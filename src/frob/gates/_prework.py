@@ -246,12 +246,6 @@ def _bounded_xref_scan(
 # frob:ticket T-0236
 # frob:ticket T-0240
 # frob:ticket T-4688
-# frob:tests tests/ticket_land_suite/test_land_core.py::TestPreworkSweepRefresh.test_land_refreshes_stale_sweep_after_unrelated_main_change kind="unit"  # noqa: E501
-# frob:tests tests/gates_suite/test_prework.py::TestPreworkSweepBounds.test_sweep_ticket_honors_graph_excludes  # noqa: E501
-# frob:tests tests/gates_suite/test_prework.py::TestPreworkSweepBounds.test_sweep_ticket_skips_builtin_skip_dirs  # noqa: E501
-# frob:tests tests/gates_suite/test_prework.py::TestPreworkSweepBounds.test_sweep_ticket_xref_hits_are_real_symbols  # noqa: E501
-# frob:tests tests/gates_suite/test_prework.py::TestPreworkSweepBounds.test_sweep_ticket_partial_on_budget_exceeded  # noqa: E501
-# frob:tests tests/gates_suite/test_prework.py::TestPreworkSweepBounds.test_sweep_ticket_resumes_pending_patterns  # noqa: E501
 def sweep_ticket(
     root: Path,
     ticket: Ticket,

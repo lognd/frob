@@ -253,7 +253,6 @@ class GroupedGap(BaseModel):
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
-# frob:tests tests/unit/strata/test_audit.py::TestGroupGaps.test_group_gaps_by_view
 def group_gaps_by_view(gaps: tuple[FamilyGap, ...]) -> tuple[GroupedGap, ...]:
     """Collapse `gaps` into `GroupedGap`s: entries that are verbatim-
     identical on (family, rule, detail, target, sub_target) -- differing
@@ -708,14 +707,6 @@ def _blast_radius_gaps_per_user(
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
-# frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_clean_proved
-# frob:tests tests/unit/strata/test_audit.py::TestVulnLitmus.test_refutes_gap_per_family
-# frob:tests tests/unit/strata/test_audit.py::TestHardenedLitmus.test_hardened_clean
-# frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_pii_gap_reported
-# frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_lint_gap_reported
-# frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_shared_model_gaps
-# frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_hardened_model_proved
-# frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_no_runs_as_no_gaps
 # frob:ticket T-0601
 # frob:enforces CHK-GATE-HOST-BLAST
 def evaluate_exhaustiveness(
@@ -974,7 +965,6 @@ def _apply_gap_waivers(
 
 # frob:ticket T-1157
 # frob:ticket T-4719
-# frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_sys205_waiver_is_not_reported_stale_by_exhaustiveness_pass  # noqa: E501
 def _gap_rule_in_scope(rule: str) -> bool:
     """Excludes rule ids that own their own waiver channel
     (SYS100-102, HOST001/HOST002, SYS200-203, SYS205, REL200/REL201/

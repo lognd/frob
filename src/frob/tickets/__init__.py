@@ -259,10 +259,7 @@ def _load_large_glob_max_files(root: Path) -> int:
 
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_defaults_false_with_no_frob_toml  # noqa: E501
-# frob:tests \
 # tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_true_when_configured
-# frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_false_when_absent_from_section  # noqa: E501
 def load_require_review_for_close(root: Path) -> bool:
     """Read `[tickets] require_review_for_close` from `frob.toml` (T-0571):
     the strict-mode gate that requires `close` to see at least one
@@ -285,10 +282,7 @@ def load_require_review_for_close(root: Path) -> bool:
 
 # frob:ticket T-1029
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets.py::TestAddAcceptance.test_appends_criteria_to_existing_ticket
-# frob:tests tests/test_tickets.py::TestAddAcceptance.test_empty_criteria_is_rejected
-# frob:tests tests/test_tickets.py::TestAddAcceptance.test_blank_criteria_are_dropped
 def add_acceptance(
     root: Path, ticket_id: str, criteria: Sequence[str]
 ) -> Result[Ticket, TicketError]:
@@ -340,7 +334,6 @@ def add_acceptance(
 
 # frob:ticket T-0409
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
 def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
     """Ids in `queue` (whatever store it was loaded from -- active-only or
     merged) whose state is DONE or DROPPED, oldest-first (T-0409): the
@@ -364,10 +357,6 @@ def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
 # frob:ticket T-0411
 # frob:ticket T-2577
 # frob:doc docs/modules/tickets-data-storage.md#milestone-as-the-doable-sort-axis-and-inheritance-t-2577-m3  # noqa: E501
-# frob:tests tests/test_tickets_priority.py::TestDoablePriorityOrdering.test_high_priority_surfaces_before_older_low_priority  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_earlier_milestone_outranks_critical_later_milestone  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_unmilestoned_sorts_after_every_declared_milestone  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_semver_numeric_not_lexical_ordering  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Milestone as the \
 # doable sort axis, and inheritance (T-2577 M3) section documents several symbols \
 # (also shared with src/frob/tickets/_doable.py) under one section, not just a public \
@@ -427,7 +416,6 @@ def _doable_sort_key(
 
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_organization.py::TestBoardView.test_columns_in_fixed_order
 def board_view(
     queue: TicketQueue,
@@ -461,7 +449,6 @@ def board_view(
 
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_organization.py::TestEpicRollup.test_counts_done_and_total
 def epic_rollup(queue: TicketQueue, epic_id: str) -> Result[EpicRollup, TicketError]:
     """`frob ticket epic <id>`: the full descendant subtree of `epic_id` via

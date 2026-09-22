@@ -190,9 +190,6 @@ def _duplicate_interface_violations(model: KernelModel) -> list[SelfConformViola
 # frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
 # frob:enforces CHK-GATE-SYS110
 # frob:enforces SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE
-# frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_real_symbol_outside_declared_set_fires  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_declared_superset_is_silent  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_node_with_no_interface_attrs_is_skipped  # noqa: E501
 # frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
 # rule family -- this symbol only moved to a sibling module verbatim (same name, same \
 # body/signature), no behavior change, so the affects()-closure doc it names needs no \
@@ -246,8 +243,6 @@ def _undeclared_intended_surface_violations(
     return found
 
 
-# frob:tests tests/unit/strata/test_selfconform.py::TestPurposeContract.test_effect_outside_profile_fires  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestPurposeContract.test_unrecognized_profile_fires  # noqa: E501
 # frob:ticket T-2729
 def _purpose_contract_violations(
     model: KernelModel, observed_by_node: dict[str, frozenset[str]]

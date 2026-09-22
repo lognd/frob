@@ -48,12 +48,6 @@ def _stamp_read_only_parse_artifact_cache_env() -> None:
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-1238
-# frob:tests tests/unit/test_app_runners.py::TestExploreRunner.test_map_subcommand_delegates_to_map_runner  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestExploreRunner.test_outline_subcommand_delegates_to_outline_runner  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestExploreRunner.test_xref_subcommand_missing_symbol_exits_1  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestExploreRunner.test_docs_search_subcommand_missing_path_exits_1  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestExploreRunner.test_unknown_subcommand_exits_1  # noqa: E501
-# frob:tests tests/unit/test_explore_runner_parse_artifact_cache.py::TestStampReadOnlyParseArtifactCacheEnv.test_stamps_env_when_cache_db_exists  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob explore <map|outline|xref|docs-search>`: the T-1238 verb-group
     front door onto the navigation porcelain -- delegates straight into the

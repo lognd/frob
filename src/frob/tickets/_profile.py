@@ -135,9 +135,6 @@ class _RatchetState(BaseModel):
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
-# frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_absent_frob_toml_is_standard  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_explicit_rapid_parses  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_unknown_value_errors  # noqa: E501
 def configured_profile(root: Path) -> Result[ProfileName, ProfileError]:
     """The RAW `[profile] profile = "..."` value from `root`'s
     `frob.toml`, with no ratchet applied -- `standard` (`Ok`) whenever the
@@ -175,10 +172,6 @@ def configured_profile(root: Path) -> Result[ProfileName, ProfileError]:
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#rapid-debt-and-the-ratchet-override-t-1681
-# frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_frob_toml_is_not_overridden  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_key_is_not_overridden  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_explicit_true_overrides  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_malformed_toml_fails_strict_not_relaxed  # noqa: E501
 # frob:ticket T-1681
 def ratchet_override_enabled(root: Path) -> bool:
     """Whether `root`'s `frob.toml` sets `[profile] override_ratchet = true`
@@ -296,10 +289,6 @@ def _ratchet_thresholds_tripped(root: Path) -> str | None:
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
-# frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_standard_is_unaffected_by_ratchet  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_rapid_below_threshold_stays_rapid  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_rapid_above_threshold_ratchets_to_standard  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_persisted_ratchet_wins_even_if_thresholds_no_longer_trip  # noqa: E501
 def effective_profile(root: Path) -> Result[ProfileName, ProfileError]:
     """The profile every land-pipeline seam should actually branch on --
     NEVER `configured_profile` directly. `standard`/`fortress` pass
@@ -360,9 +349,6 @@ def effective_profile(root: Path) -> Result[ProfileName, ProfileError]:
 # frob:ticket T-1584
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
-# frob:tests tests/unit/test_profile.py::TestDowngrade.test_downgrade_clears_persisted_ratchet  # noqa: E501
-# frob:tests tests/unit/test_profile.py::TestDowngrade.test_downgrade_is_noop_when_nothing_ratcheted  # noqa: E501
-# frob:tests tests/unit/test_profile_runner.py::TestProfileRunnerDowngrade.test_downgrade_clears_a_real_ratchet  # noqa: E501
 def downgrade_profile_ratchet(root: Path, *, reason: str) -> Result[bool, ProfileError]:
     """Clear a persisted auto-ratchet -- the ONLY way `effective_profile`
     can go back to reading `rapid` off `frob.toml` after an auto-upgrade.

@@ -45,7 +45,6 @@ _MARKER_TEMPLATE = "<!-- narrative-moved:{file}:{line}:{ticket} -->"
 
 
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests \
 # tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_no_ticket_id_refuses
 class MigrateError(ErrorSet):
     """Failure modes for `migrate_block` -- one recoverable value per
@@ -59,7 +58,6 @@ class MigrateError(ErrorSet):
 
 
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests \
 # tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_whole_block_moves_when_no\
 # _keep_lines_given
 @dataclass(frozen=True)
@@ -76,9 +74,7 @@ class MigrationResult:
 
 
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests \
 # tests/test_narrative_migrate.py::TestSplitTicketId.test_finds_ticket_id_in_lead_line
-# frob:tests \
 # tests/test_narrative_migrate.py::TestSplitTicketId.test_no_ticket_id_returns_none
 def split_ticket_id(lead_line: str) -> str | None:
     """The `T-####` id in a block's lead line (`# T-2961: ...`), or `None`
@@ -145,23 +141,16 @@ def _validate_block(
 
 
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests \
 # tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_whole_block_moves_when_no\
 # _keep_lines_given
-# frob:tests \
 # tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_load_bearing_sentence_sta\
 # ys_when_named_as_keep
-# frob:tests \
 # tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_no_ticket_id_refuses
-# frob:tests \
 # tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_keep_line_not_in_block_re\
 # fuses
-# frob:tests \
 # tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_bad_line_range_refuses
-# frob:tests \
 # tests/test_narrative_migrate.py::TestIdempotency.test_marker_already_present_refuses_\
 # as_already_migrated
-# frob:tests \
 # tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_markdown_paragraph_refere\
 # nce_line_is_plain_prose
 def migrate_block(
@@ -234,7 +223,6 @@ def migrate_block(
 
 
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests \
 # tests/test_narrative_migrate.py::TestIdempotency.test_marker_already_present_refuses_\
 # as_already_migrated
 def moved_text_for_ticket(
@@ -252,8 +240,6 @@ def moved_text_for_ticket(
 
 
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests tests/test_narrative_migrate.py::TestBlockAt.test_finds_multiline_block
-# frob:tests \
 # tests/test_narrative_migrate.py::TestBlockAt.test_non_comment_line_returns_none
 def block_at(file_text: str, start_line: int) -> tuple[int, int] | None:
     """The `(start, end)` 1-indexed inclusive range of the contiguous
@@ -272,10 +258,8 @@ def block_at(file_text: str, start_line: int) -> tuple[int, int] | None:
 
 # frob:ticket T-2995
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests \
 # tests/test_narrative_migrate.py::TestParagraphAt.test_finds_blank_line_delimited_para\
 # graph
-# frob:tests \
 # tests/test_narrative_migrate.py::TestParagraphAt.test_blank_line_returns_none
 def paragraph_at(file_text: str, start_line: int) -> tuple[int, int] | None:
     """The markdown-prose counterpart to `block_at` (T-2995): the `(start,

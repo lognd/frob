@@ -117,15 +117,12 @@ def _bucket_value(index: int, alpha: float) -> float:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_quantile_on_empty_sketch_is_zero  # noqa: E501
 def new_sketch(alpha: float = DEFAULT_ALPHA) -> QuantileSketch:
     """An empty sketch at relative-error `alpha`."""
     return QuantileSketch(alpha=alpha)
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_negative_value_is_dropped_not_raised  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_zero_values_land_in_zero_count_not_a_bucket  # noqa: E501
 def add_value(
     sketch: QuantileSketch, value: float, weight: float = 1.0
 ) -> QuantileSketch:
@@ -148,9 +145,6 @@ def add_value(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_merge_is_associative  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_merge_is_commutative  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_merge_rejects_mismatched_alpha  # noqa: E501
 def merge_sketches(a: QuantileSketch, b: QuantileSketch) -> QuantileSketch:
     """Bucket-wise sum of `a` and `b` -- ASSOCIATIVE and COMMUTATIVE by
     construction (plain per-bucket float addition), which is the whole
@@ -174,8 +168,6 @@ def merge_sketches(a: QuantileSketch, b: QuantileSketch) -> QuantileSketch:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_decay_shrinks_weight_toward_zero  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_decay_rejects_out_of_range_factor  # noqa: E501
 def decay_sketch(sketch: QuantileSketch, factor: float) -> QuantileSketch:
     """`sketch` with every bucket's (and `zero_count`'s) weight scaled by
     `factor` (`0.0 <= factor <= 1.0`) -- the exponential-decay half of
@@ -198,7 +190,6 @@ def decay_sketch(sketch: QuantileSketch, factor: float) -> QuantileSketch:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_decay_shrinks_weight_toward_zero  # noqa: E501
 def total_weight(sketch: QuantileSketch) -> float:
     """Total accumulated weight across every bucket plus `zero_count`."""
     return sketch.zero_count + sum(sketch.buckets.values())
@@ -238,7 +229,6 @@ def quantile(sketch: QuantileSketch, q: float) -> float:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra.test_bimodal_quantiles_within_relative_error_and_under_1kb  # noqa: E501
 def sketch_size_bytes(sketch: QuantileSketch) -> int:
     """Serialized (JSON) byte size of `sketch` -- what `frob.perf.
     _sketch_store` actually persists per section, and what the ticket's

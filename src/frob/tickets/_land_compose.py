@@ -41,9 +41,7 @@ _log = get_logger(__name__)
 # frob:ticket T-3088
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-publish-primitive-t-3088  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_compose_failure_returns_err  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestPublishRefCas.test_racing_publish_second_gets_ref_moved  # noqa: E501
 class LandComposeError(ErrorSet):
     """Fallible outcomes of the out-of-tree compose + CAS publish primitive
@@ -101,11 +99,8 @@ def _apply_diff_to_scratch_index(
 # frob:ticket T-3088
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-publish-primitive-t-3088  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_worktree_untouched_by_compose  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_composed_commit_contains_the_patch  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_compose_failure_returns_err  # noqa: E501
 def compose_tree_out_of_tree(
     repo: Path, base_commit: str, patch_source: str
@@ -195,9 +190,7 @@ def _write_and_commit_scratch_index(
 # frob:ticket T-3088
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-publish-primitive-t-3088  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestPublishRefCas.test_sequential_publishes_succeed
-# frob:tests \
 # tests/unit/test_land_compose.py::TestPublishRefCas.test_racing_publish_second_gets_ref_moved  # noqa: E501
 def publish_ref_cas(
     repo: Path, ref: str, expected_old_sha: str, new_sha: str
@@ -236,9 +229,7 @@ def publish_ref_cas(
 # frob:ticket T-3107
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three-way-squash-compose-t-3107  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_clean_squash_reports_no_conflicts  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash_reports_the_conflicted_paths  # noqa: E501
 class SquashStage(BaseModel):
     """A prepared disposable worktree holding a squash-merge result plus
@@ -311,24 +302,17 @@ def _squash_into_worktree(
 
 
 # frob:ticket T-3107
-# frob:tests \
 # tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_clean_squash_reports_no_conflicts  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash_reports_the_conflicted_paths  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_untouched_by_clean_squash  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_untouched_by_conflicted_squash  # noqa: E501
 # frob:ticket T-3163
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three-way-squash-compose-t-3107  # noqa: E501
-# frob:tests \
 # tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 # frob:ticket T-4431
-# frob:tests \
 # tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_native_source_mtimes_are_seeded_against_the_disposable_worktree  # noqa: E501
 # frob:ticket T-4411
-# frob:tests \
 # tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_cache_db_is_seeded_against_the_disposable_worktree  # noqa: E501
 # frob:waive AFFECT001 reason="T-4411 adds one call \
 # (seed_disposable_worktree_cache(repo, worktree)) at worktree-creation time, \
@@ -467,9 +451,7 @@ def compose_squash_in_disposable_worktree(
 
 
 # frob:ticket T-3107
-# frob:tests \
 # tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit.test_folded_commit_contains_both_sides  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit.test_fold_refuses_while_paths_are_unmerged  # noqa: E501
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three-way-squash-compose-t-3107  # noqa: E501
@@ -541,16 +523,12 @@ def fold_worktree_into_commit(
 # frob:ticket T-3114
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----post-cas-root-resync-t-3114  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_unrelated_dirty_path_resyncs_and_is_preserved  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_dirty_path_the_land_also_changed_blocks_atomically  # noqa: E501
 # frob:ticket T-4572
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----ledger-only-cas-retry-t-4572  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_cas_ledger_retry.py::TestLedgerOnlyAdvance.test_pure_ledger_advance_is_ledger_only  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_cas_ledger_retry.py::TestLedgerOnlyAdvance.test_a_single_code_touching_commit_is_not_ledger_only  # noqa: E501
 def commits_touch_only_ledger_paths(
     repo: Path, old_tip: str, new_tip: str
@@ -610,9 +588,7 @@ _LAND_OWNED_LEDGER_RACE_FILES = frozenset({"CHANGELOG.md"})
 # frob:ticket T-4572
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----ledger-only-cas-retry-t-4572  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_cas_ledger_retry.py::TestRebaseComposedCommitOnto.test_rebased_commit_carries_the_same_content_change  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_cas_ledger_retry.py::TestRebaseComposedCommitOnto.test_rebase_failure_returns_err  # noqa: E501
 def rebase_composed_commit_onto(
     repo: Path, pre_land_tip: str, composed_sha: str, new_base: str

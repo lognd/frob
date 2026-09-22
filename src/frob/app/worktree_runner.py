@@ -442,13 +442,7 @@ def _release_via_force(root: Path, ticket_id: str, reason: str | None) -> None:
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-1779
 # frob:ticket T-1789
-# frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_prints_verdicts_and_summary  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_removes_a_clean_unleased_worktree  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_and_names_the_error_for_a_bad_path  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_when_kept
-# frob:tests tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli.test_release_lease_cli_releases_an_orphaned_lease  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli.test_release_lease_cli_exits_1_for_a_live_worktree  # noqa: E501
 def run(argv: list[str]) -> None:
     """`frob worktree <subcommand>` entry point (T-0836), dispatched
     directly by `__main__._dispatch` the same way `frob agent`/`frob

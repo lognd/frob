@@ -87,7 +87,6 @@ _REPO_WIDE_EXEMPT_RULES = frozenset({"REL002"})
 
 # frob:ticket T-2284
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_out_of_scope_fix_is_reverted_and_reported kind="unit"  # noqa: E501
 class SkippedFix(BaseModel):
     """One Tier-A fix a handler produced but `filter_fixes_by_scope_and_
@@ -244,15 +243,10 @@ def _revert_fix_file(
 
 # frob:ticket T-2284
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_out_of_scope_fix_is_reverted_and_reported kind="unit"  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_live_leased_file_skipped_even_when_in_landing_scope kind="unit"  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_in_scope_fix_is_kept_unchanged kind="unit"  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_no_ticket_id_passes_every_fix_through_unfiltered kind="unit"  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass kind="unit"  # noqa: E501
 def filter_fixes_by_scope_and_lease(
     root: Path,

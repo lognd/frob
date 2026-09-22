@@ -29,7 +29,6 @@ CACHE_REL = Path(".frob") / "cache.db"
 
 # frob:doc docs/modules/app.md#shared-graph-snapshot-helper-t-1085
 # frob:ticket T-1085
-# frob:tests tests/test_debt_runner.py::TestDebtRunner.test_json_mode_lists_debt_entries
 def load_or_build_snapshot(root: Path, *, log_context: str) -> GraphSnapshot:
     """Load `root`'s cached graph snapshot (`CACHE_REL`), building it fresh
     when the cache is missing/stale -- the load-then-build-fallback shape

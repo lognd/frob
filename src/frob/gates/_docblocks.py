@@ -340,33 +340,19 @@ def _doc004_block_violations(
 
 
 # frob:doc docs/modules/gates.md#doc004-unbound-stale-doc-code-blocks-t-0436
-# frob:tests \
 # tests/test_docblocks_gate.py::TestPythonNamespace.test_python_import_of_nonexistent_symbol_is_stale  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestPythonNamespace.test_anchored_block_passes
-# frob:tests \
 # tests/test_docblocks_gate.py::TestPythonNamespace.test_unanchored_but_valid_import_warns_unbound  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestPythonNamespace.test_waive_doc004_suppresses
-# frob:tests \
 # tests/test_docblocks_gate.py::TestPythonNamespace.test_generic_external_shell_block_not_flagged  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestPythonNamespace.test_package_name_differs_from_directory_name  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_missing_item_is_stale
-# frob:tests \
 # tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_real_item_passes_or_warns_never_stale  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestRustNamespace.test_external_crate_use_not_flagged
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_nonexistent_subcommand_is_stale  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_anchored_passes  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_unanchored_warns_unbound  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_waive_suppresses_console_stale  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_console_checking  # noqa: E501
 def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC004: scan every tracked `.md` doc's fenced code blocks for
@@ -462,21 +448,14 @@ def _doc005_violation(doc_path: str, line: int, message: str) -> Violation:
 
 
 # frob:doc docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435
-# frob:tests \
 # tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_missing_row_for_real_command_fails  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_stale_row_for_removed_command_fails  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_fully_covered_table_passes  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_count_claim_mismatch_fails  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_count_claim_matching_passes  # noqa: E501
-# frob:tests \
 # tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_no_config_means_no_readme_checking  # noqa: E501
 # frob:ticket T-1011
 # frob:enforces CHK-GATE-DOC005
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_passes_after_sync  # noqa: E501
 def doc005_gate(root: Path) -> tuple[Violation, ...]:
     """DOC005 (T-0435): bind `README.md`'s command table (and any "N
     commands" count claim) to the LIVE top-level subcommand registry --
@@ -658,9 +637,6 @@ def _top_level_command_help(parser) -> dict[str, str]:  # noqa: ANN001
 # frob:ticket T-1011
 # frob:invariant INV-045
 # invariant spec: [INV-045](invariants/INV-045.md)
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_sorts_rows_across_sources  # noqa: E501
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_no_config_is_none  # noqa: E501
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_flags_stale_generated_block  # noqa: E501
 def generate_cli_command_table(root: Path) -> str | None:
     """The exact text `docs/modules/cli.md`'s generated block (between
     `CLI_COMMAND_TABLE_START`/`CLI_COMMAND_TABLE_END`) must hold (T-1011):
@@ -699,8 +675,6 @@ def generate_cli_command_table(root: Path) -> str | None:
 
 # frob:doc docs/modules/cli.md#generated-command-reference-t-1011
 # frob:ticket T-1011
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_sync_replaces_only_the_marked_block  # noqa: E501
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_sync_no_markers_returns_false  # noqa: E501
 def sync_cli_command_table(root: Path, doc_path: str = "docs/modules/cli.md") -> bool:
     """`frob docs sync-commands`'s write step (T-1011): replace the text
     between `CLI_COMMAND_TABLE_START`/`CLI_COMMAND_TABLE_END` inside
@@ -732,9 +706,6 @@ def sync_cli_command_table(root: Path, doc_path: str = "docs/modules/cli.md") ->
 
 
 # frob:ticket T-1011
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_sorts_rows_across_sources  # noqa: E501
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_sync_replaces_only_the_marked_block  # noqa: E501
-# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_flags_stale_generated_block  # noqa: E501
 def _doc005_cli_table_freshness_violations(root: Path) -> list[Violation]:
     """DOC005's freshness half (T-1011): if `docs/modules/cli.md` has a
     `CLI_COMMAND_TABLE_START`/`_END` marker block, its committed content
@@ -862,13 +833,9 @@ def _doc012_violation(name: str, prog: str) -> Violation:
 
 
 # frob:doc docs/modules/gates.md#doc012-dedicated-command-section-drift-lock-t-1783
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_undocumented_subcommand_fails  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_documented_subcommand_passes  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_table_row_alone_does_not_satisfy  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_no_config_means_no_checking  # noqa: E501
 # frob:enforces CHK-GATE-DOC012
 def doc012_gate(root: Path) -> tuple[Violation, ...]:

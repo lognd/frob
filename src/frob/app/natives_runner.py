@@ -18,7 +18,6 @@ _log = get_logger(__name__)
 
 # frob:ticket T-0864
 # frob:doc docs/modules/cli.md#frob-natives-build-t-0864
-# frob:tests \
 # tests/unit/test_natives_build.py::TestNativesRunner.test_build_reports_success
 def run(cfg: AppConfig) -> None:
     """`frob natives build`: build every declared rust `[[native]]` crate

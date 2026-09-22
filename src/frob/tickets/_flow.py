@@ -60,7 +60,6 @@ def _tickets_committed_to(queue: TicketQueue, sprint: str) -> tuple[Ticket, ...]
 
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_tiers.py::TestSprintShow.test_state_rollup_and_velocity
 def sprint_view(queue: TicketQueue, sprint: str) -> SprintReport:
     """`frob ticket sprint show <label>`: every ticket committed to
     `sprint` (T-0715), a `TicketState -> count` rollup, and `closed`
@@ -300,7 +299,6 @@ def _v2_path_transitions_raw_log(root: Path) -> str:
 
 
 # frob:ticket T-5131
-# frob:tests \
 # tests/test_tickets_velocity.py::TestSprintVelocityV2Mode.test_v2_mode_mines_via_v2_state_transitions  # noqa: E501
 def _v2_all_path_transitions(root: Path) -> dict[str, list[tuple[str, str, str]]]:
     """ONE `git log --reverse -p -- tickets/` walk over the WHOLE v2
@@ -416,7 +414,6 @@ def _v2_lineage_from(rename_map: dict[str, str], rel_path: str) -> list[str]:
 
 # frob:ticket T-1330
 # frob:ticket T-5131
-# frob:tests \
 # tests/test_tickets_velocity.py::TestSprintVelocityV2Mode.test_v2_mining_spawns_git_a_constant_number_of_times  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to the batched v2 \
 # git-history walks (T-5131), which the resolver cannot see through; the one real \
@@ -497,7 +494,6 @@ def _mine_done_transitions(
 
 # frob:ticket T-0938
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_velocity.py::TestSprintVelocity.test_transitions_mined_from_history
 def sprint_velocity(
     root: Path, queue: TicketQueue, sprint: str
@@ -709,15 +705,9 @@ def _ticket_tokens_per_point(all_tickets: dict) -> float | None:
 # frob:ticket T-1142
 # frob:ticket T-1162
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_velocity.py::TestTicketFlow.test_filed_and_landed_counted_per_day
-# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_zero_activity_days_are_filled_not_sparse  # noqa: E501
-# frob:tests \
 # tests/test_tickets_velocity.py::TestTicketFlow.test_eta_none_when_queue_not_shrinking
-# frob:tests \
 # tests/test_tickets_velocity.py::TestTicketFlow.test_eta_computed_when_queue_shrinking
-# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_landed  # noqa: E501
-# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_filed  # noqa: E501
 # frob:waive AFFECT001 reason="T-1162 is a pure internal extraction \
 # (archive-merge/histogram/row-building helpers pulled out to cut the function under \
 # the 60-line ARCH threshold); behavior, inputs, outputs, and the documented contract \

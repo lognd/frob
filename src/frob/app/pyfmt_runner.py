@@ -51,18 +51,12 @@ _log = get_logger(__name__)
 # frob:ticket T-2251
 # frob:ticket T-3906
 # frob:doc docs/modules/app.md#runners
-# frob:tests \
 # tests/unit/test_pyfmt_runner.py::TestRun.test_select_imports_only_uses_dash_dash_sele\
 # ct_i
-# frob:tests \
 # tests/unit/test_pyfmt_runner.py::TestRun.test_default_delegates_to_run_ruff_autofix
-# frob:tests tests/unit/test_pyfmt_runner.py::TestRun.test_nonzero_exit_propagates
-# frob:tests \
 # tests/unit/test_pyfmt_runner.py::TestRunCheckModeDoesNotWrite.test_check_mode_does_no\
 # t_write
-# frob:tests \
 # tests/unit/test_pyfmt_runner.py::TestRunScopeFlags.test_directives_only_skips_ruff
-# frob:tests \
 # tests/unit/test_pyfmt_runner.py::TestRunScopeFlags.test_code_only_skips_directives
 def run(cfg: AppConfig) -> None:
     """`frob format`: `--code` runs `ruff check --fix` (all rules by
@@ -185,7 +179,6 @@ def _render_human(
 
 
 # frob:ticket T-2251
-# frob:tests tests/unit/test_pyfmt_runner.py::TestRunRuffCheckFixSelectImports.test_missing_binary_yields_typed_result  # noqa: E501
 def _run_ruff_check_fix_select_imports(root: Path) -> ToolResult:
     """`ruff check --fix --select I` against `root` -- the narrower,
     import-sort-only fix scope the Makefile `format:` target uses
@@ -215,7 +208,6 @@ def _run_ruff_check_fix_select_imports(root: Path) -> ToolResult:
 
 
 # frob:ticket T-3906
-# frob:tests tests/unit/test_pyfmt_runner.py::TestRunRuffCheckSelectImportsNoFix.test_missing_binary_yields_typed_result  # noqa: E501
 def _run_ruff_check_select_imports_no_fix(root: Path) -> ToolResult:
     """`ruff check --select I` (no `--fix`) against `root` -- the
     check-only counterpart of `_run_ruff_check_fix_select_imports`, closing
@@ -240,7 +232,6 @@ def _run_ruff_check_select_imports_no_fix(root: Path) -> ToolResult:
 
 
 # frob:ticket T-2251
-# frob:tests tests/unit/test_pyfmt_runner.py::TestRuffFormatWriteOnly.test_missing_binary_yields_typed_result  # noqa: E501
 def _ruff_format_write_only(root: Path) -> list[ToolResult]:
     """The `ruff format` (write mode) half of `_run_ruff_autofix`, reused
     standalone for the `--select-imports-only` path (T-2251) since that
@@ -269,7 +260,6 @@ def _ruff_format_write_only(root: Path) -> list[ToolResult]:
 
 
 # frob:ticket T-3906
-# frob:tests tests/unit/test_pyfmt_runner.py::TestRuffFormatCheckOnly.test_missing_binary_yields_typed_result  # noqa: E501
 def _ruff_format_check_only(root: Path) -> ToolResult:
     """The `ruff format --check` counterpart of `_ruff_format_write_only`,
     for the `--select-imports-only --check` path -- closes T-3906's

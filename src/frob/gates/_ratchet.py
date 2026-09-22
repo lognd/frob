@@ -96,7 +96,6 @@ class RatchetLock(BaseModel):
     pools: tuple[RatchetPool, ...] = ()
 
     # frob:doc docs/modules/gates.md#ratchet-pools-t-0569
-    # frob:tests tests/test_gates_ratchet.py::TestSnapshotRatchet.test_two_rules_do_not_clobber_each_other  # noqa: E501
     def pool_for(self, rule_id: str) -> RatchetPool | None:
         """The `RatchetPool` for `rule_id`, or `None` if never snapshotted."""
         for pool in self.pools:
@@ -107,7 +106,6 @@ class RatchetLock(BaseModel):
 
 # frob:ticket T-0569
 # frob:doc docs/modules/gates.md#ratchet-pools-t-0569
-# frob:tests tests/test_gates_ratchet.py::TestSnapshotRatchet.test_writes_committed_lock_file  # noqa: E501
 def load_ratchet_lock(root: Path) -> RatchetLock:
     """The committed `frob-ratchet.lock.json` at `root`, or an empty
     `RatchetLock` if it does not exist yet or fails to parse (T-0569) --
@@ -164,7 +162,6 @@ def _write_ratchet_lock(root: Path, lock: RatchetLock) -> Result[None, RatchetEr
 
 # frob:ticket T-0569
 # frob:doc docs/modules/gates.md#ratchet-pools-t-0569
-# frob:tests tests/test_gates_ratchet.py::TestSnapshotRatchet.test_first_snapshot_baselines_every_key  # noqa: E501
 def snapshot_ratchet(
     root: Path, rule_id: str, finding_keys: list[str]
 ) -> Result[RatchetPool, RatchetError]:
@@ -196,7 +193,6 @@ def snapshot_ratchet(
 
 # frob:ticket T-0569
 # frob:doc docs/modules/gates.md#ratchet-pools-t-0569
-# frob:tests tests/test_gates_ratchet.py::TestClearRatchetEntry.test_clearing_with_reason_removes_entry_and_it_now_errors  # noqa: E501
 def clear_ratchet_entry(
     root: Path, rule_id: str, key: str, reason: str
 ) -> Result[RatchetPool, RatchetError]:
@@ -232,7 +228,6 @@ def clear_ratchet_entry(
 
 # frob:ticket T-0569
 # frob:doc docs/modules/gates.md#ratchet-pools-t-0569
-# frob:tests tests/test_gates_ratchet.py::TestResolveRatchetSeverity.test_baselined_finding_stays_warn  # noqa: E501
 def resolve_ratchet_severity(rule_id: str, finding_key: str, lock: RatchetLock) -> str:
     """The ratchet-adjusted severity for one finding (T-0569): `"warn"` if
     `finding_key` is already baselined for `rule_id`, `"error"` if it is
@@ -248,7 +243,6 @@ def resolve_ratchet_severity(rule_id: str, finding_key: str, lock: RatchetLock) 
 
 # frob:ticket T-0569
 # frob:doc docs/modules/gates.md#ratchet-pools-t-0569
-# frob:tests tests/test_gates_ratchet.py::TestRatchetEnabledRules.test_reads_configured_rules  # noqa: E501
 # frob:waive AFFECT001 reason="T-1371 only widens internal exception handling; the documented missing-is-default behavior is unchanged, so docs/modules/gates.md#ratchet-pools-t-0569 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def ratchet_enabled_rules(root: Path) -> frozenset[str]:
     """The rule ids opted into ratcheting via `[gates.ratchet] rules =
@@ -276,7 +270,6 @@ def ratchet_enabled_rules(root: Path) -> frozenset[str]:
 
 # frob:ticket T-4240
 # frob:doc docs/modules/gates.md#base001-a-baseline-overrun-blocks-land-reported-by-name-t-4240  # noqa: E501
-# frob:tests tests/test_gates_ratchet.py::TestBaselineOverrunViolations.test_current_count_exceeding_baseline_fires_base001  # noqa: E501
 # frob:todo T-draft-daef879a wire into gate pipeline once T-4540/T-4214 release their leases  # noqa: E501
 def baseline_overrun_violations(
     root: Path, current_counts: dict[str, int]

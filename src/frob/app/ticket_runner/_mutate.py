@@ -36,7 +36,6 @@ _log = get_logger("frob.app.ticket_runner")
 
 # frob:ticket T-1317
 # frob:doc docs/modules/gates.md#ack-accountability-t-1317
-# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_cli_reason_file_reads_verbatim  # noqa: E501
 def read_reason_file_verbatim(path: Path, *, cli_label: str) -> str:
     """Read a `--reason-file PATH` argument's contents verbatim (T-0737's
     shell-injection-avoidance precedent), or `sys.exit(1)` with `cli_label`
@@ -104,9 +103,6 @@ def _resolve_triage_reason(cfg: AppConfig) -> str | None:
 # frob:ticket T-0455
 # frob:ticket T-0737
 # frob:ticket T-1975
-# frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_free_path
-# frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_leased_path_exits_nonzero  # noqa: E501
-# frob:tests \
 # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_demote_to_evidence_only_releases_lease  # noqa: E501
 def _apply_demote_to_evidence_only(root: Path, cfg: AppConfig, reason: str) -> None:
     """T-1975 (ARCH001 split of `_scope`, zero behavior change): dispatch
@@ -285,7 +281,6 @@ def _still_implicitly_covered(glob: str, ticket) -> str | None:  # noqa: ANN001
 
 
 # frob:ticket T-1484
-# frob:tests \
 # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields
 def _scope_ack(root: Path, cfg: AppConfig) -> None:
     """`frob ticket scope-ack <id> (--reason TEXT | --reason-file PATH)`:
@@ -341,10 +336,7 @@ def _resolve_anchor_reason(cfg: AppConfig) -> str | None:
 
 
 # frob:ticket T-1867
-# frob:tests tests/unit/test_ticket_anchor_cli.py::TestAnchorCli.test_set_anchor_via_cli
-# frob:tests \
 # tests/unit/test_ticket_anchor_cli.py::TestAnchorCli.test_clear_anchor_via_cli
-# frob:tests tests/unit/test_ticket_anchor_cli.py::TestAnchorCli.test_requires_reason
 def _anchor(root: Path, cfg: AppConfig) -> None:
     """`frob ticket anchor <id> --set|--clear (--reason TEXT | --reason-file
     PATH)`: the ONLY thing this command does is forward to
@@ -468,8 +460,6 @@ def _resolve_body_mode_and_text(cfg: AppConfig) -> tuple[str, str] | None:
 
 # frob:ticket T-2392
 # frob:doc docs/modules/tickets-data-storage.md#data-models
-# frob:tests tests/test_tickets_body.py::TestBodyCli.test_cli_append_writes_body
-# frob:tests tests/test_tickets_body.py::TestBodyCli.test_cli_missing_text_exits_nonzero
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Data models section \
 # documents several symbols under one section, not just a public entry point -- the \
 # many-symbols- one-section convention this repo already accepted for vet.md (T-2810 \
@@ -1053,9 +1043,7 @@ def _runs_last(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-2624
-# frob:tests \
 # tests/test_tickets_organization.py::TestRunsLastParallelSafeCli.test_cli_reason_missing_exits_nonzero  # noqa: E501
-# frob:tests \
 # tests/test_tickets_organization.py::TestRunsLastParallelSafeCli.test_cli_sets_both_fields  # noqa: E501
 def _runs_last_parallel_safe(root: Path, cfg: AppConfig) -> None:
     """`frob ticket runs-last-parallel-safe <id> (--reason TEXT |

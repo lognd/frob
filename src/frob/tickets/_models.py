@@ -70,13 +70,9 @@ _DRAFT_TICKET_ID_RE = re.compile(r"T-draft-[0-9a-f]{8}")
 
 # frob:ticket T-1132
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_accepts_final_id \
 # kind="unit"
-# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_accepts_draft_id \
 # kind="unit"
-# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_rejects_empty_string \
 # kind="unit"
-# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_rejects_malformed_id \
 # kind="unit"
 def is_valid_ticket_ref(value: str) -> bool:
     """Whether `value` is a well-formed ticket-id reference (final
@@ -125,8 +121,6 @@ def _validate_parent(value: str | None) -> str | None:
 
 # frob:ticket T-4463
 # frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
-# frob:tests tests/test_tickets.py::TestNormalizeMilestone.test_strips_v_prefix
-# frob:tests tests/test_tickets.py::TestNormalizeMilestone.test_bare_form_unchanged
 def normalize_milestone(value: str) -> str:
     """Canonicalize a milestone string for BOTH comparison and storage
     (T-4463): `packaging.version.Version` already accepts an optional
@@ -153,10 +147,6 @@ def normalize_milestone(value: str) -> str:
 
 # frob:ticket T-2574
 # frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
-# frob:tests tests/test_tickets.py::TestValidateMilestone.test_valid_semver_accepted
-# frob:tests tests/test_tickets.py::TestValidateMilestone.test_invalid_string_refused
-# frob:tests tests/test_tickets.py::TestValidateMilestone.test_ordering_is_numeric_not_lexical  # noqa: E501
-# frob:tests \
 # tests/test_tickets.py::TestValidateMilestone.test_v_prefix_normalized_on_write
 def validate_milestone(value: str) -> Result[str, TicketError]:
     """Refuse an invalid `Ticket.milestone`/`TicketSpec.milestone` string
@@ -193,8 +183,6 @@ def validate_milestone(value: str) -> Result[str, TicketError]:
 
 # frob:ticket T-5132
 # frob:doc docs/modules/tickets-data-storage.md#points-t-5132
-# frob:tests tests/test_tickets_points.py::TestValidatePoints.test_valid_value_accepted
-# frob:tests tests/test_tickets_points.py::TestValidatePoints.test_invalid_value_refused
 def validate_points(value: int) -> Result[int, TicketError]:
     """Refuse a `Ticket.points`/`TicketSpec.points` value outside the
     Fibonacci sizing scale (1 2 3 5 8 13, T-5132) at WRITE time, the same
@@ -241,8 +229,6 @@ class TicketKind(StrEnum):
 
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets-data-storage.md#data-models
-# frob:tests tests/test_tickets_tiers.py::TestTierField.test_default_tier_is_ticket
-# frob:tests tests/test_tickets_tiers.py::TestTierField.test_serialize_parse_round_trip
 class TicketTier(StrEnum):
     """Where a ticket sits in the epic -> story -> ticket organization
     hierarchy (T-0715): `EPIC` parents `STORY` tickets, `STORY` parents leaf
@@ -276,9 +262,7 @@ CMD_EVIDENCE_ALLOWED_KINDS = frozenset({TicketKind.DOCS, TicketKind.UX})
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_bug_kind_with_no_python_surface  # noqa: E501
-# frob:tests \
 # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_false_for_bug_kind_with_real_python_surface  # noqa: E501
 def scope_has_python_surface(root: Path, scope: Sequence[str]) -> bool:
     """T-3156: True if any file under `scope` (real, tracked, on-disk
@@ -331,11 +315,8 @@ def scope_has_python_surface(root: Path, scope: Sequence[str]) -> bool:
 # public contract needs describing there, and the doc edit itself is out of this \
 # ticket's declared scope (src/frob/tickets/_models.py and \
 # src/frob/app/ticket_runner/_close_cmd.py only)"
-# frob:tests \
 # tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_empty_is_ok
-# frob:tests \
 # tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_loaded_resolves  # noqa: E501
-# frob:tests \
 # tests/test_tickets_rule_shaped.py::TestRuleShapedFindingsUnresolved.test_unloaded_unresolved  # noqa: E501
 def rule_shaped_findings_unresolved(ticket: "Ticket") -> tuple[str, ...]:
     """T-4037: a ticket is RULE-SHAPED (an audit finding whose remediation
@@ -386,7 +367,6 @@ _CMD_EVIDENCE_RE = re.compile(r"^cmd:.+ exit=0 sha256=[0-9a-f]{12}$")
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_cmd_evidence.py::TestIsCmdEvidence.test_shapes
 def is_cmd_evidence(entry: str) -> bool:
     """Whether `entry` has the `cmd:<command> exit=0 sha256=<12-hex>` shape
     `run_cmd_evidence` writes -- the format test `frob.gates`'s COV003 and
@@ -446,9 +426,6 @@ CLI_WIRING_FILES = frozenset(
 )
 
 
-# frob:tests tests/test_tickets.py::TestScopeMatching.test_comma_joined_entry_splits
-# frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_acceptance_criterion_evidence_null_normalizes_to_empty  # noqa: E501
-# frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_hand_edited_ledger_with_null_acceptance_evidence_loads  # noqa: E501
 # frob:ticket T-4143
 def _split_scope_entries(raw: Sequence[str] | None) -> tuple[str, ...]:
     """Split each entry of `raw` on commas and strip whitespace.
@@ -491,8 +468,6 @@ _SCOPE_GLOB_PROBE_ROOT = Path("/__frob_scope_glob_syntax_probe__")
 
 
 # frob:ticket T-2626
-# frob:tests tests/test_tickets.py::TestScopeGlobValidation.test_semicolon_joined_entry_is_invalid  # noqa: E501
-# frob:tests tests/test_tickets.py::TestScopeGlobValidation.test_every_existing_valid_form_still_passes  # noqa: E501
 def _first_invalid_scope_glob(globs: Sequence[str]) -> str | None:
     """The first entry of `globs` that is not a syntactically valid glob
     pattern, or `None` if every entry is valid (T-2626).
@@ -548,8 +523,6 @@ def _first_invalid_scope_glob(globs: Sequence[str]) -> str | None:
     return None
 
 
-# frob:tests tests/test_tickets.py::TestScopeMatching.test_dir_prefix_globs_recursively
-# frob:tests tests/test_tickets.py::TestScopeMatching.test_bare_dir_entry_no_trailing_slash_globs_recursively  # noqa: E501
 def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
     """Expand a ticket's declared `scope` into concrete fnmatch patterns.
 
@@ -589,13 +562,8 @@ def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets.py::TestScopeMatching.test_ledger_always_in_scope
-# frob:tests tests/test_tickets.py::TestScopeMatching.test_feature_kind_implies_cli_wiring_files_in_scope  # noqa: E501
-# frob:tests tests/test_tickets.py::TestScopeMatching.test_own_shard_always_in_scope
 # frob:ticket T-1819
 # frob:ticket T-4650
-# frob:tests tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit.test_registry_file_matches_with_empty_scope  # noqa: E501
-# frob:tests tests/test_tickets_registry_files.py::TestScopeMatchesRegistryImplicit.test_registry_file_matches_with_unrelated_scope  # noqa: E501
 def scope_matches(
     path: str,
     scope: Sequence[str],
@@ -721,19 +689,10 @@ def _segment_intersect(seg_a: str, seg_b: str) -> bool:
 
 
 # frob:ticket T-3180
-# frob:tests \
 # tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal
-# frob:tests \
 # tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings
-# frob:tests \
 # tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_directory_siblings
-# frob:tests \
 # tests/test_tickets_lease.py::TestGlobsIntersect.test_identical_globs_overlap
-# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_wildcard_basenames_same_directory  # noqa: E501
-# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_under_shared_doublestar  # noqa: E501
-# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_wildcard_basenames_under_shared_doublestar  # noqa: E501
-# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_doublestar_prefix_overlaps_nested_literal  # noqa: E501
-# frob:tests \
 # tests/test_tickets_lease.py::TestGlobsIntersect.test_doublestar_subsumes_other_pattern
 def _globs_intersect(glob_a: str, glob_b: str) -> bool:
     """Whether two fnmatch-style glob patterns can ever match the SAME
@@ -789,8 +748,6 @@ def _globs_intersect(glob_a: str, glob_b: str) -> bool:
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_precise_scopes_disjoint
-# frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_real_collision_detected
 def scope_overlap_globs(
     scope_a: Sequence[str], scope_b: Sequence[str]
 ) -> tuple[str, str] | None:
@@ -813,8 +770,6 @@ def scope_overlap_globs(
 
 
 # frob:ticket T-0485
-# frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_concrete_path_under_double_star_is_subset  # noqa: E501
-# frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_wildcard_bearing_narrow_is_never_subset  # noqa: E501
 def _glob_is_subset(narrow: str, broad: str) -> bool:
     """Whether every path `narrow` can match is also matched by `broad` --
     decided EXACTLY when `narrow` denotes one concrete literal path (no
@@ -831,7 +786,6 @@ def _glob_is_subset(narrow: str, broad: str) -> bool:
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_precise_scopes_disjoint
 def scope_overlap(scope_a: Sequence[str], scope_b: Sequence[str]) -> bool:
     """Whether two tickets' declared scopes could ever both match the same
     real path -- the T-0453 scope-lease collision test `doable` filters
@@ -896,9 +850,6 @@ _over_broad_literal_globs_cache_lock = threading.Lock()
 # frob:ticket T-4646
 # frob:ticket T-5117
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_prefix_for_a_differently_named_project  # noqa: E501
-# frob:tests tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_src_frob_globs_are_unchanged  # noqa: E501
-# frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_scales_across_many_candidates_and_leases  # noqa: E501
 def over_broad_literal_globs(root: Path) -> frozenset[str]:
     """`OVER_BROAD_LITERAL_GLOBS` (the repo-convention literals) UNIONED
     with `root`'s own package-prefix globs (`"<prefix>**"`/`"<prefix>"`
@@ -962,7 +913,6 @@ def over_broad_literal_globs(root: Path) -> frozenset[str]:
 
 # frob:ticket T-0398
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_evidence_integrity.py::TestD11DedupedMatchRule.test_tickets_and_gates_share_matches_collected  # noqa: E501
 def matches_collected(evidence: str, collected: frozenset[str]) -> bool:
     """Exact node-id membership, or bare-function match for parametrized
     tests (`f` satisfies evidence when only `f[param]` variants collect).
@@ -981,7 +931,6 @@ def matches_collected(evidence: str, collected: frozenset[str]) -> bool:
 
 # frob:ticket T-0572
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_acceptance.py::TestUnboundAcceptance.test_empty_acceptance_list_is_never_unbound  # noqa: E501
 def unbound_acceptance(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]:
     """Acceptance criteria on `ticket` with no evidence id that both (a) the
     criterion itself lists and (b) still resolves against `ticket.evidence`
@@ -1056,7 +1005,6 @@ _MIN_DONE_REPORT_LINES = 1
 
 # frob:ticket T-0493
 # frob:ticket T-0848
-# frob:tests tests/test_evidence_integrity.py::TestDoneReportSectionEndStructuralSentinel.test_narrative_h2_subheadings_do_not_end_the_section  # noqa: E501
 def _done_report_section_end(lines: list[str], heading_idx: int) -> int:
     """The index one past the END of the `## Done report` section starting
     at `heading_idx`: the next STRUCTURAL `## ` heading (another
@@ -1100,7 +1048,6 @@ def _done_report_section_end(lines: list[str], heading_idx: int) -> int:
 
 
 # frob:ticket T-0853
-# frob:tests tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation.test_lookalike_heading_without_changed_marker_not_real  # noqa: E501
 def _is_real_done_report_heading(lines: list[str], heading_idx: int) -> bool:
     """Whether the `## Done report`-matching line at `heading_idx` begins a
     GENUINE section rather than mere narrative that happens to read
@@ -1129,7 +1076,6 @@ def _is_real_done_report_heading(lines: list[str], heading_idx: int) -> bool:
 
 
 # frob:ticket T-0853
-# frob:tests tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation.test_lookalike_heading_before_real_report_ignored  # noqa: E501
 def _find_done_report_heading(lines: list[str]) -> int | None:
     """Index of the first line that begins a GENUINE `## Done report`
     section, or `None` if no such heading exists (T-0853).
@@ -1173,11 +1119,8 @@ _CHANGED_HEADING = "### Changed"
 
 # frob:ticket T-1005
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_recovers_narrative_before_changed_marker  # noqa: E501
-# frob:tests \
 # tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_done_report_section  # noqa: E501
-# frob:tests \
 # tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_changed_marker_to_anchor_against  # noqa: E501
 def recover_done_report_why(body: str) -> str | None:
     """Recover the free-narrative WHY prose a caller once passed to
@@ -1210,7 +1153,6 @@ def recover_done_report_why(body: str) -> str | None:
 
 # frob:ticket T-0398
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_section_rejected  # noqa: E501
 def has_substantive_done_report(body: str) -> bool:
     """Whether `body` carries a `## Done report` heading AND a real section
     under it (D-03) -- `frob.tickets.__init__` (`_done_transition_guard`)
@@ -1286,9 +1228,6 @@ _CLAIMS_ERROR_FINDINGS_RE = re.compile(r"^- error-findings: (.+)$")
 # frob:ticket T-0832
 # frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
 class DoneReportClaims(BaseModel):
     """Structured, CAPTURED (never hand-typed) Done-report claims (T-0754):
     `test_count` is the number of a ticket's non-cmd evidence ids observed
@@ -1349,10 +1288,6 @@ class DoneReportClaims(BaseModel):
 # frob:ticket T-0832
 # frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def render_claims_block(claims: DoneReportClaims) -> str:
     """Render `claims` as a Done report `### Captured claims` section
     (T-0754) -- the mechanical inverse of `parse_claims_from_done_report`,
@@ -1397,12 +1332,6 @@ def render_claims_block(claims: DoneReportClaims) -> str:
 # frob:ticket T-0832
 # frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_missing_section_returns_none kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_free_prose_elsewhere_never_masquerades_as_claims kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
     """Recover a `### Captured claims` section from `body`'s `## Done
     report`, the inverse of `render_claims_block` (T-0754). Returns `None`
@@ -1504,7 +1433,6 @@ def _parse_claims_lines(claims_lines: list[str]) -> DoneReportClaims | None:
 
 # frob:ticket T-0458
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_ticket_store.py::TestReplaceDoneReportSection.test_replaces_existing_section  # noqa: E501
 def replace_done_report_section(body: str, new_section: str) -> str:
     """Splice `new_section` (a full `## Done report\\n...` block) into `body`,
     replacing any existing '## Done report' section (heading through the
@@ -1578,7 +1506,6 @@ class Priority(StrEnum):
 
 # frob:ticket T-0411
 # frob:doc docs/modules/tickets-data-storage.md#data-models
-# frob:tests tests/test_tickets_priority.py::TestPriorityRank.test_critical_outranks_low
 PRIORITY_RANK: dict[Priority, int] = {
     Priority.LOW: 0,
     Priority.MEDIUM: 1,
@@ -1655,7 +1582,6 @@ class AcceptanceCriterion(BaseModel):
         return _split_scope_entries(value)
 
 
-# frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_hand_edited_ledger_with_null_acceptance_evidence_loads  # noqa: E501
 # frob:ticket T-4143
 def _coerce_acceptance(value: Sequence[object] | None) -> list[dict | object]:
     """Accept either the legacy plain-string acceptance list (pre-T-0572
@@ -1703,7 +1629,6 @@ class ScopeChangeEntry(BaseModel):
 
 # frob:ticket T-2353
 # frob:doc docs/modules/tickets-data-storage.md#data-models
-# frob:tests \
 # tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_entry  # noqa: E501
 class TriageChangeEntry(BaseModel):
     """One append-only audit line for a `frob ticket priority`/`kind`/
@@ -1737,7 +1662,6 @@ class TriageChangeEntry(BaseModel):
 
 # frob:ticket T-2392
 # frob:doc docs/modules/tickets-data-storage.md#data-models
-# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_append_records_body_change_entry  # noqa: E501
 class BodyChangeEntry(BaseModel):
     """One append-only audit line for a `frob ticket body` mutation
     (T-2392): which mode (`append`/`set`) touched the free-text body, why,
@@ -1766,7 +1690,6 @@ class BodyChangeEntry(BaseModel):
 
 # frob:ticket T-2333
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_persisted_to_the_ticket_ledger kind="unit"  # noqa: E501
 class LeaseForceReleaseEntry(BaseModel):
     """One append-only audit line for a `frob worktree release-lease
@@ -1929,7 +1852,6 @@ class ReviewEntry(BaseModel):
 
 
 # frob:ticket T-0838
-# frob:tests tests/test_tickets.py::TestEmptyCollectionOmission.test_dict_without_empty_collections_returned_unchanged  # noqa: E501
 def _omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
     """Drop every key of `data` whose value is an empty `list`/`tuple` (T-0838).
 
@@ -2297,11 +2219,8 @@ class Ticket(BaseModel):
 
     # frob:ticket T-4453
     # frob:doc docs/modules/tickets-data-storage.md#data-models
-    # frob:tests \
     # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_corrupt_row_is_named_loudly_not_silently_coerced  # noqa: E501
-    # frob:tests \
     # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_unrelated_ticket_still_files_despite_one_corrupt_row  # noqa: E501
-    # frob:tests \
     # tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_multiple_corrupt_entries_use_plural_wording  # noqa: E501
     def model_copy(
         self, *, update: Mapping[str, object] | None = None, deep: bool = False
@@ -2359,9 +2278,6 @@ class Ticket(BaseModel):
         structured `{text, evidence}` form -- see `_coerce_acceptance`."""
         return _coerce_acceptance(value)
 
-    # frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_ticket_level_evidence_null_normalizes_to_empty  # noqa: E501
-    # frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_scope_add_succeeds_on_ticket_with_null_acceptance_evidence  # noqa: E501
-    # frob:tests tests/test_tickets.py::TestEvidenceNullNormalization.test_scope_remove_succeeds_on_ticket_with_null_acceptance_evidence  # noqa: E501
     # frob:ticket T-4143
     @field_validator("evidence", mode="before")
     @classmethod
@@ -2391,7 +2307,6 @@ class Ticket(BaseModel):
     # see T-1132 for the history behind this
 
     # frob:ticket T-0838
-    # frob:tests tests/test_tickets.py::TestUnknownFieldForwardCompat.test_unknown_field_logs_warning_named  # noqa: E501
     @model_validator(mode="after")
     def _warn_unknown_extras(self) -> Ticket:
         """Log a WARNING naming every unknown ledger field this ticket
@@ -2413,7 +2328,6 @@ class Ticket(BaseModel):
         return self
 
     # frob:ticket T-0838
-    # frob:tests tests/test_tickets.py::TestEmptyCollectionOmission.test_reviews_empty_never_serialized  # noqa: E501
     @model_serializer(mode="wrap")
     def _omit_empty_collections_on_dump(
         self, handler: SerializerFunctionWrapHandler
@@ -3490,7 +3404,6 @@ class TicketFlowRow(BaseModel):
     @property
     # frob:ticket T-1100
     # frob:doc docs/modules/tickets.md#public-api
-    # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_filed_and_landed_counted_per_day kind="unit"  # noqa: E501
     def net(self) -> int:
         """`filed - landed` for this day; positive grows the queue,
         negative shrinks it."""
@@ -3545,8 +3458,6 @@ class TicketFlowReport(BaseModel):
     @property
     # frob:ticket T-1100
     # frob:doc docs/modules/tickets.md#public-api
-    # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_none_when_queue_not_shrinking kind="unit"  # noqa: E501
-    # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_computed_when_queue_shrinking kind="unit"  # noqa: E501
     def eta_days(self) -> float | None:
         """`open_count / trailing_net_rate` (a naive, disclosed
         extrapolation, not a forecast) when the trailing rate is actually

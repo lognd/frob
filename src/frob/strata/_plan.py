@@ -265,10 +265,6 @@ def _frontier_unbound(
 
 # frob:doc docs/strata/surface.md#refinement-hierarchical-models
 # frob:ticket T-0084
-# frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_unrefined_frontier
-# frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_refuted_claim
-# frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_unbound_boundary
-# frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_idempotent_markers
 def plan_obligations(
     model: KernelModel,
     *,

@@ -144,7 +144,6 @@ def _own_contribution(symref: str, edges: Sequence[Edge]) -> _FiveSets:
 
 
 # frob:doc docs/modules/graph.md#protocol-summary-engine
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
 class FunctionSummary(BaseModel):
     """One function's fixpoint-computed protocol contribution.
 
@@ -535,19 +534,6 @@ def _poison_scc_on_timeout(
 
 # frob:doc docs/modules/graph.md#protocol-summary-engine
 # frob:ticket T-0745
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_leaf_function_summary_is_its_own_declarations  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_caller_summary_includes_callee_transitions  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_requires_and_transitions_join_across_two_hops  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_recursive_cluster_converges_to_hand_computed_fixpoint  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_self_recursive_function_converges  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_unresolved_callee_poisons_the_summary  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_poisoning_propagates_transitively_through_a_clean_caller  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_unreachable_function_is_reported_not_analyzed_never_silent  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_diamond_shaped_calls_join_without_duplication_or_loss  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_resource_sets_join_transitively_through_a_caller  # noqa: E501
-# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_resource_sets_join_across_a_recursive_cluster  # noqa: E501
 def compute_protocol_summaries(
     callgraph: CallGraph,
     edges: Sequence[Edge],
@@ -623,7 +609,6 @@ def compute_protocol_summaries(
 # frob:doc docs/modules/graph.md#path-confinement-census
 # frob:ticket T-2504
 # frob:doc docs/modules/graph.md#path-confinement-census
-# frob:tests tests/unit/test_confinement_lattice.py::TestConfinementLatticePositiveControl.test_absolute_literal_write_is_escaped  # noqa: E501
 class ConfinementState(StrEnum):
     """The 3-value path-confinement lattice (T-2504's own spec):
     `ROOTED` -- provably derived from a sanctioned root (a `tmp_path`/
@@ -742,7 +727,6 @@ _LocalState = ConfinementState | _Pending | _ParamRef
 
 # frob:doc docs/modules/graph.md#path-confinement-census
 # frob:doc docs/modules/graph.md#path-confinement-census
-# frob:tests tests/unit/test_confinement_lattice.py::TestConfinementLatticePositiveControl.test_absolute_literal_write_is_escaped  # noqa: E501
 class FsWriteSite(BaseModel):
     """One recognized `fs.write`-shaped call site (T-2504): `state` is
     this pass's FINAL verdict (after cross-function resolution), and
@@ -763,7 +747,6 @@ class FsWriteSite(BaseModel):
 
 # frob:doc docs/modules/graph.md#path-confinement-census
 # frob:doc docs/modules/graph.md#path-confinement-census
-# frob:tests tests/unit/test_confinement_lattice.py::TestConfinementLatticeHelperPropagation.test_helper_return_value_confinement_propagates_to_caller_site  # noqa: E501
 class FunctionConfinement(BaseModel):
     """One function's confinement contribution (T-2504): whether its
     RETURN value's confinement is a fixed `return_always` state
@@ -787,7 +770,6 @@ class FunctionConfinement(BaseModel):
 
 # frob:doc docs/modules/graph.md#path-confinement-census
 # frob:doc docs/modules/graph.md#path-confinement-census
-# frob:tests tests/unit/test_confinement_lattice.py::TestConfinementLatticePositiveControl.test_ordinary_tmp_path_write_is_rooted_not_escaped  # noqa: E501
 class ConfinementCensusResult(BaseModel):
     """The full census: every `fs.write` site this pass recognized
     across every function `compute_confinement_summaries` was asked to
@@ -1168,7 +1150,6 @@ def _scan_function_facts(
 
 
 # frob:doc docs/modules/graph.md#path-confinement-census
-# frob:tests tests/unit/test_confinement_lattice.py::TestConfinementLatticePositiveControl.test_absolute_literal_write_is_escaped  # noqa: E501
 def scan_confinement_facts(
     root: Path, paths: Sequence[str]
 ) -> dict[str, _RawFuncFacts]:
@@ -1443,7 +1424,6 @@ def _tally_poison_sources(sites: Sequence[FsWriteSite]) -> dict[str, int]:
 
 
 # frob:ticket T-2519
-# frob:tests tests/unit/test_confinement_lattice.py::TestParam0Credit.test_helper_writing_directly_to_its_own_param_gets_credit_when_every_call_is_rooted  # noqa: E501
 def _compute_param0_credit(
     resolved_facts: Mapping[str, _RawFuncFacts],
 ) -> dict[str, bool]:
@@ -1489,8 +1469,6 @@ def _compute_param0_credit(
 
 # frob:doc docs/modules/graph.md#path-confinement-census
 # frob:ticket T-2504
-# frob:tests tests/unit/test_confinement_lattice.py::TestConfinementLatticeHelperPropagation.test_helper_return_value_confinement_propagates_to_caller_site  # noqa: E501
-# frob:tests tests/unit/test_confinement_lattice.py::TestConfinementLatticeUnknown.test_unresolved_private_helper_call_poisons_to_unknown  # noqa: E501
 def compute_confinement_summaries(
     facts: Mapping[str, _RawFuncFacts], entrypoints: Sequence[str]
 ) -> ConfinementCensusResult:

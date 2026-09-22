@@ -229,11 +229,8 @@ _MTIME_GRANULARITY_CACHE_FILENAME = "mtime-granularity-ns"
 
 
 # frob:ticket T-4279
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_real_probe_returns_a_plausible_small_value  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_all_samples_colliding_falls_back_to_loop_span  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_unwritable_root_returns_none  # noqa: E501
 def _probe_mtime_granularity_ns(root: Path) -> int | None:
     """Measure `root`'s filesystem's OBSERVED mtime-update granularity in
@@ -287,7 +284,6 @@ def _probe_mtime_granularity_ns(root: Path) -> int | None:
 
 
 # frob:ticket T-4279
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_real_probe_returns_a_plausible_small_value  # noqa: E501
 def _collect_mtime_probe_samples(
     probe_path: Path,
@@ -310,7 +306,6 @@ def _collect_mtime_probe_samples(
 
 
 # frob:ticket T-4279
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestProbeMtimeGranularityNs.test_all_samples_colliding_falls_back_to_loop_span  # noqa: E501
 def _granularity_bucket_for_samples(
     root: Path, timestamps: list[int], loop_elapsed_ns: int
@@ -343,11 +338,8 @@ def _granularity_bucket_for_samples(
 
 
 # frob:ticket T-4279
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_second_call_does_not_reprobe  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_on_disk_cache_survives_a_fresh_in_process_cache  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestMtimeGranularityCaching.test_unmeasurable_result_is_not_persisted_to_disk  # noqa: E501
 def _mtime_granularity_ns(root: Path) -> int | None:
     """`root`'s filesystem mtime granularity in nanoseconds, measured once
@@ -388,9 +380,7 @@ def _mtime_granularity_ns(root: Path) -> int | None:
 
 
 # frob:ticket T-4279
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_margin_is_granularity_times_safety_multiplier  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_margin_is_none_when_granularity_unmeasurable  # noqa: E501
 def _stat_trust_margin_ns(root: Path) -> int | None:
     """The stat-trust margin (ns) for `root`'s filesystem (T-4279):
@@ -407,17 +397,11 @@ def _stat_trust_margin_ns(root: Path) -> int | None:
 
 # frob:ticket T-4257
 # frob:ticket T-4279
-# frob:tests \
 # tests/test_gate_cache.py::TestStatKeyCoarseClockSafety.test_recent_stat_match_falls_through_to_content_hash  # noqa: E501
-# frob:tests \
 # tests/test_gate_cache.py::TestStatKeyCoarseClockSafety.test_old_stat_match_is_trusted_and_skips_reparse  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_none_margin_never_trusts_regardless_of_age  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_stat_within_margin_is_not_trusted  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_stat_past_margin_is_trusted  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_stat_trust_margin.py::TestStatTrustMarginAndTrustworthy.test_coarse_granularity_widens_the_untrusted_window  # noqa: E501
 def _stat_trustworthy(mtime_ns: int, margin_ns: int | None) -> bool:
     """`True` iff `mtime_ns` is old enough (past `margin_ns`) for a
@@ -456,11 +440,8 @@ _should_prune_dir = _excludes._should_prune_dir  # noqa: SLF001
 # frob:ticket T-0239
 # frob:ticket T-0245
 # frob:ticket T-0544
-# frob:tests \
 # tests/test_graph.py::TestExclude.test_nested_git_worktree_pruned_without_config
-# frob:tests \
 # tests/test_graph.py::TestExclude.test_walk_source_files_prunes_before_descent
-# frob:tests tests/test_graph.py::TestExclude.test_walk_repo_files_classifies_top_level_readme_as_doc  # noqa: E501
 def _walk_repo_files(
     root: Path, exclude_globs: tuple[str, ...] = ()
 ) -> tuple[list[Path], list[Path]]:
@@ -559,8 +540,6 @@ def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ..
 # frob:ticket T-0433
 # frob:ticket T-0558
 # frob:ticket T-0561
-# frob:tests tests/test_graph.py::TestBuildIncremental.test_stored_hash_matches_bytes_actually_parsed  # noqa: E501
-# frob:tests \
 # tests/test_graph.py::TestParseFailures.test_parse_error_is_recorded_as_parse_failure
 def _parse_source_file_fresh(
     conn, rel_path: str, path: Path, stat_key: tuple[int, int]
@@ -869,10 +848,7 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
 # frob:doc docs/modules/graph.md#public-api
 # frob:doc docs/commands/check.md#run-scoped-memoization
 # frob:doc docs/modules/graph.md#exclusive-lock-scope-narrowed-to-the-commit-tail-t-3478  # noqa: E501
-# frob:tests \
 # tests/test_graph.py::TestLoadGraph.test_non_utf8_doc_file_is_skipped_not_crashed
-# frob:tests tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
-# frob:tests tests/test_graph.py::TestBuildIncremental.test_stats_sum_source_and_doc_counts_not_difference  # noqa: E501
 # frob:tests tests/unit/test_graph_build_lock.py
 # frob:waive AFFECT002 reason="T-3478 only narrows build_graph's internal derived_state_write_lock scope (perf, no signature/behavior change observable to callers); src/frob/gates/_waive.py::_severity_overrides is out of this ticket's scope and has nothing to update"  # noqa: E501
 # frob:waive AFFECT001 reason="T-4282 updated \
@@ -1167,8 +1143,6 @@ def _first_added_file(
 
 # frob:doc docs/modules/graph.md#public-api
 # frob:ticket T-0232
-# frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_file_added
-# frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_doc_added
 def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
     """Cache-only read: `Err(CacheStale)` if any on-disk hash moved, `Err(CacheCorrupt)`
     if the cache is unreadable, schema-mismatched, or has never been built.
@@ -1274,11 +1248,8 @@ def _load_graph_from_connection(conn, cache: Path) -> Result[GraphSnapshot, Grap
 
 # frob:ticket T-4688
 # frob:doc docs/modules/graph.md#public-api
-# frob:tests \
 # tests/unit/test_graph_get_snapshot.py::TestGetSnapshot.test_second_call_on_unchanged_tree_does_not_rebuild  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_get_snapshot.py::TestGetSnapshot.test_changed_file_triggers_exactly_one_rebuild  # noqa: E501
-# frob:tests \
 # tests/unit/test_graph_get_snapshot.py::TestGetSnapshot.test_load_failure_falls_back_to_build  # noqa: E501
 def get_snapshot(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     """The one load-or-build entry point every graph consumer should call

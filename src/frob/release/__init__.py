@@ -159,11 +159,7 @@ def load_manifest(root: Path) -> Result[ReleaseManifest, ReleaseError]:
 
 
 # frob:doc docs/modules/release.md#stamp-refuses-an-un-bumped-api-change-t-1381
-# frob:tests tests/test_release_worktree_lease.py::TestStampWorktreeLease.test_mismatched_lease_refuses  # noqa: E501
-# frob:tests tests/test_release_worktree_lease.py::TestStampWorktreeLease.test_no_lease_succeeds  # noqa: E501
 # frob:ticket T-1381
-# frob:tests tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped.test_refuses_when_api_changed_and_version_not_bumped  # noqa: E501
-# frob:tests tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped.test_allows_when_version_is_bumped  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/modules/release.md's Stamp-refuses section \
 # (T-1381) is a deliberate architecture doc walking through this exact private \
 # helper's own contract (the SAME computation REL001 uses, applied at stamp time) -- \
@@ -265,10 +261,6 @@ def _record_unbumped_stamp_override(
 
 # frob:doc docs/modules/release.md#stamp-refuses-an-un-bumped-api-change-t-1381
 # frob:ticket T-1768
-# frob:tests tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason.test_refuses_with_no_reason_when_shortfall_is_real  # noqa: E501
-# frob:tests tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason.test_refuses_with_blank_reason  # noqa: E501
-# frob:tests tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason.test_succeeds_with_reason_and_writes_audit_record  # noqa: E501
-# frob:tests tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason.test_no_reason_required_when_no_real_shortfall  # noqa: E501
 def stamp(
     root: Path,
     snapshot: GraphSnapshot,
@@ -371,7 +363,6 @@ def rewrite_pyproject_version(root: Path, version: str) -> Result[bool, ReleaseE
 
 # frob:doc docs/modules/release.md#public-api
 # frob:ticket T-2242
-# frob:tests tests/test_release.py::TestCurrentVersion.test_reads_pyproject_version  # noqa: E501
 def current_version(root: Path) -> Result[str, ReleaseError]:
     """`root/pyproject.toml`'s `[project].version`, read-only (T-2242) --
     never mutates anything, unlike `rewrite_pyproject_version`. `Err(
@@ -395,7 +386,6 @@ def current_version(root: Path) -> Result[str, ReleaseError]:
 
 # frob:doc docs/modules/release.md#public-api
 # frob:ticket T-2242
-# frob:tests tests/test_release.py::TestNextPatchVersion.test_increments_patch_component  # noqa: E501
 def next_patch_version(version: str) -> Result[str, ReleaseError]:
     """`X.Y.Z -> X.Y.(Z+1)` (T-2242), pure -- no I/O, no mutation. The same
     unconditional-patch-bump rule `scripts/bump_version.py` implemented
@@ -410,7 +400,6 @@ def next_patch_version(version: str) -> Result[str, ReleaseError]:
 
 # frob:doc docs/modules/release.md#public-api
 # frob:ticket T-2242
-# frob:tests tests/test_release.py::TestBumpPatchVersion.test_bumps_and_writes_pyproject  # noqa: E501
 def bump_patch_version(root: Path) -> Result[str, ReleaseError]:
     """Bump `root/pyproject.toml`'s patch version unconditionally, in
     place (T-2242) -- the canonical implementation `scripts/bump_
@@ -469,7 +458,6 @@ def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) 
 
 # frob:doc docs/modules/release.md#public-api
 # frob:ticket T-1078
-# frob:tests tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
 def set_manifest_version(root: Path, version: str) -> Result[str, ReleaseError]:
     """Rewrite ONLY the `version` field of the tracked `.frob-release.json`
     manifest in place, preserving its recorded `api` map unchanged (T-1078:
@@ -517,8 +505,6 @@ def diff_class(manifest: ReleaseManifest, snapshot: GraphSnapshot) -> BumpClass:
 
 
 # frob:ticket T-4270
-# frob:tests tests/test_release.py::test_dev_prerelease_and_final_sort_in_pep440_order
-# frob:tests \
 # tests/test_release.py::test_unparseable_version_is_inspectable_failure_not_truncated_value  # noqa: E501
 def _parse(version: str) -> Version | None:
     """Full PEP 440 parse of `version` (T-4270), or `None` if the packaging
@@ -565,10 +551,7 @@ def required_version(previous: str, bump: BumpClass) -> Result[str, ReleaseError
 
 # frob:doc docs/modules/release.md#public-api
 # frob:ticket T-4270
-# frob:tests tests/test_release.py::test_required_version_and_satisfies
-# frob:tests \
 # tests/test_release.py::test_prerelease_does_not_satisfy_its_final_release_minimum
-# frob:tests \
 # tests/test_release.py::test_trailing_hyphen_number_parses_as_post_release_not_prerelease  # noqa: E501
 def satisfies(current: str, minimum: str) -> bool:
     """True if `current` >= `minimum` under full PEP 440 ordering (T-4270:
@@ -584,8 +567,6 @@ def satisfies(current: str, minimum: str) -> bool:
 
 # frob:doc docs/modules/release.md#per-land-dev-version-bump-t-4184
 # frob:ticket T-4184
-# frob:tests tests/test_release.py::test_dev_prerelease_and_final_sort_in_pep440_order
-# frob:tests tests/test_release.py::test_next_dev_version_starts_and_advances_a_cycle
 def next_dev_version(version: str) -> Result[str, ReleaseError]:
     """The next automatic per-land PEP 440 development version after
     `version` (T-4184: the counter this feature exists to advance,
@@ -617,7 +598,6 @@ def next_dev_version(version: str) -> Result[str, ReleaseError]:
 
 # frob:doc docs/modules/release.md#per-land-dev-version-bump-t-4184
 # frob:ticket T-4184
-# frob:tests tests/test_release.py::test_dev_version_bump_enabled_defaults_true_and_reads_pyproject kind="unit"  # noqa: E501
 def dev_version_bump_enabled(root: Path) -> bool:
     """Whether `root`'s `pyproject.toml` `[tool.frob]` table has the
     automatic per-land dev-version bump (T-4184) turned on -- read
@@ -641,7 +621,6 @@ def dev_version_bump_enabled(root: Path) -> bool:
 
 # frob:doc docs/modules/release.md#per-land-dev-version-bump-t-4184
 # frob:ticket T-4184
-# frob:tests tests/test_release.py::test_dev_version_major_ack_defaults_zero_and_reads_pyproject kind="unit"  # noqa: E501
 def dev_version_major_ack(root: Path) -> int:
     """The major version series `root`'s `pyproject.toml` `[tool.frob]`
     table has explicitly acknowledged continuing to auto-bump dev builds

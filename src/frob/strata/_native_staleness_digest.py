@@ -114,13 +114,10 @@ def _seed_one_native_source_mtime(
 # frob:ticket T-4431
 # frob:ticket T-4434
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_i\
 # dentical_source_is_backdated_and_reads_fresh
-# frob:tests \
 # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_d\
 # iverged_source_is_left_untouched_and_still_stale
-# frob:tests \
 # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_r\
 # epo_side_untracked_file_does_not_block_seeding
 def seed_worktree_native_source_mtimes(

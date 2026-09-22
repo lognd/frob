@@ -366,8 +366,6 @@ def _is_ticket_ledger_v2_artifact(rel_path: str) -> bool:
 
 
 # frob:ticket T-3031
-# frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_node_modules_root_entry_is_exempt kind="unit"  # noqa: E501
-# frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_a_real_orphan_outside_any_vendored_tree_still_fires kind="unit"  # noqa: E501
 def _is_under_vendored_tree(rel_path: str) -> bool:
     """T-3031: `True` iff any path component of `rel_path` is a built-in
     vendored/dependency-tree directory name (`frob.excludes.
@@ -460,8 +458,6 @@ def _load_maturin_module_name(root: Path, pyproject_rel: str) -> str | None:
 
 
 # frob:ticket T-0449
-# frob:tests tests/test_refs_gate.py::TestNativeStubLinking.test_linked_pyi_beside_matching_manifest_does_not_fire_ref001  # noqa: E501
-# frob:tests tests/test_refs_gate.py::TestNativeStubLinking.test_unlinked_pyi_with_no_adjacent_module_still_fires_ref001  # noqa: E501
 def _native_stub_pairs(tracked: frozenset[str], root: Path) -> dict[str, str]:
     """Every tracked `.pyi` stub paired with the tracked `pyproject.toml`
     that builds the native extension it types: a manifest sitting in the
@@ -1036,8 +1032,6 @@ def _ref_gate_file_violations(
 
 # frob:doc docs/modules/gates.md#anti-orphan-file-reference-gate-t-0396
 # frob:ticket T-0396
-# frob:tests tests/test_refs_gate.py::TestTiers.test_zero_refs_warns_ref001
-# frob:tests tests/test_refs_gate.py::TestTiers.test_two_refs_passes
 def ref_gate(root: Path) -> tuple[Violation, ...]:
     """REF001 (0 inbound refs), REF002 (1 inbound ref), REF003 (dangling
     `frob:used-by`) over every git-tracked file under `root`, honoring

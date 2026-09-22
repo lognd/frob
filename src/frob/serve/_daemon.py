@@ -117,7 +117,6 @@ _LAST_USEFUL_WORK_MONOTONIC: dict[str, float] = {}
 
 # frob:ticket T-4289
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests \
 # tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_updates_the_timestamp kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="new symbol, covered by this module's own new docstring \
 # section (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
@@ -139,11 +138,8 @@ def _record_useful_work(
 
 # frob:ticket T-4289
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests \
 # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_is_not_terminal kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_over_one_hour_is_terminal kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_serve_daemon.py::TestIdleSelfTermination.test_never_having_worked_is_measured_from_start_time kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="new symbol, covered by this module's own new docstring \
 # section (T-4258, 'IDLE SELF-TERMINATION') rather than by touching the shared \
@@ -266,9 +262,7 @@ def _main_head(root: Path) -> str | None:
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop \
 # kind="unit"
-# frob:tests \
 # tests/test_serve_daemon.py::TestPollPostLand.test_head_moved_refreshes_verdict \
 # kind="unit"
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
@@ -385,13 +379,10 @@ def _get_verify_worker(root: Path) -> CoalescingWorker:
 
 # frob:ticket T-4289
 # frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
-# frob:tests \
 # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the_worker \
 # kind="unit"
-# frob:tests \
 # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ticks \
 # kind="unit"
-# frob:tests tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned_when_a_run_happens kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="T-4258 added a single _record_useful_work() call when \
 # tick() actually runs; the doc's own description of this job's \
 # debounce/floor/backpressure behavior is unchanged -- same doc-anchor scope-closure \
@@ -558,15 +549,11 @@ def _merge_would_conflict(root: Path, branch: str, main_head: str) -> bool | Non
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests \
 # tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings \
 # kind="unit"
-# frob:tests \
 # tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns \
 # kind="unit"
-# frob:tests \
 # tests/test_serve_daemon.py::TestPollRebaseBot.test_clean_branch_no_warning kind="unit"
-# frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_and_logged_once kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
 # documents this daemon internal; demoted to private in this ticket (frob-exports: \
 # every real caller, including tests, already accessed it module-qualified) but \
@@ -626,7 +613,6 @@ def _poll_rebase_bot(root: Path) -> tuple[_RebaseWarning, ...]:
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests \
 # tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns \
 # kind="unit"
 def daemon_status(root: Path) -> _DaemonStatus:
@@ -636,7 +622,6 @@ def daemon_status(root: Path) -> _DaemonStatus:
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
 # documents this daemon internal; demoted to private in this ticket (frob-exports: \
 # every real caller, including tests, already accessed it module-qualified) but \
@@ -683,11 +668,8 @@ def _default_terminate() -> None:
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests \
 # tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_stops kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_self_terminates_after_the_idle_ceiling kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_serve_daemon.py::TestIdleSelfTermination.test_loop_does_not_terminate_while_work_keeps_happening kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
 # documents this daemon internal; demoted to private in this ticket (frob-exports: \

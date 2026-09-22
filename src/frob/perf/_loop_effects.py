@@ -252,12 +252,6 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 
 
 # frob:doc docs/modules/perf.md#loop-invariant-effectful-call-detector-perf008-t-0775
-# frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_loop_invariant_spawn_call_two_hops_deep_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_loop_varying_argument_is_not_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_fs_walk_direct_call_in_loop_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_ticket_row_rev_parse_shape_fires_on_real_repo_history_fixture  # noqa: E501
-# frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_loop_invariant_spawn_call_three_hops_deep_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_unresolvable_callee_does_not_crash_and_does_not_fire  # noqa: E501
 # frob:ticket T-0775
 # frob:ticket T-0922
 # frob:enforces CHK-GATE-PERF008

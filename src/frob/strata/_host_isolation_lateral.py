@@ -179,7 +179,6 @@ def _all_lateral_pair_violations(
 # verbatim (same name, same body/signature), no behavior change, so the \
 # affects()-closure doc it names needs no update"
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
-# frob:tests \
 # tests/unit/strata/test_host_isolation.py::TestLateralIsolation.test_skips_below_two_u\
 # sers kind="unit"
 def evaluate_lateral_isolation(

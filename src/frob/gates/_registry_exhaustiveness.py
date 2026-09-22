@@ -788,9 +788,6 @@ def _rel_registry_path(path: Path, repo_root: Path) -> str:
 
 # frob:ticket T-0894
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg012-adopted-then-deleted-registry-t-0894  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestPathEverTracked.test_never_committed_path_is_false  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestPathEverTracked.test_deleted_after_commit_is_true  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestPathEverTracked.test_git_failure_is_false  # noqa: E501
 def path_ever_tracked(repo_root: Path, rel_path: str) -> bool:
     """True if `rel_path` (relative to `repo_root`) appears anywhere in
     HEAD's own commit history -- added, and possibly later deleted --
@@ -847,31 +844,11 @@ def path_ever_tracked(repo_root: Path, rel_path: str) -> bool:
 # the backlog was fully drained to zero (T-0426, 2026-07-20). REG006/REG007
 # added by T-0407 to close the malformed-entry and duplicate-id early-exit
 # holes the pre-unification gate silently allowed.
-# frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_undispositioned_entry_fails  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_dangling_handled_by_fails  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_deferred_to_closed_ticket_fails  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_fully_dispositioned_fixture_passes  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestMalformedEntry.test_malformed_entry_fails  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestDuplicateId.test_duplicate_id_across_files_fails  # noqa: E501
 # T-0424: check-coverage.yaml added to REGISTRY_FILES below.
-# frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_is_in_registry_files  # noqa: E501
-# frob:tests tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage.test_no_check_coverage_violations  # noqa: E501
 # T-0428: REG008/REG009 derived-coverage two-SSOT conformance.
-# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_handled_by_with_no_frob_enforces_edge_warns  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_handled_by_with_frob_enforces_edge_is_silent  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_no_snapshot_skips_reg008_reg009  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_phantom_enforces_edge_warns  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_matching_enforces_edge_no_reg009  # noqa: E501
 # T-0680: REG011 routes out_of_scope reasons through T-0382 caught_by verification.
-# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_reason_naming_no_control_warns  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_reason_naming_unresolved_rule_warns  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_reason_naming_resolved_rule_is_silent  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_substantive_reasoned_none_is_silent  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_bare_none_is_not_substantive  # noqa: E501
 # T-0894: REG012 -- a repo that ever committed docs/design/registry/ and
 # then deleted it is loud, not silently downgraded to "never adopted".
-# frob:tests tests/test_registry_exhaustiveness.py::TestDeletedRegistry.test_never_adopted_registry_dir_is_silent  # noqa: E501
-# frob:tests tests/test_registry_exhaustiveness.py::TestDeletedRegistry.test_deleted_after_adoption_fires_reg012  # noqa: E501
 # frob:enforces CHK-GATE-REG012
 def registry_gate(
     repo_root: Path,

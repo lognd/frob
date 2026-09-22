@@ -138,22 +138,9 @@ _ERROR_SEVERITY_CATEGORIES = frozenset(
 # T-4663: dip-layering-violation channels through this same category-to-
 # rule map (ARCH104).
 # frob:enforces CHK-GATE-ARCH104
-# frob:tests tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
-# frob:tests tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
-# frob:tests tests/unit/test_layering_gate.py::test_no_declared_layering_config_is_not_a_violation  # noqa: E501
-# frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_two_cluster_class_fires_arch101  # noqa: E501
-# frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_cohesive_class_does_not_fire_arch101  # noqa: E501
-# frob:tests \
 # tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_god_module_fires_arch102
-# frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_mixed_concern_function_fires_arch103  # noqa: E501
-# frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_arch101_respects_explicit_frob_toml_override  # noqa: E501
-# frob:tests tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_cppthrow001_error  # noqa: E501
-# frob:tests tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_not_fire_cppthrow001  # noqa: E501
-# frob:tests \
 # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_error
-# frob:tests \
 # tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_large001
-# frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_directory_walk  # noqa: E501
 # see T-1020 for the history behind this
 def arch_gate(root: Path) -> tuple[Violation, ...]:
     """ARCH001: one `Violation` per long-AND-complex python/C++ function
@@ -271,8 +258,6 @@ def _arch_violations_from_suggestions(
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-1921
 # frob:ticket T-2301
-# frob:tests tests/test_arch_gate.py::TestArchExaminedSites.test_archgate_examined_sites_include_a_real_python_file  # noqa: E501
-# frob:tests tests/test_arch_gate.py::TestArchExaminedSites.test_archgate_examined_sites_exclude_an_unparseable_file  # noqa: E501
 # frob:waive WIRE001 reason="already called at runtime from \
 # frob.gates._coverage_sites._load_family_reporters, which stores it as a dict value \
 # and invokes it indirectly (reporters[family](root)) -- the exact shape static \

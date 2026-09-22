@@ -252,8 +252,6 @@ _EXPIRES_RE = re.compile(r"expires:(\d{4}-\d{2}-\d{2})")
 
 
 # frob:doc docs/modules/strata.md#bounded-escape-hatches-t-0671
-# frob:tests tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry.test_parses_embedded_expiry_date  # noqa: E501
-# frob:tests tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry.test_no_marker_returns_none  # noqa: E501
 # frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened except \
 # ValueError to except Exception around date.fromisoformat; the documented 'None on \
 # malformed date' fail-closed contract and behavior are unchanged, nothing for \
@@ -357,8 +355,6 @@ def _stale_detail(stale: WaiverMatch) -> str:
 # family's distinct violation TYPE (real per-family signal, per T-1938's
 # explicit "do not collapse" instruction) while sharing the one emit rule.
 # frob:doc docs/strata/waive.md#drift-lock-stale-waivers-fail
-# frob:tests tests/unit/strata/test_waive.py::TestStaleRelwaiveViolations.test_builds_one_violation_per_stale_waiver  # noqa: E501
-# frob:tests tests/unit/strata/test_waive.py::TestStaleRelwaiveViolations.test_uses_stale_detail_message  # noqa: E501
 def stale_relwaive_violations(
     stale: Sequence[WaiverMatch],
     make: Callable[..., _F],
@@ -418,8 +414,6 @@ def _declared_waivers(model: KernelModel) -> list[tuple[str, Waiver]]:
 # whichever `in_scope` is broad enough to admit it -- never silently
 # invisible to both.
 # frob:doc docs/strata/waive.md#implementation
-# frob:tests tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus.test_stale_fails
-# frob:tests tests/unit/strata/test_selfconform.py::TestWaiverChannel.test_stale
 # T-1020-followup: RELWAIVE002 is not literally constructed inside this
 # function -- each of ~20 `check_X_obligations` callers turns this
 # function's own `.stale` output into its own family's
@@ -463,7 +457,6 @@ def _index_declared_waivers(
 
 # frob:invariant INV-036
 # invariant spec: [INV-036](invariants/INV-036.md)
-# frob:tests tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus.test_sub_target_waiver_does_not_suppress_a_different_sub_target  # noqa: E501
 def _split_kept_and_waived(
     findings: Sequence[_F],
     by_key: dict[tuple[str, str, str | None], Waiver],

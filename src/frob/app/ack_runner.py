@@ -124,16 +124,6 @@ def _acknowledge_and_write(cfg: AppConfig, lock, snapshot, lock_path: Path) -> N
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-1317
-# frob:tests tests/test_ack_worktree_lease.py::TestAckWorktreeLease.test_mismatched_lease_refuses  # noqa: E501
-# frob:tests tests/test_ack_worktree_lease.py::TestAckWorktreeLease.test_no_lease_reaches_normal_ack_failure  # noqa: E501
-# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_no_refs_exits_with_error  # noqa: E501
-# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_success_path_builds_cache_and_writes_lock  # noqa: E501
-# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_unresolvable_ref_exits_with_error  # noqa: E501
-# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_graph_unavailable_after_failed_build_exits_with_error  # noqa: E501
-# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_malformed_lock_file_exits_with_error  # noqa: E501
-# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_write_lock_failure_exits_with_error  # noqa: E501
-# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_cli_requires_reason  # noqa: E501
-# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_list_renders_audit_trail  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Load (building if the cache is stale), acknowledge refs, and write the
     lock -- or, with `--list`, render the audit trail instead (T-1317).

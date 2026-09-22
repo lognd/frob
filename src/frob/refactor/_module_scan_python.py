@@ -572,14 +572,6 @@ def _scan_one_file(
 
 
 # frob:doc docs/commands/refactor.md#scan_python_module_references
-# frob:tests tests/test_refactor.py::TestModuleScanPython.test_rewrites_plain_import
-# frob:tests tests/test_refactor.py::TestModuleScanPython.test_rewrites_aliased_import
-# frob:tests tests/test_refactor.py::TestModuleScanPython.test_rewrites_from_package_import_module  # noqa: E501
-# frob:tests tests/test_refactor.py::TestModuleScanPython.test_rewrites_from_module_import_name  # noqa: E501
-# frob:tests tests/test_refactor.py::TestModuleScanPython.test_rewrites_relative_import
-# frob:tests tests/test_refactor.py::TestModuleScanPython.test_rewrites_init_reexport
-# frob:tests tests/test_refactor.py::TestModuleScanPython.test_rewrites_dynamic_import_module  # noqa: E501
-# frob:tests tests/test_refactor.py::TestModuleScanPython.test_leaves_prefix_colliding_sibling_untouched  # noqa: E501
 def scan_python_module_references(
     repo_root: Path, resolved: "ResolvedModule", destination: "ModuleRef"
 ) -> tuple[list[RewriteOp], list[AliasRecord], list[str]]:

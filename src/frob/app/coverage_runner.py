@@ -37,11 +37,7 @@ _log = get_logger(__name__)
 # frob:ticket T-1525
 # frob:ticket T-1572
 # frob:doc docs/modules/cli.md#frob-coverage-t-1525
-# frob:tests tests/unit/test_coverage_runner.py::TestCoverageRunner.test_default_delegates_to_run_coverage_wait  # noqa: E501
-# frob:tests tests/unit/test_coverage_runner.py::TestCoverageRunner.test_full_calls_native_refresh_directly  # noqa: E501
-# frob:tests \
 # tests/unit/test_coverage_runner.py::TestCoverageRunner.test_run_failure_exits_nonzero
-# frob:tests tests/unit/test_coverage_runner.py::TestCoverageRunner.test_base_threads_through_to_run_coverage_wait  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob coverage [--full] [--base REF]`: refresh `coverage.xml`/the
     coverage stamp via the T-1516 frob-native orchestration -- touched-set
@@ -94,10 +90,6 @@ def run(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-3748
-# frob:tests tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded.test_red_suite_exits_nonzero  # noqa: E501
-# frob:tests tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded.test_worker_crash_does_not_fail  # noqa: E501
-# frob:tests tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded.test_green_suite_returns  # noqa: E501
-# frob:tests tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded.test_missing_provenance_fails_closed  # noqa: E501
 def _fail_if_suite_degraded(root: Path) -> None:
     """`SystemExit(1)` when the last `--full` run's provenance says the suite
     ran RED -- a pytest exit != 0 that was NOT an xdist worker-crash.

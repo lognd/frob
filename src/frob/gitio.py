@@ -153,9 +153,6 @@ def spawn_recorder() -> Iterator[SpawnRecorder]:
 
 # frob:ticket T-1067
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_gitio.py::TestWorkingDiff.test_bad_base_ref_is_git_failed
-# frob:tests tests/test_gitio.py::TestWorkingDiff.test_diff_command_failure_propagates
-# frob:tests tests/test_testing.py::TestRunners.test_exit_code_is_data
 def excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
     """Bound a stdout/stderr blob to its last N lines -- the useful end.
     Public (T-1067, extracted from a byte-identical private duplicate that
@@ -323,7 +320,6 @@ _repo_root_cache: dict[Path, Result[Path, GitError]] = {}
 
 # frob:ticket T-5036
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_gitio.py::TestRepoRoot.test_memoized_per_start kind="unit"
 def repo_root(start: Path) -> Result[Path, GitError]:
     """The repo root for `start`; worktree-correct via `rev-parse --show-toplevel`.
 
@@ -367,7 +363,6 @@ def repo_root(start: Path) -> Result[Path, GitError]:
 
 # frob:ticket T-5036
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_gitio.py::TestRepoRoot.test_reset_clears_cache kind="unit"
 def reset_repo_root_cache() -> None:
     """Drop the `repo_root` process-lifetime memo (T-5036, mirroring
     `reset_common_dir_cache`), under `_repo_root_lock` -- available to
@@ -401,7 +396,6 @@ _common_dir_cache: dict[Path, Result[Path, GitError]] = {}
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_gitio.py::TestGitCommonDir.test_memoized_per_root kind="unit"
 def git_common_dir(root: Path) -> Result[Path, GitError]:
     """The shared `.git` directory for `root`'s repository (`git rev-parse
     --git-common-dir`), resolved to an absolute path -- identical across
@@ -449,7 +443,6 @@ def git_common_dir(root: Path) -> Result[Path, GitError]:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_gitio.py::TestGitCommonDir.test_reset_clears_cache kind="unit"
 def reset_common_dir_cache() -> None:
     """Drop the `git_common_dir` process-lifetime memo (T-0773/T-0784),
     under `_common_dir_lock` -- available to tests that need to simulate a
@@ -460,7 +453,6 @@ def reset_common_dir_cache() -> None:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_gitio.py::TestCommonDirAndBranch.test_single_spawn_parses_both_lines kind="unit"  # noqa: E501
 def common_dir_and_branch(root: Path) -> Result[tuple[Path, str], GitError]:
     """`(git_common_dir(root), current-branch-name)` in ONE `git` spawn
     (T-0784) via `git rev-parse --git-common-dir --abbrev-ref HEAD`, which

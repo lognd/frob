@@ -351,8 +351,6 @@ def _read_working_manifest_version(root: Path) -> str | None:
 
 # frob:ticket T-1358
 # frob:ticket T-1771
-# frob:tests tests/unit/test_land_release_coherence.py::TestUvLockCoherenceWhenAlreadyBumped.test_stale_lock_resynced_even_when_pyproject_and_manifest_agree  # noqa: E501
-# frob:tests tests/unit/test_land_release_coherence.py::TestUvLockCoherenceWhenAlreadyBumped.test_lock_already_coherent_is_untouched  # noqa: E501
 def _ensure_release_quartet_coherent(
     root: Path, final_id: str
 ) -> Result[None, LandError]:
@@ -790,9 +788,7 @@ def _apply_dev_version_bump_branch(
 
 
 # frob:ticket T-4184
-# frob:tests \
 # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_refuses_without_ack  # noqa: E501
-# frob:tests \
 # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_proceeds_once_acknowledged  # noqa: E501
 def _dev_version_major_guard(
     final_id: str, new_version: str, table: dict
@@ -826,9 +822,7 @@ def _dev_version_major_guard(
 
 
 # frob:ticket T-4184
-# frob:tests \
 # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_two_lands_in_sequence_produce_distinguishable_versions  # noqa: E501
-# frob:tests \
 # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_toggle_off_leaves_version_untouched  # noqa: E501
 # frob:waive ARCH001 reason="the major-version guard is already split out into its own \
 # _dev_version_major_guard function directly above; what remains is one linear \
@@ -1044,10 +1038,7 @@ def _apply_reported_bump(
 
 
 # frob:ticket T-1011
-# frob:tests \
 # tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
 def _apply_gate_rule_sync(
     root: Path,
     final_id: str,
@@ -1159,13 +1150,9 @@ def _maybe_rebuild_natives(
 
 
 # frob:ticket T-3095
-# frob:tests \
 # tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree.test_worktree_untouched_by_out_of_tree_bump  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree.test_bump_folds_into_a_new_commit_on_composed_commit  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree.test_no_bump_returns_composed_commit_unchanged  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree.test_bump_failure_leaves_repo_working_tree_untouched  # noqa: E501
 def _apply_release_bump_out_of_tree(
     repo: Path,

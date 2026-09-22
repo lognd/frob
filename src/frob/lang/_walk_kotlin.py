@@ -44,7 +44,6 @@ _GRAMMAR_NAME = "kotlin"
 
 # frob:ticket T-0613
 # frob:doc docs/modules/lang.md#per-language-walker-notes
-# frob:tests tests/unit/test_lang_kotlin.py::TestRawKotlinTree.test_comment_types_cover_kotlin_line_and_block_comments  # noqa: E501
 # Kotlin's two comment node types (docs/modules/lang.md extraction table
 # convention, mirroring `_extract.py`'s per-language `COMMENT_TYPES`):
 # `// ...` and `/* ... */`/`/** ... */` respectively.
@@ -53,9 +52,6 @@ COMMENT_TYPES = frozenset({"line_comment", "multiline_comment"})
 
 # frob:ticket T-0613
 # frob:doc docs/modules/lang.md#per-language-walker-notes
-# frob:tests tests/unit/test_lang_kotlin.py::TestParseKotlin.test_kt_fixture_parses_without_error  # noqa: E501
-# frob:tests tests/unit/test_lang_kotlin.py::TestParseKotlin.test_kts_fixture_parses_without_error  # noqa: E501
-# frob:tests tests/unit/test_lang_kotlin.py::TestParseKotlin.test_top_level_node_types_include_class_and_fun  # noqa: E501
 def parse_kotlin(source: bytes) -> Tree:
     """Parse kotlin source bytes into a tree-sitter `Tree` via the language
     pack's bundled kotlin grammar (no separate `tree-sitter-kotlin` pin
@@ -66,8 +62,6 @@ def parse_kotlin(source: bytes) -> Tree:
 
 # frob:ticket T-0613
 # frob:doc docs/modules/lang.md#per-language-walker-notes
-# frob:tests tests/unit/test_lang_kotlin.py::TestRawKotlinTree.test_returns_tree_node
-# frob:tests tests/unit/test_lang_kotlin.py::TestRawKotlinTree.test_comments_are_stripped  # noqa: E501
 def raw_kotlin_tree(source: bytes) -> TreeNode:
     """Raw `TreeNode` export of `source`'s full kotlin parse tree, comments
     stripped -- the raw-walk-only surface this ticket adds; no
@@ -210,12 +204,6 @@ def _kt_visit(
 
 
 # frob:ticket T-0723
-# frob:tests tests/unit/test_lang_kotlin.py::TestWalkKotlin.test_walks_top_level_function  # noqa: E501
-# frob:tests tests/unit/test_lang_kotlin.py::TestWalkKotlin.test_walks_class_and_method
-# frob:tests tests/unit/test_lang_kotlin.py::TestWalkKotlin.test_interface_method_has_no_body  # noqa: E501
-# frob:tests tests/unit/test_lang_kotlin.py::TestWalkKotlin.test_private_symbol_is_not_public  # noqa: E501
-# frob:tests tests/unit/test_lang_kotlin.py::TestWalkKotlin.test_top_level_property_and_typealias  # noqa: E501
-# frob:tests tests/unit/test_lang_kotlin.py::TestWalkKotlin.test_leading_kdoc_comment_binds_as_doc_text  # noqa: E501
 def _walk_kotlin(root: Node) -> tuple[RawSymbol, ...]:
     """Every kotlin symbol: top-level/class functions (methods), classes
     (kotlin's grammar folds `interface` into the same `class_declaration`

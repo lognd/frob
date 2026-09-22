@@ -44,7 +44,6 @@ _log = get_logger("frob.app.ticket_runner")
 
 # frob:ticket T-2569
 # frob:doc docs/modules/tickets-lifecycle.md#evidence-re-run-verdict-passedfailedunmeasured-t-2569  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingSpawnFailureIsUnmeasured.test_spawn_failed_is_unmeasured_not_failed  # noqa: E501
 class VerifyStatus(Enum):
     """One evidence id's re-run verdict (T-2569): `PASSED` (genuinely
     green on rerun), `FAILED` (genuinely red on rerun -- the test ran to
@@ -65,7 +64,6 @@ class VerifyStatus(Enum):
 
 # frob:ticket T-2569
 # frob:doc docs/modules/tickets-lifecycle.md#evidence-re-run-verdict-passedfailedunmeasured-t-2569  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose.test_unmeasured_returns_false_with_distinct_message  # noqa: E501
 class VerifyOutcome(BaseModel):
     """`VerifyStatus` plus, for `FAILED`/`UNMEASURED`, a short human-
     readable reason -- threaded through by `_verify_ids_passing` and its
@@ -374,7 +372,6 @@ def _bug_repro_outcome_message(outcome, node_id: str, parent_ref: str) -> str:  
 
 
 # frob:ticket T-2509
-# frob:tests tests/unit/test_ticket_runner_repro_merge_base.py::TestReproMergeBaseRoot.test_prefers_frob_worktree_env_when_set  # noqa: E501
 def _repro_merge_base_root(root: Path) -> Path:
     """The git checkout `_merge_base`'s `HEAD`-relative query should run
     against (T-2509) -- the ACTUAL ticket worktree named by `FROB_
@@ -408,7 +405,6 @@ def _repro_merge_base_root(root: Path) -> Path:
 
 
 # frob:ticket T-2509
-# frob:tests tests/unit/test_ticket_runner_repro_merge_base.py::TestWarnIfBaseRefNotHonouredExactly.test_warns_when_base_ref_is_not_an_ancestor  # noqa: E501
 def _warn_if_base_ref_not_honoured_exactly(
     merge_base_root: Path, base_ref: str, parent_ref: str
 ) -> None:
@@ -452,11 +448,6 @@ def _warn_if_base_ref_not_honoured_exactly(
 
 
 # frob:ticket T-1929
-# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_refuses_passed_at_parent  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_refuses_no_verdict  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_accepts_failed_at_parent  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_force_overrides_loudly  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_non_bug_kind_skips_the_check  # noqa: E501
 def _validate_designate_repro_at_parent(root: Path, cfg: AppConfig) -> None:
     """T-1929 requirement A: `--designate-repro NODE-ID` refuses (exit 1,
     no write) unless NODE-ID genuinely `FAILED_AT_PARENT` -- the mistake
@@ -551,9 +542,6 @@ def _validate_designate_repro_at_parent(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1929
-# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_reports_failed_at_parent_exit0  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_reports_passed_at_parent_exit1  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_no_node_id_resolves_designated_test  # noqa: E501
 def _evidence_check_repro(root: Path, cfg: AppConfig) -> None:
     """`frob ticket evidence <id> --check-repro [NODE-ID]` (T-1929
     requirement B): the on-demand, read-only twin of
@@ -785,7 +773,6 @@ _GATE_SUMMARY_COUNTS_ONLY_RE = re.compile(
 
 
 # frob:ticket T-3305
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
 # kind="unit"
 def _venv_python_has_frob_importable(venv_python: Path) -> bool:
     """T-3305: probe whether `frob` is actually importable through
@@ -827,7 +814,6 @@ def _venv_python_has_frob_importable(venv_python: Path) -> bool:
 
 # frob:ticket T-0846
 # frob:ticket T-3305
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
 # kind="unit"
 def _python_for_tree(root: Path) -> str:
     """The interpreter that runs `root`'s OWN installed code (T-0846): the
@@ -890,10 +876,6 @@ def _python_for_tree(root: Path) -> str:
 
 
 # frob:ticket T-4281
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_none_result_is_a_refusal  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_cache_lock_contention_names_the_holder  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_nonzero_exit_without_lock_marker_is_a_generic_crash  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_clean_exit_is_never_a_reason  # noqa: E501
 def _unmeasured_reason_from_result(
     result: subprocess.CompletedProcess | None,
 ) -> str | None:
@@ -952,9 +934,7 @@ def _extract_lock_holder(combined: str) -> str | None:
 # frob:ticket T-0919
 # frob:ticket T-4550
 # frob:ticket T-4767
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn \
 # kind="unit"
-# frob:tests tests/unit/test_done_report_check_scope.py::TestSharedCheckSpawnFnTimeout \
 # kind="unit"
 def _shared_check_spawn_fn(  # noqa: ANN201
     root: Path,
@@ -1185,11 +1165,7 @@ def _shared_check_spawn_fn(  # noqa: ANN201
 # frob:ticket T-0850
 # frob:ticket T-0919
 # frob:ticket T-4767
-# frob:tests tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
 # kind="unit"
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_scoped_run_flaky_rule_excluded_from_error_count kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn kind="unit"  # noqa: E501
 def _check_gates_summary_fn(  # noqa: ANN201
     root: Path,
     ticket_id: str,
@@ -1342,11 +1318,8 @@ def _find_tool_result(results: list, tool_name: str) -> dict | None:  # noqa: AN
 
 
 # frob:ticket T-2793
-# frob:tests \
 # tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_native_staleness_abort_yields_none_not_the_abort_findings  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_other_pre_gate_abort_also_yields_none_not_only_native001  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_ty_and_gate_error_both_appear_in_parsed_set  # noqa: E501
 def _gates_stage_ran(results: list) -> bool:  # noqa: ANN001
     """T-2793's positive completeness signal: `True` only when `results`
@@ -1413,11 +1386,8 @@ def _budget_deferred_stage_groups(results: list) -> list[str]:  # noqa: ANN001
 
 
 # frob:ticket T-2456
-# frob:tests \
 # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_extracts_deferred_groups_from_json_stdout  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_for_non_json_stdout  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_when_no_deferral_present  # noqa: E501
 def _budget_deferred_groups_from_stdout(stdout: str) -> tuple[str, ...]:
     """Recover the `BUDGET001`-deferred stage-group names straight from a
@@ -1461,9 +1431,7 @@ def _budget_deferred_groups_from_stdout(stdout: str) -> tuple[str, ...]:
 
 
 # frob:ticket T-2713
-# frob:tests \
 # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_reads_top_level_skipped_groups  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_empty_when_complete_or_absent  # noqa: E501
 def _budget_skipped_groups_from_payload(data: dict) -> tuple[str, ...]:
     """The T-2235 top-level `data["budget"]["skipped_groups"]` field --
@@ -1961,9 +1929,6 @@ def _exclude_scoped_run_flaky(
 
 # frob:ticket T-0846
 # frob:ticket T-0919
-# frob:tests tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_scoped_run_flaky_rule_excluded_from_findings kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_default_spawn_none_keeps_each_closure_independent kind="unit"  # noqa: E501
 def _check_gate_findings_fn(  # noqa: ANN201
     root: Path,
     ticket_id: str,
@@ -2053,8 +2018,6 @@ def _run_tests_count_fn(root: Path):  # noqa: ANN201
 
 
 # frob:ticket T-3468
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestDoneReportNotVisibleOnPrimaryWarning.test_done_report_from_worktree_warns_when_not_visible_on_primary  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestDoneReportNotVisibleOnPrimaryWarning.test_done_report_from_primary_is_quiet  # noqa: E501
 def _warn_if_done_report_not_visible_on_primary(root: Path, ticket_id: str) -> None:
     """T-3468: `done-report` (like `fail`, T-3137) commits to `root`'s own
     branch ONLY -- `LEDGER_VERB_STRATEGY["done-report"]` is deliberately
@@ -2107,7 +2070,6 @@ _DONE_REPORT_CHECK_DEFAULT_BUDGET_S = 300
 
 
 # frob:ticket T-4550
-# frob:tests tests/unit/test_done_report_check_scope.py::TestDoneReportCheckBudgetS \
 # kind="unit"
 def _done_report_check_budget_s(root: Path) -> int:
     """The `done-report` capture check's timeout budget, seconds (T-draft-
@@ -2133,7 +2095,6 @@ def _done_report_check_budget_s(root: Path) -> int:
 
 
 # frob:ticket T-4550
-# frob:tests tests/unit/test_done_report_check_scope.py::TestDoneReportTouchedFiles \
 # kind="unit"
 def _done_report_touched_files(
     root: Path, ticket_id: str, base: str
@@ -2173,7 +2134,6 @@ def _done_report_touched_files(
 # frob:ticket T-0754
 # frob:ticket T-3468
 # frob:ticket T-4550
-# frob:tests \
 # tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes
 def _done_report_base(cfg: AppConfig) -> str | None:
     """T-4105: `cfg.ticket_base_ref`'s effective override -- `None` (use
@@ -2433,8 +2393,6 @@ def _verify_ids_passing(
 
 
 # frob:ticket T-3847
-# frob:tests tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud.test_id_matching_no_collector_is_a_named_unmeasured_refusal  # noqa: E501
-# frob:tests tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud.test_id_matching_a_registered_non_python_rust_collector_verifies  # noqa: E501
 def _verify_unbucketed_ids(
     root: Path,
     node_ids: tuple[str, ...],
@@ -2500,8 +2458,6 @@ def _verify_unbucketed_ids(
 
 
 # frob:ticket T-3925
-# frob:tests tests/unit/test_verify_language_buckets.py::TestOtherLanguageCollectedIds.test_unions_every_non_excluded_registered_language  # noqa: E501
-# frob:tests tests/unit/test_verify_language_buckets.py::TestOtherLanguageCollectedIds.test_collector_error_degrades_to_empty_not_raise  # noqa: E501
 def _other_language_collected_ids(
     root: Path, *, exclude: frozenset[str]
 ) -> frozenset[str]:
@@ -2755,9 +2711,6 @@ section 1/3) that must never leak into a spawned verification pytest process
 # frob:ticket T-0884
 # frob:ticket T-3099
 # frob:ticket T-3311
-# frob:tests tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv.test_strips_worktree_and_agent_env  # noqa: E501
-# frob:tests tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv.test_missing_lease_env_is_fine  # noqa: E501
-# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestVerifyRunPytestDirectlyWiring.test_must_fire_applies_and_warns_before_spawn  # noqa: E501
 def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
     """`resolve_pytest_argv(<node_ids>, "-q", "-o", "addopts=",
     python=_python_for_tree(root))` (T-3311) in `root`, exit 0 == pass --
@@ -3016,7 +2969,6 @@ def _apply_evidence(
 
 
 # frob:ticket T-1537
-# frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replaces_and_commits  # noqa: E501
 # frob:ticket T-1733
 def _resolve_evidence_replace_reason(cfg: AppConfig) -> str | None:
     """Resolve `frob ticket evidence --replace`'s `--reason` (T-1733):

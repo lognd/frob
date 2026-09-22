@@ -47,10 +47,6 @@ def _read_toml(path: Path) -> dict | None:
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1451
-# frob:tests tests/unit/strata/test_scope_config.py::TestStrataScopeConfig.test_missing_frob_toml_returns_defaults  # noqa: E501
-# frob:tests tests/unit/strata/test_scope_config.py::TestStrataScopeConfig.test_parses_strata_table  # noqa: E501
-# frob:tests tests/unit/strata/test_scope_config.py::TestStrataScopeConfig.test_malformed_toml_falls_back_to_defaults  # noqa: E501
-# frob:tests tests/unit/strata/test_scope_config.py::TestStrataScopeConfig.test_wrong_typed_strata_table_falls_back_to_defaults  # noqa: E501
 def load_strata_scope_config(root: Path) -> StrataScopeConfig:
     """The `[strata]` table from `root/frob.toml`, or all-defaults
     (`require_may_scope=False`) on a missing/malformed file/table -- never

@@ -166,12 +166,7 @@ def _load_status_inputs(root: Path):  # noqa: ANN201
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697
-# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_depth_age_and_quarantine kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_clean_when_nothing_queued_and_no_quarantine kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_drains_refused_since_watermark kind="unit"  # noqa: E501
 # frob:ticket T-3082
-# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_quarantine_status_marker_none_when_never_raised kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_quarantine_status_marker_reflects_raise_and_clear kind="unit"  # noqa: E501
 def build_status(root: Path) -> VerifyStatus | None:
     """Assemble one `VerifyStatus` snapshot for `root`, or `None` on an
     unreadable queue/quarantine store -- "cannot verify is never verified"
@@ -225,7 +220,6 @@ def build_status(root: Path) -> VerifyStatus | None:
 
 
 # frob:ticket T-2406
-# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_drains_refused_since_watermark kind="unit"  # noqa: E501
 def _drain_refusal_fields(root: Path) -> tuple[int, str | None]:
     """`build_status`'s `(drains_refused_since_watermark, last_drain_
     refused_at)` pair (T-2406), split out to keep `build_status` under
@@ -627,7 +621,6 @@ def _collect_dispositions(
 
 
 # frob:ticket T-2217
-# frob:tests \
 # tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_rejects_combination_with_dismiss  # noqa: E501
 def _retire_unidentifiable_dispose(cfg: AppConfig, root: Path, reason: str, actor: str):  # noqa: ANN201
     """T-2217: `--retire-unidentifiable`'s own branch of `_run_dispose`,
@@ -659,11 +652,8 @@ def _retire_unidentifiable_dispose(cfg: AppConfig, root: Path, reason: str, acto
 
 
 # frob:ticket T-2217
-# frob:tests \
 # tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_retires_and_clears  # noqa: E501
-# frob:tests \
 # tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_still_blocks_on_a_well_formed_sibling  # noqa: E501
-# frob:tests tests/unit/verify/test_verify_runner.py::TestDispose.test_dismiss_with_relative_path_matches_a_finding_stored_absolute kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="T-3065 threads root through to _collect_dispositions/_parse_dispose_entry so a --file-ticket/--dismiss key is normalized (_normalize_finding_path) before lookup -- an implementation-level identity-matching fix, not a change to the RULE:FILE:LINE addressing/clear_quarantine-delegation behavior docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697 describes; re-verified accurate via frob ack rather than an edit to that shared, many-symbol doc section"  # noqa: E501
 def _run_dispose(cfg: AppConfig) -> None:
     """`frob verify dispose`: apply every `--file-ticket`/`--dismiss`

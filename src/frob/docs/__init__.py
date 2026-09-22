@@ -117,12 +117,8 @@ def _docstring_for_symbol(
 
 
 # frob:doc docs/modules/app.md#frobdocs-library
-# frob:tests tests/unit/test_docs_module.py::test_extract_docstrings
-# frob:tests \
 # tests/unit/test_docs_module.py::test_extract_docstrings_non_python_file_returns_empty
-# frob:tests \
 # tests/unit/test_docs_module.py::test_extract_docstrings_parse_failure_returns_empty
-# frob:tests \
 # tests/unit/test_docs_module.py::test_extract_docstrings_symbol_filter_narrows_to_one_method  # noqa: E501
 def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]:
     """Every doc comment in `path` (module, class, function, method).
@@ -201,8 +197,6 @@ def _module_docstring(path: Path) -> tuple[int, str] | None:
 
 
 # frob:doc docs/modules/app.md#frobdocs-library
-# frob:tests tests/unit/test_docs_module.py::test_find_docs_dir
-# frob:tests tests/unit/test_docs_module.py::test_find_docs_dir_not_found_returns_none  # noqa: E501
 def find_docs_dir(start: Path) -> Path | None:
     current = start if start.is_dir() else start.parent
     for _ in range(8):
@@ -243,10 +237,7 @@ def _md_headings_and_summaries(md_path: Path) -> list[tuple[int, str, str]]:
 
 
 # frob:doc docs/modules/app.md#frobdocs-library
-# frob:tests tests/unit/test_docs_module.py::test_overview
-# frob:tests \
 # tests/unit/test_docs_module.py::test_overview_no_keyword_match_falls_back_to_all_entries  # noqa: E501
-# frob:tests tests/unit/test_docs_module.py::test_overview_symbol_keyword_narrows_match  # noqa: E501
 def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
     docs_dir = find_docs_dir(path)
     if not docs_dir:
@@ -291,8 +282,6 @@ def _entry_matches(entry: DocEntry, keywords: list[str]) -> bool:
 
 
 # frob:doc docs/modules/app.md#frobdocs-library
-# frob:tests tests/unit/test_docs_module.py::test_search
-# frob:tests \
 # tests/unit/test_docs_module.py::test_search_tracks_heading_and_joins_surrounding_lines
 def search(query: str, docs_dir: Path) -> list[DocMatch]:
     q = query.lower()

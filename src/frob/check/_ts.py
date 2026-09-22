@@ -165,7 +165,6 @@ def _parse_vitest_report(stdout: str) -> list:
 
 
 # frob:ticket T-0404
-# frob:tests tests/unit/test_check_tool_unavailable.py::TestVitestUnverifiedZeroExit.test_run_vitest_warns_on_unparseable_zero_exit  # noqa: E501
 def _run_vitest(root: Path) -> ToolResult:
     """`vitest run` with the JSON reporter, mapped to per-test cases.
 

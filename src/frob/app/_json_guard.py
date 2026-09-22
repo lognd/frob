@@ -36,14 +36,12 @@ class _StderrRedirectStdout:
         self._real_stderr = real_stderr
 
     # frob:doc docs/modules/app.md#runners
-    # frob:tests tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard.test_planted_print_still_reaches_stderr kind="unit"  # noqa: E501
     def write(self, s: str) -> int:
         """Redirect the write to the captured real stderr instead of
         stdout -- the one behavior this whole class exists for."""
         return self._real_stderr.write(s)
 
     # frob:doc docs/modules/app.md#runners
-    # frob:tests tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard.test_planted_print_still_reaches_stderr kind="unit"  # noqa: E501
     def flush(self) -> None:
         """Flush the captured real stderr (the stream writes actually
         landed on), not the stdout this object is standing in for."""

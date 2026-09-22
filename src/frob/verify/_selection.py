@@ -124,9 +124,6 @@ def _synthetic_diff_for_touched_symbols(
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
-# frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_union_of_two_entries_selects_once  # noqa: E501
-# frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_empty_batch_selects_nothing  # noqa: E501
-# frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_unresolvable_symbol_is_skipped_not_fatal  # noqa: E501
 def select_batch_tests(
     snapshot: GraphSnapshot,
     entries: Sequence[VerifyQueueEntry],
@@ -151,8 +148,6 @@ def select_batch_tests(
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
-# frob:tests tests/unit/verify/test_selection.py::TestRunBatchSelectedTests.test_graph_unavailable_is_an_error  # noqa: E501
-# frob:tests tests/unit/verify/test_selection.py::TestRunBatchSelectedTests.test_selects_and_runs_once  # noqa: E501
 def run_batch_selected_tests(
     root: Path, entries: Sequence[VerifyQueueEntry]
 ) -> Result[TestRunReport, BatchSelectionError]:

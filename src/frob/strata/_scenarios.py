@@ -327,7 +327,6 @@ def _no_runs_as_error(user: str) -> StrataError:
 
 
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
-# frob:tests tests/unit/strata/test_host_isolation.py::test_blast_radius kind="unit"
 def build_compromised_user_scenario(
     model: KernelModel, user: str, scenario_id: str
 ) -> Result[Scenario, StrataError]:
@@ -435,7 +434,6 @@ def _no_krb_node_error(node_id: str) -> StrataError:
 
 
 # frob:doc docs/strata/krb.md#movement-proofs
-# frob:tests tests/unit/strata/test_krb_movement.py::TestKrbScen.test_all kind="unit"
 def build_compromised_krb_scenario(
     model: KernelModel, node_id: str, scenario_id: str
 ) -> Result[Scenario, StrataError]:

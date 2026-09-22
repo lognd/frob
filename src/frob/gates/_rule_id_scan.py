@@ -217,10 +217,8 @@ RETIRED_RULE_IDS: frozenset[str] = frozenset(
 )
 
 
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_\
 # id
-# frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_commented_out_rule_literal_is_skipped  # noqa: E501
 # frob:ticket T-1660
 def _scan_file_for_rule_literals(
     path: Path,
@@ -272,9 +270,6 @@ def _scan_file_for_rule_literals(
 # exemption: nothing about that doc anchor's own content ever depended on the lease \
 # T-2993 (now done) briefly held over it"
 # frob:doc docs/modules/gates.md#gaterule001-t-2448
-# frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_missing_scanned_base_directory_is_skipped_not_an_error  # noqa: E501
-# frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_unresolved_const_ref_is_left_out  # noqa: E501
-# frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_const_ref_resolves_against_assignment_in_another_file  # noqa: E501
 def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
     """Statically enumerate every rule id constructed under
     `SCANNED_BASES` beneath `repo_root` (inline `rule="..."` literal, or
@@ -323,9 +318,7 @@ def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
 
 # frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
 # above -- see T-1010's Done report"
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_retired_id_stays_excluded
-# frob:tests tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride.test_default_retired_set_is_module_constant  # noqa: E501
 def generated_gate_rule_ids(
     repo_root: Path, retired: frozenset[str] | None = None
 ) -> frozenset[str]:
@@ -345,15 +338,10 @@ def generated_gate_rule_ids(
 # would live in docs/modules/gates.md, whose own SCOPE002 closure is out of proportion \
 # to pull into T-1937's narrow scope for two functions; this module's own docstring is \
 # the authoritative description, see T-1937's Done report"
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_bare_positional_argument  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_typed_const_assignment  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_code_kwarg_outside_scanned_bases  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_inline_comment_example_not_picked_up  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_whole_line_comment_not_picked_up  # noqa: E501
 def scan_candidate_rule_id_literals(repo_root: Path) -> dict[str, str]:
     """T-1937 broad completeness net: every quoted, rule-id-SHAPED string
@@ -428,11 +416,8 @@ def _scan_file_for_rule_id_literals(path: Path, repo_root: Path) -> dict[str, st
 # (wired into the T-0756 close/land preflight via
 # frob.tickets._evidence._done_transition_diff_derived_guard) -- the
 # suppression that used to sit here is no longer needed.
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_empty_when_every_candidate_is_known_or_retired  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_reports_a_candidate_missing_from_both_known_and_retired  # noqa: E501
 def find_unregistered_rule_ids(
     repo_root: Path, known: frozenset[str], retired: frozenset[str] | None = None
@@ -480,18 +465,12 @@ def find_unregistered_rule_ids(
 # frob:enforces CHK-GATE-GATERULE001
 # frob:ticket T-2448
 # frob:doc docs/modules/gates.md#gaterule001-t-2448
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_clean_repo_is_silent  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_unregistered_id_reported_as_error  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_missing_src_dir_is_unresolved_not_silent_zero  # noqa: E501
 # frob:ticket T-3727
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_downstream_repo_with_own_rule_catalog_is_silent  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_downstream_repo_declaring_a_different_project_name_is_silent  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_frobs_own_repo_still_scanned  # noqa: E501
 def gate_rule_registry_violations(root: Path) -> tuple[Violation, ...]:
     """GATERULE001 (T-2448): `find_unregistered_rule_ids` (T-1937) run

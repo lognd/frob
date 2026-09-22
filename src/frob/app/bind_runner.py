@@ -76,7 +76,6 @@ def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
 # frob:ticket T-2492
-# frob:tests tests/unit/test_app_runners_batch5.py::TestBindRunner.test_mismatch_json_mode_no_exit  # noqa: E501
 def run(argv=None):
     """T-2492: `scan_bindings`/`scan_sources`/`check` all walk the tree via
     `gitio`, whose own DEBUG spawn logging landed unguarded on stdout

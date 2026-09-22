@@ -96,7 +96,6 @@ def _record_or_refuse_archive_force(
 # frob:ticket T-1615
 # frob:ticket T-1762
 # frob:ticket T-4388
-# frob:tests tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI.test_force_overrides_the_live_lease_refusal kind="unit"  # noqa: E501
 def _require_reason_for_archive_force(
     root: Path,
     force: bool,
@@ -195,7 +194,6 @@ def _archive(
 
 
 # frob:ticket T-2954
-# frob:tests \
 # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_cli_wiring_delegates_a\
 # nd_commits
 def _restore(root: Path, cfg) -> None:  # noqa: ANN001

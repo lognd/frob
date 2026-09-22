@@ -65,7 +65,6 @@ def _load_sync_module(repo_root: Path) -> ModuleType | None:
 
 # frob:ticket T-1808
 # frob:doc docs/modules/cli.md#frob-claude-sync-t-1808
-# frob:tests \
 # tests/unit/test_claude_runner.py::TestDriftReport.test_reports_drifted_and_missing
 def drift_report(repo_root: Path) -> tuple[list[str], list[str]] | None:
     """`(drifted_entries, missing_sources)` for `repo_root`'s
@@ -81,9 +80,6 @@ def drift_report(repo_root: Path) -> tuple[list[str], list[str]] | None:
 
 # frob:ticket T-3600
 # frob:doc docs/modules/cli.md#frob-claude-sync-t-1808
-# frob:tests tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_true_when_home_claude_absent  # noqa: E501
-# frob:tests tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_false_when_home_claude_present  # noqa: E501
-# frob:tests tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_none_for_repo_with_no_managed_config  # noqa: E501
 def home_claude_missing(repo_root: Path) -> bool | None:
     """Whether `repo_root`'s managed-config materialization root
     (`~/.claude`, or wherever `Path.home()` resolves) does not exist at
@@ -101,10 +97,8 @@ def home_claude_missing(repo_root: Path) -> bool | None:
 
 
 # frob:ticket T-1808
-# frob:tests \
 # tests/unit/test_claude_runner.py::TestDriftWarning.test_warns_when_managed_file_diffe\
 # rs
-# frob:tests tests/unit/test_claude_runner.py::TestDriftWarning.test_none_when_in_sync
 def drift_warning(repo_root: Path) -> str | None:
     """A loud, one-line warning if any `sync-claude-config.py`-managed file
     has drifted from its `~/.claude/` materialized copy -- the T-1808
@@ -132,8 +126,6 @@ def drift_warning(repo_root: Path) -> str | None:
 
 # frob:ticket T-1808
 # frob:doc docs/modules/cli.md#frob-claude-sync-t-1808
-# frob:tests tests/unit/test_claude_runner.py::TestRun.test_check_mode_exits_1_on_drift
-# frob:tests tests/unit/test_claude_runner.py::TestRun.test_sync_writes_managed_files
 def run(cfg: AppConfig) -> None:
     """`frob claude sync [--check]`: materialize this repo's git-tracked
     Claude config out to `~/.claude/` (default), or report drift without

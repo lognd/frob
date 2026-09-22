@@ -27,11 +27,6 @@ _log = get_logger(__name__)
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:doc docs/modules/render.md#exemplar-frob-doctor
 # frob:doc docs/modules/land-profiles.md#land-profiles-rapid-vs-standard-t-4416
-# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_plain_prints_all_available_and_does_not_exit  # noqa: E501
-# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_json_emits_parseable_report  # noqa: E501
-# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plain_exits_1_and_prints_remediation  # noqa: E501
-# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_no_remediation_prints_empty_not_none  # noqa: E501
-# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_json_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Render the `frob doctor` native-extension diagnosis; exits 1 when any
     extension is missing so `frob doctor` is scriptable as a preflight
@@ -62,9 +57,7 @@ def run(cfg: AppConfig) -> None:
 
 # frob:ticket T-2979
 # frob:ticket T-4416
-# frob:tests \
 # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_path_raises_stdout_handlers_to_warning_by_default  # noqa: E501
-# frob:tests \
 # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose  # noqa: E501
 def _run_plain(cfg: AppConfig, run_diagnosis) -> None:  # noqa: ANN001
     """`run`'s plain (human, non-`--json`, non-`--usage`) path -- extracted
@@ -116,7 +109,6 @@ def _run_plain(cfg: AppConfig, run_diagnosis) -> None:  # noqa: ANN001
 
 
 # frob:ticket T-3725
-# frob:tests \
 # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plain_exits_1_and_prints_remediation  # noqa: E501
 def _print_unhealthy_summary(r: Renderer, report) -> None:
     """`_run_plain`'s unhealthy-branch status line + remediation, extracted
@@ -147,9 +139,7 @@ def _print_unhealthy_summary(r: Renderer, report) -> None:
 
 
 # frob:ticket T-1634
-# frob:tests \
 # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line  # noqa: E501
-# frob:tests \
 # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.test_healthy_report_with_no_land_lock_prints_nothing_extra  # noqa: E501
 def _print_orphaned_land_lock_disclosure(r: Renderer, report) -> None:
     """T-1634: extracted out of `run` to keep it under ARCH001's 60-line
@@ -169,9 +159,7 @@ def _print_orphaned_land_lock_disclosure(r: Renderer, report) -> None:
 
 
 # frob:ticket T-3725
-# frob:tests \
 # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healthy_report_with_scaffold_needs_apply_prints_disclosure_line  # noqa: E501
-# frob:tests \
 # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healthy_report_with_no_scaffold_blocks_prints_nothing_extra  # noqa: E501
 # frob:waive DUP001 reason="deliberate structural mirror of this same file's \
 # _print_orphaned_land_lock_disclosure directly above -- both are the identical \
@@ -201,8 +189,6 @@ def _print_scaffold_disclosure(r: Renderer, report) -> None:
 
 
 # frob:ticket T-4416
-# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerProfileRecommendation.test_recommendation_printed_when_present  # noqa: E501
-# frob:tests tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerProfileRecommendation.test_no_recommendation_prints_nothing_extra  # noqa: E501
 def _print_profile_recommendation(r: Renderer, report) -> None:
     """T-4416: print `report.profile_recommendation` (advisory-only nudge
     toward `[profile] profile = "rapid"` once the repo crosses
@@ -220,7 +206,6 @@ def _print_profile_recommendation(r: Renderer, report) -> None:
 
 
 # frob:ticket T-1360
-# frob:tests tests/test_telemetry.py::test_usage_report_empty_corpus_is_all_zero
 def _run_usage(cfg: AppConfig) -> None:
     """Render `frob doctor --usage` (T-1360): top time sinks and footgun
     totals mined from `.frob/telemetry.jsonl`. Never exits nonzero -- this
@@ -267,8 +252,6 @@ def _run_usage(cfg: AppConfig) -> None:
 
 # frob:ticket T-4690
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
-# frob:tests tests/unit/test_cli_shims.py::TestPrintWhereis.test_plain_output_names_the_live_executable  # noqa: E501
-# frob:tests tests/unit/test_cli_shims.py::TestPrintWhereis.test_json_output_is_parseable  # noqa: E501
 def print_whereis(cfg: AppConfig) -> None:
     """`frob doctor --whereis` (folded from the standalone `frob whereis`,
     T-4299/T-4690): print the interpreter/site-packages path of the frob

@@ -26,7 +26,6 @@ class SymbolKind(StrEnum):
 # frob:ticket T-0433
 # frob:ticket T-2231
 # frob:doc docs/modules/lang.md#dependencies
-# frob:tests tests/test_graph.py::TestBuildIncremental.test_fingerprint_packages_derived_from_lang_registry  # noqa: E501
 # T-0433 (G6): the installed-distribution names whose VERSION changing can
 # change what every non-`.strata` grammar in `frob.lang._EXTENSION_TABLE`
 # parses to. `tree_sitter_language_pack.get_parser` is the ONE loading

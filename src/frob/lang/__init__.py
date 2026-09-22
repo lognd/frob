@@ -81,7 +81,6 @@ from frob.lang._nodes import (
 )
 
 # frob:ticket T-4579
-# frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
 from frob.lang._project_detect import (
     UnityProjectDetectError,
     UnityProjectInfo,
@@ -89,7 +88,6 @@ from frob.lang._project_detect import (
 )
 
 # frob:ticket T-3443
-# frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
 from frob.lang._support import (
     FACETS,
     AdapterCapabilitySupport,
@@ -311,7 +309,6 @@ _PARSE_TIMEOUT_SECONDS = 10.0
 
 
 # frob:doc docs/modules/lang.md#size-cap-and-parse-timeout-t-0893
-# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_oversized_file_is_skipped_loudly  # noqa: E501
 # frob:waive COV007 reason="docs/modules/lang.md's Size cap and parse timeout section \
 # (T-0893) is a deliberate, per-function architecture doc of this module's internal \
 # DoS guards, same convention as the Primitives section's private tree-sitter helpers"
@@ -340,8 +337,6 @@ def _check_size_cap(path: Path, size: int) -> LangError | None:
 
 # frob:ticket T-3708
 # frob:doc docs/modules/lang.md#size-cap-and-parse-timeout-t-0893
-# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_parse_timeout_returns_err_not_hang  # noqa: E501
-# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
 # frob:waive COV007 reason="docs/modules/lang.md's Size cap and parse timeout section \
 # (T-0893) is a deliberate, per-function architecture doc of this module's internal \
 # DoS guards, same convention as the Primitives section's private tree-sitter helpers"
@@ -419,7 +414,6 @@ _partial_parse_files: set[str] = set()
 # frob:doc docs/modules/lang.md#parse-cache
 # frob:ticket T-0555
 # frob:ticket T-0905
-# frob:tests tests/test_lang.py::TestParseCache.test_reset_clears_counters  # noqa: E501
 def partial_parse_files() -> tuple[str, ...]:
     """Display paths of every partially-parsed file since the last
     `reset_parse_cache` (T-0404 finding 9), sorted for determinism.
@@ -508,7 +502,6 @@ def _warn_if_partial_tree(tree: Tree, path: Path) -> None:
 
 
 # frob:doc docs/modules/lang.md#size-cap-and-parse-timeout-t-0893
-# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_oversized_file_is_skipped_loudly  # noqa: E501
 # frob:waive COV007 reason="docs/modules/lang.md's Size cap and parse timeout section \
 # (T-0893) is a deliberate, per-function architecture doc of this module's internal \
 # DoS guards, same convention as the Primitives section's private tree-sitter helpers"
@@ -850,8 +843,6 @@ def _artifact_fingerprint() -> str:
 
 
 # frob:ticket T-1464
-# frob:tests tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache.test_hit_skips_extract  # noqa: E501
-# frob:tests tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache.test_miss_populates_cache  # noqa: E501
 def _parse_file_with_artifact_cache(
     path: Path, *, expect_heterogeneous: bool = False
 ) -> Result[ParsedFile, LangError]:
@@ -1025,12 +1016,8 @@ _parse_file_memoized: Callable[..., Result[ParsedFile, LangError]] | None = None
 # frob:doc docs/modules/graph.md#public-api
 # frob:invariant INV-015
 # frob:ticket T-0410
-# frob:tests tests/unit/test_memo.py::test_parse_file_second_call_is_memo_hit
 # invariant spec: [INV-015](invariants/INV-015.md)
-# frob:tests tests/test_lang.py::TestErrors.test_syntax_error_yields_partial_symbols
-# frob:tests \
 # tests/test_lang.py::TestNativeIndependentParsing.test_corpus_parses_identically_with_and_without_natives  # noqa: E501
-# frob:tests \
 # tests/test_lang.py::TestKnownGrammarGaps.test_anonymous_bitfield_partial_parse_is_native_independent  # noqa: E501
 def parse_file(
     path: Path, *, expect_heterogeneous: bool = False
@@ -1104,8 +1091,6 @@ def extract_imports(
 
 # frob:doc docs/modules/lang.md#public-api
 # frob:ticket T-3350
-# frob:tests tests/system/test_cli_cycle.py::test_toplevel_two_module_cycle_fires kind="e2e"  # noqa: E501
-# frob:tests tests/system/test_cli_cycle.py::test_deferred_only_cycle_does_not_fire kind="e2e"  # noqa: E501
 def extract_import_edges(
     path: Path, *, expect_heterogeneous: bool = False
 ) -> Result[tuple[tuple[str, bool], ...], LangError]:

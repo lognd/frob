@@ -61,12 +61,6 @@ _log = get_logger(__name__)
 
 # frob:ticket T-1613
 # frob:ticket T-2578
-# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_unmilestoned_runs_last_keeps_global_semantics  # noqa: E501
-# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_unmilestoned_runs_last_becomes_doable_once_all_else_terminal  # noqa: E501
-# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_milestoned_runs_last_blocked_by_same_milestone_open_work  # noqa: E501
-# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_milestoned_runs_last_doable_once_same_milestone_work_terminal  # noqa: E501
-# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_milestoned_runs_last_not_blocked_by_other_milestone_open_work  # noqa: E501
-# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_runs_last_sibling_carve_out_preserved_within_a_milestone  # noqa: E501
 def _other_open_tickets(
     queue: TicketQueue, ticket: Ticket, root: Path | None = None
 ) -> tuple[str, ...]:
@@ -113,8 +107,6 @@ def _other_open_tickets(
 
 # frob:ticket T-2576
 # frob:doc docs/modules/tickets-data-storage.md#the-configured-default-is-a-third-case-t-2576-m2  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_no_declared_or_inherited_falls_back_to_configured_default  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_declared_value_is_not_overridden_by_default  # noqa: E501
 class MilestoneSource(Enum):
     """Why `effective_milestone` returned the value it did (T-2576 M2):
     `DECLARED` (the ticket's own `milestone` field), `INHERITED` (a
@@ -180,17 +172,6 @@ def _default_milestone(root: Path) -> str | None:
 # frob:ticket T-2576
 # frob:doc docs/modules/tickets-data-storage.md#milestone-as-the-doable-sort-axis-and-inheritance-t-2577-m3  # noqa: E501
 # frob:doc docs/modules/tickets-data-storage.md#the-configured-default-is-a-third-case-t-2576-m2  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_own_milestone_is_declared  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_inherits_from_parent_story  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_inherits_from_grandparent_epic  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_nearest_ancestor_wins_over_farther_one  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_no_milestone_anywhere_in_chain_is_none  # noqa: E501
-# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_cycle_does_not_infinite_loop  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_no_declared_or_inherited_falls_back_to_configured_default  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_declared_value_is_not_overridden_by_default  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_inherited_value_is_not_overridden_by_default  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_no_default_configured_stays_unresolved  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_no_root_skips_default_lookup  # noqa: E501
 def effective_milestone(
     queue: TicketQueue, ticket: Ticket, root: Path | None = None
 ) -> tuple[str | None, MilestoneSource | None]:
@@ -243,7 +224,6 @@ def effective_milestone(
 
 
 # frob:invariant INV-032
-# frob:tests tests/test_tickets.py::TestDoable.test_blocked_excluded
 # frob:ticket T-0715
 # frob:ticket T-1613
 # invariant spec: [INV-032](invariants/INV-032.md)
@@ -458,7 +438,6 @@ def _repo_files(root: Path) -> tuple[str, ...]:
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_call
 def scope_breadth_context(root: Path) -> tuple[int, tuple[str, ...]]:
     """`(large_glob_max_files threshold, repo_files)` computed ONCE -- the
@@ -553,9 +532,7 @@ def _over_broad_scope_entries(
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_glob
-# frob:tests \
 # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_test_file
 def large_glob_warnings(
     ticket: Ticket,
@@ -603,10 +580,7 @@ def large_glob_warnings(
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_hide_disjoint  # noqa: E501
-# frob:tests \
 # tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is_hidden
-# frob:tests \
 # tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_warn_only
 # frob:ticket T-5075
 # frob:waive ARCH001 reason="T-5075 added one more precomputed-parameter paragraph to \
@@ -750,10 +724,6 @@ def _leased_by_one_holder(
 
 # frob:ticket T-0716
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_live_lease_decorated  # noqa: E501
-# frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_stale_lease_undecorated  # noqa: E501
-# frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_ledger_in_progress_undecorated  # noqa: E501
-# frob:tests \
 # tests/test_tickets_lease_overlay.py::TestDisplayState.test_no_root_never_decorates
 def display_state(ticket: Ticket, root: Path | None) -> str:
     """`ticket`'s display state for `frob ticket list`/`show` (T-0716): the
@@ -793,9 +763,6 @@ def display_state(ticket: Ticket, root: Path | None) -> str:
 
 # frob:ticket T-0752
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_queued_with_live_lease_is_in_flight  # noqa: E501
-# frob:tests tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_queued_with_no_lease_is_not_in_flight  # noqa: E501
-# frob:tests \
 # tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_no_root_never_in_flight
 def has_live_lease(ticket: Ticket, root: Path | None) -> bool:
     """Whether `ticket` itself (not a scope collision with some OTHER
@@ -853,8 +820,6 @@ def _dispatch_stale_thresholds(root: Path) -> dict[Priority, float]:
 
 # frob:ticket T-0752
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours.test_same_day_is_zero_hours  # noqa: E501
-# frob:tests tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours.test_one_day_old_is_24_hours  # noqa: E501
 def dispatch_stale_hours(ticket: Ticket, *, today: date | None = None) -> float:
     """Hours `ticket` has been sitting since filing (T-0752's "last state
     change or filing" measurement) -- `Ticket.created` is the only
@@ -871,9 +836,6 @@ def dispatch_stale_hours(ticket: Ticket, *, today: date | None = None) -> float:
 
 # frob:ticket T-0752
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_dispatch_stale.py::TestUndispatchedStale.test_critical_past_threshold_alarms  # noqa: E501
-# frob:tests tests/test_tickets_dispatch_stale.py::TestUndispatchedStale.test_critical_under_threshold_no_alarm  # noqa: E501
-# frob:tests tests/test_tickets_dispatch_stale.py::TestUndispatchedStale.test_medium_priority_never_alarms  # noqa: E501
 def undispatched_stale(
     tickets: Sequence[Ticket],
     root: Path,
@@ -905,8 +867,6 @@ def undispatched_stale(
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
-# frob:tests \
 # tests/test_tickets_tiers.py::TestDoableLeafOnly.test_epic_and_story_never_surface
 # frob:invariant INV-024
 # frob:ticket T-0715
@@ -1078,12 +1038,7 @@ class WaveResult:
 # frob:ticket T-1825
 # frob:ticket T-2577
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_wave.py::TestWave.test_disjoint_scopes_pack_into_separate_groups
-# frob:tests tests/test_tickets_wave.py::TestWave.test_colliding_scopes_share_one_group
-# frob:tests tests/test_tickets_wave.py::TestWave.test_unplaceable_ticket_lands_in_remainder_with_reason  # noqa: E501
-# frob:tests tests/test_tickets_wave.py::TestWave.test_deterministic_for_repeated_calls
-# frob:tests \
 # tests/test_tickets_wave.py::TestWave.test_fewer_groups_than_agents_is_not_an_error
 def wave(
     queue: TicketQueue,
@@ -1241,7 +1196,6 @@ def _extend_unique(target: list[str], addition: Sequence[str]) -> None:
 # frob:ticket T-0453
 # frob:ticket T-2577
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons
 # frob:ticket T-5075
 def doable_blocked(
@@ -1316,9 +1270,6 @@ def _narrow_scope_files(
 
 # frob:ticket T-1744
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_own_directive_present_flags_the_ticket  # noqa: E501
-# frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_absent_directive_is_silent  # noqa: E501
-# frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_over_broad_scope_entry_is_not_scanned  # noqa: E501
 # T-1822 wired this into frob.app.ticket_runner._query's doable render
 # (_render_already_landed_markers + _doable_row's landed_ids) -- the
 # WIRE001 waiver this line used to carry is discharged, not just

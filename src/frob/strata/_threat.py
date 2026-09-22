@@ -454,7 +454,6 @@ def _caught_by_referenced_tokens(
     )
 
 
-# frob:tests tests/unit/strata/test_threat.py::TestCaughtByUnresolvedTokens.test_unknown_rule_id_is_unresolved  # noqa: E501
 # frob:ticket T-0601
 def _caught_by_unresolved_tokens(
     caught_by: str,

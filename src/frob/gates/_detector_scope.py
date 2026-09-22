@@ -59,9 +59,6 @@ from typing import Final
 from frob.gates._walk_lint import tracked_python_files_for_gate
 
 # frob:doc docs/modules/gates.md#lexcheck001-t-2344
-# frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_gates_vet_strata_check_are_members kind="unit"  # noqa: E501
-# frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_arch_is_not_a_member kind="unit"  # noqa: E501
-# frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_roots_are_sorted_and_slash_terminated kind="unit"  # noqa: E501
 #: Every package-root prefix (POSIX, trailing slash, relative to repo
 #: root) that can contain a gate-shaped detector, per this module's own
 #: docstring measurement. Sorted for a deterministic, reviewable diff
@@ -78,7 +75,6 @@ DETECTOR_PACKAGE_ROOTS: Final[tuple[str, ...]] = (
 
 
 # frob:doc docs/modules/gates.md#lexcheck001-t-2344
-# frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_unrelated_package_is_not_a_member kind="unit"  # noqa: E501
 def is_detector_package_file(rel_path: str) -> bool:
     """Whether `rel_path` (a repo-root-relative POSIX path, as returned by
     `tracked_python_files_for_gate`) sits under one of `DETECTOR_PACKAGE_
@@ -89,7 +85,6 @@ def is_detector_package_file(rel_path: str) -> bool:
 
 
 # frob:doc docs/modules/gates.md#lexcheck001-t-2344
-# frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_tracked_gate_files_filters_to_detector_roots kind="unit"  # noqa: E501
 # frob:ticket T-2966
 def tracked_gate_files(root: Path, log_prefix: str) -> tuple[str, ...]:
     """Every git-tracked `.py` file under one of `DETECTOR_PACKAGE_ROOTS`,
@@ -107,7 +102,6 @@ def tracked_gate_files(root: Path, log_prefix: str) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/gates.md#port001-t-2388
-# frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_tracked_repo_python_files_is_repo_wide_not_detector_scoped kind="unit"  # noqa: E501
 # frob:ticket T-3275
 def tracked_repo_python_files(root: Path, log_prefix: str) -> tuple[str, ...]:
     """Every git-tracked `src/frob/**/*.py` file, UNFILTERED by

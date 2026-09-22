@@ -138,7 +138,6 @@ def _run_sync_gate_rules(registry_dir: Path, root: Path) -> None:
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
-# frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun.test_missing_registry_dir_logs_and_returns kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="T-2454 only adds a LOG line to --sync-gate-rules (the full live registered rule-id set, for auditability) -- docs/modules/app.md#runners one-line runner index and docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429 (the --add corpus-emit path, untouched by this change) need no content update; docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560 IS updated in this same diff with the real content change"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob registry audit`: per-registry-file disposition counts under

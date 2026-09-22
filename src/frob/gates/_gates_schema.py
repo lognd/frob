@@ -233,10 +233,8 @@ def _gates_tables(root: Path) -> tuple[dict, dict] | None:
 
 # frob:enforces CHK-GATE-GATESSCHEMA001
 # frob:doc docs/modules/gates.md#gatesschema001-t-2390-epic-child-t-2435
-# frob:tests \
 # tests/unit/test_gates_table_schema.py::TestGatesSchemaGate.test_must_now_fire_reports\
 # _the_undeclared_ratchet_key kind="unit"
-# frob:tests \
 # tests/unit/test_gates_table_schema.py::TestGatesSchemaGate.test_must_still_pass_this_\
 # repos_own_frob_toml kind="unit"
 # frob:ticket T-2435

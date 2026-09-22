@@ -178,7 +178,6 @@ def _run_agentic(cfg: AppConfig) -> None:
     Renderer.for_stream(sys.stdout).line("\n".join(lines))
 
 
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def _try_stats_via_daemon(root: Path, cfg: AppConfig) -> bool:
     """T-1127: for a plain `frob stats --json` (non-`--agentic` -- the RPC
     (`frob_stats`) answers the default `StatsReport` shape only, never
@@ -207,7 +206,6 @@ def _try_stats_via_daemon(root: Path, cfg: AppConfig) -> bool:
 # frob:ticket T-0562
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
-# frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi
 # frob:ticket T-1392
 # frob:waive AFFECT001 reason="T-1392: docs/modules/app.md's one-line \
 # `stats_runner.run` summary ('renders the delivery snapshot ... from \

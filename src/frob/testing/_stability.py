@@ -107,7 +107,6 @@ def _entry_key(node_id: str) -> str:
     return node_id
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestRecord.test_persists
 # frob:doc docs/modules/testing.md#public-api
 def load_stability(root: Path) -> dict[str, StabilityEntry]:
     """Every recorded `StabilityEntry`, keyed by node id; an absent or
@@ -147,9 +146,6 @@ def _save_stability(
     return Ok(Unit())
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestRecord.test_persists
-# frob:tests tests/unit/testing/test_stability.py::TestRecord.test_window_bounded
-# frob:tests tests/unit/testing/test_stability.py::TestRecord.test_carries_quarantine
 # frob:doc docs/modules/testing.md#public-api
 def record_outcomes(
     root: Path, outcomes: Mapping[str, bool]
@@ -179,10 +175,6 @@ def record_outcomes(
     return Ok(entries)
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestIsFlaky.test_all_pass_ok
-# frob:tests tests/unit/testing/test_stability.py::TestIsFlaky.test_all_fail_ok
-# frob:tests tests/unit/testing/test_stability.py::TestIsFlaky.test_mixed_is_flaky
-# frob:tests tests/unit/testing/test_stability.py::TestIsFlaky.test_single_run_ok
 # frob:doc docs/modules/testing.md#public-api
 def is_flaky(entry: StabilityEntry) -> bool:
     """The flake-detection rule: `entry`'s bounded history contains BOTH a
@@ -199,7 +191,6 @@ def is_flaky(entry: StabilityEntry) -> bool:
     return _PASS in seen and _FAIL in seen
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestIsFlaky.test_filters_map
 # frob:doc docs/modules/testing.md#public-api
 def flaky_node_ids(entries: Mapping[str, StabilityEntry]) -> frozenset[str]:
     """Every node id in `entries` whose history currently reads as flaky
@@ -207,12 +198,6 @@ def flaky_node_ids(entries: Mapping[str, StabilityEntry]) -> frozenset[str]:
     return frozenset(node_id for node_id, entry in entries.items() if is_flaky(entry))
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_past_thresh
-# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_under_thresh
-# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_mixed
-# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_tail_stale
-# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_tail_short
-# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_tail_cfg
 # frob:doc docs/modules/testing.md#flake-quarantine-t-0575
 def is_hard_regression(
     entry: StabilityEntry, *, tail_k: int = DEFAULT_REGRESSION_TAIL_K
@@ -248,7 +233,6 @@ def is_hard_regression(
     return all(mark == _FAIL for mark in tail)
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestQuarantine.test_explicit_ticket
 # frob:doc docs/modules/testing.md#public-api
 def quarantined_node_ids(entries: Mapping[str, StabilityEntry]) -> frozenset[str]:
     """Every node id in `entries` currently under quarantine (has a
@@ -278,9 +262,6 @@ def _ticket_is_open(root: Path, ticket_id: str) -> bool | None:
     return ticket.state not in (TicketState.DONE, TicketState.DROPPED)
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestQuarantine.test_explicit_ticket
-# frob:tests tests/unit/testing/test_stability.py::TestQuarantine.test_rejects_bad
-# frob:tests tests/unit/testing/test_stability.py::TestQuarantine.test_auto_files
 # frob:doc docs/modules/testing.md#public-api
 def quarantine(
     root: Path, node_id: str, *, ticket_id: str | None = None
@@ -351,8 +332,6 @@ def _file_quarantine_ticket(root: Path, node_id: str) -> Result[str, FlakeError]
     return Ok(ticket_id)
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestQuarantine.test_lift_clears
-# frob:tests tests/unit/testing/test_stability.py::TestQuarantine.test_lift_unknown_errs
 # frob:doc docs/modules/testing.md#public-api
 def lift_quarantine(root: Path, node_id: str) -> Result[Unit, FlakeError]:
     """Remove `node_id`'s quarantine (its history is kept -- only the
@@ -376,9 +355,6 @@ def lift_quarantine(root: Path, node_id: str) -> Result[Unit, FlakeError]:
     return Ok(Unit())
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_closed_still_flaky
-# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_no_alarm_open
-# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_no_alarm_stable
 # frob:doc docs/modules/testing.md#public-api
 def quarantine_alarms(
     root: Path, entries: Mapping[str, StabilityEntry]
@@ -408,9 +384,6 @@ def quarantine_alarms(
     return tuple(sorted(alarmed))
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_alarm
-# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_no_alarm_flaky
-# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_alarm_tail
 # frob:doc docs/modules/testing.md#flake-quarantine-t-0575
 def hard_regression_alarms(
     entries: Mapping[str, StabilityEntry], *, tail_k: int = DEFAULT_REGRESSION_TAIL_K
@@ -434,11 +407,6 @@ def hard_regression_alarms(
     return tuple(sorted(alarmed))
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestGate.test_already_ok_stays_ok
-# frob:tests tests/unit/testing/test_stability.py::TestGate.test_all_quarantined_ok
-# frob:tests tests/unit/testing/test_stability.py::TestGate.test_one_bad_stays_failed
-# frob:tests tests/unit/testing/test_stability.py::TestGate.test_hard_regress_fails
-# frob:tests tests/unit/testing/test_stability.py::TestGate.test_hard_regress_tail_fails
 # frob:doc docs/modules/testing.md#public-api
 def evaluate_gate(
     ok: bool,
@@ -503,9 +471,6 @@ def _parse_junit_outcomes(
     return outcomes
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestCapture.test_empty_ok
-# frob:tests tests/unit/testing/test_stability.py::TestCapture.test_spawn_err
-# frob:tests tests/unit/testing/test_stability.py::TestCapture.test_parses_junit
 # frob:doc docs/modules/testing.md#public-api
 def capture_python_outcomes(
     root: Path, node_ids: tuple[str, ...], *, cwd: str = "."
@@ -542,7 +507,6 @@ def capture_python_outcomes(
     return Ok(outcomes)
 
 
-# frob:tests tests/unit/testing/test_stability.py::TestTrack.test_captures_then_records
 # frob:doc docs/modules/testing.md#public-api
 def track_python_stability(
     root: Path, node_ids: tuple[str, ...], *, cwd: str = "."

@@ -78,8 +78,6 @@ _MODULE_LANGUAGE_ADAPTERS: dict[str, ModuleReferenceScanner] = {
 
 
 # frob:doc docs/commands/refactor.md#adapter_for
-# frob:tests tests/test_refactor.py::TestModuleLang.test_python_has_an_adapter
-# frob:tests tests/test_refactor.py::TestModuleLang.test_unregistered_language_has_no_adapter  # noqa: E501
 def adapter_for(language: str) -> ModuleReferenceScanner | None:
     """The registered `ModuleReferenceScanner` for `language` (a
     `frob.lang.language_for_extension` label), or `None` if this repo's
@@ -89,7 +87,6 @@ def adapter_for(language: str) -> ModuleReferenceScanner | None:
 
 
 # frob:doc docs/commands/refactor.md#supported_languages
-# frob:tests tests/test_refactor.py::TestModuleLang.test_supported_languages_is_python_only  # noqa: E501
 def supported_languages() -> frozenset[str]:
     """Every language with a registered `move-module` adapter today --
     exposed so a caller (a `--help` string, T-2996's matrix) can report

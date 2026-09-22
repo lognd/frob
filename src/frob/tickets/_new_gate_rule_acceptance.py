@@ -198,11 +198,6 @@ def _extract_known_rules(text: str) -> frozenset[str] | None:
 
 
 # frob:doc docs/modules/gates.md#new-gate-rule-acceptance-policy-t-0756
-# frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_detects_freshly_added_rule_id  # noqa: E501
-# frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_no_new_rules_is_empty  # noqa: E501
-# frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_unresolvable_base_ref_degrades_to_none  # noqa: E501
-# frob:tests tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution.test_resolves_when_literal_lives_in_a_different_file  # noqa: E501
-# frob:tests tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution.test_raises_when_literal_missing_from_every_candidate  # noqa: E501
 def new_gate_rule_ids(root: Path, base_ref: str = "main") -> tuple[str, ...] | None:
     """Rule ids present in the CURRENT working tree's `_KNOWN_GATE_RULES`
     (dynamically located among `src/frob/gates/*.py` under `root`,
@@ -273,9 +268,6 @@ def _is_fixture_acceptance(criterion) -> bool:  # noqa: ANN001
 
 
 # frob:doc docs/modules/gates.md#new-gate-rule-acceptance-policy-t-0756
-# frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestMissingAcceptanceForNewRules.test_flags_when_no_fixture_criterion_bound  # noqa: E501
-# frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestMissingAcceptanceForNewRules.test_clear_when_a_bound_fixture_criterion_exists  # noqa: E501
-# frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestMissingAcceptanceForNewRules.test_empty_new_rule_ids_is_always_clear  # noqa: E501
 def missing_acceptance_for_new_rules(
     ticket: Ticket, new_rule_ids: tuple[str, ...]
 ) -> tuple[str, ...]:
@@ -296,11 +288,8 @@ def missing_acceptance_for_new_rules(
 
 # frob:ticket T-1956
 # frob:doc docs/modules/gates.md#new-gate-rule-acceptance-policy-t-0756
-# frob:tests \
 # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_empty_when_nothing_unregistered_in_scope  # noqa: E501
-# frob:tests \
 # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_reports_an_unregistered_id_whose_file_is_in_scope  # noqa: E501
-# frob:tests \
 # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_excludes_an_unregistered_id_outside_scope  # noqa: E501
 def unregistered_rule_ids_in_scope(root: Path, ticket: Ticket) -> tuple[str, ...]:
     """T-1937/T-1956: the soundness hole T-1937's audit found, made

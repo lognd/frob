@@ -107,7 +107,6 @@ def _old_and_dest_rel(
 
 
 # frob:doc docs/commands/refactor.md#scan_pii_allowlist_carrier
-# frob:tests \
 # tests/test_refactor.py::TestRepointer.test_pii_allowlist_entry_rekeyed_on_move
 def scan_pii_allowlist_carrier(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
@@ -154,7 +153,6 @@ def scan_pii_allowlist_carrier(
 
 
 # frob:doc docs/commands/refactor.md#scan_registry_citations
-# frob:tests tests/test_refactor.py::TestRepointer.test_registry_cross_ref_rewritten
 def scan_registry_citations(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:
@@ -213,11 +211,8 @@ def _pytest_node_id(rel_path: str, qualname: str) -> str | None:
 
 
 # frob:ticket T-1854
-# frob:tests \
 # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_active
-# frob:tests \
 # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_archived
-# frob:tests \
 # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_legacy_monofile_is_none  # noqa: E501
 def _ticket_id_from_ledger_path(ledger_path: str) -> str | None:
     """T-1854: the ticket id a per-ticket ledger file path names --
@@ -269,7 +264,6 @@ def _per_ticket_ledger_files(repo_root: Path) -> list[Path]:
 
 
 # frob:ticket T-1854
-# frob:tests \
 # tests/test_refactor.py::TestRepointer.test_evidence_citation_targets_matches_scan_inputs  # noqa: E501
 def _evidence_citation_targets(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
@@ -292,10 +286,7 @@ def _evidence_citation_targets(
 
 
 # frob:doc docs/commands/refactor.md#scan_evidence_citations
-# frob:tests tests/test_refactor.py::TestRepointer.test_ticket_evidence_symref_rewritten
-# frob:tests \
 # tests/test_refactor.py::TestRepointer.test_per_ticket_ledger_file_evidence_rewritten
-# frob:tests \
 # tests/test_refactor.py::TestRepointer.test_archived_per_ticket_ledger_file_evidence_r\
 # ewritten
 def scan_evidence_citations(

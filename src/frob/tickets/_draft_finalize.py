@@ -46,9 +46,6 @@ _log = get_logger("frob.tickets")
 
 # frob:ticket T-2199
 # frob:ticket T-2254
-# frob:tests tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords.test_attachment_path_follows_the_rename  # noqa: E501
-# frob:tests tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords.test_sha256_is_reverified_at_the_new_location  # noqa: E501
-# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_dry_run_reports_without_writing  # noqa: E501
 def _relocate_attachment_records(
     root: Path, old_id: str, new_id: str, *, dry_run: bool = False
 ) -> Result[None, TicketError]:
@@ -151,7 +148,6 @@ def _relocate_one_attachment(
 
 
 # frob:doc docs/modules/tickets-data-storage.md#data-models
-# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
 class AttachmentBackfillReport(BaseModel):
     """Outcome of `backfill_stale_draft_attachment_paths`: which
     `<ticket_id>:<draft_id>` pairs got their attachment records relocated,
@@ -168,10 +164,6 @@ class AttachmentBackfillReport(BaseModel):
 # frob:ticket T-2226
 # frob:ticket T-2254
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
-# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_leaves_a_correctly_recorded_attachment_untouched  # noqa: E501
-# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_reports_unresolvable_rather_than_guessing  # noqa: E501
-# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_dry_run_reports_without_writing  # noqa: E501
 def backfill_stale_draft_attachment_paths(
     root: Path,
     *,
@@ -284,8 +276,6 @@ def _backfill_one_ticket(
 # frob:ticket T-1090
 # frob:ticket T-1669
 # frob:doc docs/modules/tickets-lifecycle.md#provisional-ids
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace.test_two_concurrent_finalize_draft_calls_get_distinct_ids  # noqa: E501
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace.test_promote_and_land_finalize_never_allocate_the_same_id  # noqa: E501
 # frob:waive AFFECT001 reason="T-1669 adds an internal lock (allocator_lock) around \
 # this function's existing critical section -- the public contract \
 # docs/modules/tickets-lifecycle.md#provisional-ids and #public-api describe (assign a \
@@ -557,8 +547,6 @@ def _commit_and_warn_promote(
 # frob:ticket T-1179
 # frob:ticket T-1669
 # frob:doc docs/modules/tickets-lifecycle.md#provisional-ids
-# frob:tests tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling.test_id_ceiling_reads_current_main_not_stale_worktree_view  # noqa: E501
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace.test_promote_and_land_finalize_never_allocate_the_same_id  # noqa: E501
 # frob:waive AFFECT001 reason="T-1669 adds allocator_lock around this function's \
 # existing critical section -- the public contract \
 # docs/modules/tickets-lifecycle.md#provisional-ids describes (finalize a draft's id \

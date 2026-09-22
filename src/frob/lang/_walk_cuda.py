@@ -79,13 +79,7 @@ def _cuda_visibility(node: Node) -> bool | None:
 
 
 # frob:ticket T-1602
-# frob:tests tests/test_lang.py::TestCuda.test_global_kernel_is_public
-# frob:tests tests/test_lang.py::TestCuda.test_device_only_function_is_not_public
-# frob:tests tests/test_lang.py::TestCuda.test_host_device_function_defers_to_cpp_rule
-# frob:tests tests/test_lang.py::TestCuda.test_static_global_kernel_is_still_public
-# frob:tests \
 # tests/test_lang.py::TestCuda.test_plain_host_function_follows_cpp_static_rule
-# frob:tests tests/test_lang.py::TestCuda.test_class_method_with_device_qualifier
 def _walk_cuda(root: Node) -> tuple[RawSymbol, ...]:
     """Every CUDA symbol -- delegates entirely to `_walk_c_family` (module
     docstring's dialect-flag decision), layering only the kernel-qualifier

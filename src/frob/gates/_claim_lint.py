@@ -176,10 +176,6 @@ def _claim_violations_for_file(f: Path, root: Path) -> tuple[list[Violation], bo
 
 # frob:ticket T-4116
 # frob:doc docs/modules/gates.md#claim001-t-4116
-# frob:tests tests/gates_suite/test_claim_lint.py::test_claim001_fires_on_unbound_never_claim  # noqa: E501
-# frob:tests tests/gates_suite/test_claim_lint.py::test_claim001_quiet_when_invariant_directive_present  # noqa: E501
-# frob:tests tests/gates_suite/test_claim_lint.py::test_claim001_quiet_on_ordinary_prose_regardless_of_invariant_coverage  # noqa: E501
-# frob:tests tests/gates_suite/test_claim_lint.py::test_claim001_honors_frob_waive_escape_hatch  # noqa: E501
 def claim_lint_gate(root: Path) -> list[Violation]:
     """CLAIM001: flag every function/method/class docstring using
     never/always/idempotent-shaped language with no `frob:invariant`

@@ -6,8 +6,6 @@ absolute finding count does not read as "no progress" on its own."""
 from __future__ import annotations
 
 
-# frob:tests tests/test_status.py::TestAddStatusParser.test_registers_status_subcommand_with_expected_flags kind="unit"  # noqa: E501
-# frob:tests tests/test_status.py::TestAddStatusParser.test_bare_status_has_no_op_defaults kind="unit"  # noqa: E501
 # frob:ticket T-2911
 # frob:ticket T-2950
 def _add_status_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersAction

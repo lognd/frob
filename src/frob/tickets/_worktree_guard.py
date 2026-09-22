@@ -71,9 +71,6 @@ PYTEST_TESTMON_PACKAGE = "pytest-testmon"
 
 
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
-# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_no_env_var_is_unrestricted  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_matching_worktree_passes  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_mismatched_worktree_refuses  # noqa: E501
 def enforce_worktree_lease(root: Path) -> Result[None, TicketError]:
     """`Err(WorktreeLeaseViolation)` if the `FROB_WORKTREE` env var is set
     AND `root`'s actual git top-level (`git rev-parse --show-toplevel`,
@@ -122,9 +119,6 @@ def enforce_worktree_lease(root: Path) -> Result[None, TicketError]:
 
 # frob:ticket T-3379
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
-# frob:tests tests/unit/verify/test_worker.py::TestUnleasedRootEnv.test_filing_call_sees_no_worktree_lease_env kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestUnleasedRootEnv.test_ambient_lease_env_is_restored_after_filing kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestUnleasedRootEnv.test_no_ambient_lease_stays_unset_after_filing kind="unit"  # noqa: E501
 # frob:waive SEC110 reason="FROB_WORKTREE/FROB_AGENT are worktree-lease path markers, never secrets -- same posture as this module's other FROB_WORKTREE_ENV reads above"  # noqa: E501
 @contextmanager
 def unleased_root_env() -> Iterator[None]:
@@ -206,12 +200,8 @@ def _bounded_xdist_workers(root: Path) -> int | None:
 
 
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
-# frob:tests tests/test_worktree_guard.py::TestAgentEnvExports.test_resolves_worktree_root  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAgentEnvExports.test_non_repo_root_errs  # noqa: E501
-# frob:tests \
 # tests/test_worktree_guard.py::TestAgentEnvExports.test_fleet_context_bounds_xdist_wor\
 # kers
-# frob:tests \
 # tests/test_worktree_guard.py::TestAgentEnvExports.test_no_fleet_context_omits_xdist_b\
 # ound
 def agent_env_exports(root: Path) -> Result[dict[str, str], GitError]:
@@ -252,9 +242,6 @@ def agent_env_exports(root: Path) -> Result[dict[str, str], GitError]:
 
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:ticket T-3094
-# frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_mutates_current_process_env_under_fleet_context  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_must_stay_quiet_no_fleet_context_leaves_env_unset  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_child_subprocess_inherits_the_bound  # noqa: E501
 def apply_agent_env(root: Path) -> Result[dict[str, str], GitError]:
     """`agent_env_exports(root)`, ALSO applied to this process's own
     `os.environ` (T-3094): the delivery-gap fix for the T-2221 fleet-aware
@@ -299,8 +286,6 @@ def apply_agent_env(root: Path) -> Result[dict[str, str], GitError]:
 
 
 # frob:ticket T-3316
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
 def _xdist_plugin_present() -> bool:
     """Whether the `pytest-xdist` distribution resolves via
     `importlib.metadata` in the CURRENT interpreter (T-3316) -- the real
@@ -326,9 +311,6 @@ _XDIST_ADDOPTS_FLAGS = ("-n", "--numprocesses", "--dist", "--tx")
 
 
 # frob:ticket T-3722
-# frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_true_when_dash_n_present  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_false_when_addopts_has_no_xdist_token  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_false_when_pyproject_unreadable  # noqa: E501
 def _addopts_sets_xdist(root: Path) -> bool:
     """Whether `root`'s OWN `pyproject.toml` `[tool.pytest.ini_options].
     addopts` actually carries an xdist worker-count/distribution-mode
@@ -367,9 +349,6 @@ def _addopts_sets_xdist(root: Path) -> bool:
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:ticket T-3316
 # frob:ticket T-3722
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_stay_quiet_when_addopts_has_no_xdist_token  # noqa: E501
 def warn_if_xdist_plugin_missing(root: Path) -> None:
     """LOUD check for T-3316: `pytest-xdist`'s ABSENCE, a condition
     `warn_if_xdist_bound_missing` (T-3094) never covered -- that function
@@ -414,8 +393,6 @@ def warn_if_xdist_plugin_missing(root: Path) -> None:
 
 
 # frob:ticket T-3401
-# frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
 def _testmon_plugin_present() -> bool:
     """Whether the `pytest-testmon` distribution resolves via
     `importlib.metadata` in the CURRENT interpreter (T-3401) -- the real
@@ -432,8 +409,6 @@ def _testmon_plugin_present() -> bool:
 
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:ticket T-3401
-# frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
 def warn_if_testmon_plugin_missing(root: Path) -> None:
     """LOUD check for T-3401, `warn_if_xdist_plugin_missing`'s pattern
     applied to `pytest-testmon` (T-3316's own "detect the PLUGIN'S
@@ -476,10 +451,6 @@ def warn_if_testmon_plugin_missing(root: Path) -> None:
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:ticket T-3094
 # frob:ticket T-3316
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_fire_fleet_context_with_bound_missing_logs_error  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_stay_quiet_bound_present_no_log  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_stay_quiet_no_fleet_context_no_log  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_also_warns_on_plugin_absence_even_without_fleet_context  # noqa: E501
 def warn_if_xdist_bound_missing(root: Path) -> None:
     """LOUD half of the T-3094 fix: logs ERROR when `root` has a fleet
     context (`_bounded_xdist_workers` returns non-`None`) but this

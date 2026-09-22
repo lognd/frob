@@ -213,7 +213,6 @@ def _apply_fallback_waivers(model: KernelModel, violations: list[FallbackViolati
 # frob:ticket T-0643
 # frob:enforces CHK-GATE-REL240
 # frob:enforces CHK-GATE-REL241
-# frob:tests tests/unit/strata/test_fallback.py::TestMissingFallback.test_critical_node_without_fallback_fires  # noqa: E501
 def check_fallback_obligations(
     model: KernelModel, root: Path
 ) -> Result[FallbackReport, StrataError]:

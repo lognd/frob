@@ -141,11 +141,6 @@ def _bash_const_symbol(node: Node, doc: str) -> RawSymbol | None:
 
 
 # frob:ticket T-1604
-# frob:tests tests/test_lang.py::TestBash.test_walks_top_level_function
-# frob:tests tests/test_lang.py::TestBash.test_private_symbol_is_not_public
-# frob:tests tests/test_lang.py::TestBash.test_top_level_variable_assignment
-# frob:tests tests/test_lang.py::TestBash.test_nested_assignment_is_not_a_symbol
-# frob:tests tests/test_lang.py::TestBash.test_leading_comment_binds_as_doc_text
 def _walk_bash(root: Node) -> tuple[RawSymbol, ...]:
     """Every bash symbol: top-level function definitions and top-level
     variable assignments (bare or `export`/`readonly`/`declare`/`local`-

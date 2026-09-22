@@ -47,9 +47,6 @@ class _ResourceState:
 
 
 # frob:doc docs/modules/serve.md#resource-leasessemaphores-t-1097
-# frob:tests tests/test_serve_leases.py::TestResourceLeaseManager.test_second_acquire_blocks_until_first_releases kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_leases.py::TestResourceLeaseManager.test_release_holder_frees_every_resource_that_holder_held kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_leases.py::TestResourceLeaseManager.test_distinct_resources_do_not_contend kind="unit"  # noqa: E501
 class ResourceLeaseManager:
     """Daemon-owned arbitrator for named resource leases (T-1097): each
     named resource has a fixed capacity (default `DEFAULT_LEASE_CAPACITY`
@@ -162,7 +159,6 @@ class ResourceLeaseManager:
             return True
 
     # frob:doc docs/modules/serve.md#resource-leasessemaphores-t-1097
-    # frob:tests tests/test_serve_leases.py::TestConnectionCrashReleasesLease.test_closing_connection_without_explicit_release_frees_the_lease kind="unit"  # noqa: E501
     def release_holder(self, holder_id: str) -> list[str]:
         """Free EVERY resource `holder_id` currently holds in one call --
         the connection-teardown primitive (T-1097 acceptance [1]): called

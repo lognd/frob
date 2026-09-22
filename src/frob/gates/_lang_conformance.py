@@ -641,8 +641,6 @@ def _verify_known_gap_ticket(detail: str) -> str | None:
 
 # frob:doc docs/modules/lang.md#language-support-contract
 # frob:ticket T-0405
-# frob:tests tests/test_lang_conformance_gate.py::TestLangConformanceGate.test_real_registry_is_clean  # noqa: E501
-# frob:tests tests/test_lang_conformance_gate.py::TestLangConformanceGate.test_missing_facet_becomes_error_violation  # noqa: E501
 # frob:enforces CHK-GATE-LANG001
 def lang_conformance_gate() -> tuple[Violation, ...]:
     """LANG001 for every unaccounted-for `(language, facet)` cell in the
@@ -795,11 +793,6 @@ def _lang003_unsound_gaps(repo_root: Path) -> tuple[Violation, ...]:
 
 # frob:doc docs/modules/lang.md#per-project-conformance-lang002lang003-t-0406
 # frob:ticket T-0406
-# frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_unregistered_language_file_fails  # noqa: E501
-# frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_all_conformant_project_passes  # noqa: E501
-# frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_present_known_gap_with_open_ticket_warns  # noqa: E501
-# frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_present_known_gap_with_bad_ticket_ref_errors  # noqa: E501
-# frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_adopter_repo_with_no_frob_internal_tickets_does_not_error  # noqa: E501
 def project_lang_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
     """LANG002 (unregistered-language file present) + LANG003 (a
     registered-but-`KNOWN_GAP` facet whose language is actually present)
@@ -832,8 +825,6 @@ def project_lang_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
 
 # frob:doc docs/modules/lang.md#behavioral-conformance-lang004-t-2365
 # frob:ticket T-2365
-# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_real_registry_is_behaviorally_clean  # noqa: E501
-# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_wrong_implemented_claim_fails  # noqa: E501
 # frob:enforces CHK-GATE-LANG004
 # frob:waive AFFECT001 reason="T-2359 batch 3: ruff-format-only reformat moved   this \
 # function's digest with no semantic change; \

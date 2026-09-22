@@ -126,9 +126,7 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0404
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestDsl001.test_malformed_frob_doc_directive_flagged
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestDsl001.test_waive_reason_and_tests_kind_not_double_flagged  # noqa: E501
 # frob:enforces CHK-GATE-DSL001
 def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
@@ -192,9 +190,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # perf`) are NOT covered by that scan (disclosed residual, see
 # `_rule_id_scan`'s module docstring) and stay purely hand-maintained here
 # as before this ticket.
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
-# frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete  # noqa: E501
 # frob-zone-start known-gate-rules T-1002
 # frob:ticket T-1520
@@ -1443,9 +1439,7 @@ _KNOWN_GATE_RULES = frozenset(
 
 # frob:ticket T-0499
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_returns_known_rule_id
-# frob:tests tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_is_frozenset
 def known_gate_rule_ids() -> frozenset[str]:
     """Return every rule id a gate can emit, for strata `caught_by`
     resolution to recognize rule-id-shaped references (e.g. THREAT006's
@@ -2056,19 +2050,12 @@ def _waive009_violation(
 # frob:ticket T-2606
 # frob:ticket T-3295
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_no_ticket_id_errors
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_resolvable_ticket_id_still_errors  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_unresolvable_ticket_id_errors  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_draft_ticket_id_still_errors  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_no_promise_phrase_untouched
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive009Wiring.test_unresolvable_promise_fires_through_run_gates  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive009Wiring.test_resolvable_promise_also_fires_through_run_gates  # noqa: E501
 def waive009_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """WAIVE009 (T-3295, correcting T-2606's original conclusion): a
@@ -2212,14 +2199,9 @@ def _waive010_violation(
 # frob:enforces CHK-GATE-WAIVE010
 # frob:ticket T-3062
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive010Violations.test_bare_until_wording_warns
-# frob:tests tests/test_waive_gate.py::TestWaive010Violations.test_pending_wording_warns
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive010Violations.test_promise_phrase_with_resolved_ticket_still_warns  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive010Violations.test_provenance_reasoning_does_not_warn  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive010Violations.test_plain_permanent_reason_does_not_warn  # noqa: E501
 def waive010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """WAIVE010: a `frob:waive` reason that reads as deferred/temporary
@@ -2256,8 +2238,6 @@ def waive010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-3228
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:enforces CHK-GATE-WAIVE011
-# frob:tests tests/test_waive_gate.py::TestWaive011ProducerAbandoned.test_abandoned_producer_fires_error kind="unit"  # noqa: E501
-# frob:tests tests/test_waive_gate.py::TestWaive011ProducerAbandoned.test_pinned_producer_stays_quiet kind="unit"  # noqa: E501
 def waive011_violations(root: Path) -> tuple[Violation, ...]:
     """WAIVE011 (T-3228, error): `frob.gates._lock_producer.producer_
     status` for the `ratchet` lock reads `ABANDONED` -- unpinned, and
@@ -2317,23 +2297,14 @@ _UNTIL_FILE_ABSENT_RE = re.compile(r"^file-absent:(.+)$")
 _UNTIL_SYMBOL_ABSENT_RE = re.compile(r"^symbol-absent:(.+?)::(.+)$")
 
 
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_ticket_closed_predicate_fires_once_ticket_is_done  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_ticket_closed_predicate_stays_quiet_while_open  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_ticket_closed_predicate_unresolvable_id_is_none  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_file_absent_predicate_fires_once_file_exists  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_file_absent_predicate_stays_quiet_while_absent  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_symbol_absent_predicate_fires_once_symbol_reappears  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_symbol_absent_predicate_stays_quiet_while_symbol_missing  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_plain_date_until_is_not_this_vocabulary  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_freeform_prose_is_not_a_predicate  # noqa: E501
 def _until_premise_expired(
     until: str,
@@ -2409,9 +2380,7 @@ def _waive012_violation(
 # frob:enforces CHK-GATE-WAIVE012
 # frob:ticket T-4214
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_gate_fires_error_once_named_file_reappears  # noqa: E501
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive012PremiseExpiry.test_gate_stays_quiet_while_named_file_still_absent  # noqa: E501
 def waive012_violations(
     snapshot: GraphSnapshot, *, root: Path, queue: TicketQueue | None
@@ -2486,9 +2455,7 @@ class RuleCensusEntry(BaseModel):
 
 
 # frob:ticket T-1764
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive004DeadCount.test_counts_per_rule_from_message
-# frob:tests \
 # tests/test_waive_gate.py::TestWaive004DeadCount.test_empty_input_yields_empty_dict
 def _waive004_dead_count_by_rule(
     waive004_violations: tuple[Violation, ...],
@@ -2519,9 +2486,6 @@ def _waive004_dead_count_by_rule(
 
 # frob:ticket T-1764
 # frob:doc docs/modules/app.md#frob-check---census-t-1764
-# frob:tests tests/test_waive_gate.py::TestRuleCensus.test_corpus_wide_rule_gets_a_rate
-# frob:tests tests/test_waive_gate.py::TestRuleCensus.test_diff_scoped_rule_gets_no_rate
-# frob:tests \
 # tests/test_waive_gate.py::TestRuleCensus.test_dead_waiver_count_is_folded_in
 def census_gate_rules(
     kept: tuple[Violation, ...], waived: tuple[Violation, ...]
@@ -2717,7 +2681,6 @@ _PACKAGE_SCOPED_RULES = frozenset({"TEST003", "TEST004", "TEST007"})
 
 
 # frob:invariant INV-006
-# frob:tests \
 # tests/test_arch_gate.py::TestArchGateWaivers.test_ceiling_refires_when_grown_past_it
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
@@ -2781,7 +2744,6 @@ _LARGE_DISTANCE = 1 << 30
 
 
 # frob:ticket T-4392
-# frob:tests tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_path_still_matches_posix_violation  # noqa: E501
 def _posix_path(path: str) -> str:
     """Normalize `path` to forward-slash form (T-4392): a waiver's `src`
     file component can be built from an OS-native path on the platform
@@ -2869,9 +2831,7 @@ def _match_waiver_by_symref(
 
 
 # frob:ticket T-4392
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_path_still_matches_posix_violation  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestMatchWaiverPathShape.test_backslash_waiver_still_matches_package_prefix  # noqa: E501
 def _match_waiver_file_scoped(
     violation: Violation, candidates: Sequence[Edge], *, package_scoped: bool
@@ -3031,7 +2991,6 @@ def _severity_overrides(root: Path | str) -> dict[str, Severity]:
 
 
 # frob:ticket T-4386
-# frob:tests \
 # tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalates_unresolved_severity kind="unit"  # noqa: E501
 def _apply_severity_overrides(
     violations: tuple[Violation, ...], root: Path | str

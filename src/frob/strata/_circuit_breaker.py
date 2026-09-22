@@ -152,7 +152,6 @@ class CircuitBreakerReport(BaseModel):
 
 # frob:doc docs/strata/reliability.md#rel23x-circuit-breaker--bulkhead-obligation-t-0642
 # frob:ticket T-0642
-# frob:tests \
 # tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_external_dependency
 def is_external_dependency(attrs: tuple[str, ...]) -> bool:
     """Whether a node's `attrs` carries the bare `external` marker --
@@ -163,7 +162,6 @@ def is_external_dependency(attrs: tuple[str, ...]) -> bool:
 
 # frob:doc docs/strata/reliability.md#rel23x-circuit-breaker--bulkhead-obligation-t-0642
 # frob:ticket T-0642
-# frob:tests \
 # tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_critical_dependency
 def is_critical_dependency(attrs: tuple[str, ...]) -> bool:
     """Whether a node's `attrs` carries the bare `critical` marker --
@@ -260,7 +258,6 @@ def _apply_circuit_breaker_waivers(
 # frob:ticket T-0642
 # frob:enforces CHK-GATE-REL230
 # frob:enforces CHK-GATE-REL231
-# frob:tests tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_external_node_without_circuit_breaker_fires  # noqa: E501
 def check_circuit_breaker_obligations(
     model: KernelModel, root: Path
 ) -> Result[CircuitBreakerReport, StrataError]:

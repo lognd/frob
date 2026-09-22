@@ -195,25 +195,18 @@ def _kotlin_content_key(root: Path, report_dirs: list[Path]) -> str:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/test_testing.py::TestCollectKotlinTests.test_collect_kotlin_tests_parses_and_ca\
 # ches kind="unit"
-# frob:tests \
 # tests/test_testing.py::TestCollectKotlinTests.test_collect_kotlin_tests_groovy_plugin\
 # _form kind="unit"
-# frob:tests \
 # tests/test_testing.py::TestCollectKotlinTests.test_collect_kotlin_tests_no_projects_i\
 # s_ok_empty kind="unit"
-# frob:tests \
 # tests/test_testing.py::TestCollectKotlinTests.test_collect_kotlin_tests_unreported_pr\
 # oject_is_ok_empty kind="unit"
-# frob:tests \
 # tests/test_testing.py::TestCollectKotlinTests.test_collect_kotlin_tests_falls_back_wh\
 # en_source_unresolvable kind="unit"
-# frob:tests \
 # tests/test_testing.py::TestCollectKotlinTests.test_collect_kotlin_tests_skips_malform\
 # ed_report kind="unit"
-# frob:tests \
 # tests/test_testing.py::TestCollectKotlinTests.test_collect_kotlin_tests_non_kotlin_gr\
 # adle_project_is_ok_empty kind="unit"
 def collect_kotlin_tests(root: Path) -> Result[CollectedTests, TestingError]:

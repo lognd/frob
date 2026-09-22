@@ -171,10 +171,8 @@ def _native_records(root: Path) -> list[dict] | None:
 
 # frob:enforces CHK-GATE-NATIVESCHEMA001
 # frob:doc docs/modules/gates.md#nativeschema001-t-2390-epic-child-t-2429
-# frob:tests \
 # tests/unit/test_native_table_schema.py::TestNativeSchemaGate.test_must_now_fire_repor\
 # ts_the_undeclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_native_table_schema.py::TestNativeSchemaGate.test_must_still_pass_thi\
 # s_repos_own_frob_toml kind="unit"
 # frob:ticket T-2429

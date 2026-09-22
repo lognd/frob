@@ -187,7 +187,6 @@ _log = get_logger(__name__)
 # frob:ticket T-0972
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'never raises' contract to cover a surprising span shape, not just the OSError read failure -- no observable behavior change, so docs/modules/vet.md#public-api needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
-# frob:tests \
 # tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel.test_non_execut\
 # able_line_numbers_surprising_span_shape_is_empty kind="unit"  # noqa: E501
 def non_executable_line_numbers(path: Path) -> frozenset[int]:
@@ -238,7 +237,6 @@ def non_executable_line_numbers(path: Path) -> frozenset[int]:
 # frob:ticket T-0158
 # frob:ticket T-0565
 # frob:waive ARCH001 reason="a linear read/match/extend orchestration pipeline over already-extracted helpers (raw-text match, T-0328 binding match, T-0244 embedded match, T-0662/T-0663/T-0664/T-4536 per-language binding branches); each step is a single named call, splitting further would multiply indirection without shrinking real complexity" ceiling="80"  # noqa: E501
-# frob:tests tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_scan_file_operations_names_registry_entry  # noqa: E501
 def _scan_file_operations(path: Path) -> tuple[_DangerousOperation, ...]:
     """The specific `DANGEROUS_OPERATIONS` registry entries whose needle(s)
     matched in `path`'s raw text outside a comment span (T-0209) -- the

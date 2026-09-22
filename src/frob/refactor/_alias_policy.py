@@ -56,7 +56,6 @@ def _rename_def_identifier(def_line: str, old_leaf: str, new_leaf: str) -> str:
 
 
 # frob:doc docs/commands/refactor.md#resolve_rename_dest_collision
-# frob:tests tests/test_refactor.py::TestAliasPolicy.test_rename_dest_renames_existing_symbol_and_its_callers  # noqa: E501
 def resolve_rename_dest_collision(
     repo_root: Path, existing: ResolvedSymbol, requested_leaf: str
 ) -> tuple[RewriteOp, list[RewriteOp], AliasRecord]:

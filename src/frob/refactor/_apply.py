@@ -23,7 +23,6 @@ __all__ = ["apply_ops", "apply_plan", "build_move_ops"]
 
 
 # frob:doc docs/commands/refactor.md#build_move_ops
-# frob:tests tests/test_refactor.py::TestBuildMoveOps.test_build_move_ops_deletes_and_appends  # noqa: E501
 def build_move_ops(
     repo_root: Path,
     plan_source_file: str,
@@ -142,8 +141,6 @@ def _apply_ops_to_file(file_path: Path, ops: list[RewriteOp]) -> None:
 
 
 # frob:doc docs/commands/refactor.md#apply_ops
-# frob:tests tests/test_refactor.py::TestApplyPlan.test_apply_then_rollback_restores_tree  # noqa: E501
-# frob:tests tests/test_refactor.py::TestApplyPlan.test_overlapping_ops_refuse_before_write  # noqa: E501
 def apply_ops(
     ops: tuple[RewriteOp, ...] | list[RewriteOp],
 ) -> Result[None, RefactorError]:
@@ -198,7 +195,6 @@ def apply_ops(
 
 
 # frob:doc docs/commands/refactor.md#apply_plan
-# frob:tests tests/test_refactor.py::TestApplyPlan.test_apply_then_rollback_restores_tree  # noqa: E501
 def apply_plan(repo_root: Path, plan: RefactorPlan) -> Result[None, RefactorError]:
     """Splice every `RewriteOp` in `plan.all_ops` into its target file --
     thin wrapper around `apply_ops` (T-2990) kept for the symbol

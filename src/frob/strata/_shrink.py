@@ -93,7 +93,6 @@ _MAY_LINE_RE = re.compile(
 
 
 # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
-# frob:tests tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants.test_drops_declared_but_never_observed_capability kind="unit"  # noqa: E501
 @dataclass(frozen=True)
 class ShrinkDrop:
     """One `may "<kind>";` grant line removed from `node` because
@@ -106,7 +105,6 @@ class ShrinkDrop:
 
 
 # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
-# frob:tests tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants.test_partially_stale_kind_is_left_untouched kind="unit"  # noqa: E501
 @dataclass(frozen=True)
 class PartialStaleSkip:
     """One (node, kind) `shrink_report` deliberately left UNTOUCHED: some
@@ -124,7 +122,6 @@ class PartialStaleSkip:
 
 
 # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
-# frob:tests tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants.test_apply_shrink_writes_only_changed_files kind="unit"  # noqa: E501
 @dataclass(frozen=True)
 class FileShrinkResult:
     """One `.strata` file's shrink outcome: every dropped grant in it
@@ -137,7 +134,6 @@ class FileShrinkResult:
     drops: tuple[ShrinkDrop, ...]
 
     # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
-    # frob:tests tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants.test_apply_shrink_writes_only_changed_files kind="unit"  # noqa: E501
     @property
     def changed(self) -> bool:
         """Whether this file's text actually differs from what was read."""
@@ -145,7 +141,6 @@ class FileShrinkResult:
 
 
 # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
-# frob:tests tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants.test_no_drift_when_everything_observed kind="unit"  # noqa: E501
 @dataclass(frozen=True)
 class ShrinkReport:
     """Every loaded `.strata` file's shrink outcome, in load order, plus
@@ -156,7 +151,6 @@ class ShrinkReport:
     skipped: tuple[PartialStaleSkip, ...] = ()
 
     # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
-    # frob:tests tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants.test_no_drift_when_everything_observed kind="unit"  # noqa: E501
     @property
     def has_drift(self) -> bool:
         """True if ANY file in this report needs a rewrite."""
@@ -313,7 +307,6 @@ def _shrink_scan_design_root(
 
 
 # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
-# frob:tests tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants.test_drops_declared_but_never_observed_capability kind="unit"  # noqa: E501
 def shrink_report(
     root: Path, design_dir: str = DEFAULT_DESIGN_DIR
 ) -> Result[ShrinkReport, StrataError]:
@@ -352,7 +345,6 @@ def shrink_report(
 
 
 # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
-# frob:tests tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants.test_apply_shrink_writes_only_changed_files kind="unit"  # noqa: E501
 def apply_shrink(root: Path, report: ShrinkReport) -> tuple[str, ...]:
     """Write every `report.files` entry whose text actually changed back
     to disk; returns the relative paths written, in report order. Mirrors

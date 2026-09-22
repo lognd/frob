@@ -148,10 +148,6 @@ def _process_start_age_s(
 
 
 # frob:ticket T-2443
-# frob:tests tests/unit/test_process_reap.py::TestIsOrphanedForkserver.test_matches_forkserver_reparented_to_init  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestIsOrphanedForkserver.test_forkserver_with_live_parent_is_not_orphaned  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestIsOrphanedForkserver.test_non_forkserver_process_is_never_matched  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestIsOrphanedForkserver.test_missing_entry_is_false_not_raised  # noqa: E501
 def _is_orphaned_forkserver(pid: int, proc: Path) -> bool:
     """`True` when `<proc>/<pid>/cmdline` matches `_FORKSERVER_CMDLINE_RE`
     AND `<proc>/<pid>/stat`'s own ppid field is `1` (reparented to init --
@@ -255,9 +251,6 @@ _FORKSERVER_ANCESTRY_MAX_HOPS = 64
 
 
 # frob:ticket T-3072
-# frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck.test_direct_child_of_live_check_is_not_orphaned  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck.test_orphaned_forkserver_of_forkserver_is_orphaned  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck.test_deep_chain_under_a_live_check_is_not_orphaned  # noqa: E501
 def _forkserver_root_is_live_check(
     pid: int, ppid_map: dict[int, int], live_check_pids: set[int]
 ) -> bool:
@@ -291,12 +284,6 @@ def _forkserver_root_is_live_check(
 # frob:doc docs/modules/process.md#forkserver-reaping-t-2443
 # frob:ticket T-2443
 # frob:ticket T-3072
-# frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_terminates_old_orphaned_forkservers  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_leaves_young_orphaned_forkservers_alone  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_leaves_non_forkserver_processes_alone  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_missing_proc_returns_empty  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_forkserver_of_orphaned_forkserver_is_reaped  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_forkserver_under_a_live_check_is_never_reaped  # noqa: E501
 def reap_orphaned_forkservers(
     age_floor_s: float = DEFAULT_ORPHAN_AGE_FLOOR_S,
     proc: Path = Path("/proc"),
@@ -461,10 +448,6 @@ def _is_frob_check_process(pid: int, proc: Path, self_pid: int) -> bool:
 
 # frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473
 # frob:ticket T-2473
-# frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_counts_other_check_processes  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_excludes_self  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_ignores_non_check_processes  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_missing_proc_returns_none  # noqa: E501
 def count_running_checks(
     proc: Path = Path("/proc"), self_pid: int | None = None
 ) -> int | None:

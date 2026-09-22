@@ -217,7 +217,6 @@ class HostOwns(BaseModel):
     mode: str
 
     # frob:ticket T-0565
-    # frob:tests tests/unit/strata/test_host.py::TestHostOwnsModeValidation.test_valid_octal_mode_accepted  # noqa: E501
     @field_validator("mode")
     @classmethod
     def _validate_mode(cls, value: str) -> str:
@@ -253,7 +252,6 @@ class HostAcl(BaseModel):
     path: str
     rule: str
 
-    # frob:tests tests/unit/strata/test_host.py::TestHostAclRuleValidation.test_valid_rule_accepted  # noqa: E501
     @field_validator("rule")
     @classmethod
     def _validate_rule(cls, value: str) -> str:
@@ -330,7 +328,6 @@ class HostManifest(BaseModel):
     bin_path_args: str | None = None
 
     # frob:ticket T-0565
-    # frob:tests tests/unit/strata/test_host.py::TestHostManifestListensValidation.test_valid_port_accepted  # noqa: E501
     @field_validator("listens")
     @classmethod
     def _validate_listens(cls, value: tuple[int, ...]) -> tuple[int, ...]:
@@ -346,7 +343,6 @@ class HostManifest(BaseModel):
         return value
 
 
-# frob:tests tests/unit/strata/test_host.py::TestHostAttrs.test_desugars kind="unit"
 def _host_attrs(
     *,
     runs_as: str | None,
@@ -491,7 +487,6 @@ def _parse_host_attrs(node: Node) -> _ParsedHostAttrs:
 
 
 # frob:doc docs/strata/host.md#hostmanifest
-# frob:tests tests/unit/strata/test_host.py::TestHostManifest.test_reads kind="unit"
 # frob:raises ValueError
 def host_manifest_for(node: Node) -> HostManifest | None:
     """Read a `Node`'s std.host attrs back into a typed `HostManifest`.
@@ -569,7 +564,6 @@ def host_manifest_for(node: Node) -> HostManifest | None:
 
 # frob:ticket T-0861
 # frob:doc docs/strata/host.md#hostmanifest
-# frob:tests tests/unit/strata/test_host_isolation.py::TestLateralIsolation.test_skips_below_two_users  # noqa: E501
 def manifests_by_node(model: KernelModel) -> dict[str, HostManifest]:
     """Every node with a declared std.host manifest, keyed by node id --
     the shared per-node lookup HOST001/HOST002 (`_host_isolation.py`) and

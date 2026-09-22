@@ -198,10 +198,8 @@ def _test_runner_records(root: Path) -> list[dict] | None:
 
 # frob:enforces CHK-GATE-TESTRUNNERSCHEMA001
 # frob:doc docs/modules/gates.md#testrunnerschema001-t-2390-epic-child-t-2436
-# frob:tests \
 # tests/unit/test_test_table_schema.py::TestTestRunnerSchemaGate.test_must_now_fire_rep\
 # orts_the_undeclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_test_table_schema.py::TestTestRunnerSchemaGate.test_must_still_pass_t\
 # his_repos_own_frob_toml kind="unit"
 # frob:ticket T-2436

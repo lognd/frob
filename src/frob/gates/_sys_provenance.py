@@ -86,11 +86,8 @@ def _identifier_tags(node: Node) -> tuple[str, ...]:
 
 
 # frob:doc docs/strata/provenance-trust-identity.md#sys10x-consumer
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_undeclared_helper_fires_sys116  # noqa: E501
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_declared_helper_does_not_fire_sys116  # noqa: E501
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_non_identifier_category_is_out_of_sys116_scope  # noqa: E501
 def check_undeclared_provenance(model: KernelModel) -> tuple[Violation, ...]:
     """SYS116: every `identifier.*` `carries` tag on a node has exactly
@@ -126,9 +123,7 @@ def check_undeclared_provenance(model: KernelModel) -> tuple[Violation, ...]:
 
 
 # frob:doc docs/strata/provenance-trust-identity.md#sys10x-consumer
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_without_carries_fires_sys117  # noqa: E501
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_with_matching_carries_does_not_fire  # noqa: E501
 def check_trust_identity_without_carries(model: KernelModel) -> tuple[Violation, ...]:
     """SYS117: every `trust_identity:<tag>` attr on a node names a tag the
@@ -163,9 +158,7 @@ def check_trust_identity_without_carries(model: KernelModel) -> tuple[Violation,
 
 
 # frob:doc docs/strata/provenance-trust-identity.md#sys10x-consumer
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestEvaluateProvenance.test_evaluate_provenance_merges_both_rules  # noqa: E501
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestEvaluateProvenance.test_evaluate_provenance_clean_model_has_no_violations  # noqa: E501
 def evaluate_provenance(model: KernelModel) -> tuple[Violation, ...]:
     """SYS116 + SYS117 over `model`, in rule-then-node order -- the

@@ -54,7 +54,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/gate-registration.md#registryerror
-# frob:tests tests/unit/test_gate_registry.py::TestRegisterGate.test_duplicate_job_name_is_refused  # noqa: E501
 class RegistryError(ErrorSet):
     """Fallible outcomes of registering a gate job with the registry."""
 
@@ -64,7 +63,6 @@ class RegistryError(ErrorSet):
 
 
 # frob:doc docs/modules/gate-registration.md#gateregistration
-# frob:tests tests/unit/test_gate_registry.py::TestRegisterGate.test_register_returns_the_stored_registration  # noqa: E501
 class GateRegistration(BaseModel):
     """One detector's self-declaration: its job name, the rule ids it can
     emit, the `frob check --only <group>` stage groups it runs under, the
@@ -95,7 +93,6 @@ _REGISTRY = _Registry()
 
 
 # frob:doc docs/modules/gate-registration.md#register_gate
-# frob:tests tests/unit/test_gate_registry.py::TestRegisterGate.test_register_returns_the_stored_registration  # noqa: E501
 def register_gate(
     job: str,
     rule_ids: Iterable[str],
@@ -141,7 +138,6 @@ def register_gate(
 
 
 # frob:doc docs/modules/gate-registration.md#gate
-# frob:tests tests/unit/test_gate_registry.py::TestGateDecorator.test_decorator_registers_and_returns_function_unchanged  # noqa: E501
 def gate(
     *,
     job: str,
@@ -178,7 +174,6 @@ _LEGACY_JOB = "legacy"
 
 
 # frob:doc docs/modules/gate-registration.md#seed_legacy_bulk
-# frob:tests tests/unit/test_gate_registry.py::TestSeedLegacyBulk.test_seed_is_idempotent  # noqa: E501
 def seed_legacy_bulk(
     job_names: Iterable[str],
     rule_ids: Iterable[str],
@@ -215,7 +210,6 @@ def seed_legacy_bulk(
 
 
 # frob:doc docs/modules/gate-registration.md#reset_registry_for_tests
-# frob:tests tests/unit/test_gate_registry.py::TestRegisterGate.test_empty_rule_ids_is_refused  # noqa: E501
 def reset_registry_for_tests() -> None:
     """Test-only escape hatch: clears the process-wide registry so each
     test starts from an empty table instead of accumulating registrations
@@ -227,7 +221,6 @@ def reset_registry_for_tests() -> None:
 
 
 # frob:doc docs/modules/gate-registration.md#derive_job_names
-# frob:tests tests/unit/test_gate_registry.py::TestDerivedViewsMatchLegacyExactly.test_derived_job_names_equal_all_gates  # noqa: E501
 def derive_job_names() -> frozenset[str]:
     """The job-list DERIVED view: every registered job name, legacy bulk
     entry's `stage_groups` (which doubles as the legacy job-name set,
@@ -242,7 +235,6 @@ def derive_job_names() -> frozenset[str]:
 
 
 # frob:doc docs/modules/gate-registration.md#derive_known_rule_ids
-# frob:tests tests/unit/test_gate_registry.py::TestGateDecorator.test_decorator_registers_and_returns_function_unchanged  # noqa: E501
 def derive_known_rule_ids() -> frozenset[str]:
     """The rule-id-registry DERIVED view: every rule id claimed by any
     registered job, `_KNOWN_GATE_RULES`'s direct successor."""
@@ -250,7 +242,6 @@ def derive_known_rule_ids() -> frozenset[str]:
 
 
 # frob:doc docs/modules/gate-registration.md#checkcoverageentry
-# frob:tests tests/unit/test_gate_registry.py::TestAddingADetectorTouchesOneFile.test_adding_a_detector_touches_one_file  # noqa: E501
 @dataclass(frozen=True)
 class CheckCoverageEntry:
     """One `docs/design/registry/check-coverage.yaml` `gate_rule_entries`
@@ -263,7 +254,6 @@ class CheckCoverageEntry:
 
 
 # frob:doc docs/modules/gate-registration.md#derive_check_coverage_entries
-# frob:tests tests/unit/test_gate_registry.py::TestAddingADetectorTouchesOneFile.test_adding_a_detector_touches_one_file  # noqa: E501
 def derive_check_coverage_entries() -> tuple[CheckCoverageEntry, ...]:
     """The check-coverage.yaml DERIVED view: one `CHK-GATE-<rule>` entry
     per known rule id, `disposition="handled_by:<rule>"` -- matching the
@@ -280,7 +270,6 @@ def derive_check_coverage_entries() -> tuple[CheckCoverageEntry, ...]:
 
 
 # frob:doc docs/modules/gate-registration.md#derive_doc_rule_table
-# frob:tests tests/unit/test_gate_registry.py::TestAddingADetectorTouchesOneFile.test_adding_a_detector_touches_one_file  # noqa: E501
 def derive_doc_rule_table() -> tuple[str, ...]:
     """The `docs/modules/gate-registration.md` (and, once T-4647's
     wiring lands, `gates.md`) DERIVED view: every known rule id, sorted,
@@ -290,7 +279,6 @@ def derive_doc_rule_table() -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/gate-registration.md#find_unregistered_live_rule_ids
-# frob:tests tests/unit/test_gate_registry.py::TestUnregisteredLiveRuleIsReported.test_registered_ids_are_not_reported  # noqa: E501
 def find_unregistered_live_rule_ids(
     repo_root,
     scan_candidates,

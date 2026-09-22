@@ -427,7 +427,6 @@ def _env_overlay(overlay: Mapping[str, str]) -> Iterator[None]:
 
 
 # frob:ticket T-3133
-# frob:tests tests/test_testing.py::TestRunners.test_applies_fleet_xdist_bound_before_spawning  # noqa: E501
 def _run_one_runner(
     spec: RunnerSpec, items: tuple[str, ...], root: Path
 ) -> Result[RunnerOutcome, TestingError]:

@@ -83,7 +83,6 @@ def _under_pytest() -> bool:
 
 
 # frob:ticket T-3263
-# frob:tests tests/system/test_cli_check.py::TestGitlessTargetGateSeverity.test_render_lint_gate_warns_not_errors_on_gitless_root  # noqa: E501
 def _init() -> None:
     global _initialized
     if _initialized:

@@ -156,7 +156,6 @@ def _check_squash_conflicted(
 
 # frob:ticket T-1258
 # frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
-# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/design/ledger-v2.md's Merge story section \
 # (T-1136/T-1258) is a deliberate design doc walking through this exact private \
 # v2-mode scope-widening helper's own contract -- same T-0524/T-0529 per-function \
@@ -180,7 +179,6 @@ def _v2_effective_scope(ticket: Ticket) -> Ticket:
 
 # frob:ticket T-1258
 # frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
-# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory.test_same_ticket_conflict_surfaces_loudly_no_splice  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/design/ledger-v2.md's Merge story section \
 # (T-1136/T-1258, AC3's 'no splice_ledger-class resolution needed' contract) is a \
 # deliberate design doc walking through this exact private v2-mode conflict-check \
@@ -226,7 +224,6 @@ def _check_squash_conflicted_v2(
 
 # frob:ticket T-1258
 # frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
-# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/design/ledger-v2.md's Merge story section \
 # (T-1136/T-1258) is a deliberate design doc walking through this exact private \
 # v2-mode squash-and-splice entry point's own contract -- same T-0524/T-0529 \
@@ -273,7 +270,6 @@ def _squash_and_splice_ledger_v2(
 
 # frob:ticket T-0907
 # frob:ticket T-1036
-# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 def _squash_and_splice_ledger(
     root: Path,
     stage: Path,
@@ -533,7 +529,6 @@ def _tick005_land_regressions(
 
 # frob:ticket T-0463
 # frob:ticket T-0761
-# frob:tests tests/ticket_land_suite/test_land_core.py::TestLandCompleteness.test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty  # noqa: E501
 def _worktree_full_changeset(
     worktree: Path, main_branch_name: str
 ) -> Result[frozenset[str], LandError]:
@@ -723,8 +718,6 @@ def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
 
 # frob:ticket T-3543
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-land
-# frob:tests tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep.test_finds_the_squash_apply_commit_by_id_and_title_grep  # noqa: E501
-# frob:tests tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep.test_returns_none_when_no_matching_commit_exists  # noqa: E501
 def derive_land_commit_by_grep(
     root: Path, final_id: str, ref: str = "HEAD"
 ) -> str | None:
@@ -781,11 +774,6 @@ def derive_land_commit_by_grep(
 # frob:ticket T-2274
 # frob:ticket T-3126
 # frob:ticket T-3543
-# frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
-# frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_root_never_goes_dirty_while_the_record_is_made  # noqa: E501
-# frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_probe_catches_the_in_root_write_positive_control  # noqa: E501
-# frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_record_publishes_by_cas_and_refuses_a_moved_ref  # noqa: E501
 def _record_land_commit(root: Path, final_id: str, land_sha: str) -> str | None:
     """T-3543: no longer called from the primary squash-apply land path
     (`_finish_real_land_report` below) -- 53 of the last 300 `main`
@@ -1038,7 +1026,6 @@ def _absorption_scoped_content_matches(
 
 
 # frob:ticket T-1001
-# frob:tests tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_full_success_reports_absorption_not_commit_failed kind="integration"  # noqa: E501
 def _absorption_verified(
     root: Path, worktree: Path, ticket: Ticket, final_id: str
 ) -> bool:
@@ -1063,7 +1050,6 @@ def _absorption_verified(
 
 
 # frob:ticket T-1001
-# frob:tests tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_full_success_reports_absorption_not_commit_failed kind="integration"  # noqa: E501
 def _report_stacked_sibling_absorption(
     root: Path,
     ticket_id: str,
@@ -1108,10 +1094,6 @@ def _report_stacked_sibling_absorption(
 # frob:ticket T-3121
 # frob:ticket T-3163
 # frob:doc docs/modules/tickets-landing.md#the-disposable-stage-flip-t-3121
-# frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_racing_publish_surfaces_dirtymain  # noqa: E501
-# frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_blocked_resync_is_not_a_land_failure  # noqa: E501
-# frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_clean_publish_advances_root_and_resyncs  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 def _publish_squash_apply(
     root: Path,
     stage: Path,
@@ -1367,11 +1349,8 @@ def _publish_with_ledger_only_retry(
 # frob:ticket T-4572
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_squash----ledger-only-cas-retry-t-4572  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync.test_ledger_only_cas_miss_rebases_and_retries_without_regates  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync.test_code_touching_cas_miss_falls_back_to_full_recompose  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync.test_refused_land_leaves_root_clean  # noqa: E501
 def _fold_publish_and_resync(
     root: Path,
@@ -1541,8 +1520,6 @@ def _absorbed_land_report(
 # frob:ticket T-0907
 # frob:ticket T-1721
 # frob:ticket T-3089
-# frob:tests tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget.test_default_stage_runs_the_whole_transaction_in_root  # noqa: E501
-# frob:tests tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget.test_explicit_stage_leaves_root_completely_untouched  # noqa: E501
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_squash----the-squash-apply-stage-target-t-3089  # noqa: E501
 def _land_squash_apply(
@@ -1841,8 +1818,6 @@ def _refuse_if_selfaudit_findings_in_touched_files(
 
 
 # frob:ticket T-1920
-# frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_branch_drift_before_final_commit_refuses_by_construction  # noqa: E501
-# frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_no_drift_is_a_noop  # noqa: E501
 def _assert_still_on_expected_branch(
     root: Path, expected_branch: str, ticket_id: str, *, unstage_on_drift: bool = True
 ) -> Result[None, LandError]:
@@ -1945,10 +1920,6 @@ def _assert_still_on_expected_branch(
 
 
 # frob:ticket T-3111
-# frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_rebuild_runs_after_the_landing_commit_is_durable  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_invoked_when_native_source_touched  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_skipped_when_no_native_source_touched  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_rebuild_failure_does_not_block_land  # noqa: E501
 def _post_publish_native_rebuild(
     root: Path,
     final_id: str,
@@ -1984,8 +1955,6 @@ def _post_publish_native_rebuild(
 
 
 # frob:ticket T-3121
-# frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_clean_publish_advances_root_and_resyncs  # noqa: E501
-# frob:tests tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget.test_default_stage_runs_the_whole_transaction_in_root  # noqa: E501
 def _seal_squash_apply(
     root: Path,
     stage: Path,
@@ -2025,8 +1994,6 @@ _TICKET_LEDGER_FILE_PREFIX = "tickets/"
 
 
 # frob:ticket T-5126
-# frob:tests tests/tickets/test_land_squash.py::test_dev_merged_ledger_file_excluded
-# frob:tests tests/tickets/test_land_squash.py::test_own_ledger_edit_after_merge_still_counted  # noqa: E501
 def _exclude_dev_merged_ledger_files(
     worktree: Path, main_branch_name: str, touched_files: frozenset[str]
 ) -> frozenset[str]:
@@ -2260,7 +2227,6 @@ def _land_squash_apply_finish(
 
 # frob:ticket T-2220
 # frob:ticket T-3543
-# frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_land_commit_is_derivable_with_no_follow_up_commit  # noqa: E501
 def _finish_real_land_report(
     root: Path,
     ticket_id: str,

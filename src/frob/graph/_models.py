@@ -40,7 +40,6 @@ __all__ = [
 
 # frob:doc docs/modules/graph.md#error-types
 # frob:ticket T-3411
-# frob:tests tests/test_graph.py::TestResolve.test_ambiguous_suffix_match
 class GraphError(ErrorSet):
     """Failure values graph read paths can return -- never a bare exception."""
 

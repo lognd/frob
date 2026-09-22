@@ -37,8 +37,6 @@ __all__ = ["commit_wip", "run_verify_outcomes"]
 
 
 # frob:doc docs/commands/refactor.md#commit_wip
-# frob:tests tests/test_refactor.py::TestCommit.test_commit_wip_commits_and_returns_sha
-# frob:tests tests/test_refactor.py::TestCommit.test_commit_wip_resets_on_git_failure
 def commit_wip(
     repo_root: Path, message: str, pre_sha: str
 ) -> Result[str, RefactorError]:
@@ -59,7 +57,6 @@ def commit_wip(
 
 
 # frob:doc docs/commands/refactor.md#run_verify_outcomes
-# frob:tests tests/test_refactor.py::TestCommit.test_run_verify_outcomes_runs_requested_checks  # noqa: E501
 def run_verify_outcomes(
     repo_root: Path,
     touched_files: list[Path],

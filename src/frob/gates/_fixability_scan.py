@@ -20,7 +20,6 @@ from __future__ import annotations
 
 
 # frob:doc docs/design/check-fix-engine.md#fixability-registry-field-generated-verified
-# frob:tests tests/gates_suite/test_sys.py::TestRuleFixability.test_conflicting_registration_raises_fixabilityconflict kind="unit"  # noqa: E501
 class FixabilityConflict(Exception):
     """A rule id appears in more than one of `TIER_A_HANDLERS`/
     `TIER_B_HANDLERS`/`TIER_C_EMITTERS` -- a scanner-detected wiring bug,
@@ -32,7 +31,6 @@ class FixabilityConflict(Exception):
 
 
 # frob:doc docs/design/check-fix-engine.md#fixability-registry-field-generated-verified
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestRuleFixability.test_checked_in_literal_matches_a_f\
 # resh_scan kind="unit"
 def generated_fixability(

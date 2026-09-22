@@ -560,7 +560,6 @@ def _apply_contention_waivers(
 # frob:enforces CHK-GATE-SYS202
 # frob:enforces CHK-GATE-SYS203
 # frob:enforces CHK-GATE-SYSWAIVE002
-# frob:tests tests/unit/strata/test_contention.py::TestDuplicatePort.test_two_nodes_same_port_fires  # noqa: E501
 def check_resource_contention(
     model: KernelModel,
     store_ids: frozenset[str] = frozenset(),

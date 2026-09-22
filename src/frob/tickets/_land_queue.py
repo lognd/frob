@@ -158,8 +158,6 @@ def _write_intent_record(root: Path, entry: QueueEntry) -> None:
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestIntentRecord.test_missing_record_reports_not_found  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestIntentRecord.test_enqueue_writes_a_readable_intent_record  # noqa: E501
 def read_intent_record(root: Path, ticket_id: str) -> Result[QueueEntry, QueueError]:
     """`ticket_id`'s current per-intent completion record (T-3613) --
     cheap poll target for `frob ticket land --status <id>` and any agent
@@ -252,7 +250,6 @@ def _queue_lock_path(root: Path) -> Path:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
-# frob:tests tests/unit/test_land_queue.py::TestFileLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
 # frob:waive AFFECT001 reason="T-3506: file_lock/LandQueueLockUnavailable's platform- \
 # branch mechanics now delegate to frob.process._lock.portable_flock_acquire/ \
 # portable_flock_release instead of a hand-rolled fcntl copy -- the cited doc \
@@ -378,8 +375,6 @@ def _save_queue(root: Path, entries: tuple[QueueEntry, ...]) -> None:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
-# frob:tests tests/unit/test_land_queue.py::TestQueueStatus.test_empty_queue_is_empty_tuple  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestStoreCorrupt.test_corrupt_queue_file_errors  # noqa: E501
 def queue_status(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
     """The full current queue (every entry, any status) for `root`, in
     append order -- a read-only snapshot for a caller that wants to show
@@ -389,10 +384,6 @@ def queue_status(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_enqueue_returns_queued_entry  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_enqueue_persists_across_calls  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_duplicate_enqueue_refused  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_enqueue_after_landed_is_allowed  # noqa: E501
 def enqueue(
     root: Path, ticket_id: str, worktree: Path, branch: str
 ) -> Result[QueueEntry, QueueError]:
@@ -469,14 +460,6 @@ def _reclaim_dead_landing_entries(
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_empty_queue_returns_none  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_drains_fifo_order  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_successful_land_marks_entry_landed  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_failed_land_rejected_back_not_retried  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_failed_entry_is_not_redrained  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_second_entry_still_drains_after_first_failure  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_dead_drainer_landing_entry_is_reclaimed_and_redrained  # noqa: E501
-# frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_live_drainer_landing_entry_is_not_reclaimed  # noqa: E501
 # frob:waive ARCH001 reason="T-3613 added the reclaim-dead-landing-entries lock window \
 # plus a pid= field write at the pop-to-landing step and two _write_intent_record \
 # calls at the outcome-recording step -- each addition is one or two lines threaded \

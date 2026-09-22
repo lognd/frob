@@ -130,9 +130,7 @@ def _latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict 
 
 # frob:ticket T-1067
 # frob:doc docs/modules/vet.md#public-api
-# frob:tests \
 # tests/test_vet_containment.py::TestFetchCweForCve.test_cached_body_parses_cwe_ids
-# frob:tests \
 # tests/test_vet_containment.py::TestFetchCweForCve.test_expired_cache_entry_triggers_a\
 # _fresh_fetch
 # frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, query, \
@@ -174,7 +172,6 @@ def ttl_cache_get(db_path: Path, table: str, key: str, *, ttl_s: float) -> str |
 
 # frob:ticket T-1067
 # frob:doc docs/modules/vet.md#public-api
-# frob:tests \
 # tests/test_vet_containment.py::TestFetchCweForCve.test_cached_body_parses_cwe_ids
 def ttl_cache_set(db_path: Path, table: str, key: str, value: str) -> None:
     """Best-effort TTL-cache write of `value` under `key` in `table` of the

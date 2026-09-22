@@ -45,8 +45,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/strata/surface.md#parser
-# frob:tests tests/unit/strata/test_parse.py::TestStrataCoreImportError.test_none_when_import_succeeded  # noqa: E501
-# frob:tests tests/unit/strata/test_parse.py::TestStrataCoreImportError.test_names_the_real_exception_not_the_generic_guess  # noqa: E501
 def strata_core_import_error() -> str | None:
     """The real exception text from this module's guarded `strata_core`
     import, or `None` when the import succeeded. T-2707: callers that

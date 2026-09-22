@@ -50,7 +50,6 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-4393
-# frob:tests \
 # tests/test_tickets_priority.py::TestTick004QueueRot.test_severity_is_utc_deterministi\
 # c_across_local_timezones  # noqa: E501
 def _utc_today() -> date:
@@ -76,7 +75,6 @@ def _utc_today() -> date:
 
 # frob:ticket T-0162
 # frob:ticket T-0929
-# frob:tests tests/test_tickets_collision.py::TestRealLedgerIntegrity.test_no_duplicate_ids_within_or_across_ledgers  # noqa: E501
 # frob:enforces CHK-GATE-TICK001
 def _tick001_duplicate_ids(
     active: Result[dict[str, Ticket], TicketError],
@@ -230,7 +228,6 @@ def _tick003_violation(count: int, severity: Severity, threshold: int) -> Violat
 
 
 # frob:ticket T-0929
-# frob:tests tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive.test_above_default_error_threshold_errors  # noqa: E501
 def _tick003_stale_archive(
     root: Path, active: Result[dict[str, Ticket], TicketError]
 ) -> tuple[Violation, ...]:
@@ -299,10 +296,8 @@ def _tick004_rot_thresholds(root: Path) -> dict[Priority, int]:
 
 
 # frob:ticket T-4424
-# frob:tests \
 # tests/test_tickets_priority.py::TestTick004QueueRot.test_sprinted_ticket_past_2x_thre\
 # shold_since_created_is_quiet  # noqa: E501
-# frob:tests \
 # tests/test_tickets_priority.py::TestTick004QueueRot.test_sprinted_ticket_with_no_reco\
 # rded_assignment_date_fails_safe_quiet  # noqa: E501
 def _tick004_triage_date(t: Ticket) -> date | None:
@@ -561,10 +556,8 @@ def _tick004_severity_and_message(
 # frob:ticket T-3399
 # frob:ticket T-3463
 # frob:ticket T-4424
-# frob:tests \
 # tests/test_tickets_priority.py::TestTick004QueueRot.test_unsprinted_ticket_past_2x_th\
 # reshold_still_errors  # noqa: E501
-# frob:tests \
 # tests/test_tickets_priority.py::TestTick004QueueRot.test_epic_with_in_progress_child_\
 # stays_quiet_regardless_of_sprint  # noqa: E501
 # frob:enforces CHK-GATE-TICK004
@@ -717,9 +710,7 @@ def _tick005_ledger_at_ref(root: Path, ref: str) -> dict[str, TicketState] | Non
 
 # frob:ticket T-0537
 # frob:ticket T-4341
-# frob:tests \
 # tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged_on_v2_ledger  # noqa: E501
-# frob:tests \
 # tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_forward_progress_across_a_merge_is_clean_on_v2_ledger  # noqa: E501
 # frob:enforces CHK-GATE-TICK005
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
@@ -907,7 +898,6 @@ def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
 
 
 # frob:ticket T-0929
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires  # noqa: E501
 # frob:enforces CHK-GATE-TICK006
 def _tick006_phantom_filing(
@@ -1110,10 +1100,6 @@ def _tick011_disclosure_hits(text: str) -> tuple[re.Match[str], ...]:
 
 # frob:ticket T-1129
 # frob:ticket T-1402
-# frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires  # noqa: E501
-# frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_recent_ticket_outside_old_window_still_fires_exactly_as_today  # noqa: E501
-# frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_historical_ticket_outside_active_window_is_silent_by_default  # noqa: E501
-# frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_include_history_env_opt_in_restores_the_historical_finding  # noqa: E501
 # frob:enforces CHK-GATE-TICK011
 def _tick011_disclosed_cuts_without_ticket(
     queue: TicketQueue, archived: Result[dict[str, Ticket], TicketError]
@@ -1221,15 +1207,10 @@ def _tick011_first_uncited_disclosure(
 
 # frob:ticket T-0820
 # frob:enforces CHK-GATE-TICK007
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_stale_critical_fires
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_medium_priority_never_fires  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent  # noqa: E501
-# frob:tests tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
 def _tick007_undispatched_stale(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -1269,14 +1250,9 @@ def _tick007_undispatched_stale(
 
 # frob:ticket T-0842
 # frob:enforces CHK-GATE-TICK008
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_near_miss_typo  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
-# frob:tests tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_waivable
 def _tick008_unknown_ledger_fields(queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK008 (T-0842): WARN on every ticket in the CHECKED ledger that
@@ -1440,7 +1416,6 @@ def _tick009_scope_breadth_nudges(
 # already covered by this function's own except (OSError, ValueError); the resolver \
 # does not perform subclass reasoning against the caught tuple"
 # frob:ticket T-4319
-# frob:tests \
 # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_holder_dead_lease_reports_as_error_with_remedy  # noqa: E501
 def _tick010_holder_dead_pass(
     root: Path, leases_root: Path, lease_paths: list[Path]
@@ -1520,7 +1495,6 @@ def _tick010_holder_dead_pass(
     return violations
 
 
-# frob:tests \
 # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_live_holder_lease_is_silent  # noqa: E501
 # frob:enforces CHK-GATE-TICK010
 def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
@@ -1586,10 +1560,6 @@ def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-2561
-# frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_stale_superset_path_fires  # noqa: E501
-# frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_lease_matching_current_scope_is_silent  # noqa: E501
-# frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_queued_ticket_with_no_lease_is_silent  # noqa: E501
-# frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_dir_scope_still_covers_its_own_lease_paths  # noqa: E501
 # frob:enforces CHK-GATE-TICK012
 def _tick012_lease_scope_drift(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK012 (T-2561): WARN per IN_PROGRESS ticket whose live cross-
@@ -1666,12 +1636,6 @@ def _tick012_lease_scope_drift(root: Path, queue: TicketQueue) -> tuple[Violatio
 
 
 # frob:ticket T-2557
-# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_in_progress_empty_scope_fires  # noqa: E501
-# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_planned_empty_scope_fires  # noqa: E501
-# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_declared_no_scope_is_silent  # noqa: E501
-# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_nonempty_scope_is_silent  # noqa: E501
-# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_terminal_state_empty_scope_is_silent  # noqa: E501
-# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_queued_empty_scope_is_silent  # noqa: E501
 # frob:enforces CHK-GATE-TICK013
 def _tick013_empty_scope_without_declaration(
     queue: TicketQueue,
@@ -1897,10 +1861,6 @@ _LEDGERV1_SUNSET = "2027-02-02"
 # new TICK013 rule and its wiring into tickets_gate, not this function) -- nothing \
 # about its documented LEDGERV1001 behavior changed, so there is nothing for the cited \
 # affects()-closure docs to update"
-# frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_monofile_mode_warns_before_sunset  # noqa: E501
-# frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_monofile_mode_errors_past_sunset  # noqa: E501
-# frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_v2_mode_repo_is_silent  # noqa: E501
-# frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_v2_mode_repo_with_a_lingering_monofile_errors  # noqa: E501
 # frob:enforces CHK-GATE-LEDGERV1001
 def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
     """LEDGERV1001 (ledger v2 design section 7, deliverable 3): a repo

@@ -46,7 +46,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#bisect-attribution-t-1691
-# frob:tests \
 # tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding.test_empty_candidates\
 # _refuses kind="unit"
 class BisectError(ErrorSet):
@@ -70,7 +69,6 @@ VerifyAtCommit = Callable[[Path, str], Result[bool, str]]
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#bisect-attribution-t-1691
-# frob:tests \
 # tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding.test_converges_to_the\
 # _known_culprit_within_log2_n_steps kind="unit"
 class BisectOutcome(BaseModel):
@@ -251,7 +249,6 @@ def _run_bisect_search(
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#bisect-attribution-t-1691
-# frob:tests tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding kind="unit"
 def bisect_unattributed_finding(
     root: Path,
     finding_id: str,

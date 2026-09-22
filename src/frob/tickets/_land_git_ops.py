@@ -415,17 +415,8 @@ def _verified_reset_root(
 # frob:ticket T-2286
 # frob:doc \
 # docs/design/land-checkpoint-durability.md#reclaim_orphaned_squash_residue-t-2157t-2170
-# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_reclaims_when_no_live_land_holds_the_lock  # noqa: E501
-# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_does_not_touch_a_live_lands_own_staging  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_clean_root_is_a_no_op  # noqa: E501
-# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_dirty_without_a_marker_is_never_reclaimed  # noqa: E501
-# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_land_calls_reclaim_before_acquiring_its_own_lock  # noqa: E501
-# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal  # noqa: E501
-# frob:tests \
 # tests/ticket_land_suite/test_land_core.py::TestLand.test_refuses_on_dirty_main
-# frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_version_plus_other_line_still_refuses  # noqa: E501
 def reclaim_orphaned_squash_residue(
     root: Path, ticket_id: str
 ) -> Result[bool, LandError]:
@@ -652,11 +643,8 @@ _DIRTY_PATHS_SHOWN = 10
 
 # frob:ticket T-1698
 # frob:ticket T-3216
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError.test_readable_status_is_none  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError.test_spawn_failure_names_the_git_error  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError.test_nonzero_exit_names_stderr  # noqa: E501
 def _porcelain_status_error(root: Path) -> str | None:
     """T-3216: `None` iff `git status --porcelain` in `root` actually ran
@@ -765,10 +753,7 @@ def _porcelain_dirty_paths_staged(root: Path) -> tuple[str, ...]:
     return tuple(staged)
 
 
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_paths  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_truncation_declares_itself  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_empty_paths_renders_as_none_not_unavailable  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-3216
@@ -938,7 +923,6 @@ _LAND_COMMIT_SUBJECT_TICKET_RE = re.compile(r"\bland (T-\S+)\b")
 
 
 # frob:ticket T-4552
-# frob:tests tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused.test_conflicting_strata_via_list_refuses_instead_of_dropping kind="integration"  # noqa: E501
 def _land_ticket_for_commit_touching(cwd: Path, ref: str, path: str) -> str | None:
     """The ticket id named in the most recent `<type>(tickets): land <id>
     ...` commit subject (`_commit_message`'s exact shape, `frob.tickets.
@@ -994,7 +978,6 @@ def _merged_lock_doc(ours_text: str, theirs_text: str) -> dict | None:
 
 
 # frob:ticket T-1434
-# frob:tests tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to run_argv, a \
 # cross-module Result-returning wrapper the resolver cannot see through, and \
 # ours.danger_ok.stdout/theirs.danger_ok.stdout attribute access on its own return \
@@ -1232,8 +1215,6 @@ def _read_text_at_ref(worktree: Path, ref: str, relative_path: str) -> str | Non
 
 
 # frob:ticket T-0959
-# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_merges_by_id_never_overwrites  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish  # noqa: E501
 def _parse_archive_side(
     text: str, side: str, checkout: Path
 ) -> Result[dict[str, Ticket], LandError]:
@@ -1401,13 +1382,9 @@ def _read_text_at_commit_or_none(cwd: Path, commit: str, path: str) -> str | Non
 
 # frob:ticket T-2105
 # frob:doc docs/modules/tickets-landing.md#detect_duplicate_ticket_id_collisions-t-2105
-# frob:tests \
 # tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_flags_id_with_genuinely_different_content_on_both_sides  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_the_landing_tickets_own_id  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_identical_content_on_both_sides  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_an_id_that_already_existed_at_the_merge_base  # noqa: E501
 def detect_duplicate_ticket_id_collisions(
     worktree: Path, root: Path, landing_ticket_id: str, main_branch: str
@@ -1644,7 +1621,6 @@ def _auto_resolve_out_of_scope_conflicts(
 
 
 # frob:ticket T-4552
-# frob:tests tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused.test_conflicting_ratchet_lock_refuses_instead_of_dropping kind="integration"  # noqa: E501
 def _resolve_one_out_of_scope_conflict(
     cwd: Path, ticket: Ticket, keep: str, path: str
 ) -> bool:
@@ -1687,7 +1663,6 @@ def _resolve_one_out_of_scope_conflict(
 
 
 # frob:ticket T-4552
-# frob:tests tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused.test_conflicting_strata_via_list_refuses_instead_of_dropping kind="integration"  # noqa: E501
 def _log_capability_ratchet_refusal(cwd: Path, ticket: Ticket, path: str) -> None:
     """Never blind-checkout a capability-ratchet declaration (`design/
     frob.strata`, its ratchet lock) -- log the refusal naming `path` and
@@ -1723,7 +1698,6 @@ def _checkout_and_stage(cwd: Path, keep: str, path: str) -> Result[None, LandErr
 
 
 # frob:ticket T-2289
-# frob:tests tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_self_conflict_lands_by_keeping_newer_state  # noqa: E501
 def _resolve_self_conflict_by_newer_state(
     cwd: Path, ticket_id: str, main_branch: str, remaining: frozenset[str]
 ) -> frozenset[str]:
@@ -2206,7 +2180,6 @@ def _committed_out_of_scope_waive_deletions(
 
 
 # frob:ticket T-1003
-# frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit kind="integration"  # noqa: E501
 def _wip_commit(
     worktree: Path, ticket_id: str, *, dry_run: bool
 ) -> Result[bool, LandError]:
@@ -2302,7 +2275,6 @@ def _wip_add_excluding_frob(worktree: Path, ticket_id: str) -> Result[None, Land
 
 
 # frob:ticket T-0847
-# frob:tests tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed  # noqa: E501
 def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
     """`git add -A && git commit` a WIP snapshot in `worktree`, under
     `FROB_LAND_INTERNAL=1` (T-0828) so the T-0731 land-owned-files
@@ -2451,14 +2423,7 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
 # describes -- it only adds a message branch BEFORE the existing dirty-path rendering \
 # this section already documents; frob ack already recorded on this exact digest, \
 # waived here too since AFFECT001 (unlike DRIFT001) does not honor ack"
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_a_real_dirty_file  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_empty_paths_renders_as_none_not_unavailable  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_status_unreadable_names_the_git_error_not_uncommitted_work  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_readable_clean_status_is_not_status_unreadable  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_real_ticket_from_a_staged_rapid_debt_line  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_unattributed_when_the_true_author_cannot_be_determined  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-1755
 # frob:ticket T-1821

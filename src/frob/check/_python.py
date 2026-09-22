@@ -89,13 +89,7 @@ _REPO_WIDE_STAGES: frozenset[str] = frozenset({"arch", "cycle", "dup", "exports"
 # frob:ticket T-0142
 # frob:ticket T-2320
 # frob:ticket T-4359
-# frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_check_runs_only_format  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_format_runs_only_check  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_both_returns_empty  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_neither_skipped_runs_both_unchanged  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestRunRuffToolAbsent.test_missing_ruff_reports_unmeasured
-# frob:tests \
 # tests/unit/test_check.py::TestRunRuffToolAbsent.test_unparseable_output_still_errors
 def _run_ruff(
     root: Path,
@@ -247,11 +241,7 @@ def _guard_err_result(run_result, tool: str, binary: str) -> ToolResult:  # noqa
 
 
 # frob:ticket T-2320
-# frob:tests \
 # tests/unit/test_check.py::TestRunRuffAutofix.test_success_runs_fix_then_format_via_project_tool_argv  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_missing_binary_yields_two_typed_results  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_kill_switch_disabled_yields_two_typed_results  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_check_fix_nonzero_exit_still_runs_format  # noqa: E501
 def _run_ruff_autofix(root: Path) -> list[ToolResult]:
     """`frob check --fix-ruff`: a genuine `ruff check --fix` followed by a
     real `ruff format` WRITE pass -- distinct from `--fix`'s narrow Tier-A/
@@ -335,13 +325,9 @@ _DEFAULT_TY_TARGET_PLATFORMS: tuple[str, ...] = ("linux", "win32", "darwin")
 # frob:ticket T-0142
 # frob:ticket T-0996
 # frob:ticket T-3191
-# frob:tests \
 # tests/unit/test_check.py::TestRunTyMultiPlatform.test_default_platforms_all_run
-# frob:tests \
 # tests/unit/test_check.py::TestRunTyMultiPlatform.test_windows_only_diagnostic_is_reported_from_linux_host  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestRunTyMultiPlatform.test_ordinary_cross_platform_code_stays_quiet  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestRunTyMultiPlatform.test_configured_target_platforms_override_default  # noqa: E501
 def _run_ty(root: Path, *, files: tuple[str, ...] | None = None) -> ToolResult:
     """ty type-check, honouring a local ty.toml's extra-paths (T-0996), run
@@ -363,7 +349,6 @@ def _run_ty(root: Path, *, files: tuple[str, ...] | None = None) -> ToolResult:
 
 
 # frob:ticket T-4154
-# frob:tests \
 # tests/unit/test_check.py::TestRunTyRealPaths.test_nested_claude_worktrees_are_excluded
 def _nested_worktree_ty_excludes(scan: Path) -> list[str]:
     """`ty check --exclude` glob argv entries for every git worktree
@@ -1164,10 +1149,7 @@ _NO_GATE_CACHE_ENV = "FROB_NO_GATE_CACHE"
 
 
 # frob:ticket T-1346
-# frob:tests \
 # tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_default_true
-# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_false_when_no_cache_true  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_false_when_env_var_set  # noqa: E501
 def _gate_cache_enabled(no_cache: bool) -> bool:
     """Whether this `_run_gates` call should opt into T-0602's gate-result
     cache: `no_cache=True` (a caller's explicit request) or a non-empty
@@ -1186,8 +1168,6 @@ def _gate_cache_enabled(no_cache: bool) -> bool:
 # frob:ticket T-0102
 # frob:ticket T-0095
 # frob:ticket T-1346
-# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_run_gates_passes_use_cache_true_by_default  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_run_gates_no_cache_forces_use_cache_false  # noqa: E501
 # frob:ticket T-4723
 def _run_gates(
     root: Path,
@@ -1318,17 +1298,11 @@ def _label_replay(results: list, *, age_s: float) -> list:  # noqa: ANN001
 # frob:ticket T-4019
 # frob:enforces CHK-GATE-QUEUE001
 # frob:enforces CHK-GATE-GATES001
-# frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_queue_unavailable_sets_real_code_and_no_stale_path  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_other_gate_error_is_a_soft_skip_not_an_error  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_real_ticket_error_names_specific_mode  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_dummy_sentinel_still_a_defensive_fallback  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultTotalAbort.test_config_malformed_is_a_hard_error_not_a_pass  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultTotalAbort.test_graph_unavailable_is_a_hard_error_not_a_pass  # noqa: E501
 def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     """The `ToolResult` for a failed `run_gates` call: a hard ERROR if the
@@ -1597,11 +1571,7 @@ def _gate_summary_result(
 
 # frob:ticket T-1351
 # frob:ticket T-1928
-# frob:tests tests/unit/test_check.py::TestScopeDisclosure.test_only_names_the_gate_families_it_did_not_run  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestScopeDisclosure.test_ticket_flag_notes_which_families_are_actually_diff_scoped  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestScopeDisclosure.test_full_run_discloses_fmt_scope
-# frob:tests \
 # tests/unit/test_check.py::TestScopeDisclosure.test_no_disclosure_when_fmt_did_not_run
 def _scope_disclosure_note(
     *, ticket: str | None, gates: frozenset[str], ran: frozenset[str]
@@ -1685,9 +1655,6 @@ def _scope_disclosure_note(
 
 
 # frob:ticket T-0420
-# frob:tests tests/unit/test_check.py::TestSummarySeverityHonesty.test_warn_only_gate_summary_splits_errors_and_warnings  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunGatesDelta.test_no_baseline_falls_back_to_full_set_with_warning  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
 def _gates_success_result(
     report,  # noqa: ANN001
     *,

@@ -345,9 +345,6 @@ def _called_names_from_sym(sym, path: str | None = None) -> frozenset[str]:  # n
 
 
 # frob:ticket T-0813
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_exempts_attribute_call_on_foreign_receiver_from_unresolved  # noqa: E501
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_exempts_super_dunder_call_from_unresolved  # noqa: E501
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_still_marks_unresolved_self_attribute_call  # noqa: E501
 def _unresolved_exempt_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
     """Names whose EVERY call-token occurrence in `body_tokens` is an
     attribute call (`<expr>.name(`) on something other than `self` --
@@ -457,15 +454,9 @@ def _parse_package(root: Path, paths: Sequence[str]) -> dict[str, list]:
 # frob:doc docs/modules/graph.md#call-graph
 # frob:invariant INV-014
 # frob:ticket T-0809
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_marks_unresolved_private_looking_callee  # noqa: E501
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_does_not_mark_unresolved_public_looking_call  # noqa: E501
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_default_preserves_old_silent_omission_behavior  # noqa: E501
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_resolved_private_callee_is_not_also_unresolved  # noqa: E501
 # invariant spec: [INV-014](invariants/INV-014.md)
 # frob:ticket T-2683
 # frob:doc docs/modules/graph.md#self-disclosure-of-a-silently-degraded-capability-t-2683  # noqa: E501
-# frob:tests tests/test_graph.py::TestCapabilityGapDisclosure.test_capability_gap_disclosure_empty_for_no_gap  # noqa: E501
-# frob:tests tests/test_graph.py::TestCapabilityGapDisclosure.test_known_gap_is_disclosed_on_the_output_itself  # noqa: E501
 def capability_gap_disclosure(
     languages: frozenset[str], capability: str
 ) -> tuple[str, ...]:
@@ -729,8 +720,6 @@ def _call_graph_degraded_languages(
 
 # frob:doc docs/modules/graph.md#call-graph
 # frob:ticket T-0840
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_ordered_call_graph_preserves_source_text_call_order  # noqa: E501
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_ordered_call_graph_resolves_a_rust_private_callee  # noqa: E501
 def build_ordered_call_graph(root: Path, paths: Sequence[str]) -> OrderedCallGraph:
     """`build_call_graph`'s ordered counterpart (T-0840): same private-
     callee-only resolution rule (a callee resolves only when
@@ -795,7 +784,6 @@ def _ordered_private_callees(
 
 # frob:doc docs/modules/graph.md#call-graph
 # frob:ticket T-0422
-# frob:tests tests/test_graph.py::TestCallGraph.test_build_reference_graph_catches_dispatch_table_entry  # noqa: E501
 def build_reference_graph(
     root: Path, paths: Sequence[str], *, verify_imports: bool = False
 ) -> CallGraph:
@@ -850,7 +838,6 @@ def build_reference_graph(
 # frob:doc docs/modules/graph.md#attribution-safe-reference-graph-t-2156
 # frob:ticket T-2156
 # frob:ticket T-2174
-# frob:tests \
 # tests/unit/test_callgraph_module_scoped.py::TestBuildReferenceGraphModuleScoped.test_does_not_cross_wire_same_named_helpers_in_unrelated_files  # noqa: E501
 def build_reference_graph_module_scoped(root: Path, paths: Sequence[str]) -> CallGraph:
     """Attribution-safe counterpart to `build_reference_graph` (T-2156):
@@ -1393,7 +1380,6 @@ def closure(
 
 # frob:doc docs/modules/graph.md#call-graph
 # frob:ticket T-3962
-# frob:tests tests/unit/test_design_invariants.py::TestInv011.test_guarded_path_clears
 def references_name(root: Path, symref: str, name: str) -> bool:
     """Whether the symbol at `symref` (`path::qualname`) mentions the bare
     identifier `name` anywhere in its own signature or body tokens --
@@ -1448,12 +1434,6 @@ def _short_name_of_symref(symref: str) -> str:
 
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
 # frob:ticket T-0998
-# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flags_scoped_caller_of_unscoped_private_helper  # noqa: E501
-# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_only_used_by_scope_true_when_no_external_caller  # noqa: E501
-# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_clean_when_callee_also_in_scope  # noqa: E501
-# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_same_name_self_match_is_silent  # noqa: E501
-# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_genuine_cross_file_helper_still_fires  # noqa: E501
-# frob:tests \
 # tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_imported_helper_shared_name_only_flags_the_real_import  # noqa: E501
 def scope_private_helper_gaps(
     root: Path, scope: tuple[str, ...] | list[str], files: Sequence[str]

@@ -201,7 +201,6 @@ class MutationFinding(BaseModel):
     app_diff_expected: bool = False
 
     # frob:doc docs/strata/selfconform.md#the-three-rules
-    # frob:tests \
     # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may_is_load_bearing  # noqa: E501
     # frob:waive AFFECT001 reason="T-1328 extended this property's join to also check \
     # the new app_diff pair, same shape as the pre-existing export_diff check; \
@@ -239,7 +238,6 @@ class MutationAuditReport(BaseModel):
     baseline_sys101_count: int = 0
 
     # frob:doc docs/strata/selfconform.md#the-three-rules
-    # frob:tests \
     # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may_is_load_bearing  # noqa: E501
     @property
     def all_load_bearing(self) -> bool:
@@ -324,7 +322,6 @@ def _export_diff_fires(node: Node, mutated: Node) -> bool:
 
 # frob:doc docs/strata/selfconform.md#the-three-rules
 # frob:ticket T-1328
-# frob:tests \
 # tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_maps_each_app_kind kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="new T-1328 function, same doc anchor as its sibling \
 # run_may_mutation_audit already carries; docs/strata/selfconform.md is outside \
@@ -470,7 +467,6 @@ def _load_mutation_audit_baseline(
 
 # frob:doc docs/strata/selfconform.md#may-mutation-audit-t-1203
 # frob:doc docs/strata/selfconform.md#the-three-rules
-# frob:tests tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may_is_load_bearing kind="unit"  # noqa: E501
 def run_may_mutation_audit(root: Path) -> Result[MutationAuditReport, StrataError]:
     """The T-1203 mutation-audit entry point: load every `.strata` model
     under `root`, and for every `may` atom on every node, verify (module

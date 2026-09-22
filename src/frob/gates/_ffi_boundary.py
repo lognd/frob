@@ -225,18 +225,11 @@ def _ffi002_violations(root: Path) -> list[Violation]:
 # semantics, not its internal path-separator handling, so it needs no update"
 # frob:ticket T-0690
 # frob:ticket T-3947
-# frob:tests \
 # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
-# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
-# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
-# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_clean  # noqa: E501
-# frob:tests \
 # tests/unit/gates/test_ffi_boundary_path_shape.py::test_exclude_glob_and_test_dir_are_\
 # honored_not_scanned_as_production
-# frob:tests \
 # tests/unit/gates/test_ffi_boundary_path_shape.py::test_rel_path_fed_to_exclude_and_te\
 # st_checks_is_posix_style
-# frob:tests \
 # tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechan\
 # ism
 # frob:enforces CHK-GATE-FFI001

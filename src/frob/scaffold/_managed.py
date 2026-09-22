@@ -194,7 +194,6 @@ _LEGACY_OURS_MARKERS = (
 
 # frob:ticket T-2565
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestOursMarkerMigration.test_legacy_marker_still_recognised_as_ours  # noqa: E501
 def _is_ours(body: str) -> bool:
     """Whether `body` is a frob-installed hook -- current marker or any
     still-recognised legacy one (T-2565)."""
@@ -472,7 +471,6 @@ def _extract_region(text: str, block_id: str, *, target: str = "") -> str | None
 
 
 # frob:ticket T-0865
-# frob:tests \
 # tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift.test_legacy_unmana\
 # ged_core_target_reports_stale  # noqa: E501
 def _has_legacy_core_cache_logic(text: str) -> bool:
@@ -603,10 +601,8 @@ def _hook_status(root: Path, hook_name: str) -> ManagedBlockStatus:
 # frob:doc \
 # docs/guides/agent-playbook.md#1b-never-git-stash-in-a-worktree-it-is-repo-global-not-\
 # worktree-local  # noqa: E501
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_non_frob_repo\
 # _reports_nothing  # noqa: E501
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_clean_after_a\
 # pply  # noqa: E501
 def scaffold_conformance_status(root: Path) -> tuple[ManagedBlockStatus, ...]:
@@ -639,10 +635,8 @@ def scaffold_conformance_status(root: Path) -> tuple[ManagedBlockStatus, ...]:
     return statuses
 
 
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_refuses_to_clobber_fore\
 # ign_reference_transaction_hook  # noqa: E501
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_\
 # hook_is_updated  # noqa: E501
 def _stash_guard_status(root: Path) -> ManagedBlockStatus:
@@ -688,10 +682,8 @@ def _stash_guard_status(root: Path) -> ManagedBlockStatus:
     )
 
 
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_refuses_to_clobber_fore\
 # ign_reference_transaction_hook  # noqa: E501
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_\
 # hook_is_updated  # noqa: E501
 def _apply_stash_guard(root: Path) -> str:
@@ -824,13 +816,10 @@ def _apply_hooks(root: Path) -> list[str]:
 
 
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_idempotent_second_ru\
 # n_is_noop  # noqa: E501
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_creates_missing_and_\
 # updates_stale  # noqa: E501
-# frob:tests \
 # tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_refuses_to_clobber_f\
 # oreign_hook  # noqa: E501
 def apply_managed_blocks(root: Path) -> Result[tuple[str, ...], ScaffoldError]:

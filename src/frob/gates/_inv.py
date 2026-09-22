@@ -588,7 +588,6 @@ _TIME_STABLE_TIMEOUT_S = 60.0
 
 # frob:ticket T-4221
 # frob:doc docs/modules/gate-time-stable-invariant.md#inv010-t-4221
-# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_fails_once_clock_advances_past_horizon  # noqa: E501
 def time_stable_offset_s() -> int:
     """The current process's own time-stable clock offset, in seconds
     (`TIME_STABLE_OFFSET_ENV`, default `0`) -- the one function a test
@@ -842,10 +841,6 @@ def _time_stable_evidence_violations(
 # frob:ticket T-4221
 # frob:enforces CHK-GATE-INV010
 # frob:doc docs/modules/gate-time-stable-invariant.md#inv010-t-4221
-# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_fails_once_clock_advances_past_horizon  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_stays_quiet_when_still_passing_at_horizon  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_baseline_failure_is_skipped_not_double_reported  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_no_time_stable_anchor_is_silent  # noqa: E501
 def time_stable_gate(
     root: Path, invariants: tuple[Invariant, ...], snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
@@ -1135,11 +1130,6 @@ def _race002_test_obligation_violation(
 # docs/modules/gate-race001.md#race001race002-concurrent-read-then-write-test-obligation-t-3953  # noqa: E501
 # frob:ticket T-3953
 # frob:enforces CHK-GATE-RACE001
-# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_fires_on_unlocked_read_then_write_same_key  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_silent_when_a_lock_guards_the_read_then_write  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_silent_when_read_and_write_target_different_keys  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_test_obligation_fires_with_no_concurrent_binding_test  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_test_obligation_satisfied_by_a_concurrent_binding_test  # noqa: E501
 def race001_violations(root: Path, snapshot: GraphSnapshot) -> list[Violation]:
     """RACE001/RACE002 (T-3953, F-181/T-3942 item 7): every Python
     function symbol in `snapshot` is checked for two independent, related

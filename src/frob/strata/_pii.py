@@ -158,9 +158,7 @@ def node_carries_pii(node: Node) -> bool:
 
 
 # frob:doc docs/strata/provenance-trust-identity.md#derived_fromtaghelper
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_undeclared_helper_fires_sys116  # noqa: E501
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_declared_helper_does_not_fire_sys116  # noqa: E501
 def node_derived_from(node: Node) -> tuple[tuple[str, str], ...]:
     """Every `(tag, helper)` pair `node` declares via
@@ -181,9 +179,7 @@ def node_derived_from(node: Node) -> tuple[tuple[str, str], ...]:
 
 
 # frob:doc docs/strata/provenance-trust-identity.md#trust_identitytag
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_without_carries_fires_sys117  # noqa: E501
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_with_matching_carries_does_not_fire  # noqa: E501
 def node_trust_identity_tags(node: Node) -> tuple[str, ...]:
     """Every `<pii-tag>` `node` declares via `trust_identity:<tag>` attrs
@@ -403,9 +399,7 @@ def check_pii_undeclared_flow(model: KernelModel) -> tuple[PiiViolation, ...]:
 
 # frob:doc docs/strata/provenance-trust-identity.md#derived_fromtaghelper
 # frob:enforces CHK-GATE-PII005
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestPii005DerivedFromContradiction.test_conflicting_helpers_on_same_tag_fires_pii005  # noqa: E501
-# frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestPii005DerivedFromContradiction.test_single_helper_does_not_fire_pii005  # noqa: E501
 def check_pii_derived_from_contradiction(
     model: KernelModel,

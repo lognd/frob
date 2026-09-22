@@ -48,7 +48,6 @@ class _DeclaredSurface:
 _EMPTY_DECLARED_SURFACE = _DeclaredSurface(pii_categories={}, secret_files=frozenset())
 
 
-# frob:tests tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin.test_pii010_discharged_by_matching_carries_tag  # noqa: E501
 def _load_declared_surface(root: Path) -> _DeclaredSurface:
     """Load every `.strata` design file under `root` (`load_design_ids`,
     the SAME loader `sys_gate` already uses -- no second design-loading

@@ -242,7 +242,6 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
 
 # frob:ticket T-1216
 # frob:ticket T-1337
-# frob:tests tests/unit/test_app_lazy_dispatch.py::TestResolveRunner.test_imports_only_the_requested_subcommands_module  # noqa: E501
 def _resolve_runner(subcommand: Subcommand) -> Callable[[AppConfig], None] | None:
     """The single `frob.app.*_runner` module's `run` entry point that
     `subcommand` dispatches to, importing ONLY that one module -- `None` if

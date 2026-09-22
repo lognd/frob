@@ -18,7 +18,6 @@ from frob.tickets._models import (
 # fix) inside this function's body -- behavior, inputs, outputs, and the documented \
 # contract are all unchanged, so docs/modules/gates.md#public-api needs no edit"
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests \
 # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true\
 # _for_bound_test
 def evidence_covers_scope(ticket: Ticket, snapshot: GraphSnapshot) -> bool:
@@ -109,7 +108,6 @@ def _evidence_binds_to_scope(
 
 # frob:ticket T-1396
 # frob:ticket T-3413
-# frob:tests tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref
 def _node_id_matches_symref(evidence: str, symref: str) -> bool:
     """Whether `evidence` (a pytest/cargo node id) is the test named by
     `symref`: exact `symref_to_nodeid` match (or its parametrize-expanded
@@ -122,7 +120,6 @@ def _node_id_matches_symref(evidence: str, symref: str) -> bool:
 
 
 # frob:ticket T-1396
-# frob:tests tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope
 def _file_of_symref_in_scope(symref: str, scope: tuple[str, ...]) -> bool:
     """Whether `symref`'s file (the part before `::`, or itself if bare)
     is covered by `scope` (`scope_matches`)."""

@@ -74,7 +74,6 @@ DEFAULT_MAX_MODULES = 2
 
 # frob:doc \
 # docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindTemplatedAssumes.test_red_on_monolith_cwe78_cluster  # noqa: E501
 class TemplatedAssumeGroup(BaseModel):
     """One set of >=2 assumes whose parsed shape is IDENTICAL once each
@@ -91,7 +90,6 @@ class TemplatedAssumeGroup(BaseModel):
 
 # frob:doc \
 # docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindSharedExpiry.test_red_on_monolith_shared_date  # noqa: E501
 class SharedExpiryGroup(BaseModel):
     """One `review` expiry date shared by assumes across more than N
@@ -107,7 +105,6 @@ class SharedExpiryGroup(BaseModel):
 
 # frob:doc \
 # docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestModuleClaimsFromModels.test_flattens_and_tags_each_claim_with_its_module  # noqa: E501
 class ModuleClaim(BaseModel):
     """One assumed `Claim` plus the module label the caller resolved it
@@ -178,11 +175,8 @@ def _template_signature(claim: Claim, *, module: str) -> str | None:
 # frob:ticket T-5105
 # frob:doc \
 # docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindTemplatedAssumes.test_red_on_monolith_cwe78_cluster  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindTemplatedAssumes.test_distinct_weakness_class_not_merged  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindTemplatedAssumes.test_genuinely_specific_assume_not_reported  # noqa: E501
 def find_templated_assumes(
     claims: Sequence[ModuleClaim],
@@ -238,9 +232,7 @@ def find_templated_assumes(
 # frob:ticket T-5105
 # frob:doc \
 # docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindSharedExpiry.test_red_on_monolith_shared_date  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindSharedExpiry.test_at_or_below_n_modules_not_reported  # noqa: E501
 def find_shared_expiry(
     claims: Sequence[ModuleClaim],
@@ -287,9 +279,7 @@ def find_shared_expiry(
 
 # frob:doc \
 # docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestModuleClaimsFromModels.test_flattens_and_tags_each_claim_with_its_module  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestModuleClaimsFromModels.test_empty_mapping_yields_empty_tuple  # noqa: E501
 def module_claims_from_models(
     models_by_module: Mapping[str, Sequence[Claim]],

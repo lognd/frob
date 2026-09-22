@@ -268,9 +268,7 @@ def _edge_files(edge: object) -> tuple[str, ...]:
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
-# frob:tests \
 # tests/test_gate_cache.py::TestTrackedSnapshot.test_symbol_iteration_records_file
-# frob:tests \
 # tests/test_gate_cache.py::TestTrackedSnapshot.test_getitem_records_only_accessed_key
 class TrackedSnapshot:
     """Read-only proxy over a `GraphSnapshot` recording every file path a
@@ -477,10 +475,8 @@ def extra_key(values: Iterable[str]) -> str:
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-1454
-# frob:tests \
 # tests/test_gate_cache.py::TestSideChannelKey.test_model_side_channel_key_changes_on_f\
 # ield_edit
-# frob:tests \
 # tests/test_gate_cache.py::TestSideChannelKey.test_model_side_channel_key_stable_for_e\
 # qual_content
 def model_side_channel_key(*models: object) -> str:
@@ -632,7 +628,6 @@ def _store_entry(
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
-# frob:tests \
 # tests/test_gate_cache.py::TestEvaluateCacheableGate.test_invalidate_forces_next_call_\
 # to_miss
 def invalidate(root: Path) -> None:
@@ -653,21 +648,15 @@ def invalidate(root: Path) -> None:
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
-# frob:tests \
 # tests/test_gate_cache.py::TestEvaluateCacheableGate.test_miss_then_hit_skips_second_c\
 # all
-# frob:tests \
 # tests/test_gate_cache.py::TestEvaluateCacheableGate.test_edit_to_untouched_file_stays\
 # _a_hit
-# frob:tests \
 # tests/test_gate_cache.py::TestEvaluateCacheableGate.test_edit_to_touched_file_forces_\
 # miss
-# frob:tests \
 # tests/test_gate_cache.py::TestEvaluateCacheableGate.test_new_untouched_file_forces_mi\
 # ss_membership_guard
-# frob:tests \
 # tests/test_gate_cache.py::TestEvaluateCacheableGate.test_extra_change_forces_miss
-# frob:tests \
 # tests/test_gate_cache.py::TestColdDiffOracle.test_cache_agrees_with_cold_across_rando\
 # m_edits
 def evaluate_cacheable_gate(
@@ -729,11 +718,8 @@ def evaluate_cacheable_gate(
 
 # frob:doc docs/modules/gates.md#root-scanning-process-pool-gate-cache-t-1445
 # frob:ticket T-1445
-# frob:tests \
 # tests/test_gate_cache.py::TestRootContentKey.test_stable_when_nothing_changes
-# frob:tests \
 # tests/test_gate_cache.py::TestRootContentKey.test_changes_on_tracked_file_edit
-# frob:tests tests/test_gate_cache.py::TestRootContentKey.test_none_outside_a_git_repo
 def root_content_key(root: Path) -> str | None:
     """The whole-tree conservative dependency key for a gate that reads
     `st.root`/`st.repo_root` DIRECTLY (an unbounded filesystem walk, not
@@ -799,10 +785,7 @@ def root_content_key(root: Path) -> str | None:
 
 # frob:doc docs/modules/gates.md#root-scanning-process-pool-gate-cache-t-1445
 # frob:ticket T-1445
-# frob:tests \
 # tests/test_gate_cache.py::TestRootGateCache.test_miss_then_hit_skips_second_call
-# frob:tests tests/test_gate_cache.py::TestRootGateCache.test_tree_edit_forces_miss
-# frob:tests tests/test_gate_cache.py::TestRootGateCache.test_extra_change_forces_miss
 def load_root_gate_cache(
     root: Path, gate: str, key: str | None, extra: tuple[str, ...] = ()
 ) -> tuple[Violation, ...] | None:
@@ -829,7 +812,6 @@ def load_root_gate_cache(
 
 # frob:doc docs/modules/gates.md#root-scanning-process-pool-gate-cache-t-1445
 # frob:ticket T-1445
-# frob:tests \
 # tests/test_gate_cache.py::TestRootGateCache.test_miss_then_hit_skips_second_call
 def store_root_gate_cache(
     root: Path,
@@ -968,7 +950,6 @@ def _replay_fingerprint(root: Path, *, ticket: str | None = None) -> str | None:
 @dataclass(frozen=True)
 # frob:doc docs/modules/serve.md#whole-run-replay-t-2585
 # frob:ticket T-2585
-# frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
 # frob:waive AFFECT001 reason="T-2610 only removed a now-redundant WIRE001 waiver \
 # comment on age_s (the underlying gap it documented was already fixed generically by \
 # T-2746) -- no behavior or public-contract change, so \
@@ -987,7 +968,6 @@ class GateRunReplay:
     ticket: str | None
 
     # frob:doc docs/modules/serve.md#whole-run-replay-t-2585
-    # frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
     # T-2610: the WIRE001 waiver this property carried is now redundant --
     # T-2746 landed a generic property-attribute-access resolver fix
     # (`frob.gates._wire._is_property`/`property_access_pattern`) that
@@ -1005,10 +985,6 @@ class GateRunReplay:
 
 # frob:doc docs/modules/serve.md#whole-run-replay-t-2585
 # frob:ticket T-2585
-# frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
-# frob:tests tests/test_gate_cache.py::TestRunReplay.test_tracked_edit_forces_real_run
-# frob:tests tests/test_gate_cache.py::TestRunReplay.test_budget_clipped_prior_run_never_replays_as_complete  # noqa: E501
-# frob:tests tests/test_gate_cache.py::TestRunReplay.test_ticket_scoped_prior_does_not_serve_unscoped  # noqa: E501
 def load_gate_run_replay(
     root: Path,
     *,
@@ -1068,7 +1044,6 @@ def load_gate_run_replay(
 
 # frob:doc docs/modules/serve.md#whole-run-replay-t-2585
 # frob:ticket T-2585
-# frob:tests tests/test_gate_cache.py::TestRunReplay.test_budget_clipped_prior_run_never_replays_as_complete  # noqa: E501
 def store_gate_run_replay(
     root: Path,
     *,

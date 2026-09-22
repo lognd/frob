@@ -36,7 +36,6 @@ from frob._cli_parsers._reporting import (
 
 # frob:ticket T-1569
 # frob:ticket T-4520
-# frob:tests tests/unit/test_app_runners_process.py::TestProcessReapParser.test_process_reap_parses_and_dispatches  # noqa: E501
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
 # does not trace this cross-package private import -- same class of gap as this repo's \

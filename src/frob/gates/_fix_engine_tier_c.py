@@ -83,7 +83,6 @@ _TODO001_PREFIX = "TODO001:"
 
 
 # frob:doc docs/design/check-fix-engine.md#fix-it-emission-format-tier-c-for-agents
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineTierC.test_todo001_emits_a_fixit_w\
 # ith_no_proposed_patch kind="unit"
 # frob:ticket T-1481

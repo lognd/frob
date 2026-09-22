@@ -70,9 +70,7 @@ def _parse_touched_python_files(
 
 
 # frob:doc docs/commands/refactor.md#verify_import_resolution
-# frob:tests \
 # tests/test_refactor.py::TestVerify.test_import_resolution_catches_syntax_error
-# frob:tests \
 # tests/test_refactor.py::TestVerify.test_import_resolution_catches_dangling_reference
 def verify_import_resolution(
     touched_files: list[Path], repo_root: Path | None = None
@@ -234,9 +232,7 @@ def _undefined_names_in_tree(tree: ast.Module) -> list[tuple[str, int]]:
 
 # frob:doc docs/commands/refactor.md#verify_no_undefined_names
 # frob:ticket T-3596
-# frob:tests \
 # tests/test_refactor.py::TestVerifyStructural.test_no_undefined_names_catches_free_variable  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestVerifyStructural.test_no_undefined_names_passes_clean_module  # noqa: E501
 def verify_no_undefined_names(touched_files: list[Path]) -> VerifyOutcome:
     """T-3596 structural Verify-phase check: every touched `.py` file's
@@ -281,9 +277,7 @@ def verify_no_undefined_names(touched_files: list[Path]) -> VerifyOutcome:
 
 # frob:doc docs/commands/refactor.md#verify_no_self_import
 # frob:ticket T-3596
-# frob:tests \
 # tests/test_refactor.py::TestVerifyStructural.test_no_self_import_catches_self_reference  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestVerifyStructural.test_no_self_import_passes_clean_module  # noqa: E501
 def verify_no_self_import(touched_files: list[Path], repo_root: Path) -> VerifyOutcome:
     """T-3596 gap 4: `split` was observed inserting a `from <destination
@@ -331,9 +325,7 @@ def verify_no_self_import(touched_files: list[Path], repo_root: Path) -> VerifyO
 
 # frob:doc docs/commands/refactor.md#verify_decorators_preserved
 # frob:ticket T-3596
-# frob:tests \
 # tests/test_refactor.py::TestVerifyStructural.test_decorators_preserved_catches_dropped_decorator  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestVerifyStructural.test_decorators_preserved_passes_when_intact  # noqa: E501
 def verify_decorators_preserved(
     repo_root: Path,

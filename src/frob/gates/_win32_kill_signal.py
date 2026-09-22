@@ -223,12 +223,6 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
 # frob:doc \
 # docs/modules/gates.md#platform002-oskillpid-0-outside-the-sanctioned-liveness-probe-t\
 # -3696
-# frob:tests tests/unit/gates/test_win32_kill_signal.py::TestPlatform002.test_zero_signal_kill_is_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_win32_kill_signal.py::TestPlatform002.test_real_signal_kill_is_not_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_win32_kill_signal.py::TestPlatform002.test_sanctioned_module_is_allowlisted  # noqa: E501
-# frob:tests tests/unit/gates/test_win32_kill_signal.py::TestPlatform002.test_bare_imported_kill_is_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_win32_kill_signal.py::TestPlatform002.test_unparseable_file_is_parse001_not_silent  # noqa: E501
-# frob:tests tests/unit/gates/test_win32_kill_signal.py::TestPlatform002.test_frob_itself_is_clean  # noqa: E501
 def win32_kill_signal_gate(root: Path) -> tuple[Violation, ...]:
     """PLATFORM002: every git-tracked `.py` file under `src/frob/**` that
     calls `os.kill(<pid>, 0)` (dotted or bare-imported), unless the file

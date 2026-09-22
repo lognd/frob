@@ -281,14 +281,6 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
 
 
 # frob:doc docs/modules/gates.md#lexcheck001-t-2344
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_new_lexical_decider_is_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_allowlisted_function_is_silent  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_semantic_function_with_incidental_regex_is_silent  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_non_gate_code_never_scanned  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_supplychain_lexcheck001_backlog_is_empty_t2469  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_vet_needle_matcher_shape_is_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_elementtree_find_is_not_a_trigger  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_scans_scope_is_disclosed_in_log  # noqa: E501
 # frob:ticket T-2344
 # frob:ticket T-2466
 def lexical_selfcheck_gate(root: Path) -> tuple[Violation, ...]:

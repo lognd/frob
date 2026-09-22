@@ -43,7 +43,6 @@ STACKDUMP_ENV = "FROB_COVERAGE_STACKDUMP"
 
 # frob:ticket T-4494
 # frob:doc docs/modules/testing.md#sigusr1-stack-dump-handler-t-1433-t-1466
-# frob:tests tests/unit/test_land_stackdump.py::TestWriteStackDump.test_writes_and_returns_dump_path  # noqa: E501
 def write_stack_dump(header: str) -> Path:
     """Write every live thread's stack in THIS process to `.frob/
     stackdumps/pid-<pid>.txt`, prefixed with `header` (T-4494: extracted
@@ -69,7 +68,6 @@ def write_stack_dump(header: str) -> Path:
 # frob:ticket T-1466
 # frob:ticket T-1823
 # frob:doc docs/modules/testing.md#sigusr1-stack-dump-handler-t-1433-t-1466
-# frob:tests tests/unit/test_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled  # noqa: E501
 def dump_all_thread_stacks(_signum: int, _frame: object) -> None:
     """`SIGUSR1` handler (T-1433, moved here T-1466): write every live
     thread's stack in THIS process to a per-pid file under
@@ -85,8 +83,6 @@ def dump_all_thread_stacks(_signum: int, _frame: object) -> None:
 # frob:ticket T-1823
 # frob:ticket T-4494
 # frob:doc docs/modules/testing.md#sigusr1-stack-dump-handler-t-1433-t-1466
-# frob:tests tests/unit/test_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset  # noqa: E501
-# frob:tests tests/unit/test_land_stackdump.py::TestInstallStackdumpHandlerForce.test_force_installs_regardless_of_env  # noqa: E501
 def install_stackdump_handler(*, force: bool = False) -> None:
     """Install `dump_all_thread_stacks` as the `SIGUSR1` handler for THIS
     process, gated on `STACKDUMP_ENV` (T-1433, generalized beyond pytest

@@ -116,7 +116,6 @@ _CONFIG_BOUND_HOST_RE = re.compile(
 
 
 # frob:doc docs/strata/threat.md#sys11x-outbound-destination-obligation-t-4113
-# frob:tests tests/unit/strata/test_outbound_destination.py::TestOutboundDestinationConstraint.test_hardcoded_literal_host_fires  # noqa: E501
 class OutboundDestinationViolation(BaseModel):
     """One SYS114/SYS115 finding: rule id, the reporting `node` (always
     the flow's `src`, the caller who owes the obligation), `sub_target`
@@ -133,7 +132,6 @@ class OutboundDestinationViolation(BaseModel):
 
 
 # frob:doc docs/strata/threat.md#sys11x-outbound-destination-obligation-t-4113
-# frob:tests tests/unit/strata/test_outbound_destination.py::TestOutboundDestinationConstraint.test_hardcoded_literal_host_fires  # noqa: E501
 class OutboundDestinationReport(BaseModel):
     """Every unwaived SYS114 or SYS115 finding, plus `waived` (T-0174
     channel, kept for report visibility). Mirrors `_reliability.py::
@@ -295,7 +293,6 @@ def _apply_outbound_waivers(
 # frob:doc docs/strata/threat.md#sys11x-outbound-destination-obligation-t-4113
 # frob:ticket T-4113
 # frob:enforces CHK-GATE-SYS114
-# frob:tests tests/unit/strata/test_outbound_destination.py::TestOutboundDestinationConstraint.test_hardcoded_literal_host_fires  # noqa: E501
 def check_outbound_destination(
     model: KernelModel, root: Path
 ) -> Result[OutboundDestinationReport, StrataError]:
@@ -328,7 +325,6 @@ def check_outbound_destination(
 # frob:doc docs/strata/threat.md#sys11x-outbound-destination-obligation-t-4113
 # frob:ticket T-4113
 # frob:enforces CHK-GATE-SYS115
-# frob:tests tests/unit/strata/test_outbound_destination.py::TestOutboundRateLint.test_missing_rate_with_sibling_rate_fires  # noqa: E501
 def check_outbound_rate(
     model: KernelModel,
 ) -> Result[OutboundDestinationReport, StrataError]:

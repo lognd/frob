@@ -71,12 +71,9 @@ def _gate_rule_block(rule: str, fixability: str) -> str:
 
 
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
-# frob:tests \
 # tests/test_registry_staleness.py::TestMissingGateRuleIds.test_finds_rules_with_no_ent\
 # ry
-# frob:tests \
 # tests/test_registry_staleness.py::TestMissingGateRuleIds.test_fully_covered_is_empty
-# frob:tests \
 # tests/test_registry_staleness.py::TestMissingGateRuleIds.test_unreadable_file_is_empty
 def missing_gate_rule_ids(
     registry_path: Path, known_rules: frozenset[str]
@@ -101,13 +98,10 @@ def missing_gate_rule_ids(
 
 
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
-# frob:tests \
 # tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_appends_every_missing_\
 # rule
-# frob:tests \
 # tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_already_in_sync_return\
 # s_empty_tuple
-# frob:tests \
 # tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_missing_file_rejected
 def sync_gate_rule_entries(
     registry_path: Path, known_rules: frozenset[str]

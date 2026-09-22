@@ -529,7 +529,6 @@ def _apply_reliability_waivers(
 # frob:enforces SDC-5-TIMEOUT
 # frob:enforces CHK-GATE-REL200
 # frob:enforces CHK-GATE-REL201
-# frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_flow_without_timeout_fires  # noqa: E501
 def check_reliability_timeouts(
     model: KernelModel, root: Path
 ) -> Result[ReliabilityReport, StrataError]:
@@ -563,7 +562,6 @@ def check_reliability_timeouts(
 # frob:ticket T-0644
 # frob:enforces CHK-GATE-REL210
 # frob:enforces CHK-GATE-REL211
-# frob:tests tests/unit/strata/test_reliability.py::TestMissingHealth.test_daemon_without_health_fires  # noqa: E501
 def check_reliability_health(
     model: KernelModel, root: Path
 ) -> Result[ReliabilityReport, StrataError]:

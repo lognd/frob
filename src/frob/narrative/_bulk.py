@@ -68,7 +68,6 @@ _REFERENCE_LINE_RE = re.compile(
 
 
 # frob:doc docs/commands/narrative.md#bulk-mode-t-4697
-# frob:tests tests/narrative/test_bulk.py::TestPlanBulk.test_plan_lists_every_block_with_its_ticket  # noqa: E501
 @dataclass(frozen=True)
 class BulkItem:
     """One block bulk mode found: its location, the ticket id it cites
@@ -85,7 +84,6 @@ class BulkItem:
 
 
 # frob:doc docs/commands/narrative.md#bulk-mode-t-4697
-# frob:tests tests/narrative/test_bulk.py::TestPlanBulk.test_plan_lists_every_block_with_its_ticket  # noqa: E501
 @dataclass(frozen=True)
 class BulkPlan:
     """`plan_bulk`'s result: every `BulkItem` found under the swept path,
@@ -137,8 +135,6 @@ def _find_markdown_paragraphs(text: str) -> list[tuple[int, int]]:
 
 
 # frob:doc docs/commands/narrative.md#bulk-mode-t-4697
-# frob:tests tests/narrative/test_bulk.py::TestFindBlocks.test_finds_python_ticket_lead_block  # noqa: E501
-# frob:tests tests/narrative/test_bulk.py::TestFindBlocks.test_finds_markdown_paragraph
 def find_blocks(path: Path, text: str) -> tuple[tuple[int, int], ...]:
     """Every candidate block/paragraph in `text` bulk mode should attempt
     to migrate: `.py`/`.strata` via `_iter_blocks` (NARR001's own
@@ -155,8 +151,6 @@ def find_blocks(path: Path, text: str) -> tuple[tuple[int, int], ...]:
 
 
 # frob:doc docs/commands/narrative.md#bulk-mode-t-4697
-# frob:tests tests/narrative/test_bulk.py::TestDiscoverTargets.test_file_returns_itself
-# frob:tests tests/narrative/test_bulk.py::TestDiscoverTargets.test_directory_returns_scanned_suffixes_recursively  # noqa: E501
 def discover_targets(target: Path) -> tuple[Path, ...]:
     """The file(s) bulk mode sweeps: `target` itself if it is a file, or
     every `.py`/`.strata`/`.md` file under it (recursive, sorted for a
@@ -185,7 +179,6 @@ def _ticket_id_for_block(path: Path, text: str, start: int, end: int) -> str | N
 
 
 # frob:doc docs/commands/narrative.md#bulk-mode-t-4697
-# frob:tests tests/narrative/test_bulk.py::TestPlanBulk.test_plan_lists_every_block_with_its_ticket  # noqa: E501
 def plan_bulk(target: Path) -> BulkPlan:
     """The dry-run plan: every block bulk mode would attempt across
     `discover_targets(target)`, each item's `status` fixed at
@@ -281,9 +274,6 @@ def _apply_one(
 
 
 # frob:doc docs/commands/narrative.md#bulk-mode-t-4697
-# frob:tests tests/narrative/test_bulk.py::TestApplyBulk.test_apply_moves_live_and_archived_skips_untargeted  # noqa: E501
-# frob:tests tests/narrative/test_bulk.py::TestApplyBulk.test_second_apply_is_idempotent_noop  # noqa: E501
-# frob:tests tests/narrative/test_bulk.py::TestApplyBulk.test_apply_false_writes_nothing
 def apply_bulk(target: Path, *, apply: bool, reason: str, root: Path) -> BulkPlan:
     """Sweep `target` (file or directory): with `apply=False` (the
     default a bare `frob narrative move <path>` gets), returns

@@ -24,7 +24,6 @@ from frob.testing._collect import (
 )
 
 # frob:ticket T-4579
-# frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
 from frob.testing._collect_csharp import parse_csharp
 from frob.testing._coverage_cache import (
     fill_from_cache,

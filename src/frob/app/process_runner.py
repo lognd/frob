@@ -19,10 +19,6 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-3106
-# frob:tests tests/unit/test_app_runners_process.py::TestProcessRunnerReap.test_reap_reports_reaped_pids  # noqa: E501
-# frob:tests tests/unit/test_app_runners_process.py::TestProcessRunnerReap.test_reap_reports_nothing_reaped  # noqa: E501
-# frob:tests tests/unit/test_app_runners_process.py::TestProcessRunnerReap.test_reap_json_mode_emits_json  # noqa: E501
-# frob:tests tests/unit/test_app_runners_process.py::TestProcessRunnerReap.test_unknown_process_subcommand_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob ops process <reap>`: currently the single `reap` subcommand,
     dispatched by `cfg.process_command` the same way every other T-1569

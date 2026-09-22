@@ -70,8 +70,6 @@ def _intent_path(root: Path, ticket_id: str) -> Path:
     return _journal_dir(root) / f"{ticket_id}.json"
 
 
-# frob:tests tests/test_ticket_journal.py::TestWriteIntent.test_write_then_read_round_trips  # noqa: E501
-# frob:tests tests/test_ticket_journal.py::TestWriteIntent.test_write_failure_returns_err  # noqa: E501
 # frob:ticket T-0601
 def _write_intent(
     root: Path, ticket_id: str, worktree: Path
@@ -102,8 +100,6 @@ def _write_intent(
     return Ok(None)
 
 
-# frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_removes_the_file  # noqa: E501
-# frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_missing_file_is_a_no_op  # noqa: E501
 # frob:ticket T-0601
 def _clear_intent(root: Path, ticket_id: str) -> None:
     """Remove `ticket_id`'s land-intent record, if any (T-0456) -- called
@@ -118,9 +114,6 @@ def _clear_intent(root: Path, ticket_id: str) -> None:
         _log.warning("tickets: could not clear land intent for %s: %s", ticket_id, exc)
 
 
-# frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_reads_every_recorded_intent  # noqa: E501
-# frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_no_journal_dir_returns_empty  # noqa: E501
-# frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_malformed_record_is_skipped_not_fatal  # noqa: E501
 # frob:ticket T-0601
 def _read_all_intents(root: Path) -> tuple[_LandIntent, ...]:
     """Every currently-recorded land-intent record under `root` (T-0456),

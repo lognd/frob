@@ -420,7 +420,6 @@ def _symbol_violations(symbol: RawSymbol, path: str) -> tuple[Violation, ...]:
 # frob:enforces CHK-GATE-PERF011
 # frob:enforces CHK-GATE-PERF013
 # frob:enforces CHK-GATE-PERF014
-# frob:tests tests/unit/perf/test_hotpath_smells.py::TestHotpathSmellsWiredIntoPerfRules.test_perf_rules_includes_perf010_finding kind="unit"  # noqa: E501
 def hotpath_smell_violations(files: Sequence[ParsedFile]) -> tuple[Violation, ...]:
     """PERF010/011/013/014 over every Python function/method symbol in
     `files` -- the four EPIC A hot-graph root-cause detectors this

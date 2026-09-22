@@ -335,8 +335,6 @@ def _regulation_caught_by_violation(
     )
 
 
-# frob:tests tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity.test_caught_by_naming_absent_control_is_refused  # noqa: E501
-# frob:tests tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity.test_caught_by_naming_present_control_discharges  # noqa: E501
 # frob:ticket T-0601
 def _check_regulation_caught_by_integrity(
     out_of_scope: tuple[OutOfScopeRegulation, ...] = (),
@@ -1056,8 +1054,6 @@ def _cmpl_disposition_violation(entry: RegistryEntry) -> ComplianceViolation:
 
 
 # frob:ticket T-0607
-# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_deferred_disposition_is_refused  # noqa: E501
-# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_handled_by_and_out_of_scope_dispositions_pass  # noqa: E501
 # frob:ticket T-0601
 def _check_cmpl_registry_unit_dispositions(
     entries: tuple[RegistryEntry, ...],
@@ -1126,9 +1122,6 @@ def _cmpl_unit_backing_violation(entry_id: str, ticket_id: str) -> ComplianceVio
 
 
 # frob:ticket T-1244
-# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistryBacking.test_self_referential_handled_by_is_flagged  # noqa: E501
-# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistryBacking.test_frob_catalog_entries_self_reference_is_not_flagged  # noqa: E501
-# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistryBacking.test_non_self_referential_handled_by_is_not_flagged  # noqa: E501
 def _check_cmpl_registry_unit_backing(
     entries: tuple[RegistryEntry, ...],
 ) -> tuple[ComplianceViolation, ...]:
@@ -1170,8 +1163,6 @@ def _check_cmpl_registry_unit_backing(
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#compliance005compliance007-compliance-registry-vs-model-checking-t-1244  # noqa: E501
 # frob:ticket T-0607
-# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_check_cmpl_registry_loads_real_file  # noqa: E501
-# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_check_cmpl_registry_missing_file_is_parse_failed  # noqa: E501
 # frob:ticket T-0601
 def check_cmpl_registry(
     registry_dir: Path,

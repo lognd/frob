@@ -362,19 +362,10 @@ def _function_violations(
 # frob:ticket T-0688
 # frob:ticket T-1402
 # frob:ticket T-3948
-# frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_fires_exhaust002  # noqa: E501
-# frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_unresolvable_callee_fires_exhaust003_not_exhaust001  # noqa: E501
-# frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_ambiguous_bare_reraise_still_fires_exhaust001  # noqa: E501
-# frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001  # noqa: E501
-# frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directive_discharges_exhaust002  # noqa: E501
-# frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_not_a_boundary  # noqa: E501
-# frob:tests \
 # tests/unit/gates/test_exhaustive_handling_path_shape.py::test_exclude_glob_and_test_d\
 # ir_are_honored_not_scanned_as_production
-# frob:tests \
 # tests/unit/gates/test_exhaustive_handling_path_shape.py::test_rel_path_fed_to_exclude\
 # _and_test_checks_is_posix_style
-# frob:tests \
 # tests/unit/gates/test_exhaustive_handling_path_shape.py::test_windows_shaped_rel_path\
 # _mechanism
 # frob:enforces CHK-GATE-EXHAUST001

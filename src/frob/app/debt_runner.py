@@ -45,7 +45,6 @@ def _current_version(root: Path) -> str:
 # frob:ticket T-0563
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
-# frob:tests tests/test_debt_runner.py::TestDebtRunner.test_json_mode_lists_debt_entries
 def run(cfg: AppConfig) -> None:
     """List every outstanding `frob:debt` entry under `cfg.debt_path`."""
     from frob.gates import list_debt

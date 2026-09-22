@@ -114,7 +114,6 @@ def _now_iso() -> str:
 
 
 # frob:doc docs/guides/worktree-pool.md#public-api-frobscaffold
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestDefaultPoolDir.test_resolves_under_git_common\
 # _dir kind="unit"  # noqa: E501
 def default_pool_dir(repo_root: Path) -> Result[Path, PoolError]:
@@ -151,7 +150,6 @@ def _manifest_path(pool_dir: Path) -> Path:
 
 
 # frob:doc docs/guides/worktree-pool.md#public-api-frobscaffold
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestManifestRoundTrip.test_write_then_read_round_\
 # trips kind="unit"  # noqa: E501
 def read_manifest(pool_dir: Path) -> Result[tuple[PoolEntry, ...], PoolError]:
@@ -218,10 +216,8 @@ def _default_build_fn(path: Path) -> Result[None, PoolError]:
 
 
 # frob:doc docs/guides/worktree-pool.md#public-api-frobscaffold
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestWarmWorktree.test_creates_worktree_and_marks_\
 # ready kind="unit"  # noqa: E501
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestWarmWorktree.test_build_failure_marks_not_rea\
 # dy kind="unit"  # noqa: E501
 def warm_worktree(
@@ -303,10 +299,8 @@ def warm_worktree(
 
 
 # frob:doc docs/guides/worktree-pool.md#public-api-frobscaffold
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestWarmPool.test_fills_pool_to_n_slots \
 # kind="unit"  # noqa: E501
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestWarmPool.test_leaves_existing_ready_slots_alo\
 # ne kind="unit"  # noqa: E501
 def warm_pool(
@@ -352,13 +346,10 @@ def warm_pool(
 
 
 # frob:doc docs/guides/worktree-pool.md#public-api-frobscaffold
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestLeaseWorktree.test_leases_ready_slot_and_remo\
 # ves_it kind="unit"  # noqa: E501
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestLeaseWorktree.test_empty_pool_returns_err \
 # kind="unit"  # noqa: E501
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestLeaseWorktree.test_lease_merges_base_ref_curr\
 # ent kind="unit"  # noqa: E501
 def lease_worktree(
@@ -426,7 +417,6 @@ def lease_worktree(
 
 
 # frob:doc docs/guides/worktree-pool.md#public-api-frobscaffold
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestRefillAsync.test_refill_thread_rewarms_slot \
 # kind="unit"  # noqa: E501
 def refill_pool_async(
@@ -478,7 +468,6 @@ def refill_pool_async(
 
 
 # frob:doc docs/guides/worktree-pool.md#public-api-frobscaffold
-# frob:tests \
 # tests/system/test_scaffold_pool.py::TestPoolStatus.test_status_reflects_manifest \
 # kind="unit"  # noqa: E501
 def pool_status(

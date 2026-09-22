@@ -11,11 +11,7 @@ _log = get_logger(__name__)
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-1569
 # frob:ticket T-3106
-# frob:tests tests/unit/test_app_runners.py::TestOpsRunner.test_subcommand_delegates_to_matching_runner  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestOpsRunner.test_stats_subcommand_delegates_to_stats_runner  # noqa: E501
-# frob:tests \
 # tests/unit/test_app_runners.py::TestOpsRunner.test_unknown_subcommand_exits_1
-# frob:tests tests/unit/test_app_runners_process.py::TestOpsRunnerProcessDelegation.test_process_subcommand_delegates_to_process_runner  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob ops <release|natives|doctor|clean|fleet|deploy|scaffold|
     gitlog|stats|process>`: the T-1569 verb-group front door onto the

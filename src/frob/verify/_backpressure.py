@@ -156,10 +156,6 @@ def _read_frob_toml_profile_table(root: Path) -> dict:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
-# frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_fortress_is_zero_depth_zero_age  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_rapid_is_unbounded  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_standard_default  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_standard_toml_override  # noqa: E501
 def ceilings_for_profile(profile, root: Path) -> BackpressureCeilings:  # noqa: ANN001
     """The `BackpressureCeilings` a given `frob.tickets._profile.
     ProfileName` enforces at `root`: `fortress` is depth 0 (synchronous --
@@ -191,9 +187,6 @@ def ceilings_for_profile(profile, root: Path) -> BackpressureCeilings:  # noqa: 
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#land-profile-settings-t-2360
-# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_fortress_matches_current_branch_logic  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_rapid_matches_current_branch_logic  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_settings_are_frozen  # noqa: E501
 class LandProfileSettings(BaseModel):
     """The land-pipeline toggles a profile decides, generalizing
     `ceilings_for_profile`'s "resolve the name to a settings record in
@@ -265,10 +258,6 @@ _RAPID_LAND_PROFILE_SETTINGS = LandProfileSettings(
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#land-profile-settings-t-2360
-# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_fortress_matches_current_branch_logic  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_standard_matches_current_branch_logic  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_rapid_matches_current_branch_logic  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_unknown_profile_value_raises  # noqa: E501
 def settings_for_profile(profile) -> LandProfileSettings:  # noqa: ANN001
     """The `LandProfileSettings` `profile` resolves to -- T-2360's
     generalization of `ceilings_for_profile`'s pattern to the 5
@@ -308,8 +297,6 @@ def settings_for_profile(profile) -> LandProfileSettings:  # noqa: ANN001
 
 # frob:doc docs/modules/tickets-verify-sweep.md#land-profile-settings-t-2360
 # frob:ticket T-2361
-# frob:tests tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard.test_ok_passes_through  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard.test_err_falls_back_to_standard  # noqa: E501
 def effective_profile_or_standard(root: Path):
     """`frob.tickets._profile.effective_profile(root)`'s resolved
     `ProfileName`, or `ProfileName.STANDARD` on any `Err` (T-2361: an
@@ -344,11 +331,6 @@ def _parse_enqueued_at(raw: str) -> float | None:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
-# frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_empty_queue_is_never_tripped  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_depth_ceiling_trips  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_age_ceiling_trips  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_unbounded_ceilings_never_trip  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_queue_unreadable_is_an_error  # noqa: E501
 # frob:ticket T-1756
 def current_status(
     root: Path,
@@ -415,10 +397,6 @@ def current_status(
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
-# frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_not_tripped_returns_immediately_without_draining  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_tripped_drains_and_unblocks  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_persistently_red_batch_times_out  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_unbounded_ceiling_never_blocks  # noqa: E501
 def block_until_watermark_advances(
     root: Path,
     ceilings: BackpressureCeilings,
@@ -537,10 +515,6 @@ def _rapid_soft_warn_thresholds(root: Path) -> tuple[int, float]:
 
 # frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 # frob:ticket T-2290
-# frob:tests tests/unit/verify/test_backpressure.py::TestRapidSoftWarning.test_no_watermark_yet_is_none  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestRapidSoftWarning.test_below_threshold_is_none  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestRapidSoftWarning.test_stale_watermark_trips_the_soft_warning  # noqa: E501
-# frob:tests tests/unit/verify/test_backpressure.py::TestRapidSoftWarning.test_toml_override  # noqa: E501
 def rapid_soft_warning(
     root: Path,
     *,

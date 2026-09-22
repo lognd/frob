@@ -57,7 +57,6 @@ def _status_of(entry, ticket_states: dict[str, str]) -> str:  # noqa: ANN001
 # frob:ticket T-0638
 # frob:ticket T-1085
 # frob:doc docs/modules/gates.md#deprecated-gate-t-0576
-# frob:tests \
 # tests/test_deprecated_runner.py::TestDeprecatedRunner.test_json_mode_lists_deprecated\
 # _entries  # noqa: E501
 # frob:waive AFFECT001 reason="T-1085 (out of this ticket's declared \

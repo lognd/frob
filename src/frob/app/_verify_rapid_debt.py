@@ -13,7 +13,6 @@ from pydantic import BaseModel, ConfigDict
 
 
 # frob:doc docs/modules/verify-rapid-debt-visibility.md#liveness
-# frob:tests \
 # tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt.test_no_baseline_is_live
 # frob:ticket T-4324
 class RapidDebtEntryView(BaseModel):
@@ -58,11 +57,8 @@ def _commit_covered_by(root: Path, commit: str, cover: str) -> bool:
     return spawned.is_ok and spawned.danger_ok.returncode == 0
 
 
-# frob:tests \
 # tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt.test_no_baseline_is_live
-# frob:tests \
 # tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt.test_later_baseline_clears
-# frob:tests \
 # tests/unit/verify/test_verify_runner.py::TestLiveRapidDebt.test_uncovered_stays_live
 # frob:ticket T-4324
 def _live_deferred_sweep_debt(root: Path) -> tuple[RapidDebtEntryView, ...]:

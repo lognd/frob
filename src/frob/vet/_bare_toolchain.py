@@ -53,7 +53,6 @@ BARE_TOOLCHAIN_NAMES: frozenset[str] = frozenset(
 
 
 # frob:doc docs/modules/process.md#project-scoped-toolchain-spawns-t-3887t-4125
-# frob:tests tests/unit/vet/test_bare_toolchain.py::TestBareToolchainFindings.test_flags_bare_argv_literal  # noqa: E501
 @dataclass(frozen=True)
 class BareToolchainFinding:
     """One bare-toolchain-name argv literal: `tool` is the flagged name,
@@ -81,7 +80,6 @@ def _first_string_constant(elts: list[ast.expr]) -> tuple[str, int, int] | None:
 
 
 # frob:doc docs/modules/process.md#project-scoped-toolchain-spawns-t-3887t-4125
-# frob:tests tests/unit/vet/test_bare_toolchain.py::TestBareToolchainFindings.test_clean_on_project_tool_argv_spelling  # noqa: E501
 def bare_toolchain_findings(path: Path) -> list[BareToolchainFinding]:
     """Every `List`/`Tuple` literal in `path` whose first element is a
     bare `BARE_TOOLCHAIN_NAMES` string constant -- a syntax error or

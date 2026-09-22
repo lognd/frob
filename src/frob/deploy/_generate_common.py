@@ -62,7 +62,6 @@ _PRIVILEGED_PORT_CUTOFF = 1024
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestSorted.test_sorted kind="unit"
 class ManifestEntry(BaseModel):
     """One node id's `HostManifest`, paired for deterministic iteration
     (`sorted_manifest_entries`) -- the one shape every renderer walks
@@ -113,7 +112,6 @@ def _node_capabilities(node: Node, manifest: HostManifest) -> frozenset[str]:
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestSorted.test_sorted kind="unit"
 def sorted_manifest_entries(model: KernelModel) -> tuple[ManifestEntry, ...]:
     """Every node/store in `model` with a declared `std.host` manifest,
     sorted by node id -- the ONE deterministic walk `manifest_digest` and
@@ -140,7 +138,6 @@ def sorted_manifest_entries(model: KernelModel) -> tuple[ManifestEntry, ...]:
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
-# frob:tests tests/unit/deploy/test_generate.py::TestDigest.test_det kind="unit"
 def manifest_digest(model: KernelModel) -> str:
     """sha256 over a deterministic JSON serialization of every declared
     `HostManifest`, keyed by node id -- the DEPLOY001 drift lock's join

@@ -311,7 +311,6 @@ def _render_evidence_changes(ticket) -> str:  # noqa: ANN001
     return "\n".join(lines)
 
 
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def _try_doable_via_daemon(root: Path, cfg: AppConfig) -> bool:
     """T-1128: for a plain `frob ticket doable --json` (no `--show-blocked`,
     `--ignore-lease`, or `--sprint` -- the RPC's own fixed-arity `frob.
@@ -623,8 +622,6 @@ def _order_dispatchable_with_alarms(
 
 # frob:ticket T-0976
 # frob:ticket T-1822
-# frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestDoableRowLandedMarker.test_flagged_id_gets_inline_marker  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestDoableRowLandedMarker.test_unflagged_id_gets_no_marker  # noqa: E501
 def _milestone_row_suffix(
     queue: "TicketQueue | None", t: "Ticket", root: Path | None
 ) -> str:
@@ -709,8 +706,6 @@ def _doable_row(
 
 # frob:ticket T-0976
 # frob:ticket T-1822
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping.test_parent_id_not_in_queue_falls_back_to_no_parent_bucket  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping.test_parent_id_present_in_queue_uses_its_title  # noqa: E501
 def _render_doable_dispatchable(
     ordered: list,
     alarm_by_id: dict,
@@ -866,8 +861,6 @@ def _load_unlanded_summary_cache(root: Path) -> _UnlandedSummaryCache | None:
 
 
 # frob:ticket T-3522
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_doable_summary_cache kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_fresh_cache_round_trips kind="unit"  # noqa: E501
 def _save_unlanded_summary_cache(root: Path, branches: tuple[str, ...]) -> None:
     """Persist a fresh `_UnlandedSummaryCache` for `root` -- best-effort:
     a write failure (read-only tree, missing `.frob/`) is swallowed, since
@@ -950,8 +943,6 @@ def _render_unlanded_branch_work_summary(root: Path | None) -> None:
 # frob:ticket T-0976
 # frob:ticket T-1876
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_dead_holder_flagged_with_reason  # noqa: E501
-# frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_live_holder_not_flagged  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Cross-worktree lease \
 # side channel (T-0473) section individually frob:describes this symbol by its own \
 # qualified path -- a deliberate per-symbol anchor, not a duplicate"
@@ -1023,10 +1014,7 @@ def _render_doable_in_flight(
 
 # frob:ticket T-1738
 # frob:ticket T-1825
-# frob:tests \
 # tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_json_render_shape
-# frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_plain_render_lists_groups_and_remainder  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_missing_agents_flag_is_a_clean_error  # noqa: E501
 def _wave(root: Path, cfg: AppConfig) -> None:
     """Render `frob ticket wave --agents N`: up to N mutually
     scope-disjoint groups from the doable set, plus a remainder section
@@ -1120,7 +1108,6 @@ def _render_wave_plain(outcome, agents: int) -> None:  # noqa: ANN001 -- WaveRes
 
 
 # frob:ticket T-2395
-# frob:tests \
 # tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand.test_json_render_shape  # noqa: E501
 class _ContentionEntry(NamedTuple):
     """One real file declared by 2+ currently-open tickets (T-2395): the
@@ -1135,7 +1122,6 @@ class _ContentionEntry(NamedTuple):
 
 
 # frob:ticket T-2395
-# frob:tests \
 # tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand.test_json_render_shape  # noqa: E501
 class _ContentionOutcome(NamedTuple):
     """The full `frob ticket contention` answer (T-2395): every contended
@@ -1269,7 +1255,6 @@ def _compute_contention(
 
 
 # frob:ticket T-2395
-# frob:tests \
 # tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand.test_plain_render_ranks_and_names_owners  # noqa: E501
 def _contention(root: Path, cfg: AppConfig) -> None:
     """Render `frob ticket contention` (T-2395): every real file declared
@@ -1423,8 +1408,6 @@ def _render_scope_breadth_summary(
 
 
 # frob:ticket T-1822
-# frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers.test_no_markers_prints_nothing_and_returns_empty  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers.test_flagged_ticket_prints_one_summary_line_and_is_returned  # noqa: E501
 def _render_already_landed_markers(
     root: Path,
     queue: "TicketQueue",
@@ -1549,11 +1532,8 @@ def _render_doable_show_blocked(
 
 # frob:ticket T-1492
 # frob:ticket T-2728
-# frob:tests \
 # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_flag_calls_migrate_missing_v2  # noqa: E501
-# frob:tests \
 # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_omitted_keeps_original_behavior  # noqa: E501
-# frob:tests \
 # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_combines_with_to_v2  # noqa: E501
 def _migrate(root: Path, to: str | None = None, *, fill_gaps: bool = False) -> None:
     """Run `frob ticket migrate`: with `to="v2"`, delegate to
@@ -1608,9 +1588,7 @@ def _migrate(root: Path, to: str | None = None, *, fill_gaps: bool = False) -> N
 
 # frob:ticket T-0162
 # frob:ticket T-1882
-# frob:tests \
 # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_no_args_always_refuses  # noqa: E501
-# frob:tests \
 # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_dry_run_still_previews_read_only  # noqa: E501
 def _renumber(root: Path, cfg: AppConfig) -> None:
     """`frob ticket renumber <old> <new> [--dry-run]` rewrites one ticket's
@@ -1713,8 +1691,6 @@ def _renumber_one(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1637
-# frob:tests tests/system/test_cli_ticket_promote.py::TestPromoteCLI.test_promotes_a_draft_carrying_evidence_and_done_report kind="integration"  # noqa: E501
-# frob:tests tests/system/test_cli_ticket_promote.py::TestPromoteCLI.test_promoting_an_already_final_id_is_a_no_op kind="integration"  # noqa: E501
 def _promote(root: Path, cfg: AppConfig) -> None:
     """`frob ticket promote <draft-id>`: allocate the next real `T-####`
     id against `root`'s current merged (active+archive) view and rewrite

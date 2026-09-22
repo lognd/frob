@@ -165,10 +165,6 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 
 
 # frob:doc docs/design/coding-performance-corpus.md#perf015-016-t-5136
-# frob:tests tests/unit/perf/test_loop_variant.py::TestPerf016.test_git_spawn_with_loop_variable_pathspec_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_loop_variant.py::TestPerf016.test_loop_invariant_spawn_is_not_flagged_by_perf016  # noqa: E501
-# frob:tests tests/unit/perf/test_loop_variant.py::TestPerf015.test_loop_variant_ticket_id_spawn_is_flagged_advisory  # noqa: E501
-# frob:tests tests/unit/perf/test_loop_variant.py::TestPerf015.test_loop_variant_call_without_iteration_source_name_is_not_flagged  # noqa: E501
 # frob:ticket T-5136
 def loop_variant_effect_violations(
     files: Sequence[ParsedFile],

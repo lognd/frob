@@ -37,8 +37,6 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0781
-# frob:tests tests/unit/vet/test_taint.py::TestTaintGate.test_taint_gate_emits_warn_severity_violation  # noqa: E501
-# frob:tests tests/unit/vet/test_taint.py::TestTaintGate.test_taint_gate_no_findings_on_empty_tracked_set  # noqa: E501
 # frob:enforces CHK-GATE-SEC005
 # frob:enforces CWE-88
 def taint_gate(root: Path) -> tuple[Violation, ...]:

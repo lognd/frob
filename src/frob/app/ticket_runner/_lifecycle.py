@@ -284,8 +284,6 @@ def _default_work_worktree(root: Path, ticket_id: str) -> Path:
 
 
 # frob:ticket T-1790
-# frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_detects_root_under_dot_claude_worktrees  # noqa: E501
-# frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_primary_checkout_is_not_nested  # noqa: E501
 def _root_is_itself_a_nested_worktree(root: Path) -> bool:
     """`True` iff `root` (already resolved) has a `.claude/worktrees`
     segment anywhere in its own path -- i.e. `root` is ITSELF a
@@ -480,9 +478,6 @@ def _ensure_worktree_fresh(
 
 
 # frob:ticket T-3320
-# frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_runs_uv_sync_in_the_worktree  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_exec_disabled_degrades_to_a_warning_not_sys_exit  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_nonzero_exit_degrades_to_a_warning_not_sys_exit  # noqa: E501
 def _sync_venv_for_work(worktree: Path, ticket_id: str) -> None:
     """`frob ticket work`'s venv-sync half (T-3320): run `uv sync` inside
     `worktree` so a FRESH worktree has its own `.venv` populated with the
@@ -665,7 +660,6 @@ def _start_cluster_members(
 # frob:ticket T-1243
 # frob:ticket T-1790
 # frob:ticket T-5199
-# frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_work_cluster_refuses_from_a_nested_worktree  # noqa: E501
 def _work_cluster(root: Path, cfg: AppConfig) -> None:
     """`frob ticket work --cluster <epic-or-story-id> [--worktree PATH]`
     (T-1243): the cluster form of `_work` -- create/reuse ONE worktree,
@@ -765,7 +759,6 @@ def _work_cluster(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-1175
 # frob:ticket T-1790
-# frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_work_refuses_from_a_nested_worktree  # noqa: E501
 def _work(root: Path, cfg: AppConfig) -> None:
     """`frob ticket work <id> [--worktree PATH]` (T-1175): the one-verb
     replacement for playbook section 0 steps 1-2 plus `start` -- create or
@@ -1126,8 +1119,6 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-2446
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_breadth_ack_flag_sets_field_before_refusal  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_breadth_ack_without_reason_refuses  # noqa: E501
 # frob:ticket T-5132
 # frob:doc docs/modules/tickets-data-storage.md#points-t-5132
 def _apply_unsized_ack_on_start(root: Path, cfg: AppConfig, ticket):  # noqa: ANN001,ANN201
@@ -1250,8 +1241,6 @@ def _apply_scope_breadth_ack_on_start(root: Path, cfg: AppConfig, ticket):  # no
 
 # frob:ticket T-1866
 # frob:doc docs/modules/tickets-data-storage.md#mega-glob-scope-refused-at-start-t-1866
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_over_broad_scope  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_scope_ack_bypasses_refusal  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Mega-glob scope \
 # refused at start (T-1866) section documents several symbols under one section, not \
 # just a public entry point -- the many-symbols- one-section convention this repo \
@@ -1304,11 +1293,8 @@ def _refuse_over_broad_scope_on_start(root: Path, ticket) -> None:  # noqa: ANN0
 
 # frob:ticket T-2394
 # frob:doc docs/modules/tickets-lifecycle.md#declared-no-scope-t-2394
-# frob:tests \
 # tests/test_tickets_no_scope.py::TestRefuseEmptyScopeOnStart.test_empty_scope_refuses
-# frob:tests \
 # tests/test_tickets_no_scope.py::TestRefuseEmptyScopeOnStart.test_declared_no_scope_starts_cleanly  # noqa: E501
-# frob:tests \
 # tests/test_tickets_no_scope.py::TestRefuseEmptyScopeOnStart.test_nonempty_scope_starts_cleanly  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Declared no-scope \
 # (T-2394) section documents several symbols under one section, not just a public \
@@ -1354,8 +1340,6 @@ def _refuse_empty_scope_on_start(ticket) -> None:  # noqa: ANN001
 
 # frob:ticket T-1880
 # frob:ticket T-1894
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_scope_colliding_with_other_in_progress_lease  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_allows_disjoint_scope  # noqa: E501
 def _refuse_on_scope_lease_collision(root: Path, ticket_id: str, ticket) -> None:  # noqa: ANN001
     """`sys.exit(1)` if `ticket`'s declared scope (as filed, BEFORE this
     call grants its own lease) overlaps another ALREADY in-progress
@@ -1410,8 +1394,6 @@ def _refuse_on_scope_lease_collision(root: Path, ticket_id: str, ticket) -> None
 # frob:ticket T-1645
 # frob:ticket T-1866
 # frob:doc docs/modules/gates.md#tick009tick010-t-0714
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_scope_ack_bypasses_refusal  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_precise_scope_warns_nothing  # noqa: E501
 # frob:waive COV007 reason="docs/modules/gates.md's TICK009/TICK010 (T-0714) section \
 # documents several symbols under one section, not just a public entry point -- the \
 # many-symbols- one-section convention this repo already accepted for vet.md (T-2810 \
@@ -1435,10 +1417,6 @@ def _warn_scope_breadth_on_start(root: Path, ticket) -> None:  # noqa: ANN001
 
 
 # frob:ticket T-0354
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_foreground_runs_sweep_synchronously  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_spawns_detached_sweep_subprocess  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_popen_failure_falls_back_to_synchronous_sweep  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_exec_kill_switch_forces_synchronous_sweep  # noqa: E501
 def _run_sweep(root: Path, ticket) -> None:  # noqa: ANN001
     """Record the pre-work sweep (dup + xref + scope digest) for `ticket`.
 
@@ -1650,13 +1628,7 @@ def _build_unblocked_ticket(ticket, cfg: AppConfig):  # noqa: ANN001, ANN202
 # frob:ticket T-2681
 # frob:ticket T-3113
 # frob:doc docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603
-# frob:tests tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_removes_edge
-# frob:tests tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_refuses_when_not_present  # noqa: E501
-# frob:tests \
 # tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_refuses_invalid_ref
-# frob:tests tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_requires_reason
-# frob:tests tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_records_reason_in_unblock_log  # noqa: E501
-# frob:tests tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_leaves_other_blockers_intact  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's One verb table, not \
 # two sets (T-2603) section documents several symbols under one section, not just a \
 # public entry point -- the many-symbols- one-section convention this repo already \

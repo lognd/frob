@@ -133,10 +133,6 @@ def _read_toml(path: Path) -> dict | None:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStoreConfig.test_missing_frob_toml_returns_defaults  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStoreConfig.test_parses_perf_sketch_table  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStoreConfig.test_malformed_toml_falls_back_to_defaults  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStoreConfig.test_wrong_typed_perf_sketch_falls_back_to_defaults  # noqa: E501
 def load_sketch_config(root: Path) -> SketchStoreConfig:
     """The `[perf.sketch]` table from `root/frob.toml`, or all-defaults on
     a missing/malformed file/table -- never raises."""
@@ -209,7 +205,6 @@ def _ensure_label_column(conn: sqlite3.Connection) -> None:
             raise
 
 
-# frob:tests \
 # tests/unit/perf/test_sketch_store.py::TestConnectionReuse.test_close_all_drops_cached\
 # _connections  # noqa: E501
 def _close_all() -> None:
@@ -223,8 +218,6 @@ def _close_all() -> None:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_get_on_never_seen_key_is_none  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_put_then_get_round_trips  # noqa: E501
 def get_sketch(root: Path, section_key: str) -> QuantileSketch | None:
     """The currently-stored sketch for `section_key`, or `None` on a miss
     (never seen, or the store is unreadable -- both are "no prior" from a
@@ -274,10 +267,6 @@ def _evict_coldest(conn: sqlite3.Connection, cap_bytes: int) -> None:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_put_then_get_round_trips  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_decayed_merge_converges_toward_recent_run_distribution  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_store_cap_evicts_coldest_section_first  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_first_write_has_no_prior_to_decay  # noqa: E501
 def put_sketch(
     root: Path,
     section_key: str,
@@ -336,9 +325,6 @@ class StoredSketch(BaseModel):
 
 
 # frob:doc docs/modules/perf.md#hot-graph-query-surface-t-0712
-# frob:tests tests/unit/perf/test_hot_query.py::TestListSketches.test_empty_store_is_empty  # noqa: E501
-# frob:tests tests/unit/perf/test_hot_query.py::TestListSketches.test_lists_every_stored_row_with_its_label  # noqa: E501
-# frob:tests tests/unit/perf/test_hot_query.py::TestListSketches.test_pre_label_store_still_reads_via_column_migration  # noqa: E501
 def list_sketches(root: Path) -> list[StoredSketch]:
     """Every currently-stored sketch at `root`'s hot-graph store, in no
     particular order -- `frob perf hot`'s query surface sorts/ranks this
@@ -365,8 +351,6 @@ def list_sketches(root: Path) -> list[StoredSketch]:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_decayed_merge_converges_toward_recent_run_distribution  # noqa: E501
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_store_cap_evicts_coldest_section_first  # noqa: E501
 def store_size_bytes(root: Path) -> int:
     """Total serialized payload bytes currently held across every section
     in `root`'s sketch store -- what `[perf.sketch].store_cap_bytes`
@@ -382,7 +366,6 @@ def store_size_bytes(root: Path) -> int:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStore.test_new_run_sketch_is_an_empty_sketch_at_alpha  # noqa: E501
 def new_run_sketch(alpha: float) -> QuantileSketch:
     """Convenience: an empty sketch a caller accumulates one run's samples
     into before handing it to `put_sketch` -- thin wrapper over

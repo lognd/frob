@@ -27,7 +27,6 @@ def _fall_back_to_map(cfg: AppConfig, target) -> None:  # noqa: ANN001
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
 # frob:ticket T-1238
-# frob:tests tests/unit/test_app_runners.py::TestOutlineRunner.test_file_target_json_mode  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob outline`: show a file's structural skeleton (classes,
     functions, line numbers). T-1238: un-deprecated -- regrouped under

@@ -28,9 +28,6 @@ from __future__ import annotations
 # name (no more `as _symref_to_nodeid`), so static call-graph analysis sees
 # every real call site directly. A WIRE001 waiver was the wrong mechanism
 # for a permanent alias choice; removing the alias removed the need for one.
-# frob:tests tests/unit/test_nodeid.py::test_plain_dotted_qualname_becomes_double_colon kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_nodeid.py::test_bracketed_case_suffix_dots_pass_through_unchanged kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_nodeid.py::test_no_qualname_separator_is_a_noop_on_the_path_side kind="unit"  # noqa: E501
 def symref_to_nodeid(symref: str) -> str:
     """`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname.
 

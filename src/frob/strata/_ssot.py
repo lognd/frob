@@ -271,7 +271,6 @@ def _apply_ssot_waivers(model: KernelModel, violations: list[SsotViolation]):  #
 # frob:ticket T-0649
 # frob:enforces CHK-GATE-REL290
 # frob:enforces CHK-GATE-REL291
-# frob:tests tests/unit/strata/test_ssot.py::TestMissingOwner.test_multi_writer_store_without_owner_fires  # noqa: E501
 def check_ssot_obligations(
     model: KernelModel, store_ids: frozenset[str], root: Path
 ) -> Result[SsotReport, StrataError]:

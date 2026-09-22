@@ -170,7 +170,6 @@ class HitStream(BaseModel):
 
     @property
     # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-    # frob:tests tests/unit/perf/test_hotgraph.py::TestResolveStream.test_unresolvable_leaf_is_unattributed_never_dropped  # noqa: E501
     def unattributed_weight(self) -> float:
         """Total weight attributed to `UNATTRIBUTED_SECTION_ID` -- the
         NO-FAIL-SILENT accounting this stream always exposes."""
@@ -332,7 +331,6 @@ def _class_sections(file: str, cls: NormalizedClass) -> list[Section]:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_hotgraph.py::TestResolveStream.test_leaf_in_loop_body_attributes_to_loop_section  # noqa: E501
 # frob:ticket T-0972
 def build_section_index(modules: list[NormalizedModule]) -> SectionIndex:
     """Build a `SectionIndex` (file -> sorted `Section`s) from one or more
@@ -372,9 +370,6 @@ def _resolve_frame(index: SectionIndex, frame: SampledFrame) -> Section | None:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_hotgraph.py::TestResolveStream.test_leaf_in_loop_body_attributes_to_loop_section  # noqa: E501
-# frob:tests tests/unit/perf/test_hotgraph.py::TestResolveStream.test_call_edge_classified_external_when_callee_unmodeled  # noqa: E501
-# frob:tests tests/unit/perf/test_hotgraph.py::TestResolveStream.test_unresolvable_leaf_is_unattributed_never_dropped  # noqa: E501
 def resolve_stream(index: SectionIndex, stacks: list[SampledStack]) -> HitStream:
     """Resolve `stacks` (from any collector adapter -- python today,
     native/V8/JVM per T-0748) into a `HitStream` against `index`.
@@ -458,7 +453,6 @@ def _decile_language(section_id: str, file_by_section: dict[str, str]) -> str:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestLanguageDeciles.test_resolve_stream_output_feeds_language_deciles_end_to_end  # noqa: E501
 # frob:ticket T-0972
 def language_deciles(stream: HitStream, index: SectionIndex) -> list[LanguageDecileRow]:
     """Bucket `stream`'s per-section hit weight into 10 rank-ordered

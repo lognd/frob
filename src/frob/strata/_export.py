@@ -113,7 +113,6 @@ def _sorted_node_ids(model: KernelModel) -> list[str]:
 
 
 # frob:doc docs/commands/sys.md#frob-sys-export
-# frob:tests tests/unit/strata/test_export.py::TestNodeSyscalls.test_base kind="unit"
 def node_allowed_syscalls(node: Node) -> frozenset[str]:
     """Baseline + may-capability-derived allowed syscall set for one node
     (`_SECCOMP_KIND_MAP`) -- the ONE computation `export_seccomp` and

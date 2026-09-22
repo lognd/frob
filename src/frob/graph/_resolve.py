@@ -24,8 +24,6 @@ _log = get_logger(__name__)
 # frob:doc docs/modules/graph.md#public-api
 # frob:ticket T-0402
 # frob:ticket T-3411
-# frob:tests tests/test_graph.py::TestResolve.test_exact_qualname_wins_over_suffix_match
-# frob:tests tests/test_graph.py::TestResolve.test_ambiguous_suffix_match
 def resolve(snapshot: GraphSnapshot, ref: str) -> Result[SymbolRecord, GraphError]:
     """Resolve `ref`: exact `path::qualname`, else a unique qualname match,
     else a unique `.suffix` match.

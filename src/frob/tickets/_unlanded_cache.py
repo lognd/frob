@@ -42,8 +42,6 @@ class _HasBranch(Protocol):
 
 # frob:ticket T-3567
 # frob:ticket T-3734
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_doable_summary_cache kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_skips_the_cache_write_when_frob_dir_is_not_gitignored kind="unit"  # noqa: E501
 def _frob_dir_is_gitignored(root: Path) -> bool:
     """Whether `root`'s own git configuration (`.gitignore` at any level
     `git check-ignore` consults, including a repo-root `.gitignore`, a
@@ -74,8 +72,6 @@ def _frob_dir_is_gitignored(root: Path) -> bool:
 
 # frob:ticket T-3567
 # frob:ticket T-3734
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_doable_summary_cache kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_skips_the_cache_write_when_frob_dir_is_not_gitignored kind="unit"  # noqa: E501
 def _maybe_save_unlanded_summary_cache(
     root: Path, unlanded_findings: "tuple[_HasBranch, ...]"
 ) -> None:

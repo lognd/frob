@@ -175,16 +175,12 @@ def _is_already_cached(root: Path, name: str, cached_by: tuple[str, ...]) -> boo
 # frob:doc \
 # docs/modules/perf.md#cross-stage-redundant-recomputation-perf007-t-0413----the-perf-m\
 # eta-gap
-# frob:tests \
 # tests/test_perf.py::TestPerf007RedundantComputation.test_two_stages_calling_the_same_\
 # uncached_parse_is_flagged
-# frob:tests \
 # tests/test_perf.py::TestPerf007RedundantComputation.test_single_shared_call_site_is_n\
 # ot_flagged
-# frob:tests \
 # tests/test_perf.py::TestPerf007RedundantComputation.test_cached_definition_suppresses\
 # _the_warning
-# frob:tests \
 # tests/test_perf.py::TestPerf007RedundantComputation.test_no_config_means_no_perf007_c\
 # hecking
 # frob:ticket T-0413

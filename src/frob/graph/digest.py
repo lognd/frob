@@ -31,7 +31,6 @@ _JOIN = "\x00"
 
 
 # frob:ticket T-4391
-# frob:tests tests/test_graph.py::TestDigests.test_crlf_checkout_does_not_move_digest
 def _normalize_newlines(text: str) -> str:
     """Collapse `\\r\\n` and bare `\\r` to `\\n` so a digest over `text` is
     identical whether the source was checked out with CRLF (Windows) or LF
@@ -40,7 +39,6 @@ def _normalize_newlines(text: str) -> str:
 
 
 # frob:ticket T-4391
-# frob:tests tests/test_graph.py::TestDigests.test_crlf_checkout_does_not_move_digest
 def _hash_tokens(tokens: tuple[str, ...]) -> str:
     """Sha256 hex digest of `tokens` joined by NUL (empty tuple hashes fine),
     each token line-ending-normalized first (T-4391) so a multi-line token's
@@ -72,7 +70,6 @@ def _digest_body(symbol: RawSymbol) -> str:
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
 # frob:ticket T-4391
-# frob:tests tests/test_graph.py::TestDigests.test_crlf_checkout_does_not_move_digest
 def _digest_doc(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.doc_text` (already whitespace-collapsed),
     line-ending-normalized first (T-4391) for the same CRLF/LF independence

@@ -121,15 +121,6 @@ def _write_unity_fragments(
 
 # frob:doc docs/commands/scaffold.md#public-api
 # frob:ticket T-4503
-# frob:tests tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject.test_writes_frob_toml_with_unity_excludes  # noqa: E501
-# frob:tests tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject.test_one_strata_file_per_asmdef  # noqa: E501
-# frob:tests tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject.test_returned_paths_all_exist  # noqa: E501
-# frob:tests tests/unit/test_scaffold_unity_project.py::TestOutputExistsRefusal.test_second_run_without_force_is_output_exists  # noqa: E501
-# frob:tests tests/unit/test_scaffold_unity_project.py::TestOutputExistsRefusal.test_refusal_leaves_no_partial_scaffold  # noqa: E501
-# frob:tests tests/unit/test_scaffold_unity_project.py::TestOutputExistsRefusal.test_force_true_overwrites  # noqa: E501
-# frob:tests tests/unit/test_scaffold_unity_project.py::TestNotAUnityProject.test_plain_directory_is_not_a_unity_project  # noqa: E501
-# frob:tests tests/unit/test_scaffold_unity_project.py::TestNotAUnityProject.test_no_bogus_config_written  # noqa: E501
-# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_success  # noqa: E501
 def render_unity_project(
     root: Path, *, force: bool = False
 ) -> Result[list[Path], ScaffoldError]:

@@ -153,9 +153,6 @@ def _iter_candidate_files(repo_root: Path):
 
 
 # frob:doc docs/commands/refactor.md#scan_module_path_citations
-# frob:tests tests/test_refactor.py::TestModuleProse.test_rewrites_frob_toml_dotted_ref
-# frob:tests tests/test_refactor.py::TestModuleProse.test_leaves_prefix_colliding_sibling_untouched  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestModuleProse.test_leaves_unrelated_prose_untouched
 def scan_module_path_citations(
     repo_root: Path,

@@ -27,12 +27,8 @@ _TODO_RE = re.compile(r"\b(TODO|FIXME)\b")
 
 
 # frob:enforces CHK-GATE-TODO002
-# frob:tests tests/test_todo_fmt_gate.py::TestTodo002Edges.test_open_ticket_no_violation
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestTodo002Edges.test_closed_ticket_fires_todo002
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestTodo002Edges.test_missing_ticket_fires_todo002
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestTodo002Edges.test_non_todo_edges_are_ignored
 def _todo002_edges(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:
     """TODO002: `frob:todo` edges bound to a non-open (or missing) ticket.
@@ -99,11 +95,8 @@ def _pyproject_version_at(root: Path, sha: str) -> str | None:
 
 
 # frob:ticket T-0783
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_fires_after_version_bump_since_deferral_landed  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_silent_when_no_version_bump_since_deferral  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_silent_when_ticket_closes  # noqa: E501
 # frob:enforces CHK-GATE-TODO003
 def _todo003_long_deferred(
@@ -228,14 +221,9 @@ def _todo001_bare(snapshot: GraphSnapshot, diff: Diff) -> list[Violation]:
 
 
 # frob:enforces CHK-GATE-TODO001
-# frob:tests tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_bare_todo_fires
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_frob_prefixed_line_is_not_bare  # noqa: E501
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_multiline_comment_flags_only_todo_lines  # noqa: E501
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_frob_prefixed_line_inside_multiline_block_is_skipped  # noqa: E501
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestTodo001BareComment.test_no_todo_token_no_violation
 # frob:waive PII012 reason="'token' here means the TODO/FIXME lexical marker this gate scans for, not a credential"  # noqa: E501
 def _todo001_bare_comment(file: str, comment) -> list[Violation]:  # noqa: ANN001
@@ -293,15 +281,10 @@ def _fmt001_touched_lines(diff: Diff, file: str) -> set[int]:
     return lines
 
 
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestFmt001Gate.test_directive_run_over_limit_flagged
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestFmt001Gate.test_ordinary_long_comment_not_flagged
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestFmt001Gate.test_long_code_line_not_flagged
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestFmt001Gate.test_untouched_line_not_flagged
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestFmt001Gate.test_short_directive_not_flagged
 def _fmt001_file(
     root: Path, file: str, limit: int | None, touched: set[int]
@@ -345,9 +328,7 @@ def _fmt001_file(
 
 
 # frob:ticket T-0976
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestFmt001MarkerEntries.test_collects_only_marker_lines
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestFmt001MarkerEntries.test_no_marker_lines_yields_empty
 def _fmt001_marker_entries(
     lines: list[str], marker: str
@@ -369,13 +350,9 @@ def _fmt001_marker_entries(
 
 
 # frob:ticket T-0976
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestFmt001ViolationsForRuns.test_over_limit_touched_frob_line_fires  # noqa: E501
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestFmt001ViolationsForRuns.test_untouched_line_not_flagged  # noqa: E501
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestFmt001ViolationsForRuns.test_non_frob_run_not_flagged
-# frob:tests \
 # tests/test_todo_fmt_gate.py::TestFmt001ViolationsForRuns.test_short_frob_line_not_flagged  # noqa: E501
 def _fmt001_violations_for_runs(
     file: str,
@@ -437,7 +414,6 @@ def _fmt001_violations_for_runs(
 
 # frob:doc docs/modules/gates.md#fmt001-t-0851
 # frob:enforces CHK-GATE-FMT001
-# frob:tests \
 # tests/gates_suite/test_waive.py::TestFmt001Gate.test_directive_run_over_limit_flagged
 # frob:ticket T-2761
 def fmt_gate(root: Path, diff: Diff) -> tuple[Violation, ...]:

@@ -322,7 +322,6 @@ def _via_matches_site(rel: str, symbol: str | None, via: tuple[str, ...]) -> boo
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1440
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestScopedMayViaConformance.test_observation_outside_via_surface_is_a_violation kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
 # (T-1440) names this exact private per-file join function BY NAME \
@@ -467,7 +466,6 @@ _NODE_HEADER_RE = re.compile(r"^\s*(?:node|store)\s+(?P<node>[A-Za-z_][\w.]*)\s*
 
 
 # frob:doc docs/strata/surface.md#may-scope
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_missing_reason_is_flagged kind="unit"  # noqa: E501
 class AmbientCapabilityReasonViolation(BaseModel):
     """One ambient (via-less) `may` capability atom declared with no
@@ -490,11 +488,8 @@ class AmbientCapabilityReasonViolation(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#may-scope
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_missing_reason_is_flagged kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_reason_present_is_silent kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_enumerated_grant_needs_no_reason kind="unit"  # noqa: E501
 def check_ambient_capability_reasons(
     paths: tuple[Path, ...],
@@ -577,7 +572,6 @@ class LegacyCapabilityAliasViolation(BaseModel):
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 # frob:ticket T-0717
-# frob:tests tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases kind="unit"
 def check_legacy_capability_aliases(
     model: KernelModel, *, today: date | None = None
 ) -> tuple[LegacyCapabilityAliasViolation, ...]:
@@ -617,7 +611,6 @@ def check_legacy_capability_aliases(
 
 
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
-# frob:tests tests/unit/strata/test_effects.py::TestNodeMayKinds.test_kinds kind="unit"
 def node_may_kinds(node: Node) -> frozenset[str]:
     """Public alias of `_declared_kinds`: every capability KIND `node`
     declares via its `may` atoms. Exposed for `frob.deploy` (T-0257),
@@ -930,7 +923,6 @@ class StaleViaSymbolViolation(BaseModel):
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1627
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestStaleViaSymbol.test_unresolvable_symbol_is_flagged kind="unit"  # noqa: E501
 def check_stale_via_symbols(
     model: KernelModel, binding: CodeBinding, root: Path
@@ -1101,7 +1093,6 @@ class CapabilityRatchetViolation(BaseModel):
 
 
 # frob:ticket T-4495
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_new_test_file_matching_glob_via_needs_no_strata_edit  # noqa: E501
 def _via_is_bare_glob_only(via: tuple[str, ...]) -> bool:
     """`True` when every entry in `via` (T-4495) is a bare glob: no `::`
     symbol qualifier (`_via_glob_and_symbol`) and at least one wildcard
@@ -1123,7 +1114,6 @@ def _via_is_bare_glob_only(via: tuple[str, ...]) -> bool:
 
 
 # frob:ticket T-4495
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
 def _glob_via_observed_site_count(
     node: Node, grant: MayGrant, binding: CodeBinding, root: Path
 ) -> int:
@@ -1332,12 +1322,8 @@ def _capability_scan_digest(
 # frob:ticket T-1628
 # frob:ticket T-4495
 # frob:ticket T-4669
-# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_without_lock_entry_fails  # noqa: E501
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_shrink_is_silent
-# frob:tests \
 # tests/unit/strata/test_strata_scan_cache.py::TestCapabilityViaSiteCountsCache.test_second_call_in_process_is_a_cache_hit_under_one_second  # noqa: E501
-# frob:tests \
 # tests/unit/strata/test_strata_scan_cache.py::TestCapabilityViaSiteCountsCache.test_changed_tracked_file_invalidates_the_cache  # noqa: E501
 def capability_via_site_counts(
     model: KernelModel, root: Path | None = None
@@ -1387,7 +1373,6 @@ def capability_via_site_counts(
 
 
 # frob:ticket T-4495
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_non_testsuite_bare_glob_via_is_not_auto_accepted  # noqa: E501
 def _testsuite_glob_ratcheted_keys(model: KernelModel) -> frozenset[str]:
     """`{"<node_id>::<atom>"}` for every `testsuite`-node `MayGrant` whose
     `via` is bare-glob-only (T-4495) -- the ONLY keys `capability_ratchet_
@@ -1500,8 +1485,6 @@ def _land_lock_root_env(land_lock_root: Path | None):
 
 # frob:ticket T-4563
 # frob:ticket T-4583
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_sweep_context_does_not_write_lock  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_warm_stage_env_override_finds_the_primary_root_lock  # noqa: E501
 def _land_commit_in_progress(root: Path) -> bool:
     """`True` when a `frob ticket land` run currently holds its own
     `land.lock` (T-4563). The T-4495 testsuite-glob auto-accept
@@ -1569,7 +1552,6 @@ def _land_commit_in_progress(root: Path) -> bool:
 
 
 # frob:ticket T-4495
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
 def _write_capability_ratchet_lock_entry(
     root: Path, key: str, accepted_count: int, reason: str
 ) -> None:
@@ -1639,7 +1621,6 @@ def _load_capability_ratchet_lock(root: Path) -> dict:
 
 
 # frob:ticket T-4563
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_sweep_context_does_not_write_lock  # noqa: E501
 def _testsuite_glob_growth_finding(
     root: Path, key: str, node_id: str, atom: str, count: int, accepted: int
 ) -> CapabilityRatchetViolation | None:
@@ -1719,8 +1700,6 @@ def _via_len_counts_from_module(module) -> dict[str, int]:
 
 
 # frob:ticket T-4633
-# frob:tests tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth.test_own_addition_is_measured  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth.test_no_head_blob_treats_every_entry_as_added  # noqa: E501
 #: T-4633, split out of `_branch_own_via_growth` (ARCH001, the
 #: 60-line function-length threshold): the two text-acquisition halves,
 #: `_read_new_strata_text` (plain file read, best-effort) and
@@ -1850,10 +1829,6 @@ def _branch_own_via_growth_reason() -> str:
 
 # frob:ticket T-4495
 # frob:ticket T-4633
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_testsuite_glob_growth_auto_accepts_and_writes_lock  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestTestsuiteViaGlobRatchet.test_non_testsuite_bare_glob_via_is_not_auto_accepted  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth.test_branch_own_growth_auto_accepts  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestBranchOwnViaGrowth.test_growth_beyond_branch_own_addition_still_refuses  # noqa: E501
 def _capability_ratchet_growth_finding(
     root: Path,
     key: str,
@@ -1948,13 +1923,7 @@ def _missing_reason_violation(
 # frob:ticket T-1628
 # frob:ticket T-4495
 # frob:ticket T-4633
-# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_without_lock_entry_fails  # noqa: E501
-# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_beyond_justified_ceiling_fails_even_after_a_prior_shrink  # noqa: E501
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_shrink_is_silent
-# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_shrink_then_regrow_within_ceiling_stays_silent  # noqa: E501
-# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_deleting_lock_entry_does_not_bypass_the_ratchet  # noqa: E501
-# frob:tests \
 # tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_empty_reason_is_flagged
 # T-1977: wired into frob sys audit's own CLI/gate surface (SYS111,
 # src/frob/gates/_sys_selfaudit.py's _selfaudit_violations) -- the

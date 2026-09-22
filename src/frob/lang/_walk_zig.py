@@ -298,16 +298,7 @@ def _zig_visit(
 
 
 # frob:ticket T-1603
-# frob:tests tests/test_lang.py::TestZig.test_walks_top_level_function
-# frob:tests tests/test_lang.py::TestZig.test_function_without_pub_is_not_public
-# frob:tests tests/test_lang.py::TestZig.test_struct_and_method
-# frob:tests tests/test_lang.py::TestZig.test_enum_is_a_type_symbol
-# frob:tests tests/test_lang.py::TestZig.test_top_level_const_is_a_const_symbol
-# frob:tests \
 # tests/test_lang.py::TestZig.test_error_union_return_type_is_captured_in_signature
-# frob:tests tests/test_lang.py::TestZig.test_triple_slash_doc_comment_binds_as_doc_text
-# frob:tests tests/test_lang.py::TestZig.test_plain_comment_does_not_bind_as_doc_text
-# frob:tests tests/test_lang.py::TestZig.test_comptime_block_is_not_walked_for_symbols
 def _walk_zig(root: Node) -> tuple[RawSymbol, ...]:
     """Every Zig symbol: top-level/struct-or-union-member functions
     (`FUNCTION`/`METHOD`), struct/union type definitions (`CLASS`), enum

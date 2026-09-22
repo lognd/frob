@@ -91,7 +91,6 @@ _CATCHUP_BOUND = 100
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestRunScan.test_no_watermark_bounds_catchup \
 # kind="unit"
 class AuditVerdict(str, Enum):
@@ -126,7 +125,6 @@ class AuditVerdict(str, Enum):
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCompletePass.test_reviewed_count_mismatch_refuses kind="unit"  # noqa: E501
 class WaiveAuditError(ErrorSet):
     """Fallible outcomes of running a scan or recording completion."""
@@ -140,7 +138,6 @@ class WaiveAuditError(ErrorSet):
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestRunScan.test_no_watermark_bounds_catchup \
 # kind="unit"
 class ScannedWaiver(BaseModel):
@@ -157,7 +154,6 @@ class ScannedWaiver(BaseModel):
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestRunScan.test_no_watermark_bounds_catchup \
 # kind="unit"
 class WaiveAuditScanReport(BaseModel):
@@ -288,14 +284,10 @@ def _waiver_identity(waiver: ScannedWaiver) -> str:
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestRunScan.test_no_watermark_bounds_catchup \
 # kind="unit"
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestRunScan.test_watermark_malformed_is_unreadable kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestRunScan.test_no_new_waivers_when_nothing_changed_since_watermark kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_next_scan_skips_already_banked_waivers kind="unit"  # noqa: E501
 def run_scan(root: Path) -> WaiveAuditScanReport:
     """The `scan` subcommand's core logic -- read-only, safe to run as
@@ -383,17 +375,11 @@ def run_scan(root: Path) -> WaiveAuditScanReport:
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCompletePass.test_reviewed_count_mismatch_refuses kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCompletePass.test_catchup_incomplete_refuses_full_completion kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCompletePass.test_matching_reviewed_count_advances_watermark kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_partial_without_flag_still_refuses kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_partial_banks_batch_and_advances_watermark kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestPartialCatchup.test_banking_the_final_batch_clears_catchup_state kind="unit"  # noqa: E501
 def complete_pass(
     root: Path, *, reviewed_count: int, cop_outs_found: int, partial: bool = False
@@ -515,7 +501,6 @@ def _next_catchup_fields(
 
 # frob:ticket T-2467
 # frob:doc docs/modules/app.md#runners
-# frob:tests \
 # tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches \
 # kind="unit"
 def run(root: Path, cfg: AppConfig) -> None:
@@ -758,7 +743,6 @@ def _run_complete_subcommand(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_active_unsuppressed_violation_in_same_rule_and_file_is_flagged kind="unit"  # noqa: E501
 class CollisionSuspect(BaseModel):
     """One `frob:waive` directive that, in a specific `GateReport`, coexists
@@ -798,14 +782,10 @@ def _repo_relative(path: str, root: Path) -> str:
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_active_unsuppressed_violation_in_same_rule_and_file_is_flagged kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_correctly_matching_live_waiver_is_not_flagged kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_quiet_hardened_site_with_zero_violations_anywhere_is_not_flagged kind="unit"  # noqa: E501
 # frob:ticket T-2496
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCheckCollisionsWiring.test_check_collisions_renders_suspects kind="unit"  # noqa: E501
 def find_collision_suspects(
     waivers: Sequence[ScannedWaiver],
@@ -864,9 +844,7 @@ def find_collision_suspects(
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_when_waived_this_run kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_inert_when_rule_does_not_scan_the_file kind="unit"  # noqa: E501
 class WaiverLiveness(str, Enum):
     """T-2740: the three-way answer `classify_waiver_liveness` gives for a
@@ -910,13 +888,9 @@ def _load_liveness_scan_checkers() -> "dict[str, Callable[[Path, str], bool]]":
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_when_waived_this_run kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_inert_when_rule_does_not_scan_the_file kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_unverified_when_no_checker_registered kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_never_inert_even_with_a_registered_checker kind="unit"  # noqa: E501
 def classify_waiver_liveness(
     waiver: ScannedWaiver, report: GateReport, root: Path

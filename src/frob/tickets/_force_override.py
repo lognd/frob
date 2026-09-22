@@ -77,8 +77,6 @@ def _current_actor() -> str:
 
 # frob:ticket T-1762
 # frob:doc docs/modules/tickets-data-storage.md#data-models
-# frob:tests tests/test_tickets_organization.py::TestForceOverrideAudit.test_record_force_override_requires_reason  # noqa: E501
-# frob:tests tests/test_tickets_organization.py::TestForceOverrideAudit.test_record_force_override_appends_a_line  # noqa: E501
 # frob:waive SELFAUDIT001 reason="T-1762: an append-only audit-trail write into this \
 # ticket-tracked repo's own root, the exact same shape node=tickets_ledger already \
 # declares fs.write for elsewhere (tickets.md/tickets/**) -- force-overrides.jsonl is \

@@ -188,10 +188,8 @@ def _unknown_key_violation(
 
 # frob:enforces CHK-GATE-DUPSCHEMA001
 # frob:doc docs/modules/gates.md#dupschema001graphschema001-t-2390-epic-child-t-2437
-# frob:tests \
 # tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate.test_dup_must_now_f\
 # ire_reports_the_undeclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate.test_dup_must_still\
 # _pass_this_repos_own_frob_toml kind="unit"
 # frob:waive DUP001 reason="sibling DUPSCHEMA001/GRAPHSCHEMA001 key-checking builders \
@@ -230,10 +228,8 @@ def dup_schema_gate(root: Path) -> tuple[Violation, ...]:
 
 # frob:enforces CHK-GATE-GRAPHSCHEMA001
 # frob:doc docs/modules/gates.md#dupschema001graphschema001-t-2390-epic-child-t-2437
-# frob:tests \
 # tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate.test_graph_must_now\
 # _fire_reports_the_undeclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate.test_graph_must_sti\
 # ll_pass_this_repos_own_frob_toml kind="unit"
 # frob:waive DUP001 reason="sibling DUPSCHEMA001/GRAPHSCHEMA001 key-checking builders \

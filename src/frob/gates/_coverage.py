@@ -381,13 +381,9 @@ def _symbol_branch(
 
 
 # frob:ticket T-1824
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_def_line_hit_body_zero_flagged  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_genuinely_dead_code_not_flagged_without_tests_edge  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_uniformly_covered_symbol_not_flagged  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_single_line_symbol_not_flagged  # noqa: E501
 def _suspect_deflated_symbols(
     snapshot: GraphSnapshot | None,
@@ -722,7 +718,6 @@ def _known_repo_paths(root: Path, snapshot: GraphSnapshot | None) -> frozenset[s
 
 # frob:ticket T-0997
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_lock_excludes_graph_excluded_modules  # noqa: E501
 def exclude_filtered_coverage(
     data: CoverageData, snapshot: GraphSnapshot
 ) -> CoverageData:
@@ -843,9 +838,7 @@ _CANARY_MODULES: tuple[str, ...] = ("src/frob/__main__.py",)
 
 
 # frob:ticket T-1236
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_zero_canary_module  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_canary_check_skipped_when_module_unknown  # noqa: E501
 def _canary_deflation(module_line: Mapping[str, float]) -> str | None:
     """Name of the first known canary module reading exactly 0.0% coverage.
 
@@ -896,10 +889,6 @@ def _provenance_drop(root: Path, current_module_count: int) -> tuple[int, float]
 
 # frob:ticket T-1435
 # frob:ticket T-1517
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_deflation_floor_skipped_below_min_known_modules  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_provenance_check_skipped_without_committed_lock  # noqa: E501
 def _filtered_coverage_or_deflated(
     root: Path, snapshot: GraphSnapshot
 ) -> Result[CoverageData | None, GateError]:
@@ -1023,7 +1012,6 @@ def _filtered_coverage_or_deflated(
 
 # frob:ticket T-1517
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
 def stamp_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
 ) -> Result[Unit, GateError]:
@@ -1152,10 +1140,7 @@ def _apply_lock_ratchet(root: Path, rounded: dict[str, float]) -> None:
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_write_coverage_lock_refuses_downward_ratchet  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_write_coverage_lock_allow_decrease_overrides_ratchet  # noqa: E501
 def write_coverage_lock(
     root: Path, data: CoverageData, *, allow_decrease: bool = False
 ) -> Result[Unit, GateError]:
@@ -1489,7 +1474,6 @@ def _entrypoint_violation_for_module(
 
 # frob:ticket T-4230
 # frob:doc docs/modules/gates.md#cov010-entrypoint-coverage----a-__main__-guard-is-not-a-symbol-t-4230  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_uncovered_guard_fires_cov010  # noqa: E501
 # frob:todo T-draft-50806633 wire into gate pipeline once T-4540/T-4214 release their leases  # noqa: E501
 def entrypoint_coverage_violations(
     root: Path, snapshot: GraphSnapshot | None = None
@@ -1766,11 +1750,6 @@ def _testmock001_fully_mocked(
 # docs/modules/gate-testmock001.md#testmock001-fully-mocked-subjects-need-a-non-mocked-companion-t-3997  # noqa: E501
 # frob:ticket T-3997
 # frob:enforces CHK-GATE-TESTMOCK001
-# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_fires_when_the_only_binding_test_mocks_every_collaborator  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_satisfied_by_a_companion_test_leaving_one_collaborator_real  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_t3933_shaped_dynamic_dispatch_table_scenario_fires  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_the_symbol_has_no_collaborators  # noqa: E501
-# frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_no_test_resolves_at_all  # noqa: E501
 def testmock001_violations(root: Path, snapshot: GraphSnapshot) -> list[Violation]:
     """TESTMOCK001 (T-3997, F-207/T-3984 item 12): a `frob:tests`-bound
     Python symbol whose EVERY resolvable binding test mocks/patches EVERY

@@ -60,10 +60,6 @@ DEFAULT_REGISTRY_FILES: frozenset[str] = frozenset(
 
 # frob:ticket T-4650
 # frob:doc docs/modules/tickets.md#registry-files-append-shared-t-draft-a62505d4
-# frob:tests tests/test_tickets_registry_files.py::TestRegistryFiles.test_no_root_returns_default  # noqa: E501
-# frob:tests tests/test_tickets_registry_files.py::TestRegistryFiles.test_no_frob_toml_returns_default  # noqa: E501
-# frob:tests tests/test_tickets_registry_files.py::TestRegistryFiles.test_configured_override_replaces_default  # noqa: E501
-# frob:tests tests/test_tickets_registry_files.py::TestRegistryFiles.test_malformed_value_falls_back_to_default  # noqa: E501
 def registry_files(root: Path | None) -> frozenset[str]:
     """The repo's configured `[tickets].registry_files` set from
     `frob.toml`, or `DEFAULT_REGISTRY_FILES` when `root` is `None`,
@@ -104,7 +100,6 @@ def registry_files(root: Path | None) -> frozenset[str]:
 
 # frob:ticket T-4650
 # frob:doc docs/modules/tickets.md#registry-files-append-shared-t-draft-a62505d4
-# frob:tests tests/test_tickets_registry_files.py::TestRegistryFiles.test_is_registry_file_membership  # noqa: E501
 def is_registry_file(path: str, root: Path | None) -> bool:
     """Whether `path` (a repo-relative posix path) is a configured
     registry file (`registry_files`) -- the single membership test every
@@ -115,10 +110,6 @@ def is_registry_file(path: str, root: Path | None) -> bool:
 
 # frob:ticket T-4650
 # frob:doc docs/modules/tickets.md#registry-files-append-shared-t-draft-a62505d4
-# frob:tests tests/test_tickets_registry_files.py::TestIsAdditiveDiffText.test_pure_append_is_additive  # noqa: E501
-# frob:tests tests/test_tickets_registry_files.py::TestIsAdditiveDiffText.test_deleted_line_is_not_additive  # noqa: E501
-# frob:tests tests/test_tickets_registry_files.py::TestIsAdditiveDiffText.test_file_header_dashes_are_not_removed_lines  # noqa: E501
-# frob:tests tests/test_tickets_registry_files.py::TestIsAdditiveDiffText.test_empty_diff_is_additive  # noqa: E501
 def is_additive_diff_text(diff_text: str) -> bool:
     """`True` when a unified `git diff` body contains no removed lines at
     all (a pure append) -- the pure, no-subprocess half of the

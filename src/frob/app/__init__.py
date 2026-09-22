@@ -207,8 +207,6 @@ def _import_runner_run_module(module_name: str) -> Any:
 # function's own AttributeError-on-miss fallback. Pinned by the two frob:tests edges \
 # below (test_accessing_one_alias_does_not_import_the_others, \
 # test_unknown_attribute_still_raises_attribute_error)"
-# frob:tests tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs.test_accessing_one_alias_does_not_import_the_others  # noqa: E501
-# frob:tests tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs.test_unknown_attribute_still_raises_attribute_error  # noqa: E501
 def __getattr__(name: str) -> Any:
     """PEP 562 module `__getattr__`: resolve a `<name>_runner_run` alias by
     importing ONLY that one runner module, on first access, then cache the

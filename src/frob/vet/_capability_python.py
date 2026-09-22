@@ -1098,7 +1098,6 @@ def _python_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
 
 
 # frob:ticket T-2798
-# frob:tests \
 # tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_binding_ca\
 # pabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
 def _python_binding_capabilities(
@@ -1224,7 +1223,6 @@ def _wrapper_function_capabilities(
 # frob:ticket T-2223
 # frob:ticket T-2798
 # frob:doc docs/modules/vet.md#one-hop-public-cross-file-wrapper-resolution-t-2223
-# frob:tests \
 # tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_local_wrap\
 # per_capabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
 # frob:waive COV007 reason="docs/modules/vet.md's One-hop public cross-file wrapper \
@@ -1325,7 +1323,6 @@ def _python_binding_operations(
 
 
 # frob:ticket T-1752
-# frob:tests \
 # tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_wrapper_capabilities_resolve_cross_file_via_call_graph kind="unit"  # noqa: E501
 def _build_wrapper_call_graph(root: Path, python_paths: Sequence[str]) -> CallGraph:
     """`frob.graph.callgraph.build_call_graph` over `python_paths` (repo-

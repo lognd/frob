@@ -84,9 +84,6 @@ def _resolve_ref_worktree(repo_root: Path, ref: str) -> Path | None:
 
 
 # frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
-# frob:tests tests/gates_suite/test_sys.py::TestSysGateForBranch.test_finds_findings_only_visible_on_branch  # noqa: E501
-# frob:tests tests/gates_suite/test_sys.py::TestSysGateForBranch.test_missing_worktree_reports_unmeasured  # noqa: E501
-# frob:tests tests/gates_suite/test_sys.py::TestSysGateForBranch.test_snapshot_build_failure_reports_unmeasured  # noqa: E501
 def sys_gate_for_branch(repo_root: Path, ref: str) -> tuple[Violation, ...]:
     """Run `sys_gate` (and the SELFAUDIT001/capability audit surface it
     composes) against `ref` -- a branch name or a worktree directory name

@@ -86,13 +86,10 @@ def _declared_flow_ids(files: tuple[FileModule, ...]) -> frozenset[str]:
 
 
 # frob:doc docs/strata/surface.md#multi-file-design-load-cross-file-references-t-1196
-# frob:tests \
 # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_no_errors_when\
 # _all_resolve
-# frob:tests \
 # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_missing_node_n\
 # amed_per_file
-# frob:tests \
 # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_boundary_unkno\
 # wn_flow_named
 def check_cross_file_references(
@@ -145,16 +142,12 @@ def check_cross_file_references(
 
 # frob:doc docs/strata/surface.md#fragments-t-2502
 # frob:ticket T-2530
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_declared_atom_s\
 # till_works
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_undeclared_atom\
 # _refuses_closed
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_raises_at_r\
 # untime
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_fails_stati\
 # c_type_check
 class SealedGrantSet:
@@ -203,13 +196,10 @@ class SealedGrantSet:
         self._grants: dict[str, MayGrantDecl] = grants
 
     # frob:doc docs/strata/surface.md#fragments-t-2502
-    # frob:tests \
     # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_declared_at\
     # om_still_works
-    # frob:tests \
     # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_undeclared_\
     # atom_refuses_closed
-    # frob:tests \
     # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_raises_\
     # at_runtime
     @classmethod
@@ -421,20 +411,13 @@ def _rebuild_resolved_files(
 
 
 # frob:doc docs/strata/surface.md#fragments-t-2502
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestResolveFragments.test_widens_existing_grant
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestResolveFragments.test_no_root_is_error
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestResolveFragments.test_two_roots_is_error
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_root_name_is_e\
 # rror
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_node_is_error
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_atom_is_error
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unrelated_multi_module\
 # _merge_is_unaffected
 def resolve_fragments(
@@ -515,7 +498,6 @@ def resolve_fragments(
 
 
 # frob:doc docs/strata/surface.md#multi-file-design-load-cross-file-references-t-1196
-# frob:tests \
 # tests/unit/strata/test_multifile.py::TestMergeModules.test_concatenates_declarations
 def merge_modules(files: tuple[FileModule, ...], name: str = "design") -> Module:
     """Concatenate every loaded file's parsed declarations into one `Module`
@@ -545,9 +527,7 @@ def merge_modules(files: tuple[FileModule, ...], name: str = "design") -> Module
 
 
 # frob:doc docs/strata/surface.md#multi-file-design-load-cross-file-references-t-1196
-# frob:tests \
 # tests/unit/strata/test_multifile.py::TestElaborateMerged.test_resolves_cross_file_flow
-# frob:tests \
 # tests/unit/strata/test_multifile.py::TestElaborateMerged.test_fails_closed_on_missing\
 # _id
 def elaborate_merged(

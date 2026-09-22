@@ -66,7 +66,6 @@ def _yaml_scalar(value: str) -> str:
 
 # frob:doc docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429
 # frob:ticket T-0429
-# frob:tests \
 # tests/test_registry_corpus.py::TestFormatEntryBlock.test_pending_disposition_always \
 # kind="unit"
 def format_entry_block(
@@ -159,7 +158,6 @@ def _bump_total(lines: list[str], key: str) -> list[str]:
 
 # frob:doc docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429
 # frob:ticket T-0429
-# frob:tests tests/test_registry_corpus.py::TestAppendEntry.test_append_adds_entry_and_bumps_total kind="unit"  # noqa: E501
 def append_entry(
     registry_path: Path,
     key: str,

@@ -188,7 +188,6 @@ PROC_FAMILY_SCANNER_KIND: Final[str] = "exec"
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:tests tests/unit/vet/test_capability_modes.py::TestModeQualified.test_joins_family_and_mode kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 def _mode_qualified(family: str, mode: str) -> str:
     """The ONE `"family.mode"` construction site -- every caller that
@@ -258,7 +257,6 @@ LEGACY_CAPABILITY_ALIASES: Final[dict[str, _DeprecatedCapabilityAlias]] = {
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:tests tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind.test_legacy_alias_past_sunset_is_gate_error kind="unit"  # noqa: E501
 class CapabilityModeError(ErrorSet):
     """Fallible outcomes of resolving a capability kind through the T-0717
     mode vocabulary."""
@@ -275,7 +273,6 @@ def _today() -> date:
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:tests tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind.test_precise_kind_passes_through kind="unit"  # noqa: E501
 def resolve_capability_kind(
     raw: str, *, today: date | None = None
 ) -> Result[str, CapabilityModeError]:
@@ -322,7 +319,6 @@ def resolve_capability_kind(
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:tests tests/unit/vet/test_capability_modes.py::TestCanonicalAndNormalize.test_canonical_declared_kind_resolves_alias_regardless_of_sunset kind="unit"  # noqa: E501
 def canonical_declared_kind(raw: str) -> str:
     """The PURE (non-logging, never-`Err`) canonicalization of one raw
     declared-kind spelling: a legacy alias always resolves to its precise
@@ -336,7 +332,6 @@ def canonical_declared_kind(raw: str) -> str:
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:tests tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind.test_coarse_fs_covers_union_of_modes kind="unit"  # noqa: E501
 def expand_declared_kind(kind: str) -> frozenset[str]:
     """Every precise `family.mode` id a DECLARED capability kind covers
     for conformance-join purposes (mandate point 2): a precise
@@ -356,7 +351,6 @@ def expand_declared_kind(kind: str) -> frozenset[str]:
 
 
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
-# frob:tests tests/unit/vet/test_capability_modes.py::TestCanonicalAndNormalize.test_normalize_observed_kind_matches_canonical kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 def _normalize_observed_kind(raw: str) -> str:
     """The precise canonical kind a scanner-OBSERVED capability spelling

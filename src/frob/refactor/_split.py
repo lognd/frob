@@ -96,7 +96,6 @@ class SplitReport(BaseModel):
         return len(self.chunks) > 0 and all(c.success for c in self.chunks)
 
     # frob:doc docs/commands/refactor.md#splitreport
-    # frob:tests tests/test_refactor.py::TestRunSplit.test_split_moves_symbols_and_leaves_reexport_shim kind="unit"  # noqa: E501
     @property
     def moved_symbols(self) -> tuple[str, ...]:
         """Every symbol name whose own chunk actually committed, in
@@ -110,7 +109,6 @@ class SplitReport(BaseModel):
 
 
 # frob:doc docs/commands/refactor.md#chunk_symbols
-# frob:tests tests/test_refactor.py::TestSplitChunking.test_chunk_symbols_preserves_order_and_size  # noqa: E501
 def chunk_symbols(symbols: list[str], chunk_size: int) -> list[list[str]]:
     """Split `symbols` into ordered groups of at most `chunk_size`,
     preserving input order (the design doc's "applies and verifies in
@@ -120,7 +118,6 @@ def chunk_symbols(symbols: list[str], chunk_size: int) -> list[list[str]]:
 
 
 # frob:doc docs/commands/refactor.md#build_reexport_shim_op
-# frob:tests tests/test_refactor.py::TestSplitReexport.test_shim_op_imports_every_moved_name  # noqa: E501
 def build_reexport_shim_op(
     repo_root: Path, source_module: str, destination_module: str, names: list[str]
 ) -> RewriteOp:
@@ -489,8 +486,6 @@ def _run_chunk(
 
 
 # frob:doc docs/commands/refactor.md#run_split
-# frob:tests tests/test_refactor.py::TestRunSplit.test_split_moves_symbols_and_leaves_reexport_shim  # noqa: E501
-# frob:tests tests/test_refactor.py::TestRunSplit.test_split_chunk_failure_does_not_touch_later_chunks  # noqa: E501
 def run_split(
     repo_root: Path,
     source_module: str,

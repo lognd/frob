@@ -812,9 +812,6 @@ def _unlanded_findings_for_branch(
 
 
 # frob:ticket T-3731
-# frob:tests tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_budget_of_zero_scans_no_branches kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_a_generous_budget_still_scans_everything kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reconcile_does_not_hang_with_many_branches kind="unit"  # noqa: E501
 def _unlanded_branch_work(root: Path) -> tuple[_UnlandedWork, ...]:
     """Every `_UnlandedWork` finding across EVERY local branch under `root`
     except `main` itself (T-1934 acceptance 1/2/3) -- the read-only,

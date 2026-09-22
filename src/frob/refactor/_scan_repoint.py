@@ -62,7 +62,6 @@ def _bare_name_repoint_op(
 
 # frob:doc docs/commands/refactor.md#bare-name-caller-side-repoint
 # frob:ticket T-3596
-# frob:tests \
 # tests/test_refactor.py::TestGapRegressions.test_gap2_move_repoints_same_module_bare_n\
 # ame_reference
 def bare_name_repoint_ops(

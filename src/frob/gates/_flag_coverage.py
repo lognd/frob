@@ -381,10 +381,6 @@ def _check_source(root: Path, source: "_ConsoleCommandSource") -> tuple[Violatio
 
 # frob:enforces CHK-GATE-FLAGCOV001
 # frob:doc docs/modules/gates.md#flagcov001-t-2397
-# frob:tests tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_must_now_fire_reports_the_genuinely_dropped_flag  # noqa: E501
-# frob:tests tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_must_still_pass_when_everything_is_forwarded  # noqa: E501
-# frob:tests tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_this_repos_own_frob_toml_reports_zero  # noqa: E501
-# frob:tests tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_no_declared_sources_is_unresolved_not_empty  # noqa: E501
 # frob:ticket T-2397
 def flag_coverage_gate(root: Path) -> tuple[Violation, ...]:
     """FLAGCOV001: for every `[[docblocks.commands]]` entry in `root`'s

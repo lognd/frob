@@ -227,18 +227,6 @@ def _tick014_changed_paths(root: Path, t: Ticket) -> tuple[str, ...] | None:
 # frob:ticket T-3092
 # frob:ticket T-3283
 # frob:ticket T-3899
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_bug_warns
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_feature_warns
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_docs_kind_quiet
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_epic_tier_quiet
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_no_scope_quiet
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_real_diff_quiet
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_no_block_quiet
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_open_never_fires
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014LandCommit.test_land_commit_with_real_code_quiet  # noqa: E501
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014LandCommit.test_land_commit_bookkeeping_only_warns  # noqa: E501
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014LandCommit.test_land_commit_overrides_stale_empty_changed_block  # noqa: E501
-# frob:tests tests/test_gates_empty_diff_close.py::TestTick014LandCommit.test_unresolvable_land_commit_falls_back_to_changed_block  # noqa: E501
 def empty_code_diff_violations(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK014 (WARN, T-3092/T-3899): one violation per DONE ticket whose
     `kind` is `feature` or `bug` (`_APPLIES_TO_KINDS`), that is NOT

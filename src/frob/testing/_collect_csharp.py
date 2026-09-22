@@ -83,7 +83,6 @@ _TEST_ATTRIBUTE_NAMES = frozenset({"Test", "TestCase", "TestCaseSource", "UnityT
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/test_testing.py::TestCollectCsharpTests.test_collect_csharp_tests_collects_test_and_unitytest  # noqa: E501
 def parse_csharp(source: bytes) -> Tree:
     """Parse C# source bytes into a tree-sitter `Tree` via the language
@@ -284,11 +283,6 @@ def _store_cache(cache_path: Path, key: str, node_ids: frozenset[str]) -> None:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_testing.py::TestCollectCsharpTests.test_collect_csharp_tests_collects_test_and_unitytest  # noqa: E501
-# frob:tests tests/test_testing.py::TestCollectCsharpTests.test_collect_csharp_tests_collapses_parameterized_test_case  # noqa: E501
-# frob:tests tests/test_testing.py::TestCollectCsharpTests.test_collect_csharp_tests_excludes_setup_teardown  # noqa: E501
-# frob:tests tests/test_testing.py::TestCollectCsharpTests.test_collect_csharp_tests_no_cs_files_is_ok_empty  # noqa: E501
-# frob:tests tests/test_testing.py::TestCollectCsharpTests.test_collect_csharp_tests_cache_hit_skips_reparse  # noqa: E501
 def collect_csharp_tests(root: Path) -> Result[CollectedTests, TestingError]:
     """Every NUnit `[Test]`/`[TestCase(...)]`/`[TestCaseSource(...)]` and
     Unity Test Framework `[UnityTest]` method under `root`, as stable

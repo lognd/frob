@@ -107,6 +107,8 @@ pub const LEVEL_COMPONENT_UNIT_TEST: &str = "component-unit-test";
 /// level, in the order T-3004 section 1 states them.
 // frob:doc docs/strata/vmodel.md#schema-assembly
 // frob:ticket T-3260
+// frob:tests strata-core/src/graph/vmodel/mod.rs::tests.v_pairing_has_five_pairs_in_t3004_order \
+// kind="unit"
 pub fn v_pairing() -> Vec<(Level, Level)> {
     vec![
         (LEVEL_REQUIREMENTS.into(), LEVEL_CUSTOMER_TEST.into()),
@@ -174,6 +176,8 @@ pub const EDGE_BLOCKED_BY: &str = "blocked_by";
 /// `verifies` convention (test -> requirement direction).
 // frob:doc docs/strata/vmodel.md#schema-assembly
 // frob:ticket T-3260
+// frob:tests \
+// strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind kind="unit"
 pub fn v_model_schema() -> GraphSchema {
     let mut s = GraphSchema::new();
     s.declare_node_kind(KIND_ARTIFACT)
@@ -255,7 +259,6 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel/mod.rs::v_pairing kind="unit"
     // frob:ticket T-3260
     fn v_pairing_has_five_pairs_in_t3004_order() {
         let pairs = v_pairing();
@@ -288,7 +291,6 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel/mod.rs::v_model_schema kind="unit"
     // frob:ticket T-3260
     fn v_model_schema_declares_every_kind_level_and_edge_kind() {
         let s = v_model_schema();

@@ -332,15 +332,10 @@ def _head_commit_or_unknown(root: Path) -> str:
     return head.danger_ok.stdout.strip() or "unknown"
 
 
-# frob:tests \
 # tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_appends_one_json_line_per_call
-# frob:tests \
 # tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_records_a_commit_field_even_outside_a_git_repo  # noqa: E501
-# frob:tests \
 # tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_lives_under_dot_frob_not_the_tracked_root  # noqa: E501
-# frob:tests \
 # tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_creates_dot_frob_when_missing
-# frob:tests \
 # tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_an_unwritable_path_never_raises  # noqa: E501
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#rapid-debt-and-the-ratchet-override-t-1681
@@ -1005,35 +1000,20 @@ def _recover_missing_evidence_for_done(
 # frob:invariant INV-002
 # invariant spec: [INV-002](invariants/INV-002.md)
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_rejects_when_mutation_evidence_false  # noqa: E501
-# frob:tests \
 # tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_allows_when_mutation_evidence_true  # noqa: E501
-# frob:tests \
 # tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_permissive_when_mutation_evidence_none  # noqa: E501
-# frob:tests \
 # tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard.test_epic_close_refused_with_open_descendant  # noqa: E501
-# frob:tests \
 # tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard.test_epic_close_allowed_once_descendant_done  # noqa: E501
-# frob:tests \
 # tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_rejects_when_evidence_reverified_false  # noqa: E501
-# frob:tests \
 # tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true  # noqa: E501
-# frob:tests \
 # tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_permissive_when_evidence_reverified_none  # noqa: E501
-# frob:tests \
 # tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_rejects_when_own_obligations_clean_false  # noqa: E501
-# frob:tests \
 # tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_allows_when_own_obligations_clean_true  # noqa: E501
-# frob:tests \
 # tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose.test_transition_permissive_when_own_obligations_clean_none  # noqa: E501
-# frob:tests \
 # tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose.test_transition_rejects_t1276_shape_when_gate_claims_verified_false  # noqa: E501
-# frob:tests \
 # tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose.test_transition_allows_t1276_shape_when_gate_claims_verified_true  # noqa: E501
-# frob:tests \
 # tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose.test_transition_permissive_when_gate_claims_verified_none  # noqa: E501
-# frob:tests \
 # tests/test_tickets_gate_claim_evidence.py::TestT1399GateClaimOnClose.test_transition_unaffected_when_no_gate_claim_criterion_exists  # noqa: E501
 # frob:ticket T-0715
 # frob:ticket T-0417
@@ -1120,7 +1100,6 @@ def transition(
 
 
 # frob:ticket T-5120
-# frob:tests \
 # tests/unit/tickets/test_start_transition_ledger.py::TestStartTransitionCommitsLedgerInFleetContext.test_in_progress_transition_stamps_worktree_and_branch  # noqa: E501
 def _start_transition_ledger_fields(root: Path) -> dict[str, object]:
     """The `worktree`/`branch` extra fields to stamp onto a ticket entering
@@ -1151,17 +1130,14 @@ def _start_transition_ledger_fields(root: Path) -> dict[str, object]:
 # frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
 # id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
 # unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
-# frob:tests \
 # tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_close_warns_on_stranded_todo  # noqa: E501
 # frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
 # id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
 # unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
-# frob:tests \
 # tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_drop_warns_on_stranded_todo  # noqa: E501
 # frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
 # id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
 # unchanged), same unwrappable shape as pyfmt_runner.py's sibling directive lines"
-# frob:tests \
 # tests/unit/test_land_stranding_t4312.py::TestTransitionWarnsOnStranding.test_close_with_no_referencing_directives_is_silent  # noqa: E501
 def _warn_stranded_directives(root: Path, ticket_id: str) -> None:
     """T-4312: fire once a ticket actually reaches a terminal state (DONE
@@ -1194,11 +1170,8 @@ def _warn_stranded_directives(root: Path, ticket_id: str) -> None:
 
 # frob:ticket T-1005
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_passes_on_strengthened_done_ticket  # noqa: E501
-# frob:tests \
 # tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_fails_loudly_on_now_failing_evidence  # noqa: E501
-# frob:tests \
 # tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_refuses_non_done_ticket
 # frob:ticket T-1384
 # frob:ticket T-1399
@@ -1287,7 +1260,6 @@ def reverify_close_guard(
 # frob:ticket T-0473
 # frob:ticket T-4684
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-release-is-keyed-on-the-lease-file-not-local-state-t-4684  # noqa: E501
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_drop_from_a_worktree_that_never_saw_in_progress_still_releases kind="unit"  # noqa: E501
 def _sync_cross_worktree_lease(
     root: Path,
     ticket_id: str,
@@ -1797,11 +1769,8 @@ def _current_actor() -> str:
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-evidence---replace-t-1537
 # frob:doc \
 # docs/modules/tickets-lifecycle.md#evidence---replace--remove-mirror-directly-bypassing-the-verb-table-t-4267  # noqa: E501
-# frob:tests \
 # tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_replaces_flat_evidence_and_acceptance_binding_atomically  # noqa: E501
-# frob:tests \
 # tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_old_node_absent_is_a_hard_refusal  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_replace_from_worktree_is_visible_on_primary  # noqa: E501
 def replace_evidence(
     root: Path,
@@ -2157,17 +2126,13 @@ def _prepare_remove_evidence(
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_evidence_removal.py::TestRemoveEvidence.test_remove_drops_id_from_flat_list_and_acceptance  # noqa: E501
-# frob:tests \
 # tests/test_tickets_evidence_removal.py::TestRemoveEvidence.test_remove_not_found_is_err  # noqa: E501
-# frob:tests \
 # tests/test_tickets_evidence_removal.py::TestRemoveEvidence.test_remove_requires_reason
 # frob:ticket T-4000
 # frob:ticket T-4267
 # frob:doc \
 # docs/modules/tickets-lifecycle.md#evidence---replace--remove-mirror-directly-bypassing-the-verb-table-t-4267  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_remove_from_worktree_is_visible_on_primary  # noqa: E501
 def remove_evidence(
     root: Path,
@@ -2271,11 +2236,7 @@ def _write_removed_evidence(
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_exit_zero
-# frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_nonzero_exit
-# frob:tests \
 # tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused.test_silent_zero_exit_command_is_refused  # noqa: E501
-# frob:tests \
 # tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused.test_chatty_zero_exit_command_is_accepted  # noqa: E501
 # frob:ticket T-1892
 def run_cmd_evidence(command: str, cwd: Path | None = None) -> Result[str, TicketError]:
@@ -2341,7 +2302,6 @@ _CMD_EVIDENCE_PARSE_RE = re.compile(
 
 # frob:ticket T-0398
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_true_when_command_still_reproduces  # noqa: E501
 def reverify_cmd_evidence(entry: str) -> Result[bool, TicketError]:
     """Re-run the command a `cmd:` evidence entry recorded and confirm it
@@ -2516,8 +2476,6 @@ def _resolve_cmd_evidence_cwd(
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_docs_kind_closes
-# frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_bug_kind_rejected
 # frob:waive AFFECT001 reason="T-3837: same fix/lease-conflict shape as add_evidence's \
 # own AFFECT001/DRIFT001 waivers immediately above in this file -- \
 # docs/modules/tickets.md#public-api already reflects the 1-based accepts change, only \
@@ -2592,7 +2550,6 @@ def add_cmd_evidence(
 
 # frob:ticket T-0458
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestRenderEvidenceBlock.test_mixed_cmd_and_pytest_ids
 def render_evidence_block(evidence: Sequence[str]) -> str:
     """Auto-fill a Done report's Evidence section from a ticket's already-
@@ -2653,9 +2610,7 @@ def _parse_evidence_ids_from_done_report(body: str) -> tuple[str, ...]:
 
 # frob:ticket T-0357
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_recovers_ids_when_structured_evidence_empty  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_noop_when_evidence_already_present  # noqa: E501
 def replay_evidence_from_done_report(
     root: Path, ticket_id: str
@@ -2709,11 +2664,8 @@ def replay_evidence_from_done_report(
 
 # frob:ticket T-0887
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_unresolvable_ref_in_a_real_repo_is_false  # noqa: E501
-# frob:tests \
 # tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_resolvable_ref_is_true  # noqa: E501
-# frob:tests \
 # tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_non_git_root_is_none  # noqa: E501
 def base_ref_resolvable(root: Path, base_ref: str) -> bool | None:
     """Bounded (`run_argv`'s own timeout, never unbounded) check of whether
@@ -2757,7 +2709,6 @@ def base_ref_resolvable(root: Path, base_ref: str) -> bool | None:
 
 # frob:ticket T-0458
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestComputeChangedLines.test_non_git_root_returns_empty  # noqa: E501
 def compute_changed_lines(root: Path, base_ref: str = "main") -> tuple[str, ...]:
     """Best-effort `git diff --stat <base_ref>...HEAD` lines for a Done
@@ -2787,7 +2738,6 @@ def compute_changed_lines(root: Path, base_ref: str = "main") -> tuple[str, ...]
 
 # frob:ticket T-0458
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestRenderChangedBlock.test_lines_rendered_fenced
 def render_changed_block(lines: Sequence[str]) -> str:
     """Render `compute_changed_lines`'s output as a Done report Changed

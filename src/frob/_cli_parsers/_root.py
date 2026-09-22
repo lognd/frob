@@ -133,8 +133,6 @@ class _SuggestingArgumentParser(argparse.ArgumentParser):
 
     # frob:ticket T-2107
     # frob:doc docs/commands/cli-vocabulary.md#did-you-mean
-    # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_error_shows_invoked_subcommand_usage kind="unit"  # noqa: E501
     def parse_known_args(self, args=None, namespace=None):  # noqa: ANN001,ANN201
         """Records `self` onto `_INVOKED_PARSERS` before delegating (T-2107)
         -- argparse recurses into a chosen subparser's own
@@ -147,8 +145,6 @@ class _SuggestingArgumentParser(argparse.ArgumentParser):
     # frob:doc docs/commands/cli-vocabulary.md#did-you-mean
     # frob:ticket T-0578
     # frob:ticket T-2107
-    # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_error_shows_invoked_subcommand_usage kind="unit"  # noqa: E501
     def error(self, message: str) -> NoReturn:
         """Append `(did you mean: X?)` to `message` when a suggestion is
         found, scoped to the actually-invoked subcommand (T-2107), then
@@ -280,11 +276,6 @@ _VERB_GROUP_NAMES = frozenset({"explore", "ticket", "vet", "serve"})
 # formatter's own design, same T-0524/T-0529 per-function architecture-doc precedent \
 # every other COV007 waiver in this repo already carries -- not accidental drift onto \
 # a private helper"
-# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_verb_groups_listed_before_also_available_directly_section  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_non_group_verb_listed_after_also_available_directly  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_nested_subparser_help_is_unaffected  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_section_headers_indent_strictly_less_than_entries  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_no_help_text_breaks_inside_a_word  # noqa: E501
 # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- passed as \
 # formatter_class=_GroupedHelpFormatter to the root argparse parser (_build_parser) \
 # and invoked internally by argparse's own help-rendering machinery -- but the \
@@ -455,7 +446,6 @@ def _build_parser() -> argparse.ArgumentParser:
 # frob:ticket T-1568
 # frob:ticket T-1569
 # frob:ticket T-3125
-# frob:tests tests/unit/test_main_entry.py::TestHelpListsDirectDispatchVerbs.test_help_lists_refactor_and_narrative  # noqa: E501
 def _add_analysis_subparsers(sub) -> None:
     """Register the code-analysis subcommand group: scaffold through bind.
 

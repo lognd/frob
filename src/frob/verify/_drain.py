@@ -145,8 +145,6 @@ _REFUSED_LOCK_REL = Path(".frob") / "verify-drain-refused.lock"
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_declines_while_a_land_is_in_progress  # noqa: E501
-# frob:tests tests/unit/verify/test_drain.py::TestSpawnDeferredDrain.test_exec_disabled_refuses_without_spawning  # noqa: E501
 class DrainError(ErrorSet):
     """Fallible outcomes of spawning or running the detached drain."""
 
@@ -161,7 +159,6 @@ class DrainError(ErrorSet):
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
 # frob:ticket T-2406
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_a_genuinely_different_land_is_recorded_not_discarded kind="unit"  # noqa: E501
 class DrainRefusalRecord(BaseModel):
     """`.frob/verify-drain-refused.json`'s single current record (T-2406):
     how many drain attempts have refused (a genuinely different land was
@@ -195,7 +192,6 @@ def _refused_lock_path(root: Path) -> Path:
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
 # frob:ticket T-2406
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_a_genuinely_different_land_is_recorded_not_discarded kind="unit"  # noqa: E501
 def load_drain_refusal(root: Path) -> DrainRefusalRecord | None:
     """The current `DrainRefusalRecord` for `root`, or `None` on a
     missing/corrupt file -- `frob verify status`'s own "nothing to
@@ -229,7 +225,6 @@ def load_drain_refusal(root: Path) -> DrainRefusalRecord | None:
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
 # frob:ticket T-2406
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_a_genuinely_different_land_is_recorded_not_discarded kind="unit"  # noqa: E501
 def record_drain_refusal(root: Path, *, ticket_id: str) -> None:
     """Increment `.frob/verify-drain-refused.json`'s counter (T-2406):
     called once, by `run_drain_async`, exactly when a refusal survives
@@ -265,7 +260,6 @@ def record_drain_refusal(root: Path, *, ticket_id: str) -> None:
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
 # frob:ticket T-2406
-# frob:tests tests/unit/verify/test_drain.py::TestDrainAdvancesWatermarkEndToEnd.test_a_round_that_runs_clears_a_prior_refusal_record kind="unit"  # noqa: E501
 def clear_drain_refusal(root: Path) -> None:
     """Reset `.frob/verify-drain-refused.json`'s counter to zero (T-2406):
     called once a drain actually RUNS (constraint 4 -- the state a
@@ -295,8 +289,6 @@ def clear_drain_refusal(root: Path) -> None:
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
 # frob:ticket T-2310
-# frob:tests tests/unit/verify/test_drain.py::TestSpawnDeferredDrain.test_spawns_a_detached_child kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_drain.py::TestSpawnDeferredDrain.test_exec_disabled_refuses_without_spawning kind="unit"  # noqa: E501
 def spawn_deferred_drain(root: Path, land_ticket_id: str) -> Result[int, DrainError]:
     """Fire the automatic watermark drain into a DETACHED child and
     return its pid immediately (constraint 1/2, this module's own
@@ -370,11 +362,6 @@ def spawn_deferred_drain(root: Path, land_ticket_id: str) -> Result[int, DrainEr
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
 # frob:ticket T-2310
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_declines_while_a_land_is_in_progress kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_drain.py::TestDrainAdvancesWatermarkEndToEnd.test_green_round_advances_watermark_a_subsequent_round_sees kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_never_blocks_or_loops_over_the_backlog kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_excludes_its_own_originating_land_pid kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_a_genuinely_different_land_is_recorded_not_discarded kind="unit"  # noqa: E501
 def run_drain_async(
     root: Path,
     *,

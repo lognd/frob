@@ -70,7 +70,6 @@ entry to run in its place (composition), or a literal shell-free argv
 
 # frob:doc docs/commands/run.md#commands-table
 # frob:ticket T-4759
-# frob:tests tests/unit/test_run_commands.py::TestLoadCommands.test_single_command_entry_is_one_literal_argv  # noqa: E501
 class CommandEntry(BaseModel):
     """One `frob.toml` `[commands]` entry, normalized to an ordered tuple
     of steps -- a bare single command is normalized to a one-step tuple
@@ -83,7 +82,6 @@ class CommandEntry(BaseModel):
 
 # frob:doc docs/commands/run.md#commands-table
 # frob:ticket T-4759
-# frob:tests \
 # tests/unit/test_run_commands.py::TestLoadCommands.test_three_step_sequence_composes
 class CommandsConfig(BaseModel):
     """Every `[commands]` entry declared in `frob.toml`, keyed by name --
@@ -97,7 +95,6 @@ class CommandsConfig(BaseModel):
 
 # frob:doc docs/commands/run.md#error-types
 # frob:ticket T-4759
-# frob:tests \
 # tests/unit/test_run_commands.py::TestLoadCommands.test_self_reference_refused_with_path  # noqa: E501
 class CommandsError(ErrorSet):
     """Failure values loading/resolving `frob.toml`'s `[commands]` table

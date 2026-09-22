@@ -63,7 +63,6 @@ _CACHE_REL = Path(".frob") / "coverage-file-cache.json"
 
 # frob:ticket T-1517
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_coverage.py::TestCoverageFileCache.test_load_missing_returns_empty  # noqa: E501
 def load_file_cache(root: Path) -> dict[str, dict[str, object]]:
     """The persisted `path -> {content_hash, line_pct}` cache, or `{}` if
     missing/unreadable (T-1517) -- a missing cache is a cold start, not an
@@ -101,9 +100,6 @@ def _save_file_cache(root: Path, cache: Mapping[str, dict[str, object]]) -> None
 
 # frob:ticket T-1517
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_coverage.py::TestCoverageFileCache.test_fill_from_cache_backfills_unchanged_file  # noqa: E501
-# frob:tests tests/test_coverage.py::TestCoverageFileCache.test_fill_from_cache_ignores_stale_hash  # noqa: E501
-# frob:tests tests/test_coverage.py::TestCoverageFileCache.test_fill_from_cache_never_overwrites_fresh_data  # noqa: E501
 def fill_from_cache(
     data: CoverageData,
     *,
@@ -148,8 +144,6 @@ def fill_from_cache(
 
 # frob:ticket T-1517
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_coverage.py::TestCoverageFileCache.test_update_file_cache_persists_measured_files  # noqa: E501
-# frob:tests tests/test_coverage.py::TestCoverageFileCache.test_update_file_cache_roundtrips_through_fill_from_cache  # noqa: E501
 def update_file_cache(
     root: Path, data: CoverageData, *, file_hashes: Mapping[str, str]
 ) -> dict[str, dict[str, object]]:

@@ -25,7 +25,6 @@ _log = get_logger(__name__)
 
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_usage_report_aggregates_time_and_failures  # noqa: E501
 class SubcommandTimeSink(BaseModel):
     """One subcommand's aggregate cost across the whole corpus (T-1360's
     `frob doctor usage` deliverable) -- ranked by `total_duration_ms`
@@ -41,7 +40,6 @@ class SubcommandTimeSink(BaseModel):
 
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_usage_report_empty_corpus_is_all_zero
 class UsageReport(BaseModel):
     """`frob doctor usage`'s report (T-1360's fourth delivery requirement):
     top time sinks and footgun totals mined from the local telemetry
@@ -181,8 +179,6 @@ def _repeated_failure_streak_count(events: list[dict[str, Any]]) -> int:
 # preserving behavior verbatim, 26 tests in tests/test_telemetry.py still green); the \
 # documented public contract is unchanged, so \
 # docs/guides/agentic-time-profiling.md#public-api needs no update"
-# frob:tests tests/test_telemetry.py::test_usage_report_aggregates_time_and_failures  # noqa: E501
-# frob:tests tests/test_telemetry.py::test_usage_report_counts_redundant_reruns
 def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
     """Aggregate `root`'s whole telemetry corpus into a `UsageReport`
     (T-1360): per-subcommand time sinks, provably-redundant re-run cost

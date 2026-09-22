@@ -55,7 +55,6 @@ _STATUSES = ("green", "red", "undetermined")
 
 
 # frob:doc docs/guides/release.md#verify-ci-status
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_green_on_success_conclusion kind="unit"  # noqa: E501
 class CiStatusResult(BaseModel):
     """One CI-status determination for a single commit SHA: `status` is
     exactly one of `"green"`, `"red"`, `"undetermined"` (`_STATUSES`);
@@ -68,8 +67,6 @@ class CiStatusResult(BaseModel):
     detail: str
 
     # frob:doc docs/guides/release.md#verify-ci-status
-    # frob:tests tests/unit/test_verify_release_ci_status.py::TestCiStatusResultInvariant.test_valid_status_literal_constructs kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_verify_release_ci_status.py::TestCiStatusResultInvariant.test_invalid_status_literal_raises kind="unit"  # noqa: E501
     def model_post_init(self, __context: object) -> None:
         """Guard against a typo'd status literal slipping past review --
         this is an internal invariant, not user input, so an assertion
@@ -86,7 +83,6 @@ class CiStatusResult(BaseModel):
 _GhRunner = Callable[[tuple[str, ...]], tuple[int, str, str]]
 
 
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestRunGh.test_spawn_failure_reports_as_nonzero_with_stderr kind="unit"  # noqa: E501
 def _run_gh(argv: tuple[str, ...]) -> tuple[int, str, str]:
     """Run a `gh` CLI subprocess, returning `(returncode, stdout, stderr)`
     -- never raises; a spawn failure (missing binary, timeout) reports as
@@ -100,13 +96,6 @@ def _run_gh(argv: tuple[str, ...]) -> tuple[int, str, str]:
 
 
 # frob:doc docs/guides/release.md#verify-ci-status
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_green_on_success_conclusion kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_red_on_failure_conclusion kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_undetermined_on_api_error kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_undetermined_on_no_matching_run kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_undetermined_on_unparseable_json kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_undetermined_on_run_still_in_progress kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_resolves_by_exact_sha_not_branch_or_latest kind="unit"  # noqa: E501
 def determine_ci_status(
     repo: str,
     sha: str,
@@ -186,11 +175,6 @@ def determine_ci_status(
 
 
 # frob:doc docs/guides/release.md#verify-ci-status
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_green_always_proceeds kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_red_without_override_refuses kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_undetermined_without_override_refuses kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_red_with_override_and_reason_proceeds kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_override_without_reason_is_refused_even_when_requested kind="unit"  # noqa: E501
 def decide(
     result: CiStatusResult, *, override: bool, override_reason: str
 ) -> tuple[int, str]:
@@ -247,8 +231,6 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 # frob:doc docs/guides/release.md#verify-ci-status
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestMain.test_green_path_prints_green_and_exits_zero kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_verify_release_ci_status.py::TestMain.test_red_path_without_override_exits_nonzero kind="unit"  # noqa: E501
 def main(argv: list[str] | None = None) -> int:
     """Entry point: resolve CI status for `--sha`, decide, print the
     message, and return the exit code `release.yml`'s step should exit

@@ -50,8 +50,6 @@ _log = get_logger(__name__)
 
 # frob:ticket T-2695
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
-# frob:tests tests/unit/test_ticket_store.py::TestMigrateToLedger.test_moves_legacy_files_into_ledger  # noqa: E501
-# frob:tests tests/unit/test_store_batch7.py::TestMigrateToLedger.test_atomic_write_failure_propagates  # noqa: E501
 def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
     """Collapse a legacy tickets/*.md layout into a single tickets.md ledger.
 
@@ -128,7 +126,6 @@ def _split_done_report(body: str) -> tuple[str, str | None]:
 # frob:doc \
 # docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
 # tion-7
-# frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_migrates_one_active_ticket_with_done_report  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Migration to v2 \
 # (T-1259) section individually frob:describes this symbol by its own qualified path \
 # -- a deliberate per-symbol anchor, not a duplicate"
@@ -173,9 +170,6 @@ def _migrate_one_v2(
 # docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
 # tion-7
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
-# frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_golden_round_trip_semantic_equality  # noqa: E501
-# frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_idempotent_no_v1_state_is_a_no_op  # noqa: E501
-# frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_draft_id_ticket_migrates_like_any_other  # noqa: E501
 def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
     """One-shot, reversible migrator (ledger v2 design section 7,
     deliverable 1): reads today's `tickets.md`/`tickets-archive.md` via
@@ -239,14 +233,8 @@ def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
 # frob:ticket T-2355
 # frob:ticket T-2695
 # frob:doc docs/design/ledger-v2.md#7-reversible-migration-plan-design-for-the-child-ticket-not-built-here  # noqa: E501
-# frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_migrates_only_the_monofile_only_tickets  # noqa: E501
-# frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_never_overwrites_an_already_migrated_ticket  # noqa: E501
-# frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated  # noqa: E501
-# frob:tests \
 # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_flag_calls_migrate_missing_v2  # noqa: E501
-# frob:tests \
 # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_omitted_keeps_original_behavior  # noqa: E501
-# frob:tests \
 # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_combines_with_to_v2  # noqa: E501
 def migrate_missing_v2(root: Path) -> Result[int, TicketError]:
     """Partial-migration gap `migrate_v1_to_v2` cannot close (T-2355):

@@ -734,19 +734,8 @@ def _hooks_dir(root: Path) -> Result[Path, ScaffoldError]:
 # frob:doc docs/commands/scaffold.md#public-api
 # frob:ticket T-0731
 # frob:ticket T-2071
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_installs_pre_commit_and_pre_merge_commit  # noqa: E501
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_refuses_existing_hook_without_force  # noqa: E501
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_changelog  # noqa: E501
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_uv_lock  # noqa: E501
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_pyproject_version  # noqa: E501
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_pyproject_edit_without_version_change_allowed  # noqa: E501
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_override_env_var_allows_it  # noqa: E501
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_tickets_md_change_warns_but_does_not_refuse  # noqa: E501
 # frob:ticket T-1742
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_merge_commit_matching_main_is_allowed  # noqa: E501
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_merge_commit_diverging_from_main_still_refused  # noqa: E501
 # frob:ticket T-2071
-# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_agent_context_root_write_refused_without_frob_agent  # noqa: E501
 def install_worktree_lease_hook(
     root: Path, *, force: bool = False
 ) -> Result[tuple[Path, ...], ScaffoldError]:

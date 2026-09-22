@@ -30,7 +30,6 @@ __all__ = ["add_narrative_parser", "run_narrative_command"]
 
 
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests \
 # tests/test_narrative_migrate.py::TestNarrativeCli.test_add_narrative_parser_registers_move  # noqa: E501
 def add_narrative_parser(sub: argparse._SubParsersAction) -> None:
     """Register `frob narrative [move] FILE LINE` on an argparse
@@ -189,7 +188,6 @@ def _resolve_migration(
 
 
 # frob:doc docs/commands/narrative.md#usage
-# frob:tests \
 # tests/test_narrative_migrate.py::TestNarrativeCli.test_dry_run_reports_without_writing
 def run_narrative_command(args: argparse.Namespace) -> int:
     """Execute `frob narrative move` -- resolves the block, computes the

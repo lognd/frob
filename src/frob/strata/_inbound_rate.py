@@ -102,7 +102,6 @@ _INBOUND_RATE_RULES: frozenset[str] = frozenset({REL_MISSING_INBOUND_RATE})
 
 
 # frob:doc docs/strata/reliability.md#rel3xx-inbound-rate-obligation-t-4112
-# frob:tests tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate.test_unauthenticated_write_with_retention_but_no_rate_fires  # noqa: E501
 class InboundRateViolation(BaseModel):
     """One REL303 finding: the reporting `node` (the route, i.e.
     `flow.src` -- the caller whose write path lacks a declared rate
@@ -118,7 +117,6 @@ class InboundRateViolation(BaseModel):
 
 
 # frob:doc docs/strata/reliability.md#rel3xx-inbound-rate-obligation-t-4112
-# frob:tests tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate.test_unauthenticated_write_with_retention_but_no_rate_fires  # noqa: E501
 class InboundRateReport(BaseModel):
     """Every unwaived REL303 finding, plus `waived` (T-0174 channel, kept
     for report visibility). Mirrors `_reliability.py::ReliabilityReport`'s
@@ -203,7 +201,6 @@ def _apply_inbound_rate_waivers(
 # frob:doc docs/strata/reliability.md#rel3xx-inbound-rate-obligation-t-4112
 # frob:ticket T-4112
 # frob:enforces CHK-GATE-REL303
-# frob:tests tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate.test_unauthenticated_write_with_retention_but_no_rate_fires  # noqa: E501
 def check_inbound_rate(model: KernelModel) -> Result[InboundRateReport, StrataError]:
     """The REL303 entrypoint (T-4112): every unauthenticated write flow
     into a carries-bearing store with retention but no rate, waivers

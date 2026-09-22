@@ -156,7 +156,6 @@ def _manifests_by_node(model: KernelModel) -> dict[str, KrbManifest]:
 
 # frob:doc docs/strata/krb.md#movement-proofs
 # frob:enforces CHK-GATE-KRB001
-# frob:tests tests/unit/strata/test_krb_movement.py::TestKrb001.test_fires kind="unit"
 def evaluate_unconstrained_delegation(
     model: KernelModel,
 ) -> Result[tuple[KrbMovementViolation, ...], StrataError]:
@@ -186,7 +185,6 @@ def evaluate_unconstrained_delegation(
 
 # frob:doc docs/strata/krb.md#movement-proofs
 # frob:enforces CHK-GATE-KRB002
-# frob:tests tests/unit/strata/test_krb_movement.py::TestKrb002.test_fires kind="unit"
 def evaluate_roastable_spn(
     model: KernelModel,
 ) -> Result[tuple[KrbMovementViolation, ...], StrataError]:
@@ -282,7 +280,6 @@ def _delegation_reach_higher_trust(
 
 # frob:doc docs/strata/krb.md#movement-proofs
 # frob:enforces CHK-GATE-KRB003
-# frob:tests tests/unit/strata/test_krb_movement.py::TestKrb003.test_chains kind="unit"
 def evaluate_constrained_delegation_blast_radius(
     model: KernelModel,
 ) -> Result[tuple[KrbMovementViolation, ...], StrataError]:
@@ -337,7 +334,6 @@ def _path_uses_krb_trust_flow(facts, path: tuple[str, ...]) -> bool:  # noqa: AN
 
 # frob:doc docs/strata/krb.md#movement-proofs
 # frob:enforces CHK-GATE-KRB004
-# frob:tests tests/unit/strata/test_krb_movement.py::TestKrb004.test_fires kind="unit"
 def evaluate_cross_realm_containment(
     model: KernelModel,
 ) -> Result[tuple[KrbMovementViolation, ...], StrataError]:

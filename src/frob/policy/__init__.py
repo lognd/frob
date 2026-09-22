@@ -47,9 +47,7 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-4013
-# frob:tests \
 # tests/test_policy.py::TestRules.test_glob_double_star_matches_file_directly_under_prefix  # noqa: E501
-# frob:tests \
 # tests/test_policy.py::TestRules.test_glob_stays_quiet_outside_matched_directory
 @lru_cache(maxsize=None)
 def _compiled_glob(pattern: str) -> pathspec.PathSpec:
@@ -67,7 +65,6 @@ def _compiled_glob(pattern: str) -> pathspec.PathSpec:
 
 
 # frob:ticket T-4280
-# frob:tests \
 # tests/test_policy.py::TestRules.test_backslash_joined_path_matches_a_posix_glob_on_every_platform  # noqa: E501
 def _files_under(root: Path, snapshot: GraphSnapshot, pattern: str) -> tuple[str, ...]:
     """Repo-relative paths in `snapshot.file_hashes` matching glob `pattern`
@@ -331,8 +328,6 @@ def _compile_pattern_query(rule: PolicyRule, query_text: str) -> tuple | None:
 
 
 # frob:ticket T-3986
-# frob:tests tests/test_policy.py::TestPol000.test_pol000_fires_on_zero_match_pattern
-# frob:tests \
 # tests/test_policy.py::TestPol000.test_pol000_stays_quiet_when_underscore_capture_only_matches  # noqa: E501
 def _file_pattern_matches(
     rule: PolicyRule,

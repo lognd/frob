@@ -293,7 +293,6 @@ def _apply_delivery_semantics_waivers(
 # frob:enforces SDC-8-IDEMPOTENT-CONSUMERS
 # frob:enforces CHK-GATE-REL330
 # frob:enforces CHK-GATE-REL331
-# frob:tests tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_queue_node_without_delivery_semantics_fires  # noqa: E501
 def check_delivery_semantics_obligations(
     model: KernelModel, root: Path
 ) -> Result[DeliverySemanticsReport, StrataError]:

@@ -36,12 +36,6 @@ _TERMINAL_STATES = (TicketState.DONE, TicketState.DROPPED)
 
 # frob:enforces CHK-GATE-MILE003
 # frob:ticket T-2576
-# frob:tests tests/test_gates_milestone.py::TestMile003.test_fires_on_open_ticket_with_no_resolvable_milestone  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile003.test_silent_once_stamped  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile003.test_silent_on_configured_default  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile003.test_silent_on_inherited_value  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile003.test_terminal_ticket_never_fires  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile003.test_no_default_configured_still_fires  # noqa: E501
 def _mile003_unresolved_milestone(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -124,13 +118,6 @@ def _milestone_is_later(candidate: str, baseline: str) -> bool:
 
 # frob:enforces CHK-GATE-MILE001
 # frob:ticket T-2580
-# frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_later_milestone_fires  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_earlier_milestone_does_not_fire  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_same_milestone_does_not_fire  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile001.test_terminal_blocker_does_not_fire  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile001.test_terminal_ticket_never_fires  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile001.test_unresolved_milestone_does_not_fire  # noqa: E501
-# frob:tests \
 # tests/test_gates_milestone.py::TestMile001.test_v_prefixed_and_bare_milestone_treated_equal  # noqa: E501
 def _mile001_blocked_by_later_milestone(
     root: Path, queue: TicketQueue
@@ -244,12 +231,6 @@ def _descendants_of(
 
 # frob:enforces CHK-GATE-MILE002
 # frob:ticket T-2580
-# frob:tests tests/test_gates_milestone.py::TestMile002.test_descendant_in_later_milestone_fires  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile002.test_descendant_in_earlier_or_same_milestone_does_not_fire  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile002.test_terminal_descendant_does_not_fire  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile002.test_terminal_ancestor_never_fires  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile002.test_grandchild_descendant_fires  # noqa: E501
-# frob:tests \
 # tests/test_gates_milestone.py::TestMile002.test_v_prefixed_and_bare_milestone_treated_equal  # noqa: E501
 def _mile002_descendant_later_milestone(
     root: Path, queue: TicketQueue
@@ -369,12 +350,6 @@ def _mile004_pair_violation(milestone: str, a: Ticket, b: Ticket) -> Violation |
 
 # frob:ticket T-2579
 # frob:doc docs/modules/tickets-data-storage.md#mile004-t-2579-m4b
-# frob:tests tests/test_gates_milestone.py::TestMile004.test_two_unordered_runs_last_in_one_milestone_fires  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile004.test_blocked_by_edge_resolves_the_pair  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile004.test_declared_parallel_safe_resolves_the_pair  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile004.test_single_runs_last_ticket_never_fires  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile004.test_different_milestones_never_pair  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile004.test_terminal_sibling_excluded  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's MILE004 (T-2579 \
 # M4b) section documents several symbols under one section, not just a public entry \
 # point -- the many-symbols- one-section convention this repo already accepted for \
@@ -415,8 +390,6 @@ def _mile004_unordered_runs_last(
 # frob:ticket T-2580
 # frob:doc docs/modules/tickets-data-storage.md#mile003-t-2576-m2
 # frob:doc docs/modules/tickets-data-storage.md#mile001--mile002-t-2580-m5
-# frob:tests tests/test_gates_milestone.py::TestMile003.test_fires_on_open_ticket_with_no_resolvable_milestone  # noqa: E501
-# frob:tests tests/test_gates_milestone.py::TestMile003.test_silent_once_stamped  # noqa: E501
 def milestone_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """MILE001 + MILE002 + MILE003 + MILE004: the full T-2573 milestone
     gate family (M5 T-2580 added MILE001/MILE002, the two provable

@@ -335,13 +335,10 @@ def _save_build_attempts(root: Path, attempts: dict[str, str]) -> None:
 
 # frob:ticket T-2805
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reproducible_rebuil\
 # d_clears_the_content_digest_latch kind="unit"
-# frob:tests \
 # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_after_edit_wi\
 # thout_a_build_attempt_still_latches kind="unit"
-# frob:tests \
 # tests/unit/test_natives_build.py::TestBuildNatives.test_successful_build_records_a_na\
 # tive_build_attempt kind="unit"
 def record_native_build_attempt(root: Path, name: str) -> None:
@@ -390,10 +387,6 @@ def record_native_build_attempt(root: Path, name: str) -> None:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reports_native_grammar_ahead_of_native  # noqa: E501
-# frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_fresh_native_reports_nothing  # noqa: E501
-# frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_unbuilt_native_is_not_reported_as_stale  # noqa: E501
-# frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_no_matching_source_dir_is_not_reported  # noqa: E501
 # frob:waive ARCH001 reason="T-0513's mtime-then-content-digest tiers are an intentionally ORDERED decision tree over one persisted stamps dict (first-observation baseline, touch-without-rebuild detection, genuine-rebuild refresh) with stamps/stamps_changed mutated across the loop; splitting a tier into a helper would require returning multiple mutations (stale entry, stamp update, changed flag) back out, adding indirection without reducing the ordered reasoning itself"  # noqa: E501
 def stale_natives(root: Path) -> tuple[StaleNative, ...]:
     """Every declared `[[native]]` (T-0333's `frob.toml` `[[native]]` table)
@@ -524,13 +517,10 @@ def stale_natives(root: Path) -> tuple[StaleNative, ...]:
 # frob:ticket T-4434
 # frob:ticket T-4443
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_i\
 # dentical_source_is_backdated_and_reads_fresh
-# frob:tests \
 # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_d\
 # iverged_source_is_left_untouched_and_still_stale
-# frob:tests \
 # tests/unit/strata/test_native_staleness.py::TestSeedWorktreeNativeSourceMtimes.test_r\
 # epo_side_untracked_file_does_not_block_seeding
 def seed_worktree_native_source_mtimes(repo: Path, worktree: Path) -> tuple[str, ...]:
@@ -590,8 +580,6 @@ def stale_native_warning(root: Path) -> str | None:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.test_exits_nonzero_and_prints_when_stale  # noqa: E501
-# frob:tests tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.test_returns_none_when_not_stale  # noqa: E501
 def check_native_staleness_or_exit(root: Path) -> None:
     """`make check` entry point (T-0248): print `stale_native_warning` to
     stderr and `sys.exit(1)` if `root`'s natives are stale, else return
@@ -605,8 +593,6 @@ def check_native_staleness_or_exit(root: Path) -> None:
 
 
 # frob:doc docs/modules/gates.md#native001-t-1148
-# frob:tests tests/unit/strata/test_native_staleness.py::TestUnimportableNatives.test_reports_a_declared_native_that_fails_to_import  # noqa: E501
-# frob:tests tests/unit/strata/test_native_staleness.py::TestUnimportableNatives.test_healthy_native_reports_nothing  # noqa: E501
 # frob:waive OPAQUE001 reason="T-1038: spec.name is a module name from the repo \
 # owner's own frob.toml [[native]] declarations, not attacker/external input -- \
 # deliberate module-import-health probing, the whole point of this function"

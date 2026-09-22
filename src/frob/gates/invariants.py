@@ -116,7 +116,6 @@ def _claim_shaped_sentences(text: str) -> tuple[str, ...]:
 
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0462
-# frob:tests tests/gates_suite/test_invariant.py::TestInv003Gate.test_exclusivity_claim_without_marker_warns kind="unit"  # noqa: E501
 def find_exclusivity_claims(text: str) -> tuple[str, ...]:
     """Every distinct exclusivity phrase (`EXCLUSIVITY_CLAIM_PATTERNS`)
     matched in a claim-shaped sentence of `text` (T-0509: noise-stripped,
@@ -154,7 +153,6 @@ NORMATIVE_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = (
 
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0452
-# frob:tests tests/gates_suite/test_invariant.py::TestInv004Gate.test_section_with_normative_language_and_no_invariant_is_advisory kind="unit"  # noqa: E501
 def find_normative_claims(text: str) -> tuple[str, ...]:
     """Every distinct normative phrase (`NORMATIVE_CLAIM_PATTERNS`) matched
     in a claim-shaped sentence of `text` (T-0509: noise-stripped,
@@ -205,7 +203,6 @@ class InvariantError(ErrorSet):
 
 
 # frob:doc docs/modules/gates.md#invariants
-# frob:tests \
 # tests/gates_suite/test_invariant.py::TestInvariantLoad.test_malformed_bad_id \
 # kind="unit"
 class InvariantLoadError(BaseModel):
@@ -223,7 +220,6 @@ class InvariantLoadError(BaseModel):
 
 
 # frob:doc docs/modules/gates.md#invariants
-# frob:tests \
 # tests/gates_suite/test_invariant.py::TestInvariantLoad.test_one_malformed_file_does_not_block_others kind="unit"  # noqa: E501
 class LoadedInvariants(BaseModel):
     """`load_invariants`'s result (T-4019): every invariant that parsed

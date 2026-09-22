@@ -24,7 +24,6 @@ __all__ = ["import_roots", "module_to_path", "root_for_path", "resolve_symbol"]
 
 # frob:ticket T-3587
 # frob:doc docs/commands/refactor.md#import_roots
-# frob:tests \
 #   tests/test_refactor.py::TestImportRoots.test_src_first_then_repo_root  # noqa: E501
 def import_roots(repo_root: Path) -> list[Path]:
     """The ordered list of package roots this repo's dotted-module<->path
@@ -48,9 +47,7 @@ def import_roots(repo_root: Path) -> list[Path]:
 
 # frob:ticket T-3587
 # frob:doc docs/commands/refactor.md#module_to_path
-# frob:tests \
 #   tests/test_refactor.py::TestModuleToPath.test_maps_module_under_src  # noqa: E501
-# frob:tests \
 #   tests/test_refactor.py::TestModuleToPath.test_maps_module_under_root  # noqa: E501
 def module_to_path(repo_root: Path, module: str) -> Path:
     """The single place a dotted module path (`pkg.sub.mod`) becomes a
@@ -74,7 +71,6 @@ def module_to_path(repo_root: Path, module: str) -> Path:
 
 # frob:ticket T-3587
 # frob:doc docs/commands/refactor.md#root_for_path
-# frob:tests \
 #   tests/test_refactor.py::TestRootForPath.test_finds_owning_root  # noqa: E501
 def root_for_path(repo_root: Path, path: Path) -> Path | None:
     """The `import_roots` entry that contains `path`, or `None` if
@@ -124,7 +120,6 @@ def _find_def(
 
 
 # frob:doc docs/commands/refactor.md#resolve_symbol
-# frob:tests tests/test_refactor.py::TestResolveSymbol.test_resolves_top_level_function
 def resolve_symbol(
     repo_root: Path, ref: SymbolRef
 ) -> Result[ResolvedSymbol, RefactorError]:

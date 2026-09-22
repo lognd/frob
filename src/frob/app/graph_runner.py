@@ -17,7 +17,6 @@ _CACHE_REL = Path(".frob") / "cache.db"
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
-# frob:tests \
 # tests/unit/test_app_runners_batch6.py::TestGraphRunner.test_build_success_logs_stats
 def run(cfg: AppConfig) -> None:
     """Dispatch to build/query/why based on `cfg.graph_command`."""
@@ -43,7 +42,6 @@ def run(cfg: AppConfig) -> None:
 # (T-1689) section individually frob:describes this symbol by its own qualified path \
 # -- a deliberate per-symbol anchor, not a duplicate"
 # frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
-# frob:tests tests/unit/verify/test_selection.py::TestRunBatchSelectedTests.test_graph_unavailable_is_an_error  # noqa: E501
 def _run_select_batch_tests(root: Path) -> None:
     """`frob graph select-batch-tests` (T-1689): read the current verify
     queue (`.frob/verify-queue.json`, the same durable batch T-1688's
@@ -171,7 +169,6 @@ def _render_query_lines(ref: str, record, outgoing, incoming) -> list[str]:  # n
     return lines
 
 
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def _try_query_via_daemon(root: Path, cfg: AppConfig) -> bool:
     """T-1128: for `frob graph query --json`, try the daemon's own
     `frob_graph_query` RPC (`frob.serve._tools.frob_graph_query`, field-
@@ -413,7 +410,6 @@ def _affects_payload_from_daemon(payload: dict) -> dict:
     }
 
 
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def _try_affects_via_daemon(root: Path, cfg: AppConfig) -> bool:
     """T-1106: for `frob graph affects --json`, try the T-1092 daemon's own
     `frob_affects` RPC (already exposed by `_socketd._TOOL_DISPATCH` since
@@ -447,10 +443,7 @@ def _try_affects_via_daemon(root: Path, cfg: AppConfig) -> bool:
 
 
 # frob:ticket T-0628
-# frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_human_mode_reports_dependents_docs_tests  # noqa: E501
-# frob:tests \
 # tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_json_mode_payload
-# frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_truncated_closure_flagged  # noqa: E501
 # frob:waive ARCH103 reason="T-0977/T-1106: `frob graph affects` CLI entrypoint -- \
 # same runner shape as `_run_query`/`_run_why` in this module: try the daemon proxy, \
 # resolve, render text-or-json, exit"

@@ -35,7 +35,6 @@ class _LazyStdoutHandler(logging.StreamHandler):
         super().__init__(sys.stdout)
 
     # frob:doc docs/modules/logging.md#public-api
-    # frob:tests \
     # tests/unit/test_main_entry.py::TestLazyLogHandlers.test_handler_follows_stream_sw\
     # ap_not_bind_time_capture
     @property
@@ -56,7 +55,6 @@ class _LazyStderrHandler(logging.StreamHandler):
         super().__init__(sys.stderr)
 
     # frob:doc docs/modules/logging.md#public-api
-    # frob:tests \
     # tests/unit/test_main_entry.py::TestLazyLogHandlers.test_stderr_handler_never_emit\
     # s_against_a_closed_captured_stream
     @property

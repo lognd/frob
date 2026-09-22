@@ -351,13 +351,6 @@ def _file_import_edges_and_gaps(
 # T-1665 discharges the WIRE001 waiver this comment used to carry: this
 # substrate is now wired into a real production caller,
 # frob.gates._refs.ref_gate's resolved-import inbound-reference channel.
-# frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_resolves_a_real_intra_repo_import_edge  # noqa: E501
-# frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_dynamic_import_reports_unresolved_not_dropped  # noqa: E501
-# frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_non_python_file_reports_unsupported_language_unresolved  # noqa: E501
-# frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_stdlib_import_counts_as_external_not_unresolved  # noqa: E501
-# frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_relative_import_resolves_within_package  # noqa: E501
-# frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_star_import_resolves_the_module_not_its_names  # noqa: E501
-# frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_unreadable_file_is_reported_unresolved_not_silently_skipped  # noqa: E501
 def build_import_graph(root: Path, paths: Sequence[str]) -> ImportGraph:
     """Build the file-level resolved-import graph over `paths` (repo-root-
     relative POSIX file paths). See this module's own docstring for the

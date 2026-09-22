@@ -352,7 +352,6 @@ def _forbid_rule_violations(
 # frob:enforces CHK-GATE-FORBID002
 # frob:enforces CHK-GATE-FORBID003
 # frob:ticket T-4951
-# frob:tests tests/gates_suite/test_forbid_rules.py::TestForbidRulesGateLitmus.test_litmus_planted_violation_fires  # noqa: E501
 def _forbid_rules_gate(root: Path) -> tuple[Violation, ...]:
     """T-4951: `forbid call`/`forbid import` (`_ast.py::ForbidCall`/
     `ForbidImport`) run for real over `root`'s actual `design/` policies,

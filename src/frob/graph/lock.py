@@ -204,13 +204,6 @@ def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
 
 # frob:doc docs/modules/graph.md#public-api
 # frob:doc docs/modules/gates.md#ack-accountability-t-1317
-# frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_records_every_describes_facet  # noqa: E501
-# frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_skips_meaningless_body_facet_on_class  # noqa: E501
-# frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_endpoint_that_does_not_resolve_is_err  # noqa: E501
-# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_requires_reason  # noqa: E501
-# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_rejects_boilerplate_reason  # noqa: E501
-# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_records_digest_delta  # noqa: E501
-# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_first_ack_records_none_old_digest  # noqa: E501
 # frob:ticket T-1317
 # frob:ticket T-0972
 def acknowledge(
@@ -420,7 +413,6 @@ def _dangling_edges(
 
 
 # frob:doc docs/modules/graph.md#public-api
-# frob:tests tests/test_graph_lock.py::TestAckDrift.test_bare_describes_target_to_nonexistent_symbol_is_dangling  # noqa: E501
 def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
     """Pure comparison: stale acks (digest moved) and dangling edges (endpoint gone)."""
     stale = _stale_items(lock, snapshot)
@@ -431,9 +423,6 @@ def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
 
 # frob:invariant INV-001
 # frob:doc docs/modules/graph.md#public-api
-# frob:tests tests/test_graph_lock.py::TestAckDrift.test_write_lock_deterministic
-# frob:tests tests/test_graph_lock.py::TestAckDrift.test_write_lock_is_atomic
-# frob:tests tests/test_graph_lock.py::TestAckDrift.test_write_lock_oserror_on_replace_is_write_failed  # noqa: E501
 # frob:raises BaseException
 def write_lock(lock: LockFile, path: Path) -> Result[Unit, LockError]:
     """Atomically write `lock` as deterministic, sorted, diff-friendly JSON.

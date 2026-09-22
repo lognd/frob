@@ -69,7 +69,6 @@ entry here on purpose: there is no frob-native build step to fall back to."""
 
 # frob:doc docs/commands/run.md#error-types
 # frob:ticket T-4759
-# frob:tests tests/unit/test_run_commands.py::TestRun.test_unknown_command_is_err
 class RunError(ErrorSet):
     """Failure values `frob run`/`frob build`'s resolution and execution
     paths can return."""
@@ -136,8 +135,6 @@ def _detect_cycle(
 
 # frob:doc docs/commands/run.md#commands-table
 # frob:ticket T-4759
-# frob:tests tests/unit/test_run_commands.py::TestLoadCommands.test_three_step_sequence_composes  # noqa: E501
-# frob:tests tests/unit/test_run_commands.py::TestLoadCommands.test_self_reference_refused_with_path  # noqa: E501
 def load_commands(root: Path) -> Result[CommandsConfig, CommandsError]:
     """Parse `frob.toml`'s `[commands]` table into a `CommandsConfig`,
     refusing (at load time, before anything runs) any entry that
@@ -280,8 +277,6 @@ def _build_build_parser() -> argparse.ArgumentParser:
 
 # frob:doc docs/commands/run.md#public-api
 # frob:ticket T-4759
-# frob:tests tests/unit/test_run_commands.py::TestRun.test_middle_step_failure_names_index  # noqa: E501
-# frob:tests tests/unit/test_run_commands.py::TestRun.test_dry_run_prints_without_spawning  # noqa: E501
 def run(argv: list[str] | None = None) -> None:
     """`frob run <name> [--dry-run]`: execute one `[commands]` entry (or a
     frob-native default for `test`/`lint`/`format`/`check`) by name.
@@ -293,7 +288,6 @@ def run(argv: list[str] | None = None) -> None:
 
 # frob:doc docs/commands/run.md#public-api
 # frob:ticket T-4759
-# frob:tests tests/unit/test_run_commands.py::TestBuild.test_delegates_to_build_entry
 def run_build(argv: list[str] | None = None) -> None:
     """`frob build [--dry-run]`: delegate straight to the `build`
     `[commands]` entry -- carries no build logic of its own, per the

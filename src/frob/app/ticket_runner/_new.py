@@ -228,9 +228,6 @@ _PHASE_PROGRESS_THRESHOLD_S = 2.0
 
 
 # frob:ticket T-3993
-# frob:tests tests/unit/test_ticket_new_phase_progress.py::TestPhaseProgress.test_fast_run_stays_quiet  # noqa: E501
-# frob:tests tests/unit/test_ticket_new_phase_progress.py::TestPhaseProgress.test_slow_run_names_the_phase  # noqa: E501
-# frob:tests tests/unit/test_ticket_new_phase_progress.py::TestPhaseProgress.test_no_clock_stays_quiet  # noqa: E501
 def _report_phase_progress(
     cmd_name: str, start_time: float | None, phase_name: str
 ) -> None:
@@ -691,8 +688,6 @@ def _scope_plausibility_file_words(path: Path) -> frozenset[str]:
 
 
 # frob:ticket T-2177
-# frob:tests tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility.test_implausible_scope_warns_loudly  # noqa: E501
-# frob:tests tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility.test_plausible_scope_files_without_friction  # noqa: E501
 def _scope_plausibility_warnings(
     root: Path, title: str, body: str, scope: Sequence[str]
 ) -> tuple[str, ...]:
@@ -740,9 +735,6 @@ def _scope_plausibility_warnings(
 # frob:ticket T-1998
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-2455
-# frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_finds_an_archived_close_title_match kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_no_match_for_a_genuinely_distinct_title kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_short_dissimilar_titles_are_not_flagged_as_related  # noqa: E501
 def related_tickets(root: Path, title: str) -> tuple[tuple[str, str, str, float], ...]:
     """`(ticket_id, title, state, similarity)` for every ticket -- ACTIVE
@@ -933,8 +925,6 @@ def _clipboard_prompt_enabled() -> bool:
 
 
 # frob:ticket T-3322
-# frob:tests tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew.test_env_var_unset_never_calls_clipboard_has_image_even_on_a_tty  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew.test_env_var_set_but_not_a_tty_never_calls_clipboard_has_image  # noqa: E501
 def _maybe_attach_clipboard_image(root: Path, ticket_id: str) -> None:
     """Interactively (TTY only, AND only when `FROB_TICKET_NEW_CLIPBOARD`
     is explicitly set, T-3322) offer to attach a clipboard image to
@@ -1190,8 +1180,6 @@ def _emit_new_ticket_side_effects(
 
 
 # frob:ticket T-3308
-# frob:tests tests/unit/test_ticket_new_json.py::TestNewJsonOutput.test_json_flag_prints_parseable_json_with_id  # noqa: E501
-# frob:tests tests/unit/test_ticket_new_json.py::TestNewJsonOutput.test_without_json_flag_output_is_unchanged  # noqa: E501
 def _emit_new_ticket_json(ticket, warnings: list[str]) -> None:  # noqa: ANN001
     """`frob ticket new --json`'s stdout payload (T-3308): before this,
     `--json` was silently ignored by `new` -- output stayed the plain
@@ -1226,13 +1214,9 @@ def _emit_new_ticket_json(ticket, warnings: list[str]) -> None:  # noqa: ANN001
 
 
 # frob:ticket T-1556
-# frob:tests \
 # tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings.test_few_warnings_logged_individually  # noqa: E501
-# frob:tests \
 # tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings.test_many_warnings_collapse_to_counted_summary  # noqa: E501
-# frob:tests \
 # tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings.test_verbose_env_var_disables_collapse  # noqa: E501
-# frob:tests \
 # tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings.test_no_warnings_logs_nothing  # noqa: E501
 # frob:doc \
 # docs/design/cli-hygiene.md#principle-4-scope-closure-warning-volume-must-not-bury-its-own-most  # noqa: E501
@@ -1367,10 +1351,6 @@ def _non_relative_scope_patterns(scope) -> tuple[str, ...]:  # noqa: ANN001
 
 
 # frob:ticket T-2257
-# frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings.test_overlapping_scope_names_the_other_ticket_and_path  # noqa: E501
-# frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings.test_glob_vs_file_overlap_is_detected  # noqa: E501
-# frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings.test_non_overlapping_scope_is_silent  # noqa: E501
-# frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings.test_terminal_state_tickets_are_excluded  # noqa: E501
 def _scope_overlap_warnings(root: Path, new_ticket_id: str, scope) -> tuple[str, ...]:  # noqa: ANN001
     """T-2257: one warning per OTHER currently-open (non-terminal) ticket
     whose declared `scope` resolves to at least one real file `scope` (the

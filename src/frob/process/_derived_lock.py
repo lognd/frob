@@ -5,7 +5,6 @@ from pathlib import Path
 
 
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
-# frob:tests \
 # tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worke\
 # r_under_parent_shared_holder_completes  # noqa: E501
 # frob:ticket T-0982
@@ -31,10 +30,8 @@ def held_registry_keys() -> tuple[str, ...]:
         return tuple(_process_held_counts)
 
 
-# frob:tests \
 # tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worke\
 # r_under_parent_shared_holder_completes  # noqa: E501
-# frob:tests \
 # tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_independent_pro\
 # cess_without_marker_still_blocks  # noqa: E501
 # frob:ticket T-0982
@@ -115,7 +112,6 @@ def _derived_lock_path(root: Path) -> Path:
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
 class DerivedStateLockUnavailable(RuntimeError):
     """T-2934: raised by `derived_state_lock` when neither `fcntl`
     (POSIX) nor `msvcrt` (Windows) is importable -- there is no known
@@ -157,16 +153,12 @@ def _canonical_registry_key(root: Path) -> str:
 
 
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
-# frob:tests \
 # tests/unit/test_process_lock.py::TestDerivedStateLock.test_two_threads_serialize_excl\
 # usive  # noqa: E501
-# frob:tests \
 # tests/unit/test_process_lock.py::TestDerivedStateLock.test_shared_locks_do_not_block_\
 # each_other  # noqa: E501
-# frob:tests \
 # tests/unit/test_process_lock.py::TestDerivedStateLock.test_reentrant_same_mode_in_sam\
 # e_thread  # noqa: E501
-# frob:tests \
 # tests/unit/test_process_lock.py::TestDerivedStateLock.test_reentrant_opposite_mode_ra\
 # ises  # noqa: E501
 # frob:ticket T-0859
@@ -301,19 +293,14 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
 
 
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
-# frob:tests \
 # tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_standalone_rebuild_ta\
 # kes_exclusive  # noqa: E501
-# frob:tests \
 # tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_nested_inside_shared_\
 # holder_does_not_deadlock  # noqa: E501
-# frob:tests \
 # tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_concurrent_separate_p\
 # rocess_writer_still_blocked  # noqa: E501
-# frob:tests \
 # tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worke\
 # r_under_parent_shared_holder_completes  # noqa: E501
-# frob:tests \
 # tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_independent_pro\
 # cess_without_marker_still_blocks  # noqa: E501
 # frob:ticket T-0918

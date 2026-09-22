@@ -96,7 +96,6 @@ class DupResult(BaseModel):
         return sum(len(g.fragments) for g in self.groups)
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_dup.py::TestDupResultFormat.test_as_text_clean_project
     def as_text(self) -> str:
         # frob:doc docs/modules/dup.md#legacy-scanner
         if not self.groups:
@@ -124,7 +123,6 @@ class DupResult(BaseModel):
         return "\n".join(lines)
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_dup.py::TestDupResultFormat.test_as_json_has_groups_key
     def as_json(self) -> str:
         # frob:doc docs/modules/dup.md#legacy-scanner
         return json.dumps(self.model_dump(), indent=2)
@@ -376,7 +374,6 @@ def _renamed_groups(
 
 
 # frob:doc docs/modules/dup.md#legacy-scanner
-# frob:tests tests/unit/test_memo.py::test_find_duplicates_second_call_is_memo_hit
 # frob:ticket T-0491
 @memoize_per_run
 def find_duplicates(

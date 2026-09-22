@@ -79,9 +79,6 @@ DEFAULT_WATCH_POLL_INTERVAL_S = 1.0
 
 
 # frob:doc docs/modules/serve.md#fs-watch-push-invalidation-t-1094
-# frob:tests tests/test_serve_watch.py::TestWatchTick.test_no_change_leaves_state_cached kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_watch.py::TestWatchTick.test_change_invalidates_and_prewarms kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_watch.py::TestWatchTick.test_watch_tick_never_disagrees_with_pull_signal kind="unit"  # noqa: E501
 def watch_tick(root: Path, last_key: str | None) -> tuple[str, bool]:
     """One watch cycle for `root`: recompute `_repo_dirty_key(root)` (the
     SAME signal `frob.serve._warm._warm_state` checks on every pull-path
@@ -111,8 +108,6 @@ def watch_tick(root: Path, last_key: str | None) -> tuple[str, bool]:
 
 
 # frob:doc docs/modules/serve.md#fs-watch-push-invalidation-t-1094
-# frob:tests tests/test_serve_watch.py::TestWatchThread.test_change_fires_on_change_callback kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_watch.py::TestWatchThread.test_stop_joins_promptly kind="unit"  # noqa: E501
 class WatchThread:
     """Background daemon thread driving `watch_tick` on an interval for the
     life of the standalone socket daemon process (`frob.serve._socketd.

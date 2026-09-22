@@ -62,8 +62,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
-# frob:tests tests/unit/strata/test_sysdoc.py::TestMergeModels.test_concat_fields
-# frob:tests tests/unit/strata/test_sysdoc.py::TestMergeModels.test_empty_tuple
 def merge_models(models: tuple[KernelModel, ...]) -> KernelModel:
     """Concatenate every loaded design file's facts into one `KernelModel`
     so a multi-file design is audited as a single obligation surface.

@@ -111,7 +111,6 @@ def _is_agent_worktree_path(path: Path) -> bool:
 
 
 # frob:ticket T-0836
-# frob:tests tests/test_ticket_leases.py::TestListAgentWorktrees.test_lists_only_dot_claude_worktrees_paths kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def _list_agent_worktrees(root: Path) -> Result[tuple[Path, ...], _WorktreeSweepError]:
     """Every git-registered worktree of `root`'s repository whose path
@@ -184,26 +183,17 @@ def _worktree_head_age_seconds(
 # frob:ticket T-0836
 # frob:ticket T-1739
 # frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
-# frob:tests \
 # tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed \
 # kind="unit"
-# frob:tests \
 # tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept kind="unit"
-# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept kind="unit"
-# frob:tests \
 # tests/test_ticket_leases.py::TestSweepWorktrees.test_expired_lease_clean_removed \
 # kind="unit"
-# frob:tests \
 # tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing \
 # kind="unit"
-# frob:tests \
 # tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal \
 # kind="unit"
-# frob:tests \
 # tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree \
 # kind="unit"
-# frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_clean_no_lease_recent_head_live_process_kept  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_force_overrides_the_live_process_keep  # noqa: E501
 # frob:ticket T-0601
 # frob:waive AFFECT001 reason="T-2833 is a pure verbatim move out of _leases into \
 # _worktree_sweep (file-level extraction, T-1103's own precedent) -- behavior, inputs, \
@@ -287,11 +277,8 @@ def sweep_worktrees(
 
 # frob:ticket T-1779
 # frob:doc docs/modules/tickets-landing.md#root-checkout-write-guard-t-1779
-# frob:tests \
 # tests/test_ticket_leases.py::TestRemoveWorktree.test_removes_a_clean_unleased_worktree
-# frob:tests \
 # tests/test_ticket_leases.py::TestRemoveWorktree.test_keeps_a_live_process_worktree
-# frob:tests tests/test_ticket_leases.py::TestRemoveWorktree.test_refuses_a_path_not_registered_as_a_worktree  # noqa: E501
 # frob:waive AFFECT001 reason="T-2833 is a pure verbatim move out of _leases into \
 # _worktree_sweep (file-level extraction, T-1103's own precedent) -- behavior, inputs, \
 # outputs, and the documented contract in tickets-landing.md#root-checkout- \

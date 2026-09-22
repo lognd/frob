@@ -112,11 +112,8 @@ def _selfaudit_violation(
 # frob:invariant INV-041
 # frob:enforces CHK-GATE-SYS109
 # frob:enforces CHK-GATE-SYS112
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_violations  # noqa: E501
-# frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_suppressed_on_design_load_error  # noqa: E501
 def _selfaudit_violations(
     root: Path,
     design_ids,
@@ -416,7 +413,6 @@ def _assume_template_max_modules(root: Path) -> int:
 
 # frob:ticket T-5105
 # frob:invariant INV-041
-# frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestSelfaudit001TemplatedAssume.test_red_on_todays_design_frob_strata  # noqa: E501
 def _templated_assume_violations(root: Path, design_dir: str) -> list[Violation]:
     """SELFAUDIT001 SYS119/SYS120 (D-M8, T-5105, owner directive
@@ -523,10 +519,7 @@ def _compliance_selfaudit_violation(view: str, cv, design_dir: str) -> Violation
 
 # frob:ticket T-1314
 # frob:invariant INV-041
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_folds_compliance_violation  # noqa: E501
-# frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_compliance_clean_model_no_violations  # noqa: E501
-# frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_compliance_suppressed_on_design_load_error  # noqa: E501
 def _compliance_selfaudit_violations(
     root: Path,
     design_ids,  # noqa: ANN001

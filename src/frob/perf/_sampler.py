@@ -87,7 +87,6 @@ def _frame_to_stack(
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
 # frob:ticket T-0972
-# frob:tests tests/unit/perf/test_hotgraph.py::TestStackSampler
 class StackSampler:
     """Background-thread stack sampler (the py-spy-style fallback backend
     -- see module docstring): samples the CALLING thread's frame stack
@@ -108,7 +107,6 @@ class StackSampler:
         self.stacks: list[SampledStack] = []
 
     # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-    # frob:tests tests/unit/perf/test_serial_pools.py::TestStackSamplerAllThreads.test_samples_a_threadpool_worker_thread  # noqa: E501
     def start(self) -> None:
         """Begin sampling every LIVE thread's frame stack in this process,
         once per `config.interval_s`, in a daemon background thread. A
@@ -179,7 +177,6 @@ class StackSampler:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_hotgraph.py::TestStackSampler.test_collects_at_least_one_sample_over_a_hot_loop  # noqa: E501
 def run_sampled(
     fn: Callable[[], None], config: SamplerConfig | None = None
 ) -> tuple[list[SampledStack], float]:

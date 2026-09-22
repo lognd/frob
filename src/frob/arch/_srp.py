@@ -109,8 +109,6 @@ def _lcom4_components(
 # not downgraded, on that basis.
 # frob:enforces ACC-1-1-1
 # frob:enforces ACC-2-1-LARGE-CLASS
-# frob:tests tests/unit/test_arch_srp.py::TestLcom4.test_disjoint_field_groups_trigger_lcom4  # noqa: E501
-# frob:tests tests/unit/test_arch_srp.py::TestLcom4.test_shared_fields_do_not_trigger_lcom4  # noqa: E501
 def check_lcom4(
     module: NormalizedModule,
     out: list[ArchSuggestion],
@@ -290,8 +288,6 @@ def _god_module_clusters(module: NormalizedModule) -> int:
 
 
 # frob:doc docs/modules/arch.md#srp-cohesion-checks
-# frob:tests tests/unit/test_arch_srp.py::TestGodModule.test_unrelated_export_clusters_trigger_god_module  # noqa: E501
-# frob:tests tests/unit/test_arch_srp.py::TestGodModule.test_related_exports_do_not_trigger_god_module  # noqa: E501
 def check_god_module(
     module: NormalizedModule,
     out: list[ArchSuggestion],
@@ -397,8 +393,6 @@ def _decision_points(func: NormalizedFunction) -> int:
 
 
 # frob:doc docs/modules/arch.md#srp-cohesion-checks
-# frob:tests tests/unit/test_arch_srp.py::TestMixedConcernFunction.test_io_compute_and_formatting_together_trigger  # noqa: E501
-# frob:tests tests/unit/test_arch_srp.py::TestMixedConcernFunction.test_single_concern_does_not_trigger  # noqa: E501
 def check_mixed_concern_function(
     module: NormalizedModule,
     out: list[ArchSuggestion],
@@ -451,7 +445,6 @@ def check_mixed_concern_function(
 
 
 # frob:doc docs/modules/arch.md#srp-cohesion-checks
-# frob:tests tests/unit/test_arch_srp.py::TestRunSrpChecks.test_combines_all_three_checks  # noqa: E501
 def run_srp_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     """Run every ARCH1xx SRP/cohesion check (T-0616: `check_lcom4`,
     `check_god_module`, `check_mixed_concern_function`) against one

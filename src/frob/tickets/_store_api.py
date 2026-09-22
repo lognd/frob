@@ -38,7 +38,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/tickets-data-storage.md#store-api-seam-t-4657
-# frob:tests tests/unit/test_ledger_store_api.py::test_missing_ticket_is_a_result_error
 def get_ticket(root: Path, ticket_id: str) -> Result[Ticket, TicketError]:
     """Read one live ticket by id through the ledger store, or Err(NotFound).
 
@@ -65,7 +64,6 @@ def get_ticket(root: Path, ticket_id: str) -> Result[Ticket, TicketError]:
 
 
 # frob:doc docs/modules/tickets-data-storage.md#store-api-seam-t-4657
-# frob:tests tests/unit/test_ledger_store_api.py::test_put_then_get_round_trips
 def list_tickets(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every live ticket in the repo as an id -> Ticket map, mode-agnostic.
 
@@ -86,7 +84,6 @@ def list_tickets(root: Path) -> Result[dict[str, Ticket], TicketError]:
 
 
 # frob:doc docs/modules/tickets-data-storage.md#store-api-seam-t-4657
-# frob:tests tests/unit/test_ledger_store_api.py::test_put_then_get_round_trips
 def put_ticket(
     root: Path, ticket: Ticket, *, strict_no_content_loss: bool = True
 ) -> Result[None, TicketError]:
@@ -109,7 +106,6 @@ def put_ticket(
 
 
 # frob:doc docs/modules/tickets-data-storage.md#store-api-seam-t-4657
-# frob:tests tests/unit/test_ledger_store_api.py::test_archived_put_then_get_round_trips
 def get_archived_ticket(root: Path, ticket_id: str) -> Result[Ticket, TicketError]:
     """Read one archived ticket by id through the ledger store.
 
@@ -138,7 +134,6 @@ def get_archived_ticket(root: Path, ticket_id: str) -> Result[Ticket, TicketErro
 
 
 # frob:doc docs/modules/tickets-data-storage.md#store-api-seam-t-4657
-# frob:tests tests/unit/test_ledger_store_api.py::test_archived_put_then_get_round_trips
 def list_archived_tickets(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every archived ticket in the repo as an id -> Ticket map.
 
@@ -160,7 +155,6 @@ def list_archived_tickets(root: Path) -> Result[dict[str, Ticket], TicketError]:
 
 
 # frob:doc docs/modules/tickets-data-storage.md#store-api-seam-t-4657
-# frob:tests tests/unit/test_ledger_store_api.py::test_archived_put_then_get_round_trips
 def put_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """Upsert one archived ticket through the ledger store (atomic, logged).
 

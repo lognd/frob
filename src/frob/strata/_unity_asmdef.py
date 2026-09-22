@@ -67,7 +67,6 @@ _EDITOR_ONLY_PLATFORMS = ("Editor",)
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestDiscoverAsmdefs.test_not_a_unity_project_errs  # noqa: E501
 class UnityAsmdefError(ErrorSet):
     """Failure modes for `.asmdef` discovery/parsing -- recoverable, never
     a bare exception (a malformed or unreadable asmdef is one caller-
@@ -81,7 +80,6 @@ class UnityAsmdefError(ErrorSet):
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestDiscoverAsmdefs.test_finds_all_four_asmdefs  # noqa: E501
 class AsmdefInfo(BaseModel):
     """One parsed `.asmdef` file: its declared name, the raw `references`
     it names (assembly names or `GUID:<hex>` forms, unresolved), its
@@ -107,7 +105,6 @@ class AsmdefInfo(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes.test_unresolvable_reference_recorded_not_dropped  # noqa: E501
 class UnresolvedReference(BaseModel):
     """One `references` entry (`from_node`) that could not be resolved to
     a discovered asmdef's node id -- recorded rather than silently
@@ -120,7 +117,6 @@ class UnresolvedReference(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes.test_editor_flag_carried_onto_node  # noqa: E501
 class UnityComponentNode(BaseModel):
     """One strata component node derived from a discovered `.asmdef` (or
     the synthetic default-assembly node): its node id, `code=` glob(s),
@@ -135,7 +131,6 @@ class UnityComponentNode(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes.test_default_assembly_node_always_present  # noqa: E501
 class UnityAssemblyModel(BaseModel):
     """The full result of mapping a Unity project's asmdefs onto strata
     component boundaries: every built node plus any reference this
@@ -219,7 +214,6 @@ def _parse_one_asmdef(path: Path) -> Result[AsmdefInfo, UnityAsmdefError]:
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestDiscoverAsmdefs.test_finds_all_four_asmdefs  # noqa: E501
 def discover_asmdefs(
     project_root: Path,
 ) -> Result[tuple[AsmdefInfo, ...], UnityAsmdefError]:
@@ -280,8 +274,6 @@ def _code_glob(directory: Path, project_root: Path) -> str:
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes.test_two_asmdefs_two_distinct_nodes  # noqa: E501
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestBuildComponentNodes.test_reference_by_guid_resolves_to_edge  # noqa: E501
 def build_component_nodes(
     asmdefs: tuple[AsmdefInfo, ...], project_root: Path
 ) -> UnityAssemblyModel:
@@ -351,8 +343,6 @@ _FRAGMENT_HEADER = (
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestRenderUnityFragment.test_render_is_deterministic  # noqa: E501
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestRenderUnityFragment.test_editor_node_gets_editor_attr  # noqa: E501
 def render_unity_fragment(model: UnityAssemblyModel) -> str:
     """Pure, deterministic `.strata` text for `model` -- one `node` block
     per `UnityComponentNode` (sorted by id for a diffable, byte-stable
@@ -383,8 +373,6 @@ def render_unity_fragment(model: UnityAssemblyModel) -> str:
 
 
 # frob:doc docs/strata/surface.md#unity-asmdef-component-boundaries-t-4512
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestWriteUnityFragment.test_writes_fragment_file  # noqa: E501
-# frob:tests tests/unit/strata/test_unity_asmdef.py::TestWriteUnityFragment.test_write_is_idempotent  # noqa: E501
 def write_unity_fragment(
     project_root: Path, output_path: Path
 ) -> Result[UnityAssemblyModel, UnityAsmdefError]:

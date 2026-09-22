@@ -347,13 +347,9 @@ def fix_rel002_release_sync(root: Path) -> list[FixApplied]:
 # ---------------------------------------------------------------------------
 
 
-# frob:tests \
 # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_strata_file_gets_slash_slash_leader  # noqa: E501
-# frob:tests \
 # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_rust_file_gets_slash_slash_leader  # noqa: E501
-# frob:tests \
 # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_python_file_gets_hash_leader  # noqa: E501
-# frob:tests \
 # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_unknown_extension_refuses_insertion  # noqa: E501
 # frob:ticket T-1581
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to marker_for, a \
@@ -405,8 +401,6 @@ def _insert_ticket_directive_above(
 
 
 # frob:doc docs/modules/gates.md#fix_cov002_ticket_directive_insertion-auto-fix-t-1548
-# frob:tests tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean  # noqa: E501
-# frob:tests tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_no_ticket_id_is_a_no_op  # noqa: E501
 # frob:ticket T-1548
 def fix_cov002_ticket_directive_insertion(
     root: Path,
@@ -1122,9 +1116,6 @@ def _capability_counts_at_head(root: Path) -> "dict[str, int] | None":
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-# frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_bumps_growth_this_lands_diff_caused kind="unit"  # noqa: E501
-# frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_leaves_a_pre_existing_breach_untouched kind="unit"  # noqa: E501
-# frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_without_land_lock_reports_but_does_not_write kind="unit"  # noqa: E501
 # frob:ticket T-2001
 # frob:ticket T-4607
 def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:

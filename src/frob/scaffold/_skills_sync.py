@@ -80,7 +80,6 @@ _MANIFEST_FILENAME = ".frob-sync-manifest.json"
 # frob:ticket T-2241
 # frob:ticket T-2386
 # frob:doc docs/commands/sync-skills.md#public-api
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_syncs_new_repo_entries  # noqa: E501
 class SkillsSyncReport(BaseModel):
     """One `sync_skills` call's effect: which `<kind>/<name>` entries were
     created-or-updated under `claude_dir`, which stale, THIS-REPO-OWNED
@@ -223,14 +222,6 @@ def _sync_one_kind(
 # frob:ticket T-2241
 # frob:ticket T-2386
 # frob:doc docs/commands/sync-skills.md#public-api
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_syncs_new_repo_entries  # noqa: E501
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_updates_existing_entry_in_place  # noqa: E501
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_removes_stale_claude_side_entry_this_repo_previously_installed  # noqa: E501
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_missing_repo_directories_are_a_no_op  # noqa: E501
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkillsProvenance.test_second_repo_does_not_delete_first_repos_entries  # noqa: E501
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkillsProvenance.test_hand_maintained_entry_is_never_deleted_or_overwritten  # noqa: E501
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkillsProvenance.test_same_repo_sync_twice_is_a_no_op_second_run  # noqa: E501
-# frob:tests tests/unit/test_skills_sync.py::TestSyncSkillsProvenance.test_force_overwrites_collision_and_claims_ownership  # noqa: E501
 def sync_skills(
     repo_root: Path, claude_dir: Path, *, force: bool = False
 ) -> dict[str, SkillsSyncReport]:
@@ -290,7 +281,6 @@ def _default_claude_dir() -> Path:
 
 # frob:ticket T-2241
 # frob:doc docs/commands/sync-skills.md#public-api
-# frob:tests tests/unit/test_skills_sync.py::TestRun.test_run_reports_synced_and_removed_counts  # noqa: E501
 def run(argv: list[str]) -> None:
     """`frob sync-skills [path] [--claude-dir DIR] [--force]` (T-2241,
     T-2386): the CLI entry point `frob.__main__._dispatch` calls directly,

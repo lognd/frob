@@ -191,12 +191,6 @@ def _docstring_spans(text: str) -> list[tuple[int, int, str]]:
 
 # frob:enforces CHK-GATE-DOCARCH002
 # frob:doc docs/modules/gates.md#docarch002
-# frob:tests tests/gates/test_docarch_structural.py::TestScanCommentLength.test_flags_long_pure_algorithm_run  # noqa: E501
-# frob:tests tests/gates/test_docarch_structural.py::TestScanCommentLength.test_short_run_is_quiet  # noqa: E501
-# frob:tests tests/gates/test_docarch_structural.py::TestScanCommentLength.test_directive_run_is_exempt  # noqa: E501
-# frob:tests tests/gates/test_docarch_structural.py::TestScanCommentLength.test_leading_license_header_is_exempt  # noqa: E501
-# frob:tests tests/gates/test_docarch_structural.py::TestScanCommentLength.test_long_docstring_flagged_short_is_quiet  # noqa: E501
-# frob:tests tests/gates/test_docarch_structural.py::TestScanCommentLength.test_config_override_silences_default_fixture  # noqa: E501
 def scan_comment_length(
     path: Path,
     text: str,
@@ -260,8 +254,6 @@ def scan_comment_length(
 
 # frob:doc docs/modules/gates.md#docarch002
 # frob:ticket T-5217
-# frob:tests tests/gates/test_docarch_structural.py::TestScanCitationShape.test_directive_and_pointer_are_quiet  # noqa: E501
-# frob:tests tests/gates/test_docarch_structural.py::TestScanCitationShape.test_bare_citation_with_prose_is_flagged  # noqa: E501
 def scan_citation_shape(path: Path, text: str) -> tuple[Violation, ...]:
     """DOCARCH002 check 2: a `T-####` cited in a plain comment must be a
     `frob:ticket`/`frob:todo` directive, or a single-line `# see T-####`
@@ -319,7 +311,6 @@ def scan_citation_shape(path: Path, text: str) -> tuple[Violation, ...]:
 
 
 # frob:doc docs/modules/gates.md#docarch002
-# frob:tests tests/gates/test_docarch_structural.py::TestDocarch002RatchetSeverity.test_baselined_finding_stays_warn_new_one_errors  # noqa: E501
 def docarch002_violations(root: Path) -> tuple[Violation, ...]:
     """DOCARCH002 over every tracked `.py` file under `root`: both checks,
     ratchet-adjusted (T-0569) when `DOCARCH002` is opted into
@@ -361,7 +352,6 @@ def docarch002_violations(root: Path) -> tuple[Violation, ...]:
 
 
 # frob:doc docs/modules/gates.md#docarch002
-# frob:tests tests/gates/test_docarch_structural.py::TestGateEntry.test_delegates
 def docarch_structural_gate(root: Path) -> tuple[Violation, ...]:
     """Entry point for wiring into `frob.gates.__init__`'s `GATE_RUNNERS`
     -- see this ticket's Done report for the (deferred, `gates/__init__.py`

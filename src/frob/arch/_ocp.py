@@ -72,7 +72,6 @@ def _enclosing_qualname(node: Node, rel: str) -> str:
     return f"{rel}::{'.'.join(parts)}" if parts else rel
 
 
-# frob:tests tests/unit/test_arch_ocp.py::TestTypeDispatchSmell.test_isinstance_chain_flags_ocp_violation  # noqa: E501
 def _check_type_dispatch_smell(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:
@@ -269,7 +268,6 @@ def _iter_pattern_leaves(pattern: Node) -> list[Node]:
 
 
 # frob:ticket T-0972
-# frob:tests tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch.test_missing_member_flagged  # noqa: E501
 def _check_non_exhaustive_enum_match(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:

@@ -49,10 +49,6 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-4502
-# frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_explicit_ticket_path_wins_over_cwd kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_frob_root_env_wins_over_cwd_when_no_explicit_path kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_bare_dot_ticket_path_falls_back_to_cwd kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_non_ticket_subcommand_is_unaffected kind="unit"  # noqa: E501
 def _pyproject_file_for_args(args: argparse.Namespace) -> Path:
     """Resolve the `pyproject.toml` `AppConfig.from_args` reads `[tool.
     frob]` defaults from against the SAME root a `frob ticket <verb>`
@@ -92,7 +88,6 @@ def _pyproject_file_for_args(args: argparse.Namespace) -> Path:
     return Path("pyproject.toml")
 
 
-# frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values kind="unit"  # noqa: E501
 def _validate_enum_choice(
     value: str | None, enum_cls: type[enum.Enum], field_label: str
 ) -> str | None:
@@ -1431,16 +1426,6 @@ class AppConfig(BaseModel):
     coverage_base: str | None = None
 
     # frob:ticket T-1271
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_valid_ticket_state_passes_through kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_none_ticket_state_passes_through kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_kind_lists_valid_values kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_kind_value_lists_valid_values kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_tier_lists_valid_values kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_tier_value_lists_valid_values kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_priority_level_lists_valid_values kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_origin_lists_valid_values kind="unit"  # noqa: E501
-    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_review_verdict_lists_valid_values kind="unit"  # noqa: E501
     @field_validator("ticket_state")
     @classmethod
     def _check_ticket_state(cls, v: str | None) -> str | None:
@@ -1500,13 +1485,6 @@ class AppConfig(BaseModel):
         return _validate_enum_choice(v, ReviewVerdict, "ticket review verdict")
 
     @classmethod
-    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_missing_file_falls_back_to_defaults kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_reads_and_merges_tool_frob_table kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_subcommand_is_resolved_to_the_enum kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_no_color_flag_is_copied_when_present kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_string_field_from_the_first_copy_loop_is_carried kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool_flag_from_the_second_copy_loop_defaults_false kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool_flag_from_the_second_copy_loop_is_set_true kind="unit"  # noqa: E501
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
         # frob:waive AFFECT001 reason="same scope-closure disclosed deferral as this \
@@ -1520,11 +1498,6 @@ class AppConfig(BaseModel):
         return cls(**d)
 
     @classmethod
-    # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromArgs.test_delegates_to_from_external_with_pyproject_default kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_explicit_ticket_path_wins_over_cwd kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_frob_root_env_wins_over_cwd_when_no_explicit_path kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_bare_dot_ticket_path_falls_back_to_cwd kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_non_ticket_subcommand_is_unaffected kind="unit"  # noqa: E501
     # frob:ticket T-3613
     def from_args(cls, args: argparse.Namespace) -> "AppConfig":
         # frob:doc docs/modules/app.md#config

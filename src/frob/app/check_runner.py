@@ -68,7 +68,6 @@ def _resolve_check_root(cfg: AppConfig) -> Path:
 
 
 # frob:ticket T-4524
-# frob:tests tests/unit/test_check_skip_flag.py::TestSkipOnlyConflict
 def _refuse_skip_only_conflict(cfg: AppConfig) -> str | None:
     """`None` when `--skip` and `--only` name disjoint stages; otherwise
     the first stage both name, so `run` can refuse loudly (T-4524: a
@@ -413,9 +412,7 @@ def _dispatch_check_python(
 
 
 # frob:ticket T-2978
-# frob:tests \
 # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_none_progress_returns_none  # noqa: E501
-# frob:tests \
 # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_updates_progress_with_language_qualified_label  # noqa: E501
 def _task_progress_callback(
     progress: Progress | None, project_type: str
@@ -475,7 +472,6 @@ def _unknown_project_type_result(root: Path, project_type: str) -> CheckResult:
 
 
 # frob:ticket T-0546
-# frob:tests \
 # tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches
 def _dispatch_check(
     cfg: AppConfig, root: Path, project_type: str, *, progress: Progress | None = None
@@ -494,9 +490,6 @@ def _dispatch_check(
 # frob:ticket T-0229
 # frob:ticket T-0419
 # frob:ticket T-0421
-# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_unchanged_python_reports_skipped_not_silent  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_changed_python_still_runs  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_absent_language_never_shown  # noqa: E501
 def _run_all_detected(
     cfg: AppConfig,
     root: Path,
@@ -548,7 +541,6 @@ def _run_all_detected(
 
 
 # frob:ticket T-1124
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_deploy_stages_appended_when_deploy_dir_present kind="unit"  # noqa: E501
 def _opt_in_deploy_stage_result(
     root: Path,
     violations_fn: Callable[[Path], object],
@@ -568,13 +560,9 @@ def _opt_in_deploy_stage_result(
 
 # frob:ticket T-1809
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
-# frob:tests \
 # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_home_claude_present_but_file_differs  # noqa: E501
-# frob:tests \
 # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_not_applicable_when_home_claude_root_absent  # noqa: E501
-# frob:tests \
 # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_clean_when_in_sync
-# frob:tests \
 # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_has_no_managed_config  # noqa: E501
 # frob:enforces CHK-GATE-CLAUDE001
 def _claude_config_drift_result(root: Path) -> ToolResult | None:
@@ -772,12 +760,6 @@ def _deploy_conformance_tool_result(violations) -> ToolResult:  # noqa: ANN001
 
 # frob:ticket T-0586
 # frob:ticket T-1419
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_mode_passes_loaded_snapshot kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_mode_calls_stamp_and_returns kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_failure_exits_1 kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_lock_source_sha_mismatch_exits_1 kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_lock_source_sha_match_succeeds kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_no_snapshot_skips_durability_check kind="unit"  # noqa: E501
 def _run_stamp_coverage(root: Path) -> None:
     """`frob check --stamp-coverage`: record coverage.xml as the current stamp,
     and refresh the committed `frob-coverage.lock.json` summary.
@@ -1090,9 +1072,6 @@ _FROB_ALLOW_FULL_CHECK_ENV = "FROB_ALLOW_FULL_CHECK"
 
 
 # frob:ticket T-0627
-# frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_stage_selected_check_runs_under_frob_agent  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_allow_full_check_override_bypasses_refusal  # noqa: E501
 def _refuse_full_check_for_agent(cfg: AppConfig) -> bool:
     """True when a full, unchunked `frob check` must refuse under `FROB_AGENT` (T-0627).
 
@@ -1149,7 +1128,6 @@ def _stage_group_names() -> list[str]:
 
 
 # frob:ticket T-0627
-# frob:tests \
 # tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_stage_names
 def _print_stage_list(cfg: AppConfig) -> None:
     """`frob check --only list`: print every `--only` stage-group alias and
@@ -1210,7 +1188,6 @@ def _print_folded_stage_list(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1556
-# frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_read_only_invocation_skips_the_lease_check kind="integration"  # noqa: E501
 def _check_is_mutating(cfg: AppConfig) -> bool:
     """Whether this `frob check` invocation writes lease-protected worktree
     state (T-1556): `--stamp-baseline`/`--stamp-coverage` are the two flags
@@ -1225,9 +1202,6 @@ def _check_is_mutating(cfg: AppConfig) -> bool:
 
 
 # frob:ticket T-4524
-# frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_pins_to_own_worktree_lease kind="integration"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_refuses_when_lease_recorded_for_another_worktree kind="integration"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_read_only_invocation_skips_the_lease_check kind="integration"  # noqa: E501
 def _refuse_ticket_lease_mismatch(root: Path, cfg: AppConfig) -> bool:
     """True (after logging a loud, `frob ticket start`-naming refusal) when
     `--ticket`/branch-derived ticket resolution does not pin to `root`'s own
@@ -1346,7 +1320,6 @@ def _run_ruff_fix_mode(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-1535
 # frob:doc docs/modules/tickets-landing.md#frob-check---land-parity-t-1535
-# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/modules/tickets.md's --land-parity section \
 # (T-1535) is a deliberate architecture doc describing this exact private CLI \
 # handler's own evaluation, same T-0524/T-0529 per-function architecture-doc precedent \
@@ -1397,7 +1370,6 @@ def _run_land_parity(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-1764
 # frob:doc docs/modules/app.md#frob-check---census-t-1764
-# frob:tests \
 # tests/test_waive_gate.py::TestCensusCli.test_census_prints_a_table_and_exits_zero
 # frob:waive ARCH103 reason="T-1764: same early-exit-mode orchestrator shape as \
 # _run_land_parity right above it (run gates, log an error and exit on failure, else \
@@ -1513,13 +1485,6 @@ class _ColorizedLevelFormatter(logging.Formatter):
 
     # frob:doc docs/modules/app.md#runners
     # frob:ticket T-0588
-    # frob:tests tests/system/test_cli_check.py::TestCheckBadCode.test_unused_import_output_mentions_error  # noqa: E501
-    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_debug_passes_through_unchanged kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_info_passes_through_unchanged kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_warning_is_painted_yellow_when_color_on kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_error_is_painted_red_when_color_on kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_error_is_unpainted_when_color_off kind="unit"  # noqa: E501
-    # frob:tests tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_critical_uses_the_error_branch_too kind="unit"  # noqa: E501
     def format(self, record: logging.LogRecord) -> str:
         """Format via `base`, then paint ERROR+ red / WARNING yellow when
         `color` is on; DEBUG/INFO pass through unchanged."""
@@ -1572,7 +1537,6 @@ def _colorized_stderr_logs():  # noqa: ANN201
 
 # frob:ticket T-0419
 # frob:ticket T-3995
-# frob:tests \
 # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_stage_total_excludes_tail_when_only_is_set  # noqa: E501
 def _stage_total(cfg: AppConfig, root: Path) -> int:
     """The live task-list's overall stage count: one per language stage
@@ -1601,9 +1565,7 @@ def _stage_total(cfg: AppConfig, root: Path) -> int:
 
 # frob:ticket T-0419
 # frob:ticket T-3995
-# frob:tests \
 # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_only_known_stage_name_excludes_claude_config_drift  # noqa: E501
-# frob:tests \
 # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_bare_run_still_includes_claude_config_drift  # noqa: E501
 def _run_all_stages(
     cfg: AppConfig, root: Path, *, progress: Progress | None = None
@@ -1657,11 +1619,7 @@ def _run_all_stages(
 
 
 # frob:ticket T-0419
-# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot.test_unpinned_polyglot_runs_python_stage  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot.test_pinned_check_type_reports_skipped_line  # noqa: E501
-# frob:tests \
 # tests/system/test_cli_check.py::TestCheckCleanProject.test_clean_code_exits_zero
-# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """`frob check [--type T] [--json] [--stamp-coverage|--stamp-baseline]`:
@@ -1992,7 +1950,6 @@ def _render_and_exit_on_daemon_errors(check_result: dict) -> None:
 
 
 # frob:ticket T-1147
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_check_delta_gates_only_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def _try_check_delta_via_daemon(root: Path, cfg: AppConfig) -> bool:
     """T-1147: for the one narrow `frob check --only gates --delta --json`
     invocation shape -- exactly `--only gates` (no other tool stage or

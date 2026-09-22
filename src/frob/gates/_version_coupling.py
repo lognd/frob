@@ -227,16 +227,8 @@ def _crate_violations(
 # SCANNED_BASES/RETIRED_RULE_IDS waivers already document (T-1010/T-1937) -- this \
 # function's own docstring (widened by T-3903) is the authoritative description; a \
 # follow-up can widen scope deliberately to add a frob:doc anchor back"
-# frob:tests tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_matched_versions_clean  # noqa: E501
-# frob:tests tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_skewed_core_version_fires  # noqa: E501
-# frob:tests tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_loose_pin_fires  # noqa: E501
-# frob:tests tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_missing_extra_fires  # noqa: E501
-# frob:tests tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_mismatched_extra_pin_fires  # noqa: E501
-# frob:tests \
 # tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_skewed_default_dependency_pin_fires  # noqa: E501
-# frob:tests \
 # tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_loose_default_dependency_pin_fires  # noqa: E501
-# frob:tests \
 # tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate.test_pin_in_new_extra_fires  # noqa: E501
 def version_coupling_gate(root: Path) -> tuple[Violation, ...]:
     """VERSION001: frob's own version, EVERY pin naming `frob-core`/

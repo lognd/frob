@@ -346,7 +346,6 @@ def _fingerprint_refinement_confirms(
 
 
 # frob:ticket T-0153
-# frob:tests \
 # tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution.test_python_aliased_pickle_loads_still_matches  # noqa: E501
 def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     """The `frob.strata.CVE_FINGERPRINTS` entries whose needle(s) matched in
@@ -452,13 +451,10 @@ def _body_reaches_decode_and_exec(body: str) -> bool:
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-2358
 # frob:ticket T-2798
-# frob:tests \
 # tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_python_exec_a\
 # nd_net_detected kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_\
 # capabilities_still_resolves_cross_file_wrapper kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_\
 # capabilities_sees_a_genuine_sibling_change kind="unit"  # noqa: E501
 def scan_file_capabilities(path: Path) -> frozenset[str]:

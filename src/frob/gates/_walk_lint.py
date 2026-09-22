@@ -310,8 +310,6 @@ def _walk001_violation(rel_path: str, site: _WalkSite) -> Violation:
 
 # frob:ticket T-0861
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:tests tests/test_walk_lint_gate.py::TestRglob.test_raw_rglob_fires
-# frob:tests \
 # tests/gates_suite/test_sys.py::TestRenderLintGate.test_render_package_exempt
 def tracked_python_files_for_gate(
     root: Path, *, log_prefix: str, pathspec: str = "src/frob"
@@ -1015,23 +1013,6 @@ def _platform001_bare_import_violation(rel_path: str, site: _PlatformSite) -> Vi
 
 # frob:doc \
 # docs/modules/gates.md#platform001-posix-only-primitive-degrades-silently-t-2919
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_warn_and_continue_fires  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_loud_refusal_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_no_platform_probe_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001StringGuard.test_silent_string_guard_fires  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001StringGuard.test_logged_string_guard_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001StringGuard.test_real_platform_branch_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001BareImport.test_bare_import_fires  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001BareImport.test_guarded_import_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_default_arg_fires  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_module_constant_fires  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_class_attribute_fires  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_decorator_kwarg_fires  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_guarded_default_arg_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_ternary_guarded_constant_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_if_guarded_def_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_body_reference_is_quiet  # noqa: E501
-# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_gate_fires_end_to_end  # noqa: E501
 # frob:invariant INV-005
 # invariant spec: [INV-005](invariants/INV-005.md)
 # frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole WALK001 pass; the documented behavior is unchanged, so docs/modules/gates.md#walk001-unpruned-traversal-t-0471 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501

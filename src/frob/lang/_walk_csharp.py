@@ -437,14 +437,6 @@ def _append(symbols: list[RawSymbol], symbol: RawSymbol | None) -> None:
 
 
 # frob:ticket T-1600
-# frob:tests tests/test_lang.py::TestCSharp.test_walks_class_and_method
-# frob:tests tests/test_lang.py::TestCSharp.test_private_method_is_not_public
-# frob:tests tests/test_lang.py::TestCSharp.test_property_is_a_const_symbol
-# frob:tests tests/test_lang.py::TestCSharp.test_const_field_is_extracted_plain_field_is_not  # noqa: E501
-# frob:tests tests/test_lang.py::TestCSharp.test_enum_is_a_type_symbol
-# frob:tests tests/test_lang.py::TestCSharp.test_namespace_is_a_transparent_qualname_container  # noqa: E501
-# frob:tests tests/test_lang.py::TestCSharp.test_file_scoped_namespace_is_a_transparent_qualname_container  # noqa: E501
-# frob:tests tests/test_lang.py::TestCSharp.test_leading_xml_doc_comment_binds_as_doc_text  # noqa: E501
 def _walk_csharp(root: Node) -> tuple[RawSymbol, ...]:
     """Every C# symbol: classes/structs/interfaces (`CLASS`), their
     methods (`METHOD`), their properties and `const` fields (`CONST`),

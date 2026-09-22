@@ -65,8 +65,6 @@ DEFAULT_SUBSCRIBE_TIMEOUT_S = 60.0
 
 
 # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
-# frob:tests tests/test_serve_events.py::TestEventBus.test_publish_reaches_all_subscribers kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_events.py::TestEventBus.test_unsubscribe_wakes_blocked_consumer kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-1096: docs/modules/serve.md's Subscribe/push events \
 # section individually frob:describes this private class by name -- a deliberate \
 # architecture doc walking through the daemon-internal pub/sub design, not accidental \
@@ -87,7 +85,6 @@ class _EventBus:
         self._next_id = 0
 
     # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
-    # frob:tests tests/test_serve_events.py::TestEventBus.test_publish_reaches_all_subscribers kind="unit"  # noqa: E501
     def subscribe(self) -> tuple[int, queue.Queue[dict[str, Any] | None]]:
         """Register a new subscriber and return its id (for `unsubscribe`)
         plus the queue frames get pushed onto -- a blocking `queue.get()`
@@ -126,9 +123,6 @@ class _EventBus:
 
 
 # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
-# frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_after_edit kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_times_out_with_no_matching_event kind="unit"  # noqa: E501
 # frob:waive ARCH103 reason="T-1096: connect, send one subscribe request, read frames \
 # in a loop up to a match or timeout -- the entire, inherently sequential job of this \
 # client helper; splitting connect/send/read-loop into separate functions would not \
@@ -250,7 +244,6 @@ DEFAULT_COVERAGE_POLL_INTERVAL_S = 1.0
 
 
 # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
-# frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened \
 # CoverageWatcher._current_mtime's except OSError to except Exception; the documented \
 # 'None if it does not exist yet' contract and behavior are unchanged, nothing for \
@@ -286,7 +279,6 @@ class CoverageWatcher:
         )
 
     # frob:doc docs/modules/serve.md#subscribepush-events-t-1096
-    # frob:tests tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write kind="unit"  # noqa: E501
     def start(self) -> None:
         """Start the background poll thread."""
         self._thread.start()

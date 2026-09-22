@@ -156,11 +156,8 @@ _NO_TESTS_COLLECTED_EXIT = 5
 
 
 # frob:ticket T-4349
-# frob:tests \
 # tests/test_testing_collect.py::TestCollectorPython.test_prefers_cwds_own_venv_when_pytest_importable  # noqa: E501
-# frob:tests \
 # tests/test_testing_collect.py::TestCollectorPython.test_falls_back_to_sys_executable_with_no_venv  # noqa: E501
-# frob:tests \
 # tests/test_testing_collect.py::TestCollectorPython.test_falls_back_to_sys_executable_when_venv_pytest_unimportable  # noqa: E501
 def _collector_python(cwd: Path) -> str:
     """T-4349: the interpreter `_run_collect_only` should collect `cwd`
@@ -361,7 +358,6 @@ def _collect_nested_python(
 # (src/frob/testing/_collect*.py, tests/*), same shape \
 # src/frob/app/ticket_runner/_close_cmd.py's own T-1146 AFFECT001 waiver documents" \
 # follow_up="T-4449"
-# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestCollectPythonTestsWiring.test_must_fire_applies_and_warns_before_collection  # noqa: E501
 def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     """`uv run pytest --collect-only -q` node ids for the outer tree, UNIONED
     with the same collection run inside every nested `language = "python"`

@@ -274,9 +274,6 @@ def _baseline_path(root: Path) -> Path:
 
 
 # frob:ticket T-2036
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile.test_absolute_under_root_becomes_relative  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile.test_already_relative_is_unchanged  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile.test_absolute_outside_root_falls_back_unchanged  # noqa: E501
 def _normalize_identity_file(root: Path, file: str) -> str:
     """T-2036: collapse an identity's `file` component to
     repo-relative POSIX form, so an absolute-path finding and a
@@ -332,10 +329,6 @@ def _is_git_metadata_path(file: str) -> bool:
 
 # frob:ticket T-2313
 # frob:ticket T-4607
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_drops_genuinely_empty_identity_pair  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_well_formed_pairs_untouched  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_drops_git_metadata_path_such_as_a_lease_file  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_a_real_tickets_dir_finding_alone  # noqa: E501
 def _normalize_identities(
     root: Path, identities: frozenset[tuple[str, str]]
 ) -> frozenset[tuple[str, str]]:
@@ -398,8 +391,6 @@ def _normalize_identities(
     return frozenset(normalized)
 
 
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_absent_baseline_reads_as_none_not_empty  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_corrupt_baseline_reads_as_none_not_empty  # noqa: E501
 def _read_baseline(root: Path) -> frozenset[tuple[str, str]] | None:
     """The last recorded `(rule_id, file)` error set (file components
     normalized repo-relative, T-2036 -- an older baseline
@@ -431,8 +422,6 @@ def _read_baseline(root: Path) -> frozenset[tuple[str, str]] | None:
 
 
 # frob:ticket T-2009
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_read_baseline_commit_absent_is_none  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_read_baseline_commit_round_trips  # noqa: E501
 def _read_baseline_commit(root: Path) -> str | None:
     """T-2009: the commit the last recorded baseline was ACTUALLY
     measured at, as opposed to the `commit_sha` a land passed to
@@ -459,10 +448,6 @@ _LAND_COMMIT_ID_RE = re.compile(r"\bland (T-\d+)\b")
 
 
 # frob:ticket T-2009
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_single_land_in_range  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_multiple_lands_in_range_oldest_first  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_non_land_commits_are_ignored  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_non_repo_returns_empty_list  # noqa: E501
 def _land_ids_between(root: Path, since_commit: str, until_commit: str) -> list[str]:
     """T-2009: every distinct `T-####` id named in a `land T-####` commit
     subject reachable in `since_commit..until_commit` (oldest first).
@@ -505,7 +490,6 @@ def _land_ids_between(root: Path, since_commit: str, until_commit: str) -> list[
 
 
 # frob:ticket T-2009
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestResolveActualHead.test_non_repo_falls_back_to_the_given_commit  # noqa: E501
 def _resolve_actual_head(root: Path, fallback: str) -> str:
     """T-2009: the actual git HEAD of `root` at the moment this sweep's
     `frob check` finished running, or `fallback` (the land's own
@@ -525,9 +509,6 @@ def _resolve_actual_head(root: Path, fallback: str) -> str:
 
 
 # frob:ticket T-2571
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween.test_deleted_file_is_reported  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween.test_modified_only_file_is_not_reported  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween.test_non_repo_or_missing_since_returns_empty  # noqa: E501
 def _files_deleted_between(root: Path, since: str | None, until: str) -> frozenset[str]:
     """T-2571: repo-relative POSIX paths git considers PURELY DELETED
     (never a rename target, `--diff-filter=D`) between `since` and
@@ -577,9 +558,6 @@ def _files_deleted_between(root: Path, since: str | None, until: str) -> frozens
 
 
 # frob:ticket T-2571
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilterPhantomDeletedFindings.test_deleted_file_finding_is_excluded  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilterPhantomDeletedFindings.test_live_file_finding_is_kept  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilterPhantomDeletedFindings.test_no_deletions_is_a_noop  # noqa: E501
 def _filter_phantom_deleted_findings(
     final_id: str,
     fresh: frozenset[tuple[str, str]],
@@ -614,8 +592,6 @@ def _filter_phantom_deleted_findings(
 
 
 # frob:ticket T-2571
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineWriteSurvived.test_matching_commit_survived  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineWriteSurvived.test_mismatched_commit_did_not_survive  # noqa: E501
 def _baseline_write_survived(root: Path, written_commit: str) -> bool:
     """T-2571: `True` iff the baseline file on disk RIGHT NOW still
     records `written_commit` as its `commit` -- i.e. no OTHER process
@@ -637,7 +613,6 @@ def _baseline_write_survived(root: Path, written_commit: str) -> bool:
     return _read_baseline_commit(root) == written_commit
 
 
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_write_then_read_round_trips  # noqa: E501
 def _write_baseline(
     root: Path, findings: frozenset[tuple[str, str]], commit: str
@@ -676,7 +651,6 @@ def _baseline_lock_path(root: Path) -> Path:
 # frob:ticket T-2918
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#baseline-lock-posixwindows-backends-loud-refusal-otherwise-t-2595t-2918  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
 class BaselineLockUnavailable(RuntimeError):
     """T-2918: raised by `_baseline_lock` when NEITHER `fcntl` (POSIX) nor
     `msvcrt` (Windows) is importable on this interpreter -- there is no
@@ -693,9 +667,6 @@ class BaselineLockUnavailable(RuntimeError):
 
 # frob:ticket T-2595
 # frob:ticket T-2918
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock.test_serializes_two_concurrent_holders  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock.test_windows_backend_serializes_two_concurrent_holders  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
 @contextmanager
 def _baseline_lock(
     root: Path, *, timeout: float = _BASELINE_LOCK_TIMEOUT_S
@@ -801,9 +772,6 @@ def _advisory_file_lock(path: Path, *, timeout: float, label: str) -> Iterator[N
 
 
 # frob:ticket T-2595
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor.test_true_when_older_is_ancestor  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor.test_false_when_not_an_ancestor  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor.test_none_on_git_failure  # noqa: E501
 def _is_ancestor(root: Path, older: str, newer: str) -> bool | None:
     """`True` iff `older` is an ancestor of (or equal to) `newer` in
     `root`'s git history, `False` if git resolved the question and it is
@@ -835,10 +803,6 @@ def _is_ancestor(root: Path, older: str, newer: str) -> bool | None:
 
 
 # frob:ticket T-2595
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas.test_writes_when_no_prior_baseline  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas.test_writes_when_prior_is_an_ancestor  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas.test_skips_when_prior_is_not_an_ancestor  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas.test_writes_when_ancestry_is_unresolvable  # noqa: E501
 def _write_baseline_cas(
     root: Path, findings: frozenset[tuple[str, str]], commit: str
 ) -> bool:
@@ -900,11 +864,8 @@ def _write_baseline_cas(
 _RAPID_DEBT_FAILURE_LOG_PREFIX = "rapid-debt-commit-failure"
 
 
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure.test_writes_proc_result_diagnostics  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure.test_writes_spawn_error_diagnostics  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure.test_swallows_its_own_write_failure  # noqa: E501
 # frob:ticket T-2671
 def _persist_commit_step_failure(
@@ -975,18 +936,11 @@ def _persist_commit_step_failure(
     return path
 
 
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_leaves_the_repo_clean  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_stages_only_the_debt_file  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_is_a_noop_when_nothing_was_appended  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_a_non_repo_never_raises  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_survives_the_scaffolded_root_write_guard  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_guard_still_refuses_a_genuinely_foreign_file  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_commit_failure_persists_a_diagnostic_log  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-2669
@@ -1099,7 +1053,6 @@ def _window_lock_path(root: Path) -> Path:
 
 
 # frob:ticket T-4414
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowLock.test_serializes_two_concurrent_holders  # noqa: E501
 @contextmanager
 def _window_lock(
     root: Path, *, timeout: float = _WINDOW_LOCK_TIMEOUT_S
@@ -1146,10 +1099,6 @@ def _toml_number(path: Path, keys: tuple[str, ...]) -> float | int | None:
 
 
 # frob:ticket T-4414
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_default_when_no_config_present  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_frob_toml_sweep_section_wins  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_frob_toml_top_level_key_wins  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_pyproject_tool_frob_table_is_the_fallback  # noqa: E501
 def _sweep_window_seconds(root: Path) -> float:
     """T-4414: the configured batching-window length (seconds), read
     directly from config rather than threaded through `AppConfig`/
@@ -1189,9 +1138,6 @@ def _default_window_state() -> dict[str, Any]:
 
 
 # frob:ticket T-4414
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_round_trips  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_missing_file_is_the_default_idle_state  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_corrupt_file_degrades_to_the_default_idle_state  # noqa: E501
 def _read_window_state(root: Path) -> dict[str, Any]:
     """The persisted batching-window state, or `_default_window_state()`
     when `_WINDOW_STATE_REL` is absent or unreadable -- callers must
@@ -1242,11 +1188,6 @@ def _worker_is_alive(state: dict[str, Any]) -> bool:
 
 
 # frob:ticket T-4414
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_idle_opens_a_new_window  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_second_land_within_window_joins_it  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_land_while_sweep_running_defers_to_next_window  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_dead_worker_pid_is_reaped_and_a_new_window_opens  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_expired_window_with_a_still_alive_worker_still_joins  # noqa: E501
 def _decide_land_registration(
     state: dict[str, Any],
     land: dict[str, Any],
@@ -1302,8 +1243,6 @@ def _decide_land_registration(
 
 
 # frob:ticket T-2030
-# frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv.test_pins_frob_root_to_the_correct_root  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv.test_strips_worktree_lease_env  # noqa: E501
 def _detached_sweep_env(root: Path, target_branch: str | None = None) -> dict[str, str]:
     """T-2030: the `env=` this module's detached `sweep-async` child MUST
     be spawned with -- never the bare inherited `os.environ`.
@@ -1360,7 +1299,6 @@ def _detached_sweep_env(root: Path, target_branch: str | None = None) -> dict[st
 # frob:ticket T-2450
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#public-seam-for-cross-node-callers-t-2450
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnvPublicSeam.test_delegates_to_the_private_implementation  # noqa: E501
 def detached_sweep_env(root: Path) -> dict[str, str]:
     """T-2450: public seam for `_detached_sweep_env`, for callers OUTSIDE
@@ -1380,7 +1318,6 @@ def detached_sweep_env(root: Path) -> dict[str, str]:
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
-# frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepSpawn.test_exec_disabled_records_debt_and_refuses  # noqa: E501
 # frob:ticket T-1684
 def spawn_deferred_post_land_sweep(
     root: Path,
@@ -1564,7 +1501,6 @@ _AUTO_SWEEP_MIN_AGE_HOURS = 4.0
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-stale-worktree-reclamation-t-2261
 # frob:ticket T-2261
-# frob:tests tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand.test_logs_one_line_per_verdict  # noqa: E501
 def sweep_stale_worktrees_after_land(root: Path) -> None:
     """T-2261: reclaim stale agent worktrees automatically, hooked into
     the SAME detached, off-critical-path child `spawn_deferred_post_land_
@@ -1619,8 +1555,6 @@ def sweep_stale_worktrees_after_land(root: Path) -> None:
 
 # frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestAttributeNewFindings.test_attributed_and_unattributed_round_trip  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
 # attribution (T-1690) section individually frob:describes this symbol by its own \
 # qualified path -- a deliberate per-symbol anchor, not a duplicate"
@@ -1668,10 +1602,7 @@ def _attribute_new_findings(
 
 # frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_open_ticket_is_open  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_done_ticket_is_not_open  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_missing_ticket_is_not_open  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
 # attribution (T-1690) section individually frob:describes this symbol by its own \
@@ -1698,8 +1629,6 @@ def _ticket_is_open(root: Path, ticket_id: str) -> bool:
 # frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:ticket T-1791
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_unattributed_is_filed  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
 # attribution (T-1690) section documents several symbols under one section, not just a \
@@ -1825,12 +1754,6 @@ def _warm_tree_clears_unattributed_native_noise(root: Path, rule: str, attr) -> 
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1847
 # frob:ticket T-2604
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_drops_cold_worktree_native_noise  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_keeps_finding_when_native_still_broken  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_never_drops_an_attributed_finding  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_open_ticket_attribution_clears_the_quarantine_raise  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_closed_ticket_attribution_still_raises  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_unattributed_still_raises_alongside_open_ticket_finding  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Quarantine circuit \
 # breaker (T-1693) section documents several symbols under one section, not just a \
 # public entry point -- the many-symbols- one-section convention this repo already \
@@ -1946,9 +1869,6 @@ def _filter_pairs_for_quarantine_raise(
 # frob:ticket T-1791
 # frob:ticket T-1847
 # frob:ticket T-2604
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_raises_with_attributed_and_unattributed_findings  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_empty_queue_logs_and_skips_the_raise  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_raise_failure_is_logged_not_raised  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Quarantine circuit \
 # breaker (T-1693) section individually frob:describes this symbol by its own \
 # qualified path -- a deliberate per-symbol anchor, not a duplicate"
@@ -2189,9 +2109,6 @@ def _matching_error_diagnostics(
 
 
 # frob:ticket T-1935
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount.test_counts_every_diagnostic_matching_an_identity  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount.test_unparsable_json_is_none_not_zero  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount.test_spawn_refused_is_none_not_zero  # noqa: E501
 def _true_finding_count_for_identities(
     root: Path, pairs: frozenset[tuple[str, str]], budget: int | None = None
 ) -> int | None:
@@ -2217,8 +2134,6 @@ def _true_finding_count_for_identities(
 
 
 # frob:ticket T-2006
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing.test_only_reproducing_identities_returned  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing.test_unmeasurable_is_none  # noqa: E501
 def _identities_still_reproducing(
     root: Path, pairs: frozenset[tuple[str, str]], budget: int | None = None
 ) -> frozenset[tuple[str, str]] | None:
@@ -2236,9 +2151,6 @@ def _identities_still_reproducing(
 
 
 # frob:ticket T-2089
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_real_repo_returns_a_key  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_dirty_tree_changes_the_key  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_non_repo_is_none  # noqa: E501
 def _tree_state_key(root: Path) -> str | None:
     """T-2089: a cheap signature of `root`'s current tree state -- the
     committed HEAD sha plus a hash of `git status --porcelain`'s output
@@ -2268,11 +2180,6 @@ def _tree_state_key(root: Path) -> str | None:
 
 
 # frob:ticket T-2165
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey.test_unchanged_files_same_key_across_a_head_move  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey.test_editing_a_named_file_changes_the_key  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey.test_editing_an_unrelated_file_does_not_change_the_key  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey.test_uncommitted_edit_to_a_named_file_changes_the_key  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey.test_missing_file_has_a_stable_sentinel_digest  # noqa: E501
 def _identity_scoped_state_key(root: Path, pairs: frozenset[tuple[str, str]]) -> str:
     """T-2165: `_tree_state_key`'s replacement for
     `_reproducing_identities_cached`'s cache key -- narrowed from "has
@@ -2336,12 +2243,6 @@ def _revalidation_cache_path(root: Path) -> Path:
 
 
 # frob:ticket T-2089
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_write_then_read_round_trips  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_absent_cache_is_none  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_corrupt_cache_is_none  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_mismatched_tree_key_is_none  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_mismatched_pairs_is_none  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_expired_ttl_is_none  # noqa: E501
 class _UnmeasurableCacheSentinel:
     """T-5135 (H2): a dedicated, uniquely-typed sentinel (rather than a
     bare string or `object()`) so `ty`/mypy can narrow `_read_
@@ -2402,7 +2303,6 @@ def _read_revalidation_cache(
 
 
 # frob:ticket T-2089
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_write_then_read_round_trips  # noqa: E501
 def _write_revalidation_cache(
     root: Path,
     tree_key: str,
@@ -2446,8 +2346,6 @@ def _write_revalidation_cache(
 
 
 # frob:ticket T-2077
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine.test_true_count_known  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine.test_true_count_unmeasurable  # noqa: E501
 def _regression_count_line(
     unfiled_pairs: Sequence[tuple[str, str]], true_count: int | None
 ) -> str:
@@ -2483,8 +2381,6 @@ def _regression_count_line(
 
 
 # frob:ticket T-2077
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestBuildRegressionBody.test_no_attribution_lines_no_multi_land  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestBuildRegressionBody.test_multi_land_and_attribution_lines_both_appended  # noqa: E501
 def _build_regression_body(
     *,
     attribution_label: str,
@@ -2553,16 +2449,9 @@ def _build_regression_body(
 # frob:ticket T-1791
 # frob:ticket T-2077
 # frob:ticket T-1952
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_attributed_to_closed_ticket_is_refiled  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_unattributed_is_filed  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_all_attributed_to_open_tickets_files_nothing  # noqa: E501
 # frob:ticket T-2312
 # frob:ticket T-3051
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_unrelated_duplicate_finding_in_a_different_file_still_refuses  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
 # attribution (T-1690) section documents several symbols under one section, not just a \
@@ -2648,9 +2537,6 @@ def _dispose_to_existing_duplicate_or_none(
 
 
 # frob:ticket T-2352
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile.test_absolute_under_root_is_relativized  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile.test_already_relative_is_unchanged  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile.test_absolute_outside_root_is_kept_and_logged  # noqa: E501
 def _relativize_regression_scope_file(root: Path, file: str) -> str:
     """T-2352: normalize one regression finding's `.file` to a
     repo-relative path before it becomes a filed ticket's `scope:` entry
@@ -2694,8 +2580,6 @@ def _relativize_regression_scope_file(root: Path, file: str) -> str:
 
 
 # frob:ticket T-2672
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_causally_implicated_land_still_names_itself_as_the_cause  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_unattributed_finding_does_not_name_the_spawning_land_as_cause  # noqa: E501
 def _single_land_attribution_label(
     final_id: str,
     commit_sha: str,
@@ -2735,11 +2619,8 @@ def _single_land_attribution_label(
 
 
 # frob:ticket T-3222
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_attribution.py::TestReverifyUnfiledPairsAtFileTime.test_still_live_pair_is_kept  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_attribution.py::TestReverifyUnfiledPairsAtFileTime.test_vanished_pair_is_dropped_and_recorded_as_debt  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_attribution.py::TestReverifyUnfiledPairsAtFileTime.test_unmeasurable_files_everything_as_before  # noqa: E501
 def _reverify_unfiled_pairs_at_file_time(
     root: Path, final_id: str, unfiled_pairs: Sequence[tuple[str, str]]
@@ -2807,7 +2688,6 @@ def _reverify_unfiled_pairs_at_file_time(
 
 
 # frob:ticket T-2744
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_commit_failure_skips_auto_dispose_and_returns_none  # noqa: E501
 def _file_regression_ticket(
     root: Path,
@@ -3042,7 +2922,6 @@ def _file_regression_ticket(
 # frob:ticket T-2450
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#public-seam-for-cross-node-callers-t-2450
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicketPublicSeam.test_delegates_to_the_private_implementation  # noqa: E501
 def file_regression_ticket(
     root: Path,
@@ -3064,10 +2943,6 @@ def file_regression_ticket(
 
 
 # frob:ticket T-2208
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings.test_disposes_findings_the_ticket_covers  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings.test_leaves_quarantine_raised_when_other_findings_remain_undisposed  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings.test_no_quarantine_raised_is_a_silent_no_op  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings.test_clear_failure_is_logged_not_raised  # noqa: E501
 def _auto_dispose_filed_findings(
     root: Path, unfiled_pairs: list[tuple[str, str]], regression_id: str
 ) -> None:
@@ -3215,9 +3090,6 @@ def _discard_uncommitted_regression_ticket(root: Path, regression_id: str) -> No
 
 
 # frob:ticket T-2034
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitOrDiscardLedgerWrite.test_returns_true_on_first_success  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitOrDiscardLedgerWrite.test_retries_then_succeeds  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitOrDiscardLedgerWrite.test_exhausted_retries_calls_discard_exactly_once_and_returns_false  # noqa: E501
 def _commit_or_discard_ledger_write(
     root: Path,
     ticket_id: str,
@@ -3287,10 +3159,6 @@ def _commit_or_discard_ledger_write(
 # frob:ticket T-1791
 # frob:ticket T-1841
 # frob:ticket T-2744
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket.test_commits_the_ledger_write  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket.test_commit_failure_logs_at_error_and_does_not_raise  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket.test_retries_then_succeeds_on_a_transient_land_in_progress  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket.test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty  # noqa: E501
 def _commit_regression_ticket(
     root: Path,
     regression_id: str,
@@ -3369,9 +3237,7 @@ def _commit_regression_ticket(
 
 
 # frob:ticket T-1983
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_parses_a_sweep_titled_ticket_identity_set  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_non_sweep_ticket_returns_none  # noqa: E501
 def _parse_sweep_ticket_identities(ticket) -> frozenset[tuple[str, str]] | None:  # noqa: ANN001 -- Ticket, deferred-import type
     """T-1983: recover the exact `(rule, file)` identity set
@@ -3422,8 +3288,6 @@ _TICKET_DROP_COMMIT_RETRY_DELAY_S = _REGRESSION_TICKET_COMMIT_RETRY_DELAY_S
 
 
 # frob:ticket T-2034
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDiscardUncommittedTicketDrop.test_v1_store_logs_and_leaves_root_alone  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDiscardUncommittedTicketDrop.test_v2_store_restores_the_ticket_file_to_head  # noqa: E501
 # frob:waive ARCH103 reason="mirrors the sibling \
 # _discard_uncommitted_regression_ticket's exact shape (store-mode check, one \
 # filesystem/git undo action, one log line per branch) -- the store-mode branch and \
@@ -3586,9 +3450,6 @@ def _maybe_drop_resolved_ticket(
 
 
 # frob:ticket T-1983
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_drops_a_fully_resolved_sweep_ticket  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_leaves_a_partially_resolved_ticket_untouched  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_leaves_a_still_reproducing_ticket_untouched  # noqa: E501
 def _close_resolved_sweep_tickets(
     root: Path,
     final_id: str,
@@ -3642,10 +3503,6 @@ def _close_resolved_sweep_tickets(
 
 # frob:ticket T-2006
 # frob:ticket T-2024
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_no_sweep_tickets_is_zero_cost  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_fully_resolved_candidate_is_dropped  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_still_reproducing_candidate_is_left_untouched  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_unmeasurable_recheck_drops_nothing  # noqa: E501
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#doable-time-revalidation-of-sweep-filed-tickets-t-2006  # noqa: E501
 # frob:ticket T-3349
@@ -3721,8 +3578,6 @@ def revalidate_dispatchable_sweep_tickets(
 
 # frob:ticket T-2089
 # frob:ticket T-2165
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_second_call_same_tree_reuses_cache_no_second_spawn  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets.test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged  # noqa: E501
 def _reproducing_identities_cached(
     root: Path, n_candidates: int, all_pairs: frozenset[tuple[str, str]]
 ) -> frozenset[tuple[str, str]] | None:
@@ -3891,9 +3746,7 @@ def _resolve_regression_attribution(
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:ticket T-2929
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_stale_baseline_refuses_to_file_and_records_debt  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
 def _refuse_filing_for_stale_verification_queue(
     root: Path,
@@ -4251,9 +4104,6 @@ _SNAPSHOT_WORKTREE_TIMEOUT_S = 120
 
 
 # frob:ticket T-4660
-# frob:tests tests/unit/test_post_publish_lock_window.py::TestSnapshotWorktree.test_yields_a_detached_checkout_of_the_commit  # noqa: E501
-# frob:tests tests/unit/test_post_publish_lock_window.py::TestSnapshotWorktree.test_removes_the_worktree_on_exit  # noqa: E501
-# frob:tests tests/unit/test_post_publish_lock_window.py::TestSnapshotWorktree.test_yields_none_when_the_commit_does_not_resolve  # noqa: E501
 @contextmanager
 def _snapshot_worktree(root: Path, commit_sha: str) -> Iterator[Path | None]:
     """T-4660: check out `commit_sha` into a throwaway `git worktree`
@@ -4325,8 +4175,6 @@ def _snapshot_worktree(root: Path, commit_sha: str) -> Iterator[Path | None]:
 
 
 # frob:ticket T-4660
-# frob:tests tests/unit/test_post_publish_lock_window.py::test_post_publish_never_holds_derived_lock_across_a_check  # noqa: E501
-# frob:tests tests/unit/test_post_publish_lock_window.py::test_next_land_not_blocked_by_previous_sweep  # noqa: E501
 def _run_full_check_in_snapshot(
     root: Path, final_id: str, commit_sha: str
 ) -> Result[frozenset[tuple[str, str]], RapidSweepError]:
@@ -4398,7 +4246,6 @@ def _run_full_check_in_snapshot(
 # frob:ticket T-4318
 # frob:ticket T-4335
 # frob:ticket T-4660
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_calls_unscoped_error_findings_with_full_true  # noqa: E501
 def _measure_fresh_sweep_state(
     root: Path, final_id: str, commit_sha: str
@@ -4507,7 +4354,6 @@ def _measure_fresh_sweep_state(
 
 
 # frob:ticket T-4335
-# frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestPersistBaseline.test_writes_and_logs_survival_warning_on_loss  # noqa: E501
 def _persist_baseline(
     root: Path,
     final_id: str,
@@ -4558,12 +4404,7 @@ def _persist_baseline(
 # frob:ticket T-2077
 # frob:ticket T-1952
 # frob:ticket T-2595
-# frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_first_sweep_records_a_baseline_and_files_nothing  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_no_new_findings_is_clean  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_new_findings_file_a_ticket_and_rebaseline  # noqa: E501
-# frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestDeferredSweepBaselineCasRace.test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline  # noqa: E501
 # frob:waive AFFECT001 reason="T-2595 only replaces the baseline write's internal \
 # mechanics (an unconditional unlocked write becomes a locked compare-and-swap) -- it \
 # does not change this function's own documented external contract (still: one check \
@@ -4574,17 +4415,12 @@ def _persist_baseline(
 # on this same file just above"
 # frob:ticket T-1684
 # frob:ticket T-2929
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_stale_baseline_refuses_to_file_and_records_debt  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
 # frob:ticket T-2938
 # frob:ticket T-4335
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_stale_baseline_refusal_is_still_new_on_the_next_sweep  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_inherited_debt_is_reported_as_debt_not_clean  # noqa: E501
-# frob:tests \
 # tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun.test_genuinely_zero_errors_still_says_clean  # noqa: E501
 # frob:waive DRIFT001 reason="T-4335 DOES change this function's external contract (a \
 # new identity is now only rolled into the rolling baseline once it is actually \

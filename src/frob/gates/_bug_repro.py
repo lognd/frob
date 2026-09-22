@@ -252,9 +252,7 @@ class _BugReproOutcome(Enum):
 BugReproOutcome = _BugReproOutcome
 
 
-# frob:tests \
 # tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_reason_present_suppresses
-# frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_bare_directive_without_reason_does_not_suppress  # noqa: E501
 def _bug002_waiver_reason(ticket: Ticket) -> str | None:
     """The `reason="..."` text of a `frob:waive BUG002 reason="..."` line
     found anywhere in `ticket.body`, or `None` if no such (well-formed)
@@ -316,8 +314,6 @@ def _bug002_malformed_waiver(ticket: Ticket) -> str | None:
     return None
 
 
-# frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_reason_present_recognized  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_bare_directive_without_reason_not_recognized  # noqa: E501
 def _no_behavior_change_reason(ticket: Ticket) -> str | None:
     """The `reason="..."` text of a `frob:no-behavior-change reason="..."`
     line found anywhere in `ticket.body` (T-1616), or `None` if absent.
@@ -341,9 +337,6 @@ def _no_behavior_change_reason(ticket: Ticket) -> str | None:
 
 
 # frob:ticket T-2193
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_single_directive_extracted  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_multiple_directives_extracted  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_no_directive_is_empty  # noqa: E501
 def _must_still_pass_controls(ticket: Ticket) -> tuple[str, ...]:
     """Every `frob:must-still-pass NODE-ID` pytest node id declared in
     `ticket.body` (T-2193), in the order they appear. Empty tuple when no
@@ -372,10 +365,6 @@ def _must_still_pass_controls(ticket: Ticket) -> tuple[str, ...]:
 
 
 # frob:ticket T-3104
-# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_single_directive_extracted  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_comma_separated_names_extracted_in_order  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_no_directive_is_empty  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_duplicate_names_deduplicated_first_wins  # noqa: E501
 def _env_absent_vars(ticket: Ticket) -> tuple[str, ...]:
     """Every environment variable name declared across all `frob:env-
     absent VAR1,VAR2,...` directives in `ticket.body` (T-3104), in first-
@@ -404,8 +393,6 @@ def _env_absent_vars(ticket: Ticket) -> tuple[str, ...]:
 
 
 # frob:ticket T-3104
-# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiable.test_reason_present_recognized  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiable.test_bare_directive_without_reason_not_recognized  # noqa: E501
 def _env_absent_unverifiable_reason(ticket: Ticket) -> str | None:
     """The `reason="..."` text of a `frob:env-absent-unverifiable
     reason="..."` line found anywhere in `ticket.body` (T-3104), or
@@ -423,10 +410,6 @@ def _env_absent_unverifiable_reason(ticket: Ticket) -> str | None:
     return None
 
 
-# frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_first_pytest_node_id_is_designated  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_no_pytest_evidence_is_none  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_explicit_designation_wins_over_bind_order  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_explicit_designation_not_in_evidence_falls_back_to_positional  # noqa: E501
 def _designated_repro_test(ticket: Ticket) -> str | None:
     """The single evidence test BUG002 re-runs at the parent commit
     (T-1670): `ticket.designated_repro_test` if explicitly set (via `frob
@@ -462,7 +445,6 @@ def _designated_repro_test(ticket: Ticket) -> str | None:
     return None
 
 
-# frob:tests \
 # tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous
 def _resolve_sha(root: Path, ref: str) -> str | None:
     """`git rev-parse <ref>`, trimmed, or `None` on any spawn/exit failure
@@ -476,9 +458,6 @@ def _resolve_sha(root: Path, ref: str) -> str | None:
     return resolved.danger_ok.stdout.strip()
 
 
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_exec_disabled_is_no_verdict  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_worktree_add_failure_is_no_verdict  # noqa: E501
-# frob:tests \
 # tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous
 def _bug_repro_outcome_at_ref(
     root: Path,
@@ -555,7 +534,6 @@ def _bug_repro_outcome_at_ref(
 
 # frob:ticket T-1929
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_wraps_the_private_classifier  # noqa: E501
 def bug_repro_outcome_at_ref(
     root: Path,
     test_id: str,
@@ -605,7 +583,6 @@ def bug_repro_outcome_at_ref(
 
 # frob:ticket T-1929
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestDesignatedReproTestPublic.test_wraps_the_private_resolver  # noqa: E501
 def designated_repro_test(ticket: Ticket) -> str | None:
     """Public wrapper (T-1929) around `_designated_repro_test`, for a
     caller outside this module that needs to resolve WHICH evidence id
@@ -958,18 +935,6 @@ def _env_absent_vars_logged(ticket: Ticket) -> tuple[str, ...]:
 # frob:enforces CHK-GATE-BUG002
 # frob:doc \
 # docs/modules/gates.md#bug002-t-1421-a-bug-ticket-must-prove-the-defect-no-longer-reproduces  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_non_bug_kind_never_checked  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_no_pytest_evidence_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_waived_with_reason_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_passed_at_parent_is_error_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_failed_at_parent_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_no_verdict_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_passed_at_parent_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_failed_at_parent_is_error_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_no_verdict_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_reconstructed_uncalled_guard_passes_at_both_is_refused kind="integration"  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_reconstructed_wired_guard_fails_at_parent_is_permitted kind="integration"  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_fix_committed_direct_to_main_is_unresolved_not_refused kind="integration"  # noqa: E501
 # frob:ticket T-1678
 # frob:ticket T-2883
 # frob:waive ARCH001 reason="T-3104: this function's own directive-check chain \
@@ -1146,13 +1111,6 @@ def _must_still_pass_never_passed_message(ticket_id: str, test_id: str) -> str:
 # frob:ticket T-2193
 # frob:enforces CHK-GATE-BUG003
 # frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_no_directive_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_passes_at_both_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_fails_at_fix_is_error_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_never_passed_at_parent_is_error_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_unresolvable_parent_degrades_to_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_unresolvable_fix_degrades_to_no_violation  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_multiple_directives_each_checked  # noqa: E501
 def must_still_pass_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:

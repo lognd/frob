@@ -223,8 +223,6 @@ def _stale_design_violations_for_node(
 
 # frob:invariant INV-026
 # invariant spec: [INV-026](invariants/INV-026.md)
-# frob:tests tests/unit/strata/test_selfconform.py::TestStaleDesign.test_stale_design_skips_node_fully_within_graph_exclude  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestStaleDesign.test_via_scoped_grant_stale_while_other_surface_uses_same_kind  # noqa: E501
 # frob:ticket T-2729
 def _stale_design_violations(
     model: KernelModel,
@@ -270,7 +268,6 @@ def _stale_design_violations(
     return found
 
 
-# frob:tests tests/unit/strata/test_selfconform.py::TestCoverageTotality.test_foreign_file_with_capability_fires_sys103  # noqa: E501
 # frob:ticket T-2729
 def _coverage_totality_scan_prefix(root: Path) -> str | None:
     """UNRESTRICTED as of T-1091: always returns `None` -- SYS103 scans
@@ -308,7 +305,6 @@ def _coverage_totality_scan_prefix(root: Path) -> str | None:
 
 # frob:invariant INV-048
 # invariant spec: [INV-048](invariants/INV-048.md)
-# frob:tests tests/unit/strata/test_selfconform.py::TestCoverageTotality.test_foreign_file_with_capability_fires_sys103  # noqa: E501
 # frob:ticket T-2729
 def _coverage_totality_violations(
     capability_binding: CodeBinding,

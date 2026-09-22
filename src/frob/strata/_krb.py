@@ -130,7 +130,6 @@ class KrbManifest(BaseModel):
     trusts: tuple[KrbTrust, ...] = ()
 
 
-# frob:tests tests/unit/strata/test_krb.py::TestKrbAttrs.test_desugars kind="unit"
 def _krb_attrs(
     *,
     realm: str | None,
@@ -164,7 +163,6 @@ def _krb_attrs(
 
 
 # frob:doc docs/strata/krb.md#krbmanifest
-# frob:tests tests/unit/strata/test_krb.py::TestKrbManifest.test_reads kind="unit"
 def krb_manifest_for(node: Node) -> KrbManifest | None:
     """Read a `Node`'s std.krb attrs back into a typed `KrbManifest`.
 
@@ -247,7 +245,6 @@ def _parse_krb_trust_attr(attr: str) -> KrbTrust:
 
 
 # frob:doc docs/strata/krb.md#domain-trust-lattice
-# frob:tests tests/unit/strata/test_krb.py::TestKrbTrustFlows.test_sync kind="unit"
 # frob:invariant INV-031
 # invariant spec: [INV-031](invariants/INV-031.md)
 def krb_trust_flows(nodes: tuple[Node, ...]) -> tuple[Flow, ...]:
@@ -307,7 +304,6 @@ def _krb_trust_flows_for_node(node: Node, known_ids: set[str]) -> list[Flow]:
 
 
 # frob:doc docs/strata/krb.md#surface-grammar
-# frob:tests tests/unit/strata/test_krb.py::TestFlowAuthVia.test_read kind="unit"
 def flow_authenticates_via(flow: Flow) -> str | None:
     """Read a `Flow`'s `authenticates_via` ticket kind back off its attrs.
 

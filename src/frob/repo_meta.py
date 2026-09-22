@@ -72,13 +72,6 @@ ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS = 2
 # frob:doc docs/modules/arch.md#frob-toml-arch-config
 # frob:ticket T-0373
 # frob:ticket T-0728
-# frob:tests tests/unit/test_config.py::test_reads_override
-# frob:tests tests/unit/test_config.py::test_missing_toml_defaults
-# frob:tests tests/unit/test_config.py::test_missing_section_defaults
-# frob:tests tests/unit/test_config.py::test_partial_override
-# frob:tests tests/unit/test_config.py::test_malformed_toml_defaults
-# frob:tests tests/unit/test_arch_srp.py::TestArchConfigThresholds.test_reads_srp_overrides  # noqa: E501
-# frob:tests tests/unit/test_arch_srp.py::TestArchConfigThresholds.test_srp_defaults_without_frob_toml  # noqa: E501
 def load_arch_config(root: Path) -> dict[str, int]:
     """The `[arch]` table from `root/frob.toml` (`max_function_lines`,
     `max_class_methods`, `max_local_imports`, `max_nesting_depth`,
@@ -146,9 +139,6 @@ def _read_pyproject_project(repo_root: Path) -> dict[str, object] | None:
 
 # frob:ticket T-2706
 # frob:doc docs/modules/lang.md#behavioral-conformance-lang004-t-2365
-# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_real_registry_is_behaviorally_clean  # noqa: E501
-# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_consumer_repo_is_silent_even_with_a_broken_claim  # noqa: E501
-# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_repo_root_with_no_pyproject_is_silent  # noqa: E501
 def is_frob_own_repo(repo_root: Path) -> bool:
     """True when `repo_root`'s own `pyproject.toml` declares `[project]
     name = "frob"` -- i.e. this checkout IS the frob source repo itself,
@@ -179,9 +169,6 @@ def _declared_frob_version(repo_root: Path) -> str | None:
 
 # frob:ticket T-0358
 # frob:doc docs/modules/app.md#entry-point
-# frob:tests tests/unit/test_config.py::test_stale_install_warning_flags_version_mismatch  # noqa: E501
-# frob:tests tests/unit/test_config.py::test_stale_install_warning_none_for_editable_checkout  # noqa: E501
-# frob:tests tests/unit/test_config.py::test_stale_install_warning_none_when_versions_match  # noqa: E501
 def stale_install_warning(repo_root: Path) -> str | None:
     """A loud, one-line warning string if the RUNNING `frob` package is
     installed OUTSIDE `repo_root`'s own `src/frob/` (a globally `uv tool
@@ -261,7 +248,6 @@ def _parse_version_tuple(raw: str) -> tuple[int, ...] | None:
 
 # frob:ticket T-1218
 # frob:doc docs/modules/app.md#entry-point
-# frob:tests tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor  # noqa: E501
 def declared_min_frob_version(repo_root: Path) -> str | None:
     """`repo_root`'s own `frob.toml` top-level `min_frob_version` string
     (T-1218), or `None` when the file is absent, unparseable, or declares
@@ -284,9 +270,6 @@ def declared_min_frob_version(repo_root: Path) -> str | None:
 
 # frob:ticket T-1218
 # frob:doc docs/modules/app.md#entry-point
-# frob:tests tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor  # noqa: E501
-# frob:tests tests/unit/test_config.py::test_stale_binary_warning_none_when_no_floor_declared  # noqa: E501
-# frob:tests tests/unit/test_config.py::test_stale_binary_warning_none_when_version_meets_floor  # noqa: E501
 def stale_binary_warning(
     repo_root: Path, running_version: str | None = None
 ) -> str | None:

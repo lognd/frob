@@ -32,9 +32,7 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:tests \
 # tests/vet_suite/test_scan_tree.py::TestVetRunnerLockArg.test_run_lockfile_arg
-# frob:tests \
 # tests/vet_suite/test_scan_tree.py::TestVetRunnerLockArg.test_run_unsupp_nonzero
 def run(cfg: AppConfig) -> None:
     """Dispatch to hook mode (`--hook`) or a full lockfile scan."""

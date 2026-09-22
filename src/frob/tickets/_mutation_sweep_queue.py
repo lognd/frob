@@ -128,7 +128,6 @@ def _sweep_lock_path(root: Path) -> Path:
 
 
 # frob:doc docs/modules/tickets-landing.md#batch-mutation-evidence-sweep-test016-t-1518
-# frob:tests tests/unit/test_mutation_sweep_queue.py::TestSweepLockPlatformBackend.test_no_lock_primitive_refuses_loudly  # noqa: E501
 # frob:waive AFFECT001 reason="T-3506: this new exception class is purely the loud- \
 # refusal case of _sweep_lock's existing advisory-lock discipline, which the cited doc \
 # section's prose already covers -- no new externally-observable contract to describe \
@@ -207,7 +206,6 @@ def _save_sweep_queue(root: Path, entries: tuple[SweepEntry, ...]) -> None:
 
 
 # frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
-# frob:tests tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep.test_enqueue_persists_entry  # noqa: E501
 def enqueue_pending_sweep(
     root: Path, ticket_id: str, base_ref: str, kind: TicketKind
 ) -> Result[SweepEntry, SweepQueueError]:
@@ -239,10 +237,6 @@ def enqueue_pending_sweep(
 
 
 # frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
-# frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_empty_queue_is_noop  # noqa: E501
-# frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_clean_finding_marks_swept_no_ticket_filed  # noqa: E501
-# frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_bug_kind_confirmatory_finding_files_ticket  # noqa: E501
-# frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_non_bug_confirmatory_finding_only_warns  # noqa: E501
 def run_pending_sweep(root: Path) -> Result[int, SweepQueueError]:
     """Process every `pending` entry: re-run `frob.tickets._mutation_
     evidence.check_ticket_mutation_evidence` against `root`'s CURRENT tree
@@ -436,7 +430,6 @@ def _file_confirmatory_only_ticket(
 
 
 # frob:doc docs/modules/tickets-landing.md#batch-mutation-evidence-sweep-test016-t-1518
-# frob:tests tests/unit/test_mutation_sweep_queue.py::TestPendingSweepCount.test_counts_only_pending_entries  # noqa: E501
 def pending_sweep_count(root: Path) -> Result[int, SweepQueueError]:
     """How many entries are currently `pending` in `root`'s mutation-sweep
     queue -- a read-only count for a caller (e.g. `frob ticket land

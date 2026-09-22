@@ -106,7 +106,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
 class TicketLockUnavailable(RuntimeError):
     """T-2934: raised by `ledger_lock`/`_flock_path` when neither `fcntl`
     (POSIX) nor `msvcrt` (Windows) is importable -- there is no known
@@ -122,8 +121,6 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
 # frob:ticket T-1204
-# frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_detects_coverage_tracer_by_module_name  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestYamlLoader.test_no_active_tracer_is_not_coverage
 def _coverage_tracer_active() -> bool:
     """Thin re-export of `frob.yamlio._coverage_tracer_active` (T-1204:
@@ -136,9 +133,6 @@ def _coverage_tracer_active() -> bool:
 
 
 # frob:ticket T-1204
-# frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_prefers_csafeloader_when_libyaml_present  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_without_libyaml  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_under_active_coverage_tracer  # noqa: E501
 def _yaml_loader() -> type[yaml.SafeLoader]:
     """Thin re-export of `frob.yamlio.fast_yaml_loader` (T-1204: see that
     function's docstring for the full T-1206/T-1333 rationale) -- kept
@@ -168,7 +162,6 @@ _LEDGER_HEADER = (
 
 # frob:ticket T-1536
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger.test_defuses_marker_lookalike_line  # noqa: E501
 def sanitize_narrative_for_ledger(text: str) -> str:
     """Neutralize any line in caller-authored narrative `text` that would
     otherwise round-trip as a literal `<!-- ticket:T-#### -->` ledger
@@ -223,8 +216,6 @@ _ARCHIVE_HEADER = (
 #
 # frob:ticket T-4555
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
-# frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_public_lock_rel_matches_private_lock_path  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestTicketsLedgerLockRelSingleSource.test_leases_constant_is_the_store_constant  # noqa: E501
 # Public on purpose (T-0601 originally kept this private with "no consumer
 # outside this module and its own test"; T-3612 needed the exact same path
 # from `_leases.py` to probe the same lock `ledger_lock` holds and, since
@@ -257,7 +248,6 @@ _LOCK_REL = TICKETS_LEDGER_LOCK_REL
 _lock_local = threading.local()
 
 
-# frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir
 # frob:ticket T-0601
 # frob:ticket T-4555
 def _lock_path(root: Path) -> Path:
@@ -273,7 +263,6 @@ def _lock_path(root: Path) -> Path:
 
 
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
-# frob:tests tests/unit/test_ticket_store.py::TestLedgerLock.test_two_threads_serialize
 # frob:waive AFFECT001 reason="T-3506: ledger_lock's platform-branch mechanics now \
 # delegate to frob.process._lock.portable_flock_acquire/portable_flock_release instead \
 # of a hand-rolled msvcrt copy in this function -- the doc section describes \
@@ -457,9 +446,6 @@ def _flock_path(path: Path) -> Iterator[None]:
 
 
 # frob:doc docs/design/ledger-v2.md#3-lock-model
-# frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_two_different_ticket_ids_do_not_block_each_other  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_reentrant_same_id_in_same_thread_does_not_deadlock  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_same_id_from_two_threads_serializes  # noqa: E501
 # frob:ticket T-1253
 @contextmanager
 def ticket_lock(root: Path, ticket_id: str) -> Iterator[None]:
@@ -483,7 +469,6 @@ def ticket_lock(root: Path, ticket_id: str) -> Iterator[None]:
 
 
 # frob:doc docs/design/ledger-v2.md#3-lock-model
-# frob:tests tests/unit/test_process_lock.py::TestAllocatorLock.test_two_concurrent_allocations_get_distinct_ids  # noqa: E501
 # frob:ticket T-1253
 @contextmanager
 def allocator_lock(root: Path) -> Iterator[None]:
@@ -549,7 +534,6 @@ _V2_TICKET_GLOB = "T-*/ticket.md"
 
 # frob:ticket T-1254
 # frob:ticket T-1504
-# frob:tests tests/unit/test_ticket_store.py::TestV2StoreMode.test_v2_tree_present_is_v2
 def _v2_glob(root: Path) -> list[Path]:
     """Every v2-mode `tickets/T-####/ticket.md` path, sorted (ledger v2
     design section 1)."""
@@ -565,7 +549,6 @@ def _v2_glob(root: Path) -> list[Path]:
 
 # frob:ticket T-1256
 # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
-# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
 def v2_archive_dir(root: Path, ticket_id: str) -> Path:
     """The `tickets/archive/T-####/` directory an archived v2-mode ticket
     owns (design section 4.3) -- `archive_v2`'s `git mv` destination, same
@@ -603,7 +586,6 @@ _store_mode_cache_lock = threading.Lock()
 
 
 # frob:ticket T-4649
-# frob:tests \
 # tests/unit/test_store_mode_memoization.py::TestStoreModeMemo.test_invalidates_new
 def _store_mode_cache_signal(root: Path) -> tuple[float, float, float]:
     """Cheap invalidation signal for `_store_mode`'s cache: the mtimes of the
@@ -633,8 +615,6 @@ def _store_mode_cache_signal(root: Path) -> tuple[float, float, float]:
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
 # architecture doc, not accidental drift onto a private helper"
 # frob:ticket T-4649
-# frob:tests tests/unit/test_store_mode_memoization.py::TestStoreModeMemo.test_memoized
-# frob:tests \
 # tests/unit/test_store_mode_memoization.py::TestStoreModeMemo.test_invalidates_new
 def _store_mode(root: Path) -> str:
     """Which backend a repo uses: 'v2' if any `tickets/T-####/ticket.md`
@@ -804,7 +784,6 @@ def _dir_path_for(root: Path, ticket: Ticket) -> Path:
 
 # frob:ticket T-1254
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
-# frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_ticket_dir_named_by_id_not_slug  # noqa: E501
 def v2_ticket_dir(root: Path, ticket_id: str) -> Path:
     """The `tickets/T-####/` directory a v2-mode ticket owns (design section
     1) -- the directory name IS the id, never a slugified title, so a
@@ -814,7 +793,6 @@ def v2_ticket_dir(root: Path, ticket_id: str) -> Path:
 
 # frob:ticket T-1254
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode
 def v2_ticket_path(root: Path, ticket_id: str) -> Path:
     """The `tickets/T-####/ticket.md` frontmatter+body file for a v2-mode
@@ -825,7 +803,6 @@ def v2_ticket_path(root: Path, ticket_id: str) -> Path:
 
 # frob:ticket T-1254
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
-# frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
 def v2_done_report_path(root: Path, ticket_id: str) -> Path:
     """The `tickets/T-####/done-report.md` file (design section 1) -- the
     Done report split OUT of `ticket.md`'s body, its own file so recording
@@ -837,7 +814,6 @@ def v2_done_report_path(root: Path, ticket_id: str) -> Path:
 
 # frob:ticket T-1254
 # frob:doc docs/design/ledger-v2.md#8-what-this-design-does-not-cover-open-questions-for-the-migration-child  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestV2Attachments.test_attachment_written_under_ticket_dir  # noqa: E501
 def v2_attachments_dir(root: Path, ticket_id: str) -> Path:
     """The self-contained `tickets/T-####/attachments/` directory a v2-mode
     ticket's attachments live under (design section 8's open question,
@@ -849,7 +825,6 @@ def v2_attachments_dir(root: Path, ticket_id: str) -> Path:
 
 # frob:ticket T-1254
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
-# frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
 def write_done_report(
     root: Path, ticket_id: str, report_text: str
 ) -> Result[None, TicketError]:
@@ -865,8 +840,6 @@ def write_done_report(
 
 # frob:ticket T-1254
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
-# frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestV2DoneReport.test_missing_report_is_none
 def read_done_report(root: Path, ticket_id: str) -> str | None:
     """v2-mode only: `tickets/T-####/done-report.md`'s raw text, or `None`
@@ -883,7 +856,6 @@ _V2_STATE_ADD_RE = re.compile(r"^\+state:\s*(\S+)\s*$")
 
 # frob:ticket T-1543
 # frob:doc docs/design/ledger-v2.md#44-flow--velocity-mining
-# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
 def _v2_rename_source(root: Path, rel_path: str) -> str | None:
     """Find the single genuine git-mv predecessor path of `rel_path`, if
     any (T-1543). Restricted to `-M100%` (exact-content rename detection,
@@ -930,7 +902,6 @@ def _v2_rename_source(root: Path, rel_path: str) -> str | None:
 
 
 # frob:ticket T-1543
-# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
 def _v2_path_lineage(root: Path, rel_path: str) -> list[str]:
     """Reconstruct the FULL sequence of paths a v2 ticket's `ticket.md`
     has ever lived at, oldest-first (T-1543). Walks backward from
@@ -957,11 +928,8 @@ def _v2_path_lineage(root: Path, rel_path: str) -> list[str]:
 
 # frob:ticket T-1543
 # frob:doc docs/design/ledger-v2.md#44-flow--velocity-mining
-# frob:tests \
 # tests/test_tickets.py::TestV2StateTransitions.test_transitions_mined_oldest_first
-# frob:tests \
 # tests/test_tickets.py::TestV2StateTransitions.test_no_history_returns_empty_tuple
-# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
 def v2_state_transitions(
     root: Path, ticket_id: str
 ) -> tuple[tuple[str, str, str], ...]:
@@ -1056,7 +1024,6 @@ def _mine_v2_path_transitions(
 
 # frob:ticket T-1256
 # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
-# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
 # frob:waive DUP002 reason="near-duplicate of _renumber_v2._git_mv_ticket_dir (T-1420 \
 # split of _new_renumber's v2 backend) by design -- _renumber_v2 already imports \
 # helpers back from _new_renumber, and _new_renumber already imports _load_merged FROM \
@@ -1127,10 +1094,8 @@ def _prune_stale_v2_dirs(root: Path, keep_dirs: set[Path]) -> None:
 
 # frob:ticket T-1132
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
-# frob:tests \
 # tests/test_tickets.py::TestIterRawLedgerFrontmatter.test_returns_raw_dict_per_ticket \
 # kind="unit"
-# frob:tests tests/test_tickets.py::TestIterRawLedgerFrontmatter.test_skips_malformed_yaml_block_without_raising kind="unit"  # noqa: E501
 def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]:
     """Every `<!-- ticket:ID -->` section's RAW (unvalidated) frontmatter
     dict, tolerating a malformed YAML block by skipping just that one
@@ -1234,7 +1199,6 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
 
 
 # frob:ticket T-0764
-# frob:tests \
 # tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def _check_ledger_id_integrity(
@@ -1318,7 +1282,6 @@ _MISSING_LEDGER_DIGEST = ""
 
 # frob:ticket T-0889
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
-# frob:tests \
 # tests/test_ticket_store_stale_snapshot.py::TestLedgerDigest.test_digest_stable_for_un\
 # changed_content  # noqa: E501
 def ledger_digest(path: Path) -> str:
@@ -1346,7 +1309,6 @@ def ledger_digest(path: Path) -> str:
 
 # frob:ticket T-1588
 # frob:doc docs/design/ledger-v2.md#3-lock-model
-# frob:tests tests/test_ticket_store_stale_snapshot.py::TestLedgerDigestMapV2.test_map_keys_are_ticket_ids_values_match_ledger_digest  # noqa: E501
 def ledger_digest_map(root: Path) -> dict[str, str]:
     """Per-TICKET fingerprint map for v2 mode's stale-snapshot guard
     (T-1588): `{ticket_id: ledger_digest(that ticket's ticket.md)}`.
@@ -1373,7 +1335,6 @@ def ledger_digest_map(root: Path) -> dict[str, str]:
 
 # frob:ticket T-1588
 # frob:doc docs/design/ledger-v2.md#3-lock-model
-# frob:tests tests/test_ticket_store_stale_snapshot.py::TestLedgerDigestMapV2.test_archive_map_keys_are_ticket_ids  # noqa: E501
 def archive_digest_map(root: Path) -> dict[str, str]:
     """`ledger_digest_map`'s archive-side twin (T-1588): per-archived-
     ticket digest map, `write_archive`'s v2 `expected_digest` counterpart
@@ -1452,7 +1413,6 @@ def _stat_key(path: Path) -> list[int] | None:
     return [st.st_mtime_ns, st.st_size]
 
 
-# frob:tests \
 # tests/test_tickets.py::TestV2IndexCache.test_stale_index_falls_back_to_fresh_parse
 def _read_index_cache(index_path: Path, paths: list[Path]) -> dict[str, Ticket] | None:
     """The cached v2-mode parse keyed by exact `(relative path, [mtime-ns,
@@ -1572,7 +1532,6 @@ def _write_index_cache(
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
 # frob:doc docs/design/ledger-v2.md#6-greppability
 # frob:ticket T-3684
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_archive  # noqa: E501
 def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every ticket in the repo as an id -> Ticket map, backend-agnostic.
 
@@ -1685,8 +1644,6 @@ def _archive_cache_path(root: Path) -> Path:
 # frob:invariant INV-050
 # invariant spec: [INV-050](invariants/INV-050.md)
 # frob:ticket T-1519
-# frob:tests tests/unit/test_ticket_store.py::TestLoadArchiveCache.test_reparses_when_archive_content_changes  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestLoadArchiveCache.test_skips_reparse_when_content_hash_unchanged  # noqa: E501
 def _read_archive_cache(
     cache_path: Path, digest: str
 ) -> Result[dict[str, Ticket], TicketError] | None:
@@ -1940,10 +1897,7 @@ def _write_archive_v2(
 # frob:ticket T-1536
 # frob:ticket T-1637
 # frob:ticket T-1679
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode
-# frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_refuses_by_default
 def write_ticket(
     root: Path, ticket: Ticket, *, strict_no_content_loss: bool = True
@@ -2194,7 +2148,6 @@ def _splice_single_ticket(
 
 
 # frob:ticket T-1536
-# frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
 def _post_splice_integrity_check(
     before_ids: frozenset[str], written_id: str, spliced_text: str
 ) -> Result[None, TicketError]:
@@ -2235,9 +2188,7 @@ def _post_splice_integrity_check(
 
 # frob:ticket T-1561
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_mode_writes_under_archive_dir kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_splices_into_archive_file kind="unit"  # noqa: E501
 def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """Upsert ONE ticket into ARCHIVE storage (T-1561): the archive-side
@@ -2486,9 +2437,7 @@ def _prune_stale_files(root: Path, keep_files: set[Path]) -> None:
 
 
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsyncs_file_before_replace
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsync_failure_is_write_failed_n\
 # ot_a_partial_file  # noqa: E501
 # frob:waive ARCH103 reason="T-0977: crash-safe write primitive -- temp file + fsync + \

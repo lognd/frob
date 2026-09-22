@@ -87,7 +87,6 @@ _ARCH_DEFAULT_KEYS: tuple[str, ...] = (
 
 
 # frob:doc docs/modules/gates.md#archschema001-t-2390-epic-child-t-2433
-# frob:tests \
 # tests/unit/test_arch_table_schema.py::TestArchSchemaGate.test_arch_known_keys_matches\
 # _load_arch_configs_own_defaults kind="unit"
 # frob:ticket T-2433
@@ -234,10 +233,8 @@ def _arch_table(root: Path) -> dict | None:
 
 # frob:enforces CHK-GATE-ARCHSCHEMA001
 # frob:doc docs/modules/gates.md#archschema001-t-2390-epic-child-t-2433
-# frob:tests \
 # tests/unit/test_arch_table_schema.py::TestArchSchemaGate.test_must_now_fire_reports_t\
 # he_undeclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_arch_table_schema.py::TestArchSchemaGate.test_must_still_pass_this_re\
 # pos_own_frob_toml kind="unit"
 # frob:ticket T-2433

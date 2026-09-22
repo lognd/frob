@@ -27,7 +27,6 @@ from frob.tickets._store import load_all
 
 
 # frob:doc docs/modules/graph.md#evidence-reach-t-3046
-# frob:tests tests/test_measure_evidence_reach.py::TestMeasureEvidenceReachMain.test_runs_clean_over_a_minimal_ticket_ledger  # noqa: E501
 def measure_evidence_reach_main() -> int:
     """CLI entrypoint: `--root` defaults to the current repo root; prints
     one line per classified evidence id plus a summary count, and exits

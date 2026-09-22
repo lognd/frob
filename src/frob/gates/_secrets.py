@@ -127,7 +127,6 @@ _log = get_logger(__name__)
 CRITICAL_PROVIDERS = frozenset(p.provider for p in _PATTERNS if p.label == "critical")
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/test_secrets_gate.py::TestDriftLock.test_every_provider_has_a_fixture
 #: Drift-lock source of truth: every provider name that MUST have a
 #: corresponding test fixture (T-0157's drift-lock requirement).
 ALL_PROVIDERS: frozenset[str] = frozenset(p.provider for p in _PATTERNS)
@@ -182,7 +181,6 @@ def _candidate_line_indices(text: str) -> list[int]:
 # frob:waive COV007 reason="docs/modules/gates.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:tests tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token
 # frob:invariant INV-039
 # invariant spec: [INV-039](invariants/INV-039.md)
 #: low.
@@ -488,10 +486,6 @@ def _is_env_file(rel_path: str) -> bool:
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/test_secrets_gate.py::TestFindsTokens.test_stripe_live_key_sec003
-# frob:tests tests/test_secrets_gate.py::TestFakeMarking.test_fake_marker_same_line
-# frob:tests tests/test_secrets_gate.py::TestTrackedEnvFile.test_env_file_sec002
-# frob:tests tests/test_secrets_gate.py::TestGateIsGreenOnItself.test_repo_is_clean
 # frob:enforces SEC-SECRETS-SECRETS-DETECT_SECRETS_PLUGINS
 # frob:enforces SEC-SECRETS-SECRETS-PROVIDER_TOKEN_FORMATS
 # frob:enforces CHK-GATE-SEC001

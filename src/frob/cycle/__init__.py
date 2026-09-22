@@ -19,8 +19,6 @@ __all__ = [
 
 # frob:ticket T-2683
 # frob:doc docs/modules/graph.md#self-disclosure-of-a-silently-degraded-capability-t-2683  # noqa: E501
-# frob:tests tests/test_graph.py::TestCycleImportGraphGapDisclosure.test_empty_for_no_gap  # noqa: E501
-# frob:tests tests/test_graph.py::TestCycleImportGraphGapDisclosure.test_delegates_to_the_shared_primitive  # noqa: E501
 def import_graph_gap_disclosure(languages: frozenset[str]) -> tuple[str, ...]:
     """T-2683: one human-readable warning per `languages` member whose
     `import_graph` capability cell is a live registry `KNOWN_GAP` --

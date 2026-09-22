@@ -154,10 +154,6 @@ def _drift_for_file(
 
 # frob:doc docs/commands/scaffold.md#the-wrapper-drift-gate-wrap001wrap002wrap003-t-4760  # noqa: E501
 # frob:ticket T-4760
-# frob:tests tests/unit/test_wrapper_drift.py::TestWrapperDriftGate.test_inline_sequence_in_target_body_is_wrap001  # noqa: E501
-# frob:tests tests/unit/test_wrapper_drift.py::TestWrapperDriftGate.test_target_for_removed_commands_entry_is_wrap002  # noqa: E501
-# frob:tests tests/unit/test_wrapper_drift.py::TestWrapperDriftGate.test_mismatched_target_sets_is_wrap003  # noqa: E501
-# frob:tests tests/unit/test_wrapper_drift.py::TestWrapperDriftGate.test_freshly_applied_project_is_clean  # noqa: E501
 def wrapper_drift_gate(root: Path) -> tuple[Violation, ...]:
     """WRAP001/WRAP002/WRAP003 over `root`'s `Makefile`/`make.bat` managed
     wrapper-target blocks (T-4760). Returns no violations when neither

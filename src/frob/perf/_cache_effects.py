@@ -178,10 +178,6 @@ def _file_violations(path: str) -> list[Violation]:
 
 
 # frob:doc docs/design/coding-performance-corpus.md#perf017-018-t-5136
-# frob:tests tests/unit/perf/test_cache_effects.py::TestPerf017.test_success_only_cache_write_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_cache_effects.py::TestPerf017.test_both_branches_writing_cache_is_not_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_cache_effects.py::TestPerf018.test_hoisted_value_recomputed_in_loop_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_cache_effects.py::TestPerf018.test_hoisted_value_threaded_through_is_not_flagged  # noqa: E501
 # frob:ticket T-5136
 def cache_effect_violations(files: Sequence[ParsedFile]) -> tuple[Violation, ...]:
     """PERF017/PERF018 (T-5136) over every python file in `files` -- see

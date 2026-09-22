@@ -139,7 +139,6 @@ class ConfirmatoryFinding(BaseModel):
     unmeasured: bool = False
 
 
-# frob:tests tests/test_tickets_mutation_evidence.py::TestEvidenceTestIds.test_filters_non_node_id_entries  # noqa: E501
 # frob:ticket T-0601
 def _evidence_test_ids(ticket: Ticket) -> tuple[str, ...]:
     """The subset of `ticket.evidence` that look like pytest node ids
@@ -196,8 +195,6 @@ def _matches_base_ref_tip(root: Path, file: str, base_ref: str) -> bool:
         return False
 
 
-# frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_filters_to_scope_and_python  # noqa: E501
-# frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_already_landed_sibling_content_excluded kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-0855
 def _touched_python_files(
@@ -249,8 +246,6 @@ def _touched_python_files(
     return tuple(kept)
 
 
-# frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
-# frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_large_file_unmutable_changed_lines_is_skipped_not_flagged  # noqa: E501
 # frob:ticket T-0601
 def _changed_line_ranges(
     root: Path, base_ref: str
@@ -350,10 +345,6 @@ def _budget_exceeded_finding(
 
 # frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 # frob:invariant INV-017
-# frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
-# frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
-# frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
-# frob:tests \
 # tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_real_subprocess_spawning_evidence_stays_bounded_not_hung  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-4369

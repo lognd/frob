@@ -36,9 +36,7 @@ __all__ = [
 
 
 # frob:doc docs/modules/lang.md#unity-project-detection
-# frob:tests \
 # tests/unit/test_lang_project_detect.py::test_not_unity_project_without_markers
-# frob:tests tests/unit/test_lang_project_detect.py::test_malformed_version_file
 class UnityProjectDetectError(ErrorSet):
     """Failure modes for `detect_unity_project`."""
 
@@ -50,8 +48,6 @@ class UnityProjectDetectError(ErrorSet):
 
 
 # frob:doc docs/modules/lang.md#unity-project-detection
-# frob:tests tests/unit/test_lang_project_detect.py::test_detects_unity_project
-# frob:tests tests/unit/test_lang_project_detect.py::test_parses_editor_version
 class UnityProjectInfo(BaseModel):
     """A confirmed Unity project root plus the editor version it was
     authored against (parsed from `ProjectVersion.txt`'s `m_EditorVersion`
@@ -75,12 +71,9 @@ _ASSETS_DIRNAME = "Assets"
 _PROJECT_VERSION_REL = Path("ProjectSettings") / "ProjectVersion.txt"
 _PACKAGES_MANIFEST_REL = Path("Packages") / "manifest.json"
 
-# frob:tests tests/unit/test_lang_project_detect.py::test_parses_editor_version
 _EDITOR_VERSION_RE = re.compile(r"^m_EditorVersion:\s*(?P<version>\S+)", re.MULTILINE)
 
 
-# frob:tests tests/unit/test_lang_project_detect.py::test_parses_editor_version
-# frob:tests tests/unit/test_lang_project_detect.py::test_missing_editor_version_line_is_malformed  # noqa: E501
 def _parse_editor_version(text: str) -> Result[str, UnityProjectDetectError]:
     """Extract the `m_EditorVersion` value out of a `ProjectVersion.txt`
     body (a two-line YAML-ish file Unity writes verbatim, never round-
@@ -94,11 +87,6 @@ def _parse_editor_version(text: str) -> Result[str, UnityProjectDetectError]:
 
 # frob:doc docs/modules/lang.md#unity-project-detection
 # frob:ticket T-4515
-# frob:tests tests/unit/test_lang_project_detect.py::test_detects_unity_project
-# frob:tests tests/unit/test_lang_project_detect.py::test_reports_packages_manifest_presence  # noqa: E501
-# frob:tests tests/unit/test_lang_project_detect.py::test_not_unity_project_without_markers  # noqa: E501
-# frob:tests tests/unit/test_lang_project_detect.py::test_unreadable_version_file
-# frob:tests tests/unit/test_lang_project_detect.py::test_malformed_version_file
 def detect_unity_project(
     root: Path,
 ) -> Result[UnityProjectInfo, UnityProjectDetectError]:

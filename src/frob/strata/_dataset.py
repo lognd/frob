@@ -64,7 +64,6 @@ _APPEND_ONLY_ATTR = "append_only"
 
 
 # frob:doc docs/strata/dataset-construct.md#parent_store
-# frob:tests tests/test_dataset_construct.py::TestDatasetAttrParsing.test_node_parent_store_parses_attr  # noqa: E501
 def node_parent_store(node: Node) -> str | None:
     """The `parent_store=<node-id>` this dataset `node` declares, or
     `None` if it declares none (i.e. `node` is not a dataset sub-region
@@ -76,7 +75,6 @@ def node_parent_store(node: Node) -> str | None:
 
 
 # frob:doc docs/strata/dataset-construct.md#parent_store
-# frob:tests tests/test_dataset_construct.py::TestDatasetAttrParsing.test_node_is_dataset_true_with_parent_store  # noqa: E501
 def node_is_dataset(node: Node) -> bool:
     """Whether `node` declares a `parent_store=` attr at all -- the
     marker that this `Node` is a dataset sub-region (module docstring:
@@ -86,7 +84,6 @@ def node_is_dataset(node: Node) -> bool:
 
 
 # frob:doc docs/strata/dataset-construct.md#append_only
-# frob:tests tests/test_dataset_construct.py::TestDatasetAttrParsing.test_node_is_append_only_true  # noqa: E501
 def node_is_append_only(node: Node) -> bool:
     """Whether `node` declares the bare `append_only` attr."""
     return _APPEND_ONLY_ATTR in node.attrs
@@ -94,7 +91,6 @@ def node_is_append_only(node: Node) -> bool:
 
 # frob:doc docs/strata/dataset-construct.md#sys118-dangling-parent_store-reference
 # frob:enforces CHK-GATE-SYS118
-# frob:tests tests/test_dataset_construct.py::TestSys118DanglingParentStore.test_dangling_parent_store_fires_sys118  # noqa: E501
 def check_dangling_parent_store(model: KernelModel) -> tuple[str, ...]:
     """SYS118: every `parent_store=<id>` attr names a node id that
     actually exists in `model` -- deny-by-default on a typo'd or stale

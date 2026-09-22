@@ -319,11 +319,7 @@ def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
 
 # frob:ticket T-0844
 # frob:ticket T-1438
-# frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
-# frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
-# frob:tests tests/unit/test_ticket_close_bug002_t1438.py::TestCloseMutationEvidenceBaseRef.test_uses_merge_base_not_own_branch_tip  # noqa: E501
 # frob:ticket T-2215
-# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassCombinesWithBug002.test_close_refuses_on_bug003_alone  # noqa: E501
 def _close_mutation_evidence_for_ticket(
     root: Path, ticket, base_ref: str = "main"
 ) -> bool | None:  # noqa: ANN001
@@ -514,8 +510,6 @@ def _close_gate_claims_for_ticket(
 
 
 # frob:ticket T-2462
-# frob:tests tests/unit/test_close_rel001_bump.py::TestRel001FragmentExistsForTicket.test_true_when_fragment_present  # noqa: E501
-# frob:tests tests/unit/test_close_rel001_bump.py::TestRel001FragmentExistsForTicket.test_false_when_absent  # noqa: E501
 def _rel001_fragment_exists_for_ticket(root: Path, ticket_id: str) -> bool:
     """T-2462: whether `root/changelog.d/<ticket_id>.md` exists -- the
     "deferred, not missing" satisfying signal `_own_obligations_rel_bump_
@@ -660,9 +654,6 @@ def _own_obligations_rel_bump_outstanding(root: Path, ticket, needed: str) -> bo
     return True
 
 
-# frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_absent_pyproject_is_none  # noqa: E501
-# frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_unparsable_pyproject_is_none  # noqa: E501
-# frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_reads_the_declared_version  # noqa: E501
 # frob:ticket T-1684
 def _declared_pyproject_version(root: Path) -> str | None:
     """`root/pyproject.toml`'s declared `version`, or `None` if the file
@@ -683,11 +674,7 @@ def _declared_pyproject_version(root: Path) -> str | None:
     return str(version) if version else None
 
 
-# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_equal_covers
-# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_higher_covers
-# frob:tests \
 # tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_lower_does_not_cover
-# frob:tests \
 # tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_non_numeric_never_covers
 # frob:ticket T-1684
 def _version_covers(declared: str, needed: str) -> bool:
@@ -705,10 +692,6 @@ def _version_covers(declared: str, needed: str) -> bool:
 
 # frob:ticket T-1648
 # frob:ticket T-5199
-# frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_refuses_when_disclosure_language_has_no_filed_ticket  # noqa: E501
-# frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_allows_when_filed_ticket_is_open  # noqa: E501
-# frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_refuses_when_filed_ticket_is_already_closed  # noqa: E501
-# frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_clean_narrative_is_unaffected  # noqa: E501
 def _undisclosed_remainder_reason(root: Path, ticket, queue_result=None) -> str | None:  # noqa: ANN001
     """T-1648: `None` if `ticket`'s Done report carries no disclosure-
     shaped language (`disclosure_shaped_language`), OR if it does but a
@@ -783,9 +766,6 @@ def _undisclosed_remainder_reason(root: Path, ticket, queue_result=None) -> str 
 
 
 # frob:ticket T-3087
-# frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_open_blocker_names_the_open_ticket_not_the_terminal_one  # noqa: E501
-# frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_no_blocked_by_returns_empty  # noqa: E501
-# frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_unresolvable_blocker_id_is_ignored  # noqa: E501
 def _open_blockers_at_close(ticket, queue) -> tuple[str, ...]:  # noqa: ANN001
     """T-3087: ids from `ticket.blocked_by` whose CURRENT state is still
     open (not done/dropped) -- the close-time twin of `_transition_guard`'s
@@ -1112,8 +1092,6 @@ def _current_commit(root: Path) -> str | None:
 
 
 # frob:ticket T-0571
-# frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_writes_review_record
-# frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_requires_all_flags
 def _review(root: Path, cfg: AppConfig) -> None:
     """`frob ticket review <id> --verdict approve|reject --reviewer NAME
     --findings-file PATH [--commit SHA]`: resolve the findings text and
@@ -1242,9 +1220,6 @@ def _apply_close_time_evidence(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0976
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade.test_true_mutation_evidence_with_skip_flag_is_never_downgraded  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade.test_false_mutation_evidence_with_skip_flag_is_downgraded_to_none  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade.test_false_mutation_evidence_without_skip_flag_stays_false  # noqa: E501
 def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:  # noqa: ANN001
     """Compute the six independent close-time guard values `transition`
     needs for `frob ticket close`'s strict default (T-0398 covers_scope,
@@ -1340,9 +1315,7 @@ def _resolve_no_behavior_change_reason(cfg: AppConfig) -> str | None:
 
 # frob:ticket T-2393
 # frob:doc docs/modules/tickets-data-storage.md#frob-ticket-body-t-2392
-# frob:tests \
 # tests/test_bug002_no_behavior_change.py::TestNoBehaviorChangeCli.test_flag_writes_directive_before_close  # noqa: E501
-# frob:tests \
 # tests/test_bug002_no_behavior_change.py::TestNoBehaviorChangeCli.test_reason_missing_exits_nonzero  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's `frob ticket body` \
 # (T-2392) section documents several symbols under one section, not just a public \
@@ -1695,9 +1668,6 @@ def _report_stranded_drafts_and_exit(closed_ticket_id: str, failed: list[str]) -
 
 
 # frob:ticket T-2738
-# frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_promotes_a_draft_the_ticket_filed  # noqa: E501
-# frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_with_no_drafts_is_unchanged  # noqa: E501
-# frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_reports_and_exits_nonzero_when_a_draft_cannot_be_promoted  # noqa: E501
 def _promote_pending_drafts_after_close(root: Path, closed_ticket_id: str) -> None:
     """T-2738: `frob ticket close` used to leave every `T-draft-*`
     follow-up the closed ticket filed stranded, never promoted to a real
@@ -1735,9 +1705,6 @@ def _promote_pending_drafts_after_close(root: Path, closed_ticket_id: str) -> No
 
 
 # frob:ticket T-1005
-# frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_reruns_verification_and_refreshes_recap_state_unchanged  # noqa: E501
-# frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_surfaces_now_failing_evidence_loudly  # noqa: E501
-# frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_refuses_non_done_ticket
 def _reverify(root: Path, cfg: AppConfig) -> None:
     """`frob ticket reverify <id>`: the missing verb for a post-close
     send-back (churn item 6, docs/audits/coordination-churn.md -- ~5
@@ -1953,8 +1920,6 @@ def _requeue_if_in_progress(root: Path, ticket_id: str, ticket) -> None:
 
 
 # frob:ticket T-3137
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestFailNotVisibleOnPrimaryWarning.test_fail_from_worktree_warns_when_not_visible_on_primary  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestFailNotVisibleOnPrimaryWarning.test_fail_from_primary_is_quiet  # noqa: E501
 def _warn_if_fail_not_visible_on_primary(root: Path, ticket_id: str) -> None:
     """T-3137: `fail` (unlike `scope`/`block`/`attach`/... T-2563's
     `MIRRORED_LEDGER_VERBS`) commits its failure-log entry to `root`'s

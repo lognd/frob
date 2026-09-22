@@ -154,7 +154,6 @@ class Quantity(BaseModel):
 
 
 # frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
-# frob:tests tests/unit/strata/test_capacity_projection.py::TestProjectCapacityGrowth.test_at_projects_growth_and_can_fire  # noqa: E501
 class Growth(BaseModel):
     """T-2016: a `growth PERCENT per PERIOD` modifier on a `users`/`rate`
     demand declaration -- compound, not linear (docs/strata/kernel.md
@@ -170,10 +169,8 @@ class Growth(BaseModel):
     pct: float
     period: str  # one of _UNITS's time-dimension keys, e.g. "w"/"mo"/"y"
 
-    # frob:tests \
     # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_resolves_known_t\
     # ime_unit kind="unit"
-    # frob:tests \
     # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_unknown_unit_is_\
     # err kind="unit"
     def period_seconds(self) -> Result[float, StrataError]:

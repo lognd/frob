@@ -131,11 +131,6 @@ def _hit_violation(rel_path: str, hit: "FingerprintHit") -> Violation:
 
 # frob:doc docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-t-0153
 # frob:ticket T-0439
-# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_smelly_file_fires  # noqa: E501
-# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_clean_file_does_not_fire  # noqa: E501
-# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_self_excluded_files_not_scanned  # noqa: E501
-# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_undecodable_file_fires_parse001  # noqa: E501
-# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_undecodable_file_under_graph_exclude_is_silent  # noqa: E501
 # frob:ticket T-0897
 # frob:enforces CHK-GATE-SEC-CVE-FINGERPRINT-001
 # frob:enforces SEC-CVE-FINGERPRINT-FP-EXEC-SHELL-001

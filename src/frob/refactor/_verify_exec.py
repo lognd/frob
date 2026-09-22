@@ -71,10 +71,7 @@ def _spawn_pytest_collect(
 # frob:doc docs/commands/refactor.md#verify_pytest_collect
 # frob:ticket T-3136
 # frob:ticket T-3311
-# frob:tests tests/test_refactor.py::TestVerify.test_pytest_collect_reports_failure
-# frob:tests \
 #   tests/test_refactor.py::TestVerify.test_pytest_collect_skips_non_python_touched_files  # noqa: E501
-# frob:tests \
 #   tests/test_refactor.py::TestVerify.test_pytest_collect_passes_when_all_touched_files_non_python  # noqa: E501
 def verify_pytest_collect(
     repo_root: Path, targets: list[Path] | None = None, timeout: int = 100
@@ -128,8 +125,6 @@ def verify_pytest_collect(
 
 
 # frob:doc docs/commands/refactor.md#verify_check_delta
-# frob:tests tests/test_refactor.py::TestVerify.test_check_delta_reports_command_failure
-# frob:tests \
 # tests/test_refactor.py::TestVerify.test_check_delta_uses_current_interpreter
 def verify_check_delta(repo_root: Path, timeout: int = 100) -> VerifyOutcome:
     """Post-condition 3: `frob check --delta` against a pre-refactor

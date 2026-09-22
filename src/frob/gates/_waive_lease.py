@@ -51,11 +51,6 @@ def active_ticket(root: Path, explicit: str | None) -> Option[str]:
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0787
 # frob:ticket T-1556
-# frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_no_lease_mechanism_engaged_passes_through kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_pinned_lease_for_this_worktree_passes kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_lease_absent_for_this_worktree_refuses kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_lease_recorded_elsewhere_refuses kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_tickets_leases.py::TestTicketLeasePin.test_mutating_false_skips_the_pin_ch\
 # eck_entirely
 def ticket_lease_pin(

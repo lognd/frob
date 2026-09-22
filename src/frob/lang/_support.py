@@ -209,7 +209,6 @@ ADAPTER_CAPABILITIES: tuple[str, ...] = (
 
 
 # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
-# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_fully_registered_language_passes  # noqa: E501
 class CapabilityRequirement(StrEnum):
     """Whether a `(language, capability)` cell is REQUIRED (every language
     must eventually reach `IMPLEMENTED`, or be a reasoned `NOT_APPLICABLE`)
@@ -264,7 +263,6 @@ class LanguageSupport(BaseModel):
     facets: dict[str, FacetStatus]
 
     # frob:doc docs/modules/lang.md#language-support-contract
-    # frob:tests tests/test_lang_support.py::TestConformanceViolations.test_missing_facet_fails  # noqa: E501
     def missing_facets(self) -> tuple[str, ...]:
         """Facets in `FACETS` entirely absent from `self.facets`, sorted.
 
@@ -274,7 +272,6 @@ class LanguageSupport(BaseModel):
         return tuple(f for f in FACETS if f not in self.facets)
 
     # frob:doc docs/modules/lang.md#language-support-contract
-    # frob:tests tests/test_lang_support.py::TestConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
     def unreasoned_facets(self) -> tuple[str, ...]:
         """Present facets whose `NOT_APPLICABLE`/`KNOWN_GAP` `detail` is blank.
 
@@ -285,7 +282,6 @@ class LanguageSupport(BaseModel):
 
 
 # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
-# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_fully_registered_language_passes  # noqa: E501
 class CapabilityStatus(BaseModel):
     """One `(language, capability)` cell: requirement, state, and an honest
     detail string -- the same `FacetState`/reasoned-detail discipline
@@ -301,7 +297,6 @@ class CapabilityStatus(BaseModel):
 
 
 # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
-# frob:tests tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_covers_every_supported_language  # noqa: E501
 class AdapterCapabilitySupport(BaseModel):
     """One language's full adapter-capability accounting -- the T-2365
     typed registration, structurally identical in spirit to
@@ -316,7 +311,6 @@ class AdapterCapabilitySupport(BaseModel):
     capabilities: dict[str, CapabilityStatus]
 
     # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
-    # frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_missing_capability_fails  # noqa: E501
     def missing_capabilities(self) -> tuple[str, ...]:
         """Capabilities in `ADAPTER_CAPABILITIES` entirely absent from
         `self.capabilities`, sorted -- mirrors `LanguageSupport.
@@ -324,7 +318,6 @@ class AdapterCapabilitySupport(BaseModel):
         return tuple(c for c in ADAPTER_CAPABILITIES if c not in self.capabilities)
 
     # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
-    # frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
     def unreasoned_capabilities(self) -> tuple[str, ...]:
         """Present capabilities whose `NOT_APPLICABLE`/`KNOWN_GAP` `detail`
         is blank -- shares `_unreasoned_names` with `LanguageSupport.
@@ -334,8 +327,6 @@ class AdapterCapabilitySupport(BaseModel):
 
 
 # frob:doc docs/modules/lang.md#language-support-contract
-# frob:tests tests/test_lang_support.py::TestConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
-# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
 # frob:waive COV007 reason="docs/modules/lang.md's Adapter-capability contract \
 # (T-2365) section documents several symbols under one section, not just a public \
 # entry point -- the many-symbols- one-section convention this repo already accepted \
@@ -480,7 +471,6 @@ _ARCH_DISPATCHED_LANGUAGES = frozenset({"python", "cpp"})
 # `derive_language_registry()` catch drift the same way the arch mirror
 # above describes.
 # frob:ticket T-2996
-# frob:tests tests/test_lang_support.py::test_refactor_adapter_languages_matches_live_registry  # noqa: E501
 # see T-2996 for the history behind this
 _REFACTOR_ADAPTER_LANGUAGES = frozenset({"python"})
 
@@ -671,7 +661,6 @@ def _refactor_status(language: str) -> FacetStatus:
 # frob:doc docs/modules/lang.md#language-support-contract
 # frob:ticket T-0405
 # frob:ticket T-2996
-# frob:tests tests/test_lang_support.py::TestDeriveLanguageRegistry.test_covers_every_supported_language  # noqa: E501
 def derive_language_registry() -> dict[str, LanguageSupport]:
     """One `LanguageSupport` per `frob.lang.supported_languages()` member.
 
@@ -703,8 +692,6 @@ def derive_language_registry() -> dict[str, LanguageSupport]:
 
 # frob:doc docs/modules/lang.md#language-support-contract
 # frob:ticket T-0405
-# frob:tests tests/test_lang_support.py::TestConformanceViolations.test_missing_facet_fails  # noqa: E501
-# frob:tests tests/test_lang_support.py::TestConformanceViolations.test_fully_registered_language_passes  # noqa: E501
 def conformance_violations(
     registry: dict[str, LanguageSupport],
 ) -> tuple[str, ...]:
@@ -925,11 +912,8 @@ _TEST_DISCOVERY_COLLECTORS: dict[str, str] = {
 
 
 # frob:ticket T-2499
-# frob:tests \
 # tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_kotlin_test_discovery_is_implemented  # noqa: E501
-# frob:tests \
 # tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_test_discovery_known_gap_tracks_a_language_absent_from_registry  # noqa: E501
-# frob:tests \
 # tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_test_discovery_known_gap_when_registry_entry_is_stale  # noqa: E501
 def _capability_test_discovery_status(language: str) -> CapabilityStatus:
     """IMPLEMENTED iff `language` has a real entry in
@@ -987,7 +971,6 @@ def _capability_test_discovery_status(language: str) -> CapabilityStatus:
 
 # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
 # frob:ticket T-2365
-# frob:tests tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_covers_every_supported_language  # noqa: E501
 def derive_capability_registry() -> dict[str, AdapterCapabilitySupport]:
     """One `AdapterCapabilitySupport` per `frob.lang.supported_languages()`
     member -- the capability-axis analogue of `derive_language_registry`.
@@ -1019,8 +1002,6 @@ def derive_capability_registry() -> dict[str, AdapterCapabilitySupport]:
 
 # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
 # frob:ticket T-2365
-# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_missing_capability_fails  # noqa: E501
-# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_fully_registered_language_passes  # noqa: E501
 def capability_conformance_violations(
     registry: dict[str, AdapterCapabilitySupport],
 ) -> tuple[str, ...]:
@@ -1065,7 +1046,6 @@ def capability_conformance_violations(
 
 # frob:doc docs/modules/lang.md#package-language-axis-t-2996
 # frob:ticket T-2996
-# frob:tests tests/test_lang_support.py::TestPackageAudit.test_every_measured_package_is_registered  # noqa: E501
 class PackageLanguageAxis(StrEnum):
     """How a package's per-language specialisation is accounted for
     (T-2996 part 2): `FACET`/`CAPABILITY` mean an existing FACETS/
@@ -1082,7 +1062,6 @@ class PackageLanguageAxis(StrEnum):
 
 # frob:doc docs/modules/lang.md#package-language-axis-t-2996
 # frob:ticket T-2996
-# frob:tests tests/test_lang_support.py::TestPackageAudit.test_every_measured_package_is_registered  # noqa: E501
 class PackageAudit(BaseModel):
     """One package's T-2996 part-2 classification: which axis accounts
     for its per-language specialisation, plus the reasoning."""
@@ -1095,7 +1074,6 @@ class PackageAudit(BaseModel):
 
 # frob:doc docs/modules/lang.md#package-language-axis-t-2996
 # frob:ticket T-2996
-# frob:tests tests/test_lang_support.py::TestPackageAudit.test_every_measured_package_is_registered  # noqa: E501
 #: T-2996 part 2's declared registry: every `frob.*` package this ticket's
 #: survey found branching on language identity (plus `frob.refactor`,
 #: which branches on nothing but is Python-only anyway -- the invisible
@@ -1315,8 +1293,6 @@ LANGUAGE_SENSITIVE_PACKAGES: dict[str, PackageAudit] = {
 
 # frob:doc docs/modules/lang.md#package-language-axis-t-2996
 # frob:ticket T-2996
-# frob:tests tests/test_lang_support.py::TestPackageAudit.test_must_fire_unregistered_language_branching  # noqa: E501
-# frob:tests tests/test_lang_support.py::TestPackageAudit.test_must_stay_quiet_agnostic_package  # noqa: E501
 # frob:waive ARCH001 reason="one cohesive AST-based scan (default-resolve known_languages/registry, then walk each package dir's .py files looking for a language-literal ast.Constant) -- splitting the default-resolution preamble or the inner per-file AST walk into a second function would fragment one linear pass into two callers that must always run together, the opposite of T-2996's own no-duplication rule"  # noqa: E501
 def unfaceted_packages(
     src_root: Path,

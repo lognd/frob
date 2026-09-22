@@ -10,10 +10,6 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-1567
-# frob:tests tests/unit/test_app_runners.py::TestQualityRunner.test_subcommand_delegates_to_matching_runner  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestQualityRunner.test_arch_subcommand_delegates_to_arch_runner  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestQualityRunner.test_mutate_subcommand_missing_file_exits_nonzero  # noqa: E501
-# frob:tests \
 # tests/unit/test_app_runners.py::TestQualityRunner.test_unknown_subcommand_exits_1
 def run(cfg: AppConfig) -> None:
     """`frob quality <check|test|dup|arch|cycle|mutate|perf>`: the T-1567

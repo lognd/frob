@@ -42,8 +42,6 @@ _DOTNET_RUN_TIMEOUT_S = 900.0
 
 # frob:doc docs/modules/testing.md#public-api
 # frob:ticket T-4508
-# frob:tests tests/unit/test_dotnet_runner.py::TestCsharpFqn.test_three_part_node_id_drops_path_joins_dots  # noqa: E501
-# frob:tests tests/unit/test_dotnet_runner.py::TestCsharpFqn.test_no_separator_passes_through_unchanged  # noqa: E501
 def _csharp_fqn(node_id: str) -> str:
     """The `<path>::<Namespace.Class>::<Method>` node id
     (`frob.testing._collect_csharp`'s NODE ID SHAPE) as .NET's dotted
@@ -63,8 +61,6 @@ def _csharp_fqn(node_id: str) -> str:
 
 
 # frob:ticket T-4508
-# frob:tests tests/unit/test_dotnet_runner.py::TestDotnetFilterExpr.test_single_item_no_or_operator  # noqa: E501
-# frob:tests tests/unit/test_dotnet_runner.py::TestDotnetFilterExpr.test_multiple_items_ored  # noqa: E501
 def _dotnet_filter_expr(items: tuple[str, ...]) -> str:
     """A `dotnet test --filter` boolean-OR expression selecting every
     `_csharp_fqn` derived from `items` (dotnet's `--filter` grammar ORs
@@ -83,8 +79,6 @@ def _strip_xml_ns(tag: str) -> str:
 
 
 # frob:ticket T-4508
-# frob:tests tests/unit/test_dotnet_runner.py::TestParseTrx.test_parses_static_fixture_into_fqn_outcome_map  # noqa: E501
-# frob:tests tests/unit/test_dotnet_runner.py::TestParseTrx.test_malformed_xml_is_err_not_empty  # noqa: E501
 def _parse_trx(text: str) -> Result[dict[str, str], TestingError]:
     """Parse one VSTest TRX results file (`dotnet test --logger trx`'s
     native output format) into `{dotted_fqn: outcome}` (outcome is TRX's
@@ -182,10 +176,6 @@ def _run_dotnet_test_process(
 
 # frob:doc docs/modules/testing.md#public-api
 # frob:ticket T-4508
-# frob:tests tests/unit/test_dotnet_runner.py::TestRunDotnetTests.test_maps_passing_and_failing_ids  # noqa: E501
-# frob:tests tests/unit/test_dotnet_runner.py::TestRunDotnetTests.test_no_items_is_ok_empty  # noqa: E501
-# frob:tests tests/unit/test_dotnet_runner.py::TestRunDotnetTests.test_crash_with_no_results_file_is_run_failed  # noqa: E501
-# frob:tests tests/unit/test_dotnet_runner.py::TestRunDotnetTests.test_requested_id_missing_from_results_is_err  # noqa: E501
 # frob:waive WIRE001 reason="the direct evidence-channel entry point this ticket adds; \
 # routing frob's ticket-runner CLI to call it for csharp node ids is T-4516's own \
 # scope (blocked_by T-4518's project-model detection), not this ticket's" \

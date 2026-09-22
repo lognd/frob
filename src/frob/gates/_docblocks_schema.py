@@ -184,10 +184,8 @@ def _docblocks_command_records(root: Path) -> list[dict] | None:
 
 # frob:enforces CHK-GATE-DOCBLOCKSSCHEMA001
 # frob:doc docs/modules/gates.md#docblocksschema001-t-2390-epic-child-t-2434
-# frob:tests \
 # tests/unit/test_docblocks_table_schema.py::TestDocblocksSchemaGate.test_must_now_fire\
 # _reports_the_undeclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_docblocks_table_schema.py::TestDocblocksSchemaGate.test_must_still_pa\
 # ss_this_repos_own_frob_toml kind="unit"
 # frob:ticket T-2434

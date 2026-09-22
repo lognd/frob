@@ -1,5 +1,5 @@
 ---
-id: T-draft-d7a5f3f5
+id: T-5322
 title: 'A11Y129-135: redundant entry, accessible authentication, contrast'
 state: queued
 kind: feature

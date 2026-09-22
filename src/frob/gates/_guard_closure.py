@@ -70,8 +70,6 @@ __all__ = [
 
 
 # frob:doc docs/modules/gates.md#guard001-t-4111
-# frob:tests tests/gates_suite/test_guard_closure.py::test_load_guard_closure_pairs_reads_frob_toml  # noqa: E501
-# frob:tests tests/gates_suite/test_guard_closure.py::test_guard001_honors_configured_pair_and_route_marker  # noqa: E501
 @dataclass(frozen=True)
 class GuardClosurePair:
     """One configured lockout READ/WRITE primitive-name pair GUARD001
@@ -98,8 +96,6 @@ _DEFAULT_ROUTE_MARKERS: frozenset[str] = frozenset(
 
 
 # frob:doc docs/modules/gates.md#guard001-t-4111
-# frob:tests tests/gates_suite/test_guard_closure.py::test_load_guard_closure_pairs_defaults_when_unconfigured  # noqa: E501
-# frob:tests tests/gates_suite/test_guard_closure.py::test_load_guard_closure_pairs_reads_frob_toml  # noqa: E501
 def load_guard_closure_pairs(
     root: Path,
 ) -> tuple[tuple[GuardClosurePair, ...], frozenset[str]]:
@@ -278,9 +274,6 @@ def _class_violations(
 
 
 # frob:doc docs/modules/gates.md#guard001-t-4111
-# frob:tests tests/gates_suite/test_guard_closure.py::test_guard001_fires_when_no_writer_reachable  # noqa: E501
-# frob:tests tests/gates_suite/test_guard_closure.py::test_guard001_quiet_when_writer_reachable_from_same_class_route  # noqa: E501
-# frob:tests tests/gates_suite/test_guard_closure.py::test_guard001_fires_when_writer_reachable_only_from_a_different_class  # noqa: E501
 def guard_closure_gate(root: Path) -> list[Violation]:
     """GUARD001: flag every class whose lockout READ call site has no
     write-primitive caller reachable from a route entry point in that

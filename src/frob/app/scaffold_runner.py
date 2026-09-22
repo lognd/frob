@@ -14,7 +14,6 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-0877
-# frob:tests tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli.test_warm_lease_status_roundtrip  # noqa: E501
 # frob:waive ARCH103 reason="T-0977: thin CLI wrapper dispatching to \
 # warm_pool/lease_worktree/pool_status by subcommand and rendering the result \
 # text-or-json -- the dispatch+render IS this wrapper's whole documented job (see \
@@ -59,9 +58,6 @@ def _run_pool(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-4578
-# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_success  # noqa: E501
-# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_output_exists_refusal  # noqa: E501
-# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_not_a_unity_project  # noqa: E501
 def _run_unity_project(cfg: AppConfig) -> None:
     """`frob scaffold unity-project <dir> [--force]` (T-4578): thin CLI
     wrapper over T-4503's `render_unity_project`, whose root-only
@@ -91,9 +87,6 @@ def _run_unity_project(cfg: AppConfig) -> None:
 # frob:ticket T-0736
 # frob:ticket T-4578
 # frob:ticket T-4416
-# frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldApplyCli.test_apply_reports_changes  # noqa: E501
-# frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_success  # noqa: E501
-# frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldNewProfileRecommendation.test_new_small_project_prints_no_recommendation  # noqa: E501
 # frob:waive AFFECT001 reason="see T-4416's Done report / ticket body for why \
 # app.md#runners and worktree-pool.md need no edit"
 def run(cfg: AppConfig) -> None:

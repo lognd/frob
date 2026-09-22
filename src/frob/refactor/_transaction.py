@@ -134,7 +134,6 @@ def _prose_carrier_ops(
 
 
 # frob:doc docs/commands/refactor.md#build_plan
-# frob:tests \
 # tests/test_refactor.py::TestBuildPlan.test_plan_includes_move_and_reference_ops
 def build_plan(
     repo_root: Path,
@@ -307,9 +306,7 @@ def build_plan(
 
 
 # frob:ticket T-1854
-# frob:tests \
 # tests/test_refactor.py::TestRunRefactor.test_per_ticket_evidence_rewrite_routes_through_replace_evidence  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestRunRefactor.test_evidence_rewrite_not_in_structured_evidence_falls_back_to_raw_op  # noqa: E501
 def _route_evidence_rebinds_through_replace_evidence(
     repo_root: Path, plan: RefactorPlan, destination: SymbolRef
@@ -458,8 +455,6 @@ def _resolve_and_plan(
 
 
 # frob:doc docs/commands/refactor.md#run_refactor
-# frob:tests tests/test_refactor.py::TestRunRefactor.test_rename_succeeds_and_commits
-# frob:tests tests/test_refactor.py::TestRunRefactor.test_verify_failure_rolls_back
 def run_refactor(
     repo_root: Path,
     kind: RefactorKind,

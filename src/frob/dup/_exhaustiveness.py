@@ -373,7 +373,6 @@ class DupMatrixCell(BaseModel):
 
 # frob:doc docs/modules/dup.md#public-api
 # frob:ticket T-0199
-# frob:tests tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness.test_matrix_covers_every_rung_clone_type_and_language kind="unit"  # noqa: E501
 def dup_matrix() -> tuple[DupMatrixCell, ...]:
     """The full (rung x clone_type x language) matrix, restricted to
     cells `RUNG_SPECS.claimed_clone_types` actually puts in play: every
@@ -408,7 +407,6 @@ def dup_matrix() -> tuple[DupMatrixCell, ...]:
 
 # frob:doc docs/modules/dup.md#public-api
 # frob:ticket T-0199
-# frob:tests tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness.test_no_unclaimed_cells kind="unit"  # noqa: E501
 def unclaimed_cells() -> tuple[DupMatrixCell, ...]:
     """Every matrix cell with neither a claim nor an excuse -- the T-0199
     gate failure condition. Empty tuple = the exhaustiveness claim holds."""
@@ -417,7 +415,6 @@ def unclaimed_cells() -> tuple[DupMatrixCell, ...]:
 
 # frob:doc docs/modules/dup.md#public-api
 # frob:ticket T-0199
-# frob:tests tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness.test_every_claim_names_a_registered_rung_and_claimed_type kind="unit"  # noqa: E501
 def validate_claim_rungs(claims: tuple[DupClaim, ...] = DUP_CLAIMS) -> tuple[str, ...]:
     """Drift-lock: every `DupClaim.rung` must name a registered
     `RUNG_SPECS` entry and its `clone_type` must be one that rung claims.

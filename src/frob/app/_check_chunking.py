@@ -175,7 +175,6 @@ def _save_budget_timing_samples(root: Path, samples: dict[str, list[float]]) -> 
 
 
 # frob:ticket T-2809
-# frob:tests tests/unit/test_check_budget.py::TestBudgetTimingSampleWindow.test_appends_and_caps_window  # noqa: E501
 def _record_budget_timing_sample(root: Path, group: str, elapsed_s: float) -> None:
     """Append one fresh raw `elapsed_s` measurement for `group` to its
     rolling window (T-2809), capped at `_BUDGET_TIMING_SAMPLE_WINDOW`
@@ -207,9 +206,6 @@ _POST_LAND_SWEEP_BUDGET_FLOOR_S = 300
 
 
 # frob:ticket T-2715
-# frob:tests tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget.test_derives_from_measured_timing_with_headroom  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget.test_falls_back_to_default_with_no_timing_data  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget.test_floor_protects_against_sparse_timing_data  # noqa: E501
 def _derive_post_land_sweep_budget_s(root: Path, *, default: int = 480) -> int:
     """T-2715: the post-land/pre-commit unscoped sweep's `--budget` ceiling,
     derived from `root`'s own recorded `.frob/check-budget-timing.json`
@@ -346,8 +342,6 @@ def _clear_budget_remaining(root: Path) -> None:
 
 
 # frob:ticket T-1004
-# frob:tests tests/unit/test_check_budget.py::TestSelectBudgetChunks.test_greedy_pack_fits_under_budget  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestSelectBudgetChunks.test_first_stage_always_selected_even_if_over_budget  # noqa: E501
 # frob:ticket T-1195
 def _select_budget_chunks(
     remaining: list[str], timing: dict[str, float], budget_s: int
@@ -675,16 +669,6 @@ def _resolve_budget_remaining(
 # frob:ticket T-1004
 # frob:ticket T-2235
 # frob:ticket T-2250
-# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_runs_selected_chunks_and_reports_result  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_persists_resume_state_for_deferred_groups  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_resumes_from_prior_remaining_state  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_clears_resume_state_once_every_group_has_run  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestBudgetCoverageReport.test_skipped_is_universe_minus_executed  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestBudgetCoverageReport.test_empty_skipped_present_not_absent  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_json_reports_universe_skip_despite_narrow_resume  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_only_scoped_budget_runs_exactly_the_named_group  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_only_scoped_budget_never_touches_shared_resume_state  # noqa: E501
-# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_only_budget_combo_refuses_a_bare_gate_name  # noqa: E501
 # frob:ticket T-1195
 def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
     """`frob check --budget SECONDS`: self-select and order `--only` stage

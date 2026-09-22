@@ -274,7 +274,6 @@ def _all_kinds_view(
     }
 
 
-# frob:tests tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock.test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds  # noqa: E501
 # frob:ticket T-2729
 def _observed_extended_kinds_by_node(
     binding: CodeBinding, root: Path
@@ -295,7 +294,6 @@ def _observed_extended_kinds_by_node(
     return _extended_kinds_view(_observed_raw_kinds_by_node(binding, root))
 
 
-# frob:tests tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock.test_observed_all_kinds_by_node_normalizes_through_kind_map  # noqa: E501
 # frob:ticket T-2729
 def _observed_all_kinds_by_node(
     binding: CodeBinding, root: Path

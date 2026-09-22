@@ -487,8 +487,6 @@ def _scan_dependencies_parallel(
 # running thread) but can no longer block interpreter shutdown.
 
 
-# frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_slow_package_returns_within_timeout_not_task_duration  # noqa: E501
-# frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
 # run_bounded/fn/frob._daemon_timeout internals, cross-module stdlib-adjacent \
 # threading calls the resolver cannot see through; the one deliberately special-cased \
@@ -735,9 +733,7 @@ def _resolve_lockfiles_and_deps(
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:tests \
 # tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
-# frob:tests \
 # tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
 # frob:ticket T-2233
 # frob:waive AFFECT001 reason="T-2233: this diff only retargets this file's frob.vet \

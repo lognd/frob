@@ -112,11 +112,8 @@ def quiet_stdout_logs() -> Iterator[None]:
 @contextlib.contextmanager
 # frob:doc docs/modules/logging.md#public-api
 # frob:ticket T-2582
-# frob:tests \
 # tests/unit/test_logging_quiet.py::TestQuietQueryStdout.test_quiets_by_default \
 # kind="unit"
-# frob:tests tests/unit/test_logging_quiet.py::TestQuietQueryStdout.test_frob_verbose_env_var_restores_full_chatter kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_logging_quiet.py::TestQuietQueryStdout.test_restores_on_exception \
 # kind="unit"
 def quiet_query_stdout() -> Iterator[None]:

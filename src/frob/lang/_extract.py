@@ -624,8 +624,6 @@ def extract_imports(tree: Tree, language: str) -> tuple[str, ...]:
 
 # frob:doc docs/modules/lang.md#extraction-api
 # frob:ticket T-3350
-# frob:tests tests/system/test_cli_cycle.py::test_toplevel_two_module_cycle_fires kind="e2e"  # noqa: E501
-# frob:tests tests/system/test_cli_cycle.py::test_deferred_only_cycle_does_not_fire kind="e2e"  # noqa: E501
 def extract_import_edges(tree: Tree, language: str) -> tuple[tuple[str, bool], ...]:
     """(spec, import_time) for every import in `language` (empty if unsupported).
 

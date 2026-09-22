@@ -55,14 +55,12 @@ class CleanReport(BaseModel):
     skipped_tracked: list[Path] = []
 
     # frob:doc docs/modules/clean.md#public-api
-    # frob:tests tests/test_clean.py::test_clean_execute_removes_matched
     @property
     def reclaimed_bytes(self) -> int:
         """Total bytes represented by every matched (not skipped) entry."""
         return sum(e.size_bytes for e in self.entries)
 
     # frob:doc docs/modules/clean.md#public-api
-    # frob:tests tests/test_clean.py::test_scan_tier1_matches_expected
     @property
     def count(self) -> int:
         """Number of matched (not skipped) entries."""

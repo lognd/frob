@@ -371,7 +371,6 @@ def _apply_process_bounds_waivers(
 # frob:enforces CHK-GATE-REL391
 # frob:enforces CHK-GATE-REL392
 # frob:enforces CHK-GATE-REL393
-# frob:tests tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test_kernel_interface_node_without_classification_fires  # noqa: E501
 def check_process_bounds_obligations(
     model: KernelModel, root: Path
 ) -> Result[ProcessBoundsReport, StrataError]:

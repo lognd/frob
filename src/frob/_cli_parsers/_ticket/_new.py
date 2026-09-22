@@ -18,9 +18,6 @@ _TICKET_WAIT_DEFAULT_S = 60.0
 
 
 # frob:ticket T-3614
-# frob:tests tests/unit/test_ticket_verbs_wait.py::TestAddWaitArg.test_bare_flag_uses_default_budget  # noqa: E501
-# frob:tests tests/unit/test_ticket_verbs_wait.py::TestAddWaitArg.test_flag_absent_leaves_wait_none  # noqa: E501
-# frob:tests tests/unit/test_ticket_verbs_wait.py::TestAddWaitArg.test_explicit_seconds_is_used_verbatim  # noqa: E501
 def _add_ticket_wait_arg(parser) -> None:  # noqa: ANN001
     """Register `--wait [SECONDS]` on `parser` (T-3614): a write verb that
     hits a held `LandInProgress`/`tickets.lock` window used to fail

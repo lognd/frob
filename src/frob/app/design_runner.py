@@ -10,9 +10,6 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-1568
-# frob:tests tests/unit/test_app_runners.py::TestDesignRunner.test_subcommand_delegates_to_matching_runner  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestDesignRunner.test_exports_subcommand_delegates_to_exports_runner  # noqa: E501
-# frob:tests \
 # tests/unit/test_app_runners.py::TestDesignRunner.test_unknown_subcommand_exits_1
 def run(cfg: AppConfig) -> None:
     """`frob design <sys|registry|docs|graph|exports>`: the T-1568

@@ -117,7 +117,6 @@ def _route_candidates(tree: ast.Module) -> tuple[tuple[str, int], ...]:
 
 # frob:enforces CHK-GATE-ROUTE001
 # frob:doc docs/modules/gate-route-response-model.md#route001-t-4115
-# frob:tests tests/gates_suite/test_route_response_model.py::TestRouteResponseModelGate.test_bare_dict_literal_return_fires  # noqa: E501
 def route_response_model_gate(root: Path) -> tuple[Violation, ...]:
     """ROUTE001: flag every route-decorated function (`@<obj>.get/post/
     put/patch/delete(...)`) whose body returns a bare `dict` literal

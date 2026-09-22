@@ -45,10 +45,6 @@ GENERATED_MARKER_RE = re.compile(
 
 
 # frob:doc docs/modules/graph.md#generated-file-marker
-# frob:tests tests/test_graph.py::TestGeneratedSource.test_is_generated_source_detects_repo_convention_header  # noqa: E501
-# frob:tests tests/test_graph.py::TestGeneratedSource.test_is_generated_source_detects_do_not_edit_and_at_markers  # noqa: E501
-# frob:tests tests/test_graph.py::TestGeneratedSource.test_is_generated_source_false_for_hand_authored_file  # noqa: E501
-# frob:tests tests/test_graph.py::TestGeneratedSource.test_is_generated_source_false_for_missing_file  # noqa: E501
 # frob:waive AFFECT001 reason="T-1062: EXHAUST001 hardening -- widened a narrow except \
 # OSError to except Exception around the same read-and-scan body; the documented 'read \
 # failure is not generated' contract and behavior are unchanged, nothing for \

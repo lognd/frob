@@ -109,7 +109,6 @@ _OTHER_LANGUAGE_CODE_EXTENSIONS = (
 
 
 # frob:doc docs/modules/graph.md#evidence-reach-t-3046
-# frob:tests tests/test_graph_reach.py::TestClassifyEvidenceReach.test_reaches_via_call_graph_closure  # noqa: E501
 class EvidenceReach:
     """The three classification values `classify_evidence_reach` can
     return. Plain string constants (not a `StrEnum`), matching
@@ -122,7 +121,6 @@ class EvidenceReach:
 
 
 # frob:doc docs/modules/graph.md#evidence-reach-t-3046
-# frob:tests tests/test_graph_reach.py::TestClassifyEvidenceReach.test_reaches_via_call_graph_closure  # noqa: E501
 class ReachResult(BaseModel):
     """One evidence id's classification against one ticket's scope:
     `status` is one of `EvidenceReach`'s three values, `reason` is a
@@ -229,22 +227,16 @@ def _is_test_shaped(path: str) -> bool:
 
 
 # frob:doc docs/modules/graph.md#evidence-reach-t-3046
-# frob:tests \
 # tests/test_graph_reach.py::TestClassifyEvidenceReach.test_reaches_via_call_graph_clos\
 # ure
-# frob:tests \
 # tests/test_graph_reach.py::TestClassifyEvidenceReach.test_reaches_via_co_located_test\
 # _file
-# frob:tests \
 # tests/test_graph_reach.py::TestClassifyEvidenceReach.test_does_not_reach_when_closure\
 # _misses_scope
-# frob:tests \
 # tests/test_graph_reach.py::TestClassifyEvidenceReach.test_unknown_when_test_symbol_un\
 # resolved
-# frob:tests \
 # tests/test_graph_reach.py::TestClassifyEvidenceReach.test_unknown_when_scope_is_nativ\
 # e_only
-# frob:tests \
 # tests/test_graph_reach.py::TestClassifyEvidenceReach.test_evidence_scope_alone_does_n\
 # ot_launder_reach
 # frob:ticket T-3046

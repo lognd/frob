@@ -87,7 +87,6 @@ def _resolve_scope(
 
 # frob:invariant INV-030
 # invariant spec: [INV-030](invariants/INV-030.md)
-# frob:tests tests/unit/strata/test_policy.py::TestScopeResolution.test_trust_scope_resolves_via_lattice  # noqa: E501
 def _resolve_trust_scope(
     value: str, model: KernelModel
 ) -> Result[tuple[str, ...], StrataError]:
@@ -315,12 +314,6 @@ def _pairwise_weakenings(
 # invariant spec: [INV-051](invariants/INV-051.md)
 # frob:doc docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482
 # frob:ticket T-1843
-# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_confine_use_broadened_home_detected  # noqa: E501
-# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_at_call_require_dropped_arg_detected  # noqa: E501
-# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_mediate_swapped_mediator_detected  # noqa: E501
-# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_no_finding_when_child_only_strengthens  # noqa: E501
-# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_no_finding_when_child_never_overlaps_parent_scope  # noqa: E501
-# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_forbid_call_never_flagged_even_when_child_narrows  # noqa: E501
 def find_policy_weakenings(compiled: CompiledPolicies) -> tuple[PolicyWeakening, ...]:
     """INV-051's refinement-monotonicity diff pass (T-1482): for every pair
     of compiled policies whose scope one strictly contains the other (the

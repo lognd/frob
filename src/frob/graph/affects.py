@@ -94,12 +94,6 @@ def _dependents_of(snapshot: GraphSnapshot, ref: str) -> set[str]:
 
 # frob:doc docs/modules/graph.md#affects
 # frob:invariant INV-014
-# frob:tests tests/test_graph_affects.py::TestAffects.test_direct_doc_and_test_edges
-# frob:tests tests/test_graph_affects.py::TestAffects.test_transitive_uses_contract_chain  # noqa: E501
-# frob:tests tests/test_graph_affects.py::TestAffects.test_cycle_guarded
-# frob:tests tests/test_graph_affects.py::TestAffects.test_truncated_at_max_depth
-# frob:tests tests/test_graph_affects.py::TestAffects.test_truncated_at_max_nodes
-# frob:tests tests/test_graph_affects.py::TestAffects.test_no_edges_is_empty_set
 # frob:ticket T-0972
 def affects(
     snapshot: GraphSnapshot,
@@ -168,9 +162,6 @@ def affects(
 
 # frob:doc docs/modules/graph.md#caller-dependents-t-4553
 # frob:ticket T-4553
-# frob:tests tests/unit/test_check_scoped_files.py::TestCallerDependentFiles.test_direct_caller_files_found  # noqa: E501
-# frob:tests tests/unit/test_check_scoped_files.py::TestCallerDependentFiles.test_already_covered_files_excluded  # noqa: E501
-# frob:tests tests/unit/test_check_scoped_files.py::TestCallerDependentFiles.test_capped_at_max_added  # noqa: E501
 def caller_dependent_files(
     graph: CallGraph,
     changed_symrefs: Iterable[str],
@@ -218,9 +209,7 @@ def caller_dependent_files(
 
 # frob:doc docs/modules/graph.md#caller-dependents-t-4553
 # frob:ticket T-4560
-# frob:tests \
 # tests/unit/test_check_scoped_files.py::TestPublicCallerDependentFiles.test_public_callee_caller_is_found_through_import_binding  # noqa: E501
-# frob:tests \
 # tests/unit/test_check_scoped_files.py::TestPublicCallerDependentFiles.test_same_named_private_helpers_in_different_modules_stay_unlinked  # noqa: E501
 def public_caller_dependent_files(
     root: Path,
@@ -332,12 +321,7 @@ def _ref_file(ref: str) -> str:
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
 # frob:ticket T-0998
 # frob:ticket T-3412
-# frob:tests tests/test_graph_affects.py::TestScopeDocCodeGaps.test_code_in_scope_doc_target_unscoped  # noqa: E501
-# frob:tests tests/test_graph_affects.py::TestScopeDocCodeGaps.test_doc_in_scope_code_target_unscoped  # noqa: E501
-# frob:tests tests/test_graph_affects.py::TestScopeDocCodeGaps.test_clean_when_both_sides_in_scope  # noqa: E501
-# frob:tests \
 # tests/test_graph_affects.py::TestScopeDocCodeGaps.test_scoping_the_whole_doc_file_subsumes_its_own_anchors  # noqa: E501
-# frob:tests \
 # tests/test_graph_affects.py::TestScopeDocCodeGaps.test_scoping_the_whole_doc_file_still_flags_a_genuinely_unscoped_anchor  # noqa: E501
 def scope_doc_code_gaps(
     snapshot: GraphSnapshot, scope: tuple[str, ...] | list[str]
@@ -385,9 +369,6 @@ def scope_doc_code_gaps(
 
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
 # frob:ticket T-0998
-# frob:tests tests/test_graph_affects.py::TestScopeTestGaps.test_code_in_scope_test_target_unscoped  # noqa: E501
-# frob:tests tests/test_graph_affects.py::TestScopeTestGaps.test_test_in_scope_code_target_unscoped  # noqa: E501
-# frob:tests tests/test_graph_affects.py::TestScopeTestGaps.test_clean_when_both_sides_in_scope  # noqa: E501
 def scope_test_gaps(
     snapshot: GraphSnapshot, scope: tuple[str, ...] | list[str]
 ) -> tuple[ScopeClosureGap, ...]:

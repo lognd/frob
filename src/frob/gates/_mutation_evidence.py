@@ -56,13 +56,7 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 # frob:enforces CHK-THEME-EXISTENCE-NOT-PROOF
 # frob:enforces CHK-SUBSYS-TICKETS-TESTING
 # frob:enforces CHK-GATE-TEST018
-# frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_warn_for_feature_kind  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_error_for_security_kind  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_findings_no_violations  # noqa: E501
-# frob:tests tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches.test_exec_disabled_degrades_to_no_violations  # noqa: E501
 # frob:ticket T-1733
-# frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_evidence_weakened_and_confirmatory_refuses_outright  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_evidence_changes_never_produces_test018  # noqa: E501
 def mutation_evidence_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:
@@ -243,16 +237,10 @@ def _quoted_span_ranges(
 
 # frob:ticket T-2218
 # frob:ticket T-2243
-# frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_fenced_quoted
-# frob:tests \
 # tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_inline_span_quoted
-# frob:tests \
 # tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_blockquote_quoted
-# frob:tests \
 # tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_indented_quoted
-# frob:tests \
 # tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_plain_text_not_quoted
-# frob:tests \
 # tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_double_quoted_span_quoted
 def _quoted_char_ranges(body: str) -> tuple[tuple[int, int], ...]:
     """Character-offset ranges of `body` (a ticket's markdown body text)

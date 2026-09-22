@@ -118,7 +118,6 @@ def _crate_dir_for(root: Path, spec: NativeSpec) -> Path | None:
 
 # frob:ticket T-0864
 # frob:doc docs/modules/cli.md#frob-natives-build-t-0864
-# frob:tests \
 # tests/unit/test_natives_build.py::TestBuildNatives.test_builds_declared_rust_natives
 def build_natives(root: Path) -> Result[BuildReport, NativesError]:
     """Build every declared rust `[[native]]` crate via `maturin develop

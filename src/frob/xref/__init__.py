@@ -43,7 +43,6 @@ class XrefResult(BaseModel):
     usages: list[Usage]
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_xref.py::test_as_text
     def as_text(self, cross_file: bool = False) -> str:
         # frob:doc docs/commands/xref.md#public-api
         parts = [self.symbol]
@@ -73,7 +72,6 @@ class XrefResult(BaseModel):
         return "\n".join(parts)
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_xref.py::test_as_json
     def as_json(self) -> str:
         # frob:doc docs/commands/xref.md#public-api
         return self.model_dump_json(indent=2)

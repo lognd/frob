@@ -35,7 +35,6 @@ _Id = TypeVar("_Id", bound=Hashable)
 
 
 # frob:doc docs/modules/graph.md#hierarchy-t-3032
-# frob:tests tests/unit/test_graph_hierarchy.py::TestChildrenByParentId.test_builds_adjacency_from_parent_pairs  # noqa: E501
 def children_by_parent_id(
     items: Iterable[tuple[_Id, _Id | None]],
 ) -> dict[_Id, list[_Id]]:
@@ -55,7 +54,6 @@ def children_by_parent_id(
 
 
 # frob:doc docs/modules/graph.md#hierarchy-t-3032
-# frob:tests tests/unit/test_graph_hierarchy.py::TestDescendantIds.test_direct_children_only  # noqa: E501
 def descendant_ids(root_id: _Id, children_of: Mapping[_Id, list[_Id]]) -> list[_Id]:
     """Every id reachable from `root_id` via `children_of`
     (`children_by_parent_id`'s output), at ANY depth, each visited

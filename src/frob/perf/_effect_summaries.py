@@ -140,7 +140,6 @@ UNKNOWN_KIND = "unknown"
 
 
 # frob:doc docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-0922  # noqa: E501
-# frob:tests tests/unit/perf/test_effect_summaries.py::TestUnknownIdentityEquality.test_two_unknowns_with_the_same_reason_text_are_not_equal  # noqa: E501
 # frob:ticket T-0922
 class Unknown:
     """T-0922 acceptance criterion (c): an explicit, non-empty marker for
@@ -337,7 +336,6 @@ def _callee_short_name(node: Node) -> str | None:
 
 
 # frob:doc docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-0922  # noqa: E501
-# frob:tests tests/unit/perf/test_effect_summaries.py::TestEffectGraphSummaryUnknownDegradation.test_fully_resolvable_call_path_has_no_unknown_member  # noqa: E501
 # frob:ticket T-0922
 class EffectGraph:
     """The SHARED interprocedural EFFECT-SUMMARY substrate (T-0922,
@@ -406,7 +404,6 @@ class EffectGraph:
                 self._called[symref] = _called_names_from_tokens(sym.body_tokens)
 
     # frob:doc docs/modules/perf.md#loop-invariant-effectful-call-detector-perf008-t-0775  # noqa: E501
-    # frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_loop_invariant_spawn_call_three_hops_deep_is_flagged  # noqa: E501
     # frob:ticket T-0922
     def reachable_effect(
         self, callee_name: str, receiver_class: str | None = None
@@ -441,7 +438,6 @@ class EffectGraph:
         return None
 
     # frob:doc docs/modules/perf.md#three-false-positive-classes-closed-t-1053
-    # frob:tests tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_lru_cache_decorated_symbol_is_memoized  # noqa: E501
     # frob:ticket T-1053
     def is_memoized(self, symref: str) -> bool:
         """True if `symref` (T-1053) is itself decorated `@lru_cache`/
@@ -450,7 +446,6 @@ class EffectGraph:
         return symref in self._memoized
 
     # frob:doc docs/modules/perf.md#three-false-positive-classes-closed-t-1053
-    # frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_loop_invariant_call_to_lru_cached_helper_is_not_flagged  # noqa: E501
     # frob:ticket T-1053
     def callee_is_memoized(self, callee_name: str) -> bool:
         """True (T-1053) if EVERY symbol named `callee_name` this graph
@@ -499,7 +494,6 @@ class EffectGraph:
         return self._direct[found], found
 
     # frob:doc docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919  # noqa: E501
-    # frob:tests tests/unit/perf/test_effect_summaries.py::TestEffectGraphSummaryUnknownDegradation.test_ambiguous_cross_file_callee_yields_an_explicit_unknown_member  # noqa: E501
     # frob:ticket T-0922
     def resolve_scoped(
         self,

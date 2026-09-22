@@ -68,8 +68,6 @@ def _dir_size(path: Path) -> int:
 
 
 # frob:ticket T-3220
-# frob:tests tests/test_clean.py::test_deep_clean_preserves_rapid_debt_jsonl
-# frob:tests \
 # tests/test_clean.py::test_deep_clean_still_wholesale_removes_frob_without_the_ledger
 def _protect_excluded_paths(root: Path, candidates: dict[Path, str]) -> dict[Path, str]:
     """T-3220: `candidates` with every `TIER3_PROTECTED_PATHS` entry
@@ -150,8 +148,6 @@ def _match_candidates(root: Path, patterns: tuple[str, ...]) -> dict[Path, str]:
 
 
 # frob:doc docs/modules/clean.md#public-api
-# frob:tests tests/test_clean.py::test_scan_tier1_matches_expected
-# frob:tests tests/test_clean.py::test_scan_skips_tracked_files
 # frob:invariant INV-008
 # invariant spec: [INV-008](invariants/INV-008.md)
 def scan(
@@ -196,9 +192,6 @@ def scan(
 
 
 # frob:doc docs/modules/clean.md#public-api
-# frob:tests tests/test_clean.py::test_clean_dry_run_removes_nothing
-# frob:tests tests/test_clean.py::test_clean_execute_removes_matched
-# frob:tests tests/test_clean.py::test_clean_never_touches_src
 def clean(
     root: Path,
     tier: CleanTier,

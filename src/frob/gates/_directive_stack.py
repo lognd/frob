@@ -82,7 +82,6 @@ def _stack_finding(
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:ticket T-4713
-# frob:tests \
 # tests/test_gates_directive_stack.py::TestDstack001MergeFix.test_interleaved_doc_tests_doc_collapses_to_one_doc_then_one_tests  # noqa: E501
 def edges_for_stack(
     snapshot: GraphSnapshot, *, file: str, src: str
@@ -97,7 +96,6 @@ def edges_for_stack(
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:ticket T-4713
-# frob:tests \
 # tests/test_gates_directive_stack.py::TestStackThresholdOffByOne.test_n_is_exactly_one_finding  # noqa: E501
 def stack_lint_violations(
     snapshot: GraphSnapshot, *, threshold: int = DEFAULT_STACK_THRESHOLD

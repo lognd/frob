@@ -39,7 +39,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_project_tool.py::TestResolveProjectTool.test_which_spawn_failure_is_err  # noqa: E501
 class ProjectToolError(ErrorSet):
     """Recoverable failures resolving or identifying a project-scoped
     toolchain binary through `uv run --project`: `uv` itself is not on
@@ -74,7 +73,6 @@ def _project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_project_tool.py::TestProjectToolArgv.test_shape
 def project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
     """The RUN-ONLY spawn kind (T-4171): invoking `tool` (e.g. `"ty"`,
     `"ruff"`, `"pytest"`) purely as a tool BINARY inside the project
@@ -114,10 +112,7 @@ def project_tool_argv(root: Path, tool: str, *args: str) -> list[str]:
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_check.py::TestProjectImportArgv.test_shape kind="unit"
-# frob:tests \
 # tests/unit/test_check.py::TestProjectImportArgv.test_same_shape_as_run_only kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestProjectToolSpawnNonMutation.test_import_spawn_does_not_mutate_an_already_present_env kind="unit"  # noqa: E501
 def project_import_argv(root: Path, tool: str, *args: str) -> list[str]:
     """The IMPORTING spawn kind (T-4171): a `tool` invocation (in
@@ -148,9 +143,6 @@ def project_import_argv(root: Path, tool: str, *args: str) -> list[str]:
 
 # frob:doc docs/modules/process.md#public-api
 # frob:ticket T-4354
-# frob:tests tests/unit/test_project_tool.py::TestToolAbsent.test_true_on_spawn_failure
-# frob:tests tests/unit/test_project_tool.py::TestToolAbsent.test_false_unrelated_exit
-# frob:tests tests/unit/test_project_tool.py::TestToolAbsent.test_false_wrong_tool
 def tool_absent_from_project(tool: str, exit_code: int, stderr: str) -> bool:
     """True iff `exit_code`/`stderr` are `uv run`'s OWN failure to spawn
     `tool` at all inside the target project -- never a diagnostic `tool`
@@ -194,7 +186,6 @@ def tool_absent_from_project(tool: str, exit_code: int, stderr: str) -> bool:
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_project_tool.py::TestToolIdentity.test_describe
 class ToolIdentity:
     """The RESOLVED identity of a project-scoped tool spawn: the
     absolute binary path `uv run` actually launched, and the tool's own
@@ -218,7 +209,6 @@ class ToolIdentity:
         return f"ToolIdentity(path={self.path!r}, version={self.version!r})"
 
     # frob:doc docs/modules/process.md#public-api
-    # frob:tests tests/unit/test_project_tool.py::TestToolIdentity.test_describe
     def describe(self) -> str:
         """One-line `<path> (<version>)` rendering for embedding in a
         gate refusal or diagnostic message."""
@@ -238,8 +228,6 @@ _WHICH_PROBE = (
 # frob:doc docs/modules/process.md#public-api
 # frob:ticket T-4125
 # frob:ticket T-4354
-# frob:tests tests/unit/test_project_tool.py::TestResolveProjectTool.test_ok_resolves_path_and_version  # noqa: E501
-# frob:tests tests/unit/test_project_tool.py::TestResolveProjectTool.test_absent_err
 def resolve_project_tool(
     root: Path, tool: str, timeout_s: float = 30.0
 ) -> Result[ToolIdentity, ProjectToolError]:

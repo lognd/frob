@@ -105,9 +105,6 @@ def _current_actor() -> str:
 # frob:ticket T-0455
 # frob:ticket T-0561
 # frob:ticket T-0422
-# frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_under_broad_lease_is_exempt  # noqa: E501
-# frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_existing_file_under_broad_lease_still_conflicts  # noqa: E501
-# frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_exact_match_of_holder_scope_still_conflicts  # noqa: E501
 def _scope_add_conflicts(
     glob: str,
     ticket_id: str,
@@ -220,9 +217,7 @@ def _live_lease_still_conflicts(holder_id: str, glob: str, root: Path) -> bool:
 
 # frob:ticket T-1880
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_no_collision_is_none
-# frob:tests tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_first_colliding_entry_wins  # noqa: E501
 def scope_lease_conflict(
     ticket_id: str,
     scope: Sequence[str],
@@ -313,9 +308,7 @@ def _scope_add_queue_conflict(
 # frob:ticket T-1868
 # frob:ticket T-1909
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestScopeAddIgnoresTerminalLease.test_dropped_ticket_on_local_ledger_does_not_block_live_lease  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Cross-worktree lease \
 # side channel (T-0473) section individually frob:describes this symbol by its own \
@@ -675,10 +668,7 @@ def _scope_change_entries(
 # frob:ticket T-0561
 # frob:ticket T-0422
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_granted
-# frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_leased_path_rejected_names_holder  # noqa: E501
-# frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_frees_path_for_other_doable  # noqa: E501
 def mutate_scope(
     root: Path,
     ticket_id: str,
@@ -865,10 +855,8 @@ def _write_scope_mutation(
 
 # frob:ticket T-1944
 # frob:doc docs/modules/tickets-landing.md#evidence-only-scope-t-1944
-# frob:tests \
 # tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test_demote_\
 # releases_the_lease_and_keeps_evidence_covered
-# frob:tests \
 # tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test_demote_\
 # refuses_an_undeclared_glob
 def demote_to_evidence_only(

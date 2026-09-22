@@ -30,7 +30,6 @@ _log = get_logger(__name__)
 #: does not have; disclosed as a real remaining gap, not silently
 #: dropped.
 # frob:ticket T-0971
-# frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_orm_declarative_base_field_fires  # noqa: E501
 _STRUCTURE_BASE_NAMES = frozenset(
     {"BaseModel", "TypedDict", "NamedTuple", "DeclarativeBase", "Model"}
 )
@@ -145,7 +144,6 @@ def _scan_class_fields(
     return violations
 
 
-# frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_password_field_fires
 # frob:waive AFFECT001 reason="T-1209 adds an optional internal _index perf kwarg \
 # (defaults to computing the same walk it always did); the documented PII010 \
 # behavior/output is unchanged (verified byte-identical before/after against this \
@@ -359,7 +357,6 @@ def _scan_ddl_strings(
     return violations
 
 
-# frob:tests tests/test_pii_structural_gate.py::TestDdlSchema.test_orm_column_password_fires  # noqa: E501
 def _scan_python_ddl(
     tree: ast.Module,
     rel_path: str,

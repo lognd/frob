@@ -47,8 +47,6 @@ _LOG_TIMEOUT_S = 60.0
 
 
 # frob:doc docs/modules/ghio.md#error-types
-# frob:tests tests/test_ghio.py::TestPreflight.test_not_installed
-# frob:tests tests/test_ghio.py::TestJobLog.test_empty_log_for_a_failed_job_is_named
 class GhError(ErrorSet):
     """Every named failure mode `frob.ghio` can hand back as a value --
     never a crash, never a silent empty result. T-2982's motivating
@@ -76,7 +74,6 @@ class GhError(ErrorSet):
 
 
 # frob:doc docs/modules/ghio.md#data-models
-# frob:tests tests/test_ghio.py::TestPreflight.test_success
 class GhEnvironment(BaseModel):
     """The result of `preflight`: whether `gh` is usable at all in this
     working tree, checked once so every other function in this module can
@@ -89,7 +86,6 @@ class GhEnvironment(BaseModel):
 
 
 # frob:doc docs/modules/ghio.md#data-models
-# frob:tests tests/test_ghio.py::TestListRuns.test_success_parses_rows
 class RunSummary(BaseModel):
     """One row of `gh run list --json`: enough to identify a run and its
     outcome without a second call."""
@@ -105,7 +101,6 @@ class RunSummary(BaseModel):
 
 
 # frob:doc docs/modules/ghio.md#data-models
-# frob:tests tests/test_ghio.py::TestViewRun.test_success_parses_jobs
 class JobSummary(BaseModel):
     """One job belonging to a run, as reported by `gh run view --json jobs`."""
 
@@ -118,7 +113,6 @@ class JobSummary(BaseModel):
 
 
 # frob:doc docs/modules/ghio.md#data-models
-# frob:tests tests/test_ghio.py::TestViewRun.test_success_parses_jobs
 class RunDetail(BaseModel):
     """A single run plus its jobs, from one `gh run view <id> --json` call."""
 
@@ -131,7 +125,6 @@ class RunDetail(BaseModel):
 
 
 # frob:doc docs/modules/ghio.md#data-models
-# frob:tests tests/test_ghio.py::TestJobLog.test_truncated_log_for_cancelled_run
 class JobLog(BaseModel):
     """A job's log text, with the measured empty/truncated distinctions
     made explicit rather than left for a caller to rediscover by
@@ -231,10 +224,7 @@ def _run_gh(
 
 
 # frob:doc docs/modules/ghio.md#public-api
-# frob:tests tests/test_ghio.py::TestPreflight.test_success
-# frob:tests \
 # tests/test_ghio.py::TestPreflight.test_no_gh_no_auth_no_remote_never_crashes
-# frob:tests \
 # tests/test_ghio.py::TestPreflightIntegration.test_real_subprocess_seam_against_a_fake\
 # _gh_binary
 def preflight(root: Path) -> Result[GhEnvironment, GhError]:
@@ -276,8 +266,6 @@ def preflight(root: Path) -> Result[GhEnvironment, GhError]:
 
 
 # frob:doc docs/modules/ghio.md#public-api
-# frob:tests tests/test_ghio.py::TestListRuns.test_success_parses_rows
-# frob:tests tests/test_ghio.py::TestListRuns.test_not_found_run_list_failure
 def list_runs(
     root: Path, *, limit: int = 20, workflow: str | None = None
 ) -> Result[tuple[RunSummary, ...], GhError]:
@@ -311,8 +299,6 @@ def list_runs(
 
 
 # frob:doc docs/modules/ghio.md#public-api
-# frob:tests tests/test_ghio.py::TestViewRun.test_success_parses_jobs
-# frob:tests tests/test_ghio.py::TestViewRun.test_run_not_found
 def view_run(root: Path, run_id: str) -> Result[RunDetail, GhError]:
     """`gh run view <run_id> --json status,conclusion,jobs`: one run plus
     every job it contains, in a single call. `Err(GhError.NotFound)` for
@@ -348,9 +334,6 @@ def view_run(root: Path, run_id: str) -> Result[RunDetail, GhError]:
 
 
 # frob:doc docs/modules/ghio.md#public-api
-# frob:tests tests/test_ghio.py::TestJobLog.test_empty_log_for_a_failed_job_is_named
-# frob:tests tests/test_ghio.py::TestJobLog.test_truncated_log_for_cancelled_run
-# frob:tests tests/test_ghio.py::TestJobLog.test_normal_log_is_not_truncated_not_empty
 def job_log(root: Path, run_id: str, job_id: str) -> Result[JobLog, GhError]:
     """A single job's log text, routed through the job-scoped REST route
     (`gh api repos/{owner}/{repo}/actions/jobs/{job_id}/logs`) rather than

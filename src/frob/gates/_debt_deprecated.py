@@ -196,11 +196,6 @@ def _debt003_violations(
 
 
 # frob:doc docs/modules/gates.md#debt-gate-t-0412
-# frob:tests tests/gates_suite/test_debt.py::TestDebtGate.test_debt001_malformed_directive_is_reported  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDebtGate.test_debt002_closed_ticket_is_reported  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_expired_by_date_is_reported  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_expired_by_version_is_reported  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDebtGate.test_clean_debt_produces_no_violations  # noqa: E501
 def debt_gate(
     snapshot: GraphSnapshot,
     queue: TicketQueue,
@@ -224,7 +219,6 @@ def debt_gate(
 
 
 # frob:doc docs/modules/gates.md#debt-gate-t-0412
-# frob:tests tests/gates_suite/test_debt.py::TestDebtGate.test_lists_every_debt_entry  # noqa: E501
 def list_debt(
     snapshot: GraphSnapshot, *, current_date: str, current_version: str
 ) -> tuple[DebtEntry, ...]:
@@ -732,8 +726,6 @@ def _references_from_index(symbol: str, index: _DeprecatedRefIndex) -> frozenset
 
 
 # frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr005_reference_set_combines_consumers_and_xref kind="unit"  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating.test_unrelated_same_name_call_in_non_importing_file_is_excluded kind="unit"  # noqa: E501
 def deprecated_current_references(symbol: str, root: Path) -> frozenset[str]:
     """The current `file:line` reference set for bare identifier `symbol`
     under `root` (T-0639, callgraph-resolved as of T-1052, index-backed as
@@ -822,8 +814,6 @@ def _depr005_edge_violations(
 
 
 # frob:enforces CHK-GATE-DEPR005
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.test_same_count_as_baseline_does_not_fire kind="unit"  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth.test_growth_beyond_baseline_fires_at_the_right_file_and_line kind="unit"  # noqa: E501
 def _depr005_violations(
     snapshot: GraphSnapshot, queue: TicketQueue, root: Path, *, current_date: str
 ) -> tuple[Violation, ...]:
@@ -883,8 +873,6 @@ def _depr005_violations(
 
 # frob:ticket T-3228
 # frob:enforces CHK-GATE-DEPR006
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr006ProducerAbandoned.test_abandoned_producer_fires_error kind="unit"  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr006ProducerAbandoned.test_pinned_producer_stays_quiet kind="unit"  # noqa: E501
 def _depr006_producer_abandoned(root: Path) -> tuple[Violation, ...]:
     """DEPR006 (T-3228, error): `frob.gates._lock_producer.producer_status`
     for the `deprecated-baseline` lock reads `ABANDONED` -- unpinned, and
@@ -923,13 +911,6 @@ def _depr006_producer_abandoned(root: Path) -> tuple[Violation, ...]:
 
 
 # frob:doc docs/modules/gates.md#deprecated-gate-t-0576
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr001_malformed_directive_is_reported  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr002_closed_ticket_is_reported  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr003_in_window_warns  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr004_past_sunset_errors  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_clean_deprecated_produces_no_violations  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr005_new_caller_errors  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr005_no_baseline_entry_is_silent  # noqa: E501
 def deprecated_gate(
     snapshot: GraphSnapshot,
     queue: TicketQueue,
@@ -959,7 +940,6 @@ def deprecated_gate(
 
 
 # frob:doc docs/modules/gates.md#deprecated-gate-t-0576
-# frob:tests tests/gates_suite/test_debt.py::TestDeprecatedGate.test_lists_every_deprecated_entry  # noqa: E501
 def list_deprecated(
     snapshot: GraphSnapshot, *, current_date: str
 ) -> tuple[DeprecatedEntry, ...]:
@@ -1025,13 +1005,6 @@ def _release_expired_deprecated_violations(
 # frob:ticket T-2581
 # frob:ticket T-4463
 # frob:enforces CHK-GATE-REL001
-# frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_open_ticket_in_cut_milestone_refuses  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_open_ticket_in_other_milestone_does_not_refuse  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_terminal_ticket_in_cut_milestone_does_not_refuse  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_no_open_tickets_in_milestone_succeeds  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_names_every_blocking_ticket  # noqa: E501
-# frob:tests tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_queue_unavailable_does_not_crash  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations.test_v_prefixed_ticket_milestone_refuses  # noqa: E501
 def _release_open_milestone_violations(
     root: Path, release_version: str

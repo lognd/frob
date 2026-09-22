@@ -58,7 +58,6 @@ OWNER_PID_FILENAME = ".frob-owner-pid"
 
 
 # frob:doc docs/modules/clean.md#frob-clean---sweep-disposable-worktrees-t-4437
-# frob:tests tests/unit/test_clean_worktrees_sweep.py::TestSweepDisposableWorktrees.test_dead_stamped_worktree_is_removed  # noqa: E501
 class DisposableWorktreeEntry(BaseModel):
     """One disposable scratch dir this sweep looked at (T-4437): its
     `scratch` root, the nested `worktree` path (`scratch/wt`, may not
@@ -74,7 +73,6 @@ class DisposableWorktreeEntry(BaseModel):
 
 
 # frob:doc docs/modules/clean.md#frob-clean---sweep-disposable-worktrees-t-4437
-# frob:tests tests/unit/test_clean_worktrees_sweep.py::TestSweepDisposableWorktrees.test_dry_run_reports_without_removing  # noqa: E501
 class DisposableSweepReport(BaseModel):
     """The result of one `sweep_disposable_worktrees` call (T-4437):
     every scratch dir it looked at, split into `removed` (dead, and
@@ -86,7 +84,6 @@ class DisposableSweepReport(BaseModel):
 
 
 # frob:doc docs/modules/clean.md#frob-clean---sweep-disposable-worktrees-t-4437
-# frob:tests tests/unit/test_clean_worktrees_sweep.py::TestStampOwnerPid.test_writes_current_pid  # noqa: E501
 def stamp_owner_pid(scratch: Path) -> None:
     """Write the CURRENT process's pid into `scratch/OWNER_PID_FILENAME`
     (T-4437 acceptance criterion 2). Called by a disposable-worktree
@@ -193,10 +190,6 @@ def _remove_disposable_worktree(
 
 # frob:ticket T-4437
 # frob:doc docs/modules/clean.md#frob-clean---sweep-disposable-worktrees-t-4437
-# frob:tests tests/unit/test_clean_worktrees_sweep.py::TestSweepDisposableWorktrees.test_dead_stamped_worktree_is_removed  # noqa: E501
-# frob:tests tests/unit/test_clean_worktrees_sweep.py::TestSweepDisposableWorktrees.test_live_stamped_worktree_is_kept  # noqa: E501
-# frob:tests tests/unit/test_clean_worktrees_sweep.py::TestSweepDisposableWorktrees.test_unstamped_worktree_is_removed  # noqa: E501
-# frob:tests tests/unit/test_clean_worktrees_sweep.py::TestSweepDisposableWorktrees.test_dry_run_reports_without_removing  # noqa: E501
 def sweep_disposable_worktrees(
     repo_root: Path,
     *,

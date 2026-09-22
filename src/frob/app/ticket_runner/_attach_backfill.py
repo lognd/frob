@@ -46,8 +46,6 @@ _log = get_logger("frob.app.ticket_runner")
 
 
 # frob:ticket T-2254
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketAttachBackfillDrafts.test_backfill_drafts_dry_run_does_not_write  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketAttachBackfillDrafts.test_backfill_drafts_apply_writes_and_reports  # noqa: E501
 def _attach_dispatch(root: Path, cfg: AppConfig) -> None:
     """`frob ticket attach` entry point (T-2254): routes to the draft-
     attachment backfill (`_run_backfill_drafts`) when `--backfill-drafts`

@@ -58,7 +58,6 @@ def _display_path(path: Path) -> str:
 
 
 # frob:doc docs/commands/refactor.md#extend_span_for_attached_directives
-# frob:tests tests/test_refactor.py::TestDirectiveCarrier.test_attached_waiver_moves_with_symbol  # noqa: E501
 def extend_span_for_attached_directives(
     source_lines: Sequence[str], start_line: int
 ) -> int:
@@ -85,7 +84,6 @@ def extend_span_for_attached_directives(
 
 
 # frob:doc docs/commands/refactor.md#scan_directive_carriers
-# frob:tests tests/test_refactor.py::TestDirectiveCarrier.test_directive_target_elsewhere_rewritten  # noqa: E501
 def scan_directive_carriers(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:
@@ -197,7 +195,6 @@ def _comment_span_for_edge(parsed, edge) -> tuple[int, int] | None:
 
 
 # frob:doc docs/commands/refactor.md#carry_lock_acks
-# frob:tests tests/test_refactor.py::TestDirectiveCarrier.test_lock_ack_carried_to_new_symref  # noqa: E501
 def carry_lock_acks(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> int:

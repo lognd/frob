@@ -114,10 +114,8 @@ def _build_node_index(tree: ast.Module) -> _NodeIndex:
 # description needs no update, matching the identical T-1209 _index-kwarg precedent \
 # immediately below in this same file family"
 # frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
-# frob:tests \
 # tests/test_pii_structural_gate.py::TestSymrefPopulation.test_enclosing_qualname_neste\
 # d_method_is_dotted kind="unit"
-# frob:tests \
 # tests/test_pii_structural_gate.py::TestSymrefPopulation.test_enclosing_qualname_modul\
 # e_level_is_none kind="unit"
 def enclosing_qualname(index: _NodeIndex, line: int) -> str | None:

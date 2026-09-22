@@ -465,8 +465,6 @@ def _line_of_offset(text: str, offset: int) -> int:
 
 # frob:doc docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-t-0153
 # frob:ticket T-0439
-# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints.test_smelly_text_fires  # noqa: E501
-# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints.test_clean_text_does_not_fire  # noqa: E501
 def scan_text_for_fingerprints(
     text: str,
     language: str,

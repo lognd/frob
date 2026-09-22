@@ -24,7 +24,6 @@ from frob.stats._agentic_shared import _completed_tool_events, _load_events, _pa
 
 # frob:doc docs/modules/stats.md#public-api
 # frob:ticket T-3059
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_tool_events_join_by_window_and_sum_tokens kind="unit"  # noqa: E501
 class DispatchRecord(BaseModel):
     """One dispatch's cost, joined against delivery (T-1724): the span
     between one `kind="dispatch"` `event="start"`/`event="end"` pair, plus
@@ -59,7 +58,6 @@ class DispatchRecord(BaseModel):
 
 # frob:doc docs/modules/stats.md#public-api
 # frob:ticket T-3059
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_marginal_run_deltas_ordered_and_computed_per_worktree kind="unit"  # noqa: E501
 class MarginalRunDelta(BaseModel):
     """The token-cost delta between one dispatch and the PREVIOUS dispatch
     against the same worktree (T-1724's "marginal cost of run N vs N+1"
@@ -80,7 +78,6 @@ class MarginalRunDelta(BaseModel):
 
 # frob:doc docs/modules/stats.md#public-api
 # frob:ticket T-3059
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_empty_stream_yields_empty_report kind="unit"  # noqa: E501
 class DispatchCostReport(BaseModel):
     """T-1724's join of cost against delivery: `dispatches` ordered by
     `start_ts` (unparseable/missing timestamps sort last, deterministically
@@ -321,16 +318,7 @@ def _marginal_run_deltas(
 
 # frob:doc docs/modules/stats.md#public-api
 # frob:ticket T-1724
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_empty_stream_yields_empty_report  # noqa: E501
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_dispatch_with_no_tool_events_has_unmeasured_not_zero_tokens  # noqa: E501
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_tool_events_join_by_window_and_sum_tokens  # noqa: E501
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_delivered_tickets_join_by_window  # noqa: E501
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_zero_delivery_dispatch_flagged_only_when_measurably_costly  # noqa: E501
-# frob:tests \
 # tests/test_stats_agentic.py::TestDispatchCostReport.test_tokens_per_landed_ticket
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_marginal_run_deltas_ordered_and_computed_per_worktree  # noqa: E501
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_dispatches_ordered_by_start_ts_missing_last  # noqa: E501
-# frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_malformed_lines_skipped_not_raised  # noqa: E501
 # frob:ticket T-1787
 # frob:ticket T-3059
 # frob:waive AFFECT001 reason="T-1787 adds a caller (stats_runner.py's --agentic text \

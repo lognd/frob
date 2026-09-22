@@ -237,7 +237,6 @@ def _shared_id_counter_path(root: Path) -> Path | None:
 
 
 # frob:ticket T-2122
-# frob:tests tests/unit/test_process_lock.py::TestSharedIdCounter.test_two_checkouts_with_divergent_views_never_collide  # noqa: E501
 # frob:waive ARCH103 reason="the flock-guarded read-increment-write of the shared \
 # counter file must stay ONE body: splitting the read, the compare/increment, and the \
 # write into separate functions would let the flock scope span a function boundary or, \
@@ -921,11 +920,8 @@ def new_ticket(
 
 # frob:ticket T-2394
 # frob:doc docs/modules/tickets-lifecycle.md#declared-no-scope-t-2394
-# frob:tests \
 # tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_empty_scope_warns_at_filing_time  # noqa: E501
-# frob:tests \
 # tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_declared_no_scope_is_silent  # noqa: E501
-# frob:tests \
 # tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_nonempty_scope_is_silent
 def _warn_empty_scope_on_new(ticket: Ticket) -> None:
     """T-2394: an empty `scope` at filing time gets a loud WARNING (never
@@ -960,10 +956,6 @@ def _warn_empty_scope_on_new(ticket: Ticket) -> None:
 
 # frob:ticket T-2123
 # frob:doc docs/modules/tickets-data-storage.md#mega-glob-scope-refused-at-start-t-1866
-# frob:tests tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew.test_over_broad_scope_warns_at_filing_time  # noqa: E501
-# frob:tests tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew.test_precise_scope_is_silent_at_filing_time  # noqa: E501
-# frob:tests tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew.test_ack_bypasses_the_warning  # noqa: E501
-# frob:tests tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew.test_severity_scales_with_a_catastrophic_match_count  # noqa: E501
 def _warn_over_broad_scope_on_new(root: Path, ticket: Ticket) -> None:
     """T-2123: the SAME TICK009/`large_glob_warnings` breadth measure and
     `scope_breadth_ack` escape hatch T-1866 already enforces (as a hard
@@ -1411,13 +1403,8 @@ def _renumber_locked(root: Path) -> Result[int, TicketError]:
 # frob:ticket T-0889
 # frob:ticket T-1630
 # frob:ticket T-1882
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations.test_concurrent_ledger_lock_acquisition_serializes  # noqa: E501
-# frob:tests tests/test_ticket_store_stale_snapshot.py::TestRenumberV2StaleSnapshotGuard.test_renumber_root_refuses_when_a_ticket_changes_under_it  # noqa: E501
-# frob:tests \
 # tests/test_tickets.py::TestSchemaExtras.test_renumber_dry_run_previews_without_writing
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_bulk_renumber_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_bulk_renumber_dry_run_still_works_under_a_live_lease  # noqa: E501
 def renumber(root: Path, *, dry_run: bool = False) -> Result[int, TicketError]:
     """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
@@ -1746,8 +1733,6 @@ def _log_renumber_dry_run(old_id: str, new_id: str, report: RenumberReport) -> N
 # frob:ticket T-0889
 # frob:ticket T-1255
 # frob:ticket T-2092
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_renumber_one  # noqa: E501
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace.test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id  # noqa: E501
 # frob:waive AFFECT001 reason="T-2092 adds allocator_lock around this function's v1 \
 # branch and _allocate_and_write_new_ticket's existing critical section, matching \
 # finalize_draft's T-1669 pattern -- the public contract docs/modules/tickets.md \

@@ -28,7 +28,6 @@ import sys
 __all__ = ["is_interactive_stdin"]
 
 
-# frob:tests \
 # tests/unit/test_process_tty.py::TestWin32StdinHasConsole.test_never_raises_when_ctype\
 # s_windll_is_unavailable
 def _win32_stdin_has_console() -> bool:
@@ -57,16 +56,12 @@ def _win32_stdin_has_console() -> bool:
         return False
 
 
-# frob:tests \
 # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_non_tty_stdin_is_never_in\
 # teractive
-# frob:tests \
 # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_posix_tty_stdin_is_intera\
 # ctive
-# frob:tests \
 # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_win32_tty_isatty_but_no_c\
 # onsole_is_not_interactive
-# frob:tests \
 # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_win32_tty_isatty_and_real\
 # _console_is_interactive
 # frob:doc docs/modules/process.md#cross-platform-interactive-stdin-check-t-4255

@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict
 # frob:doc docs/modules/gates.md#unresolved-t-1664
 # frob:ticket T-1664
 # frob:ticket T-3086
-# frob:tests \
 #   tests/unit/test_check_gates_summary.py::TestSeverityUnresolved.test_unresolved_is_a_distinct_severity_value  # noqa: E501
 class Severity(StrEnum):
     """A violation's exit-code weight: `error` fails `frob check`, `warn`

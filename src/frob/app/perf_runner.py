@@ -44,8 +44,6 @@ def run(cfg: AppConfig) -> None:
 # frob:ticket T-0021
 # frob:ticket T-0562
 # frob:ticket T-3099
-# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestPerfRunnerProfileWiring.test_must_fire_applies_and_warns_for_tests_path  # noqa: E501
-# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestPerfRunnerProfileWiring.test_must_stay_quiet_raw_argv_path_does_not_wire  # noqa: E501
 # frob:waive ARCH103 reason="T-0977: `frob perf profile` CLI entrypoint -- resolves \
 # the profile root/argv and dispatches to `profile_command`; runner-shape \
 # orchestration, same as this module's other `_run_*`/`_*` CLI handlers"
@@ -102,8 +100,6 @@ def _load_snapshot(root: Path):  # noqa: ANN201
 
 
 # frob:ticket T-1124
-# frob:tests tests/unit/test_app_runners_batch6.py::TestPerfRunner.test_heat_json_mode kind="unit"  # noqa: E501
-# frob:tests tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath.test_missing_perf_path_resolves_to_cwd kind="unit"  # noqa: E501
 def _run_quiet_if_json(cfg: AppConfig, body: Callable[[AppConfig], None]) -> None:
     """Run `body(cfg)` under `quiet_stdout_logs()` when `cfg.perf_json` is
     set (T-1124: extracted from `_heat`/`_collect`'s identical
@@ -233,9 +229,6 @@ def _heat_body(cfg: AppConfig) -> None:
 
 # frob:ticket T-0765
 # frob:ticket T-0976
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping.test_non_marker_first_arg_is_not_stripped  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping.test_marker_first_arg_is_stripped  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping.test_empty_argv_falls_back_to_dash_q  # noqa: E501
 def _collect_stacks_via_sampler(cfg: AppConfig):  # noqa: ANN201
     """Run the T-0710 in-process python sampler over `pytest.main` under
     `-- <argv>` (argv defaulting to `-q`, the whole suite) and return the
@@ -283,7 +276,6 @@ def _collect_stacks_via_sampler(cfg: AppConfig):  # noqa: ANN201
 
 
 # frob:ticket T-0990
-# frob:tests tests/system/test_cli_perf.py::TestPerfCollect.test_collect_resolves_a_real_python_hot_frame  # noqa: E501
 def _read_perf_file_text(file: Path) -> str:  # noqa: ANN201
     """Read `file` as UTF-8 text for `frob perf collect`, exiting with a
     logged error on any OSError. Split out of `_collect_stacks_from_file`
@@ -300,7 +292,6 @@ def _read_perf_file_text(file: Path) -> str:  # noqa: ANN201
 
 
 # frob:ticket T-0990
-# frob:tests tests/system/test_cli_perf.py::TestPerfCollect.test_collect_autodetects_cpuprofile_format  # noqa: E501
 def _resolve_perf_format(cfg: AppConfig, file: Path, text: str) -> str:
     """Explicit `cfg.perf_format`, else autodetect via
     `detect_collector_format` (T-0990, split out of
@@ -312,7 +303,6 @@ def _resolve_perf_format(cfg: AppConfig, file: Path, text: str) -> str:
 
 
 # frob:ticket T-0990
-# frob:tests tests/system/test_cli_perf.py::TestPerfCollect.test_collect_json_output_is_valid_json  # noqa: E501
 def _parse_perf_text_or_exit(fmt: str, text: str, file: Path):  # noqa: ANN201
     """Parse `text` as `fmt` via `parse_collector_format`, exiting with a
     logged error on any parse failure (T-0990, split out of

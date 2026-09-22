@@ -111,7 +111,6 @@ _REOPEN_LOG_HEADING = REOPEN_LOG_HEADING
 
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_organization.py::TestMutateLabels.test_add_and_remove_labels
 def mutate_labels(
     root: Path,
@@ -163,8 +162,6 @@ def mutate_labels(
 # frob:ticket T-0568
 # frob:ticket T-1347
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief-t-0568
-# frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing
-# frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_concurrent_leases
 def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
     """`frob ticket brief <id>` (T-0568): compose the complete agent
     mission briefing text (`frob.tickets._brief.compose_brief`) for
@@ -199,7 +196,6 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
 
 # frob:ticket T-1243
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief---cluster-t-1243
-# frob:tests \
 # tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
 def brief_cluster(root: Path, cluster_id: str) -> Result[str, TicketError]:
     """`frob ticket brief --cluster <id>` (T-1243): compose one briefing
@@ -230,7 +226,6 @@ _LEADING_DONE_REPORT_HEADING_RE = re.compile(
 
 
 # frob:ticket T-0826
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestComposeDoneReport.test_strips_duplicate_leading_heading_from_why  # noqa: E501
 def _strip_leading_done_report_heading(why: str) -> str:
     """Strip a leading '## Done report' (any `#` level, any case, optional
@@ -249,9 +244,7 @@ def _strip_leading_done_report_heading(why: str) -> str:
 # frob:ticket T-0458
 # frob:ticket T-0826
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestComposeDoneReport.test_composes_all_three_sections  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestComposeDoneReport.test_strips_duplicate_leading_heading_from_why  # noqa: E501
 def compose_done_report(
     why: str,
@@ -388,7 +381,6 @@ def _capture_done_report_claims(
 
 
 # frob:ticket T-1254
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestSetDoneReport.test_v2_mode_writes_done_report_md_not_body  # noqa: E501
 def _store_done_report(
     root: Path, ticket_id: str, ticket: Ticket, report: str
@@ -433,15 +425,10 @@ def _store_done_report(
 # frob:ticket T-0832
 # frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestSetDoneReport.test_composes_and_writes_atomically
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestSetDoneReport.test_caller_never_touches_markdown
-# frob:tests \
 # tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
-# frob:tests \
 # tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
-# frob:tests \
 # tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
 def set_done_report(
     root: Path,
@@ -633,9 +620,7 @@ def record_failure(
 # _resolve_review_commit by name (T-0529 precedent: a deliberate architecture-doc \
 # callout of the never-store-abbreviated-SHA security behavior, not accidental drift \
 # onto a private helper)"
-# frob:tests \
 # tests/test_tickets_review.py::TestRecordReview.test_unresolvable_commit_rejected
-# frob:tests \
 # tests/test_tickets_review.py::TestRecordReview.test_short_sha_normalized_to_full_sha
 def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:
     """Resolve `commit` (a short SHA, ref name, `HEAD`, ...) to its full
@@ -665,9 +650,6 @@ def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:
 
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets-lifecycle.md#structured-review-channel-t-0571
-# frob:tests tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry
-# frob:tests tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected
-# frob:tests \
 # tests/test_tickets_review.py::TestRecordReview.test_multiple_reviews_append_only
 def record_review(
     root: Path,
@@ -730,7 +712,6 @@ def record_review(
 
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_review.py::TestHasApprovedReviewForCommit.test_true_only_for_matching_approve  # noqa: E501
 def has_approved_review_for_commit(ticket: Ticket, commit: str) -> bool:
     """Whether `ticket` carries at least one `verdict: approve` review
@@ -746,7 +727,6 @@ def has_approved_review_for_commit(ticket: Ticket, commit: str) -> bool:
 
 
 # frob:ticket T-2078
-# frob:tests \
 # tests/test_tickets.py::TestDropTicket.test_terminal_ticket_transition_refused_before_any_write  # noqa: E501
 def _is_transition_legal(current: TicketState, to: TicketState) -> bool:
     """T-2078: pure, side-effect-free legality check against the SAME
@@ -886,13 +866,9 @@ def _worktrees_carrying_terminal_copy(root: Path, ticket_id: str) -> tuple[str, 
 # frob:ticket T-3087
 # frob:ticket T-4287
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_requires_done
-# frob:tests \
 # tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_requires_reason
-# frob:tests \
 # tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_appends_dated_entry_and_requeues  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_sibling_regression.py::TestNamesStrandedWorktreesBeforeReopen.test_worktrees_carrying_terminal_copy_are_named  # noqa: E501
 def reopen_ticket(
     root: Path, ticket_id: str, reason: str
@@ -1110,32 +1086,19 @@ def _done_report_section(text: str) -> str:
 # frob:ticket T-2638
 # frob:doc \
 # docs/modules/tickets-data-storage.md#disclosed-remainder-requires-follow-up-guard-at-close-t-1648  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_detects_known_phrase  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_clean_narrative_is_not_flagged  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_tier_a_generated_report_with_no_real_followup_closes_clean  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_genuine_hand_typed_subheading_alongside_generated_ones_still_fires  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_renaming_a_generated_heading_still_fires  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_description_before_done_report_is_not_flagged  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_done_report_still_fires  # noqa: E501
 # frob:ticket T-3285
-# frob:tests \
 # tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_hash_line_inside_fence_not_a_subheading  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_real_subheading_after_a_fence_still_detected  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_unterminated_trailing_fence_swallows_rest  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t3285_fenced_subheadings.py::TestDisclosureShapedLanguageFencedChanged.test_stat_line_starting_with_hash_inside_changed_block_not_flagged  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t3285_fenced_subheadings.py::TestDisclosureShapedLanguageFencedChanged.test_genuine_subheading_outside_fence_still_flagged  # noqa: E501
 def disclosure_shaped_language(text: str) -> str | None:
     """Non-`None` if `text` looks like it discloses unfinished/cut work,
@@ -1214,9 +1177,7 @@ def disclosure_shaped_language(text: str) -> str | None:
 # frob:ticket T-1648
 # frob:doc \
 # docs/modules/tickets-data-storage.md#disclosed-remainder-requires-follow-up-guard-at-close-t-1648  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets.test_parses_ids_from_filed_line  # noqa: E501
-# frob:tests \
 # tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets.test_no_filed_line_returns_empty  # noqa: E501
 def filed_followup_tickets(body: str) -> list[str]:
     """Every `T-####` ticket id named on a `Filed:` line anywhere in

@@ -154,7 +154,6 @@ def _field_candidates(
 
 # frob:enforces CHK-GATE-CONFIGPATH001
 # frob:doc docs/modules/gate-config-path-defaults.md#configpath001-t-4114
-# frob:tests tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate.test_relative_path_default_fires  # noqa: E501
 def config_path_default_gate(root: Path) -> tuple[Violation, ...]:
     """CONFIGPATH001: flag every pydantic `Field(default=...)` on a
     `*_path`-named or `Path`-annotated field whose default value is a

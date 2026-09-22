@@ -11,7 +11,6 @@ from pydantic import BaseModel, ConfigDict
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules
-# frob:tests tests/unit/strata/test_native_test.py::TestSummarize.test_format_selfconform_one_line_per_violation  # noqa: E501
 # frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
 # rule family -- this symbol only moved to a sibling module verbatim (same name, same \
 # body/signature), no behavior change, so the affects()-closure doc it names needs no \
@@ -37,7 +36,6 @@ class SelfConformViolation(BaseModel):
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules
-# frob:tests tests/unit/strata/test_native_test.py::TestSummarize.test_no_gaps_reports_proved  # noqa: E501
 # frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
 # rule family -- this symbol only moved to a sibling module verbatim (same name, same \
 # body/signature), no behavior change, so the affects()-closure doc it names needs no \

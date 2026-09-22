@@ -49,10 +49,8 @@ def _print_report(r: Renderer, report, executed: bool) -> None:  # noqa: ANN001
 # frob:ticket T-0563
 # frob:ticket T-0875
 # frob:doc docs/modules/clean.md#public-api
-# frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestCleanRunnerRun.test_dry_run_reports_nothing_to_clean kind="unit"  # noqa: E501
 # frob:ticket T-2492
 # frob:ticket T-4437
-# frob:tests tests/unit/test_clean_worktrees_sweep.py::TestCleanSweepDisposableWorktreesFlag.test_flag_dispatches_to_sweep  # noqa: E501
 def _print_disposable_sweep_report(r: Renderer, report, executed: bool) -> None:  # noqa: ANN001
     """Render a `DisposableSweepReport` (T-4437): one line per dead
     scratch dir (removed, or would-remove under a dry run) plus every

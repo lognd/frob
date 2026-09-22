@@ -350,13 +350,6 @@ def _content_key(line: str) -> str:
 
 
 # frob:doc docs/modules/tickets-landing.md#live-tracker-citation-preflight-t-0854
-# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_registry_deferred_disposition  # noqa: E501
-# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_ticket_attribute  # noqa: E501
-# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_own_scope_citation_excluded  # noqa: E501
-# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_citation_outside_own_scope_still_flagged  # noqa: E501
-# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_draft_id_always_clear  # noqa: E501
-# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_follow_up_attribute  # noqa: E501
-# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_changelog_fragment_quoting_whole_directive_not_a_citation  # noqa: E501
 # frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
 # id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
 # reports it unchanged), same unwrappable shape as _json_guard.py's identical FMT001 \

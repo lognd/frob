@@ -157,9 +157,6 @@ def net_enabled() -> bool:
 
 
 # frob:ticket T-3670
-# frob:tests tests/unit/test_process_guard.py::TestPoolPreloadEnabled.test_unset_env_is_enabled  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestPoolPreloadEnabled.test_truthy_value_disables  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestPoolPreloadEnabled.test_falsy_value_stays_enabled  # noqa: E501
 # frob:doc docs/modules/process.md#public-api
 def pool_preload_enabled() -> bool:
     """Whether `frob.gates`'s internal `ProcessPoolExecutor` gate-worker
@@ -181,11 +178,6 @@ def pool_preload_enabled() -> bool:
 # invariant spec: [INV-019](invariants/INV-019.md)
 # frob:ticket T-3015
 # frob:ticket T-3797
-# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_disabled_returns_err_without_spawning  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_enabled_spawns_and_returns_ok  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_timeout_returns_err_never_raises  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_healthy_path_unchanged_when_timeout_kwarg_given  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_missing_binary_returns_err_spawn_failed_never_raises  # noqa: E501
 # frob:waive AFFECT001 reason="T-3797's scope is restricted to \
 # src/frob/process/_guard.py + tests/unit/test_process_guard.py only; \
 # docs/modules/process.md update filed as follow-up T-3802"
@@ -256,11 +248,6 @@ def guarded_subprocess_run(
     return Ok(proc)
 
 
-# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_injects_utf8_replace_when_text_true_and_no_encoding  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_injects_when_universal_newlines_true  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_never_overrides_explicit_encoding  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_never_overrides_explicit_errors  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_no_op_without_text_mode  # noqa: E501
 def _default_text_encoding(kwargs: dict[str, object]) -> dict[str, object]:
     """T-2953: when a caller asks for text mode (`text=True` or the older
     `universal_newlines=True`) without naming an explicit `encoding=`,
@@ -291,10 +278,6 @@ def _default_text_encoding(kwargs: dict[str, object]) -> dict[str, object]:
 
 
 # frob:ticket T-3651
-# frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_no_op_on_non_win32  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_sets_new_process_group_on_win32  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_never_overrides_an_explicit_creationflags  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_sets_create_no_window_on_win32  # noqa: E501
 def _win32_isolate_console_group(kwargs: dict[str, object]) -> dict[str, object]:
     """On win32, default every `guarded_subprocess_run` spawn into its own
     console process group AND off any console entirely (T-3648, T-3651),
@@ -352,11 +335,6 @@ def _win32_ignore_console_ctrl_requested() -> bool:
 
 
 # frob:ticket T-3657
-# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_no_op_on_non_win32  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_no_op_when_env_unset  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_installs_and_removes_handler_when_requested  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_handler_swallows_ctrl_c_and_ctrl_break  # noqa: E501
-# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_handler_passes_through_other_events  # noqa: E501
 # frob:doc docs/modules/process.md#public-api
 @contextlib.contextmanager
 def win32_console_ctrl_ignore_scope() -> Generator[None, None, None]:

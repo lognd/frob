@@ -76,7 +76,6 @@ class Diagnostic(BaseModel):
     message: str = ""
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_process.py::test_ruff_as_text
     def as_text(self) -> str:
         # frob:doc docs/modules/process.md#public-api
         """One-line `file:line:col  CODE  message` rendering."""
@@ -122,8 +121,6 @@ class ToolResult(BaseModel):
     summary: str = ""
     # frob:ticket T-3985
     # frob:doc docs/modules/process.md#public-api
-    # frob:tests tests/unit/test_process.py::TestSubjectCount.test_default_is_none
-    # frob:tests \
     # tests/unit/test_process.py::TestSubjectCount.test_populated_zero_is_distinct_from\
     # _none
     subject_count: int | None = None
@@ -201,10 +198,6 @@ class ToolResult(BaseModel):
     # frob:ticket T-2391
     # frob:doc docs/modules/process.md#public-api
     # frob:ticket T-3206
-    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_zero_diagnostics  # noqa: E501
-    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_a_real_error_is_present  # noqa: E501
-    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
-    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_unresolved_mixes_with_a_real_warning  # noqa: E501
     @computed_field  # type: ignore[prop-decorator]
     @property
     def measurement(self) -> Measurement:
@@ -245,7 +238,6 @@ class ToolResult(BaseModel):
     # frob:ticket T-2391
     # frob:doc docs/modules/process.md#public-api
     # frob:ticket T-3206
-    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
     @computed_field  # type: ignore[prop-decorator]
     @property
     def measurement_reason(self) -> str:
@@ -304,7 +296,6 @@ class ToolResult(BaseModel):
         return lines
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_process.py::test_pytest_as_text_shows_failures
     def as_text(self, verbose: bool = False) -> str:
         # frob:doc docs/modules/process.md#public-api
         """
@@ -317,7 +308,6 @@ class ToolResult(BaseModel):
         return "\n".join(parts)
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_process.py::test_pytest_as_json
     def as_json(self) -> str:
         # frob:doc docs/modules/process.md#public-api
         """The full structured result as JSON."""
@@ -327,16 +317,12 @@ class ToolResult(BaseModel):
 # frob:ticket T-3985
 # frob:enforces CHK-GATE-SUBJECT001
 # frob:doc docs/modules/process.md#public-api
-# frob:tests \
 # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_not_enf\
 # orcing
-# frob:tests \
 # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_subject\
 # _count_is_none
-# frob:tests \
 # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_subject\
 # _count_is_positive
-# frob:tests \
 # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_fires_when_enforc\
 # ing_and_zero
 def enforcing_zero_subject_diagnostic(
@@ -465,7 +451,6 @@ def tool_crash_result(tool: str, exc: BaseException) -> ToolResult:
 
 # frob:doc docs/modules/process.md#public-api
 # frob:ticket T-2537
-# frob:tests \
 # tests/unit/test_parser_failure_diagnostics.py::TestParseFailureResult.test_attaches_e\
 # rror_diagnostic
 def tool_parse_failure_result(
@@ -500,7 +485,6 @@ def tool_parse_failure_result(
 
 
 # frob:ticket T-4308
-# frob:tests \
 # tests/unit/test_parser_failure_diagnostics.py::TestNoOutputResult.test_attaches_error
 # frob:waive COV001 reason="a frob:doc anchor here would live in \
 # docs/modules/process.md, whose own SCOPE002 closure (every OTHER symbol that shared \

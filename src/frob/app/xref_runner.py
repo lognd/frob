@@ -14,7 +14,6 @@ _log = get_logger(__name__)
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
 # frob:ticket T-1238
-# frob:tests tests/unit/test_app_runners.py::TestXrefRunner.test_found_symbol_json_mode
 def run(cfg: AppConfig) -> None:
     """`frob xref`: find where a symbol is defined and every file that uses
     it. T-1238: un-deprecated -- regrouped under `frob explore xref`

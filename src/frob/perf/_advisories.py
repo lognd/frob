@@ -59,8 +59,6 @@ def _all_sections(index: SectionIndex) -> dict[str, Section]:
 
 
 # frob:doc docs/modules/perf.md#slow-operation-advisories-t-0712
-# frob:tests tests/unit/perf/test_advisories.py::TestExternalCallAdvisories.test_dominant_external_edge_fires  # noqa: E501
-# frob:tests tests/unit/perf/test_advisories.py::TestExternalCallAdvisories.test_minor_external_edge_does_not_fire  # noqa: E501
 # frob:ticket T-0972
 def external_call_advisories(stream: HitStream, index: SectionIndex) -> list[Violation]:
     """One `PERF-ADV-EXT` advisory per loop section whose external call
@@ -157,8 +155,6 @@ def _loop_callers_by_callee(stream: HitStream, sections: dict) -> dict[str, set[
 
 
 # frob:doc docs/modules/perf.md#slow-operation-advisories-t-0712
-# frob:tests tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories.test_hot_loop_with_multiple_callers_fires  # noqa: E501
-# frob:tests tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories.test_single_caller_loop_does_not_fire  # noqa: E501
 def nested_loop_fanin_advisories(
     stream: HitStream, index: SectionIndex
 ) -> list[Violation]:
@@ -201,8 +197,6 @@ def nested_loop_fanin_advisories(
 
 
 # frob:doc docs/modules/perf.md#slow-operation-advisories-t-0712
-# frob:tests tests/unit/perf/test_advisories.py::TestHeavyTailAdvisories.test_heavy_tail_ratio_fires  # noqa: E501
-# frob:tests tests/unit/perf/test_advisories.py::TestHeavyTailAdvisories.test_uniform_distribution_does_not_fire  # noqa: E501
 def heavy_tail_advisories(
     sketches: dict[str, tuple[str, str, int, QuantileSketch]],
 ) -> list[Violation]:

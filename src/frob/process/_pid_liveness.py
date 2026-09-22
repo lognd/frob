@@ -68,13 +68,6 @@ def _pid_alive_windows(pid: int) -> bool:
 
 # frob:doc docs/modules/process.md#pid-liveness-t-3018
 # frob:ticket T-3018
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAlivePosix.test_current_process_is_alive  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAlivePosix.test_process_lookup_error_is_dead  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAlivePosix.test_permission_error_is_conservatively_alive  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend.test_alive_pid_reports_true  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend.test_exited_pid_reports_false  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend.test_unknown_pid_open_process_fails_reports_false  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend.test_never_requests_kill_capable_access_rights  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
 # (the demoted case). T-1062: leaked Unknown traces to os.kill itself; every exception \
@@ -109,10 +102,6 @@ def pid_alive(pid: int) -> bool:
 # (the demoted case). T-1062: leaked Unknown traces to os.kill itself; every exception \
 # os.kill can raise is an OSError subclass, and ProcessLookupError/ \
 # PermissionError/OSError together already cover the full hierarchy"
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAliveTristatePosix.test_process_lookup_error_is_confirmed_dead  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAliveTristatePosix.test_permission_error_is_ambiguous_not_alive  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAliveTristatePosix.test_live_pid_is_true  # noqa: E501
-# frob:tests tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend.test_tristate_never_returns_ambiguous_on_windows_backend  # noqa: E501
 def pid_alive_tristate(pid: int) -> bool | None:
     """Three-state variant of `pid_alive` for a caller that must never
     treat "cannot tell" as license to act (e.g. `frob.tickets._land`'s

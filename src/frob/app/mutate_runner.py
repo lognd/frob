@@ -20,8 +20,6 @@ _log = get_logger(__name__)
 # frob:ticket T-0588
 # frob:ticket T-3099
 # frob:doc docs/modules/app.md#runners
-# frob:tests tests/unit/test_app_runners.py::TestMutateRunner.test_success_no_survivors_text_mode  # noqa: E501
-# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestMutateRunnerWiring.test_must_fire_applies_and_warns_before_run_mutations  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Mutate a file and report which mutants survived the test command.
 

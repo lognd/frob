@@ -76,9 +76,6 @@ def _log_hotgraph_summary(stacks: list[SampledStack]) -> None:
 
 
 # frob:doc docs/modules/perf.md#integration-points
-# frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_unset_installs_serial_pools  # noqa: E501
-# frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_one_installs_serial_pools  # noqa: E501
-# frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_zero_skips_serial_pools  # noqa: E501
 def main() -> int:
     """Profile the target argv, dump stats, and return the workload's code.
 

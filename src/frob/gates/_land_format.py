@@ -150,11 +150,8 @@ def _ruff_format_would_rewrite(
 # frob:ticket T-4298
 # frob:doc docs/modules/gates.md#land-format-landfmt001-t-4298
 # frob:enforces CHK-GATE-LANDFMT001
-# frob:tests \
 # tests/unit/test_land_format_gate.py::test_diff_touched_unformatted_file_fires
-# frob:tests \
 # tests/unit/test_land_format_gate.py::test_already_formatted_touched_file_is_quiet
-# frob:tests tests/unit/test_land_format_gate.py::test_no_diff_is_quiet
 def land_format_gate(root: Path) -> tuple[Violation, ...]:
     """LANDFMT001 (T-4298): `ruff format --check`, scoped to this diff's
     OWN touched `.py` files (`_land_format_touched_py_files`) rather than

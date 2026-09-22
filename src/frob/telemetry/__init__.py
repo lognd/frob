@@ -77,8 +77,6 @@ def rule_firing_counts(report: "GateReport") -> dict[str, int]:
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#rule-level-gate-firing-counts-t-1939
-# frob:tests tests/unit/telemetry/test_rule_counts.py::TestRecordRuleFiringCounts.test_appends_one_event_with_every_fired_rule  # noqa: E501
-# frob:tests tests/unit/telemetry/test_rule_counts.py::TestRecordRuleFiringCounts.test_empty_report_appends_a_zero_rule_event  # noqa: E501
 def record_rule_firing_counts(root: Path, report: "GateReport") -> None:
     """Append one `kind="gate_rule_counts"` telemetry event for this
     `frob check` gates-stage run's `rule_firing_counts(report)`.

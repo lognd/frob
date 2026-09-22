@@ -14,7 +14,6 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-1479
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_map_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def _try_map_via_daemon(root: Path, cfg: AppConfig) -> bool:
     """T-1479: for a plain `frob map --json` against the daemon's own
     served root (`cfg.map_path` unset or exactly `.`/root -- unlike

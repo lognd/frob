@@ -173,14 +173,12 @@ class RefactorPlan(BaseModel):
     unresolved: tuple[str, ...] = ()
 
     # frob:doc docs/commands/refactor.md#refactorplan
-    # frob:tests tests/test_refactor.py::TestPlanProperties.test_plan_and_report_touched_files_dedupe  # noqa: E501
     @property
     def all_ops(self) -> tuple[RewriteOp, ...]:
         """Every rewrite op the Apply phase must perform, move ops first."""
         return self.move_ops + self.reference_ops
 
     # frob:doc docs/commands/refactor.md#refactorplan
-    # frob:tests tests/test_refactor.py::TestPlanProperties.test_plan_and_report_touched_files_dedupe  # noqa: E501
     @property
     def touched_files(self) -> tuple[Path, ...]:
         """Every file path any op in this plan writes to, deduplicated --
@@ -238,7 +236,6 @@ class RefactorReport(BaseModel):
     rolled_back: bool
 
     # frob:doc docs/commands/refactor.md#refactorreport
-    # frob:tests tests/test_refactor.py::TestPlanProperties.test_plan_and_report_touched_files_dedupe  # noqa: E501
     @property
     def touched_files(self) -> tuple[Path, ...]:
         """Every file path any op in the plan wrote to, deduplicated,

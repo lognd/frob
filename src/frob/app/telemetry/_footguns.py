@@ -62,7 +62,6 @@ iteration, three in a row with no change is stuck."""
 
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_render_tips_human_readable_names_the_rule  # noqa: E501
 class Tip(BaseModel):
     """One footgun-detector finding (T-1360): a command that completed but
     looked like a different result than what actually happened (silently
@@ -90,7 +89,6 @@ def _suppressed_rule_ids() -> frozenset[str]:
 
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_detect_footguns_returns_empty_when_tips_disabled  # noqa: E501
 def tips_disabled() -> bool:
     """True when tips are opted out entirely via `FROB_NO_FOOTGUN_TIPS`
     (any non-empty, non-`0`/`false` value) or telemetry itself is disabled
@@ -236,8 +234,6 @@ def _tip_repeated_failure(
 
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_detect_footguns_flags_redundant_rerun
-# frob:tests tests/test_telemetry.py::test_detect_footguns_respects_suppress_env
 def detect_footguns(
     root: Path,
     *,
@@ -285,8 +281,6 @@ def detect_footguns(
 
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_render_tips_json_is_parseable
-# frob:tests tests/test_telemetry.py::test_render_tips_empty_list_is_empty_string
 def render_tips(tips: list[Tip], *, as_json: bool) -> str:
     """`tips` formatted for post-command display: one `model_dump_json`
     array when `as_json` (the machine-readable form T-1360 requires so an

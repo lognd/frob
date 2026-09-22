@@ -77,8 +77,6 @@ def _freeze(value: Any) -> Any:  # noqa: ANN401
 
 
 # frob:doc docs/commands/check.md#run-scoped-memoization
-# frob:tests tests/unit/test_memo.py::test_run_memo_scope_deactivates_on_exit
-# frob:tests tests/unit/test_memo.py::test_run_memo_scope_nests_without_truncating_outer
 # frob:ticket T-0423
 @contextmanager
 def run_memo_scope() -> Iterator[None]:
@@ -111,7 +109,6 @@ def run_memo_scope() -> Iterator[None]:
 
 
 # frob:doc docs/commands/check.md#run-scoped-memoization
-# frob:tests tests/unit/test_memo.py::test_reset_run_memo_activates_an_unbounded_scope
 # frob:ticket T-0423
 def reset_run_memo() -> None:
     """Enter a fresh top-level memo scope, clearing any prior one and its
@@ -134,7 +131,6 @@ def reset_run_memo() -> None:
 
 
 # frob:doc docs/commands/check.md#run-scoped-memoization
-# frob:tests tests/unit/test_memo.py::test_second_call_with_same_args_is_memo_hit
 # frob:ticket T-0423
 def run_memo_stats() -> tuple[int, int]:
     """(hits, misses) against every `@memoize_per_run`-wrapped call since
@@ -149,9 +145,6 @@ def run_memo_stats() -> tuple[int, int]:
 
 
 # frob:doc docs/commands/check.md#run-scoped-memoization
-# frob:tests tests/unit/test_memo.py::test_second_call_with_same_args_is_memo_hit
-# frob:tests tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
-# frob:tests tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
 # frob:ticket T-0423
 def memoize_per_run(func: _F) -> _F:
     """Wrap `func` so repeat calls with identical arguments, while a

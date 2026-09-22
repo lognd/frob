@@ -157,7 +157,6 @@ class ResourceContentionReport(BaseModel):
 
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
-# frob:tests tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_reads_access_attrs  # noqa: E501
 # frob:raises ValueError
 def node_access_declarations(node: Node) -> tuple[NodeAccess, ...]:
     """Every `access "RESOURCE" mode MODE` clause `node` declares (i.e.
@@ -187,7 +186,6 @@ def node_access_declarations(node: Node) -> tuple[NodeAccess, ...]:
 
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
-# frob:tests tests/unit/strata/test_access.py::TestModeConflict.test_read_read_is_safe
 def mode_conflict(a: AccessMode, b: AccessMode) -> bool:
     """Whether two accessors of the SAME resource declaring modes `a`/`b`
     conflict per the T-0700 compatibility matrix (module docstring): the
@@ -224,7 +222,6 @@ def _resource_accessors(model: KernelModel) -> dict[str, list[tuple[str, AccessM
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
 # frob:enforces CHK-GATE-SYS204
-# frob:tests tests/unit/strata/test_access.py::TestResourceContentionViolations.test_two_writers_no_arbiter_fires  # noqa: E501
 def resource_contention_violations(
     model: KernelModel, module: Module
 ) -> ResourceContentionReport:

@@ -56,7 +56,6 @@ def _display_path(repo_root: Path, path: Path) -> str:
 
 
 # frob:doc docs/commands/refactor.md#moduleplan
-# frob:tests \
 # tests/test_refactor.py::TestBuildModulePlan.test_plan_includes_reference_ops
 class ModulePlan(BaseModel):
     """The full module-move rewrite plan, computed once before any file
@@ -88,7 +87,6 @@ class ModulePlan(BaseModel):
 
 
 # frob:doc docs/commands/refactor.md#modulerefactorreport
-# frob:tests tests/test_refactor.py::TestRunMoveModule.test_move_module_succeeds_and_commits  # noqa: E501
 class ModuleRefactorReport(BaseModel):
     """The disclosed report for a `move-module` transaction -- the
     module-verb mirror of `RefactorReport`."""
@@ -104,9 +102,7 @@ class ModuleRefactorReport(BaseModel):
 
 
 # frob:doc docs/commands/refactor.md#build_module_plan
-# frob:tests \
 # tests/test_refactor.py::TestBuildModulePlan.test_plan_includes_reference_ops
-# frob:tests \
 # tests/test_refactor.py::TestBuildModulePlan.test_refuses_unsupported_language
 def build_module_plan(
     repo_root: Path,
@@ -275,9 +271,6 @@ def _apply_and_move(repo_root: Path, plan: ModulePlan) -> Result[None, RefactorE
 
 
 # frob:doc docs/commands/refactor.md#run_move_module
-# frob:tests tests/test_refactor.py::TestRunMoveModule.test_move_module_succeeds_and_commits  # noqa: E501
-# frob:tests tests/test_refactor.py::TestRunMoveModule.test_move_module_rolls_back_on_verify_failure  # noqa: E501
-# frob:tests tests/test_refactor.py::TestRunMoveModule.test_move_module_uses_git_mv
 def run_move_module(
     repo_root: Path,
     source: ModuleRef,

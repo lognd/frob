@@ -22,13 +22,10 @@ _log = get_logger(__name__)
 
 # frob:ticket T-3546
 # frob:doc docs/design/land-splice-test-then-impl.md#land-splice-tests-first-then-implementation-t-3546  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_mix\
 # ed_paths_split_into_two_groups
-# frob:tests \
 # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_no_\
 # test_paths_returns_none
-# frob:tests \
 # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_no_\
 # impl_paths_returns_none
 def classify_test_then_impl_paths(
@@ -180,10 +177,8 @@ def _compose_pathset_commit(
 
 # frob:ticket T-3546
 # frob:doc docs/design/land-splice-test-then-impl.md#land-splice-tests-first-then-implementation-t-3546  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits.test_tw\
 # o_commits_chain_correctly
-# frob:tests \
 # tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits.test_fi\
 # nal_tree_matches_full_squash
 def compose_test_then_impl_commits(

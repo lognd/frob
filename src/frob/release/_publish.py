@@ -47,7 +47,6 @@ _COMMIT_FILES = ("pyproject.toml", "uv.lock", "CHANGELOG.md", ".frob-release.jso
 
 
 # frob:doc docs/modules/release.md#frob-release-publish-t-2242
-# frob:tests \
 # tests/test_release.py::TestPublish.test_dry_run_does_not_mutate_anything  # noqa: E501
 class PublishPlan(BaseModel):
     """The publish sequence's plan (T-2242): the version it would bump to
@@ -66,7 +65,6 @@ class PublishPlan(BaseModel):
 
 
 # frob:doc docs/modules/release.md#frob-release-publish-t-2242
-# frob:tests \
 # tests/test_release.py::TestPublish.test_real_run_composes_every_step_in_order  # noqa: E501
 class PublishReport(BaseModel):
     """One `publish()` call's outcome: the plan it computed, whether it
@@ -200,11 +198,8 @@ def _run_git_publish_steps(
 
 
 # frob:doc docs/modules/release.md#frob-release-publish-t-2242
-# frob:tests \
 # tests/test_release.py::TestPublish.test_dry_run_does_not_mutate_anything  # noqa: E501
-# frob:tests \
 # tests/test_release.py::TestPublish.test_real_run_composes_every_step_in_order  # noqa: E501
-# frob:tests tests/test_release.py::TestPublish.test_env_only_loaded_on_a_real_run  # noqa: E501
 def publish(
     root: Path, snapshot, *, dry_run: bool
 ) -> Result[PublishReport, ReleaseError]:

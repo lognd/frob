@@ -23,8 +23,6 @@ _NO_TELEMETRY_ENV = "FROB_NO_TELEMETRY"
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_append_event_respects_no_telemetry_env
-# frob:tests \
 # tests/test_telemetry.py::test_no_telemetry_env_false_like_values_stay_enabled
 def is_disabled() -> bool:
     """True when the operator opted out via `FROB_NO_TELEMETRY` (any
@@ -111,8 +109,6 @@ def _walk_home_claude_entries(root: Path, home_claude: Path) -> list[str]:
 
 
 # frob:ticket T-2191
-# frob:tests tests/test_telemetry.py::test_redundant_rerun_not_flagged_when_home_claude_config_changed  # noqa: E501
-# frob:tests tests/test_telemetry.py::test_redundant_rerun_still_flags_when_nothing_changed_at_all  # noqa: E501
 def _home_config_state_hash() -> str:
     """sha256-derived digest (first 12 hex chars) over every regular
     file's `(relpath, size, mtime_ns)` under `~/.claude`, excluding
@@ -247,8 +243,6 @@ def _walk_external_path_state(path: Path) -> list[str]:
 
 
 # frob:ticket T-2204
-# frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_a_deleted_external_fixture_changes_the_hash  # noqa: E501
-# frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_no_path_looking_argument_yields_none  # noqa: E501
 def _external_path_arg_hash(root: Path, args_head: str) -> str:
     """sha256-derived digest (first 12 hex chars) over the on-disk state of
     every positional-PATH-shaped token in `args_head` that resolves

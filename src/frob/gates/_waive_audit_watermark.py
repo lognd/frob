@@ -83,7 +83,6 @@ _WATERMARK_REL = Path("waive-audit-watermark.json")
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestLoadWatermark.test_missing_file_is_not_\
 # found kind="unit"
 class WaiveAuditWatermarkError(ErrorSet):
@@ -95,7 +94,6 @@ class WaiveAuditWatermarkError(ErrorSet):
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestSaveWatermark.test_round_trips_through_\
 # load kind="unit"
 class WaiveAuditWatermark(BaseModel):
@@ -135,7 +133,6 @@ class WaiveAuditWatermark(BaseModel):
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestSaveWatermark.test_creates_parent_dir_i\
 # f_missing kind="unit"
 def watermark_path(root: Path) -> Path:
@@ -144,13 +141,10 @@ def watermark_path(root: Path) -> Path:
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestLoadWatermark.test_missing_file_is_not_\
 # found kind="unit"
-# frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestLoadWatermark.test_malformed_json_is_ma\
 # lformed kind="unit"
-# frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestLoadWatermark.test_valid_file_round_tri\
 # ps kind="unit"
 def load_watermark(root: Path) -> Result[WaiveAuditWatermark, WaiveAuditWatermarkError]:
@@ -287,7 +281,6 @@ def _mirror_watermark_to_primary(root: Path, message: str) -> None:
 # the lease, and T-2735 wrote the git-tracked/mirrored watermark section
 # into `docs/modules/app.md#waive-audit-t-2467` in the same change that
 # removes this waiver, so AFFECT001 no longer has anything to excuse here.
-# frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestSaveWatermark.test_round_trips_through_\
 # load kind="unit"
 def save_watermark(
@@ -329,7 +322,6 @@ def save_watermark(
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
-# frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestSaveWatermark.test_round_trips_through_\
 # load kind="unit"
 def utc_now() -> datetime:

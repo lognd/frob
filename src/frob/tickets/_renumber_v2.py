@@ -343,10 +343,6 @@ def _persist_v2_renumber(
 # docs/design/ledger-v2.md is also out of this ticket's declared scope \
 # (src/frob/app/ticket_runner/_query.py, src/frob/tickets/_renumber_v2.py, \
 # src/frob/tickets/_new_renumber.py)"
-# frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_git_mv_renames_directory_and_rewrites_id_field  # noqa: E501
-# frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_sibling_ticket_prose_citation_rewritten  # noqa: E501
-# frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_locks_acquired_in_sorted_id_order_no_deadlock  # noqa: E501
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace.test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id  # noqa: E501
 # frob:waive ARCH001 reason="T-2092's allocator_lock fix adds ~20 lines (the lock \
 # acquisition plus its docstring paragraph) to a function already at the threshold; \
 # splitting the body further would mean threading old_dir/ref_changes/code_changes/ \

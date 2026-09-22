@@ -9,7 +9,6 @@ import frob.process._lock as _lock_mod
 
 
 # frob:ticket T-3577
-# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_blocking_reentry_raises_instead_of_hanging_forever  # noqa: E501
 def _msvcrt_acquire_blocking(fd: int) -> None:  # pragma: no cover -- windows-only
     """Block (polling) until an exclusive `msvcrt.locking` byte-range
     lock on `fd`'s first byte is acquired -- `msvcrt` has no shared/read

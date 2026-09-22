@@ -109,10 +109,8 @@ _load_queue_cache: dict[Path, Result[TicketQueue, TicketError]] = {}
 
 # frob:ticket T-4397
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/gates_suite/test_run.py::TestLoadQueueMemoization.test_load_queue_run_scope_cac\
 # hes_within_the_with_block
-# frob:tests \
 # tests/gates_suite/test_run.py::TestLoadQueueMemoization.test_load_queue_is_memoized_a\
 # cross_the_whole_tickets_gate_call
 @contextmanager
@@ -156,11 +154,8 @@ def load_queue_run_scope() -> Iterator[None]:
 
 
 # frob:invariant INV-004
-# frob:tests tests/test_tickets.py::TestQueue.test_malformed_frontmatter_is_err
-# frob:tests \
 # tests/gates_suite/test_run.py::TestLoadQueueMemoization.test_load_queue_run_scope_cac\
 # hes_within_the_with_block
-# frob:tests \
 # tests/gates_suite/test_run.py::TestLoadQueueMemoization.test_load_queue_reloads_outsi\
 # de_a_run_scope
 # invariant spec: [INV-004](invariants/INV-004.md)
@@ -214,12 +209,6 @@ def migrate(root: Path) -> Result[int, TicketError]:
 # frob:ticket T-0843
 # frob:ticket T-0889
 # frob:ticket T-1437
-# frob:tests tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_archive  # noqa: E501
-# frob:tests tests/test_tickets.py::TestArchive.test_id_present_in_both_active_and_archive_collapses_not_refuses  # noqa: E501
-# frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_refuses_when_a_live_lease_exists  # noqa: E501
-# frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_force_overrides_the_live_lease_refusal  # noqa: E501
-# frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_stale_lease_from_a_removed_worktree  # noqa: E501
-# frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_live_lease_for_a_ticket_it_would_not_touch  # noqa: E501
 # T-0633: the whole load-filter-write sequence below is held under ONE
 # `ledger_lock` span, not just the final `write_all`/`write_archive` calls
 # individually -- `load_all` used to run UNLOCKED, so a concurrent
@@ -312,9 +301,6 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
 
 # frob:ticket T-1750
 # frob:doc docs/modules/tickets-data-storage.md#archive-the-live-worktree-guard-t-1750
-# frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_refuses_when_another_worktree_exists kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_force_overrides_the_live_worktree_refusal kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_no_other_worktree_archives_normally kind="unit"  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Archive: the \
 # live-worktree guard (T-1750) section documents several symbols under one section, \
 # not just a public entry point -- the many-symbols- one-section convention this repo \
@@ -433,9 +419,6 @@ def _refuse_archive_if_leased(
 # frob:ticket T-1256
 # frob:ticket T-1750
 # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
-# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archive_v2_regression_two_sided_divergence_no_clobber  # noqa: E501
-# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archived_v2_ticket_still_resolves_as_blocker  # noqa: E501
 # frob:waive AFFECT001 reason="T-1750 only extracts the existing git-mv-per-ticket \
 # loop into a private helper (_archive_v2_move_tickets, ARCH001 line-budget fix) -- \
 # design/ledger-v2.md#43-archive-as-git-mv describes the git-mv-per-ticket design \
@@ -650,7 +633,6 @@ def _rewrite_moved_attachment_paths(
 
 # frob:ticket T-0889
 # frob:ticket T-1437
-# frob:tests tests/test_tickets.py::TestArchive.test_id_present_in_both_active_and_archive_collapses_not_refuses  # noqa: E501
 def _write_archived_and_active(
     root: Path,
     active: dict[str, Ticket],
@@ -723,15 +705,11 @@ def _write_archived_and_active(
 
 # frob:ticket T-2954
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-restore-t-2954
-# frob:tests \
 # tests/unit/test_ticket_restore.py::TestRestore.test_restores_a_non_terminal_archived_\
 # ticket_to_active
-# frob:tests \
 # tests/unit/test_ticket_restore.py::TestRestore.test_refuses_when_not_archived
-# frob:tests \
 # tests/unit/test_ticket_restore.py::TestRestore.test_refuses_when_destination_already_\
 # exists
-# frob:tests tests/unit/test_ticket_restore.py::TestRestore.test_refuses_a_blank_reason
 def restore(root: Path, ticket_id: str, *, reason: str) -> Result[Ticket, TicketError]:
     """`frob ticket restore <id> --reason TEXT` (T-2954): the missing
     repair primitive for a ticket stranded under `tickets/archive/` in a

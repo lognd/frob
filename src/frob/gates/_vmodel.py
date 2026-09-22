@@ -88,7 +88,6 @@ def _strata_files(root: Path, design_dir: Path) -> list[Path]:
 
 
 # frob:ticket T-3264
-# frob:tests tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud.test_check_fails_loud_with_sys004_when_strata_present  # noqa: E501
 def _collect_vmodel_graph(
     paths: list[Path],
 ) -> tuple[
@@ -166,13 +165,8 @@ def _collect_vmodel_graph(
 
 # frob:ticket T-3042
 # frob:doc docs/strata/vmodel.md#wired-into-frob-check-vmod001-t-3042
-# frob:tests tests/test_gates_vmodel.py::TestVmodelGate.test_noop_no_design_dir
-# frob:tests tests/test_gates_vmodel.py::TestVmodelGate.test_noop_no_vmodel_declarations
-# frob:tests \
 # tests/test_gates_vmodel.py::TestVmodelGate.test_fires_vmod001_on_construction_error
-# frob:tests \
 # tests/test_gates_vmodel.py::TestVmodelGate.test_fires_vmod001_on_closure_violation
-# frob:tests \
 # tests/test_gates_vmodel.py::TestVmodelGate.test_quiet_on_a_genuinely_closed_graph
 # frob:enforces CHK-GATE-VMOD001
 def vmodel_gate(root: Path) -> tuple[Violation, ...]:

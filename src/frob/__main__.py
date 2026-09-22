@@ -101,10 +101,7 @@ _log = get_logger(__name__)
 # another ticket's live scope lease (T-4306), so this diff cannot edit it without a \
 # cross-ticket scope conflict; the new call's own docstring \
 # (_ensure_ambient_virtual_env) carries the full rationale"
-# frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_keyboard_interrupt_prints_clean_message_and_exits_130  # noqa: E501
-# frob:tests \
 # tests/unit/test_main_entry.py::TestMainSigint.test_normal_dispatch_is_unaffected
-# frob:tests tests/unit/test_main_entry.py::TestMainInstallsSigtermReaper.test_main_installs_the_reaper_before_dispatch  # noqa: E501
 def main() -> None:
     """CLI entry point: parses argv and dispatches to `App`, or straight to
     `frob bind` (T-0355: SIGINT during a long-running command -- e.g. a
@@ -320,10 +317,8 @@ def _dispatch_release_status(argv: list[str]) -> None:
 
 
 # frob:ticket T-1483
-# frob:tests \
 # tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_subcommand_dispatch\
 # es_to_run_refactor_command kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_exit_code_propagate\
 # s kind="unit"  # noqa: E501
 def _dispatch_refactor(argv: list[str]) -> None:
@@ -350,7 +345,6 @@ def _dispatch_refactor(argv: list[str]) -> None:
 # frob:ticket T-2993
 # frob:ticket T-3020
 # frob:ticket T-4546
-# frob:tests \
 # tests/test_narrative_blocks.py::TestT3020WaiversRemoved.test_dispatch_narrative_has_no_sys003_waiver  # noqa: E501
 # frob:waive DUP001 reason="deliberate structural duplicate of _dispatch_refactor \
 # immediately above -- both are the same direct-dispatch-verb shape this file already \
@@ -447,9 +441,6 @@ def _dispatch_default(argv: list[str]) -> None:
 
 
 # frob:ticket T-4308
-# frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_sets_when_unset
-# frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_leaves_existing
-# frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_skips_non_venv
 # frob:waive ARCH103 reason="single atomic unit: read one env var, check one candidate \
 # path, write the env var -- a startup-time environment-normalization step no smaller \
 # than the fact it names (is VIRTUAL_ENV already set; is sys.prefix a real venv). The \
@@ -509,8 +500,6 @@ def _ensure_ambient_virtual_env() -> None:
 
 
 # frob:ticket T-4308
-# frob:tests tests/unit/test_main_entry.py::TestIsRealVenv.test_true_for_this_process_own_venv  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestIsRealVenv.test_false_for_a_path_with_no_pyvenv_cfg  # noqa: E501
 def _is_real_venv(prefix: Path) -> bool:
     """`True` when `prefix` (a candidate `sys.prefix`) is a real venv --
     split out of `_ensure_ambient_virtual_env` (ARCH103: keep the I/O-plus-
@@ -521,10 +510,6 @@ def _is_real_venv(prefix: Path) -> bool:
 
 # frob:ticket T-2979
 # frob:doc docs/modules/logging.md#public-api
-# frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_v_sets_debug_env_var  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_dash_verbose_sets_debug_env_var  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_no_verbose_flag_leaves_env_var_untouched  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_existing_explicit_frob_log_level_is_not_clobbered  # noqa: E501
 def _apply_verbose_env_override(argv: list[str]) -> None:
     """Set `FROB_VERBOSE=1` when `-v`/`--verbose` is present in `argv`
     (T-2979). Runs by RAW ARGV SCAN, before `_build_parser`/`_dispatch`,

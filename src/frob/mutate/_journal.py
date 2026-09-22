@@ -334,10 +334,8 @@ def _read_journal_file(path: Path) -> _MutationJournalEntry | None:
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
-# frob:tests \
 # tests/test_mutate_journal.py::test_write_journal_is_idempotent_for_same_content \
 # kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_mutate_journal.py::test_write_journal_refuses_on_content_collision \
 # kind="unit"  # noqa: E501
 def write_journal(
@@ -412,14 +410,11 @@ def write_journal(
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
-# frob:tests \
 # tests/test_mutate_journal.py::test_record_journal_progress_tracks_last_written_conten\
 # t \
 # kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_mutate_journal.py::test_record_journal_progress_is_a_noop_with_no_journal \
 # kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_mutate_journal.py::test_record_journal_progress_swallows_write_failure \
 # kind="unit"  # noqa: E501
 def record_journal_progress(root: Path, target: Path, current: bytes) -> None:
@@ -453,9 +448,7 @@ def record_journal_progress(root: Path, target: Path, current: bytes) -> None:
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
-# frob:tests tests/test_mutate_journal.py::test_remove_journal_after_restore \
 # kind="unit"  # noqa: E501
-# frob:tests tests/test_mutate_journal.py::test_remove_journal_swallows_oserror \
 # kind="unit"  # noqa: E501
 def remove_journal(root: Path, target: Path) -> None:
     """Delete `target`'s journal file after a successful restore -- called
@@ -478,7 +471,6 @@ def _iter_journal_files(root: Path) -> tuple[Path, ...]:
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
-# frob:tests \
 # tests/test_mutate_journal.py::test_list_stale_journals_reports_without_restoring \
 # kind="unit"  # noqa: E501
 def list_stale_journals(root: Path) -> tuple[StaleJournal, ...]:
@@ -501,10 +493,8 @@ def list_stale_journals(root: Path) -> tuple[StaleJournal, ...]:
 
 
 # frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
-# frob:tests \
 # tests/test_mutate_journal.py::test_restore_stale_journals_is_byte_exact_crlf \
 # kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_mutate_journal.py::test_restore_stale_journals_after_simulated_crash \
 # kind="unit"  # noqa: E501
 def restore_stale_journals(root: Path) -> tuple[str, ...]:

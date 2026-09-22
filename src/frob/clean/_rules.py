@@ -58,7 +58,6 @@ TIER3_PROTECTED_PATHS: tuple[str, ...] = (".frob/rapid-debt.jsonl",)
 
 
 # frob:doc docs/modules/clean.md#tiers
-# frob:tests tests/test_clean.py::test_tier_patterns_cumulative
 def tier_patterns(tier: CleanTier) -> tuple[str, ...]:
     """The full glob-pattern allowlist for `tier`, cumulative -- DEEP includes
     everything ALL includes, which includes everything SAFE includes."""
@@ -71,8 +70,6 @@ def tier_patterns(tier: CleanTier) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/clean.md#public-api
-# frob:tests tests/test_clean.py::test_extra_patterns_from_config
-# frob:tests tests/test_clean.py::test_extra_patterns_missing_toml
 def extra_patterns_from_config(root: Path) -> tuple[str, ...]:
     """Project-specific extra allowlist patterns from `root/frob.toml`'s
     `[clean]` table (`extra_patterns = [...]`), same degrade-gracefully

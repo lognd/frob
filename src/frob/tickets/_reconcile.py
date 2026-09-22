@@ -359,13 +359,6 @@ def _refuse_apply_if_land_in_progress(
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_remove_orphans_actually_removes_it kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_the_confirmed_leak_shape kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_refuses_and_writes_nothing_while_land_lock_held kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_still_requeues_when_no_land_in_progress kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_doable_summary_cache kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_cache_even_on_a_dry_run kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-1934
 # frob:ticket T-2291

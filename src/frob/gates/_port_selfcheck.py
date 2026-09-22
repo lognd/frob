@@ -470,15 +470,6 @@ def _unresolved_project_name_violation(root: Path) -> Violation:
 
 # frob:ticket T-2388
 # frob:doc docs/modules/gates.md#port001-t-2388
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_hardcoded_path_prefix_is_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_allowlisted_self_match_file_is_silent  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_unresolved_project_name_is_not_a_clean_pass  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_unparseable_file_is_parse001_not_silent  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_non_detector_package_code_is_now_scanned_t3275  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_legitimate_self_reference_stays_quiet_t3275  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_strata_and_vet_are_scanned_since_t2405  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_bare_default_value_is_flagged_t3435  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_bare_pkg_name_assignment_stays_quiet_t3435  # noqa: E501
 def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
     """PORT001: every git-tracked `.py` file under one of
     `DETECTOR_PACKAGE_ROOTS` (`src/frob/{check,gates,strata,vet}/`,

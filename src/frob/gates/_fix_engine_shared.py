@@ -29,7 +29,6 @@ _log = logging.getLogger(__name__)
 
 
 # frob:ticket T-3698
-# frob:tests tests/gates_suite/test_fix_engine.py::TestPidAlive.test_pid_alive_delegates_to_shared_process_liveness_probe  # noqa: E501
 def _pid_alive(pid: int) -> bool:
     """Whether `pid` is a live process, best-effort -- delegates to
     `frob.process._pid_liveness.pid_alive` (T-3018/T-3003/T-3191) rather
@@ -97,7 +96,6 @@ def _autofix_manifest_path(root: Path) -> Path:
 
 # frob:ticket T-1348
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-land
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestAutofixManifest.test_write_then_clear_round\
 # trip
 def write_autofix_manifest(root: Path, applied: list[FixApplied]) -> None:
@@ -130,7 +128,6 @@ def write_autofix_manifest(root: Path, applied: list[FixApplied]) -> None:
 
 # frob:ticket T-1348
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-land
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestAutofixManifest.test_write_then_clear_round\
 # trip
 # frob:waive AFFECT001 reason="T-1371 only widens internal exception handling; the documented breadcrumb-removal behavior is unchanged, so docs/modules/tickets-landing.md#frob-ticket-land needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
@@ -156,7 +153,6 @@ def clear_autofix_manifest(root: Path) -> None:
 
 
 # frob:ticket T-3526
-# frob:tests tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_dead_pid_manifest_is_abandoned kind="unit"  # noqa: E501
 # frob:waive COV001 reason="this model is a plain data-carrier for \
 # read_abandoned_autofix_manifest's own return value, three fields already fully \
 # described by its own docstring (rewritten_paths/fix_count/pid); the natural anchor \
@@ -180,13 +176,10 @@ class AutofixManifest(BaseModel):
 
 # frob:ticket T-3526
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-# frob:tests \
 # tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_dead_pid_mani\
 # fest_is_abandoned kind="unit"
-# frob:tests \
 # tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_live_pid_mani\
 # fest_is_not_abandoned kind="unit"
-# frob:tests \
 # tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_absent_manife\
 # st_is_not_abandoned kind="unit"
 def read_abandoned_autofix_manifest(root: Path) -> AutofixManifest | None:

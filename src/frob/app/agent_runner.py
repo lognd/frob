@@ -209,13 +209,6 @@ def _run_env(path: str) -> None:
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:tests tests/test_worktree_guard.py::TestAgentRunnerEnv.test_env_prints_export_lines_for_worktree  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAgentRunnerEnv.test_env_defaults_to_cwd  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAgentRunnerEnv.test_env_non_repo_path_exits_nonzero  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_bare_eval_succeeds_with_no_filtering  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_stdout_contains_only_export_lines  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_diagnostics_still_appear_on_stderr  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_no_fleet_context_still_produces_valid_eval_output  # noqa: E501
 def run(argv: list[str]) -> None:
     """`frob agent [subcommand]` entry point (T-0574), dispatched directly
     by `__main__._dispatch` the same way `frob bind` is. `agent` has

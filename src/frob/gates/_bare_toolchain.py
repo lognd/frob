@@ -58,8 +58,6 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # frob:ticket T-4125
 # frob:ticket T-4163
 # frob:enforces CHK-GATE-BARETOOL001
-# frob:tests tests/unit/vet/test_bare_toolchain.py::TestBareToolchainGate.test_flags_bare_argv_literal  # noqa: E501
-# frob:tests tests/unit/vet/test_bare_toolchain.py::TestBareToolchainGate.test_clean_on_project_tool_argv_spelling  # noqa: E501
 def bare_toolchain_gate(root: Path) -> tuple[Violation, ...]:
     """BARETOOL001: every git-tracked `.py` file scanned for a bare
     toolchain-name argv literal (`frob.vet._bare_toolchain.

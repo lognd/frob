@@ -132,7 +132,6 @@ _TIERBDEMO_MARKER_PREFIX = "# frob:tierbdemo "
 
 
 # frob:doc docs/design/check-fix-engine.md#transaction--rollback-model-tier-b
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_clean_fix_commits_and_i\
 # s_reported_fixed kind="unit"
 # frob:waive EXHAUST003 reason="T-1262: leaked Unknown traces to \
@@ -268,13 +267,10 @@ def _dead001_delete_one_symbol(
 
 
 # frob:doc docs/design/check-fix-engine.md#transaction--rollback-model-tier-b
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_removes_unrefer\
 # enced_private_symbol kind="unit"
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_skips_a_waived_\
 # finding kind="unit"
-# frob:tests \
 # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_at_most_one_del\
 # etion_per_file_per_pass kind="unit"
 def fix_dead001_unreferenced_symbol_removal(

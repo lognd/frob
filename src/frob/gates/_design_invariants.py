@@ -87,8 +87,6 @@ def _import_violates(spec: str, forbidden: str) -> bool:
 
 # frob:doc docs/modules/gates.md#inv007-and-inv008-t-0757
 # frob:ticket T-0757
-# frob:tests tests/unit/test_design_invariants.py::TestInv007.test_forbidden_import_fires  # noqa: E501
-# frob:tests tests/unit/test_design_invariants.py::TestInv007.test_clean_module_no_finding  # noqa: E501
 # frob:enforces CHK-GATE-INV007
 def inv007_violations(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """INV007: a `frob:invariant ... no_import="pkg"` anchor whose own file
@@ -186,8 +184,6 @@ def _has_bound_property_test(anchor_src: str, snapshot: GraphSnapshot) -> bool:
 
 # frob:doc docs/modules/gates.md#inv007-and-inv008-t-0757
 # frob:ticket T-0757
-# frob:tests tests/unit/test_design_invariants.py::TestInv008.test_missing_property_test_fires  # noqa: E501
-# frob:tests tests/unit/test_design_invariants.py::TestInv008.test_bound_property_test_clears  # noqa: E501
 # frob:enforces CHK-GATE-INV008
 def inv008_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """INV008: a `frob:invariant ... establishes="..."` anchor with no
@@ -370,8 +366,6 @@ def _inv011_edge_violations(root: Path, edge: Edge) -> tuple[Violation, ...]:
 
 # frob:doc docs/modules/gate-inv011-forbidden-constant-reachability.md#inv011-forbidden-constant-reachability-t-3962  # noqa: E501
 # frob:ticket T-3962
-# frob:tests tests/unit/test_design_invariants.py::TestInv011.test_unguarded_path_fires  # noqa: E501
-# frob:tests tests/unit/test_design_invariants.py::TestInv011.test_guarded_path_clears  # noqa: E501
 # frob:enforces CHK-GATE-INV011
 def inv011_violations(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """INV011: forbidden-constant reachability (F-175, T-3962).

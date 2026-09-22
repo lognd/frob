@@ -127,9 +127,6 @@ def _run_downgrade(cfg: AppConfig, root: Path) -> None:
 # frob:ticket T-1584
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
-# frob:tests tests/unit/test_profile_runner.py::TestProfileRunnerShow.test_show_reports_configured_and_effective  # noqa: E501
-# frob:tests tests/unit/test_profile_runner.py::TestProfileRunnerDowngrade.test_downgrade_requires_a_reason  # noqa: E501
-# frob:tests tests/unit/test_profile_runner.py::TestProfileRunnerDowngrade.test_downgrade_clears_a_real_ratchet  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob profile show` / `frob profile downgrade --reason TEXT`
     (T-1584): wires `frob.tickets._profile`'s `effective_profile`/

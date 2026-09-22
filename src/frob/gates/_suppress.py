@@ -99,7 +99,6 @@ _MYPY_DIAG_RE = re.compile(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests \
 # tests/test_gates_suppress.py::TestSuppressionDialects.test_registers_ty_mypy_ruff
 class SuppressionDialect(BaseModel):
     """One suppression-comment dialect frob's Python source may carry:
@@ -121,7 +120,6 @@ class SuppressionDialect(BaseModel):
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests \
 # tests/test_gates_suppress.py::TestSuppressionDialects.test_available_reflects_path_not_project_config  # noqa: E501
 def suppression_dialects() -> dict[str, SuppressionDialect]:
     """The registry of every Python `SuppressionDialect` SUPPRESS001
@@ -403,15 +401,10 @@ def _suppress001_correlate(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests \
 # tests/test_gates_suppress.py::TestSuppress001Gate.test_mypy_suppressed_ty_unsuppressed_fires  # noqa: E501
-# frob:tests \
 # tests/test_gates_suppress.py::TestSuppress001Gate.test_ty_suppressed_mypy_unsuppressed_fires  # noqa: E501
-# frob:tests \
 # tests/test_gates_suppress.py::TestSuppress001Gate.test_both_dialects_present_reports_nothing  # noqa: E501
-# frob:tests \
 # tests/test_gates_suppress.py::TestSuppress001Gate.test_no_available_oracle_reports_nothing  # noqa: E501
-# frob:tests \
 # tests/test_gates_suppress.py::TestSuppress001RepoWideLock.test_repo_is_currently_clean
 # frob:ticket T-1342
 # frob:enforces CHK-GATE-SUPPRESS001

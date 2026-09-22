@@ -257,15 +257,7 @@ def _java_visit(
 
 
 # frob:ticket T-1601
-# frob:tests tests/test_lang.py::TestJava.test_walks_class_and_method
-# frob:tests tests/test_lang.py::TestJava.test_package_private_method_is_not_public
-# frob:tests tests/test_lang.py::TestJava.test_static_final_field_is_a_const_symbol
-# frob:tests tests/test_lang.py::TestJava.test_plain_field_is_not_extracted
-# frob:tests tests/test_lang.py::TestJava.test_enum_is_a_class_symbol
-# frob:tests tests/test_lang.py::TestJava.test_inner_class_is_a_transparent_qualname_container  # noqa: E501
-# frob:tests \
 # tests/test_lang.py::TestJava.test_interface_default_method_is_implicitly_public
-# frob:tests tests/test_lang.py::TestJava.test_leading_javadoc_comment_binds_as_doc_text
 def _walk_java(root: Node) -> tuple[RawSymbol, ...]:
     """Every Java symbol: classes/interfaces/enums (`CLASS`), their
     methods/constructors (`METHOD`), and their `static final` (or

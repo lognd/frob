@@ -73,7 +73,6 @@ _CVE_RE = re.compile(r"^CVE-\d{4}-\d+$")
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:tests tests/vet_suite/test_advisories.py::TestOsvAdapter.test_query_advisories_no_cache_no_network_is_unavailable  # noqa: E501
 class OsvQueryError(ErrorSet):
     """Fallible outcomes of an OSV.dev advisory query."""
 
@@ -92,7 +91,6 @@ class OsvQueryError(ErrorSet):
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:tests tests/vet_suite/test_advisories.py::TestOsvAdapter.test_query_advisories_unparseable_response_is_distinct_from_unavailable  # noqa: E501
 class OsvQueryFailure:
     """`query_advisories`'s error value: `kind` (`OsvQueryError`) plus an
     optional `detail` -- the raw response tail for `UnparseableResponse`,
@@ -408,9 +406,6 @@ def _cached_advisories_and_age(
 # frob:doc docs/modules/vet.md#public-api
 # frob:enforces SC-DEFENSE-OSV
 # frob:ticket T-5138
-# frob:tests tests/vet_suite/test_advisories.py::TestOsvAdapter.test_query_advisories_positive_control_fires_a_known_advisory  # noqa: E501
-# frob:tests tests/vet_suite/test_advisories.py::TestOsvAdapter.test_query_advisories_serves_fresh_cache_with_no_network_call  # noqa: E501
-# frob:tests tests/vet_suite/test_advisories.py::TestOsvAdapter.test_query_advisories_no_cache_no_network_is_unavailable  # noqa: E501
 def query_advisories(
     deps: tuple[Dependency, ...],
     *,

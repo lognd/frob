@@ -522,14 +522,7 @@ def _design_load_digest(paths: list[Path], root: Path) -> str:
 # frob:ticket T-0080
 # frob:ticket T-3529
 # frob:ticket T-4669
-# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_merges_ids
-# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_no_dir_empty
-# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_bad_file_reported
-# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_excluded_no_ids
-# frob:tests tests/unit/strata/test_design_load.py::TestCrossFileArchitectureResolution.test_architecture_resolves_against_a_sibling_files_entity  # noqa: E501
-# frob:tests \
 # tests/unit/strata/test_strata_scan_cache.py::TestLoadDesignIdsCache.test_second_call_in_process_is_a_cache_hit  # noqa: E501
-# frob:tests \
 # tests/unit/strata/test_strata_scan_cache.py::TestLoadDesignIdsCache.test_changed_design_file_invalidates_the_cache  # noqa: E501
 def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignIds:
     """Parse+elaborate every `.strata` file under `root/design_dir` and merge
@@ -599,8 +592,6 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
 # frob:doc docs/strata/surface.md#directives-t-0080
 # frob:ticket T-0084
 # frob:ticket T-0972
-# frob:tests tests/unit/strata/test_design_load.py::TestUnbound.test_unbound_pair
-# frob:tests tests/unit/strata/test_design_load.py::TestUnbound.test_bound_excluded
 def unbound_constructs(
     design_ids: DesignIds,
     snapshot: GraphSnapshot,

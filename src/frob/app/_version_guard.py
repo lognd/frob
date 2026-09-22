@@ -118,11 +118,6 @@ def _fingerprint_mismatch_message(
 
 # frob:ticket T-3129
 # frob:doc docs/modules/app.md#entry-point
-# frob:tests tests/unit/test_version_guard.py::test_matching_sha_is_quiet
-# frob:tests tests/unit/test_version_guard.py::test_mismatched_sha_warns_loudly
-# frob:tests tests/unit/test_version_guard.py::test_unresolvable_running_sha_warns
-# frob:tests tests/unit/test_version_guard.py::test_non_frob_repo_is_quiet
-# frob:tests tests/unit/test_version_guard.py::test_editable_in_tree_run_is_quiet
 def binary_fingerprint_warning(repo_root: Path) -> str | None:
     """A loud, one-line warning when the INVOKED `frob` binary's source
     content cannot be PROVEN identical to `repo_root`'s own checkout,

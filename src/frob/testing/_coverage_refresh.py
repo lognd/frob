@@ -110,8 +110,6 @@ _DEFAULT_COV_TARGET = "src/frob"
 
 
 # frob:ticket T-3275
-# frob:tests tests/test_coverage.py::TestResolveCovTarget.test_non_frob_repo_resolves_its_own_package kind="unit"  # noqa: E501
-# frob:tests tests/test_coverage.py::TestResolveCovTarget.test_unresolvable_name_falls_back_to_default kind="unit"  # noqa: E501
 def _resolve_cov_target(root: Path) -> str:
     """Resolve the coverage source target from `root`'s OWN
     `pyproject.toml` `[project].name` (the same `import-path convention
@@ -152,9 +150,6 @@ _SUBPROCESS_RC_REL = ".frob/coverage-subprocess.rc"
 # frob:ticket T-1235
 # frob:ticket T-2527
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_uses_absolute_source_and_data_file  # noqa: E501
-# frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_declares_multiprocessing_and_sigterm  # noqa: E501
-# frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_remaps_paths_back_to_source  # noqa: E501
 # frob:waive COV007 reason="docs/modules/testing.md's Public API section documents \
 # several symbols under one section, not just a public entry point -- the \
 # many-symbols- one-section convention this repo already accepted for vet.md (T-2810 \
@@ -616,8 +611,6 @@ class _PytestPass:
 
 
 # frob:ticket T-1516
-# frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_full_run_when_no_stamp_exists  # noqa: E501
-# frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_incremental_run_uses_touched_set_targets  # noqa: E501
 def _pytest_argv(
     root: Path,
     *,
@@ -971,7 +964,6 @@ def _neutralized_addopts(cwd: Path) -> str | None:
 
 
 # frob:ticket T-2068
-# frob:tests tests/test_coverage.py::TestNeutralizedAddoptsPytest11Entrypoint.test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override  # noqa: E501
 # frob:doc docs/modules/testing.md#public-api
 def pytest_load_initial_conftests(
     early_config: "pytest.Config",
@@ -1370,11 +1362,6 @@ def _write_abort_provenance(root: Path, error: CoverageRefreshError) -> None:
 # frob:ticket T-1516
 # frob:ticket T-3099
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_full_run_when_no_stamp_exists  # noqa: E501
-# frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_incremental_run_uses_touched_set_targets  # noqa: E501
-# frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_nothing_touched_only_restamps  # noqa: E501
-# frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_red_suite_keeps_coverage_data  # noqa: E501
-# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestNativeCoverageRefreshWiring.test_must_fire_applies_and_warns_before_pytest_pass  # noqa: E501
 def native_coverage_refresh(
     root: Path,
     snapshot: GraphSnapshot,

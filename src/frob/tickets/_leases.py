@@ -602,11 +602,8 @@ class _LeaseRecord(BaseModel):
 
 # frob:ticket T-0782
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests \
 # tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_computes_elapsed_time \
 # kind="unit"
-# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_none_for_unparseable_timestamp kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLeaseAgeSecondsExceptionBranch.test_none_when_recorded_at_is_not_a_string kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'defensive, a \
 # lease file is peer-writable' None-on-failure contract to cover any unresolvable \
@@ -640,9 +637,7 @@ def lease_age_seconds(
 
 # frob:ticket T-0782
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_expired_past_ttl \
 # kind="unit"
-# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_not_expired_within_ttl \
 # kind="unit"
 # frob:ticket T-0601
 def is_lease_ttl_expired(
@@ -667,7 +662,6 @@ def is_lease_ttl_expired(
     return age > ttl_seconds
 
 
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_across_linked_worktrees kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def _git_common_dir(root: Path) -> Result[Path, LeaseError]:
     """The shared `.git` directory for `root`'s repository, resolved to an
@@ -691,7 +685,6 @@ def _git_common_dir(root: Path) -> Result[Path, LeaseError]:
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_lease_written_in_one_worktree_seen_in_another kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def leases_dir(root: Path) -> Result[Path, LeaseError]:
     """`<git-common-dir>/frob-leases`, the directory every worktree of
@@ -775,9 +768,6 @@ def _should_skip_root_lease(root: Path, common_dir: Path) -> bool:
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_lease_written_in_one_worktree_seen_in_another kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_mkdir_failure kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_write_failure kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-2007
 def record_lease(
@@ -877,7 +867,6 @@ def record_lease(
 
 
 # frob:ticket T-5120
-# frob:tests \
 # tests/unit/tickets/test_start_transition_ledger.py::TestStartTransitionCommitsLedgerInFleetContext.test_in_progress_transition_commits_the_ledger  # noqa: E501
 def _commit_start_ledger_write_in_fleet_context(
     root: Path, ticket_id: str, record: "_LeaseRecord"
@@ -925,13 +914,6 @@ def _commit_start_ledger_write_in_fleet_context(
 
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:doc docs/modules/tickets-lifecycle.md#lease-lifecycle-acquire-and-release-table-t-4659  # noqa: E501
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_release_on_close_removes_the_lease kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_release_lease_degrades_on_unlink_failure kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_drop_releases_lease kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_fail_releases_lease kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_requeue_releases_lease kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening.test_missing_lease_is_a_silent_ok kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_lease_lifecycle.py::TestReleaseLeaseHardening.test_real_unlink_failure_logs_at_error kind="unit"  # noqa: E501
 # frob:ticket T-4659
 def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     """Remove `ticket_id`'s cross-worktree lease file, if any (T-0473) --
@@ -1059,12 +1041,7 @@ def _land_in_progress_for_ticket(root: Path, ticket_id: str) -> bool:
 # frob:ticket T-2264
 # frob:doc \
 # docs/modules/tickets-landing.md#orphaned-lease-detection-and-release-t-1779-finding-7
-# frob:tests tests/test_ticket_leases.py::TestLeaseStalenessReason.test_path_gone
-# frob:tests tests/test_ticket_leases.py::TestLeaseStalenessReason.test_ticket_gone
-# frob:tests tests/test_ticket_leases.py::TestLeaseStalenessReason.test_holder_dead
-# frob:tests \
 # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_live_lease_is_not_stale
-# frob:tests \
 # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_land_shields_lease
 def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     """Unifies the four independent orphaned-lease shapes T-1806/T-2048
@@ -1222,8 +1199,6 @@ def _load_active_ledger_cached(root: Path) -> Result[TicketQueue, TicketError]:
 
 # frob:ticket T-4172
 # frob:ticket T-4491
-# frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_terminal_lease_does_not_block kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_leases_staleness_perf.py::TestTicketLedgerStalenessShapeArchiveFastPath.test_archived_ticket_id_is_terminal_without_parsing_the_archive kind="unit"  # noqa: E501
 def _ticket_ledger_staleness_shape(
     root: Path,
     ticket_id: str,
@@ -1296,11 +1271,7 @@ def _ticket_ledger_staleness_shape(
 # frob:ticket T-1806
 # frob:doc \
 # docs/modules/tickets-landing.md#orphaned-lease-detection-and-release-t-1779-finding-7
-# frob:tests tests/test_ticket_leases.py::TestOrphanedLeases.test_finds_a_lease_pointing_at_a_gone_worktree  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestOrphanedLeases.test_live_worktree_lease_is_not_orphaned  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedLeases.test_finds_a_ticket_gone_lease
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedLeases.test_finds_a_holder_dead_lease
 def orphaned_leases(root: Path) -> tuple[_LeaseRecord, ...]:
     """Every lease `read_all_leases(root)` reports that `lease_staleness_
@@ -1345,15 +1316,10 @@ def orphaned_leases(root: Path) -> tuple[_LeaseRecord, ...]:
 
 
 # frob:ticket T-4342
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_lock_gone_ticket_is_orphaned
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_live_holder_not_orphaned
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_real_ticket_not_orphaned
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_archived_ticket_not_orphaned
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_bad_ledger_degrades_to_none
 def _lock_file_held_by_live_process(path: Path) -> bool:
     """`True` iff `path` (a per-ticket `ticket_lock` file, `.frob/tickets/
@@ -1398,15 +1364,12 @@ def _lock_file_held_by_live_process(path: Path) -> bool:
 
 
 # frob:ticket T-4348
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_draft_id_never_reported
 _ORPHAN_DRAFT_ID_PREFIX = "T-draft-"
 
 # frob:ticket T-4348
 # frob:doc docs/modules/tickets-landing.md#orphaned-ticket-lock-detection-t-4342
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_pre_cutover_lock_is_baseline_silent  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_reports  # noqa: E501
 _ORPHAN_LOCK_BASELINE_CUTOVER = datetime(2026, 9, 9, 3, 10, 0, tzinfo=UTC).timestamp()
 """Unix-epoch mtime cutover for `orphaned_ticket_locks` (T-4348): fixed at
@@ -1428,11 +1391,8 @@ horizon, which is the opposite of what T-4348 asked for."""
 
 # frob:ticket T-4348
 # frob:ticket T-4404
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_draft_id_never_reported
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_pre_cutover_lock_is_baseline_silent  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_post_cutover_lock_still_reports  # noqa: E501
 def _is_ticket_lock_baseline_excluded(
     ticket_id: str, lock_path: Path, *, lock_mtime: float | None
@@ -1491,9 +1451,7 @@ def _is_ticket_lock_baseline_excluded(
 # frob:ticket T-4342
 # frob:ticket T-4348
 # frob:doc docs/modules/tickets-landing.md#orphaned-ticket-lock-detection-t-4342
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_lock_gone_ticket_is_orphaned
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_live_holder_not_orphaned
 def orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
     """Every ticket id whose per-ticket `ticket_lock` file (`.frob/tickets/
@@ -1585,14 +1543,12 @@ def orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
 
 
 # frob:ticket T-4342
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_warn_logs_once_per_id
 _warned_orphaned_ticket_lock_ids: set[tuple[Path, str]] = set()
 
 
 # frob:ticket T-4342
 # frob:doc docs/modules/tickets-landing.md#orphaned-ticket-lock-detection-t-4342
-# frob:tests \
 # tests/test_ticket_leases.py::TestOrphanedTicketLocks.test_warn_logs_once_per_id
 def warn_orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
     """Logs one WARNING for every id `orphaned_ticket_locks(root)` finds,
@@ -1662,11 +1618,6 @@ def warn_orphaned_ticket_locks(root: Path) -> tuple[str, ...]:
 # frob:ticket T-1806
 # frob:doc \
 # docs/modules/tickets-landing.md#orphaned-lease-detection-and-release-t-1779-finding-7
-# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_releases_a_genuinely_orphaned_lease  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_refuses_a_live_worktree_lease  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_refuses_an_unknown_ticket_id  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_releases_a_ticket_gone_lease  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_releases_a_holder_dead_lease  # noqa: E501
 def release_orphaned_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     """`frob worktree release-lease TICKET-ID` (T-1779 finding 7): the
     SAFE, scoped alternative to a coordinator deleting a lease file by
@@ -1735,8 +1686,6 @@ def release_orphaned_lease(root: Path, ticket_id: str) -> Result[None, LeaseErro
 
 # frob:ticket T-1743
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.test_cross_worktree_holder_names_its_worktree kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.test_local_only_holder_has_no_worktree kind="unit"  # noqa: E501
 def lease_holder_worktree(root: Path, ticket_id: str) -> str | None:
     """The worktree path recorded in `ticket_id`'s CURRENT cross-worktree
     lease file, or `None` if no such file exists (T-1743).
@@ -1761,9 +1710,6 @@ def lease_holder_worktree(root: Path, ticket_id: str) -> str | None:
 
 # frob:ticket T-2079
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_ticket_ownership_guard.py::TestMainWriteToLeasedTicketIsRefused.test_main_side_write_to_a_worktree_leased_ticket_is_refused  # noqa: E501
-# frob:tests tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicket.test_holder_worktree_write_still_succeeds  # noqa: E501
-# frob:tests tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicket.test_unleased_ticket_is_writable_from_main  # noqa: E501
 def enforce_ticket_ownership(root: Path, ticket_id: str) -> Result[None, TicketError]:
     """The OWNERSHIP half of T-1669's ledger-ownership model, split off as
     T-2079 once T-1631's v2 migration made every active ticket a single
@@ -1842,8 +1788,6 @@ def enforce_ticket_ownership(root: Path, ticket_id: str) -> Result[None, TicketE
 # frob:ticket T-1883
 # frob:ticket T-5075
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_both_leased_to_same_worktree_matches kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_different_worktrees_do_not_match kind="unit"  # noqa: E501
 def same_worktree_lease(
     root: Path,
     requesting_id: str,
@@ -2002,15 +1946,10 @@ def _record_lease_force_release_audit(
 
 # frob:ticket T-2333
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_existing_lease_file kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_lease_file_exists kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_included_in_the_warning_log kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_persisted_to_the_ticket_ledger kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli.test_release_lease_cli_force_releases_a_live_looking_lease kind="unit"  # noqa: E501
 def force_release_lease(
     root: Path, ticket_id: str, *, reason: str | None = None
@@ -2072,10 +2011,6 @@ def force_release_lease(
 
 # frob:ticket T-1173
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_is_a_no_op_when_no_lease_exists_for_old_id kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_rename_lease_degrades_on_malformed_old_record kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_rename_lease_degrades_on_write_failure kind="unit"  # noqa: E501
 def rename_lease(root: Path, old_id: str, new_id: str) -> Result[None, LeaseError]:
     """Migrate `old_id`'s cross-worktree lease file (if any) to `new_id`
     (T-1173): `renumber_one`'s draft-to-final rename rewrites the ticket's
@@ -2138,9 +2073,6 @@ def rename_lease(root: Path, old_id: str, new_id: str) -> Result[None, LeaseErro
 
 # frob:ticket T-1054
 # frob:doc docs/modules/tickets-lifecycle.md#start-transition-auto-commit-t-1054
-# frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_commits_dirty_ledger_with_expected_message kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_no_op_when_ledger_already_clean kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_reports_exact_recovery_command_on_commit_failure kind="unit"  # noqa: E501
 def commit_start_transition(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     """Commit `root`'s just-written `queued -> in-progress` (or
     `planned -> in-progress`) ledger line, the way `land`'s own
@@ -2185,12 +2117,8 @@ _STALE_WORKTREE_WARN_COMMITS_DEFAULT = 20
 
 # frob:ticket T-1059
 # frob:doc docs/modules/tickets-lifecycle.md#stale-worktree-cut-warning-t-1059
-# frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_returns_default_when_frob_toml_absent kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_reads_configured_value \
 # kind="unit"
-# frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_non_positive_value_falls_back_to_default kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_malformed_toml_falls_back_to_default kind="unit"  # noqa: E501
 def load_positive_int_config(root: Path, key: str, default: int) -> int:
     """Read `[tickets] <key>` from `root`'s `frob.toml` as a positive `int`
     (T-1059): the shared degrade-quietly `frob.toml` reader every optional
@@ -2228,16 +2156,8 @@ def _load_stale_worktree_warn_commits(root: Path) -> int:
 
 # frob:ticket T-1059
 # frob:doc docs/modules/tickets-lifecycle.md#stale-worktree-cut-warning-t-1059
-# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_warns_when_behind_threshold kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_when_within_threshold kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_on_non_git_root \
 # kind="unit"
-# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_respects_configured_threshold kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_main_ref_does_not_exist kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_rev_list_count_fails kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_count_is_not_numeric kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_config_lookup_raises kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'best-effort \
 # and non-fatal' silent-no-op contract to cover any git-result-shape surprise, not \
 # just the .is_err-checked cases -- no observable behavior change, so \
@@ -2451,7 +2371,6 @@ def _without_agent_commit_guard() -> Iterator[None]:
 
 
 # frob:ticket T-1321
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_identity_less_environment_falls_back_to_throwaway_git_identity  # noqa: E501
 def _retry_commit_with_fallback_identity(
     root: Path,
     message: str,
@@ -2847,8 +2766,6 @@ _TICKET_ID_ARGV_RE = re.compile(r"^T-\d+$")
 
 # frob:ticket T-1715
 # frob:doc docs/modules/tickets-landing.md#worktree-liveness-scan-t-1715-t-1739
-# frob:tests tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess.test_finds_a_process_cwd_into_the_path  # noqa: E501
-# frob:tests tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess.test_none_when_no_process_matches  # noqa: E501
 def scan_for_live_worktree_process(
     path: Path,
 ) -> tuple[int, tuple[str, ...] | None] | None:
@@ -2888,10 +2805,7 @@ def scan_for_live_worktree_process(
 # frob:ticket T-1619
 # frob:ticket T-3885
 # frob:doc docs/modules/tickets-landing.md#land-exclusivity-lease-t-1619
-# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_targeting_a_different_repo_does_not_block_this_one  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_a_land_does_not_block_on_its_own_descendant  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-landing.md's Land exclusivity lease \
 # (T-1619) section documents several symbols under one section, not just a public \
@@ -3034,12 +2948,7 @@ def _log_allowed_write_during_land(root: Path) -> None:
 # frob:ticket T-1619
 # frob:ticket T-3612
 # frob:doc docs/modules/tickets-landing.md#land-exclusivity-lease-t-1619
-# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_land_lock_held  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_ledger_lock_held  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file
-# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice.test_tickets_lock_held_refuses_naming_the_correlated_land_holder  # noqa: E501
 def refuse_if_land_in_progress(
     root: Path,
@@ -3182,7 +3091,6 @@ class WorktreeInUseError(ErrorSet):
 
 
 # frob:ticket T-1715
-# frob:tests tests/unit/test_land_finish_guard.py::TestLiveLeaseForWorktree.test_finds_a_live_lease_pinned_to_the_worktree  # noqa: E501
 def _live_lease_for_worktree(
     worktree: Path,
     leases: tuple[_LeaseRecord, ...],
@@ -3211,9 +3119,6 @@ def _live_lease_for_worktree(
 
 # frob:ticket T-1715
 # frob:doc docs/modules/tickets-landing.md#worktree-liveness-scan-t-1715-t-1739
-# frob:tests tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse.test_refuses_on_a_live_process_and_names_the_pid  # noqa: E501
-# frob:tests tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse.test_refuses_on_a_live_lease  # noqa: E501
-# frob:tests tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse.test_allows_when_neither_signal_fires  # noqa: E501
 def refuse_if_worktree_in_use(
     root: Path, worktree: Path, *, now: datetime | None = None
 ) -> Result[None, WorktreeInUseError]:
@@ -3380,11 +3285,6 @@ def _rev_parse_head(root: Path) -> str | None:
 
 
 # frob:ticket T-2714
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finishes_a_killed_commit_when_the_staged_content_is_still_there  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_already_advanced_tip_just_clears_the_marker  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_nothing_dirty_clears_the_marker_silently  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human  # noqa: E501
 def _repair_stale_ledger_commit_markers(root: Path) -> None:
     """Reconcile every leftover T-2714 ledger-commit-repair marker under
     `root` -- called at the very start of `_add_and_commit_tickets_md`,
@@ -3400,8 +3300,6 @@ def _repair_stale_ledger_commit_markers(root: Path) -> None:
         _reconcile_one_ledger_commit_marker(root, marker_path)
 
 
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_already_advanced_tip_just_clears_the_marker  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_nothing_dirty_clears_the_marker_silently  # noqa: E501
 def _load_ledger_commit_marker(
     marker_path: Path,
 ) -> tuple[str, tuple[str, ...], str | None] | None:
@@ -3495,8 +3393,6 @@ def _reconcile_one_ledger_commit_marker(root: Path, marker_path: Path) -> None:
     )
 
 
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finishes_a_killed_commit_when_the_staged_content_is_still_there  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human  # noqa: E501
 def _finish_ledger_commit_marker(
     root: Path,
     marker_path: Path,
@@ -3550,9 +3446,7 @@ def _finish_ledger_commit_marker(
 
 # frob:ticket T-4273
 # frob:ticket T-4290
-# frob:tests \
 # tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_resolved_race_clears_the_marker_without_a_false_alarm  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human  # noqa: E501
 def _handle_finish_marker_retry_failure(
     root: Path,
@@ -3616,7 +3510,6 @@ def _handle_finish_marker_retry_failure(
 
 # frob:ticket T-1054
 # frob:ticket T-1432
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_pre_staged_unrelated_file_never_rides_along_into_the_commit  # noqa: E501
 # T-1432 fix: the commit step is pathspec-limited (`git commit -m message
 # -- <pathspecs>`, git's documented `--only`-equivalent form for a bare
 # `-- <pathspec>` after the message) rather than a bare `git commit -m
@@ -3644,7 +3537,6 @@ def _handle_finish_marker_retry_failure(
 # frob:ticket T-2937
 # frob:doc \
 # docs/modules/tickets-landing.md#frob-ticket-new-no-longer-waits-out-a-full-land-t-2937
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_rollback_on_land_in_progress_leaves_root_clean kind="unit"  # noqa: E501
 def _rollback_pathspecs(root: Path, ticket_id: str, pathspecs: tuple[str, ...]) -> None:
     """T-2937: best-effort UNDO of a
     still-uncommitted write to `pathspecs`, restoring `root` to exactly
@@ -3743,7 +3635,6 @@ def _land_check_with_optional_rollback(
 
 # frob:ticket T-2937
 # frob:ticket T-3578
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commit_failure_names_the_failing_step_and_git_detail  # noqa: E501
 def _proc_result_failed(result: Result[ProcResult, GitError]) -> bool:
     """`True` iff a `gitio.run_argv` `Result` represents failure -- either
     the spawn itself errored, or it ran but exited nonzero. Split out
@@ -3753,7 +3644,6 @@ def _proc_result_failed(result: Result[ProcResult, GitError]) -> bool:
 
 
 # frob:ticket T-4273
-# frob:tests \
 # tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_is_not_reported_as_commit_failed  # noqa: E501
 _GIT_NOTHING_TO_COMMIT_MARKERS = (
     "nothing to commit",
@@ -3866,7 +3756,6 @@ def _add_and_commit_tickets_md(
 
 
 # frob:ticket T-4273
-# frob:tests \
 # tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_resolved_race_is_not_reported_as_commit_failed  # noqa: E501
 def _is_resolved_concurrent_commit_race(
     ticket_id: str,
@@ -3905,7 +3794,6 @@ def _is_resolved_concurrent_commit_race(
 
 
 # frob:ticket T-3578
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commit_failure_names_the_failing_step_and_git_detail  # noqa: E501
 def _log_ledger_commit_failure(
     ticket_id: str,
     root: Path,
@@ -3984,12 +3872,6 @@ def _ledger_commit_failure_step_and_detail(
 # frob:ticket T-1891
 # frob:ticket T-2937
 # frob:doc docs/modules/tickets-lifecycle.md#newdropfail-auto-commit-t-1130
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commits_dirty_ledger_with_given_message kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_skips_entirely_even_when_dirty kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_warns_when_dirty kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_does_not_warn_when_clean kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_with_warn_if_dirty_false_stays_silent kind="unit"  # noqa: E501
 def commit_ticket_ledger_change(
     root: Path,
     ticket_id: str,
@@ -4090,11 +3972,8 @@ def commit_ticket_ledger_change(
 # frob:ticket T-1615
 # frob:doc \
 # docs/modules/tickets-lifecycle.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_commits_dirty_whole_ledger kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean \
 # kind="unit"
-# frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_commit_flag_warns_when_dirty kind="unit"  # noqa: E501
 def commit_full_ledger_change(
     root: Path, message: str, *, no_commit: bool = False
 ) -> Result[None, LeaseError]:
@@ -4151,13 +4030,6 @@ def _full_ledger_dirty(pathspecs: tuple[str, ...], *, root: Path) -> bool:
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_doable_in_second_worktree_hides_colliding_ticket kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_stale_lease_for_a_removed_worktree_is_skipped kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestOpportunisticUnlink.test_stale_path_lease_is_unlinked_from_disk kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestOpportunisticUnlink.test_live_lease_is_never_unlinked kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_stat_failure_does_not_unlink kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_failure_is_logged_once_per_process kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_genuine_enoent_still_unlinks kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-5075
 def read_all_leases(
@@ -4258,7 +4130,6 @@ def read_all_leases(
 # frob:ticket T-1999
 # frob:doc \
 # docs/modules/tickets-landing.md#shared-land-path-liveness-authority-is_effectively_in_progress-t-1999  # noqa: E501
-# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_live_lease_refuses_even_when_roots_ledger_still_reads_planned kind="unit"  # noqa: E501
 def is_effectively_in_progress(
     root: Path, ticket_id: str, ledger_state: object
 ) -> bool:
@@ -4420,10 +4291,6 @@ def _recombine_lease_parse_results(
 # frob:ticket T-0976
 # frob:ticket T-4172
 # frob:ticket T-4388
-# frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_terminal_lease_does_not_block kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_in_progress_lease_still_blocks kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI.test_force_overrides_the_live_lease_refusal kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI.test_refuses_without_force_when_a_live_lease_exists kind="unit"  # noqa: E501
 def _live_leases_pruning_stale(
     root: Path,
     leases_root: Path,
@@ -4529,7 +4396,6 @@ def _prune_one_lease_record(
 
 
 # frob:ticket T-4172
-# frob:tests tests/test_ticket_leases.py::TestReadAllLeasesReconciliation.test_terminal_lease_does_not_block kind="unit"  # noqa: E501
 def _unlink_terminal_ticket_lease(leases_root: Path, record: "_LeaseRecord") -> None:
     """T-4172's reclaim half of `_live_leases_pruning_stale`: `record`'s
     own ticket has already finished (`_ticket_ledger_staleness_shape` ==
@@ -4675,14 +4541,10 @@ def _read_one_lease(leases_root: Path, ticket_id: str) -> _LeaseRecord | None:
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests \
 # tests/test_tickets_leases.py::TestResolveLease.test_resolves_own_ticket_own_worktree \
 # kind="unit"
-# frob:tests tests/test_tickets_leases.py::TestResolveLease.test_never_returns_a_sibling_tickets_lease kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_tickets_leases.py::TestResolveLease.test_no_lease_for_ticket_fails_loudly \
 # kind="unit"
-# frob:tests tests/test_tickets_leases.py::TestResolveLease.test_lease_recorded_for_a_different_worktree_fails_loudly kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def resolve_lease(
     root: Path, ticket_id: str, invoking_worktree: Path

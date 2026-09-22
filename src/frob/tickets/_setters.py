@@ -235,9 +235,6 @@ def _set_reasoned_field(
 # the new _set_reasoned_field helper and trims a repeated docstring paragraph to a \
 # cross-reference; the documented public-api behavior/contract is unchanged \
 # (re-verified, frob ack'd), so docs/modules/tickets.md#public-api needs no edit"
-# frob:tests tests/test_tickets_priority.py::TestSetPriority.test_updates_priority_field
-# frob:tests tests/test_tickets_priority.py::TestSetPriority.test_reason_missing_refuses
-# frob:tests \
 # tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_entry  # noqa: E501
 def set_priority(
     root: Path, ticket_id: str, priority: Priority, *, reason: str
@@ -267,11 +264,7 @@ def set_priority(
 # T-2353 paragraph to a cross-reference to set_priority); the documented public-api \
 # behavior/contract is unchanged (re-verified, frob ack'd), so \
 # docs/modules/tickets.md#public-api needs no edit"
-# frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
-# frob:tests \
 # tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded
-# frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_before_any_work_not_recorded  # noqa: E501
-# frob:tests tests/test_ticket_evidence.py::TestSetKind.test_reason_missing_refuses
 def set_kind(
     root: Path, ticket_id: str, kind: TicketKind, *, reason: str
 ) -> Result[Ticket, TicketError | LeaseError]:
@@ -360,8 +353,6 @@ def _kind_history_entry(ticket: Ticket, kind: TicketKind) -> str | None:
 # the new _set_reasoned_field helper and trims a repeated docstring paragraph to a \
 # cross-reference; the documented public-api behavior/contract is unchanged \
 # (re-verified, frob ack'd), so docs/modules/tickets.md#public-api needs no edit"
-# frob:tests tests/test_tickets_tiers.py::TestSetTier.test_updates_tier_field
-# frob:tests tests/test_tickets_tiers.py::TestSetTier.test_reason_missing_refuses
 def set_tier(
     root: Path, ticket_id: str, tier: TicketTier, *, reason: str
 ) -> Result[Ticket, TicketError | LeaseError]:
@@ -448,17 +439,6 @@ def _validate_parent_edge(
 
 # frob:ticket T-2770
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_reparents_leaf_to_epic
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_self_parent_refuses
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_nonexistent_parent_refuses
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_direct_cycle_refuses
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_longer_ring_cycle_refuses
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_tier_inversion_refuses
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_epic_can_parent_epic
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_story_cannot_parent_epic
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_reason_missing_refuses
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_moving_an_existing_parent_drops_the_old_edge  # noqa: E501
-# frob:tests tests/test_tickets_parent.py::TestSetParent.test_archived_ticket_routes_to_archive_path  # noqa: E501
 def set_parent(
     root: Path, ticket_id: str, parent_id: str | None, *, reason: str
 ) -> Result[Ticket, TicketError | LeaseError]:
@@ -596,11 +576,8 @@ def _amend_raw_body(raw_body: str, text: str, mode: str) -> str:
 
 
 # frob:ticket T-2678
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append_on_archived_ticket_writes_archive_path_only  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append_on_active_ticket_still_writes_active_path  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_single_mode_append_on_archived_ticket_writes_archive_only  # noqa: E501
 def _ticket_currently_archived(root: Path, ticket_id: str) -> bool:
     """True when `ticket_id` currently lives ONLY in archive storage, not
@@ -635,10 +612,6 @@ def _ticket_currently_archived(root: Path, ticket_id: str) -> bool:
 
 # frob:ticket T-2392
 # frob:doc docs/modules/tickets-data-storage.md#data-models
-# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_append_appends_text
-# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_set_replaces_text
-# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_reason_missing_refuses
-# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_append_records_body_change_entry  # noqa: E501
 def set_body(
     root: Path,
     ticket_id: str,
@@ -758,7 +731,6 @@ def set_body(
 
 # frob:ticket T-1613
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_organization.py::TestRunsLast.test_set_runs_last_updates_field
 def set_runs_last(
     root: Path, ticket_id: str, runs_last: bool
@@ -779,9 +751,7 @@ def set_runs_last(
 
 # frob:ticket T-2624
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_organization.py::TestSetRunsLastParallelSafe.test_reason_missing_refuses  # noqa: E501
-# frob:tests \
 # tests/test_tickets_organization.py::TestSetRunsLastParallelSafe.test_ack_sets_both_fields  # noqa: E501
 def set_runs_last_parallel_safe(
     root: Path, ticket_id: str, reason: str
@@ -843,10 +813,6 @@ _MILESTONE_ASSIGNMENT_REASON = "milestone set via `frob ticket milestone`"
 # frob:ticket T-2574
 # frob:ticket T-4427
 # frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
-# frob:tests tests/test_tickets.py::TestSetMilestone.test_valid_semver_sets_field
-# frob:tests tests/test_tickets.py::TestSetMilestone.test_invalid_semver_refused
-# frob:tests tests/test_tickets.py::TestSetMilestone.test_v_prefix_normalized_on_write
-# frob:tests \
 # tests/test_tickets_triage_dates.py::TestSetMilestoneRecordsTriageChange.test_assign\
 # ing_a_milestone_records_a_triage_change_entry  # noqa: E501
 def set_milestone(
@@ -889,8 +855,6 @@ def set_milestone(
 
 # frob:ticket T-5132
 # frob:doc docs/modules/tickets-data-storage.md#points-t-5132
-# frob:tests tests/test_tickets_points.py::TestSetPoints.test_valid_value_sets_field
-# frob:tests tests/test_tickets_points.py::TestSetPoints.test_invalid_value_refused
 def set_points(
     root: Path, ticket_id: str, points: int | None
 ) -> Result[Ticket, TicketError | LeaseError]:
@@ -918,8 +882,6 @@ def set_points(
 
 # frob:ticket T-5132
 # frob:doc docs/modules/tickets-data-storage.md#points-t-5132
-# frob:tests tests/test_tickets_points.py::TestSetUnsizedAck.test_ack_sets_both_fields
-# frob:tests tests/test_tickets_points.py::TestSetUnsizedAck.test_reason_missing_refuses
 def set_unsized_ack(
     root: Path, ticket_id: str, reason: str
 ) -> Result[Ticket, TicketError | LeaseError]:
@@ -955,7 +917,6 @@ def set_unsized_ack(
 
 # frob:ticket T-5132
 # frob:doc docs/modules/tickets-data-storage.md#points-t-5132
-# frob:tests tests/test_tickets_points.py::TestSetTokens.test_sets_fields
 def set_tokens(
     root: Path,
     ticket_id: str,
@@ -1005,7 +966,6 @@ def set_tokens(
 
 # frob:ticket T-1484
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests \
 # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields
 def set_scope_breadth_ack(
     root: Path, ticket_id: str, reason: str
@@ -1051,9 +1011,7 @@ def set_scope_breadth_ack(
 
 # frob:ticket T-2394
 # frob:doc docs/modules/tickets-lifecycle.md#declared-no-scope-t-2394
-# frob:tests \
 # tests/test_tickets_no_scope.py::TestSetNoScopeDeclared.test_sets_both_fields
-# frob:tests \
 # tests/test_tickets_no_scope.py::TestSetNoScopeDeclared.test_reason_missing_refuses
 def set_no_scope_declared(
     root: Path, ticket_id: str, reason: str
@@ -1146,15 +1104,10 @@ def _redesignation_entry(
 
 # frob:ticket T-1749
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests \
 # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_designates_a_bound_evidence_id  # noqa: E501
-# frob:tests \
 # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_refuses_an_id_not_in_evidence  # noqa: E501
-# frob:tests \
 # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignation_appends_an_audit_entry  # noqa: E501
-# frob:tests \
 # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_first_time_designation_appends_no_audit_entry  # noqa: E501
-# frob:tests \
 # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignating_the_same_id_appends_no_audit_entry  # noqa: E501
 def set_designated_repro_test(
     root: Path, ticket_id: str, node_id: str, *, reason: str | None = None
@@ -1240,11 +1193,8 @@ _SPRINT_ASSIGNMENT_REASON = "sprint set via `frob ticket sprint assign`"
 # frob:ticket T-0715
 # frob:ticket T-4427
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field
-# frob:tests \
 # tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange.test_assignin\
 # g_a_sprint_records_a_triage_change_entry  # noqa: E501
-# frob:tests \
 # tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange.test_reassign\
 # ing_the_same_sprint_still_records_an_entry  # noqa: E501
 def set_sprint(
@@ -1302,9 +1252,7 @@ from frob.tickets._flow import (  # noqa: E402
 # the new _set_reasoned_field helper and trims a repeated docstring paragraph to a \
 # cross-reference; the documented public-api behavior/contract is unchanged \
 # (re-verified, frob ack'd), so docs/modules/tickets.md#public-api needs no edit"
-# frob:tests \
 # tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field
-# frob:tests \
 # tests/test_tickets_organization.py::TestSetComponent.test_reason_missing_refuses
 def set_component(
     root: Path, ticket_id: str, component: str | None, *, reason: str

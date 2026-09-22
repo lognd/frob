@@ -12,9 +12,6 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-0876
-# frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_consumers_mode_logs_result  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_consumers_mode_json_output  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_consumers_mode_err_result_exits_1  # noqa: E501
 def _run_consumers(cfg: AppConfig) -> None:
     """`frob exports --consumers SYMBOL <path>`: log the CLI-level rendering
     of `frob.exports.exports_consumers` (T-0858's library surface), the CLI
@@ -35,8 +32,6 @@ def _run_consumers(cfg: AppConfig) -> None:
         _log.info(cr.as_text())
 
 
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daemon_matches_in_process kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_json_mode_logs_result kind="unit"  # noqa: E501
 def _try_exports_via_daemon(pkg_dir: Path, cfg: AppConfig) -> bool:
     """T-1127: for a plain `frob exports <path> --json` render (no
     `--consumers`, no `--write` -- the RPC's `frob_exports` has no
@@ -98,7 +93,6 @@ def _try_exports_via_daemon(pkg_dir: Path, cfg: AppConfig) -> bool:
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
-# frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_json_mode_logs_result  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob exports` entry point: default mode generates a package's
     `__init__.py` listing; `--consumers SYMBOL` instead answers "who imports

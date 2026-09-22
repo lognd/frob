@@ -285,6 +285,104 @@ class TestRelevantToolFindings:
         assert doctor.relevant_tool_findings(tmp_path) == []
 
 
+class TestLintToolVersionLag:
+    """T-5204 (T-5138 DESIGN item 7): a lint tool whose installed version
+    is `_LINT_LAG_WARN_THRESHOLD`+ minor releases behind its registry's
+    latest is a finding; a fresh tool is not. Network is NEVER hit here
+    -- every test either monkeypatches `_probe_binary_version`/the
+    fetcher directly or passes `fetch=False` against a pre-seeded cache."""
+
+    # frob:tests src/frob/doctor.py::lint_tool_version_lag kind="unit"
+    # frob:tests src/frob/doctor.py::LintToolVersionLag  # noqa: E501
+    # frob:tests src/frob/doctor.py::LintToolLagError  # noqa: E501
+    def test_stale_tool_is_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Positive control: an installed version two minors behind the
+        (monkeypatched) registry fetcher's answer is a finding naming
+        both versions and the registry."""
+        monkeypatch.setattr(
+            doctor,
+            "_LINT_TOOL_REGISTRIES",
+            (("ruff", "pypi"),),
+        )
+        monkeypatch.setattr(doctor, "_probe_binary_version", lambda _name: "ruff 0.1.0")
+        monkeypatch.setattr(
+            doctor,
+            "_LINT_LAG_FETCHERS",
+            {"pypi": lambda _name: doctor.Ok("0.3.0")},
+        )
+        findings = doctor.lint_tool_version_lag(tmp_path)
+        assert len(findings) == 1
+        assert findings[0].name == "ruff"
+        assert findings[0].registry == "pypi"
+        assert findings[0].minor_versions_behind == 2
+
+    # frob:tests src/frob/doctor.py::lint_tool_version_lag kind="unit"
+    def test_fresh_tool_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An installed version matching the registry's latest is never
+        a finding."""
+        monkeypatch.setattr(doctor, "_LINT_TOOL_REGISTRIES", (("ruff", "pypi"),))
+        monkeypatch.setattr(doctor, "_probe_binary_version", lambda _name: "ruff 0.3.0")
+        monkeypatch.setattr(
+            doctor,
+            "_LINT_LAG_FETCHERS",
+            {"pypi": lambda _name: doctor.Ok("0.3.0")},
+        )
+        assert doctor.lint_tool_version_lag(tmp_path) == []
+
+    # frob:tests src/frob/doctor.py::lint_tool_version_lag kind="unit"
+    def test_missing_tool_is_skipped(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A tool not installed at all (`_probe_binary_version` returns
+        `None`) is silently skipped -- never a crash, never a finding."""
+        monkeypatch.setattr(doctor, "_LINT_TOOL_REGISTRIES", (("ruff", "pypi"),))
+        monkeypatch.setattr(doctor, "_probe_binary_version", lambda _name: None)
+        assert doctor.lint_tool_version_lag(tmp_path) == []
+
+    # frob:tests src/frob/doctor.py::lint_tool_version_lag kind="unit"
+    def test_fetch_false_serves_only_from_cache(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`fetch=False` against a cold cache never calls the network
+        fetcher and reports nothing -- proves the network is never hit
+        when the caller opts out."""
+        monkeypatch.setattr(doctor, "_LINT_TOOL_REGISTRIES", (("ruff", "pypi"),))
+        monkeypatch.setattr(doctor, "_probe_binary_version", lambda _name: "ruff 0.1.0")
+
+        def _boom(_name: str) -> "doctor.Result":
+            raise AssertionError("network fetcher must not be called")
+
+        monkeypatch.setattr(doctor, "_LINT_LAG_FETCHERS", {"pypi": _boom})
+        assert doctor.lint_tool_version_lag(tmp_path, fetch=False) == []
+
+    # frob:tests src/frob/doctor.py::lint_tool_version_lag kind="unit"
+    def test_fresh_cache_entry_skips_the_network(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A cache entry younger than `_LINT_LAG_CACHE_TTL_S` serves the
+        finding with zero network calls."""
+        cache_path = tmp_path / ".frob" / "tool-version-lag-cache.json"
+        cache_path.parent.mkdir(parents=True)
+        cache_path.write_text(
+            '{"ruff": {"version": "0.3.0", "checked_at": %f}}'
+            % __import__("time").time()
+        )
+        monkeypatch.setattr(doctor, "_LINT_TOOL_REGISTRIES", (("ruff", "pypi"),))
+        monkeypatch.setattr(doctor, "_probe_binary_version", lambda _name: "ruff 0.1.0")
+
+        def _boom(_name: str) -> "doctor.Result":
+            raise AssertionError("network fetcher must not be called")
+
+        monkeypatch.setattr(doctor, "_LINT_LAG_FETCHERS", {"pypi": _boom})
+        findings = doctor.lint_tool_version_lag(tmp_path)
+        assert len(findings) == 1
+        assert findings[0].latest == "0.3.0"
+
+
 class TestUnityEditorStatus:
     """T-4501: `_locate_unity_editor` searches env vars, then Unity Hub's
     default per-OS install root, then PATH, in that precedence order, and

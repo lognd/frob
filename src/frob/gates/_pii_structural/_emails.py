@@ -219,7 +219,6 @@ def _pii011_violation(
     )
 
 
-# frob:tests tests/test_pii_structural_gate.py::TestEmailShapeValues.test_email_literal_fires  # noqa: E501
 def _scan_python_email_values(
     tree: ast.Module, rel_path: str, text: str, *, _index: _NodeIndex | None = None
 ) -> tuple[Violation, ...]:

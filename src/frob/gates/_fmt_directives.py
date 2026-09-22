@@ -133,10 +133,7 @@ table needing the same patch independently."""
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
-# frob:tests tests/test_gates_fmt_directives.py::TestMarkerFor.test_python_uses_hash
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestMarkerFor.test_rust_uses_slash_slash
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestMarkerFor.test_unsupported_suffix_is_none
 def marker_for(path: str) -> str | None:
     """The line-comment marker for `path`'s suffix (`#`, `//`), or `None`
@@ -145,11 +142,8 @@ def marker_for(path: str) -> str | None:
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestReadLineLength.test_reads_configured_limit
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestReadLineLength.test_missing_file_defaults_to_88  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestReadLineLength.test_missing_ruff_section_defaults_to_88  # noqa: E501
 def read_line_length(root: Path) -> int:
     """The project's configured line-length limit, read from `[tool.ruff]
@@ -348,25 +342,15 @@ def _resolve_clang_format_width(path: Path, root: Path) -> int:
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_python_uses_ruff_config
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_rust_uses_rustfmt_toml
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_rust_falls_back_to_tool_default  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_uses_prettierrc  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_uses_package_json_key  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_falls_back_to_tool_default  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_clang_format_uses_config  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_clang_format_falls_back_to_tool_default  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_nearest_config_wins_over_root_config  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_unregistered_suffix_falls_back_to_ruff_derived_default  # noqa: E501
 def resolve_line_length(path: Path, root: Path) -> int | None:
     """The width `path`'s OWN formatter would enforce -- Rust's rustfmt,
@@ -820,7 +804,6 @@ def _noqa_strip_runs(
 
 
 # frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaText.test_strips_a_noqa_that_no_longer_fits_the_line  # noqa: E501
 def strip_needless_noqa_text(text: str, *, path: str, limit: int | None) -> str:
     """FMT002's own text transform (T-4714): strip a no-longer-needed
@@ -856,7 +839,6 @@ def strip_needless_noqa_text(text: str, *, path: str, limit: int | None) -> str:
 
 
 # frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestNoqaStripViolations.test_flags_a_directive_whose_noqa_no_longer_fits_the_reason  # noqa: E501
 def noqa_strip_findings_for_text(
     text: str, *, path: str, limit: int | None
@@ -887,7 +869,6 @@ def noqa_strip_findings_for_text(
 
 
 # frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestNoqaStripViolations.test_flags_a_directive_whose_noqa_no_longer_fits_the_reason  # noqa: E501
 def noqa_strip_violations(
     root: Path, *, limit: int | None = None, include_test_corpora: bool = False
@@ -931,7 +912,6 @@ def noqa_strip_violations(
 
 
 # frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaPaths.test_second_run_reports_zero_changes  # noqa: E501
 def strip_needless_noqa_paths(
     root: Path,
@@ -973,23 +953,14 @@ def strip_needless_noqa_paths(
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_wraps_over_long_single_line_directive  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_joins_over_split_directive_that_now_fits  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_idempotent_on_already_canonical_text  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_single_line_with_noqa_e501_is_byte_identical  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_single_line_with_bare_noqa_is_byte_identical  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_line_without_noqa_still_wraps  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestRepoWideIdempotenceT0985.test_canonicalizing_twice_over_real_repo_files_is_a_no_op  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987.test_wrappable_reason_keeps_its_noqa  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987.test_idempotent_with_noqa_kept  # noqa: E501
 # frob:ticket T-0972
 # frob:ticket T-0985
@@ -1199,9 +1170,7 @@ def _format_one_path(
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestFormatPaths.test_check_mode_reports_without_writing  # noqa: E501
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestFormatPaths.test_write_mode_rewrites_file
 def format_paths(
     root: Path,

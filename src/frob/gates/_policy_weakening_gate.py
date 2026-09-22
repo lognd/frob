@@ -133,10 +133,6 @@ def _policy_id_file_map(root: Path, design_dir: str) -> dict[str, str]:
 # frob:doc docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482
 # frob:ticket T-1843
 # frob:ticket T-1864
-# frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_no_design_dir_noop  # noqa: E501
-# frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_weakening_detected  # noqa: E501
-# frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_clean_policies_no_finding  # noqa: E501
-# frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_load_failure_skips_silently  # noqa: E501
 def policy_weakening_gate(root: Path) -> tuple[Violation, ...]:
     """INV051: a `design/` policy whose scope is a strict subset of a
     containing policy's, but which re-declares `confine_use`/

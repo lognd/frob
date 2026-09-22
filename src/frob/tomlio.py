@@ -20,7 +20,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
-# frob:tests tests/unit/perf/test_sketch_store.py::TestSketchStoreConfig.test_missing_frob_toml_returns_defaults  # noqa: E501
 def read_toml_lenient(path: Path, *, log_prefix: str) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed
     `path`, never a crash -- `log_prefix` names the caller in the WARNING

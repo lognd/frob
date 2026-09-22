@@ -42,7 +42,6 @@ def core_available() -> bool:
 
 
 # frob:doc docs/modules/graph.md#rust-core
-# frob:tests \
 # tests/test_graph.py::TestResolveCallEdgesNative.test_native_matches_python_fallback_o\
 # n_a_real_package  # noqa: E501
 def resolve_call_edges_native(

@@ -80,8 +80,6 @@ _VALUE_TOKEN = re.compile(r"0x[0-9a-fA-F]+|'[^']*'|\"[^\"]*\"|\d+")
 
 
 # frob:doc docs/modules/ci_report.md#data-models
-# frob:tests tests/test_ci_report.py::test_test_failure_model_is_frozen
-# frob:tests tests/test_ci_report.py::TestParsePytestLog.test_parses_named_failures
 class TestFailure(BaseModel):
     """One `FAILED`/`ERROR` line pytest's own short summary named --
     never inferred positionally (see module docstring)."""
@@ -99,7 +97,6 @@ class TestFailure(BaseModel):
 
 
 # frob:doc docs/modules/ci_report.md#data-models
-# frob:tests tests/test_ci_report.py::TestBuildJobReport.test_failures_clustered
 class FailureCluster(BaseModel):
     """Every `TestFailure` in one job sharing the same `signature`,
     grouped so the operator reads one root cause plus its member node
@@ -113,8 +110,6 @@ class FailureCluster(BaseModel):
 
 
 # frob:doc docs/modules/ci_report.md#data-models
-# frob:tests tests/test_ci_report.py::TestBuildJobReport.test_clean_job
-# frob:tests tests/test_ci_report.py::TestBuildJobReport.test_failures_clustered
 class JobReport(BaseModel):
     """One job's structured outcome: `outcome` is the honest tri-state
     this module exists to add -- `"clean"` (pytest's own summary says
@@ -136,7 +131,6 @@ class JobReport(BaseModel):
 
 
 # frob:doc docs/modules/ci_report.md#data-models
-# frob:tests tests/test_ci_report.py::TestBuildRunReport.test_all_jobs_reported
 class RunReport(BaseModel):
     """A whole run's structured report: one `JobReport` per job `gh`
     reported for it. A job whose log could not be retrieved AT ALL (a
@@ -170,10 +164,6 @@ def _signature(kind: str, reason: str) -> str:
 
 
 # frob:doc docs/modules/ci_report.md#public-api
-# frob:tests tests/test_ci_report.py::TestParsePytestLog.test_parses_named_failures
-# frob:tests tests/test_ci_report.py::TestParsePytestLog.test_clean_run_is_no_failures
-# frob:tests tests/test_ci_report.py::TestParsePytestLog.test_no_result_line_is_not_recoverable  # noqa: E501
-# frob:tests \
 # tests/test_ci_report.py::TestParsePytestLog.test_truncated_with_no_evidence_is_not_recoverable  # noqa: E501
 def parse_pytest_log(
     text: str, *, truncated: bool
@@ -240,9 +230,6 @@ def _cluster(failures: tuple[TestFailure, ...]) -> tuple[FailureCluster, ...]:
 
 
 # frob:doc docs/modules/ci_report.md#public-api
-# frob:tests tests/test_ci_report.py::TestBuildJobReport.test_clean_job
-# frob:tests tests/test_ci_report.py::TestBuildJobReport.test_failures_clustered
-# frob:tests tests/test_ci_report.py::TestBuildJobReport.test_empty_log_propagates_gherror  # noqa: E501
 def build_job_report(
     root: Path, run_id: str, job: JobSummary
 ) -> Result[JobReport, GhError]:
@@ -271,8 +258,6 @@ def build_job_report(
 
 
 # frob:doc docs/modules/ci_report.md#public-api
-# frob:tests tests/test_ci_report.py::TestBuildRunReport.test_all_jobs_reported
-# frob:tests \
 # tests/test_ci_report.py::TestBuildRunReport.test_one_job_log_failure_degrades_not_abo\
 # rts
 def build_run_report(root: Path, run_id: str) -> Result[RunReport, GhError]:

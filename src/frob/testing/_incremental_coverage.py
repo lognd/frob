@@ -47,9 +47,6 @@ _PYTHON_LANG = "python"
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_coverage.py::TestPythonCoverageTargets.test_touched_source_selects_test kind="unit"  # noqa: E501
-# frob:tests tests/test_coverage.py::TestPythonCoverageTargets.test_nothing_touched_returns_empty kind="unit"  # noqa: E501
-# frob:tests tests/test_coverage.py::TestPythonCoverageTargets.test_bad_base_ref_returns_empty kind="unit"  # noqa: E501
 def python_coverage_targets(
     root: Path, snapshot: GraphSnapshot, base: str
 ) -> tuple[str, ...]:

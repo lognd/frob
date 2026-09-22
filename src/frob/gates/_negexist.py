@@ -51,11 +51,6 @@ def _site_from_origin(origin: str) -> tuple[str, int]:
 
 # frob:doc docs/modules/gates.md#negexist001-gate-t-1229
 # frob:enforces CHK-GATE-NEGEXIST001
-# frob:tests tests/unit/gates/test_negexist.py::TestNegexist001Gate.test_unbound_claim_is_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_negexist.py::TestNegexist001Gate.test_claim_bound_to_open_ticket_is_clean  # noqa: E501
-# frob:tests tests/unit/gates/test_negexist.py::TestNegexist001Gate.test_claim_bound_to_closed_ticket_is_stale  # noqa: E501
-# frob:tests tests/unit/gates/test_negexist.py::TestNegexist001Gate.test_claim_bound_to_missing_ticket_is_stale  # noqa: E501
-# frob:tests tests/unit/gates/test_negexist.py::TestNegexist001Gate.test_no_claims_at_all_is_clean  # noqa: E501
 def negexist001_gate(
     snapshot: GraphSnapshot, queue: TicketQueue
 ) -> tuple[Violation, ...]:

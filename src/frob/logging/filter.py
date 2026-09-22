@@ -7,7 +7,6 @@ import logging
 # deliberate architecture doc, not accidental drift onto a private helper"
 # frob:invariant INV-016
 # invariant spec: [INV-016](invariants/INV-016.md)
-# frob:tests tests/unit/test_logging_module.py::test_below_level_filter
 # frob:ticket T-1038
 # frob:waive AFFECT001 reason="T-1038: OPAQUE001 fix-or-waive hardening -- added a \
 # reasoned frob:waive comment above the existing getattr(logging, below.upper()) call \

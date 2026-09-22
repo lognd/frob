@@ -255,7 +255,6 @@ def _load_snapshot_and_call_graph(root: Path):  # noqa: ANN201
 
 # frob:doc docs/modules/testing.md#ad-hoc-attribution-t-2018
 # frob:ticket T-2018
-# frob:tests tests/unit/verify/test_attribution.py::TestLoadAttributionContext.test_returns_a_usable_snapshot_and_call_graph  # noqa: E501
 def load_attribution_context(
     root: Path,
 ) -> Result[tuple, AttributionError]:
@@ -276,12 +275,6 @@ def load_attribution_context(
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
-# frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_caller_break_attributes_to_the_caller_commit  # noqa: E501
-# frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_two_reaching_commits_is_unattributed  # noqa: E501
-# frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_zero_reaching_commits_is_unattributed  # noqa: E501
-# frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_direct_touch_attributes_at_depth_zero  # noqa: E501
-# frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_missing_line_falls_back_to_whole_file_candidates  # noqa: E501
-# frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_graph_unavailable_is_an_error_for_the_whole_batch  # noqa: E501
 def attribute_batch(
     root: Path,
     findings: Iterable[tuple[str, str] | tuple[str, str, int]],
@@ -391,7 +384,6 @@ def _touched_symrefs(diff, snapshot) -> tuple[str, ...]:  # noqa: ANN001
 
 # frob:doc docs/modules/testing.md#ad-hoc-attribution-t-2018
 # frob:ticket T-2018
-# frob:tests tests/unit/verify/test_attribution.py::TestBuildAdHocBatch.test_covers_a_commit_the_persisted_queue_never_saw  # noqa: E501
 def build_ad_hoc_batch(
     root: Path,
     *,

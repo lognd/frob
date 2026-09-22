@@ -90,7 +90,6 @@ from frob.process._lock import (
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
 class CoverageLockUnavailable(RuntimeError):
     """Raised when neither `fcntl` (POSIX) nor `msvcrt` (Windows) exists
@@ -141,7 +140,6 @@ class CoverageWaitOutcome(BaseModel):
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/test_app.py::TestRunCoverageWait.test_coverage_lock_path_is_under_frob_dir
 def coverage_lock_path(root: Path) -> Path:
     """The advisory single-flight lock path (`.frob/coverage.lock`) guarding
@@ -192,8 +190,6 @@ def _coverage_lock(root: Path) -> Iterator[None]:
         yield
 
 
-# frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up kind="unit"  # noqa: E501
-# frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_lock_when_no_daemon kind="unit"  # noqa: E501
 @contextmanager
 def _worktree_lock(root: Path) -> Iterator[None]:
     """T-1126: this worktree's single-flight coverage-run arbitration --
@@ -233,8 +229,6 @@ def _worktree_lock(root: Path) -> Iterator[None]:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_coverage_wait_shared.py::TestTreeDigest.test_identical_hashes_produce_identical_digest kind="unit"  # noqa: E501
-# frob:tests tests/test_coverage_wait_shared.py::TestTreeDigest.test_differing_hashes_produce_differing_digest kind="unit"  # noqa: E501
 def tree_digest(snapshot: GraphSnapshot) -> str:
     """A stable content digest (sha256 hex) over `snapshot`'s tracked
     source file hashes (`_DIGESTED_SUFFIXES` -- the same filter
@@ -259,8 +253,6 @@ def tree_digest(snapshot: GraphSnapshot) -> str:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_coverage_wait_shared.py::TestSharedStateDir.test_two_worktrees_of_same_clone_share_one_dir kind="unit"  # noqa: E501
-# frob:tests tests/test_coverage_wait_shared.py::TestSharedStateDir.test_no_git_falls_back_to_worktree_local kind="unit"  # noqa: E501
 def shared_state_dir(root: Path) -> Path:
     """The worktree-path-independent shared state directory (T-1095):
     `<git-common-dir>/frob-coverage-shared/`, one location per CLONE
@@ -401,11 +393,7 @@ def _is_stamp_fresh(root: Path, snapshot: GraphSnapshot) -> bool:
 
 # frob:ticket T-1516
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/test_app.py::TestRunCoverageWait.test_no_stamp_runs_command_and_reports_ran
-# frob:tests tests/test_app.py::TestRunCoverageWait.test_fresh_stamp_skips_the_run
-# frob:tests tests/test_app.py::TestRunCoverageWait.test_failed_command_is_err
-# frob:tests tests/test_coverage.py::TestRunCoverageWaitNativeDefault.test_default_command_none_calls_native_refresh  # noqa: E501
 # T-1516: `command=None` auto-wires the refresh through the in-process
 # native path. Before falling to the per-worktree lock/run below, this
 # checks the CROSS-worktree layer first -- `tree_digest` computed from

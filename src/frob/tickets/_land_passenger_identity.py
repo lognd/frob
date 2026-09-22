@@ -54,7 +54,6 @@ _WHITESPACE_RUN_RE = re.compile(r"\s+")
 
 
 # frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
-# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_moved_and_rewrapped_directive_does_not_refuse kind="unit"  # noqa: E501
 def normalize_directive_text(text: str) -> str:
     """Collapse one directive-bearing source line to a width- and
     indentation-independent identity string (T-4474): strip a trailing
@@ -73,8 +72,6 @@ def normalize_directive_text(text: str) -> str:
 
 
 # frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
-# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_refusal_message_distinguishes_new_from_moved_ids kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_brand_new_directive_still_refuses kind="unit"  # noqa: E501
 def classify_directive_ids(
     added_lines: dict[str, list[str]], removed_lines: dict[str, list[str]]
 ) -> tuple[frozenset[str], frozenset[str]]:

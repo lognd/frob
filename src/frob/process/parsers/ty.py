@@ -116,9 +116,6 @@ def _scan_ty_lines(stdout: str) -> tuple[list[Diagnostic], str | None]:
 
 # frob:ticket T-4358
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_tool_absent_parser_reconcile.py::TestTyAbsentToolIsUnmeasured.test_spawn_failure_text_is_unmeasured  # noqa: E501
-# frob:tests tests/unit/test_tool_absent_parser_reconcile.py::TestTyAbsentToolIsUnmeasured.test_unrelated_nonzero_exit_with_no_matches_still_empty  # noqa: E501
-# frob:tests tests/unit/test_tool_absent_parser_reconcile.py::TestTyAbsentToolIsUnmeasured.test_real_diagnostic_still_parses_even_with_nonzero_exit  # noqa: E501
 # frob:waive FMT001 reason="single-line frob:tests directives naming long test node \
 # ids -- already at frob fmt's own canonical form, same unwrappable shape as \
 # src/frob/app/pyfmt_runner.py's existing FMT001 waiver"

@@ -33,7 +33,6 @@ __all__ = ["ResolvedModule", "resolve_module"]
 
 
 # frob:doc docs/commands/refactor.md#resolvedmodule
-# frob:tests tests/test_refactor.py::TestResolveModule.test_resolves_python_module
 class ResolvedModule(BaseModel):
     """The module-verb Resolve phase's output: a `ModuleRef` pinned to a
     real file and the language `frob.lang.language_for_extension`
@@ -71,9 +70,6 @@ def _find_module_file(repo_root: Path, module: str) -> Path | None:
 
 
 # frob:doc docs/commands/refactor.md#resolve_module
-# frob:tests tests/test_refactor.py::TestResolveModule.test_resolves_python_module
-# frob:tests tests/test_refactor.py::TestResolveModule.test_refuses_missing_module
-# frob:tests tests/test_refactor.py::TestResolveModule.test_refuses_unsupported_language  # noqa: E501
 def resolve_module(
     repo_root: Path, ref: ModuleRef
 ) -> Result[ResolvedModule, RefactorError]:

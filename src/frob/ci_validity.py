@@ -74,7 +74,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/ci_validity.md#error-types
-# frob:tests tests/test_ci_validity.py::TestValidityForRunHeadSha.test_diff_failure_is_err  # noqa: E501
 class ValidityError(ErrorSet):
     """Fallible outcomes of this module's own operations (never the
     per-test classification itself, which always succeeds with an
@@ -85,7 +84,6 @@ class ValidityError(ErrorSet):
 
 
 # frob:doc docs/modules/ci_validity.md#data-models
-# frob:tests tests/test_ci_validity.py::TestClassifyTest.test_still_valid_when_nothing_relevant_changed  # noqa: E501
 class Validity:
     """The three classification values `classify_test` can return. Not a
     `StrEnum` deliberately -- plain string constants keep byte-stable
@@ -99,8 +97,6 @@ class Validity:
 
 
 # frob:doc docs/modules/ci_validity.md#data-models
-# frob:tests tests/test_ci_validity.py::TestClassifyTest.test_still_valid_when_nothing_relevant_changed  # noqa: E501
-# frob:tests tests/test_ci_validity.py::TestClassifyTest.test_stale_when_reached_by_a_touched_symbol  # noqa: E501
 class TestValidity(BaseModel):
     """One test node's classification against the current tree: `status`
     is one of `Validity`'s three values, `reason` is a short human-
@@ -151,13 +147,8 @@ def _touched_symrefs(diff, snapshot: GraphSnapshot) -> frozenset[str]:  # noqa: 
 
 
 # frob:doc docs/modules/ci_validity.md#public-api
-# frob:tests tests/test_ci_validity.py::TestClassifyTest.test_still_valid_when_nothing_relevant_changed  # noqa: E501
-# frob:tests tests/test_ci_validity.py::TestClassifyTest.test_stale_when_reached_by_a_touched_symbol  # noqa: E501
-# frob:tests \
 # tests/test_ci_validity.py::TestClassifyTest.test_stale_when_test_itself_touched
-# frob:tests \
 # tests/test_ci_validity.py::TestClassifyTest.test_unknown_when_symbol_unresolvable
-# frob:tests \
 # tests/test_ci_validity.py::TestClassifyTest.test_unknown_when_closure_truncated
 def classify_test(
     snapshot: GraphSnapshot,
@@ -258,8 +249,6 @@ def _classify_via_closure(
 
 
 # frob:doc docs/modules/ci_validity.md#public-api
-# frob:tests tests/test_ci_validity.py::TestValidityForRunHeadSha.test_diff_failure_is_err  # noqa: E501
-# frob:tests \
 # tests/test_ci_validity.py::TestValidityForRunHeadSha.test_classifies_every_failing_no\
 # de
 def validity_for_run_head_sha(
@@ -293,7 +282,6 @@ def validity_for_run_head_sha(
 
 
 # frob:doc docs/modules/ci_validity.md#data-models
-# frob:tests tests/test_ci_validity.py::TestJobAndRunValidity.test_job_validity_covers_named_failures  # noqa: E501
 class JobValidity(BaseModel):
     """`classify_test` applied to every failing node id a `JobReport`
     named, plus the job's own identity -- the per-job answer to "which of
@@ -308,7 +296,6 @@ class JobValidity(BaseModel):
 
 
 # frob:doc docs/modules/ci_validity.md#public-api
-# frob:tests tests/test_ci_validity.py::TestJobAndRunValidity.test_job_validity_covers_named_failures  # noqa: E501
 def job_validity(
     root: Path, snapshot: GraphSnapshot, run_head_sha: str, job: JobReport
 ) -> Result[JobValidity, ValidityError]:
@@ -324,7 +311,6 @@ def job_validity(
 
 
 # frob:doc docs/modules/ci_validity.md#data-models
-# frob:tests tests/test_ci_validity.py::TestJobAndRunValidity.test_run_validity_covers_every_job  # noqa: E501
 class RunValidity(BaseModel):
     """`job_validity` for every job in a `RunReport` -- the whole run's
     validity answer, one `JobValidity` per job."""
@@ -336,7 +322,6 @@ class RunValidity(BaseModel):
 
 
 # frob:doc docs/modules/ci_validity.md#public-api
-# frob:tests tests/test_ci_validity.py::TestJobAndRunValidity.test_run_validity_covers_every_job  # noqa: E501
 def run_validity(
     root: Path, snapshot: GraphSnapshot, run_head_sha: str, run: RunReport
 ) -> Result[RunValidity, ValidityError]:

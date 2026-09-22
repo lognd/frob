@@ -32,7 +32,6 @@ _log = get_logger(__name__)
 # frob:ticket T-4710
 # frob:doc \
 # docs/modules/graph.md#frobtests-test-side-declaration-derived-reverse-edge-t-4710
-# frob:tests tests/unit/graph/test_dsl.py::TestTestSideDeclarationReorientation.test_test_side_declaration_is_reoriented_to_canonical_shape  # noqa: E501
 def looks_like_test_path(path: str) -> bool:
     """Whether `path` (a symref's file half) is a conventional test file --
     `tests/` anywhere in its directory parts, or a `test_*.py`/`*_test.py`
@@ -651,11 +650,6 @@ def _unhandled_markdown_directive(
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
-# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_until_directive_emits_until_edge  # noqa: E501
-# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_negative_existence_phrase_emits_claims_absence_edge  # noqa: E501
-# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_not_yet_wired_phrase_is_also_detected  # noqa: E501
-# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_directive_comment_line_itself_never_matches_the_heuristic  # noqa: E501
-# frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_plain_prose_with_no_matching_phrase_emits_nothing  # noqa: E501
 # frob:ticket T-1433
 # frob:ticket T-1989
 # frob:waive AFFECT001 reason="pure ARCH001 line-count split (extracted \
@@ -741,8 +735,6 @@ def _enclosing_src(comment: RawComment, path: str) -> str:
     return path
 
 
-# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_nested_quote_in_quoted_target_is_a_named_refusal  # noqa: E501
-# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_attribute_form_is_untouched  # noqa: E501
 # frob:ticket T-4719
 def _parse_attrs(
     verb: str, attr_text: str, *, path: str, lineno: int
@@ -986,7 +978,6 @@ _TESTS_QUOTED_TITLE_LEAD_RE = re.compile(r"^[^\s\"]+\.[^\s\".]+$")
 
 
 # frob:ticket T-4197
-# frob:tests \
 # tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath.test_pure_prose_quoted_target_is_malformed_not_a_free_pass  # noqa: E501
 def _tests_quoted_title_error(
     target: str, *, path: str, lineno: int
@@ -1145,10 +1136,6 @@ def _parse_attrs_verb_error(
     return validator(attrs, path=path, lineno=lineno)
 
 
-# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_quoted_target_with_spaces_parses_as_one_value  # noqa: E501
-# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_unquoted_target_with_space_is_still_an_error  # noqa: E501
-# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_nested_quote_in_quoted_target_is_a_named_refusal  # noqa: E501
-# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_unterminated_quoted_target_is_a_named_refusal  # noqa: E501
 def _parse_target(
     verb: str, rest: str, *, path: str, lineno: int
 ) -> tuple[str, dict[str, str]] | MalformedDirective:
@@ -1461,9 +1448,7 @@ def _parse_directive_line(
 
 
 # frob:ticket T-0286
-# frob:tests \
 # tests/unit/graph/test_dsl.py::TestContinuation.test_long_reason_continues_across_lines
-# frob:tests \
 # tests/unit/graph/test_dsl.py::TestContinuation.test_unrelated_directives_on_consecutive_lines_do_not_fold  # noqa: E501
 def _fold_continuations(
     lines: list[tuple[int, str, str, int]],
@@ -1576,7 +1561,6 @@ def _is_genuine_directive_start(line: str) -> bool:
 
 # frob:ticket T-0441
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
-# frob:tests \
 # tests/unit/graph/test_dsl.py::TestFoldCommentRuns.test_run_length_matches_consumed_physical_lines  # noqa: E501
 def _fold_comment_runs_with_joins(
     lines: list[tuple[int, str, str, int]],

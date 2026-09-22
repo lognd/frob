@@ -82,7 +82,6 @@ _MSVCRT_BLOCKING_ACQUIRE_CEILING_S = 120.0
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_branch_selected_when_fcntl_absent  # noqa: E501
 # frob:ticket T-3506
 class PortableLockUnavailable(RuntimeError):
     """T-3506: raised by `portable_flock_acquire` when neither `fcntl`
@@ -101,7 +100,6 @@ class PortableLockUnavailable(RuntimeError):
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_branch_selected_when_fcntl_absent  # noqa: E501
 # frob:ticket T-3506
 def lock_backend_available() -> bool:
     """Whether a real advisory-lock primitive exists on this platform at
@@ -116,9 +114,6 @@ def lock_backend_available() -> bool:
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_nonblocking_contended_returns_false  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_branch_selected_when_fcntl_absent  # noqa: E501
 # frob:ticket T-3506
 def portable_flock_acquire(
     fd: int,
@@ -258,7 +253,6 @@ def _portable_flock_acquire_windows(
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
 # frob:ticket T-3506
 def portable_flock_release(fd: int) -> None:
     """Release a lock `portable_flock_acquire` took on `fd` -- the

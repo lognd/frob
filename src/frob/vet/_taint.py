@@ -266,8 +266,6 @@ def _scan_statements(stmts: list[ast.stmt], rel_path: str) -> list[TaintFinding]
     return findings
 
 
-# frob:tests tests/unit/vet/test_taint.py::TestTaintFindings.test_unvalidated_state_read_reaching_argv_fires  # noqa: E501
-# frob:tests tests/unit/vet/test_taint.py::TestTaintFindings.test_validated_value_does_not_fire  # noqa: E501
 # frob:doc docs/modules/vet.md#sec005-taint-rule-t-0781
 def taint_findings(path: Path) -> tuple[TaintFinding, ...]:
     """SEC005 findings for the Python source file at `path`: every

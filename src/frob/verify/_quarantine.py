@@ -210,9 +210,6 @@ def _draft_ids_all_have_live_owners(queue: TicketQueue) -> bool:
 
 
 # frob:ticket T-3065
-# frob:tests tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath.test_absolute_and_relative_resolve_identical kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath.test_empty_file_passes_through kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath.test_unresolvable_path_falls_back_verbatim kind="unit"  # noqa: E501
 def _normalize_finding_path(root: Path, file: str) -> str:
     """The single normalization every quarantine finding identity WRITE
     (`raise_quarantine`) and LOOKUP (`frob.app.verify_runner`'s
@@ -367,10 +364,8 @@ def _now_iso() -> str:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
-# frob:tests \
 # tests/unit/verify/test_quarantine.py::TestLoadQuarantine.test_missing_file_is_none \
 # kind="unit"
-# frob:tests \
 # tests/unit/verify/test_quarantine.py::TestLoadQuarantine.test_corrupt_file_errors \
 # kind="unit"
 def load_quarantine(root: Path) -> Result[QuarantineRecord | None, QuarantineError]:
@@ -435,11 +430,6 @@ def _write_quarantine_status(root: Path, *, raised: bool) -> None:
 
 
 # frob:ticket T-3082
-# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_none_when_never_raised kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_raised_after_raise kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_cleared_after_clear kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_cleared_after_retire_unidentifiable_findings kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestQuarantineStatusMarker.test_stays_raised_when_retire_leaves_a_sibling_undisposed kind="unit"  # noqa: E501
 # frob:waive COV001 reason="T-3082: this marker is a plain-text disk read explained fully by its own docstring (raised/cleared/None, same convention load_quarantine's Ok(None) already establishes) -- docs/modules/tickets-verify-sweep.md's Quarantine circuit breaker section is a many-symbol shared doc file this ticket's scope (src/frob/verify/_quarantine.py, tests/unit/verify/test_quarantine.py) does not include, and a disproportionate scope-closure pull for one small companion accessor, the same T-1010/T-3534 precedent this module's own COV001 waivers already establish elsewhere"  # noqa: E501
 def quarantine_status_marker(root: Path) -> str | None:
     """T-3082: the current `.frob/quarantine.status` tombstone marker for
@@ -457,13 +447,10 @@ def quarantine_status_marker(root: Path) -> str | None:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
-# frob:tests \
 # tests/unit/verify/test_quarantine.py::TestIsQuarantined.test_false_when_never_raised \
 # kind="unit"
-# frob:tests \
 # tests/unit/verify/test_quarantine.py::TestIsQuarantined.test_true_while_raised \
 # kind="unit"
-# frob:tests \
 # tests/unit/verify/test_quarantine.py::TestIsQuarantined.test_false_after_clear \
 # kind="unit"
 def is_quarantined(root: Path) -> Result[bool, QuarantineError]:
@@ -481,24 +468,9 @@ def is_quarantined(root: Path) -> Result[bool, QuarantineError]:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
-# frob:tests \
 # tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_raises_and_persists \
 # kind="unit"
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_empty_findings_refused kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_survives_a_fresh_load_reflecting_a_restart kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_raise_quarantine_drops_identity_less_findings_at_write_time kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_raise_quarantine_refuses_when_only_identity_less_findings_given kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_a_trivial_unattributed_ruff_finding_alone_does_not_raise kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_a_trivial_unattributed_unused_import_finding_does_not_raise kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_unattributed_frob_gate_autofix_rule_is_deliberately_not_exempt kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_attributed_trivial_finding_still_raises kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_unattributed_non_trivial_finding_still_raises kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_a_mixed_batch_drops_only_the_trivial_unattributed_finding kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_normalizes_an_absolute_file_to_root_relative_at_write_time kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_already_relative_file_is_left_as_is kind="unit"  # noqa: E501
 # frob:ticket T-3378
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_tick002_dropped_when_every_draft_id_has_a_live_owner kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_tick002_still_raises_when_a_draft_id_is_terminal_unpromoted kind="unit"  # noqa: E501
 # frob:waive DUP001 reason="T-2207: the new identity-less filter block mirrors this function's OWN pre-existing _NATURALLY_UNATTRIBUTABLE_RULES filter shape on purpose (deliberate consistency, see this function's docstring) -- the resulting structural match against unrelated filter/log/drop bodies across the tree (native-stub pairs, compliance-catalog tests, etc) is the generic shape, not shared logic worth extracting"  # noqa: E501
 # frob:waive AFFECT001 reason="T-3065 adds a write-time path-normalization step (_normalize_finding_path) inside this function's existing filter pipeline -- an implementation-level bugfix to the identity-matching mechanism, not a change to the raise/persist/logging behavior docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693 describes; re-verified accurate via frob ack rather than an edit to that shared, many-symbol doc section"  # noqa: E501
 def raise_quarantine(
@@ -751,11 +723,6 @@ def _all_findings_disposed(findings: tuple[QuarantinedFinding, ...]) -> bool:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
-# frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_refuses_when_not_raised kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_refuses_when_a_finding_is_undisposed kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_clears_when_every_finding_disposed kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_green_verification_alone_never_clears kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_cli_addressing_can_never_key_an_identity_less_finding kind="unit"  # noqa: E501
 # frob:ticket T-2312
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Quarantine circuit \
 # breaker (T-1693) section documents several symbols under one section, not just a \
@@ -793,7 +760,6 @@ def _refuse_if_undisposed(
 
 
 # frob:ticket T-2744
-# frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_refuses_when_filed_ticket_does_not_resolve  # noqa: E501
 def _refuse_if_filed_ticket_unresolvable(
     root: Path,
     dispositions: dict[tuple[str, str, int | None], tuple[str, str]],
@@ -940,11 +906,6 @@ def _dispose_one(
 
 # frob:ticket T-2207
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
-# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_recovers_a_stuck_store kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_still_blocks_on_a_well_formed_sibling kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_refuses_when_none_present kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_refuses_when_not_raised kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_retires_and_clears kind="unit"  # noqa: E501
 def retire_unidentifiable_findings(
     root: Path,
     *,

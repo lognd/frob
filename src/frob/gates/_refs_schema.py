@@ -190,10 +190,8 @@ def _entrypoint_records(root: Path) -> list[dict] | None:
 
 # frob:enforces CHK-GATE-REFSCHEMA001
 # frob:doc docs/modules/gates.md#refschema001-t-2390-epic-child-t-2428
-# frob:tests \
 # tests/unit/test_refs_schema.py::TestRefsSchemaGate.test_must_now_fire_reports_the_und\
 # eclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_refs_schema.py::TestRefsSchemaGate.test_must_still_pass_this_repos_ow\
 # n_frob_toml kind="unit"
 # frob:ticket T-2428

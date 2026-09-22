@@ -735,7 +735,6 @@ def _scan_comment_keywords(
     return violations
 
 
-# frob:tests tests/test_pii_structural_gate.py::TestKeywordSweep.test_identifier_keyword_fires_at_suggestion_severity  # noqa: E501
 def _scan_python_keyword_sweep(
     tree: ast.Module, rel_path: str, text: str, *, _index: _NodeIndex | None = None
 ) -> tuple[Violation, ...]:

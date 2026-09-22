@@ -51,8 +51,6 @@ def _pyproject_mtime_signal(root: Path) -> float:
 
 
 # frob:ticket T-4646
-# frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_memoized  # noqa: E501
-# frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_invalidates_on_mtime_change  # noqa: E501
 def _pyproject_data(root: Path) -> dict[str, object]:
     """Parsed `root/pyproject.toml` as a dict (`{}` if missing/unreadable/
     invalid TOML), memoized per-root and invalidated by the file's own
@@ -90,7 +88,6 @@ def _pyproject_data(root: Path) -> dict[str, object]:
 
 
 # frob:ticket T-4646
-# frob:tests tests/unit/test_pyproject_data_memoization.py::TestPyprojectDataMemo.test_memoized  # noqa: E501
 def _dict_or_empty(value: object) -> dict[str, object]:
     """`value` if it is a `dict`, else `{}` -- the narrowing helper every
     nested `pyproject.toml` table lookup below shares (T-4646), since a
@@ -171,8 +168,6 @@ def _declared_python_source_roots(root: Path) -> tuple[Path, ...]:
 
 # frob:doc docs/modules/lang.md#declared-project-identity-t-2195t-2389
 # frob:ticket T-2389
-# frob:tests tests/gates_suite/test_invariant.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
 def declared_project_package_name(root: Path) -> str | None:
     """`root`'s own declared package name (`pyproject.toml` `[project].
     name`), or `None` if it cannot be read/parsed (T-2389, promoted out
@@ -200,8 +195,6 @@ def declared_project_package_name(root: Path) -> str | None:
 
 # frob:doc docs/modules/lang.md#declared-project-identity-t-2195t-2389
 # frob:ticket T-2389
-# frob:tests tests/gates_suite/test_invariant.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
-# frob:tests tests/gates_suite/test_invariant.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
 # frob:ticket T-5117
 # per-root memoization cache for `declared_source_prefixes`, keyed on the
 # same `_pyproject_mtime_signal` invalidation `_pyproject_data` uses --
@@ -211,7 +204,6 @@ _declared_source_prefixes_cache_lock = threading.Lock()
 
 
 # frob:ticket T-5117
-# frob:tests \
 # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_prefix_for_a_differently_named_project  # noqa: E501
 def declared_source_prefixes(root: Path) -> tuple[str, ...]:
     """Every `root`-relative POSIX path prefix (`"src/frob/"`-shaped,

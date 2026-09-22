@@ -68,7 +68,6 @@ ABANDONED_CODE_COMMIT_THRESHOLD = 200
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts.test_must_stay_quiet_when_pinned kind="unit"  # noqa: E501
 class LockPin(BaseModel):
     """A lock's `"pin"` object: a positive, reasoned declaration that its
     staleness is deliberate, never inferred from silence."""
@@ -80,7 +79,6 @@ class LockPin(BaseModel):
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts.test_fresh_when_unpinned_and_below_threshold kind="unit"  # noqa: E501
 class TrackedLock(BaseModel):
     """One of the three known baseline locks this module watches: its
     committed path and the code glob whose churn measures whether its
@@ -116,7 +114,6 @@ KNOWN_LOCKS: tuple[TrackedLock, ...] = (
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/unit/gates/test_lock_producer.py::TestAgainstThisRepo.test_runs_clean_against_this_repo kind="unit"  # noqa: E501
 class LockProducerStatus(BaseModel):
     """One lock's measured producer state (T-2999): age, churn since its
     last stamp, and the verdict `frob status`/a consuming gate should
@@ -199,7 +196,6 @@ def _commit_count(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts \
 # kind="unit"
 # frob:ticket T-2999
 def producer_status(root: Path, lock: TrackedLock) -> LockProducerStatus:
@@ -247,7 +243,6 @@ def producer_status(root: Path, lock: TrackedLock) -> LockProducerStatus:
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests \
 # tests/unit/gates/test_lock_producer.py::TestAgainstThisRepo.test_runs_clean_against_t\
 # his_repo kind="unit"
 # frob:ticket T-2999

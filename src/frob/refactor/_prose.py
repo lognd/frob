@@ -90,7 +90,6 @@ def _word_boundary_pattern(literal: str) -> re.Pattern[str]:
 
 
 # frob:doc docs/commands/refactor.md#scan_python_prose_mentions
-# frob:tests tests/test_refactor.py::TestProseCarrier.test_docstring_mention_elsewhere_rewritten  # noqa: E501
 def scan_python_prose_mentions(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:
@@ -184,7 +183,6 @@ def _scan_file_for_prose_mentions(
 
 
 # frob:doc docs/commands/refactor.md#scan_docs_prose_mentions
-# frob:tests tests/test_refactor.py::TestProseCarrier.test_docs_prose_and_code_block_rewritten  # noqa: E501
 def scan_docs_prose_mentions(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:
@@ -329,8 +327,6 @@ def _rewrite_anchor_refs(
 
 
 # frob:doc docs/commands/refactor.md#scan_doc_anchor_carriers
-# frob:tests tests/test_refactor.py::TestProseCarrier.test_heading_and_anchor_rewritten_together  # noqa: E501
-# frob:tests tests/test_refactor.py::TestProseCarrier.test_anchor_text_inside_string_literal_survives_untouched  # noqa: E501
 def scan_doc_anchor_carriers(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:

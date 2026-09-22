@@ -578,17 +578,11 @@ _LAND_WHOLE_LAND_VERBS = frozenset({"renumber", "promote", "archive", "migrate"}
 # frob:ticket T-1779
 # frob:ticket T-1779
 # frob:ticket T-4556
-# frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_refuses_mutating_verb_while_land_in_progress  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_read_only_verb_runs_while_land_in_progress  # noqa: E501
-# frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_land_verb_itself_is_exempt
-# frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_refused_verb_never_writes_the_ticket_file_at_all  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification.test_renumber_refused_while_only_land_lock_held  # noqa: E501
-# frob:tests \
 # tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification.test_splice_only_verb_allowed_while_only_land_lock_held  # noqa: E501
 def _refuse_if_land_in_progress_for_dispatch(
     root: Path, command: str | None, *, wait_timeout_s: float | None = None
@@ -879,21 +873,14 @@ def _looks_like_a_frob_repo(root: Path) -> bool:
 # of the registry's own count, an orthogonal concern this change never touches; \
 # docs/modules/app.md#runners and #config (the docs this change IS actually about) \
 # were updated in the same diff"
-# frob:tests \
 # tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 # frob:ticket T-1674
-# frob:tests \
 # tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_frob_root_env_used_when_path_not_explicit  # noqa: E501
-# frob:tests \
 # tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_explicit_path_wins_over_frob_root  # noqa: E501
-# frob:tests \
 # tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_resolved_root_is_logged_for_a_mutating_verb  # noqa: E501
 # frob:ticket T-4085
-# frob:tests \
 # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_ambient_cwd_with_no_frob_toml_or_git_is_refused  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_ambient_cwd_inside_a_real_frob_repo_still_works  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_explicit_path_to_a_bare_directory_is_still_trusted  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch to the ticket subcommand named by `cfg.ticket_command`.

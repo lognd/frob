@@ -984,7 +984,6 @@ _SEGMENT_SEP_RE = re.compile(r"::|\.")
 
 
 # frob:ticket T-2507
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_family_prefix_still_reaches_sibling_family  # noqa: E501
 def _dotted_segments(target: str) -> list[str]:
     """Split a resolved identity or registry needle into its dotted
@@ -1000,21 +999,13 @@ def _dotted_segments(target: str) -> list[str]:
 
 
 # frob:ticket T-2507
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_module_prefix_matches_with_and_without_trailing_dot  # noqa: E501
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_call_target_matches_with_and_without_trailing_paren  # noqa: E501
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_bare_identifier_matches_with_and_without_trailing_paren  # noqa: E501
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_family_prefix_still_reaches_sibling_family  # noqa: E501
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_module_name_substring  # noqa: E501
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_call_target_substring  # noqa: E501
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_bare_identifier_substring  # noqa: E501
-# frob:tests \
 # tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.test_module_prefix_does_not_match_unrelated_leading_segment  # noqa: E501
 def _needle_matches_resolved(needle: str, resolved: str) -> bool:
     """True if `needle` (a registry needle string -- a bare identifier
@@ -1086,7 +1077,6 @@ SCANNED_LANGUAGES: frozenset[str] = frozenset(_EXT_LANGUAGE.values())
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-2358
-# frob:tests \
 # tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_language_for_\
 # known_and_unknown_extensions kind="unit"  # noqa: E501
 def language_for(path: Path) -> str | None:

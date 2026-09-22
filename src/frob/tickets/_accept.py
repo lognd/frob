@@ -137,8 +137,6 @@ def _validate_amend_mutation(
 # frob:ticket T-1422
 # frob:ticket T-3908
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_replaces_text_and_records_reason  # noqa: E501
-# frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_on_terminal_ticket  # noqa: E501
 def amend_acceptance(
     root: Path,
     ticket_id: str,
@@ -247,8 +245,6 @@ def amend_acceptance(
 # frob:ticket T-1422
 # frob:ticket T-3908
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_drops_criterion_and_records_reason  # noqa: E501
-# frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_refuses_on_terminal_ticket  # noqa: E501
 def remove_acceptance(
     root: Path, ticket_id: str, index: int, *, reason: str
 ) -> Result[Ticket, TicketError]:

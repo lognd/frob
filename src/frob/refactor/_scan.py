@@ -40,7 +40,6 @@ __all__ = [
 
 
 # frob:doc docs/commands/refactor.md#find_python_files
-# frob:tests tests/test_refactor.py::TestFindPythonFiles.test_finds_py_files_and_skips_venv  # noqa: E501
 # frob:ticket T-1504
 def find_python_files(repo_root: Path) -> list[Path]:
     """Every `.py` file under `repo_root`, skipping VCS/build/venv
@@ -220,8 +219,6 @@ def _handle_from_import(
 
 
 # frob:doc docs/commands/refactor.md#scan_references
-# frob:tests tests/test_refactor.py::TestScanReferences.test_finds_from_import_call_site
-# frob:tests \
 # tests/test_refactor.py::TestScanReferences.test_self_import_skip_str_compare_is_not_per_node  # noqa: E501
 # frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole scan (a surprise becomes a disclosed 'unresolved' entry, matching this function's own never-silently-drops-it contract); no observable public-API change, so docs/commands/refactor.md needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 # frob:waive ARCH001 reason="T-1371's EXHAUST001/002 fix wraps the pre-existing per-file loop body in one try/except (AST-shape surprise -> disclosed unresolved entry, not an abort) -- boilerplate exception handling, not a new independently meaningful phase; splitting it out would just move the same lines behind an indirection"  # noqa: E501

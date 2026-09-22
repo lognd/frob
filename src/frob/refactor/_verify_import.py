@@ -186,8 +186,6 @@ def _import_check_env(repo_root: Path) -> dict[str, str]:
 
 # frob:doc docs/commands/refactor.md#verify_module_import
 # frob:ticket T-3119
-# frob:tests tests/test_refactor.py::TestVerify.test_module_import_catches_missing_import  # noqa: E501
-# frob:tests tests/test_refactor.py::TestVerify.test_module_import_passes_clean_module  # noqa: E501
 def verify_module_import(repo_root: Path, touched_files: list[Path]) -> VerifyOutcome:
     """T-3119's fix: `verify_import_resolution` only checks that a
     touched file PARSES and that its own local imports statically

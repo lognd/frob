@@ -804,7 +804,6 @@ def _apply_mode_conformance_waivers(
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
 # frob:enforces CHK-GATE-SYS205
-# frob:tests tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance.test_read_mode_fails_on_a_write_open  # noqa: E501
 def check_mode_conformance(
     model: KernelModel, module: Module, binding: CodeBinding, root: Path
 ) -> ModeConformanceReport:

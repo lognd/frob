@@ -71,7 +71,6 @@ def _doc004_violation(doc_path: str, line: int, *, tier: str, detail: str) -> Vi
 
 
 # frob:doc docs/modules/gates.md#flagcov001-t-2397
-# frob:tests \
 # tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_unresolvable_parser_\
 # is_unresolved_not_a_crash kind="unit"
 # frob:ticket T-2397

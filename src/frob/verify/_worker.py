@@ -175,10 +175,6 @@ def _clear_in_flight_marker(root: Path) -> None:
 
 
 # frob:ticket T-1694
-# frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_no_marker_is_a_silent_noop  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_stale_marker_with_no_matching_watermark_is_reported_unverified  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_stale_marker_matching_current_watermark_is_reported_recovered  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_unreadable_marker_is_reported_unverified_and_cleared  # noqa: E501
 def _reconcile_stale_in_flight_marker(root: Path) -> None:
     """Reconcile a leftover T-1694 in-flight marker under `root`, if any --
     called at the very START of `run_coalesced_verification`, before this
@@ -314,13 +310,9 @@ def _default_available_memory_mb() -> int | None:
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#resource-budget-never-starve-foreground-agents-t-1695  # noqa: E501
-# frob:tests \
 # tests/unit/verify/test_worker.py::TestBackpressure.test_yields_at_lease_ceiling
-# frob:tests \
 # tests/unit/verify/test_worker.py::TestBackpressure.test_resumes_below_lease_ceiling
-# frob:tests \
 # tests/unit/verify/test_worker.py::TestBackpressure.test_yields_below_memory_floor
-# frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_unmeasurable_memory_never_blocks_a_run  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Resource budget: \
 # never starve foreground agents (T-1695) section individually frob:describes this \
 # symbol by its own qualified path -- a deliberate per-symbol anchor, not a duplicate"
@@ -370,8 +362,6 @@ _PRIORITY_REDUCED = False
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#resource-budget-never-starve-foreground-agents-t-1695  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_applies_nice_and_ionice_exactly_once  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_failed_nice_call_never_raises  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Resource budget: \
 # never starve foreground agents (T-1695) section individually frob:describes this \
 # symbol by its own qualified path -- a deliberate per-symbol anchor, not a duplicate"
@@ -570,11 +560,8 @@ def _make_unmeasurable_reason_handler():  # noqa: ANN201
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#unmeasurable-cause-separation-t-3886
-# frob:tests \
 # tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_child_timeout_log_line_classified  # noqa: E501
-# frob:tests \
 # tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_spawn_refused_log_line_classified  # noqa: E501
-# frob:tests \
 # tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_no_matching_log_line_is_unmeasurable  # noqa: E501
 def _capture_unmeasurable_reason():  # noqa: ANN201
     """T-3886: a context manager yielding a one-element list (`[reason]`)
@@ -684,16 +671,6 @@ def _findings_digest(findings: frozenset[tuple[str, str]]) -> str:
 
 # frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 # frob:ticket T-1694
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_empty_queue_is_a_noop  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_five_queued_entries_call_verify_exactly_once  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_unmeasurable_never_advances_watermark  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_first_run_establishes_baseline_without_advancing  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_new_findings_filed_to_a_real_ticket_still_advance  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_new_findings_that_cannot_be_filed_still_do_not_advance  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_clean_run_advances_watermark_and_compacts_queue  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_queue_unreadable_is_an_error  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_all_vanished_findings_advance_the_watermark  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_partially_vanished_findings_still_pin_the_watermark  # noqa: E501
 def run_coalesced_verification(
     root: Path,
     *,
@@ -799,8 +776,6 @@ def _rapid_debt_path(root: Path) -> Path:
 
 
 # frob:ticket T-3464
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_all_vanished_findings_advance_the_watermark  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_partially_vanished_findings_still_pin_the_watermark  # noqa: E501
 def _vanished_pairs_appended_since(
     root: Path, offset: int
 ) -> frozenset[tuple[str, str]]:
@@ -851,9 +826,6 @@ def _vanished_pairs_appended_since(
 
 
 # frob:ticket T-3464
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_all_vanished_findings_advance_the_watermark  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_partially_vanished_findings_still_pin_the_watermark  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_new_findings_that_cannot_be_filed_still_do_not_advance  # noqa: E501
 def _outcome_for_unfiled_new_findings(
     root: Path,
     tip: VerifyQueueEntry,
@@ -1153,11 +1125,6 @@ def _advance_watermark_and_compact(
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
-# frob:tests tests/unit/verify/test_worker.py::TestCoalescingWorker.test_notify_then_tick_before_deadline_does_not_run  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestCoalescingWorker.test_notify_then_tick_after_deadline_runs_once  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestCoalescingWorker.test_repeated_notify_pushes_the_deadline_out  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestCoalescingWorker.test_periodic_floor_forces_a_run_under_continuous_notify  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestCoalescingWorker.test_tick_with_nothing_pending_is_a_noop  # noqa: E501
 class CoalescingWorker:
     """Trailing-edge debounce state machine over `run_coalesced_verification`
     (T-1688): `notify()` records that a wake condition fired (a queue

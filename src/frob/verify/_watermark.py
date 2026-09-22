@@ -216,9 +216,7 @@ def _save_queue(root: Path, entries: tuple[VerifyQueueEntry, ...]) -> None:
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
 # t-1686-epic
-# frob:tests \
 # tests/unit/verify/test_watermark.py::TestQueueStatus.test_empty_queue_is_empty_tuple
-# frob:tests \
 # tests/unit/verify/test_watermark.py::TestQueueStatus.test_corrupt_queue_errors
 def queue_status(root: Path) -> Result[tuple[VerifyQueueEntry, ...], WatermarkError]:
     """The full current verify queue (every entry, oldest first, append
@@ -231,10 +229,6 @@ def queue_status(root: Path) -> Result[tuple[VerifyQueueEntry, ...], WatermarkEr
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
 # t-1686-epic
-# frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_appends_one_entry_with_resolvable_symbols  # noqa: E501
-# frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_persists_across_calls_in_order  # noqa: E501
-# frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_empty_touched_symbols_refused  # noqa: E501
-# frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_corrupt_queue_refuses_to_append  # noqa: E501
 # frob:ticket T-1736
 def record_intent(
     root: Path,
@@ -293,10 +287,7 @@ def record_intent(
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
 # t-1686-epic
-# frob:tests \
 # tests/unit/verify/test_watermark.py::TestLoadWatermark.test_missing_file_is_none
-# frob:tests tests/unit/verify/test_watermark.py::TestLoadWatermark.test_round_trips
-# frob:tests tests/unit/verify/test_watermark.py::TestLoadWatermark.test_corrupt_file_reads_as_none_not_verified  # noqa: E501
 def load_watermark(root: Path) -> Result[Watermark | None, WatermarkError]:
     """`root`'s current watermark, or `None` if none has ever been set OR
     the stored record is corrupt/unparsable -- see this module's own
@@ -333,8 +324,6 @@ def load_watermark(root: Path) -> Result[Watermark | None, WatermarkError]:
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
 # t-1686-epic
-# frob:tests tests/unit/verify/test_watermark.py::TestAdvanceWatermark.test_advance_then_load_round_trips  # noqa: E501
-# frob:tests tests/unit/verify/test_watermark.py::TestAdvanceWatermark.test_advance_overwrites_prior_watermark  # noqa: E501
 def advance_watermark(
     root: Path,
     *,
@@ -374,10 +363,6 @@ def advance_watermark(
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
 # t-1686-epic
-# frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_drops_entries_at_or_before_watermark  # noqa: E501
-# frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_keeps_entries_after_watermark  # noqa: E501
-# frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_watermark_commit_absent_from_queue_is_a_noop  # noqa: E501
-# frob:tests \
 # tests/unit/verify/test_watermark.py::TestCompactQueue.test_no_watermark_yet_is_a_noop
 def compact_queue(root: Path) -> Result[int, WatermarkError]:
     """Drop every queue entry at-or-before the current watermark's
@@ -432,9 +417,6 @@ def compact_queue(root: Path) -> Result[int, WatermarkError]:
 # docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
 # t-1686-epic
 # frob:ticket T-2290
-# frob:tests tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark.test_counts_raw_git_commits_not_queue_entries  # noqa: E501
-# frob:tests tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark.test_none_when_watermark_commit_unresolvable  # noqa: E501
-# frob:tests tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark.test_zero_at_the_watermark_itself  # noqa: E501
 def commits_since_watermark(root: Path, watermark_commit: str) -> int | None:
     """The real number of `git` commits between `watermark_commit` and
     `HEAD` at `root` (`git rev-list --count <watermark_commit>..HEAD`),

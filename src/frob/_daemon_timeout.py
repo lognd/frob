@@ -43,8 +43,6 @@ _THREAD_NAME_PREFIX = "frob-bounded-"
 
 
 # frob:ticket T-3708
-# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
-# frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
 def _run_bounded(fn: Callable[[], _T], timeout: float) -> _T:
     """Run zero-arg `fn` on a dedicated daemon thread, returning its result
     within `timeout` seconds.

@@ -135,8 +135,6 @@ class ToolTokens(BaseModel):
 
 
 # frob:doc docs/modules/stats.md#public-api
-# frob:tests tests/test_stats_agentic.py::test_tool_call_histogram_counts_completed_calls_by_shape  # noqa: E501
-# frob:tests tests/test_stats_agentic.py::test_tool_call_histogram_counts_unmatched_pre_as_blocked  # noqa: E501
 class ToolCallShape(BaseModel):
     """One `(tool, command_shape)` bucket from the `kind="tool"` stream
     (T-2912): how many times it completed, how many attempts never got a

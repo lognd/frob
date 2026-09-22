@@ -279,9 +279,6 @@ def _pkg003_violation(root: Path) -> Violation:
 # frob:enforces CHK-GATE-PKG001
 # frob:enforces CHK-GATE-PKG002
 # frob:enforces CHK-GATE-PKG003
-# frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg001DeclaredLongDescription.test_relative_markdown_image_in_declared_readme_fires_error  # noqa: E501
-# frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg002NonDeclaredMarkdown.test_relative_image_in_other_markdown_warns_not_errors  # noqa: E501
-# frob:tests tests/unit/gates/test_pkg_resources.py::TestPkg003NoDeclaredLongDescription.test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass  # noqa: E501
 def pkg_resources_gate(root: Path) -> tuple[Violation, ...]:
     """PKG001/PKG002/PKG003 (T-4219): a relative embedded-image reference
     in a tracked markdown file mis-renders on a consumer with no

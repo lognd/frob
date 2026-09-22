@@ -133,8 +133,6 @@ def _resolve_baseline_only_chunk(only: list[str]) -> frozenset[str] | None:
 
 # frob:ticket T-0970
 # frob:ticket T-0972
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_mode_calls_stamp_and_returns  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_gate_error_exits_1  # noqa: E501
 # frob:waive ARCH103 reason="T-0977: chunk-loop orchestrator -- runs each gate chunk, \
 # logs progress, folds violations into the caller's accumulator, exits on first \
 # failure; the loop/log/exit ARE the orchestration job T-0627's chunked-check design \
@@ -178,8 +176,6 @@ def _run_baseline_chunks(
 
 
 # frob:ticket T-0751
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_only_chunk_records_without_stamping  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_only_chunk_completes_and_stamps  # noqa: E501
 # frob:ticket T-1195
 def _run_stamp_baseline(root: Path, cfg: AppConfig) -> None:
     """`frob check --stamp-baseline`: record current gate violations as `--delta`'s

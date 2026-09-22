@@ -107,9 +107,7 @@ _TIMING_PROCESS_START = time.monotonic()
 
 
 # frob:ticket T-3689
-# frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_disabled_by_default
-# frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_enabled_when_set_non_empty
 def _timing_debug_enabled() -> bool:
     """True exactly when `FROB_CHECK_TIMING_DEBUG` (`FROB_CHECK_TIMING_
@@ -119,11 +117,8 @@ def _timing_debug_enabled() -> bool:
 
 
 # frob:ticket T-3689
-# frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_mark_is_silent_when_disabled
-# frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_mark_prints_breadcrumb_when_enabled  # noqa: E501
-# frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_mark_elapsed_grows_with_process_start_offset  # noqa: E501
 def _timing_mark(label: str) -> None:
     """Print a `FROB-CHECK-TIMING:` breadcrumb naming `label` and the
@@ -178,11 +173,8 @@ def _timing_atexit() -> None:
 
 
 # frob:ticket T-3713
-# frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_silent_when_disabled  # noqa: E501
-# frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_lists_every_live_thread  # noqa: E501
-# frob:tests \
 # tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_dumps_stack_for_non_daemon_alive_thread  # noqa: E501
 def _timing_dump_thread_inventory() -> None:
     """Round 24 of the win32 ~120s atexit-hang investigation (T-3686/
@@ -426,7 +418,6 @@ def _available_memory_mb() -> int | None:
 
 
 # frob:ticket T-3686
-# frob:tests \
 # tests/unit/test_check_admission.py::TestAdmissionRegistry.test_pid_alive_delegates_to_shared_process_liveness_probe kind="unit"  # noqa: E501
 def _pid_alive(pid: int) -> bool:
     """Whether `pid` is a live process, best-effort (T-3256), delegating
@@ -460,13 +451,9 @@ def _pid_alive(pid: int) -> bool:
 
 
 # frob:ticket T-3287
-# frob:tests \
 # tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_non_git_root_falls_back_to_itself kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_primary_checkout_anchors_to_itself kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_of_one_repo_share_one_anchor kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_unrelated_repos_do_not_throttle_each_other kind="unit"  # noqa: E501
 def _admission_registry_anchor(root: Path) -> Path:
     """T-3287: the REPOSITORY-wide anchor for the admission registry --
@@ -516,9 +503,7 @@ def _admission_registry_anchor(root: Path) -> Path:
 
 
 # frob:ticket T-3287
-# frob:tests \
 # tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_see_each_others_markers kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_stale_marker_from_dead_pid_does_not_permanently_deflate_shared_budget kind="unit"  # noqa: E501
 def _admission_dir(root: Path) -> Path:
     """`<repo-root>/.frob/check-admission/` (T-3287: `<repo-root>` is
@@ -719,9 +704,7 @@ def _admission_budget(root: Path) -> Iterator[int]:
 
 
 # frob:ticket T-2764
-# frob:tests \
 # tests/unit/test_check.py::TestNativeStalenessResult.test_stale_native_fails_closed_when_rebuild_cannot_fix_it  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestNativeStalenessResult.test_fresh_native_is_not_a_violation  # noqa: E501
 def _native_staleness_result(root: Path) -> ToolResult | None:
     """T-2764: `uv run frob check` used to have NO equivalent of `make
@@ -776,9 +759,7 @@ def _native_staleness_result(root: Path) -> ToolResult | None:
 
 
 # frob:ticket T-3526
-# frob:tests \
 # tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_abandoned_journal_fails_check_loudly kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_no_journal_is_not_a_violation kind="unit"  # noqa: E501
 # frob:enforces CHK-GATE-AUTOFIX001
 def _abandoned_autofix_result(root: Path) -> ToolResult | None:
@@ -839,9 +820,7 @@ def _abandoned_autofix_result(root: Path) -> ToolResult | None:
 
 
 # frob:ticket T-0603
-# frob:tests \
 # tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_closed_before_any_stage_runs  # noqa: E501
-# frob:tests \
 # tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a_violation  # noqa: E501
 # frob:ticket T-0603
 # frob:enforces CHK-GATE-DERIVED001
@@ -1034,11 +1013,8 @@ class CheckResult(BaseModel):
     # frob:doc docs/commands/check.md#public-api
     # frob:waive AFFECT001 reason="T-4309: see the identical waiver on CheckResult \
     # above"
-    # frob:tests \
     # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_every_result_measured  # noqa: E501
-    # frob:tests \
     # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_not_measured_result  # noqa: E501
-    # frob:tests \
     # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_listed_in_unmeasured_results  # noqa: E501
     @property
     def unmeasured_results(self) -> list[ToolResult]:
@@ -1147,7 +1123,6 @@ class CheckResult(BaseModel):
         )
 
     # frob:ticket T-0588
-    # frob:tests \
     # tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_json_mode_prints_json_and_errors_exit_1  # noqa: E501
     def as_json(self) -> str:
         # frob:doc docs/commands/check.md#public-api
@@ -1260,7 +1235,6 @@ def __getattr__(name: str) -> Any:
 
 # frob:ticket T-0627
 # frob:doc docs/commands/check.md#public-api
-# frob:tests \
 # tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool  # noqa: E501
 def available_stages() -> list[str]:
     """Sorted `_STAGE_GROUPS` alias names `frob check --only list` prints (T-0627)."""

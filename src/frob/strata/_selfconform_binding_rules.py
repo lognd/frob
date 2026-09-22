@@ -60,7 +60,6 @@ def _reachable_local_files(start_files: list[str], root: Path) -> frozenset[str]
     return frozenset(visited)
 
 
-# frob:tests tests/unit/strata/test_selfconform.py::TestBindingTotality.test_laundered_capable_file_fires  # noqa: E501
 # frob:ticket T-2729
 def _binding_totality_violations(
     model: KernelModel, binding: CodeBinding, root: Path
@@ -160,9 +159,6 @@ def _via_less_atoms_for_node(node: Node) -> frozenset[str]:
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1451
 # frob:ticket T-2224
-# frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_less_grant_on_large_node_fires  # noqa: E501
-# frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_less_grant_on_small_node_is_silent  # noqa: E501
-# frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_scoped_grant_on_large_node_is_silent  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
 # (T-1440/T-1451) documents the SYS107 via-less-large-node advisory this private \
 # helper implements -- same T-0524/T-0529 per-function architecture-doc precedent \

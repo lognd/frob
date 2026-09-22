@@ -168,7 +168,6 @@ def _repo_root_for(file_path: Path) -> Path:
     return file_path.parent
 
 
-# frob:tests tests/system/test_cli_sys_audit.py::TestSysAuditCli.test_file_arg_fails
 def _resolve_design_root(cfg: AppConfig, command: str) -> Path:
     """Resolve `cfg.sys_path` (or `.`) to the repo-root directory `plan`/
     `doc`/`audit` walk with `_design_dir`+`load_design_ids` (those two
@@ -1052,7 +1051,6 @@ def _print_trace_report(paths: dict[str, tuple[str, ...]], *, to: str | None) ->
 
 
 # frob:ticket T-1480
-# frob:tests tests/unit/test_app_sys_trace.py::TestSysTrace.test_trace_prints_witness_path_to_destination  # noqa: E501
 def _run_trace(cfg: AppConfig) -> None:
     """`frob sys trace <from> [to]` (T-1480): load every `.strata` design
     file under the repo's design dir (reusing `_load_audit_model`'s
@@ -1093,7 +1091,6 @@ def _run_trace(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1925
-# frob:tests tests/unit/test_app_sys_threats.py::TestSysThreats.test_no_boundary_prints_every_violation  # noqa: E501
 def _print_threats_report(violations: tuple, *, boundary: str | None) -> bool:
     """Print `frob sys threats`'s violation list; returns True iff the
     result is empty (vacuous-pass doctrine, same as `_print_audit_report`/
@@ -1117,7 +1114,6 @@ def _print_threats_report(violations: tuple, *, boundary: str | None) -> bool:
 
 
 # frob:ticket T-1925
-# frob:tests tests/unit/test_app_sys_threats.py::TestSysThreats.test_boundary_scopes_to_its_own_zone_only  # noqa: E501
 def _run_threats(cfg: AppConfig) -> None:
     """`frob sys threats [boundary]` (T-1925): load every `.strata` design
     file under the repo's design dir (reusing `_load_audit_model`'s
@@ -1180,8 +1176,6 @@ def _run_threats(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1927
-# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_no_population_reports_current_violations  # noqa: E501
-# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_at_date_reports_projected_elapsed  # noqa: E501
 def _print_capacity_report(
     report, *, population: float | None, at: datetime | None = None
 ) -> bool:
@@ -1217,8 +1211,6 @@ def _print_capacity_report(
 
 
 # frob:ticket T-1927
-# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_population_scales_and_can_fire  # noqa: E501
-# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_since_without_at_is_an_error  # noqa: E501
 def _run_capacity(cfg: AppConfig) -> None:
     """`frob sys capacity [--population N] [--since DATE --at DATE]`
     (T-1927/T-2016): load every `.strata` design file under the repo's
@@ -1440,7 +1432,6 @@ def _run_init(cfg: AppConfig) -> None:
 # frob:ticket T-1927
 # frob:ticket T-2923
 # frob:ticket T-2910
-# frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085),
     `export` (T-0086), `audit` (T-0115), `trace` (T-1480), `threats`

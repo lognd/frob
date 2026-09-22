@@ -473,7 +473,6 @@ def _node_id_collected(base_node_id: str, node_ids: frozenset[str]) -> bool:
 
 # frob:ticket T-0318
 # frob:ticket T-1396
-# frob:tests tests/gates/test_scope_symref_helpers.py::TestMacroSymbolFile
 def _macro_symbol_file(src: str) -> str | None:
     """The file path `src` names, if `src` is a T-0318 test-macro stand-in
     symbol (`_walk_rust.py::_macro_symbol` mints a qualname whose leaf
@@ -591,7 +590,6 @@ def _is_path_level_evidence(evidence: str) -> bool:
 # frob:ticket T-0298
 # frob:invariant INV-013
 # invariant spec: [INV-013](invariants/INV-013.md)
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov003_rejects_empty_directory_level_evidence  # noqa: E501
 def _path_level_evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """COV003 file-/directory-level evidence resolution: `evidence` (a bare
@@ -1158,13 +1156,9 @@ def _affect002_violation(
 
 # frob:doc docs/modules/gates.md#affect001-affect002-t-0628
 # frob:ticket T-0628
-# frob:tests \
 # tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_doc_flagged
-# frob:tests \
 # tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_code_flagged  # noqa: E501
-# frob:tests \
 # tests/test_gates_affect_drift.py::TestAffectDriftGate.test_clean_when_closure_also_touched  # noqa: E501
-# frob:tests \
 # tests/test_gates_affect_drift.py::TestAffectDriftGate.test_no_closure_is_silent
 # frob:enforces CHK-GATE-AFFECT001
 # frob:enforces CHK-GATE-AFFECT002
@@ -1339,7 +1333,6 @@ def _resolved_documented_srcs(root: Path, snapshot: GraphSnapshot) -> set[str]:
 
 
 # frob:ticket T-0553
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
 # frob:enforces CHK-GATE-COV001
 # frob:enforces CHK-THEME-PYTHON-ONLY
@@ -1400,7 +1393,6 @@ def _cov001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0965
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
 def _open_scopes(
     queue: TicketQueue, root: str | None = None, diff: Diff | None = None
@@ -1507,15 +1499,10 @@ def _ticket_edges(snapshot: GraphSnapshot, symref: str) -> list[Edge]:
 # frob:ticket T-0214
 # frob:ticket T-0320
 # frob:ticket T-0590
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fires  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov002_marker_touch_without_state_transition_still_fires  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov002_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
 def _bound_to_open_ticket(
     snapshot: GraphSnapshot, queue: TicketQueue, symref: str, diff: Diff | None = None
@@ -1575,7 +1562,6 @@ def _bound_to_open_ticket(
 
 
 # frob:ticket T-0590
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov002_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
 def _base_state_permits_grace(state_at_base: TicketState | None) -> bool:
     """True if a ticket's state at the diff's base commit is consistent with
@@ -1764,7 +1750,6 @@ def _ledger_states_at_base(root: str, base: str) -> Mapping[str, TicketState]:
 
 
 # frob:ticket T-0564
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov002_grace_matches_hunk_anywhere_in_ticket_block  # noqa: E501
 def _ticket_marker_in_diff_hunk(root: str, diff: Diff, ticket_id: str) -> bool:
     """True if any of `diff`'s `tickets.md` hunk spans overlaps `ticket_id`'s
@@ -1899,7 +1884,6 @@ def _cov002(
 
 
 # frob:ticket T-0553
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
 # frob:enforces CHK-GATE-COV002
 def _cov002_check_symref(
@@ -2168,11 +2152,8 @@ def _cov008_violation(ticket: Ticket, evidence: str, file_part: str) -> Violatio
 
 
 # frob:ticket T-2688
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov008_fires_when_diff_deletes_a_cited_test  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov008_silent_on_uncited_deletion  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov008_silent_on_rename_with_rebound_citation  # noqa: E501
 def _cov008(
     root: Path, diff: Diff, queue: TicketQueue, tests: CollectedTests
@@ -2228,9 +2209,7 @@ def _cov004(queue: TicketQueue) -> tuple[Violation, ...]:
 
 # frob:enforces CHK-GATE-COV004
 # frob:ticket T-1455
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov004_matching_sha_is_clean
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov004_missing_attachment
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to hashlib.sha256, a \
 # stdlib call the resolver cannot statically bound; the one real raise path \
@@ -2274,11 +2253,8 @@ def _cov004_one(
 
 
 # frob:ticket T-0297
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov005_directive_rebound_to_private_symbol_flags  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov005_same_symbol_no_rebind_is_clean  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_cov005_no_old_blob_is_clean
 def _cov005(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
     """COV005: a `frob:` directive whose (kind, target) pair now binds a
@@ -3488,7 +3464,6 @@ def _cov007(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0355
-# frob:tests \
 # tests/test_prework_parity.py::TestScopeDigestParity.test_digest_is_content_only_portable_across_checkouts  # noqa: E501
 def scope_digest(scope: Sequence[str], snapshot: GraphSnapshot) -> str:
     """Sha256 over the sorted `(file, hash)` pairs of files matching `scope`.
@@ -3744,9 +3719,7 @@ def _scope_exempt_file(
 # frob:doc docs/modules/gates.md#public-api
 # frob:doc docs/modules/gates.md#scope002-t-0998
 # frob:ticket T-0906
-# frob:tests \
 # tests/gates_suite/test_prework.py::TestScopePrework.test_scope001_fires_when_no_scope_declared  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_prework.py::TestScopePrework.test_scope001_empty_scope_ledger_still_implicitly_in_scope  # noqa: E501
 def scope_gate(
     diff: Diff,
@@ -3802,13 +3775,9 @@ def _scope002_violation(message: str) -> Violation:
 
 
 # frob:ticket T-0998
-# frob:tests \
 # tests/gates_suite/test_prework.py::TestScope002ClosureGate.test_warns_on_unscoped_doc_target  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_prework.py::TestScope002ClosureGate.test_warns_on_unscoped_private_helper  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_prework.py::TestScope002ClosureGate.test_warns_on_unscoped_test_target  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_prework.py::TestScope002ClosureGate.test_silent_on_closed_scope
 # frob:enforces CHK-GATE-SCOPE002
 def _scope002_violations(
@@ -4332,7 +4301,6 @@ def _test002_unmeasured(record, langs: frozenset[str]) -> Violation:  # noqa: AN
 
 
 # frob:ticket T-4386
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platform_skipped_edge_reports_unresolved_not_error kind="unit"  # noqa: E501
 def _edges_platform_skip_reason(edges: list[Edge], tests: CollectedTests) -> str | None:
     """T-4386: the recorded skip reason if every one of `edges` names a
@@ -4363,7 +4331,6 @@ def _edges_platform_skip_reason(edges: list[Edge], tests: CollectedTests) -> str
 
 
 # frob:ticket T-4386
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platform_skipped_edge_reports_unresolved_not_error kind="unit"  # noqa: E501
 def _test002_platform_skipped(record, reason: str) -> Violation:  # noqa: ANN001
     """TEST002 platform-skip verdict (T-4386, same shape as T-4382's COV003
@@ -4512,11 +4479,8 @@ def _test014_group_by_leaf(
 
 
 # frob:ticket T-0547
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
 # frob:enforces CHK-GATE-TEST014
 # frob:ticket T-1445
@@ -4582,11 +4546,8 @@ def _test014_ambiguous_convention(
 
 
 # frob:ticket T-0548
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asserts  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit.test_silent_when_no_test_matches_at_all  # noqa: E501
 # frob:enforces CHK-GATE-TEST015
 def _test015_vacuous_credit(
@@ -4996,9 +4957,7 @@ def _test004(
 
 
 # frob:ticket T-0557
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_test005_unmeasured_symbol_in_measured_file_flags_as_zero  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_test005_symbol_in_unmeasured_file_still_skipped  # noqa: E501
 # frob:ticket T-1205
 # T-1205 acceptance[1]: a TEST005 finding computed against a stale
@@ -5316,9 +5275,7 @@ def _test017_deflation(data: CoverageData) -> tuple[Violation, ...]:
 
 # frob:ticket T-1877
 # frob:enforces CHK-GATE-TEST019
-# frob:tests \
 # tests/test_gates_test019.py::TestTest019DeflatedSymbols.test_flags_suspect_symbol
-# frob:tests \
 # tests/test_gates_test019.py::TestTest019DeflatedSymbols.test_clean_when_no_suspects
 def _test019_deflated_symbols(data: CoverageData) -> tuple[Violation, ...]:
     """TEST019 (warn): one or more symbols look per-symbol deflated -- def
@@ -5360,11 +5317,8 @@ _COVERAGE_LOCK_REL = "frob-coverage.lock.json"
 
 
 # frob:ticket T-0545
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_test012_missing_lock_warns
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_test012_drifted_module_warns
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_test012_matching_lock_is_clean
 # frob:enforces CHK-GATE-TEST012
 def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violation, ...]:
@@ -5432,9 +5386,7 @@ def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violatio
 
 
 # frob:ticket T-2999
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_test012_abandoned_producer_fires_error  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_test012_pinned_producer_stays_quiet  # noqa: E501
 def _test012_producer_abandoned(root: Path) -> tuple[Violation, ...]:
     """TEST012 (error): `frob.gates._lock_producer.producer_status` for
@@ -5481,7 +5433,6 @@ _exclude_filtered_coverage = _coverage_exclude_filtered_coverage
 # frob:enforces CHK-GATE-TEST006
 # frob:enforces CHK-THEME-GITIGNORED-TRUST
 # frob:ticket T-3721
-# frob:tests tests/gates_suite/test_test_gate.py::TestTestGate.test_test006_remedy_points_at_frob_coverage_not_make  # noqa: E501
 def _test006_missing() -> tuple[Violation, ...]:
     """The TEST006 violation for a missing coverage stamp."""
     return (
@@ -5499,7 +5450,6 @@ def _test006_missing() -> tuple[Violation, ...]:
 
 
 # frob:ticket T-1830
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_test006_stale_on_new_file_not_in_stamp  # noqa: E501
 def _test006_stale(
     stamped_hashes: dict, snapshot: GraphSnapshot
@@ -5612,9 +5562,7 @@ def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0552
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
 # frob:enforces CHK-GATE-TEST013
 # frob:enforces CHK-SUBSYS-GATES-ACCOUNTING
@@ -5753,9 +5701,7 @@ def _current_version(root: Path) -> str | None:
 
 
 # frob:ticket T-0403
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_changelog_mentions_rejects_substring_in_prose  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_test_gate.py::TestTestGate.test_changelog_mentions_accepts_real_heading_entry  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this finding traces to an unresolved-callee resolution gap \
@@ -5823,9 +5769,7 @@ def _rel001_version(manifest, snapshot, current_version):  # noqa: ANN001
 
 
 # frob:ticket T-0731
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestDebtGate.test_release_gate_bump_suppressed_under_frob_agent  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestDebtGate.test_release_gate_bump_fires_without_frob_agent  # noqa: E501
 def _rel001_bump_suppressed_under_agent() -> bool:
     """T-0731: whether the bump/changelog half of REL001 is suppressed
@@ -5845,7 +5789,6 @@ def _rel001_bump_suppressed_under_agent() -> bool:
 
 
 # frob:ticket T-0807
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_linked_worktree_detected
 def _rel001_is_linked_worktree(root: Path) -> bool:
     """T-0807: whether `root` is a LINKED git worktree (as opposed to the
@@ -5877,11 +5820,8 @@ def _rel001_is_linked_worktree(root: Path) -> bool:
 
 
 # frob:ticket T-0807
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_not_land_owned_root_checkout_no_ticket  # noqa: E501
 def _rel001_land_owned(root: Path, ticket_id: str | None) -> bool:
     """T-0807: whether REL001's bump/changelog half is land-owned in THIS
@@ -6104,7 +6044,6 @@ def _rel002_dev_ahead_of_stamp(candidate: str, authoritative: str) -> bool:
 # frob:ticket T-4540
 # frob:invariant INV-044
 # invariant spec: [INV-044](invariants/INV-044.md)
-# frob:tests \
 # tests/test_release.py::TestReleaseGateCoherence.test_hand_edited_pyproject_fires_rel002  # noqa: E501
 # frob:tests tests/unit/test_rel002_dev_suffix.py
 # frob:enforces CHK-GATE-REL002
@@ -6157,12 +6096,10 @@ def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # no
 
 
 # frob:ticket T-0807
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
 # frob:waive DUP001 reason="sibling REL001 note builders (_rel001_land_note vs the \
 # T-2462 changelog-fragment note): same WARN-note shape, independently-evolving \
 # message text per bump-vs-fragment case"
-# frob:tests \
 # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease
 def _rel001_land_note(bump, manifest, current_version: str) -> list[Violation]:  # noqa: ANN001
     """REL001, land-owned case (T-0807): a `WARN`-severity note naming the
@@ -6198,9 +6135,6 @@ def _rel001_land_note(bump, manifest, current_version: str) -> list[Violation]: 
 
 
 # frob:ticket T-2462
-# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_true_with_a_fragment  # noqa: E501
-# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_false_with_no_fragments  # noqa: E501
-# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_false_on_malformed_fragment  # noqa: E501
 def _rel001_fragments_pending(root: Path) -> bool:
     """T-2462: whether `root/changelog.d/` has at least one parseable
     `frob.release._fragments` entry -- the signal `release_gate`'s plain-
@@ -6224,8 +6158,6 @@ def _rel001_fragments_pending(root: Path) -> bool:
 # T-2462 changelog-fragment note): same WARN-note shape, independently-evolving \
 # message text per bump-vs-fragment case"
 # frob:ticket T-2462
-# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001DeferredNote.test_names_bump_and_fragment_mechanism  # noqa: E501
-# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001DeferredNote.test_empty_for_none_bump  # noqa: E501
 def _rel001_deferred_note(bump, manifest, current_version: str) -> list[Violation]:  # noqa: ANN001
     """T-2462: `release_gate`'s plain-root-checkout WARN note when a real
     bump would otherwise ERROR (`_rel001_version`) but `changelog.d/`
@@ -6768,7 +6700,6 @@ def _load_diff(root: Path, base: str) -> tuple[Diff, bool, bool]:
     return diff_result.danger_ok, False, False
 
 
-# frob:tests \
 # tests/gates_suite/test_coverage.py::TestCoverageGate.test_load_tests_threads_platform_skipped_through  # noqa: E501
 def _load_tests(root: Path) -> tuple[CollectedTests, str | None, frozenset[str]]:
     """Collected pytest + cargo + vitest + ctest node ids, degrading each
@@ -6929,9 +6860,7 @@ def _repo_state_fingerprint(root: Path) -> str | None:
 
 # frob:ticket T-2710
 # frob:ticket T-4343
-# frob:tests \
 # tests/gates_suite/test_run.py::TestRunGatesQueueFailureThreadsRealTicketError.test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_run.py::TestGraphFP.test_head_move_unmeasured  # noqa: E501
 def _load_graph_queue_lock(
     root: Path,
@@ -6988,7 +6917,6 @@ def _load_graph_queue_lock(
 
 # frob:ticket T-4019
 # frob:enforces CHK-GATE-INV009
-# frob:tests \
 # tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius.test_must_fire_malformed_invariant_file_produces_named_error  # noqa: E501
 def _invariant_load_error_violations(
     errors: tuple[InvariantLoadError, ...],
@@ -8303,7 +8231,6 @@ def _build_ticket_scoped_jobs(
 
 
 # frob:ticket T-0232
-# frob:tests \
 # tests/gates_suite/test_run.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing  # noqa: E501
 def _timed_job(
     job: Callable[[], tuple[Violation, ...]],
@@ -8336,7 +8263,6 @@ def _timed_job(
     return run
 
 
-# frob:tests \
 # tests/gates_suite/test_run.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing  # noqa: E501
 def _run_jobs(
     jobs: dict[str, Callable[[], tuple[Violation, ...]]],
@@ -8462,8 +8388,6 @@ def _submit_process_pool(
 
 
 # frob:ticket T-3670
-# frob:tests tests/unit/test_gates_pool_preload.py::TestRunProcessJobsSerially.test_runs_every_job_and_populates_accumulators  # noqa: E501
-# frob:tests tests/unit/test_gates_pool_preload.py::TestRunProcessJobsSerially.test_empty_jobs_is_a_noop  # noqa: E501
 def _run_process_jobs_serially_in_process(
     process_jobs: dict[str, _ProcessJob],
     raw: dict[str, tuple[Violation, ...]],
@@ -8579,7 +8503,6 @@ def _process_pool_start_method() -> str:
 
 # frob:ticket T-0806
 # frob:ticket T-0990
-# frob:tests \
 # tests/gates_suite/test_run.py::TestProcessPoolGates.test_open_process_pool_preloads_forkserver_when_available  # noqa: E501
 def _stamp_worker_stdout_log_level_env() -> None:
     """Stamp `_WORKER_STDOUT_LOG_LEVEL_ENV` with the parent's current
@@ -8604,7 +8527,6 @@ def _stamp_worker_stdout_log_level_env() -> None:
 
 # frob:ticket T-0982
 # frob:ticket T-0990
-# frob:tests \
 # tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worker_under_parent_shared_holder_completes  # noqa: E501
 def _stamp_worker_lock_keys_env() -> None:
     """Stamp `frob.process._lock._INHERITED_LOCK_KEYS_ENV` with this (the
@@ -8870,11 +8792,8 @@ def _run_thread_jobs(
 
 
 # frob:ticket T-1445
-# frob:tests \
 # tests/test_gate_cache.py::TestSplitProcessCache.test_use_cache_false_returns_everything_as_misses  # noqa: E501
-# frob:tests \
 # tests/test_gate_cache.py::TestSplitProcessCache.test_hit_removes_gate_from_remaining
-# frob:tests \
 # tests/test_gate_cache.py::TestSplitProcessCache.test_miss_keeps_gate_pending
 def _split_process_cache(
     process_jobs: dict[str, _ProcessJob], st: _GateInputs, *, use_cache: bool
@@ -9083,7 +9002,6 @@ def _run_combined_jobs(
 
 
 # frob:ticket T-1148
-# frob:tests \
 # tests/gates_suite/test_run.py::TestNativeAvailabilityGate.test_unimportable_native_short_circuits_run_gates_with_one_finding  # noqa: E501
 def _native_unavailable_report(root: Path) -> GateReport | None:
     """T-1148: ONE `NATIVE001` `GateReport` naming every declared native
@@ -9155,13 +9073,9 @@ def _native_autorebuild_disabled(root: Path) -> bool:
 
 
 # frob:ticket T-1213
-# frob:tests \
 # tests/test_natives.py::TestNativeAutorebuild.test_stale_native_triggers_autorebuild
-# frob:tests \
 # tests/test_natives.py::TestNativeAutorebuild.test_missing_but_buildable_native_triggers_autorebuild  # noqa: E501
-# frob:tests \
 # tests/test_natives.py::TestNativeAutorebuild.test_disabled_via_env_var_skips_autorebuild  # noqa: E501
-# frob:tests \
 # tests/test_natives.py::TestNativeAutorebuild.test_build_failure_falls_through_to_native001  # noqa: E501
 def _maybe_autorebuild_natives(root: Path) -> None:
     """T-1213: the fix for the recurring worktree-natives false-failure

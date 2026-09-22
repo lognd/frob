@@ -67,9 +67,6 @@ def _section_body(lines: list[str], heading: str) -> str | None:
 
 
 # frob:ticket T-3195
-# frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_rapid_hollow_report_refused  # noqa: E501
-# frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_real_evidence_never_flagged_as_hollow  # noqa: E501
-# frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_narrative_mentioning_the_markers_is_never_flagged  # noqa: E501
 def _is_hollow_done_report(body: str) -> bool:
     """True when `body` (a ticket's Done report text) has a `### Changed`
     section whose content is EXACTLY the empty-case placeholder AND a
@@ -89,8 +86,6 @@ def _is_hollow_done_report(body: str) -> bool:
 
 
 # frob:ticket T-3195
-# frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_docs_kind_rapid_hollow_report_exempt  # noqa: E501
-# frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_no_behaviour_change_narrative_exempt  # noqa: E501
 def _hollow_done_report_exempt(ticket: Ticket, body: str, *, rapid: bool) -> bool:
     """True when `ticket` is legitimately allowed to close carrying a
     hollow Done report (T-3195's stated exemption): a DOCS-kind ticket
@@ -106,10 +101,6 @@ def _hollow_done_report_exempt(ticket: Ticket, body: str, *, rapid: bool) -> boo
 
 
 # frob:ticket T-3266
-# frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_zero_claims_with_real_evidence_refused  # noqa: E501
-# frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_wrong_nonzero_claims_refused  # noqa: E501
-# frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_matching_claims_not_flagged  # noqa: E501
-# frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_no_claims_section_not_flagged  # noqa: E501
 def _stale_claims_reason(ticket: Ticket, body: str) -> str | None:
     """`None` if `body`'s '### Captured claims' section (if any) has an
     `evidence_count` matching `ticket`'s own recorded non-cmd evidence

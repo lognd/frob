@@ -35,9 +35,6 @@ _FLEET_ERROR_MESSAGES: dict[FleetError, str] = {
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0815
-# frob:tests tests/unit/test_fleet_runner.py::TestFleetRunner.test_run_status_table
-# frob:tests tests/unit/test_fleet_runner.py::TestFleetRunner.test_run_status_missing_manifest  # noqa: E501
-# frob:tests tests/unit/test_fleet_runner.py::TestFleetRunner.test_run_route_ok
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob fleet status` (default) or `frob fleet route`."""
     if cfg.fleet_command == "route":

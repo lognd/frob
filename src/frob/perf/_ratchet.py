@@ -77,9 +77,6 @@ def _deciles(sketch: QuantileSketch) -> dict[str, float]:
 
 
 # frob:doc docs/modules/perf.md#regression-ratchet-t-0712
-# frob:tests tests/unit/perf/test_ratchet.py::TestCheckRatchet.test_no_prior_never_fires  # noqa: E501
-# frob:tests tests/unit/perf/test_ratchet.py::TestCheckRatchet.test_regression_beyond_tolerance_fires  # noqa: E501
-# frob:tests tests/unit/perf/test_ratchet.py::TestCheckRatchet.test_within_tolerance_does_not_fire  # noqa: E501
 def check_ratchet(
     section_key: str,
     label: str,
@@ -128,7 +125,6 @@ def check_ratchet(
 
 
 # frob:doc docs/modules/perf.md#regression-ratchet-t-0712
-# frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_save_then_load_round_trips  # noqa: E501
 def save_ratchet_findings(root: Path, findings: list[RatchetFinding]) -> None:
     """Overwrite `root/.frob/perf/ratchet_findings.json` with `findings`
     (empty list clears it) -- one run's full set, never appended-to,
@@ -141,10 +137,6 @@ def save_ratchet_findings(root: Path, findings: list[RatchetFinding]) -> None:
 
 
 # frob:doc docs/modules/perf.md#regression-ratchet-t-0712
-# frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_save_then_load_round_trips  # noqa: E501
-# frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_missing_file_is_empty  # noqa: E501
-# frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_malformed_json_is_empty_not_a_crash  # noqa: E501
-# frob:tests tests/unit/perf/test_ratchet.py::TestPersistRoundTrip.test_wrong_schema_json_is_empty_not_a_crash  # noqa: E501
 def load_ratchet_findings(root: Path) -> list[RatchetFinding]:
     """`root/.frob/perf/ratchet_findings.json`'s findings, or `[]` when the
     file is missing/malformed (fail-open -- no `frob perf collect` run yet
@@ -165,8 +157,6 @@ def load_ratchet_findings(root: Path) -> list[RatchetFinding]:
 
 
 # frob:doc docs/modules/perf.md#regression-ratchet-t-0712
-# frob:tests tests/unit/perf/test_ratchet.py::TestRatchetViolations.test_findings_become_perf009_violations  # noqa: E501
-# frob:tests tests/unit/perf/test_ratchet.py::TestRatchetViolations.test_no_findings_file_is_zero_violations  # noqa: E501
 # frob:enforces CHK-GATE-PERF009
 # frob:enforces CHK-SUBSYS-PERF
 def ratchet_violations(root: Path) -> list[Violation]:

@@ -29,7 +29,6 @@ class ExportsResult(BaseModel):
     modules: list[ModuleExports]
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_exports.py::TestExportsPackage.test_as_text_output
     def as_text(self) -> str:
         # frob:doc docs/commands/exports.md#public-api
         # Find which symbol names are duplicated across modules
@@ -63,7 +62,6 @@ class ExportsResult(BaseModel):
         return "\n".join(lines)
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_json_mode_logs_result  # noqa: E501
     def as_json(self) -> str:
         # frob:doc docs/commands/exports.md#public-api
         return self.model_dump_json(indent=2)
@@ -148,7 +146,6 @@ class ConsumersResult(BaseModel):
 
     # frob:doc docs/modules/cli.md#exports-consumers-surface-t-0858
     # frob:ticket T-0858
-    # frob:tests tests/unit/test_exports.py::TestExportsConsumers.test_as_text_output
     def as_text(self) -> str:
         parts = [self.symbol]
         if self.consumers:
@@ -161,15 +158,12 @@ class ConsumersResult(BaseModel):
 
     # frob:doc docs/modules/cli.md#exports-consumers-surface-t-0858
     # frob:ticket T-0858
-    # frob:tests tests/unit/test_exports.py::TestExportsConsumers.test_as_json_output
     def as_json(self) -> str:
         return self.model_dump_json(indent=2)
 
 
 # frob:doc docs/modules/cli.md#exports-consumers-surface-t-0858
 # frob:ticket T-0858
-# frob:tests tests/unit/test_exports.py::TestExportsConsumers.test_finds_import_consumer
-# frob:tests tests/unit/test_exports.py::TestExportsConsumers.test_excludes_prose_mention  # noqa: E501
 def exports_consumers(
     symbol: str, root: Path, *, lang: str | None = None
 ) -> Result[ConsumersResult, ExportsError]:

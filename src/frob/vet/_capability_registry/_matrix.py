@@ -1032,7 +1032,6 @@ _STRUCTURAL_KIND_REASONS: dict[str, str] = {
 _NEW_ADAPTER_LANGUAGES: tuple[str, ...] = ("bash", "csharp", "java", "cuda")
 
 
-# frob:tests tests/test_capability_registry.py::TestMatrixExhaustiveness.test_no_unexcused_empty_cells  # noqa: E501
 def _new_adapter_matrix_excuses() -> tuple[_MatrixExcuse, ...]:
     """`_STRUCTURAL_KIND_REASONS` x `_NEW_ADAPTER_LANGUAGES`, generated
     rather than hand-copying the identical five-language block a sixth and
@@ -1105,7 +1104,6 @@ def capability_matrix() -> tuple[_MatrixCell, ...]:
 # already carries the same docs/modules/vet.md#public-api anchor (COV007).
 # frob:ticket T-0158
 # frob:ticket T-0565
-# frob:tests tests/test_capability_registry.py::TestMatrixExhaustiveness.test_no_unexcused_empty_cells  # noqa: E501
 def _unexcused_empty_cells() -> tuple[_MatrixCell, ...]:
     """Every matrix cell with zero patterns and zero excuse -- the T-0158
     gate failure condition. Empty tuple = the exhaustiveness claim holds."""
@@ -1118,7 +1116,6 @@ def _unexcused_empty_cells() -> tuple[_MatrixCell, ...]:
 # in this module, so the private symbol genuinely is the documented contract here"
 # frob:ticket T-0158
 # frob:ticket T-0565
-# frob:tests tests/test_capability_registry.py::TestValidateRegistryKinds.test_known_kinds_pass  # noqa: E501
 def _validate_registry_kinds(external_kinds: frozenset[str]) -> tuple[str, ...]:
     """Drift-lock (extends T-0150): every kind `external_kinds` names (e.g.
     every `WeaknessEntry.capability_kind`, every `may` atom kind observed

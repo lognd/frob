@@ -32,7 +32,6 @@ _log = get_logger(__name__)
 
 # frob:doc docs/strata/reliability.md#shared-proof-against-code-plumbing-t-0641
 # frob:ticket T-0641
-# frob:tests tests/unit/strata/test_obligation_proof.py::TestOwnerIndex.test_inverts_file_to_node_map  # noqa: E501
 def owner_index(owner: dict[str, str]) -> dict[str, list[str]]:
     """`CodeBinding.owner` (file -> node id) inverted to node id -> its
     bound files, in deterministic path order -- the per-node lookup every
@@ -47,7 +46,6 @@ def owner_index(owner: dict[str, str]) -> dict[str, list[str]]:
 
 # frob:doc docs/strata/reliability.md#shared-proof-against-code-plumbing-t-0641
 # frob:ticket T-0641
-# frob:tests tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode.test_true_when_files_present  # noqa: E501
 def node_has_bound_code(node_id: str, owner_by_node: dict[str, list[str]]) -> bool:
     """Whether `node_id` owns at least one real source file per `bind_code`
     -- the "can this rule even check?" gate every proof-against-code rule
@@ -59,7 +57,6 @@ def node_has_bound_code(node_id: str, owner_by_node: dict[str, list[str]]) -> bo
 
 # frob:doc docs/strata/reliability.md#shared-proof-against-code-plumbing-t-0641
 # frob:ticket T-0641
-# frob:tests tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_matches_a_real_token  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
 # (the demoted case). T-1062: leaked Unknown traces to pattern.search(text), a \
@@ -88,7 +85,6 @@ def files_evidence_token(
 
 # frob:doc docs/strata/reliability.md#shared-proof-against-code-plumbing-t-0641
 # frob:ticket T-0641
-# frob:tests tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints.test_both_endpoints_bound_src_first  # noqa: E501
 def bound_endpoints(
     flow_src: str, flow_dst: str, owner_by_node: dict[str, list[str]]
 ) -> list[str]:

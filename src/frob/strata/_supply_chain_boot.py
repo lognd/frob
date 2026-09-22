@@ -378,7 +378,6 @@ def _apply_supply_chain_boot_waivers(
 # frob:enforces CHK-GATE-REL395
 # frob:enforces CHK-GATE-REL396
 # frob:enforces CHK-GATE-REL397
-# frob:tests tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_compiled_artifact_node_without_compat_window_fires  # noqa: E501
 def check_supply_chain_boot_obligations(
     model: KernelModel, root: Path
 ) -> Result[SupplyChainBootReport, StrataError]:

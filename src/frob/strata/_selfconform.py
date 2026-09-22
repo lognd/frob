@@ -406,8 +406,6 @@ _CONFORMANCE_WAIVER_RULES: frozenset[str] = frozenset(
 
 
 # frob:enforces CHK-GATE-SYSWAIVE003
-# frob:tests tests/unit/strata/test_selfconform.py::TestConformanceWaiverStaleness.test_expired_waiver_refires_and_is_flagged  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestConformanceWaiverStaleness.test_missing_expiry_marker_treated_as_expired  # noqa: E501
 def _apply_conformance_waiver_staleness(
     applied: WaiverApplication[SelfConformViolation],
     today: date | None = None,

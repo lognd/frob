@@ -72,13 +72,9 @@ def _iter_blocks(lines: list[str]) -> list[tuple[int, int]]:
 
 
 # frob:doc docs/commands/narrative.md#narr001-the-detector
-# frob:tests \
 # tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_must_fire_long_archaeology_block  # noqa: E501
-# frob:tests \
 # tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_must_stay_quiet_short_keep_block  # noqa: E501
-# frob:tests \
 # tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_socketd_t2961_block_stays_quiet_at_default_threshold  # noqa: E501
-# frob:tests \
 # tests/test_narrative_blocks.py::TestNarrativeBlocksGate.test_threshold_boundary_is_inclusive  # noqa: E501
 def scan_narrative_blocks(
     path: Path, text: str, *, threshold: int = NARR001_THRESHOLD_LINES
@@ -114,9 +110,7 @@ def scan_narrative_blocks(
 
 
 # frob:doc docs/commands/narrative.md#narr001-the-detector
-# frob:tests \
 # tests/test_narrative_blocks.py::TestNarrativeBlocksGateRepoScan.test_fires_on_a_tracked_file_with_a_long_block  # noqa: E501
-# frob:tests \
 # tests/test_narrative_blocks.py::TestT3020WaiversRemoved.test_narrative_blocks_gate_has_no_selfaudit001_waiver  # noqa: E501
 # T-3014: wired into gates/__init__.py's GATE_RUNNERS dict (the WIRE001
 # waiver this comment used to carry is no longer warranted -- the T-2986

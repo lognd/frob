@@ -424,13 +424,6 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 
 
 # frob:doc docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919  # noqa: E501
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_two_helpers_spawning_identical_subprocess_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_two_helpers_spawning_different_subprocess_args_is_not_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_single_helper_call_is_not_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_call_site_varying_argument_is_not_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_three_hop_duplicate_split_across_sibling_callees_is_flagged  # noqa: E501
-# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_unresolvable_dynamic_dispatch_callee_never_manufactures_a_duplicate  # noqa: E501
 # frob:ticket T-0919
 # frob:ticket T-0922
 # frob:ticket T-1212

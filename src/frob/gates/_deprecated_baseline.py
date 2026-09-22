@@ -99,7 +99,6 @@ def _decode_file_count(ref: str) -> tuple[str, int]:
 
 # frob:ticket T-1052
 # frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestFileReferenceCounts.test_buckets_by_file  # noqa: E501
 def file_reference_counts(refs: frozenset[str]) -> dict[str, int]:
     """Bucket a `deprecated_current_references`-shaped `file:line` set
     into per-file reference counts (T-1052): `{"src/a.py": 2, ...}`. The
@@ -134,7 +133,6 @@ class DeprecatedBaselineEntry(BaseModel):
     references: tuple[str, ...] = ()
 
     # frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
-    # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedBaselineEntry.test_file_counts_decodes_encoded_references  # noqa: E501
     def file_counts(self) -> dict[str, int]:
         """This entry's `references` decoded back into `{file: count}`
         (T-1052) -- the shape `_depr005_violations`/`tighten_deprecated_
@@ -154,7 +152,6 @@ class DeprecatedBaselineLock(BaseModel):
     entries: tuple[DeprecatedBaselineEntry, ...] = ()
 
     # frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
-    # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedBaselineLock.test_for_symbol_missing_is_none  # noqa: E501
     def for_symbol(self, symbol: str) -> DeprecatedBaselineEntry | None:
         """The baselined entry for `symbol` (an `Edge.src`), or `None` if
         `symbol` has never been baselined."""
@@ -166,7 +163,6 @@ class DeprecatedBaselineLock(BaseModel):
 
 # frob:ticket T-0639
 # frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestLoadSave.test_missing_file_is_empty  # noqa: E501
 def load_deprecated_baseline(root: Path) -> DeprecatedBaselineLock:
     """The committed `frob-deprecated-baseline.lock.json` at `root`, or an
     empty `DeprecatedBaselineLock` if it does not exist yet or fails to
@@ -190,7 +186,6 @@ def load_deprecated_baseline(root: Path) -> DeprecatedBaselineLock:
 
 # frob:ticket T-0639
 # frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestLoadSave.test_save_then_load_round_trips  # noqa: E501
 def save_deprecated_baseline(root: Path, lock: DeprecatedBaselineLock) -> None:
     """Atomically overwrite `root/frob-deprecated-baseline.lock.json` with
     `lock`, entries sorted by symbol then reference so the diff a reviewer
@@ -214,10 +209,6 @@ def save_deprecated_baseline(root: Path, lock: DeprecatedBaselineLock) -> None:
 
 # frob:ticket T-0639
 # frob:doc docs/modules/gates.md#depr005-new-caller-baseline-ratchet-t-0639-redesigned-t-1052  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestTighten.test_shrinkage_drops_stale_references  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestTighten.test_never_absorbs_a_new_reference  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestTighten.test_first_seen_symbol_is_seeded_whole  # noqa: E501
-# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestTighten.test_symbol_no_longer_deprecated_is_dropped  # noqa: E501
 def tighten_deprecated_baseline(
     root: Path, current: dict[str, frozenset[str]]
 ) -> DeprecatedBaselineLock:

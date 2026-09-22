@@ -63,7 +63,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/strata/surface.md#parser
-# frob:tests tests/unit/strata/test_facts.py::TestFactsStrataCoreImportError.test_names_the_real_exception  # noqa: E501
 def strata_core_import_error() -> str | None:
     """The real exception text from this module's guarded `strata_core`
     import, or `None` when the import succeeded. T-2707: mirrors
@@ -340,8 +339,6 @@ class FactBase:
     # frob:doc docs/strata/kernel.md#demand-declarations-t-0702
     # frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
     # frob:ticket T-0972
-    # frob:tests tests/unit/strata/test_demand.py::TestAggregateDemand.test_two_entry_nodes_sum_at_fan_in  # noqa: E501
-    # frob:tests tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_growth_scales_seed_before_fan_in  # noqa: E501
     def aggregate_demand(
         self, node_id: str, *, elapsed_seconds: float | None = None
     ) -> AggregateDemand:

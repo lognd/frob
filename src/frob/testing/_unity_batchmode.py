@@ -45,8 +45,6 @@ _UNITY_PASSED_RESULTS = frozenset({"Passed"})
 
 
 # frob:doc docs/guides/unity.md#unity-batchmode-evidence-channel
-# frob:tests tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml.test_malformed_xml_is_err_not_empty  # noqa: E501
-# frob:tests tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode.test_editor_not_found_is_err  # noqa: E501
 class UnityBatchmodeError(ErrorSet):
     """Failure values `run_unity_batchmode`/`parse_unity_batchmode_xml`
     can return (T-4508)."""
@@ -90,9 +88,6 @@ def _pyproject_unity_editor(root: Path) -> str | None:
 
 # frob:doc docs/guides/unity.md#unity-batchmode-evidence-channel
 # frob:ticket T-4508
-# frob:tests tests/unit/test_unity_batchmode.py::TestResolveUnityEditor.test_pyproject_override_wins  # noqa: E501
-# frob:tests tests/unit/test_unity_batchmode.py::TestResolveUnityEditor.test_no_override_falls_back_to_doctor_lookup  # noqa: E501
-# frob:tests tests/unit/test_unity_batchmode.py::TestResolveUnityEditor.test_nothing_resolves_is_none  # noqa: E501
 def resolve_unity_editor(root: Path) -> str | None:
     """The Unity Editor binary path to invoke for batchmode runs, in
     precedence order: `[tool.frob] unity_editor` in `root/pyproject.toml`
@@ -119,7 +114,6 @@ def resolve_unity_editor(root: Path) -> str | None:
 
 # frob:doc docs/guides/unity.md#unity-batchmode-evidence-channel
 # frob:ticket T-4508
-# frob:tests tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml.test_parses_nested_test_suites_into_fqn_result_map  # noqa: E501
 def parse_unity_batchmode_xml(text: str) -> Result[dict[str, str], UnityBatchmodeError]:
     """Parse one Unity Test Framework batchmode NUnit3 results file
     (`Unity -batchmode -runTests -testResults <path>`'s own output
@@ -227,9 +221,6 @@ def _run_unity_batchmode_process(
 
 # frob:doc docs/guides/unity.md#unity-batchmode-evidence-channel
 # frob:ticket T-4508
-# frob:tests tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode.test_maps_passing_and_failing_ids  # noqa: E501
-# frob:tests tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode.test_crash_with_no_results_file_is_run_failed_distinct_from_a_test_failure  # noqa: E501
-# frob:tests tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode.test_requested_id_missing_from_results_is_err  # noqa: E501
 # frob:waive WIRE001 reason="the direct evidence-channel entry point this ticket adds; \
 # routing frob's ticket-runner CLI to call it for Unity node ids is T-4516's own scope \
 # (blocked_by T-4518's project-model detection), not this ticket's" follow_up="T-4516"

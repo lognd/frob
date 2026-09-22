@@ -182,13 +182,9 @@ def _dest_file_bound_names(dest_file: Path) -> set[str]:
 # frob:ticket T-3596
 # frob:ticket T-3650
 # frob:ticket T-3645
-# frob:tests \
 # tests/test_refactor.py::TestRunSplit.test_split_carries_forward_imports_moved_body_needs  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestGapRegressions.test_gap3_split_carries_forward_module_level_free_variable  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestGapRegressions.test_gap1_move_carries_forward_default_arg_import  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestRunSplit.test_split_merges_carried_imports_into_existing_top_block  # noqa: E501
 def needed_import_ops_for_symbols(
     source_file: Path,
@@ -372,9 +368,7 @@ def _sorted_stale_names(stale: list[ast.alias]) -> list[str]:
 # frob:doc docs/commands/refactor.md#split-verb-t-1201
 # frob:ticket T-3653
 # frob:ticket T-3690
-# frob:tests \
 # tests/test_refactor.py::TestGapRegressions.test_gap5_stale_dest_import_becomes_circular_when_its_own_symbol_later_moves_in  # noqa: E501
-# frob:tests \
 # tests/test_refactor.py::TestGapRegressions.test_stale_dest_import_ops_sorts_each_stale_set_once  # noqa: E501
 # frob:waive AFFECT001 reason="T-3690 only dedups an internal sorted() call (log line \
 # + RewriteOp.reason now share one sort) -- no observable public-API or output change, \

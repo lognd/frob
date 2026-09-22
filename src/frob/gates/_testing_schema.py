@@ -44,7 +44,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/gates.md#testingschema001-t-2390-epic-child-t-2432
-# frob:tests \
 # tests/unit/test_testing_table_schema.py::TestTestingSchemaGate.test_testing_known_key\
 # s_reads_test_policy_model_fields kind="unit"
 # frob:ticket T-2432
@@ -186,10 +185,8 @@ def _testing_table(root: Path) -> dict | None:
 
 # frob:enforces CHK-GATE-TESTINGSCHEMA001
 # frob:doc docs/modules/gates.md#testingschema001-t-2390-epic-child-t-2432
-# frob:tests \
 # tests/unit/test_testing_table_schema.py::TestTestingSchemaGate.test_must_now_fire_rep\
 # orts_the_undeclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_testing_table_schema.py::TestTestingSchemaGate.test_must_still_pass_t\
 # his_repos_own_frob_toml kind="unit"
 # frob:ticket T-2432

@@ -108,10 +108,8 @@ def _symbol_usages(root: Path, symbol: str) -> tuple[tuple[str, int], ...]:
 # frob:doc \
 # docs/modules/process.md#subject-count-primitive-a-zero-subject-enforcing-gate-is-a-fi\
 # nding-t-3985
-# frob:tests \
 # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCo\
 # unt.test_counts_every_usage_examined
-# frob:tests \
 # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCo\
 # unt.test_zero_reproduces_t3941_windows_shape
 # frob:waive WIRE001 follow_up="T-4087" reason="genuinely wired -- called from \
@@ -147,11 +145,6 @@ def profile_boundary_subject_count(root: Path) -> int:
 
 # frob:enforces CHK-GATE-PROFILE001
 # frob:doc docs/modules/tickets-verify-sweep.md#land-profile-settings-t-2360
-# frob:tests tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate.test_negative_control_settings_layer_only_is_silent  # noqa: E501
-# frob:tests tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate.test_positive_control_reintroduced_branch_is_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate.test_settings_resolver_layer_itself_is_never_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate.test_pre_t2361_shape_is_flagged  # noqa: E501
-# frob:tests tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate.test_tests_directory_is_not_scanned  # noqa: E501
 def profile_boundary_gate(root: Path) -> tuple[Violation, ...]:
     """PROFILE001: flag every `src/frob/**` reference to `ProfileName`
     outside `_PROFILE_BOUNDARY_ALLOWED_FILES` -- a land-pipeline module

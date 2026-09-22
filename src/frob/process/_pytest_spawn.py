@@ -38,7 +38,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_pytest_spawn.py::TestResolvePytestArgv.test_err_when_not_importable  # noqa: E501
 class PytestSpawnError(ErrorSet):
     """`resolve_pytest_argv`'s one failure mode (T-3311): the resolved
     interpreter does not have `pytest` importable at all -- a spawn
@@ -55,8 +54,6 @@ class PytestSpawnError(ErrorSet):
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_pytest_spawn.py::TestPytestImportable.test_true_when_importable  # noqa: E501
-# frob:tests tests/unit/test_pytest_spawn.py::TestPytestImportable.test_false_when_not_importable  # noqa: E501
 def pytest_importable(python: str) -> bool:
     """Whether `pytest` actually imports through `python` (T-3311,
     T-3305's probe-don't-assume principle applied to pytest rather than
@@ -99,9 +96,6 @@ def pytest_importable(python: str) -> bool:
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:tests tests/unit/test_pytest_spawn.py::TestResolvePytestArgv.test_ok_uses_sys_executable  # noqa: E501
-# frob:tests tests/unit/test_pytest_spawn.py::TestResolvePytestArgv.test_appends_extra_args  # noqa: E501
-# frob:tests tests/unit/test_pytest_spawn.py::TestResolvePytestArgv.test_err_when_not_importable  # noqa: E501
 def resolve_pytest_argv(
     *args: str, python: str | None = None
 ) -> Result[list[str], PytestSpawnError]:

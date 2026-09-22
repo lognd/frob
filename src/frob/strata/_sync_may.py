@@ -58,9 +58,6 @@ _NODE_HEADER_RE = re.compile(
 # also under a live cross-worktree lease (T-1579) at the time this ticket ran, \
 # matching the same scope-closure tension SCANNED_BASES documents in _rule_id_scan.py \
 # -- this function's own docstring is the authoritative description"
-# frob:tests tests/unit/strata/test_sync_may.py::TestNodeBodySpan.test_flat_body_returns_closing_brace_line kind="unit"  # noqa: E501
-# frob:tests tests/unit/strata/test_sync_may.py::TestNodeBodySpan.test_nested_braces_do_not_close_early kind="unit"  # noqa: E501
-# frob:tests tests/unit/strata/test_sync_may.py::TestNodeBodySpan.test_malformed_input_returns_last_line_best_effort kind="unit"  # noqa: E501
 def node_body_span(lines: list[str], header_idx: int) -> int:
     """The line index of the `}` that closes the node body opened at
     `lines[header_idx]` (which itself ends in `{`), brace-depth matched so a

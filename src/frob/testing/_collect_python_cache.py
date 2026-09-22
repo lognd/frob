@@ -54,7 +54,6 @@ _last_python_collection_failure_detail: str | None = None
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/test_testing_collect.py::TestPythonCollectionFailureDetail.test_none_before_any\
 # _call
 def python_collection_failure_detail() -> str | None:
@@ -92,7 +91,6 @@ _last_missing_natives: tuple[NativeSpec, ...] = ()
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/test_testing.py::TestCollectPythonTests.test_python_collection_missing_natives_\
 # reflects_last_call
 def python_collection_missing_natives() -> tuple[NativeSpec, ...]:
@@ -160,7 +158,6 @@ _SKIPPED_MODULE_LEVEL_RE = re.compile(r"^SKIPPED \[\d+\] ([^:]+):(\d+): (.+)$")
 
 
 # frob:ticket T-4408
-# frob:tests tests/test_testing_collect.py::TestParsePlatformSkippedWindowsPathShape
 def _parse_platform_skipped(stdout: str) -> tuple[tuple[str, str], ...]:
     """T-4382: parse `pytest --collect-only -rs`'s stdout for module-level
     skip lines (`SKIPPED [N] <file>:<line>: <reason>`) -- the ONLY shape
@@ -431,7 +428,6 @@ def _collection_cache_key(root: Path, natives: tuple[NativeSpec, ...]) -> str:
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests \
 # tests/test_testing.py::TestNativeFingerprint.test_drop_collection_cache_removes_file
 def drop_collection_cache(root: Path) -> bool:
     """Delete the pytest collection cache so the next collection re-runs from

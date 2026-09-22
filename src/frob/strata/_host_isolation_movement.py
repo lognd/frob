@@ -147,7 +147,6 @@ def _movement_flows_for_pair(
 # verbatim (same name, same body/signature), no behavior change, so the \
 # affects()-closure doc it names needs no update"
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
-# frob:tests tests/unit/strata/test_host_isolation.py::test_movement_flows kind="unit"
 def host_movement_flows(model: KernelModel) -> tuple[Flow, ...]:
     """Materialize HOST001's HostManifest-derived sharing relations
     (shared writable path, shared reachable socket) as real `Flow` facts

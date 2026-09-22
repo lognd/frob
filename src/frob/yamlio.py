@@ -18,10 +18,8 @@ __all__ = ["fast_yaml_loader"]
 
 
 # frob:ticket T-1204
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestYamlLoader.test_detects_coverage_tracer_by_modu\
 # le_name  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestYamlLoader.test_no_active_tracer_is_not_coverag\
 # e  # noqa: E501
 def _coverage_tracer_active() -> bool:
@@ -48,13 +46,10 @@ def _coverage_tracer_active() -> bool:
 
 # frob:ticket T-1204
 # frob:doc docs/modules/tickets-data-storage.md#shared-yaml-loader-selection-frobyamlio
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestYamlLoader.test_prefers_csafeloader_when_libyam\
 # l_present  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_withou\
 # t_libyaml  # noqa: E501
-# frob:tests \
 # tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_under_\
 # active_coverage_tracer  # noqa: E501
 def fast_yaml_loader() -> type[yaml.SafeLoader]:

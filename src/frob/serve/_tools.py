@@ -74,10 +74,6 @@ def _load_snapshot(root: Path):  # noqa: ANN202
 
 
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_tools_daemon_bypass.py::TestFrobDoableTicketsRevalidation.test_resolved_sweep_ticket_is_dropped_before_listing  # noqa: E501
-# frob:tests tests/test_serve_tools_daemon_bypass.py::TestFrobDoableTicketsRevalidation.test_still_reproducing_sweep_ticket_stays_listed  # noqa: E501
-# frob:tests tests/test_serve_tools_daemon_bypass.py::TestFrobDoableTicketsRevalidation.test_no_sweep_tickets_never_calls_revalidate  # noqa: E501
 def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
     """Doable tickets, oldest-first, as JSON-able dicts.
 
@@ -131,7 +127,6 @@ def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
 
 
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def frob_exports(
     root: Path,
     pkg_dir: str,
@@ -163,7 +158,6 @@ def frob_exports(
 
 
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def frob_stats(root: Path, *, window_days: int = 30) -> Result[dict, ServeError]:
     """`StatsReport.model_dump(mode="json")` for `root` -- the default
     (non-`--agentic`) `frob stats --json` render mode (`frob.app.
@@ -214,7 +208,6 @@ def _dangling_entries_as_dicts(report) -> list[dict]:  # noqa: ANN001
 
 
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_map_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def frob_map(root: Path, *, depth: int | None = None) -> Result[dict, ServeError]:
     """`MapResult.model_dump(mode="json")` for `root` -- the same payload
     `frob map --json`'s `result.as_json()` serializes (`frob.app.
@@ -302,7 +295,6 @@ def _resolve_symref(
 
 
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_daemon_matches_in_process kind="unit"  # noqa: E501
 def frob_graph_query(root: Path, symref: str) -> Result[dict, ServeError]:
     """Resolve `symref`; list outgoing/incoming edges, like `frob graph query`.
 
@@ -383,11 +375,8 @@ def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
 
 # frob:doc docs/modules/graph.md#affects
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_serve.py::TestAffects.test_direct_symbol_no_dependents \
 # kind="unit"
-# frob:tests tests/test_serve.py::TestAffects.test_transitive_dependent_docs_included \
 # kind="unit"
-# frob:tests tests/test_serve.py::TestAffects.test_unknown_symbol_is_err kind="unit"
 def frob_affects(
     root: Path,
     symref: str,
@@ -489,16 +478,11 @@ def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
 # frob:doc docs/modules/serve.md#proxied-commands
 # frob:ticket T-0602
 # frob:ticket T-1147
-# frob:tests \
 # tests/test_serve.py::TestCheckDelta.test_delta_against_fresh_baseline_is_empty \
 # kind="unit"
-# frob:tests tests/test_serve.py::TestCheckDelta.test_delta_reports_new_violation \
 # kind="unit"
-# frob:tests tests/test_serve.py::TestCheckDelta.test_missing_baseline_is_full_set \
 # kind="unit"
-# frob:tests \
 # tests/test_serve.py::TestCheckDelta.test_verify_true_matches_when_no_drift kind="unit"
-# frob:tests tests/test_serve.py::TestCheckDelta.test_check_result_matches_only_gates_delta_cli_shape kind="unit"  # noqa: E501
 def frob_check_delta(
     root: Path,
     ticket_id: str | None = None,
@@ -593,9 +577,7 @@ def frob_check_delta(
 
 
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_serve.py::TestRunTouchedTests.test_no_diff_selects_nothing \
 # kind="unit"
-# frob:tests tests/test_serve.py::TestRunTouchedTests.test_bad_base_is_git_failed \
 # kind="unit"
 def frob_run_touched_tests(root: Path, base: str = "main") -> Result[dict, ServeError]:
     """Select AND run the touched-set tests for `base` (`frob.testing.
@@ -685,7 +667,6 @@ def frob_perf_hot(
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests \
 # tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status kind="unit"
 def frob_daemon_status(root: Path) -> Result[dict, ServeError]:
     """(T-0733) The background daemon's latest post-land verdict and

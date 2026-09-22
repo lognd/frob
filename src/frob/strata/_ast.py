@@ -743,7 +743,6 @@ class PolicyDecl(BaseModel):
     rationale: tuple[str, ...] = ()
 
     # frob:ticket T-0565
-    # frob:tests tests/unit/strata/test_policy.py::TestGrammarRoundTrip.test_enables_and_rationale_split_out_of_rules  # noqa: E501
     @model_validator(mode="before")
     @classmethod
     def _split_meta_rules(cls, data: object) -> object:
@@ -830,7 +829,6 @@ class ResourceDecl(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#fragments-t-2502
-# frob:tests \
 # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_part_of_parses
 class ExtendNodeDecl(BaseModel):
     """A parsed `extend node ID { may "ATOM" via GLOB[, GLOB...]; ... }`

@@ -199,10 +199,8 @@ def _toplevel_scalar_keys(root: Path) -> list[str] | None:
 
 # frob:enforces CHK-GATE-TOPSCALARSCHEMA001
 # frob:doc docs/modules/gates.md#topscalarschema001-t-2390-epic-child-t-2431
-# frob:tests \
 # tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate.test_must_now\
 # _fire_reports_the_undeclared_key kind="unit"
-# frob:tests \
 # tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate.test_must_sti\
 # ll_pass_this_repos_own_frob_toml kind="unit"
 # frob:ticket T-2431

@@ -1128,9 +1128,7 @@ def _java_import_violations(
 
 # frob:ticket T-4254
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:tests \
 # tests/gates_suite/test_docblocks_refs_cov009.py::TestSharedDocAnchorGrouping.test_two_symbols_same_anchor_form_a_group  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_docblocks_refs_cov009.py::TestSharedDocAnchorGrouping.test_lone_anchor_participant_is_not_a_group  # noqa: E501
 def _shared_doc_anchor_groups(snapshot: GraphSnapshot) -> dict[str, tuple[str, ...]]:
     """T-4254: group every `EdgeKind.DOC` edge's source symbol by the
@@ -1197,13 +1195,9 @@ def _cov009_violation(
 # frob:enforces CHK-GATE-COV009
 # frob:ticket T-4254
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:tests \
 # tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_touching_one_sibling_flags_the_other  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_touching_both_siblings_flags_neither  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_untouched_group_is_silent  # noqa: E501
-# frob:tests \
 # tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_lone_anchor_participant_is_not_a_group  # noqa: E501
 def cov009_violations(snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
     """COV009 (T-4254): for every group of symbols sharing one `frob:doc`
@@ -1246,7 +1240,6 @@ def cov009_violations(snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, .
 # frob:doc docs/modules/gates.md#cov009-t-4254
 # frob:enforces CHK-GATE-COV009
 # frob:ticket T-4254
-# frob:tests tests/gates_suite/test_docblocks_refs_cov009.py::TestCov009SharedAnchorReview.test_touching_one_sibling_flags_the_other  # noqa: E501
 def cov009_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV009's `run_gates`-ready entrypoint: computes its own
     `working_diff(root, "main")` exactly the way `_land_format.

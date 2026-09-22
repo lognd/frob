@@ -198,9 +198,6 @@ FORKSERVER_ARM_PDEATHSIG_ENV = "FROB_FORKSERVER_ARM_PDEATHSIG"
 # frob:doc docs/modules/process.md#forkserver-reaping-t-2443
 # frob:ticket T-2849
 # frob:ticket T-2944
-# frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_arms_successfully_on_linux  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_self_kills_on_missed_reparent_race  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_returns_false_off_linux  # noqa: E501
 def arm_parent_death_signal(sig: int | None = None) -> bool:
     """T-2936: `sig` defaults to `None`, resolved to `signal.SIGKILL`
     ONLY after the `sys.platform != "linux"` check below passes -- a
@@ -336,10 +333,6 @@ def arm_parent_death_signal(sig: int | None = None) -> bool:
 
 # frob:doc docs/modules/process.md#forkserver-reaping-t-2443
 # frob:ticket T-2849
-# frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_noop_without_env_var  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_arms_when_env_var_set  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_success_logs_nothing_at_all  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_failure_still_warns  # noqa: E501
 # frob:waive COV007 reason="docs/modules/process.md's Forkserver reaping (T-2443) \
 # section documents several symbols under one section, not just a public entry point \
 # -- the many-symbols-one-section convention this repo already accepted for vet.md \
@@ -390,9 +383,6 @@ _arm_forkserver_helper_pdeathsig_if_requested()
 
 # frob:doc docs/modules/process.md#forkserver-reaping-t-2443
 # frob:ticket T-2443
-# frob:tests tests/unit/test_process_reap.py::TestReapActiveChildren.test_terminates_and_joins_active_children  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestReapActiveChildren.test_escalates_to_kill_if_terminate_does_not_stick  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestReapActiveChildren.test_no_children_is_a_silent_noop  # noqa: E501
 def reap_active_multiprocessing_children(
     grace_s: float = _CHILD_REAP_GRACE_S,
 ) -> list[int]:
@@ -471,8 +461,6 @@ def _sigterm_handler(signum: int, frame: FrameType | None) -> None:
 
 # frob:doc docs/modules/process.md#forkserver-reaping-t-2443
 # frob:ticket T-2443
-# frob:tests tests/unit/test_process_reap.py::TestInstallSigtermReaper.test_installs_handler_once  # noqa: E501
-# frob:tests tests/unit/test_process_reap.py::TestInstallSigtermReaper.test_second_call_is_a_noop  # noqa: E501
 def install_sigterm_reaper() -> None:
     """Install `_sigterm_handler` as this process's SIGTERM handler
     (idempotent -- a second call is a no-op, `_sigterm_reaper_installed`).

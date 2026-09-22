@@ -143,7 +143,6 @@ def _sanitize_ident(raw: str) -> str:
 
 
 # frob:doc docs/commands/sys.md#frob-sys-init-t-2910
-# frob:tests \
 # tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelComponentsAndFlows.test_\
 # single_top_package_splits_by_subdirectory kind="unit"
 @dataclass(frozen=True)
@@ -168,7 +167,6 @@ class BootstrapComponent:
 
 
 # frob:doc docs/commands/sys.md#frob-sys-init-t-2910
-# frob:tests \
 # tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelComponentsAndFlows.test_\
 # real_import_edge_becomes_a_flow_in_the_right_direction kind="unit"
 @dataclass(frozen=True)
@@ -184,7 +182,6 @@ class BootstrapFlow:
 
 
 # frob:doc docs/commands/sys.md#frob-sys-init-t-2910
-# frob:tests \
 # tests/unit/strata/test_bootstrap.py::TestRenderedTextParsesAndElaborates.test_empty_m\
 # odel_still_parses kind="unit"
 @dataclass(frozen=True)
@@ -302,7 +299,6 @@ def _derive_flows(
 
 
 # frob:doc docs/commands/sys.md#frob-sys-init-t-2910
-# frob:tests \
 # tests/unit/strata/test_bootstrap.py::TestRenderedTextParsesAndElaborates.test_empty_m\
 # odel_still_parses kind="unit"
 def render_bootstrap_text(
@@ -353,7 +349,6 @@ def render_bootstrap_text(
 
 
 # frob:doc docs/commands/sys.md#frob-sys-init-t-2910
-# frob:tests \
 # tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelRefusesAnExistingModel.t\
 # est_existing_design_files_lists_the_real_files kind="unit"
 def existing_design_files(
@@ -375,7 +370,6 @@ def existing_design_files(
 
 
 # frob:doc docs/commands/sys.md#frob-sys-init-t-2910
-# frob:tests \
 # tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelRefusesAnExistingModel.t\
 # est_refuses_when_a_strata_file_already_exists kind="unit"
 def derive_bootstrap_model(
@@ -443,7 +437,6 @@ def derive_bootstrap_model(
 
 
 # frob:doc docs/commands/sys.md#frob-sys-init-t-2910
-# frob:tests \
 # tests/unit/strata/test_bootstrap.py::TestWriteBootstrapModel.test_writes_module_named\
 # _strata_file_under_design_dir kind="unit"
 def write_bootstrap_model(

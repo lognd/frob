@@ -76,7 +76,6 @@ _DEFAULT_STATUS_GATES = "gates-fast"
 
 
 # frob:doc docs/modules/cli.md#frob-status-t-2911
-# frob:tests tests/test_status.py::TestFindingsMovementModel.test_defaults_are_unmeasured_shaped kind="unit"  # noqa: E501
 # frob:ticket T-2911
 class FindingsMovement(BaseModel):
     """The `.frob/baseline`-vs-current-run delta -- the one genuinely new
@@ -109,7 +108,6 @@ class FindingsMovement(BaseModel):
 
 
 # frob:doc docs/modules/cli.md#frob-status-t-2911
-# frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_no_baseline_reports_unmeasured_findings kind="unit"  # noqa: E501
 # frob:ticket T-2911
 class StatusReport(BaseModel):
     """`frob status`'s whole payload. `--json` serializes this model
@@ -140,7 +138,6 @@ class StatusReport(BaseModel):
 
 
 # frob:doc docs/modules/cli.md#frob-status-t-2911
-# frob:tests tests/test_status.py::TestComputeFindingsMovement.test_must_show_healed_and_introduced kind="unit"  # noqa: E501
 # frob:ticket T-2911
 def compute_findings_movement(
     baseline: dict | None,
@@ -285,7 +282,6 @@ def _flow_section(root: Path) -> tuple[int | None, int | None, float | None]:
 
 
 # frob:ticket T-2999
-# frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_baseline_locks_section_is_always_populated kind="unit"  # noqa: E501
 def _baseline_locks_section(root: Path) -> tuple[LockProducerStatus, ...]:
     """`frob.gates._lock_producer.all_producer_statuses` for `root` --
     three `git log`/`git rev-list` calls, cheap enough (T-2999 measured:
@@ -297,7 +293,6 @@ def _baseline_locks_section(root: Path) -> tuple[LockProducerStatus, ...]:
 
 
 # frob:doc docs/modules/cli.md#frob-status-t-2911
-# frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_no_baseline_reports_unmeasured_findings kind="unit"  # noqa: E501
 # frob:ticket T-2911
 def build_status_report(
     root: Path, *, only: list[str], include_tickets: bool
@@ -392,8 +387,6 @@ def _resolve_root(cfg: AppConfig) -> Path:
 
 
 # frob:doc docs/modules/cli.md#frob-status-t-2911
-# frob:tests tests/test_status.py::TestRunEndToEnd.test_run_prints_human_text_by_default kind="unit"  # noqa: E501
-# frob:tests tests/test_status.py::TestRunEndToEnd.test_run_prints_json_when_requested kind="unit"  # noqa: E501
 # frob:ticket T-2911
 def run(cfg: AppConfig) -> None:
     """`frob status`: print the delta-first movement summary. Never exits

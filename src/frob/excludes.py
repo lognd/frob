@@ -83,11 +83,8 @@ _IGNORE_FILENAME = ".gitignore"
 
 
 # frob:ticket T-4178
-# frob:tests \
 # tests/test_excludes.py::TestRepoIgnoreGlobs.test_missing_ignore_file_returns_empty
-# frob:tests \
 # tests/test_excludes.py::TestRepoIgnoreGlobs.test_reads_root_ignore_file_lines
-# frob:tests \
 # tests/test_excludes.py::TestRepoIgnoreGlobs.test_skips_blank_and_comment_lines
 def _load_repo_ignore_globs(root: Path) -> tuple[str, ...]:
     """Read `root`'s own ignore file (`.gitignore`) as gitwildmatch-dialect
@@ -138,8 +135,6 @@ def _load_repo_ignore_globs(root: Path) -> tuple[str, ...]:
 
 
 # frob:ticket T-4515
-# frob:tests tests/test_excludes.py::TestUnityExcludeGlobs.test_unity_project_adds_globs
-# frob:tests tests/test_excludes.py::TestUnityExcludeGlobs.test_non_unity_project_adds_nothing  # noqa: E501
 def _unity_exclude_globs(root: Path) -> tuple[str, ...]:
     """`UNITY_EXCLUDE_GLOBS` if `root` is a detected Unity project, else
     `()`.
@@ -186,7 +181,6 @@ def load_exclude_globs(root: Path) -> tuple[str, ...]:
 
 
 # frob:ticket T-4102
-# frob:tests \
 # tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism  # noqa: E501
 @lru_cache(maxsize=None)
 def _compiled_globs(exclude_globs: tuple[str, ...]) -> pathspec.PathSpec:
@@ -211,7 +205,6 @@ def _compiled_globs(exclude_globs: tuple[str, ...]) -> pathspec.PathSpec:
 # docs/modules/app.md's own description ('True if rel_path matches one of the globs') \
 # already describes the contract, not the matcher, and stays accurate unchanged"
 # frob:ticket T-4155
-# frob:tests \
 # tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism  # noqa: E501
 def is_excluded(rel_path: str, exclude_globs: tuple[str, ...]) -> bool:
     """True if `rel_path` matches any glob, identically on every platform.
@@ -241,10 +234,6 @@ def is_skipped_dir(name: str) -> bool:
 
 
 # frob:ticket T-0239
-# frob:tests tests/test_excludes.py::test_is_nested_worktree_detects_own_git_dir
-# frob:tests tests/test_excludes.py::test_is_nested_worktree_git_file_form
-# frob:tests tests/test_excludes.py::test_is_nested_worktree_false_for_root_itself
-# frob:tests tests/test_excludes.py::test_is_nested_worktree_false_for_plain_subdir
 def _is_nested_worktree(dir_path: Path, root: Path) -> bool:
     """True if `dir_path` is its own git checkout (has a `.git` entry) other
     than `root` itself.
@@ -296,8 +285,6 @@ def _has_negated_descendant(rel: str, exclude_globs: tuple[str, ...]) -> bool:
 
 
 # frob:ticket T-0239
-# frob:tests tests/test_excludes.py::test_should_prune_dir_covers_all_three_signals
-# frob:tests \
 # tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_negated_reinclusion_not_pruned_wholesale  # noqa: E501
 def _should_prune_dir(
     dir_path: Path, root: Path, exclude_globs: tuple[str, ...] = ()
@@ -333,10 +320,6 @@ def _should_prune_dir(
 
 
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
-# frob:tests tests/test_excludes.py::test_is_test_file_by_dir_component
-# frob:tests tests/test_excludes.py::test_is_test_file_by_name_prefix_suffix
-# frob:tests tests/test_excludes.py::test_is_test_file_typescript_naming
-# frob:tests tests/test_excludes.py::test_is_test_file_false_for_production_module
 def is_test_file(path: str) -> bool:
     """True if `path` is itself a test file, by a `tests/` directory component
     or by a test-file naming convention across Python and TS/JS.
@@ -363,18 +346,11 @@ def is_test_file(path: str) -> bool:
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
 # frob:ticket T-0471
 # frob:ticket T-4178
-# frob:tests tests/test_excludes.py::test_walk_pruned_does_not_descend_venv_or_git
-# frob:tests \
 # tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_ignored_directory_absent_from_hardcoded_set_is_not_yielded  # noqa: E501
-# frob:tests \
 # tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_tracked_file_matching_no_ignore_rule_still_yielded  # noqa: E501
-# frob:tests \
 # tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_no_ignore_file_behaves_exactly_as_before  # noqa: E501
-# frob:tests \
 # tests/test_excludes.py::TestWalkPrunedHonorsIgnoreFile.test_ignore_file_naming_the_secrets_file_hides_it_from_every_walk  # noqa: E501
 # frob:ticket T-4515
-# frob:tests tests/test_excludes.py::TestUnityExcludeGlobs.test_walk_pruned_excludes_unity_dirs  # noqa: E501
-# frob:tests tests/test_excludes.py::TestUnityExcludeGlobs.test_walk_pruned_skips_meta_files  # noqa: E501
 def walk_pruned(root: Path, *, exclude_globs: tuple[str, ...] = ()) -> Iterator[Path]:
     """Yield every file under `root`, pruning `_should_prune_dir` directories
     IN PLACE before `os.walk` descends into them, and skipping any
@@ -437,9 +413,6 @@ def walk_pruned(root: Path, *, exclude_globs: tuple[str, ...] = ()) -> Iterator[
 
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
 # frob:ticket T-0471
-# frob:tests tests/test_excludes.py::test_iter_files_git_fast_path_matches_ls_files
-# frob:tests tests/test_excludes.py::test_iter_files_suffix_filter
-# frob:tests tests/test_excludes.py::test_iter_files_falls_back_to_walk_pruned_outside_git  # noqa: E501
 def iter_files(root: Path, *, suffix: str | None = None) -> tuple[Path, ...]:
     """Every file under `root`, pruning the same heavy/irrelevant dirs
     `_should_prune_dir` always prunes -- the ONE shared entry point T-0471's

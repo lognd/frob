@@ -75,7 +75,6 @@ _FRAGMENT_HEADER_RE = re.compile(r"^bump:\s*(\S+)\s*$")
 
 
 # frob:doc docs/modules/release.md#changelog-fragments-t-2445
-# frob:tests tests/test_release.py::TestChangelogFragments.test_write_then_read_round_trips  # noqa: E501
 class ChangelogFragment(BaseModel):
     """One `changelog.d/T-####.md` file's parsed content: the ticket id
     that wrote it, the note text a `CHANGELOG.md` bullet is built from,
@@ -92,7 +91,6 @@ class ChangelogFragment(BaseModel):
 
 
 # frob:doc docs/modules/release.md#changelog-fragments-t-2445
-# frob:tests tests/test_release.py::TestChangelogFragments.test_assemble_writes_every_fragment_as_a_bullet  # noqa: E501
 def fragment_dir(root: Path) -> Path:
     """`root`'s `changelog.d/` directory (T-2445) -- may not exist yet on
     a repo that has never landed a bump-worthy ticket."""
@@ -100,7 +98,6 @@ def fragment_dir(root: Path) -> Path:
 
 
 # frob:doc docs/modules/release.md#changelog-fragments-t-2445
-# frob:tests tests/test_release.py::TestChangelogFragments.test_write_then_read_round_trips  # noqa: E501
 def fragment_path(root: Path, ticket_id: str) -> Path:
     """The fragment path a land for `ticket_id` writes/reads (T-2445):
     `changelog.d/T-####.md`. The ticket id IS the collision-avoidance
@@ -112,7 +109,6 @@ def fragment_path(root: Path, ticket_id: str) -> Path:
 
 
 # frob:doc docs/modules/release.md#changelog-fragments-t-2445
-# frob:tests tests/test_release.py::TestChangelogFragments.test_write_then_read_round_trips  # noqa: E501
 def write_changelog_fragment(
     root: Path, ticket_id: str, bump: str, note: str
 ) -> Result[Path | None, ReleaseError]:
@@ -213,8 +209,6 @@ def _parse_fragment(path: Path) -> Result[ChangelogFragment, ReleaseError]:
 
 
 # frob:doc docs/modules/release.md#changelog-fragments-t-2445
-# frob:tests tests/test_release.py::TestChangelogFragments.test_read_sorts_numerically_not_lexically  # noqa: E501
-# frob:tests tests/test_release.py::TestChangelogFragments.test_read_fails_closed_on_a_malformed_fragment  # noqa: E501
 def read_changelog_fragments(
     root: Path,
 ) -> Result[tuple[ChangelogFragment, ...], ReleaseError]:
@@ -274,9 +268,6 @@ def _find_heading_span(lines: list[str], version: str) -> tuple[int, int] | None
 
 
 # frob:doc docs/modules/release.md#changelog-fragments-t-2445
-# frob:tests tests/test_release.py::TestChangelogFragments.test_assemble_writes_every_fragment_as_a_bullet  # noqa: E501
-# frob:tests tests/test_release.py::TestChangelogFragments.test_assemble_is_a_noop_with_no_fragments  # noqa: E501
-# frob:tests tests/test_release.py::TestChangelogFragments.test_assemble_is_idempotent_and_picks_up_new_fragments  # noqa: E501
 def assemble_changelog_from_fragments(
     root: Path, version: str
 ) -> Result[int, ReleaseError]:

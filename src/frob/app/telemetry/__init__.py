@@ -59,7 +59,6 @@ T = TypeVar("T")
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_iso_now_has_iso_shape_with_z_suffix
 def iso_now() -> str:
     """Current UTC time as an ISO-8601 timestamp with a `Z` suffix -- the
     single timestamp format every telemetry record and ticket-transition
@@ -71,8 +70,6 @@ def iso_now() -> str:
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 # frob:invariant INV-022
 # invariant spec: [INV-022](invariants/INV-022.md)
-# frob:tests tests/test_telemetry.py::test_redact_command_hides_recognizable_secret
-# frob:tests tests/test_telemetry.py::test_redact_command_leaves_ordinary_text_alone
 def redact_command(text: str) -> str:
     """`text` with any recognizable provider-secret substring replaced by
     `frob.gates._secrets`'s fixed-shape placeholder (T-0157 reuse).
@@ -114,8 +111,6 @@ def redact_command(text: str) -> str:
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_append_event_writes_one_json_line
-# frob:tests tests/test_telemetry.py::test_append_event_swallows_oserror_and_logs
 def append_event(root: Path, record: Mapping[str, Any]) -> None:
     """Append one JSON-line `record` to `root`'s telemetry stream.
 
@@ -137,9 +132,6 @@ def append_event(root: Path, record: Mapping[str, Any]) -> None:
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_tree_hash_returns_stripped_stdout_on_success  # noqa: E501
-# frob:tests tests/test_telemetry.py::test_tree_hash_returns_unknown_on_nonzero_returncode  # noqa: E501
-# frob:tests tests/test_telemetry.py::test_tree_hash_returns_unknown_when_git_spawn_errors  # noqa: E501
 def tree_hash(root: Path) -> str:
     """Short git HEAD sha for `root`, or `\"unknown\"` if git is unavailable
     -- lets retread detection (identical command + tree_hash re-runs) tell
@@ -160,7 +152,6 @@ def tree_hash(root: Path) -> str:
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_estimate_tokens_is_len_over_four
 def estimate_tokens(text: str) -> int:
     """Rough `len(text) / 4` token estimate -- the documented heuristic
     method (T-0178 addendum a); cheap and good enough to rank tools by
@@ -169,8 +160,6 @@ def estimate_tokens(text: str) -> int:
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_record_cli_event_shape
-# frob:tests tests/unit/test_telemetry_verb_recording.py::test_record_cli_event_carries_verb_and_subverb  # noqa: E501
 def record_cli_event(
     root: Path,
     *,
@@ -230,8 +219,6 @@ def record_cli_event(
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::test_record_ticket_event_shape
-# frob:tests tests/test_telemetry.py::test_record_ticket_event_merges_extra_fields  # noqa: E501
 def record_ticket_event(
     root: Path, *, ticket_id: str, event: str, extra: Mapping[str, Any] | None = None
 ) -> None:
@@ -253,8 +240,6 @@ def record_ticket_event(
 # frob:ticket T-1724
 # frob:ticket T-1787
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:tests tests/test_telemetry.py::TestRecordDispatchEvent.test_start_and_end_events_shaped_correctly  # noqa: E501
-# frob:tests tests/test_telemetry.py::TestRecordDispatchEvent.test_optional_fields_omitted_when_none  # noqa: E501
 def record_dispatch_event(
     root: Path,
     *,
@@ -381,7 +366,6 @@ def _finish_timed_call(
 # verbatim, 26 tests in tests/test_telemetry.py still green); the documented public \
 # contract is unchanged, so docs/guides/agentic-time-profiling.md#public-api and \
 # docs/modules/stats.md need no update"
-# frob:tests tests/test_telemetry.py::test_timed_call_records_event_and_returns_value  # noqa: E501
 def timed_call(
     root: Path,
     *,

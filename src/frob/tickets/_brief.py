@@ -36,7 +36,6 @@ class _PlaybookSection(BaseModel):
 
 
 # frob:ticket T-0568
-# frob:tests tests/test_tickets_brief.py::TestParsePlaybookSections.test_parses_numbered_headings_only  # noqa: E501
 # frob:ticket T-0601
 def _parse_playbook_sections(text: str) -> tuple[_PlaybookSection, ...]:
     """Parse every numbered `## N[.letter]. Title` heading in `text` into a
@@ -68,7 +67,6 @@ def _parse_playbook_sections(text: str) -> tuple[_PlaybookSection, ...]:
 
 
 # frob:ticket T-0568
-# frob:tests tests/test_tickets_brief.py::TestLoadPlaybookSections.test_reads_real_file
 # frob:ticket T-0601
 def _load_playbook_sections(root: Path) -> tuple[_PlaybookSection, ...]:
     """`_parse_playbook_sections` over `root`'s `docs/guides/agent-
@@ -84,7 +82,6 @@ def _load_playbook_sections(root: Path) -> tuple[_PlaybookSection, ...]:
 
 
 # frob:ticket T-0568
-# frob:tests tests/test_tickets_brief.py::TestInferVerifyCommands.test_scope_naming_tests_dir_is_used_directly  # noqa: E501
 # frob:ticket T-0601
 def _infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
     """Best-effort exact verify commands for `ticket`'s declared scope
@@ -125,7 +122,6 @@ def _infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
 
 
 # frob:ticket T-0568
-# frob:tests tests/test_tickets_brief.py::TestGateBaselineSummary.test_missing_baseline
 # frob:ticket T-0601
 def _gate_baseline_summary(root: Path) -> str:
     """One-line status of `root`'s stamped `frob check` baseline (T-0568) --
@@ -145,7 +141,6 @@ def _gate_baseline_summary(root: Path) -> str:
 
 
 # frob:ticket T-0568
-# frob:tests tests/test_tickets_brief.py::TestCurrentVersion.test_reads_project_version
 # frob:ticket T-0601
 def _current_version(root: Path) -> str | None:
     """The `[project].version` string from `root/pyproject.toml`, or
@@ -193,7 +188,6 @@ _CONCURRENCY_HAZARDS = (
 
 
 # frob:ticket T-1347
-# frob:tests tests/test_tickets_brief.py::TestConcurrentLeases.test_lists_others
 # frob:waive DUP001 reason="the DUP001 hits here are all rung=r2 95%-similar matches \
 # against unrelated modules (strata compliance-catalog test fixtures, \
 # frob.gates._coverage._module_join_fraction, frob.gates._refs._native_stub_pairs, \
@@ -259,8 +253,6 @@ def _playbook_hard_rules_section(root: Path) -> tuple[str, ...]:
 # frob:ticket T-0568
 # frob:ticket T-1347
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief-t-0568
-# frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing
-# frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_concurrent_leases
 # frob:ticket T-0601
 def compose_brief(
     root: Path,
@@ -400,9 +392,6 @@ def _cluster_open_blockers_of(t: Ticket, by_id: dict) -> tuple[str, ...]:
 
 # frob:ticket T-1243
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief---cluster-t-1243
-# frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_dependency_order_respects_intra_cluster_blocked_by  # noqa: E501
-# frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_excludes_leaf_blocked_from_outside_the_cluster  # noqa: E501
-# frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_unknown_cluster_returns_empty  # noqa: E501
 def cluster_descendants(queue: TicketQueue, cluster_id: str) -> tuple[Ticket, ...]:
     """Dependency-ordered, currently-dispatchable LEAF descendants of the
     epic/story `cluster_id` (T-1243): every `TicketTier.TICKET` descendant
@@ -438,7 +427,6 @@ def cluster_descendants(queue: TicketQueue, cluster_id: str) -> tuple[Ticket, ..
 
 # frob:ticket T-1243
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief---cluster-t-1243
-# frob:tests tests/test_tickets_brief.py::TestClusterUnionScope.test_deduplicates_and_preserves_first_seen_order  # noqa: E501
 def cluster_union_scope(members: tuple[Ticket, ...]) -> tuple[str, ...]:
     """The deduplicated, order-preserving union of every member ticket's
     declared `scope` globs (T-1243) -- the single lease a `frob ticket work
@@ -456,7 +444,6 @@ def cluster_union_scope(members: tuple[Ticket, ...]) -> tuple[str, ...]:
 
 # frob:ticket T-1243
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief---cluster-t-1243
-# frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
 def compose_cluster_brief(
     root: Path,
     cluster: Ticket,

@@ -41,7 +41,6 @@ __all__ = [
 
 
 # frob:doc docs/commands/refactor.md#operandkind
-# frob:tests tests/test_refactor.py::TestOperands.test_classifies_symbol_module_and_path
 class OperandKind(StrEnum):
     """The three operand kinds a raw CLI argument classifies into --
     SYMBOL (`module:qualname`), MODULE (a bare dotted path), or PATH (a
@@ -54,7 +53,6 @@ class OperandKind(StrEnum):
 
 
 # frob:doc docs/commands/refactor.md#operanderror
-# frob:tests tests/test_refactor.py::TestOperands.test_parse_symbol_operand_refuses_module_shaped  # noqa: E501
 class OperandError(ErrorSet):
     """Operand-typing refusals (T-2990) -- distinct from `RefactorError`,
     which is a pipeline-PHASE failure (dirty tree, unresolved target).
@@ -77,7 +75,6 @@ class OperandError(ErrorSet):
 
 
 # frob:doc docs/commands/refactor.md#moduleref
-# frob:tests tests/test_refactor.py::TestOperands.test_parse_module_operand_refuses_symbol_shaped  # noqa: E501
 class ModuleRef(BaseModel):
     """A dotted Python module path operand (T-2990) -- the MODULE operand
     kind. Deliberately NOT a `SymbolRef`: a `SymbolRef` additionally
@@ -102,7 +99,6 @@ def _is_dotted_identifier_chain(text: str) -> bool:
 
 
 # frob:doc docs/commands/refactor.md#classify_operand
-# frob:tests tests/test_refactor.py::TestOperands.test_classifies_symbol_module_and_path  # noqa: E501
 def classify_operand(text: str) -> OperandKind:
     """Classify a raw CLI operand string into an `OperandKind` value by
     SHAPE alone, before any resolution: PATH if it contains a path
@@ -122,7 +118,6 @@ def classify_operand(text: str) -> OperandKind:
 
 
 # frob:doc docs/commands/refactor.md#parse_symbol_operand
-# frob:tests tests/test_refactor.py::TestOperands.test_parse_symbol_operand_refuses_module_shaped  # noqa: E501
 def parse_symbol_operand(text: str) -> Result[SymbolRef, OperandError]:
     """Parse `text` as a SYMBOL operand (`module:qualname`), refusing
     `Err(WrongOperandKind)` for anything MODULE- or PATH-shaped -- the
@@ -136,7 +131,6 @@ def parse_symbol_operand(text: str) -> Result[SymbolRef, OperandError]:
 
 
 # frob:doc docs/commands/refactor.md#parse_module_operand
-# frob:tests tests/test_refactor.py::TestOperands.test_parse_module_operand_refuses_symbol_shaped  # noqa: E501
 def parse_module_operand(text: str) -> Result[ModuleRef, OperandError]:
     """Parse `text` as a MODULE operand (a bare dotted path, no `:`),
     refusing `Err(WrongOperandKind)` for anything SYMBOL- or PATH-shaped
@@ -149,8 +143,6 @@ def parse_module_operand(text: str) -> Result[ModuleRef, OperandError]:
 
 # frob:ticket T-3587
 # frob:doc docs/commands/refactor.md#validate_module_destination
-# frob:tests tests/test_refactor.py::TestOperands.test_validate_destination_refuses_non_identifier_segment  # noqa: E501
-# frob:tests tests/test_refactor.py::TestOperands.test_validate_destination_refuses_existing_module  # noqa: E501
 def validate_module_destination(
     repo_root: Path, ref: ModuleRef, *, allow_existing: bool = False
 ) -> Result[Path, OperandError]:

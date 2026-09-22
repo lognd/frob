@@ -51,7 +51,6 @@ SERIAL_POOLS_ENV_VAR = "FROB_PERF_SERIAL_POOLS"
 
 
 # frob:doc docs/modules/perf.md#pool-dispatched-work-attribution-t-0948
-# frob:tests tests/unit/perf/test_serial_pools.py::TestSerialExecutor
 class SerialExecutor:
     """A `concurrent.futures.Executor`-shaped drop-in that runs every job
     immediately, inline, on the calling thread -- accepts and ignores
@@ -65,7 +64,6 @@ class SerialExecutor:
         _log.debug("SerialExecutor: constructed (args=%r, kwargs=%r)", args, kwargs)
 
     # frob:doc docs/modules/perf.md#pool-dispatched-work-attribution-t-0948
-    # frob:tests tests/unit/perf/test_serial_pools.py::TestSerialExecutor.test_submit_runs_inline_and_resolves  # noqa: E501
     def submit(
         self, fn: Callable[..., T], /, *args: Any, **kwargs: Any
     ) -> "concurrent.futures.Future[T]":
@@ -83,7 +81,6 @@ class SerialExecutor:
         return future
 
     # frob:doc docs/modules/perf.md#pool-dispatched-work-attribution-t-0948
-    # frob:tests tests/unit/perf/test_serial_pools.py::TestSerialExecutor.test_map_runs_eagerly_inline  # noqa: E501
     def map(
         self,
         fn: Callable[..., T],
@@ -97,7 +94,6 @@ class SerialExecutor:
         return iter([fn(*args) for args in zip(*iterables, strict=False)])
 
     # frob:doc docs/modules/perf.md#pool-dispatched-work-attribution-t-0948
-    # frob:tests tests/unit/perf/test_serial_pools.py::TestSerialExecutor.test_shutdown_is_a_no_op  # noqa: E501
     def shutdown(self, wait: bool = True, *, cancel_futures: bool = False) -> None:
         """No-op: there is no pool/process to tear down."""
 
@@ -114,7 +110,6 @@ class SerialExecutor:
 
 
 # frob:doc docs/modules/perf.md#pool-dispatched-work-attribution-t-0948
-# frob:tests tests/unit/perf/test_serial_pools.py::TestInstallSerialPools.test_with_serial_pools_worker_is_majority_attributed  # noqa: E501
 # frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'safe to call even if frob.gates fails to import' contract to cover any import-time surprise, not just ImportError -- no observable behavior change, so docs/modules/perf.md#pool-dispatched-work-attribution-t-0948 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def install_serial_pools() -> None:
     """Replace `ThreadPoolExecutor`/`ProcessPoolExecutor` with

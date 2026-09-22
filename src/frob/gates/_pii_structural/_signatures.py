@@ -259,7 +259,6 @@ _CAMEL_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z]
 
 
 # frob:ticket T-0971
-# frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_camelcase_password_hash_field_fires  # noqa: E501
 def _camel_to_snake(name: str) -> str:
     """Insert `_` at every camelCase/acronym boundary in `name` (T-0971,
     `_CAMEL_BOUNDARY_RE`'s docstring) -- a no-op on an already-snake_case
@@ -269,7 +268,6 @@ def _camel_to_snake(name: str) -> str:
 
 
 # frob:ticket T-0971
-# frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_camelcase_password_hash_field_fires  # noqa: E501
 def _field_name_hit(field_name: str) -> _FieldSignature | None:
     """The first `FIELD_SIGNATURES` name-kind entry `field_name` matches, or
     `None`. Single-word keywords match a whole `_`-split token; multi-word

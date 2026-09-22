@@ -79,9 +79,6 @@ _OUT_OF_SCOPE_RE = re.compile(r"^out[_-]of[_-]scope[:(](?P<reason>.+?)[)]?$")
 
 
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407
-# frob:tests tests/test_registry_models.py::TestParseDisposition.test_handled_by
-# frob:tests tests/test_registry_models.py::TestParseDisposition.test_undispositioned_pending  # noqa: E501
-# frob:tests tests/test_registry_models.py::TestParseDisposition.test_undispositioned_bare_addressed  # noqa: E501
 def parse_disposition(raw: str | None) -> Disposition:
     """Parse one entry's raw `disposition:` string into a typed
     `Disposition` under the ONE grammar every registry file shares
@@ -182,7 +179,6 @@ class RegistryAudit(BaseModel):
 
 
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407
-# frob:tests tests/test_registry_models.py::TestAuditRegistryFile.test_counts_each_kind
 def audit_registry_file(registry_file: RegistryFile) -> RegistryAudit:
     """The per-file `RegistryAudit` for `registry_file`: one count per
     `DispositionKind` across every entry list it carries, plus
@@ -288,8 +284,6 @@ def _parse_registry_file(rel_path: str, data: dict[str, Any]) -> RegistryFile:
 
 
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407
-# frob:tests tests/test_registry_models.py::TestLoadRegistryDir.test_loads_typed_entries  # noqa: E501
-# frob:tests tests/test_registry_models.py::TestLoadRegistryDir.test_malformed_yaml_is_err  # noqa: E501
 def load_registry_dir(
     registry_dir: Path, filenames: tuple[str, ...]
 ) -> dict[str, Result[RegistryFile, RegistryLoadError]]:

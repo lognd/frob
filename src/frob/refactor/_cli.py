@@ -63,9 +63,7 @@ def _parse_module_ref(text: str) -> ModuleRef:
 
 
 # frob:doc docs/commands/refactor.md#cli
-# frob:tests \
 # tests/test_refactor.py::TestCli.test_add_refactor_parser_registers_move_and_rename
-# frob:tests tests/test_refactor.py::TestCli.test_add_refactor_parser_registers_split
 def add_refactor_parser(sub: argparse._SubParsersAction) -> None:
     """Register `frob refactor {move,rename,split}` on an argparse
     subparsers object, matching every other `_add_*_parser` builder's
@@ -278,7 +276,6 @@ def _run_move_module_command(args: argparse.Namespace) -> int:
 
 
 # frob:doc docs/commands/refactor.md#cli
-# frob:tests \
 # tests/test_refactor.py::TestCli.test_run_refactor_command_reports_refusal_exit_code
 def run_refactor_command(args: argparse.Namespace) -> int:
     """Execute a parsed `frob refactor move`/`rename`/`split`/

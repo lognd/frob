@@ -78,9 +78,6 @@ RULE_TDD001 = "TDD001"
 
 
 # frob:doc docs/modules/gates.md#tdd001-t-3009
-# frob:tests tests/gates/test_tdd_order.py::TestClassifyOrder.test_fires_when_implementation_precedes_test  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestClassifyOrder.test_stays_quiet_when_test_precedes_implementation  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestClassifyOrder.test_fires_when_commits_are_identical  # noqa: E501
 class TDDOrder(StrEnum):
     """The three possible outcomes of comparing a `verifies`/`frob:tests`
     pair's two introducing commits -- three, not two, because "cannot
@@ -105,7 +102,6 @@ class TDDOrder(StrEnum):
 
 
 # frob:doc docs/modules/gates.md#tdd001-t-3009
-# frob:tests tests/gates/test_tdd_order.py::TestSymrefHelpers.test_symref_path_splits_on_double_colon  # noqa: E501
 def symref_path(symref: str) -> str:
     """The repo-relative path half of a `path::qualname` symref -- the
     half git operates on. A bare path (no `::`) is returned unchanged."""
@@ -114,7 +110,6 @@ def symref_path(symref: str) -> str:
 
 
 # frob:doc docs/modules/gates.md#tdd001-t-3009
-# frob:tests tests/gates/test_tdd_order.py::TestSymrefHelpers.test_symref_qualname_keeps_the_full_dotted_path  # noqa: E501
 def symref_qualname(symref: str) -> str | None:
     """The dotted qualname half of a `path::qualname` symref (`frob:
     tests`' own convention, e.g. `TestFoo.test_bar`, or a plain
@@ -127,7 +122,6 @@ def symref_qualname(symref: str) -> str | None:
     return qualname.replace("::", ".")
 
 
-# frob:tests tests/gates/test_tdd_order.py::TestAstQualnames.test_collects_nested_dotted_qualnames  # noqa: E501
 def _ast_qualnames(source: str) -> set[str]:
     """Every function/class qualname `source` actually DEFINES, dotted by
     enclosing class (`TestFoo.test_bar`) the same way `frob:tests`
@@ -157,7 +151,6 @@ def _ast_qualnames(source: str) -> set[str]:
     return names
 
 
-# frob:tests tests/gates/test_tdd_order.py::TestPerfShape.test_since_bounds_the_log_walk_to_a_revision_range  # noqa: E501
 def _revisions_oldest_first(
     root: Path, path: str, *, since: str | None = None
 ) -> list[str]:
@@ -229,8 +222,6 @@ def _show_file_at_revision(
 
 
 # frob:doc docs/modules/gates.md#tdd001-t-3009
-# frob:tests tests/gates/test_tdd_order.py::TestResolveSymbolIntroduction.test_resolves_the_commit_that_added_the_symbol  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestResolveSymbolIntroduction.test_returns_none_for_a_symbol_never_added  # noqa: E501
 def resolve_symbol_introduction(
     root: Path,
     symref: str,
@@ -317,12 +308,7 @@ def _is_ancestor(root: Path, maybe_ancestor: str, maybe_descendant: str) -> bool
     return spawned.danger_ok.returncode == 0
 
 
-# frob:tests tests/gates/test_tdd_order.py::TestClassifyOrder.test_fires_when_implementation_precedes_test  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestClassifyOrder.test_stays_quiet_when_test_precedes_implementation  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestClassifyOrder.test_fires_when_commits_are_identical  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestClassifyOrder.test_reports_unresolved_when_either_commit_is_unresolvable  # noqa: E501
 # frob:doc docs/modules/gates.md#tdd001-t-3009
-# frob:tests tests/gates/test_tdd_order.py::TestClassifyOrder.test_reports_unresolved_on_diverged_history  # noqa: E501
 def classify_order(
     root: Path, *, artifact_commit: str | None, test_commit: str | None
 ) -> TDDOrder:
@@ -438,19 +424,10 @@ def _tdd001_backwards_message(artifact_symref: str, test_symref: str) -> str:
 
 
 # frob:doc docs/modules/gates.md#tdd001-t-3009
-# frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_fires_on_a_planted_implementation_first_pair  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_fires_when_test_and_implementation_share_a_commit  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_stays_quiet_on_a_genuine_test_first_pair  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_reports_unresolved_rather_than_passing_on_an_unresolvable_pair  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_ignores_non_tests_edges  # noqa: E501
-# frob:tests tests/gates/test_tdd_order.py::TestPerfShape.test_shared_file_is_walked_and_read_exactly_once_across_edges  # noqa: E501
-# frob:tests \
 # tests/gates/test_tdd_order.py::TestTddOrderViolations.test_self_referential_edge_is_a\
 # _malformed_directive_not_an_ordering_violation
-# frob:tests \
 # tests/gates/test_tdd_order.py::TestTddOrderViolations.test_backwards_edge_is_reported\
 # _as_a_backwards_directive
-# frob:tests \
 # tests/gates/test_tdd_order.py::TestTddOrderViolations.test_role_validation_never_spaw\
 # ns_git_for_a_malformed_edge
 # frob:waive WIRE001 reason="T-3009's own scope is the ordering check and its rule, \
