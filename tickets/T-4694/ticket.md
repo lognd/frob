@@ -2,7 +2,7 @@
 id: T-4694
 title: Register 'frob narrative move' as the Tier-A --fix for DOCARCH002 check 2 (ledger
   write inside the fix transaction, archived-path safe, idempotent)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -84,6 +84,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4694
+branch: t-4694
 ---
 Split out of T-4693 per the owner's 18:30 directive: "that move is also registered
 as a `frob check --fix` Tier-A auto-fix (a separate 1-2 point leaf if the fix
