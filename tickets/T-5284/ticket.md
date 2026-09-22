@@ -1,5 +1,5 @@
 ---
-id: T-draft-4df380d9
+id: T-5284
 title: Re-slice open tickets into goal-named sprints (T-5133 step 3 follow-up)
 state: queued
 kind: feature
