@@ -399,6 +399,11 @@ class AppConfig(BaseModel):
     #: run and exit, instead of the normal full/`--only`/`--budget`
     #: dispatch. `False` (default) leaves existing behavior untouched.
     check_census: bool = False
+    # frob:ticket T-4692
+    #: `frob check --list-stages`: print exactly the folded check stages
+    #: (dup arch cycle bind narrative exports), one per line, and exit --
+    #: distinct from `--only list`'s stage-GROUP aliases.
+    check_list_stages: bool = False
     check_delta: bool = False
     # frob:ticket T-1260
     #: `frob check --fix`: apply every registered Tier-A deterministic

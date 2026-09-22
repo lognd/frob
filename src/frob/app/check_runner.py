@@ -1174,6 +1174,41 @@ def _print_stage_list(cfg: AppConfig) -> None:
         renderer.line("\n".join(stages))
 
 
+# frob:ticket T-4692
+_FOLDED_CHECK_STAGES: tuple[str, ...] = (
+    "dup",
+    "arch",
+    "cycle",
+    "bind",
+    "narrative",
+    "exports",
+)
+"""T-4692's own fold set: every standalone verb this ticket deleted in favor
+of `frob check --only <stage>`, plus `narrative` (a `--only`-only alias onto
+the `narrative_blocks` gate that never had a standalone verb of its own).
+`mutate`/`coverage`/`perf` are deliberately absent (acceptance[2]'s own
+amendment records the measured reason: each has a write-shaped standalone
+verb genuinely distinct from a same-named read-only gate); `pool`/`profile`
+are absent because they mutate ratchet/profile state, not analyze anything."""
+
+
+# frob:ticket T-4692
+def _print_folded_stage_list(cfg: AppConfig) -> None:
+    """`frob check --list-stages` (T-4692): print exactly
+    `_FOLDED_CHECK_STAGES`, one per line, and exit -- the discoverability
+    surface T-4692's deprecation shims (`frob dup`, `frob arch`, ...) name
+    in their own stderr notice. Distinct from `--only list` (`_print_
+    stage_list` above, T-0627), which prints `_STAGE_GROUPS` alias names
+    (`lint`, `static`, ...) instead of this ticket's specific fold set."""
+    if cfg.check_json:
+        import json
+
+        _log.info(json.dumps({"stages": list(_FOLDED_CHECK_STAGES)}, indent=2))
+    else:
+        renderer = Renderer.for_stream(sys.stdout)
+        renderer.line("\n".join(_FOLDED_CHECK_STAGES))
+
+
 # frob:ticket T-1556
 # frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_read_only_invocation_skips_the_lease_check kind="integration"  # noqa: E501
 def _check_is_mutating(cfg: AppConfig) -> bool:
@@ -1249,6 +1284,9 @@ def _handle_early_exit_modes(root: Path, cfg: AppConfig) -> bool:
     returns `True` once any has fired, so `run` can return right after."""
     if cfg.check_only == ["list"]:
         _print_stage_list(cfg)
+        return True
+    if cfg.check_list_stages:
+        _print_folded_stage_list(cfg)
         return True
     if cfg.check_budget is not None:
         _run_budgeted_check(root, cfg)

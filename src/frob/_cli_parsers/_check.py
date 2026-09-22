@@ -377,6 +377,18 @@ def _add_check_selection_args(check_p) -> None:
         ),
     )
     # frob:ticket T-4413
+    # frob:ticket T-4692
+    check_p.add_argument(
+        "--list-stages",
+        dest="check_list_stages",
+        action="store_true",
+        help=(
+            "print every folded check stage (dup arch cycle bind narrative "
+            "exports), one per line, and exit -- each name is accepted by "
+            "--only; distinct from --only list, which prints stage-GROUP "
+            "aliases (lint/static/...) instead"
+        ),
+    )
     check_p.add_argument(
         "--files",
         dest="check_files",

@@ -2,7 +2,7 @@
 id: T-4692
 title: 'Gate stages are not verbs: fold dup arch cycle bind perf mutate coverage parse
   pool profile narrative debt deprecated into frob check --only'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -124,12 +124,22 @@ body_changes:
   at: '2026-09-19'
   old_length: 4434
   new_length: 4506
+evidence:
+- tests/unit/test_check_only_stages.py::TestDupGoldenComparison::test_check_dup_gate_reports_the_planted_duplicate
+- tests/unit/test_check_only_stages.py::TestDupGoldenComparison::test_flat_dup_runner_reports_the_same_duplicate
+- tests/unit/test_check_only_stages.py::TestListStages::test_folded_stages_is_the_documented_set
+- tests/unit/test_check_only_stages.py::TestListStages::test_every_folded_stage_is_a_known_check_only_name
+- tests/unit/test_check_only_stages.py::TestExportsSplit::test_scaffold_exports_leaf_is_registered
+- tests/unit/test_check_only_stages.py::TestExportsSplit::test_scaffold_exports_dispatches_to_the_unchanged_exports_runner
+- tests/unit/test_check_only_stages.py::TestPoolProfileCarveOut::test_pool_and_profile_are_not_check_only_stages
+- tests/unit/test_check_only_stages.py::TestPoolProfileCarveOut::test_pool_and_profile_remain_working_top_level_verbs
 designated_repro_test: null
 acceptance:
 - text: Given a committed fixture tree containing a planted duplicate block, when
     frob check --only dup runs on it, then it reports that duplicate -- the same finding
     frob dup reported before the fold (golden comparison, not a no-crash assertion)
-  evidence: []
+  evidence:
+  - tests/unit/test_check_only_stages.py::TestDupGoldenComparison::test_check_dup_gate_reports_the_planted_duplicate
 - text: 'Given frob check --list-stages, when it runs, then it prints exactly the
     folded stages (dup arch cycle bind narrative exports) and every printed name is
     accepted by frob check --only; pool, profile, debt, deprecated and parse are absent
@@ -147,18 +157,24 @@ acceptance:
     the same reasoning the ticket''s own pool/profile carve-out already applies, generalized
     to every verb this ticket''s initial fold list named that turns out to mutate
     state'
-  evidence: []
+  evidence:
+  - tests/unit/test_check_only_stages.py::TestListStages::test_folded_stages_is_the_documented_set
+  - tests/unit/test_check_only_stages.py::TestListStages::test_every_folded_stage_is_a_known_check_only_name
 - text: Given the exports verb is split, when this ticket closes, then its CHECK half
     runs as frob check --only exports and its GENERATE half (generate __init__.py
     from public symbols in a package directory) is reachable under frob scaffold --
     owner decision 2026-09-19, scaffold not refactor -- and a test exercises each
     half
-  evidence: []
+  evidence:
+  - tests/unit/test_check_only_stages.py::TestExportsSplit::test_scaffold_exports_leaf_is_registered
+  - tests/unit/test_check_only_stages.py::TestExportsSplit::test_scaffold_exports_dispatches_to_the_unchanged_exports_runner
 - text: Given pool and profile, when this ticket closes, then neither is reachable
     through frob check --only (they mutate ratchet and profile state) and each is
     either a frob check pool|profile subverb or is documented in the Done report as
     deliberately left top-level, with the reason
-  evidence: []
+  evidence:
+  - tests/unit/test_check_only_stages.py::TestPoolProfileCarveOut::test_pool_and_profile_are_not_check_only_stages
+  - tests/unit/test_check_only_stages.py::TestPoolProfileCarveOut::test_pool_and_profile_remain_working_top_level_verbs
 acceptance_amendments:
 - op: replace
   index: 2
@@ -325,6 +341,3 @@ this ticket's scope -- they belong to T-4698 and T-4695 respectively. The
 declared scope on the ledger still lists them from the original filing; the
 implementer must run `frob ticket scope T-4692 --remove` for those three (and
 `--add scaffold_runner.py`) before starting, or hand them back at close.
-
-## Failure log
-- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-4692), requeued by frob check

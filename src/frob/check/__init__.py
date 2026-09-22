@@ -1185,6 +1185,13 @@ def _unknown_only_result(root: Path, unknown: frozenset[str]) -> CheckResult:
 _TOOL_ONLY_STAGE_GROUPS: dict[str, frozenset[str]] = {
     "lint": frozenset({"ruff", "ty"}),
     "static": frozenset({"cycle", "dup", "arch", "bind", "exports"}),
+    # frob:ticket T-4692
+    # T-4692: `--only narrative` is a single-member "group" (this module's
+    # existing alias mechanism, T-0627) onto the real gate name
+    # `narrative_blocks` -- the folded `frob narrative` verb's own
+    # deprecation shim suggests `check --only narrative`, the short name
+    # a reader would actually type, not the gate's internal id.
+    "narrative": frozenset({"narrative_blocks"}),
 }
 
 

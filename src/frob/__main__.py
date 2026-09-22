@@ -173,14 +173,27 @@ def _is_release_status(argv: list[str]) -> bool:
 
 
 # frob:ticket T-0574
+# frob:deprecated 0.1.0 sunset="2026-12-01" ticket="T-4692" reason="bind folded into \
+# frob check --only bind (T-4692: a gate stage is not a verb) -- kept as this working \
+# shim through the sunset window"
 def _dispatch_bind(argv: list[str]) -> None:
-    """`frob bind ...` (and, via `_dispatch_quality_bind` below, `frob
+    """`frob bind ...` (DEPRECATED T-4692, sunset 2026-12-01: use `frob
+    check --only bind`) (and, via `_dispatch_quality_bind` below, `frob
     quality bind ...`): `bind_runner.run` takes raw argv, not an
     `AppConfig`, so it is dispatched directly rather than through
-    `quality_runner.run`. Split out of `_dispatch` (T-2452/ARCH001) so the
-    routing table itself stays a pure list of one-line calls."""
+    `quality_runner.run`/`App.__call__`'s `_DEPRECATED_SPELLINGS` table --
+    the shim notice is announced here instead. Split out of `_dispatch`
+    (T-2452/ARCH001) so the routing table itself stays a pure list of
+    one-line calls."""
+    from frob._cli_parsers._shims import announce_shim
     from frob.app.bind_runner import run as _bind_run
 
+    announce_shim(
+        old_name="bind",
+        new_name="check --only bind",
+        sunset="2026-12-01",
+        ticket="T-4692",
+    )
     _bind_run(argv)
 
 

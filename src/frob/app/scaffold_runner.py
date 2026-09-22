@@ -120,6 +120,10 @@ def run(cfg: AppConfig) -> None:
         _run_unity_project(cfg)
         return
 
+    if cmd == "exports":
+        _run_exports(cfg)
+        return
+
     proj_type = cfg.scaffold_type
     proj_name = cfg.scaffold_name
 
@@ -159,3 +163,17 @@ def _print_profile_recommendation(project_dir: Path) -> None:
     recommendation = profile_recommendation(project_dir)
     if recommendation:
         _log.info(recommendation)
+
+
+# frob:ticket T-4692
+def _run_exports(cfg: AppConfig) -> None:
+    """`frob scaffold exports <path>` (T-4692): the GENERATE half of the
+    old flat `frob exports` verb (owner decision 2026-09-19: scaffolding
+    output, not analysis) -- delegates straight into `frob.app.
+    exports_runner.run`, the unchanged implementation, so behavior is
+    identical to the pre-fold standalone verb. The CHECK half (missing-
+    exports detection) is unrelated code that already runs as `frob
+    check --only exports`."""
+    from frob.app.exports_runner import run as exports_run
+
+    exports_run(cfg)

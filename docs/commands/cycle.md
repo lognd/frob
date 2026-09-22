@@ -1,5 +1,9 @@
 # frob cycle
 
+DEPRECATED (T-4692, sunset 2026-12-01): use `frob check --only cycle`
+instead -- `frob cycle` keeps working, with a stderr notice, through the
+sunset window, then exits non-zero.
+
 Detect and explain dependency cycles in a codebase.
 
 ## Usage

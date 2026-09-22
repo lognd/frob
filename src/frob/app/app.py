@@ -287,6 +287,11 @@ _DEPRECATED_SPELLINGS: dict[tuple[Subcommand, str | None], tuple[str, str]] = {
     (Subcommand.xref, None): ("xref", "explore xref"),
     (Subcommand.verify, "status"): ("verify status", "status"),
     (Subcommand.fleet, "status"): ("fleet status", "status"),
+    # frob:ticket T-4692
+    (Subcommand.dup, None): ("dup", "check --only dup"),
+    (Subcommand.arch, None): ("arch", "check --only arch"),
+    (Subcommand.cycle, None): ("cycle", "check --only cycle"),
+    (Subcommand.exports, None): ("exports", "scaffold exports"),
 }
 """T-4690's single deprecation-shim dispatch table: every deleted/renamed
 spelling this story's `App.__call__` interception point covers, keyed by

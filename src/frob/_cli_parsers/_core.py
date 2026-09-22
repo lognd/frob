@@ -119,12 +119,32 @@ def _populate_scaffold_actions(scaffold_sub) -> None:
     )
     scaffold_pool_sub.add_parser("status", help="print the current pool manifest")
 
+    # frob:ticket T-4692
+    # T-4692: the GENERATE half of the old flat `frob exports` verb (owner
+    # decision 2026-09-19: scaffold, not refactor) -- generating a
+    # package's __init__.py listing is scaffolding output, not a CHECK
+    # stage; the CHECK half (missing-exports detection) already runs as
+    # `frob check --only exports`, unrelated code this subverb does not
+    # touch. Shares `_populate_exports_args` with the (now deprecated)
+    # flat parser so neither duplicates the flag list.
+    scaffold_exports_p = scaffold_sub.add_parser(
+        "exports",
+        help="generate __init__.py from public symbols in a package "
+        "directory (T-4692, folded from the standalone frob exports)",
+    )
+    _populate_exports_args(scaffold_exports_p)
+
 
 # frob:ticket T-0030
+# frob:ticket T-4692
 def _add_cycle_parser(sub) -> None:
-    """Register the `frob cycle` subcommand and its arguments."""
+    """Register the DEPRECATED `frob cycle` subcommand (T-4692, sunset
+    2026-12-01: use `frob check --only cycle`) -- suppressed from usage;
+    `App.__call__`'s shim keeps it working through the sunset window."""
+    import argparse
+
     # -- cycle ---------------------------------------------------------------
-    cycle_p = sub.add_parser("cycle", help="detect dependency cycles")
+    cycle_p = sub.add_parser("cycle", help=argparse.SUPPRESS)
     _populate_cycle_args(cycle_p)
 
 
@@ -290,12 +310,13 @@ def _add_parse_parser(sub) -> None:
 # frob:ticket T-0030
 # frob:ticket T-0192
 def _add_dup_parser(sub) -> None:
-    """Register the `frob dup` subcommand and its arguments."""
+    """Register the DEPRECATED `frob dup` subcommand (T-4692, sunset
+    2026-12-01: use `frob check --only dup`) -- suppressed from usage;
+    `App.__call__`'s shim keeps it working through the sunset window."""
+    import argparse
+
     # -- dup -----------------------------------------------------------------
-    dup_p = sub.add_parser(
-        "dup",
-        help="detect duplicate/clone code segments (Type 1 exact, Type 2 renamed)",
-    )
+    dup_p = sub.add_parser("dup", help=argparse.SUPPRESS)
     _populate_dup_args(dup_p)
 
 
@@ -338,12 +359,13 @@ def _add_dup_probe_argument(dup_p) -> None:
 
 # frob:ticket T-0030
 def _add_arch_parser(sub) -> None:
-    """Register the `frob arch` subcommand and its arguments."""
+    """Register the DEPRECATED `frob arch` subcommand (T-4692, sunset
+    2026-12-01: use `frob check --only arch`) -- suppressed from usage;
+    `App.__call__`'s shim keeps it working through the sunset window."""
+    import argparse
+
     # -- arch ----------------------------------------------------------------
-    arch_p = sub.add_parser(
-        "arch",
-        help="arch analysis: long functions, god classes, coupling",
-    )
+    arch_p = sub.add_parser("arch", help=argparse.SUPPRESS)
     _populate_arch_args(arch_p)
 
 
@@ -438,12 +460,15 @@ def _populate_docs_args(docs_p, *, include_search: bool) -> None:
 
 # frob:ticket T-0030
 def _add_exports_parser(sub) -> None:
-    """Register the `frob exports` subcommand and its arguments."""
+    """Register the DEPRECATED `frob exports` subcommand (T-4692, sunset
+    2026-12-01: the GENERATE half moves to `frob scaffold exports`, the
+    CHECK half already runs as `frob check --only exports` -- owner
+    decision 2026-09-19) -- suppressed from usage; `App.__call__`'s shim
+    keeps it working through the sunset window."""
+    import argparse
+
     # -- exports -------------------------------------------------------------
-    exports_p = sub.add_parser(
-        "exports",
-        help="generate __init__.py from public symbols in a package directory",
-    )
+    exports_p = sub.add_parser("exports", help=argparse.SUPPRESS)
     _populate_exports_args(exports_p)
 
 
@@ -497,11 +522,12 @@ def _populate_exports_args(exports_p) -> None:
 # frob:ticket T-0030
 def _add_bind_parser(sub) -> None:
     """Register the `frob bind` subcommand and its arguments."""
-    # -- bind ----------------------------------------------------------------
-    bind_p = sub.add_parser(
-        "bind",
-        help="verify binding declarations match source signatures",
-    )
+    # -- bind (DEPRECATED T-4692, sunset 2026-12-01: use frob check --only
+    # bind; suppressed from usage, dispatch-bypassed so the shim itself
+    # lives in __main__._dispatch_bind, not here) ---------------------------
+    import argparse
+
+    bind_p = sub.add_parser("bind", help=argparse.SUPPRESS)
     bind_p.add_argument("bind_path", metavar="path", help="project root to scan")
     bind_p.add_argument(
         "--list-bindings",
