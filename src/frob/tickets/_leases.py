@@ -3040,7 +3040,7 @@ def _log_allowed_write_during_land(root: Path) -> None:
 # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice::test_tickets_lock_held_refuses_naming_the_correlated_land_holder  # noqa: E501
+# tests/unit/test_land_in_progress_window.py::TestLandInProgressWindowNarrowedToSplice.test_tickets_lock_held_refuses_naming_the_correlated_land_holder  # noqa: E501
 def refuse_if_land_in_progress(
     root: Path,
     *,

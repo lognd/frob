@@ -752,6 +752,13 @@ class AppConfig(BaseModel):
     # one of these four subcommands runs per invocation.
     ticket_triage_reason: str | None = None
     ticket_triage_reason_file: Path | None = None
+    # frob:ticket T-4696
+    # `frob ticket set <id> <field> <value>` -- folds priority/kind/
+    # component/tier/milestone/sprint's six standalone spellings into
+    # one subverb; reuses `ticket_triage_reason`/`_reason_file` above for
+    # its own `--reason`/`--reason-file` (same shared-dest shape).
+    ticket_set_field: str | None = None
+    ticket_set_value: str | None = None
     # frob:ticket T-1613
     # `frob ticket runs-last <id> <on|off>` -- the new runs-last marker
     # value, same shape as `ticket_tier_value`'s T-1069 precedent.

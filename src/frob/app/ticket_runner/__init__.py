@@ -91,6 +91,8 @@ from ._lifecycle import (
     _attach,
     _auto_plan_if_queued,
     _block,
+    _deprecated_set_field,
+    _deprecated_sprint_assign,
     _find_landing_commit,
     _load_ticket_or_exit,
     _plan,
@@ -99,6 +101,7 @@ from ._lifecycle import (
     _refuse_if_terminal,
     _requeue,
     _run_sweep,
+    _set,
     _spawn_background_sweep,
     _start,
     _sweep_cmd,
@@ -425,9 +428,11 @@ def _ticket_dispatch_table() -> dict:
         "scope-ack": _scope_ack,
         # frob:ticket T-1867
         "anchor": _anchor,
-        "priority": _priority,
-        "kind": _kind,
-        "component": _component,
+        # frob:ticket T-4696
+        "set": _set,
+        "priority": _deprecated_set_field("priority", "priority", _priority),
+        "kind": _deprecated_set_field("kind", "kind", _kind),
+        "component": _deprecated_set_field("component", "component", _component),
         "label": _label,
         # frob:ticket T-2392
         "body": _body,
@@ -439,9 +444,9 @@ def _ticket_dispatch_table() -> dict:
         # frob:ticket T-1100
         "flow": _flow,
         # frob:ticket T-0715
-        "sprint": _sprint,
+        "sprint": _deprecated_sprint_assign(_sprint),
         # frob:ticket T-1069
-        "tier": _tier,
+        "tier": _deprecated_set_field("tier", "tier", _tier),
         # frob:ticket T-2770
         "set-parent": _set_parent,
         # frob:ticket T-1613
@@ -449,7 +454,7 @@ def _ticket_dispatch_table() -> dict:
         # frob:ticket T-2624
         "runs-last-parallel-safe": _runs_last_parallel_safe,
         # frob:ticket T-2574
-        "milestone": _milestone,
+        "milestone": _deprecated_set_field("milestone", "milestone", _milestone),
         "archive": lambda root, cfg: _archive(
             root,
             force=cfg.ticket_force,

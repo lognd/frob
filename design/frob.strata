@@ -143,7 +143,12 @@ node cli : trusted {
     // baseline/log reads) into two new sibling modules -- same fs.read
     // effect, new file names, so both are named here the same way every
     // other verify_runner.py-adjacent split file already is.
-    may "fs.read" via "src/frob/app/_check_chunking.py", "src/frob/app/_check_chunking_baseline.py", "src/frob/app/_verify_coverage_lock.py", "src/frob/app/_verify_rapid_debt.py", "src/frob/app/coverage_runner.py", "src/frob/app/deploy_runner.py", "src/frob/app/parse_runner.py", "src/frob/app/perf_runner.py", "src/frob/app/profile_runner.py", "src/frob/app/sys_runner.py", "src/frob/app/telemetry/__init__.py", "src/frob/app/telemetry/_footguns.py", "src/frob/app/telemetry/_usage.py", "src/frob/app/ticket_runner/_close_cmd.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_ledger_mirror.py", "src/frob/app/ticket_runner/_mutate.py", "src/frob/app/ticket_runner/_new.py", "src/frob/app/ticket_runner/_query.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/ticket_runner/_verify.py", "src/frob/app/verify_runner.py", "src/frob/app/worktree_runner.py", "src/frob/doctor.py";
+    // T-4696: frob ticket set's own --reason-file resolution
+    // (_resolve_set_reason, _lifecycle.py) reads a file verbatim, the
+    // same T-0737 pattern _mutate.py's own --reason-file flags already
+    // use -- a real new fs.read site, not a re-declaration of an
+    // existing one (_lifecycle.py was fs.write-only here before).
+    may "fs.read" via "src/frob/app/_check_chunking.py", "src/frob/app/_check_chunking_baseline.py", "src/frob/app/_verify_coverage_lock.py", "src/frob/app/_verify_rapid_debt.py", "src/frob/app/coverage_runner.py", "src/frob/app/deploy_runner.py", "src/frob/app/parse_runner.py", "src/frob/app/perf_runner.py", "src/frob/app/profile_runner.py", "src/frob/app/sys_runner.py", "src/frob/app/telemetry/__init__.py", "src/frob/app/telemetry/_footguns.py", "src/frob/app/telemetry/_usage.py", "src/frob/app/ticket_runner/_close_cmd.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_ledger_mirror.py", "src/frob/app/ticket_runner/_lifecycle.py", "src/frob/app/ticket_runner/_mutate.py", "src/frob/app/ticket_runner/_new.py", "src/frob/app/ticket_runner/_query.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/ticket_runner/_verify.py", "src/frob/app/verify_runner.py", "src/frob/app/worktree_runner.py", "src/frob/doctor.py";
     // T-0178: frob.app.telemetry reads FROB_NO_TELEMETRY/FROB_STATS_AGENTIC
     // (os.environ.get) to opt out of/into the non-gated agentic telemetry
     // stream and its `--agentic` report trigger. T-1535: _land_cmd.py's

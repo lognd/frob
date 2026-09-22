@@ -142,14 +142,11 @@ class LedgerWriteStrategy(enum.Enum):
 # frob:tests \
 # tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_all_classified
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_derived_sets_tr\
-# ack_the_live_strategy_table
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_derived_sets_track_the_live_strategy_table  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_requ\
-# eue_edit_from_worktree_is_visible_on_primary
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_requeue_edit_from_worktree_is_visible_on_primary  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_requeue_ru\
-# nning_in_the_primary_checkout_is_a_no_op
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_requeue_running_in_the_primary_checkout_is_a_no_op  # noqa: E501
 #: The single source of truth for every `frob ticket` verb's ledger-write
 #: strategy (T-2603). `_MIRRORED_LEDGER_VERBS`/`_OWN_TRANSACTION_VERBS`
 #: below are DERIVED from this table, never redeclared, so there is
@@ -185,6 +182,8 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     # the fleet until the ticket landed.
     "milestone": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "priority": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # frob:ticket T-4696
+    "set": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "review": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "runs-last": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     # frob:ticket T-2624
@@ -303,8 +302,7 @@ _MIRRORED_LEDGER_VERBS = frozenset(
 
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_state_mach\
-# ine_verbs_are_not_mirrored
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_state_machine_verbs_are_not_mirrored  # noqa: E501
 #: Back-compat alias (T-2563's original name) for `_MIRRORED_LEDGER_VERBS`
 #: -- both names refer to the SAME frozenset, derived from
 #: `LEDGER_VERB_STRATEGY` above rather than declared twice.
@@ -545,11 +543,9 @@ def _commit_mirrored_paths(
 # frob:ticket T-2563
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_scop\
-# e_edit_from_worktree_is_visible_on_primary
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_scope_edit_from_worktree_is_visible_on_primary  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorCarriesNothingElse.te\
-# st_worktree_source_changes_do_not_leak_to_primary
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorCarriesNothingElse.test_worktree_source_changes_do_not_leak_to_primary  # noqa: E501
 def mirror_ledger_change_to_primary(root: Path, ticket_id: str, command: str) -> None:
     """Copy `ticket_id`'s ledger files from the worktree `root` onto the
     primary checkout and commit them there, so a ledger-only edit made
@@ -578,8 +574,7 @@ def _ticket_md_path(root: Path, ticket_id: str) -> Path:
 
 # frob:ticket T-3892
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestMirrorPreservesEvidence.test_pres\
-# erve_evidence_helper_unions_primary_only_ids
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestMirrorPreservesEvidence.test_preserve_evidence_helper_unions_primary_only_ids  # noqa: E501
 def _preserve_primary_only_evidence(
     worktree_text: str, primary_text: str
 ) -> str | None:
@@ -689,20 +684,15 @@ def _mirror_ledger_paths(
 
 # frob:ticket T-4267
 # frob:doc \
-# docs/modules/tickets-lifecycle.md#evidence---replace--remove-mirror-directly-bypassin\
-# g-the-verb-table-t-4267
+# docs/modules/tickets-lifecycle.md#evidence---replace--remove-mirror-directly-bypassing-the-verb-table-t-4267  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_replace\
-# _from_worktree_is_visible_on_primary
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_replace_from_worktree_is_visible_on_primary  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_remove_\
-# from_worktree_is_visible_on_primary
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_remove_from_worktree_is_visible_on_primary  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_prior_s\
-# cope_mirror_then_replace_does_not_leave_the_old_id_resurrectable
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_prior_scope_mirror_then_replace_does_not_leave_the_old_id_resurrectable  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_running\
-# _in_the_primary_checkout_is_a_no_op
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestEvidenceRebindMirror.test_running_in_the_primary_checkout_is_a_no_op  # noqa: E501
 def mirror_evidence_rebind_to_primary(root: Path, ticket_id: str, command: str) -> None:
     """Unconditionally mirror `ticket_id`'s ledger onto the primary
     checkout, bypassing `MIRRORED_LEDGER_VERBS`/`_mirror_target` entirely
@@ -813,11 +803,9 @@ def _remove_stale_draft_ledger_dir(primary: Path, draft_id: str) -> str | None:
 # frob:ticket T-2587
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror.test_promote_from_w\
-# orktree_is_visible_on_primary_without_a_land
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror.test_promote_from_worktree_is_visible_on_primary_without_a_land  # noqa: E501
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror.test_promote_mirror\
-# _does_not_leak_source_changes_or_duplicate_the_draft
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror.test_promote_mirror_does_not_leak_source_changes_or_duplicate_the_draft  # noqa: E501
 def mirror_promote_to_primary(root: Path, draft_id: str) -> bool:
     """T-2587: mirror a `frob ticket promote` rename's LEDGER pathspecs
     onto the primary checkout, so the promoted final id is visible to the

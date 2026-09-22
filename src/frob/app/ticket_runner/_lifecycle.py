@@ -1670,3 +1670,221 @@ def _unblock(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-0215
 # frob:ticket T-1005
+
+
+# frob:ticket T-4696
+def _set_field_priority(root: Path, ticket_id: str, value: str, reason: str | None):  # noqa: ANN201
+    """`frob ticket set <id> priority <value>`'s own field handler --
+    split out of `_set` (ARCH001) so each of the six folded fields' own
+    validate-then-forward shape stays a short, individually readable
+    function, matching every ORIGINAL flat setter's own one-field-one-
+    function precedent (`_mutate._priority`, etc.)."""
+    from frob.tickets import Priority, set_priority
+
+    if not reason:
+        _log.error(
+            "frob ticket set priority requires --reason TEXT or --reason-file PATH"
+        )
+        sys.exit(1)
+    try:
+        level = Priority(value)
+    except ValueError:
+        _log.error(
+            "frob ticket set priority: %r is not a valid priority (choose from %s)",
+            value,
+            sorted(p.value for p in Priority),
+        )
+        sys.exit(1)
+    return set_priority(root, ticket_id, level, reason=reason)
+
+
+# frob:ticket T-4696
+def _set_field_kind(root: Path, ticket_id: str, value: str, reason: str | None):  # noqa: ANN201
+    """`frob ticket set <id> kind <value>`'s own field handler -- see
+    `_set_field_priority`'s docstring for why this is split out."""
+    from frob.tickets import TicketKind, set_kind
+
+    if not reason:
+        _log.error("frob ticket set kind requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+    try:
+        kind = TicketKind(value)
+    except ValueError:
+        _log.error(
+            "frob ticket set kind: %r is not a valid kind (choose from %s)",
+            value,
+            sorted(k.value for k in TicketKind),
+        )
+        sys.exit(1)
+    return set_kind(root, ticket_id, kind, reason=reason)
+
+
+# frob:ticket T-4696
+def _set_field_component(root: Path, ticket_id: str, value: str, reason: str | None):  # noqa: ANN201
+    """`frob ticket set <id> component <value>`'s own field handler --
+    see `_set_field_priority`'s docstring for why this is split out.
+    `value == "none"` clears the field, same as the flat setter."""
+    from frob.tickets import set_component
+
+    if not reason:
+        _log.error(
+            "frob ticket set component requires --reason TEXT or --reason-file PATH"
+        )
+        sys.exit(1)
+    component_value = None if value == "none" else value
+    return set_component(root, ticket_id, component_value, reason=reason)
+
+
+# frob:ticket T-4696
+def _set_field_tier(root: Path, ticket_id: str, value: str, reason: str | None):  # noqa: ANN201
+    """`frob ticket set <id> tier <value>`'s own field handler -- see
+    `_set_field_priority`'s docstring for why this is split out."""
+    from frob.tickets import TicketTier, set_tier
+
+    if not reason:
+        _log.error("frob ticket set tier requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+    try:
+        tier = TicketTier(value)
+    except ValueError:
+        _log.error(
+            "frob ticket set tier: %r is not a valid tier (choose from %s)",
+            value,
+            sorted(t.value for t in TicketTier),
+        )
+        sys.exit(1)
+    return set_tier(root, ticket_id, tier, reason=reason)
+
+
+# frob:ticket T-4696
+def _set_field_milestone(root: Path, ticket_id: str, value: str, reason: str | None):  # noqa: ANN201,ARG001
+    """`frob ticket set <id> milestone <value>`'s own field handler --
+    `reason` is accepted (uniform signature, `_SET_FIELD_HANDLERS`) but
+    unused: milestone never required one, same as the flat setter."""
+    from frob.tickets import set_milestone
+
+    return set_milestone(root, ticket_id, value)
+
+
+# frob:ticket T-4696
+def _set_field_sprint(root: Path, ticket_id: str, value: str, reason: str | None):  # noqa: ANN201,ARG001
+    """`frob ticket set <id> sprint <value>`'s own field handler --
+    `reason` is accepted (uniform signature) but unused: sprint never
+    required one, same as `sprint assign`."""
+    from frob.tickets import set_sprint
+
+    return set_sprint(root, ticket_id, value)
+
+
+# frob:ticket T-4696
+_SET_FIELD_HANDLERS = {
+    "priority": _set_field_priority,
+    "kind": _set_field_kind,
+    "component": _set_field_component,
+    "tier": _set_field_tier,
+    "milestone": _set_field_milestone,
+    "sprint": _set_field_sprint,
+}
+"""`frob ticket set`'s own field-name -> handler dispatch (T-4696), one
+entry per `_TICKET_SET_FIELDS` name (`_cli_parsers/_ticket/_metadata.py`)
+-- argparse `choices` already refused anything outside this set before
+`_set` ever runs, so this dict is never consulted with an unknown key."""
+
+
+# frob:ticket T-4696
+def _set(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket set <id> <field> <value> (--reason TEXT | --reason-file
+    PATH)` (T-4696): one subverb for the six single-value field-setters
+    `priority`/`kind`/`component`/`tier`/`milestone`/`sprint` used to be --
+    dispatches (via `_SET_FIELD_HANDLERS`) to the SAME `frob.tickets.
+    set_*` library functions their standalone verbs already called (no
+    validation re-derived here, matching every folded setter's own "this
+    command does nothing but forward" precedent). `--reason`/
+    `--reason-file` reuse the shared `ticket_triage_reason`/
+    `ticket_triage_reason_file` dests `_add_triage_reason_flags`
+    populates -- required for `priority`/`kind`/`component`/`tier`
+    (T-2353's own accountability rule), optional for `milestone`/
+    `sprint` (neither ever required one)."""
+    field = cfg.ticket_set_field
+    value = cfg.ticket_set_value
+    if cfg.ticket_id is None or field is None or value is None:
+        _log.error("frob ticket set requires <id> <field> <value>")
+        sys.exit(1)
+
+    reason = _resolve_set_reason(cfg)
+    result = _SET_FIELD_HANDLERS[field](root, cfg.ticket_id, value, reason)
+
+    if result.is_err:
+        _log.error("frob ticket set %s failed: %s", field, result.danger_err)
+        sys.exit(1)
+    _log.info("%s: %s now %s", cfg.ticket_id, field, value)
+
+
+# frob:ticket T-4696
+def _resolve_set_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket set`'s `--reason`/`--reason-file` -- identical
+    shape to `_mutate._resolve_triage_reason` (the flag pair is the same
+    shared dest, `_add_triage_reason_flags`), reimplemented here rather
+    than cross-imported since `_mutate.py` is outside this ticket's
+    declared scope."""
+    if cfg.ticket_triage_reason_file is not None and cfg.ticket_triage_reason:
+        _log.error("frob ticket set: --reason and --reason-file are mutually exclusive")
+        sys.exit(1)
+    if cfg.ticket_triage_reason_file is not None:
+        try:
+            return cfg.ticket_triage_reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "frob ticket set: could not read --reason-file %s: %s",
+                cfg.ticket_triage_reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_triage_reason
+
+
+# frob:ticket T-4696
+def _deprecated_set_field(old_name: str, field: str, fn):  # noqa: ANN001,ANN201
+    """Wrap a folded field-setter's original dispatch function `fn` with
+    T-4690's shared `announce_shim` notice, without editing `fn`'s own
+    module (`_mutate.py`, outside this ticket's declared scope) -- the
+    same "wrap at the dispatch table, not the runner" shape `bind`'s own
+    T-4692 shim uses (`frob.__main__._dispatch_bind`). Called once per
+    folded verb when building `app.ticket_runner`'s dispatch dict; `fn`
+    itself is untouched and still the single implementation both the
+    deprecated flat spelling and (indirectly, via `_set`) the new `frob
+    ticket set` spelling exercise."""
+
+    def _wrapped(root: Path, cfg: AppConfig) -> None:
+        from frob._cli_parsers._shims import announce_shim
+
+        announce_shim(
+            old_name=f"ticket {old_name}",
+            new_name=f"ticket set <id> {field} <value>",
+            sunset="2026-12-01",
+            ticket="T-4696",
+        )
+        fn(root, cfg)
+
+    return _wrapped
+
+
+# frob:ticket T-4696
+def _deprecated_sprint_assign(fn):  # noqa: ANN001,ANN201
+    """Like `_deprecated_set_field`, but scoped to `frob ticket sprint
+    assign` only -- `sprint show` (a query, not a setter) is unaffected
+    by T-4696's fold and must never announce a deprecation notice."""
+
+    def _wrapped(root: Path, cfg: AppConfig) -> None:
+        if cfg.ticket_sprint_command == "assign":
+            from frob._cli_parsers._shims import announce_shim
+
+            announce_shim(
+                old_name="ticket sprint assign",
+                new_name="ticket set <id> sprint <value>",
+                sunset="2026-12-01",
+                ticket="T-4696",
+            )
+        fn(root, cfg)
+
+    return _wrapped

@@ -73,7 +73,7 @@ DEFAULT_MAX_MODULES = 2
 
 
 # frob:doc \
-# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-draft-af37d815  # noqa: E501
+# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
 # frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindTemplatedAssumes.test_red_on_monolith_cwe78_cluster  # noqa: E501
 class TemplatedAssumeGroup(BaseModel):
@@ -90,7 +90,7 @@ class TemplatedAssumeGroup(BaseModel):
 
 
 # frob:doc \
-# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-draft-af37d815  # noqa: E501
+# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
 # frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindSharedExpiry.test_red_on_monolith_shared_date  # noqa: E501
 class SharedExpiryGroup(BaseModel):
@@ -106,7 +106,7 @@ class SharedExpiryGroup(BaseModel):
 
 
 # frob:doc \
-# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-draft-af37d815  # noqa: E501
+# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
 # frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestModuleClaimsFromModels.test_flattens_and_tags_each_claim_with_its_module  # noqa: E501
 class ModuleClaim(BaseModel):
@@ -177,7 +177,7 @@ def _template_signature(claim: Claim, *, module: str) -> str | None:
 
 # frob:ticket T-5105
 # frob:doc \
-# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-draft-af37d815  # noqa: E501
+# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
 # frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindTemplatedAssumes.test_red_on_monolith_cwe78_cluster  # noqa: E501
 # frob:tests \
@@ -237,7 +237,7 @@ def find_templated_assumes(
 
 # frob:ticket T-5105
 # frob:doc \
-# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-draft-af37d815  # noqa: E501
+# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
 # frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestFindSharedExpiry.test_red_on_monolith_shared_date  # noqa: E501
 # frob:tests \
@@ -286,7 +286,7 @@ def find_shared_expiry(
 
 
 # frob:doc \
-# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-draft-af37d815  # noqa: E501
+# docs/strata/selfconform.md#sys119sys120----the-templated-assume-gate-d-m8-t-5105  # noqa: E501
 # frob:tests \
 # tests/gates_suite/test_sys_assume_template.py::TestModuleClaimsFromModels.test_flattens_and_tags_each_claim_with_its_module  # noqa: E501
 # frob:tests \

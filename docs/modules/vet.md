@@ -933,8 +933,7 @@ full rationale and the shared must-fire/must-stay-quiet test coverage
 <!-- frob:describes src/frob/vet/_typosquat.py::_damerau_levenshtein -->
 <!-- frob:describes src/frob/vet/_typosquat.py::_find_typosquat -->
 <!-- frob:describes src/frob/vet/_osv.py::OsvAdvisory -->
-<!-- frob:describes src/frob/vet/_osv.py::_is_available -->
-<!-- frob:describes src/frob/vet/_osv.py::_run_osv_scan -->
+<!-- frob:describes src/frob/vet/_osv.py::query_advisories -->
 <!-- frob:describes src/frob/vet/_registry.py::_RegistryResult -->
 <!-- frob:describes src/frob/vet/_registry.py::_fetch_publish_date -->
 <!-- frob:describes src/frob/vet/_source.py::_locate_pypi_source -->

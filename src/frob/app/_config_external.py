@@ -160,6 +160,9 @@ _STRING_FIELDS = (
     # frob:ticket T-2353
     "ticket_triage_reason",
     "ticket_triage_reason_file",
+    # frob:ticket T-4696
+    "ticket_set_field",
+    "ticket_set_value",
     # frob:ticket T-2392
     "ticket_body_append",
     "ticket_body_set",

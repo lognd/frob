@@ -47,6 +47,7 @@ from ._metadata import (
     _add_ticket_scope_ack_parser,
     _add_ticket_scope_parser,
     _add_ticket_set_parent_parser,
+    _add_ticket_set_parser,
     _add_ticket_sprint_parser,
     _add_ticket_tier_parser,
 )
@@ -97,6 +98,7 @@ __all__ = [
     "_add_ticket_scope_ack_parser",
     "_add_ticket_scope_parser",
     "_add_ticket_set_parent_parser",
+    "_add_ticket_set_parser",
     "_add_ticket_sprint_parser",
     "_add_ticket_tier_parser",
     "_suppress_subparser_alias",
@@ -117,7 +119,7 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
     # frob:ticket T-1684
     ticket_sweep_async_p = _add_ticket_sweep_async_parser(ticket_sub)
     _suppress_subparser_alias(ticket_sub, "sweep-async")
-    return (
+    parsers = (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
         + [
@@ -132,6 +134,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_scope_ack_parser(ticket_sub),
             # frob:ticket T-1867
             _add_ticket_anchor_parser(ticket_sub),
+            # frob:ticket T-4696
+            _add_ticket_set_parser(ticket_sub),
             _add_ticket_priority_parser(ticket_sub),
             _add_ticket_kind_parser(ticket_sub),
             _add_ticket_component_parser(ticket_sub),
@@ -155,6 +159,20 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_body_parser(ticket_sub),
         ]
     )
+    # frob:ticket T-4696
+    # Five of the six T-4696 fold targets are hidden here the same way --
+    # each keeps working (dispatch is unaffected; App.__call__'s
+    # _DEPRECATED_SPELLINGS-style shim covers Subcommand-routed verbs,
+    # `ticket`'s own subverbs get an equivalent announce_shim call at
+    # dispatch) but no longer appear in `frob ticket --help`'s listing.
+    # Run AFTER the parsers above are actually registered -- the pseudo-
+    # actions `_suppress_subparser_alias` filters do not exist until
+    # `add_parser()` has run. `sprint` is NOT suppressed here: only its
+    # `assign` mode folds into `set`; `show` (a query, not a setter)
+    # survives unchanged and must stay visible.
+    for _folded in ("priority", "kind", "component", "tier", "milestone"):
+        _suppress_subparser_alias(ticket_sub, _folded)
+    return parsers
 
 
 # frob:ticket T-0030

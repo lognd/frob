@@ -328,6 +328,53 @@ def _add_ticket_anchor_parser(ticket_sub):
 
 # frob:ticket T-0411
 # frob:ticket T-2353
+# frob:ticket T-4696
+_TICKET_SET_FIELDS: tuple[str, ...] = (
+    "priority",
+    "kind",
+    "component",
+    "tier",
+    "milestone",
+    "sprint",
+)
+"""The six single-value field-setters T-4696 folds under `frob ticket set
+<id> <field> <value>` -- one subverb replacing six (`priority`/`kind`/
+`component`/`tier`/`milestone`/`sprint assign`). `label` (a repeatable
+add/remove LIST, not a scalar value), `accept` (three modes -- append/
+amend/remove -- plus `--criterion-file`), and `body` (`--append-file`/
+`--set-file`) are deliberately NOT folded: each measured to NOT be a
+one-token field write, the same `--*-file`-streaming disqualifier the
+ticket's own body rule names, generalized here to accept and to label's
+list shape. `sprint show` (a QUERY, not a setter) stays its own
+subcommand under `sprint`, unaffected by this fold."""
+
+
+# frob:ticket T-4696
+def _add_ticket_set_parser(ticket_sub):
+    """Register `frob ticket set <id> <field> <value> (--reason TEXT |
+    --reason-file PATH)` (T-4696): one subverb for the six single-value
+    field-setters `_TICKET_SET_FIELDS` names, replacing their standalone
+    top-level spellings (each keeps a T-4690-style deprecation shim for
+    one minor version). `--reason`/`--reason-file` are shared with the
+    deprecated flat setters via `_add_triage_reason_flags` -- required at
+    dispatch time for `priority`/`kind`/`component`/`tier` (the four
+    T-2353 already required an audit trail for), optional for
+    `milestone`/`sprint` (neither ever required one)."""
+    ticket_set_p = ticket_sub.add_parser(
+        "set",
+        help="set a ticket field: priority, kind, component, tier, "
+        "milestone, or sprint (T-4696, folds their standalone spellings)",
+    )
+    ticket_set_p.add_argument("ticket_id", metavar="id")
+    ticket_set_p.add_argument(
+        "ticket_set_field", metavar="field", choices=_TICKET_SET_FIELDS
+    )
+    ticket_set_p.add_argument("ticket_set_value", metavar="value")
+    _add_triage_reason_flags(ticket_set_p)
+    _add_no_commit_flag(ticket_set_p)
+    return ticket_set_p
+
+
 def _add_ticket_priority_parser(ticket_sub):
     """Register `frob ticket priority <id> <level> (--reason TEXT |
     --reason-file PATH)` -- reprioritize an existing ticket (T-0411), the
