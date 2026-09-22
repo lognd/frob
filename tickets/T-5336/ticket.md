@@ -1,5 +1,5 @@
 ---
-id: T-draft-acb2da9b
+id: T-5336
 title: 'Post-land sweep residue 2026-09-22_1944: COV002:tests/narrative/test_docarch002_fix.py
   COV002:tests/ticket_land_suite/test_dirt_ownership.py COV002:tests/ticket_land_suite/test_wip.'
 state: queued
