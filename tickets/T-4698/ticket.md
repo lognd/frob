@@ -3,7 +3,7 @@ id: T-4698
 title: 'Ticket subverb tail: verdict per subverb (attach anchor flow plan board epic
   wave runs-last migrate archive reverify waive-audit review admin debt deprecated
   scope-ack worktree contention) -- keep with a cited consumer or delete with a shim'
-state: queued
+state: planned
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -19,19 +19,7 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/_cli_parsers/_ticket/_closeout.py
-- src/frob/_cli_parsers/_ticket/_closeout_evidence.py
-- src/frob/_cli_parsers/_ticket/_progress.py
-- src/frob/_cli_parsers/_ticket/_query.py
-- src/frob/_cli_parsers/_ticket/_new.py
-- src/frob/app/ticket_runner/_archive.py
-- src/frob/app/ticket_runner/_attach_backfill.py
-- src/frob/app/ticket_runner/_query.py
-- src/frob/app/ticket_runner/_verify.py
-- src/frob/app/ticket_runner/_waive_audit.py
 - tests/unit/test_ticket_subverb_tail.py
-- src/frob/app/parse_runner.py
-- src/frob/_cli_parsers/_core.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +37,102 @@ scope_changes:
   reason: 'the parse verdict (T-4690''s amendment: parse belongs in this story''s
     own verdict-rendering leaf) is DELETE with a shim -- _core.py is free now that
     T-4690/T-4692 have both landed'
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_closeout_evidence.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/app/ticket_runner/_archive.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/app/ticket_runner/_attach_backfill.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/app/ticket_runner/_waive_audit.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/app/parse_runner.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/_cli_parsers/_core.py
+  reason: this is a pure verdict/measurement ticket -- the only file this branch ever
+    touches is tests/unit/test_ticket_subverb_tail.py (confirmed via git diff dev...t-4698);
+    freeing every declared-but-unused file, several of which now collide with live
+    tickets (T-5132)
   actor: logan
   at: '2026-09-22'
 triage_changes:
