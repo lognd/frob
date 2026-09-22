@@ -1,7 +1,7 @@
 ---
 id: T-4663
 title: 'Wire [arch.layering] into frob check: ARCH10x red on a kernel layering violation'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -44,30 +44,51 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
+- tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
+- tests/unit/test_layering_gate.py::test_no_declared_layering_config_is_not_a_violation
+- tests/unit/test_layering_gate.py::test_allowed_edge_across_declared_layers_is_not_arch104
 designated_repro_test: null
 acceptance:
 - text: Given [arch.layering] declares ledger < leases < land < app with gates independent,
     when `frob check` runs, then a layering violation is reported as an ARCH10x finding
     at RED severity and fails the check.
-  evidence: []
+  evidence:
+  - tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
+  - tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
+  - tests/unit/test_layering_gate.py::test_no_declared_layering_config_is_not_a_violation
+  - tests/unit/test_layering_gate.py::test_allowed_edge_across_declared_layers_is_not_arch104
 - text: 'POSITIVE CONTROL: tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
     plants an import from the ledger layer back up into the land layer and asserts
     `frob check` reports ARCH10x at red. It FAILS on dev today (the layering checker
     is never invoked, so the planted violation is reported by nothing -- a silent
     zero) and passes after this leaf.'
-  evidence: []
+  evidence:
+  - tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
+  - tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
+  - tests/unit/test_layering_gate.py::test_no_declared_layering_config_is_not_a_violation
+  - tests/unit/test_layering_gate.py::test_allowed_edge_across_declared_layers_is_not_arch104
 - text: Given no violation, when `frob check` runs, then the layering job reports
     a nonzero number of edges CHECKED, never a bare zero; tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
     proves the job actually ran.
-  evidence: []
+  evidence:
+  - tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
+  - tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
+  - tests/unit/test_layering_gate.py::test_no_declared_layering_config_is_not_a_violation
+  - tests/unit/test_layering_gate.py::test_allowed_edge_across_declared_layers_is_not_arch104
 - text: docs/modules/arch.md's DIP layering section is updated to describe the live
     kernel contract rather than an inert example, in this same change.
-  evidence: []
+  evidence:
+  - tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
+  - tests/unit/test_layering_gate.py::test_allowed_edge_across_declared_layers_is_not_arch104
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4663
+branch: t-4663
 ---
 Kernel decoupling leaf (LAYERING story). ~3 points. This is the leaf that makes the whole epic irreversible.
 

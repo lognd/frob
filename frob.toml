@@ -130,28 +130,54 @@ max_nesting_depth = 4
 max_file_lines = 800
 
 # T-0620: `[arch.layering]` is `frob.arch._layering`'s DIP layering
-# contract schema -- NOT wired into `frob check` yet (out of this ticket's
-# scope, matching T-0616/T-0617/T-0618/T-0619's own disclosed gate-wiring
-# cuts), so this table is inert today and present purely as a real,
-# minimal worked example of the config shape (docs/modules/arch.md's "DIP
-# layering contract" section documents the schema in full). `layers` maps
-# a declared layer name to the repo-relative path prefixes belonging to
-# it; `allow` maps a layer name to the OTHER layer names it may import
-# from -- an edge between two declared layers not listed here is a
-# violation once a future ticket wires `check_layering_violations` into
-# `frob check`. This particular contract states a fact already true of
-# this repo's own layout: `src/frob/app` (the CLI/orchestration layer)
-# may depend on `src/frob/lang` (the tree-sitter parsing utility layer),
-# but `src/frob/lang` may never import back from `src/frob/app` --
-# `frob.lang` is a leaf dependency the rest of the codebase reaches into,
-# never the reverse.
+# contract schema. T-4663 wires `check_layering_edges` into `frob.gates.
+# _arch.arch_gate` (ARCH104, RED) -- this table is now LIVE, not an inert
+# worked example. `layers` maps a declared layer name to the repo-relative
+# path prefixes belonging to it (longest-prefix-match wins, so a more
+# specific subtree overrides a broader parent one -- `_rapid_sweep.py`'s
+# own full-path entry below wins over the broader `app` prefix that would
+# otherwise also match it); `allow` maps a layer name to the OTHER layer
+# names it may import from -- an edge between two declared layers not
+# listed here is an ARCH104 violation.
+#
+# Two contracts share this one table:
+# 1. `app`/`lang`: `src/frob/app` (CLI/orchestration) may depend on
+#    `src/frob/lang` (tree-sitter parsing utility layer), never the
+#    reverse -- `frob.lang` is a leaf dependency.
+# 2. T-4656 LAYERING (epic T-4651 "kernel decoupling"): the ticket-store
+#    kernel is a strict chain `ledger < leases < land < app`, with `gates`
+#    independent of the whole chain (a gate may read `frob.lang`, the
+#    shared leaf, but never `frob.tickets`) --
+#      ledger (`src/frob/tickets/_store*.py`) imports nothing in the chain
+#      leases (`_leases.py`) may import ledger
+#      land (`_land*.py`, `_rapid_sweep.py`) may import leases, ledger
+#      app (`src/frob/app`, the orchestration layer) may import land,
+#        leases, ledger, gates and lang -- the top of the stack
+#      gates (`src/frob/gates`) is independent: may import lang (the
+#        shared leaf utility), never ledger/leases/land
+#    T-4663's Done report discloses the 30 edges this contract already
+#    finds violated on dev at filing time (`gates` -> `leases` coupling
+#    predating this leaf, plus `land`'s `_rapid_sweep.py` importing back
+#    up into `app/ticket_runner`) -- ratcheted via `frob pool snapshot
+#    ARCH104` (`[gates.ratchet]` above), not waived: the sibling LEDGER/
+#    LEASES/LAND leaves (T-4657/T-4659/T-4660 and adopted children) are
+#    the burn-down, tracked under epic T-4651, not a fresh ticket per
+#    finding.
 [arch.layering.layers]
 app = ["src/frob/app"]
 lang = ["src/frob/lang"]
+ledger = ["src/frob/tickets/_store"]
+leases = ["src/frob/tickets/_leases.py"]
+land = ["src/frob/tickets/_land", "src/frob/app/ticket_runner/_rapid_sweep.py"]
+gates = ["src/frob/gates"]
 
 [arch.layering.allow]
-app = ["lang"]
+app = ["lang", "land", "leases", "ledger", "gates"]
 lang = []
+ledger = []
+leases = ["ledger"]
+land = ["leases", "ledger"]
+gates = ["lang"]
 
 # T-2390 epic child (T-2437): known_keys declares this table's own
 # known-key set for GRAPHSCHEMA001 (an unknown/misspelled key,
@@ -1046,8 +1072,15 @@ language = "rust"
 # means no rule is ratcheted.
 # T-1763: INV006 (the rule this pool was first wired for, T-0594) was
 # deleted -- 338 waivers, zero unwaived findings across its whole
-# lifetime; see docs/modules/gates.md's T-1763 note. No rule is
-# currently ratcheted.
+# lifetime; see docs/modules/gates.md's T-1763 note.
+#
+# T-4663: ARCH104 (dip-layering-violation, the kernel [arch.layering]
+# contract below) is ratcheted -- 30 pre-existing edges measured on dev
+# at filing time (gates/{tickets._leases, lang} coupling, and land's
+# _rapid_sweep.py importing back up into app/ticket_runner), baselined
+# via `frob pool snapshot ARCH104` rather than waived (T-4663's Done
+# report has the exact count and file list; the kernel-decoupling epic
+# T-4651 tracks the burn-down, not a fresh ticket per finding).
 #
 # T-2390 epic child (T-2435): ratchet_known_keys declares [gates.
 # ratchet]'s own known-key set for GATESSCHEMA001 (an unknown key,
@@ -1062,7 +1095,7 @@ ratchet_known_keys = "frob.gates._gates_schema:GATES_RATCHET_KNOWN_KEYS"
 # citation reports ERROR immediately. Promotion to always-ERROR is
 # T-4772, once the eight migration clusters land.
 [gates.ratchet]
-rules = ["DOCARCH002"]
+rules = ["ARCH104", "DOCARCH002"]
 
 # T-2390 epic child (T-2430): known_keys declares this table's own
 # known-key set for PROFILESCHEMA001 (an unknown/misspelled key in

@@ -709,22 +709,34 @@ size minus the number actually called).
 above against one `NormalizedModule` and returns the combined findings,
 mirroring `run_lsp_checks`'s convention.
 
-### DIP layering contract: `dip-layering-violation` (T-0620)
+### DIP layering contract: `dip-layering-violation` / ARCH104 (T-0620, wired T-4663)
 
 <a id="dip-layering-contract"></a>
 <!-- frob:describes src/frob/arch/_layering.py::LayeringConfig -->
 <!-- frob:describes src/frob/arch/_layering.py::LayeringConfig.layer_for -->
 <!-- frob:describes src/frob/arch/_layering.py::load_layering_config -->
 <!-- frob:describes src/frob/arch/_layering.py::check_layering_violations -->
+<!-- frob:describes src/frob/arch/_layering.py::check_layering_edges -->
 
 `frob.arch._layering` (EPIC T-0330's ARCH1xx DIP family, T-0620) is a
 project-wide check, not a per-file `NormalizedModule` one -- a layering
 contract is a claim about the whole import graph, not one file's shape.
-It stays on the same unwaivable advisory channel every other `frob.arch`
-category is on; no real ARCH1xx gate is wired in this ticket's scope
-either (`check_layering_violations` is a library entry point a future
-wiring ticket calls, same as `run_srp_checks`/`run_lsp_checks`/
-`run_isp_checks`).
+
+**T-4663 (epic T-4651 "kernel decoupling", story T-4656 LAYERING) wires
+this checker into `frob check`.** T-0620 shipped the schema and
+`check_layering_violations` real but never invoked from a gate -- a
+planted upward-import violation was reported by NOTHING (a silent zero).
+`frob.gates._arch.arch_gate` now calls `check_layering_edges` (the same
+scan, plus an edges-checked count) directly against `load_layering_
+config`'s result and channels every `dip-layering-violation` finding as
+**ARCH104 at `Severity.ERROR`** (RED, not advisory) -- see that module's
+own docstring for why this ships directly at ERROR rather than the
+WARN-first turn-on every prior `_ARCH_CATEGORY_TO_RULE` category used.
+ARCH104 is also the one category opted into `[gates.ratchet]`
+(`docs/modules/gates.md#ratchet-pools-t-0569`): pre-existing violations
+baselined via `frob pool snapshot ARCH104` stay at WARN, only a NEW edge
+reds `frob check` -- see T-4663's Done report for the exact baselined
+count and file list measured on `dev` at filing time.
 
 **Config schema (`[arch.layering]` in `frob.toml`).** Import-linter
 style: named layers plus an explicit allowed-edge set, NOT the
@@ -759,10 +771,19 @@ lang = []
   has nothing to enforce, not an error, same posture as
   `frob.app.config.load_arch_config`.
 
-This repo's own `frob.toml` carries a real, minimal worked example (not
-wired into `frob check` yet, so inert today): `src/frob/lang` is a leaf
-parsing-utility layer nothing else in this repo may import BACK from,
-while `src/frob/app` (the CLI/orchestration layer) may depend on it.
+This repo's own `frob.toml` carries two LIVE contracts sharing this one
+table (both enforced now, not inert). The original: `src/frob/lang` is a
+leaf parsing-utility layer nothing else in this repo may import BACK
+from, while `src/frob/app` (the CLI/orchestration layer) may depend on
+it. T-4663 adds the ticket-store kernel chain (T-4656's own design):
+`ledger` (`src/frob/tickets/_store*.py`) imports nothing declared here;
+`leases` (`_leases.py`) may import `ledger`; `land` (`_land*.py`, plus
+`src/frob/app/ticket_runner/_rapid_sweep.py` by its full path, which
+wins the longest-prefix match over the broader `app` prefix) may import
+`leases`/`ledger`; `app` (`src/frob/app`) sits at the top and may import
+everything -- `land`, `leases`, `ledger`, `gates`, `lang`; and `gates`
+(`src/frob/gates`) is independent of the ticket-store chain, allowed only
+`lang` (the shared leaf utility), never `ledger`/`leases`/`land`.
 
 **Resolved, not surface, imports (adversarial-hardening note).** A raw
 import edge under-counts real coupling two ways this check addresses:
@@ -783,7 +804,7 @@ import edge under-counts real coupling two ways this check addresses:
    flagged as its own `dip-layering-violation` finding, distinct from
    any specific edge.
 
-**`check_layering_violations(root, config) -> list[ArchSuggestion]`**
+**`check_layering_edges(root, config) -> (list[ArchSuggestion], int)`**
 walks every python file under `root` belonging to a declared layer
 (`frob.excludes.iter_files`/`is_excluded`, same exclusion posture every
 other project-wide walk in this codebase uses), resolves its imports via
@@ -791,10 +812,19 @@ other project-wide walk in this codebase uses), resolves its imports via
 `frob.app.cycle_runner._build_graph` already calls for cycle detection,
 reused rather than re-derived -- plus `_resolve_reexports`, and flags
 every resolved edge landing in a declared layer not present in the
-source layer's `allow` list. Per-file scan errors (T-1022) are caught at
-each file rather than aborting the whole walk: an unresolvable path is
-logged at debug level and skipped, so one bad file cannot hide layering
-findings in every other file under `root`.
+source layer's `allow` list. It ALSO returns the total number of
+declared-layer-to-declared-layer edges it resolved and compared (allowed
+edges included, not only violations) -- T-4663's silent-zero guard: a
+caller can tell "scanned N edges, zero violations" apart from "the scan
+never ran". Every checked edge logs at DEBUG (both endpoints, allowed or
+not); a violation additionally logs at ERROR. Per-file scan errors
+(T-1022) are caught at each file rather than aborting the whole walk: an
+unresolvable path is logged at debug level and skipped, so one bad file
+cannot hide layering findings in every other file under `root`.
+`check_layering_violations(root, config) -> list[ArchSuggestion]` is a
+back-compat wrapper returning just the violations half, for callers (the
+advisory `frob arch` output, pre-T-4663 tests) that do not need the
+edges-checked count.
 
 ### No-DI construction smell: `no-di-construction` (T-0620)
 

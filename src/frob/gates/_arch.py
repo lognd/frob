@@ -55,6 +55,24 @@ at filing time (see `frob.arch.__init__`'s `_check_large_file` docstring
 and this ticket's Refile note in `tickets.md` for the disclosed count),
 same debt-corpus posture as ARCH101-103 and EXHAUST001/002 above, not the
 CPPTHROW001 zero-findings case just above it.
+
+T-4663 wires one more pre-existing-but-INERT category: `dip-layering-
+violation` (ARCH104, `frob.arch._layering.check_layering_edges`, T-0620's
+`[arch.layering]` schema and checker). T-0620 shipped the schema and the
+checker real, but nothing called `check_layering_violations` from `frob
+check` -- a planted upward-import violation was reported by NOTHING, a
+silent zero. Unlike every WARN-first category above, ARCH104 ships
+directly at `Severity.ERROR`: a layering contract that only warns is not
+a boundary, and the whole point of this leaf (T-4656 LAYERING, epic
+T-4651 "kernel decoupling") is to make the declared kernel contract
+(ledger < leases < land < app, gates independent) an actual RED gate, not
+an advisory suggestion a team can ignore indefinitely. `arch_gate` calls
+`check_layering_edges` directly (NOT threaded through `analyze_project`,
+since the layering scan needs the whole-project import graph rather than
+one file's `NormalizedModule` shape -- see `_layering.py`'s own module
+docstring) and logs the edges-checked count at INFO on every run: T-4663's
+silent-zero guard, so "frob check passed" can never mean "the layering
+job never ran" as opposed to "the layering job found nothing to flag."
 """
 
 from __future__ import annotations
@@ -86,6 +104,11 @@ _ARCH_CATEGORY_TO_RULE = {
     # T-2375 epic's split/waive children were all terminal at zero
     # unwaived findings -- see _ERROR_SEVERITY_CATEGORIES above.
     "large-file": "LARGE001",
+    # T-4663: dip-layering-violation (frob.arch._layering.check_layering_
+    # edges, T-0620's schema/checker) -- see this module's own docstring
+    # addendum below for why this wires as RED, not the WARN every prior
+    # category defaults to.
+    "dip-layering-violation": "ARCH104",
 }
 
 #: Categories (T-1034) whose `Violation` uses `Severity.ERROR` instead of
@@ -98,7 +121,9 @@ _ARCH_CATEGORY_TO_RULE = {
 #: land its `frob:waive LARGE001` alongside the new file in the same
 #: change, not after.
 # see T-1034 for the history behind this
-_ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws", "large-file"})
+_ERROR_SEVERITY_CATEGORIES = frozenset(
+    {"cpp-noexcept-throws", "large-file", "dip-layering-violation"}
+)
 
 
 # frob:doc docs/modules/gates.md#rule-catalog
@@ -110,6 +135,12 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws", "large-file"})
 # frob:enforces CHK-GATE-ARCH103
 # T-1102: large-file channels through this same category-to-rule map.
 # frob:enforces CHK-GATE-LARGE001
+# T-4663: dip-layering-violation channels through this same category-to-
+# rule map (ARCH104).
+# frob:enforces CHK-GATE-ARCH104
+# frob:tests tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
+# frob:tests tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
+# frob:tests tests/unit/test_layering_gate.py::test_no_declared_layering_config_is_not_a_violation  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_two_cluster_class_fires_arch101  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_cohesive_class_does_not_fire_arch101  # noqa: E501
 # frob:tests \
@@ -152,11 +183,62 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
     used to silently ignore the user's disclosed 60/800 calibration. T-0728
     extends the same threading to its own five ARCH1xx knobs."""
     from frob.arch import analyze_project
+    from frob.arch._layering import check_layering_edges, load_layering_config
+    from frob.gates._ratchet import load_ratchet_lock, ratchet_enabled_rules
     from frob.repo_meta import load_arch_config
 
     result = analyze_project(root, **load_arch_config(root))
+    suggestions = list(result.suggestions)
+
+    # T-4663: check_layering_edges is a whole-project import-graph scan,
+    # not one `analyze_project`-walked file's `NormalizedModule` shape --
+    # called directly rather than threaded through `analyze_project`. A
+    # missing/malformed `[arch.layering]` table means "nothing declared"
+    # (`load_layering_config`'s own docstring), same fail-quiet posture
+    # every other per-section frob.toml reader here uses.
+    layering_config = load_layering_config(root)
+    if layering_config is not None:
+        layering_violations, edges_checked = check_layering_edges(root, layering_config)
+        suggestions.extend(layering_violations)
+        _log.info(
+            "arch_gate: layering scan checked %d edge(s), %d violation(s)",
+            edges_checked,
+            len(layering_violations),
+        )
+
+    # T-4663: ARCH104 (dip-layering-violation) opts into `[gates.ratchet]`
+    # so this leaf's own measured pre-existing violations (dev's real
+    # gates<->tickets coupling, disclosed in this ticket's Done report)
+    # baseline at WARN instead of instantly redding every `frob check`
+    # run on landing -- `resolve_ratchet_severity`'s own docstring: a
+    # rule opts in via `ratchet_enabled_rules`, and only a genuinely NEW
+    # (non-baselined) finding of that rule resolves to ERROR.
+    ratchet_rules = ratchet_enabled_rules(root)
+    ratchet_lock = load_ratchet_lock(root) if ratchet_rules else None
+
+    violations = _arch_violations_from_suggestions(
+        suggestions, ratchet_rules, ratchet_lock
+    )
+    _log.info("arch_gate: %d arch-family violation(s)", len(violations))
+    return tuple(violations)
+
+
+# frob:ticket T-4663
+def _arch_violations_from_suggestions(
+    suggestions: list,  # noqa: ANN001
+    ratchet_rules,  # noqa: ANN001
+    ratchet_lock,  # noqa: ANN001
+) -> list[Violation]:
+    """`arch_gate`'s suggestion-to-`Violation` translation loop, split out
+    under ARCH001: for each `ArchSuggestion` in `suggestions`, resolve its
+    rule id (`_ARCH_CATEGORY_TO_RULE`, skipping any category with no
+    mapped rule), its base severity (`_ERROR_SEVERITY_CATEGORIES`), and --
+    when `ratchet_lock` is not `None` and the rule opted into
+    `[gates.ratchet]` -- its ratchet-resolved severity
+    (`resolve_ratchet_severity`), exactly as `arch_gate` computed inline
+    before extraction."""
     violations: list[Violation] = []
-    for s in result.suggestions:
+    for s in suggestions:
         rule = _ARCH_CATEGORY_TO_RULE.get(s.category)
         if rule is None:
             continue
@@ -165,6 +247,13 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
             if s.category in _ERROR_SEVERITY_CATEGORIES
             else Severity.WARN
         )
+        if ratchet_lock is not None and rule in ratchet_rules:
+            from frob.gates._ratchet import resolve_ratchet_severity
+
+            finding_key = f"{s.file}::{s.symref}"
+            severity = Severity(
+                resolve_ratchet_severity(rule, finding_key, ratchet_lock)
+            )
         violations.append(
             Violation(
                 rule=rule,
@@ -176,8 +265,7 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
                 metric=s.metric,
             )
         )
-    _log.info("arch_gate: %d arch-family violation(s)", len(violations))
-    return tuple(violations)
+    return violations
 
 
 # frob:doc docs/modules/gates.md#data-models

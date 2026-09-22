@@ -212,6 +212,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-3014
 # frob:ticket T-2688
 # frob:ticket T-4212
+# frob:ticket T-4663
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -755,6 +756,12 @@ _KNOWN_GATE_RULES = frozenset(
         # per that module's own docstring convention (T-1111 REG002 fix,
         # same CHK-GATE-CPPTHROW001 auto-sync gap class noted at T-1042).
         "LARGE001",
+        # T-4663: ARCH104 (dip-layering-violation, frob.arch._layering.
+        # check_layering_edges, T-0620's [arch.layering] schema/checker),
+        # channeled into a real gate Violation by the same
+        # frob.gates._arch.arch_gate as ARCH001/ARCH1xx/CPPTHROW001/
+        # LARGE001 -- same dict-value-rule-id hand-add posture as those.
+        "ARCH104",
         # T-0396: anti-orphan file-reference gate (frob.gates._refs).
         "REF001",
         "REF002",

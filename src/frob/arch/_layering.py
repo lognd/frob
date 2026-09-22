@@ -165,52 +165,102 @@ def _has_dynamic_import(path: Path) -> bool:
 # frob:tests tests/unit/arch_suite/test_type_design.py::TestLayeringViolations.test_disallowed_cross_layer_edge_flagged  # noqa: E501
 # frob:tests tests/unit/arch_suite/test_type_design.py::TestLayeringViolations.test_allowed_cross_layer_edge_not_flagged  # noqa: E501
 # frob:tests tests/unit/arch_suite/test_type_design.py::TestLayeringViolations.test_dynamic_import_in_layered_file_flagged  # noqa: E501
-def check_layering_violations(
+# frob:tests tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
+# frob:ticket T-4663
+def check_layering_edges(
     root: Path, config: LayeringConfig
-) -> list[ArchSuggestion]:
-    """ARCHxxx (T-0620): walk every python file under `root` that belongs
-    to a `config`-declared layer (`LayeringConfig.layer_for`), resolve its
-    imports (`frob.lang.extract_imports`/`resolve_local_import`, the same
-    pair `frob.app.cycle_runner` already uses for cycle detection --
-    RESOLVED against the filesystem, not left as raw specifier text), and
-    flag every edge whose target ALSO belongs to a declared layer that is
-    not in the source layer's `config.allow` list (and is not the same
-    layer). Re-export edges (`_resolve_reexports`) are checked the same
-    way. A layered file containing dynamic-import indirection
+) -> tuple[list[ArchSuggestion], int]:
+    """ARCH10x (T-4663, wiring T-0620's inert checker into `frob check`):
+    walk every python file under `root` that belongs to a `config`-declared
+    layer (`LayeringConfig.layer_for`), resolve its imports
+    (`frob.lang.extract_imports`/`resolve_local_import`, the same pair
+    `frob.app.cycle_runner` already uses for cycle detection -- RESOLVED
+    against the filesystem, not left as raw specifier text), and flag every
+    edge whose target ALSO belongs to a declared layer that is not in the
+    source layer's `config.allow` list (and is not the same layer).
+    Re-export edges (`_resolve_reexports`) are checked the same way. A
+    layered file containing dynamic-import indirection
     (`_has_dynamic_import`) is flagged on its own -- this scan cannot
     prove its real dependency set, so it fails closed instead of silently
     passing. Written directly against the filesystem (not `NormalizedModule`
     -- this check needs the WHOLE project's import graph, not one file's
-    shape)."""
-    from frob.excludes import (
-        is_excluded,
-        is_skipped_dir,
-        iter_files,
-        load_exclude_globs,
-    )
+    shape).
+
+    Returns `(violations, edges_checked)`: `edges_checked` is the total
+    count of declared-layer-to-declared-layer edges this scan actually
+    resolved and compared against `config.allow` (allowed edges included,
+    not only violations) -- T-4663's silent-zero guard. `frob.gates._arch.
+    arch_gate` logs and, via `check_layering_violations`'s callers, a
+    caller can distinguish "scanned N edges, zero violations" from "the
+    scan never ran" (T-0620 shipped this checker real but never invoked;
+    a planted violation used to be reported by nothing)."""
+    from frob.excludes import iter_files, load_exclude_globs
 
     exclude_globs = load_exclude_globs(root)
     out: list[ArchSuggestion] = []
+    edges_checked = 0
 
     for path in iter_files(root, suffix=".py"):
-        try:
-            rel_path = path.relative_to(root)
-        except ValueError:
-            continue
-        try:
-            if any(is_skipped_dir(part) for part in rel_path.parts):
-                continue
-            rel = rel_path.as_posix()
-            if exclude_globs and is_excluded(rel, exclude_globs):
-                continue
-            source_layer = config.layer_for(rel)
-            if source_layer is None:
-                continue
-            _layering_violations_for_file(path, rel, root, source_layer, config, out)
-        except Exception as exc:  # noqa: BLE001 -- one bad file must not abort the scan
-            _log.debug("check_layering_violations: %s failed: %s", rel_path, exc)
-            continue
-    return out
+        edges_checked += _check_layering_edges_for_path(
+            path, root, config, exclude_globs, out
+        )
+    _log.debug(
+        "check_layering_edges: %d edge(s) checked, %d violation(s)",
+        edges_checked,
+        len(out),
+    )
+    return out, edges_checked
+
+
+# frob:ticket T-4663
+def _check_layering_edges_for_path(
+    path: Path,
+    root: Path,
+    config: LayeringConfig,
+    exclude_globs: tuple[str, ...],
+    out: list[ArchSuggestion],
+) -> int:
+    """One `path`'s worth of `check_layering_edges` (T-4663, split under
+    ARCH001): resolve `path` to a `config`-declared layer (skipping
+    excluded/skipped-dir files and anything outside a declared layer,
+    exactly as the loop body did before extraction) and, if it belongs to
+    one, delegate to `_layering_violations_for_file`, appending any
+    violation to `out` in place and returning the edge count it checked.
+    Returns 0 for every skip/exclude/exception path -- a single bad file
+    must not abort the whole scan, the same fail-soft posture the
+    un-split loop had."""
+    from frob.excludes import is_excluded, is_skipped_dir
+
+    try:
+        rel_path = path.relative_to(root)
+    except ValueError:
+        return 0
+    try:
+        if any(is_skipped_dir(part) for part in rel_path.parts):
+            return 0
+        rel = rel_path.as_posix()
+        if exclude_globs and is_excluded(rel, exclude_globs):
+            return 0
+        source_layer = config.layer_for(rel)
+        if source_layer is None:
+            return 0
+        return _layering_violations_for_file(path, rel, root, source_layer, config, out)
+    except Exception as exc:  # noqa: BLE001 -- one bad file must not abort the scan
+        _log.debug("check_layering_edges: %s failed: %s", rel_path, exc)
+        return 0
+
+
+# frob:doc docs/modules/arch.md#dip-layering-contract
+# frob:tests tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
+def check_layering_violations(
+    root: Path, config: LayeringConfig
+) -> list[ArchSuggestion]:
+    """Back-compat entry point (T-0620): the violations half of
+    `check_layering_edges`, for callers (existing tests, `frob arch`
+    advisory output) that only need the finding list, not the
+    edges-checked count."""
+    violations, _edges_checked = check_layering_edges(root, config)
+    return violations
 
 
 # frob:ticket T-0976
@@ -265,11 +315,16 @@ def _layering_violations_for_file(
     source_layer: str,
     config: LayeringConfig,
     out: list[ArchSuggestion],
-) -> None:
-    """One layered file's contribution to `check_layering_violations`:
-    the dynamic-import fail-closed flag, then every resolved cross-layer
-    import edge not present in `config.allow[source_layer]`; appends
-    findings onto `out` in place."""
+) -> int:
+    """One layered file's contribution to `check_layering_edges`: the
+    dynamic-import fail-closed flag, then every resolved import edge
+    landing in ANOTHER declared layer -- logged at DEBUG whether allowed
+    or not, and appended to `out` as an `ArchSuggestion` (ERROR severity,
+    T-4663) plus logged at ERROR when it is not present in `config.
+    allow[source_layer]`. Returns the number of declared-layer-to-
+    declared-layer edges this file contributed (T-4663's edges-checked
+    count, the silent-zero guard) -- the dynamic-import flag does not
+    count as an edge, since it never resolved one."""
     from frob.lang import extract_imports
 
     if _has_dynamic_import(path):
@@ -277,21 +332,39 @@ def _layering_violations_for_file(
 
     result = extract_imports(path)
     if result.is_err:
-        return
+        return 0
     targets = _resolve_import_targets(result.danger_ok, path, root)
 
+    edges_checked = 0
     for target in sorted(targets):
         target_layer = config.layer_for(target)
         if target_layer is None or target_layer == source_layer:
             continue
-        if target_layer in config.allow.get(source_layer, []):
+        edges_checked += 1
+        allowed = target_layer in config.allow.get(source_layer, [])
+        _log.debug(
+            "layering edge checked: %s (%s) -> %s (%s) allowed=%s",
+            rel,
+            source_layer,
+            target,
+            target_layer,
+            allowed,
+        )
+        if allowed:
             continue
+        _log.error(
+            "layering violation: %s (%s) -> %s (%s) not a declared allowed edge",
+            rel,
+            source_layer,
+            target,
+            target_layer,
+        )
         out.append(
             ArchSuggestion(
                 file=rel,
                 line=None,
                 category="dip-layering-violation",
-                severity="warning",
+                severity="error",
                 message=(
                     f"`{rel}` (layer `{source_layer}`) imports `{target}`"
                     f" (layer `{target_layer}`) -- not a declared allowed"
@@ -303,9 +376,15 @@ def _layering_violations_for_file(
                     " intentional, or remove the import and depend on an"
                     " abstraction instead"
                 ),
-                symref=rel,
+                # T-4663: `{rel}->{target}` (one edge), not bare `rel` (one
+                # file) -- a ratchet-pool key (`frob.gates._ratchet`) needs
+                # per-EDGE granularity so baselining one existing violation
+                # never silently swallows a second, different edge added
+                # later from the same file.
+                symref=f"{rel}->{target}",
             )
         )
+    return edges_checked
 
 
 # ---------------------------------------------------------------------------
