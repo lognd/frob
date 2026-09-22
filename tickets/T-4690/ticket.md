@@ -55,6 +55,7 @@ scope:
 - src/frob/tickets/_land_squash.py
 - src/frob/verify/_quarantine.py
 - src/frob/app/ticket_runner/_verify.py
+- docs/modules/clean.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -231,6 +232,22 @@ scope_changes:
     drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
     these functions are T-4690''s own edits) -- coordinator directive: fix each finding
     at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/modules/clean.md
+  reason: 'root-cause fix for the DOC002 anchor mismatch: the heading''s inline HTML
+    waive-comment is being slugified into the anchor text, producing an unresolvable
+    anchor -- moving the frob:waive DOC006 onto its own line below the heading is
+    the real fix, not a citation-side workaround'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: docs/modules/clean.md
+  reason: 'root-cause fix for the DOC002 anchor mismatch: the heading''s inline HTML
+    waive-comment is being slugified into the anchor text, producing an unresolvable
+    anchor -- moving the frob:waive DOC006 onto its own line below the heading is
+    the real fix, not a citation-side workaround'
   actor: logan
   at: '2026-09-21'
 triage_changes:
