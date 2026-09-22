@@ -2,7 +2,7 @@
 id: T-5287
 title: T-5132 points-required-on-start broke ~40 pre-existing tests across 7 files
   (test fixtures never updated)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -44,6 +44,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5287
+branch: t-5287
 ---
 CI run 35717833933 on dev tip 197238c35e: a second major (after the shim
 INFO-log bug) failure cluster comes from T-5132's own "points required
