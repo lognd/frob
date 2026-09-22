@@ -19,6 +19,7 @@ scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates_fix_engine.py
 - tests/gates_suite/test_fix_engine.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,12 @@ scope_changes:
   glob: tests/gates_suite/test_fix_engine.py
   reason: existing exhaustive TIER_A_HANDLERS-set pin test needs TEST010 added, since
     this ticket registers a new handler
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/modules/gates.md
+  reason: Tier-A handler doc section for the new TEST010 redundant-test-declaration
+    fix
   actor: logan
   at: '2026-09-22'
 designated_repro_test: null
