@@ -11,6 +11,12 @@ tier: ticket
 sprint: v0.534.0
 runs_last: false
 milestone: null
+points: 3
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -44,6 +50,12 @@ triage_changes:
     test-hygiene tree; T-4420 needs T-2994's descendants closed
   actor: logan
   at: '2026-09-21'
+- field: points
+  old_value: null
+  new_value: '3'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-22'
 designated_repro_test: null
 acceptance:
 - text: DOCARCH001 count for tests/ticket_land_suite's 12 scoped files is 0
