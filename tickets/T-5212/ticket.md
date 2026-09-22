@@ -1,7 +1,7 @@
 ---
 id: T-5212
 title: Wire _rapid_caller_dependents to public_caller_dependent_files
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-21'
@@ -27,6 +27,9 @@ scope_changes:
     to end; test file was not in the original ticket scope
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/unit/test_check_scoped_files.py::TestRapidCheckScopeFilesCallerDependents::test_public_symbol_caller_is_included
+- tests/unit/test_check_scoped_files.py::TestRapidCheckScopeFilesCallerDependents::test_three_callers_of_a_changed_function_are_included
 designated_repro_test: null
 threat: null
 component: null

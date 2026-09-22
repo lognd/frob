@@ -599,6 +599,28 @@ class TestRapidCheckScopeFilesCallerDependents:
             assert f"caller{i}.py" in result, f"caller{i}.py not scoped in: {result}"
         assert "unrelated.py" not in result
 
+    def test_public_symbol_caller_is_included(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_rapid_caller_dependents \
+        # kind="unit"
+        # T-5212: a caller of a changed PUBLIC (non-underscore) symbol is
+        # invisible to `caller_dependent_files`'s private-only graph --
+        # only wiring `public_caller_dependent_files` (T-4560) in finds
+        # it. Positive control: `target.py::changed` (no leading
+        # underscore) is called by `caller.py` only through the public
+        # name.
+        from frob.app.ticket_runner._land_cmd import _rapid_check_scope_files
+
+        (tmp_path / "target.py").write_text("def changed():\n    return 1\n")
+        (tmp_path / "caller.py").write_text(
+            "from target import changed\n\n\ndef use():\n    return changed()\n"
+        )
+        (tmp_path / "unrelated.py").write_text("def other():\n    return 2\n")
+
+        result = _rapid_check_scope_files(tmp_path, "T-5212", frozenset({"target.py"}))
+        assert result is not None
+        assert "caller.py" in result, f"caller.py not scoped in: {result}"
+        assert "unrelated.py" not in result
+
     def test_falls_back_and_logs_info_when_callgraph_unavailable(
         self, tmp_path: Path, monkeypatch, caplog
     ) -> None:

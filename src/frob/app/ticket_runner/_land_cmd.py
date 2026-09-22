@@ -515,6 +515,7 @@ def _rapid_check_scope_files(
 
 
 # frob:ticket T-4553
+# frob:ticket T-5212
 def _rapid_caller_dependents(
     worktree: Path,
     ticket_id: str,
@@ -530,6 +531,17 @@ def _rapid_caller_dependents(
     `_rapid_check_scope_files` to keep that function under ARCH001's line
     threshold.
 
+    T-5212: also calls `frob.graph.affects.public_caller_dependent_files`
+    (T-4560) -- `caller_dependent_files`'s own `CallGraph` only records
+    PRIVATE callees (T-0841), so a caller of a changed PUBLIC symbol was
+    invisible to this scope even after T-4553. `public_caller_dependent_
+    files` builds a second, opt-in `include_public_callees=True` graph
+    and resolves the same one-hop caller walk over it; its result is
+    unioned into `scoped` alongside the private-callee walk's, with
+    `already` (passed as `already_covered` to BOTH calls, not just the
+    first) preventing either walk from re-adding a file the other, or the
+    uses-contract walk before it, already covered.
+
     Falls back to adding nothing (INFO-logged, per this ticket's own
     acceptance criterion) when the call graph itself cannot be built --
     a parse failure, a missing dependency, or any other environmental
@@ -537,7 +549,10 @@ def _rapid_caller_dependents(
     as an error; it degrades to the `uses-contract`-only scope instead."""
     already = frozenset(scoped)
     try:
-        from frob.graph.affects import caller_dependent_files
+        from frob.graph.affects import (
+            caller_dependent_files,
+            public_caller_dependent_files,
+        )
         from frob.graph.callgraph import build_call_graph
 
         all_paths = sorted({ref.split("::", 1)[0] for ref in snapshot.symbols})
@@ -561,7 +576,28 @@ def _rapid_caller_dependents(
             ticket_id,
         )
     scoped |= caller_files
-    return len(caller_files)
+
+    try:
+        public_caller_files, public_truncated = public_caller_dependent_files(
+            worktree, all_paths, changed, already | caller_files
+        )
+    except Exception as exc:  # noqa: BLE001 -- degrade, never raise (see above)
+        _log.info(
+            "ticket land: %s rapid --files public-caller-dependent scoping "
+            "unavailable (%s) -- falling back to the private-callee scope "
+            "only",
+            ticket_id,
+            exc,
+        )
+        return len(caller_files)
+    if public_truncated:
+        _log.warning(
+            "ticket land: %s rapid --files public-caller-dependent files "
+            "capped at 200 -- some public-caller-dependents were dropped",
+            ticket_id,
+        )
+    scoped |= public_caller_files
+    return len(caller_files) + len(public_caller_files)
 
 
 # frob:ticket T-1175
