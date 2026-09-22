@@ -259,6 +259,7 @@ def scan_comment_length(
 
 
 # frob:doc docs/modules/gates.md#docarch002
+# frob:ticket T-5217
 # frob:tests tests/gates/test_docarch_structural.py::TestScanCitationShape.test_directive_and_pointer_are_quiet  # noqa: E501
 # frob:tests tests/gates/test_docarch_structural.py::TestScanCitationShape.test_bare_citation_with_prose_is_flagged  # noqa: E501
 def scan_citation_shape(path: Path, text: str) -> tuple[Violation, ...]:
@@ -298,6 +299,17 @@ def scan_citation_shape(path: Path, text: str) -> tuple[Violation, ...]:
                             "pointer; move the prose with `frob narrative "
                             "move`"
                         ),
+                        # T-5217: a citation-shape violation is a comment
+                        # RUN, not necessarily attached to one function or
+                        # class the way the docstring-length check above
+                        # is -- unlike that check's own `name`-derived
+                        # symref, there is no reliable single enclosing
+                        # symbol to bind to here. File-level self-
+                        # reference (LEXCHECK001's own literal-presence
+                        # check, not a meaningfulness check) so this
+                        # Violation still carries a real symref instead
+                        # of silently omitting the keyword.
+                        symref=path.as_posix(),
                     )
                 )
             i = j
