@@ -61,6 +61,12 @@ triage_changes:
   reason: smoke test T-4696 set verb
   actor: logan
   at: '2026-09-22'
+- field: priority
+  old_value: high
+  new_value: high
+  reason: smoke test T-4696 set verb round-trip
+  actor: logan
+  at: '2026-09-22'
 body_changes:
 - mode: set
   reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
