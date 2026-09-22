@@ -115,6 +115,37 @@ class TestAutoSyncWorktreeOntoMain:
         assert (wt / "src" / "other.py").read_text() == "# unrelated, already landed\n"
         assert _rev_parse(wt) != pre_sync_own_tip  # a merge commit was made
 
+    # frob:ticket T-4599
+    def test_logs_a_phase_marker_before_starting_the_merge(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_logs_a_phase_marker_before_starting_the_merge  # noqa: E501
+        """T-4599: the actual `git merge` call inside
+        `_auto_sync_worktree_onto_main` used to be invisible in a land
+        log's `[+Ns]`-prefixed phase-transition lines -- only its OWN
+        eventual completion (`_attempt_auto_sync_merge`'s success line)
+        ever carried a marker, never its start, so a slow merge could not
+        be distinguished from a slow step before it. A "ticket land: ...
+        starting auto-sync merge" line must now precede the completion
+        line."""
+        import logging
+
+        repo, wt = self._seed(tmp_path)
+        (wt / "src" / "own.py").write_text("# this branch's own work\n")
+        _commit_all(wt, "own work")
+        (repo / "src" / "other.py").write_text("# unrelated, already landed\n")
+        _commit_all(repo, "unrelated main-side land")
+
+        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+            _auto_sync_worktree_onto_main(repo, wt, "T-4599")
+
+        messages = [r.getMessage() for r in caplog.records]
+        starting = [m for m in messages if "starting auto-sync merge" in m]
+        completed = [m for m in messages if "auto-synced" in m]
+        assert len(starting) == 1
+        assert len(completed) == 1
+        assert messages.index(starting[0]) < messages.index(completed[0])
+
     def test_squash_then_rebase_conflicts_but_merge_does_not(
         self, tmp_path: Path
     ) -> None:

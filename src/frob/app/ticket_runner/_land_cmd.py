@@ -3195,6 +3195,8 @@ def _reap_or_sync_worktree(root: Path, worktree: Path, ticket_id: str) -> None:
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_merges_the_worktree_onto_the_new_main_tip  # noqa: E501
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land  # noqa: E501
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_dirty_worktree_is_skipped_rather_than_merged_into  # noqa: E501
+# frob:ticket T-4599
+# frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_logs_a_phase_marker_before_starting_the_merge  # noqa: E501
 def _auto_sync_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) -> None:
     """T-1720/T-2173: `git merge <main>` `worktree`'s own branch onto the
     main tip THIS land just produced, best-effort -- closes the repeated,
@@ -3297,6 +3299,19 @@ def _auto_sync_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) ->
     main_branch = _auto_sync_resolve_main_branch(root, ticket_id)
     if main_branch is None:
         return
+    # frob:ticket T-4599
+    # T-4599: the LAST phase-transition line before this function's own
+    # eventual "ticket land: %s auto-synced ... onto %s" success line
+    # (below, in `_attempt_auto_sync_merge`) -- without this, the actual
+    # `git merge` call (the real remaining cost once every finish-tail
+    # bookkeeping above has run) is invisible: only the merge's own
+    # completion was ever timestamped, never its start.
+    _log.info(
+        "ticket land: %s starting auto-sync merge of %s onto %s",
+        ticket_id,
+        branch,
+        main_branch,
+    )
     _attempt_auto_sync_merge(worktree, ticket_id, branch, main_branch)
 
 
@@ -7024,6 +7039,9 @@ def _land_core_invoke(
 
 
 # frob:ticket T-1593
+# frob:ticket T-4599
+# frob:tests tests/unit/test_land_cmd_drain_wiring.py::TestPostLandSweepDispatchPhaseMarker.test_entry_marker_logged_unconditionally  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_drain_wiring.py::TestPostLandSweepDispatchPhaseMarker.test_entry_marker_logged_even_on_dry_run  # noqa: E501
 def _land_core_finish_post_land(
     root: Path,
     cfg: AppConfig,
@@ -7044,6 +7062,26 @@ def _land_core_finish_post_land(
     from frob.tickets._models import LandError
 
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
+
+    # frob:ticket T-4599
+    # T-4599: this function's entry is the FIRST phase-transition line
+    # after the land commit itself becomes durable (`report.commit_sha`
+    # is already on `root` by the time this runs, per the T-1523
+    # docstring paragraph below) -- everything before this point in a
+    # `rapid` land was already covered by earlier "ticket land: ..."
+    # phase lines, but the commit-assembly/squash-apply work between the
+    # LAST of those and this one had no phase marker at all (the T-3233
+    # incident this ticket measured: a 110.9s block with zero phase
+    # lines, [+30.7s] to the NEXT marker at [+141.6s]). Logged
+    # unconditionally (dry-run included) so the marker's own timing is
+    # never itself gated on the branch it precedes.
+    _log.info(
+        "ticket land: %s land commit durable -- entering post-land sweep "
+        "dispatch (rapid=%s, dry_run=%s)",
+        cfg.ticket_id,
+        rapid_land,
+        report.dry_run,
+    )
 
     # T-1684: under rapid the sweep is the ONLY thing left between a
     # durable land commit and the developer's prompt, and it is a
@@ -7070,6 +7108,12 @@ def _land_core_finish_post_land(
             from frob.verify._drain import spawn_deferred_drain
 
             spawn_deferred_drain(root, cfg.ticket_id)
+            # frob:ticket T-4599
+            _log.info(
+                "ticket land: %s deferred post-land sweep + drain "
+                "dispatched -- returning to the caller's own finish tail",
+                cfg.ticket_id,
+            )
         return Ok(report)
 
     if not report.dry_run and pre_land_sha is not None:

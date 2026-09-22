@@ -36,6 +36,68 @@ def _make_report(
     )
 
 
+# frob:ticket T-4599
+class TestPostLandSweepDispatchPhaseMarker:
+    """T-4599: `_land_core_finish_post_land`'s entry now logs a "ticket
+    land: ... land commit durable -- entering post-land sweep dispatch"
+    phase-transition line -- the FIRST marker after everything preceding
+    it in a real land, closing a measured 110.9s gap (T-3233's own log,
+    [+30.7s] to the next marker at [+141.6s]) with zero phase-transition
+    lines at all."""
+
+    # frob:ticket T-4599
+    def test_entry_marker_logged_unconditionally(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        # frob:tests tests/unit/test_land_cmd_drain_wiring.py::TestPostLandSweepDispatchPhaseMarker.test_entry_marker_logged_unconditionally  # noqa: E501
+        import logging
+
+        monkeypatch.setattr(
+            rapid_sweep_mod, "spawn_deferred_post_land_sweep", lambda *a, **k: None
+        )
+        monkeypatch.setattr(drain_mod, "spawn_deferred_drain", lambda *a, **k: None)
+        cfg = AppConfig(ticket_id="T-9000")
+        report = _make_report()
+
+        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+            result = _land_core_finish_post_land(
+                tmp_path, cfg, report, None, None, rapid_land=True
+            )
+
+        assert result.is_ok
+        messages = [r.getMessage() for r in caplog.records]
+        entry = [m for m in messages if "entering post-land sweep dispatch" in m]
+        dispatched = [m for m in messages if "sweep + drain dispatched" in m]
+        assert len(entry) == 1
+        assert len(dispatched) == 1
+        assert messages.index(entry[0]) < messages.index(dispatched[0])
+
+    # frob:ticket T-4599
+    def test_entry_marker_logged_even_on_dry_run(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        # frob:tests tests/unit/test_land_cmd_drain_wiring.py::TestPostLandSweepDispatchPhaseMarker.test_entry_marker_logged_even_on_dry_run  # noqa: E501
+        """The marker itself must never be gated on the branch it
+        precedes -- a dry run still reaches this function's entry."""
+        import logging
+
+        monkeypatch.setattr(
+            rapid_sweep_mod, "spawn_deferred_post_land_sweep", lambda *a, **k: None
+        )
+        monkeypatch.setattr(drain_mod, "spawn_deferred_drain", lambda *a, **k: None)
+        cfg = AppConfig(ticket_id="T-9000")
+        report = _make_report(dry_run=True)
+
+        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+            result = _land_core_finish_post_land(
+                tmp_path, cfg, report, None, None, rapid_land=True
+            )
+
+        assert result.is_ok
+        messages = [r.getMessage() for r in caplog.records]
+        assert any("entering post-land sweep dispatch" in m for m in messages)
+
+
 class TestRapidLandDrainWiring:
     """T-2317: the rapid-land branch of `_land_core_finish_post_land`
     fires `spawn_deferred_drain` immediately after `spawn_deferred_post_
