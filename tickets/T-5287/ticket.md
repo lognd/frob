@@ -27,10 +27,43 @@ scope:
 - tests/test_ticket_runner_archive_force.py
 - tests/test_tickets_lease.py
 - tests/test_tickets_no_scope.py
+- src/frob/app/_config_external.py
+- src/frob/app/ticket_runner/_lifecycle.py
+- src/frob/_cli_parsers/_ticket/_progress.py
+- pyproject.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: opt-in points-required gate needs the pyproject [tool.frob] loader allowlist
+    entry, --require-points CLI flag, the _refuse_unsized_on_start guard itself, and
+    this repo's own pyproject.toml opt-in
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: opt-in points-required gate needs the pyproject [tool.frob] loader allowlist
+    entry, --require-points CLI flag, the _refuse_unsized_on_start guard itself, and
+    this repo's own pyproject.toml opt-in
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: opt-in points-required gate needs the pyproject [tool.frob] loader allowlist
+    entry, --require-points CLI flag, the _refuse_unsized_on_start guard itself, and
+    this repo's own pyproject.toml opt-in
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: pyproject.toml
+  reason: opt-in points-required gate needs the pyproject [tool.frob] loader allowlist
+    entry, --require-points CLI flag, the _refuse_unsized_on_start guard itself, and
+    this repo's own pyproject.toml opt-in
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: points
   old_value: null
