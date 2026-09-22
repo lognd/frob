@@ -75,6 +75,7 @@ scope:
 - docs/commands/vet.md
 - docs/commands/worktree.md
 - docs/index.md
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -389,6 +390,12 @@ scope_changes:
     link or DOC001 refuses them as orphaned
   actor: logan
   at: '2026-09-22'
+- op: add
+  glob: docs/modules/app.md
+  reason: frob:doc home for _command_pages.py's 4 new public symbols (frob.docs library
+    section)
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -415,6 +422,8 @@ evidence:
 - tests/unit/test_docs_commands_coverage.py::TestLiveSurfaceMatchesDocsCommands::test_every_doc_page_names_a_registered_verb
 - tests/unit/test_docs_commands_coverage.py::TestAssertionFiresInBothDirections::test_planted_verb_with_no_doc_is_caught
 - tests/unit/test_docs_commands_coverage.py::TestAssertionFiresInBothDirections::test_planted_doc_with_no_verb_is_caught
+- tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages::test_generate_command_page_renders_help_text_and_usage
+- tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages::test_sync_writes_only_missing_pages_and_never_overwrites
 designated_repro_test: null
 acceptance:
 - text: Given the live argparse tree, when the coverage test runs, then every top-level
@@ -422,6 +431,8 @@ acceptance:
   evidence:
   - tests/unit/test_docs_commands_coverage.py::TestLiveSurfaceMatchesDocsCommands::test_every_live_verb_has_a_doc_page
   - tests/unit/test_docs_commands_coverage.py::TestLiveSurfaceMatchesDocsCommands::test_every_doc_page_names_a_registered_verb
+  - tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages::test_generate_command_page_renders_help_text_and_usage
+  - tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages::test_sync_writes_only_missing_pages_and_never_overwrites
 - text: Given a planted verb with no doc and a planted doc with no verb, when the
     coverage test runs, then it fails on each -- the assertion is proven to fire in
     both directions
