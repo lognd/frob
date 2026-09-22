@@ -23,6 +23,7 @@ scope:
 - src/frob/app/ticket_runner/_lifecycle.py
 - tests/unit/test_ticket_set.py
 - src/frob/app/_config_external.py
+- src/frob/app/ticket_runner/_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
   reason: frob ticket set needs its two new string fields (ticket_set_field, ticket_set_value)
     added to the from_external field-copy allowlist, the same T-4690 gap found (doctor_whereis
     silently no-op'd without this)
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: every verb in _ticket_dispatch_table() must declare a LEDGER_VERB_STRATEGY
+    entry (T-2603) -- the new set verb needs one
   actor: logan
   at: '2026-09-22'
 triage_changes:
@@ -48,6 +55,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+- field: priority
+  old_value: high
+  new_value: high
+  reason: smoke test T-4696 set verb
+  actor: logan
+  at: '2026-09-22'
 body_changes:
 - mode: set
   reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
