@@ -49,6 +49,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+- field: points
+  old_value: '8'
+  new_value: '8'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-22'
 designated_repro_test: null
 acceptance:
 - text: given an agent session that started a ticket and landed it, when the land
