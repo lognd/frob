@@ -688,3 +688,82 @@ class TestDraftReferenceRewriteOnLand:
             "substitution must be scoped to this land's own old->new "
             "mapping, not a blanket T-draft- removal"
         )
+
+
+# frob:ticket T-5166
+class TestLandFromDotClaudeWorktreesPromotesOwnAndSiblingDrafts:
+    """T-5166 POSITIVE CONTROL: T-4658's `_refuse_renumber_inside_worktree`
+    guard refuses ANY renumber whose root resolves under `.claude/
+    worktrees/` -- but `frob ticket land` legitimately calls `renumber_one`
+    AGAINST such a worktree by design (`finalize_draft_for_land`, for both
+    the landing ticket's own draft id and any sibling draft still in that
+    worktree's ledger). Before the fix, a land whose worktree sits under
+    `.claude/worktrees/` (every real dispatched-agent worktree) died with
+    `WorktreeLeaseViolation` -- 'sibling draft ... finalize failed' or
+    'draft finalize failed after merge landed in the worktree only' --
+    exactly the failures logged in T-5121/T-4599/T-draft-707b4040's lands.
+    This land must succeed and promote BOTH drafts on the target branch."""
+
+    # frob:ticket T-5166
+    def test_own_and_sibling_draft_both_promoted_from_agent_worktree_path(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft_for_land kind="unit"  # noqa: E501
+        # An agent-shaped worktree path (`.claude/worktrees/<id>`) -- the
+        # exact path shape `_is_agent_worktree_path` matches and every
+        # real dispatched worktree actually has.
+        wt = repo.parent / ".claude" / "worktrees" / "t-9001"
+        wt.parent.mkdir(parents=True)
+        _run(["git", "worktree", "add", "-b", "feature-k", str(wt)], repo)
+
+        # The ticket actually being landed -- its own id is still a draft.
+        primary = new_ticket(
+            wt, _spec("Primary work in agent worktree", scope=("src/main4.py",))
+        )
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        assert primary_id.startswith("T-draft-")
+        _make_closeable(wt, primary_id)
+        (wt / "src" / "main4.py").write_text("# primary work\n")
+
+        # A standalone sibling draft, filed in the same worktree, unrelated
+        # to the ticket being landed.
+        sibling = new_ticket(
+            wt, _spec("Sibling found in agent worktree", scope=("src/sib2.py",))
+        )
+        assert sibling.is_ok
+        sibling_draft_id = sibling.danger_ok.id
+        assert sibling_draft_id.startswith("T-draft-")
+        assert sibling_draft_id != primary_id
+
+        _commit_all(
+            wt, "primary work plus a sibling draft, from an agent worktree path"
+        )
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert not report.final_id.startswith("T-draft-")
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        landed_map = landed.danger_ok
+
+        assert primary_id not in landed_map
+        assert report.final_id in landed_map
+
+        assert sibling_draft_id not in landed_map, (
+            "sibling draft id should have been finalized (promoted) by "
+            "land, not left as a draft id or dropped"
+        )
+        finalized_siblings = [
+            tid
+            for tid, t in landed_map.items()
+            if t.title == "Sibling found in agent worktree"
+        ]
+        assert finalized_siblings, (
+            "sibling draft filed in a .claude/worktrees/ path was dropped "
+            "or never promoted at land"
+        )
+        assert len(finalized_siblings) == 1
+        assert not finalized_siblings[0].startswith("T-draft-")

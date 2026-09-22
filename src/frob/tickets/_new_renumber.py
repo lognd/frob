@@ -1731,8 +1731,15 @@ def _log_renumber_dry_run(old_id: str, new_id: str, report: RenumberReport) -> N
 # describes (rename one ticket's id atomically) is unchanged; that file is a large \
 # repo-wide hub file, out of this ticket's declared scope \
 # (src/frob/tickets/_renumber_v2.py, src/frob/tickets/_new_renumber.py)"
+# frob:waive ARCH001 reason="T-5166's _land_internal param + one docstring paragraph \
+# pushed this just over threshold; see T-5166 for the rationale"
 def renumber_one(
-    root: Path, old_id: str, new_id: str, *, dry_run: bool = False
+    root: Path,
+    old_id: str,
+    new_id: str,
+    *,
+    dry_run: bool = False,
+    _land_internal: bool = False,
 ) -> Result[RenumberReport, TicketError]:
     """Atomically rewrite ONE ticket's id everywhere: its ledger section
     (active or archive, id + every blocked_by/parent reference across BOTH
@@ -1764,11 +1771,26 @@ def renumber_one(
     RENAME target it commits to is an id claim, same as `new_ticket`'s or
     `finalize_draft`'s), and T-1669 never wired it in. See `renumber_one_
     v2`'s own docstring for the v2-mode half of this fix; `_allocate_and_
-    write_new_ticket`'s docstring for the third leg (`new_ticket` itself)."""
+    write_new_ticket`'s docstring for the third leg (`new_ticket` itself).
+
+    T-5166: `_land_internal=True` (only ever passed by `frob.tickets.
+    _draft_finalize._finalize_draft_for_land_locked`) skips the T-4658
+    in-worktree refusal below. T-4658's guard was written to stop an AGENT
+    renumbering from inside a `.claude/worktrees/` checkout, but `frob
+    ticket land` legitimately runs `renumber_one` AGAINST a worktree by
+    design (the landing ticket's own draft id, and any sibling draft still
+    in that worktree's ledger, per `finalize_draft_for_land`'s docstring)
+    -- land is the root-orchestrated, ledger-only promotion path T-4652
+    carves out, not the in-worktree renumber T-4658 exists to refuse, so
+    treating land's own call the same as an agent's was the bug (every
+    land whose worktree carried an unpromoted draft died with
+    `WorktreeLeaseViolation`)."""
     # frob:ticket T-4658
-    refused = _refuse_renumber_inside_worktree(root)
-    if refused.is_err:
-        return Err(refused.danger_err)
+    # frob:ticket T-5166
+    if not _land_internal:
+        refused = _refuse_renumber_inside_worktree(root)
+        if refused.is_err:
+            return Err(refused.danger_err)
     if _store_mode(root) == "v2":
         # Local import: `_renumber_v2` imports helpers back from this module
         # (`_rewrite_body_prose_references`, `_scan_code_references`,
@@ -1776,7 +1798,9 @@ def renumber_one(
         # import here would be circular.
         from frob.tickets._renumber_v2 import renumber_one_v2
 
-        return renumber_one_v2(root, old_id, new_id, dry_run=dry_run)
+        return renumber_one_v2(
+            root, old_id, new_id, dry_run=dry_run, _land_internal=_land_internal
+        )
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)

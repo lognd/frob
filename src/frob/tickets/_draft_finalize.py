@@ -657,7 +657,15 @@ def _finalize_draft_for_land_locked(
 
     from frob.tickets import renumber_one as _renumber_one
 
-    result = _renumber_one(worktree, draft_id, final_id)
+    # frob:ticket T-5166
+    # T-5166: `_land_internal=True` -- this call runs `renumber_one`
+    # AGAINST `worktree` by design (the whole point of `finalize_draft_
+    # for_land`, per this module's docstring), which is exactly what
+    # T-4658's `_refuse_renumber_inside_worktree` guard used to refuse
+    # unconditionally, treating land's own root-orchestrated finalize the
+    # same as an agent renumbering from inside its own worktree. That
+    # guard exists to stop the LATTER, not this call.
+    result = _renumber_one(worktree, draft_id, final_id, _land_internal=True)
     if result.is_err:
         return Err(result.danger_err)
     relocated = _relocate_attachment_records(worktree, draft_id, final_id)

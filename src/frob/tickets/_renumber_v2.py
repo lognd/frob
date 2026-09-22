@@ -354,7 +354,12 @@ def _persist_v2_renumber(
 # data-loss-class lock fix -- not worth the added indirection here. A real LARGE001 \
 # split is better done as its own follow-up if this function grows again"
 def renumber_one_v2(
-    root: Path, old_id: str, new_id: str, *, dry_run: bool = False
+    root: Path,
+    old_id: str,
+    new_id: str,
+    *,
+    dry_run: bool = False,
+    _land_internal: bool = False,
 ) -> Result[RenumberReport, TicketError]:
     """v2-mode `renumber_one` (design section 4.1): `git mv tickets/<old>
     tickets/<new>` (or `tickets/archive/<old>` if archived), rewrite the
@@ -391,11 +396,18 @@ def renumber_one_v2(
     agent checkout -- `renumber_one` already runs this same check before
     dispatching here, but `renumber_one_v2` re-checks defensively since it
     is itself a public v2-mode entry point some caller could reach
-    directly."""
+    directly.
+
+    T-5166: `_land_internal=True` (threaded straight through from
+    `renumber_one`'s own identically-named parameter) skips that
+    defensive re-check too -- see `renumber_one`'s docstring for why
+    `frob ticket land`'s own draft-finalize call is exempt."""
     # frob:ticket T-4658
-    refused = _refuse_renumber_inside_worktree(root)
-    if refused.is_err:
-        return Err(refused.danger_err)
+    # frob:ticket T-5166
+    if not _land_internal:
+        refused = _refuse_renumber_inside_worktree(root)
+        if refused.is_err:
+            return Err(refused.danger_err)
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
