@@ -21,13 +21,164 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- docs/commands/**
 - docs/design/cli-regrouping.md
 - tests/unit/test_docs_commands_coverage.py
+- docs/commands/check.md
+- docs/commands/cli-vocabulary.md
+- docs/commands/cycle.md
+- docs/commands/deploy.md
+- docs/commands/exports.md
+- docs/commands/format.md
+- docs/commands/gitlog.md
+- docs/commands/map.md
+- docs/commands/narrative.md
+- docs/commands/outline.md
+- docs/commands/parse.md
+- docs/commands/refactor.md
+- docs/commands/release.md
+- docs/commands/run.md
+- docs/commands/scaffold.md
+- docs/commands/sync-skills.md
+- docs/commands/sys.md
+- docs/commands/xref.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/commands/**
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/check.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/cli-vocabulary.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/cycle.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/deploy.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/exports.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/format.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/gitlog.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/map.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/narrative.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/outline.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/parse.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/release.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/run.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/sync-skills.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/sys.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/xref.md
+  reason: narrowing the broad docs/commands/** glob to every file except ticket.md,
+    which collides with in-progress T-5132's live lease (points/tokens fields); regenerating
+    everything else now, ticket.md once T-5132 releases it
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
