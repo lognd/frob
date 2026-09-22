@@ -27,6 +27,7 @@ from pathlib import Path
 
 from typani.result import Result
 
+import frob.gitio as gitio
 from frob.gates._empty_diff_close import empty_code_diff_violations
 from frob.gates._models import Severity, Violation
 from frob.gates._mutation_evidence import (
@@ -1744,6 +1745,132 @@ def _tick013_empty_scope_without_declaration(
     return tuple(violations)
 
 
+# frob:ticket T-5121
+def _tick015_dead_worktree_reason(
+    root: Path, worktree: str, branch: str | None
+) -> str | None:
+    """TICK015 (T-5121): the reason `ticket_id`'s recorded `worktree`/
+    `branch` (T-5120's `worktree`/`branch` extra fields, stamped on every
+    IN_PROGRESS transition) is judged dead, or `None` if it is judged
+    live. Checked in cheapest-first order: the worktree path missing on
+    disk, then the branch missing from `git branch --list`, then no live
+    process (`frob.tickets._leases.scan_for_live_worktree_process`, the
+    same `/proc` cwd walk `frob.tickets._worktree_sweep`'s own T-1739
+    liveness gate reuses) cwd'd into the worktree. Any one of the three is
+    enough -- this never needs to be unanimous."""
+    from frob.tickets._leases import scan_for_live_worktree_process
+
+    path = Path(worktree)
+    if not path.exists():
+        return f"worktree path {worktree} no longer exists"
+    if branch:
+        verified = gitio.run_argv(
+            ("git", "-C", str(root), "rev-parse", "--verify", "--quiet", branch)
+        )
+        if verified.is_err or verified.danger_ok.returncode != 0:
+            return f"branch {branch} no longer exists"
+    if scan_for_live_worktree_process(path) is None:
+        return f"no live process holds worktree {worktree}"
+    return None
+
+
+# frob:ticket T-5121
+# frob:enforces CHK-GATE-TICK015
+def _tick015_requeue_dead_worktree(
+    root: Path, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """TICK015 (T-5121): ERROR per IN_PROGRESS ticket whose recorded
+    `worktree`/`branch` (T-5120's ledger-durable stamp, `Ticket`'s
+    `extra="allow"` fields) is judged dead by `_tick015_dead_worktree_
+    reason` -- measured 2026-09-20 (scratchpad/STRANDED.md): 38 of 54
+    in-progress tickets were abandoned by dead agents while their
+    worktree directories survived, and `orphaned_leases`
+    (`frob.tickets._leases`) never caught this because lease liveness is
+    a SEPARATE side channel from the ticket's own recorded state.
+
+    A ticket with no recorded `worktree` at all (started before T-5120,
+    or never dispatched through the fleet `frob ticket work` path) is
+    silently skipped -- there is nothing to judge dead, and refusing to
+    guess is the same fail-closed posture `_branch_ahead_of_main_count`
+    already takes for its own unresolvable case.
+
+    Unlike TICK010's `_tick010_holder_dead_pass` (read-only, surfaces a
+    remedy command), this rule actually performs the fix: it requeues
+    the ticket (IN_PROGRESS -> QUEUED, releasing whatever lease it still
+    holds) and appends a failure-log entry naming the dead worktree,
+    through the same `record_failure` + `transition` + `commit_ticket_
+    ledger_change` composition `frob ticket fail`'s own `_fail` already
+    uses (T-1131/T-1130) -- a dead worktree is exactly the "the ticket
+    needs a fresh attempt" case `fail` already exists to record, so this
+    rule reuses that primitive rather than inventing a second requeue
+    path. Best-effort: if the requeue itself fails (e.g. `root` is not
+    a git work tree, or the ledger is unwritable), the ERROR still
+    reports the dead worktree -- the write is a bonus, not the
+    condition being tested for."""
+    from frob.tickets import FailureEntry, record_failure, transition
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    violations: list[Violation] = []
+    for t in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if t.state is not TicketState.IN_PROGRESS:
+            continue
+        worktree = getattr(t, "worktree", None)
+        if not worktree:
+            continue
+        branch = getattr(t, "branch", None)
+        reason = _tick015_dead_worktree_reason(root, worktree, branch)
+        if reason is None:
+            continue
+        violations.append(
+            Violation(
+                rule="TICK015",
+                severity=Severity.ERROR,
+                file="tickets.md",
+                line=0,
+                message=(
+                    f"TICK015: {t.id} is in-progress but its recorded "
+                    f"worktree is dead ({reason}) -- requeued to queued "
+                    f"and a failure-log entry was recorded naming the "
+                    f"dead worktree"
+                ),
+            )
+        )
+        attempt = t.body.count("attempt ") + 1
+        entry = FailureEntry(
+            date=_utc_today(),
+            attempt=attempt,
+            summary=f"TICK015: dead worktree ({reason}), requeued by frob check",
+        )
+        recorded = record_failure(root, t.id, entry)
+        if recorded.is_err:
+            _log.error(
+                "TICK015: %s: could not record failure log (%s) -- requeue skipped",
+                t.id,
+                recorded.danger_err,
+            )
+            continue
+        requeued = transition(root, t.id, TicketState.QUEUED)
+        if requeued.is_err:
+            _log.error(
+                "TICK015: %s: failure log recorded but requeue failed "
+                "(%s) -- lease NOT released, needs manual attention",
+                t.id,
+                requeued.danger_err,
+            )
+            continue
+        committed = commit_ticket_ledger_change(
+            root, t.id, f"TICK015: requeue {t.id} (dead worktree)"
+        )
+        if committed.is_err:
+            _log.error(
+                "TICK015: %s: requeue committed to the ledger object but "
+                "the commit itself failed (%s)",
+                t.id,
+                committed.danger_err,
+            )
+    return tuple(violations)
+
+
 # frob:ticket T-1259
 # T-1259: the sunset date this repo has recorded for ledger v1 (monofile
 # tickets.md/tickets-archive.md) in docs/modules/tickets.md's ledger-v2
@@ -1861,7 +1988,7 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
 # frob:doc docs/modules/tickets-lifecycle.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
-    TICK009/TICK010/TICK011/TICK012/TICK013/TICK014: the T-0162
+    TICK009/TICK010/TICK011/TICK012/TICK013/TICK014/TICK015: the T-0162
     ticket-id collision invariant gate, plus the T-0409 ledger-hygiene
     check, the T-0411 priority-rot check, the T-0537 post-merge terminal-
     state-regression lint, the T-0726 phantom-filing-claim check, the
@@ -1875,8 +2002,10 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     second, narrower liveness test here), the T-1129 disclosed-cut-
     without-ticket check, the T-2561 in-progress-lease-vs-declared-scope
     drift check, the T-2557 in-progress/planned-empty-scope-without-
-    declaration check, and the T-3092 empty-code-diff-on-close warn
-    (`frob.gates._empty_diff_close.empty_code_diff_violations`).
+    declaration check, the T-3092 empty-code-diff-on-close warn
+    (`frob.gates._empty_diff_close.empty_code_diff_violations`), and the
+    T-5121 dead-recorded-worktree requeue
+    (`_tick015_requeue_dead_worktree`).
 
     T-0929 (docs/audits/check-performance.md row 10, `tickets` gate): the
     full `tickets.md`/`tickets-archive.md` ledger text is now loaded ONCE
@@ -1935,6 +2064,7 @@ def _tickets_gate_inner(root: Path, queue: TicketQueue) -> tuple[Violation, ...]
         + _tick009_scope_breadth_nudges(root, queue)
         + _tick012_lease_scope_drift(root, queue)
         + _tick013_empty_scope_without_declaration(queue)
+        + _tick015_requeue_dead_worktree(root, queue)
         + stale_leases
         + _ledgerv1001_violations(root)
         # T-3092/T-3899: TICK014 (frob.gates._empty_diff_close) -- a

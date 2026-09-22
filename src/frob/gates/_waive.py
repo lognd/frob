@@ -660,6 +660,13 @@ _KNOWN_GATE_RULES = frozenset(
         # T-3064 incident this closes (a Done report saying "not
         # implemented" on a ledger-only land).
         "TICK014",
+        # T-5121: TICK015 (frob.gates._tickets_gate.
+        # _tick015_requeue_dead_worktree) -- ERROR per IN_PROGRESS ticket
+        # whose recorded worktree/branch (T-5120's ledger-durable stamp)
+        # is judged dead (path gone, branch gone, or no live process
+        # holds it); requeues the ticket and records a failure-log entry
+        # naming the dead worktree.
+        "TICK015",
         # T-2580: MILE001 (frob.gates._milestone.milestone_gate) -- an
         # OPEN ticket `blocked_by` an OPEN ticket in a LATER effective
         # milestone -- a provable release deadlock.

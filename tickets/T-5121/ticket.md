@@ -2,7 +2,7 @@
 id: T-5121
 title: 'TICK rule: requeue an in-progress ticket whose recorded worktree or branch
   is dead'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -46,6 +46,9 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue::test_deleted_worktree_fires_and_requeues
+- tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue::test_live_holder_is_untouched
 designated_repro_test: null
 threat: null
 component: null
