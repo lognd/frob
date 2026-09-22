@@ -1,5 +1,5 @@
 ---
-id: T-draft-d93a6efa
+id: T-5281
 title: TICK015 appends a dead-worktree failure-log entry to a DONE ticket on the root
   ledger, uncommitted (DirtyMain for the next land)
 state: queued
