@@ -641,10 +641,51 @@ def _directive_anchored_ticket_ids(
     all (unsupported language, or the blob fails to parse) -- narrowing
     a false-positive source must never also narrow COVERAGE for a
     language this repo's parser does not yet support."""
+    candidates = frozenset(
+        path for path in own_changed if not path.startswith("tickets/")
+    )
+    if not candidates:
+        return frozenset()
+    # T-5135 (M7): one `git grep -l frob:ticket <branch> --
+    # <paths>` spawn narrows `candidates` down to files that actually
+    # MENTION the directive text at all, before paying the per-file
+    # `_blob_text` `git show` -- this module used to spawn one `git show`
+    # per changed file per branch unconditionally (719 spawns across 13
+    # branches measured on this repo), even though most changed files
+    # never mention `frob:ticket` anywhere. A file this grep misses is
+    # guaranteed to carry neither a real directive nor a
+    # `_TICKET_DIRECTIVE_RE` match, so skipping its `_blob_text` read
+    # changes zero results. `grep.is_err` (spawn itself failed, not "no
+    # match") falls back to the unfiltered candidate set -- fails toward
+    # the pre-T-5135 behavior, never toward silently dropping files.
+    grepped = run_argv(
+        (
+            "git",
+            "-C",
+            str(root),
+            "grep",
+            "-l",
+            "-e",
+            "frob:ticket",
+            branch,
+            "--",
+            *sorted(candidates),
+        )
+    )
+    if grepped.is_err:
+        filtered = candidates
+    elif grepped.danger_ok.returncode not in (0, 1):
+        filtered = candidates
+    else:
+        # `git grep -l -- <ref>` reports "<ref>:<path>" per hit.
+        hit_paths = {
+            line.split(":", 1)[1]
+            for line in grepped.danger_ok.stdout.splitlines()
+            if ":" in line
+        }
+        filtered = candidates & hit_paths
     ids: set[str] = set()
-    for path in own_changed:
-        if path.startswith("tickets/"):
-            continue
+    for path in filtered:
         text = _blob_text(root, branch, path)
         if text is None:
             continue

@@ -2342,13 +2342,35 @@ def _revalidation_cache_path(root: Path) -> Path:
 # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_mismatched_tree_key_is_none  # noqa: E501
 # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_mismatched_pairs_is_none  # noqa: E501
 # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_expired_ttl_is_none  # noqa: E501
+class _UnmeasurableCacheSentinel:
+    """T-5135 (H2): a dedicated, uniquely-typed sentinel (rather than a
+    bare string or `object()`) so `ty`/mypy can narrow `_read_
+    revalidation_cache`'s return type by `isinstance`/identity check --
+    returned when the cached entry records a PRIOR re-check that was
+    itself unmeasurable (timed out), distinct from `None` (no usable
+    cache, caller must re-measure) so `_reproducing_identities_cached`
+    can recognize "we already tried and could not measure this" and skip
+    the doomed re-spawn entirely, while still never treating
+    "unmeasurable" as "resolved" (T-1983's rule): the caller still
+    returns `None` (nothing dropped), it just does so with 0 spawns
+    instead of re-paying the 20s budget every call."""
+
+
+#: The one process-lifetime instance of `_UnmeasurableCacheSentinel` --
+#: compared by identity (`is`), never constructed a second time.
+_UNMEASURABLE_CACHE_SENTINEL = _UnmeasurableCacheSentinel()
+
+
 def _read_revalidation_cache(
     root: Path, tree_key: str, pairs: frozenset[tuple[str, str]]
-) -> tuple[frozenset[tuple[str, str]], float] | None:
+) -> tuple[frozenset[tuple[str, str]], float] | _UnmeasurableCacheSentinel | None:
     """T-2089: the last cached `(reproducing, age_seconds)` for exactly
-    `(tree_key, pairs)`, or `None` when there is no USABLE cache entry --
-    absent, corrupt, a different tree state, a different identity set (no
-    superset/subset matching, exact only -- a caller re-checking a
+    `(tree_key, pairs)`, `_UNMEASURABLE_CACHE_SENTINEL` (T-5135, H2) when
+    the last re-check at this exact tree state/identity set was itself
+    UNMEASURABLE (timed out) and that negative outcome is still within
+    `_REVALIDATION_CACHE_TTL_S`, or `None` when there is no USABLE cache
+    entry -- absent, corrupt, a different tree state, a different identity
+    set (no superset/subset matching, exact only -- a caller re-checking a
     different candidate set always re-measures), or older than
     `_REVALIDATION_CACHE_TTL_S`. Every one of those is "cache miss, spawn
     for real", never a wrong or stale reuse."""
@@ -2365,6 +2387,8 @@ def _read_revalidation_cache(
         age_s = time.time() - float(raw["timestamp"])
         if age_s < 0 or age_s > _REVALIDATION_CACHE_TTL_S:
             return None
+        if raw.get("unmeasurable", False):
+            return _UNMEASURABLE_CACHE_SENTINEL
         reproducing = frozenset((str(r), str(f)) for r, f in raw.get("reproducing", []))
         return reproducing, age_s
     except Exception as exc:  # noqa: BLE001 -- json/shape, any corruption
@@ -2383,21 +2407,31 @@ def _write_revalidation_cache(
     root: Path,
     tree_key: str,
     pairs: frozenset[tuple[str, str]],
-    reproducing: frozenset[tuple[str, str]],
+    reproducing: frozenset[tuple[str, str]] | None,
 ) -> None:
     """T-2089: record `reproducing` (the outcome of a real, just-completed
     re-measure of `pairs` at `tree_key`) so the NEXT `revalidate_
     dispatchable_sweep_tickets` call against the same unchanged tree state
     and identity set can reuse it instead of spawning a second full check.
-    Best-effort: a write failure is logged and swallowed -- a caller that
-    just paid for a real measurement must never have ITS result blocked by
-    a cache-write problem."""
+    T-5135 (H2): `reproducing=None` records the NEGATIVE outcome -- the
+    re-check was itself UNMEASURABLE (timed out) -- with `unmeasurable:
+    true`, so the next call recognizes "already tried, could not measure"
+    via `_UNMEASURABLE_CACHE_SENTINEL` and skips the doomed re-spawn
+    instead of repeating an unbounded-cost re-check that buys nothing;
+    this still never treats unmeasurable as resolved, it only memoizes the
+    NON-result under the same TTL as a successful measurement. Best-effort:
+    a write failure is logged and swallowed -- a caller that just paid for
+    a real measurement (or a real timeout) must never have ITS result
+    blocked by a cache-write problem."""
     path = _revalidation_cache_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "tree_key": tree_key,
         "pairs": sorted([rule, file] for rule, file in pairs),
-        "reproducing": sorted([rule, file] for rule, file in reproducing),
+        "reproducing": sorted([rule, file] for rule, file in reproducing)
+        if reproducing is not None
+        else [],
+        "unmeasurable": reproducing is None,
         "timestamp": time.time(),
     }
     try:
@@ -3721,7 +3755,23 @@ def _reproducing_identities_cached(
     started = time.monotonic()
     tree_key = _identity_scoped_state_key(root, all_pairs)
     cached = _read_revalidation_cache(root, tree_key, all_pairs)
-    if cached is not None:
+    if cached is _UNMEASURABLE_CACHE_SENTINEL:
+        # T-5135 (H2): a prior re-check at this exact tree
+        # state/identity set already timed out -- re-spawning the same
+        # doomed 20s budget buys nothing, so reuse the cached NON-result
+        # with 0 spawns instead. Still never treated as resolved: this
+        # returns None, exactly like a fresh timeout would.
+        _log.info(
+            "rapid sweep: T-5135: doable-time re-verification of %d "
+            "sweep-filed candidate ticket(s) (%d total identit(ies)) "
+            "reused a cached UNMEASURABLE outcome for this exact, "
+            "unchanged tree state -- 0 check spawn(s) (%.3fs)",
+            n_candidates,
+            len(all_pairs),
+            time.monotonic() - started,
+        )
+        return None
+    if cached is not None and not isinstance(cached, _UnmeasurableCacheSentinel):
         reproducing, cache_age_s = cached
         _log.info(
             "rapid sweep: T-2089: doable-time re-verification of %d "
@@ -3752,6 +3802,10 @@ def _reproducing_identities_cached(
             len(all_pairs),
             elapsed_s,
         )
+        # T-5135 (H2): memoize the negative outcome so the
+        # NEXT call at this exact tree state/identity set does not
+        # re-spawn the same doomed 20s re-check.
+        _write_revalidation_cache(root, tree_key, all_pairs, None)
         return None
     _log.info(
         "rapid sweep: T-2006: doable-time re-verification of %d "

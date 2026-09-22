@@ -12,6 +12,7 @@ import pytest
 
 from frob.app.ticket_runner import _rapid_sweep
 from frob.app.ticket_runner._rapid_sweep import (
+    _UNMEASURABLE_CACHE_SENTINEL,
     _baseline_write_survived,
     _files_deleted_between,
     _filter_phantom_deleted_findings,
@@ -702,6 +703,7 @@ class TestRevalidationCache:
         _write_revalidation_cache(tmp_path, "key", pairs, reproducing)
         cached = _read_revalidation_cache(tmp_path, "key", pairs)
         assert cached is not None
+        assert not isinstance(cached, _rapid_sweep._UnmeasurableCacheSentinel)
         got_reproducing, age_s = cached
         assert got_reproducing == reproducing
         assert age_s >= 0.0
@@ -731,3 +733,17 @@ class TestRevalidationCache:
         raw["timestamp"] = 0.0  # far in the past -- well past the TTL
         path.write_text(json.dumps(raw), encoding="utf-8")
         assert _read_revalidation_cache(tmp_path, "key", pairs) is None
+
+    # frob:ticket T-5135
+    def test_unmeasurable_outcome_is_cached_sentinel(self, tmp_path: Path) -> None:
+        """T-5135 (H2): writing `reproducing=None` (an unmeasurable
+        re-check) must be read back as `_UNMEASURABLE_CACHE_SENTINEL`, not
+        `None` and not an empty reproducing set -- the whole point is that
+        the caller can tell "known unmeasurable, do not respawn" apart
+        from "no usable cache, must respawn"."""
+        pairs = frozenset({("COV003", "a.py")})
+        _write_revalidation_cache(tmp_path, "key", pairs, None)
+        assert (
+            _read_revalidation_cache(tmp_path, "key", pairs)
+            is _UNMEASURABLE_CACHE_SENTINEL
+        )

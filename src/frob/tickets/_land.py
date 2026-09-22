@@ -5355,7 +5355,11 @@ def _effective_leakage_scope(
 
 
 # frob:ticket T-2948
-def _sibling_branch_ref(root: Path, other_id: str) -> str | None:
+def _sibling_branch_ref(
+    root: Path,
+    other_id: str,
+    leases: "Sequence[_LeaseRecord] | None" = None,
+) -> str | None:
     """T-2948: `other_id`'s own live branch name, if a cross-worktree
     lease (`read_all_leases`, the SAME side-channel `_effective_leakage_
     scope` already reads) records one -- used to check whether that
@@ -5363,8 +5367,17 @@ def _sibling_branch_ref(root: Path, other_id: str) -> str | None:
     not just whether `other_id`'s declared scope glob happens to match
     it. `None` when no live lease is recorded for `other_id` (an
     unresolvable branch is never treated as evidence either way -- the
-    caller's own None-means-keep-the-hit posture handles that)."""
-    for lease in read_all_leases(root):
+    caller's own None-means-keep-the-hit posture handles that).
+
+    T-5135 (H4): `leases`, when given, is used as-is instead of a fresh
+    `read_all_leases(root)` call -- `_find_leaked_tickets` already hoists
+    that scan once per land precheck (T-4492: it measured minutes on this
+    repo's `.git/frob-leases/` at fleet scale), and this function used to
+    discard that hoist and re-scan per candidate two frames below it,
+    reopening the exact cost T-4492 closed. `leases=None` still falls
+    back to a fresh scan so any other caller keeps working unchanged."""
+    resolved = leases if leases is not None else read_all_leases(root)
+    for lease in resolved:
         if lease.ticket_id == other_id and lease.branch:
             return lease.branch
     return None
@@ -5520,8 +5533,37 @@ def _frob_lock_edits_disjoint(root: Path, worktree: Path, branch: str) -> bool |
 
 # frob:ticket T-2948
 # frob:ticket T-4271
+def _sibling_branch_changed_paths(root: Path, branch: str) -> frozenset[str] | None:
+    """T-5135 (H5): the set of paths that differ, BYTE-FOR-BYTE, between
+    `root`'s current `HEAD` and `branch`, via a SINGLE `git diff
+    --name-only HEAD..<branch>` spawn -- the batched first pass for
+    `_drop_hits_other_branch_never_touched`'s own `_sibling_branch_
+    touched_path` loop, which used to spawn two `git show` calls PER hit
+    path (a wide-scope sibling with dozens of hit paths used to cost
+    dozens of spawns; a land precheck with ~800 open tickets could reach
+    thousands). A path IN this set differs between the two refs (added,
+    removed, or edited) -- ambiguous cases (a path in neither ref) are
+    resolved by `_sibling_branch_touched_path`'s own existing per-path
+    fallback, only for the (typically far smaller) set of hit paths NOT
+    reported here. `None` when the diff itself cannot be read (branch
+    unresolvable) -- the caller's own None-means-keep-the-hit posture
+    handles that, matching `_sibling_branch_touched_path`'s existing
+    fail-safe direction."""
+    diffed = run_argv(
+        ["git", "-C", str(root), "diff", "--name-only", f"HEAD..{branch}"]
+    )
+    if diffed.is_err or diffed.danger_ok.returncode != 0:
+        return None
+    return frozenset(line for line in diffed.danger_ok.stdout.splitlines() if line)
+
+
 def _drop_hits_other_branch_never_touched(
-    root: Path, worktree: Path, landing_id: str, other_id: str, hits: list[str]
+    root: Path,
+    worktree: Path,
+    landing_id: str,
+    other_id: str,
+    hits: list[str],
+    leases: "Sequence[_LeaseRecord] | None" = None,
 ) -> list[str]:
     """`_leaked_hits_for_candidate`'s own ARCH001 split -- the T-2948
     per-path narrowing: a declared scope hit alone is not enough even
@@ -5536,49 +5578,90 @@ def _drop_hits_other_branch_never_touched(
     drops a hit -- this can only ever narrow an existing refusal, never
     widen a gap.
 
+    T-5135 (H4/H5): `leases`, when given, threads through to `_sibling_
+    branch_ref` instead of a fresh `read_all_leases(root)` scan (T-4492's
+    hoist, previously discarded one frame below `_find_leaked_tickets`).
+    `_sibling_branch_changed_paths` batches the branch-vs-HEAD compare
+    into one spawn up front; only hit paths it does NOT report (an
+    ambiguous "neither ref has this path" shape) fall back to `_sibling_
+    branch_touched_path`'s own two-spawn per-path read.
+
     T-4271: a `True` verdict on a path in `_LOCK_ENTRY_AWARE_PATHS`
     (`frob.lock`) gets ONE further narrowing -- `_frob_lock_edits_
     disjoint` -- since two tickets both touching that additive, per-
     symbol-keyed file is routine (`frob ack`) and does not by itself mean
     their edits collide. Same fail-safe posture: only a `False` (proven
     disjoint) drops the hit; `True`/`None` keep it."""
-    branch = _sibling_branch_ref(root, other_id)
+    branch = _sibling_branch_ref(root, other_id, leases=leases)
     if branch is None:
         return hits
-    kept: list[str] = []
-    for path in hits:
+    changed = _sibling_branch_changed_paths(root, branch)
+    return [
+        path
+        for path in hits
+        if _keep_leakage_hit(
+            root, worktree, landing_id, other_id, branch, changed, path
+        )
+    ]
+
+
+def _keep_leakage_hit(
+    root: Path,
+    worktree: Path,
+    landing_id: str,
+    other_id: str,
+    branch: str,
+    changed: frozenset[str] | None,
+    path: str,
+) -> bool:
+    """`_drop_hits_other_branch_never_touched`'s own ARCH001 split
+    (T-5135): the per-path verdict for exactly ONE hit, given `other_id`'s
+    resolved sibling `branch` and the batched `_sibling_branch_changed_
+    paths` result -- `True` keeps the hit, `False` drops it (logging why
+    either way matches the pre-split behavior exactly)."""
+    if changed is not None and path in changed:
+        # T-5135 (H5): the batched compare already proved
+        # the two refs differ on this path -- a genuine overlap, same as
+        # `_sibling_branch_touched_path`'s own `True` verdict, with 0
+        # extra spawns for this path.
+        touched: bool | None = True
+    else:
+        # Absence from the batched diff is ambiguous on its own -- it
+        # covers BOTH "both sides identical" (safe to drop) AND
+        # "neither side has this path" (must stay conservative) -- so
+        # only these paths fall back to the per-path two-spawn read that
+        # can tell the two apart.
         touched = _sibling_branch_touched_path(root, branch, path)
-        if touched is False:
+    if touched is False:
+        _log.info(
+            "land: %s cross-ticket leakage check exempting %s's "
+            "scope hit on %s (T-2948: %s's own branch %s carries NO "
+            "real change to this path relative to root's current tip "
+            "-- a declared scope overlap, never an actual edit)",
+            landing_id,
+            other_id,
+            path,
+            other_id,
+            branch,
+        )
+        return False
+    if touched is True and path in _LOCK_ENTRY_AWARE_PATHS:
+        disjoint = _frob_lock_edits_disjoint(root, worktree, branch)
+        if disjoint is False:
             _log.info(
                 "land: %s cross-ticket leakage check exempting %s's "
-                "scope hit on %s (T-2948: %s's own branch %s carries NO "
-                "real change to this path relative to root's current tip "
-                "-- a declared scope overlap, never an actual edit)",
+                "scope hit on %s (T-4271: %s's own branch %s and this "
+                "land's own frob.lock edits touch entirely disjoint "
+                "(ref, facet) entries -- an additive-JSON file overlap, "
+                "never a real collision on the same acked symbol)",
                 landing_id,
                 other_id,
                 path,
                 other_id,
                 branch,
             )
-            continue
-        if touched is True and path in _LOCK_ENTRY_AWARE_PATHS:
-            disjoint = _frob_lock_edits_disjoint(root, worktree, branch)
-            if disjoint is False:
-                _log.info(
-                    "land: %s cross-ticket leakage check exempting %s's "
-                    "scope hit on %s (T-4271: %s's own branch %s and this "
-                    "land's own frob.lock edits touch entirely disjoint "
-                    "(ref, facet) entries -- an additive-JSON file overlap, "
-                    "never a real collision on the same acked symbol)",
-                    landing_id,
-                    other_id,
-                    path,
-                    other_id,
-                    branch,
-                )
-                continue
-        kept.append(path)
-    return kept
+            return False
+    return True
 
 
 # frob:ticket T-1390
@@ -5668,7 +5751,7 @@ def _leaked_hits_for_candidate(
         return None
 
     hits = _drop_hits_other_branch_never_touched(
-        root, worktree, landing_id, other_id, hits
+        root, worktree, landing_id, other_id, hits, leases=leases
     )
     if not hits:
         return None

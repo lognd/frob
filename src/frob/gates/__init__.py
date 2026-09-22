@@ -1658,33 +1658,60 @@ def _ledger_state_from_frontmatter_text(text: str) -> TicketState | None:
 
 
 def _ledger_states_at_base_v2(root: str, base: str) -> Mapping[str, TicketState]:
-    """`_ledger_states_at_base`'s v2-mode body (T-1582): list every
-    `tickets/T-####/ticket.md` blob `base`'s tree carries and read each
-    one's `state:` field directly out of the git object (`git show
-    base:<path>`), never the working tree -- mirrors the v1 branch's own
-    `git show base:tickets.md` read, one file per ticket instead of one
-    shared monofile. A ticket whose blob fails to read or parse is simply
-    absent from the returned map (same as v1's "ticket did not exist at
-    base" case -- `_base_state_permits_grace` treats a missing id as
-    grace-eligible)."""
-    ls = run_argv(
-        ("git", "-C", root, "ls-tree", "-r", "--name-only", base, "--", "tickets/")
+    """`_ledger_states_at_base`'s v2-mode body (T-1582, batched T-5135
+    H3): read every `tickets/T-####/ticket.md`'s `state:` frontmatter
+    field at `base` with a SINGLE `git grep -n '^state:' <base> --
+    tickets/` spawn, never the working tree -- previously this spawned
+    one `git show base:<path>` per ticket file (~691 spawns per distinct
+    `(root, base)` pair on the land hot path, since `git ls-tree` only
+    listed the paths and each blob was read separately); `git grep`
+    against a revision reads every matching blob in one process and
+    reports `<rev>:<path>:<lineno>:<content>` per hit, which is enough to
+    recover the same field this used to parse out of the full
+    frontmatter (only the `state:` line is ever consulted). A ticket
+    whose line fails to parse is simply absent from the returned map
+    (same as v1's "ticket did not exist at base" case --
+    `_base_state_permits_grace` treats a missing id as grace-eligible)."""
+    grepped = run_argv(
+        (
+            "git",
+            "-C",
+            root,
+            "grep",
+            "-n",
+            "--no-color",
+            "-e",
+            "^state:",
+            base,
+            "--",
+            "tickets/",
+        )
     )
-    if ls.is_err or ls.danger_ok.returncode != 0:
+    if grepped.is_err:
+        return {}
+    # NOTE: git grep exits 1 (not an error) when nothing matches --
+    # only >1 is a real failure (bad revision, git error, etc.).
+    if grepped.danger_ok.returncode not in (0, 1):
         return {}
     states: dict[str, TicketState] = {}
-    for line in ls.danger_ok.stdout.splitlines():
-        parts = line.split("/")
+    for line in grepped.danger_ok.stdout.splitlines():
+        parsed = line.split(":", 3)
+        if len(parsed) != 4:
+            continue
+        _rev, path, _lineno, content = parsed
+        parts = path.split("/")
         if len(parts) != 3 or parts[0] != "tickets" or parts[2] != "ticket.md":
             continue
         ticket_id = parts[1]
-        shown = run_argv(("git", "-C", root, "show", f"{base}:{line}"))
-        if shown.is_err or shown.danger_ok.returncode != 0:
+        _field, _sep, raw_value = content.partition(":")
+        try:
+            value = yaml.load(raw_value, Loader=_tickets_yaml_loader())
+        except yaml.YAMLError:
             continue
-        state = _ledger_state_from_frontmatter_text(shown.danger_ok.stdout)
-        if state is None:
+        try:
+            states[ticket_id] = TicketState(value)
+        except ValueError:
             continue
-        states[ticket_id] = state
     return states
 
 

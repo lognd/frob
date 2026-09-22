@@ -2,7 +2,7 @@
 id: T-5135
 title: N+1 git spawns and discarded caches on the doable, check, land, doctor and
   explore hot paths (perf audit 2026-09-20)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-20'
@@ -72,20 +72,26 @@ evidence:
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_marker_touch_without_state_transition_still_fires
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_done_ticket_without_grace_still_fires
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_stale_done_ticket_unrelated_touch_still_fires
-designated_repro_test: null
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_directive_anchored_code_with_queued_ticket_is_flagged
+- tests/unit/test_land_leaked_tickets_lease_hoist.py::TestFindLeakedTicketsHoistsReadAllLeases::test_read_all_leases_called_at_most_once_across_many_candidates
+designated_repro_test: tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache::test_unmeasurable_outcome_is_cached_sentinel
 acceptance:
 - text: given the dev ledger, when frob ticket doable runs twice within the cache
     TTL, then the second run spawns no re-measure and completes in under 5 s
-  evidence: []
+  evidence:
+  - tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache::test_unmeasurable_outcome_is_cached_sentinel
 - text: given the dev ledger, when frob check evaluates COV002, then the base-ledger
     read makes one git spawn
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_done_ticket_covers_own_closing_diff
 - text: given the dev ledger, when frob doctor runs, then it completes in under 5
     s and spawns fewer than 50 subprocesses
-  evidence: []
+  evidence:
+  - tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_directive_anchored_code_with_queued_ticket_is_flagged
 - text: given a land precheck with 800 open tickets, when _find_leaked_tickets runs,
     then read_all_leases is called once
-  evidence: []
+  evidence:
+  - tests/unit/test_land_leaked_tickets_lease_hoist.py::TestFindLeakedTicketsHoistsReadAllLeases::test_read_all_leases_called_at_most_once_across_many_candidates
 acceptance_amendments:
 - op: remove
   index: 4
@@ -94,7 +100,7 @@ acceptance_amendments:
   new_text: null
   reason: explore_runner.py removed from T-5135's scope due to a live cross-worktree
     lease collision with T-4690 (frob ticket work refused to start with it in scope);
-    the xref/map artifact-cache fix is filed separately as T-5201
+    the xref/map artifact-cache fix is filed separately as T-draft-4ae93df2
   actor: logan
   at: '2026-09-21'
 threat: null
