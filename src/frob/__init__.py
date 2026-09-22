@@ -36,7 +36,6 @@ from frob.ci_validity import (
 )
 
 # frob:ticket T-3443
-# frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
 from frob.doctor import (
     DerivedArtifactStatus,
     DoctorReport,
@@ -46,12 +45,16 @@ from frob.doctor import (
     LiveLandProcess,
     MalformedTicketEdge,
     NativeExtensionStatus,
+    RelevantToolEntry,
+    RelevantToolFailureKind,
+    RelevantToolFinding,
     ToolCategory,
     UnityEditorStatus,
     VenvShimDrift,
     global_binary_skew,
     native_degrade_warning,
     profile_recommendation,
+    relevant_tool_findings,
     run_diagnosis,
     scan_external_tools,
     scan_live_land_processes,
@@ -137,6 +140,9 @@ __all__ = [
     "MalformedTicketEdge",
     "NativeExtensionStatus",
     "ProcResult",
+    "RelevantToolEntry",
+    "RelevantToolFailureKind",
+    "RelevantToolFinding",
     "RunDetail",
     "RunReport",
     "RunSummary",
@@ -179,6 +185,7 @@ __all__ = [
     "profile_recommendation",
     "read_toml_lenient",
     "recent_commits",
+    "relevant_tool_findings",
     "repo_root",
     "reset_common_dir_cache",
     "reset_repo_root_cache",

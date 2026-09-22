@@ -57,6 +57,7 @@ from frob.arch._ffi import (
 from frob.arch._kotlin import KotlinAdapter
 from frob.arch._layering import (
     LayeringConfig,
+    check_layering_edges,
     check_layering_violations,
     check_no_di_construction,
     load_layering_config,
@@ -198,6 +199,7 @@ __all__ = [
     "check_fat_interface",
     "check_feature_envy",
     "check_illegal_states_representable",
+    "check_layering_edges",
     "check_layering_violations",
     "check_magic_literal",
     "check_module_dependency_cycles",
@@ -245,9 +247,7 @@ __all__ = [
 
 
 # frob:ticket T-0471
-# frob:tests \
-# tests/unit/arch_suite/test_complexity.py::TestGodClass.test_big_class_triggers_god_cl\
-# ass
+# tests/unit/arch_suite/test_complexity.py::TestGodClass.test_big_class_triggers_god_class  # noqa: E501
 def _collect_files(root: Path) -> list[Path]:
     """Every file under `root` worth handing to a language's arch checks
     (T-0026's original built-in-skip-dir/exclude-glob filtering, now routed
@@ -279,7 +279,6 @@ def _collect_files(root: Path) -> list[Path]:
 
 
 # frob:ticket T-0368
-# frob:tests \
 # tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_fixtures_json_not_flagged
 def _is_fixture_data_file(rel: str) -> bool:
     """True if `rel` sits under a `fixtures/` directory (T-0368): test-data
@@ -293,21 +292,11 @@ def _is_fixture_data_file(rel: str) -> bool:
 
 # frob:ticket T-0368
 # frob:ticket T-0372
-# frob:tests \
-# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_test_file_not_flag\
-# ged
-# frob:tests \
-# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_src_file_still_fla\
-# gged
-# frob:tests \
-# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_json_data_not_flag\
-# ged
-# frob:tests \
-# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_md_ledger_not_flag\
-# ged
-# frob:tests \
-# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_py_src_still_flagg\
-# ed
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_test_file_not_flagged  # noqa: E501
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_src_file_still_flagged  # noqa: E501
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_json_data_not_flagged  # noqa: E501
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_md_ledger_not_flagged  # noqa: E501
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_py_src_still_flagged  # noqa: E501
 def _check_large_file(
     rel: str,
     lines: list[bytes],
@@ -591,7 +580,6 @@ def _run_python_checks(
 
 
 # frob:ticket T-0728
-# frob:tests tests/unit/test_arch_srp.py::TestAnalyzeProjectWiring.test_two_cluster_class_fires_arch101  # noqa: E501
 def _run_srp_checks_python(
     tree: object,
     rel: str,
@@ -628,7 +616,6 @@ def _run_srp_checks_python(
 # frob:doc docs/modules/arch.md#fork-pool-hazards
 # frob:doc docs/modules/arch.md#async-event-loop-hazards
 # frob:doc docs/modules/arch.md#lock-ordering-hazards
-# frob:tests tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
 # frob:ticket T-0423
 # frob:ticket T-1102
 # frob:ticket T-1104

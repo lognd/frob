@@ -3,7 +3,7 @@ id: T-5289
 title: 'TEST010 Tier-A fix deletes the wrong source lines: per-file line numbers come
   from the pre-fix snapshot, so every land''s pre-land pass corrupts files (lands
   refused by ty)'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -52,3 +52,6 @@ worktree: /home/logan/projects/frob/.claude/worktrees/t-5289
 branch: t-5289
 ---
 Landed with T-5261 (e1ee0f1704). fix_test010_redundant_test_declaration iterates snapshot.malformed and calls _delete_redundant_test_declaration(root, md.file, md.line) per entry; after the first deletion in a file every later md.line is stale, so it deletes unrelated lines (observed in .claude/worktrees/t-5267 after a refused land: 'def _run_ruff(', '*,' and docstring lines removed from src/frob/check/_python.py, leaving invalid syntax). Every land since ~05:00 on 2026-09-22 runs this pass unscoped, corrupts the worktree tree, and is refused by ty with 1600-3300 'NEW errors' (T-5133, T-5267). Fix: group entries by file, delete from the highest line downward (or re-parse after each write), never apply a stale line index; add a positive-control test with two redundant declarations in one file above real code and assert the code survives byte-for-byte. Also: the pass must be scoped to the landing ticket's touched files (T-5106 note), and a Tier-A handler must refuse to write a file that no longer parses.
+
+## Failure log
+- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5289), requeued by frob check

@@ -1,5 +1,5 @@
 ---
-id: T-draft-721a945d
+id: T-5306
 title: 'WEBSEC101-108: output-encoding and template sinks'
 state: queued
 kind: feature

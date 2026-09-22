@@ -2,7 +2,7 @@
 id: T-5285
 title: CLI shim announce_shim logs at INFO, leaking a stray line onto every shimmed
   command's stdout (breaks --json)
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -61,3 +61,6 @@ CI run 35717833933 on dev tip 197238c35e: ~150 of the ~170 total ubuntu test fai
 Fix (already prototyped and verified locally, reverted before filing since I do not own a worktree lease yet): change `_log.info` to `_log.debug` in announce_shim -- the human-readable deprecation notice is already correctly delivered via the separate `Renderer.for_stream(sys.stderr, ...)` call right below it; the `_log.info` line is a redundant diagnostic duplicate, not user-facing, and DEBUG-level records are excluded by the stdout handler's own level=INFO threshold by default (T-2979), only surfacing via FROB_LOG_LEVEL.
 
 Verify with: tests/unit/test_cli_shims.py (the shim's own suite, including TestAnnounceShim.test_never_writes_to_stdout -- confirm this test currently only checks the renderer's own write, not the logger, since it did not already catch this) plus a representative sample of the failing --json tests (tests/system/test_cli_arch.py::test_json_is_valid, test_cli_map.py::test_json_is_valid, test_cli_outline.py::test_json_is_valid, test_cli_dup.py::test_json_is_valid, test_cli_xref.py::test_json_is_valid).
+
+## Failure log
+- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5285), requeued by frob check

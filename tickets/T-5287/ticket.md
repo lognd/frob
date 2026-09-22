@@ -2,7 +2,7 @@
 id: T-5287
 title: T-5132 points-required-on-start broke ~40 pre-existing tests across 7 files
   (test fixtures never updated)
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -143,3 +143,6 @@ shared-helper fix would be far less risky than 7 separate edits -- or
 back to T-5132's own area. Do NOT set points on every individual
 ticket_run call site by hand without first checking for a shared
 helper -- that is the wrong scope if one exists.
+
+## Failure log
+- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5287), requeued by frob check

@@ -64,7 +64,13 @@ from frob.vet._models import (
     capability_diff,
 )
 from frob.vet._nvd import NvdResult, fetch_cwe_for_cve
-from frob.vet._osv import OsvAdvisory, cve_ids
+from frob.vet._osv import (
+    OsvAdvisory,
+    OsvQueryError,
+    OsvQueryFailure,
+    cve_ids,
+    query_advisories,
+)
 from frob.vet._scan import scan_tree
 from frob.vet._supplychain import supply_chain_tree_violations
 from frob.vet._taint import TaintFinding, taint_findings
@@ -88,6 +94,8 @@ __all__ = [
     "MatchStatus",
     "NvdResult",
     "OsvAdvisory",
+    "OsvQueryError",
+    "OsvQueryFailure",
     "PackageVerdict",
     "TaintFinding",
     "VetConfig",
@@ -111,6 +119,7 @@ __all__ = [
     "match_dependencies_against_mirror",
     "non_executable_line_numbers",
     "parse_hook_command",
+    "query_advisories",
     "render_containment_report",
     "resolve_capability_kind",
     "resolve_import",

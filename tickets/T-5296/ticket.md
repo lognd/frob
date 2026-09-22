@@ -1,7 +1,7 @@
 ---
 id: T-5296
 title: frob-exports reports 3 packages with missing symbols (doctor, arch, vet)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -78,6 +78,8 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 designated_repro_test: null
 threat: null
 component: null

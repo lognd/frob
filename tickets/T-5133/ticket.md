@@ -2,7 +2,7 @@
 id: T-5133
 title: 'Sprint is a time box, milestone is the version: migrate v0.NNN.0 sprint labels
   into milestone, normalize the v prefix, re-slice the queue into weekly sprints'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-09-20'
@@ -111,3 +111,6 @@ branch: t-5133
 Owner directive 2026-09-20: sprint has been carrying the version (v0.533.0 .. v0.553.0 on 592 of 691 open tickets) while milestone is null on 398 and mixed-format on the rest (1.0.0 vs v0.541.0, 82 values still carry the v prefix validate_milestone now strips). The two fields have collapsed into one. Decision: milestone = the semver a ticket ships with (totally ordered, what ships together); sprint = a time box (when we work), smaller than one release so several milestones can close inside one sprint and a milestone can span sprints. Steps: (1) one-shot migration from the root: for every ticket whose sprint matches v?\d+\.\d+\.\d+, set milestone to that value (v stripped) when milestone is null, else keep the existing milestone and warn on conflict; then clear sprint; also normalize every existing v-prefixed milestone to bare semver; (2) validate_sprint refuses a semver-shaped label going forward (one override flag --semver-sprint-ack) so the collapse cannot recur; (3) re-slice open tickets into weekly sprints labelled YYYY-Www by milestone order and priority, sized against measured velocity (~20 lands/day over the last 7 days, ~29 over 21 days) and, once the sizing story lands, by points; (4) frob ticket sprint show and flow print both axes: per-sprint and per-milestone rollups; (5) update the one-minor-version-per-sprint directive in docs to one-or-more-milestones-per-sprint. Sizing story: see the ticket filed alongside this one.
 
 AMENDMENT (owner, 2026-09-20): sprint labels are OVERARCHING GOALS, not version numbers and not calendar weeks. Step (3) changes: re-slice open tickets into goal-named sprints (kebab-case, e.g. csharp-unity, narrative-migration, kernel-decoupling, strata-friction, land-latency), one goal per sprint, each sized to roughly one to two weeks at measured velocity; the epic tree already names most goals, so the first pass maps each epic's sprint label from its parent epic's slug. Step (2) changes: validate_sprint refuses a semver-shaped label AND the refusal text suggests naming the goal ('a sprint is a goal you can say in three words; the version belongs in --milestone'); a label matching YYYY-Www or sprint-N gets a WARN with the same suggestion, not a refusal. frob ticket sprint show LABEL becomes the goal view: tickets, state rollup, milestones the goal spans, points and ETA. Acceptance amendment: the 2026-W39 criterion is replaced by frob ticket sprint show kernel-decoupling listing its tickets, rollup and milestones.
+
+## Failure log
+- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5133), requeued by frob check
