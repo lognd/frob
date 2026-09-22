@@ -34,6 +34,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/_metadata.py
 - src/frob/_cli_parsers/_ticket/_progress.py
 - src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/_cli_parsers/_ticket/__init__.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: one model field threaded through new, setter, flow, sprint
   show and docs; each file is a one-hunk change
@@ -71,6 +72,11 @@ scope_changes:
   reason: argparse wiring for --points/--unsized-ack/frob ticket points/tokens verbs
     lives in _cli_parsers/_ticket, implicit_scope's CLI-wiring grant covers __main__.py/config.py/ticket_runner/__init__.py
     but not this sibling parser package
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: parser registration dispatch table for new points/tokens subcommands
   actor: logan
   at: '2026-09-22'
 triage_changes:
