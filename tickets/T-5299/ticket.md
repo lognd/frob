@@ -11,7 +11,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
-points: null
+points: 3
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -32,6 +32,13 @@ scope_changes:
 - op: add
   glob: tests/unit/test_land_parity_gate.py
   reason: T-2114 doc/test-edge coverage lives here, the actual test file to touch
+  actor: logan
+  at: '2026-09-22'
+triage_changes:
+- field: points
+  old_value: null
+  new_value: '3'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-22'
 designated_repro_test: null
