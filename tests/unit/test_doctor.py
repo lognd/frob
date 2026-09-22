@@ -216,6 +216,57 @@ class TestExternalToolsRemediation:
         assert _external_tools_remediation(statuses) is None
 
 
+class TestRelevantToolFindings:
+    """T-5139: a gate-serving tool (`_RELEVANT_TOOLS`) is reported only
+    when its `relevant_when` predicate is true for this repo AND it is
+    missing/failed -- "not needed here" is never a finding."""
+
+    def test_relevant_missing_tool_is_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::relevant_tool_findings kind="unit"
+        # Positive control: a planted Cargo.lock (cargo-audit's own
+        # relevant_when) plus a guaranteed-absent binary must yield a
+        # real finding naming VET005 and the install remedy.
+        from frob import doctor
+
+        (tmp_path / "Cargo.lock").write_text("", encoding="utf-8")
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
+
+        findings = doctor.relevant_tool_findings(tmp_path)
+        assert len(findings) == 1
+        finding = findings[0]
+        assert finding.entry.name == "cargo-audit"
+        assert "VET005" in finding.entry.rules_it_serves
+        assert finding.kind == doctor.RelevantToolFailureKind.MISSING
+        assert "cargo install cargo-audit" == finding.entry.install_remedy
+
+    def test_irrelevant_missing_tool_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::relevant_tool_findings kind="unit"
+        # No Cargo.lock: cargo-audit's absence is "not needed here", not
+        # a finding, even though the binary is still absent.
+        from frob import doctor
+
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
+
+        assert doctor.relevant_tool_findings(tmp_path) == []
+
+    def test_relevant_present_tool_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::relevant_tool_findings kind="unit"
+        from frob import doctor
+
+        (tmp_path / "Cargo.lock").write_text("", encoding="utf-8")
+        monkeypatch.setattr(
+            doctor.shutil, "which", lambda _name: "/usr/bin/cargo-audit"
+        )
+
+        assert doctor.relevant_tool_findings(tmp_path) == []
+
+
 class TestUnityEditorStatus:
     """T-4501: `_locate_unity_editor` searches env vars, then Unity Hub's
     default per-OS install root, then PATH, in that precedence order, and

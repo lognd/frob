@@ -767,6 +767,37 @@ command. A fully-present environment produces no new output and no
 measurable slowdown beyond the cheap presence probes themselves (the
 MUST-STAY-QUIET fixture).
 
+### Relevance-gated gate-serving tools (T-5139)
+
+<!-- frob:describes src/frob/doctor.py::RelevantToolFailureKind -->
+<!-- frob:describes src/frob/doctor.py::RelevantToolEntry -->
+<!-- frob:describes src/frob/doctor.py::RelevantToolFinding -->
+<!-- frob:describes src/frob/doctor.py::relevant_tool_findings -->
+
+`_EXTERNAL_TOOLS`/`ToolCategory.OPTIONAL_FOR_GATE` above answers "is this
+tool present"; `_RELEVANT_TOOLS`/`relevant_tool_findings(root)` answers
+the sharper question "is this tool present GIVEN what THIS repo actually
+contains" -- a `RelevantToolEntry` (`name`, `rules_it_serves`,
+`install_remedy`) is paired with a `relevant_when: Path -> bool` repo
+predicate (e.g. `cargo-audit`'s `(root / "Cargo.lock").exists()`); a tool
+whose predicate is false is never reported even if absent ("not needed
+here" is not a finding), and a `RelevantToolFinding` names the specific
+`RelevantToolFailureKind` (`MISSING` is the only kind this presence-only
+registry can observe today; `VERSION_TOO_OLD`/`SPAWN_FAILED`/
+`NON_ZERO_EXIT`/`TIMEOUT`/`UNPARSEABLE_OUTPUT`/`NETWORK_UNAVAILABLE` are
+the fuller Result-typed adapter failure taxonomy a real spawn-and-parse
+adapter reports, docs/modules/vet.md's `_osv.py::OsvQueryError` being one
+such adapter already built).
+
+`relevant_tool_findings` is reporting-only in this slice: wiring it into
+`frob check`'s loud end-of-run UNMEASURED block (exit non-zero for a
+relevant finding, `--allow-missing-tool NAME --reason` to override) is a
+follow-up -- `src/frob/check/**` and `src/frob/gates/__init__.py` carried
+other agents' live in-progress leases at ticket time, the same
+`src/frob/check/**`/`src/frob/gates/**`-out-of-reach shape T-0570 hit
+before it (see that ticket's Done report, and this module's own
+docstring).
+
 ## Unity toolchain detection (T-4501)
 
 <!-- frob:describes src/frob/doctor.py::UnityEditorStatus -->

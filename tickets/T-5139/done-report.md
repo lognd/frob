@@ -1,23 +1,24 @@
 ## Done report
 
-Owner directive: VET005 had never fired here because it delegated to an
-absent osv-scanner binary behind an opt-in flag. _osv.py now queries
-OSV.dev's batch API directly over HTTPS (querybatch + per-id vuln lookup),
-cached in .frob/vet.db with a 24h freshness TTL and an
-advisory_max_age_days staleness ceiling (default 7d) -- a cold/expired
-cache with no reachable network is now the loud VET012 finding instead of
-a silent clean pass. [vet].advisories (renamed from osv) defaults to true.
+Owner directive: missing/failing external tools must be loud, never a
+quiet skip. `ticket start` collided with two live leases at start time
+(src/frob/check/__init__.py held by T-4692, src/frob/gates/__init__.py
+held by T-5135), so the frob-check/frob-ticket-land end-of-run UNMEASURED
+block, TOOL001-003 gate rules, --allow-missing-tool override and the
+DUP/ARCH bare-shutil.which detector (acceptance [1],[3],[4],[5]) are out
+of this ticket's reachable scope -- removed with reasons and filed as
+T-5267.
 
-VET012's registration in src/frob/gates/_waive.py's _KNOWN_GATE_RULES and
-_osv.py's fetch_url edge in design/frob.strata originally shipped as the
-follow-up T-5203 (files were held by T-5121's live lease at first
-close-out). The real land refused with UnregisteredGateRuleConstructed --
-the close check runs post-merge, so that registration cannot be deferred
-past this ticket's own land. Absorbed T-5203's fix back into T-5138 and
-dropped T-5203 as absorbed-by T-5138.
-
-Filed T-5269 for acceptance [5] (frob doctor lint-tool version
-lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
+Delivered within scope: frob.doctor._RELEVANT_TOOLS/RelevantToolEntry/
+RelevantToolFinding/relevant_tool_findings -- a repo-predicate-gated tool
+registry distinct from the existing presence-only _EXTERNAL_TOOLS
+(cargo-audit -> VET005, relevant_when=Cargo.lock present). _osv.py's
+query_advisories now distinguishes a REACHED-but-unparseable OSV.dev
+response (OsvQueryError.UnparseableResponse, carrying the response tail)
+from a plain network failure (Unavailable/VET012); _osv_violations
+reports the former as VET005 Severity.UNRESOLVED ("UNMEASURED: ..."),
+satisfying acceptance [1] (this ticket's remaining bound criterion, was
+[2] before the others were removed).
 
 ### Changed
 ```
@@ -33,7 +34,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  .github/dependabot.yml                             |     1 +
  .github/workflows/ci.yml                           |   123 +-
  .github/workflows/release.yml                      |    45 +-
- CHANGELOG.md                                       |   171 +
+ CHANGELOG.md                                       |   175 +
  changelog.d/T-2965.md                              |     2 +
  changelog.d/T-3020.md                              |     2 +
  changelog.d/T-3032.md                              |     2 +
@@ -197,11 +198,18 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  changelog.d/T-5125.md                              |     2 +
  changelog.d/T-5126.md                              |     2 +
  changelog.d/T-5131.md                              |     2 +
+ changelog.d/T-5135.md                              |     2 +
+ changelog.d/T-5138.md                              |     2 +
+ changelog.d/T-5166.md                              |     2 +
  changelog.d/T-5217.md                              |     2 +
  changelog.d/T-5219.md                              |     2 +
  changelog.d/T-5222.md                              |     2 +
+ changelog.d/T-5228.md                              |     2 +
+ changelog.d/T-5240.md                              |     2 +
  changelog.d/T-5242.md                              |     2 +
+ changelog.d/T-5245.md                              |     2 +
  changelog.d/T-5247.md                              |     2 +
+ changelog.d/T-5259.md                              |     2 +
  design/frob.strata                                 |   191 +-
  design/litmus/fixtures/forbid_rules/clean.py       |    15 +
  design/litmus/fixtures/forbid_rules/violation.py   |    15 +
@@ -214,15 +222,16 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  docs/commands/ticket.md                            |    72 +
  docs/commands/xref.md                              |    16 +-
  docs/design/cli-regrouping.md                      |    73 +
- .../registry/capability-via-ratchet.lock.json      |   102 +-
- docs/design/registry/check-coverage.yaml           |   112 +-
+ .../registry/capability-via-ratchet.lock.json      |   107 +-
+ docs/design/registry/check-coverage.yaml           |   127 +-
  .../design/ticket-strata-shared-graph-inventory.md |    81 +
  docs/guides/agentic-time-profiling.md              |    26 +-
  docs/guides/claude-hooks.md                        |    37 +-
  docs/guides/extending/comment-dsl-directives.md    |    13 +-
  .../failure-injection-acceptance-criteria.md       |    79 +
+ docs/guides/extending/registry_of_registries.json  |     7 +
  docs/guides/frob-toml.md                           |   121 +
- docs/guides/install.md                             |    40 +
+ docs/guides/install.md                             |    71 +
  docs/guides/release.md                             |    37 +
  docs/guides/unity.md                               |   241 +
  docs/modules/app.md                                |    20 +
@@ -247,7 +256,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  docs/modules/tickets-lifecycle.md                  |    85 +
  docs/modules/tickets-verify-sweep.md               |    44 +
  docs/modules/tickets.md                            |    70 +-
- docs/modules/vet.md                                |    54 +-
+ docs/modules/vet.md                                |    70 +-
  docs/strata/charter.md                             |     4 +-
  docs/strata/dataset-construct.md                   |    99 +
  docs/strata/evidence.md                            |     9 +-
@@ -309,11 +318,11 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  src/frob/app/telemetry/_state.py                   |     7 -
  src/frob/app/ticket_runner/__init__.py             |   141 +-
  src/frob/app/ticket_runner/_close_cmd.py           |    10 +-
- src/frob/app/ticket_runner/_land_cmd.py            |   648 +-
+ src/frob/app/ticket_runner/_land_cmd.py            |   663 +-
  src/frob/app/ticket_runner/_lifecycle.py           |    88 +-
  src/frob/app/ticket_runner/_mutate.py              |    39 +-
  src/frob/app/ticket_runner/_new.py                 |   203 +-
- src/frob/app/ticket_runner/_rapid_sweep.py         |   860 +-
+ src/frob/app/ticket_runner/_rapid_sweep.py         |   934 +-
  src/frob/app/ticket_runner/_verify.py              |   288 +-
  src/frob/app/ticket_runner/_waive_audit.py         |   190 +-
  src/frob/app/verify_runner.py                      |    40 +-
@@ -329,7 +338,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  src/frob/deploy/_audit.py                          |    15 +-
  src/frob/deploy/_conform.py                        |     7 -
  src/frob/docs/__init__.py                          |    64 +-
- src/frob/doctor.py                                 |   366 +-
+ src/frob/doctor.py                                 |   476 +-
  src/frob/dup/_legacy.py                            |    83 +-
  src/frob/dup/_legacy_cs.py                         |   207 +
  src/frob/dup/_pipeline/_probe.py                   |     1 -
@@ -337,7 +346,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  src/frob/dup/_template.py                          |    21 +-
  src/frob/excludes.py                               |    83 +-
  src/frob/findings.py                               |    28 +-
- src/frob/gates/__init__.py                         |   274 +-
+ src/frob/gates/__init__.py                         |   339 +-
  src/frob/gates/_arch.py                            |    13 +-
  src/frob/gates/_bug_repro.py                       |   319 +-
  src/frob/gates/_claim_lint.py                      |   202 +
@@ -500,9 +509,10 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  src/frob/tickets/__init__.py                       |     2 +
  src/frob/tickets/_doable.py                        |   145 +-
  src/frob/tickets/_done_report.py                   |    10 -
+ src/frob/tickets/_draft_finalize.py                |    10 +-
  src/frob/tickets/_evidence.py                      |   209 +-
  src/frob/tickets/_flow.py                          |   235 +-
- src/frob/tickets/_land.py                          |   496 +-
+ src/frob/tickets/_land.py                          |   641 +-
  src/frob/tickets/_land_compose.py                  |   219 +-
  src/frob/tickets/_land_finalize.py                 |   132 +-
  src/frob/tickets/_land_git_ops.py                  |   156 +-
@@ -511,15 +521,16 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  src/frob/tickets/_land_squash.py                   |   342 +-
  src/frob/tickets/_leases.py                        |   708 +-
  src/frob/tickets/_live_tracker.py                  |    35 +-
- src/frob/tickets/_models.py                        |   167 +-
+ src/frob/tickets/_models.py                        |   170 +-
  src/frob/tickets/_mutation_evidence.py             |    11 +-
- src/frob/tickets/_new_renumber.py                  |   103 +-
+ src/frob/tickets/_new_renumber.py                  |   133 +-
  src/frob/tickets/_registry_files.py                |   145 +
- src/frob/tickets/_renumber_v2.py                   |    13 +-
+ src/frob/tickets/_renumber_v2.py                   |    27 +-
  src/frob/tickets/_reporting.py                     |    96 +-
  src/frob/tickets/_setters.py                       |   113 +-
  src/frob/tickets/_store.py                         |   129 +-
  src/frob/tickets/_store_api.py                     |   178 +
+ src/frob/tickets/_unlanded.py                      |    47 +-
  src/frob/tickets/_worktree_sweep.py                |    17 +-
  src/frob/verify/_quarantine.py                     |    69 +
  src/frob/verify/_worker.py                         |    99 +-
@@ -543,8 +554,8 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  src/frob/vet/_containment.py                       |     2 +-
  src/frob/vet/_models.py                            |    10 +-
  src/frob/vet/_obfuscation.py                       |    77 +-
- src/frob/vet/_osv.py                               |   503 +-
- src/frob/vet/_scan.py                              |   126 +-
+ src/frob/vet/_osv.py                               |   560 +-
+ src/frob/vet/_scan.py                              |   147 +-
  src/frob/worktrees/__init__.py                     |    14 +
  src/frob/worktrees/_disposable_sweep.py            |   227 +
  src/frob/xref/__init__.py                          |    75 +-
@@ -553,7 +564,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  strata-core/src/parse/grammar_node.rs              |    28 +
  strata-core/src/parse/grammar_policy.rs            |    47 +
  strata-core/src/parse/mod.rs                       |   201 +
- tests/conftest.py                                  |    19 -
+ tests/conftest.py                                  |   187 +-
  .../csharp_dup_docblock/Sample/Dup/Duplicate.cs    |    37 +
  tests/fixtures/csharp_dup_docblock/guide.md        |    36 +
  .../python_control/duplicate.py                    |    29 +
@@ -715,6 +726,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tests/test_waive_gate.py                           |   154 +-
  tests/test_worktree_guard.py                       |    44 +-
  tests/test_worktree_pythonpath.py                  |    10 -
+ tests/ticket_land_suite/test_draft.py              |    79 +
  tests/ticket_land_suite/test_land_lock.py          |   132 +-
  .../test_land_proof_unmeasured.py                  |   104 +
  .../ticket_land_suite/test_land_reaps_worktree.py  |    97 +
@@ -743,7 +755,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tests/unit/lang/test_csharp_directives.py          |   115 +
  tests/unit/perf/test_hotpath_smells.py             |    24 +-
  tests/unit/rapid_sweep_suite/test_attribution.py   |    33 +-
- tests/unit/rapid_sweep_suite/test_baseline.py      |    10 +-
+ tests/unit/rapid_sweep_suite/test_baseline.py      |    26 +-
  tests/unit/rapid_sweep_suite/test_commit.py        |    25 +-
  tests/unit/rapid_sweep_suite/test_dispose.py       |    58 +-
  tests/unit/rapid_sweep_suite/test_filing.py        |    77 +-
@@ -794,7 +806,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tests/unit/test_cli_single_child_groups.py         |   242 +
  tests/unit/test_close_promote_drafts.py            |    12 +-
  tests/unit/test_conftest_sigbreak_faulthandler.py  |    14 +-
- tests/unit/test_conftest_stackdump.py              |   139 +-
+ tests/unit/test_conftest_stackdump.py              |   152 +-
  tests/unit/test_conftest_suite_result_status.py    |    48 +-
  tests/unit/test_cycle_runner_doc_waiver_t2598.py   |     7 +-
  tests/unit/test_cycle_waiver.py                    |     9 +-
@@ -802,12 +814,13 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tests/unit/test_design_invariants.py               |   133 +-
  tests/unit/test_dev_branch_workflow.py             |    50 +
  tests/unit/test_docs_module.py                     |    59 +-
- tests/unit/test_doctor.py                          |   205 +
+ tests/unit/test_doctor.py                          |   256 +
  tests/unit/test_doctor_runner_t1276.py             |   101 +-
  tests/unit/test_done_report_check_scope.py         |   177 +
  tests/unit/test_dotnet_runner.py                   |   182 +
  tests/unit/test_dup_cache.py                       |    15 +-
  tests/unit/test_dup_legacy_cpp.py                  |    41 +-
+ tests/unit/test_extending_guides_complete.py       |     4 +
  tests/unit/test_findings_severity_pinned.py        |    15 +-
  tests/unit/test_frob_core_gil.py                   |     6 +-
  tests/unit/test_gate_registry.py                   |   226 +
@@ -822,9 +835,9 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tests/unit/test_land_cas_ledger_retry.py           |   312 +
  tests/unit/test_land_cmd_quarantine.py             |    62 +-
  tests/unit/test_land_compose.py                    |    12 +-
- tests/unit/test_land_default_queue.py              |   128 +
+ tests/unit/test_land_default_queue.py              |   170 +
  .../test_land_dirty_main_orphaned_ticket_t2026.py  |    21 +-
- tests/unit/test_land_in_progress_window.py         |   349 +
+ tests/unit/test_land_in_progress_window.py         |   360 +
  tests/unit/test_land_leaked_tickets_lease_hoist.py |    95 +
  tests/unit/test_land_merge_conflict_drop.py        |   198 +
  tests/unit/test_land_queue.py                      |   114 +
@@ -889,7 +902,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tests/unit/verify/test_verify_runner.py            |    45 +
  tests/unit/verify/test_worker.py                   |    30 +-
  tests/unit/vet/test_capability_modes.py            |    14 +-
- tests/vet_suite/test_advisories.py                 |   309 +-
+ tests/vet_suite/test_advisories.py                 |   353 +-
  tests/vet_suite/test_capability_registry_unity.py  |   130 +
  tests/vet_suite/test_capability_scan_csharp.py     |    84 +
  tests/vet_suite/test_capability_scan_dotnet_bcl.py |   119 +
@@ -1455,7 +1468,7 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tickets/T-4685/ticket.md                           |    59 +
  tickets/T-4686/ticket.md                           |    40 +
  tickets/T-4687/ticket.md                           |   247 +
- tickets/T-4690/ticket.md                           |   298 +
+ tickets/T-4690/ticket.md                           |   447 +
  tickets/T-4691/ticket.md                           |   143 +
  tickets/T-4692/ticket.md                           |   327 +
  tickets/T-4693/done-report.md                      |  1328 ++
@@ -1608,12 +1621,13 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tickets/T-5132/ticket.md                           |    68 +
  tickets/T-5133/ticket.md                           |    65 +
  tickets/T-5134/ticket.md                           |    49 +
- tickets/T-5135/ticket.md                           |   585 +
+ tickets/T-5135/done-report.md                      |  2846 +++
+ tickets/T-5135/ticket.md                           |   591 +
  tickets/T-5136/ticket.md                           |    89 +
  tickets/T-5137/ticket.md                           |    63 +
- tickets/T-5138/done-report.md                      |  2817 +++
+ tickets/T-5138/done-report.md                      |  2913 +++
  tickets/T-5138/ticket.md                           |    78 +
- tickets/T-5139/ticket.md                           |    62 +
+ tickets/T-5139/ticket.md                           |   122 +
  tickets/T-5140/ticket.md                           |   770 +
  tickets/T-5141/ticket.md                           |   241 +
  tickets/T-5142/ticket.md                           |   282 +
@@ -1638,7 +1652,8 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tickets/T-5162/ticket.md                           |    31 +
  tickets/T-5163/ticket.md                           |  4299 ++++
  tickets/T-5165/ticket.md                           |   261 +
- tickets/T-5166/ticket.md                           |    33 +
+ tickets/T-5166/done-report.md                      |  2853 +++
+ tickets/T-5166/ticket.md                           |    39 +
  tickets/T-5168/ticket.md                           |    80 +
  tickets/T-5171/ticket.md                           |    50 +
  tickets/T-5172/ticket.md                           |    45 +
@@ -1655,13 +1670,13 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tickets/T-5190/ticket.md                           |    48 +
  tickets/T-5192/ticket.md                           |    29 +
  tickets/T-5198/ticket.md                           |    31 +
- tickets/T-5199/ticket.md                           |    30 +
+ tickets/T-5199/ticket.md                           |    46 +
  tickets/T-5201/ticket.md                           |    30 +
  tickets/T-5202/ticket.md                           |    31 +
- tickets/T-5203/ticket.md                           |    30 +
+ tickets/T-5203/ticket.md                           |    33 +
  tickets/T-5204/ticket.md                           |    29 +
  tickets/T-5205/ticket.md                           |    30 +
- tickets/T-5212/ticket.md                           |    29 +
+ tickets/T-5212/ticket.md                           |    31 +
  tickets/T-5213/ticket.md                           |    34 +
  tickets/T-5214/ticket.md                           |    32 +
  tickets/T-5215/ticket.md                           |    58 +
@@ -1671,13 +1686,16 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tickets/T-5219/ticket.md                           |    37 +
  tickets/T-5222/done-report.md                      |  2880 +++
  tickets/T-5222/ticket.md                           |    35 +
- tickets/T-5228/ticket.md                           |    46 +
+ tickets/T-5228/done-report.md                      |  2883 +++
+ tickets/T-5228/ticket.md                           |    48 +
  tickets/T-5229/ticket.md                           |    32 +
  tickets/T-5231/ticket.md                           |    54 +
  tickets/T-5238/ticket.md                           |    32 +
- tickets/T-5240/ticket.md                           |    30 +
+ tickets/T-5240/done-report.md                      |  2893 +++
+ tickets/T-5240/ticket.md                           |    35 +
  tickets/T-5242/done-report.md                      |  2869 +++
  tickets/T-5242/ticket.md                           |    43 +
+ tickets/T-5245/done-report.md                      |  2860 +++
  tickets/T-5245/ticket.md                           |    36 +
  tickets/T-5247/done-report.md                      |  2875 +++
  tickets/T-5247/ticket.md                           |    50 +
@@ -1686,12 +1704,18 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tickets/T-5250/ticket.md                           |    40 +
  tickets/T-5251/ticket.md                           |    39 +
  tickets/T-5252/ticket.md                           |    46 +
- tickets/T-5253/ticket.md                           |    36 +
+ tickets/T-5253/ticket.md                           |    46 +
  tickets/T-5254/ticket.md                           |    40 +
  tickets/T-5255/ticket.md                           |    40 +
  tickets/T-5256/ticket.md                           |    38 +
- tickets/T-5259/ticket.md                           |    31 +
+ tickets/T-5259/done-report.md                      |  2887 +++
+ tickets/T-5259/ticket.md                           |    35 +
  tickets/T-5260/ticket.md                           |    51 +
+ tickets/T-5261/ticket.md                           |    30 +
+ tickets/T-5262/ticket.md                           |    35 +
+ tickets/T-5267/ticket.md                 |    32 +
+ tickets/T-5268/ticket.md                 |    30 +
+ tickets/T-5269/ticket.md                 |    29 +
  tickets/archive/T-0090/ticket.md                   |    18 +
  tickets/archive/T-0114/ticket.md                   |    45 +-
  tickets/archive/T-0143/ticket.md                   |    94 +-
@@ -2899,15 +2923,16 @@ lag), which needs src/frob/doctor.py -- outside T-5138's declared scope.
  tickets/archive/T-5082/ticket.md                   |   345 +
  tickets/archive/T-5083/ticket.md                   |    90 +
  uv.lock                                            |     2 +-
- 2878 files changed, 313434 insertions(+), 15393 deletions(-)
+ 2901 files changed, 332152 insertions(+), 15523 deletions(-)
 ```
 
 ### Evidence
-- `tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_positive_control_fires_a_known_advisory` (pytest node id, verified passing when recorded)
-- `tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_serves_fresh_cache_with_no_network_call` (pytest node id, verified passing when recorded)
-- `tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_no_cache_no_network_is_unavailable` (pytest node id, verified passing when recorded)
-- `tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_stale_cache_beyond_max_age_is_unavailable` (pytest node id, verified passing when recorded)
-- `tests/vet_suite/test_advisories.py::TestVetConfigDefault::test_default_frob_toml_enables_advisories_with_no_opt_in` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_advisories.py::TestOsvViolationsUnresolved::test_unparseable_response_is_vet005_unresolved_with_tail` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_unparseable_response_is_distinct_from_unavailable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_doctor.py::TestRelevantToolFindings::test_relevant_missing_tool_is_a_finding` (pytest node id, verified passing when recorded)
 
 ### Acceptance amendments
-- [5] remove: removed 'given ruff two minor versions behind PyPI, when frob doctor runs, then it reports the lag' (reason: out of T-5138's declared scope (src/frob/vet/*.py, frob.toml, docs/modules/vet.md, src/frob/strata/_cve_fingerprint.py -- doctor.py is not in it); filed T-5204 to implement frob doctor's lint-tool version-lag reporting; logan, 2026-09-21)
+- [5] remove: removed 'given a new shutil.which call outside frob.tools, when frob check runs, then a DUP or ARCH finding names the registry' (reason: requires DUP/ARCH gate wiring in src/frob/gates/__init__.py, out of scope (T-5135's live lease); filed T-5267; logan, 2026-09-21)
+- [4] remove: removed 'given --allow-missing-tool sqlfluff --reason X, when frob ticket land runs, then the land proceeds and the reason is recorded on the ticket' (reason: requires frob ticket land wiring (--allow-missing-tool), out of scope (src/frob/check/*.py/gates/__init__.py leases); filed T-5267; logan, 2026-09-21)
+- [3] remove: removed 'given no Cargo.lock, when frob check runs, then cargo-audit is listed as not needed and does not affect exit' (reason: requires frob check's exit-code wiring, out of scope (src/frob/check/*.py held by T-4692); filed T-5267; logan, 2026-09-21)
+- [1] remove: removed 'given Cargo.lock in the repo and cargo-audit absent, when frob check runs, then the run ends with an UNMEASURED block naming cargo-audit, VET005 and the install command, and exits non-zero' (reason: requires frob check's UNMEASURED-block/exit-code wiring, out of scope (src/frob/check/*.py held by T-4692); filed T-5267; logan, 2026-09-21)

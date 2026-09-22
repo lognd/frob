@@ -130,7 +130,28 @@ class TestOsvAdapter:
             (dep,), cache_path=tmp_path / "vet.db", fetch=True
         )
         assert result.is_err
-        assert result.danger_err == _osv.OsvQueryError.Unavailable
+        assert result.danger_err == _osv.OsvQueryFailure(_osv.OsvQueryError.Unavailable)
+
+    def test_query_advisories_unparseable_response_is_distinct_from_unavailable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/vet/_osv.py::query_advisories kind="unit"
+        # T-5139 acceptance [2]: OSV.dev REACHED but answered with garbage
+        # must be a DIFFERENT, more actionable failure than "no data at
+        # all" -- and the response tail must ride along for the report.
+        from frob.vet import _osv
+        from frob.vet._models import Dependency
+
+        dep = Dependency(ecosystem="pypi", name="requests", version="2.31.0")
+        monkeypatch.setattr(_osv, "_http_post_json", lambda *a, **kw: "{not json")
+
+        result = _osv.query_advisories(
+            (dep,), cache_path=tmp_path / "vet.db", fetch=True
+        )
+        assert result.is_err
+        failure = result.danger_err
+        assert failure.kind == _osv.OsvQueryError.UnparseableResponse
+        assert "{not json" in failure.detail
 
     def test_query_advisories_stale_cache_beyond_max_age_is_unavailable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -167,7 +188,7 @@ class TestOsvAdapter:
             (dep,), cache_path=cache_path, fetch=True, max_age_days=7.0
         )
         assert result.is_err
-        assert result.danger_err == _osv.OsvQueryError.Unavailable
+        assert result.danger_err == _osv.OsvQueryFailure(_osv.OsvQueryError.Unavailable)
 
     def test_query_advisories_net_disabled_falls_back_to_stale_cache(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -226,6 +247,35 @@ class TestOsvAdapter:
         result = _osv.query_advisories((dep,), cache_path=tmp_path / "vet.db")
         assert result.is_ok
         assert result.danger_ok[dep] == ()
+
+
+class TestOsvViolationsUnresolved:
+    """T-5139 acceptance [2]: an unparseable OSV.dev response is VET005
+    UNRESOLVED (never a silent VET012/clean fold)."""
+
+    def test_unparseable_response_is_vet005_unresolved_with_tail(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/vet/_scan.py::_osv_violations kind="unit"
+        from frob.gates._models import Severity
+        from frob.vet import _osv
+        from frob.vet._models import Dependency, VetConfig
+        from frob.vet._scan import _osv_violations
+
+        dep = Dependency(ecosystem="pypi", name="requests", version="2.31.0")
+        monkeypatch.setattr(_osv, "_http_post_json", lambda *a, **kw: "{garbage")
+        cfg = VetConfig(present=True, advisories=True)
+
+        violations, skipped = _osv_violations(
+            (dep,), tmp_path / "requirements.txt", cfg, tmp_path / "vet.db", True
+        )
+        assert skipped == []
+        assert len(violations) == 1
+        v = violations[0]
+        assert v.rule == "VET005"
+        assert v.severity == Severity.UNRESOLVED
+        assert "UNMEASURED" in v.message
+        assert "garbage" in v.message
 
 
 class TestVetConfigDefault:

@@ -3,7 +3,7 @@ id: T-5139
 title: 'Missing or failing external tools are loud: one tool registry, Result-typed
   adapters, an UNMEASURED summary block at the end of every check and land, non-zero
   exit when a relevant tool is absent'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-20'
@@ -61,11 +61,18 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/vet_suite/test_advisories.py::TestOsvViolationsUnresolved::test_unparseable_response_is_vet005_unresolved_with_tail
+- tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_unparseable_response_is_distinct_from_unavailable
+- tests/unit/test_doctor.py::TestRelevantToolFindings::test_relevant_missing_tool_is_a_finding
 designated_repro_test: null
 acceptance:
 - text: given osv reachable but returning unparseable JSON, when frob vet runs, then
     VET005 is reported UNMEASURED with the stderr tail, never clean
-  evidence: []
+  evidence:
+  - tests/vet_suite/test_advisories.py::TestOsvViolationsUnresolved::test_unparseable_response_is_vet005_unresolved_with_tail
+  - tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_unparseable_response_is_distinct_from_unavailable
+  - tests/unit/test_doctor.py::TestRelevantToolFindings::test_relevant_missing_tool_is_a_finding
 acceptance_amendments:
 - op: remove
   index: 5
@@ -73,7 +80,7 @@ acceptance_amendments:
     then a DUP or ARCH finding names the registry
   new_text: null
   reason: requires DUP/ARCH gate wiring in src/frob/gates/__init__.py, out of scope
-    (T-5135's live lease); filed T-draft-2efc4eb3
+    (T-5135's live lease); filed T-5267
   actor: logan
   at: '2026-09-21'
 - op: remove
@@ -82,7 +89,7 @@ acceptance_amendments:
     runs, then the land proceeds and the reason is recorded on the ticket
   new_text: null
   reason: requires frob ticket land wiring (--allow-missing-tool), out of scope (src/frob/check/*.py/gates/__init__.py
-    leases); filed T-draft-2efc4eb3
+    leases); filed T-5267
   actor: logan
   at: '2026-09-21'
 - op: remove
@@ -91,7 +98,7 @@ acceptance_amendments:
     as not needed and does not affect exit
   new_text: null
   reason: requires frob check's exit-code wiring, out of scope (src/frob/check/*.py
-    held by T-4692); filed T-draft-2efc4eb3
+    held by T-4692); filed T-5267
   actor: logan
   at: '2026-09-21'
 - op: remove
@@ -101,7 +108,7 @@ acceptance_amendments:
     install command, and exits non-zero
   new_text: null
   reason: requires frob check's UNMEASURED-block/exit-code wiring, out of scope (src/frob/check/*.py
-    held by T-4692); filed T-draft-2efc4eb3
+    held by T-4692); filed T-5267
   actor: logan
   at: '2026-09-21'
 threat: null

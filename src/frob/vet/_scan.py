@@ -37,7 +37,7 @@ from frob.vet._models import (
     VetReport,
 )
 from frob.vet._obfuscation import _scan_directory_obfuscation
-from frob.vet._osv import query_advisories
+from frob.vet._osv import OsvQueryError, query_advisories
 from frob.vet._source import _locate_source
 from frob.vet._supplychain import supply_chain_tree_violations
 from frob.vet._typosquat import _find_typosquat
@@ -590,6 +590,7 @@ def _lifecycle_violations(
 # frob:enforces CHK-GATE-VET005
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-5138
+# frob:ticket T-5139
 def _osv_violations(
     deps: tuple[Dependency, ...],
     lockfile: Path,
@@ -597,10 +598,13 @@ def _osv_violations(
     cache_path: Path,
     fetch: bool,
 ) -> tuple[list[Violation], list[str]]:
-    """VET005 (a known advisory fires) / VET012 (advisory data could not be
-    obtained at all -- no cache and no network, or cache older than
-    `[vet].advisory_max_age_days`; docs/modules/vet.md "Advisories
-    (VET005)"), or a skipped-note when disabled by config."""
+    """VET005 (a known advisory fires) / VET012 (advisory data unavailable
+    -- no cache and no network, or cache older than
+    `[vet].advisory_max_age_days`) / VET005-UNRESOLVED (T-5139 acceptance
+    [2]: OSV.dev was REACHED but its response did not parse -- a
+    distinct, more actionable failure, reported UNRESOLVED with the raw
+    response tail rather than folded into VET012's "no data at all"),
+    or a skipped-note when disabled by config."""
     if not cfg.advisories:
         return [], ["VET005: advisories disabled ([vet].advisories = false)"]
 
@@ -612,6 +616,23 @@ def _osv_violations(
         max_age_days=cfg.advisory_max_age_days,
     )
     if result.is_err:
+        failure = result.danger_err
+        if failure.kind == OsvQueryError.UnparseableResponse:
+            return (
+                [
+                    Violation(
+                        rule="VET005",
+                        severity=Severity.UNRESOLVED,
+                        file=lockfile.name,
+                        line=0,
+                        message=(
+                            "UNMEASURED: osv query reached OSV.dev but its "
+                            f"response did not parse; response tail: {failure.detail}"
+                        ),
+                    )
+                ],
+                [],
+            )
         return (
             [
                 Violation(

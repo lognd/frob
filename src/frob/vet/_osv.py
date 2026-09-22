@@ -81,6 +81,35 @@ class OsvQueryError(ErrorSet):
         "advisory data unavailable: no cache and no network "
         "(or cache older than [vet].advisory_max_age_days) -- VET012"
     )
+    #: T-5139 acceptance [2]: OSV.dev was REACHED but answered with a body
+    #: that does not parse as its own documented schema -- a distinct,
+    #: more actionable failure than `Unavailable` (which means "never
+    #: answered at all"). Reported as VET005 UNRESOLVED, never a silent
+    #: clean pass (`OsvQueryFailure.detail` below carries the response tail).
+    UnparseableResponse = (
+        "advisory query reached OSV.dev but its response did not parse"
+    )
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:tests tests/vet_suite/test_advisories.py::TestOsvAdapter.test_query_advisories_unparseable_response_is_distinct_from_unavailable  # noqa: E501
+class OsvQueryFailure:
+    """`query_advisories`'s error value: `kind` (`OsvQueryError`) plus an
+    optional `detail` -- the raw response tail for `UnparseableResponse`,
+    empty for every other kind (T-5139 acceptance [2])."""
+
+    __slots__ = ("kind", "detail")
+
+    def __init__(self, kind: OsvQueryError, detail: str = "") -> None:
+        self.kind = kind
+        self.detail = detail
+
+    def __eq__(self, other: object) -> bool:
+        """Structural equality on (kind, detail) -- lets tests assert
+        `result.danger_err == OsvQueryFailure(OsvQueryError.X)` directly."""
+        if not isinstance(other, OsvQueryFailure):
+            return NotImplemented
+        return self.kind == other.kind and self.detail == other.detail
 
 
 # frob:doc docs/modules/vet.md#public-api
@@ -226,21 +255,27 @@ def _http_get_json(url: str, timeout_s: float) -> str | None:
 
 def _fetch_advisory_ids(
     deps: tuple[Dependency, ...], base_url: str | None, timeout_s: float
-) -> dict[Dependency, tuple[str, ...]] | None:
-    """`/v1/querybatch` ids-only lookup for every queryable dep in `deps`;
-    `None` on any network/parse failure (caller degrades to cache/Err)."""
+) -> Result[dict[Dependency, tuple[str, ...]], str]:
+    """`/v1/querybatch` ids-only lookup for every queryable dep in `deps`.
+
+    T-5139: distinguishes a network failure (`Err("network")` -- caller
+    degrades to cache/VET012-shaped Unavailable) from a REACHED-but-
+    unparseable response (`Err("unparseable:<raw response tail>")` --
+    caller reports the specific UnparseableResponse failure kind, T-5139
+    acceptance [2]: a tool that answered with garbage is a DIFFERENT,
+    more actionable failure than one that never answered at all)."""
     body, queryable = _querybatch_body(deps)
     if not queryable:
-        return {}
+        return Ok({})
     url = base_url if base_url else _QUERYBATCH_URL
     raw = _http_post_json(url, body, timeout_s)
     if raw is None:
-        return None
+        return Err("network")
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         _log.warning("vet: osv querybatch response unparseable: %s", exc)
-        return None
+        return Err(f"unparseable:{raw[-200:]}")
     results = data.get("results", [])
     out: dict[Dependency, tuple[str, ...]] = {}
     for dep, result_entry in zip(queryable, results, strict=False):
@@ -248,7 +283,7 @@ def _fetch_advisory_ids(
             v.get("id", "") for v in result_entry.get("vulns", []) if v.get("id")
         )
         out[dep] = ids
-    return out
+    return Ok(out)
 
 
 def _fetch_vuln(vuln_id: str, base_url: str | None, timeout_s: float) -> dict | None:
@@ -271,15 +306,17 @@ def _fetch_from_network(
     *,
     base_url: str | None,
     timeout_s: float,
-) -> dict[Dependency, tuple[OsvAdvisory, ...]] | None:
+) -> Result[dict[Dependency, tuple[OsvAdvisory, ...]], str]:
     """Query OSV.dev for every dep in `deps`, cache each dep's result, and
-    return the full per-dep advisory map; `None` if the batch call itself
-    fails (a per-vuln detail-fetch failure degrades that ONE advisory's
-    record to a minimal stub instead of dropping the whole batch -- an
-    id-only hit is still a real finding, just less detailed)."""
-    ids_by_dep = _fetch_advisory_ids(deps, base_url, timeout_s)
-    if ids_by_dep is None:
-        return None
+    return the full per-dep advisory map; `Err("network")` /
+    `Err("unparseable:...")` if the batch call itself fails (a per-vuln
+    detail-fetch failure degrades that ONE advisory's record to a minimal
+    stub instead of dropping the whole batch -- an id-only hit is still a
+    real finding, just less detailed)."""
+    ids_result = _fetch_advisory_ids(deps, base_url, timeout_s)
+    if ids_result.is_err:
+        return Err(ids_result.danger_err)
+    ids_by_dep = ids_result.danger_ok
 
     vuln_cache: dict[str, dict] = {}
     out: dict[Dependency, tuple[OsvAdvisory, ...]] = {}
@@ -305,7 +342,7 @@ def _fetch_from_network(
         len(deps),
         sum(1 for advs in out.values() if advs),
     )
-    return out
+    return Ok(out)
 
 
 def _advisory_to_dict(advisory: OsvAdvisory) -> dict:
@@ -382,7 +419,7 @@ def query_advisories(
     timeout_s: float = _TIMEOUT_S,
     fetch: bool = True,
     max_age_days: float = 7.0,
-) -> Result[dict[Dependency, tuple[OsvAdvisory, ...]], OsvQueryError]:
+) -> Result[dict[Dependency, tuple[OsvAdvisory, ...]], OsvQueryFailure]:
     """Advisories for every dep in `deps`, batched through OSV.dev's
     `querybatch` API (docs/modules/vet.md "Advisories (VET005)").
 
@@ -390,15 +427,27 @@ def query_advisories(
     A stale-cache-or-miss dep triggers one network attempt UNLESS
     `fetch=False`. A dep whose cache is unusable (miss, or older than
     `max_age_days`) AND could not be freshly fetched makes the WHOLE call
-    `Err(OsvQueryError.Unavailable)` (VET012) -- never a partial silent
-    drop of that one dependency's advisories.
+    `Err(OsvQueryFailure(Unavailable))` (VET012) -- never a partial silent
+    drop of that one dependency's advisories. T-5139: OSV.dev REACHED but
+    answering with an unparseable body is instead
+    `Err(OsvQueryFailure(UnparseableResponse, detail=<response tail>))`,
+    a distinct, more actionable failure (acceptance [2]).
     """
     fresh, need_fetch, stale_fallback, unusable = _classify_deps(
         deps, cache_path, max_age_days
     )
-    fetched = _fetch_if_needed(need_fetch, fetch, cache_path, base_url, timeout_s)
+    fetch_result = _fetch_if_needed(need_fetch, fetch, cache_path, base_url, timeout_s)
+    if fetch_result is not None and fetch_result.is_err:
+        detail = fetch_result.danger_err
+        if detail.startswith("unparseable:"):
+            _log.warning("vet: osv response unparseable: %s", detail)
+            return Err(
+                OsvQueryFailure(
+                    OsvQueryError.UnparseableResponse, detail[len("unparseable:") :]
+                )
+            )
     fresh, unusable = _merge_fetch_outcome(
-        fresh, stale_fallback, unusable, need_fetch, fetched
+        fresh, stale_fallback, unusable, need_fetch, fetch_result
     )
 
     if unusable:
@@ -408,7 +457,7 @@ def query_advisories(
             len(unusable),
             max_age_days,
         )
-        return Err(OsvQueryError.Unavailable)
+        return Err(OsvQueryFailure(OsvQueryError.Unavailable))
 
     return Ok(fresh)
 
@@ -455,9 +504,12 @@ def _fetch_if_needed(
     cache_path: Path,
     base_url: str | None,
     timeout_s: float,
-) -> dict[Dependency, tuple[OsvAdvisory, ...]] | None:
+) -> Result[dict[Dependency, tuple[OsvAdvisory, ...]], str] | None:
     """One network attempt for `need_fetch`, or `None` if skipped
-    (`fetch=False`, net disabled, or nothing to fetch) or failed."""
+    (`fetch=False`, net disabled, or nothing to fetch); a made attempt
+    always returns a `Result` (T-5139: distinguishes a plain network
+    failure from a reached-but-unparseable response, see
+    `_fetch_advisory_ids`)."""
     if not need_fetch or not fetch:
         return None
     if not net_enabled():
@@ -477,12 +529,17 @@ def _merge_fetch_outcome(
     stale_fallback: dict[Dependency, tuple[OsvAdvisory, ...]],
     unusable: list[Dependency],
     need_fetch: list[Dependency],
-    fetched: dict[Dependency, tuple[OsvAdvisory, ...]] | None,
+    fetch_result: Result[dict[Dependency, tuple[OsvAdvisory, ...]], str] | None,
 ) -> tuple[dict[Dependency, tuple[OsvAdvisory, ...]], list[Dependency]]:
     """Fold a (possibly-skipped/failed) fetch attempt's outcome into
     `fresh`/`unusable`: a successful fetch resolves every dep it covers
     (clearing it from `unusable`); a skipped/failed one falls back to
     `stale_fallback`, leaving only the truly unusable deps."""
+    fetched = (
+        fetch_result.danger_ok
+        if fetch_result is not None and fetch_result.is_ok
+        else None
+    )
     if fetched is not None:
         fresh = {**fresh, **fetched}
         unusable = [d for d in unusable if d not in fetched]
@@ -495,6 +552,7 @@ def _merge_fetch_outcome(
 __all__ = [
     "OsvAdvisory",
     "OsvQueryError",
+    "OsvQueryFailure",
     "cve_ids",
     "query_advisories",
 ]

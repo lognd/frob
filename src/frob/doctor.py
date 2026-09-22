@@ -81,6 +81,7 @@ import json
 import os
 import platform
 import shutil
+from collections.abc import Callable
 from enum import StrEnum
 from importlib.metadata import version
 from pathlib import Path
@@ -922,6 +923,118 @@ def _external_tools_remediation(statuses: list[ExternalToolStatus]) -> str | Non
         return None
     lines = [f"{s.name} not found -- {s.install_hint}" for s in missing_required]
     return "required tool(s) missing: " + "; ".join(lines)
+
+
+# frob:ticket T-5139
+# frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
+# frob:tests tests/unit/test_doctor.py::TestRelevantToolFindings.test_relevant_missing_tool_is_a_finding  # noqa: E501
+class RelevantToolFailureKind(StrEnum):
+    """T-5139 DESIGN item 2: why a gate-serving tool's `RelevantToolEntry`
+    could not measure what it serves -- Result-typed instead of a bare
+    presence bool, so a REACHED-but-broken tool (`NonZeroExit`,
+    `UnparseableOutput`, `Timeout`) is never folded into the same "absent"
+    bucket as `Missing`: each is a differently actionable remedy."""
+
+    MISSING = "missing"
+    VERSION_TOO_OLD = "version_too_old"
+    SPAWN_FAILED = "spawn_failed"
+    NON_ZERO_EXIT = "non_zero_exit"
+    TIMEOUT = "timeout"
+    UNPARSEABLE_OUTPUT = "unparseable_output"
+    NETWORK_UNAVAILABLE = "network_unavailable"
+
+
+# frob:ticket T-5139
+# frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
+# frob:tests tests/unit/test_doctor.py::TestRelevantToolFindings.test_relevant_missing_tool_is_a_finding  # noqa: E501
+class RelevantToolEntry(BaseModel):
+    """One `_RELEVANT_TOOLS` registry row (T-5139 DESIGN item 1): `name` +
+    `rules_it_serves` (the gate rule ids left UNMEASURED when this tool is
+    relevant-and-missing/failed) + `install_remedy` (the command a human
+    or `frob doctor --install` runs). `relevant_when` is NOT stored on the
+    model (a `Path -> bool` repo predicate is not pydantic-serializable);
+    it lives in the paired `_RELEVANT_TOOLS` tuple entry instead, keyed by
+    `name`, and `tool_is_relevant`/`relevant_tool_findings` below join the
+    two back together."""
+
+    model_config = {}
+
+    name: str
+    rules_it_serves: tuple[str, ...]
+    install_remedy: str
+
+
+# frob:ticket T-5139
+# frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
+# frob:tests tests/unit/test_doctor.py::TestRelevantToolFindings.test_relevant_missing_tool_is_a_finding  # noqa: E501
+class RelevantToolFinding(BaseModel):
+    """One gate-serving tool that IS relevant to `root` and is missing or
+    failed (T-5139 DESIGN item 3): the rules it serves are UNMEASURED, and
+    a relevant finding makes the caller's run exit non-zero UNLESS
+    overridden (`--allow-missing-tool NAME --reason ...`, T-5139 DESIGN
+    item 3) -- wiring that override and the non-zero exit itself into
+    `frob check`/`frob ticket land` is a follow-up (`src/frob/check/**`/
+    `src/frob/gates/**` carried other agents' live leases at the time of
+    this ticket, same class of cut T-0570 made for the derived-state
+    drift check this module already reports -- see this module's own
+    docstring)."""
+
+    model_config = {}
+
+    entry: RelevantToolEntry
+    kind: RelevantToolFailureKind
+    detail: str = ""
+
+
+# frob:ticket T-5139
+# frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
+_RELEVANT_TOOLS: tuple[tuple[RelevantToolEntry, Callable[[Path], bool]], ...] = (
+    (
+        RelevantToolEntry(
+            name="cargo-audit",
+            rules_it_serves=("VET005",),
+            install_remedy="cargo install cargo-audit",
+        ),
+        lambda root: (root / "Cargo.lock").exists(),
+    ),
+)
+
+
+# frob:ticket T-5139
+def _relevant_tool_status(
+    entry: RelevantToolEntry,
+) -> tuple[bool, RelevantToolFailureKind | None, str]:
+    """Whether `entry`'s binary is present and, if not, which
+    `RelevantToolFailureKind` explains the absence -- `shutil.which` is
+    the whole probe for MVP (VersionTooOld/NonZeroExit/Timeout/
+    UnparseableOutput/NetworkUnavailable are real adapter-failure kinds a
+    real spawn-and-parse adapter can report; this registry-level presence
+    check can only ever observe MISSING, so it is the only kind returned
+    here)."""
+    if shutil.which(entry.name) is None:
+        return False, RelevantToolFailureKind.MISSING, f"{entry.name} not on PATH"
+    return True, None, ""
+
+
+# frob:ticket T-5139
+# frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
+# frob:tests tests/unit/test_doctor.py::TestRelevantToolFindings.test_relevant_missing_tool_is_a_finding  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestRelevantToolFindings.test_irrelevant_missing_tool_is_not_a_finding  # noqa: E501
+def relevant_tool_findings(root: Path) -> list[RelevantToolFinding]:
+    """Every `_RELEVANT_TOOLS` entry whose `relevant_when(root)` predicate
+    is true AND which is missing/failed (T-5139 DESIGN item 3) -- a tool
+    that is not relevant here (no `Cargo.lock`, no `*.sql`, ...) is never
+    reported, even if absent: "not needed here" is not a finding. An
+    empty return means every relevant tool measured cleanly, never "no
+    tools exist to check" (the registry always has entries)."""
+    findings: list[RelevantToolFinding] = []
+    for entry, relevant_when in _RELEVANT_TOOLS:
+        if not relevant_when(root):
+            continue
+        present, kind, detail = _relevant_tool_status(entry)
+        if not present and kind is not None:
+            findings.append(RelevantToolFinding(entry=entry, kind=kind, detail=detail))
+    return findings
 
 
 # frob:ticket T-4459

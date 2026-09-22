@@ -230,7 +230,7 @@ false` keeps disabling live advisory lookups, logged at WARNING.
 | VET002 | observed capability not in the declaration |
 | VET003 | version bump ADDS a capability vs the previously scanned version (fires even if declared -- escalation always warrants a look; re-declare to acknowledge) |
 | VET004 | obfuscation signals or install-hook capability beyond declared |
-| VET005 | known advisory for a locked version (`[vet].advisories`, on by default since T-5138) -- message names the advisory id, its raw OSV `severity` (CVSS vector or word), and the fixed version when known |
+| VET005 | known advisory for a locked version (`[vet].advisories`, on by default since T-5138) -- message names the advisory id, its raw OSV `severity` (CVSS vector or word), and the fixed version when known. UNRESOLVED (not ERROR/WARN) when OSV.dev was REACHED but its response did not parse (T-5139 acceptance [2]) -- the message is prefixed `UNMEASURED:` and carries the raw response tail; a distinct, more actionable failure than VET012's "never answered at all" |
 | VET006 | lockfile and manifest disagree (manifest edited without re-lock) |
 | VET012 | advisory data could not be obtained at all: no cache and no network, or the cache is older than `[vet].advisory_max_age_days` (T-5138) -- a stale-but-usable cache serves WITH a note, never silently as "no advisories"; this is the loud failure mode instead |
 
@@ -452,6 +452,22 @@ into vet's models, never an auto-install):
 | malware-heuristics | GuardDog | corroborates VET004 signals with maintained typosquat/exfil rules |
 | repo-health | OpenSSF Scorecard | advisory metadata on verdicts (unmaintained, unreviewed-commits) -- informational, not a gate |
 | provenance | sigstore/cosign, SLSA attestations | VET007 (new, opt-in): artifact hash lacks valid provenance for packages listed in <!-- frob:waive DOC006 reason="VET007 is itself explicitly marked new/opt-in in this same cell -- vet.require-provenance is a forward-looking config key this feature does not implement yet, not a stale/bogus pointer" --> [vet.require-provenance] |
+
+**Relevance-gated tools (T-5139)**: unlike the adapters above, `cargo-audit`
+is registered in `frob.doctor._RELEVANT_TOOLS` (`RelevantToolEntry`,
+`relevant_when=lambda root: (root / "Cargo.lock").exists()`) rather than
+delegated to unconditionally -- OSV.dev's `crates.io` ecosystem mapping
+already covers Cargo.lock advisories via `_osv.py` (VET005) with no
+external binary, so `cargo-audit`'s own absence is reported by
+`frob.doctor.relevant_tool_findings(root)` as an informational
+`RelevantToolFinding` (not a gate failure) when a repo has a `Cargo.lock`
+-- a second, ecosystem-native audit source a reviewer may still want.
+Wiring `relevant_tool_findings` into `frob check`'s loud end-of-run
+UNMEASURED block and `frob ticket land`'s `--allow-missing-tool NAME
+--reason` override (T-5139's full DESIGN items 3-4) is a follow-up:
+`src/frob/check/**` and `src/frob/gates/__init__.py` carried other
+agents' live in-progress leases (T-4692, T-5135) at the time of this
+ticket -- see T-5139's Done report and its filed follow-up ticket.
 
 ## First-party detectors (the non-public layer)
 
