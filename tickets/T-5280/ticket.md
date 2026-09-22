@@ -1,5 +1,5 @@
 ---
-id: T-draft-ac05cce9
+id: T-5280
 title: frob ticket points/tokens missing LEDGER_VERB_STRATEGY entry (T-5132 regression)
 state: in-progress
 kind: bug

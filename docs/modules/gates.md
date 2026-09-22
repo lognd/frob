@@ -7691,6 +7691,45 @@ violation-collection wiring into `run_gates` (`frob.gates.__init__`) are
 both outside this leaf's declared scope -- see T-4714's Done report for
 the filed follow-up.
 
+### TEST010 redundant test declaration Tier-A fix (T-4710, T-5261)
+
+`frob.gates._fix_engine_text.fix_test010_redundant_test_declaration`,
+registered in `TIER_A_HANDLERS` under the `TEST010` key. TEST010 already
+fires generically on any `frob:tests`-flavored `MalformedDirective`
+(`_test010_violations`, `frob.gates.__init__`) -- including
+`frob.graph._redundant_test_declaration_finding`'s own T-4710 finding, a
+`frob:tests` directive still declared on the PRODUCTION symbol now that
+the graph derives the same edge from a test-side declaration. This
+handler owns only THAT shape (matched by its own reason text, `frob:
+tests on production symbol '...' is redundant (T-4710): ...`); TEST010's
+other catch-all case (an invalid `frob:tests kind=`) has no remedy this
+handler can apply and is left alone.
+
+Three outcomes, matching the finding's own remedy text verbatim:
+
+- **DELETE** -- a test-side declaration for the same `(src, target)`
+  pair already exists: the production-side physical line is removed.
+- **MOVE** -- no test-side declaration exists yet: the directive is
+  relocated to directly above the test symbol's own definition
+  (`GraphSnapshot.symbols[target].span`), re-indented to the destination
+  site, with its OWN target rewritten from the test symbol to the
+  production symbol (`dsl._reorient_test_edge`'s orientation convention:
+  a declaration sitting ON the test symbol must name the production
+  symbol, not itself) -- still the exact same `(src, target)` pair the
+  production-side directive already declared, restated in the new
+  site's required grammar, never a new binding invented. Any trailing
+  `key="value"` attrs are carried over verbatim.
+- **REFUSE** -- the move target does not resolve in `GraphSnapshot.
+  symbols` at all: neither file is touched. A dangling id is a finding
+  for a human, never a binding this handler guesses at.
+
+Acceptance (verified end-to-end through `frob.graph.build_graph` +
+`frob.gates.test_gate` + `frob.gates._fix_engine.apply_tier_a_fixes`,
+the real production entry points, not the handler called directly): the
+DELETE and MOVE cases both leave TEST010 clean on a re-built graph, and
+the MOVE case's post-fix edge set is byte-for-byte identical to the
+pre-fix one.
+
 ## Design decisions
 
 - **Gates are pure functions over loaded state.** Load once (snapshot,

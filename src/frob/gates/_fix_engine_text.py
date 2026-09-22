@@ -956,3 +956,234 @@ def fix_fmt002_noqa_strip(
         )
         for change in report.changes
     ]
+
+
+# ---------------------------------------------------------------------------
+# TEST010 redundant-test-declaration Tier-A fix (T-4710/T-5261): a
+# `frob:tests` directive still declared on the PRODUCTION symbol, now
+# redundant because the graph derives the same edge from a test-side
+# declaration (`frob.graph._redundant_test_declarations`, folded into
+# `GraphSnapshot.malformed` and surfaced generically by TEST010's own
+# "any frob:tests-flavored MalformedDirective" catch-all). DELETE when a
+# test-side declaration for the same pair already exists; MOVE the line
+# verbatim onto the test symbol's own site when it does not yet; REFUSE
+# (report, do nothing) when that test symbol does not resolve in
+# `GraphSnapshot.symbols` at all -- never invent a binding.
+# ---------------------------------------------------------------------------
+
+#: `frob.graph._redundant_test_declaration_finding`'s own reason shape --
+#: matched here rather than re-deriving the redundancy analysis a second
+#: time (this handler acts on the ALREADY-COMPUTED finding, it does not
+#: recompute which declarations are redundant).
+_T4710_REDUNDANT_RE = re.compile(
+    r"frob:tests on production symbol '(?P<src>[^']*)' is redundant \(T-4710\): "
+    r"(?P<remedy>.*)$"
+)
+_T4710_MOVE_TARGET_RE = re.compile(
+    r"move this line onto the test symbol '(?P<target>[^']*)' in its own file"
+)
+_T4710_DELETE_MARKER = "delete this production-side copy"
+
+
+def _delete_redundant_test_declaration(
+    root: Path, rel_file: str, line: int
+) -> FixApplied | None:
+    """DELETE case: remove the one physical `line` (1-indexed) of
+    `root/rel_file` -- a test-side declaration for the same `(src,
+    target)` pair already exists, so this production-side copy carries
+    no coverage information a deletion would lose."""
+    path = root / rel_file
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    lines = text.splitlines(keepends=True)
+    idx = line - 1
+    if idx < 0 or idx >= len(lines):
+        return None
+    removed = lines[idx]
+    del lines[idx]
+    if not _write_text(path, "".join(lines)):
+        return None
+    return FixApplied(
+        rule="TEST010",
+        file=rel_file,
+        line=line,
+        detail=f"deleted redundant production-side frob:tests: {removed.strip()!r}",
+    )
+
+
+#: A directive comment's own leader (`#`/`//`) plus the bare `frob:tests`
+#: verb, capturing everything AFTER the verb (target + any trailing
+#: `key="value"` attrs) as one group -- used only to locate where the
+#: TARGET token starts so `_move_redundant_test_declaration` can replace
+#: it (the site changed, so the target must change to name the symbol
+#: the OLD site was, per T-4710's reversed-orientation convention) while
+#: leaving any trailing attrs untouched.
+_DIRECTIVE_TESTS_REST_RE = re.compile(
+    r"^(?P<lead>\s*(?:#|//)\s*frob:tests\s+)(?P<rest>.*)$"
+)
+
+
+def _rebuilt_move_directive_content(
+    moved_line: str, *, target_file: str, src: str
+) -> str | None:
+    """The NEW directive text `_move_redundant_test_declaration` inserts
+    at the destination site, or `None` if `moved_line` does not shape-
+    match a `frob:tests` directive at all -- split out for ARCH001. The
+    target token is rewritten from the old (production-side) spelling to
+    `src`: T-4710's declaration now sits ON the test symbol, so its
+    target must name the PRODUCTION symbol the comment used to sit on
+    (`dsl._reorient_test_edge`'s own orientation convention), not the
+    test symbol it already IS; any trailing `key="value"` attrs are
+    carried over verbatim -- still exactly the `(src, target)` pair the
+    production-side directive already declared, restated in the new
+    site's required grammar, never a new binding invented."""
+    rest_match = _DIRECTIVE_TESTS_REST_RE.match(moved_line)
+    if rest_match is None:
+        return None
+    from frob.gates._fmt_directives import marker_for
+
+    marker = marker_for(target_file)
+    if marker is None:
+        return None
+    _old_target, _, attrs_tail = rest_match.group("rest").partition(" ")
+    return f"{marker} frob:tests {src}" + (f" {attrs_tail}" if attrs_tail else "")
+
+
+def _apply_move_edit(
+    src_path: Path, dst_path: Path, *, idx: int, insert_idx: int, new_line: str
+) -> bool:
+    """Perform the actual insert/delete file-write half of
+    `_move_redundant_test_declaration` -- split out for ARCH001. Same-file
+    moves apply both edits against ONE in-memory line list so the
+    insert/delete indices stay consistent with each other; cross-file
+    moves insert into the destination first (never lose the declaration
+    if the destination write fails) and only then delete from the
+    source."""
+    src_lines = src_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    if src_path == dst_path:
+        combined = list(src_lines)
+        del combined[idx]
+        insert_at = insert_idx - 1 if insert_idx > idx else insert_idx
+        combined.insert(insert_at, new_line)
+        return _write_text(src_path, "".join(combined))
+    dst_lines = dst_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    dst_lines = list(dst_lines)
+    dst_lines.insert(insert_idx, new_line)
+    if not _write_text(dst_path, "".join(dst_lines)):
+        return False
+    src_lines = list(src_lines)
+    del src_lines[idx]
+    return _write_text(src_path, "".join(src_lines))
+
+
+def _move_redundant_test_declaration(
+    root: Path,
+    snapshot: GraphSnapshot,
+    rel_file: str,
+    line: int,
+    src: str,
+    target: str,
+) -> FixApplied | None:
+    """MOVE case: relocate the one physical `line` (1-indexed) of
+    `root/rel_file` to directly above `target`'s own definition, in
+    `target`'s own file -- re-indented to match the destination site
+    (formatting only, `_rebuilt_move_directive_content` builds the new
+    content, `_apply_move_edit` writes it). REFUSES -- returns `None`,
+    touching neither file -- when `target` does not resolve in
+    `snapshot.symbols` at all: a dangling id is a finding for a human to
+    look at, never a binding this handler guesses at."""
+    symbol = snapshot.symbols.get(target)
+    if symbol is None:
+        return None
+    target_file, _, _qualname = target.partition("::")
+    if not target_file:
+        return None
+    src_path = root / rel_file
+    dst_path = root / target_file
+    try:
+        src_text = src_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    src_lines = src_text.splitlines(keepends=True)
+    idx = line - 1
+    if idx < 0 or idx >= len(src_lines):
+        return None
+    directive_content = _rebuilt_move_directive_content(
+        src_lines[idx], target_file=target_file, src=src
+    )
+    if directive_content is None:
+        return None
+    if src_path == dst_path:
+        dst_lines = src_lines
+    else:
+        try:
+            dst_text = dst_path.read_text(encoding="utf-8")
+        except OSError:
+            return None
+        dst_lines = dst_text.splitlines(keepends=True)
+    insert_idx = symbol.span[0] - 1
+    if insert_idx < 0 or insert_idx > len(dst_lines):
+        return None
+    dest_indent_source = dst_lines[insert_idx] if insert_idx < len(dst_lines) else ""
+    dest_indent = dest_indent_source[
+        : len(dest_indent_source) - len(dest_indent_source.lstrip(" \t"))
+    ]
+    new_line = f"{dest_indent}{directive_content}\n"
+    if not _apply_move_edit(
+        src_path, dst_path, idx=idx, insert_idx=insert_idx, new_line=new_line
+    ):
+        return None
+    return FixApplied(
+        rule="TEST010",
+        file=rel_file,
+        line=line,
+        detail=(
+            f"moved redundant production-side frob:tests onto {target!r} "
+            f"in {target_file}"
+        ),
+    )
+
+
+# frob:doc \
+# docs/modules/gates.md#test010-redundant-test-declaration-tier-a-fix-t-4710-t-5261
+# frob:ticket T-5261
+# frob:tests \
+# tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration.test_delete_case_fires_test010_and_fix_removes_the_line  # noqa: E501
+def fix_test010_redundant_test_declaration(
+    root: Path, snapshot: GraphSnapshot
+) -> list[FixApplied]:
+    """Tier-A fix (T-4710/T-5261) for the redundant-test-declaration half
+    of TEST010's own catch-all: scans `snapshot.malformed` for
+    `frob.graph._redundant_test_declaration_finding`'s own reason shape
+    (never re-derives which declarations are redundant, only acts on the
+    finding already computed) and DELETEs, MOVEs, or REFUSES per finding
+    -- see `_delete_redundant_test_declaration`/`_move_redundant_test_
+    declaration`'s own docstrings for the three outcomes. A finding whose
+    reason does not match this shape (e.g. TEST010's OTHER catch-all
+    case, an invalid `frob:tests kind=`) is left alone -- this handler
+    owns only the redundant-declaration shape, not TEST010 wholesale."""
+    applied: list[FixApplied] = []
+    for md in snapshot.malformed:
+        match = _T4710_REDUNDANT_RE.search(md.reason)
+        if match is None:
+            continue
+        remedy = match.group("remedy")
+        if _T4710_DELETE_MARKER in remedy:
+            fix = _delete_redundant_test_declaration(root, md.file, md.line)
+        else:
+            move_match = _T4710_MOVE_TARGET_RE.search(remedy)
+            if move_match is None:
+                continue
+            fix = _move_redundant_test_declaration(
+                root,
+                snapshot,
+                md.file,
+                md.line,
+                match.group("src"),
+                move_match.group("target"),
+            )
+        if fix is not None:
+            applied.append(fix)
+    return applied

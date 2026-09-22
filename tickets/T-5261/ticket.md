@@ -1,7 +1,7 @@
 ---
 id: T-5261
 title: Tier-A fix for redundant production-side frob:tests declarations (T-4710 follow-up)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-21'
@@ -11,6 +11,12 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -57,6 +63,11 @@ scope_changes:
   reason: _KNOWN_RULE_FIXABILITY needs TEST010=auto, guarded by TestRuleFixability
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_delete_case_fires_test010_and_fix_removes_the_line
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_move_case_fires_test010_and_fix_relocates_the_line
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_dangling_target_refuses_rather_than_guessing
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
 designated_repro_test: null
 threat: null
 component: null

@@ -68,6 +68,7 @@ from frob.gates._fix_engine_text import (
     fix_e501_merge_introduced,
     fix_fmt001_directive_wrap,
     fix_suppress001_paired_suppression,
+    fix_test010_redundant_test_declaration,
 )
 from frob.gitio import run_argv
 from frob.graph import EdgeKind, GraphSnapshot
@@ -1229,6 +1230,12 @@ TIER_A_HANDLERS: dict[
     ),
     "FMT001": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
         fix_fmt001_directive_wrap(root)
+    ),
+    # T-4710/T-5261: TEST010's own redundant-production-side-frob:tests
+    # shape only -- an invalid frob:tests kind= (TEST010's OTHER catch-all
+    # case) is left alone by this handler, see its own docstring.
+    "TEST010": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_test010_redundant_test_declaration(root, snapshot)
     ),
     "SUPPRESS001": (
         lambda root, snapshot, queue, ticket_id, merge_target_ids: (

@@ -45,8 +45,7 @@ class TestFixSuppress001PairedSuppression:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_mypy\
-        # _suppressed_ty_unsuppressed_gets_paired_suppression kind="unit"
+        # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression kind="unit"  # noqa: E501
         """Acceptance [0]: given a SUPPRESS001 finding (a line carrying
         only mypy's `type: ignore` that `ty` still errors on), the fix
         appends `ty`'s own reported rule code, and the line then passes
@@ -75,8 +74,7 @@ class TestFixSuppress001PairedSuppression:
 
     def test_idempotent_second_fix_pass_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_idem\
-        # potent_second_fix_pass_is_a_no_op kind="unit"
+        # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_idempotent_second_fix_pass_is_a_no_op kind="unit"  # noqa: E501
         """Acceptance [1]: running the fix twice never duplicates or
         reorders a suppression -- the second pass is byte-identical to
         the first, since the underlying diagnostic silences itself once
@@ -101,8 +99,7 @@ class TestFixSuppress001PairedSuppression:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_merg\
-        # es_with_existing_other_code_canonical_order kind="unit"
+        # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_merges_with_existing_other_code_canonical_order kind="unit"  # noqa: E501
         """A pre-existing `# noqa: F401` on the fixed line is MERGED, not
         clobbered -- `E501,F401` in canonical alphabetical order,
         preserving the pre-existing code."""
@@ -113,8 +110,7 @@ class TestFixSuppress001PairedSuppression:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_no_a\
-        # vailable_oracle_no_op kind="unit"
+        # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_no_available_oracle_no_op kind="unit"  # noqa: E501
         """With no available oracle, `suppress001_gate` itself reports
         nothing, so the fix handler is a clean no-op rather than
         guessing."""
@@ -138,8 +134,7 @@ class TestSuppress001NoOpSuppressionRefusal:
 
     def test_code_ignored_for_path_true_under_tests_glob(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestSuppress001NoOpSuppressionRefusal.test_co\
-        # de_ignored_for_path_true_under_tests_glob kind="unit"
+        # tests/test_gates_fix_engine.py::TestSuppress001NoOpSuppressionRefusal.test_code_ignored_for_path_true_under_tests_glob kind="unit"  # noqa: E501
         """`_code_ignored_for_path` reads this repo's OWN
         `pyproject.toml` shape directly: `tests/**` is configured to
         ignore `E501`, so a synthetic copy of that same configuration
@@ -156,8 +151,7 @@ class TestSuppress001NoOpSuppressionRefusal:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestSuppress001NoOpSuppressionRefusal.test_no\
-        # _op_suppression_never_added_under_tests_glob kind="unit"
+        # tests/test_gates_fix_engine.py::TestSuppress001NoOpSuppressionRefusal.test_no_op_suppression_never_added_under_tests_glob kind="unit"  # noqa: E501
         """End-to-end: a SUPPRESS001 fix on a `tests/**` file whose
         rewritten line would exceed the line-length limit must NOT gain
         a `# noqa: E501` -- this repo's real `pyproject.toml` already
@@ -195,8 +189,7 @@ class TestSuppress001StringLiteralSafety:
 
     def test_hash_suppression_inside_string_literal_is_not_a_comment(self) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_hash_\
-        # suppression_inside_string_literal_is_not_a_comment kind="unit"
+        # tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_hash_suppression_inside_string_literal_is_not_a_comment kind="unit"  # noqa: E501
         # The marker is assembled rather than written out. A bare
         # suppression marker in source -- inside a string, a comment, or a
         # directive line FMT001 wrapped mid-word -- trips ruff's own
@@ -210,8 +203,7 @@ class TestSuppress001StringLiteralSafety:
 
     def test_no_real_comment_at_all(self) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_no_re\
-        # al_comment_at_all kind="unit"
+        # tests/test_gates_fix_engine.py::TestSuppress001StringLiteralSafety.test_no_real_comment_at_all kind="unit"  # noqa: E501
         line = 'x = "# looks like a comment but is not"'
         code_part, comment_text, _newline = _split_suppression_line(line)
         assert code_part == line
@@ -229,8 +221,7 @@ class TestSuppress001FMT001Precedence:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestSuppress001FMT001Precedence.test_frob_dir\
-        # ective_bearing_line_is_left_untouched kind="unit"
+        # tests/test_gates_fix_engine.py::TestSuppress001FMT001Precedence.test_frob_directive_bearing_line_is_left_untouched kind="unit"  # noqa: E501
         """A line that ALSO happens to carry a trailing `frob:` directive
         marker alongside its dialect mismatch is skipped outright by
         SUPPRESS001's own handler -- running the whole fix pass twice
@@ -265,8 +256,7 @@ class TestFmt001OnlyPathsLandScoping:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_path\
-        # s_leaves_an_out_of_scope_file_untouched kind="unit"
+        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_paths_leaves_an_out_of_scope_file_untouched kind="unit"  # noqa: E501
         """GIVEN a land whose ticket scope excludes a file elsewhere in
         the tree carrying a non-canonical `frob:` directive, WHEN the
         Tier-A FMT001 handler runs with `only_paths` set to the landing
@@ -295,8 +285,7 @@ class TestFmt001OnlyPathsLandScoping:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_path\
-        # s_none_preserves_whole_tree_behaviour kind="unit"
+        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_paths_none_preserves_whole_tree_behaviour kind="unit"  # noqa: E501
         """GIVEN a `frob check --fix` invoked outside a land (no
         `only_paths` argument at all), WHEN the Tier-A FMT001 handler
         runs, THEN its existing whole-tree behaviour is preserved -- both
@@ -318,8 +307,7 @@ class TestFmt001OnlyPathsLandScoping:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_path\
-        # s_skips_nonexistent_path_without_error kind="unit"
+        # tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping.test_only_paths_skips_nonexistent_path_without_error kind="unit"  # noqa: E501
         """A caller's touched-file set can legitimately name a path that
         no longer exists (deleted since the set was computed) -- this is
         a silent no-op for that entry, never an error, matching the
@@ -355,8 +343,7 @@ class TestFixE501MergeIntroduced:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_merge_in\
-        # troduced_targeted_format_applies kind="unit"
+        # tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_merge_introduced_targeted_format_applies kind="unit"  # noqa: E501
         """GIVEN a merge commit that introduces an over-long line in a
         `.py` file it touches, WHEN `fix_e501_merge_introduced` runs,
         THEN it applies a targeted `ruff format` to that file and the
@@ -405,8 +392,7 @@ class TestFixE501MergeIntroduced:
 
     def test_e501_no_merge_shape_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge\
-        # _shape_is_a_no_op kind="unit"
+        # tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge_shape_is_a_no_op kind="unit"  # noqa: E501
         """GIVEN a repo whose `HEAD` is a single-parent commit with no
         uncommitted changes, WHEN `fix_e501_merge_introduced` runs, THEN
         it makes no changes -- there is no merge-shaped touched set to
@@ -440,8 +426,7 @@ class TestFixCov002TicketDirectiveInsertion:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_op\
-        # en_landing_ticket_gets_directive_inserted_and_reverifies_clean kind="unit"
+        # tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean kind="unit"  # noqa: E501
         """GIVEN a symbol changed on a branch with no `frob:ticket` edge
         and no covering ticket scope, WHEN `fix_cov002_ticket_directive_
         insertion` runs with a real, OPEN landing ticket id, THEN a
@@ -498,8 +483,7 @@ class TestFixCov002TicketDirectiveInsertion:
 
     def test_no_ticket_id_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_no\
-        # _ticket_id_is_a_no_op kind="unit"
+        # tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_no_ticket_id_is_a_no_op kind="unit"  # noqa: E501
         """GIVEN `fix_cov002_ticket_directive_insertion` is invoked with
         `ticket_id=None` (outside a landing context), WHEN it runs, THEN
         it makes no changes at all -- there is no id to cite, and Tier-A
@@ -539,8 +523,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
 
     def test_strata_file_gets_slash_slash_leader(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.t\
-        # est_strata_file_gets_slash_slash_leader kind="unit"
+        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_strata_file_gets_slash_slash_leader kind="unit"  # noqa: E501
         """GIVEN a `.strata` target file, WHEN the directive is inserted,
         THEN it uses the `//` leader, not `#`."""
         from frob.gates._fix_engine_sync import _insert_ticket_directive_above
@@ -556,8 +539,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
 
     def test_rust_file_gets_slash_slash_leader(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.t\
-        # est_rust_file_gets_slash_slash_leader kind="unit"
+        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_rust_file_gets_slash_slash_leader kind="unit"  # noqa: E501
         """GIVEN a `.rs` target file, WHEN the directive is inserted, THEN
         it uses the `//` leader."""
         from frob.gates._fix_engine_sync import _insert_ticket_directive_above
@@ -573,8 +555,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
 
     def test_python_file_gets_hash_leader(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.t\
-        # est_python_file_gets_hash_leader kind="unit"
+        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_python_file_gets_hash_leader kind="unit"  # noqa: E501
         """GIVEN a `.py` target file, WHEN the directive is inserted, THEN
         it uses the `#` leader."""
         from frob.gates._fix_engine_sync import _insert_ticket_directive_above
@@ -590,8 +571,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
 
     def test_unknown_extension_refuses_insertion(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.t\
-        # est_unknown_extension_refuses_insertion kind="unit"
+        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_unknown_extension_refuses_insertion kind="unit"  # noqa: E501
         """GIVEN a target file whose suffix has no registered comment
         leader, WHEN the directive would be inserted, THEN the handler
         refuses (no-op) rather than guessing a leader."""
@@ -639,8 +619,7 @@ class TestSnapshotParameterDroppedStaticallyEnforced:
 
     def test_two_positional_args_are_statically_refused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_fix_engine.py::TestSnapshotParameterDroppedStaticallyEnforce\
-        # d.test_two_positional_args_are_statically_refused kind="unit"
+        # tests/test_gates_fix_engine.py::TestSnapshotParameterDroppedStaticallyEnforced.test_two_positional_args_are_statically_refused kind="unit"  # noqa: E501
         """GIVEN a probe module that calls both handlers with a stray
         second positional `GraphSnapshot` argument (the exact T-1896/
         T-1900/T-1906 mistake), WHEN `ty check` runs against it from this
@@ -774,8 +753,7 @@ class TestTick006RenameConfirmation:
     ticket's body."""
 
     # frob:tests \
-    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_git_m_false_po\
-    # sitive_pairing_is_not_trusted_body_untouched
+    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_git_m_false_positive_pairing_is_not_trusted_body_untouched  # noqa: E501
     def test_git_m_false_positive_pairing_is_not_trusted_body_untouched(
         self, tmp_path: Path, caplog, tick006_git_repo, tick006_claiming_ticket
     ) -> None:
@@ -867,8 +845,7 @@ class TestTick006RenameConfirmation:
         assert "T-9500" not in body
 
     # frob:tests \
-    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_confirmed_prom\
-    # otion_is_rewritten_with_info_log
+    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_confirmed_promotion_is_rewritten_with_info_log  # noqa: E501
     def test_confirmed_promotion_is_rewritten_with_info_log(
         self, tmp_path: Path, caplog, tick006_git_repo, tick006_claiming_ticket
     ) -> None:
@@ -937,8 +914,7 @@ class TestTick006RenameConfirmation:
         assert "T-draft-600d0001" not in reloaded.danger_ok["T-0001"].body
 
     # frob:tests \
-    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_no_rename_at_a\
-    # ll_is_unresolved_body_untouched_pending_new_ticket
+    # tests/test_gates_fix_engine.py::TestTick006RenameConfirmation.test_no_rename_at_all_is_unresolved_body_untouched_pending_new_ticket  # noqa: E501
     def test_no_rename_at_all_is_unresolved_body_untouched_pending_new_ticket(
         self, tmp_path: Path, tick006_git_repo, tick006_claiming_ticket
     ) -> None:
@@ -973,3 +949,145 @@ class TestTick006RenameConfirmation:
         for fix in applied:
             assert fix.detail.startswith("T-draft-dead0000 -> ")
         assert "T-draft-dead0000" in body or len(applied) == 1
+
+
+# frob:ticket T-5261
+class TestFixTest010RedundantTestDeclaration:
+    """`fix_test010_redundant_test_declaration` (T-4710/T-5261) --
+    end-to-end through the REAL entry points: `frob.graph.build_graph`
+    (which computes `_redundant_test_declarations` the same way a real
+    `frob check` run would), `frob.gates.test_gate` (the real TEST010
+    violation producer), and `frob.gates._fix_engine.apply_tier_a_fixes`
+    (the real Tier-A dispatch, via `TIER_A_HANDLERS`), not just this
+    handler's own function called directly."""
+
+    def _snap(self, root: Path):  # noqa: ANN001, ANN202
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    def _test010_violations(self, snapshot):  # noqa: ANN001, ANN202
+        from typani import Nothing
+
+        from frob.gates import test_gate
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        violations = test_gate(
+            snapshot,
+            (),
+            Nothing(),
+            CollectedTests(node_ids=frozenset()),
+            TestPolicy(),
+        )
+        return [v for v in violations if v.rule == "TEST010"]
+
+    def test_delete_case_fires_test010_and_fix_removes_the_line(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration.test_delete_case_fires_test010_and_fix_removes_the_line  # noqa: E501
+        from frob.gates._fix_engine import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "foo.py").write_text(
+            "class Foo:\n"
+            "    # frob:tests tests/test_foo.py::TestFoo.test_bar\n"
+            "    def bar(self) -> None:\n"
+            "        pass\n"
+        )
+        (root / "tests").mkdir(parents=True)
+        (root / "tests" / "test_foo.py").write_text(
+            "class TestFoo:\n"
+            "    # frob:tests src/foo.py::Foo.bar\n"
+            "    def test_bar(self) -> None:\n"
+            "        pass\n"
+        )
+        snapshot = self._snap(root)
+
+        # POSITIVE CONTROL: TEST010 genuinely fires through the real
+        # gate entry point before any fix runs.
+        before = self._test010_violations(snapshot)
+        assert any("redundant (T-4710)" in v.message for v in before)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        test010_applied = [a for a in applied if a.rule == "TEST010"]
+        assert len(test010_applied) == 1
+        assert "deleted redundant" in test010_applied[0].detail
+
+        rewritten = (root / "src" / "foo.py").read_text()
+        assert "frob:tests" not in rewritten
+
+        # Re-run the real gate over the post-fix graph: TEST010's
+        # redundant-declaration finding is gone.
+        after_snapshot = self._snap(root)
+        after = self._test010_violations(after_snapshot)
+        assert not any("redundant (T-4710)" in v.message for v in after)
+
+    def test_move_case_fires_test010_and_fix_relocates_the_line(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates._fix_engine import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "foo.py").write_text(
+            "class Foo:\n"
+            "    # frob:tests tests/test_foo.py::TestFoo.test_bar\n"
+            "    def bar(self) -> None:\n"
+            "        pass\n"
+        )
+        (root / "tests").mkdir(parents=True)
+        (root / "tests" / "test_foo.py").write_text(
+            "class TestFoo:\n    def test_bar(self) -> None:\n        pass\n"
+        )
+        snapshot = self._snap(root)
+        before = self._test010_violations(snapshot)
+        assert any("move this line" in v.message for v in before)
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        test010_applied = [a for a in applied if a.rule == "TEST010"]
+        assert len(test010_applied) == 1
+        assert "moved redundant" in test010_applied[0].detail
+
+        prod_after = (root / "src" / "foo.py").read_text()
+        test_after = (root / "tests" / "test_foo.py").read_text()
+        assert "frob:tests" not in prod_after
+        assert "frob:tests" in test_after
+
+        # Edge set preserved: the graph still derives the SAME coverage
+        # edge from the relocated (now test-side) declaration.
+        after_snapshot = self._snap(root)
+        after_edges = {(e.src, e.kind, e.target) for e in after_snapshot.edges}
+        before_edges = {(e.src, e.kind, e.target) for e in snapshot.edges}
+        assert after_edges == before_edges
+
+    def test_dangling_target_refuses_rather_than_guessing(self, tmp_path: Path) -> None:
+        # POSITIVE CONTROL for the refusal path: a move target that does
+        # not resolve in the graph must be left completely untouched.
+        from frob.gates._fix_engine import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "foo.py").write_text(
+            "class Foo:\n"
+            "    # frob:tests tests/test_foo.py::TestFoo.test_missing\n"
+            "    def bar(self) -> None:\n"
+            "        pass\n"
+        )
+        (root / "tests").mkdir(parents=True)
+        (root / "tests" / "test_foo.py").write_text(
+            "class TestFoo:\n    def test_bar(self) -> None:\n        pass\n"
+        )
+        snapshot = self._snap(root)
+        before_prod = (root / "src" / "foo.py").read_text()
+        before_test = (root / "tests" / "test_foo.py").read_text()
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "TEST010"]
+        assert (root / "src" / "foo.py").read_text() == before_prod
+        assert (root / "tests" / "test_foo.py").read_text() == before_test
