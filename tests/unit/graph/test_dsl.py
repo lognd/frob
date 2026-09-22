@@ -1377,3 +1377,153 @@ class TestRedundantTestDeclarationLint:
         assert len(findings) == 1
         assert findings[0].file == "src/frob/foo.py"
         assert "delete" in findings[0].reason
+
+
+class TestMultiTargetDirectives:
+    """T-4711 (a): `# frob:tests a.py::A.m, b.py::B.n` and
+    `# frob:doc path#a, path#b` -- same kind, comma-separated, one Edge
+    per target, identical kind/src. A comma inside a quoted value is
+    never a separator."""
+
+    def test_multi_target_tests_emits_one_edge_per_target(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/unit/graph/test_dsl.py::TestMultiTargetDirectives.test_multi_target_tests_emits_one_edge_per_target  # noqa: E501
+        monkeypatch.chdir(tmp_path)
+        src = (
+            "class Foo:\n"
+            "    # frob:tests a.py::A.m, b.py::B.n\n"
+            "    def bar(self) -> None:\n"
+            "        pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "src/foo.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        tests_edges = [e for e in edges if e.kind == EdgeKind.TESTS]
+        assert len(tests_edges) == 2
+        assert {e.target for e in tests_edges} == {"a.py::A.m", "b.py::B.n"}
+        assert {e.src for e in tests_edges} == {"src/foo.py::Foo.bar"}
+
+    def test_multi_target_doc_emits_one_edge_per_target(self, tmp_path: Path) -> None:
+        src = (
+            "class Foo:\n"
+            "    # frob:doc docs/a.md#x, docs/b.md#y\n"
+            "    def bar(self) -> None:\n"
+            "        pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "src/foo.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        doc_edges = [e for e in edges if e.kind == EdgeKind.DOC]
+        assert len(doc_edges) == 2
+        assert {e.target for e in doc_edges} == {"docs/a.md#x", "docs/b.md#y"}
+
+    def test_comma_inside_quoted_title_is_not_a_separator(self, tmp_path: Path) -> None:
+        # A comma inside a quoted vitest-style title must not split the
+        # target list -- this is the whole point of "quoted, not lexical".
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests "src/x.test.ts describe, with a comma title"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        tests_edges = [e for e in edges if e.kind == EdgeKind.TESTS]
+        assert len(tests_edges) == 1
+        assert tests_edges[0].target == "src/x.test.ts describe, with a comma title"
+
+    def test_single_target_verbs_are_unaffected_by_a_comma(
+        self, tmp_path: Path
+    ) -> None:
+        # A verb NOT in `_MULTI_TARGET_VERBS` keeps its pre-existing,
+        # single-target grammar even if its target text happens to
+        # contain a comma (no regression on the 30,915 existing lines).
+        src = "def foo() -> None:\n    # frob:ticket T-0001\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == "T-0001"
+
+    def test_multi_target_with_empty_entry_is_a_named_refusal(
+        self, tmp_path: Path
+    ) -> None:
+        src = "def foo() -> None:\n    # frob:tests a.py::A.m,, b.py::B.n\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "empty entry" in malformed[0].reason
+
+
+class TestDsl001MidTokenBreak:
+    """T-4711 (c): a folded continuation whose join point lands inside the
+    directive's own target token is reported with a name-the-fix DSL001
+    reason; the same target broken at a real token boundary stays
+    clean."""
+
+    def test_join_mid_symbol_path_is_reported_by_dsl001(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/graph/test_dsl.py::TestDsl001MidTokenBreak.test_join_mid_symbol_path_is_reported_by_dsl001  # noqa: E501
+        # The continuation join lands after "...Class.metho ", right
+        # before "d_further_here" -- exactly T-2857's own measured
+        # corruption shape (a TRAILING SPACE before the backslash), on
+        # the code-comment (not markdown) side.
+        src = (
+            "def foo() -> None:\n"
+            "    # frob:tests src/x.py::Class.metho \\\n"
+            "    # d_further_here\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "DSL001" in malformed[0].reason
+        assert "target token" in malformed[0].reason
+
+    def test_same_target_broken_at_token_boundary_is_clean(
+        self, tmp_path: Path
+    ) -> None:
+        # The repo's own widespread convention: continuing a long qualname
+        # across lines with NO inserted space (backslash immediately
+        # follows real content) is a token-SEPARATION break -- between
+        # the class-qualified name's own dotted segments is still inside
+        # one target token, so this in fact joins into ONE valid,
+        # uncorrupted symref, not a DSL001 finding.
+        src = (
+            "def foo() -> None:\n"
+            "    # frob:tests src/x.py::Class.\\\n"
+            "    # method_further_here\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == "src/x.py::Class.method_further_here"
+
+
+class TestMultiTargetFoldRoundTrip:
+    """T-4711 positive control: fold(unfold(x)) == x for a multi-target
+    directive split across a continuation -- the multi-target grammar and
+    the one continuation form compose without losing or duplicating a
+    target."""
+
+    def test_multi_target_directive_survives_a_continuation_split(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/graph/test_dsl.py::TestMultiTargetFoldRoundTrip.test_multi_target_directive_survives_a_continuation_split  # noqa: E501
+        src = (
+            "class Foo:\n"
+            "    # frob:tests a.py::A.m, \\\n"
+            "    # b.py::B.n\n"
+            "    def bar(self) -> None:\n"
+            "        pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        tests_edges = [e for e in edges if e.kind == EdgeKind.TESTS]
+        assert len(tests_edges) == 2
+        assert {e.target for e in tests_edges} == {"a.py::A.m", "b.py::B.n"}

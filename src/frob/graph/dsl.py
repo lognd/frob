@@ -275,6 +275,12 @@ _ATTR_ONLY_VERBS = frozenset({"transition", "requires"})
 #: the trimmed remainder as `attrs["note"]` when non-empty.
 _FREE_TEXT_NOTE_VERBS = frozenset({"todo"})
 
+#: Verbs T-4711 allows a comma-separated MULTI-TARGET list on: `frob:tests
+#: a.py::A.m, b.py::B.n` and `frob:doc path#a, path#b` -- same kind, one
+#: `Edge` per target, a comma inside a quoted target/value is never a
+#: separator. Every other verb keeps its single-target grammar unchanged.
+_MULTI_TARGET_VERBS = frozenset({"tests", "doc"})
+
 # see T-4221 for the history behind this
 _INVARIANT_KIND_VALUES = frozenset({"time-stable"})
 
@@ -1194,6 +1200,121 @@ def _parse_target(
     return target, attrs
 
 
+# frob:ticket T-4711
+def _target_token_span(rest: str, verb: str) -> tuple[int, int] | None:
+    """The character span, within `rest`, of its bare TARGET token --
+    before any trailing `key="value"` attrs -- mirroring `_parse_target`'s
+    own quoted-vs-unquoted boundary logic without re-running attr parsing.
+    `None` for an `_ATTR_ONLY_VERBS` verb, which has no separate target
+    token (T-0744: its whole `rest` is attrs). T-4711's DSL001 mid-token
+    check uses this span as one of the byte ranges a continuation's join
+    point may never land inside."""
+    if verb in _ATTR_ONLY_VERBS:
+        return None
+    if rest.startswith('"'):
+        quoted = _QUOTED_TARGET_RE.match(rest)
+        if quoted is None:
+            return None
+        return (0, quoted.end(1) + 1)
+    space_idx = rest.find(" ")
+    return (0, space_idx if space_idx != -1 else len(rest))
+
+
+# frob:ticket T-4711
+def _strip_leading_hash_offset(logical_line: str) -> tuple[str, int]:
+    """`(core, front_removed)`: `logical_line` with its leading whitespace
+    and an optional docstring-embedded `#` prefix (T-3856) removed, plus
+    how many characters that removed -- split out of
+    `_dsl001_mid_token_reason` for ARCH001 (T-4711). `core` is the same
+    text `parse_directives`' own `stripped` variable holds at this point
+    (modulo trailing whitespace, which does not affect the FRONT offset
+    this function exists to compute); `front_removed` converts a byte
+    offset in `core` back into `logical_line`'s own coordinate space."""
+    lstripped = logical_line.lstrip()
+    front_removed = len(logical_line) - len(lstripped)
+    core = lstripped
+    if core.startswith("#"):
+        core = core[1:]
+        core_lstripped = core.lstrip()
+        front_removed += 1 + (len(core) - len(core_lstripped))
+        core = core_lstripped
+    return core, front_removed
+
+
+def _dsl001_target_span_in_logical_line(
+    logical_line: str,
+) -> tuple[int, int] | None:
+    """The bare, UNQUOTED target token's span in `logical_line`'s own
+    coordinate space, or `None` when this line has no such span to
+    protect (unparseable, a quoted target, or an `_ATTR_ONLY_VERBS`
+    verb) -- split out of `_dsl001_mid_token_reason` for ARCH001
+    (T-4711)."""
+    core, front_removed = _strip_leading_hash_offset(logical_line)
+    match = _LINE_RE.match(core.rstrip())
+    if match is None:
+        return None
+    verb = match.group("verb")
+    rest = match.group("rest") or ""
+    if rest.startswith('"'):
+        return None
+    rest_start = match.start("rest") if match.group("rest") is not None else len(core)
+    target_span = _target_token_span(rest, verb)
+    if target_span is None:
+        return None
+    return (
+        rest_start + target_span[0] + front_removed,
+        rest_start + target_span[1] + front_removed,
+    )
+
+
+def _dsl001_mid_token_reason(logical_line: str, joins: tuple[int, ...]) -> str | None:
+    """T-4711 (c), owner decision 2: whether one of `joins`
+    (`_fold_comment_runs_with_joins`'s physical-line-boundary offsets,
+    already in `logical_line`'s own coordinate space) lands strictly
+    INSIDE the directive's bare, UNQUOTED target token
+    (`_dsl001_target_span_in_logical_line`) -- a plain symref like
+    `path::Class.method` or `path#anchor` has no grammatically-valid
+    internal whitespace at all, so a join there corrupts the identifier
+    by construction. Promoted from T-2857's own measured repro at this
+    file's history (`frob:describes path::Class.metho d_further_here`, a
+    wrapped continuation's trailing space landing mid-identifier) --
+    that repro is a MARKDOWN-side corruption T-2857 already catches via
+    its strict per-verb regex; this is the CODE-comment-side equivalent,
+    which `_parse_target`'s space-partition already turns into a
+    malformed directive (an orphaned tail with no `=` fails
+    `_parse_attrs`' "bad attribute syntax" check) but with a generic
+    message that does not name the real defect. Returns the SPECIFIC
+    DSL001 reason to substitute in when that generic malformed
+    directive's cause was actually a mid-token join, or `None` otherwise
+    -- a REASON-QUALITY improvement on an ALREADY-malformed line, never
+    a new refusal of something that used to parse cleanly: a QUOTED
+    target/value (real internal spaces by design) is excluded entirely,
+    since a join at one of ITS natural word boundaries is today a
+    legitimate `frob fmt` wrap, not corruption -- narrowing where the
+    wrapper may place that break is leaf 3's job (T-4712)."""
+    if not joins:
+        return None
+    span = _dsl001_target_span_in_logical_line(logical_line)
+    if span is None:
+        return None
+    span_start, span_end = span
+    # T-4711: `span`'s end excludes the single separating space a
+    # corrupted wrap inserts (the space itself is what TERMINATES the
+    # parsed target -- `_parse_target`'s own `rest.partition(" ")` stops
+    # there), so a join landing immediately AFTER that space (where the
+    # orphaned tail begins) is included too (`+ 1`) -- it is still the
+    # SAME inserted space that split one identifier into two.
+    if not any(span_start < join <= span_end + 1 for join in joins):
+        return None
+    return (
+        "continuation join lands inside the target token (a symbol path "
+        "or anchor) -- break only at token separation: between "
+        'multi-target list entries or between key="value" attributes, '
+        "never inside one (T-4711 DSL001; frob fmt's own wrapper "
+        "respects this boundary too, T-4712)"
+    )
+
+
 # frob:ticket T-4197
 def _resolve_target_and_attrs(
     verb: str, rest: str, *, path: str, lineno: int
@@ -1213,12 +1334,45 @@ def _resolve_target_and_attrs(
 
 
 # frob:ticket T-4719
+# frob:ticket T-4711
+def _split_top_level_commas(text: str) -> list[str]:
+    """Split `text` on every comma NOT inside a `"..."` quoted span (T-4711
+    multi-target grammar: `frob:tests a.py::A.m, b.py::B.n` -- a comma
+    inside a quoted vitest-style title or `reason="..., still one value"`
+    must never split). No backslash-escape handling: the DSL's quoting
+    convention (`_QUOTED_TARGET_RE`/`_ATTR_RE`) has none either, so a
+    quoted span here is simply "between two `\"` characters", the same
+    rule those regexes already assume."""
+    parts: list[str] = []
+    buf: list[str] = []
+    in_quotes = False
+    for ch in text:
+        if ch == '"':
+            in_quotes = not in_quotes
+            buf.append(ch)
+        elif ch == "," and not in_quotes:
+            parts.append("".join(buf))
+            buf = []
+        else:
+            buf.append(ch)
+    parts.append("".join(buf))
+    return parts
+
+
 def _parse_line(
     line: str, *, path: str, lineno: int, src: str
 ) -> Edge | MalformedDirective | None:
-    """Parse one `frob:...` comment line into an `Edge`, a `MalformedDirective`,
-    or `None` for a reserved marker verb another subsystem owns
-    (`_RESERVED_MARKER_VERBS`). T-3893: `_parse_target` splits target/attrs."""
+    """Parse one SINGLE-target `frob:...` comment line into an `Edge`, a
+    `MalformedDirective`, or `None` for a reserved marker verb another
+    subsystem owns (`_RESERVED_MARKER_VERBS`). T-3893: `_parse_target`
+    splits target/attrs. This return contract is UNCHANGED by T-4711's
+    multi-target grammar on purpose -- every existing caller (`frob.
+    gates` code that inspects one parsed directive directly,
+    `_is_genuine_directive_start`, and this file's own tests) keeps
+    working against a bare `Edge` with no union-unwrapping. Multi-target
+    fan-out (`_MULTI_TARGET_VERBS`) is a SEPARATE concern layered on top
+    in `_parse_directive_line`, which calls this once per comma-split
+    target rather than changing what this function itself returns."""
     origin = f"{path}:{lineno}"
     match = _LINE_RE.match(line)
     if match is None:
@@ -1253,9 +1407,57 @@ def _parse_line(
         if title_err is not None:
             return title_err
 
-    # see T-0265 for the history behind this
-
     return Edge(src=src, kind=kind, target=target, origin=origin, attrs=attrs)
+
+
+# frob:ticket T-4711
+def _parse_directive_line(
+    line: str, *, path: str, lineno: int, src: str
+) -> list[Edge] | MalformedDirective | None:
+    """`parse_directives`' own entry point: one `frob:...` comment line
+    into a list of `Edge`s (usually one; more than one for a T-4711
+    multi-target directive), a `MalformedDirective`, or `None`.
+
+    A `_MULTI_TARGET_VERBS` verb (`tests`/`doc`) whose `rest` has a
+    top-level comma (`_split_top_level_commas`) is split into N
+    single-target lines (`frob:<verb> <segment>`, same verb, one target
+    each) and each is parsed through the UNCHANGED `_parse_line` --
+    keeping that function's own return contract (bare `Edge`, never a
+    list) intact for every other caller. One `Edge` per target, all
+    sharing an identical `kind`/`src`/`origin`; each target's own attrs
+    (a multi-target line with no attrs at all, the only shape this
+    leaf's grammar documents, gives every edge the same empty `attrs`).
+    """
+    match = _LINE_RE.match(line)
+    if match is None:
+        single = _parse_line(line, path=path, lineno=lineno, src=src)
+        return [single] if isinstance(single, Edge) else single
+
+    verb = match.group("verb")
+    rest = (match.group("rest") or "").strip()
+    if verb not in _MULTI_TARGET_VERBS or "," not in rest:
+        single = _parse_line(line, path=path, lineno=lineno, src=src)
+        return [single] if isinstance(single, Edge) else single
+
+    segments = [seg.strip() for seg in _split_top_level_commas(rest)]
+    if any(not seg for seg in segments):
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason=(
+                f"frob:{verb} multi-target list has an empty entry -- "
+                "remove the stray comma"
+            ),
+        )
+    edges: list[Edge] = []
+    for segment in segments:
+        result = _parse_line(
+            f"frob:{verb} {segment}", path=path, lineno=lineno, src=src
+        )
+        if not isinstance(result, Edge):
+            return result
+        edges.append(result)
+    return edges
 
 
 # frob:ticket T-0286
@@ -1376,6 +1578,42 @@ def _is_genuine_directive_start(line: str) -> bool:
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
 # frob:tests \
 # tests/unit/graph/test_dsl.py::TestFoldCommentRuns.test_run_length_matches_consumed_physical_lines  # noqa: E501
+def _fold_comment_runs_with_joins(
+    lines: list[tuple[int, str, str, int]],
+) -> list[tuple[str, int, str, int, tuple[int, ...]]]:
+    """The one place that actually walks the fold loop (T-0441): folds
+    physical comment lines ending in a trailing backslash into the line
+    that follows, same rule as `_fold_continuations`, and returns each
+    logical line's PHYSICAL LINE COUNT plus its JOIN OFFSETS -- the
+    character index, in the folded `head` text's OWN coordinate space, of
+    every point where a physical line boundary was stitched together
+    (T-4711: the only positions a corrupted wrap could have landed a
+    break at). `fold_comment_runs` and `_fold_continuations` are thin
+    wrappers over this that drop the count and/or the joins for callers
+    that don't need them (T-0441's original split)."""
+    folded: list[tuple[str, int, str, int, tuple[int, ...]]] = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        start = i
+        lineno, text, src, _comment_id = lines[i]
+        head = text.rstrip("\r")
+        joins: list[int] = []
+        while (
+            head.rstrip().endswith("\\")
+            and i + 1 < n
+            and lines[i + 1][0] == lines[i][0] + 1
+            and not _is_genuine_directive_start(lines[i + 1][1])
+        ):
+            head = head.rstrip()[:-1]
+            joins.append(len(head))
+            i += 1
+            head += lines[i][1].rstrip("\r")
+        folded.append((head, lineno, src, i - start + 1, tuple(joins)))
+        i += 1
+    return folded
+
+
 def fold_comment_runs(
     lines: list[tuple[int, str, str, int]],
 ) -> list[tuple[str, int, str, int]]:
@@ -1388,29 +1626,14 @@ def fold_comment_runs(
     cannot tell a caller which physical lines a logical directive's folded
     form actually spans (only where it started); a caller that needs to
     REWRITE those physical lines in place -- `frob fmt`'s canonical-form
-    wrap/unwrap (T-0441) -- needs the span, so this is the one place that
-    actually walks the fold loop; `_fold_continuations` is now a thin
-    wrapper over this that just drops the count.
+    wrap/unwrap (T-0441) -- needs the span. Thin wrapper over
+    `_fold_comment_runs_with_joins`, dropping the join offsets T-4711
+    added for `parse_directives`' own DSL001 mid-token check.
     """
-    folded: list[tuple[str, int, str, int]] = []
-    i = 0
-    n = len(lines)
-    while i < n:
-        start = i
-        lineno, text, src, _comment_id = lines[i]
-        head = text.rstrip("\r")
-        while (
-            head.rstrip().endswith("\\")
-            and i + 1 < n
-            and lines[i + 1][0] == lines[i][0] + 1
-            and not _is_genuine_directive_start(lines[i + 1][1])
-        ):
-            head = head.rstrip()[:-1]
-            i += 1
-            head += lines[i][1].rstrip("\r")
-        folded.append((head, lineno, src, i - start + 1))
-        i += 1
-    return folded
+    return [
+        (text, lineno, src, count)
+        for text, lineno, src, count, _joins in _fold_comment_runs_with_joins(lines)
+    ]
 
 
 def _resolve_block_srcs(comments: tuple[RawComment, ...], path: str) -> dict[int, str]:
@@ -1698,20 +1921,29 @@ def parse_directives(
             (start_line + offset, raw_line, src, comment_id)
             for offset, raw_line in enumerate(physical)
         )
-    for logical_line, lineno, src in _fold_continuations(flat):
+    for logical_line, lineno, src, _count, joins in _fold_comment_runs_with_joins(flat):
         stripped = logical_line.strip()
         # see T-3856 for the history behind this
         if stripped.startswith("#"):
             stripped = stripped[1:].strip()
         if not stripped.startswith("frob:"):
             continue
-        result = _parse_line(stripped, path=parsed.path, lineno=lineno, src=src)
+        result = _parse_directive_line(
+            stripped, path=parsed.path, lineno=lineno, src=src
+        )
         if result is None:
             continue
-        if isinstance(result, Edge):
-            edges.append(_reorient_test_edge(result))
-        else:
+        if isinstance(result, MalformedDirective):
+            # T-4711 (c): a mid-token continuation join is usually ALSO
+            # why this line failed to parse (an orphaned tail with no
+            # `=` reads as "bad attribute syntax") -- name the real
+            # defect instead of the generic message when that is why.
+            dsl001_reason = _dsl001_mid_token_reason(logical_line, joins)
+            if dsl001_reason is not None:
+                result = result.model_copy(update={"reason": dsl001_reason})
             malformed.append(result)
+        else:
+            edges.extend(_reorient_test_edge(edge) for edge in result)
     extra_edges, coherence_malformed = _debt_todo_coherence(edges)
     edges.extend(extra_edges)
     malformed.extend(coherence_malformed)

@@ -2,7 +2,7 @@
 id: T-4711
 title: Multi-target directive grammar and the one documented continuation form, with
   a DSL001 mid-token break check
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -31,12 +31,23 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/unit/graph/test_dsl.py::TestMultiTargetDirectives::test_multi_target_tests_emits_one_edge_per_target
+- tests/unit/graph/test_dsl.py::TestMultiTargetDirectives::test_multi_target_doc_emits_one_edge_per_target
+- tests/unit/graph/test_dsl.py::TestMultiTargetDirectives::test_comma_inside_quoted_title_is_not_a_separator
+- tests/unit/graph/test_dsl.py::TestMultiTargetDirectives::test_single_target_verbs_are_unaffected_by_a_comma
+- tests/unit/graph/test_dsl.py::TestMultiTargetDirectives::test_multi_target_with_empty_entry_is_a_named_refusal
+- tests/unit/graph/test_dsl.py::TestDsl001MidTokenBreak::test_join_mid_symbol_path_is_reported_by_dsl001
+- tests/unit/graph/test_dsl.py::TestDsl001MidTokenBreak::test_same_target_broken_at_token_boundary_is_clean
+- tests/unit/graph/test_dsl.py::TestMultiTargetFoldRoundTrip::test_multi_target_directive_survives_a_continuation_split
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4711
+branch: t-4711
 ---
 Leaf 2 of T-4703. 3 points. Multi-target directive grammar plus the ONE documented
 continuation form. Owns the parser; no gate or fixer changes live here.

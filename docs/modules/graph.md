@@ -1090,6 +1090,49 @@ next physical comment line -- folded before parsing, joined with the empty
 string, reported at the FIRST physical line's number (T-0286); see
 `docs/guides/extending/comment-dsl-directives.md#multi-line-directives-backslash-continuation`
 for the full mechanics (dangling-backslash and CRLF handling included).
+T-4711 adopts this as THE one documented continuation form -- an
+indented-hash alternative was considered and explicitly NOT built.
+
+### Multi-target directives (T-4711)
+
+`frob:tests` and `frob:doc` accept a comma-separated list of targets,
+same kind, one `Edge` per target sharing an identical `kind`/`src`:
+
+```python
+# frob:tests <file-a>::<Symbol-A>.<method>, <file-b>::<Symbol-B>.<method>
+# frob:doc <path>#<anchor-a>, <path>#<anchor-b>
+```
+
+parses to two `EdgeKind.TESTS` edges (one target per comma-separated
+entry) or two `EdgeKind.DOC` edges, respectively. A comma inside a
+quoted target (a vitest-style describe title) is NOT a separator --
+`frob:tests "describe, with a comma title"` is still one target. Every
+other verb keeps its pre-existing single-target grammar; combined with
+the one continuation form above, a long multi-target list can still
+split across physical lines with a trailing backslash, e.g.:
+
+```python
+# frob:tests <file-a>::<Symbol-A>.<method>, \
+# <file-b>::<Symbol-B>.<method>
+```
+
+### DSL001: mid-token continuation break (T-4711)
+
+Owner decision: a continuation break may land ONLY at token separation
+-- between multi-target list entries, or between `key="value"`
+attributes -- never inside a symbol path, an anchor, or a quoted value.
+A folded run whose join point lands inside the directive's own bare
+(unquoted) TARGET token -- e.g. a wrapped continuation's trailing space
+splitting `<path>::<Symbol>.method` into `<path>::<Symbol>.metho` + `d` (T-2857's
+own measured corruption repro, originally caught on the markdown-anchor
+side by `_unhandled_markdown_directive`'s strict per-verb regex) -- is
+reported with a DSL001 reason naming the fix, in place of the generic
+"bad attribute syntax" message the orphaned tail would otherwise produce.
+A QUOTED target or attribute value is NOT covered by this check: it
+carries real internal spaces by design, so a continuation break at one
+of its natural word boundaries is a legitimate (if inelegant) `frob fmt`
+wrap, not corruption -- narrowing where the wrapper itself is allowed to
+place that break is T-4712's job, the next leaf in this family.
 
 | Directive | Meaning (edge created) |
 |---|---|
