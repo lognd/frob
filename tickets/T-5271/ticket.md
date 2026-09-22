@@ -1,5 +1,5 @@
 ---
-id: T-draft-d50bc65c
+id: T-5271
 title: 'Post-land sweep residue 2026-09-22_0034: COV002:tests/gates_suite/test_tick_dead_worktree.py
   LARGE001:src/frob/vet/_scan.py WIRE001:src/frob/doctor.py '
 state: queued
