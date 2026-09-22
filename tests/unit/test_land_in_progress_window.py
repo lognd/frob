@@ -306,12 +306,23 @@ class TestDispatchLayerWholeLandClassification:
         """Shared setup for both tests below: pins `wait_timeout_s=0.0`
         on every `refuse_if_land_in_progress` call the dispatch guard
         makes, so a genuine refusal returns immediately instead of
-        idling through the real T-1961 wait budget."""
+        idling through the real T-1961 wait budget.
+
+        T-5245: the dispatch layer's own call
+        (`_refuse_if_land_in_progress_for_dispatch`, src/frob/app/
+        ticket_runner/__init__.py) now forwards its OWN caller-supplied
+        `wait_timeout_s` through to `refuse_if_land_in_progress` --
+        `_zero_wait` must accept (and override, per this helper's own
+        stated purpose) whatever value comes in rather than only ever
+        matching a caller that never passes it."""
         import frob.tickets._leases as leases_module
 
         real = leases_module.refuse_if_land_in_progress
 
-        def _zero_wait(root: Path, *, whole_land: bool = False) -> object:
+        def _zero_wait(
+            root: Path, *, whole_land: bool = False, wait_timeout_s: float = 0.0
+        ) -> object:
+            del wait_timeout_s  # always forced to 0.0, see docstring above
             return real(root, wait_timeout_s=0.0, whole_land=whole_land)
 
         monkeypatch.setattr(leases_module, "refuse_if_land_in_progress", _zero_wait)
