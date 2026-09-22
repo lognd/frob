@@ -20,6 +20,7 @@ scope:
 - tests/test_gates_fix_engine.py
 - tests/gates_suite/test_fix_engine.py
 - docs/modules/gates.md
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +50,11 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: Tier-A handler doc section for the new TEST010 redundant-test-declaration
     fix
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: _KNOWN_RULE_FIXABILITY needs TEST010=auto, guarded by TestRuleFixability
   actor: logan
   at: '2026-09-22'
 designated_repro_test: null
