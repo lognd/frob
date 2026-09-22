@@ -238,7 +238,14 @@ class TestDoneReportBaseResolution:
 
         captured: dict = {}
 
-        def _fake_shared_check_spawn_fn(root, ticket_id, base=None):  # noqa: ANN001
+        def _fake_shared_check_spawn_fn(root, ticket_id, base=None, **extra):  # noqa: ANN001
+            # T-5247: the real `_shared_check_spawn_fn` now also
+            # forwards `files=`/`timeout=` (and possibly future scoping
+            # arguments); this double only cares about `base` (this
+            # test's own subject), so it accepts and discards everything
+            # else via `**extra` rather than only ever matching a caller
+            # whose exact keyword set never changes.
+            del extra
             captured["base"] = base
             return lambda: None
 
