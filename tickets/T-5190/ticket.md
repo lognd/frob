@@ -47,6 +47,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+- field: sprint
+  old_value: v0.534.0
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-22'
 body_changes:
 - mode: append
   reason: record real double-lease blocker found while trying to narrow scope per
