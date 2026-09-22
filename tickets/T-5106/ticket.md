@@ -15,6 +15,12 @@ tier: story
 sprint: v0.535.0
 runs_last: false
 milestone: null
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
@@ -350,6 +356,12 @@ body_changes:
   at: '2026-09-21'
   old_length: 2259
   new_length: 2259
+- mode: append
+  reason: observed during the queue drain
+  actor: logan
+  at: '2026-09-22'
+  old_length: 2259
+  new_length: 2680
 designated_repro_test: null
 threat: null
 component: null
@@ -366,3 +378,6 @@ SHAPE. Each leaf hooks an existing seam: `_apply_land_default_queue`/`_dispatch_
 DONE MEANS. An agent under FROB_AGENT runs a bare `frob ticket land <id> --worktree P`, it returns in seconds, the daemon lands it in dependency order without a coordinator script, a planted refusal leaves the worktree clean and the intent record names the refusal, `frob status` shows the queue and a stuck land, and the MCP tools report the same. Positive control: an e2e that enqueues three tickets out of blocked_by order plus one planted refusal.
 
 Repo set to `ticket_land_default = "queue"` on 2026-09-21 (commit 69b4468f5d). NOTE: the documented key `land_default` is not read; the loader merges by AppConfig field name (leaf A fixes the docs and adds the opt-out).
+
+
+Coordinator note 2026-09-22: the pre-land Tier-A auto-fix pass runs repo-wide, not scoped to the landing ticket, so it edits files leased by other open tickets (seen: T-4702's land rewriting design/frob.strata under T-5280's scope), and the land then refuses itself as a passenger. Leaf C2 (prepare) must scope Tier-A fixes to the branch's own touched files; the wip snapshot commit must never carry out-of-scope edits.
