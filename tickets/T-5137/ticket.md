@@ -14,6 +14,12 @@ tier: story
 sprint: v0.534.0
 runs_last: false
 milestone: 1.0.0
+points: 8
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -37,6 +43,12 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+- field: points
+  old_value: null
+  new_value: '8'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-22'
 designated_repro_test: null
 acceptance:
 - text: given an agent session that started a ticket and landed it, when the land
