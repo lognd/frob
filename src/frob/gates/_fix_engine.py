@@ -29,7 +29,13 @@ T-1763: the INV006 (split-carried-waiver) Tier-A handler that used to
 live here was removed along with the rest of the INV006 gate -- see
 `docs/modules/gates.md`'s T-1763 note for why (338 waivers, zero live
 findings across the gate's whole lifetime, a purely lexical corpus-wide
-keyword scan `frob:invariant`/INV001/INV002 already makes redundant)."""
+keyword scan `frob:invariant`/INV001/INV002 already makes redundant).
+
+T-4694: `fix_docarch002_narrative_move` registers `frob narrative move`'s
+own migration engine (`frob.narrative._migrate`) as DOCARCH002 check 2's
+Tier-A fix -- the one handler in this module whose write ALSO touches a
+ticket body, not just source text; see that function's own docstring for
+the transaction ordering (ledger write before file write) T-2994 demands."""
 # frob:waive LARGE001 reason="T-1651-grade review (T-2828): this module's own \
 # docstring already documents the seam T-1646 drew -- the source-text/line-level \
 # handler family went to _fix_engine_text, shared infra (FixApplied, manifest helpers) \
@@ -65,6 +71,7 @@ from frob.gates._fix_engine_sync import (
     fix_waive004_stale_waiver,
 )
 from frob.gates._fix_engine_text import (
+    _write_text_if_parses,
     fix_e501_merge_introduced,
     fix_fmt001_directive_wrap,
     fix_suppress001_paired_suppression,
@@ -353,6 +360,209 @@ def fix_doc002_unique_slug(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
                     detail=f"{old_ref!r} -> {new_ref!r}",
                 )
             )
+    return applied
+
+
+# ---------------------------------------------------------------------------
+# DOCARCH002 check 2: a `# T-####` comment-run citation that is not a
+# directive/pointer -- Tier-A fix moves the whole cited run into the named
+# ticket's body (T-4694, blocked_by T-4693).
+# ---------------------------------------------------------------------------
+
+
+def _docarch002_existing_body(
+    root: Path, queue: TicketQueue, ticket_id: str
+) -> str | None:
+    """The CURRENT body text of `ticket_id`, read from whichever store
+    actually holds it -- `queue` (this pass's own in-memory active
+    ledger, avoiding a second active-store read) first, then the
+    on-disk archive (T-2994's ARCHIVED-TICKET WRITE HAZARD: most cited
+    tickets are done and archived, and `migrate_block`'s idempotency
+    check needs the REAL current body wherever it lives, not just the
+    active one). `None` when `ticket_id` resolves nowhere -- the caller
+    treats that as "nothing to migrate into," never a guess."""
+    from frob.tickets._store import load_archive
+
+    active = queue.tickets.get(ticket_id)
+    if active is not None:
+        return active.body
+    archived = load_archive(root)
+    if archived.is_ok and ticket_id in archived.danger_ok:
+        return archived.danger_ok[ticket_id].body
+    return None
+
+
+def _docarch002_migrate_one(
+    root: Path,
+    queue: TicketQueue,
+    rel_path: str,
+    current_text: str,
+    line: int,
+):  # noqa: ANN201
+    """One DOCARCH002 citation-shape finding's own share of `fix_
+    docarch002_narrative_move`'s per-file loop: resolves the comment
+    block at `line` in `current_text`, moves it via `frob.narrative.
+    _migrate.migrate_block`, and -- ONLY if that succeeds -- writes the
+    ticket-body half via `frob.tickets.set_body` (T-2678's proven
+    archived-ticket-safe front door, the same one `frob narrative move`'s
+    own CLI already reuses). The ledger write happens BEFORE this
+    function reports success and BEFORE the caller ever updates its own
+    in-memory file text, so a `set_body` failure leaves the file's
+    `current_text` completely untouched -- the narrative stays exactly
+    where it already was (T-2994 constraint 1: MOVE, NEVER DELETE) rather
+    than a half-applied state where the file lost it but no ticket ever
+    gained it.
+
+    Returns `None` when there is nothing to do this call (no comment
+    block at `line`, no `T-####` citation on its lead line, or the block
+    was already migrated -- `MigrateError.AlreadyMigrated`, T-2994
+    constraint 4) -- a silent skip, never a guess or a partial write.
+    Otherwise returns `(new_text, FixApplied)`."""
+    from frob.narrative._migrate import (
+        MigrateError,
+        block_at,
+        migrate_block,
+        moved_text_for_ticket,
+        split_ticket_id,
+    )
+    from frob.tickets._setters import set_body
+
+    extent = block_at(current_text, line)
+    if extent is None:
+        return None
+    start, end = extent
+    lines = current_text.splitlines()
+    lead_line = lines[start - 1]
+    cited_ticket_id = split_ticket_id(lead_line)
+    if cited_ticket_id is None:
+        return None
+    existing_body = _docarch002_existing_body(root, queue, cited_ticket_id)
+    if existing_body is None:
+        _log.warning(
+            "fix_docarch002_narrative_move: %s:%d cites %s, which resolves "
+            "to no ticket (active or archived) -- skipping",
+            rel_path,
+            start,
+            cited_ticket_id,
+        )
+        return None
+    result = migrate_block(
+        rel_path=rel_path,
+        file_text=current_text,
+        start_line=start,
+        end_line=end,
+        existing_ticket_body=existing_body,
+    )
+    if result.is_err:
+        if result.danger_err is not MigrateError.AlreadyMigrated:
+            _log.warning(
+                "fix_docarch002_narrative_move: %s:%d refused: %s",
+                rel_path,
+                start,
+                result.danger_err,
+            )
+        return None
+    migration = result.danger_ok
+    moved_lines = tuple(lines[start - 1 : end])
+    ticket_body_text = moved_text_for_ticket(
+        rel_path=rel_path,
+        start_line=start,
+        moved_lines=moved_lines,
+        ticket_id=migration.ticket_id,
+    )
+    write_result = set_body(
+        root,
+        migration.ticket_id,
+        ticket_body_text,
+        mode="append",
+        reason=(
+            f"frob check --fix: DOCARCH002 Tier-A narrative move from "
+            f"{rel_path}:{start}"
+        ),
+    )
+    if write_result.is_err:
+        _log.warning(
+            "fix_docarch002_narrative_move: %s:%d -> %s ledger write "
+            "failed (%s) -- file left untouched (T-2994 constraint 1)",
+            rel_path,
+            start,
+            migration.ticket_id,
+            write_result.danger_err,
+        )
+        return None
+    fix = FixApplied(
+        rule="DOCARCH002",
+        file=rel_path,
+        line=start,
+        detail=(
+            f"moved {migration.moved_line_count} line(s) into {migration.ticket_id}"
+        ),
+    )
+    return migration.new_file_text, fix
+
+
+def _docarch002_fix_one_file(
+    root: Path, queue: TicketQueue, rel: str, original_text: str
+) -> list[FixApplied]:
+    """One tracked `.py` file's own share of `fix_docarch002_narrative_
+    move`'s sweep -- split out to keep that function under ARCH001's
+    threshold. Plans every DOCARCH002 check-2 finding in `original_text`
+    against ITS OWN original line numbers, applies them in one DESCENDING
+    pass (`_docarch002_migrate_one`, highest `line` first, so an earlier
+    -- lower-in-file -- edit never invalidates a later finding's already-
+    resolved line number), and writes the result via `_write_text_if_
+    parses` exactly once, only if at least one finding actually moved."""
+    from frob.gates._docarch_structural import scan_citation_shape
+
+    violations = scan_citation_shape(Path(rel), original_text)
+    if not violations:
+        return []
+    current_text = original_text
+    file_fixes: list[FixApplied] = []
+    # frob:waive PERF004 reason="violations is THIS file's own findings list (a \
+    # different, non-hoistable set of Violations for every call, one call per tracked \
+    # file in the caller's loop) -- there is no loop-invariant sort to hoist out, the \
+    # same varies-per-iteration false-positive class T-2321/T-2303/T-5242 already \
+    # established for a per-iteration .resolve()/sort call"
+    for violation in sorted(violations, key=lambda v: v.line, reverse=True):
+        outcome = _docarch002_migrate_one(
+            root, queue, rel, current_text, violation.line
+        )
+        if outcome is None:
+            continue
+        current_text, fix = outcome
+        file_fixes.append(fix)
+    if not file_fixes or current_text == original_text:
+        return []
+    finding = f"{file_fixes[0].file}:{file_fixes[0].line}"
+    if not _write_text_if_parses(root / rel, rel, current_text, finding=finding):
+        return []
+    return file_fixes
+
+
+# frob:doc docs/commands/narrative.md#docarch002-check-2s-tier-a-auto-fix-t-4694
+# frob:ticket T-4694
+def fix_docarch002_narrative_move(
+    root: Path, snapshot: GraphSnapshot, queue: TicketQueue
+) -> list[FixApplied]:
+    """Tier-A fix: run `frob narrative move`'s own engine
+    (`_docarch002_fix_one_file`/`_docarch002_migrate_one`) over every
+    DOCARCH002 check-2 finding (`frob.gates._docarch_structural.scan_
+    citation_shape`) across every tracked `.py` file. See docs/commands/
+    narrative.md#docarch002-check-2s-tier-a-auto-fix-t-4694 for the
+    whole-block-move limitation, the ledger-before-file write order, and
+    the archived-ticket/idempotency guarantees this handler makes."""
+    from frob.gates._tracked_files import tracked_files
+
+    applied: list[FixApplied] = []
+    for rel in tracked_files(root, caller="fix_docarch002_narrative_move"):
+        if not rel.endswith(".py"):
+            continue
+        try:
+            original_text = (root / rel).read_text(encoding="utf-8")
+        except OSError:
+            continue
+        applied.extend(_docarch002_fix_one_file(root, queue, rel, original_text))
     return applied
 
 
@@ -1264,6 +1474,10 @@ TIER_A_HANDLERS: dict[
         lambda root, snapshot, queue, ticket_id, merge_target_ids: (
             fix_cov002_ticket_directive_insertion(root, snapshot, queue, ticket_id)
         )
+    ),
+    # frob:ticket T-4694
+    "DOCARCH002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_docarch002_narrative_move(root, snapshot, queue)
     ),
     "TICK002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
         fix_tick002_renumber(root, queue)

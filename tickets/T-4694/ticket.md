@@ -2,7 +2,7 @@
 id: T-4694
 title: Register 'frob narrative move' as the Tier-A --fix for DOCARCH002 check 2 (ledger
   write inside the fix transaction, archived-path safe, idempotent)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -66,27 +66,38 @@ body_changes:
   at: '2026-09-19'
   old_length: 2572
   new_length: 3597
+evidence:
+- tests/narrative/test_docarch002_fix.py::TestFixDocarch002NarrativeMove::test_positive_control_moves_prose_and_leaves_pointer
+- tests/narrative/test_docarch002_fix.py::TestFixDocarch002NarrativeMove::test_second_run_is_idempotent
+- tests/narrative/test_docarch002_fix.py::TestFixDocarch002NarrativeMove::test_archived_ticket_writes_archive_path_and_ticket_list_stays_clean
+- tests/narrative/test_docarch002_fix.py::TestFixDocarch002NarrativeMove::test_negative_control_directive_citation_is_untouched
+- tests/narrative/test_docarch002_fix.py::test_docs_disclose_the_whole_block_move_limitation
 designated_repro_test: null
 acceptance:
 - text: given a fixture with a '# T-1234:' citation and 3 prose lines under it, when
     frob check --fix runs, then the prose is in T-1234's body and the file keeps a
     single-line pointer
-  evidence: []
+  evidence:
+  - tests/narrative/test_docarch002_fix.py::TestFixDocarch002NarrativeMove::test_positive_control_moves_prose_and_leaves_pointer
 - text: given that same fixture after one --fix, when frob check --fix runs a second
     time, then neither the file nor the ticket body changes (idempotency, T-2994 constraint
     4)
-  evidence: []
+  evidence:
+  - tests/narrative/test_docarch002_fix.py::TestFixDocarch002NarrativeMove::test_second_run_is_idempotent
 - text: given a fixture citing an ARCHIVED ticket, when --fix runs, then the body
     is appended on the ARCHIVED path and frob ticket list still exits 0 (T-2994 constraint
     3, the DuplicateId hazard)
-  evidence: []
+  evidence:
+  - tests/narrative/test_docarch002_fix.py::TestFixDocarch002NarrativeMove::test_archived_ticket_writes_archive_path_and_ticket_list_stays_clean
 - text: given a comment block whose citation is a frob:ticket directive, when --fix
     runs, then the block is not touched
-  evidence: []
+  evidence:
+  - tests/narrative/test_docarch002_fix.py::TestFixDocarch002NarrativeMove::test_negative_control_directive_citation_is_untouched
 - text: given docs/commands/narrative.md, when this lands, then it states that --fix
     moves the WHOLE cited block and cannot make the load-bearing/archaeology split
     (T-2994 constraint 2)
-  evidence: []
+  evidence:
+  - tests/narrative/test_docarch002_fix.py::test_docs_disclose_the_whole_block_move_limitation
 threat: null
 component: null
 anchor: false

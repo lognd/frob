@@ -84,6 +84,35 @@ deferred -- that file is leased by T-4546. `src/frob/narrative/_bulk.py`
 is otherwise complete and independently tested; see T-4697's Done
 report for the exact CLI-wiring hunk.
 
+## DOCARCH002 check 2's Tier-A auto-fix (T-4694)
+
+`frob check --fix` performs the move automatically for DOCARCH002 check 2
+findings (`src/frob/gates/_docarch_structural.py::scan_citation_shape` --
+a `T-####` citation with 2+ plain comment lines under it, not itself a
+`frob:ticket`/`frob:todo` directive or a single-line `# see T-####`
+pointer): `frob.gates._fix_engine.fix_docarch002_narrative_move` is
+registered in `TIER_A_HANDLERS` under rule id `DOCARCH002`, using the
+SAME `migrate_block`/`set_body` engine this page's single-block form
+already uses.
+
+**THE SPLIT IS A JUDGEMENT, NOT A REGEX (T-2994 constraint 2).** This
+Tier-A fix always moves the WHOLE cited comment run -- it has no
+`--keep-file` equivalent and cannot decide that some of the run's prose
+is load-bearing utility worth keeping in place. Do not run `frob check
+--fix` repo-wide expecting it to preserve a load-bearing sentence inside
+a flagged run; that split is a human/agent review, done via this page's
+single-block `--keep-file` form, not an unattended auto-fix.
+
+The ledger write (`set_body`) happens BEFORE the file rewrite, so a
+ticket-body write failure leaves the source file completely untouched
+(T-2994 constraint 1: MOVE, NEVER DELETE) rather than losing the
+narrative from both places. Archived-ticket-safe (T-2994 constraint 3,
+the DuplicateId hazard `set_body`'s own T-2678 routing already handles)
+and idempotent (T-2994 constraint 4: `migrate_block`'s own marker check
+makes a second `--fix` pass a no-op). A citation whose lead line is
+already a `frob:ticket`/`frob:todo` directive is never a DOCARCH002 check
+2 finding in the first place, so this handler never touches it.
+
 ## NARR001 (the detector)
 
 `src/frob/gates/_narrative_blocks.py::narrative_blocks_gate` flags any

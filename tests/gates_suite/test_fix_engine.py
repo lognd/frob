@@ -2371,6 +2371,7 @@ class TestFixEngineTierABatch2:
             "DOCENUM001",  # T-1974
             "SYS111",  # T-2001
             "TEST010",  # T-4710/T-5261
+            "DOCARCH002",  # T-4694
         }
 
     def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
@@ -2410,7 +2411,8 @@ class TestFixEngineScopeLease:
         root.mkdir()
         _git_init(root)
         return root
-# frob:tests src/frob/gates/_fix_engine_scope.py::SkippedFix
+
+    # frob:tests src/frob/gates/_fix_engine_scope.py::SkippedFix
 
     def test_out_of_scope_fix_is_reverted_and_reported(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
@@ -2784,7 +2786,8 @@ class TestFixEngineTierB:
             encoding="utf-8",
         )
         return path
-# frob:tests src/frob/gates/_fix_engine_tier_b.py::fix_tierbdemo001_marker_rewrite
+
+    # frob:tests src/frob/gates/_fix_engine_tier_b.py::fix_tierbdemo001_marker_rewrite
 
     # -- acceptance [0]: a clean Tier-B fix commits ------------------------
 

@@ -1,5 +1,5 @@
 ---
-id: T-draft-a6f0301b
+id: T-5326
 title: 'WEBSEC301-309: security headers (CSP/HSTS/COOP/CORP/CORS/Cache-Control)'
 state: queued
 kind: feature
