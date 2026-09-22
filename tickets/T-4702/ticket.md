@@ -18,7 +18,7 @@ tier: ticket
 sprint: v0.533.0
 runs_last: false
 milestone: null
-points: null
+points: 2
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -428,6 +428,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+- field: points
+  old_value: null
+  new_value: '2'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-22'
 body_changes:
 - mode: set
   reason: '2026-09-19: rewrite with the real leaf ids (drafts promoted non-contiguously;
