@@ -1,7 +1,7 @@
 ---
 id: T-5108
 title: narrative move deletes directive lines inside the moved comment run
-state: queued
+state: planned
 kind: bug
 origin: human
 created: '2026-09-19'
