@@ -1,7 +1,7 @@
 ---
 id: T-5212
 title: Wire _rapid_caller_dependents to public_caller_dependent_files
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-21'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/unit/test_check_scoped_files.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_check_scoped_files.py
+  reason: T-5212 needs a positive-control test proving the public-caller wiring end
+    to end; test file was not in the original ticket scope
+  actor: logan
+  at: '2026-09-22'
 designated_repro_test: null
 threat: null
 component: null
