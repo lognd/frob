@@ -2,7 +2,7 @@
 id: T-4695
 title: 'Fold the read-only analysis surface into one verb: explore map/outline/xref/docs-search/gitlog/stats
   and the graph queries'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -20,16 +20,45 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/_explore.py
 - src/frob/app/explore_runner.py
-- src/frob/app/map_runner.py
-- src/frob/app/outline_runner.py
 - src/frob/app/gitlog_runner.py
 - src/frob/app/stats_runner.py
 - src/frob/app/graph_runner.py
 - tests/unit/test_explore_verb.py
+- src/frob/app/debt_runner.py
+- src/frob/app/deprecated_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/map_runner.py
+  reason: 'reconciling per the ticket''s own note: T-4690 already handles the map/outline
+    mirrors under explore; debt/deprecated are the T-4692-deferred top-level verbs
+    this ticket now folds'
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/app/outline_runner.py
+  reason: 'reconciling per the ticket''s own note: T-4690 already handles the map/outline
+    mirrors under explore; debt/deprecated are the T-4692-deferred top-level verbs
+    this ticket now folds'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/app/debt_runner.py
+  reason: 'reconciling per the ticket''s own note: T-4690 already handles the map/outline
+    mirrors under explore; debt/deprecated are the T-4692-deferred top-level verbs
+    this ticket now folds'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/app/deprecated_runner.py
+  reason: 'reconciling per the ticket''s own note: T-4690 already handles the map/outline
+    mirrors under explore; debt/deprecated are the T-4692-deferred top-level verbs
+    this ticket now folds'
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -127,6 +156,8 @@ labels:
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4695
+branch: t-4695
 ---
 POINTS: 3. Parent story T-4687. blocked_by T-4690 and T-4692 -- it shares
 _core.py/_misc.py/_reporting.py/_explore.py/__main__.py with both, and a frob
