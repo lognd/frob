@@ -3,7 +3,7 @@ id: T-4698
 title: 'Ticket subverb tail: verdict per subverb (attach anchor flow plan board epic
   wave runs-last migrate archive reverify waive-audit review admin debt deprecated
   scope-ack worktree contention) -- keep with a cited consumer or delete with a shim'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -86,15 +86,23 @@ body_changes:
   at: '2026-09-19'
   old_length: 4610
   new_length: 4626
+evidence:
+- tests/unit/test_ticket_subverb_tail.py::TestVerdictTableIsComplete::test_every_named_subverb_has_a_row
+- tests/unit/test_ticket_subverb_tail.py::TestVerdictTableIsComplete::test_every_row_carries_citing_evidence
+- tests/unit/test_ticket_subverb_tail.py::TestPositiveControlKeptSubverbConsumerExecutes::test_contention_renders_a_real_overlap_ranking
+- tests/unit/test_ticket_subverb_tail.py::TestNoDeleteVerdictThisRound::test_no_row_is_verdicted_delete
 designated_repro_test: null
 acceptance:
 - text: Given the 20 tail subverbs, when the ticket closes, then the Done report carries
     one row per subverb with name, verdict, git grep hit count and the citing file:line,
     or the exact grep command that returned zero
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_subverb_tail.py::TestVerdictTableIsComplete::test_every_named_subverb_has_a_row
+  - tests/unit/test_ticket_subverb_tail.py::TestVerdictTableIsComplete::test_every_row_carries_citing_evidence
 - text: Given a subverb whose verdict is KEEP, when its cited consumer is exercised
     by a test, then removing the subverb makes that test fail
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_subverb_tail.py::TestPositiveControlKeptSubverbConsumerExecutes::test_contention_renders_a_real_overlap_ranking
 - text: Given the measured verdict table this ticket renders (18 KEEP, migrate ALREADY-REMOVED
     by T-4521, debt/deprecated DEFERRED to T-4695, parse KEEP as a deliberate deviation
     -- see the Done report's full reasoning), no subverb was verdicted DELETE this
@@ -103,7 +111,8 @@ acceptance:
     mechanism is already proven correct by T-4690/T-4692/T-4696's own test suites
     -- nothing new to add here) and would be exercised the moment a future re-verdict
     actually deletes one of these subverbs
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_subverb_tail.py::TestNoDeleteVerdictThisRound::test_no_row_is_verdicted_delete
 acceptance_amendments:
 - op: replace
   index: 3
