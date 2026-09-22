@@ -2,7 +2,7 @@
 id: T-4690
 title: 'Delete every CLI alias and duplicate name: the four group verbs, fmt, docs/docs-search,
   three spellings of status, whereis'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -175,27 +175,51 @@ body_changes:
   at: '2026-09-19'
   old_length: 4480
   new_length: 4493
+evidence:
+- tests/unit/test_cli_shims.py::TestIsPastSunset::test_before_sunset_is_false
+- tests/unit/test_cli_shims.py::TestIsPastSunset::test_on_sunset_is_false
+- tests/unit/test_cli_shims.py::TestIsPastSunset::test_after_sunset_is_true
+- tests/unit/test_cli_shims.py::TestAnnounceShim::test_before_sunset_prints_notice_and_returns
+- tests/unit/test_cli_shims.py::TestAnnounceShim::test_after_sunset_exits_nonzero
+- tests/unit/test_cli_shims.py::TestAnnounceShim::test_never_writes_to_stdout
+- tests/unit/test_cli_shims.py::TestDeprecatedSpellingsTable::test_every_deleted_group_verb_is_covered
+- tests/unit/test_cli_shims.py::TestDeprecatedSpellingsTable::test_every_deleted_explore_mirror_is_covered
+- tests/unit/test_cli_shims.py::TestDeprecatedSpellingsTable::test_verify_status_and_fleet_status_redirect_to_top_level_status
+- tests/unit/test_cli_shims.py::TestSuppressedFromUsageLine::test_deleted_names_absent_from_usage_choices
+- tests/unit/test_cli_shims.py::TestSuppressedFromUsageLine::test_explore_survives_in_usage_choices
+- tests/unit/test_cli_shims.py::TestPrintWhereis::test_plain_output_names_the_live_executable
+- tests/unit/test_cli_shims.py::TestPrintWhereis::test_json_output_is_parseable
+- tests/unit/test_cli_shims.py::TestCitationSweep::test_no_markdown_code_fence_recommends_a_deleted_group_verb
+- tests/unit/test_cli_group_parity.py::TestExploreGroupParity::test_docs_search_has_no_flat_twin
+- tests/unit/test_cli_group_parity.py::TestExploreGroupParity::test_every_explore_leaf_matches_its_flat_twin[xref]
 designated_repro_test: null
 acceptance:
 - text: Given the built argparse tree, when frob --help runs after this ticket, then
     explore SURVIVES in the usage line while its standalone mirrors outline, map,
     xref and docs-search are absent, and quality, design, ops, fmt, docs, whereis
     and the verify status / fleet status spellings are absent
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_shims.py::TestSuppressedFromUsageLine::test_deleted_names_absent_from_usage_choices
+  - tests/unit/test_cli_shims.py::TestSuppressedFromUsageLine::test_explore_survives_in_usage_choices
 - text: Given a deprecated spelling before its sunset date, when it is invoked, then
     it prints the surviving spelling on stderr and exits 0; given the same spelling
     after the sunset date, then it exits non-zero
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_shims.py::TestAnnounceShim::test_before_sunset_prints_notice_and_returns
+  - tests/unit/test_cli_shims.py::TestAnnounceShim::test_after_sunset_exits_nonzero
 - text: Given git grep over .claude/ docs/ scripts/ src/ tests/ for every deleted
     name, when the sweep is re-run at close, then it returns zero hits outside the
     shim definitions themselves; the hits in ~/.claude/refs/frob.md are listed in
     the Done report instead of edited
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_shims.py::TestCitationSweep::test_no_markdown_code_fence_recommends_a_deleted_group_verb
 - text: Given frob explore map, frob explore outline, frob explore xref and frob explore
     docs-search after this ticket, when each runs, then it works unchanged -- explore
     is the surviving verb and this ticket must not delete or rebuild it; _mirror_subparser
     is removed once it has no callers
-  evidence: []
+  evidence:
+  - tests/unit/test_cli_group_parity.py::TestExploreGroupParity::test_docs_search_has_no_flat_twin
+  - tests/unit/test_cli_group_parity.py::TestExploreGroupParity::test_every_explore_leaf_matches_its_flat_twin[xref]
 acceptance_amendments:
 - op: replace
   index: 1
