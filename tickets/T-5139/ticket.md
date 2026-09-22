@@ -70,9 +70,6 @@ acceptance:
 - text: given osv reachable but returning unparseable JSON, when frob vet runs, then
     VET005 is reported UNMEASURED with the stderr tail, never clean
   evidence: []
-- text: given no Cargo.lock, when frob check runs, then cargo-audit is listed as not
-    needed and does not affect exit
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 5
@@ -90,6 +87,15 @@ acceptance_amendments:
   new_text: null
   reason: requires frob ticket land wiring (--allow-missing-tool), out of scope (src/frob/check/*.py/gates/__init__.py
     leases); filed T-draft-2efc4eb3
+  actor: logan
+  at: '2026-09-21'
+- op: remove
+  index: 3
+  old_text: given no Cargo.lock, when frob check runs, then cargo-audit is listed
+    as not needed and does not affect exit
+  new_text: null
+  reason: requires frob check's exit-code wiring, out of scope (src/frob/check/*.py
+    held by T-4692); filed T-draft-2efc4eb3
   actor: logan
   at: '2026-09-21'
 threat: null
