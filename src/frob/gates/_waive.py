@@ -540,6 +540,10 @@ _KNOWN_GATE_RULES = frozenset(
         "VET009",
         "VET010",
         "VET011",
+        # T-5138: advisory data unavailable (no cache and no network, or
+        # cache older than [vet].advisory_max_age_days) -- same
+        # hand-maintained VET block as the rest.
+        "VET012",
         "VET-JS",
         "VET-JS003",
         "VET-JS004",

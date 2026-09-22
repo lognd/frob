@@ -2,7 +2,7 @@
 id: T-5138
 title: 'Live advisory data in vet: OSV.dev batch API in-process, no external binary,
   cached with staleness refusal, on by default in check and land'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-09-20'

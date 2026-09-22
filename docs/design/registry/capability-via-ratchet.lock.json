@@ -336,9 +336,8 @@
       "ticket": "T-1628"
     },
     "vet::fetch_url": {
-      "accepted_count": 2,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 3,
+      "reason": "branch-own via addition auto-accept (T-5138)"
     },
     "vet::ffi": {
       "accepted_count": 1,

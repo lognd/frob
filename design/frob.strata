@@ -1392,7 +1392,7 @@ node vet : trusted {
     clearance Internal;
     code "src/frob/vet/**";
     may "env" via "src/frob/vet/_source.py";
-    may "fetch_url" via "src/frob/vet/_nvd.py", "src/frob/vet/_registry.py";
+    may "fetch_url" via "src/frob/vet/_nvd.py", "src/frob/vet/_registry.py", "src/frob/vet/_osv.py";
     may "ffi" via "src/frob/vet/_popular_pypi.py";
     // T-3029: `_source.py`'s shared `read_text_or_none`-shaped helper
     // (T-2378's de-duplicated copy) is a real, new fs.read site.

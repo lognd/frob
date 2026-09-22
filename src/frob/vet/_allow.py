@@ -72,11 +72,24 @@ def _build_vet_config(vet: dict[str, object]) -> VetConfig:
     # than crashing the whole `frob` invocation on a malformed config line.
     raw_days = vet.get("quarantine_days", 14)
     raw_url = vet.get("registry_base_url")
+    raw_max_age = vet.get("advisory_max_age_days", 7.0)
+
+    # T-5138: `osv` is the pre-rename key; honored as a deprecated alias
+    # for `advisories` for one release so an existing `frob.toml` with
+    # `osv = false` still disables live advisory lookups after the rename.
+    if "osv" in vet and "advisories" not in vet:
+        _log.warning("vet: [vet].osv is deprecated, use [vet].advisories (T-5138)")
+        raw_advisories = vet.get("osv")
+    else:
+        raw_advisories = vet.get("advisories", True)
 
     cfg = VetConfig(
         present=True,
         enforce=bool(vet.get("enforce", False)),
-        osv=bool(vet.get("osv", False)),
+        advisories=bool(raw_advisories),
+        advisory_max_age_days=float(raw_max_age)
+        if isinstance(raw_max_age, (int, float, str))
+        else 7.0,
         quarantine_days=int(raw_days)
         if isinstance(raw_days, (int, float, str))
         else 14,
@@ -84,9 +97,11 @@ def _build_vet_config(vet: dict[str, object]) -> VetConfig:
         allow=allow,
     )
     _log.info(
-        "vet: loaded [vet] config: enforce=%s osv=%s quarantine_days=%d allow=%d",
+        "vet: loaded [vet] config: enforce=%s advisories=%s "
+        "advisory_max_age_days=%.1f quarantine_days=%d allow=%d",
         cfg.enforce,
-        cfg.osv,
+        cfg.advisories,
+        cfg.advisory_max_age_days,
         cfg.quarantine_days,
         len(cfg.allow),
     )

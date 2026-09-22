@@ -62,6 +62,15 @@ known_keys = "frob.gates._dup_graph_schema:DUP_KNOWN_KEYS"
 enforce = true
 
 
+# T-5138: live OSV.dev advisory data, on by default (docs/modules/vet.md
+# "Declaration and gates") -- VET005 fires when a locked dependency has a
+# known advisory; VET012 fires when advisory data could not be obtained at
+# all (no cache and no network, or cache older than advisory_max_age_days)
+# rather than a silent clean pass. frob itself vets its own lockfile.
+[vet]
+advisories = true
+advisory_max_age_days = 7
+
 # T-0443: DOC004's console/bash command-drift tier (frob.gates._docblocks.
 # doc004_gate) -- `prog` is the console word introducing an invocation in a
 # ```console```/```bash```/```sh```/```shell``` fenced doc block; `parser`

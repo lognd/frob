@@ -211,7 +211,8 @@ corresponding source is the red flag.
 ```toml
 [vet]
 enforce = true
-osv = false                    # optional online advisory lookup (osv.dev)
+advisories = true              # T-5138: OSV.dev advisory lookup, ON by default
+advisory_max_age_days = 7      # cache older than this + no network = VET012
 
 [vet.allow]
 requests = ["net", "env"]
@@ -219,14 +220,19 @@ pydantic-core = ["native"]
 jinja2 = ["eval"]              # sandboxed template compilation, reviewed
 ```
 
+`[vet].osv` (the pre-T-5138 key) is still honored as a deprecated alias
+for `advisories` for one release: an existing `frob.toml` with `osv =
+false` keeps disabling live advisory lookups, logged at WARNING.
+
 | Rule | Fails when |
 |---|---|
 | VET001 | dependency in the lockfile has no `[vet.allow]` entry (absence is an error -- new deps get reviewed before check passes) |
 | VET002 | observed capability not in the declaration |
 | VET003 | version bump ADDS a capability vs the previously scanned version (fires even if declared -- escalation always warrants a look; re-declare to acknowledge) |
 | VET004 | obfuscation signals or install-hook capability beyond declared |
-| VET005 | known advisory for a locked version (only when `osv = true`; offline-first default) |
+| VET005 | known advisory for a locked version (`[vet].advisories`, on by default since T-5138) -- message names the advisory id, its raw OSV `severity` (CVSS vector or word), and the fixed version when known |
 | VET006 | lockfile and manifest disagree (manifest edited without re-lock) |
+| VET012 | advisory data could not be obtained at all: no cache and no network, or the cache is older than `[vet].advisory_max_age_days` (T-5138) -- a stale-but-usable cache serves WITH a note, never silently as "no advisories"; this is the loud failure mode instead |
 
 All waivable per-site is meaningless here (there is no site); VET waivers
 live as reviewed `[vet.allow]` edits in a commit -- the declaration IS the
@@ -317,8 +323,9 @@ section (CVE id, status, CVSS score/severity, description summary, CWE
 linkage) after the normal package table, or a `cve_matches` array folded
 into the `--json` payload alongside the existing `VetReport` fields.
 Matches are reporting-only in this slice -- no new gate rule feeds them
-into `frob check`'s enforce/exit-code path yet (a `VET012`-shaped gate
-rule is a natural, still-unbuilt follow-up).
+into `frob check`'s enforce/exit-code path yet (a `VET013`-shaped gate
+rule -- distinct from VET012, T-5138's "advisory data unavailable"
+rule -- is a natural, still-unbuilt follow-up).
 
 ## Mechanics
 
@@ -361,17 +368,27 @@ rule is a natural, still-unbuilt follow-up).
   `scan_tree` -- unset `--jobs` still defaults to the safe `jobs=1` path,
   so raising it above 1 is an explicit opt-in into the shared-cache race
   disclosed above, not a new default.
-- **Advisories (VET005)**: delegated to the osv-scanner adapter (see
-  External tool adapters below) -- OSV.dev aggregates GitHub Advisory DB,
-  PyPA, RustSec, and npm under one package-keyed schema, and osv-scanner
-  already handles batch queries, offline database mirrors, and lockfile
-  parsing for ecosystems frob has not met. frob does not hand-roll an
-  advisory client alongside it (no duplication). Advisory results cache
-  in `.frob/vet.db` with a 24h TTL -- advisories, unlike capability
-  verdicts, can appear for an unchanged version, so this is the one vet
-  fact expiring by time instead of by hash. Live queries disclose your
-  dependency list to a third party, so the default is off; recommended
-  posture is off locally, on (or offline-mirror) in CI.
+- **Advisories (VET005/VET012, T-5138)**: `_osv.py::query_advisories`
+  queries OSV.dev directly over HTTPS -- `POST /v1/querybatch` (up to 1000
+  `{package:{name,ecosystem},version}` queries per call) for the id list,
+  then `GET /v1/vulns/{id}` per hit for the full record (CVSS, fixed
+  version, summary). No external binary: OSV.dev already aggregates
+  GitHub Advisory DB (GHSA), PyPA, RustSec, npm, Go, and NVD-derived CVE
+  aliases under one package-keyed schema, so osv-scanner/pip-audit/
+  cargo-audit add nothing when absent and are not wired in (no
+  duplication). Results cache per (ecosystem, name, version) in
+  `.frob/vet.db`'s `osv_cache` table with a 24h freshness TTL --
+  advisories, unlike capability verdicts, can appear for an unchanged
+  version, so this is the one vet fact expiring by time instead of by
+  hash. A cache older than 24h triggers one refetch attempt; on failure
+  (or `FROB_DISABLE_NET`) the STALE value still serves as long as it is
+  younger than `[vet].advisory_max_age_days` (default 7) -- older than
+  that, or no cache at all, is `VET012` "advisory data unavailable",
+  never a silent "no advisories" pass (silent-zero doctrine). On by
+  default (`[vet].advisories = true`) in `frob vet`, the VET stage of
+  `frob check`, and the pre-land sweep -- live queries disclose your
+  dependency list to OSV.dev, a security-first tradeoff this project
+  accepts by default; set `[vet].advisories = false` to opt out.
 - **Containment (CVE->CWE join, phase D)**: `_containment.py::
   build_containment_report` joins each VET005 advisory's CVE id(s)
   against `frob.strata`'s CWE obligation model via NVD's <!-- frob:waive DOC006 reason="NVD's own external REST API path segment, not a path in this repo" -->`cves/2.0` API,
@@ -431,7 +448,7 @@ into vet's models, never an auto-install):
 
 | Adapter | Tool | Feeds |
 |---|---|---|
-| advisories | osv-scanner (or pip-audit / cargo-audit as ecosystem fallbacks when osv-scanner is absent) | VET005 |
+| advisories | OSV.dev batch API, in-process HTTPS client (`_osv.py`, T-5138 -- no external binary; osv-scanner/pip-audit/cargo-audit would add nothing when OSV.dev already aggregates their sources) | VET005 / VET012 |
 | malware-heuristics | GuardDog | corroborates VET004 signals with maintained typosquat/exfil rules |
 | repo-health | OpenSSF Scorecard | advisory metadata on verdicts (unmaintained, unreviewed-commits) -- informational, not a gate |
 | provenance | sigstore/cosign, SLSA attestations | VET007 (new, opt-in): artifact hash lacks valid provenance for packages listed in <!-- frob:waive DOC006 reason="VET007 is itself explicitly marked new/opt-in in this same cell -- vet.require-provenance is a forward-looking config key this feature does not implement yet, not a stale/bogus pointer" --> [vet.require-provenance] |
@@ -1456,8 +1473,9 @@ What landed on top of the lockfile-conformance MVP:
 - **Gate integration**: NOT built in this slice -- `frob vet --cve-mirror`
   reports matches (table/JSON) but does not add a new `VET`-numbered rule
   to `VetReport.violations`, so a `frob check` run does not yet fail on a
-  live dependency CVE. A `VET012`-shaped rule (ERROR on `AFFECTED`, WARN
-  on `INDETERMINATE`) is the natural follow-up; the ticket's own text asks
+  live dependency CVE. A `VET013`-shaped rule (ERROR on `AFFECTED`, WARN
+  on `INDETERMINATE`; distinct from VET012, T-5138's "advisory data
+  unavailable" rule) is the natural follow-up; the ticket's own text asks
   for "report", not "gate", so this is a disclosed cut rather than a
   silent one.
 - **Product matching**: exact case-insensitive string match against

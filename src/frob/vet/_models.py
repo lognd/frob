@@ -110,7 +110,15 @@ class VetConfig(BaseModel):
 
     present: bool = False
     enforce: bool = False
-    osv: bool = False
+    #: T-5138: live OSV.dev advisory lookups, on by default (renamed from
+    #: `osv` -- see docs/modules/vet.md "Declaration and gates"). `osv` is
+    #: kept as a deprecated alias in `_allow.py::_build_vet_config` for one
+    #: release so an existing `frob.toml` with `osv = false` still disables it.
+    advisories: bool = True
+    #: T-5138: a cached advisory older than this many days, with no
+    #: reachable network, is VET012 "unavailable" rather than served stale
+    #: (docs/modules/vet.md "Advisories (VET005)").
+    advisory_max_age_days: float = 7.0
     quarantine_days: int = 14
     registry_base_url: str | None = None
     allow: Mapping[str, tuple[str, ...] | bool] = {}

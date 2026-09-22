@@ -29,186 +29,227 @@ class TestLifecycleScripts:
 
 
 class TestOsvAdapter:
-    def test_is_available_reflects_path_lookup(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        # frob:tests src/frob/vet/_osv.py::_is_available kind="unit"
-        from frob.vet import _osv
+    """T-5138: OSV.dev in-process HTTP advisory adapter -- no external
+    binary, no network hit in these tests (urlopen is monkeypatched)."""
 
-        monkeypatch.setattr(
-            _osv.shutil, "which", lambda _binary: "/usr/bin/osv-scanner"
-        )
-        assert _osv._is_available() is True
-
-        monkeypatch.setattr(_osv.shutil, "which", lambda _binary: None)
-        assert _osv._is_available() is False
-
-    def test_run_osv_scan_none_when_binary_absent(
+    def test_query_advisories_positive_control_fires_a_known_advisory(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/vet/_osv.py::_run_osv_scan kind="unit"
+        # frob:tests src/frob/vet/_osv.py::query_advisories kind="unit"
+        # Positive control: a fixture dependency + a planted OSV response
+        # must yield a real advisory -- proves the client is actually wired
+        # up, not just silently passing on every input.
         from frob.vet import _osv
+        from frob.vet._models import Dependency
 
-        monkeypatch.setattr(_osv.shutil, "which", lambda _binary: None)
-        lockfile = tmp_path / "uv.lock"
-        lockfile.write_text("version = 1\n")
-        assert _osv._run_osv_scan(lockfile) is None
+        dep = Dependency(ecosystem="pypi", name="requests", version="2.31.0")
 
-    def test_run_osv_scan_flattens_advisories_from_scanner_output(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        # frob:tests src/frob/vet/_osv.py::_run_osv_scan kind="unit"
-        # T-1294: pins the real JSON-flattening behavior -- one advisory
-        # per (package, vulnerability), fixed_version pulled from the LAST
-        # "fixed" event across all ranges, aliases carried through.
-        from frob.vet import _osv
+        def fake_post(url, _body, _timeout_s):
+            assert url == _osv._QUERYBATCH_URL
+            return json.dumps({"results": [{"vulns": [{"id": "GHSA-xxxx"}]}]})
 
-        monkeypatch.setattr(
-            _osv.shutil, "which", lambda _binary: "/usr/bin/osv-scanner"
+        def fake_get(url, _timeout_s):
+            assert url == _osv._VULN_URL.format(id="GHSA-xxxx")
+            return json.dumps(
+                {
+                    "id": "GHSA-xxxx",
+                    "aliases": ["CVE-2023-1234"],
+                    "summary": "planted fixture advisory",
+                    "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N"}],
+                    "affected": [{"ranges": [{"events": [{"fixed": "2.32.0"}]}]}],
+                }
+            )
+
+        monkeypatch.setattr(_osv, "_http_post_json", fake_post)
+        monkeypatch.setattr(_osv, "_http_get_json", fake_get)
+
+        result = _osv.query_advisories(
+            (dep,), cache_path=tmp_path / "vet.db", fetch=True
         )
-        payload = json.dumps(
-            {
-                "results": [
-                    {
-                        "packages": [
-                            {
-                                "package": {"name": "requests", "version": "2.0.0"},
-                                "vulnerabilities": [
-                                    {
-                                        "id": "GHSA-xxxx",
-                                        "aliases": ["CVE-2023-1234"],
-                                        "affected": [
-                                            {
-                                                "ranges": [
-                                                    {
-                                                        "events": [
-                                                            {"introduced": "0"},
-                                                            {"fixed": "2.1.0"},
-                                                        ]
-                                                    },
-                                                    {
-                                                        "events": [
-                                                            {"fixed": "2.2.0"},
-                                                        ]
-                                                    },
-                                                ]
-                                            }
-                                        ],
-                                    }
-                                ],
-                            }
-                        ]
-                    }
-                ]
-            }
-        )
-        monkeypatch.setattr(_osv, "_run_osv_scanner", lambda _lockfile: payload)
-        lockfile = tmp_path / "requirements.txt"
-        lockfile.write_text("requests==2.0.0\n")
-
-        advisories = _osv._run_osv_scan(lockfile)
-
-        assert advisories is not None
+        assert result.is_ok
+        advisories = result.danger_ok[dep]
         assert len(advisories) == 1
         advisory = advisories[0]
         assert advisory.advisory_id == "GHSA-xxxx"
-        assert advisory.package == "requests"
-        assert advisory.version == "2.0.0"
-        # The LAST-declared "fixed" event across all ranges wins.
-        assert advisory.fixed_version == "2.2.0"
-        assert advisory.aliases == ("CVE-2023-1234",)
-        # cve_ids surfaces the CVE-shaped alias even though the advisory's
-        # own id is a GHSA id -- proves the two adapters compose correctly.
+        assert advisory.fixed_version == "2.32.0"
+        assert advisory.severity == "CVSS:3.1/AV:N"
         assert _osv.cve_ids(advisory) == ("CVE-2023-1234",)
 
-    def test_run_osv_scan_empty_stdout_is_a_clean_no_findings_result(
+    def test_query_advisories_serves_fresh_cache_with_no_network_call(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/vet/_osv.py::_run_osv_scan kind="unit"
-        # Empty (whitespace-only) stdout is a real "no vulnerabilities"
-        # result, distinct from the None-on-failure sentinel.
+        # frob:tests src/frob/vet/_osv.py::query_advisories kind="unit"
         from frob.vet import _osv
+        from frob.vet._cache import ttl_cache_set
+        from frob.vet._models import Dependency
 
-        monkeypatch.setattr(
-            _osv.shutil, "which", lambda _binary: "/usr/bin/osv-scanner"
+        dep = Dependency(ecosystem="pypi", name="requests", version="2.31.0")
+        cache_path = tmp_path / "vet.db"
+        ttl_cache_set(
+            cache_path,
+            _osv._CACHE_TABLE,
+            _osv._cache_key("pypi", "requests", "2.31.0"),
+            json.dumps(
+                [
+                    {
+                        "advisory_id": "GHSA-cached",
+                        "package": "requests",
+                        "version": "2.31.0",
+                        "fixed_version": "2.32.0",
+                        "aliases": [],
+                        "severity": None,
+                        "summary": "",
+                    }
+                ]
+            ),
         )
-        monkeypatch.setattr(_osv, "_run_osv_scanner", lambda _lockfile: "   \n")
-        lockfile = tmp_path / "requirements.txt"
-        lockfile.write_text("requests==2.0.0\n")
 
-        assert _osv._run_osv_scan(lockfile) == ()
+        def _no_connect(*_args: object, **_kwargs: object) -> object:
+            raise AssertionError("fresh cache must never reach the network")
 
-    def test_run_osv_scan_unparseable_json_is_none_not_empty(
+        monkeypatch.setattr(_osv, "_http_post_json", _no_connect)
+        monkeypatch.setattr(_osv, "_http_get_json", _no_connect)
+
+        result = _osv.query_advisories((dep,), cache_path=cache_path, fetch=True)
+        assert result.is_ok
+        assert result.danger_ok[dep][0].advisory_id == "GHSA-cached"
+
+    def test_query_advisories_no_cache_no_network_is_unavailable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/vet/_osv.py::_run_osv_scan kind="unit"
-        # A parse failure must degrade to None (adapter-failed), never to
-        # the empty tuple ("scanned clean") -- conflating the two would
-        # silently hide a broken adapter as "nothing found" (T-1294: the
-        # dangerous-regression class this ticket calls out for vet).
+        # frob:tests src/frob/vet/_osv.py::query_advisories kind="unit"
+        # VET012's premise: cold cache + unreachable network must be an
+        # honest Err, never a silent "no advisories" Ok.
         from frob.vet import _osv
+        from frob.vet._models import Dependency
 
-        monkeypatch.setattr(
-            _osv.shutil, "which", lambda _binary: "/usr/bin/osv-scanner"
+        dep = Dependency(ecosystem="pypi", name="requests", version="2.31.0")
+        monkeypatch.setattr(_osv, "_http_post_json", lambda *a, **kw: None)
+
+        result = _osv.query_advisories(
+            (dep,), cache_path=tmp_path / "vet.db", fetch=True
         )
-        monkeypatch.setattr(_osv, "_run_osv_scanner", lambda _lockfile: "{not json")
-        lockfile = tmp_path / "requirements.txt"
-        lockfile.write_text("requests==2.0.0\n")
+        assert result.is_err
+        assert result.danger_err == _osv.OsvQueryError.Unavailable
 
-        assert _osv._run_osv_scan(lockfile) is None
-
-    def test_run_osv_scanner_reports_spawn_failure_as_none(
+    def test_query_advisories_stale_cache_beyond_max_age_is_unavailable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/vet/_osv.py::_run_osv_scanner kind="unit"
-        from typani import Err
+        # frob:tests src/frob/vet/_osv.py::query_advisories kind="unit"
+        import time
 
         from frob.vet import _osv
+        from frob.vet._cache import ttl_cache_set
+        from frob.vet._models import Dependency
 
-        monkeypatch.setattr(
-            _osv, "run_argv", lambda argv, timeout_s=60.0: Err("spawn failed")
+        dep = Dependency(ecosystem="pypi", name="requests", version="2.31.0")
+        cache_path = tmp_path / "vet.db"
+        ttl_cache_set(
+            cache_path,
+            _osv._CACHE_TABLE,
+            _osv._cache_key("pypi", "requests", "2.31.0"),
+            json.dumps([]),
         )
-        lockfile = tmp_path / "requirements.txt"
-        lockfile.write_text("requests==2.0.0\n")
-        assert _osv._run_osv_scanner(lockfile) is None
+        # Back-date the entry well past the default 7d max age.
+        import sqlite3
 
-    def test_run_osv_scanner_crash_with_no_output_is_none(
+        conn = sqlite3.connect(str(cache_path))
+        conn.execute(
+            f"UPDATE {_osv._CACHE_TABLE} SET fetched_at = ?",  # noqa: S608
+            (time.time() - 30 * 86400,),
+        )
+        conn.commit()
+        conn.close()
+
+        monkeypatch.setattr(_osv, "_http_post_json", lambda *a, **kw: None)
+
+        result = _osv.query_advisories(
+            (dep,), cache_path=cache_path, fetch=True, max_age_days=7.0
+        )
+        assert result.is_err
+        assert result.danger_err == _osv.OsvQueryError.Unavailable
+
+    def test_query_advisories_net_disabled_falls_back_to_stale_cache(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/vet/_osv.py::_run_osv_scanner kind="unit"
-        from typani import Ok
+        # frob:tests src/frob/vet/_osv.py::query_advisories kind="unit"
+        # T-0822: FROB_DISABLE_NET degrades exactly like a network failure
+        # -- serving a still-usable (within max_age_days) stale cache
+        # entry, never crashing and never calling urlopen.
+        import time
 
-        from frob.gitio import ProcResult
         from frob.vet import _osv
+        from frob.vet._cache import ttl_cache_set
+        from frob.vet._models import Dependency
 
-        def fake_run_argv(argv, timeout_s=60.0):
-            return Ok(ProcResult(argv=argv, returncode=1, stdout="", stderr="boom"))
+        dep = Dependency(ecosystem="pypi", name="requests", version="2.31.0")
+        cache_path = tmp_path / "vet.db"
+        ttl_cache_set(
+            cache_path,
+            _osv._CACHE_TABLE,
+            _osv._cache_key("pypi", "requests", "2.31.0"),
+            json.dumps([]),
+        )
+        import sqlite3
 
-        monkeypatch.setattr(_osv, "run_argv", fake_run_argv)
-        lockfile = tmp_path / "requirements.txt"
-        lockfile.write_text("requests==2.0.0\n")
-        assert _osv._run_osv_scanner(lockfile) is None
+        conn = sqlite3.connect(str(cache_path))
+        conn.execute(
+            f"UPDATE {_osv._CACHE_TABLE} SET fetched_at = ?",  # noqa: S608
+            (time.time() - 2 * 86400,),
+        )
+        conn.commit()
+        conn.close()
 
-    def test_run_osv_scanner_nonzero_with_output_is_findings_not_failure(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        monkeypatch.setenv("FROB_DISABLE_NET", "1")
+
+        def _no_connect(*_args: object, **_kwargs: object) -> object:
+            raise AssertionError("net-disabled path must never reach the network")
+
+        monkeypatch.setattr(_osv, "_http_post_json", _no_connect)
+
+        result = _osv.query_advisories(
+            (dep,), cache_path=cache_path, fetch=True, max_age_days=7.0
+        )
+        assert result.is_ok
+        assert result.danger_ok[dep] == ()
+
+    def test_query_advisories_unmapped_ecosystem_is_a_clean_skip(
+        self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_osv.py::_run_osv_scanner kind="unit"
-        # osv-scanner exits non-zero WHEN IT FINDS VULNERABILITIES -- that
-        # must be treated as real findings, never conflated with a crash.
-        from typani import Ok
-
-        from frob.gitio import ProcResult
+        # frob:tests src/frob/vet/_osv.py::query_advisories kind="unit"
+        # A dependency in an ecosystem OSV has no data for is honestly
+        # reported as "no advisories", not a network failure.
         from frob.vet import _osv
+        from frob.vet._models import Dependency
 
-        def fake_run_argv(argv, timeout_s=60.0):
-            return Ok(
-                ProcResult(argv=argv, returncode=1, stdout='{"results": []}', stderr="")
-            )
+        dep = Dependency(ecosystem="nuget", name="Newtonsoft.Json", version="1.0.0")
+        result = _osv.query_advisories((dep,), cache_path=tmp_path / "vet.db")
+        assert result.is_ok
+        assert result.danger_ok[dep] == ()
 
-        monkeypatch.setattr(_osv, "run_argv", fake_run_argv)
-        lockfile = tmp_path / "requirements.txt"
-        lockfile.write_text("requests==2.0.0\n")
-        assert _osv._run_osv_scanner(lockfile) == '{"results": []}'
+
+class TestVetConfigDefault:
+    def test_default_frob_toml_enables_advisories_with_no_opt_in(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_allow.py::_load_vet_config kind="unit"
+        # T-5138 acceptance [4]: a fresh clone's default `[vet]` table (no
+        # `advisories`/`osv` key at all) must run the advisory query with no
+        # opt-in flag -- the query executes automatically, on by default.
+        from frob.vet._allow import _load_vet_config
+
+        (tmp_path / "frob.toml").write_text("[vet]\nenforce = true\n")
+        cfg = _load_vet_config(tmp_path)
+        assert cfg.advisories is True
+        assert cfg.advisory_max_age_days == 7.0
+
+    def test_deprecated_osv_key_still_disables_advisories(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_allow.py::_load_vet_config kind="unit"
+        from frob.vet._allow import _load_vet_config
+
+        (tmp_path / "frob.toml").write_text("[vet]\nosv = false\n")
+        cfg = _load_vet_config(tmp_path)
+        assert cfg.advisories is False
 
 
 class TestRegistryLookup:

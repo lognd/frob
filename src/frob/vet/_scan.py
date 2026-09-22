@@ -1,8 +1,9 @@
 """`scan_tree`: the full-lockfile `frob vet` pass (docs/modules/vet.md "Mechanics").
 
 Runs VET001 (allow conformance), VET011 (cooldown quarantine), VET-JS
-(lifecycle scripts), typosquat distance, and VET005 (osv-scanner, opt-in)
-over every dependency in the project's lockfile.
+(lifecycle scripts), typosquat distance, and VET005/VET012 (OSV.dev live
+advisory lookup, on by default -- T-5138) over every dependency in the
+project's lockfile.
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ from frob.vet._models import (
     VetReport,
 )
 from frob.vet._obfuscation import _scan_directory_obfuscation
-from frob.vet._osv import _is_available, _run_osv_scan
+from frob.vet._osv import query_advisories
 from frob.vet._source import _locate_source
 from frob.vet._supplychain import supply_chain_tree_violations
 from frob.vet._typosquat import _find_typosquat
@@ -587,36 +588,76 @@ def _lifecycle_violations(
 
 # frob:enforces SC-DETECTION-OSV-ADVISORY-MATCH
 # frob:enforces CHK-GATE-VET005
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-5138
 def _osv_violations(
-    lockfile: Path, cfg: VetConfig
+    deps: tuple[Dependency, ...],
+    lockfile: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    fetch: bool,
 ) -> tuple[list[Violation], list[str]]:
-    """VET005: osv-scanner advisories, or a skipped-note when unavailable/off."""
-    if not cfg.osv:
-        return [], ["VET005: osv disabled ([vet].osv = false)"]
-    if not _is_available():
-        return [], ["VET005: osv-scanner not on PATH"]
-    advisories = _run_osv_scan(lockfile)
-    if advisories is None:
-        return [], ["VET005: osv-scanner invocation failed"]
-    violations: list[Violation] = []
-    for adv in advisories:
-        fixed_note = f"; fixed in {adv.fixed_version}" if adv.fixed_version else ""
-        violations.append(
-            Violation(
-                rule="VET005",
-                severity=Severity.ERROR,
-                file=lockfile.name,
-                line=0,
-                message=f"{adv.package}@{adv.version}: {adv.advisory_id}{fixed_note}",
-            )
+    """VET005 (a known advisory fires) / VET012 (advisory data could not be
+    obtained at all -- no cache and no network, or cache older than
+    `[vet].advisory_max_age_days`; docs/modules/vet.md "Advisories
+    (VET005)"), or a skipped-note when disabled by config."""
+    if not cfg.advisories:
+        return [], ["VET005: advisories disabled ([vet].advisories = false)"]
+
+    result = query_advisories(
+        deps,
+        cache_path=cache_path,
+        base_url=cfg.registry_base_url,
+        fetch=fetch,
+        max_age_days=cfg.advisory_max_age_days,
+    )
+    if result.is_err:
+        return (
+            [
+                Violation(
+                    rule="VET012",
+                    severity=Severity.ERROR,
+                    file=lockfile.name,
+                    line=0,
+                    message=(
+                        "advisory data unavailable: no cache and no network, "
+                        f"or cache older than {cfg.advisory_max_age_days:.0f}d"
+                    ),
+                )
+            ],
+            [],
         )
+
+    violations: list[Violation] = []
+    for advisories in result.danger_ok.values():
+        for adv in advisories:
+            fixed_note = f"; fixed in {adv.fixed_version}" if adv.fixed_version else ""
+            cvss_note = f"; CVSS {adv.severity}" if adv.severity else "; CVSS unknown"
+            violations.append(
+                Violation(
+                    rule="VET005",
+                    severity=Severity.ERROR,
+                    file=lockfile.name,
+                    line=0,
+                    message=(
+                        f"{adv.package}@{adv.version}: {adv.advisory_id}"
+                        f"{cvss_note}{fixed_note}"
+                    ),
+                )
+            )
     return violations, []
 
 
 def _collect_supplementary_findings(
-    project_root: Path, lockfile: Path, cfg: VetConfig, violations: list[Violation]
+    project_root: Path,
+    lockfile: Path,
+    deps: tuple[Dependency, ...],
+    cfg: VetConfig,
+    cache_path: Path,
+    fetch: bool,
+    violations: list[Violation],
 ) -> list[str]:
-    """Fold JS-lifecycle (if applicable) and osv-scanner violations into
+    """Fold JS-lifecycle (if applicable) and OSV advisory violations into
     `violations` in place; return the combined skipped-note list."""
     skipped: list[str] = []
     if lockfile.name in ("package-lock.json", "pnpm-lock.yaml"):
@@ -624,7 +665,9 @@ def _collect_supplementary_findings(
         violations.extend(lc_violations)
         skipped.extend(lc_skipped)
 
-    osv_violations, osv_skipped = _osv_violations(lockfile, cfg)
+    osv_violations, osv_skipped = _osv_violations(
+        deps, lockfile, cfg, cache_path, fetch
+    )
     violations.extend(osv_violations)
     skipped.extend(osv_skipped)
     return skipped
@@ -728,7 +771,9 @@ def scan_tree(
         violations.extend(lf_violations)
         verdicts.extend(lf_verdicts)
         skipped.extend(
-            _collect_supplementary_findings(project_root, lockfile, cfg, violations)
+            _collect_supplementary_findings(
+                project_root, lockfile, deps, cfg, cache_path, fetch, violations
+            )
         )
 
     report = VetReport(
