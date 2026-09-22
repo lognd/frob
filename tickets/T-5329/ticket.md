@@ -1,5 +1,5 @@
 ---
-id: T-draft-66ed8716
+id: T-5329
 title: 'WEBSEC310-317: debug/info-leak config'
 state: queued
 kind: feature
