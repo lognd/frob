@@ -1,5 +1,5 @@
 ---
-id: T-draft-8dae0206
+id: T-5260
 title: 'Post-land sweep residue 2026-09-21_2054: AFFECT001:src/frob/strata/_pii.py
   AFFECT001:strata-core/src/parse/grammar_policy.rs COV001:src/frob/gates/_sys_provenance.py
   COV001:src/frob'
