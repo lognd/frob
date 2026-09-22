@@ -25,6 +25,7 @@ no behavior, only which file a given handler's body lives in.
 
 from __future__ import annotations
 
+import ast
 import fnmatch
 import io
 import json
@@ -985,13 +986,88 @@ _T4710_MOVE_TARGET_RE = re.compile(
 _T4710_DELETE_MARKER = "delete this production-side copy"
 
 
+def _parses_as_python(rel_file: str, text: str) -> bool:
+    """`True` when `rel_file` is not a `.py` file (nothing to guard) or
+    `text` parses as valid Python -- the T-5289 last-resort guard every
+    write in this handler routes through so a stale-line bug (or any
+    future one) can corrupt a line's CONTENT without ever corrupting the
+    file's SYNTAX: a `.py` write that would leave the file unparseable is
+    refused, never silently applied."""
+    if not rel_file.endswith(".py"):
+        return True
+    try:
+        ast.parse(text)
+    except SyntaxError:
+        return False
+    return True
+
+
+def _write_text_if_parses(
+    path: Path, rel_file: str, text: str, *, finding: str
+) -> bool:
+    """`_write_text` wrapper (T-5289) that refuses -- logs and returns
+    `False`, writing nothing -- to rewrite a `.py` file into something
+    that no longer parses; `finding` names the TEST010 finding/fix this
+    write came from so the log line points a human at the right redundant-
+    declaration record, not just a bare path."""
+    if not _parses_as_python(rel_file, text):
+        _log.error(
+            "test010 redundant-test-declaration fix: refusing to write %s "
+            "(%s) -- result would not parse as Python",
+            path,
+            finding,
+        )
+        return False
+    return _write_text(path, text)
+
+
+class _RedundantDeclEdit:
+    """One planned per-file edit for `fix_test010_redundant_test_
+    declaration` (T-5289): either DELETE `line` outright, or INSERT
+    `new_line` immediately before `line`. `line` is always the ORIGINAL
+    (pre-fix) 1-indexed line number the finding/target named -- never a
+    line number recomputed after some OTHER edit in this same run has
+    already shifted the file, which is exactly the T-5289 bug (a later
+    finding's `md.line` going stale the moment an earlier finding in the
+    same file was applied). Kept 1:1 with `FixApplied` so
+    `fix_test010_redundant_test_declaration` can still report one
+    `FixApplied` per finding even though the actual writes now happen in
+    one batched pass per file."""
+
+    __slots__ = ("line", "is_delete", "new_line", "fix", "contributes_fix")
+
+    def __init__(
+        self,
+        *,
+        line: int,
+        is_delete: bool,
+        new_line: str | None,
+        fix: FixApplied,
+        contributes_fix: bool = True,
+    ) -> None:
+        """Store one planned edit plus the `FixApplied` record it will
+        contribute if the batched apply for its file succeeds.
+        `contributes_fix=False` marks the half of a MOVE pair (the two
+        edits share one `FixApplied`, T-5289) that must NOT also add a
+        second entry to the reported list -- only one of the pair's two
+        `_RedundantDeclEdit`s contributes."""
+        self.line = line
+        self.is_delete = is_delete
+        self.new_line = new_line
+        self.fix = fix
+        self.contributes_fix = contributes_fix
+
+
 def _delete_redundant_test_declaration(
     root: Path, rel_file: str, line: int
-) -> FixApplied | None:
-    """DELETE case: remove the one physical `line` (1-indexed) of
-    `root/rel_file` -- a test-side declaration for the same `(src,
-    target)` pair already exists, so this production-side copy carries
-    no coverage information a deletion would lose."""
+) -> _RedundantDeclEdit | None:
+    """DELETE case (planning only, T-5289 -- no file is written here): a
+    test-side declaration for the same `(src, target)` pair already
+    exists, so this production-side copy at the one physical `line`
+    (1-indexed, ORIGINAL numbering) of `root/rel_file` carries no coverage
+    information a deletion would lose. Returns `None` -- never plans an
+    edit -- when `line` cannot be resolved against the file's current
+    line count at all (nothing to bounds-check further at apply time)."""
     path = root / rel_file
     try:
         text = path.read_text(encoding="utf-8")
@@ -1002,14 +1078,16 @@ def _delete_redundant_test_declaration(
     if idx < 0 or idx >= len(lines):
         return None
     removed = lines[idx]
-    del lines[idx]
-    if not _write_text(path, "".join(lines)):
-        return None
-    return FixApplied(
-        rule="TEST010",
-        file=rel_file,
+    return _RedundantDeclEdit(
         line=line,
-        detail=f"deleted redundant production-side frob:tests: {removed.strip()!r}",
+        is_delete=True,
+        new_line=None,
+        fix=FixApplied(
+            rule="TEST010",
+            file=rel_file,
+            line=line,
+            detail=f"deleted redundant production-side frob:tests: {removed.strip()!r}",
+        ),
     )
 
 
@@ -1051,31 +1129,67 @@ def _rebuilt_move_directive_content(
     return f"{marker} frob:tests {src}" + (f" {attrs_tail}" if attrs_tail else "")
 
 
-def _apply_move_edit(
-    src_path: Path, dst_path: Path, *, idx: int, insert_idx: int, new_line: str
-) -> bool:
-    """Perform the actual insert/delete file-write half of
-    `_move_redundant_test_declaration` -- split out for ARCH001. Same-file
-    moves apply both edits against ONE in-memory line list so the
-    insert/delete indices stay consistent with each other; cross-file
-    moves insert into the destination first (never lose the declaration
-    if the destination write fails) and only then delete from the
-    source."""
-    src_lines = src_path.read_text(encoding="utf-8").splitlines(keepends=True)
-    if src_path == dst_path:
-        combined = list(src_lines)
-        del combined[idx]
-        insert_at = insert_idx - 1 if insert_idx > idx else insert_idx
-        combined.insert(insert_at, new_line)
-        return _write_text(src_path, "".join(combined))
-    dst_lines = dst_path.read_text(encoding="utf-8").splitlines(keepends=True)
-    dst_lines = list(dst_lines)
-    dst_lines.insert(insert_idx, new_line)
-    if not _write_text(dst_path, "".join(dst_lines)):
-        return False
-    src_lines = list(src_lines)
-    del src_lines[idx]
-    return _write_text(src_path, "".join(src_lines))
+def _new_move_directive_line(
+    root: Path, rel_file: str, line: int, *, target_file: str, src: str
+) -> str | None:
+    """The NEW directive text (not yet re-indented -- `_move_insert_line`
+    does that) `_move_redundant_test_declaration` inserts at the
+    destination site -- split out for ARCH001. Reads `root/rel_file`'s
+    `line` fresh from disk (planning never shares state with any other
+    finding's write) and hands it to `_rebuilt_move_directive_content`.
+    Returns `None` on any read/shape failure -- plans nothing rather than
+    guessing."""
+    src_path = root / rel_file
+    try:
+        src_text = src_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    src_lines = src_text.splitlines(keepends=True)
+    idx = line - 1
+    if idx < 0 or idx >= len(src_lines):
+        return None
+    return _rebuilt_move_directive_content(
+        src_lines[idx], target_file=target_file, src=src
+    )
+
+
+def _move_insert_line(
+    root: Path,
+    rel_file: str,
+    target_file: str,
+    insert_line: int,
+    directive_content: str,
+) -> str | None:
+    """The fully re-indented new directive LINE (trailing `\\n` included)
+    `_move_redundant_test_declaration` inserts at `target_file`'s
+    `insert_line` -- split out for ARCH001. Matches the destination
+    site's own leading whitespace (the line AT `insert_line`, i.e. the
+    target symbol's own definition line) so the moved comment lines up
+    with the code it now sits above. Returns `None` when `insert_line`
+    does not resolve against `target_file`'s current line count, or the
+    file cannot be read (same-file moves reuse `rel_file`'s already-read
+    text instead of a second read)."""
+    dst_path = root / target_file
+    if root / rel_file == dst_path:
+        try:
+            dst_lines = (
+                (root / rel_file).read_text(encoding="utf-8").splitlines(keepends=True)
+            )
+        except OSError:
+            return None
+    else:
+        try:
+            dst_lines = dst_path.read_text(encoding="utf-8").splitlines(keepends=True)
+        except OSError:
+            return None
+    insert_idx = insert_line - 1
+    if insert_idx < 0 or insert_idx > len(dst_lines):
+        return None
+    dest_indent_source = dst_lines[insert_idx] if insert_idx < len(dst_lines) else ""
+    dest_indent = dest_indent_source[
+        : len(dest_indent_source) - len(dest_indent_source.lstrip(" \t"))
+    ]
+    return f"{dest_indent}{directive_content}\n"
 
 
 def _move_redundant_test_declaration(
@@ -1085,105 +1199,151 @@ def _move_redundant_test_declaration(
     line: int,
     src: str,
     target: str,
-) -> FixApplied | None:
-    """MOVE case: relocate the one physical `line` (1-indexed) of
-    `root/rel_file` to directly above `target`'s own definition, in
-    `target`'s own file -- re-indented to match the destination site
-    (formatting only, `_rebuilt_move_directive_content` builds the new
-    content, `_apply_move_edit` writes it). REFUSES -- returns `None`,
-    touching neither file -- when `target` does not resolve in
-    `snapshot.symbols` at all: a dangling id is a finding for a human to
-    look at, never a binding this handler guesses at."""
+) -> tuple[_RedundantDeclEdit, str, _RedundantDeclEdit] | None:
+    """MOVE case (planning only, T-5289 -- no file is written here):
+    plans relocating the one physical `line` (1-indexed, ORIGINAL
+    numbering) of `root/rel_file` to directly above `target`'s own
+    definition, in `target`'s own file -- re-indented to match the
+    destination site (`_new_move_directive_line`/`_move_insert_line`
+    build the new content, split out for ARCH001). Returns `None` --
+    plans nothing -- when `target` does not resolve in `snapshot.symbols`
+    at all: a dangling id is a finding for a human to look at, never a
+    binding this handler guesses at. On success returns `(delete_edit,
+    target_rel_file, insert_edit)`, both edits keyed to their ORIGINAL
+    line numbers so `fix_test010_redundant_test_declaration`'s batched
+    per-file apply can order them safely."""
     symbol = snapshot.symbols.get(target)
     if symbol is None:
         return None
     target_file, _, _qualname = target.partition("::")
     if not target_file:
         return None
-    src_path = root / rel_file
-    dst_path = root / target_file
-    try:
-        src_text = src_path.read_text(encoding="utf-8")
-    except OSError:
-        return None
-    src_lines = src_text.splitlines(keepends=True)
-    idx = line - 1
-    if idx < 0 or idx >= len(src_lines):
-        return None
-    directive_content = _rebuilt_move_directive_content(
-        src_lines[idx], target_file=target_file, src=src
+    directive_content = _new_move_directive_line(
+        root, rel_file, line, target_file=target_file, src=src
     )
     if directive_content is None:
         return None
-    if src_path == dst_path:
-        dst_lines = src_lines
-    else:
-        try:
-            dst_text = dst_path.read_text(encoding="utf-8")
-        except OSError:
-            return None
-        dst_lines = dst_text.splitlines(keepends=True)
-    insert_idx = symbol.span[0] - 1
-    if insert_idx < 0 or insert_idx > len(dst_lines):
-        return None
-    dest_indent_source = dst_lines[insert_idx] if insert_idx < len(dst_lines) else ""
-    dest_indent = dest_indent_source[
-        : len(dest_indent_source) - len(dest_indent_source.lstrip(" \t"))
-    ]
-    new_line = f"{dest_indent}{directive_content}\n"
-    if not _apply_move_edit(
-        src_path, dst_path, idx=idx, insert_idx=insert_idx, new_line=new_line
-    ):
-        return None
-    return FixApplied(
-        rule="TEST010",
-        file=rel_file,
-        line=line,
-        detail=(
-            f"moved redundant production-side frob:tests onto {target!r} "
-            f"in {target_file}"
-        ),
+    insert_line = symbol.span[0]
+    new_line = _move_insert_line(
+        root, rel_file, target_file, insert_line, directive_content
     )
+    if new_line is None:
+        return None
+    detail = (
+        f"moved redundant production-side frob:tests onto {target!r} in {target_file}"
+    )
+    delete_edit = _RedundantDeclEdit(
+        line=line,
+        is_delete=True,
+        new_line=None,
+        fix=FixApplied(rule="TEST010", file=rel_file, line=line, detail=detail),
+    )
+    insert_edit = _RedundantDeclEdit(
+        line=insert_line,
+        is_delete=False,
+        new_line=new_line,
+        fix=FixApplied(rule="TEST010", file=rel_file, line=line, detail=detail),
+        contributes_fix=False,
+    )
+    return delete_edit, target_file, insert_edit
+
+
+def _apply_redundant_decl_edits(
+    root: Path, rel_file: str, edits: list[_RedundantDeclEdit]
+) -> list[FixApplied]:
+    """Apply every planned `_RedundantDeclEdit` for ONE file in a single
+    batched pass (T-5289): sorts `edits` by their ORIGINAL line number
+    DESCENDING and mutates one shared in-memory line list top-down. This
+    is the fix for the T-5289 stale-index bug -- processing highest line
+    first means every edit still to come sits at a STRICTLY LOWER original
+    line number, and a delete/insert at the current (higher) position
+    never shifts the index of anything below it, so each edit's `line`
+    stays valid against the CURRENT list exactly as recorded, with no
+    re-read and no offset bookkeeping required. Refuses -- reports nothing
+    for this file, original left untouched -- when the resulting text
+    would no longer parse as Python (`_write_text_if_parses`), naming the
+    file's first finding in the log line."""
+    path = root / rel_file
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    lines = text.splitlines(keepends=True)
+    ordered = sorted(edits, key=lambda e: e.line, reverse=True)
+    applied_edits: list[_RedundantDeclEdit] = []
+    for edit in ordered:
+        idx = edit.line - 1
+        if edit.is_delete:
+            if idx < 0 or idx >= len(lines):
+                continue
+            del lines[idx]
+        else:
+            assert edit.new_line is not None
+            insert_at = max(0, min(idx, len(lines)))
+            lines.insert(insert_at, edit.new_line)
+        applied_edits.append(edit)
+    if not applied_edits:
+        return []
+    finding = f"{applied_edits[0].fix.file}:{applied_edits[0].fix.line}"
+    if not _write_text_if_parses(path, rel_file, "".join(lines), finding=finding):
+        return []
+    return [edit.fix for edit in applied_edits if edit.contributes_fix]
 
 
 # frob:doc \
 # docs/modules/gates.md#test010-redundant-test-declaration-tier-a-fix-t-4710-t-5261
 # frob:ticket T-5261
+# frob:ticket T-5289
 # frob:tests \
 # tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration.test_delete_case_fires_test010_and_fix_removes_the_line  # noqa: E501
 def fix_test010_redundant_test_declaration(
     root: Path, snapshot: GraphSnapshot
 ) -> list[FixApplied]:
-    """Tier-A fix (T-4710/T-5261) for the redundant-test-declaration half
-    of TEST010's own catch-all: scans `snapshot.malformed` for
-    `frob.graph._redundant_test_declaration_finding`'s own reason shape
-    (never re-derives which declarations are redundant, only acts on the
-    finding already computed) and DELETEs, MOVEs, or REFUSES per finding
-    -- see `_delete_redundant_test_declaration`/`_move_redundant_test_
-    declaration`'s own docstrings for the three outcomes. A finding whose
-    reason does not match this shape (e.g. TEST010's OTHER catch-all
-    case, an invalid `frob:tests kind=`) is left alone -- this handler
-    owns only the redundant-declaration shape, not TEST010 wholesale."""
-    applied: list[FixApplied] = []
+    """Tier-A fix (T-4710/T-5261, stale-index-safe as of T-5289) for the
+    redundant-test-declaration half of TEST010's own catch-all: scans
+    `snapshot.malformed` for `frob.graph._redundant_test_declaration_
+    finding`'s own reason shape (never re-derives which declarations are
+    redundant, only acts on the finding already computed) and plans a
+    DELETE, MOVE, or REFUSE per finding -- see
+    `_delete_redundant_test_declaration`/`_move_redundant_test_
+    declaration`'s own docstrings for the three outcomes. T-5289: every
+    finding's `md.line` is the ORIGINAL pre-fix snapshot's line number, so
+    planning is kept fully separate from writing -- every edit for a given
+    file is collected first, then applied in ONE batched, descending-line
+    pass per file (`_apply_redundant_decl_edits`) so an earlier finding's
+    write in the same file can never invalidate a later finding's line
+    number, the exact corruption T-5289 fixed. A finding whose reason does
+    not match this shape (e.g. TEST010's OTHER catch-all case, an invalid
+    `frob:tests kind=`) is left alone -- this handler owns only the
+    redundant-declaration shape, not TEST010 wholesale."""
+    edits_by_file: dict[str, list[_RedundantDeclEdit]] = {}
     for md in snapshot.malformed:
         match = _T4710_REDUNDANT_RE.search(md.reason)
         if match is None:
             continue
         remedy = match.group("remedy")
         if _T4710_DELETE_MARKER in remedy:
-            fix = _delete_redundant_test_declaration(root, md.file, md.line)
-        else:
-            move_match = _T4710_MOVE_TARGET_RE.search(remedy)
-            if move_match is None:
-                continue
-            fix = _move_redundant_test_declaration(
-                root,
-                snapshot,
-                md.file,
-                md.line,
-                match.group("src"),
-                move_match.group("target"),
-            )
-        if fix is not None:
-            applied.append(fix)
+            delete_edit = _delete_redundant_test_declaration(root, md.file, md.line)
+            if delete_edit is not None:
+                edits_by_file.setdefault(md.file, []).append(delete_edit)
+            continue
+        move_match = _T4710_MOVE_TARGET_RE.search(remedy)
+        if move_match is None:
+            continue
+        planned = _move_redundant_test_declaration(
+            root,
+            snapshot,
+            md.file,
+            md.line,
+            match.group("src"),
+            move_match.group("target"),
+        )
+        if planned is None:
+            continue
+        delete_edit, target_file, insert_edit = planned
+        edits_by_file.setdefault(md.file, []).append(delete_edit)
+        edits_by_file.setdefault(target_file, []).append(insert_edit)
+    applied: list[FixApplied] = []
+    for rel_file, edits in edits_by_file.items():
+        applied.extend(_apply_redundant_decl_edits(root, rel_file, edits))
     return applied
