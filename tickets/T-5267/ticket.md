@@ -9,7 +9,7 @@ created: '2026-09-21'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 points: 5
@@ -55,6 +55,20 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-22'
+evidence:
+- tests/unit/gates/test_tool_registry_gate.py::TestToolRegistryGate::test_missing_relevant_tool_is_tool001
+- tests/unit/gates/test_tool_registry_gate.py::TestToolRegistryGate::test_failed_relevant_tool_is_tool002
+- tests/unit/gates/test_tool_registry_gate.py::TestToolRegistryGate::test_allow_missing_tool_suppresses_tool001
+- tests/unit/gates/test_tool_registry_gate.py::TestToolRegistryGate::test_no_findings_is_clean
+- tests/unit/gates/test_tool_registry_gate.py::TestBareShutilWhichGate::test_flags_bare_shutil_which
+- tests/unit/gates/test_tool_registry_gate.py::TestBareShutilWhichGate::test_registry_module_itself_is_exempt
+- tests/unit/gates/test_tool_registry_gate.py::TestBareShutilWhichGate::test_clean_file_reports_nothing
 designated_repro_test: null
 threat: null
 component: null
