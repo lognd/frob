@@ -1,5 +1,5 @@
 ---
-id: T-draft-cf824840
+id: T-5305
 title: 'frob ticket reconcile --strip-stale-fields: remove pydantic-extra fields (branch/worktree
   from an older writer) from live ledger records so TICK008 stops flagging the real
   ledger'
