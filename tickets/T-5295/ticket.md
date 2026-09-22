@@ -1,5 +1,5 @@
 ---
-id: T-draft-5d0e124a
+id: T-5295
 title: DOC006 no longer flags backticked future-verb phrasing in ticket bodies
 state: queued
 kind: bug
