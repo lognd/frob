@@ -7297,9 +7297,10 @@ def _run_batch_mutation_sweep(root: Path) -> None:
 
 
 # frob:ticket T-1444
+# frob:ticket T-5259
 class _LandReportShim:
-    """A minimal stand-in for `LandReport`'s two fields `_print_land_proof`
-    actually reads (`commit_sha`, `final_id`) -- `drain_next`'s
+    """A minimal stand-in for `LandReport`'s fields `_print_land_proof`
+    actually reads (`commit_sha`, `final_id`, `ticket_id`) -- `drain_next`'s
     `QueueEntry` only carries `commit_sha` on a landed entry, not the full
     `LandReport` `land_fn` originally produced (the report itself is not
     threaded back through `drain_next`'s `QueueEntry`, by T-1345's own
@@ -7307,13 +7308,19 @@ class _LandReportShim:
     result object). Constructing this tiny shim is cheaper and less
     invasive than widening `QueueEntry`'s schema (outside this ticket's
     `src/frob/tickets/**`-adjacent-but-not-`_land_queue.py` scope) just to
-    carry a report `_print_land_proof` only reads two fields of."""
+    carry a report `_print_land_proof` only reads a few fields of."""
 
     # frob:ticket T-1444
+    # frob:ticket T-5259
     def __init__(self, commit_sha: str | None, final_id: str) -> None:
-        """Store the two fields `_print_land_proof` reads."""
+        """Store the fields `_print_land_proof` reads. `ticket_id` mirrors
+        `final_id`: on a drained queue entry the two are the same value
+        (the entry's ticket id), and `_print_land_proof` also keys its
+        `_LAST_CLAIMS_OUTCOME` / `_LAST_ORPHAN_EVIDENCE_OUTCOME` /
+        `_LAST_BUDGET_DEFERRALS` lookups off `report.ticket_id`."""
         self.commit_sha = commit_sha
         self.final_id = final_id
+        self.ticket_id = final_id
 
 
 # frob:ticket T-0631

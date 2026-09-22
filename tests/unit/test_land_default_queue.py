@@ -16,6 +16,8 @@ from frob.app.config import AppConfig
 from frob.app.ticket_runner._land_cmd import (
     _apply_land_default_queue,
     _land_status_cmd,
+    _LandReportShim,
+    _print_land_proof,
 )
 from frob.tickets._land_queue import enqueue
 
@@ -126,3 +128,43 @@ class TestLandStatusCmd:
         with pytest.raises(SystemExit) as exc_info:
             _land_status_cmd(tmp_path, cfg)
         assert exc_info.value.code == 1
+
+
+class TestLandReportShimTicketId:
+    """T-5259 regression: `drain_next`'s per-entry `_LandReportShim` must
+    carry `ticket_id` (not just `final_id`), because `_print_land_proof`
+    reads `report.ticket_id` -- not `report.final_id` -- for its
+    `_LAST_CLAIMS_OUTCOME`/`_LAST_ORPHAN_EVIDENCE_OUTCOME`/
+    `_LAST_BUDGET_DEFERRALS` lookups. Before the fix, `_LandReportShim`
+    only set `commit_sha`/`final_id`, so every `_print_land_proof(root,
+    shim)` call inside `drain_next` raised `AttributeError: 'ticket_id'`
+    after the FIRST entry landed, truncating a multi-entry drain to one
+    ticket per invocation (see /tmp/land-T-5035.log, /tmp/land-T-4560.log)."""
+
+    def test_shim_carries_ticket_id_print_land_proof_does_not_raise(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_LandReportShim kind="unit"  # noqa: E501
+        shim = _LandReportShim("deadbeef", "T-0001")
+        assert shim.ticket_id == "T-0001"
+        assert shim.final_id == "T-0001"
+        assert shim.commit_sha == "deadbeef"
+
+        # `_print_land_proof` does its own ancestry/ledger-state lookups
+        # via `_land_proof_checks` -- stub that out so this test exercises
+        # only the attribute access `_LandReportShim` must satisfy, not the
+        # full git/ledger plumbing (already covered elsewhere).
+        import frob.app.ticket_runner._land_cmd as land_cmd_mod
+
+        monkeypatch.setattr(
+            land_cmd_mod,
+            "_land_proof_checks",
+            lambda root, final_id, commit_sha, *, target_branch="main": (
+                True,
+                "done",
+                True,
+            ),
+        )
+
+        verified = _print_land_proof(tmp_path, shim)
+        assert verified is True
