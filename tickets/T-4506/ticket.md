@@ -2,7 +2,7 @@
 id: T-4506
 title: C# end-to-end adapter parity (capability resolver, directive DSL, docs/xref/perf,
   dup/docblock fixture)
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -42,12 +42,22 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/vet_suite/test_capability_scan_csharp.py::TestCapabilityScanCsharpTaxonomyClosureResolution::test_var_local_type_carries_into_a_later_instance_call
+- tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_slash_doc_directive_binds
+- tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_xml_doc_todo_free_text_note_is_accepted
+- tests/unit/lang/test_csharp_directives.py::TestCSharpDirectiveParity::test_xml_doc_waive_directive_on_class_binds
+- tests/unit/test_xref.py::test_csharp_finds_property_definition
+- tests/unit/test_xref.py::test_csharp_finds_const_field_definition
+- tests/unit/test_xref.py::test_csharp_finds_nested_type_definition
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4506
+branch: t-4506
 ---
 Story: bring C# to the same adapter contract as python/rust/typescript/kotlin/c (mirrors T-1597's non-negotiable bar). Parent for the leaf tickets under it. blocked_by T-3232/T-3234/T-3856 because each is a generic cross-language bug this story's csharp-specific leaves build on top of -- fixing them here would duplicate those tickets, not extend them.
 
