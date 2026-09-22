@@ -148,6 +148,7 @@ class TestPort001:
         }
         assert "src/frob/testing/_offender.py" in hits
 
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
     def test_legitimate_self_reference_stays_quiet_t3275(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET (T-3275): a bare equality check naming this
         repo's own package (`project.get("name") != "frob"`-shaped, the
@@ -177,6 +178,7 @@ class TestPort001:
             v for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
         ] == []
 
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
     def test_strata_and_vet_are_scanned_since_t2405(self, tmp_path: Path) -> None:
         """T-2405: PORT001 widened past `src/frob/gates/**` to the full
         `DETECTOR_PACKAGE_ROOTS` set -- a hardcoded-identity literal in
@@ -210,6 +212,7 @@ class TestPort001:
         assert "src/frob/strata/_offender.py" in path_hits
         assert "src/frob/vet/_offender.py" in ident_hits
 
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
     def test_bare_default_value_is_flagged_t3435(self, tmp_path: Path) -> None:
         """MUST-FIRE (T-3435): a bare `_X = "src/frob"` module-level
         assignment -- the `_DEFAULT_COV_TARGET = "src/frob"` shape
@@ -239,6 +242,7 @@ class TestPort001:
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert hits[0].severity.value == "warn"
 
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
     def test_bare_pkg_name_assignment_stays_quiet_t3435(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET (T-3435): a bare `_PKG = "frob"` assignment
         (the package NAME alone, not a `"src/<pkg>"` path-shaped value)

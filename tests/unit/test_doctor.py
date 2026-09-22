@@ -30,6 +30,7 @@ class TestNativeDegradeWarning:
     produce a loud message naming every missing extension, and a fully-
     accelerated environment MUST NOT produce any message at all."""
 
+    # frob:tests src/frob/doctor.py::native_degrade_warning  # noqa: E501
     def test_missing_extensions_named_loudly(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -48,6 +49,7 @@ class TestNativeDegradeWarning:
         assert "strata_core" in message
         assert "pure-Python mode" in message
 
+    # frob:tests src/frob/doctor.py::native_degrade_warning  # noqa: E501
     def test_fully_accelerated_produces_no_warning(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -62,6 +64,7 @@ class TestNativeDegradeWarning:
         )
         assert native_degrade_warning(tmp_path) is None
 
+    # frob:tests src/frob/doctor.py::native_degrade_warning  # noqa: E501
     def test_partial_availability_still_names_the_missing_one(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -80,6 +83,7 @@ class TestNativeDegradeWarning:
         assert "strata_core" in message
         assert "frob_core" not in message.split("--")[0].split("(")[1]
 
+    # frob:tests src/frob/doctor.py::native_degrade_warning  # noqa: E501
     def test_source_checkout_gets_make_core_hint(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -98,6 +102,7 @@ class TestNativeDegradeWarning:
         assert message is not None
         assert "make core" in message
 
+    # frob:tests src/frob/doctor.py::native_degrade_warning  # noqa: E501
     def test_installed_package_gets_pip_extra_hint(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -122,6 +127,8 @@ class TestScanExternalTools:
     `importlib.metadata.version` -- and never raises regardless of what
     is present or absent."""
 
+    # frob:tests src/frob/doctor.py::scan_external_tools  # noqa: E501
+    # frob:tests src/frob/doctor.py::ExternalToolStatus  # noqa: E501
     def test_present_binary_reports_version(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -133,6 +140,8 @@ class TestScanExternalTools:
         assert statuses["git"].present is True
         assert statuses["git"].version == "git 1.0"
 
+    # frob:tests src/frob/doctor.py::scan_external_tools  # noqa: E501
+    # frob:tests src/frob/doctor.py::ExternalToolStatus  # noqa: E501
     def test_missing_binary_reports_absent_with_install_hint(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -145,6 +154,7 @@ class TestScanExternalTools:
         assert statuses["git"].version is None
         assert statuses["git"].install_hint
 
+    # frob:tests src/frob/doctor.py::scan_external_tools  # noqa: E501
     def test_present_package_reports_version_via_importlib(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -156,6 +166,7 @@ class TestScanExternalTools:
         assert statuses["pytest-xdist"].present is True
         assert statuses["pytest-xdist"].version == "3.8.0"
 
+    # frob:tests src/frob/doctor.py::scan_external_tools  # noqa: E501
     def test_missing_package_reports_absent(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -176,6 +187,8 @@ class TestExternalToolsRemediation:
     """T-3276: only a missing REQUIRED tool produces a remediation line --
     the category rule (`ToolCategory`'s own docstring) applied."""
 
+    # frob:tests src/frob/doctor.py::_external_tools_remediation  # noqa: E501
+    # frob:tests src/frob/doctor.py::ToolCategory  # noqa: E501
     def test_missing_required_tool_names_it_and_the_install_command(self) -> None:
         """Must-fire fixture: a REQUIRED tool's absence names the tool
         and the install command in the returned remediation text."""
@@ -193,6 +206,8 @@ class TestExternalToolsRemediation:
         assert "git" in remediation
         assert "git-scm.com" in remediation
 
+    # frob:tests src/frob/doctor.py::_external_tools_remediation  # noqa: E501
+    # frob:tests src/frob/doctor.py::ToolCategory  # noqa: E501
     def test_missing_optional_tool_is_silent(self) -> None:
         """An OPTIONAL or OPTIONAL_FOR_GATE tool's absence never produces
         a `frob doctor` remediation line -- that is the affected gate's
@@ -221,6 +236,9 @@ class TestRelevantToolFindings:
     when its `relevant_when` predicate is true for this repo AND it is
     missing/failed -- "not needed here" is never a finding."""
 
+    # frob:tests src/frob/doctor.py::RelevantToolFinding  # noqa: E501
+    # frob:tests src/frob/doctor.py::RelevantToolEntry  # noqa: E501
+    # frob:tests src/frob/doctor.py::RelevantToolFailureKind  # noqa: E501
     def test_relevant_missing_tool_is_a_finding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -272,6 +290,8 @@ class TestUnityEditorStatus:
     default per-OS install root, then PATH, in that precedence order, and
     never raises regardless of what is present or absent."""
 
+    # frob:tests src/frob/doctor.py::_locate_unity_editor  # noqa: E501
+    # frob:tests src/frob/doctor.py::UnityEditorStatus  # noqa: E501
     def test_present_via_env_reports_version(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -285,6 +305,7 @@ class TestUnityEditorStatus:
         assert status.present is True
         assert status.path == str(binary)
 
+    # frob:tests src/frob/doctor.py::_locate_unity_editor  # noqa: E501
     def test_present_via_hub_default_root(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -305,6 +326,7 @@ class TestUnityEditorStatus:
         assert status.present is True
         assert status.version == "2022.3.5f1"
 
+    # frob:tests src/frob/doctor.py::_locate_unity_editor  # noqa: E501
     def test_present_via_path(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -318,6 +340,8 @@ class TestUnityEditorStatus:
         assert status.present is True
         assert status.path == "/usr/local/bin/Unity"
 
+    # frob:tests src/frob/doctor.py::_locate_unity_editor  # noqa: E501
+    # frob:tests src/frob/doctor.py::UnityEditorStatus  # noqa: E501
     def test_absent_reports_not_found(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -338,6 +362,7 @@ class TestUnityProjectDiagnosis:
     `detect_unity_project` -- a non-Unity root must never attempt Unity
     detection at all (the story's own third acceptance criterion)."""
 
+    # frob:tests src/frob/doctor.py::_diagnose_unity_toolchain  # noqa: E501
     def test_unity_project_reports_editor_status(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -361,6 +386,7 @@ class TestUnityProjectDiagnosis:
         assert editor is not None
         assert editor.present is False
 
+    # frob:tests src/frob/doctor.py::_diagnose_unity_toolchain  # noqa: E501
     def test_non_unity_project_skips_unity_detection(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -387,6 +413,7 @@ class TestProfileRecommendation:
     file-count axis; `None` (no recommendation, never force `rapid`)
     below both -- matching this ticket's acceptance criteria 2/3."""
 
+    # frob:tests src/frob/doctor.py::profile_recommendation  # noqa: E501
     def test_below_threshold_recommends_nothing(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -403,6 +430,7 @@ class TestProfileRecommendation:
         monkeypatch.setattr("frob.tickets.load_queue", lambda root: Ok(_EmptyQueue()))
         assert doctor.profile_recommendation(tmp_path) is None
 
+    # frob:tests src/frob/doctor.py::profile_recommendation  # noqa: E501
     def test_ticket_count_above_threshold_recommends_rapid(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -424,6 +452,7 @@ class TestProfileRecommendation:
         assert "5000" in message
         assert "rapid" in message
 
+    # frob:tests src/frob/doctor.py::profile_recommendation  # noqa: E501
     def test_file_count_above_threshold_recommends_rapid(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:

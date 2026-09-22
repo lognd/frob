@@ -114,6 +114,11 @@ fn anti_unify_walk(
 /// exactly-one-empty is a maximal-divergence case (nothing shared) and
 /// always exceeds the hole ceiling below.
 // frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
+// frob:tests frob-core/src/lib.rs::tests.anti_unify_deterministic_hole_numbering kind="unit"
+// frob:tests frob-core/src/lib.rs::tests.anti_unify_wildly_different_trees_exceeds_hole_ceiling kind="unit"
+// frob:tests frob-core/src/lib.rs::tests.anti_unify_arity_mismatch_becomes_a_hole_not_a_crash kind="unit"
+// frob:tests frob-core/src/lib.rs::tests.anti_unify_single_leaf_divergence_binds_one_hole kind="unit"
+// frob:tests frob-core/src/lib.rs::tests.anti_unify_identical_trees_has_zero_holes kind="unit"
 pub(crate) fn anti_unify_core(
     labels_a: &[String],
     parents_a: &[i64],
@@ -205,6 +210,7 @@ pub fn anti_unify(
 }
 
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:tests frob-core/src/lib.rs::tests.anti_unify_pyfunction_wraps_hole_ceiling_as_false_sentinel kind="unit"
 pub(crate) fn anti_unify_impl(
     labels_a: Vec<String>,
     parents_a: Vec<i64>,
@@ -251,6 +257,7 @@ pub fn wl_hash(
 }
 
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:tests frob-core/src/lib.rs::tests.wl_hash_isomorphic_relabeled_graphs_collide kind="unit"
 pub(crate) fn wl_hash_impl(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usize) -> u64 {
     let n = labels.len();
     if n == 0 {

@@ -41,6 +41,7 @@ class TestPhaseProgress:
         assert len(caplog.records) == 1
         assert "a slow phase" in caplog.records[0].message
 
+    # frob:tests src/frob/app/ticket_runner/_new.py::_report_phase_progress  # noqa: E501
     def test_no_clock_stays_quiet(self, caplog) -> None:  # noqa: ANN001
         """`start_time=None` (a caller with no command-wide clock, e.g. an
         isolated unit test) never emits progress."""

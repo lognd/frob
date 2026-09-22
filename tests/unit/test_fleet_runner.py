@@ -49,6 +49,7 @@ class TestFleetRunner:
             run(cfg)
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/fleet_runner.py::run
     def test_run_route_ok(self, tmp_path: Path, monkeypatch, capsys) -> None:
         manifest_path = tmp_path / "fleet.toml"
         manifest_path.write_text('[[repo]]\nname = "a"\npath = "."\n')

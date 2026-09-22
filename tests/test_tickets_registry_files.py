@@ -56,6 +56,7 @@ class TestRegistryFiles:
         """A repo root with no `frob.toml` at all falls back to default."""
         assert registry_files(tmp_path) == DEFAULT_REGISTRY_FILES
 
+    # frob:tests src/frob/tickets/_registry_files.py::registry_files  # noqa: E501
     def test_configured_override_replaces_default(self, tmp_path: Path) -> None:
         """`[tickets].registry_files` in `frob.toml` replaces the default
         set entirely, honoring the ticket's "configured in frob.toml"
@@ -65,12 +66,14 @@ class TestRegistryFiles:
         )
         assert registry_files(tmp_path) == frozenset({"some/custom/registry.yaml"})
 
+    # frob:tests src/frob/tickets/_registry_files.py::registry_files  # noqa: E501
     def test_malformed_value_falls_back_to_default(self, tmp_path: Path) -> None:
         """A non-list `registry_files` value degrades to the default
         rather than crashing or silently emptying the set."""
         (tmp_path / "frob.toml").write_text('[tickets]\nregistry_files = "oops"\n')
         assert registry_files(tmp_path) == DEFAULT_REGISTRY_FILES
 
+    # frob:tests src/frob/tickets/_registry_files.py::is_registry_file  # noqa: E501
     def test_is_registry_file_membership(self) -> None:
         """`is_registry_file` matches the default set's own paths."""
         assert is_registry_file("docs/modules/gates.md", None)
@@ -89,17 +92,20 @@ class TestIsAdditiveDiffText:
         diff = "@@ -3,0 +4 @@\n+| NEW001 | foo.py |\n"
         assert is_additive_diff_text(diff) is True
 
+    # frob:tests src/frob/tickets/_registry_files.py::is_additive_diff_text  # noqa: E501
     def test_deleted_line_is_not_additive(self) -> None:
         """A diff containing a real removed line (`-`, not `---`) is NOT
         additive-only."""
         diff = "@@ -3,1 +3,0 @@\n-|---|---|\n"
         assert is_additive_diff_text(diff) is False
 
+    # frob:tests src/frob/tickets/_registry_files.py::is_additive_diff_text  # noqa: E501
     def test_file_header_dashes_are_not_removed_lines(self) -> None:
         """The `---`/`+++` file-header lines never count as a removal."""
         diff = "--- a/docs/modules/gates.md\n+++ b/docs/modules/gates.md\n+added\n"
         assert is_additive_diff_text(diff) is True
 
+    # frob:tests src/frob/tickets/_registry_files.py::is_additive_diff_text  # noqa: E501
     def test_empty_diff_is_additive(self) -> None:
         """No diff at all (identical content) is vacuously additive-only."""
         assert is_additive_diff_text("") is True
@@ -151,11 +157,13 @@ class TestScopeMatchesRegistryImplicit:
     """`scope_matches`'s implicit registry-file coverage (T-4650
     acceptance a): mirrors `LEDGER_PATH`'s always-in-scope rule."""
 
+    # frob:tests src/frob/tickets/_models.py::scope_matches  # noqa: E501
     def test_registry_file_matches_with_empty_scope(self) -> None:
         """A ticket with NO declared scope at all still matches a
         registry file -- no `--add`, no lease, ever required."""
         assert scope_matches("docs/modules/gates.md", ())
 
+    # frob:tests src/frob/tickets/_models.py::scope_matches  # noqa: E501
     def test_registry_file_matches_with_unrelated_scope(self) -> None:
         """A ticket whose declared scope covers something unrelated still
         matches every default registry file."""
@@ -173,6 +181,7 @@ class TestRegistryLeakageExemptPaths:
     (T-4650 acceptances b/c): the CrossTicketLeakage exemption
     wiring."""
 
+    # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage  # noqa: E501
     def test_additive_registry_change_is_exempt(self, tmp_path: Path) -> None:
         """A registry file changed only additively on this branch is
         dropped from the leakage-relevant set."""
@@ -185,6 +194,7 @@ class TestRegistryLeakageExemptPaths:
         )
         assert exempt == frozenset({"docs/modules/gates.md"})
 
+    # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage  # noqa: E501
     def test_destructive_registry_change_is_not_exempt(self, tmp_path: Path) -> None:
         """A registry file whose diff deletes/rewrites an existing line
         is NEVER exempted -- CrossTicketLeakage must still be free to

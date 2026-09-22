@@ -80,6 +80,9 @@ class TestBuildGraphLockScope:
 
     # frob:ticket T-3478
     # frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
+    # frob:tests src/frob/graph/cache.py::connect
+    # frob:tests src/frob/graph/cache.py::_inprocess_write_lock
+    # frob:tests src/frob/graph/cache.py::_is_transient_lock_error
     def test_two_processes_never_commit_to_the_same_cache_concurrently(
         self, tmp_path: Path
     ) -> None:

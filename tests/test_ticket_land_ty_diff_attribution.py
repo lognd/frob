@@ -80,6 +80,7 @@ class TestTyDiagnosticIdentity:
     """`_ty_diagnostic_identity` (T-3116): `(file, code, message)`,
     deliberately blind to `line`/`col`."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_type_check_pre_land  # noqa: E501
     def test_ignores_line_and_col(self) -> None:
         # frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestTyDiagnosticIdentity.test_ignores_line_and_col  # noqa: E501
         from frob.app.ticket_runner._land_cmd import _ty_diagnostic_identity
@@ -111,6 +112,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
     """T-3116's own acceptance pair, plus the unmeasurable-baseline
     fallback -- the touched-file `ty` gate attributed to the DIFF."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_type_check_pre_land  # noqa: E501
     def test_pre_existing_finding_that_merely_shifted_lines_does_not_refuse(
         self, repo: Path
     ) -> None:
@@ -130,6 +132,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
             repo, "T-3116", frozenset({"src/bad_types.py"})
         )  # must not raise -- pre-existing, only relocated
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_type_check_pre_land  # noqa: E501
     def test_genuinely_new_finding_still_refuses(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand.test_genuinely_new_finding_still_refuses  # noqa: E501
         # A SECOND, genuinely new type error introduced alongside the
@@ -151,6 +154,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_type_check_pre_land  # noqa: E501
     def test_baseline_unmeasurable_falls_back_to_file_scoped_refusal(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

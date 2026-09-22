@@ -237,6 +237,7 @@ class TestReleaseBumpQuartetAtomicity:
     actual cause of a monotonicity refusal."""
 
     # frob:ticket T-2220
+    # frob:tests src/frob/release/__init__.py::set_manifest_version  # noqa: E501
     def test_manifest_version_written_same_step_as_pyproject(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
         (repo / ".frob-release.json").write_text(
@@ -753,6 +754,7 @@ class TestUvLockSync:
         assert 'version = "0.1.0"' in (wt / "uv.lock").read_text()
         assert (repo / "uv.lock").read_text().count('version = "0.1.0"') == 1
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
     def test_dirty_lock_with_other_change_still_refuses(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
         (repo / "uv.lock").write_text(
@@ -777,6 +779,7 @@ class TestUvLockSync:
         assert result.is_err
         assert result.danger_err == LandError.DirtyMain
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
     def test_dirty_lock_version_plus_other_line_still_refuses(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_version_plus_other_line_still_refuses  # noqa: E501
         (repo / "uv.lock").write_text(
@@ -928,6 +931,7 @@ class TestRebuildNatives:
     """T-0338: `land`'s optional `rebuild_natives` callback -- invoked only
     when the landed changeset touches a native source tree."""
 
+    # frob:tests src/frob/tickets/_land_squash.py::_post_publish_native_rebuild  # noqa: E501
     def test_invoked_when_native_source_touched(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_invoked_when_native_source_touched  # noqa: E501
         wt = repo.parent / "wt"
@@ -954,6 +958,7 @@ class TestRebuildNatives:
         assert result.danger_ok.natives_rebuilt is True
         assert calls == [repo]
 
+    # frob:tests src/frob/tickets/_land_squash.py::_post_publish_native_rebuild  # noqa: E501
     def test_skipped_when_no_native_source_touched(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_skipped_when_no_native_source_touched  # noqa: E501
         wt = repo.parent / "wt"
@@ -976,6 +981,7 @@ class TestRebuildNatives:
         assert result.danger_ok.natives_rebuilt is False
         assert calls == []
 
+    # frob:tests src/frob/tickets/_land_squash.py::_post_publish_native_rebuild  # noqa: E501
     def test_rebuild_runs_after_the_landing_commit_is_durable(self, repo: Path) -> None:
         """T-3111 must-fire: the callback must observe a root whose HEAD is
         ALREADY the landing commit with a clean working tree -- before this
@@ -1020,6 +1026,7 @@ class TestRebuildNatives:
             f"{result.danger_ok.commit_sha!r}"
         )
 
+    # frob:tests src/frob/tickets/_land_squash.py::_post_publish_native_rebuild  # noqa: E501
     def test_rebuild_failure_does_not_block_land(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_rebuild_failure_does_not_block_land  # noqa: E501
         wt = repo.parent / "wt"
@@ -1060,6 +1067,7 @@ class TestDevVersionBump:
         _commit_all(wt, f"add {name}.py")
         return tid
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_dev_version_bump
     def test_two_lands_in_sequence_produce_distinguishable_versions(
         self, repo: Path
     ) -> None:
@@ -1101,6 +1109,7 @@ class TestDevVersionBump:
             result2.danger_ok.release_bumped_to != result1.danger_ok.release_bumped_to
         )
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_dev_version_bump
     def test_toggle_off_leaves_version_untouched(self, repo: Path) -> None:
         # frob:tests \
         # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_toggle_off_l\
@@ -1122,6 +1131,7 @@ class TestDevVersionBump:
             encoding="utf-8"
         )
 
+    # frob:tests src/frob/tickets/_land_release.py::_dev_version_major_guard
     def test_major_bump_refuses_without_ack(self, repo: Path) -> None:
         # frob:tests \
         # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_r\
@@ -1149,6 +1159,7 @@ class TestDevVersionBump:
         )
         assert (repo / "pyproject.toml").read_text().count('version = "2.0.0"') == 1
 
+    # frob:tests src/frob/tickets/_land_release.py::_dev_version_major_guard
     def test_major_bump_proceeds_once_acknowledged(self, repo: Path) -> None:
         # frob:tests \
         # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_p\

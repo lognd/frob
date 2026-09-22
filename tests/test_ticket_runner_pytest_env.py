@@ -22,6 +22,7 @@ class TestRunPytestDirectlyStripsLeaseEnv:
     """`_run_pytest_directly` must never forward `FROB_WORKTREE`/`FROB_AGENT`
     into the spawned pytest subprocess env."""
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_run_pytest_directly  # noqa: E501
     def test_strips_worktree_and_agent_env(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -54,6 +55,7 @@ class TestRunPytestDirectlyStripsLeaseEnv:
         assert "FROB_AGENT" not in env
         assert env.get("SOME_OTHER_VAR") == "kept"
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_run_pytest_directly  # noqa: E501
     def test_missing_lease_env_is_fine(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

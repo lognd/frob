@@ -144,6 +144,8 @@ class TestCapabilityRatchetConflictRefused:
     tickets) rather than silently keeping the target branch's side."""
 
     # frob:tests tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused.test_conflicting_strata_via_list_refuses_instead_of_dropping  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::_log_capability_ratchet_refusal kind="integration"  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::_land_ticket_for_commit_touching kind="integration"  # noqa: E501
     def test_conflicting_strata_via_list_refuses_instead_of_dropping(
         self, v2_repo: Path
     ) -> None:
@@ -178,6 +180,7 @@ class TestCapabilityRatchetConflictRefused:
         )
 
     # frob:tests tests/unit/test_land_merge_conflict_drop.py::TestCapabilityRatchetConflictRefused.test_conflicting_ratchet_lock_refuses_instead_of_dropping  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::_resolve_one_out_of_scope_conflict kind="integration"  # noqa: E501
     def test_conflicting_ratchet_lock_refuses_instead_of_dropping(
         self, v2_repo: Path
     ) -> None:

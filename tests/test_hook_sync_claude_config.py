@@ -62,6 +62,7 @@ class TestDedupeHookRegistrations:
     """`dedupe_hook_registrations` -- the pure decision, no I/O."""
 
     # frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_duplicate_basename_same_event_is_removed  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::dedupe_hook_registrations  # noqa: E501
     def test_duplicate_basename_same_event_is_removed(self, hook) -> None:  # noqa: ANN001
         """MUST-FIRE: the project already registers `frob-suggest.py` for
         PreToolUse; the user copy's own registration of the SAME basename
@@ -79,6 +80,7 @@ class TestDedupeHookRegistrations:
         assert new_user["hooks"]["PreToolUse"] == []
 
     # frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_distinct_basenames_are_kept  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::dedupe_hook_registrations  # noqa: E501
     def test_distinct_basenames_are_kept(self, hook) -> None:  # noqa: ANN001
         """MUST-STAY-QUIET: a user-level hook the project does not
         register at all (a different basename) survives untouched."""
@@ -96,6 +98,7 @@ class TestDedupeHookRegistrations:
         assert kept[0]["command"].endswith("protect-secrets.py")
 
     # frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_empty_group_after_removal_is_dropped  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::dedupe_hook_registrations  # noqa: E501
     def test_empty_group_after_removal_is_dropped(self, hook) -> None:  # noqa: ANN001
         """A hook GROUP left with zero surviving entries is dropped
         entirely rather than kept as a dead `"hooks": []` entry."""
@@ -127,6 +130,7 @@ class TestSyncDedupeHookRegistrations:
     """`sync_dedupe_hook_registrations` -- the real-file-I/O wrapper."""
 
     # frob:tests tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations.test_writes_deduped_user_settings  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::sync_dedupe_hook_registrations  # noqa: E501
     def test_writes_deduped_user_settings(self, hook, tmp_path: Path) -> None:  # noqa: ANN001
         """A real duplicate on disk is removed and the user settings.json
         is rewritten to reflect it."""
@@ -156,6 +160,7 @@ class TestSyncDedupeHookRegistrations:
         assert written["hooks"]["PreToolUse"] == []
 
     # frob:tests tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations.test_dry_run_does_not_write  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::sync_dedupe_hook_registrations  # noqa: E501
     def test_dry_run_does_not_write(self, hook, tmp_path: Path) -> None:  # noqa: ANN001
         """`dry_run=True` (the `--check` path) reports what WOULD be
         removed without touching the file on disk."""

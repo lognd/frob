@@ -66,11 +66,13 @@ class TestTierField:
     """`tier` defaults to TICKET (T-0715 backward compat) and round-trips
     through serialize/parse and the ledger."""
 
+    # frob:tests src/frob/tickets/_models.py::TicketTier
     def test_default_tier_is_ticket(self) -> None:
         # frob:tests src/frob/tickets/_models.py::Ticket kind="unit"
         ticket = _ticket(ticket_id="T-0001")
         assert ticket.tier is TicketTier.TICKET
 
+    # frob:tests src/frob/tickets/_models.py::TicketTier
     def test_serialize_parse_round_trip(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_store.py::_serialize_ticket kind="unit"
         from frob.tickets._store import _parse_ticket_file
@@ -241,6 +243,7 @@ class TestSetTier:
         assert loaded.danger_ok[ticket_id].tier is TicketTier.EPIC
 
     # frob:ticket T-2353
+    # frob:tests src/frob/tickets/_setters.py::set_tier
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_tiers.py::TestSetTier.test_reason_missing_refuses

@@ -36,6 +36,7 @@ class TestUnloggedErrorPath:
         assert out[0].category == "unlogged-error-path"
         assert out[0].symref == "load_config"
 
+    # frob:tests src/frob/arch/_logging_checks.py::check_unlogged_error_path  # noqa: E501
     def test_catch_with_nearby_log_call_not_flagged(self) -> None:
         from frob.arch._logging_checks import check_unlogged_error_path
         from frob.arch._normalized import (
@@ -76,6 +77,7 @@ class TestUnloggedBoundary:
         assert any(s.category == "unlogged-boundary" for s in out)
         assert any(s.symref == "run" for s in out)
 
+    # frob:tests src/frob/arch/_logging_checks.py::check_unlogged_boundary  # noqa: E501
     def test_boundary_call_with_no_nearby_log_call_flagged(self) -> None:
         from frob.arch._logging_checks import check_unlogged_boundary
         from frob.arch._normalized import (
@@ -99,6 +101,7 @@ class TestUnloggedBoundary:
         out = check_unlogged_boundary(module)
         assert any(s.category == "unlogged-boundary" and s.line == 10 for s in out)
 
+    # frob:tests src/frob/arch/_logging_checks.py::check_unlogged_boundary  # noqa: E501
     def test_private_function_not_flagged(self) -> None:
         from frob.arch._logging_checks import check_unlogged_boundary
         from frob.arch._normalized import NormalizedFunction, NormalizedModule
@@ -115,6 +118,7 @@ class TestPrintAsDiagnostic:
     """`check_print_as_diagnostic`
     (docs/modules/arch.md#logging-discipline-checks)."""
 
+    # frob:tests src/frob/arch/_logging_checks.py::check_print_as_diagnostic  # noqa: E501
     def test_print_call_flagged(self) -> None:
         from frob.arch._logging_checks import check_print_as_diagnostic
         from frob.arch._normalized import (
@@ -136,6 +140,7 @@ class TestPrintAsDiagnostic:
         assert len(out) == 1
         assert out[0].category == "print-as-diagnostic"
 
+    # frob:tests src/frob/arch/_logging_checks.py::check_print_as_diagnostic  # noqa: E501
     def test_print_call_in_cli_module_not_flagged(self) -> None:
         from frob.arch._logging_checks import check_print_as_diagnostic
         from frob.arch._normalized import (
@@ -161,6 +166,7 @@ class TestRunLoggingChecks:
     """`run_logging_checks` combines every ARCH1xx logging-discipline check
     (docs/modules/arch.md#logging-discipline-checks)."""
 
+    # frob:tests src/frob/arch/_logging_checks.py::run_logging_checks  # noqa: E501
     def test_combines_all_three_checks(self) -> None:
         from frob.arch._logging_checks import run_logging_checks
         from frob.arch._normalized import (
@@ -224,6 +230,7 @@ class TestUnhandledResult:
         assert out[0].category == "unhandled-result"
         assert out[0].symref == "run"
 
+    # frob:tests src/frob/arch/_fallibility.py::check_unhandled_result  # noqa: E501
     def test_returned_call_to_result_function_not_flagged(self) -> None:
         from frob.arch._fallibility import check_unhandled_result
         from frob.arch._normalized import (
@@ -277,6 +284,7 @@ class TestSwallowedException:
         assert out[0].category == "swallowed-exception"
         assert out[0].severity == "warning"
 
+    # frob:tests src/frob/arch/_fallibility.py::check_swallowed_exception  # noqa: E501
     def test_except_with_nearby_log_call_not_flagged(self) -> None:
         from frob.arch._fallibility import check_swallowed_exception
         from frob.arch._normalized import (
@@ -304,6 +312,7 @@ class TestRecoverableErrorWrongSignature:
     """`check_recoverable_error_wrong_signature`
     (docs/modules/arch.md#fallibility-checks)."""
 
+    # frob:tests src/frob/arch/_fallibility.py::check_recoverable_error_wrong_signature  # noqa: E501
     def test_raises_value_error_without_result_signature_flagged(self) -> None:
         from frob.arch._fallibility import check_recoverable_error_wrong_signature
         from frob.arch._normalized import (
@@ -327,6 +336,7 @@ class TestRecoverableErrorWrongSignature:
         assert out[0].category == "recoverable-error-wrong-signature"
         assert out[0].symref == "parse_amount"
 
+    # frob:tests src/frob/arch/_fallibility.py::check_recoverable_error_wrong_signature  # noqa: E501
     def test_raises_value_error_with_result_signature_not_flagged(self) -> None:
         from frob.arch._fallibility import check_recoverable_error_wrong_signature
         from frob.arch._normalized import (
@@ -375,6 +385,7 @@ class TestOverBroadExcept:
         out = check_over_broad_except(module)
         assert any(s.category == "over-broad-except" for s in out)
 
+    # frob:tests src/frob/arch/_fallibility.py::check_over_broad_except  # noqa: E501
     def test_specific_except_not_flagged(self) -> None:
         from frob.arch._fallibility import check_over_broad_except
         from frob.arch._normalized import (
@@ -395,6 +406,7 @@ class TestOverBroadExcept:
         out = check_over_broad_except(module)
         assert out == []
 
+    # frob:tests src/frob/arch/_fallibility.py::check_over_broad_except  # noqa: E501
     def test_reraise_with_different_type_loses_context_flagged(self) -> None:
         from frob.arch._fallibility import check_over_broad_except
         from frob.arch._normalized import (
@@ -426,6 +438,7 @@ class TestRunFallibilityChecks:
     """`run_fallibility_checks` combines every ARCH1xx fallibility check
     (docs/modules/arch.md#fallibility-checks)."""
 
+    # frob:tests src/frob/arch/_fallibility.py::run_fallibility_checks  # noqa: E501
     def test_combines_all_four_checks(self) -> None:
         from frob.arch._fallibility import run_fallibility_checks
         from frob.arch._normalized import (

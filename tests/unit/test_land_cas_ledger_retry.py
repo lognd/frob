@@ -78,6 +78,7 @@ class TestLedgerOnlyAdvance:
     """`commits_touch_only_ledger_paths` classifies the commits between two
     tips as ledger-only (safe to rebase onto) or not (must fall back)."""
 
+    # frob:tests src/frob/tickets/_land_compose.py::commits_touch_only_ledger_paths
     def test_pure_ledger_advance_is_ledger_only(self, scratch_repo: Path) -> None:
         """Given two sibling commits touching only tickets/T-0001/ticket.md
         and CHANGELOG.md, when classified, then it reports ledger_only=True
@@ -98,6 +99,7 @@ class TestLedgerOnlyAdvance:
         assert result.is_ok
         assert result.danger_ok is True
 
+    # frob:tests src/frob/tickets/_land_compose.py::commits_touch_only_ledger_paths
     def test_a_single_code_touching_commit_is_not_ledger_only(
         self, scratch_repo: Path
     ) -> None:
@@ -124,6 +126,7 @@ class TestRebaseComposedCommitOnto:
     """`rebase_composed_commit_onto` re-parents a composed commit's OWN
     diff onto a fresh base without losing either side's content."""
 
+    # frob:tests src/frob/tickets/_land_compose.py::rebase_composed_commit_onto
     def test_rebased_commit_carries_the_same_content_change(
         self, scratch_repo: Path
     ) -> None:
@@ -167,6 +170,7 @@ class TestRebaseComposedCommitOnto:
         ).stdout.strip()
         assert parents == new_base
 
+    # frob:tests src/frob/tickets/_land_compose.py::rebase_composed_commit_onto
     def test_rebase_failure_returns_err(self, scratch_repo: Path) -> None:
         """Given a composed commit whose own diff conflicts with the new
         base (the same path changed both ways), when rebased, then it
@@ -267,6 +271,7 @@ class TestFoldPublishAndResync:
         ).stdout
         assert landed_ledger == "id: T-0001\n"
 
+    # frob:tests src/frob/tickets/_land_squash.py::_fold_publish_and_resync
     def test_code_touching_cas_miss_falls_back_to_full_recompose(
         self, scratch_repo: Path
     ) -> None:
@@ -290,6 +295,7 @@ class TestFoldPublishAndResync:
         assert result.danger_err is LandError.DirtyMain
         _run(["git", "worktree", "remove", "--force", str(stage)], scratch_repo)
 
+    # frob:tests src/frob/tickets/_land_squash.py::_fold_publish_and_resync
     def test_refused_land_leaves_root_clean(self, scratch_repo: Path) -> None:
         """Given a refused land (the code-touching CAS-miss case above),
         when the refusal returns, then `git status --porcelain` in `root`

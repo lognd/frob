@@ -28,10 +28,12 @@ class TestAttributeNewFindings:
     never a false 'everything unattributed') whenever the queue or the
     graph is unavailable."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_attribute_new_findings  # noqa: E501
     def test_empty_queue_returns_empty_mapping(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
         assert _attribute_new_findings(tmp_path, [("RULE1", "a.py")]) == {}
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_attribute_new_findings  # noqa: E501
     def test_attributed_and_unattributed_round_trip(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -95,6 +97,7 @@ class TestTrueFindingCount:
         return Ok(_Proc(stdout))
 
     # frob:ticket T-1935
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_true_finding_count_for_identities  # noqa: E501
     def test_counts_every_diagnostic_matching_an_identity(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -225,6 +228,7 @@ class TestTrueFindingCount:
         assert count == 19
 
     # frob:ticket T-1935
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_true_finding_count_for_identities  # noqa: E501
     def test_unparsable_json_is_none_not_zero(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -239,6 +243,7 @@ class TestTrueFindingCount:
         )
 
     # frob:ticket T-1935
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_true_finding_count_for_identities  # noqa: E501
     def test_spawn_refused_is_none_not_zero(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -277,6 +282,7 @@ class TestIdentitiesStillReproducing:
         return Ok(_Proc(stdout))
 
     # frob:ticket T-2006
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identities_still_reproducing  # noqa: E501
     def test_only_reproducing_identities_returned(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -307,6 +313,7 @@ class TestIdentitiesStillReproducing:
         assert result == frozenset({("COV003", "a.py")})
 
     # frob:ticket T-2006
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identities_still_reproducing  # noqa: E501
     def test_unmeasurable_is_none(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -361,6 +368,7 @@ class TestRevalidateDispatchableSweepTickets:
     not only inside the next unrelated land's own sweep."""
 
     # frob:ticket T-2006
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::revalidate_dispatchable_sweep_tickets  # noqa: E501
     def test_no_sweep_tickets_is_zero_cost(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -382,6 +390,7 @@ class TestRevalidateDispatchableSweepTickets:
         assert called == []  # no check spawn was attempted at all
 
     # frob:ticket T-2006
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::revalidate_dispatchable_sweep_tickets  # noqa: E501
     def test_fully_resolved_candidate_is_dropped(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -423,6 +432,7 @@ class TestRevalidateDispatchableSweepTickets:
         assert requeried.danger_ok.tickets[ticket_id].state == TicketState.DROPPED
 
     # frob:ticket T-2006
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::revalidate_dispatchable_sweep_tickets  # noqa: E501
     def test_still_reproducing_candidate_is_left_untouched(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -473,6 +483,7 @@ class TestRevalidateDispatchableSweepTickets:
         assert requeried.danger_ok.tickets[ticket_id].state == TicketState.QUEUED
 
     # frob:ticket T-2006
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::revalidate_dispatchable_sweep_tickets  # noqa: E501
     def test_unmeasurable_recheck_drops_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -640,6 +651,7 @@ class TestRevalidateDispatchableSweepTickets:
         assert requeried.danger_ok.tickets[ticket_id].state == TicketState.DROPPED
 
     # frob:ticket T-2089
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached  # noqa: E501
     def test_second_call_same_tree_reuses_cache_no_second_spawn(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -700,6 +712,7 @@ class TestRevalidateDispatchableSweepTickets:
         assert len(spawn_calls) == 1
 
     # frob:ticket T-2165
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached  # noqa: E501
     def test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -839,6 +852,7 @@ class TestRegressionCountLine:
     identity-vs-finding-count caveat line."""
 
     # frob:ticket T-2077
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_regression_count_line  # noqa: E501
     def test_true_count_known(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine.test_true_count_known  # noqa: E501
         line = _regression_count_line([("RULE1", "a.py"), ("RULE2", "b.py")], 5)
@@ -846,6 +860,7 @@ class TestRegressionCountLine:
         assert "5 actual finding" in line
 
     # frob:ticket T-2077
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_regression_count_line  # noqa: E501
     def test_true_count_unmeasurable(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine.test_true_count_unmeasurable  # noqa: E501
         line = _regression_count_line([("RULE1", "a.py")], None)
@@ -860,6 +875,7 @@ class TestBuildRegressionBody:
     each appended only when their own inputs are non-empty."""
 
     # frob:ticket T-2077
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_build_regression_body  # noqa: E501
     def test_no_attribution_lines_no_multi_land(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestBuildRegressionBody.test_no_attribution_lines_no_multi_land  # noqa: E501
         body = _build_regression_body(
@@ -877,6 +893,7 @@ class TestBuildRegressionBody:
         assert "Attribution (T-1690" not in body
 
     # frob:ticket T-2077
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_build_regression_body  # noqa: E501
     def test_multi_land_and_attribution_lines_both_appended(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestBuildRegressionBody.test_multi_land_and_attribution_lines_both_appended  # noqa: E501
         body = _build_regression_body(
@@ -915,6 +932,7 @@ class TestReverifyUnfiledPairsAtFileTime:
         return Ok(_Proc(stdout))
 
     # frob:ticket T-3222
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
     def test_still_live_pair_is_kept(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -940,6 +958,7 @@ class TestReverifyUnfiledPairsAtFileTime:
         assert true_count == 1
 
     # frob:ticket T-3222
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
     def test_vanished_pair_is_dropped_and_recorded_as_debt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -966,6 +985,7 @@ class TestReverifyUnfiledPairsAtFileTime:
         assert record["skipped"] == "sweep-finding-vanished-before-file:RULE1:a.py"
 
     # frob:ticket T-3222
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
     def test_unmeasurable_files_everything_as_before(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -40,6 +40,7 @@ class TestMacroSymbolFile:
         assert result == "strata-core/src/parse.rs"
 
 
+# frob:tests src/frob/tickets/_scope_coverage.py::_node_id_matches_symref
 class TestNodeIdMatchesSymref:
     """`_node_id_matches_symref` matches a pytest/cargo node id against a
     symref, either an exact/parametrized dotted match or a bare-file
@@ -88,6 +89,7 @@ class TestNodeIdMatchesSymref:
         )
 
 
+# frob:tests src/frob/tickets/_scope_coverage.py::_file_of_symref_in_scope
 class TestFileOfSymrefInScope:
     """`_file_of_symref_in_scope` strips a symref down to its file path
     (bare, or before `::`) and checks it against a ticket's scope

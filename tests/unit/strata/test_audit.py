@@ -571,6 +571,7 @@ class TestHostWiring:
     test_main_cli_dispatches`) directly, with no hand-written harness, to
     prove the wiring closes the CLI-reachability gap."""
 
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness
     def test_shared_model_gaps(self):
         model = _shared_two_user_model()
         result = evaluate_exhaustiveness(model)
@@ -586,6 +587,7 @@ class TestHostWiring:
         assert "host:blast-radius:svc-a" in report.views_checked
         assert "host:blast-radius:svc-b" in report.views_checked
 
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness
     def test_hardened_model_proved(self):
         model = _isolated_hardened_two_user_model()
         result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
@@ -597,6 +599,7 @@ class TestHostWiring:
         # sudoers grant structurally prove both sub-targets false.
         assert report.waived == ()
 
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness
     def test_no_runs_as_no_gaps(self):
         """A model with no `runs_as` service users (e.g. `design/frob.
         strata`'s own self-audit model) declares no HOST001/HOST002/

@@ -388,11 +388,13 @@ class TestLandRepairMarker:
     leftover land-repair marker at the start of the NEXT `land()` call
     against the same root/ticket."""
 
+    # frob:tests src/frob/tickets/_land.py::_repair_stale_land_marker
     def test_no_marker_is_a_silent_no_op(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
         result = _land_mod._repair_stale_land_marker(repo)
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_land.py::_repair_stale_land_marker
     def test_repair_resets_root_when_current_tip_matches_the_marker(
         self, repo: Path
     ) -> None:
@@ -410,6 +412,7 @@ class TestLandRepairMarker:
         assert not marker.exists()
 
     # frob:ticket T-1963
+    # frob:tests src/frob/tickets/_land.py::_repair_stale_land_marker
     def test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker(
         self, repo: Path
     ) -> None:
@@ -472,6 +475,7 @@ class TestFinalizeRepairMarker:
     brackets (before `_land_finalize_and_close`, cleared in a `finally`
     right after)."""
 
+    # frob:tests src/frob/tickets/_land.py::_repair_stale_finalize_markers
     def test_no_marker_is_a_silent_no_op(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -480,6 +484,7 @@ class TestFinalizeRepairMarker:
             _land_mod._repair_stale_finalize_markers(repo)
         assert not [r for r in caplog.records if r.levelname == "ERROR"]
 
+    # frob:tests src/frob/tickets/_land.py::_repair_stale_finalize_markers
     def test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -507,6 +512,7 @@ class TestFinalizeRepairMarker:
         marker = _land_mod._finalize_repair_marker_path(repo, tid)
         assert not marker.exists()
 
+    # frob:tests src/frob/tickets/_land.py::_repair_stale_finalize_markers
     def test_repair_is_silent_when_root_already_shows_the_ticket_done(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -538,10 +544,12 @@ class TestPostLandVerifyPendingMarker:
     own `_report_stale_post_land_verify_markers` to reconcile at the start
     of the NEXT invocation."""
 
+    # frob:tests src/frob/tickets/_land.py::_stale_post_land_verify_markers
     def test_no_marker_is_a_silent_empty_result(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_no_marker_is_a_silent_empty_result  # noqa: E501
         assert _land_mod._stale_post_land_verify_markers(repo) == ()
 
+    # frob:tests src/frob/tickets/_land.py::_stale_post_land_verify_markers
     def test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor(
         self, repo: Path
     ) -> None:
@@ -556,6 +564,7 @@ class TestPostLandVerifyPendingMarker:
         _land_mod._clear_post_land_verify_marker(repo, "T-9999")
         assert _land_mod._stale_post_land_verify_markers(repo) == ()
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_report_stale_post_land_verify_markers  # noqa: E501
     def test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared(
         self, repo: Path
     ) -> None:
@@ -752,6 +761,7 @@ class TestSigkillMidStaging:
         assert _status_ignoring_frob(repo) == ""
 
     # frob:ticket T-2679
+    # frob:tests src/frob/tickets/_land.py::_write_finalize_repair_marker
     def test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -849,6 +859,8 @@ class TestSigkillMidStaging:
         assert _status_ignoring_frob(repo) == ""
 
     # frob:ticket T-2679
+    # frob:tests src/frob/tickets/_land.py::_clear_finalize_repair_marker
+    # frob:tests src/frob/tickets/_land.py::_write_finalize_repair_marker
     def test_normal_land_reaches_done_exactly_once_no_extra_transition(
         self, repo: Path
     ) -> None:

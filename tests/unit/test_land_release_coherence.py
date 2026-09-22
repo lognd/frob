@@ -204,6 +204,7 @@ class TestUvLockCoherenceWhenAlreadyBumped:
         assert result.is_ok, result.danger_err
         assert _read_working_uv_lock_version(tmp_path) == "0.290.0"
 
+    # frob:tests src/frob/tickets/_land_release.py::_ensure_release_quartet_coherent  # noqa: E501
     def test_lock_already_coherent_is_untouched(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

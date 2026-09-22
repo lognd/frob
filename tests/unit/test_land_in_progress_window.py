@@ -134,6 +134,7 @@ class TestLandInProgressWindowNarrowedToSplice:
         assert str(pid) in caplog.text
         assert "T-9001" in caplog.text
 
+    # frob:tests src/frob/tickets/_leases.py::refuse_if_land_in_progress
     def test_tickets_lock_held_refuses_naming_the_correlated_land_holder(
         self, tmp_path: Path
     ) -> None:
@@ -244,6 +245,7 @@ class TestWholeLandVerbClassification:
     than the assertion it makes here -- FAILED_AT_PARENT, not "passed
     but asserted the wrong thing"."""
 
+    # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch
     def test_renumber_refused_while_only_land_lock_held(self, tmp_path: Path) -> None:
         """A land's slow phase (`land.lock` held, `tickets.lock` free):
         a whole-land-classified verb (`renumber`, standing in for
@@ -260,6 +262,7 @@ class TestWholeLandVerbClassification:
         assert result.is_err
         assert result.danger_err is LeaseError.LandInProgress
 
+    # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch
     def test_splice_only_verb_allowed_while_only_land_lock_held(
         self, tmp_path: Path
     ) -> None:

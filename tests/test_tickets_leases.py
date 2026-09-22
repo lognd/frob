@@ -89,6 +89,7 @@ def _write_lease(
 class TestResolveLease:
     """`resolve_lease` pins ticket id -> its own worktree, never a sibling's."""
 
+    # frob:tests src/frob/tickets/_leases.py::resolve_lease
     def test_resolves_own_ticket_own_worktree(self, repo: Path) -> None:
         """A ticket with a lease recorded for `invoking_worktree` resolves Ok."""
         worktree = repo
@@ -97,6 +98,7 @@ class TestResolveLease:
         assert result.is_ok
         assert result.danger_ok.ticket_id == "T-0695"
 
+    # frob:tests src/frob/tickets/_leases.py::resolve_lease kind="unit"  # noqa: E501
     def test_never_returns_a_sibling_tickets_lease(self, repo: Path) -> None:
         """Reproduces the T-0695 cross-talk shape: two tickets, two fake
         worktree paths, both leases recorded (in either write order) --
@@ -132,6 +134,7 @@ class TestResolveLease:
         assert cross_b.is_err
         assert cross_b.danger_err == LeaseError.LeaseWorktreeMismatch
 
+    # frob:tests src/frob/tickets/_leases.py::resolve_lease
     def test_no_lease_for_ticket_fails_loudly(self, repo: Path) -> None:
         """A ticket id with no recorded lease file at all fails loudly
         (`NoLeaseForTicket`) instead of falling back to any other ticket's
@@ -141,6 +144,7 @@ class TestResolveLease:
         assert result.is_err
         assert result.danger_err == LeaseError.NoLeaseForTicket
 
+    # frob:tests src/frob/tickets/_leases.py::resolve_lease kind="unit"  # noqa: E501
     def test_lease_recorded_for_a_different_worktree_fails_loudly(
         self, repo: Path
     ) -> None:
@@ -196,6 +200,7 @@ class TestTicketLeasePin:
         assert result.is_err
         assert result.danger_err == LeaseError.NoLeaseForTicket
 
+    # frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin kind="unit"  # noqa: E501
     def test_lease_recorded_elsewhere_refuses(self, repo: Path) -> None:
         """T-0787 has a recorded lease, but for a different worktree --
         must refuse loudly (`LeaseWorktreeMismatch`), never silently borrow
@@ -209,6 +214,7 @@ class TestTicketLeasePin:
         assert result.danger_err == LeaseError.LeaseWorktreeMismatch
 
     # frob:ticket T-1556
+    # frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin
     def test_mutating_false_skips_the_pin_check_entirely(self, repo: Path) -> None:
         """T-1556: a read-only invocation (`mutating=False`) must pass
         `Ok` unconditionally, even in EVERY shape that otherwise refuses
@@ -238,6 +244,7 @@ class TestCheckTicketLeaseCli:
     shape end to end at the CLI boundary rather than just the gates-level
     primitive above."""
 
+    # frob:tests src/frob/app/check_runner.py::_refuse_ticket_lease_mismatch kind="integration"  # noqa: E501
     def test_pins_to_own_worktree_lease(self, repo: Path) -> None:
         """A ticket leased to THIS worktree does not trigger a refusal --
         the no-mismatch, most-common agent-dispatch path keeps working."""
@@ -248,6 +255,7 @@ class TestCheckTicketLeaseCli:
         cfg = AppConfig(check_ticket="T-0787")
         assert _refuse_ticket_lease_mismatch(repo, cfg) is False
 
+    # frob:tests src/frob/app/check_runner.py::_refuse_ticket_lease_mismatch kind="integration"  # noqa: E501
     def test_refuses_when_lease_recorded_for_another_worktree(self, repo: Path) -> None:
         """Reproduces T-0695 end to end: two fake worktree paths, a lease
         recorded for the SIBLING worktree, and this worktree's own
@@ -278,6 +286,8 @@ class TestCheckTicketLeaseCli:
         cfg = AppConfig(check_ticket=None)
         assert _refuse_ticket_lease_mismatch(repo, cfg) is False
 
+    # frob:tests src/frob/app/check_runner.py::_refuse_ticket_lease_mismatch kind="integration"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_check_is_mutating kind="integration"  # noqa: E501
     def test_read_only_invocation_skips_the_lease_check(self, repo: Path) -> None:
         """T-1556: a lease recorded for a SIBLING worktree (the exact
         T-0695 mismatch shape) no longer refuses when the invocation is a
@@ -558,12 +568,14 @@ class TestLeaseTtl:
         assert lease_age_seconds(record) is None
 
     # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
+    # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
     def test_expired_past_ttl(self) -> None:
         now = datetime(2026, 7, 23, 12, 0, 0, tzinfo=UTC)
         recorded = now - timedelta(seconds=100)
         record = self._record(recorded.isoformat())
         assert is_lease_ttl_expired(record, now=now, ttl_seconds=60) is True
 
+    # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
     def test_not_expired_within_ttl(self) -> None:
         now = datetime(2026, 7, 23, 12, 0, 0, tzinfo=UTC)
         recorded = now - timedelta(seconds=10)
@@ -581,6 +593,7 @@ class TestOpportunisticUnlink:
     worktree path no longer exists, instead of only skipping it
     in-memory."""
 
+    # frob:tests src/frob/tickets/_leases.py::read_all_leases kind="unit"  # noqa: E501
     def test_stale_path_lease_is_unlinked_from_disk(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -604,6 +617,7 @@ class TestOpportunisticUnlink:
         assert resolved.is_ok
         assert not (resolved.danger_ok / "T-0700.json").exists()
 
+    # frob:tests src/frob/tickets/_leases.py::read_all_leases kind="unit"  # noqa: E501
     def test_live_lease_is_never_unlinked(self, repo: Path) -> None:
         """A lease recording a worktree path that DOES exist (`repo`
         itself) is never removed, no matter how many times
@@ -628,6 +642,7 @@ class TestAmbiguousLivenessGuard:
     this distinction (it swallows every `OSError`), which is exactly the
     bug this guards against."""
 
+    # frob:tests src/frob/tickets/_leases.py::read_all_leases kind="unit"  # noqa: E501
     def test_ambiguous_stat_failure_does_not_unlink(
         self, repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -660,6 +675,7 @@ class TestAmbiguousLivenessGuard:
         # failure is never grounds for deletion.
         assert (resolved.danger_ok / "T-0800.json").exists()
 
+    # frob:tests src/frob/tickets/_leases.py::read_all_leases kind="unit"  # noqa: E501
     def test_ambiguous_failure_is_logged_once_per_process(
         self, repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -697,6 +713,7 @@ class TestAmbiguousLivenessGuard:
         ]
         assert len(matches) == 1
 
+    # frob:tests src/frob/tickets/_leases.py::read_all_leases kind="unit"  # noqa: E501
     def test_genuine_enoent_still_unlinks(self, repo: Path, tmp_path: Path) -> None:
         """The real ENOENT case (no monkeypatching -- a worktree directory
         that was genuinely removed) still unlinks the lease file, exactly

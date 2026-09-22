@@ -26,6 +26,7 @@ from tests.unit.test_app_runners_t0714_doable_summary import _queue, _ticket
 
 class TestRenderAlreadyLandedMarkers:
     # frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers.test_no_markers_prints_nothing_and_returns_empty  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_render_already_landed_markers  # noqa: E501
     def test_no_markers_prints_nothing_and_returns_empty(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -53,6 +54,7 @@ class TestRenderAlreadyLandedMarkers:
         assert own_records == []
 
     # frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers.test_flagged_ticket_prints_one_summary_line_and_is_returned  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_render_already_landed_markers  # noqa: E501
     def test_flagged_ticket_prints_one_summary_line_and_is_returned(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -92,6 +94,7 @@ class TestDoableRowLandedMarker:
         assert "T-9103" in row
 
     # frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestDoableRowLandedMarker.test_unflagged_id_gets_no_marker  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_milestone_row_suffix  # noqa: E501
     def test_unflagged_id_gets_no_marker(self) -> None:
         t = _ticket("T-9104", ("src/mod.py",), TicketState.QUEUED)
         row = ticket_runner._doable_row(t, {}, False, landed_ids=frozenset({"T-9103"}))

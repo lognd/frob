@@ -184,6 +184,7 @@ class TestSweepStaleWorktreesAfterLand:
         assert captured["min_age_hours"] == _rapid_sweep._AUTO_SWEEP_MIN_AGE_HOURS
 
     # frob:ticket T-2261
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::sweep_stale_worktrees_after_land  # noqa: E501
     def test_logs_one_line_per_verdict(
         self,
         tmp_path: Path,

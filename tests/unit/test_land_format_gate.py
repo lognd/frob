@@ -88,6 +88,7 @@ def test_diff_touched_unformatted_file_fires(repo: Path, monkeypatch) -> None:
     assert any(v.file == "src/feature.py" for v in violations)
 
 
+# frob:tests src/frob/gates/_land_format.py::land_format_gate
 def test_already_formatted_touched_file_is_quiet(repo: Path, monkeypatch) -> None:
     """`ruff format --check` reporting nothing to rewrite (exit 0) is
     quiet -- LANDFMT001 must not fire on a file it has nothing to say
@@ -106,6 +107,7 @@ def test_already_formatted_touched_file_is_quiet(repo: Path, monkeypatch) -> Non
     assert violations == ()
 
 
+# frob:tests src/frob/gates/_land_format.py::land_format_gate
 def test_no_diff_is_quiet(repo: Path) -> None:
     """No working-tree diff against `main` at all -- `()`, matching
     `land_parity_doc_test_gate`'s/`land_parity_long_function_gate`'s own

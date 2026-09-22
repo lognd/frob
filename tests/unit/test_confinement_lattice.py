@@ -32,6 +32,9 @@ class TestConfinementLatticePositiveControl:
     ESCAPING write must FIRE as `ESCAPED`, and the ordinary `tmp_path`
     pattern must NOT."""
 
+    # frob:tests src/frob/graph/summary.py::scan_confinement_facts  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::FsWriteSite  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::ConfinementState  # noqa: E501
     def test_absolute_literal_write_is_escaped(self, tmp_path: Path) -> None:
         """`Path("/tmp/evil.txt").write_text(...)` -- an absolute string
         literal feeding a write -- resolves `ESCAPED`, never `ROOTED` or
@@ -51,6 +54,7 @@ class TestConfinementLatticePositiveControl:
         assert len(escaped_sites) == 1
         assert escaped_sites[0].symref.endswith("::test_evil")
 
+    # frob:tests src/frob/graph/summary.py::ConfinementCensusResult  # noqa: E501
     def test_ordinary_tmp_path_write_is_rooted_not_escaped(
         self, tmp_path: Path
     ) -> None:
@@ -72,6 +76,7 @@ class TestConfinementLatticeUnknown:
     """`UNKNOWN` is the honest default whenever this pass cannot prove
     either endpoint -- never silently rendered as a pass."""
 
+    # frob:tests src/frob/graph/summary.py::compute_confinement_summaries  # noqa: E501
     def test_unresolved_private_helper_call_poisons_to_unknown(
         self, tmp_path: Path
     ) -> None:
@@ -125,6 +130,8 @@ class TestConfinementLatticeHelperPropagation:
     "`_write_fixture(tmp: Path)` summarizes as param0 confined => result
     confined" example."""
 
+    # frob:tests src/frob/graph/summary.py::compute_confinement_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::FunctionConfinement  # noqa: E501
     def test_helper_return_value_confinement_propagates_to_caller_site(
         self, tmp_path: Path
     ) -> None:
@@ -159,6 +166,7 @@ class TestParam0Credit:
     provably ROOTED argument -- closing the 727-of-740-UNKNOWN gap
     T-2504's census measured."""
 
+    # frob:tests src/frob/graph/summary.py::_compute_param0_credit  # noqa: E501
     def test_helper_writing_directly_to_its_own_param_gets_credit_when_every_call_is_rooted(
         self, tmp_path: Path
     ) -> None:

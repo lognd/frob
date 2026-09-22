@@ -67,11 +67,13 @@ class TestNarrativeBlocksGate:
         assert len(violations) == 1
         assert violations[0].rule == "NARR001"
 
+    # frob:tests src/frob/gates/_narrative_blocks.py::scan_narrative_blocks
     def test_must_stay_quiet_short_keep_block(self) -> None:
         """A short block genuinely explaining the code stays quiet."""
         violations = scan_narrative_blocks(Path("fixture.py"), _MUST_STAY_QUIET)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_narrative_blocks.py::scan_narrative_blocks
     def test_socketd_t2961_block_stays_quiet_at_default_threshold(self) -> None:
         """T-2993's own cited example: this exact block (12 comment lines,
         equal to the default threshold, all load-bearing utility -- see
@@ -85,6 +87,7 @@ class TestNarrativeBlocksGate:
             "utility -- it must not fire"
         )
 
+    # frob:tests src/frob/gates/_narrative_blocks.py::scan_narrative_blocks
     def test_threshold_boundary_is_inclusive(self) -> None:
         """A block of exactly `threshold` lines does not fire; one past it
         does -- the off-by-one this gate's own `<=` check must get right."""
@@ -104,6 +107,7 @@ class TestT3020WaiversRemoved:
     flow (see T-3020's ticket body for the removal rationale), so
     neither waiver is ever warranted again for these two call sites."""
 
+    # frob:tests src/frob/gates/_narrative_blocks.py::narrative_blocks_gate
     def test_narrative_blocks_gate_has_no_selfaudit001_waiver(self) -> None:
         """`narrative_blocks_gate`'s source no longer carries a
         `frob:waive SELFAUDIT001` directive -- its `fs.read` is declared
@@ -113,6 +117,7 @@ class TestT3020WaiversRemoved:
         source = Path(module.__file__).read_text(encoding="utf-8")
         assert "frob:waive SELFAUDIT001" not in source
 
+    # frob:tests src/frob/__main__.py::_dispatch_narrative
     def test_dispatch_narrative_has_no_sys003_waiver(self) -> None:
         """`_dispatch_narrative`'s `frob.narrative._cli` import no longer
         carries a `frob:waive SYS003` directive -- the `cli -> narrative`
@@ -127,6 +132,7 @@ class TestNarrativeBlocksGateRepoScan:
     """`narrative_blocks_gate`'s own tracked-file walk, over a throwaway
     git repo (not this repo) so the test does not depend on live counts."""
 
+    # frob:tests src/frob/gates/_narrative_blocks.py::narrative_blocks_gate
     def test_fires_on_a_tracked_file_with_a_long_block(self, tmp_path: Path) -> None:
         """A tracked `.py` file with a `_MUST_FIRE`-shaped block is found."""
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)

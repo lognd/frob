@@ -224,6 +224,7 @@ class TestTick014:
         queue = TicketQueue(tickets={t.id: t})
         assert empty_code_diff_violations(_UNUSED_ROOT, queue) == ()
 
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
     def test_no_block_quiet(self) -> None:
         """MUST-STAY-QUIET: a Done report with no parsable `### Changed`
         block at all (predates T-0458, or a hand-written narrative) is a
@@ -237,6 +238,7 @@ class TestTick014:
         queue = TicketQueue(tickets={t.id: t})
         assert empty_code_diff_violations(_UNUSED_ROOT, queue) == ()
 
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
     def test_open_never_fires(self) -> None:
         """MUST-STAY-QUIET: a non-done ticket (queued here) never fires --
         it has not closed yet, so there is nothing to check."""
@@ -255,6 +257,7 @@ class TestTick014LandCommit:
     done-report Changed block, is what TICK014 judges a closed ticket by
     when a `land_commit` is recorded."""
 
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations  # noqa: E501
     def test_land_commit_with_real_code_quiet(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET, reproducing the ticket's reported false
         positive: `land_commit` is a squash of a `feat:` code commit
@@ -280,6 +283,7 @@ class TestTick014LandCommit:
         queue = TicketQueue(tickets={t.id: t})
         assert empty_code_diff_violations(root, queue) == ()
 
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations  # noqa: E501
     def test_land_commit_bookkeeping_only_warns(self, tmp_path: Path) -> None:
         """MUST-FIRE: `land_commit`'s own diff touches ONLY `tickets/` --
         the true-positive case (T-3064's own incident) survives the
@@ -292,6 +296,7 @@ class TestTick014LandCommit:
         assert len(violations) == 1
         assert "T-9102" in violations[0].message
 
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations  # noqa: E501
     def test_land_commit_overrides_stale_empty_changed_block(
         self, tmp_path: Path
     ) -> None:
@@ -314,6 +319,7 @@ class TestTick014LandCommit:
         queue = TicketQueue(tickets={t.id: t})
         assert empty_code_diff_violations(root, queue) == ()
 
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations  # noqa: E501
     def test_unresolvable_land_commit_falls_back_to_changed_block(
         self, tmp_path: Path
     ) -> None:

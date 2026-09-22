@@ -175,6 +175,7 @@ class TestRules:
         assert "POL-raw-client-ip" in violations_by_rule
         assert violations_by_rule["POL-raw-client-ip"].file == "app/request_context.py"
 
+    # frob:tests src/frob/policy/__init__.py::_compiled_glob
     def test_glob_stays_quiet_outside_matched_directory(self, tmp_path: Path) -> None:
         """T-4013 must-stay-quiet fixture: the gitwildmatch widening is
         bounded -- a file genuinely outside `app/**/*.py` (a sibling
@@ -195,6 +196,7 @@ class TestRules:
         assert violations == ()
 
     # frob:ticket T-4280
+    # frob:tests src/frob/policy/__init__.py::_files_under
     def test_backslash_joined_path_matches_a_posix_glob_on_every_platform(
         self, tmp_path: Path
     ) -> None:
@@ -372,6 +374,7 @@ class TestPol000:
         assert not any(v.rule == "POL000" for v in violations)
 
     # frob:ticket T-3986
+    # frob:tests src/frob/policy/__init__.py::_file_pattern_matches
     def test_pol000_stays_quiet_when_underscore_capture_only_matches(
         self, tmp_path: Path
     ) -> None:

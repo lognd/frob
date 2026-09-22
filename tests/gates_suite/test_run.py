@@ -178,6 +178,7 @@ class TestInvariantLoadBlastRadius:
     relying on this repo's own (possibly empty) `invariants/` directory
     (see T-4019/T-3928)."""
 
+    # frob:tests src/frob/gates/__init__.py::_invariant_load_error_violations
     def test_must_fire_malformed_invariant_file_produces_named_error(
         self, tmp_path: Path
     ) -> None:
@@ -277,6 +278,7 @@ class TestNativeAvailabilityGate:
     cascade of misattributed downstream errors (the 2026-07-28 incident's
     43 spurious DRIFT002s)."""
 
+    # frob:tests src/frob/gates/__init__.py::_native_unavailable_report
     def test_unimportable_native_short_circuits_run_gates_with_one_finding(
         self, tmp_path: Path
     ) -> None:
@@ -318,6 +320,8 @@ class TestRunJobsTimingAttribution:
     """T-0232: `_run_jobs` must attribute each job its OWN cost, not a
     number smeared across every job sharing the thread pool."""
 
+    # frob:tests src/frob/gates/__init__.py::_run_jobs
+    # frob:tests src/frob/gates/__init__.py::_timed_job
     def test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing(self) -> None:
         """Pin the regression this ticket was filed against: run one
         deliberately CPU-heavy job (busy-loops, holds the GIL) alongside
@@ -519,6 +523,7 @@ class TestProcessPoolGates:
         assert parallel_sorted == serial_sorted
         assert len(parallel_violations) == len(serial_violations)
 
+    # frob:tests src/frob/gates/__init__.py::_stamp_worker_stdout_log_level_env
     def test_open_process_pool_preloads_forkserver_when_available(
         self, tmp_path: Path
     ) -> None:
@@ -1220,6 +1225,7 @@ class TestRunGatesQueueFailureThreadsRealTicketError:
 
     # frob:tests \
     # tests/gates_suite/test_run.py::TestRunGatesQueueFailureThreadsRealTicketError.test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror  # noqa: E501
+    # frob:tests src/frob/gates/__init__.py::_load_graph_queue_lock
     def test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror(
         self, tmp_path: Path
     ) -> None:
@@ -1257,6 +1263,7 @@ class TestGraphFP:
 
     # frob:tests \
     # tests/gates_suite/test_run.py::TestGraphFP.test_head_move_unmeasured  # noqa: E501
+    # frob:tests src/frob/gates/__init__.py::_load_graph_queue_lock
     def test_head_move_unmeasured(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1319,6 +1326,7 @@ class TestNewGateRuleDynamicResolution:
         self._git(root, "config", "user.name", "Test")
 
     # frob:tests tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution.test_resolves_when_literal_lives_in_a_different_file  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids  # noqa: E501
     def test_resolves_when_literal_lives_in_a_different_file(
         self, tmp_path: Path
     ) -> None:
@@ -1360,6 +1368,7 @@ class TestNewGateRuleDynamicResolution:
         assert found == ("NEWRULE001",)
 
     # frob:tests tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution.test_raises_when_literal_missing_from_every_candidate  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids  # noqa: E501
     def test_raises_when_literal_missing_from_every_candidate(
         self, tmp_path: Path
     ) -> None:
@@ -1466,6 +1475,7 @@ class TestLoadQueueMemoization:
             encoding="utf-8",
         )
 
+    # frob:tests src/frob/tickets/_archive.py::load_queue_run_scope
     def test_load_queue_is_memoized_across_the_whole_tickets_gate_call(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1511,6 +1521,7 @@ class TestLoadQueueMemoization:
             f"10 holder-dead leases"
         )
 
+    # frob:tests src/frob/tickets/_archive.py::load_queue
     def test_load_queue_reloads_outside_a_run_scope(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1537,6 +1548,7 @@ class TestLoadQueueMemoization:
         assert len(calls) == 2
 
     # frob:tests src/frob/tickets/_archive.py::load_queue_run_scope
+    # frob:tests src/frob/tickets/_archive.py::load_queue
     def test_load_queue_run_scope_caches_within_the_with_block(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

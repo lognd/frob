@@ -471,6 +471,7 @@ def test_render_tips_human_readable_names_the_rule():
 # --- usage_report / doctor --usage (T-1360) ----------------------------
 
 
+# frob:tests src/frob/app/doctor_runner.py::_run_usage
 def test_usage_report_empty_corpus_is_all_zero(tmp_path: Path):
     # frob:tests src/frob/app/telemetry/_usage.py::usage_report
     # frob:tests src/frob/app/telemetry/_usage.py::UsageReport
@@ -533,6 +534,7 @@ def test_usage_report_counts_fast_exit1(tmp_path: Path):
 # --- REDUNDANT_RERUN must not fire across a real external-state change (T-2191) ---
 
 
+# frob:tests src/frob/app/telemetry/_state.py::_home_config_state_hash  # noqa: E501
 def test_redundant_rerun_not_flagged_when_home_claude_config_changed(
     tmp_path: Path, monkeypatch
 ):
@@ -584,6 +586,7 @@ def test_redundant_rerun_not_flagged_when_home_claude_config_changed(
     )
 
 
+# frob:tests src/frob/app/telemetry/_state.py::_home_config_state_hash  # noqa: E501
 def test_redundant_rerun_still_flags_when_nothing_changed_at_all(
     tmp_path: Path, monkeypatch
 ):
@@ -626,6 +629,7 @@ class TestExternalPathArgHash:
 
     # frob:ticket T-2204
     # frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_a_deleted_external_fixture_changes_the_hash  # noqa: E501
+    # frob:tests src/frob/app/telemetry/_state.py::_external_path_arg_hash  # noqa: E501
     def test_a_deleted_external_fixture_changes_the_hash(self, tmp_path: Path):
         # T-2204's DESIGNATED REPRO (BUG002): reproduces the exact live
         # incident. `frob cycle <fixture>/srclayout` (fixture lives
@@ -700,6 +704,7 @@ class TestExternalPathArgHash:
 
     # frob:ticket T-2204
     # frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_no_path_looking_argument_yields_none  # noqa: E501
+    # frob:tests src/frob/app/telemetry/_state.py::_external_path_arg_hash  # noqa: E501
     def test_no_path_looking_argument_yields_none(self, tmp_path: Path):
         # A subcommand with no PATH-shaped positional argument at all
         # (e.g. plain "check") must not be affected by this digest --

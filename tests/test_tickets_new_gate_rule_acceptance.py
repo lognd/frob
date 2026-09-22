@@ -135,6 +135,7 @@ class TestNewGateRuleIds:
 
 class TestMissingAcceptanceForNewRules:
     # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestMissingAcceptanceForNewRules.test_flags_when_no_fixture_criterion_bound  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::missing_acceptance_for_new_rules  # noqa: E501
     def test_flags_when_no_fixture_criterion_bound(self) -> None:
         ticket = _ticket(
             acceptance=(AcceptanceCriterion(text="GIVEN x THEN y", evidence=("a",)),)
@@ -144,6 +145,7 @@ class TestMissingAcceptanceForNewRules:
         )
 
     # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestMissingAcceptanceForNewRules.test_clear_when_a_bound_fixture_criterion_exists  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::missing_acceptance_for_new_rules  # noqa: E501
     def test_clear_when_a_bound_fixture_criterion_exists(self) -> None:
         ticket = _ticket(
             acceptance=(
@@ -171,6 +173,7 @@ class TestMissingAcceptanceForNewRules:
         )
 
     # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestMissingAcceptanceForNewRules.test_empty_new_rule_ids_is_always_clear  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::missing_acceptance_for_new_rules  # noqa: E501
     def test_empty_new_rule_ids_is_always_clear(self) -> None:
         ticket = _ticket(acceptance=())
         assert missing_acceptance_for_new_rules(ticket, ()) == ()
@@ -251,6 +254,7 @@ class TestUnregisteredRuleIdsInScope:
 
     # frob:tests \
     # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_empty_when_nothing_unregistered_in_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::unregistered_rule_ids_in_scope
     def test_empty_when_nothing_unregistered_in_scope(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write_gates_source(tmp_path, _BASE_GATES_SOURCE)
@@ -260,6 +264,7 @@ class TestUnregisteredRuleIdsInScope:
 
     # frob:tests \
     # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_reports_an_unregistered_id_whose_file_is_in_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::unregistered_rule_ids_in_scope
     def test_reports_an_unregistered_id_whose_file_is_in_scope(
         self, tmp_path: Path
     ) -> None:
@@ -276,6 +281,7 @@ class TestUnregisteredRuleIdsInScope:
 
     # frob:tests \
     # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_excludes_an_unregistered_id_outside_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::unregistered_rule_ids_in_scope
     def test_excludes_an_unregistered_id_outside_scope(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write_gates_source(tmp_path, _BASE_GATES_SOURCE)

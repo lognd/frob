@@ -55,6 +55,7 @@ class TestTick003StaleArchive:
         assert "11 closed ticket" in violations[0].message
         assert "frob ticket archive" in violations[0].message
 
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick003_stale_archive  # noqa: E501
     def test_above_default_error_threshold_errors(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive.test_above_default_error_threshold_errors  # noqa: E501
         # T-1750: default error moved 60 -> 400 -- far above anything a

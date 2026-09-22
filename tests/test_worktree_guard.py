@@ -93,6 +93,7 @@ class TestEnforceWorktreeLease:
         monkeypatch.setenv(FROB_WORKTREE_ENV, str(tmp_path))
         assert enforce_worktree_lease(tmp_path).is_ok
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::enforce_worktree_lease  # noqa: E501
     def test_mismatched_worktree_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -168,6 +169,7 @@ class TestAgentEnvExports:
     values `frob agent env` prints, mechanically instead of relying on a
     dispatcher/playbook to remember to set them by hand."""
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::agent_env_exports  # noqa: E501
     def test_resolves_worktree_root(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAgentEnvExports.test_resolves_worktree_root  # noqa: E501
         _init_repo(tmp_path)
@@ -177,6 +179,7 @@ class TestAgentEnvExports:
         assert exports[FROB_WORKTREE_ENV] == str(tmp_path.resolve())
         assert exports[FROB_AGENT_ENV] == "1"
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::agent_env_exports  # noqa: E501
     def test_non_repo_root_errs(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAgentEnvExports.test_non_repo_root_errs  # noqa: E501
         not_a_repo = tmp_path / "not-a-repo"
@@ -236,6 +239,7 @@ class TestApplyAgentEnv:
     hop at all -- the hop that a per-command harness (state reset between
     invocations) or an unread playbook line silently drops."""
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::apply_agent_env  # noqa: E501
     def test_mutates_current_process_env_under_fleet_context(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -258,6 +262,7 @@ class TestApplyAgentEnv:
             == exports[PYTEST_XDIST_AUTO_NUM_WORKERS_ENV]
         )
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::apply_agent_env  # noqa: E501
     def test_must_stay_quiet_no_fleet_context_leaves_env_unset(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -272,6 +277,7 @@ class TestApplyAgentEnv:
         assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV not in result.danger_ok
         assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV not in os.environ
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::apply_agent_env  # noqa: E501
     def test_child_subprocess_inherits_the_bound(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -316,6 +322,7 @@ class TestWarnIfXdistBoundMissing:
     surfaces that gap in the spawning process's own log instead of only
     being discoverable via a live `/proc` scan after the fact."""
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_xdist_bound_missing  # noqa: E501
     def test_must_fire_fleet_context_with_bound_missing_logs_error(
         self,
         tmp_path: Path,
@@ -333,6 +340,7 @@ class TestWarnIfXdistBoundMissing:
             for record in caplog.records
         )
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_xdist_bound_missing  # noqa: E501
     def test_must_stay_quiet_bound_present_no_log(
         self,
         tmp_path: Path,
@@ -347,6 +355,7 @@ class TestWarnIfXdistBoundMissing:
             warn_if_xdist_bound_missing(tmp_path)
         assert [r for r in caplog.records if r.levelname == "ERROR"] == []
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_xdist_bound_missing  # noqa: E501
     def test_must_stay_quiet_no_fleet_context_no_log(
         self,
         tmp_path: Path,
@@ -362,6 +371,7 @@ class TestWarnIfXdistBoundMissing:
 
     # frob:ticket T-3316
     # frob:ticket T-3722
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_xdist_bound_missing  # noqa: E501
     def test_also_warns_on_plugin_absence_even_without_fleet_context(
         self,
         tmp_path: Path,
@@ -409,6 +419,7 @@ class TestAddoptsSetsXdist:
     warning despite an addopts of plain `-q`, no xdist token anywhere."""
 
     # frob:ticket T-3722
+    # frob:tests src/frob/tickets/_worktree_guard.py::_addopts_sets_xdist  # noqa: E501
     def test_true_when_dash_n_present(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_true_when_dash_n_present  # noqa: E501
         from frob.tickets._worktree_guard import _addopts_sets_xdist
@@ -417,6 +428,7 @@ class TestAddoptsSetsXdist:
         assert _addopts_sets_xdist(tmp_path) is True
 
     # frob:ticket T-3722
+    # frob:tests src/frob/tickets/_worktree_guard.py::_addopts_sets_xdist  # noqa: E501
     def test_false_when_addopts_has_no_xdist_token(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_false_when_addopts_has_no_xdist_token  # noqa: E501
         from frob.tickets._worktree_guard import _addopts_sets_xdist
@@ -425,6 +437,7 @@ class TestAddoptsSetsXdist:
         assert _addopts_sets_xdist(tmp_path) is False
 
     # frob:ticket T-3722
+    # frob:tests src/frob/tickets/_worktree_guard.py::_addopts_sets_xdist  # noqa: E501
     def test_false_when_pyproject_unreadable(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_false_when_pyproject_unreadable  # noqa: E501
         from frob.tickets._worktree_guard import _addopts_sets_xdist
@@ -442,6 +455,8 @@ class TestWarnIfXdistPluginMissing:
 
     # frob:ticket T-3316
     # frob:ticket T-3722
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_xdist_plugin_missing  # noqa: E501
+    # frob:tests src/frob/tickets/_worktree_guard.py::_xdist_plugin_present  # noqa: E501
     def test_must_fire_when_plugin_not_importable(
         self,
         tmp_path: Path,
@@ -464,6 +479,8 @@ class TestWarnIfXdistPluginMissing:
 
     # frob:ticket T-3316
     # frob:ticket T-3722
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_xdist_plugin_missing  # noqa: E501
+    # frob:tests src/frob/tickets/_worktree_guard.py::_xdist_plugin_present  # noqa: E501
     def test_must_stay_quiet_when_plugin_importable(
         self,
         tmp_path: Path,
@@ -481,6 +498,7 @@ class TestWarnIfXdistPluginMissing:
         assert [r for r in caplog.records if r.levelname == "ERROR"] == []
 
     # frob:ticket T-3722
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_xdist_plugin_missing  # noqa: E501
     def test_must_stay_quiet_when_addopts_has_no_xdist_token(
         self,
         tmp_path: Path,
@@ -508,6 +526,8 @@ class TestWarnIfTestmonPluginMissing:
     `frob test` gap)."""
 
     # frob:ticket T-3401
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_testmon_plugin_missing  # noqa: E501
+    # frob:tests src/frob/tickets/_worktree_guard.py::_testmon_plugin_present  # noqa: E501
     def test_must_fire_when_plugin_not_importable(
         self,
         tmp_path: Path,
@@ -528,6 +548,8 @@ class TestWarnIfTestmonPluginMissing:
         )
 
     # frob:ticket T-3401
+    # frob:tests src/frob/tickets/_worktree_guard.py::warn_if_testmon_plugin_missing  # noqa: E501
+    # frob:tests src/frob/tickets/_worktree_guard.py::_testmon_plugin_present  # noqa: E501
     def test_must_stay_quiet_when_plugin_importable(
         self,
         tmp_path: Path,
@@ -661,6 +683,7 @@ class TestAgentEnvStdoutPurity:
         assert result.returncode == 0, result.stderr
         assert "EVAL_OK" in result.stdout
 
+    # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
     def test_stdout_contains_only_export_lines(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_stdout_contains_only_export_lines  # noqa: E501
         _init_repo(tmp_path)
@@ -679,6 +702,7 @@ class TestAgentEnvStdoutPurity:
                 f"non-export line on stdout: {line!r} (full stdout: {result.stdout!r})"
             )
 
+    # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
     def test_diagnostics_still_appear_on_stderr(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_diagnostics_still_appear_on_stderr  # noqa: E501
         # MUST-STILL-PASS: the gitio/process diagnostics are redirected to
@@ -695,6 +719,7 @@ class TestAgentEnvStdoutPurity:
         assert "gitio:" in result.stderr
         assert "process:" in result.stderr
 
+    # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
     def test_no_fleet_context_still_produces_valid_eval_output(
         self, tmp_path: Path
     ) -> None:
@@ -836,6 +861,7 @@ class TestSweepWorktreesLiveProcess:
     lease, and had a recent HEAD commit -- exactly the shape that used
     to read as `removed`. This is that exact shape, reproduced."""
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees  # noqa: E501
     def test_clean_no_lease_recent_head_live_process_kept(self, tmp_path: Path) -> None:
         if sys.platform == "win32":
             pytest.skip(
@@ -877,6 +903,7 @@ class TestSweepWorktreesLiveProcess:
             holder.kill()
             holder.wait(timeout=5)
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees  # noqa: E501
     def test_force_overrides_the_live_process_keep(self, tmp_path: Path) -> None:
         if sys.platform == "win32":
             pytest.skip(

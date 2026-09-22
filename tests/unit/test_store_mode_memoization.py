@@ -67,6 +67,7 @@ class TestStoreModeMemo:
         # (already-warm) call is served from `_store_mode_cache` alone.
         assert calls["n"] == 0
 
+    # frob:tests src/frob/tickets/_store.py::_store_mode_cache_signal
     def test_invalidates_new(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_store.py::_store_mode kind="unit"
         # positive control: plant a v2 ticket AFTER the first (cached) call

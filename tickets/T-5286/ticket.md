@@ -1,7 +1,7 @@
 ---
 id: T-5286
 title: T-5034's fresh-graph fix broke test_unreadable_graph_fails's mockability
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'

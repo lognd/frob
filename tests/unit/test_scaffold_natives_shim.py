@@ -112,6 +112,7 @@ class TestLegacyCoreCacheDrift:
         assert not _has_legacy_core_cache_logic(_core_shim_block().content)
 
     # frob:ticket T-0865
+    # frob:tests src/frob/scaffold/_managed.py::_has_legacy_core_cache_logic
     def test_legacy_unmanaged_core_target_reports_stale(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift.test_lega\

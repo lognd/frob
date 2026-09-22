@@ -27,6 +27,7 @@ from frob.process.parsers.common import Diagnostic, ToolResult
 class TestSelectBudgetChunks:
     """`_select_budget_chunks`'s pure greedy-packing math."""
 
+    # frob:tests src/frob/app/_check_chunking.py::_select_budget_chunks  # noqa: E501
     def test_greedy_pack_fits_under_budget(self) -> None:
         """Groups are added while the running total (with the next group
         included) still fits the budget; the first group that would push
@@ -39,6 +40,7 @@ class TestSelectBudgetChunks:
         assert selected == ["a", "b"]
         assert deferred == ["c"]
 
+    # frob:tests src/frob/app/_check_chunking.py::_select_budget_chunks  # noqa: E501
     def test_first_stage_always_selected_even_if_over_budget(self) -> None:
         """A budget too small for even the first group's estimate still
         selects that one group -- forward progress beats a zero-work run."""
@@ -120,6 +122,7 @@ class TestDerivePostLandSweepBudget:
             measured_total * check_chunking_mod._BUDGET_DERIVE_HEADROOM
         )
 
+    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s  # noqa: E501
     def test_falls_back_to_default_with_no_timing_data(self, tmp_path: Path) -> None:
         """A fresh checkout with no `.frob/check-budget-timing.json` yet
         (or an unreadable one) has no measurement to derive from -- the
@@ -130,6 +133,7 @@ class TestDerivePostLandSweepBudget:
         )
         assert budget == 480
 
+    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s  # noqa: E501
     def test_floor_protects_against_sparse_timing_data(self, tmp_path: Path) -> None:
         """A tiny recorded total (e.g. only one fast group ever measured)
         must not derive an unrealistically small budget that would starve
@@ -420,6 +424,7 @@ class TestRunBudgetedCheck:
         assert "static" in diag.message
 
     # frob:ticket T-2235
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
     def test_json_reports_universe_skip_despite_narrow_resume(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -521,6 +526,7 @@ class TestRunBudgetedCheck:
         assert set(data.keys()) == {"path", "results"}
 
     # frob:ticket T-2250
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
     def test_only_scoped_budget_runs_exactly_the_named_group(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -562,6 +568,7 @@ class TestRunBudgetedCheck:
         assert tool_names == ["lint"]
 
     # frob:ticket T-2250
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
     def test_only_scoped_budget_never_touches_shared_resume_state(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -604,6 +611,7 @@ class TestRunBudgetedCheck:
         assert calls == ["gates-fast", "lint", "static"]
 
     # frob:ticket T-2250
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
     def test_only_budget_combo_refuses_a_bare_gate_name(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -683,6 +691,7 @@ class TestBudgetCoverageReport:
     """`_budget_coverage_report`'s pure dict-building logic (T-2235)."""
 
     # frob:ticket T-2235
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
     def test_skipped_is_universe_minus_executed(self) -> None:
         """The reported `skipped_groups` reflects `all_groups - executed`,
         not any notion of a local `deferred` list -- this is what makes
@@ -698,6 +707,7 @@ class TestBudgetCoverageReport:
         assert report["complete"] is False
 
     # frob:ticket T-2235
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
     def test_empty_skipped_present_not_absent(self) -> None:
         """Executing every group in the universe yields an empty (but
         present) `skipped_groups` list and `complete=True`."""

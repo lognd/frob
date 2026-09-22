@@ -50,6 +50,7 @@ class TestEffectGraphSummaryUnknownDegradation:
     unresolvable binding to an explicit, visible `Unknown` member --
     never to silent omission."""
 
+    # frob:tests src/frob/perf/_effect_summaries.py::EffectGraph.resolve_scoped  # noqa: E501
     def test_ambiguous_cross_file_callee_yields_an_explicit_unknown_member(
         self, tmp_path: Path
     ) -> None:
@@ -80,6 +81,7 @@ class TestEffectGraphSummaryUnknownDegradation:
         unknown_members = [arg for kind, arg in summary if kind == UNKNOWN_KIND]
         assert all(isinstance(arg, Unknown) for arg in unknown_members)
 
+    # frob:tests src/frob/perf/_effect_summaries.py::EffectGraph  # noqa: E501
     def test_fully_resolvable_call_path_has_no_unknown_member(
         self, tmp_path: Path
     ) -> None:
@@ -180,6 +182,7 @@ class TestMemoizedCalleeDetection:
     decorator, never a bare-name coincidence like a parameter called
     `cache`."""
 
+    # frob:tests src/frob/perf/_effect_summaries.py::EffectGraph.is_memoized  # noqa: E501
     def test_lru_cache_decorated_symbol_is_memoized(self, tmp_path: Path) -> None:
         """A `@lru_cache`-decorated function is memoized by both
         `is_memoized` (by symref) and `callee_is_memoized` (by short

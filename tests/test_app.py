@@ -53,6 +53,7 @@ def _make_repo(tmp_path: Path) -> Path:
 
 # frob:ticket T-0803
 class TestRunCoverageWait:
+    # frob:tests src/frob/testing/_coverage_wait.py::coverage_lock_path
     def test_coverage_lock_path_is_under_frob_dir(self, tmp_path):
         # frob:tests \
         # tests/test_app.py::TestRunCoverageWait.test_coverage_lock_path_is_under_frob_\
@@ -94,6 +95,7 @@ class TestRunCoverageWait:
         assert calls == [["true"]]
 
     # frob:ticket T-0803
+    # frob:tests src/frob/testing/_coverage_wait.py::run_coverage_wait
     def test_fresh_stamp_skips_the_run(self, tmp_path, monkeypatch):
         # frob:tests \
         # tests/test_app.py::TestRunCoverageWait.test_fresh_stamp_skips_the_run  # \
@@ -123,6 +125,7 @@ class TestRunCoverageWait:
         assert called is False
 
     # frob:ticket T-0803
+    # frob:tests src/frob/testing/_coverage_wait.py::run_coverage_wait
     def test_failed_command_is_err(self, tmp_path, monkeypatch):
         # frob:tests tests/test_app.py::TestRunCoverageWait.test_failed_command_is_err  \
         # # noqa: E501

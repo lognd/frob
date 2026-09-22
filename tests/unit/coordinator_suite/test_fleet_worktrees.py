@@ -20,6 +20,7 @@ class TestRootDirt:
         monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(""))
         assert fleet_status.root_dirt() == []
 
+    # frob:tests scripts/fleet_status.py::root_dirt
     def test_dirty_repo(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Non-empty porcelain lines are returned verbatim, blank lines dropped."""
         monkeypatch.setattr(
@@ -27,6 +28,7 @@ class TestRootDirt:
         )
         assert fleet_status.root_dirt() == ["M foo.py", " ?? bar.py"]
 
+    # frob:tests scripts/fleet_status.py::root_dirt
     def test_phantom_modified_entry_dropped(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -44,6 +46,7 @@ class TestRootDirt:
         monkeypatch.setattr(subprocess, "run", _fake_run)
         assert fleet_status.root_dirt() == []
 
+    # frob:tests scripts/fleet_status.py::root_dirt
     def test_genuine_modified_entry_kept(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """T-2586: a bare 'M' status whose `git diff --stat HEAD` DOES show
         a real difference must still be reported dirty -- the positive
@@ -60,6 +63,7 @@ class TestRootDirt:
         monkeypatch.setattr(subprocess, "run", _fake_run)
         assert fleet_status.root_dirt() == ["M rapid-debt.jsonl"]
 
+    # frob:tests scripts/fleet_status.py::root_dirt
     def test_untracked_entry_never_reverified(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -86,6 +90,7 @@ class TestRootDirt:
 class TestLeases:
     """`fleet_status.leases`."""
 
+    # frob:tests scripts/fleet_status.py::leases
     def test_reads_lease_records(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -98,6 +103,7 @@ class TestLeases:
         monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
         assert fleet_status.leases() == [{"ticket_id": "T-0001", "worktree": "/x"}]
 
+    # frob:tests scripts/fleet_status.py::leases
     def test_no_lease_dir(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -105,6 +111,7 @@ class TestLeases:
         monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "does-not-exist")
         assert fleet_status.leases() == []
 
+    # frob:tests scripts/fleet_status.py::leases
     def test_unreadable_lease_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -139,6 +146,8 @@ class TestInProgressTicketScopeLeases:
         ticket_dir.mkdir(parents=True)
         (ticket_dir / "ticket.md").write_text(text, encoding="utf-8")
 
+    # frob:tests scripts/fleet_status.py::_resolve_worktree_for_in_progress_ticket
+    # frob:tests scripts/fleet_status.py::in_progress_ticket_scope_leases
     def test_no_worktree_flagged_as_leak(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -161,6 +170,8 @@ class TestInProgressTicketScopeLeases:
             }
         ]
 
+    # frob:tests scripts/fleet_status.py::_resolve_worktree_for_in_progress_ticket
+    # frob:tests scripts/fleet_status.py::in_progress_ticket_scope_leases
     def test_live_worktree_named_not_leaked(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -195,6 +206,7 @@ class TestInProgressTicketScopeLeases:
             }
         ]
 
+    # frob:tests scripts/fleet_status.py::in_progress_ticket_scope_leases
     def test_queued_ticket_excluded(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -217,6 +229,7 @@ class TestBlockedInProgressLeases:
     without waiting for its worktree to vanish."""
 
     # frob:ticket T-2654
+    # frob:tests scripts/fleet_status.py::blocked_in_progress_leases
     def test_in_progress_with_open_blocker_flagged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -232,6 +245,7 @@ class TestBlockedInProgressLeases:
         assert entries == [{"ticket_id": "T-2377", "open_blockers": ["T-2568"]}]
 
     # frob:ticket T-2654
+    # frob:tests scripts/fleet_status.py::blocked_in_progress_leases
     def test_in_progress_with_no_blockers_not_flagged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -244,6 +258,7 @@ class TestBlockedInProgressLeases:
         assert fleet_status.blocked_in_progress_leases() == []
 
     # frob:ticket T-2654
+    # frob:tests scripts/fleet_status.py::blocked_in_progress_leases
     def test_in_progress_with_only_terminal_blockers_not_flagged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -259,6 +274,7 @@ class TestBlockedInProgressLeases:
         assert fleet_status.blocked_in_progress_leases() == []
 
     # frob:ticket T-2654
+    # frob:tests scripts/fleet_status.py::blocked_in_progress_leases
     def test_queued_ticket_with_open_blocker_not_flagged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -275,6 +291,7 @@ class TestBlockedInProgressLeases:
 class TestWorktrees:
     """`fleet_status.worktrees`."""
 
+    # frob:tests scripts/fleet_status.py::worktrees
     def test_reports_idle_age(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -289,6 +306,7 @@ class TestWorktrees:
         rows = fleet_status.worktrees(idle_seconds=100)
         assert rows == [("one", 9999, True)]
 
+    # frob:tests scripts/fleet_status.py::worktrees
     def test_no_worktree_dir(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -378,6 +396,7 @@ class TestWorktreeContentClassification:
         assert verdict == "STALE"
         assert samples == []
 
+    # frob:tests scripts/fleet_status.py::worktree_content_classification
     def test_stale_when_only_behind_main(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -390,6 +409,7 @@ class TestWorktreeContentClassification:
         assert samples == []
 
     # frob:ticket T-2755
+    # frob:tests scripts/fleet_status.py::worktree_content_classification
     def test_active_ticket_never_stranded_or_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -689,6 +709,7 @@ class TestWorktreeTicketId:
 class TestTicketLease:
     """`fleet_status.ticket_lease` (T-2133)."""
 
+    # frob:tests scripts/fleet_status.py::ticket_lease
     def test_reads_a_live_lease(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -706,6 +727,7 @@ class TestTicketLease:
         monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
         assert fleet_status.ticket_lease("T-2114") == record
 
+    # frob:tests scripts/fleet_status.py::ticket_lease
     def test_no_lease_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -715,6 +737,7 @@ class TestTicketLease:
         monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
         assert fleet_status.ticket_lease("T-9999") is None
 
+    # frob:tests scripts/fleet_status.py::ticket_lease
     def test_unreadable_lease_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -732,6 +755,7 @@ class TestTicketLease:
 class TestTicketFrontmatterOnMain:
     """`fleet_status.ticket_frontmatter_on_main` (T-2133)."""
 
+    # frob:tests scripts/fleet_status.py::ticket_frontmatter_on_main
     def test_reads_state_and_scope(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """`state:` and the `scope:` list block are parsed from the
         committed ticket.md's YAML frontmatter."""
@@ -776,12 +800,14 @@ class TestTicketFrontmatterOnMain:
             "land_commit": None,
         }
 
+    # frob:tests scripts/fleet_status.py::ticket_frontmatter_on_main
     def test_missing_ticket_returns_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """`git show` returning nothing (ticket absent on main) is None."""
         monkeypatch.setattr(fleet_status, "_git", lambda args, cwd: "")
         assert fleet_status.ticket_frontmatter_on_main("T-9999") is None
 
     # frob:ticket T-2449
+    # frob:tests scripts/fleet_status.py::ticket_frontmatter_on_main
     def test_falls_back_to_archive_when_active_ledger_has_no_such_ticket(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -816,6 +842,7 @@ class TestClassifyBlockers:
     """`fleet_status._classify_blockers` (T-2449): the `main:`-committed
     resolver, archive-aware via `ticket_frontmatter_on_main`."""
 
+    # frob:tests scripts/fleet_status.py::_classify_blockers
     def test_done_blocker_is_closed(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
             fleet_status,
@@ -826,6 +853,7 @@ class TestClassifyBlockers:
         assert open_ids == []
         assert unresolved_ids == []
 
+    # frob:tests scripts/fleet_status.py::_classify_blockers
     def test_archived_done_blocker_is_closed(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -842,6 +870,7 @@ class TestClassifyBlockers:
         assert open_ids == []
         assert unresolved_ids == []
 
+    # frob:tests scripts/fleet_status.py::_classify_blockers
     def test_in_progress_blocker_is_open(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """MUST-STILL-BLOCK control: a genuinely open blocker still reports
         open -- this fix must never simply stop checking blocked_by."""
@@ -854,6 +883,7 @@ class TestClassifyBlockers:
         assert open_ids == ["T-0002"]
         assert unresolved_ids == []
 
+    # frob:tests scripts/fleet_status.py::_classify_blockers
     def test_missing_blocker_is_unresolved_not_open(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -873,6 +903,7 @@ class TestClassifyBlockersLocal:
     twin used by `_rotting_entry` so NEEDS DISPATCH agrees with
     `ticket_readiness`."""
 
+    # frob:tests scripts/fleet_status.py::_classify_blockers_local
     def test_done_archived_blocker_is_closed(self, tmp_path: Path) -> None:
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
@@ -887,6 +918,7 @@ class TestClassifyBlockersLocal:
         assert open_ids == []
         assert unresolved_ids == []
 
+    # frob:tests scripts/fleet_status.py::_classify_blockers_local
     def test_queued_blocker_is_open(self, tmp_path: Path) -> None:
         tickets_dir = tmp_path / "tickets"
         _write_ticket(tickets_dir, "T-0002", state="queued", priority="high")
@@ -896,6 +928,7 @@ class TestClassifyBlockersLocal:
         assert open_ids == ["T-0002"]
         assert unresolved_ids == []
 
+    # frob:tests scripts/fleet_status.py::_classify_blockers_local
     def test_missing_blocker_is_unresolved(self, tmp_path: Path) -> None:
         tickets_dir = tmp_path / "tickets"
         tickets_dir.mkdir(parents=True)
@@ -936,6 +969,7 @@ class TestWorktreesTouchingTicket:
         assert fleet_status.worktrees_touching_ticket("T-2114", ["src/a.py"]) == ["one"]
 
     # frob:ticket T-2179
+    # frob:tests scripts/fleet_status.py::worktrees_touching_ticket
     def test_empty_when_nothing_touches_it(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -947,6 +981,7 @@ class TestWorktreesTouchingTicket:
         assert fleet_status.worktrees_touching_ticket("T-2114", ["src/a.py"]) == []
 
     # frob:ticket T-2179
+    # frob:tests scripts/fleet_status.py::worktrees_touching_ticket
     def test_ledger_only_churn_is_not_reported(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1034,6 +1069,7 @@ class TestWorktreesTouchingTicket:
         )
 
     # frob:ticket T-2747
+    # frob:tests scripts/fleet_status.py::worktrees_touching_ticket
     def test_non_conventionally_named_worktree_matches_via_start_transition(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1076,6 +1112,7 @@ class TestWorktreesTouchingTicket:
         ]
 
     # frob:ticket T-2747
+    # frob:tests scripts/fleet_status.py::worktrees_touching_ticket
     def test_series_worktree_matches_sibling_ticket_via_start_transition(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1172,6 +1209,7 @@ class TestWorktreeStartedTicket:
 class TestScopeIntersections:
     """`fleet_status.scope_intersections` (T-2180)."""
 
+    # frob:tests scripts/fleet_status.py::scope_intersections
     def test_reports_overlapping_pair(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Two tickets whose effective scope shares a glob are reported as
         a colliding pair, with the overlapping glob(s) named -- the
@@ -1199,6 +1237,7 @@ class TestScopeIntersections:
             "overlapping_globs"
         ]
 
+    # frob:tests scripts/fleet_status.py::scope_intersections
     def test_no_overlap_reports_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Disjoint declared scopes report no collisions at all."""
 
@@ -1214,6 +1253,7 @@ class TestScopeIntersections:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         assert fleet_status.scope_intersections(["T-1", "T-2"]) == []
 
+    # frob:tests scripts/fleet_status.py::scope_intersections
     def test_checks_against_a_held_lease_outside_the_requested_set(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1702,6 +1742,7 @@ class TestInProgressTicketScopeLeasesLiveGit:
     worktree at all, so they cannot tell a genuine fallback-scan success
     apart from a fixture that merely looks right."""
 
+    # frob:tests scripts/fleet_status.py::worktrees_touching_ticket
     def test_live_worktree_with_lease_file_removed_is_not_leaked(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1756,6 +1797,7 @@ class TestInProgressTicketScopeLeasesLiveGit:
             "must NOT report leaked=True, even with no lease file at all"
         )
 
+    # frob:tests scripts/fleet_status.py::worktrees_touching_ticket
     def test_no_worktree_and_no_lease_is_still_leaked(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

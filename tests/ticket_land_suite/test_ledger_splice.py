@@ -307,6 +307,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
 
     # frob:ticket T-1721
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_main_only_edit_is_left_alone  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_carry_forward_or_refuse_sibling_edits  # noqa: E501
     def test_main_only_edit_is_left_alone(self, tmp_path: Path) -> None:
         """Inverse of the above: main independently edited B since the
         base, the worktree never touched B at all -- main's edit must
@@ -339,6 +340,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
 
     # frob:ticket T-1721
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_the_same_way_converges_silently  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_carry_forward_or_refuse_sibling_edits  # noqa: E501
     def test_both_sides_edit_the_same_way_converges_silently(
         self, tmp_path: Path
     ) -> None:
@@ -372,6 +374,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
 
     # frob:ticket T-1721
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_differently_refuses  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_carry_forward_or_refuse_sibling_edits  # noqa: E501
     def test_both_sides_edit_differently_refuses(self, tmp_path: Path) -> None:
         """The genuine conflict this ticket exists to stop silently
         resolving: main and the worktree each independently rebind B's
@@ -404,6 +407,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
 
     # frob:ticket T-1721
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_no_base_available_falls_back_to_done_report_heuristic  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_carry_forward_or_refuse_sibling_edits  # noqa: E501
     def test_no_base_available_falls_back_to_done_report_heuristic(
         self, tmp_path: Path
     ) -> None:
@@ -869,6 +873,7 @@ class TestSpliceLedgerIdDropGuard:
     # frob:ticket T-0764
     # frob:ticket T-1194
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::_check_ledger_id_integrity
     def test_render_that_would_drop_an_id_is_refused(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -936,6 +941,8 @@ class TestLedgerV2LandMergeStory:
     an ordinary git conflict, never a silent splice (AC3)."""
 # frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope  # noqa: E501
 
+    # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_merge_main_into_worktree_v2
     def test_disjoint_v2_tickets_land_with_no_custom_merge(self, v2_repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::land kind="unit"
         wt = v2_repo.parent / "wt-v2-a"
@@ -968,6 +975,7 @@ class TestLedgerV2LandMergeStory:
         assert (v2_repo / "src" / "widget.py").exists()
         assert not (v2_repo / "tickets.md").exists()
 
+    # frob:tests src/frob/tickets/_land_squash.py::_check_squash_conflicted_v2  # noqa: E501
     def test_same_ticket_conflict_surfaces_loudly_no_splice(
         self, v2_repo: Path
     ) -> None:
@@ -1060,6 +1068,9 @@ class TestSquashSpliceLedgerChurn:
     # or thread-local state -- verified standalone against T-3163's fixed
     # production code before landing this) makes the simulation honest to
     # the real-world concurrent-writer case again, and the test passes.
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger  # noqa: E501
+    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_concurrent_write_between_squash_and_splice_survives_land(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1157,6 +1168,7 @@ class TestUnionZoneMerge:
         assert 'RULEA = "error"' in merged
         assert 'RULEB = "warn"' in merged
 
+    # frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks  # noqa: E501
     def test_keyed_lines_union_refuses(self) -> None:
         # frob:tests \
         # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
@@ -1167,6 +1179,7 @@ class TestUnionZoneMerge:
         )
         assert merged is None
 
+    # frob:tests src/frob/tickets/_land_merge_zones.py::_resolve_union_zone_conflicts  # noqa: E501
     def test_resolve_stages(self, repo: Path) -> None:
         # frob:tests \
         # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_resolve_stages  # noqa: E501

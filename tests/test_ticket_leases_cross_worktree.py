@@ -93,6 +93,7 @@ def second_worktree(repo: Path) -> Path:
 
 
 class TestGitCommonDir:
+    # frob:tests src/frob/tickets/_leases.py::_git_common_dir kind="unit"  # noqa: E501
     def test_shared_across_linked_worktrees(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -109,6 +110,8 @@ class TestCrossWorktreeLeaseVisibility:
     """A lease recorded by `transition(..., IN_PROGRESS)` in one worktree is
     visible via `read_all_leases`/`leased_by`/`doable` from another."""
 
+    # frob:tests src/frob/tickets/_leases.py::record_lease kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::leases_dir kind="unit"  # noqa: E501
     def test_lease_written_in_one_worktree_seen_in_another(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -126,6 +129,7 @@ class TestCrossWorktreeLeaseVisibility:
         assert held.scope == ("src/feature.py",)
         assert held.worktree == str(repo.resolve())
 
+    # frob:tests src/frob/tickets/_leases.py::read_all_leases kind="unit"  # noqa: E501
     def test_doable_in_second_worktree_hides_colliding_ticket(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -176,6 +180,7 @@ class TestCrossWorktreeLeaseVisibility:
             lease.ticket_id == tid for lease in read_all_leases(second_worktree)
         )
 
+    # frob:tests src/frob/tickets/_evidence.py::_sync_cross_worktree_lease kind="unit"  # noqa: E501
     def test_drop_from_a_worktree_that_never_saw_in_progress_still_releases(
         self, repo: Path
     ) -> None:
@@ -217,6 +222,7 @@ class TestCrossWorktreeLeaseVisibility:
         assert dropped.is_ok
         assert not lease_path.exists()
 
+    # frob:tests src/frob/tickets/_leases.py::read_all_leases kind="unit"  # noqa: E501
     def test_stale_lease_for_a_removed_worktree_is_skipped(
         self, repo: Path, second_worktree: Path, tmp_path: Path
     ) -> None:
@@ -375,6 +381,7 @@ class TestLeaseAttributionProvenance:
     cross-worktree lease file (the incident's stale/wrong-attribution
     shape) is distinguishable from a genuine one."""
 
+    # frob:tests src/frob/tickets/_leases.py::lease_holder_worktree kind="unit"  # noqa: E501
     def test_cross_worktree_holder_names_its_worktree(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -389,6 +396,7 @@ class TestLeaseAttributionProvenance:
         worktree = lease_holder_worktree(second_worktree, tid)
         assert worktree == str(repo.resolve())
 
+    # frob:tests src/frob/tickets/_leases.py::lease_holder_worktree kind="unit"  # noqa: E501
     def test_local_only_holder_has_no_worktree(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.test_local_only_holder_has_no_worktree  # noqa: E501
@@ -400,6 +408,7 @@ class TestForceReleaseLease:
     a lease file directly, independent of any ticket's own declared
     scope, so it can clear a holder `frob ticket scope --remove` cannot."""
 
+    # frob:tests src/frob/tickets/_leases.py::force_release_lease
     def test_removes_an_existing_lease_file(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -419,6 +428,7 @@ class TestForceReleaseLease:
             lease.ticket_id == tid for lease in read_all_leases(second_worktree)
         )
 
+    # frob:tests src/frob/tickets/_leases.py::force_release_lease
     def test_no_op_when_no_lease_file_exists(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_lease_file_exists  # noqa: E501
@@ -427,6 +437,7 @@ class TestForceReleaseLease:
         assert released.danger_ok is False
 
     # frob:ticket T-1777
+    # frob:tests src/frob/tickets/_leases.py::force_release_lease
     def test_reason_is_included_in_the_warning_log(
         self, repo: Path, second_worktree: Path, caplog
     ) -> None:
@@ -450,6 +461,8 @@ class TestForceReleaseLease:
         )
 
     # frob:ticket T-2333
+    # frob:tests src/frob/tickets/_models.py::LeaseForceReleaseEntry
+    # frob:tests src/frob/tickets/_leases.py::force_release_lease
     def test_reason_is_persisted_to_the_ticket_ledger(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_persisted_to_the_ticket_ledger  # noqa: E501
@@ -486,6 +499,7 @@ class TestScopeAddRefusesLiveCrossWorktreeLease:
     (`frob ticket scope T-1648 --add design/frob.strata` succeeded against
     T-1863's live, unmerged lease on the same path)."""
 
+    # frob:tests src/frob/tickets/_scope.py::_scope_add_live_lease_conflict
     def test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -551,6 +565,7 @@ class TestScopeAddIgnoresTerminalLease:
     ticket refused with `ScopeLeaseConflict` naming an already-dropped
     holder."""
 
+    # frob:tests src/frob/tickets/_scope.py::_scope_add_live_lease_conflict
     def test_dropped_ticket_on_local_ledger_does_not_block_live_lease(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -623,6 +638,7 @@ class TestRenumberRefusesLiveCrossWorktreeLease:
     (keyed by ticket id string, never re-derived from content)."""
 
     # frob:ticket T-1882
+    # frob:tests src/frob/tickets/_new_renumber.py::renumber
     def test_bulk_renumber_refused_by_unmerged_sibling_worktrees_live_lease(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -649,6 +665,7 @@ class TestRenumberRefusesLiveCrossWorktreeLease:
         assert result.danger_err == TicketError.ScopeLeaseConflict
 
     # frob:ticket T-1882
+    # frob:tests src/frob/tickets/_new_renumber.py::renumber
     def test_bulk_renumber_dry_run_still_works_under_a_live_lease(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -765,6 +782,7 @@ class TestSameWorktreeLease:
     tickets leased to the SAME worktree never count as conflicting with each
     other; two tickets leased to DIFFERENT worktrees do."""
 
+    # frob:tests src/frob/tickets/_leases.py::same_worktree_lease kind="unit"  # noqa: E501
     def test_both_leased_to_same_worktree_matches(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_both_leased_to_same_worktree_matches  # noqa: E501
@@ -782,6 +800,7 @@ class TestSameWorktreeLease:
 
         assert same_worktree_lease(repo, tid_b, tid_a) is True
 
+    # frob:tests src/frob/tickets/_leases.py::same_worktree_lease kind="unit"  # noqa: E501
     def test_different_worktrees_do_not_match(
         self, repo: Path, second_worktree: Path
     ) -> None:

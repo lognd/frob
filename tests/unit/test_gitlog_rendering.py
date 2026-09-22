@@ -82,6 +82,7 @@ def test_as_json_round_trips_groups() -> None:
 
 
 # frob:tests tests/unit/test_gitlog_rendering.py::test_as_text_no_commits_short_circuit
+# frob:tests src/frob/gitlog/__init__.py::GitLogResult.as_text  # noqa: E501
 def test_as_text_no_commits_short_circuit() -> None:
     """`as_text` on an empty commit list returns the fixed no-commits message."""
     result = GitLogResult(root=".", since=None, granularity="full", commits=[])

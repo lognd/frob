@@ -30,6 +30,7 @@ class TestWriteIntent:
         assert records[0].ticket_id == "T-0001"
         assert records[0].worktree == str((tmp_path / "worktree").resolve())
 
+    # frob:tests src/frob/tickets/_journal.py::_write_intent  # noqa: E501
     def test_write_failure_returns_err(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -58,6 +59,7 @@ class TestClearIntent:
         _clear_intent(tmp_path, "T-0003")
         assert _read_all_intents(tmp_path) == ()
 
+    # frob:tests src/frob/tickets/_journal.py::_clear_intent  # noqa: E501
     def test_clear_missing_file_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_missing_file_is_a_no_op  # noqa: E501
         _clear_intent(tmp_path, "T-does-not-exist")  # must not raise
@@ -74,10 +76,12 @@ class TestReadAllIntents:
         records = _read_all_intents(tmp_path)
         assert sorted(r.ticket_id for r in records) == ["T-0010", "T-0011"]
 
+    # frob:tests src/frob/tickets/_journal.py::_read_all_intents  # noqa: E501
     def test_no_journal_dir_returns_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_no_journal_dir_returns_empty  # noqa: E501
         assert _read_all_intents(tmp_path) == ()
 
+    # frob:tests src/frob/tickets/_journal.py::_read_all_intents  # noqa: E501
     def test_malformed_record_is_skipped_not_fatal(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_malformed_record_is_skipped_not_fatal  # noqa: E501
         directory = _journal_dir(tmp_path)

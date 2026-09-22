@@ -38,10 +38,12 @@ class TestWindowStateIo:
     to the idle default on absence or corruption."""
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_missing_file_is_the_default_idle_state  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_window_state  # noqa: E501
     def test_missing_file_is_the_default_idle_state(self, tmp_path: Path) -> None:
         assert _read_window_state(tmp_path) == _default_window_state()
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_round_trips  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_window_state  # noqa: E501
     def test_round_trips(self, tmp_path: Path) -> None:
         state = {
             "phase": "window_open",
@@ -53,6 +55,7 @@ class TestWindowStateIo:
         assert _read_window_state(tmp_path) == state
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowStateIo.test_corrupt_file_degrades_to_the_default_idle_state  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_window_state  # noqa: E501
     def test_corrupt_file_degrades_to_the_default_idle_state(
         self, tmp_path: Path
     ) -> None:
@@ -70,6 +73,7 @@ class TestDecideLandRegistration:
     sweep)."""
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_idle_opens_a_new_window  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_decide_land_registration  # noqa: E501
     def test_idle_opens_a_new_window(self) -> None:
         action, new_state = _decide_land_registration(
             _default_window_state(), _land("T-0001"), now=100.0
@@ -81,6 +85,7 @@ class TestDecideLandRegistration:
         assert new_state["worker_pid"] is None
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_second_land_within_window_joins_it  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_decide_land_registration  # noqa: E501
     def test_second_land_within_window_joins_it(self) -> None:
         state = {
             "phase": "window_open",
@@ -95,6 +100,7 @@ class TestDecideLandRegistration:
         assert new_state["worker_pid"] == os.getpid()
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_land_while_sweep_running_defers_to_next_window  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_decide_land_registration  # noqa: E501
     def test_land_while_sweep_running_defers_to_next_window(self) -> None:
         state = {
             "phase": "sweep_running",
@@ -110,6 +116,7 @@ class TestDecideLandRegistration:
         assert new_state["pending_lands"] == [_land("T-0003")]
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_dead_worker_pid_is_reaped_and_a_new_window_opens  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_decide_land_registration  # noqa: E501
     def test_dead_worker_pid_is_reaped_and_a_new_window_opens(self) -> None:
         # `worker_pid=None` names no live process -- the same code path
         # a genuinely crashed worker's PID takes once `pid_alive` reports
@@ -131,6 +138,7 @@ class TestDecideLandRegistration:
         assert new_state["pending_lands"] == [_land("T-0004")]
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestDecideLandRegistration.test_expired_window_with_a_still_alive_worker_still_joins  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_decide_land_registration  # noqa: E501
     def test_expired_window_with_a_still_alive_worker_still_joins(self) -> None:
         state = {
             "phase": "window_open",
@@ -154,6 +162,7 @@ class TestWindowLock:
     `_baseline_lock` uses, pointed at a dedicated `.frob/` lock file."""
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestWindowLock.test_serializes_two_concurrent_holders  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_window_lock  # noqa: E501
     def test_serializes_two_concurrent_holders(self, tmp_path: Path) -> None:
         order: list[str] = []
         with _window_lock(tmp_path, timeout=2.0):
@@ -184,6 +193,7 @@ class TestSweepWindowSeconds:
     pattern (T-1038)."""
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_default_when_no_config_present  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_sweep_window_seconds  # noqa: E501
     def test_default_when_no_config_present(self, tmp_path: Path) -> None:
         from frob.app.ticket_runner._rapid_sweep import (
             _DEFAULT_SWEEP_WINDOW_SECONDS,
@@ -192,6 +202,7 @@ class TestSweepWindowSeconds:
         assert _sweep_window_seconds(tmp_path) == _DEFAULT_SWEEP_WINDOW_SECONDS
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_frob_toml_sweep_section_wins  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_sweep_window_seconds  # noqa: E501
     def test_frob_toml_sweep_section_wins(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text(
             "[sweep]\nwindow_seconds = 45\n", encoding="utf-8"
@@ -199,6 +210,7 @@ class TestSweepWindowSeconds:
         assert _sweep_window_seconds(tmp_path) == 45.0
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_frob_toml_top_level_key_wins  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_sweep_window_seconds  # noqa: E501
     def test_frob_toml_top_level_key_wins(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text(
             "rapid_sweep_window_seconds = 30\n", encoding="utf-8"
@@ -206,6 +218,7 @@ class TestSweepWindowSeconds:
         assert _sweep_window_seconds(tmp_path) == 30.0
 
     # frob:tests tests/unit/rapid_sweep_suite/test_window.py::TestSweepWindowSeconds.test_pyproject_tool_frob_table_is_the_fallback  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_sweep_window_seconds  # noqa: E501
     def test_pyproject_tool_frob_table_is_the_fallback(self, tmp_path: Path) -> None:
         (tmp_path / "pyproject.toml").write_text(
             "[tool.frob]\nrapid_sweep_window_seconds = 60\n", encoding="utf-8"

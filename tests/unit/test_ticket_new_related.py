@@ -68,6 +68,7 @@ class TestRelatedTicketsSearch:
         )
         assert any(m[0] == "T-1866" for m in matches)
 
+    # frob:tests src/frob/app/ticket_runner/_new.py::related_tickets kind="unit"  # noqa: E501
     def test_no_match_for_a_genuinely_distinct_title(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_no_match_for_a_genuinely_distinct_title  # noqa: E501
         _archive_a_done_ticket(

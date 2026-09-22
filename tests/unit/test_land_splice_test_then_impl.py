@@ -51,6 +51,7 @@ class TestClassifyTestThenImplPaths:
         )
         assert impl_paths == ("docs/modules/widget.md", "src/frob/widget.py")
 
+    # frob:tests src/frob/tickets/_land_splice.py::classify_test_then_impl_paths
     def test_no_test_paths_returns_none(self) -> None:
         # frob:tests \
         # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_no_test_paths_returns_none  # noqa: E501
@@ -59,6 +60,7 @@ class TestClassifyTestThenImplPaths:
         )
         assert result is None
 
+    # frob:tests src/frob/tickets/_land_splice.py::classify_test_then_impl_paths
     def test_no_impl_paths_returns_none(self) -> None:
         # frob:tests \
         # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_no_impl_paths_returns_none  # noqa: E501
@@ -115,6 +117,7 @@ class TestComposeTestThenImplCommits:
     parented on `pre_land_tip`, then an impl-only commit parented on
     THAT commit -- neither step touches the checked-out working tree."""
 
+    # frob:tests src/frob/tickets/_land_splice.py::compose_test_then_impl_commits
     def test_two_commits_chain_correctly(self, scratch_repo: Path) -> None:
         """Given a scratch repo with a mixed test+impl feature branch,
         when compose_test_then_impl_commits runs, then commit 1 contains
@@ -174,6 +177,7 @@ class TestComposeTestThenImplCommits:
         )
         assert full_changed == ["tests/test_widget.py", "widget.py"]
 
+    # frob:tests src/frob/tickets/_land_splice.py::compose_test_then_impl_commits
     def test_final_tree_matches_full_squash(self, scratch_repo: Path) -> None:
         """The final commit's tree is byte-identical to what a plain
         single-commit `compose_tree_out_of_tree` squash would have

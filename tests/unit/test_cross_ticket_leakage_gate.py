@@ -94,6 +94,7 @@ class TestCrossTicketLeakageGate:
 
         return wt, held_id, landing_id
 
+    # frob:tests src/frob/tickets/_land.py::cross_ticket_leakage_gate
     def test_leaked_sibling_scope_fires(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_leaked_sibling_scope_fires  # noqa: E501
         wt, held_id, landing_id = self._seed_leaked_worktree(tmp_path)
@@ -107,12 +108,14 @@ class TestCrossTicketLeakageGate:
         assert held_id in v.message
         assert landing_id in v.message
 
+    # frob:tests src/frob/tickets/_land.py::cross_ticket_leakage_gate
     def test_no_ticket_id_is_quiet(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_no_ticket_id_is_quiet  # noqa: E501
         wt, _held_id, _landing_id = self._seed_leaked_worktree(tmp_path)
 
         assert cross_ticket_leakage_gate(wt, None) == ()
 
+    # frob:tests src/frob/tickets/_land.py::cross_ticket_leakage_gate
     def test_no_leaked_tickets_is_quiet(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_no_leaked_tickets_is_quiet  # noqa: E501
         main_repo = tmp_path / "main"

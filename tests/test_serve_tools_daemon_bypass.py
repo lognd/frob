@@ -92,6 +92,7 @@ class TestFrobDoableTicketsRevalidation:
         assert requeried.danger_ok.tickets[ticket_id].state == TicketState.DROPPED
 
     # frob:ticket T-2027
+    # frob:tests src/frob/serve/_tools.py::frob_doable_tickets  # noqa: E501
     def test_still_reproducing_sweep_ticket_stays_listed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -119,6 +120,7 @@ class TestFrobDoableTicketsRevalidation:
         assert ticket_id in listed_ids
 
     # frob:ticket T-2027
+    # frob:tests src/frob/serve/_tools.py::frob_doable_tickets  # noqa: E501
     def test_no_sweep_tickets_never_calls_revalidate(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

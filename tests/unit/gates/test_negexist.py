@@ -62,6 +62,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         assert len(claims) == 1
         assert claims[0].src == "doc.md#section"
 
+    # frob:tests src/frob/graph/dsl.py::markdown_anchors  # noqa: E501
     def test_not_yet_wired_phrase_is_also_detected(self) -> None:
         """The "not yet <verb>" phrasing variant is detected too, not just
         "does not exist yet"."""
@@ -70,6 +71,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
         assert len(claims) == 1
 
+    # frob:tests src/frob/graph/dsl.py::markdown_anchors  # noqa: E501
     def test_directive_comment_line_itself_never_matches_the_heuristic(self) -> None:
         """A directive comment line is skipped by the heuristic scan even
         if its own text happens to contain a matching phrase (defense
@@ -79,6 +81,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
         assert claims == []
 
+    # frob:tests src/frob/graph/dsl.py::markdown_anchors  # noqa: E501
     def test_plain_prose_with_no_matching_phrase_emits_nothing(self) -> None:
         """Ordinary prose with no negative-existence phrasing at all emits
         no CLAIMS_ABSENCE edge (the heuristic is narrow by design)."""
@@ -174,6 +177,7 @@ class TestNegexist001Gate:
         assert len(violations) == 1
         assert "none is" in violations[0].message
 
+    # frob:tests src/frob/gates/_negexist.py::negexist001_gate  # noqa: E501
     def test_claim_bound_to_missing_ticket_is_stale(self) -> None:
         """An UNTIL edge naming a ticket absent from the queue entirely is
         treated the same as a closed ticket -- stale, not silently clean."""
@@ -194,6 +198,7 @@ class TestNegexist001Gate:
         violations = negexist001_gate(_test_snapshot(edges), TicketQueue(tickets={}))
         assert len(violations) == 1
 
+    # frob:tests src/frob/gates/_negexist.py::negexist001_gate  # noqa: E501
     def test_no_claims_at_all_is_clean(self) -> None:
         """No CLAIMS_ABSENCE edges in the snapshot: nothing to flag, even
         with an unrelated UNTIL edge present."""

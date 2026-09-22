@@ -40,6 +40,7 @@ class TestSetSprintRecordsTriageChange:
     # frob:tests \
     # tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange.test_assigni\
     # ng_a_sprint_records_a_triage_change_entry  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_sprint
     def test_assigning_a_sprint_records_a_triage_change_entry(
         self, tmp_path: Path
     ) -> None:
@@ -64,6 +65,7 @@ class TestSetSprintRecordsTriageChange:
     # frob:tests \
     # tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange.test_reassig\
     # ning_the_same_sprint_still_records_an_entry  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_sprint
     def test_reassigning_the_same_sprint_still_records_an_entry(
         self, tmp_path: Path
     ) -> None:
@@ -116,6 +118,7 @@ class TestSetMilestoneRecordsTriageChange:
     # frob:tests \
     # tests/test_tickets_triage_dates.py::TestSetMilestoneRecordsTriageChange.test_assi\
     # gning_a_milestone_records_a_triage_change_entry  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_milestone
     def test_assigning_a_milestone_records_a_triage_change_entry(
         self, tmp_path: Path
     ) -> None:

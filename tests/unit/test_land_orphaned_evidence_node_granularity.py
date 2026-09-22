@@ -257,6 +257,7 @@ class TestOrphanedEvidenceFindingsNodeGranularity:
 
     # frob:tests tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindingsNodeGranularity.test_dropped_tickets_evidence_never_orphans_a_land  # noqa: E501
     # frob:ticket T-2066
+    # frob:tests src/frob/tickets/_land.py::_dropped_evidence_is_never_orphaned
     def test_dropped_tickets_evidence_never_orphans_a_land(
         self, tmp_path: Path
     ) -> None:

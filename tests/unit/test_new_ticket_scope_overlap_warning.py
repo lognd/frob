@@ -141,6 +141,7 @@ class TestScopeOverlapWarnings:
             )
 
     # frob:ticket T-2257
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings  # noqa: E501
     def test_glob_vs_file_overlap_is_detected(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -176,6 +177,7 @@ class TestScopeOverlapWarnings:
         assert "src/frob/gates/_x.py" in messages
 
     # frob:ticket T-2257
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings  # noqa: E501
     def test_non_overlapping_scope_is_silent(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -210,6 +212,7 @@ class TestScopeOverlapWarnings:
         assert len(list((tmp_path / "tickets").iterdir())) == 2
 
     # frob:ticket T-2257
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings  # noqa: E501
     def test_terminal_state_tickets_are_excluded(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -261,6 +264,7 @@ class TestNonRelativeScopeDoesNotCrash:
 
     # frob:ticket T-2342
     # frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_unrelated_ticket_still_files_despite_one_corrupt_row  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::Ticket.model_copy
     def test_unrelated_ticket_still_files_despite_one_corrupt_row(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -308,6 +312,7 @@ class TestNonRelativeScopeDoesNotCrash:
 
     # frob:ticket T-2342
     # frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_corrupt_row_is_named_loudly_not_silently_coerced  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::Ticket.model_copy
     def test_corrupt_row_is_named_loudly_not_silently_coerced(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -357,6 +362,7 @@ class TestNonRelativeScopeDoesNotCrash:
 
     # frob:ticket T-2342
     # frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_multiple_corrupt_entries_use_plural_wording  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::Ticket.model_copy
     def test_multiple_corrupt_entries_use_plural_wording(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

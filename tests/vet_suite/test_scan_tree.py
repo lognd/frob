@@ -10,6 +10,7 @@ from tests.conftest import (
 
 
 class TestScanTreeLockArg:
+    # frob:tests src/frob/vet/_scan.py::scan_tree
     def test_scan_tree_lockfile_arg(self, tmp_path: Path) -> None:
         """T-0221 regression: `scan_tree(<path to a lockfile file>)` must vet
         that lockfile, not treat it as a directory root and fail to find
@@ -24,6 +25,7 @@ class TestScanTreeLockArg:
         report = result.danger_ok
         assert len(report.verdicts) == 2
 
+    # frob:tests src/frob/vet/_scan.py::scan_tree
     def test_scan_tree_unsupp_err(self, tmp_path: Path) -> None:
         """T-0221 regression: an unresolvable lockfile is a typed Err, not a
         silent empty-ok report -- callers (the CLI) rely on this to exit
@@ -60,6 +62,7 @@ class TestVetRunnerLockArg:
         out = capsys.readouterr().out
         assert "requests" in out
 
+    # frob:tests src/frob/app/vet_runner.py::run
     def test_run_unsupp_nonzero(self, tmp_path: Path) -> None:
         """T-0221 regression: a LockfileUnsupported Err must not be a silent
         exit-0 -- that is the same vacuous-pass class as T-0184 and poisons
@@ -301,6 +304,8 @@ class TestScanTreeTimeout:
         assert "timeout" in verdict.signals
 
     # frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
+    # frob:tests src/frob/vet/_scan.py::_bounded_process_dependency  # noqa: E501
+    # frob:tests src/frob/_daemon_timeout.py::_run_bounded  # noqa: E501
     def test_timed_out_worker_is_daemon_not_registered(self, tmp_path: Path) -> None:
         """T-3708 regression: an abandoned-on-timeout `_process_dependency`
         worker must not be able to block interpreter shutdown.

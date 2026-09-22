@@ -17,6 +17,7 @@ from frob.app.config import AppConfig
 
 class TestEnumFieldValidation:
     # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/config.py::_validate_enum_choice kind="unit"  # noqa: E501
     def test_invalid_ticket_state_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:
@@ -48,12 +49,14 @@ class TestEnumFieldValidation:
         assert "'nope' is not a valid ticket kind" in message
         assert "feature" in message and "bug" in message
 
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
     def test_invalid_ticket_kind_value_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_kind_value_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:
             AppConfig(ticket_kind_value="nope")
         assert "is not a valid ticket kind" in str(exc_info.value)
 
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
     def test_invalid_ticket_tier_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_tier_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:
@@ -62,12 +65,14 @@ class TestEnumFieldValidation:
         assert "is not a valid ticket tier" in message
         assert "epic" in message and "story" in message and "ticket" in message
 
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
     def test_invalid_ticket_tier_value_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_tier_value_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:
             AppConfig(ticket_tier_value="nope")
         assert "is not a valid ticket tier" in str(exc_info.value)
 
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
     def test_invalid_ticket_priority_level_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_priority_level_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:
@@ -77,6 +82,7 @@ class TestEnumFieldValidation:
         assert "low" in message and "medium" in message and "high" in message
         assert "critical" in message
 
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
     def test_invalid_ticket_origin_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_origin_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:
@@ -85,6 +91,7 @@ class TestEnumFieldValidation:
         assert "is not a valid ticket origin" in message
         assert "human" in message and "agent" in message
 
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
     def test_invalid_ticket_review_verdict_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_review_verdict_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:

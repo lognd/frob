@@ -60,6 +60,7 @@ class TestTodo002Edges:
         )
         assert _todo002_edges(_snapshot((edge,)), queue) == []
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo002_edges
     def test_closed_ticket_fires_todo002(self) -> None:
         """A `frob:todo` edge bound to a DONE ticket fires TODO002 at the
         edge's own origin site."""
@@ -79,6 +80,7 @@ class TestTodo002Edges:
         assert v.line == 9
         assert "T-0001" in v.message
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo002_edges
     def test_missing_ticket_fires_todo002(self) -> None:
         """A `frob:todo` edge whose target ticket does not exist at all
         also fires TODO002 (missing is treated the same as closed)."""
@@ -93,6 +95,7 @@ class TestTodo002Edges:
         assert len(violations) == 1
         assert violations[0].rule == "TODO002"
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo002_edges
     def test_non_todo_edges_are_ignored(self) -> None:
         """Edges of a different `EdgeKind` never contribute a TODO002
         finding, even if their target ticket is closed."""
@@ -142,6 +145,7 @@ class TestTodo001BareComment:
         )
         assert _todo001_bare_comment("pkg/mod.py", comment) == []
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
     def test_multiline_comment_flags_only_todo_lines(self) -> None:
         """A multi-line comment block fires once per bare untracked
         deferral-marker physical line, at the correct offset line number,
@@ -156,6 +160,7 @@ class TestTodo001BareComment:
         assert len(violations) == 1
         assert violations[0].line == 21
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
     def test_frob_prefixed_line_inside_multiline_block_is_skipped(self) -> None:
         """Within a multi-line comment, a `frob:`-prefixed physical line is
         skipped even if a sibling line in the same comment is a bare
@@ -171,6 +176,7 @@ class TestTodo001BareComment:
         assert violations[0].line == 2
 
     # frob:waive PII012 reason="'token' here means the TODO/FIXME lexical marker this gate scans for, not a credential"  # noqa: E501
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
     def test_no_todo_token_no_violation(self) -> None:
         """An ordinary comment with neither deferral-marker token raises
         nothing."""
@@ -187,6 +193,7 @@ class TestFmt001MarkerEntries:
     """`_todo_fmt._fmt001_marker_entries`: collecting comment-marker lines
     ahead of `fold_comment_runs`."""
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_marker_entries
     def test_collects_only_marker_lines(self) -> None:
         """Only lines starting (after leading whitespace) with `marker`
         are collected, with the marker (and one following space) stripped
@@ -203,6 +210,7 @@ class TestFmt001MarkerEntries:
             (2, "frob:doc baz", "", 0),
         ]
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_marker_entries
     def test_no_marker_lines_yields_empty(self) -> None:
         """A file with no comment-marker lines at all yields no entries."""
         assert _fmt001_marker_entries(["a", "b", "c"], "#") == []
@@ -212,6 +220,7 @@ class TestFmt001ViolationsForRuns:
     """`_todo_fmt._fmt001_violations_for_runs`: over-length `frob:`
     directive lines, diff-touch and non-`frob:`-run filtering."""
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_violations_for_runs
     def test_over_limit_touched_frob_line_fires(self) -> None:
         """A `frob:`-prefixed run whose physical line exceeds `limit` and
         is diff-touched fires FMT001 at that physical line."""
@@ -227,6 +236,7 @@ class TestFmt001ViolationsForRuns:
         assert v.severity == Severity.WARN
         assert v.line == 2
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_violations_for_runs
     def test_untouched_line_not_flagged(self) -> None:
         """The same over-length run is silent when its physical line is
         not in the diff's touched-line set."""
@@ -238,6 +248,7 @@ class TestFmt001ViolationsForRuns:
         )
         assert violations == []
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_violations_for_runs
     def test_non_frob_run_not_flagged(self) -> None:
         """A folded comment run that does not start with `frob:` is never
         flagged, no matter its length or touch status."""
@@ -249,6 +260,7 @@ class TestFmt001ViolationsForRuns:
         )
         assert violations == []
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_violations_for_runs
     def test_short_frob_line_not_flagged(self) -> None:
         """A `frob:`-prefixed run within the column limit is silent even
         when touched."""

@@ -28,6 +28,8 @@ class TestLeaseClassification:
         record.update(overrides)
         return record
 
+    # frob:tests scripts/fleet_status.py::live_lease_count
+    # frob:tests scripts/fleet_status.py::lease_classification
     def test_live_lease_stays_live(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -45,6 +47,7 @@ class TestLeaseClassification:
         assert fleet_status.lease_classification(record) == "live"
         assert fleet_status.live_lease_count([record]) == 1
 
+    # frob:tests scripts/fleet_status.py::lease_classification
     def test_holder_dead_is_reclaimable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -68,6 +71,7 @@ class TestLeaseClassification:
         assert fleet_status.lease_classification(record) == "reclaimable"
         assert fleet_status.live_lease_count([record]) == 0
 
+    # frob:tests scripts/fleet_status.py::lease_classification
     def test_ticket_terminal_is_reclaimable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -82,6 +86,7 @@ class TestLeaseClassification:
         )
         assert fleet_status.lease_classification(record) == "reclaimable"
 
+    # frob:tests scripts/fleet_status.py::lease_classification
     def test_path_gone_is_reclaimable(self, tmp_path: Path) -> None:
         """A recorded worktree path that no longer exists on disk at all
         is reclaimable -- the cheapest, most-common shape, checked first
@@ -93,6 +98,7 @@ class TestLeaseClassification:
         }
         assert fleet_status.lease_classification(record) == "reclaimable"
 
+    # frob:tests scripts/fleet_status.py::lease_classification
     def test_root_worktree_is_structurally_unreclaimable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -114,6 +120,7 @@ class TestLeaseClassification:
         assert fleet_status.lease_classification(record) == "root-resident"
         assert fleet_status.live_lease_count([record]) == 0
 
+    # frob:tests scripts/fleet_status.py::lease_classification
     def test_classification_is_strictly_read_only(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -150,6 +157,7 @@ class TestLeaseClassification:
 class TestHostLoad:
     """`fleet_status.host_load` (T-2180)."""
 
+    # frob:tests scripts/fleet_status.py::host_load
     def test_reads_loadavg_and_mem_available(self, tmp_path: Path) -> None:
         """Both values are read from their own structured /proc fields --
         `MemAvailable`, not `MemFree`, so a busy-but-healthy host with
@@ -166,6 +174,7 @@ class TestHostLoad:
         result = fleet_status.host_load(proc)
         assert result == (19.48, 10485760)
 
+    # frob:tests scripts/fleet_status.py::host_load
     def test_missing_proc_files_return_none(self, tmp_path: Path) -> None:
         """A `/proc` with neither file present (a sandboxed or non-Linux
         host) reads as unknown, never a fabricated zero load/plenty of
@@ -178,6 +187,7 @@ class TestHostLoad:
 class TestSwapPressure:
     """`fleet_status.swap_pressure` (T-2249)."""
 
+    # frob:tests scripts/fleet_status.py::swap_pressure
     def test_reads_swap_used_and_total(self, tmp_path: Path) -> None:
         """`swap_used_kb = SwapTotal - SwapFree`, matching `free`'s own
         arithmetic -- the measured incident's own numbers (24GB total,
@@ -192,6 +202,7 @@ class TestSwapPressure:
         )
         assert fleet_status.swap_pressure(proc) == (7340032, 25165824)
 
+    # frob:tests scripts/fleet_status.py::swap_pressure
     def test_swap_total_zero_never_crashes_or_claims_pressure(
         self, tmp_path: Path
     ) -> None:
@@ -293,6 +304,7 @@ class TestOrphanedForkserverCount:
         b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
     )
 
+    # frob:tests scripts/fleet_status.py::_ORPHAN_AGE_FLOOR_S
     def test_counts_forkserver_reparented_to_init(self, tmp_path: Path) -> None:
         proc = tmp_path / "proc"
         proc.mkdir()
@@ -301,6 +313,7 @@ class TestOrphanedForkserverCount:
         )
         assert fleet_status.orphaned_forkserver_count(proc) == 1
 
+    # frob:tests scripts/fleet_status.py::_ORPHAN_AGE_FLOOR_S
     def test_ignores_forkserver_with_live_parent(self, tmp_path: Path) -> None:
         """A forkserver whose immediate parent is a genuinely LIVE `frob
         check` process (T-2818: ancestry, not one-level ppid==1, is the
@@ -317,6 +330,7 @@ class TestOrphanedForkserverCount:
         )
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
+    # frob:tests scripts/fleet_status.py::_ORPHAN_AGE_FLOOR_S
     def test_ignores_non_forkserver_processes(self, tmp_path: Path) -> None:
         proc = tmp_path / "proc"
         proc.mkdir()
@@ -325,9 +339,11 @@ class TestOrphanedForkserverCount:
         )
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
+    # frob:tests scripts/fleet_status.py::_ORPHAN_AGE_FLOOR_S
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         assert fleet_status.orphaned_forkserver_count(tmp_path / "no-proc") is None
 
+    # frob:tests scripts/fleet_status.py::_ORPHAN_AGE_FLOOR_S
     def test_two_level_chain_with_dead_root_is_orphaned(self, tmp_path: Path) -> None:
         """Asserts a forkserver (4242) whose parent is another forkserver
         (5000) whose own originating check already died (reparented to
@@ -349,6 +365,7 @@ class TestOrphanedForkserverCount:
         )
         assert fleet_status.orphaned_forkserver_count(proc) == 2
 
+    # frob:tests scripts/fleet_status.py::_ORPHAN_AGE_FLOOR_S
     def test_deep_chain_under_a_live_check_is_not_orphaned(
         self, tmp_path: Path
     ) -> None:
@@ -375,6 +392,7 @@ class TestOrphanedForkserverCount:
         )
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
+    # frob:tests scripts/fleet_status.py::_ORPHAN_AGE_FLOOR_S
     def test_zero_forkservers_reports_zero(self, tmp_path: Path) -> None:
         """MUST-STILL-PASS: no forkservers at all (even with other, live,
         non-forkserver processes present) reports a clean `0`, never an
@@ -384,6 +402,7 @@ class TestOrphanedForkserverCount:
         self._write_live_check(proc, 100)
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
+    # frob:tests scripts/fleet_status.py::orphaned_forkserver_count
     def test_unmeasurable_age_never_counted(self, tmp_path: Path) -> None:
         """T-3139: `stat` too short to derive `starttime` (age
         unmeasurable) must never be counted -- matches `reap_orphaned_
@@ -398,6 +417,7 @@ class TestOrphanedForkserverCount:
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
     # frob:ticket T-3139
+    # frob:tests scripts/fleet_status.py::orphaned_forkserver_count
     def test_young_forkserver_with_no_check_ancestor_is_not_orphaned(
         self, tmp_path: Path
     ) -> None:
@@ -423,6 +443,7 @@ class TestOrphanedForkserverCount:
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
     # frob:ticket T-3139
+    # frob:tests scripts/fleet_status.py::orphaned_forkserver_count
     def test_old_forkserver_with_no_check_ancestor_is_orphaned(
         self, tmp_path: Path
     ) -> None:
@@ -491,6 +512,7 @@ class TestOrphanedForkserverCountAgreesWithReap:
         now = time.time()
         os.utime(entry, (now - age_s, now - age_s))
 
+    # frob:tests scripts/fleet_status.py::orphaned_forkserver_count
     def test_young_xdist_parented_forkserver_agrees(self, tmp_path: Path) -> None:
         """T-3139's exact measured shape: a forkserver, 5s old, parented
         by a live xdist worker. Neither tool may treat it as orphaned."""
@@ -509,6 +531,7 @@ class TestOrphanedForkserverCountAgreesWithReap:
         assert fleet_status_count == 0, "fleet_status must not report this orphaned"
         assert reaped == [], "reap must not touch this pid"
 
+    # frob:tests scripts/fleet_status.py::orphaned_forkserver_count
     def test_old_no_ancestor_forkserver_agrees(self, tmp_path: Path) -> None:
         """The must-fire counterpart, same shared tree: a forkserver old
         enough to clear both tools' age floor, with no `frob check`
@@ -592,6 +615,7 @@ class TestStaleForkserverCount:
         stat_fields.append(str(starttime_ticks))  # fields[19] == starttime
         (entry / "stat").write_text(f"{pid} (python3) " + " ".join(stat_fields) + "\n")
 
+    # frob:tests scripts/fleet_status.py::stale_forkserver_count
     def test_counts_old_forkserver_when_no_checks_running(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_counts_old_forkserver_when_no_checks_running  # noqa: E501
         proc = tmp_path / "proc"
@@ -599,6 +623,7 @@ class TestStaleForkserverCount:
         self._write_forkserver(proc, 4242, age_s=7200.0)  # 2h old
         assert fleet_status.stale_forkserver_count(proc, concurrent_checks=0) == 1
 
+    # frob:tests scripts/fleet_status.py::stale_forkserver_count
     def test_ignores_young_forkserver(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_ignores_young_forkserver  # noqa: E501
         proc = tmp_path / "proc"
@@ -606,6 +631,7 @@ class TestStaleForkserverCount:
         self._write_forkserver(proc, 4242, age_s=30.0)  # 30s old, still working
         assert fleet_status.stale_forkserver_count(proc, concurrent_checks=0) == 0
 
+    # frob:tests scripts/fleet_status.py::stale_forkserver_count
     def test_never_counts_anything_while_a_check_is_running(
         self, tmp_path: Path
     ) -> None:
@@ -620,6 +646,7 @@ class TestStaleForkserverCount:
         self._write_forkserver(proc, 4242, age_s=7200.0)
         assert fleet_status.stale_forkserver_count(proc, concurrent_checks=1) == 0
 
+    # frob:tests scripts/fleet_status.py::stale_forkserver_count
     def test_unknown_concurrent_checks_never_counts_anything(
         self, tmp_path: Path
     ) -> None:
@@ -632,6 +659,7 @@ class TestStaleForkserverCount:
         self._write_forkserver(proc, 4242, age_s=7200.0)
         assert fleet_status.stale_forkserver_count(proc, concurrent_checks=None) == 0
 
+    # frob:tests scripts/fleet_status.py::stale_forkserver_count
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_missing_proc_returns_none  # noqa: E501
         assert (
@@ -721,6 +749,7 @@ class TestForkserverSwapHeldKb:
                 encoding="utf-8",
             )
 
+    # frob:tests scripts/fleet_status.py::forkserver_swap_held_kb
     def test_sums_vmswap_across_every_forkserver(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_sums_vmswap_across_every_forkserver  # noqa: E501
         proc = tmp_path / "proc"
@@ -731,6 +760,7 @@ class TestForkserverSwapHeldKb:
         self._write_entry(proc, 102, cmdline=b"sleep\x00600\x00", vmswap_kb=9000)
         assert fleet_status.forkserver_swap_held_kb(proc) == 12000
 
+    # frob:tests scripts/fleet_status.py::forkserver_swap_held_kb
     def test_missing_status_file_degrades_that_entry_to_zero_not_a_crash(
         self, tmp_path: Path
     ) -> None:
@@ -742,6 +772,7 @@ class TestForkserverSwapHeldKb:
         self._write_entry(proc, 101, cmdline=fs_cmdline, vmswap_kb=3000)
         assert fleet_status.forkserver_swap_held_kb(proc) == 3000
 
+    # frob:tests scripts/fleet_status.py::forkserver_swap_held_kb
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_missing_proc_returns_none  # noqa: E501
         assert fleet_status.forkserver_swap_held_kb(tmp_path / "no-proc") is None
@@ -768,6 +799,7 @@ class TestForkserverRssHeldKb:
                 encoding="utf-8",
             )
 
+    # frob:tests scripts/fleet_status.py::forkserver_rss_held_kb
     def test_sums_vmrss_across_every_forkserver(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_sums_vmrss_across_every_forkserver  # noqa: E501
         proc = tmp_path / "proc"
@@ -778,6 +810,7 @@ class TestForkserverRssHeldKb:
         self._write_entry(proc, 102, cmdline=b"sleep\x00600\x00", vmrss_kb=500_000)
         assert fleet_status.forkserver_rss_held_kb(proc) == 3_700_000
 
+    # frob:tests scripts/fleet_status.py::forkserver_rss_held_kb
     def test_missing_status_file_degrades_that_entry_to_zero_not_a_crash(
         self, tmp_path: Path
     ) -> None:
@@ -789,6 +822,7 @@ class TestForkserverRssHeldKb:
         self._write_entry(proc, 101, cmdline=fs_cmdline, vmrss_kb=300_000)
         assert fleet_status.forkserver_rss_held_kb(proc) == 300_000
 
+    # frob:tests scripts/fleet_status.py::forkserver_rss_held_kb
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_missing_proc_returns_none  # noqa: E501
         assert fleet_status.forkserver_rss_held_kb(tmp_path / "no-proc") is None
@@ -800,6 +834,7 @@ class TestForkserverCount:
     count -- the denominator `_forkserver_rss_headline` attributes
     aggregate RSS across."""
 
+    # frob:tests scripts/fleet_status.py::forkserver_count
     def test_counts_every_live_forkserver(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount.test_counts_every_live_forkserver  # noqa: E501
         proc = tmp_path / "proc"
@@ -816,6 +851,7 @@ class TestForkserverCount:
         (non_fs / "stat").write_text("200 (sleep) S 999 200 0 0 -1 0\n")
         assert fleet_status.forkserver_count(proc) == 3
 
+    # frob:tests scripts/fleet_status.py::forkserver_count
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount.test_missing_proc_returns_none  # noqa: E501
         assert fleet_status.forkserver_count(tmp_path / "no-proc") is None
@@ -828,6 +864,7 @@ class TestForkserverRssHeadline:
     root-cause fix (the aggregate must outrank, not merely join, the
     three reassuring orphan/stale/swap lines)."""
 
+    # frob:tests scripts/fleet_status.py::_forkserver_rss_headline
     def test_large_rss_produces_a_visible_warning(self) -> None:
         """MUST-FIRE: healthy, live-parented, non-swapping forkservers
         holding large RSS produce a visible warning (T-3407's own
@@ -839,6 +876,7 @@ class TestForkserverRssHeadline:
         assert "7 forkserver(s)" in headline
         assert "7 concurrent check(s)" in headline
 
+    # frob:tests scripts/fleet_status.py::_forkserver_rss_headline
     def test_small_rss_stays_quiet(self) -> None:
         """MUST-STAY-QUIET: a small number of forkservers on an idle host
         does not produce a warning (T-3407's own fixture) -- the real
@@ -849,6 +887,7 @@ class TestForkserverRssHeadline:
         assert "1 forkserver(s)" in headline
         assert "0 concurrent check(s)" in headline
 
+    # frob:tests scripts/fleet_status.py::_forkserver_rss_headline
     def test_unknown_inputs_degrade_to_unknown_not_zero(self) -> None:
         """MUST-STILL-PASS: an unreadable `/proc` must read as 'unknown',
         never a clean 0 -- matching every other best-effort line in this
@@ -920,6 +959,7 @@ class TestConcurrentCheckCount:
         entry.mkdir(parents=True)
         (entry / "cmdline").write_bytes(cmdline)
 
+    # frob:tests scripts/fleet_status.py::concurrent_check_count
     def test_counts_check_processes(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_counts_check_processes  # noqa: E501
         proc = tmp_path / "proc"
@@ -930,6 +970,7 @@ class TestConcurrentCheckCount:
         )
         assert fleet_status.concurrent_check_count(proc) == 2
 
+    # frob:tests scripts/fleet_status.py::concurrent_check_count
     def test_ignores_non_check_processes(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_ignores_non_check_processes  # noqa: E501
         proc = tmp_path / "proc"
@@ -938,6 +979,7 @@ class TestConcurrentCheckCount:
         self._write_entry(proc, 201, cmdline=b"frob\x00checkpointer\x00")
         assert fleet_status.concurrent_check_count(proc) == 0
 
+    # frob:tests scripts/fleet_status.py::concurrent_check_count
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_missing_proc_returns_none  # noqa: E501
         assert fleet_status.concurrent_check_count(tmp_path / "no-proc") is None
@@ -981,6 +1023,7 @@ class TestIsLiveCheckCmdline:
 class TestSwapGuidance:
     """`fleet_status._swap_guidance` (T-2249)."""
 
+    # frob:tests scripts/fleet_status.py::_swap_guidance
     def test_swap_above_floor_overrides_the_static_guidance(self) -> None:
         """(MUST FAIL FIRST, pre-fix) Swap usage at/above
         `_SWAP_PRESSURE_FLOOR_KB` (1GB) replaces the static '3-4 agent'
@@ -991,6 +1034,7 @@ class TestSwapGuidance:
         assert "SWAP" in guidance
         assert "6.0GB" in guidance
 
+    # frob:tests scripts/fleet_status.py::_swap_guidance
     def test_swap_below_floor_keeps_the_static_guidance(self) -> None:
         """A few MB of swap (well under the 1GB floor, the ticket's own
         'not any swap at all' caution) must NOT trip the pressure
@@ -999,6 +1043,7 @@ class TestSwapGuidance:
         guidance = fleet_status._swap_guidance((10 * 1024, 24 * 1024 * 1024))
         assert guidance == "3-4 agent concurrent"
 
+    # frob:tests scripts/fleet_status.py::_swap_guidance
     def test_unknown_swap_keeps_the_static_guidance(self) -> None:
         """`swap is None` (unreadable /proc) must never be read as
         'pressure' -- pressure is only ever claimed from a real reading,

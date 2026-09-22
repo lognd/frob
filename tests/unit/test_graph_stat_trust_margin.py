@@ -24,6 +24,7 @@ class TestProbeMtimeGranularityNs:
     and here irrelevant property -- see the function's own docstring)."""
 
     # frob:tests src/frob/graph/__init__.py::_probe_mtime_granularity_ns
+    # frob:tests src/frob/graph/__init__.py::_collect_mtime_probe_samples
     def test_real_probe_returns_a_plausible_small_value(self, tmp_path: Path) -> None:
         """Smoke test against this repo's own real dev mount: whatever
         the measured granularity is, it must be a positive value drawn
@@ -39,6 +40,7 @@ class TestProbeMtimeGranularityNs:
         )
 
     # frob:tests src/frob/graph/__init__.py::_probe_mtime_granularity_ns
+    # frob:tests src/frob/graph/__init__.py::_granularity_bucket_for_samples
     def test_all_samples_colliding_falls_back_to_loop_span(
         self, tmp_path: Path, monkeypatch
     ) -> None:

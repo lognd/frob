@@ -36,6 +36,7 @@ class TestVerifyRunPytestDirectlyWiring:
     the bound and check for its absence before spawning verification
     pytest."""
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_run_pytest_directly  # noqa: E501
     def test_must_fire_applies_and_warns_before_spawn(self, tmp_path: Path) -> None:
         """Both calls happen, in order, before the guarded subprocess
         spawn."""
@@ -80,6 +81,7 @@ class TestCollectPythonTestsWiring:
     bound and check for its absence before its own `--collect-only`
     spawn."""
 
+    # frob:tests src/frob/testing/_collect.py::collect_python_tests  # noqa: E501
     def test_must_fire_applies_and_warns_before_collection(
         self, tmp_path: Path
     ) -> None:
@@ -118,6 +120,7 @@ class TestNativeCoverageRefreshWiring:
     apply the bound and check for its absence before dispatching to the
     pytest pass."""
 
+    # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
     def test_must_fire_applies_and_warns_before_pytest_pass(
         self, tmp_path: Path
     ) -> None:
@@ -157,6 +160,7 @@ class TestMutateRunnerWiring:
     """`mutate_runner.run` must apply the bound and check for its
     absence before `run_mutations` spawns the mutant test command."""
 
+    # frob:tests src/frob/app/mutate_runner.py::run  # noqa: E501
     def test_must_fire_applies_and_warns_before_run_mutations(
         self, tmp_path: Path
     ) -> None:
@@ -236,6 +240,7 @@ class TestPerfRunnerProfileWiring:
 
         assert calls == ["apply", "warn", "profile"]
 
+    # frob:tests src/frob/app/perf_runner.py::_profile  # noqa: E501
     def test_must_stay_quiet_raw_argv_path_does_not_wire(self, tmp_path: Path) -> None:
         """A raw `-- <argv>` profile target (no `--tests`) is NOT
         necessarily pytest -- neither function must fire on that path."""

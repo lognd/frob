@@ -72,6 +72,7 @@ _WIN32_NO_REPLACE_OVER_OPEN_HANDLE = pytest.mark.skipif(
 class TestParsedArtifacts:
     """`store_parsed_artifact`/`load_parsed_artifact` round-trip and miss."""
 
+    # frob:tests src/frob/graph/cache.py::store_parsed_artifact
     def test_store_then_load_round_trips(self, tmp_path: Path) -> None:
         """A stored payload comes back byte-identical for the same key."""
         conn = graph_cache.connect(tmp_path / "cache.db")
@@ -86,6 +87,7 @@ class TestParsedArtifacts:
         )
         assert loaded == '{"path": "a.py"}'
 
+    # frob:tests src/frob/graph/cache.py::load_parsed_artifact
     def test_load_miss_returns_none(self, tmp_path: Path) -> None:
         """An unknown `(content_hash, fingerprint)` pair is a clean miss."""
         conn = graph_cache.connect(tmp_path / "cache.db")
@@ -306,6 +308,8 @@ class TestRecreateConcurrentReaderSurvives:
 
     # frob:tests \
     # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling_reader_survives_concurrent_recreate  # noqa: E501
+    # frob:tests src/frob/graph/cache.py::connect_readonly
+    # frob:tests src/frob/graph/cache.py::_with_lock_retry
     @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_sibling_reader_survives_concurrent_recreate(self, tmp_path: Path) -> None:
         """A real sibling process reading in a tight loop never dies from
@@ -340,6 +344,8 @@ class TestRecreateConcurrentReaderSurvives:
     # frob:ticket T-4419
     # frob:tests \
     # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_path_never_absent_during_recreate  # noqa: E501
+    # frob:tests src/frob/graph/cache.py::_quarantine_main_db
+    # frob:tests src/frob/graph/cache.py::_quarantine_sidecars
     def test_path_never_absent_during_recreate(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -394,6 +400,7 @@ class TestRecreateConcurrentReaderSurvives:
 
     # frob:tests \
     # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_quarantined_sidecars_are_renamed_not_unlinked  # noqa: E501
+    # frob:tests src/frob/graph/cache.py::_quarantine_sidecars
     def test_quarantined_sidecars_are_renamed_not_unlinked(
         self, tmp_path: Path
     ) -> None:
@@ -556,6 +563,8 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
     # window (3.0s); underlying bug fixed through 9 rounds (T-3623/T-3700),
     # residual failure is timing starvation under xdist CI load, not a
     # deterministic defect.
+    # frob:tests src/frob/graph/cache.py::get_root
+    # frob:tests src/frob/graph/cache.py::_check_fingerprint_with_recovery
     @pytest.mark.flaky(reruns=2, reruns_delay=1)
     @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_two_processes_connecting_concurrently_never_see_no_such_table_meta(
@@ -822,6 +831,7 @@ class TestConnectNeverReturnsAStaleConnection:
 
     # frob:tests \
     # tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection  # noqa: E501
+    # frob:tests src/frob/graph/cache.py::_inprocess_write_lock
     @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection(
         self, tmp_path: Path
@@ -879,6 +889,7 @@ class TestLockBackoff:
     the design rationale."""
 
     # frob:tests src/frob/graph/cache.py::_lock_backoff_seconds
+    # frob:tests src/frob/graph/cache.py::_connect_with_backoff
     def test_backoff_doubles_up_to_the_cap(self) -> None:
         delays = [
             graph_cache._lock_backoff_seconds(attempt, remaining=100.0)
@@ -1064,6 +1075,7 @@ class TestHandleIdentity:
         )
 
     # frob:tests src/frob/graph/cache.py::store_file_data
+    # frob:tests src/frob/graph/cache.py::_reopen_without_closing
     @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_store_file_data_after_a_replace_lands_on_the_live_file(
         self, tmp_path: Path
@@ -1224,6 +1236,7 @@ class TestCorruptCacheSelfHeals:
             fh.seek(100)
             fh.write(b"\xff" * 200)
 
+    # frob:tests src/frob/graph/cache.py::_cache_integrity_ok
     def test_integrity_check_reports_corrupt(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_integrity_check_reports_corrupt  # noqa: E501
@@ -1237,6 +1250,7 @@ class TestCorruptCacheSelfHeals:
         self._corrupt_in_place(path)
         assert graph_cache._cache_integrity_ok(path) is False
 
+    # frob:tests src/frob/graph/cache.py::_rebuild_because_corrupt
     def test_corrupt_cache_self_heals(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_graph_cache.py::TestCorruptCacheSelfHeals.test_corrupt_cache_self_heals  # noqa: E501
@@ -1269,6 +1283,8 @@ class TestCorruptCacheSelfHeals:
         finally:
             fresh.close()
 
+    # frob:tests src/frob/graph/cache.py::_rebuild_if_genuinely_corrupt
+    # frob:tests src/frob/graph/cache.py::_is_genuine_corruption_shape
     def test_run_with_stale_reconnect_rebuilds_and_completes_on_corruption(
         self, tmp_path: Path
     ) -> None:
@@ -1311,6 +1327,7 @@ class TestCorruptCacheSelfHeals:
             "the on-disk cache was not actually rebuilt clean"
         )
 
+    # frob:tests src/frob/graph/cache.py::_rebuild_if_genuinely_corrupt
     def test_win32_rebuild_closes_the_callers_stale_connection_first(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1410,6 +1427,8 @@ class TestLockedDbNeverRebuilds:
     succeeding once the lock clears or raising `CacheLocked` (naming the
     holder) once the retry budget is exhausted."""
 
+    # frob:tests src/frob/graph/cache.py::connect
+    # frob:tests src/frob/graph/cache.py::_read_schema_version
     def test_locked_db_is_never_classified_as_unreadable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1496,6 +1515,7 @@ class TestLockedDbNeverRebuilds:
 
         assert rebuild_calls == []
 
+    # frob:tests src/frob/graph/cache.py::_read_schema_version
     def test_genuinely_malformed_db_still_rebuilds(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_graph_cache.py::TestLockedDbNeverRebuilds.test_genuinely_malformed_db_still_rebuilds  # noqa: E501
@@ -1521,6 +1541,7 @@ class TestSeedDisposableWorktreeCache:
     `load_graph` there finds a warm cache instead of rebuilding the whole
     graph uncached."""
 
+    # frob:tests src/frob/graph/cache.py::seed_disposable_worktree_cache
     def test_seeds_from_an_existing_primary_cache(self, tmp_path: Path) -> None:
         """Given a primary checkout with a built cache.db and a fresh
         worktree with none, when seeding runs, then the worktree's
@@ -1543,6 +1564,7 @@ class TestSeedDisposableWorktreeCache:
         conn.execute("SELECT 1")
         conn.close()
 
+    # frob:tests src/frob/graph/cache.py::seed_disposable_worktree_cache
     def test_no_primary_cache_is_a_quiet_no_op(self, tmp_path: Path) -> None:
         """Given a primary checkout that has never built a cache, when
         seeding runs, then it declines rather than seeding an empty file
@@ -1557,6 +1579,7 @@ class TestSeedDisposableWorktreeCache:
         assert seeded is False
         assert not (worktree / ".frob" / "cache.db").exists()
 
+    # frob:tests src/frob/graph/cache.py::seed_disposable_worktree_cache
     def test_primary_journal_present_skips_seeding(self, tmp_path: Path) -> None:
         """Given a primary cache with a NON-EMPTY `cache.db-journal`
         sidecar (T-3644: this module's rollback-journal mode means a
@@ -1576,6 +1599,7 @@ class TestSeedDisposableWorktreeCache:
         assert seeded is False
         assert not (worktree / ".frob" / "cache.db").exists()
 
+    # frob:tests src/frob/graph/cache.py::seed_disposable_worktree_cache
     def test_empty_primary_journal_does_not_block_seeding(self, tmp_path: Path) -> None:
         """Given a primary cache with the ZERO-length `cache.db-journal`
         that this module's TRUNCATE journal mode routinely leaves behind

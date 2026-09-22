@@ -47,6 +47,7 @@ class TestTiers:
     """REF001 (0 refs), REF002 (1 ref), pass (2+ refs) -- docs/modules/gates.md's
     tier table, T-0396 acceptance criterion (4)."""
 
+    # frob:tests src/frob/gates/_refs.py::ref_gate
     def test_zero_refs_warns_ref001(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "orphan.yaml", "key: value\n")
@@ -67,6 +68,7 @@ class TestTiers:
 
         assert _rule_ids(violations, "single.yaml") == ["REF002"]
 
+    # frob:tests src/frob/gates/_refs.py::ref_gate
     def test_two_refs_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "double.yaml", "key: value\n")
@@ -470,6 +472,7 @@ class TestNativeStubLinking:
 
         assert "REF001" not in _rule_ids(violations, "somecrate/somecrate_native.pyi")
 
+    # frob:tests src/frob/gates/_refs.py::_native_stub_pairs  # noqa: E501
     def test_unlinked_pyi_with_no_adjacent_module_still_fires_ref001(
         self, tmp_path: Path
     ) -> None:
@@ -881,6 +884,7 @@ class TestVendoredTreeExempt:
 
         assert _rule_ids(violations, "node_modules") == []
 
+    # frob:tests src/frob/gates/_refs.py::_is_under_vendored_tree kind="unit"  # noqa: E501
     def test_a_real_orphan_outside_any_vendored_tree_still_fires(
         self, tmp_path: Path
     ) -> None:

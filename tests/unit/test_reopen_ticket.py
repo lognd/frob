@@ -54,6 +54,7 @@ def _load(root: Path, ticket_id: str):  # noqa: ANN001
 
 
 class TestReopenTicket:
+    # frob:tests src/frob/tickets/_reporting.py::reopen_ticket
     def test_reopen_requires_done(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         _write_ticket(
@@ -69,6 +70,7 @@ class TestReopenTicket:
         assert result.danger_err is TicketError.ReopenRequiresDone
         assert _load(tmp_path, "T-9101").state is TicketState.IN_PROGRESS
 
+    # frob:tests src/frob/tickets/_reporting.py::reopen_ticket
     def test_reopen_requires_reason(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         _write_ticket(
@@ -84,6 +86,7 @@ class TestReopenTicket:
         assert result.danger_err is TicketError.ReopenReasonMissing
         assert _load(tmp_path, "T-9102").state is TicketState.DONE
 
+    # frob:tests src/frob/tickets/_reporting.py::reopen_ticket
     def test_reopen_appends_dated_entry_and_requeues(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         _write_ticket(

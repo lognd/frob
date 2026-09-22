@@ -4,6 +4,7 @@ from pathlib import Path
 class TestSupplyChainUnpinnedDependencies:
     """T-1088: VET007, SC-ATTACK-UNPINNED-DEPENDENCIES."""
 
+    # frob:tests src/frob/vet/_supplychain.py::supply_chain_tree_violations
     def test_pyproject_caret_range_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_supplychain.py::_unpinned_dependency_violations \
         # kind="unit"

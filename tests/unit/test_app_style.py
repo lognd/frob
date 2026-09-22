@@ -251,6 +251,7 @@ def _init_frob_repo(root: Path) -> None:
     subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=root, check=True)
 
 
+# frob:tests src/frob/app/stats_runner.py::run
 def test_stats_plain_stdout_has_no_ansi(tmp_path, monkeypatch, capfd):
     # frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi \
     # kind="unit"

@@ -54,6 +54,9 @@ def _write_waiver(tmp_path: Path, name: str, rule: str) -> None:
 
 class TestRunScan:
     # frob:tests src/frob/app/ticket_runner/_waive_audit.py::AuditVerdict
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::run_scan
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::WaiveAuditScanReport
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::ScannedWaiver
     def test_no_watermark_bounds_catchup(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -70,6 +73,7 @@ class TestRunScan:
         assert len(report.scanned) == 2
         assert report.not_covered_count == 3
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::run_scan
     def test_watermark_malformed_is_unreadable(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         _write_waiver(tmp_path, "m.py", "DUP001")
@@ -84,6 +88,7 @@ class TestRunScan:
         assert report.mode == "unreadable"
         assert report.error is not None
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::run_scan
     def test_no_new_waivers_when_nothing_changed_since_watermark(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -119,6 +124,8 @@ class TestRunScan:
 
 
 class TestCompletePass:
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::complete_pass
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::WaiveAuditError
     def test_reviewed_count_mismatch_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -132,6 +139,7 @@ class TestCompletePass:
         assert result.is_err
         assert result.err is WaiveAuditError.ReviewCountMismatch
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::complete_pass
     def test_catchup_incomplete_refuses_full_completion(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -146,6 +154,7 @@ class TestCompletePass:
         assert result.is_err
         assert result.err is WaiveAuditError.CatchupIncomplete
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::complete_pass
     def test_matching_reviewed_count_advances_watermark(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -169,6 +178,7 @@ class TestPartialCatchup:
     (unchanged from before), and the NEXT scan must advance past what
     was already banked rather than re-offering the same window."""
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::complete_pass
     def test_partial_without_flag_still_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -184,6 +194,7 @@ class TestPartialCatchup:
         assert result.err is WaiveAuditError.CatchupIncomplete
         assert not watermark_path(tmp_path).exists()
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::complete_pass
     def test_partial_banks_batch_and_advances_watermark(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -204,6 +215,7 @@ class TestPartialCatchup:
         assert len(watermark.catchup_covered) == 1
         assert watermark_path(tmp_path).exists()
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::run_scan
     def test_next_scan_skips_already_banked_waivers(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -228,6 +240,7 @@ class TestPartialCatchup:
         scanned_identity = f"{report.scanned[0].file}:{report.scanned[0].line}:{report.scanned[0].rule}"
         assert scanned_identity not in first_covered
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::complete_pass
     def test_banking_the_final_batch_clears_catchup_state(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -269,6 +282,8 @@ class TestCollisionSuspects:
     matching waiver, and a quiet hardened site with zero violations
     anywhere, are BOTH not flagged."""
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::find_collision_suspects
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::CollisionSuspect
     def test_active_unsuppressed_violation_in_same_rule_and_file_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -297,6 +312,7 @@ class TestCollisionSuspects:
         assert suspects[0].file == "mod.py"
         assert suspects[0].colliding_violation_line == 10
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::find_collision_suspects
     def test_a_correctly_matching_live_waiver_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -323,6 +339,7 @@ class TestCollisionSuspects:
 
         assert suspects == ()
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::find_collision_suspects
     def test_a_quiet_hardened_site_with_zero_violations_anywhere_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -377,6 +394,7 @@ class TestCheckCollisionsWiring:
     this command's exit status."""
 
     # frob:ticket T-2496
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::find_collision_suspects
     def test_check_collisions_renders_suspects(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -457,6 +475,8 @@ class TestClassifyWaiverLiveness:
     def _report(waived: list[Violation]) -> GateReport:
         return GateReport(violations=(), waived=tuple(waived), stats=GateStats())
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::classify_waiver_liveness
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::WaiverLiveness
     def test_necessary_when_waived_this_run(self, tmp_path: Path) -> None:
         waiver = ScannedWaiver(
             file="mod.py", line=3, rule="DUP001", reason="suppresses a real finding"
@@ -478,6 +498,8 @@ class TestClassifyWaiverLiveness:
             is WaiverLiveness.NECESSARY
         )
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::classify_waiver_liveness
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::WaiverLiveness
     def test_inert_when_rule_does_not_scan_the_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -497,6 +519,7 @@ class TestClassifyWaiverLiveness:
             classify_waiver_liveness(waiver, report, tmp_path) is WaiverLiveness.INERT
         )
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::classify_waiver_liveness
     def test_unverified_when_no_checker_registered(self, tmp_path: Path) -> None:
         # No registered scan-membership checker exists for this rule id,
         # and nothing suppressed it this run -- the honest default, never
@@ -523,6 +546,7 @@ class TestClassifyWaiverLiveness:
 
         assert cfg.waive_audit_check_liveness is False
 
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::classify_waiver_liveness
     def test_necessary_never_inert_even_with_a_registered_checker(
         self, tmp_path: Path
     ) -> None:

@@ -51,6 +51,7 @@ class TestReapActiveChildren:
     real-world defect shape T-1378 fixed for the socket daemon, generalized
     here into the shared primitive both callers use."""
 
+    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children  # noqa: E501
     def test_terminates_and_joins_active_children(self) -> None:
         proc = multiprocessing.Process(target=_sleep_forever, daemon=False)
         proc.start()
@@ -66,6 +67,7 @@ class TestReapActiveChildren:
                 proc.kill()
                 proc.join(timeout=5)
 
+    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children  # noqa: E501
     def test_escalates_to_kill_if_terminate_does_not_stick(self) -> None:
         proc = multiprocessing.Process(target=_ignore_sigterm_and_sleep, daemon=False)
         proc.start()
@@ -84,6 +86,7 @@ class TestReapActiveChildren:
                 proc.kill()
                 proc.join(timeout=5)
 
+    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children  # noqa: E501
     def test_no_children_is_a_silent_noop(self) -> None:
         assert multiprocessing.active_children() == []
         assert reap_active_multiprocessing_children() == []
@@ -94,6 +97,7 @@ class TestInstallSigtermReaper:
     whatever handler was already registered. See T-2443 for the design
     rationale."""
 
+    # frob:tests src/frob/process/_reap.py::install_sigterm_reaper  # noqa: E501
     def test_installs_handler_once(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(_reap, "_sigterm_reaper_installed", False)
         monkeypatch.setattr(_reap, "_prior_sigterm_handler", None)
@@ -105,6 +109,7 @@ class TestInstallSigtermReaper:
         finally:
             signal.signal(signal.SIGTERM, prior)
 
+    # frob:tests src/frob/process/_reap.py::install_sigterm_reaper  # noqa: E501
     def test_second_call_is_a_noop(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(_reap, "_sigterm_reaper_installed", False)
         monkeypatch.setattr(_reap, "_prior_sigterm_handler", None)
@@ -227,10 +232,12 @@ class TestIsOrphanedForkserver:
         )
         assert _is_orphaned_forkserver(4242, tmp_path) is False
 
+    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver  # noqa: E501
     def test_non_forkserver_process_is_never_matched(self, tmp_path: Path) -> None:
         _write_proc_entry(tmp_path, 4242, cmdline=b"sleep\x0030\x00", ppid=1)
         assert _is_orphaned_forkserver(4242, tmp_path) is False
 
+    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver  # noqa: E501
     def test_missing_entry_is_false_not_raised(self, tmp_path: Path) -> None:
         assert _is_orphaned_forkserver(999999, tmp_path) is False
 
@@ -284,6 +291,7 @@ class TestReapOrphanedForkservers:
         assert reaped == []
         assert killed == []
 
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
     def test_leaves_non_forkserver_processes_alone(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -298,10 +306,12 @@ class TestReapOrphanedForkservers:
         assert reaped == []
         assert killed == []
 
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
     def test_missing_proc_returns_empty(self, tmp_path: Path) -> None:
         assert reap_orphaned_forkservers(proc=tmp_path / "does-not-exist") == []
 
     # frob:ticket T-3760
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="reads /proc/<pid>/stat for ppid+starttime; Linux-only primitive",
@@ -336,6 +346,7 @@ class TestReapOrphanedForkservers:
         reaped = reap_orphaned_forkservers(age_floor_s=300.0, proc=tmp_path)
         assert set(reaped) == {5000, 4242}
 
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
     def test_forkserver_under_a_live_check_is_never_reaped(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -453,6 +464,7 @@ class TestForkserverRootIsLiveCheck:
         live = {p for p in ppid_map if _is_live_check_process(p, tmp_path)}
         assert _forkserver_root_is_live_check(4242, ppid_map, live) is True
 
+    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
     def test_orphaned_forkserver_of_forkserver_is_orphaned(
         self, tmp_path: Path
     ) -> None:
@@ -463,6 +475,7 @@ class TestForkserverRootIsLiveCheck:
         live = {p for p in ppid_map if _is_live_check_process(p, tmp_path)}
         assert _forkserver_root_is_live_check(4242, ppid_map, live) is False
 
+    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
     def test_deep_chain_under_a_live_check_is_not_orphaned(
         self, tmp_path: Path
     ) -> None:
@@ -565,6 +578,7 @@ class TestCountRunningChecks:
     argv token pair, excludes the caller's own pid, degrades to `None`
     on an unreadable `/proc`."""
 
+    # frob:tests src/frob/process/_proc_scan.py::count_running_checks  # noqa: E501
     def test_counts_other_check_processes(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_counts_other_check_processes  # noqa: E501
         _write_proc_entry(
@@ -573,11 +587,13 @@ class TestCountRunningChecks:
         _write_proc_entry(tmp_path, 101, cmdline=b"frob\x00check\x00--json\x00", ppid=1)
         assert count_running_checks(proc=tmp_path, self_pid=1) == 2
 
+    # frob:tests src/frob/process/_proc_scan.py::count_running_checks  # noqa: E501
     def test_excludes_self(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_excludes_self  # noqa: E501
         _write_proc_entry(tmp_path, 200, cmdline=b"frob\x00check\x00", ppid=1)
         assert count_running_checks(proc=tmp_path, self_pid=200) == 0
 
+    # frob:tests src/frob/process/_proc_scan.py::count_running_checks  # noqa: E501
     def test_ignores_non_check_processes(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_ignores_non_check_processes  # noqa: E501
         # A different frob subcommand -- must NOT count as a check.
@@ -589,6 +605,7 @@ class TestCountRunningChecks:
         _write_proc_entry(tmp_path, 302, cmdline=b"pytest\x00check\x00", ppid=1)
         assert count_running_checks(proc=tmp_path, self_pid=1) == 0
 
+    # frob:tests src/frob/process/_proc_scan.py::count_running_checks  # noqa: E501
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_missing_proc_returns_none  # noqa: E501
         assert count_running_checks(proc=tmp_path / "does-not-exist") is None
@@ -654,6 +671,7 @@ class TestArmParentDeathSignal:
         assert result is True
         assert killed == [(os.getpid(), signal.SIGTERM)]
 
+    # frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
     def test_returns_false_off_linux(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_returns_false_off_linux  # noqa: E501
         monkeypatch.setattr(sys, "platform", "darwin")
@@ -748,6 +766,7 @@ class TestArmForkserverHelperPdeathsigIfRequested:
         _arm_forkserver_helper_pdeathsig_if_requested()
         assert called == []
 
+    # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
     def test_arms_when_env_var_set(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """T-2936: the call site passes NO explicit `sig` argument any
         more -- `arm_parent_death_signal` resolves its own safe default
@@ -767,6 +786,7 @@ class TestArmForkserverHelperPdeathsigIfRequested:
         _arm_forkserver_helper_pdeathsig_if_requested()
         assert called == 1
 
+    # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
     def test_success_logs_nothing_at_all(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -782,6 +802,7 @@ class TestArmForkserverHelperPdeathsigIfRequested:
             _arm_forkserver_helper_pdeathsig_if_requested()
         assert caplog.records == []
 
+    # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
     def test_failure_still_warns(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ) -> None:

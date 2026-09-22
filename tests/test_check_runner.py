@@ -466,6 +466,7 @@ class TestClaudeConfigDriftStage:
     # frob:tests \
     # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_not_applicable_when_home_claude_root_absent  # noqa: E501
     # frob:ticket T-4624
+    # frob:tests src/frob/app/check_runner.py::_claude_config_drift_result
     def test_not_applicable_when_home_claude_root_absent(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -505,6 +506,7 @@ class TestClaudeConfigDriftStage:
 
     # frob:tests \
     # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_clean_when_in_sync
+    # frob:tests src/frob/app/check_runner.py::_claude_config_drift_result
     def test_clean_when_in_sync(self, tmp_path: Path, monkeypatch) -> None:
         root = _claude_config_repo(tmp_path, monkeypatch)
         dest = Path.home() / ".claude" / "hooks" / "widget.py"
@@ -521,6 +523,7 @@ class TestClaudeConfigDriftStage:
 
     # frob:tests \
     # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_has_no_managed_config  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_claude_config_drift_result
     def test_no_stage_when_repo_has_no_managed_config(self, tmp_path: Path) -> None:
         root = tmp_path / "bare"
         root.mkdir()
@@ -558,6 +561,7 @@ class TestOnlyExcludesUnconditionalTail:
 
     # frob:tests \
     # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_only_known_stage_name_excludes_claude_config_drift  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_all_stages
     def test_only_known_stage_name_excludes_claude_config_drift(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -574,6 +578,7 @@ class TestOnlyExcludesUnconditionalTail:
 
     # frob:tests \
     # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_bare_run_still_includes_claude_config_drift  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_all_stages
     def test_bare_run_still_includes_claude_config_drift(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -589,6 +594,7 @@ class TestOnlyExcludesUnconditionalTail:
 
     # frob:tests \
     # tests/test_check_runner.py::TestOnlyExcludesUnconditionalTail.test_stage_total_excludes_tail_when_only_is_set  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_stage_total
     def test_stage_total_excludes_tail_when_only_is_set(
         self, tmp_path: Path, monkeypatch
     ) -> None:

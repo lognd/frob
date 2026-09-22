@@ -88,6 +88,7 @@ class TestCollectStacksViaSamplerArgvStripping:
         cfg = AppConfig(perf_argv=["foo"])
         assert self._captured_argv(monkeypatch, cfg) == ["foo"]
 
+    # frob:tests src/frob/app/perf_runner.py::_collect_stacks_via_sampler  # noqa: E501
     def test_marker_first_arg_is_stripped(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -97,6 +98,7 @@ class TestCollectStacksViaSamplerArgvStripping:
         cfg = AppConfig(perf_argv=["--", "foo"])
         assert self._captured_argv(monkeypatch, cfg) == ["foo"]
 
+    # frob:tests src/frob/app/perf_runner.py::_collect_stacks_via_sampler  # noqa: E501
     def test_empty_argv_falls_back_to_dash_q(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -112,6 +114,7 @@ class TestRenderDoableDispatchableByParentGrouping:
     parent_id in queue.tickets:` guard inside the `--by-parent` grouping
     path."""
 
+    # frob:tests src/frob/app/ticket_runner/_query.py::_render_doable_dispatchable  # noqa: E501
     def test_parent_id_not_in_queue_falls_back_to_no_parent_bucket(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -134,6 +137,7 @@ class TestRenderDoableDispatchableByParentGrouping:
         assert not any(r.levelname == "ERROR" for r in caplog.records)
         assert any("(no parent)" in r.message for r in caplog.records)
 
+    # frob:tests src/frob/app/ticket_runner/_query.py::_render_doable_dispatchable  # noqa: E501
     def test_parent_id_present_in_queue_uses_its_title(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -194,6 +198,7 @@ class TestCloseGuardsMutationEvidenceDowngrade:
         cfg = AppConfig(ticket_close_skip_mutation_evidence=skip)
         return ticket_runner._close_guards_for_ticket(Path("."), cfg, object())
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_close_guards_for_ticket  # noqa: E501
     def test_true_mutation_evidence_with_skip_flag_is_never_downgraded(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -209,6 +214,7 @@ class TestCloseGuardsMutationEvidenceDowngrade:
         )
         assert mutation_evidence is True
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_close_guards_for_ticket  # noqa: E501
     def test_false_mutation_evidence_with_skip_flag_is_downgraded_to_none(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -221,6 +227,7 @@ class TestCloseGuardsMutationEvidenceDowngrade:
         )
         assert mutation_evidence is None
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_close_guards_for_ticket  # noqa: E501
     def test_false_mutation_evidence_without_skip_flag_stays_false(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

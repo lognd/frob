@@ -97,6 +97,7 @@ def test_enclosing_class_py_none_for_top_level_function(tmp_path: Path) -> None:
 
 # frob:tests \
 # tests/unit/test_dup_legacy_py.py::test_enclosing_class_py_finds_class_for_method
+# frob:tests src/frob/dup/_legacy_py.py::_enclosing_class_py  # noqa: E501
 def test_enclosing_class_py_finds_class_for_method(tmp_path: Path) -> None:
     """A method's enclosing class name is recovered by walking up through
     the `block` node to the `class_definition`."""

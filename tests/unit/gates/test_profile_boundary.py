@@ -140,6 +140,7 @@ def _land_core(root, worktree):
         assert len(violations) >= 3
 
     # frob:ticket T-2362
+    # frob:tests src/frob/gates/_profile_boundary.py::profile_boundary_gate  # noqa: E501
     def test_settings_resolver_layer_itself_is_never_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -153,6 +154,7 @@ def _land_core(root, worktree):
         assert violations == ()
 
     # frob:ticket T-2362
+    # frob:tests src/frob/gates/_profile_boundary.py::profile_boundary_gate  # noqa: E501
     def test_pre_t2361_shape_is_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate.test_pre_t2361_shape_is_flagged  # noqa: E501
         """T-2362's own acceptance text: verify the gate fires against
@@ -182,6 +184,7 @@ def _is_rapid(root) -> bool:
         assert "src/frob/tickets/_evidence.py" in files
 
     # frob:ticket T-2362
+    # frob:tests src/frob/gates/_profile_boundary.py::profile_boundary_gate  # noqa: E501
     def test_tests_directory_is_not_scanned(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate.test_tests_directory_is_not_scanned  # noqa: E501
         """A test fixture constructing `ProfileName.STANDARD` to pass

@@ -45,11 +45,13 @@ def _init_repo(root: Path) -> None:
 
 class TestLoadWatermark:
     # frob:tests src/frob/gates/_waive_audit_watermark.py::WaiveAuditWatermarkError
+    # frob:tests src/frob/gates/_waive_audit_watermark.py::load_watermark
     def test_missing_file_is_not_found(self, tmp_path: Path) -> None:
         result = load_watermark(tmp_path)
         assert result.is_err
         assert result.err is WaiveAuditWatermarkError.NotFound
 
+    # frob:tests src/frob/gates/_waive_audit_watermark.py::load_watermark
     def test_malformed_json_is_malformed(self, tmp_path: Path) -> None:
         path = watermark_path(tmp_path)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -58,6 +60,7 @@ class TestLoadWatermark:
         assert result.is_err
         assert result.err is WaiveAuditWatermarkError.Malformed
 
+    # frob:tests src/frob/gates/_waive_audit_watermark.py::load_watermark
     def test_valid_file_round_trips(self, tmp_path: Path) -> None:
         watermark = WaiveAuditWatermark(
             commit_sha="deadbeef",
@@ -74,6 +77,9 @@ class TestLoadWatermark:
 
 
 class TestSaveWatermark:
+    # frob:tests src/frob/gates/_waive_audit_watermark.py::utc_now
+    # frob:tests src/frob/gates/_waive_audit_watermark.py::save_watermark
+    # frob:tests src/frob/gates/_waive_audit_watermark.py::WaiveAuditWatermark
     def test_round_trips_through_load(self, tmp_path: Path) -> None:
         watermark = WaiveAuditWatermark(
             commit_sha="cafef00d",
@@ -87,6 +93,7 @@ class TestSaveWatermark:
         assert reloaded.commit_sha == "cafef00d"
         assert reloaded.catchup_remaining == 7
 
+    # frob:tests src/frob/gates/_waive_audit_watermark.py::watermark_path
     def test_creates_parent_dir_if_missing(self, tmp_path: Path) -> None:
         """Proves `save_watermark` creates `waive-audit-watermark.json`
         at the repo root, whose parent (`tmp_path` itself, the pytest

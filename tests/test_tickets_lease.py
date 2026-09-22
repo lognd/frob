@@ -53,22 +53,27 @@ def _queue(*tickets: Ticket) -> TicketQueue:
 
 
 class TestGlobsIntersect:
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_wildcard_prefix_overlaps_literal(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal  # noqa: E501
         assert _globs_intersect("tests/**", "tests/test_gates.py") is True
 
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_disjoint_literal_siblings(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings
         assert _globs_intersect("tests/test_gates.py", "tests/test_vet.py") is False
 
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_disjoint_directory_siblings(self) -> None:
         assert _globs_intersect("src/frob/gates/**", "src/frob/vet/**") is False
 
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_identical_globs_overlap(self) -> None:
         assert _globs_intersect("src/frob/gates/**", "src/frob/gates/**") is True
 
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect  # noqa: E501
     def test_disjoint_wildcard_basenames_same_directory(self) -> None:
         # T-3180 MUST-STAY-QUIET: a wildcard-bearing add glob against a
         # held wildcard glob in the SAME directory, disjoint basenames --
@@ -88,6 +93,7 @@ class TestGlobsIntersect:
             is False
         )
 
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect  # noqa: E501
     def test_disjoint_literal_under_shared_doublestar(self) -> None:
         # T-3180: the literal (no wildcard) case must also stay quiet --
         # this one already passed before the fix; guard against regression.
@@ -99,17 +105,20 @@ class TestGlobsIntersect:
             is False
         )
 
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect  # noqa: E501
     def test_disjoint_wildcard_basenames_under_shared_doublestar(self) -> None:
         # T-3180 MUST-STAY-QUIET: disjoint basenames under a shared `**`
         # prefix -- two independent wildcard globs whose final-segment
         # literal prefixes cannot both match the same file.
         assert _globs_intersect("tests/**/test_a*.py", "tests/**/test_b*.py") is False
 
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect  # noqa: E501
     def test_doublestar_prefix_overlaps_nested_literal(self) -> None:
         # T-3180 MUST-FIRE: `tests/**/a*.py` genuinely overlaps a concrete
         # nested literal path it can match.
         assert _globs_intersect("tests/**/a*.py", "tests/unit/ab.py") is True
 
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_doublestar_subsumes_other_pattern(self) -> None:
         # T-3180 MUST-FIRE: a `**` that genuinely subsumes the other
         # pattern must still be refused.
@@ -117,6 +126,8 @@ class TestGlobsIntersect:
 
 
 class TestScopeOverlap:
+    # frob:tests src/frob/tickets/_models.py::scope_overlap
+    # frob:tests src/frob/tickets/_models.py::scope_overlap_globs
     def test_precise_scopes_disjoint(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestScopeOverlap.test_precise_scopes_disjoint
@@ -125,6 +136,7 @@ class TestScopeOverlap:
         assert scope_overlap(scope_a, scope_b) is False
         assert scope_overlap_globs(scope_a, scope_b) is None
 
+    # frob:tests src/frob/tickets/_models.py::scope_overlap_globs
     def test_real_collision_detected(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestScopeOverlap.test_real_collision_detected
@@ -141,6 +153,7 @@ class TestScopeOverlap:
 
 # frob:ticket T-2771
 class TestLeasedBy:
+    # frob:tests src/frob/tickets/_doable.py::leased_by  # noqa: E501
     def test_precise_in_progress_does_not_hide_disjoint(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_hide_disjoint  # noqa: E501
@@ -161,6 +174,7 @@ class TestLeasedBy:
         queue = _queue(holder_a, holder_b, candidate)
         assert leased_by(queue, candidate) == ()
 
+    # frob:tests src/frob/tickets/_doable.py::leased_by
     def test_real_source_scope_collision_is_hidden(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is_hidden  # noqa: E501
@@ -179,6 +193,7 @@ class TestLeasedBy:
         assert hits[0][0] == "T-1000"
 
     # frob:ticket T-2771
+    # frob:tests src/frob/tickets/_doable.py::leased_by
     def test_over_broad_lease_demotes_to_warn_only(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_warn_only  # noqa: E501
@@ -278,6 +293,7 @@ class TestDoable:
         queue = _queue(holder, candidate)
         assert [t.id for t in doable(queue)] == ["T-1001"]
 
+    # frob:tests src/frob/tickets/_doable.py::doable
     def test_ignore_lease_returns_raw_list(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
@@ -296,6 +312,7 @@ class TestDoable:
 
 
 class TestShowBlocked:
+    # frob:tests src/frob/tickets/_doable.py::doable_blocked
     def test_show_blocked_lists_reasons(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons
@@ -320,6 +337,7 @@ class TestShowBlocked:
 
 
 class TestLargeGlobWarnings:
+    # frob:tests src/frob/tickets/_doable.py::large_glob_warnings
     def test_fires_on_broad_tests_glob(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_glob  # noqa: E501
@@ -328,6 +346,7 @@ class TestLargeGlobWarnings:
         assert warnings
         assert "T-2000" in warnings[0]
 
+    # frob:tests src/frob/tickets/_doable.py::large_glob_warnings
     def test_silent_on_precise_test_file(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_test_file  # noqa: E501
@@ -374,6 +393,8 @@ class TestOverBroadLiteralGlobs:
     package-prefix entries from the project's own package name, instead
     of a hardcoded `src/frob/**`."""
 
+    # frob:tests src/frob/tickets/_models.py::over_broad_literal_globs  # noqa: E501
+    # frob:tests src/frob/lang/_nodes.py::declared_source_prefixes
     def test_derives_package_prefix_for_a_differently_named_project(
         self, tmp_path: Path
     ) -> None:
@@ -394,6 +415,7 @@ class TestOverBroadLiteralGlobs:
         assert warnings
         assert "chronically over-broad" in warnings[0]
 
+    # frob:tests src/frob/tickets/_models.py::over_broad_literal_globs  # noqa: E501
     def test_this_repos_own_src_frob_globs_are_unchanged(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_src_frob_globs_are_unchanged  # noqa: E501
@@ -433,6 +455,7 @@ class TestBreadthPerf:
     this repo's real worktree count (a full-tree `rglob` re-walked per
     pair)."""
 
+    # frob:tests src/frob/tickets/_doable.py::scope_breadth_context
     def test_computed_once_per_doable_call(self, tmp_path: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_call  # noqa: E501

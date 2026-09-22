@@ -405,6 +405,7 @@ class TestDoneReportCli:
     `frob.tickets.set_done_report` (T-0458): supplies ONLY the narrative,
     never touches markdown itself."""
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_done_report_base
     def test_cli_composes_and_writes(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes  # noqa: E501
         from frob.app.ticket_runner import _done_report
@@ -664,6 +665,7 @@ class TestReplaceEvidence:
             )
         return "T-0001"
 
+    # frob:tests src/frob/tickets/_evidence.py::replace_evidence
     def test_replaces_flat_evidence_and_acceptance_binding_atomically(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -696,6 +698,7 @@ class TestReplaceEvidence:
         assert change.new_node == "tests/x.py::test_new"
         assert change.reason == "test renamed, same coverage"
 
+    # frob:tests src/frob/tickets/_evidence.py::replace_evidence
     def test_old_node_absent_is_a_hard_refusal(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -787,6 +790,7 @@ class TestReplaceEvidenceCli:
     layer (`_evidence`/`_apply_replace_evidence`) wiring `replace_evidence`
     through the same collect/pass oracle `--evidence` ids use."""
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_resolve_evidence_replace_reason  # noqa: E501
     def test_cli_replaces_and_commits(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

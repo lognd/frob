@@ -295,6 +295,7 @@ class TestInv003Gate:
 
 class TestInv004Gate:
     # frob:tests src/frob/gates/_inv.py::inv004_gate
+    # frob:tests src/frob/gates/invariants.py::find_normative_claims kind="unit"  # noqa: E501
     def test_section_with_normative_language_and_no_invariant_is_advisory(
         self, tmp_path: Path
     ) -> None:
@@ -516,6 +517,7 @@ class TestExcludeHazardGate:
         assert violations[0].severity == Severity.ERROR
         assert "src/pkg" in violations[0].message
 
+    # frob:tests src/frob/gates/_exclude_hazard.py::exclude_hazard_gate  # noqa: E501
     def test_entry_matching_no_tracked_path_is_silent(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/pkg/a.py", "x = 1\n")
         _git_init(tmp_path)
@@ -596,6 +598,8 @@ class TestRootAssetDirGate:
         assert violations[0].file == "orphan"
 
     # frob:tests src/frob/gates/_root_asset_dirs.py::root_asset_dir_gate
+    # frob:tests src/frob/lang/_nodes.py  # noqa: E501
+    # frob:tests src/frob/lang/_nodes.py::declared_project_package_name  # noqa: E501
     def test_unreferenced_root_directory_fires_for_a_differently_named_project(
         self, tmp_path: Path
     ) -> None:
@@ -826,6 +830,8 @@ class TestEnvVarDocGate:
         assert violations[0].line == 1
 
     # frob:tests src/frob/gates/_env_var_docs.py::env_var_doc_gate
+    # frob:tests src/frob/lang/_nodes.py  # noqa: E501
+    # frob:tests src/frob/lang/_nodes.py::declared_project_package_name  # noqa: E501
     def test_undocumented_env_var_fires_for_a_differently_named_project(
         self, tmp_path: Path
     ) -> None:
@@ -932,6 +938,7 @@ class TestInvariantLoad:
     in `.errors`, never a whole-load failure, and never silently dropped
     either (`.errors` always names it)."""
 
+    # frob:tests src/frob/gates/invariants.py::InvariantLoadError
     def test_malformed_bad_id(self, tmp_path: Path) -> None:
         (tmp_path / "invariants").mkdir()
         (tmp_path / "invariants" / "INV-abc.md").write_text(
@@ -997,6 +1004,7 @@ class TestInvariantLoad:
         assert loaded.errors == ()
         assert loaded.invariants[0].id == "INV-ADMIN-DATA-001"
 
+    # frob:tests src/frob/gates/invariants.py::LoadedInvariants
     def test_one_malformed_file_does_not_block_others(self, tmp_path: Path) -> None:
         """T-4019 defect 2 (blast radius): a malformed file alongside a
         valid one produces exactly one `InvariantLoadError` for the bad
@@ -1183,6 +1191,7 @@ class TestTimeStableGate:
         assert violations == ()
 
     # frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_baseline_failure_is_skipped_not_double_reported  # noqa: E501
+    # frob:tests src/frob/gates/_inv.py::time_stable_gate  # noqa: E501
     def test_baseline_failure_is_skipped_not_double_reported(
         self, tmp_path: Path
     ) -> None:
@@ -1201,6 +1210,7 @@ class TestTimeStableGate:
         violations = time_stable_gate(tmp_path, (inv,), snap)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_inv.py::time_stable_gate  # noqa: E501
     def test_no_time_stable_anchor_is_silent(self, tmp_path: Path) -> None:
         """An invariant with no `kind="time-stable"` anchor at all is not
         this gate's concern (a bare `frob:invariant` anchor, or none)."""
@@ -1253,6 +1263,7 @@ class TestRace001Violations:
         assert fires[0].symref == "src/frob/pkg/quota.py::bump"
 
     # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_silent_when_a_lock_guards_the_read_then_write  # noqa: E501
+    # frob:tests src/frob/gates/_inv.py::race001_violations  # noqa: E501
     def test_silent_when_a_lock_guards_the_read_then_write(
         self, tmp_path: Path
     ) -> None:
@@ -1277,6 +1288,7 @@ class TestRace001Violations:
         assert [v for v in violations if v.rule == "RACE001"] == []
 
     # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_silent_when_read_and_write_target_different_keys  # noqa: E501
+    # frob:tests src/frob/gates/_inv.py::race001_violations  # noqa: E501
     def test_silent_when_read_and_write_target_different_keys(
         self, tmp_path: Path
     ) -> None:
@@ -1297,6 +1309,7 @@ class TestRace001Violations:
         assert [v for v in violations if v.rule == "RACE001"] == []
 
     # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_test_obligation_fires_with_no_concurrent_binding_test  # noqa: E501
+    # frob:tests src/frob/gates/_inv.py::race001_violations  # noqa: E501
     def test_test_obligation_fires_with_no_concurrent_binding_test(
         self, tmp_path: Path
     ) -> None:
@@ -1327,6 +1340,7 @@ class TestRace001Violations:
         assert fires[0].symref == "src/frob/pkg/quota.py::bump"
 
     # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_test_obligation_satisfied_by_a_concurrent_binding_test  # noqa: E501
+    # frob:tests src/frob/gates/_inv.py::race001_violations  # noqa: E501
     def test_test_obligation_satisfied_by_a_concurrent_binding_test(
         self, tmp_path: Path
     ) -> None:

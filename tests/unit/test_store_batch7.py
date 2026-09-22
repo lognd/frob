@@ -35,6 +35,7 @@ def _base_ticket(ticket_id: str = "T-0001") -> Ticket:
 
 
 class TestMigrateToLedger:
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_to_ledger  # noqa: E501
     def test_atomic_write_failure_propagates(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

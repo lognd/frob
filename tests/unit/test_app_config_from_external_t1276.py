@@ -33,6 +33,7 @@ class TestFromExternal:
         assert cfg.subcommand is None
         assert cfg.no_color is False
 
+    # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"  # noqa: E501
     def test_reads_and_merges_tool_frob_table(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_reads_and_merges_tool_frob_table  # noqa: E501
@@ -42,6 +43,7 @@ class TestFromExternal:
         cfg = AppConfig.from_external(args, cfg_file)
         assert cfg.check_type == "lint"
 
+    # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"  # noqa: E501
     def test_subcommand_is_resolved_to_the_enum(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_subcommand_is_resolved_to_the_enum  # noqa: E501
@@ -49,6 +51,7 @@ class TestFromExternal:
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.subcommand is Subcommand.doctor
 
+    # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"  # noqa: E501
     def test_no_color_flag_is_copied_when_present(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_no_color_flag_is_copied_when_present  # noqa: E501
@@ -56,6 +59,7 @@ class TestFromExternal:
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.no_color is True
 
+    # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"  # noqa: E501
     def test_string_field_from_the_first_copy_loop_is_carried(
         self, tmp_path: Path
     ) -> None:
@@ -66,6 +70,7 @@ class TestFromExternal:
         assert cfg.check_type == "policy"
         assert cfg.check_ticket == "T-0001"
 
+    # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"  # noqa: E501
     def test_bool_flag_from_the_second_copy_loop_defaults_false(
         self, tmp_path: Path
     ) -> None:
@@ -75,6 +80,7 @@ class TestFromExternal:
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.fmt_check is False
 
+    # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"  # noqa: E501
     def test_bool_flag_from_the_second_copy_loop_is_set_true(
         self, tmp_path: Path
     ) -> None:
@@ -107,6 +113,7 @@ class TestFromExternal:
 
 
 class TestFromArgs:
+    # frob:tests src/frob/app/config.py::AppConfig.from_args kind="unit"  # noqa: E501
     def test_delegates_to_from_external_with_pyproject_default(
         self, tmp_path: Path, monkeypatch
     ) -> None:

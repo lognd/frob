@@ -106,6 +106,7 @@ def _seed_in_progress_ticket(tmp_path: Path) -> Ticket:
 
 
 class TestRecordReview:
+    # frob:tests src/frob/tickets/_reporting.py::record_review
     def test_appends_approve_entry(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry
@@ -129,6 +130,7 @@ class TestRecordReview:
         assert entry.commit == full_sha
         assert entry.at == date.today()
 
+    # frob:tests src/frob/tickets/_reporting.py::record_review
     def test_blank_findings_rejected(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected
@@ -145,6 +147,7 @@ class TestRecordReview:
         assert result.is_err
         assert result.danger_err == TicketError.ReviewFindingsMissing
 
+    # frob:tests src/frob/tickets/_reporting.py::record_review
     def test_multiple_reviews_append_only(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_review.py::TestRecordReview.test_multiple_reviews_append_only  # noqa: E501
         full_sha = _init_git_repo(tmp_path)
@@ -169,6 +172,7 @@ class TestRecordReview:
         assert result.is_ok, result
         assert len(result.danger_ok.reviews) == 2
 
+    # frob:tests src/frob/tickets/_reporting.py::_resolve_review_commit
     def test_unresolvable_commit_rejected(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_review.py::TestRecordReview.test_unresolvable_commit_rejected  # noqa: E501
         _init_git_repo(tmp_path)
@@ -188,6 +192,7 @@ class TestRecordReview:
         reload = load_queue(tmp_path).danger_ok.tickets[ticket.id]
         assert reload.reviews == ()
 
+    # frob:tests src/frob/tickets/_reporting.py::_resolve_review_commit
     def test_short_sha_normalized_to_full_sha(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_review.py::TestRecordReview.test_short_sha_normalized_to_full_sha  # noqa: E501
         full_sha = _init_git_repo(tmp_path)
@@ -210,6 +215,7 @@ class TestRecordReview:
 
 
 class TestHasApprovedReviewForCommit:
+    # frob:tests src/frob/tickets/_reporting.py::has_approved_review_for_commit
     def test_true_only_for_matching_approve(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_review.py::TestHasApprovedReviewForCommit.test_true_only_for_matching_approve  # noqa: E501
         first_sha = _init_git_repo(tmp_path)
@@ -247,6 +253,7 @@ class TestLoadRequireReviewForClose:
         # frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_defaults_false_with_no_frob_toml  # noqa: E501
         assert load_require_review_for_close(tmp_path) is False
 
+    # frob:tests src/frob/tickets/__init__.py::load_require_review_for_close
     def test_true_when_configured(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_true_when_configured  # noqa: E501
         (tmp_path / "frob.toml").write_text(
@@ -254,6 +261,7 @@ class TestLoadRequireReviewForClose:
         )
         assert load_require_review_for_close(tmp_path) is True
 
+    # frob:tests src/frob/tickets/__init__.py::load_require_review_for_close  # noqa: E501
     def test_false_when_absent_from_section(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_false_when_absent_from_section  # noqa: E501
         (tmp_path / "frob.toml").write_text(
@@ -263,6 +271,7 @@ class TestLoadRequireReviewForClose:
 
 
 class TestReviewCli:
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_review
     def test_cli_writes_review_record(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_review.py::TestReviewCli.test_cli_writes_review_record
@@ -290,6 +299,7 @@ class TestReviewCli:
         assert reload.reviews[0].commit == full_sha
         assert reload.reviews[0].findings == "verified the counterexample probe"
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_review
     def test_cli_requires_all_flags(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_review.py::TestReviewCli.test_cli_requires_all_flags

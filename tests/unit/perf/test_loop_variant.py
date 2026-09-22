@@ -60,6 +60,7 @@ class TestPerf015:
     iteration-source-name threshold so trivial loop-variant calls do not
     flood the report."""
 
+    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations  # noqa: E501
     def test_loop_variant_ticket_id_spawn_is_flagged_advisory(
         self, tmp_path: Path
     ) -> None:
@@ -73,6 +74,7 @@ class TestPerf015:
         violations = loop_variant_effect_violations([parsed])
         assert any(v.rule == "PERF015" for v in violations)
 
+    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations  # noqa: E501
     def test_loop_variant_call_without_iteration_source_name_is_not_flagged(
         self, tmp_path: Path
     ) -> None:

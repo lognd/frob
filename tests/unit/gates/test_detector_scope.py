@@ -33,12 +33,14 @@ class TestDetectorScope:
         excluded -- not silently omitted by guesswork."""
         assert not is_detector_package_file("src/frob/arch/_layering.py")
 
+    # frob:tests src/frob/gates/_detector_scope.py::is_detector_package_file kind="unit"  # noqa: E501
     def test_unrelated_package_is_not_a_member(self) -> None:
         """A package with no detector shape at all (`app/`) stays
         excluded -- this is a narrow, measured allowlist, not a repo-wide
         default."""
         assert not is_detector_package_file("src/frob/app/config.py")
 
+    # frob:tests src/frob/gates/_detector_scope.py::DETECTOR_PACKAGE_ROOTS kind="unit"  # noqa: E501
     def test_roots_are_sorted_and_slash_terminated(self) -> None:
         """Every root is a directory PREFIX (trailing slash, so
         `src/frob/gates_extra/` can never falsely match `src/frob/gates/`
@@ -46,6 +48,7 @@ class TestDetectorScope:
         assert list(DETECTOR_PACKAGE_ROOTS) == sorted(DETECTOR_PACKAGE_ROOTS)
         assert all(root.endswith("/") for root in DETECTOR_PACKAGE_ROOTS)
 
+    # frob:tests src/frob/gates/_detector_scope.py::tracked_gate_files kind="unit"  # noqa: E501
     def test_tracked_gate_files_filters_to_detector_roots(self) -> None:
         """Asserts `tracked_gate_files` returns only files under
         `DETECTOR_PACKAGE_ROOTS`, sourced from this repo's own tracked
@@ -59,6 +62,7 @@ class TestDetectorScope:
         assert files
         assert all(is_detector_package_file(rel) for rel in files)
 
+    # frob:tests src/frob/gates/_detector_scope.py::tracked_repo_python_files kind="unit"  # noqa: E501
     def test_tracked_repo_python_files_is_repo_wide_not_detector_scoped(self) -> None:
         """T-3275: `tracked_repo_python_files` returns the UNFILTERED
         `src/frob/**/*.py` population (PORT001's own scan population,

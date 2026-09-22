@@ -144,6 +144,7 @@ class TestHardRegression:
 
 
 class TestQuarantine:
+    # frob:tests src/frob/testing/_stability.py::quarantined_node_ids
     def test_explicit_ticket(self, tmp_path: Path) -> None:
         # frob:tests src/frob/testing/_stability.py::quarantine
         ticket = new_ticket(

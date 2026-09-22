@@ -96,6 +96,7 @@ class TestParsePerfScript:
 class TestParseV8CpuProfile:
     """`node --cpu-prof` `.cpuprofile` JSON -> `SampledStack`s."""
 
+    # frob:tests src/frob/perf/_collectors.py::parse_v8_cpuprofile kind="unit"  # noqa: E501
     def test_parses_committed_fixture_walking_parent_chain(self) -> None:
         """Each sample's leaf id is walked up the node/children tree into
         a full leaf-first stack; V8's 0-based line becomes 1-based."""
@@ -148,6 +149,7 @@ class TestParseV8CpuProfile:
 class TestBuildClassToFile:
     """JVM dotted-class-name -> source-file map, derived from `NormalizedModule`s."""
 
+    # frob:tests src/frob/perf/_collectors.py::build_class_to_file kind="unit"  # noqa: E501
     def test_maps_unambiguous_class_to_its_file(self) -> None:
         module = NormalizedModule(
             path="src/HotLoop.kt",
@@ -177,6 +179,7 @@ class TestBuildClassToFile:
 class TestParseJfrPrint:
     """`jfr print --events jdk.ExecutionSample` text output -> `SampledStack`s."""
 
+    # frob:tests src/frob/perf/_collectors.py::parse_jfr_print kind="unit"  # noqa: E501
     def test_parses_committed_fixture_into_leaf_first_stacks(self) -> None:
         text = (_FIXTURES / "sample.jfr.txt").read_text()
         class_to_file = {"com.example.HotLoop": "src/HotLoop.kt"}
@@ -233,6 +236,7 @@ class TestParseJfrPrint:
 class TestDetectCollectorFormat:
     """`detect_collector_format` autodetection (T-0765)."""
 
+    # frob:tests src/frob/perf/_collectors.py::detect_collector_format kind="unit"  # noqa: E501
     def test_cpuprofile_extension_is_v8(self) -> None:
         """`.cpuprofile` is decided by extension alone."""
         assert detect_collector_format(Path("out.cpuprofile"), "{}") == "v8-cpuprofile"
@@ -253,6 +257,7 @@ class TestDetectCollectorFormat:
 class TestParseCollectorFormat:
     """`parse_collector_format`'s single dispatch call site (T-0765)."""
 
+    # frob:tests src/frob/perf/_collectors.py::parse_collector_format kind="unit"  # noqa: E501
     @pytest.mark.parametrize(
         ("fmt", "fixture_name"),
         [
@@ -275,6 +280,7 @@ class TestParseCollectorFormat:
 class TestBuildIndexForFiles:
     """`build_index_for_files`'s multi-language, best-effort index (T-0765)."""
 
+    # frob:tests src/frob/perf/_collectors.py::build_index_for_files kind="unit"  # noqa: E501
     def test_resolves_a_real_python_file_in_the_repo(self) -> None:
         """A stack landing on a real, on-disk python function resolves to
         that function's section -- proving the shared helper `_harness`
@@ -344,6 +350,7 @@ class TestLanguageDeciles:
         assert rows[0].language == UNATTRIBUTED_SECTION_ID
         assert rows[0].weight == 4.0
 
+    # frob:tests src/frob/perf/_hotgraph.py::language_deciles  # noqa: E501
     def test_resolve_stream_output_feeds_language_deciles_end_to_end(self) -> None:
         """A real `SampledStack` -> `resolve_stream` -> `language_deciles`
         round trip, proving the pieces `frob perf collect` wires together

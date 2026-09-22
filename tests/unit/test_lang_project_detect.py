@@ -76,6 +76,7 @@ def test_unreadable_version_file(tmp_path: Path):
     assert result.danger_err is UnityProjectDetectError.NotUnityProject
 
 
+# frob:tests src/frob/lang/_project_detect.py::UnityProjectDetectError
 def test_malformed_version_file(tmp_path: Path):
     """ProjectVersion.txt exists but has no `m_EditorVersion` line."""
     # frob:tests src/frob/lang/_project_detect.py::detect_unity_project kind="unit"
@@ -88,6 +89,9 @@ def test_malformed_version_file(tmp_path: Path):
     assert result.danger_err is UnityProjectDetectError.VersionFileMalformed
 
 
+# frob:tests src/frob/lang/_project_detect.py::_parse_editor_version
+# frob:tests src/frob/lang/_project_detect.py::_EDITOR_VERSION_RE
+# frob:tests src/frob/lang/_project_detect.py::UnityProjectInfo
 def test_parses_editor_version(tmp_path: Path):
     """The editor version parsed matches the `m_EditorVersion:` value
     exactly, ignoring the trailing revision-hash line."""
@@ -97,6 +101,7 @@ def test_parses_editor_version(tmp_path: Path):
     assert result.danger_ok.editor_version == "2022.3.5f1"
 
 
+# frob:tests src/frob/lang/_project_detect.py::_parse_editor_version  # noqa: E501
 def test_missing_editor_version_line_is_malformed(tmp_path: Path):
     """A ProjectVersion.txt with only unrelated keys is malformed, not a
     silent empty-string version."""

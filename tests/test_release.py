@@ -92,6 +92,7 @@ def test_load_manifest_reads_stamped_version(tmp_path):
     assert any("public" in ref for ref in manifest.api)
 
 
+# frob:tests src/frob/release/__init__.py::satisfies
 def test_required_version_and_satisfies():
     assert required_version("1.2.3", BumpClass.MAJOR).danger_ok == "2.0.0"
     assert required_version("1.2.3", BumpClass.MINOR).danger_ok == "1.3.0"
@@ -102,6 +103,8 @@ def test_required_version_and_satisfies():
 
 # frob:ticket T-4270
 # frob:ticket T-4623
+# frob:tests src/frob/release/__init__.py::next_dev_version
+# frob:tests src/frob/release/__init__.py::_parse
 def test_dev_prerelease_and_final_sort_in_pep440_order():
     """Asserts a dev build, a pre-release, and the final release of the
     same version sort in PEP 440 order (dev < pre-release < final) by
@@ -114,6 +117,7 @@ def test_dev_prerelease_and_final_sort_in_pep440_order():
 
 
 # frob:ticket T-4270
+# frob:tests src/frob/release/__init__.py::satisfies
 def test_prerelease_does_not_satisfy_its_final_release_minimum():
     """T-4270 acceptance [2]: a pre-release must not be treated as
     satisfying the minimum-version check for its own final release --
@@ -123,6 +127,7 @@ def test_prerelease_does_not_satisfy_its_final_release_minimum():
 
 
 # frob:ticket T-4270
+# frob:tests src/frob/release/__init__.py::satisfies
 def test_trailing_hyphen_number_parses_as_post_release_not_prerelease():
     """T-4270: a trailing hyphen-number (`1.2.3-1`) reads like a semver
     pre-release but PEP 440 parses it as a POST-release, so it sorts
@@ -132,6 +137,7 @@ def test_trailing_hyphen_number_parses_as_post_release_not_prerelease():
 
 
 # frob:ticket T-4270
+# frob:tests src/frob/release/__init__.py::_parse
 def test_unparseable_version_is_inspectable_failure_not_truncated_value():
     """T-4270 acceptance [3]: a version string the parser cannot interpret
     produces `None`/`Err`, never a confident value silently computed from
@@ -323,6 +329,8 @@ class TestChangelogFragments:
     deterministic/idempotent CHANGELOG.md section assembly."""
 
     # frob:tests src/frob/release/_fragments.py::ChangelogFragment  # noqa: E501
+    # frob:tests src/frob/release/_fragments.py::write_changelog_fragment  # noqa: E501
+    # frob:tests src/frob/release/_fragments.py::fragment_path  # noqa: E501
     def test_write_then_read_round_trips(self, tmp_path):
         # frob:tests \
         # tests/test_release.py::TestChangelogFragments.test_write_then_read_round_trips
@@ -368,6 +376,7 @@ class TestChangelogFragments:
         ids = [f.ticket_id for f in fragments.danger_ok]
         assert ids == ["T-2", "T-10"]
 
+    # frob:tests src/frob/release/_fragments.py::read_changelog_fragments  # noqa: E501
     def test_read_fails_closed_on_a_malformed_fragment(self, tmp_path):
         # frob:tests \
         # tests/test_release.py::TestChangelogFragments.test_read_fails_closed_on_a_malformed_fragment  # noqa: E501
@@ -394,6 +403,7 @@ class TestChangelogFragments:
         assert (tmp_path / "CHANGELOG.md").read_text() == "# Changelog\n"
 
     # frob:tests src/frob/release/_fragments.py::assemble_changelog_from_fragments  # noqa: E501
+    # frob:tests src/frob/release/_fragments.py::fragment_dir  # noqa: E501
     def test_assemble_writes_every_fragment_as_a_bullet(self, tmp_path):
         # frob:tests \
         # tests/test_release.py::TestChangelogFragments.test_assemble_writes_every_fragment_as_a_bullet  # noqa: E501
@@ -416,6 +426,7 @@ class TestChangelogFragments:
         assert "T-0002: second thing" in text
         assert "## [1.0.0] - unreleased" in text  # old entry survives
 
+    # frob:tests src/frob/release/_fragments.py::assemble_changelog_from_fragments  # noqa: E501
     def test_assemble_is_idempotent_and_picks_up_new_fragments(self, tmp_path):
         # frob:tests \
         # tests/test_release.py::TestChangelogFragments.test_assemble_is_idempotent_and_picks_up_new_fragments  # noqa: E501
@@ -753,6 +764,7 @@ def _write_pyproject(root: Path, version: str) -> None:
 class TestCurrentVersion:
     """`current_version` (T-2242): read-only pyproject.toml version read."""
 
+    # frob:tests src/frob/release/__init__.py::current_version  # noqa: E501
     def test_reads_pyproject_version(self, tmp_path):
         _write_pyproject(tmp_path, "1.2.3")
         result = current_version(tmp_path)
@@ -775,6 +787,7 @@ class TestCurrentVersion:
 class TestNextPatchVersion:
     """`next_patch_version` (T-2242): pure X.Y.Z -> X.Y.(Z+1)."""
 
+    # frob:tests src/frob/release/__init__.py::next_patch_version  # noqa: E501
     def test_increments_patch_component(self):
         result = next_patch_version("1.2.3")
         assert result.is_ok
@@ -790,6 +803,7 @@ class TestBumpPatchVersion:
     """`bump_patch_version` (T-2242): the canonical, single-home patch bump
     `scripts/bump_version.py` and `frob release publish` both call."""
 
+    # frob:tests src/frob/release/__init__.py::bump_patch_version  # noqa: E501
     def test_bumps_and_writes_pyproject(self, tmp_path):
         _write_pyproject(tmp_path, "0.1.0")
         result = bump_patch_version(tmp_path)
@@ -815,6 +829,7 @@ class TestPublish:
     non-negotiable safety constraint)."""
 # frob:tests src/frob/release/_publish.py::PublishPlan
 
+    # frob:tests src/frob/release/_publish.py::publish
     def test_dry_run_does_not_mutate_anything(self, tmp_path, monkeypatch):
         # frob:tests \
         # tests/test_release.py::TestPublish.test_dry_run_does_not_mutate_anything
@@ -841,6 +856,8 @@ class TestPublish:
         assert current_version(tmp_path).danger_ok == "1.0.0"
         assert not (tmp_path / ".frob-release.json").exists()
 
+    # frob:tests src/frob/release/_publish.py::publish
+    # frob:tests src/frob/release/_publish.py::PublishReport
     def test_real_run_composes_every_step_in_order(self, tmp_path, monkeypatch):
         # frob:tests \
         # tests/test_release.py::TestPublish.test_real_run_composes_every_step_in_order
@@ -909,6 +926,7 @@ class TestPublish:
         # this proves the sequence stops rather than silently continuing
         assert current_version(tmp_path).danger_ok == "1.0.1"
 
+    # frob:tests src/frob/release/_publish.py::publish  # noqa: E501
     def test_env_only_loaded_on_a_real_run(self, tmp_path, monkeypatch):
         # frob:tests \
         # tests/test_release.py::TestPublish.test_env_only_loaded_on_a_real_run
@@ -963,6 +981,7 @@ class TestRunReleasePublishCommand:
         out = capsys.readouterr().out
         assert "would bump 2.0.0 -> 2.0.1" in out
 
+    # frob:tests src/frob/release/_cli.py::run_release_publish_command  # noqa: E501
     def test_publish_failure_exits_nonzero(self, tmp_path, monkeypatch, capsys):
         # frob:tests \
         # tests/test_release.py::TestRunReleasePublishCommand.test_publish_failure_exits_nonzero  # noqa: E501
@@ -1012,6 +1031,7 @@ class TestAddReleaseStatusParser:
     # frob:ticket T-4301
     # frob:tests \
     # tests/test_release.py::TestAddReleaseStatusParser.test_registers_release_status
+    # frob:tests src/frob/release/_cli.py::add_release_status_parser
     def test_registers_release_status(self):
         import argparse
 
@@ -1034,6 +1054,7 @@ class TestRunReleaseStatusCommand:
     # frob:ticket T-4301
     # frob:tests \
     # tests/test_release.py::TestRunReleaseStatusCommand.test_reports_bump_required_when_gate_refuses  # noqa: E501
+    # frob:tests src/frob/release/_cli.py::run_release_status_command
     def test_reports_bump_required_when_gate_refuses(self, tmp_path, capsys):
         import argparse
 
@@ -1065,6 +1086,7 @@ class TestRunReleaseStatusCommand:
     # frob:ticket T-4301
     # frob:tests \
     # tests/test_release.py::TestRunReleaseStatusCommand.test_reports_ok_and_dev_bump_toggle_state  # noqa: E501
+    # frob:tests src/frob/release/_cli.py::run_release_status_command
     def test_reports_ok_and_dev_bump_toggle_state(self, tmp_path, capsys):
         import argparse
 
@@ -1135,6 +1157,7 @@ class TestNoStrayFragmentForNonDoneTicket:
 
 
 # frob:ticket T-4184
+# frob:tests src/frob/release/__init__.py::next_dev_version
 def test_next_dev_version_starts_and_advances_a_cycle():
     """T-4184 must-fire fixture: a plain final release starts a new dev
     cycle on top of the next patch (`.dev1`), and an existing dev build
@@ -1174,6 +1197,7 @@ def test_dev_version_bump_ordering_matches_worked_example():
 
 
 # frob:ticket T-4184
+# frob:tests src/frob/release/__init__.py::dev_version_bump_enabled kind="unit"  # noqa: E501
 def test_dev_version_bump_enabled_defaults_true_and_reads_pyproject(tmp_path):
     """`dev_version_bump_enabled` defaults on (core functionality, not an
     opt-in convenience) for a repo with no `[tool.frob]` table at all, and
@@ -1188,6 +1212,7 @@ def test_dev_version_bump_enabled_defaults_true_and_reads_pyproject(tmp_path):
 
 
 # frob:ticket T-4184
+# frob:tests src/frob/release/__init__.py::dev_version_major_ack kind="unit"  # noqa: E501
 def test_dev_version_major_ack_defaults_zero_and_reads_pyproject(tmp_path):
     """`dev_version_major_ack` defaults to `0` (nothing acknowledged) and
     reads the configured value once set -- the acknowledgement this

@@ -32,6 +32,7 @@ class TestAutoDisposeFiledFindings:
     verify dispose --file-ticket` after every red batch."""
 
     # frob:ticket T-2208
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_auto_dispose_filed_findings  # noqa: E501
     def test_disposes_findings_the_ticket_covers(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings.test_disposes_findings_the_ticket_covers  # noqa: E501
         from frob.verify import record_intent
@@ -67,6 +68,7 @@ class TestAutoDisposeFiledFindings:
     # frob:ticket T-2208
     # frob:ticket T-2604
     # frob:ticket T-4626
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_auto_dispose_filed_findings  # noqa: E501
     def test_leaves_quarantine_raised_when_other_findings_remain_undisposed(
         self, tmp_path: Path
     ) -> None:
@@ -117,6 +119,7 @@ class TestAutoDisposeFiledFindings:
     # auto-dispose call downstream of it is a no-op when there was nothing to dispose \
     # in the first place; a shared helper would hide which capability each test is \
     # pinning"
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_auto_dispose_filed_findings  # noqa: E501
     def test_no_quarantine_raised_is_a_silent_no_op(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings.test_no_quarantine_raised_is_a_silent_no_op  # noqa: E501
         from frob.verify._quarantine import is_quarantined
@@ -136,6 +139,7 @@ class TestAutoDisposeFiledFindings:
     # logged and swallowed, never raised), applied to the OTHER quarantine write this \
     # ticket adds (clear_quarantine, not raise_quarantine); collapsing the two would \
     # obscure which call each test pins down"
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_auto_dispose_filed_findings  # noqa: E501
     def test_clear_failure_is_logged_not_raised(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -174,6 +178,7 @@ class TestCloseResolvedSweepTickets:
     next time the sweep can prove it, reusing the rolling-baseline diff
     the sweep already computes for the opposite direction."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_parse_sweep_ticket_identities
     def test_non_sweep_ticket_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_non_sweep_ticket_returns_none  # noqa: E501
         ticket_id = _seed_ticket(tmp_path)
@@ -184,6 +189,7 @@ class TestCloseResolvedSweepTickets:
         ticket = queue.danger_ok.tickets[ticket_id]
         assert _parse_sweep_ticket_identities(ticket) is None
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_parse_sweep_ticket_identities
     def test_parses_a_sweep_titled_ticket_identity_set(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_parses_a_sweep_titled_ticket_identity_set  # noqa: E501
         findings = frozenset({("RULE1", "a.py"), ("RULE2", "b.py")})
@@ -196,6 +202,7 @@ class TestCloseResolvedSweepTickets:
         ticket = queue.danger_ok.tickets[filed]
         assert _parse_sweep_ticket_identities(ticket) == findings
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_close_resolved_sweep_tickets  # noqa: E501
     def test_drops_a_fully_resolved_sweep_ticket(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_drops_a_fully_resolved_sweep_ticket  # noqa: E501
         findings = frozenset({("RULE1", "a.py")})
@@ -211,6 +218,7 @@ class TestCloseResolvedSweepTickets:
         assert queue.is_ok
         assert queue.danger_ok.tickets[filed].state == TicketState.DROPPED
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_close_resolved_sweep_tickets  # noqa: E501
     def test_leaves_a_partially_resolved_ticket_untouched(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_leaves_a_partially_resolved_ticket_untouched  # noqa: E501
         findings = frozenset({("RULE1", "a.py"), ("RULE2", "b.py")})
@@ -230,6 +238,7 @@ class TestCloseResolvedSweepTickets:
         assert queue.is_ok
         assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_close_resolved_sweep_tickets  # noqa: E501
     def test_leaves_a_still_reproducing_ticket_untouched(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_leaves_a_still_reproducing_ticket_untouched  # noqa: E501
         findings = frozenset({("RULE1", "a.py")})
@@ -433,6 +442,7 @@ class TestNormalizeIdentityFile:
 
         assert _normalize_identity_file(tmp_path, "a/b.py") == "a/b.py"
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file  # noqa: E501
     def test_absolute_outside_root_falls_back_unchanged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile.test_absolute_outside_root_falls_back_unchanged  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _normalize_identity_file
@@ -466,6 +476,7 @@ class TestNormalizeIdentities:
         assert "T-2313" in caplog.text
         assert "1 genuinely identity-less" in caplog.text
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
     def test_leaves_well_formed_pairs_untouched(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_well_formed_pairs_untouched  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _normalize_identities
@@ -488,6 +499,7 @@ class TestNormalizeIdentities:
         assert next(iter(result))[0] == "E501"
 
     # frob:ticket T-4607
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
     def test_drops_git_metadata_path_such_as_a_lease_file(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -515,6 +527,7 @@ class TestNormalizeIdentities:
         assert "T-4607" in caplog.text
 
     # frob:ticket T-4607
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
     def test_leaves_a_real_tickets_dir_finding_alone(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_a_real_tickets_dir_finding_alone  # noqa: E501
         # Negative control: a real TICK010 against a genuine `tickets/`

@@ -26,6 +26,7 @@ class TestTick006PhantomFiling:
 
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick006_phantom_filing
     def test_phantom_filed_colon_fires(self, tmp_path: Path) -> None:
         """`Filed: T-draft-deadbeef` (a real T-0726/T-0577-class draft-loss
         shape) resolving to no block, active or archived, is TICK006."""
@@ -122,6 +123,7 @@ class TestTick006PhantomFiling:
         assert not any(v.rule == "TICK006" for v in violations)
 
     # frob:tests tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_code_spanned_filed_claim_does_not_fire  # noqa: E501
+    # frob:tests src/frob/gates/_markdown_scan.py::strip_code_spans  # noqa: E501
     def test_code_spanned_filed_claim_does_not_fire(self, tmp_path: Path) -> None:
         """T-1700's own incident, reproduced exactly: a Done report
         EXPLAINS that a code-spanned mention is DOC011's illustrative-
@@ -581,6 +583,7 @@ class TestTick011DisclosedCutWithoutTicket:
 
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_historical_ticket_outside_active_window_is_silent_by_default  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket  # noqa: E501
     def test_historical_ticket_outside_active_window_is_silent_by_default(
         self, tmp_path: Path
     ) -> None:
@@ -635,6 +638,7 @@ class TestTick011DisclosedCutWithoutTicket:
 
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_include_history_env_opt_in_restores_the_historical_finding  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket  # noqa: E501
     def test_include_history_env_opt_in_restores_the_historical_finding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -711,6 +715,7 @@ class TestTick007UndispatchedStale:
     # frob:ticket T-0820
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_stale_critical_fires  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale
     def test_stale_critical_fires(self, tmp_path: Path) -> None:
         """A CRITICAL ticket filed long ago (far past the 4h default
         threshold), still queued and unblocked, is TICK007."""
@@ -728,6 +733,7 @@ class TestTick007UndispatchedStale:
     # frob:ticket T-0820
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale
     def test_fresh_critical_is_silent(self, tmp_path: Path) -> None:
         """A CRITICAL ticket filed today has not crossed the 4h threshold
         yet (whole-day granularity means same-day is 0h elapsed) -- no
@@ -743,6 +749,7 @@ class TestTick007UndispatchedStale:
     # frob:ticket T-0820
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_medium_priority_never_fires  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale
     def test_medium_priority_never_fires(self, tmp_path: Path) -> None:
         """MEDIUM/LOW carry no default threshold (T-0752: "a queue always
         has some") -- an ancient MEDIUM ticket never alarms TICK007."""
@@ -757,6 +764,7 @@ class TestTick007UndispatchedStale:
     # frob:ticket T-0820
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale
     def test_blocked_ticket_is_silent(self, tmp_path: Path) -> None:
         """A CRITICAL ticket blocked on an open blocker is not in the
         dispatchable set at all (`doable()` excludes it), so it never
@@ -778,6 +786,7 @@ class TestTick007UndispatchedStale:
 
     # frob:ticket T-0820
     # frob:tests tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale  # noqa: E501
     def test_real_repo_scan_runs_end_to_end_without_crashing(self) -> None:
         """The honest "real repo scan" smoke test (T-0813 precedent): runs
         `tickets_gate` over this repo's OWN live `tickets.md`, not a
@@ -851,6 +860,7 @@ class TestTick008UnknownLedgerFields:
 
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick008_unknown_ledger_fields
     def test_fires_on_unknown_field(self, tmp_path: Path) -> None:
         """A ticket with a genuinely unknown field fires TICK008, naming
         both the ticket id and the unknown field, at WARN (not ERROR --
@@ -864,6 +874,7 @@ class TestTick008UnknownLedgerFields:
         assert tick008[0].severity == Severity.WARN
 
     # frob:tests tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_near_miss_typo  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick008_unknown_ledger_fields
     def test_fuzzy_hint_on_near_miss_typo(self, tmp_path: Path) -> None:
         """A near-miss typo of a known field name (`priorty` for
         `priority`, the exact incident T-0838's reviewer flagged) gets a
@@ -886,6 +897,7 @@ class TestTick008UnknownLedgerFields:
         assert not any(v.rule == "TICK008" for v in violations)
 
     # frob:tests tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick008_unknown_ledger_fields  # noqa: E501
     def test_real_repo_ledger_is_tick008_clean(self) -> None:
         """The real-repo smoke test the ticket demands: this repo's own
         live `tickets.md`/`tickets-archive.md` must produce ZERO TICK008
@@ -918,6 +930,7 @@ class TestTick008UnknownLedgerFields:
 
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_waivable
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick008_unknown_ledger_fields
     def test_waivable(self) -> None:
         """TICK008 is waivable like TICK004/TICK006/TICK007 (not added to
         `_UNWAIVABLE_RULES`) -- a genuinely temporary, disclosed exception

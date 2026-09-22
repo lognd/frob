@@ -122,6 +122,7 @@ class TestImportSourceStatus:
     T-4459's own declared scope."""
 
     # frob:ticket T-4459
+    # frob:tests src/frob/doctor.py::ImportSourceStatus
     def test_matching_worktree_reports_clean(self) -> None:
         """`resolved_root` whose own `src/frob/__init__.py` IS the
         currently-imported module resolves to `mismatched=False`."""
@@ -130,6 +131,7 @@ class TestImportSourceStatus:
         assert status.worktree_src == status.resolved_module_path
 
     # frob:ticket T-4459
+    # frob:tests src/frob/doctor.py::ImportSourceStatus
     def test_mismatched_worktree_reports_loudly(self, tmp_path: Path) -> None:
         """A `resolved_root` with its OWN `src/frob/__init__.py`, distinct
         from the currently-imported module's file, resolves to
@@ -144,6 +146,7 @@ class TestImportSourceStatus:
         assert status.resolved_module_path != status.worktree_src
 
     # frob:ticket T-4459
+    # frob:tests src/frob/doctor.py::ImportSourceStatus
     def test_no_worktree_src_never_mismatches(self, tmp_path: Path) -> None:
         """A `resolved_root` with no `src/frob/__init__.py` of its own
         (e.g. an installed tool, no worktree layout) has nothing to

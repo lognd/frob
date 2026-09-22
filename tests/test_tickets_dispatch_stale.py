@@ -73,6 +73,7 @@ class TestHasLiveLease:
     """`has_live_lease` -- the in-flight/dispatchable split signal."""
 
     # frob:ticket T-0752
+    # frob:tests src/frob/tickets/_doable.py::has_live_lease  # noqa: E501
     def test_queued_with_live_lease_is_in_flight(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -87,6 +88,7 @@ class TestHasLiveLease:
         assert has_live_lease(ticket, tmp_path) is True
 
     # frob:ticket T-0752
+    # frob:tests src/frob/tickets/_doable.py::has_live_lease  # noqa: E501
     def test_queued_with_no_lease_is_not_in_flight(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -96,6 +98,7 @@ class TestHasLiveLease:
         assert has_live_lease(ticket, tmp_path) is False
 
     # frob:ticket T-0752
+    # frob:tests src/frob/tickets/_doable.py::has_live_lease
     def test_no_root_never_in_flight(self) -> None:
         """`root=None` degrades quietly, matching `display_state`."""
         ticket = _ticket(ticket_id="T-0001", state=TicketState.QUEUED)
@@ -107,12 +110,14 @@ class TestDispatchStaleHours:
     """`dispatch_stale_hours` -- filing-age-in-hours measurement."""
 
     # frob:ticket T-0752
+    # frob:tests src/frob/tickets/_doable.py::dispatch_stale_hours  # noqa: E501
     def test_same_day_is_zero_hours(self) -> None:
         """A ticket filed today has sat 0h by this day-granularity measure."""
         ticket = _ticket(created=date(2026, 7, 23))
         assert dispatch_stale_hours(ticket, today=date(2026, 7, 23)) == 0.0
 
     # frob:ticket T-0752
+    # frob:tests src/frob/tickets/_doable.py::dispatch_stale_hours  # noqa: E501
     def test_one_day_old_is_24_hours(self) -> None:
         """A ticket filed exactly 1 day ago reads as 24h elapsed."""
         ticket = _ticket(created=date(2026, 7, 22))
@@ -124,6 +129,7 @@ class TestUndispatchedStale:
     """`undispatched_stale` -- the per-priority alarm computation."""
 
     # frob:ticket T-0752
+    # frob:tests src/frob/tickets/_doable.py::undispatched_stale  # noqa: E501
     def test_critical_past_threshold_alarms(self, tmp_path: Path) -> None:
         """A critical ticket filed 2 days ago (48h) exceeds the 4h default
         critical threshold and alarms."""
@@ -138,6 +144,7 @@ class TestUndispatchedStale:
         assert threshold == 4.0
 
     # frob:ticket T-0752
+    # frob:tests src/frob/tickets/_doable.py::undispatched_stale  # noqa: E501
     def test_critical_under_threshold_no_alarm(self, tmp_path: Path) -> None:
         """A critical ticket filed today (0h elapsed) is under the 4h
         threshold and does not alarm."""
@@ -148,6 +155,7 @@ class TestUndispatchedStale:
         assert alarms == ()
 
     # frob:ticket T-0752
+    # frob:tests src/frob/tickets/_doable.py::undispatched_stale  # noqa: E501
     def test_medium_priority_never_alarms(self, tmp_path: Path) -> None:
         """A medium-priority ticket has no default threshold at all, no
         matter how old -- only CRITICAL/HIGH carry a default (T-0752)."""
@@ -189,6 +197,7 @@ class TestAlreadyLandedMarkers:
     that landed OUTSIDE the ticket workflow (a direct commit, never
     through `frob ticket land`), leaving the ledger stuck at open."""
 
+    # frob:tests src/frob/tickets/_doable.py::already_landed_markers  # noqa: E501
     def test_own_directive_present_flags_the_ticket(self, tmp_path: Path) -> None:
         """A scoped file already carrying `frob:ticket T-0001` flags T-0001
         even though its ledger state is still queued."""
@@ -200,6 +209,7 @@ class TestAlreadyLandedMarkers:
         hits = already_landed_markers(queue, tmp_path)
         assert hits == (ticket,)
 
+    # frob:tests src/frob/tickets/_doable.py::already_landed_markers  # noqa: E501
     def test_absent_directive_is_silent(self, tmp_path: Path) -> None:
         """A scoped file with no directive at all -- genuinely undone work
         -- never flags."""
@@ -211,6 +221,7 @@ class TestAlreadyLandedMarkers:
         hits = already_landed_markers(queue, tmp_path)
         assert hits == ()
 
+    # frob:tests src/frob/tickets/_doable.py::already_landed_markers  # noqa: E501
     def test_over_broad_scope_entry_is_not_scanned(self, tmp_path: Path) -> None:
         """A scope entry `_over_broad_scope_entries` flags is excluded from
         the scan entirely -- a hit under it must not surface, even though

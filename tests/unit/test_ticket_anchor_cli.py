@@ -49,6 +49,7 @@ class TestAnchorCli:
     """`frob ticket anchor <id> --set|--clear --reason TEXT` forwards to
     `frob.tickets.set_anchor` (T-1856), the ONLY thing `_anchor` does."""
 
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_anchor
     def test_set_anchor_via_cli(self, tmp_path: Path) -> None:
         root = _git_repo(tmp_path)
         ticket_id = _new_ticket(root, "a permanent waiver target")
@@ -89,6 +90,7 @@ class TestAnchorCli:
         assert reloaded.is_ok
         assert reloaded.danger_ok.tickets[ticket_id].anchor is False
 
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_anchor
     def test_requires_reason(self, tmp_path: Path) -> None:
         root = _git_repo(tmp_path)
         ticket_id = _new_ticket(root, "missing reason")

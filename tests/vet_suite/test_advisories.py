@@ -133,6 +133,7 @@ class TestOsvAdapter:
         assert result.is_err
         assert result.danger_err == _osv.OsvQueryFailure(_osv.OsvQueryError.Unavailable)
 
+    # frob:tests src/frob/vet/_osv.py::OsvQueryFailure  # noqa: E501
     def test_query_advisories_unparseable_response_is_distinct_from_unavailable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

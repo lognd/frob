@@ -28,6 +28,7 @@ class TestRelativizeRegressionScopeFile:
 
     # frob:ticket T-2352
     # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile.test_absolute_under_root_is_relativized  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_relativize_regression_scope_file  # noqa: E501
     def test_absolute_under_root_is_relativized(self, tmp_path: Path) -> None:
         """Positive control 1 (T-2352): an absolute path under root
         becomes a repo-relative one."""
@@ -38,6 +39,7 @@ class TestRelativizeRegressionScopeFile:
 
     # frob:ticket T-2352
     # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile.test_already_relative_is_unchanged  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_relativize_regression_scope_file  # noqa: E501
     def test_already_relative_is_unchanged(self, tmp_path: Path) -> None:
         """Must-still-pass control: an already-relative path is returned
         unchanged (no double-processing, no accidental corruption)."""
@@ -46,6 +48,7 @@ class TestRelativizeRegressionScopeFile:
 
     # frob:ticket T-2352
     # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile.test_absolute_outside_root_is_kept_and_logged  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_relativize_regression_scope_file  # noqa: E501
     def test_absolute_outside_root_is_kept_and_logged(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -99,6 +102,7 @@ class TestRaiseQuarantineForRedBatch:
     call through."""
 
     # frob:ticket T-1791
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_raise_quarantine_for_red_batch  # noqa: E501
     def test_raises_with_attributed_and_unattributed_findings(
         self, tmp_path: Path
     ) -> None:
@@ -144,6 +148,7 @@ class TestRaiseQuarantineForRedBatch:
         assert all(f.disposition_ref == filed for f in record.danger_ok.findings)
 
     # frob:ticket T-1791
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_raise_quarantine_for_red_batch  # noqa: E501
     def test_empty_queue_logs_and_skips_the_raise(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch.test_empty_queue_logs_and_skips_the_raise  # noqa: E501
         from frob.verify._quarantine import is_quarantined
@@ -189,6 +194,7 @@ class TestRaiseQuarantineForRedBatch:
         assert is_quarantined(tmp_path).danger_ok is False
 
     # frob:ticket T-2604
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_log_directory_shaped_pairs_dropped  # noqa: E501
     def test_open_ticket_attribution_clears_the_quarantine_raise(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -239,6 +245,7 @@ class TestRaiseQuarantineForRedBatch:
 
     # frob:ticket T-2604
     # frob:ticket T-4626
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_log_directory_shaped_pairs_dropped  # noqa: E501
     def test_closed_ticket_attribution_still_raises(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -297,6 +304,7 @@ class TestRaiseQuarantineForRedBatch:
         }
 
     # frob:ticket T-2604
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_log_directory_shaped_pairs_dropped  # noqa: E501
     def test_unattributed_still_raises_alongside_open_ticket_finding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -360,6 +368,7 @@ class TestRaiseQuarantineForRedBatch:
         }
 
     # frob:ticket T-1791
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_raise_quarantine_for_red_batch  # noqa: E501
     def test_raise_failure_is_logged_not_raised(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -391,6 +400,7 @@ class TestRaiseQuarantineForRedBatch:
         assert filed is not None
 
     # frob:ticket T-1847
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_log_directory_shaped_pairs_dropped  # noqa: E501
     def test_warm_tree_recheck_drops_cold_worktree_native_noise(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -421,6 +431,7 @@ class TestRaiseQuarantineForRedBatch:
         assert is_quarantined(tmp_path).danger_ok is False
 
     # frob:ticket T-1847
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_log_directory_shaped_pairs_dropped  # noqa: E501
     def test_warm_tree_recheck_keeps_finding_when_native_still_broken(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -460,6 +471,7 @@ class TestRaiseQuarantineForRedBatch:
         assert all(f.disposition == "filed" for f in record.danger_ok.findings)
 
     # frob:ticket T-1847
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_log_directory_shaped_pairs_dropped  # noqa: E501
     def test_warm_tree_recheck_never_drops_an_attributed_finding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -537,6 +549,7 @@ class TestFileRegressionTicketPublicSeam:
 
     # frob:ticket T-2450
     # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicketPublicSeam.test_delegates_to_the_private_implementation  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::file_regression_ticket
     def test_delegates_to_the_private_implementation(self, tmp_path: Path) -> None:
         from frob.app.ticket_runner._rapid_sweep import file_regression_ticket
 
@@ -565,6 +578,7 @@ class TestFileRegressionTicket:
         )
 
     # frob:ticket T-1791
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none  # noqa: E501
     def test_no_attribution_files_everything_as_before(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
         # No verify queue at all -- attribution unavailable, falls back to
@@ -704,6 +718,7 @@ class TestFileRegressionTicket:
         )
         assert filed is None
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket
     def test_commit_failure_skips_auto_dispose_and_returns_none(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -747,6 +762,7 @@ class TestFileRegressionTicket:
         assert record.cleared_at is None  # still raised, not phantom-cleared
 
     # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_partition_findings_by_attribution  # noqa: E501
     def test_attributed_to_open_ticket_is_not_refiled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -782,6 +798,7 @@ class TestFileRegressionTicket:
         )
         assert filed is None
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none  # noqa: E501
     def test_attributed_to_closed_ticket_is_refiled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -818,6 +835,8 @@ class TestFileRegressionTicket:
         )
         assert filed is not None
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_partition_findings_by_attribution
     def test_unattributed_is_filed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -840,6 +859,7 @@ class TestFileRegressionTicket:
         assert filed is not None
 
     # frob:ticket T-2672
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_single_land_attribution_label  # noqa: E501
     def test_causally_implicated_land_still_names_itself_as_the_cause(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -894,6 +914,7 @@ class TestFileRegressionTicket:
         )
 
     # frob:ticket T-2672
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_single_land_attribution_label  # noqa: E501
     def test_unattributed_finding_does_not_name_the_spawning_land_as_cause(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -985,6 +1006,7 @@ class TestFileRegressionTicket:
 
     # frob:ticket T-3051
     # frob:ticket T-4626
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none  # noqa: E501
     def test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1049,6 +1071,7 @@ class TestFileRegressionTicket:
         )
 
     # frob:ticket T-3051
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none
     def test_unrelated_duplicate_finding_in_a_different_file_still_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1147,6 +1170,7 @@ class TestFileRegressionTicket:
             "quarantine -- that is the guard's real job"
         )
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none  # noqa: E501
     def test_all_attributed_to_open_tickets_files_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

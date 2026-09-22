@@ -57,6 +57,7 @@ def _snapshot(
 
 class TestClassifyTest:
     # frob:tests src/frob/ci_validity.py::TestValidity  # noqa: E501
+    # frob:tests src/frob/ci_validity.py::Validity  # noqa: E501
     def test_still_valid_when_nothing_relevant_changed(self) -> None:
         # frob:tests src/frob/ci_validity.py::classify_test
         snap = _snapshot(
@@ -73,6 +74,7 @@ class TestClassifyTest:
         result = classify_test(snap, frozenset(), "tests/test_a.py::test_foo")
         assert result.status == Validity.STILL_VALID
 
+    # frob:tests src/frob/ci_validity.py::TestValidity  # noqa: E501
     def test_stale_when_reached_by_a_touched_symbol(self) -> None:
         # frob:tests src/frob/ci_validity.py::classify_test
         snap = _snapshot(
@@ -213,6 +215,7 @@ class TestJobAndRunValidity:
         )
         return snap
 
+    # frob:tests src/frob/ci_validity.py::JobValidity  # noqa: E501
     def test_job_validity_covers_named_failures(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -241,6 +244,7 @@ class TestJobAndRunValidity:
         assert len(jv.tests) == 1
         assert jv.tests[0].status == Validity.STILL_VALID
 
+    # frob:tests src/frob/ci_validity.py::RunValidity  # noqa: E501
     def test_run_validity_covers_every_job(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

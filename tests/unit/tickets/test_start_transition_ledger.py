@@ -94,6 +94,7 @@ class TestStartTransitionCommitsLedgerInFleetContext:
     fleet-dispatch shape where the generic post-dispatch auto-commit sweep
     only ever commits the CALLING worktree's own ledger, never `root`'s."""
 
+    # frob:tests src/frob/tickets/_leases.py::_commit_start_ledger_write_in_fleet_context
     def test_in_progress_transition_commits_the_ledger(
         self, repo_with_sibling_worktree: Path
     ) -> None:
@@ -119,6 +120,7 @@ class TestStartTransitionCommitsLedgerInFleetContext:
             "IN_PROGRESS transition must produce a new commit on the ledger"
         )
 
+    # frob:tests src/frob/tickets/_evidence.py::_start_transition_ledger_fields
     def test_in_progress_transition_stamps_worktree_and_branch(
         self, repo_with_sibling_worktree: Path
     ) -> None:

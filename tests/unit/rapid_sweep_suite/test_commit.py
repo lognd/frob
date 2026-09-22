@@ -45,6 +45,7 @@ class TestCommitRapidDebt:
         assert "rapid-debt.jsonl" not in _git(repo, "ls-files")
 
     # frob:ticket T-2669
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_guard_still_refuses_a_genuinely_foreign_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -92,6 +93,7 @@ class TestCommitRapidDebt:
         assert commit.returncode != 0, commit.stdout + commit.stderr
         assert _git(repo, "status", "--porcelain").strip() != ""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt
     def test_stages_only_the_debt_file(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_stages_only_the_debt_file  # noqa: E501
         from frob.tickets._evidence import record_rapid_debt
@@ -107,6 +109,7 @@ class TestCommitRapidDebt:
         assert "seed.txt" in porcelain
         assert "rapid-debt.jsonl" not in porcelain
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt  # noqa: E501
     def test_is_a_noop_when_nothing_was_appended(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_is_a_noop_when_nothing_was_appended  # noqa: E501
         repo = _seed_repo(tmp_path)
@@ -121,6 +124,7 @@ class TestCommitRapidDebt:
         _rapid_sweep._commit_rapid_debt(tmp_path, "T-0004")
 
     # frob:ticket T-2669
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_survives_the_scaffolded_root_write_guard(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -184,6 +188,7 @@ class TestCommitRapidDebt:
         assert "rapid-debt.jsonl" not in _git(repo, "ls-files")
 
     # frob:ticket T-2671
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_commit_failure_persists_a_diagnostic_log(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -295,6 +300,7 @@ class TestPersistCommitStepFailure:
             "stderr": "hook refused: DirtyMain guard",
         }
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
     def test_writes_spawn_error_diagnostics(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure.test_writes_spawn_error_diagnostics  # noqa: E501
         from typani.result import Err
@@ -315,6 +321,7 @@ class TestPersistCommitStepFailure:
         assert "argv" not in payload
         assert "returncode" not in payload
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
     def test_swallows_its_own_write_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -343,6 +350,7 @@ class TestPorcelainStatusError:
     found nothing", which `_porcelain_dirty_paths`'s empty-tuple return
     collapses for its many other (unchanged) callers."""
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::_porcelain_status_error
     def test_readable_status_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError.test_readable_status_is_none  # noqa: E501
         from frob.tickets._land_git_ops import _porcelain_status_error
@@ -350,6 +358,7 @@ class TestPorcelainStatusError:
         repo = _seed_repo(tmp_path)
         assert _porcelain_status_error(repo) is None
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::_porcelain_status_error
     def test_spawn_failure_names_the_git_error(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -367,6 +376,7 @@ class TestPorcelainStatusError:
         assert error is not None
         assert "spawn failed" in error
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::_porcelain_status_error
     def test_nonzero_exit_names_stderr(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -393,6 +403,7 @@ class TestPorcelainStatusError:
 class TestDescribeRootDirt:
     """T-1698: a DirtyMain refusal must name what made it refuse."""
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::_render_dirty_paths  # noqa: E501
     def test_names_the_paths(self) -> None:
         # frob:tests \
         # tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_paths  # noqa: E501
@@ -400,6 +411,7 @@ class TestDescribeRootDirt:
 
         assert _render_dirty_paths(("a.py", "b.md")) == "a.py, b.md"
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::_render_dirty_paths
     def test_truncation_declares_itself(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_truncation_declares_itself  # noqa: E501
         from frob.tickets._land_git_ops import _render_dirty_paths
@@ -407,6 +419,8 @@ class TestDescribeRootDirt:
         rendered = _render_dirty_paths(tuple(f"f{i}.py" for i in range(14)))
         assert rendered.endswith("(+4 more)")
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::describe_root_dirt  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::_render_dirty_paths
     def test_empty_paths_renders_as_none_not_unavailable(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_empty_paths_renders_as_none_not_unavailable  # noqa: E501
         # T-3216: `_render_dirty_paths` no longer guesses "unreadable"
@@ -419,6 +433,7 @@ class TestDescribeRootDirt:
         assert _render_dirty_paths(()) == "(none)"
 
     # frob:ticket T-3216
+    # frob:tests src/frob/tickets/_land_git_ops.py::describe_root_dirt  # noqa: E501
     def test_status_unreadable_names_the_git_error_not_uncommitted_work(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -449,6 +464,7 @@ class TestDescribeRootDirt:
         assert "retrying is appropriate" in rendered
 
     # frob:ticket T-3216
+    # frob:tests src/frob/tickets/_land_git_ops.py::describe_root_dirt  # noqa: E501
     def test_readable_clean_status_is_not_status_unreadable(
         self, tmp_path: Path
     ) -> None:
@@ -460,6 +476,7 @@ class TestDescribeRootDirt:
         repo = _seed_repo(tmp_path)
         assert "STATUS-UNREADABLE" not in describe_root_dirt(repo)
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::describe_root_dirt
     def test_names_a_real_dirty_file(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_a_real_dirty_file  # noqa: E501
         from frob.tickets._land_git_ops import describe_root_dirt
@@ -468,6 +485,7 @@ class TestDescribeRootDirt:
         (repo / "seed.txt").write_text("changed\n", encoding="utf-8")
         assert "seed.txt" in describe_root_dirt(repo)
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::describe_root_dirt  # noqa: E501
     def test_names_the_detached_sweep_as_likely_author(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
         from frob.tickets._land_git_ops import describe_root_dirt
@@ -491,6 +509,7 @@ class TestDescribeRootDirt:
         assert "detached post-land sweep" not in rendered
 
     # frob:ticket T-1795
+    # frob:tests src/frob/tickets/_land_git_ops.py::describe_root_dirt  # noqa: E501
     def test_names_the_real_ticket_from_a_staged_rapid_debt_line(
         self, tmp_path: Path
     ) -> None:
@@ -514,6 +533,7 @@ class TestDescribeRootDirt:
         assert "T-1699's sweep child" not in rendered  # never the wrong ticket
 
     # frob:ticket T-1795
+    # frob:tests src/frob/tickets/_land_git_ops.py::describe_root_dirt  # noqa: E501
     def test_unattributed_when_the_true_author_cannot_be_determined(
         self, tmp_path: Path
     ) -> None:
@@ -532,6 +552,7 @@ class TestCommitRegressionTicket:
     """T-1755: the filed regression ticket's `tickets.md` write must be
     committed by the sweep itself, scoped to the ledger paths only."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_regression_ticket  # noqa: E501
     def test_commits_the_ledger_write(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket.test_commits_the_ledger_write  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _commit_regression_ticket
@@ -558,6 +579,7 @@ class TestCommitRegressionTicket:
         assert created.danger_ok.id in log
         assert "T-9000" in log
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_regression_ticket  # noqa: E501
     def test_commit_failure_logs_at_error_and_does_not_raise(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -589,6 +611,7 @@ class TestCommitRegressionTicket:
         assert "DISCARDED" in errors[0]
 
     # frob:ticket T-1841
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_regression_ticket  # noqa: E501
     def test_retries_then_succeeds_on_a_transient_land_in_progress(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -624,6 +647,7 @@ class TestCommitRegressionTicket:
         assert errors == []  # succeeded before exhausting retries
 
     # frob:ticket T-1841
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_regression_ticket  # noqa: E501
     def test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -695,6 +719,7 @@ class TestCommitOrDiscardLedgerWrite:
     ledger write path (regression-ticket filing, auto-drop, and whatever
     comes next) must go through."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_or_discard_ledger_write  # noqa: E501
     def test_returns_true_on_first_success(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -720,6 +745,7 @@ class TestCommitOrDiscardLedgerWrite:
         assert ok is True
         assert discarded == []
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_or_discard_ledger_write  # noqa: E501
     def test_retries_then_succeeds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -753,6 +779,7 @@ class TestCommitOrDiscardLedgerWrite:
         assert len(attempts) == 3
         assert discarded == []
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_or_discard_ledger_write  # noqa: E501
     def test_exhausted_retries_calls_discard_exactly_once_and_returns_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -788,6 +815,7 @@ class TestDiscardUncommittedTicketDrop:
     rmtree it -- it is real, already-landed history, unlike a fresh
     regression ticket's brand-new directory)."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_discard_uncommitted_ticket_drop  # noqa: E501
     def test_v2_store_restores_the_ticket_file_to_head(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDiscardUncommittedTicketDrop.test_v2_store_restores_the_ticket_file_to_head  # noqa: E501
         import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
@@ -811,6 +839,7 @@ class TestDiscardUncommittedTicketDrop:
         assert not _git(repo, "status", "--porcelain", "--", "tickets").strip()
         assert (ticket_dir / "ticket.md").read_text(encoding="utf-8") == original
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_discard_uncommitted_ticket_drop  # noqa: E501
     def test_v1_store_logs_and_leaves_root_alone(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -833,12 +862,14 @@ class TestDiscardUncommittedTicketDrop:
 class TestTicketIsOpen:
     """`_ticket_is_open` is the "still open" half of T-1690's filing rule."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_ticket_is_open  # noqa: E501
     def test_open_ticket_is_open(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_open_ticket_is_open  # noqa: E501
         ticket_id = _seed_ticket(tmp_path)
         assert _ticket_is_open(tmp_path, ticket_id) is True
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_ticket_is_open
     def test_done_ticket_is_not_open(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_done_ticket_is_not_open  # noqa: E501
@@ -847,6 +878,7 @@ class TestTicketIsOpen:
         ticket_id = _seed_ticket(tmp_path, state=TicketState.DONE)
         assert _ticket_is_open(tmp_path, ticket_id) is False
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_ticket_is_open
     def test_missing_ticket_is_not_open(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestTicketIsOpen.test_missing_ticket_is_not_open  # noqa: E501
         assert _ticket_is_open(tmp_path, "T-9999") is False

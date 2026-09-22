@@ -50,6 +50,7 @@ class TestExpandDeclaredKind:
     def test_precise_kind_covers_only_itself(self):
         assert expand_declared_kind("fs.read") == frozenset({"fs.read"})
 
+    # frob:tests src/frob/vet/_capability_modes.py::expand_declared_kind kind="unit"  # noqa: E501
     def test_coarse_fs_covers_union_of_modes(self):
         """Mandate point 2: a coarse `may "fs"` declaration is the UNION of
         fs's modes -- "a coarse declarer answers for everything"."""
@@ -86,6 +87,7 @@ class TestExpandDeclaredKind:
 
 
 class TestResolveCapabilityKind:
+    # frob:tests src/frob/vet/_capability_modes.py::resolve_capability_kind kind="unit"  # noqa: E501
     def test_precise_kind_passes_through(self):
         assert resolve_capability_kind("fs.write").danger_ok == "fs.write"
 
@@ -109,6 +111,7 @@ class TestResolveCapabilityKind:
             for record in caplog.records
         )
 
+    # frob:tests src/frob/vet/_capability_modes.py::CapabilityModeError kind="unit"  # noqa: E501
     def test_legacy_alias_past_sunset_is_gate_error(self):
         """T-0717 acceptance clause 3: once the sunset date has passed, the
         legacy spelling is a gate ERROR, not a silent pass."""
@@ -128,6 +131,7 @@ class TestResolveCapabilityKind:
 
 
 class TestCanonicalAndNormalize:
+    # frob:tests src/frob/vet/_capability_modes.py::canonical_declared_kind kind="unit"  # noqa: E501
     def test_canonical_declared_kind_resolves_alias_regardless_of_sunset(self):
         """Unlike `resolve_capability_kind`, the pure canonicalization used
         for conformance joins never errors -- the sunset is a separate gate
@@ -137,6 +141,7 @@ class TestCanonicalAndNormalize:
         assert canonical_declared_kind("fs.write") == "fs.write"
         assert canonical_declared_kind("fs") == "fs"
 
+    # frob:tests src/frob/vet/_capability_modes.py::_normalize_observed_kind kind="unit"  # noqa: E501
     def test_normalize_observed_kind_matches_canonical(self):
         assert _normalize_observed_kind("fs-write") == "fs.write"
         assert _normalize_observed_kind("net") == "net"

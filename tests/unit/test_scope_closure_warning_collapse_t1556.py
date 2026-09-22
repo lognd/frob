@@ -18,11 +18,13 @@ from frob.app.ticket_runner._new import (
 
 
 class TestEmitScopeClosureWarnings:
+    # frob:tests src/frob/app/ticket_runner/_new.py::_emit_scope_closure_warnings
     def test_no_warnings_logs_nothing(self, caplog: pytest.LogCaptureFixture) -> None:
         with caplog.at_level(logging.WARNING):
             _emit_scope_closure_warnings("ticket new", "T-0001", ())
         assert caplog.records == []
 
+    # frob:tests src/frob/app/ticket_runner/_new.py::_emit_scope_closure_warnings
     def test_few_warnings_logged_individually(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -36,6 +38,7 @@ class TestEmitScopeClosureWarnings:
         # No collapse summary line for a small set.
         assert not any("collapsed" in m for m in messages)
 
+    # frob:tests src/frob/app/ticket_runner/_new.py::_emit_scope_closure_warnings
     def test_many_warnings_collapse_to_counted_summary(
         self, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -53,6 +56,7 @@ class TestEmitScopeClosureWarnings:
         assert "FROB_SCOPE_CLOSURE_VERBOSE=1" in summary
         assert str(total) in summary
 
+    # frob:tests src/frob/app/ticket_runner/_new.py::_emit_scope_closure_warnings
     def test_verbose_env_var_disables_collapse(
         self, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
     ) -> None:

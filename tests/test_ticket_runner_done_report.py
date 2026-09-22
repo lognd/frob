@@ -51,6 +51,7 @@ class TestBaseRefResolvable:
     """Direct unit coverage of the fail-fast primitive `set_done_report`
     is built on."""
 
+    # frob:tests src/frob/tickets/_evidence.py::base_ref_resolvable
     def test_unresolvable_ref_in_a_real_repo_is_false(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_unresolva\
@@ -60,6 +61,7 @@ class TestBaseRefResolvable:
         _commit_all(tmp_path, "init")
         assert base_ref_resolvable(tmp_path, "totally-made-up-ref") is False
 
+    # frob:tests src/frob/tickets/_evidence.py::base_ref_resolvable
     def test_resolvable_ref_is_true(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_resolvabl\
@@ -69,6 +71,7 @@ class TestBaseRefResolvable:
         _commit_all(tmp_path, "init")
         assert base_ref_resolvable(tmp_path, "main") is True
 
+    # frob:tests src/frob/tickets/_evidence.py::base_ref_resolvable
     def test_non_git_root_is_none(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_non_git_r\

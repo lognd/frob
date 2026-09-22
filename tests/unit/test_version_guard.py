@@ -53,6 +53,7 @@ def _write_frob_pyproject(root: Path) -> None:
     )
 
 
+# frob:tests src/frob/app/_version_guard.py::binary_fingerprint_warning
 def test_non_frob_repo_is_quiet(tmp_path: Path) -> None:
     """T-3129 must-stay-quiet: a repo whose pyproject.toml does not
     declare itself as frob (or has none at all) never gets this warning,
@@ -61,6 +62,7 @@ def test_non_frob_repo_is_quiet(tmp_path: Path) -> None:
     assert binary_fingerprint_warning(tmp_path) is None
 
 
+# frob:tests src/frob/app/_version_guard.py::binary_fingerprint_warning
 def test_editable_in_tree_run_is_quiet(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

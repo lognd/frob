@@ -31,6 +31,7 @@ ROOT = (
 class TestParseFragmentGrammar:
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_part_of_parses
+    # frob:tests src/frob/strata/_ast.py::ExtendNodeDecl
     def test_part_of_parses(self) -> None:
         """`part of NAME` sets `part_of` and leaves `name` empty -- a
         fragment declares no module of its own."""
@@ -93,6 +94,7 @@ class TestParseFragmentGrammar:
 class TestResolveFragments:
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestResolveFragments.test_widens_existing_grant  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::resolve_fragments
     def test_widens_existing_grant(self) -> None:
         """POSITIVE CONTROL: a fragment extending a declared node's
         EXISTING grant loads and takes effect -- the root's via-list is
@@ -125,6 +127,7 @@ class TestResolveFragments:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestResolveFragments.test_no_root_is_error
+    # frob:tests src/frob/strata/_multifile.py::resolve_fragments
     def test_no_root_is_error(self) -> None:
         """NEGATIVE CONTROL: every loaded file is a fragment, no root --
         refused."""
@@ -136,6 +139,7 @@ class TestResolveFragments:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestResolveFragments.test_two_roots_is_error
+    # frob:tests src/frob/strata/_multifile.py::resolve_fragments
     def test_two_roots_is_error(self) -> None:
         """NEGATIVE CONTROL: two files declare `module frob` and a
         fragment targets that name -- the closure boundary is ambiguous
@@ -159,6 +163,7 @@ class TestResolveFragments:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unrelated_multi_module_merge_is_unaffected  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::resolve_fragments
     def test_unrelated_multi_module_merge_is_unaffected(self) -> None:
         """T-1196's pre-existing multi-file merge (several independently
         named `module` files, no fragments at all) passes through
@@ -173,6 +178,7 @@ class TestResolveFragments:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_root_name_is_error  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::resolve_fragments
     def test_unknown_root_name_is_error(self) -> None:
         """NEGATIVE CONTROL: a fragment names a root that was never
         loaded -- refused as a distinct case from an unknown node."""
@@ -186,6 +192,7 @@ class TestResolveFragments:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_node_is_error  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::resolve_fragments
     def test_unknown_node_is_error(self) -> None:
         """NEGATIVE CONTROL: `extend node` targets an id the root never
         declared -- refused as a distinct case from an unknown atom."""
@@ -199,6 +206,7 @@ class TestResolveFragments:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestResolveFragments.test_unknown_atom_is_error  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::resolve_fragments
     def test_unknown_atom_is_error(self) -> None:
         """NEGATIVE CONTROL, the hard constraint: a fragment cannot grant
         a capability the root never granted to that node in the first
@@ -251,6 +259,8 @@ class TestSealedGrantSet:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_declared_atom_still_works  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::SealedGrantSet.from_root_node
+    # frob:tests src/frob/strata/_multifile.py::SealedGrantSet
     def test_widen_on_declared_atom_still_works(self) -> None:
         """POSITIVE CONTROL (direction 1, unchanged from T-2502): widening
         an ALREADY-DECLARED atom's `via` list still works through the
@@ -268,6 +278,8 @@ class TestSealedGrantSet:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_undeclared_atom_refuses_closed  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::SealedGrantSet.from_root_node
+    # frob:tests src/frob/strata/_multifile.py::SealedGrantSet
     def test_widen_on_undeclared_atom_refuses_closed(self) -> None:
         """POSITIVE CONTROL (direction 2, unchanged from T-2502): an atom
         the root never granted still refuses closed -- `widen` returns
@@ -279,6 +291,8 @@ class TestSealedGrantSet:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_raises_at_runtime  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::SealedGrantSet.from_root_node
+    # frob:tests src/frob/strata/_multifile.py::SealedGrantSet
     def test_fresh_insert_raises_at_runtime(self) -> None:
         """NEW POSITIVE CONTROL this ticket adds: an attempt IN CODE to
         assign a fresh key through the public `grants` view raises
@@ -292,6 +306,7 @@ class TestSealedGrantSet:
 
     # frob:tests \
     # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_fails_static_type_check  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::SealedGrantSet
     def test_fresh_insert_fails_static_type_check(self, tmp_path: Path) -> None:
         """NEW POSITIVE CONTROL this ticket adds, the STATIC half: the
         exact same fresh-insert attempt, written as ordinary source and

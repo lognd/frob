@@ -60,6 +60,7 @@ class TestDerivedStateLock:
         assert _derived_lock_path(tmp_path).exists()
 
     # frob:ticket T-0859
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_lock
     def test_reentrant_same_mode_in_same_thread(self, tmp_path: Path) -> None:
         """Nested `with derived_state_lock(..., exclusive=X)` requesting the
         SAME mode in the SAME thread must not deadlock."""
@@ -71,6 +72,7 @@ class TestDerivedStateLock:
                 pass
 
     # frob:ticket T-0859
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_lock
     def test_reentrant_opposite_mode_raises(self, tmp_path: Path) -> None:
         """A same-thread re-entry requesting the OPPOSITE mode from the one
         already held is refused up front rather than silently deadlocking
@@ -85,6 +87,7 @@ class TestDerivedStateLock:
                 raise AssertionError("expected RuntimeError on mode mismatch")
 
     # frob:ticket T-0859
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_lock
     def test_two_threads_serialize_exclusive(self, tmp_path: Path) -> None:
         """Two threads racing for the EXCLUSIVE lock never overlap -- a
         real cross-thread mutual-exclusion check, not just "no exception"."""
@@ -113,6 +116,7 @@ class TestDerivedStateLock:
 
     # frob:ticket T-0859
     # frob:ticket T-3761
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_lock
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="exclusive=False (SHARED) fcntl.flock semantics are POSIX-only; "
@@ -171,6 +175,7 @@ class TestPortableFlock:
     rationale."""
 
     # frob:tests src/frob/process/_lock.py::portable_flock_acquire  # noqa: E501
+    # frob:tests src/frob/process/_lock.py::portable_flock_release  # noqa: E501
     def test_posix_blocking_acquire_release_round_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
         import frob.process._lock as _lock_mod
@@ -189,6 +194,7 @@ class TestPortableFlock:
         finally:
             os.close(fd)
 
+    # frob:tests src/frob/process/_lock.py::portable_flock_acquire  # noqa: E501
     def test_posix_nonblocking_contended_returns_false(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_nonblocking_contended_returns_false  # noqa: E501
         import frob.process._lock as _lock_mod
@@ -218,6 +224,8 @@ class TestPortableFlock:
             os.close(contender_fd)
 
     # frob:tests src/frob/process/_lock.py::PortableLockUnavailable  # noqa: E501
+    # frob:tests src/frob/process/_lock.py::portable_flock_acquire  # noqa: E501
+    # frob:tests src/frob/process/_lock.py::lock_backend_available  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="the fake msvcrt backend below is real fcntl.flock under "
@@ -318,6 +326,7 @@ class TestDerivedStateLockPlatformBackends:
     loud refusal when neither `fcntl` nor `msvcrt` exists -- the same
     PLATFORM001-shaped fix T-2918 applied to `_baseline_lock`."""
 
+    # frob:tests src/frob/process/_derived_lock.py::DerivedStateLockUnavailable  # noqa: E501
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -387,6 +396,7 @@ class TestDerivedStateWriteLock:
     same-process SHARED holder (e.g. `frob check`'s gate-worker threads)."""
 
     # frob:ticket T-0918
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_write_lock
     def test_standalone_rebuild_takes_exclusive(self, tmp_path: Path) -> None:
         """With NO outer holder anywhere in this process, `derived_state_
         write_lock` takes a real OS-level EXCLUSIVE `derived_state_lock`
@@ -401,6 +411,7 @@ class TestDerivedStateWriteLock:
         assert not _process_already_holds(tmp_path)
 
     # frob:ticket T-0918
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_write_lock
     def test_nested_inside_shared_holder_does_not_deadlock(
         self, tmp_path: Path
     ) -> None:
@@ -430,6 +441,7 @@ class TestDerivedStateWriteLock:
 
     # frob:ticket T-0918
     # frob:ticket T-3761
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_write_lock
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="real cross-process EXCLUSIVE blocking via a second spawned "
@@ -511,6 +523,9 @@ class TestCrossProcessPoolInheritance:
 
     # frob:tests tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worker_under_parent_shared_holder_completes  # noqa: E501
     # frob:tests src/frob/process/_derived_lock.py::held_registry_keys
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_write_lock
+    # frob:tests src/frob/process/_derived_lock.py::_worker_inherits_hold
+    # frob:tests src/frob/gates/__init__.py::_stamp_worker_lock_keys_env
     def test_real_pool_worker_under_parent_shared_holder_completes(
         self, tmp_path: Path
     ) -> None:
@@ -553,6 +568,8 @@ class TestCrossProcessPoolInheritance:
 
     # frob:tests tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_independent_process_without_marker_still_blocks  # noqa: E501
     # frob:ticket T-3761
+    # frob:tests src/frob/process/_derived_lock.py::derived_state_write_lock
+    # frob:tests src/frob/process/_derived_lock.py::_worker_inherits_hold
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="real cross-process EXCLUSIVE blocking via a second spawned "
@@ -682,6 +699,7 @@ class TestTicketLock:
         assert path_a.name == "T-0001.lock"
 
     # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_two_different_ticket_ids_do_not_block_each_other  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::ticket_lock  # noqa: E501
     def test_two_different_ticket_ids_do_not_block_each_other(
         self, tmp_path: Path
     ) -> None:
@@ -722,6 +740,7 @@ class TestTicketLock:
         )
 
     # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_same_id_from_two_threads_serializes  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::ticket_lock  # noqa: E501
     def test_same_id_from_two_threads_serializes(self, tmp_path: Path) -> None:
         """Two threads racing for `ticket_lock` on the SAME ticket id never
         overlap -- a real cross-thread mutual-exclusion check."""
@@ -749,6 +768,7 @@ class TestTicketLock:
         assert max_active == 1
 
     # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_reentrant_same_id_in_same_thread_does_not_deadlock  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::ticket_lock  # noqa: E501
     def test_reentrant_same_id_in_same_thread_does_not_deadlock(
         self, tmp_path: Path
     ) -> None:
@@ -777,6 +797,7 @@ class TestAllocatorLock:
         assert _allocator_lock_path(tmp_path).exists()
 
     # frob:tests tests/unit/test_process_lock.py::TestAllocatorLock.test_two_concurrent_allocations_get_distinct_ids  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::allocator_lock  # noqa: E501
     def test_two_concurrent_allocations_get_distinct_ids(self, tmp_path: Path) -> None:
         """GIVEN two callers both call the id allocator concurrently WHEN
         both request a next id THEN they receive distinct ids (interleaving

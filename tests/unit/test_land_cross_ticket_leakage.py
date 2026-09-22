@@ -495,6 +495,7 @@ class TestCrossTicketLeakage:
         assert (repo / "src" / "fix.py").exists()
 
     # frob:ticket T-1999
+    # frob:tests src/frob/tickets/_leases.py::is_effectively_in_progress kind="unit"  # noqa: E501
     def test_live_lease_refuses_even_when_roots_ledger_still_reads_planned(
         self, repo: Path
     ) -> None:
@@ -751,6 +752,7 @@ class TestCrossTicketLeakage:
         )
 
     # frob:ticket T-4271
+    # frob:tests src/frob/tickets/_land.py::_frob_lock_edits_disjoint
     def test_sibling_disjoint_frob_lock_ack_entries_do_not_block(
         self, repo: Path
     ) -> None:
@@ -802,6 +804,7 @@ class TestCrossTicketLeakage:
         assert {e["ref"] for e in landed["entries"]} == {"moduleB.py::funcB"}
 
     # frob:ticket T-4271
+    # frob:tests src/frob/tickets/_land.py::_frob_lock_edits_disjoint
     def test_sibling_colliding_frob_lock_ack_entry_still_refuses(
         self, repo: Path
     ) -> None:
@@ -1272,6 +1275,7 @@ class TestPassengerTickets:
         assert "MOVED" in caplog.text
 
     # frob:ticket T-4474
+    # frob:tests src/frob/tickets/_land_passenger_identity.py::classify_directive_ids kind="unit"  # noqa: E501
     def test_brand_new_directive_still_refuses(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"
         # Control case for T-4474's widened identity rule: a directive

@@ -104,6 +104,7 @@ def _land_core(root, worktree):
         assert subject_count > 0
 
     # frob:ticket T-3985
+    # frob:tests src/frob/gates/_profile_boundary.py::profile_boundary_subject_count
     def test_zero_reproduces_t3941_windows_shape(
         self, tmp_path: Path, monkeypatch
     ) -> None:

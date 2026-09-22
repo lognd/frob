@@ -245,6 +245,7 @@ class TestLedgerDigest:
         after = ledger_digest(ledger_path(tmp_path))
         assert before != after
 
+    # frob:tests src/frob/tickets/_store.py::ledger_digest
     def test_digest_stable_for_unchanged_content(self, tmp_path: Path) -> None:
         """The same on-disk bytes must always digest identically (no
         nondeterminism -- mtime-only, hidden-timestamp, etc. would break
@@ -520,6 +521,7 @@ class TestLedgerDigestMapV2:
         assert ledger_digest_map(tmp_path) == {}
         assert archive_digest_map(tmp_path) == {}
 
+    # frob:tests src/frob/tickets/_store.py::ledger_digest_map  # noqa: E501
     def test_map_keys_are_ticket_ids_values_match_ledger_digest(
         self, tmp_path: Path
     ) -> None:
@@ -532,6 +534,7 @@ class TestLedgerDigestMapV2:
 
         assert digest_map["T-0723"] == ledger_digest(v2_ticket_path(tmp_path, "T-0723"))
 
+    # frob:tests src/frob/tickets/_store.py::archive_digest_map  # noqa: E501
     def test_archive_map_keys_are_ticket_ids(self, tmp_path: Path) -> None:
         """`archive_digest_map`'s analogous contract, over
         `tickets/archive/T-####/ticket.md`."""

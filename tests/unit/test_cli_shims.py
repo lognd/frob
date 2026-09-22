@@ -31,6 +31,7 @@ class TestIsPastSunset:
         (the boundary is exclusive: `today > sunset`, not `>=`)."""
         assert not is_past_sunset("2026-12-01", today=dt.date(2026, 12, 1))
 
+    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset  # noqa: E501
     def test_after_sunset_is_true(self) -> None:
         """A date strictly after the sunset has passed it."""
         assert is_past_sunset("2026-12-01", today=dt.date(2026, 12, 2))
@@ -58,6 +59,7 @@ class TestAnnounceShim:
         assert "explore" in captured.err
         assert captured.out == ""
 
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
     def test_after_sunset_exits_nonzero(self, capsys) -> None:
         """Past the sunset date: `SystemExit` with a non-zero code, and
         the stderr notice explains what replaced the removed spelling."""
@@ -74,6 +76,7 @@ class TestAnnounceShim:
         assert "removed" in captured.err
         assert "format --directives" in captured.err
 
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
     def test_never_writes_to_stdout(self, capsys) -> None:
         """The notice must never touch stdout -- a `--json`-producing
         runner's stdout is the JSON payload itself (the T-2492 precedent
@@ -177,6 +180,7 @@ class TestPrintWhereis:
     standalone `frob whereis`, T-4299): shared by `frob doctor --whereis`
     and the deprecated `frob whereis` shim."""
 
+    # frob:tests src/frob/app/doctor_runner.py::print_whereis  # noqa: E501
     def test_plain_output_names_the_live_executable(self, capsys) -> None:
         """The plain-text path prints the actually-running interpreter's
         own `sys.executable`, never a PATH lookup."""
@@ -190,6 +194,7 @@ class TestPrintWhereis:
         assert sys.executable in captured.out
         assert "frob package" in captured.out
 
+    # frob:tests src/frob/app/doctor_runner.py::print_whereis  # noqa: E501
     def test_json_output_is_parseable(self, capsys) -> None:
         """`--json`/`doctor_json=True` emits a parseable JSON payload with
         the same three keys the plain path's lines name."""

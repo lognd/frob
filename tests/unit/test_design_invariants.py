@@ -45,6 +45,7 @@ class TestInv007:
         assert violations[0].file == "pure.py"
 
     # frob:tests tests/unit/test_design_invariants.py::TestInv007.test_clean_module_no_finding  # noqa: E501
+    # frob:tests src/frob/gates/_design_invariants.py::inv007_violations  # noqa: E501
     def test_clean_module_no_finding(self, tmp_path: Path) -> None:
         mod = tmp_path / "pure.py"
         mod.write_text("import os\n")
@@ -120,6 +121,7 @@ class TestInv008:
         assert violations[0].rule == "INV008"
 
     # frob:tests tests/unit/test_design_invariants.py::TestInv008.test_bound_property_test_clears  # noqa: E501
+    # frob:tests src/frob/gates/_design_invariants.py::inv008_violations  # noqa: E501
     def test_bound_property_test_clears(self, tmp_path: Path) -> None:
         inv_edge = Edge(
             src="a.py::_newer",
@@ -198,6 +200,7 @@ def _unguarded_entry(table):
         return mod
 
     # frob:tests tests/unit/test_design_invariants.py::TestInv011.test_unguarded_path_fires  # noqa: E501
+    # frob:tests src/frob/gates/_design_invariants.py::inv011_violations  # noqa: E501
     def test_unguarded_path_fires(self, tmp_path: Path) -> None:
         """Positive control: `_unguarded_entry` reaches `_sink` without
         ever consulting `_EXCLUDED_TABLES` -- INV011 must fire, naming
@@ -221,6 +224,8 @@ def _unguarded_entry(table):
         assert "_sink" in violations[0].message
 
     # frob:tests tests/unit/test_design_invariants.py::TestInv011.test_guarded_path_clears  # noqa: E501
+    # frob:tests src/frob/graph/callgraph.py::references_name
+    # frob:tests src/frob/gates/_design_invariants.py::inv011_violations  # noqa: E501
     def test_guarded_path_clears(self, tmp_path: Path) -> None:
         """Negative control (same module/graph): `_guarded_entry`
         references `_EXCLUDED_TABLES` before ever reaching `_sink` -- no

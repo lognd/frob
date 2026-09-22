@@ -60,6 +60,7 @@ class TestArchResultFormat:
         data = json.loads(result.as_json())
         assert isinstance(data, dict)
 
+    # frob:tests src/frob/arch/_models.py::ArchResult.as_json
     def test_as_json_has_suggestions_key(self):
         result = analyze_project(FIXTURES / "arch_python" / "src")
         data = json.loads(result.as_json())

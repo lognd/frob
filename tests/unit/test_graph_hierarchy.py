@@ -32,6 +32,7 @@ class TestChildrenByParentId:
 class TestDescendantIds:
     """`descendant_ids` -- the any-depth BFS walk itself."""
 
+    # frob:tests src/frob/graph/_hierarchy.py::descendant_ids  # noqa: E501
     def test_direct_children_only(self) -> None:
         """A root with only direct children returns exactly those."""
         adjacency = {"root": ["a", "b"]}

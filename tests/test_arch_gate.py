@@ -108,6 +108,7 @@ class TestArchGateWaivers:
         assert any(v.rule == "ARCH001" for v in report.violations)
 
     # invariant spec: [INV-006](invariants/INV-006.md)
+    # frob:tests src/frob/gates/_waive.py::_ceiling_ok
     def test_ceiling_refires_when_grown_past_it(self, tmp_path):
         src = _complex_long_source(
             "complex_long",
@@ -170,6 +171,7 @@ class TestArchGateCppThrow:
 
     # frob:tests \
     # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_not_fire_cppthrow001  # noqa: E501
+    # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
     def test_noexcept_with_catch_all_does_not_fire_cppthrow001(
         self, tmp_path: Path
     ) -> None:
@@ -241,6 +243,7 @@ def _big_python_source(n_lines: int) -> str:
 class TestArchGateLargeFile:
     # frob:tests \
     # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_error  # noqa: E501
+    # frob:tests src/frob/gates/_arch.py::arch_gate
     def test_large_file_fires_large001_error(self, tmp_path: Path) -> None:
         """A production python file over max_file_lines fires LARGE001 at
         Severity.ERROR (T-2831 promotion, post T-2375 epic burn-down)."""
@@ -256,6 +259,7 @@ class TestArchGateLargeFile:
 
     # frob:tests \
     # tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_large001
+    # frob:tests src/frob/gates/_arch.py::arch_gate
     def test_test_file_exempt_from_large001(self, tmp_path: Path) -> None:
         """A file under a `tests/` directory is exempt from LARGE001,
         same as it is from the underlying advisory large-file category
@@ -269,6 +273,7 @@ class TestArchGateLargeFile:
     # frob:tests \
     # tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_directory_walk  # noqa: E501
     # frob:ticket T-4623
+    # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
     def test_single_file_mode_matches_directory_walk(self, tmp_path: Path) -> None:
         """Asserts `analyze_project` invoked directly on a single
         over-threshold file reports the same large-file finding (category

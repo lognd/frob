@@ -39,6 +39,7 @@ class TestUnmeasuredResults:
     """`CheckResult.unmeasured_results` -- the roster both `as_text` and a
     `--json` consumer can read without re-deriving the predicate."""
 
+    # frob:tests src/frob/check/__init__.py::CheckResult.unmeasured_results
     def test_empty_when_every_result_measured(self) -> None:
         # frob:tests \
         # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_e\
@@ -48,6 +49,7 @@ class TestUnmeasuredResults:
         )
         assert result.unmeasured_results == []
 
+    # frob:tests src/frob/check/__init__.py::CheckResult.unmeasured_results
     def test_lists_every_not_measured_result(self) -> None:
         # frob:tests \
         # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_\
@@ -106,6 +108,7 @@ class TestSilentNonzeroExit:
     """T-4309: a nonzero exit with zero diagnostics must never render as a
     manufactured FAIL when its own detail text says nothing is wrong."""
 
+    # frob:tests src/frob/check/__init__.py::CheckResult.unmeasured_results
     def test_listed_in_unmeasured_results(self) -> None:
         # frob:tests \
         # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_listed_in_un\

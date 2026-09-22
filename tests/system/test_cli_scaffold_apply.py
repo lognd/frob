@@ -63,6 +63,7 @@ class TestScaffoldNewProfileRecommendation:
 
     # frob:tests \
     # tests/system/test_cli_scaffold_apply.py::TestScaffoldNewProfileRecommendation.test_new_small_project_prints_no_recommendation  # noqa: E501
+    # frob:tests src/frob/app/scaffold_runner.py::run  # noqa: E501
     def test_new_small_project_prints_no_recommendation(self, tmp_path: Path) -> None:
         # frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldNewProfileRecommendation.test_new_small_project_prints_no_recommendation  # noqa: E501
         """A freshly scaffolded `python-library` project is far below

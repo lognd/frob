@@ -25,6 +25,7 @@ from frob.verify._watermark import record_intent
 # frob:ticket T-1693
 class TestQuarantineOverrideCeilings:
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings  # noqa: E501
     def test_not_quarantined_is_unchanged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_not_quarantined_is_unchanged  # noqa: E501
         original = BackpressureCeilings(max_depth=5, max_age_s=3600.0)
@@ -32,6 +33,7 @@ class TestQuarantineOverrideCeilings:
         assert result is original
 
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings  # noqa: E501
     def test_quarantined_forces_synchronous(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_quarantined_forces_synchronous  # noqa: E501
         assert raise_quarantine(
@@ -45,6 +47,7 @@ class TestQuarantineOverrideCeilings:
         assert result == BackpressureCeilings(max_depth=0, max_age_s=0.0)
 
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings  # noqa: E501
     def test_corrupt_store_also_forces_synchronous(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_corrupt_store_also_forces_synchronous  # noqa: E501
         path = tmp_path / ".frob" / "quarantine.json"
@@ -56,6 +59,8 @@ class TestQuarantineOverrideCeilings:
         assert result == BackpressureCeilings(max_depth=0, max_age_s=0.0)
 
     # frob:ticket T-2049
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_QUARANTINE_SUMMARY_NAMED_LIMIT  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings  # noqa: E501
     def test_notice_names_undisposed_count_and_dispose_command(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -86,6 +91,7 @@ class TestQuarantineOverrideCeilings:
 # frob:ticket T-2049
 class TestQuarantineUndisposedSummary:
     # frob:ticket T-2049
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_QUARANTINE_SUMMARY_NAMED_LIMIT  # noqa: E501
     def test_no_quarantine_ever_raised_is_unknown_not_a_crash(
         self, tmp_path: Path
     ) -> None:
@@ -100,6 +106,7 @@ class TestQuarantineUndisposedSummary:
         )
 
     # frob:ticket T-2049
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_QUARANTINE_SUMMARY_NAMED_LIMIT  # noqa: E501
     def test_corrupt_store_is_unknown(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_corrupt_store_is_unknown  # noqa: E501
         path = tmp_path / ".frob" / "quarantine.json"
@@ -110,6 +117,7 @@ class TestQuarantineUndisposedSummary:
         )
 
     # frob:ticket T-2049
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_QUARANTINE_SUMMARY_NAMED_LIMIT  # noqa: E501
     def test_raised_record_counts_undisposed_findings(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_raised_record_counts_undisposed_findings  # noqa: E501
         assert raise_quarantine(
@@ -186,6 +194,7 @@ class TestQuarantineUndisposedSummary:
 # frob:ticket T-1693
 class TestRaiseQuarantineOnPersistentBlockTimeout:
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_raise_quarantine_on_persistent_block_timeout  # noqa: E501
     def test_raises_with_a_synthetic_finding(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestRaiseQuarantineOnPersistentBlockTimeout.test_raises_with_a_synthetic_finding  # noqa: E501
         assert is_quarantined(tmp_path).danger_ok is False
@@ -193,6 +202,7 @@ class TestRaiseQuarantineOnPersistentBlockTimeout:
         assert is_quarantined(tmp_path).danger_ok is True
 
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_raise_quarantine_on_persistent_block_timeout  # noqa: E501
     def test_already_quarantined_is_a_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestRaiseQuarantineOnPersistentBlockTimeout.test_already_quarantined_is_a_noop  # noqa: E501
         original = raise_quarantine(
@@ -225,12 +235,14 @@ class TestAutoClearSyntheticQuarantine:
     _CEILINGS = BackpressureCeilings(max_depth=0, max_age_s=None)
 
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_clear_synthetic_quarantine  # noqa: E501
     def test_no_quarantine_is_a_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_no_quarantine_is_a_noop  # noqa: E501
         _auto_clear_synthetic_quarantine(tmp_path, self._CEILINGS)
         assert is_quarantined(tmp_path).danger_ok is False
 
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_clear_synthetic_quarantine  # noqa: E501
     def test_real_attributed_finding_never_auto_clears(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_real_attributed_finding_never_auto_clears  # noqa: E501
         assert raise_quarantine(
@@ -252,6 +264,7 @@ class TestAutoClearSyntheticQuarantine:
         assert is_quarantined(tmp_path).danger_ok is True
 
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_clear_synthetic_quarantine  # noqa: E501
     def test_synthetic_finding_stays_raised_while_still_tripped(
         self, tmp_path: Path
     ) -> None:
@@ -269,6 +282,7 @@ class TestAutoClearSyntheticQuarantine:
         assert is_quarantined(tmp_path).danger_ok is True
 
     # frob:ticket T-1693
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_clear_synthetic_quarantine  # noqa: E501
     def test_synthetic_finding_clears_once_status_is_untripped(
         self, tmp_path: Path
     ) -> None:

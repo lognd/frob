@@ -1030,3 +1030,22 @@ def _graph_snapshot(root: Path):  # noqa: ANN201
     if loaded.is_err:
         loaded = build_graph(root, cache)
     return loaded
+
+
+# frob:ticket T-5286
+def _fresh_graph_snapshot(root: Path):  # noqa: ANN201
+    """The current `GraphSnapshot`, ALWAYS incrementally rebuilt against
+    `root`'s current file state -- unlike `_graph_snapshot` above, never
+    trusts a pre-existing `load_graph(cache)` hit as-is. T-5034: a caller
+    whose correctness depends on the snapshot being current AS OF THIS
+    EXACT CALL (the REL001 bump computation, run against a temporary
+    squash worktree that may already carry a `.frob/cache.db` populated
+    by an EARLIER stage of the same land pipeline, before the squash-
+    apply wrote the files this snapshot must see) needs this, not
+    `_graph_snapshot`'s cache-or-build fallback. `build_graph`'s own
+    incremental reconciliation (mtime/hash staleness checks,
+    `_prune_stale_cache`) still makes repeat calls cheap; this only
+    skips the pure, no-staleness-check `load_graph` fast path."""
+    from frob.graph import build_graph
+
+    return build_graph(root, root / _CACHE_REL)

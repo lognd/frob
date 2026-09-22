@@ -73,6 +73,7 @@ class TestFixEngineTierA:
 
     # -- acceptance [0]: DOC007 dotted-form rewrite ------------------------
 
+    # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"  # noqa: E501
     def test_doc007_dotted_form_rewrite_applies_and_reverifies_clean(
         self, tmp_path: Path
     ) -> None:
@@ -785,6 +786,7 @@ class TestFixEngineTierA:
         assert applied[0].rule == "TICK006"
 
     # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    # frob:tests src/frob/gates/_fix_engine.py::MergeTargetKnownIds
     def test_tick006_not_measured_merge_target_files_nothing(
         self, tmp_path: Path
     ) -> None:
@@ -1090,6 +1092,7 @@ class TestFixEngineTierA:
     # function in isolation with a clean git repo, which is exactly what
     # let T-2690's own four unit tests pass while production re-filed.
 
+    # frob:tests src/frob/gates/_fix_engine.py::_resolve_via_git_rename_measured
     def test_tick006_git_rename_lookup_failure_files_nothing_never_treated_as_confirmed_non_rename(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -1173,6 +1176,7 @@ class TestFixEngineTierA:
         # ticket was filed.
         assert set(reloaded.danger_ok) == {"T-0001", "T-9998"}
 
+    # frob:tests src/frob/gates/_fix_engine.py::_resolve_via_git_rename_measured
     def test_tick006_lookup_failure_then_clean_retry_recovers_correctly(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -1253,6 +1257,7 @@ class TestFixEngineTierA:
         assert "T-draft-cafef00f" not in reloaded.danger_ok["T-0001"].body
         assert set(reloaded.danger_ok) == {"T-0001", "T-9997"}
 
+    # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile
     def test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket(
         self, tmp_path: Path
     ) -> None:
@@ -1519,6 +1524,7 @@ class TestFixEngineTierA:
         assert lock["entries"]["Api::fs.write"]["accepted_count"] == 2
 
     # frob:ticket T-2001
+    # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys111_capability_ratchet_sync kind="unit"  # noqa: E501
     def test_sys111_leaves_a_pre_existing_breach_untouched(
         self, tmp_path: Path
     ) -> None:
@@ -1568,6 +1574,7 @@ class TestFixEngineTierA:
         assert any(v.node == "Api" and v.atom == "fs.write" for v in violations)
 
     # frob:ticket T-4607
+    # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys111_capability_ratchet_sync kind="unit"  # noqa: E501
     def test_sys111_without_land_lock_reports_but_does_not_write(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1687,6 +1694,8 @@ class TestAutofixManifest:
         return build_graph(root, root / ".frob" / "cache.db").danger_ok
 
     # frob:ticket T-1348
+    # frob:tests src/frob/gates/_fix_engine_shared.py::clear_autofix_manifest
+    # frob:tests src/frob/gates/_fix_engine_shared.py::write_autofix_manifest
     def test_write_then_clear_roundtrip(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_fix_engine.py::TestAutofixManifest.test_write_then_clear_roundtrip  # noqa: E501
@@ -2959,6 +2968,7 @@ class TestFixEngineTierB:
     # -- DEAD001: the first real, production Tier-B handler (T-1643) -------
 
     # frob:ticket T-1643
+    # frob:tests src/frob/gates/_fix_engine_tier_b.py::fix_dead001_unreferenced_symbol_removal
     def test_dead001_removes_unreferenced_private_symbol(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_removes_unreferenced_private_symbol  # noqa: E501
@@ -2986,6 +2996,7 @@ class TestFixEngineTierB:
         assert "def foo" in rewritten
 
     # frob:ticket T-1643
+    # frob:tests src/frob/gates/_fix_engine_tier_b.py::fix_dead001_unreferenced_symbol_removal
     def test_dead001_skips_a_waived_finding(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_skips_a_waived_finding  # noqa: E501
@@ -3010,6 +3021,7 @@ class TestFixEngineTierB:
         assert "_never_called" in (root / "src" / "a.py").read_text(encoding="utf-8")
 
     # frob:ticket T-1643
+    # frob:tests src/frob/gates/_fix_engine_tier_b.py::fix_dead001_unreferenced_symbol_removal
     def test_dead001_at_most_one_deletion_per_file_per_pass(
         self, tmp_path: Path
     ) -> None:

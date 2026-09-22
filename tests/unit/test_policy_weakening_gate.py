@@ -53,6 +53,7 @@ class TestPolicyWeakeningGate:
         assert "Parent" in violations[0].message
 
     # frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_clean_policies_no_finding  # noqa: E501
+    # frob:tests src/frob/gates/_policy_weakening_gate.py::policy_weakening_gate  # noqa: E501
     def test_clean_policies_no_finding(self, tmp_path: Path) -> None:
         _write_design(
             tmp_path,
@@ -71,6 +72,7 @@ class TestPolicyWeakeningGate:
         assert policy_weakening_gate(tmp_path) == ()
 
     # frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_load_failure_skips_silently  # noqa: E501
+    # frob:tests src/frob/gates/_policy_weakening_gate.py::policy_weakening_gate  # noqa: E501
     def test_load_failure_skips_silently(self, tmp_path: Path) -> None:
         _write_design(tmp_path, "not valid strata syntax {{{")
         assert policy_weakening_gate(tmp_path) == ()

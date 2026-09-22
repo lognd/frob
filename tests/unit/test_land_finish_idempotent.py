@@ -145,6 +145,7 @@ class TestFinishOnlyIfAlreadyLanded:
     `cfg.ticket_id` is already terminal on `main`, running pure cleanup
     instead."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_worktree_content_already_on_main  # noqa: E501
     def test_terminal_on_main_skips_land_core_and_cleans_up(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -183,6 +184,7 @@ class TestFinishOnlyIfAlreadyLanded:
         # merge+BUG002-repro re-verification) is never called.
         assert land_core_calls == []
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_worktree_content_already_on_main  # noqa: E501
     def test_non_terminal_on_main_runs_the_normal_land(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -304,6 +306,7 @@ class TestReadTicketStateAtHead:
     introduces so `_ticket_terminal_state_on_main` can never mistake an
     uncommitted working-tree edit for main's real state."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_read_ticket_state_at_head
     def test_reads_committed_state_not_dirty_working_tree(self, repo: Path) -> None:
         # frob:tests \
         # tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_rea\
@@ -319,6 +322,7 @@ class TestReadTicketStateAtHead:
         assert transition(repo, tid, TicketState.DONE).is_ok
         assert _read_ticket_state_at_head(repo, tid) == "in-progress"
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_read_ticket_state_at_head
     def test_returns_none_when_head_has_no_such_ticket(self, repo: Path) -> None:
         # frob:tests \
         # tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_ret\

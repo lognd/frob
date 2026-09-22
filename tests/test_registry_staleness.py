@@ -45,12 +45,14 @@ class TestMissingGateRuleIds:
         assert missing == frozenset({"COV001"})
 
     # frob:ticket T-0560
+    # frob:tests src/frob/registry/_staleness.py::missing_gate_rule_ids
     def test_fully_covered_is_empty(self, tmp_path: Path) -> None:
         path = _write_fixture(tmp_path)
         missing = missing_gate_rule_ids(path, frozenset({"REF001"}))
         assert missing == frozenset()
 
     # frob:ticket T-0560
+    # frob:tests src/frob/registry/_staleness.py::missing_gate_rule_ids
     def test_unreadable_file_is_empty(self, tmp_path: Path) -> None:
         missing = missing_gate_rule_ids(tmp_path / "nope.yaml", frozenset({"COV001"}))
         assert missing == frozenset()
@@ -61,6 +63,7 @@ class TestSyncGateRuleEntries:
     # frob:tests \
     # tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_appends_every_missing_rule  # noqa: E501
     # frob:ticket T-0560
+    # frob:tests src/frob/registry/_staleness.py::sync_gate_rule_entries
     def test_appends_every_missing_rule(self, tmp_path: Path) -> None:
         path = _write_fixture(tmp_path)
 
@@ -75,6 +78,7 @@ class TestSyncGateRuleEntries:
         assert "gate_rule_total: 3" in text
 
     # frob:ticket T-0560
+    # frob:tests src/frob/registry/_staleness.py::sync_gate_rule_entries
     def test_already_in_sync_returns_empty_tuple(self, tmp_path: Path) -> None:
         path = _write_fixture(tmp_path)
 
@@ -89,6 +93,7 @@ class TestSyncGateRuleEntries:
         assert 'fixability: "manual"' in path.read_text()
 
     # frob:ticket T-0560
+    # frob:tests src/frob/registry/_staleness.py::sync_gate_rule_entries
     def test_missing_file_rejected(self, tmp_path: Path) -> None:
         result = sync_gate_rule_entries(tmp_path / "nope.yaml", frozenset({"COV001"}))
         assert result.is_err

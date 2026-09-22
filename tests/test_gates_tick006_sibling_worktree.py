@@ -71,6 +71,7 @@ class TestSiblingWorktreeKnownIds:
     """`_sibling_worktree_known_ids` (T-3108): widens known-id resolution
     to every OTHER live git worktree's own local ledger."""
 
+    # frob:tests src/frob/gates/_fix_engine.py::_sibling_worktree_known_ids
     def test_reads_an_active_id_from_another_worktree(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.tes\
@@ -85,6 +86,7 @@ class TestSiblingWorktreeKnownIds:
         found = _sibling_worktree_known_ids(main_repo)
         assert "T-3107" in found
 
+    # frob:tests src/frob/gates/_fix_engine.py::_sibling_worktree_known_ids
     def test_excludes_root_itself(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.tes\
@@ -102,6 +104,7 @@ class TestSiblingWorktreeKnownIds:
         found = _sibling_worktree_known_ids(main_repo)
         assert found == frozenset()
 
+    # frob:tests src/frob/gates/_fix_engine.py::_sibling_worktree_known_ids
     def test_unreadable_worktree_is_skipped_not_fatal(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.tes\

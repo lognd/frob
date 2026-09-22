@@ -66,6 +66,7 @@ class TestDeprecatedCurrentReferencesImportGating:
     `subprocess.run(` in a file that never imports a deprecated `run`)
     is not a caller."""
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_current_references kind="unit"  # noqa: E501
     def test_unrelated_same_name_call_in_non_importing_file_is_excluded(
         self, tmp_path: Path
     ) -> None:
@@ -148,6 +149,7 @@ class TestDeprecatedBaselineEntry:
     """`DeprecatedBaselineEntry.file_counts`: decodes `"file#count"`
     entries back into a `{file: count}` mapping (T-1052)."""
 
+    # frob:tests src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineEntry.file_counts  # noqa: E501
     def test_file_counts_decodes_encoded_references(self) -> None:
         """T-1052: `"file#count"`-encoded references decode to their
         `(file, count)` pairs."""
@@ -161,6 +163,7 @@ class TestDeprecatedBaselineEntry:
 class TestDeprecatedBaselineLock:
     """`DeprecatedBaselineLock.for_symbol`."""
 
+    # frob:tests src/frob/gates/_deprecated_baseline.py::DeprecatedBaselineLock.for_symbol  # noqa: E501
     def test_for_symbol_missing_is_none(self) -> None:
         """T-0639: an un-baselined symbol resolves to `None`, not a crash."""
         # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedBaselineLock.test_for_symbol_missing_is_none  # noqa: E501
@@ -174,12 +177,14 @@ class TestDeprecatedBaselineLock:
 class TestLoadSave:
     """`load_deprecated_baseline`/`save_deprecated_baseline`."""
 
+    # frob:tests src/frob/gates/_deprecated_baseline.py::load_deprecated_baseline  # noqa: E501
     def test_missing_file_is_empty(self, tmp_path: Path) -> None:
         """T-0639: no committed lock file yet is a valid, empty baseline."""
         # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestLoadSave.test_missing_file_is_empty  # noqa: E501
         lock = load_deprecated_baseline(tmp_path)
         assert lock.entries == ()
 
+    # frob:tests src/frob/gates/_deprecated_baseline.py::save_deprecated_baseline  # noqa: E501
     def test_save_then_load_round_trips(self, tmp_path: Path) -> None:
         """T-0639: a saved lock loads back byte-identical in content, sorted
         deterministically."""
@@ -211,6 +216,7 @@ class TestTighten:
     """`tighten_deprecated_baseline`: seed-once, shrink-only, drop-if-gone
     -- now on the per-file-count key shape (T-1052)."""
 
+    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
     def test_first_seen_symbol_is_seeded_whole(self, tmp_path: Path) -> None:
         """T-0639: a symbol never baselined before is accepted whole, not
         flagged -- legacy callers at declaration time are not "new"."""
@@ -333,6 +339,7 @@ class TestTighten:
         assert entry is not None
         assert entry.file_counts() == {"src/b.py": 1}
 
+    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
     def test_symbol_no_longer_deprecated_is_dropped(self, tmp_path: Path) -> None:
         """Asserts a baselined symbol absent from `current` (directive
         removed, or symbol deleted) drops out of the baseline entirely.
@@ -369,6 +376,7 @@ class TestDepr005ViolationsGrowth:
             "    return x\n"
         )
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_depr005_violations kind="unit"  # noqa: E501
     def test_same_count_as_baseline_does_not_fire(self, tmp_path: Path) -> None:
         """T-1052: a file whose CURRENT count equals its baselined count
         does not fire -- proves the comparison is a strict `>`, not `>=`
@@ -392,6 +400,7 @@ class TestDepr005ViolationsGrowth:
         violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         assert not any(v.rule == "DEPR005" for v in violations)
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_depr005_violations kind="unit"  # noqa: E501
     def test_growth_beyond_baseline_fires_at_the_right_file_and_line(
         self, tmp_path: Path
     ) -> None:

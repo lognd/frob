@@ -45,6 +45,7 @@ def test_depr003_survives_repo_severity_overrides(tmp_path: Path) -> None:
 
 
 # frob:ticket T-4386
+# frob:tests src/frob/gates/_waive.py::_apply_severity_overrides
 def test_override_never_escalates_unresolved_severity(tmp_path: Path) -> None:
     """T-4386: `[gates.severity]` promoting a rule to error must never
     touch a `Severity.UNRESOLVED` finding of that same rule -- UNRESOLVED

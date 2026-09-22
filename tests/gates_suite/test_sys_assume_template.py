@@ -135,6 +135,7 @@ class TestFindSharedExpiry:
     """`find_shared_expiry` (pure, no design tree needed)."""
 
     # frob:tests src/frob/strata/_assume_template.py::find_shared_expiry kind="unit"
+    # frob:tests src/frob/strata/_assume_template.py::SharedExpiryGroup
     def test_red_on_monolith_shared_date(self) -> None:
         """GIVEN assumes from 3 distinct modules all sharing one review
         date, with `max_modules=2` WHEN `find_shared_expiry` runs THEN it
@@ -193,6 +194,7 @@ class TestModuleClaimsFromModels:
 
     # frob:tests src/frob/strata/_assume_template.py::module_claims_from_models \
     # kind="unit"
+    # frob:tests src/frob/strata/_assume_template.py::ModuleClaim
     def test_flattens_and_tags_each_claim_with_its_module(self) -> None:
         """GIVEN a `{module_label: claims}` mapping with two modules WHEN
         `module_claims_from_models` runs THEN every claim reappears exactly

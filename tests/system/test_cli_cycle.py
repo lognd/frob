@@ -188,6 +188,7 @@ def deferred_only_two_module_cycle_dir(tmp_path):
     return tmp_path
 
 
+# frob:tests src/frob/lang/__init__.py::extract_import_edges kind="e2e"  # noqa: E501
 def test_toplevel_two_module_cycle_fires(toplevel_two_module_cycle_dir):
     # frob:tests src/frob/app/cycle_runner.py::run kind="e2e"
     # frob:tests src/frob/lang/_extract.py::extract_import_edges kind="e2e"
@@ -198,6 +199,7 @@ def test_toplevel_two_module_cycle_fires(toplevel_two_module_cycle_dir):
     assert "cycle (" in r.stdout.lower()
 
 
+# frob:tests src/frob/lang/__init__.py::extract_import_edges kind="e2e"  # noqa: E501
 def test_deferred_only_cycle_does_not_fire(deferred_only_two_module_cycle_dir):
     # frob:tests src/frob/app/cycle_runner.py::run kind="e2e"
     # frob:tests src/frob/lang/_extract.py::extract_import_edges kind="e2e"

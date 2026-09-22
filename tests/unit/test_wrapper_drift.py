@@ -91,6 +91,7 @@ class TestWrapperDriftGate:
         generated yet to have drifted from."""
         assert wrapper_drift_gate(tmp_path) == ()
 
+    # frob:tests src/frob/gates/_wrapper_drift.py::wrapper_drift_gate  # noqa: E501
     def test_freshly_applied_project_is_clean(self, tmp_path):
         """Immediately after `apply`, the gate finds nothing to report."""
         apply_managed_blocks(tmp_path)
@@ -131,6 +132,7 @@ class TestWrapperDriftGate:
             v.rule == "WRAP002" and "not-a-real-entry" in v.message for v in violations
         )
 
+    # frob:tests src/frob/gates/_wrapper_drift.py::wrapper_drift_gate  # noqa: E501
     def test_mismatched_target_sets_is_wrap003(self, tmp_path):
         """Makefile and make.bat with different target/branch sets is
         reported as WRAP003."""

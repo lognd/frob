@@ -143,6 +143,7 @@ class TestValidateDesignateReproAtParent:
         ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         assert ticket.designated_repro_test is None
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_validate_designate_repro_at_parent  # noqa: E501
     def test_accepts_failed_at_parent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -168,6 +169,7 @@ class TestValidateDesignateReproAtParent:
         ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         assert ticket.designated_repro_test == "tests/x.py::test_a"
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_validate_designate_repro_at_parent  # noqa: E501
     def test_force_overrides_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -194,6 +196,7 @@ class TestValidateDesignateReproAtParent:
         ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         assert ticket.designated_repro_test == "tests/x.py::test_a"
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_validate_designate_repro_at_parent  # noqa: E501
     def test_non_bug_kind_skips_the_check(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -308,6 +311,7 @@ class TestEvidenceCheckRepro:
         assert "T-0001 TIMEOUT:" in message
         assert "--repro-timeout-s" in message
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro  # noqa: E501
     def test_reports_failed_at_parent_exit0(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -335,6 +339,7 @@ class TestEvidenceCheckRepro:
         ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         assert ticket.designated_repro_test is None
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro  # noqa: E501
     def test_reports_passed_at_parent_exit1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -422,6 +427,7 @@ class TestEvidenceCheckRepro:
         assert "squash" in caplog.text.lower()
 
     # frob:ticket T-2480
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro  # noqa: E501
     def test_no_node_id_resolves_designated_test(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

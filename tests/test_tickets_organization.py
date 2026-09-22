@@ -174,6 +174,7 @@ class TestSetComponent:
         assert result.danger_ok.component is None
 
     # frob:ticket T-2353
+    # frob:tests src/frob/tickets/_setters.py::set_component
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_organization.py::TestSetComponent.test_reason_missing_refuses  # noqa: E501
@@ -475,6 +476,7 @@ class TestArchiveRefusesLiveWorktrees:
         )
 
     # frob:ticket T-1750
+    # frob:tests src/frob/tickets/_archive.py::_refuse_archive_if_other_worktrees_live kind="unit"  # noqa: E501
     def test_refuses_when_another_worktree_exists(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_refuses_when_another_worktree_exists  # noqa: E501
@@ -498,6 +500,7 @@ class TestArchiveRefusesLiveWorktrees:
         assert "T-0001" in active.danger_ok
 
     # frob:ticket T-1750
+    # frob:tests src/frob/tickets/_archive.py::_refuse_archive_if_other_worktrees_live kind="unit"  # noqa: E501
     def test_force_overrides_the_live_worktree_refusal(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_force_overrides_the_live_worktree_refusal  # noqa: E501
@@ -517,6 +520,7 @@ class TestArchiveRefusesLiveWorktrees:
         assert result.danger_ok == 1
 
     # frob:ticket T-1750
+    # frob:tests src/frob/tickets/_archive.py::_refuse_archive_if_other_worktrees_live kind="unit"  # noqa: E501
     def test_no_other_worktree_archives_normally(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_no_other_worktree_archives_normally  # noqa: E501
@@ -890,6 +894,7 @@ class TestRunsLastParallelSafeCli:
     for `scope-ack`."""
 
     # frob:ticket T-2624
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_runs_last_parallel_safe
     def test_cli_sets_both_fields(self, tmp_path: Path) -> None:
         from frob.tickets import load_queue
 
@@ -916,6 +921,7 @@ class TestRunsLastParallelSafeCli:
         )
 
     # frob:ticket T-2624
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_runs_last_parallel_safe
     def test_cli_reason_missing_exits_nonzero(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         spec = TicketSpec(

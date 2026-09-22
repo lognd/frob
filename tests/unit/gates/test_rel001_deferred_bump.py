@@ -46,6 +46,7 @@ class TestRel001FragmentsPending:
     """`_rel001_fragments_pending`: whether `root/changelog.d/` has at
     least one parseable fragment."""
 
+    # frob:tests src/frob/gates/__init__.py::_rel001_fragments_pending  # noqa: E501
     def test_true_with_a_fragment(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_true_with_a_fragment  # noqa: E501
         from frob.gates import _rel001_fragments_pending
@@ -54,12 +55,14 @@ class TestRel001FragmentsPending:
         assert write_changelog_fragment(tmp_path, "T-0001", "minor", "note").is_ok
         assert _rel001_fragments_pending(tmp_path) is True
 
+    # frob:tests src/frob/gates/__init__.py::_rel001_fragments_pending  # noqa: E501
     def test_false_with_no_fragments(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_false_with_no_fragments  # noqa: E501
         from frob.gates import _rel001_fragments_pending
 
         assert _rel001_fragments_pending(tmp_path) is False
 
+    # frob:tests src/frob/gates/__init__.py::_rel001_fragments_pending  # noqa: E501
     def test_false_on_malformed_fragment(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_false_on_malformed_fragment  # noqa: E501
         """Fail-closed: an unparseable fragment must never count as
@@ -75,6 +78,7 @@ class TestRel001DeferredNote:
     """`_rel001_deferred_note`: the WARN-severity message naming the bump
     class and the deferred-via-fragments remedy."""
 
+    # frob:tests src/frob/gates/__init__.py::_rel001_deferred_note  # noqa: E501
     def test_names_bump_and_fragment_mechanism(self) -> None:
         # frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001DeferredNote.test_names_bump_and_fragment_mechanism  # noqa: E501
         from frob.gates import Severity, _rel001_deferred_note
@@ -90,6 +94,7 @@ class TestRel001DeferredNote:
         assert "changelog.d" in v.message
         assert "release cut" in v.message
 
+    # frob:tests src/frob/gates/__init__.py::_rel001_deferred_note  # noqa: E501
     def test_empty_for_none_bump(self) -> None:
         # frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001DeferredNote.test_empty_for_none_bump  # noqa: E501
         from frob.gates import _rel001_deferred_note

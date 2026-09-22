@@ -43,6 +43,7 @@ class TestStrandReferenceForEdge:
     """Unit coverage for the dispatch table itself -- the T-4312
     generalization past WIRE001-only."""
 
+    # frob:tests src/frob/tickets/_land.py::_stranded_directives_for_ticket
     def test_waive_wire001_follow_up_is_found(self) -> None:
         edge = _edge(
             EdgeKind.WAIVE, "WIRE001", "src/x.py:10", follow_up="T-9001", reason="r"
@@ -69,6 +70,7 @@ class TestStrandReferenceForEdge:
         ref, _, _, _ = _strand_reference_for_edge(edge)
         assert ref is None
 
+    # frob:tests src/frob/tickets/_land.py::_stranded_directives_for_ticket
     def test_todo_directive_is_found(self) -> None:
         edge = _edge(EdgeKind.TODO, "T-9001", "src/y.py:20")
         ref, kind_label, rule, remedy = _strand_reference_for_edge(edge)
@@ -157,6 +159,7 @@ class TestTransitionWarnsOnStranding:
     """The verification the ticket's own body demands: force the
     condition, don't just assert the machinery in isolation."""
 
+    # frob:tests src/frob/tickets/_land.py::_stranded_directives_for_ticket
     def test_drop_warns_on_stranded_waive_follow_up(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -205,6 +208,8 @@ class TestTransitionWarnsOnStranding:
             for r in caplog.records
         )
 
+    # frob:tests src/frob/tickets/_land.py::_stranded_directives_for_ticket
+    # frob:tests src/frob/tickets/_evidence.py::_warn_stranded_directives
     def test_close_warns_on_stranded_todo(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -231,6 +236,8 @@ class TestTransitionWarnsOnStranding:
         assert any("todo_site.py" in r.message for r in matches)
         assert any("TODO002" in r.message for r in matches)
 
+    # frob:tests src/frob/tickets/_land.py::_stranded_directives_for_ticket
+    # frob:tests src/frob/tickets/_evidence.py::_warn_stranded_directives
     def test_close_with_no_referencing_directives_is_silent(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -248,6 +255,7 @@ class TestTransitionWarnsOnStranding:
         matches = [r for r in caplog.records if "strands a directive" in r.message]
         assert matches == []
 
+    # frob:tests src/frob/tickets/_evidence.py::_warn_stranded_directives
     def test_drop_warns_on_stranded_todo(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

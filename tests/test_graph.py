@@ -88,6 +88,8 @@ class TestDigests:
         assert d1.doc == d2.doc
 
     # frob:tests src/frob/graph/digest.py::_normalize_newlines
+    # frob:tests src/frob/graph/digest.py::_digest_doc
+    # frob:tests src/frob/graph/digest.py::_hash_tokens
     def test_crlf_checkout_does_not_move_digest(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/digest.py::compute_digests
         # T-4391: a Windows (core.autocrlf) checkout of the IDENTICAL source
@@ -661,6 +663,7 @@ class TestParseFailures:
 
     # frob:ticket T-0558
     # frob:ticket T-0561
+    # frob:tests src/frob/graph/__init__.py::_parse_source_file_fresh
     def test_parse_error_is_recorded_as_parse_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -734,6 +737,7 @@ class TestBuildIncremental:
         return tmp_path
 
     # frob:ticket T-0918
+    # frob:tests src/frob/graph/__init__.py::build_graph  # noqa: E501
     def test_stats_sum_source_and_doc_counts_not_difference(
         self, tmp_path: Path
     ) -> None:
@@ -990,6 +994,7 @@ class TestExclude:
         assert "src/a.py" in paths
         assert "tests/fixtures/b.py" in paths
 
+    # frob:tests src/frob/graph/__init__.py::_walk_repo_files
     def test_nested_git_worktree_pruned_without_config(self, tmp_path: Path) -> None:
         """A nested git checkout (own `.git` dir) is pruned by default, with
         no `[graph] exclude` entry needed -- T-0239: `.claude/worktrees/*`
@@ -1026,6 +1031,7 @@ class TestExclude:
         assert ".claude/hooks/dispatch-telemetry.py" in paths
 
     # frob:ticket T-4625
+    # frob:tests src/frob/graph/__init__.py::_walk_repo_files
     def test_walk_source_files_prunes_before_descent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1064,6 +1070,7 @@ class TestExclude:
     # frob:ticket T-0544
     # frob:ticket T-0561
     # frob:ticket T-4625
+    # frob:tests src/frob/graph/__init__.py::_walk_repo_files  # noqa: E501
     def test_walk_repo_files_classifies_top_level_readme_as_doc(
         self, tmp_path: Path
     ) -> None:
@@ -2045,6 +2052,7 @@ class TestGeneratedSource:
         assert is_generated_source(tmp_path, "src/b.ts") is True
         assert is_generated_source(tmp_path, "src/c.ts") is True
 
+    # frob:tests src/frob/graph/_generated.py::is_generated_source  # noqa: E501
     def test_is_generated_source_false_for_hand_authored_file(
         self, tmp_path: Path
     ) -> None:
@@ -2053,6 +2061,7 @@ class TestGeneratedSource:
         _write(tmp_path, "src/d.py", '"""A hand-written module."""\n\nx = 1\n')
         assert is_generated_source(tmp_path, "src/d.py") is False
 
+    # frob:tests src/frob/graph/_generated.py::is_generated_source  # noqa: E501
     def test_is_generated_source_false_for_missing_file(self, tmp_path: Path) -> None:
         from frob.graph._generated import is_generated_source
 
@@ -2145,6 +2154,7 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::public_entry": (UNRESOLVED_CALLEE,)}
 
     # frob:ticket T-0809
+    # frob:tests src/frob/graph/callgraph.py::capability_gap_disclosure  # noqa: E501
     def test_build_call_graph_does_not_mark_unresolved_public_looking_call(
         self, tmp_path: Path
     ) -> None:
@@ -2164,6 +2174,7 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0809
+    # frob:tests src/frob/graph/callgraph.py::capability_gap_disclosure  # noqa: E501
     def test_build_call_graph_default_preserves_old_silent_omission_behavior(
         self, tmp_path: Path
     ) -> None:
@@ -2183,6 +2194,7 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0809
+    # frob:tests src/frob/graph/callgraph.py::capability_gap_disclosure  # noqa: E501
     def test_build_call_graph_resolved_private_callee_is_not_also_unresolved(
         self, tmp_path: Path
     ) -> None:
@@ -2241,6 +2253,7 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0813
+    # frob:tests src/frob/graph/callgraph.py::_unresolved_exempt_names  # noqa: E501
     def test_build_call_graph_still_marks_unresolved_self_attribute_call(
         self, tmp_path: Path
     ) -> None:
@@ -3025,6 +3038,7 @@ class TestCapabilityGapDisclosure:
         # (T-1599) -- this is a real, not vacuous, empty-set assertion.
         assert call_graph.degraded_languages == ()
 
+    # frob:tests src/frob/graph/callgraph.py::capability_gap_disclosure  # noqa: E501
     def test_known_gap_is_disclosed_on_the_output_itself(
         self, tmp_path: Path, monkeypatch
     ) -> None:

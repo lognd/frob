@@ -109,6 +109,7 @@ def test_as_text(py_file):
     assert "defined" in text
 
 
+# frob:tests src/frob/xref/__init__.py::XrefResult.as_json
 def test_as_json(py_file):
     import json
 

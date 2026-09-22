@@ -24,15 +24,18 @@ from frob.app.ticket_runner._close_cmd import (
 class TestDeclaredPyprojectVersion:
     """ "Cannot verify" is `None`, never a version that satisfies."""
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version  # noqa: E501
     def test_absent_pyproject_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_absent_pyproject_is_none  # noqa: E501
         assert _declared_pyproject_version(tmp_path) is None
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version  # noqa: E501
     def test_unparsable_pyproject_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_unparsable_pyproject_is_none  # noqa: E501
         (tmp_path / "pyproject.toml").write_text("[project\n", encoding="utf-8")
         assert _declared_pyproject_version(tmp_path) is None
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version  # noqa: E501
     def test_reads_the_declared_version(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_reads_the_declared_version  # noqa: E501
         (tmp_path / "pyproject.toml").write_text(
@@ -44,6 +47,7 @@ class TestDeclaredPyprojectVersion:
 class TestVersionCovers:
     """Numeric dotted comparison; anything else is not satisfied."""
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_version_covers
     def test_equal_covers(self) -> None:
         # frob:tests \
         # tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_equal_covers
@@ -55,10 +59,12 @@ class TestVersionCovers:
         # tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_higher_covers
         assert _version_covers("0.357.0", "0.356.0") is True
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_version_covers
     def test_lower_does_not_cover(self) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_lower_does_not_cover  # noqa: E501
         assert _version_covers("0.355.0", "0.356.0") is False
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_version_covers
     def test_non_numeric_never_covers(self) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_non_numeric_never_covers  # noqa: E501
         assert _version_covers("0.356.0rc1", "0.356.0") is False
@@ -186,6 +192,7 @@ class TestRel001FragmentExistsForTicket:
     satisfying signal `_own_obligations_rel_bump_dirty` now accepts
     alongside "pyproject.toml already covers the diff"."""
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_rel001_fragment_exists_for_ticket  # noqa: E501
     def test_true_when_fragment_present(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestRel001FragmentExistsForTicket.test_true_when_fragment_present  # noqa: E501
         from frob.release._fragments import write_changelog_fragment
@@ -193,6 +200,7 @@ class TestRel001FragmentExistsForTicket:
         assert write_changelog_fragment(tmp_path, "T-0042", "minor", "note").is_ok
         assert _rel001_fragment_exists_for_ticket(tmp_path, "T-0042") is True
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_rel001_fragment_exists_for_ticket  # noqa: E501
     def test_false_when_absent(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestRel001FragmentExistsForTicket.test_false_when_absent  # noqa: E501
         assert _rel001_fragment_exists_for_ticket(tmp_path, "T-0042") is False

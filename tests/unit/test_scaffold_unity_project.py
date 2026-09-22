@@ -101,6 +101,7 @@ class TestOutputExistsRefusal:
         assert not (unity_project / "design").exists()
 
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestOutputExistsRefusal.test_force_true_overwrites  # noqa: E501
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
     def test_force_true_overwrites(self, unity_project: Path) -> None:
         first = render_unity_project(unity_project)
         assert first.is_ok, first.err
@@ -114,6 +115,7 @@ class TestNotAUnityProject:
     instead of producing a bogus config."""
 
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestNotAUnityProject.test_plain_directory_is_not_a_unity_project  # noqa: E501
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
     def test_plain_directory_is_not_a_unity_project(self, tmp_path: Path) -> None:
         plain_dir = tmp_path / "not_unity"
         plain_dir.mkdir()
@@ -124,6 +126,7 @@ class TestNotAUnityProject:
         assert result.danger_err is ScaffoldError.NotAUnityProject
 
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestNotAUnityProject.test_no_bogus_config_written  # noqa: E501
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
     def test_no_bogus_config_written(self, tmp_path: Path) -> None:
         plain_dir = tmp_path / "not_unity"
         plain_dir.mkdir()

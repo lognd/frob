@@ -526,6 +526,7 @@ class TestStaleDesign:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # invariant spec: [INV-026](invariants/INV-026.md)
+    # frob:tests src/frob/strata/_selfconform_core_rules.py::_stale_design_violations  # noqa: E501
     def test_via_scoped_grant_stale_while_other_surface_uses_same_kind(
         self, tmp_path: Path
     ):
@@ -1063,6 +1064,7 @@ class TestExtendedKindsDriftLock:
         assert observed["node.danger"].isdisjoint(_KIND_MAP.keys())
 
     # frob:tests tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock.test_observed_all_kinds_by_node_normalizes_through_kind_map  # noqa: E501
+    # frob:tests src/frob/strata/_selfconform_kinds.py::_observed_all_kinds_by_node  # noqa: E501
     def test_observed_all_kinds_by_node_normalizes_through_kind_map(
         self, tmp_path: Path
     ):
@@ -1128,6 +1130,7 @@ class TestWaiverChannel:
         assert "SYS100:net.connect" in waived[0].detail
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:tests src/frob/strata/_waive.py::apply_waivers
     def test_stale(self, tmp_path: Path):
         """`widget` declares no capability at all, so SYS100:net never
         fires -- the waiver on it matches zero findings and must be
@@ -1343,6 +1346,7 @@ class TestCoverageTotality:
     # frob:tests \
     # src/frob/strata/_selfconform_core_rules.py::_coverage_totality_violations \
     # kind="unit"
+    # frob:tests src/frob/strata/_selfconform_core_rules.py::_coverage_totality_scan_prefix  # noqa: E501
     def test_foreign_file_with_capability_fires_sys103(self, tmp_path: Path):
         """A file with an observed `net` effect and no node's `code=`
         glob binding it fires SYS103, even though SYS100/SYS101 (which
@@ -2138,6 +2142,7 @@ class TestTestsuiteViaGlobRatchet:
     surface is untouched (acceptance clause 1)."""
 
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    # frob:tests src/frob/strata/_effects.py::_via_is_bare_glob_only  # noqa: E501
     def test_new_test_file_matching_glob_via_needs_no_strata_edit(self, tmp_path: Path):
         """A brand-new `tests/**.py` file that spawns a subprocess (exec)
         and writes under a tmp dir (fs.write) is fully covered by a
@@ -2197,6 +2202,9 @@ class TestTestsuiteViaGlobRatchet:
         assert any(v.node == "widget" and "exec" in v.detail for v in hit)
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    # frob:tests src/frob/strata/_effects.py::_capability_ratchet_growth_finding  # noqa: E501
+    # frob:tests src/frob/strata/_effects.py::_write_capability_ratchet_lock_entry  # noqa: E501
+    # frob:tests src/frob/strata/_effects.py::_glob_via_observed_site_count  # noqa: E501
     def test_testsuite_glob_growth_auto_accepts_and_writes_lock(self, tmp_path: Path):
         """T-4495: a `testsuite` node whose `exec` grant is a bare
         `"tests/**"` glob, with NO existing ratchet lock entry (ceiling
@@ -2248,6 +2256,8 @@ class TestTestsuiteViaGlobRatchet:
         assert entry["reason"] == "testsuite glob growth"
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    # frob:tests src/frob/strata/_effects.py::_testsuite_glob_growth_finding  # noqa: E501
+    # frob:tests src/frob/strata/_effects.py::_land_commit_in_progress  # noqa: E501
     def test_sweep_context_does_not_write_lock(self, tmp_path: Path):
         """T-4563 regression: the SAME testsuite-glob growth as
         `test_testsuite_glob_growth_auto_accepts_and_writes_lock` above,
@@ -2286,6 +2296,7 @@ class TestTestsuiteViaGlobRatchet:
         assert not (tmp_path / CAPABILITY_RATCHET_LOCK_REL).is_file()
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    # frob:tests src/frob/strata/_effects.py::_land_commit_in_progress  # noqa: E501
     def test_warm_stage_env_override_finds_the_primary_root_lock(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
@@ -2347,6 +2358,8 @@ class TestTestsuiteViaGlobRatchet:
         assert lock_path.is_file()
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    # frob:tests src/frob/strata/_effects.py::_capability_ratchet_growth_finding  # noqa: E501
+    # frob:tests src/frob/strata/_effects.py::_testsuite_glob_ratcheted_keys  # noqa: E501
     def test_non_testsuite_bare_glob_via_is_not_auto_accepted(self, tmp_path: Path):
         """The T-4495 auto-accept carve-out is `testsuite`-specific: a
         DIFFERENT node declaring a bare-glob `via` still ratchets the
@@ -2424,6 +2437,7 @@ class TestBranchOwnViaGrowth:
 
     # frob:tests src/frob/strata/_effects.py::_branch_own_via_growth kind="unit"
     # frob:ticket T-4633
+    # frob:tests src/frob/strata/_effects.py::_read_new_strata_text  # noqa: E501
     def test_own_addition_is_measured(self, tmp_path: Path):
         """A `design/frob.strata` edit that adds one `via` entry to an
         existing node/atom, still uncommitted in the working tree, is
@@ -2447,6 +2461,7 @@ class TestBranchOwnViaGrowth:
 
     # frob:tests src/frob/strata/_effects.py::_branch_own_via_growth kind="unit"
     # frob:ticket T-4633
+    # frob:tests src/frob/strata/_effects.py::_read_new_strata_text  # noqa: E501
     def test_no_head_blob_treats_every_entry_as_added(self, tmp_path: Path):
         """A brand-new `design/frob.strata` with no committed `HEAD` blob
         at all (a repo with no commits yet, or the file itself newly
@@ -2466,6 +2481,7 @@ class TestBranchOwnViaGrowth:
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
     # frob:ticket T-4633
+    # frob:tests src/frob/strata/_effects.py::_capability_ratchet_growth_finding  # noqa: E501
     def test_branch_own_growth_auto_accepts(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
@@ -2524,6 +2540,7 @@ class TestBranchOwnViaGrowth:
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
     # frob:ticket T-4633
+    # frob:tests src/frob/strata/_effects.py::_capability_ratchet_growth_finding  # noqa: E501
     def test_growth_beyond_branch_own_addition_still_refuses(self, tmp_path: Path):
         """The negative control: `design/frob.strata`'s own committed-vs-
         working-tree diff shows the branch adding only ONE `via` entry

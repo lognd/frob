@@ -110,6 +110,7 @@ class TestEffectiveMilestone:
         queue = TicketQueue(tickets={epic.id: epic, story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == ("3.1.0", MilestoneSource.INHERITED)
 
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
     def test_no_milestone_anywhere_in_chain_is_none(self) -> None:
         """No milestone on the ticket or any ancestor: `(None, False)`, not
         an error -- the common pre-M2-backfill case."""
@@ -118,6 +119,7 @@ class TestEffectiveMilestone:
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == (None, None)
 
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
     def test_cycle_does_not_infinite_loop(self) -> None:
         """A malformed cyclic `parent` chain terminates instead of hanging
         (`parent` is deliberately unvalidated against cycles at the model
@@ -131,6 +133,7 @@ class TestEffectiveMilestone:
 class TestDoableSortKey:
     """`_doable_sort_key(t, queue)` -- milestone-primary ordering."""
 
+    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key  # noqa: E501
     def test_earlier_milestone_outranks_critical_later_milestone(self) -> None:
         """A LOW-priority v1.0 ticket must sort before a CRITICAL v1.1
         ticket while 1.0 is still shipping -- the exact scenario T-2577's
@@ -157,6 +160,7 @@ class TestDoableSortKey:
         assert "T-3002" in ids, "later-milestone ticket must not be hidden"
         assert ids == ["T-3001", "T-3002"]
 
+    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key  # noqa: E501
     def test_unmilestoned_sorts_after_every_declared_milestone(self) -> None:
         """An unmilestoned ticket sorts AFTER a declared-milestone one,
         deterministically -- not arbitrarily -- regardless of priority."""
@@ -172,6 +176,7 @@ class TestDoableSortKey:
         result = doable(queue, root=None, ignore_lease=True)
         assert [t.id for t in result] == ["T-4002", "T-4001"]
 
+    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key  # noqa: E501
     def test_semver_numeric_not_lexical_ordering(self) -> None:
         """ "1.10.0" must outrank "1.9.0" -- a lexical compare gets this
         backwards ("1.10.0" < "1.9.0" as strings)."""

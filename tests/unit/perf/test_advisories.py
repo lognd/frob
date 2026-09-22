@@ -45,6 +45,7 @@ class TestExternalCallAdvisories:
         assert violations[0].rule == "PERF-ADV-EXT"
         assert "requests.get" in violations[0].message
 
+    # frob:tests src/frob/perf/_advisories.py::external_call_advisories  # noqa: E501
     def test_minor_external_edge_does_not_fire(self) -> None:
         loop = _loop_section()
         index = {"pkg/mod.py": [loop]}
@@ -96,6 +97,7 @@ class TestNestedLoopFaninAdvisories:
         assert violations[0].rule == "PERF-ADV-FANIN"
         assert "pkg.mod.inner" in violations[0].message
 
+    # frob:tests src/frob/perf/_advisories.py::nested_loop_fanin_advisories  # noqa: E501
     def test_single_caller_loop_does_not_fire(self) -> None:
         inner = _loop_section(qualname="pkg.mod.inner", section_id="loop-inner")
         caller_a = _loop_section(qualname="pkg.mod.caller_a", section_id="loop-a")
@@ -122,6 +124,7 @@ def _sketch(values: list[float]):
 
 
 class TestHeavyTailAdvisories:
+    # frob:tests src/frob/perf/_advisories.py::heavy_tail_advisories  # noqa: E501
     def test_heavy_tail_ratio_fires(self) -> None:
         # Bimodal: mostly cheap, occasionally 10x -- p90 >> p50.
         values = [1.0] * 80 + [15.0] * 20
@@ -131,6 +134,7 @@ class TestHeavyTailAdvisories:
         assert violations[0].rule == "PERF-ADV-VARIANCE"
         assert "pkg.mod.fn" in violations[0].message
 
+    # frob:tests src/frob/perf/_advisories.py::heavy_tail_advisories  # noqa: E501
     def test_uniform_distribution_does_not_fire(self) -> None:
         values = [10.0] * 100
         sketches = {"k1": ("pkg.mod.fn", "pkg/mod.py", 3, _sketch(values))}

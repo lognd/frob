@@ -38,6 +38,7 @@ def _init_repo(tmp_path: Path) -> str:
 class TestBodyAmend:
     """`set_body` writes the ticket's body field via the ledger (T-2392)."""
 
+    # frob:tests src/frob/tickets/_setters.py::set_body
     def test_append_appends_text(self, tmp_path: Path) -> None:
         """`mode="append"` on a ticket with an existing body adds the new
         text after a blank line, preserving the original body verbatim --
@@ -66,6 +67,7 @@ class TestBodyAmend:
         assert "original body text" in reloaded.danger_ok.tickets[ticket_id].body
         assert "frob:no-behavior-change" in reloaded.danger_ok.tickets[ticket_id].body
 
+    # frob:tests src/frob/tickets/_setters.py::set_body
     def test_set_replaces_text(self, tmp_path: Path) -> None:
         """`mode="set"` REPLACES the body outright -- the old text must not
         survive, unlike `append`."""
@@ -80,6 +82,7 @@ class TestBodyAmend:
         assert result.danger_ok.body == "corrected body"
         assert "wrong body" not in result.danger_ok.body
 
+    # frob:tests src/frob/tickets/_setters.py::set_body
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
         """A blank/whitespace-only `reason` is refused with
         `BodyReasonMissing` -- the positive control mirroring T-2353's
@@ -90,6 +93,8 @@ class TestBodyAmend:
         assert blank.is_err
         assert blank.danger_err is TicketError.BodyReasonMissing
 
+    # frob:tests src/frob/tickets/_setters.py::set_body  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::BodyChangeEntry  # noqa: E501
     def test_append_records_body_change_entry(self, tmp_path: Path) -> None:
         """A successful `append` appends exactly one `BodyChangeEntry` to
         `ticket.body_changes` recording mode/reason -- the audit trail
@@ -190,6 +195,7 @@ class TestBodyCli:
     contract is "given a populated `AppConfig`, do the right thing" --
     independent of how that `AppConfig` got populated."""
 
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_body
     def test_cli_append_writes_body(self, tmp_path: Path) -> None:
         """A CLI-shaped `--append TEXT --reason TEXT` call persists the
         appended text to the ticket's body."""
@@ -215,6 +221,7 @@ class TestBodyCli:
         assert reloaded.is_ok
         assert "frob:no-behavior-change" in reloaded.danger_ok.tickets[ticket_id].body
 
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_body
     def test_cli_missing_text_exits_nonzero(self, tmp_path: Path) -> None:
         """Neither `--append`/`--append-file`/`--set`/`--set-file` given:
         `_body` exits nonzero rather than writing an empty/no-op change --

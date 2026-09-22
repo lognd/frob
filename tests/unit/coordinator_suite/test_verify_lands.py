@@ -13,11 +13,13 @@ from tests.unit.conftest import (
 class TestResolve:
     """`verify_lands.resolve`."""
 
+    # frob:tests scripts/verify_lands.py::resolve
     def test_resolves_full_sha(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A resolvable sha/ref returns git's full commit id, stripped."""
         monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed("abc123\n"))
         assert verify_lands.resolve("abc") == "abc123"
 
+    # frob:tests scripts/verify_lands.py::resolve
     def test_unknown_sha_returns_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A sha `rev-parse` cannot verify returns None, never raises."""
         monkeypatch.setattr(
@@ -29,11 +31,13 @@ class TestResolve:
 class TestIsAncestor:
     """`verify_lands.is_ancestor`."""
 
+    # frob:tests scripts/verify_lands.py::is_ancestor
     def test_true_when_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """`merge-base --is-ancestor` exit 0 means the sha landed."""
         monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(returncode=0))
         assert verify_lands.is_ancestor("abc123", "main") is True
 
+    # frob:tests scripts/verify_lands.py::is_ancestor
     def test_false_when_not_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A non-zero exit means the sha resolves but never landed on ref."""
         monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(returncode=1))
@@ -43,6 +47,7 @@ class TestIsAncestor:
 class TestSubject:
     """`verify_lands.subject`."""
 
+    # frob:tests scripts/verify_lands.py::subject
     def test_returns_commit_subject(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """The stripped stdout of `git log -1 --format=%s` is returned."""
         monkeypatch.setattr(
@@ -75,6 +80,7 @@ class TestLoadLandCommit:
         assert verify_lands.load_land_commit("T-9999") == "abc123full"
 
     # frob:ticket T-2220
+    # frob:tests scripts/verify_lands.py::load_land_commit
     def test_returns_none_for_an_unlanded_ticket(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -90,6 +96,7 @@ class TestLoadLandCommit:
         assert verify_lands.load_land_commit("T-9998") is None
 
     # frob:ticket T-2220
+    # frob:tests scripts/verify_lands.py::load_land_commit
     def test_returns_missing_for_an_unknown_ticket_id(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -155,6 +162,7 @@ class TestVerifyLandsMain:
         assert "UNKNOWN-SHA typo123" in out
         assert "NOT-LANDED" not in out.split("UNKNOWN-SHA")[1]
 
+    # frob:tests scripts/verify_lands.py::main
     def test_distinguishes_unknown_from_missing(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -203,6 +211,7 @@ class TestProbeLandsInFlight:
         )
         assert wait_for_land_slot.probe_lands_in_flight(["irrelevant"]) == 0
 
+    # frob:tests scripts/wait_for_land_slot.py::probe_lands_in_flight
     def test_nonzero_exit_is_unmeasured(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """POSITIVE CONTROL (T-2775): force the status probe to fail --
         the exact case the whole ticket exists to guard. A nonzero exit
@@ -214,6 +223,7 @@ class TestProbeLandsInFlight:
         )
         assert wait_for_land_slot.probe_lands_in_flight(["irrelevant"]) is None
 
+    # frob:tests scripts/wait_for_land_slot.py::probe_lands_in_flight
     def test_unparseable_output_is_unmeasured(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -224,6 +234,7 @@ class TestProbeLandsInFlight:
         )
         assert wait_for_land_slot.probe_lands_in_flight(["irrelevant"]) is None
 
+    # frob:tests scripts/wait_for_land_slot.py::probe_lands_in_flight
     def test_probe_timeout_is_unmeasured(self, monkeypatch: pytest.MonkeyPatch) -> None:
         def _raise(*a, **k):
             raise subprocess.TimeoutExpired(cmd="fleet_status", timeout=30)

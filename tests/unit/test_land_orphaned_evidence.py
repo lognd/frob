@@ -378,6 +378,7 @@ class TestOrphanEvidenceCheckOutcome:
     existed, and never ran, and nothing said so)."""
 
     # frob:ticket T-2255
+    # frob:tests src/frob/tickets/_land.py::_LAST_ORPHAN_EVIDENCE_OUTCOME
     def test_skipped_unmeasured_recorded_and_logged_on_collection_failure(
         self,
         repo: Path,
@@ -427,6 +428,7 @@ class TestOrphanEvidenceCheckOutcome:
         assert landing_id in caplog.text
 
     # frob:ticket T-2255
+    # frob:tests src/frob/tickets/_land.py::_LAST_ORPHAN_EVIDENCE_OUTCOME
     def test_ran_recorded_on_healthy_pass(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

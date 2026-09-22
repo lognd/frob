@@ -53,6 +53,7 @@ test_a.py::test_two PASSED
 
 
 class TestParsePytestLog:
+    # frob:tests src/frob/ci_report.py::TestFailure
     def test_parses_named_failures(self) -> None:
         # frob:tests src/frob/ci_report.py::parse_pytest_log
         outcome, failures = parse_pytest_log(_FAILING_LOG, truncated=False)
@@ -118,6 +119,8 @@ class TestBuildJobReport:
         assert report.failures == ()
         assert report.clusters == ()
 
+    # frob:tests src/frob/ci_report.py::JobReport
+    # frob:tests src/frob/ci_report.py::FailureCluster
     def test_failures_clustered(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -158,6 +161,7 @@ class TestBuildJobReport:
 
 
 class TestBuildRunReport:
+    # frob:tests src/frob/ci_report.py::RunReport
     def test_all_jobs_reported(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -88,6 +88,7 @@ class TestRuffDiagnosticIdentity:
     through -- see the function's own docstring for why (`ruff`'s JSON
     output reports an ABSOLUTE `filename`, unlike `ty`)."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land  # noqa: E501
     def test_ignores_line_and_col(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestRuffDiagnosticIdentity.test_ignores_line_and_col  # noqa: E501
         from frob.app.ticket_runner._land_cmd import _ruff_diagnostic_identity
@@ -191,6 +192,7 @@ class TestAssertTouchedFilesLintCleanPreLand:
     """T-3132's own acceptance triple -- the touched-file `ruff` gate
     attributed to the DIFF, not the FILE."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land  # noqa: E501
     def test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse(
         self,
         repo: Path,
@@ -232,6 +234,7 @@ class TestAssertTouchedFilesLintCleanPreLand:
                     f"log={caplog.text!r}"
                 ) from exc
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land  # noqa: E501
     def test_genuinely_new_violation_still_refuses(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_genuinely_new_violation_still_refuses  # noqa: E501
         # Must-fire fixture: a SECOND, genuinely new lint violation
@@ -250,6 +253,7 @@ class TestAssertTouchedFilesLintCleanPreLand:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land  # noqa: E501
     def test_second_new_violation_sharing_identity_with_pre_existing_one_still_refuses(
         self, repo: Path
     ) -> None:
@@ -283,6 +287,7 @@ class TestAssertTouchedFilesLintCleanPreLand:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land  # noqa: E501
     def test_baseline_unmeasurable_falls_back_to_file_scoped_refusal(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -312,6 +317,7 @@ class TestRelativizeDiagPath:
     host -- `ntpath` implements the real win32 `splitdrive`/`relpath`/
     `normcase` rules regardless of which OS this test itself runs on."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_same_drive_relativizes_normally(self) -> None:
         # frob:tests \
         # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
@@ -326,6 +332,7 @@ class TestRelativizeDiagPath:
             path_mod=ntpath,
         ) == ntpath.normcase("src\\bad_lint.py")
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_cross_drive_diag_and_base_do_not_crash(self) -> None:
         # frob:tests \
         # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
@@ -350,6 +357,7 @@ class TestRelativizeDiagPath:
             ntpath.abspath("D:\\a\\frob\\frob\\src\\bad_lint.py")
         )
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_live_and_baseline_pass_agree_across_differently_drived_trees(
         self,
     ) -> None:
@@ -384,6 +392,7 @@ class TestRelativizeDiagPath:
         assert live_identity == baseline_identity == "src\\bad_lint.py"
 
     # frob:ticket T-4461
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_ntpath_absolute_snapshot_rooted_diag_file_matches_live_identity(
         self,
     ) -> None:
@@ -416,6 +425,7 @@ class TestRelativizeDiagPath:
         assert live_identity == baseline_identity == "src\\bad_lint.py"
 
     # frob:ticket T-4461
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_posix_absolute_tmp_snapshot_path_matches_live_identity(self) -> None:
         # frob:tests \
         # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
@@ -441,6 +451,7 @@ class TestRelativizeDiagPath:
         assert live_identity == baseline_identity == "src/bad_lint.py"
 
     # frob:ticket T-4461
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_symlinked_snapshot_diag_file_unresolved_matches_realpath_base(
         self, tmp_path: Path
     ) -> None:

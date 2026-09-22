@@ -882,6 +882,7 @@ class TestWaive009Violations:
     untouched regardless of what it says about tickets (WAIVE006/007's
     territory, not WAIVE009's)."""
 
+    # frob:tests src/frob/gates/_waive.py::waive009_violations
     def test_promise_with_no_ticket_id_errors(self, tmp_path: Path) -> None:
         source = (
             "def helper(x):\n"
@@ -896,6 +897,7 @@ class TestWaive009Violations:
         assert violations[0].rule == "WAIVE009"
         assert violations[0].severity == Severity.ERROR
 
+    # frob:tests src/frob/gates/_waive.py::waive009_violations
     def test_promise_with_resolvable_ticket_id_still_errors(
         self, tmp_path: Path
     ) -> None:
@@ -915,6 +917,7 @@ class TestWaive009Violations:
         assert violations[0].rule == "WAIVE009"
         assert "T-0010" in violations[0].message
 
+    # frob:tests src/frob/gates/_waive.py::waive009_violations
     def test_promise_with_unresolvable_ticket_id_errors(self, tmp_path: Path) -> None:
         source = (
             "def helper(x):\n"
@@ -928,6 +931,7 @@ class TestWaive009Violations:
         assert len(violations) == 1
         assert violations[0].rule == "WAIVE009"
 
+    # frob:tests src/frob/gates/_waive.py::waive009_violations
     def test_promise_with_draft_ticket_id_still_errors(self, tmp_path: Path) -> None:
         """T-3295: a `T-draft-*` id no longer clears this either -- even
         in-flight work-in-progress is still a promise of future work, the
@@ -944,6 +948,7 @@ class TestWaive009Violations:
         assert len(violations) == 1
         assert violations[0].rule == "WAIVE009"
 
+    # frob:tests src/frob/gates/_waive.py::waive009_violations
     def test_no_promise_phrase_untouched(self, tmp_path: Path) -> None:
         """A reason naming zero tickets and promising no future work is
         WAIVE006/007's territory (or nobody's), never WAIVE009's."""
@@ -969,6 +974,7 @@ class TestWaive010Violations:
     above `_WAIVE010_DEFERRED_PHRASE_RES` in `frob.gates._waive` for why
     citation shape cannot be the signal)."""
 
+    # frob:tests src/frob/gates/_waive.py::waive010_violations
     def test_bare_until_wording_warns(self, tmp_path: Path) -> None:
         source = (
             "def helper(x):\n"
@@ -1019,6 +1025,7 @@ class TestWaive010Violations:
         assert len(violations) == 1
         assert violations[0].rule == "WAIVE010"
 
+    # frob:tests src/frob/gates/_waive.py::waive010_violations
     def test_provenance_reasoning_does_not_warn(self, tmp_path: Path) -> None:
         """The PROVENANCE shape: a ticket cited as the reasoning for why
         this is deliberately, permanently exempt -- no deferred-work
@@ -1035,6 +1042,7 @@ class TestWaive010Violations:
         violations = waive010_violations(snap)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_waive.py::waive010_violations
     def test_plain_permanent_reason_does_not_warn(self, tmp_path: Path) -> None:
         source = (
             "def helper(x):\n"
@@ -1090,6 +1098,7 @@ class TestWaive009Wiring:
     regression (the function existing but never being invoked) actually
     fails this test."""
 
+    # frob:tests src/frob/gates/_waive.py::waive009_violations
     def test_unresolvable_promise_fires_through_run_gates(self, tmp_path: Path) -> None:
         """A `frob:waive` reason promising follow-up work with no
         resolvable ticket id must surface as a WAIVE009 ERROR through a
@@ -1109,6 +1118,7 @@ class TestWaive009Wiring:
             "WAIVE009 did not fire through run_gates -- wiring regression"
         )
 
+    # frob:tests src/frob/gates/_waive.py::waive009_violations
     def test_resolvable_promise_also_fires_through_run_gates(
         self, tmp_path: Path
     ) -> None:
@@ -1223,6 +1233,7 @@ class TestWaive012PremiseExpiry:
     checkable tree-state condition must fire once that condition no
     longer holds."""
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_ticket_closed_predicate_fires_once_ticket_is_done(self) -> None:
         queue = TicketQueue(
             tickets={"T-0001": _ticket(ticket_id="T-0001", state=TicketState.DONE)}
@@ -1234,6 +1245,7 @@ class TestWaive012PremiseExpiry:
             is True
         )
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_ticket_closed_predicate_stays_quiet_while_open(self) -> None:
         queue = TicketQueue(
             tickets={
@@ -1247,6 +1259,7 @@ class TestWaive012PremiseExpiry:
             is False
         )
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_ticket_closed_predicate_unresolvable_id_is_none(self) -> None:
         queue = TicketQueue(tickets={})
         assert (
@@ -1256,6 +1269,7 @@ class TestWaive012PremiseExpiry:
             is None
         )
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_file_absent_predicate_fires_once_file_exists(self, tmp_path: Path) -> None:
         (tmp_path / "gone.py").write_text("x = 1\n")
         assert (
@@ -1265,6 +1279,7 @@ class TestWaive012PremiseExpiry:
             is True
         )
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_file_absent_predicate_stays_quiet_while_absent(
         self, tmp_path: Path
     ) -> None:
@@ -1275,6 +1290,7 @@ class TestWaive012PremiseExpiry:
             is False
         )
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_symbol_absent_predicate_fires_once_symbol_reappears(
         self, tmp_path: Path
     ) -> None:
@@ -1290,6 +1306,7 @@ class TestWaive012PremiseExpiry:
             is True
         )
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_symbol_absent_predicate_stays_quiet_while_symbol_missing(
         self, tmp_path: Path
     ) -> None:
@@ -1305,6 +1322,7 @@ class TestWaive012PremiseExpiry:
             is False
         )
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_plain_date_until_is_not_this_vocabulary(self) -> None:
         """A bare `YYYY-MM-DD` `until=` stays WAIVE005's own concern --
         none of the three predicate forms match a date literal, so this
@@ -1316,6 +1334,7 @@ class TestWaive012PremiseExpiry:
             is None
         )
 
+    # frob:tests src/frob/gates/_waive.py::_until_premise_expired
     def test_freeform_prose_is_not_a_predicate(self) -> None:
         assert (
             _until_premise_expired(
@@ -1327,6 +1346,7 @@ class TestWaive012PremiseExpiry:
             is None
         )
 
+    # frob:tests src/frob/gates/_waive.py::waive012_violations
     def test_gate_fires_error_once_named_file_reappears(self, tmp_path: Path) -> None:
         """End-to-end: a real `frob:waive` comment with a `file-absent:`
         `until=` fires WAIVE012 once the named file exists again."""
@@ -1345,6 +1365,7 @@ class TestWaive012PremiseExpiry:
         assert violations[0].severity == Severity.ERROR
         assert "file-absent:pkg/gone.py" in violations[0].message
 
+    # frob:tests src/frob/gates/_waive.py::waive012_violations
     def test_gate_stays_quiet_while_named_file_still_absent(
         self, tmp_path: Path
     ) -> None:

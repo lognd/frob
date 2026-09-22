@@ -147,6 +147,7 @@ class TestRunUnityBatchmode:
         assert result.danger_ok == {_NODE_A: True, _NODE_B: False}
 
     # frob:tests tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode.test_editor_not_found_is_err  # noqa: E501
+    # frob:tests src/frob/testing/_unity_batchmode.py::UnityBatchmodeError  # noqa: E501
     def test_editor_not_found_is_err(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

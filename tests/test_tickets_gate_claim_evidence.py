@@ -112,6 +112,7 @@ class TestT1399GateClaimOnClose:
     allows it; `None` (the default) is fully permissive -- mirroring
     T-0844/T-1384's own injected-boolean test shape."""
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_rejects_t1276_shape_when_gate_claims_verified_false(
         self, tmp_path: Path
     ) -> None:
@@ -136,6 +137,7 @@ class TestT1399GateClaimOnClose:
         assert result.is_err
         assert result.danger_err == TicketError.GateClaimUnverified
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_allows_t1276_shape_when_gate_claims_verified_true(
         self, tmp_path: Path
     ) -> None:
@@ -155,6 +157,7 @@ class TestT1399GateClaimOnClose:
         )
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_permissive_when_gate_claims_verified_none(
         self, tmp_path: Path
     ) -> None:
@@ -172,6 +175,7 @@ class TestT1399GateClaimOnClose:
         result = transition(tmp_path, "T-0001", TicketState.DONE)
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_unaffected_when_no_gate_claim_criterion_exists(
         self, tmp_path: Path
     ) -> None:

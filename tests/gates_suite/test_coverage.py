@@ -210,6 +210,7 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
 
+    # frob:tests src/frob/gates/__init__.py::_bound_to_open_ticket
     def test_cov002_done_ticket_covers_own_closing_diff(self, tmp_path: Path) -> None:
         """T-0214: closing the covering ticket in the same uncommitted diff
         that edits the symbol it covers must not turn into a COV002 hard
@@ -250,6 +251,8 @@ class TestCoverageGate:
         assert not any(v.rule == "COV002" for v in violations)
 
     # frob:ticket T-0590
+    # frob:tests src/frob/gates/__init__.py::_base_state_permits_grace
+    # frob:tests src/frob/gates/__init__.py::_bound_to_open_ticket
     def test_cov002_grace_covers_ticket_created_and_closed_in_same_diff(
         self, tmp_path: Path
     ) -> None:
@@ -295,6 +298,7 @@ class TestCoverageGate:
         assert not any(v.rule == "COV002" for v in violations)
 
     # frob:ticket T-0965
+    # frob:tests src/frob/gates/__init__.py::_open_scopes
     def test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff(
         self, tmp_path: Path
     ) -> None:
@@ -394,6 +398,7 @@ class TestCoverageGate:
         assert _open_scopes(queue, root=None, diff=diff) == []
 
     # frob:ticket T-0564
+    # frob:tests src/frob/gates/__init__.py::_ticket_marker_in_diff_hunk
     def test_cov002_grace_matches_hunk_anywhere_in_ticket_block(
         self, tmp_path: Path
     ) -> None:
@@ -436,6 +441,7 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
 
+    # frob:tests src/frob/gates/__init__.py::_bound_to_open_ticket
     def test_cov002_marker_touch_without_state_transition_still_fires(
         self, tmp_path: Path
     ) -> None:
@@ -477,6 +483,7 @@ class TestCoverageGate:
         assert v is not None
         assert "frob ticket new" in v.message
 
+    # frob:tests src/frob/gates/__init__.py::_bound_to_open_ticket
     def test_cov002_done_ticket_without_grace_still_fires(self, tmp_path: Path) -> None:
         """A `DONE` ticket whose close already landed as a separate commit
         (so `tickets.md` is no longer part of this diff) must NOT cover a
@@ -495,6 +502,7 @@ class TestCoverageGate:
         assert v is not None
         assert "frob ticket new" in v.message
 
+    # frob:tests src/frob/gates/__init__.py::_bound_to_open_ticket
     def test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires(
         self, tmp_path: Path
     ) -> None:
@@ -927,6 +935,7 @@ class TestCoverageGate:
         assert not any(v.rule == "COV003" for v in violations)
 
     # invariant spec: [INV-013](invariants/INV-013.md)
+    # frob:tests src/frob/gates/__init__.py::_path_level_evidence_collected
     def test_cov003_rejects_empty_directory_level_evidence(
         self, tmp_path: Path
     ) -> None:
@@ -990,6 +999,7 @@ class TestCoverageGate:
         assert not any(v.rule == "COV003" for v in violations)
 
     # frob:ticket T-2688
+    # frob:tests src/frob/gates/__init__.py::_cov008
     def test_cov008_fires_when_diff_deletes_a_cited_test(self, tmp_path: Path) -> None:
         """MUST-FIRE fixture (T-2688's own required positive control):
         deleting a test file some ticket's evidence still cites must be
@@ -1020,6 +1030,7 @@ class TestCoverageGate:
         assert node in v.message
 
     # frob:ticket T-2688
+    # frob:tests src/frob/gates/__init__.py::_cov008
     def test_cov008_silent_on_uncited_deletion(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET fixture #1 (T-2688): deleting a test file NO
         ticket's evidence cites is the overwhelming majority of ordinary
@@ -1048,6 +1059,7 @@ class TestCoverageGate:
         assert not any(v.rule == "COV008" for v in violations)
 
     # frob:ticket T-2688
+    # frob:tests src/frob/gates/__init__.py::_cov008
     def test_cov008_silent_on_rename_with_rebound_citation(
         self, tmp_path: Path
     ) -> None:
@@ -1122,6 +1134,7 @@ class TestCoverageGate:
         assert python_collection_failed2 is None
 
     # frob:ticket T-4429
+    # frob:tests src/frob/gates/__init__.py::_load_tests
     def test_load_tests_threads_platform_skipped_through(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -1225,6 +1238,7 @@ class TestCoverageGate:
         assert len(cov003) == 1
         assert "stderr tail" in cov003[0].message
 
+    # frob:tests src/frob/gates/__init__.py::_cov004_one
     def test_cov004_missing_attachment(self, tmp_path: Path) -> None:
         from frob.tickets import Attachment
 
@@ -1240,6 +1254,7 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "COV004" for v in violations)
 
+    # frob:tests src/frob/gates/__init__.py::_cov004_one
     def test_cov004_matching_sha_is_clean(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1271,6 +1286,7 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV004" for v in violations)
 
+    # frob:tests src/frob/gates/__init__.py::_cov005
     def test_cov005_directive_rebound_to_private_symbol_flags(
         self, tmp_path: Path
     ) -> None:
@@ -1307,6 +1323,7 @@ class TestCoverageGate:
         assert "_foo_impl" in v.message
         assert "T-0001" in v.message
 
+    # frob:tests src/frob/gates/__init__.py::_cov005
     def test_cov005_same_symbol_no_rebind_is_clean(self, tmp_path: Path) -> None:
         """A directive that stays bound to the same (still public) symbol
         across the diff must not fire COV005, even though the body changed."""
@@ -1329,6 +1346,7 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV005" for v in violations)
 
+    # frob:tests src/frob/gates/__init__.py::_cov005
     def test_cov005_no_old_blob_is_clean(self, tmp_path: Path) -> None:
         """A brand-new (never-committed) file has no "before" to compare
         against `diff.base`, so COV005 must not fire on it (only COV001
@@ -1930,6 +1948,7 @@ class TestCoverageGate:
     # frob:tests \
     # tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_fires_after_version_bump_since\
     # _deferral_landed  # noqa: E501
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo003_long_deferred
     def test_todo003_fires_after_version_bump_since_deferral_landed(
         self, tmp_path: Path
     ) -> None:
@@ -1964,6 +1983,7 @@ class TestCoverageGate:
     # frob:tests \
     # tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_silent_when_no_version_bump_si\
     # nce_deferral  # noqa: E501
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo003_long_deferred
     def test_todo003_silent_when_no_version_bump_since_deferral(
         self, tmp_path: Path
     ) -> None:
@@ -1984,6 +2004,7 @@ class TestCoverageGate:
     # frob:ticket T-0783
     # frob:tests \
     # tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_silent_when_ticket_closes  # noqa: E501
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo003_long_deferred
     def test_todo003_silent_when_ticket_closes(self, tmp_path: Path) -> None:
         """Acceptance (T-0783): once the deferred-to ticket closes, the
         finding clears -- `_todo003_long_deferred` only considers edges
@@ -2031,6 +2052,8 @@ class TestCoverageGate:
         assert waived_cov001.waived is not None
 
     # frob:ticket T-0553
+    # frob:tests src/frob/gates/__init__.py::_cov002_check_symref
+    # frob:tests src/frob/gates/__init__.py::_cov001
     def test_cov001_waiver_does_not_blanket_suppress_sibling_symbol(
         self, tmp_path: Path
     ) -> None:
@@ -2600,6 +2623,7 @@ class TestCoverageLoad:
         assert is_stamp_stale(tmp_path, stamp) is True
 
     # frob:ticket T-0545
+    # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
     def test_stamp_coverage_refreshes_committed_lock(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage
         # frob:tests src/frob/gates/_coverage.py::load_coverage_lock
@@ -2956,6 +2980,7 @@ class TestCoverageLoad:
         assert load_stamp(tmp_path) is None
 
     # frob:ticket T-1180
+    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated  # noqa: E501
     def test_stamp_coverage_refuses_below_deflation_floor(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage
         # T-1180: extends TEST011's WARN-only deflation heuristic into a
@@ -2992,6 +3017,7 @@ class TestCoverageLoad:
         assert not (tmp_path / "frob-coverage.lock.json").exists()
 
     # frob:ticket T-1180
+    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated  # noqa: E501
     def test_stamp_coverage_deflation_floor_skipped_below_min_known_modules(
         self, tmp_path: Path
     ) -> None:
@@ -3012,6 +3038,7 @@ class TestCoverageLoad:
         assert (tmp_path / ".frob" / "coverage-stamp").exists()
 
     # frob:ticket T-1435
+    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated  # noqa: E501
     def test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop(
         self, tmp_path: Path
     ) -> None:
@@ -3068,6 +3095,7 @@ class TestCoverageLoad:
         assert len(json.loads(lock_text)["module_line"]) == 24
 
     # frob:ticket T-1435
+    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated  # noqa: E501
     def test_stamp_coverage_provenance_check_skipped_without_committed_lock(
         self, tmp_path: Path
     ) -> None:
@@ -3099,6 +3127,7 @@ class TestCoverageLoad:
         assert (tmp_path / "frob-coverage.lock.json").exists()
 
     # frob:ticket T-1236
+    # frob:tests src/frob/gates/_coverage.py::_canary_deflation
     def test_stamp_coverage_refuses_zero_canary_module(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage
         # T-0969/T-1180 found that `module_join_fraction` alone reads
@@ -3140,6 +3169,7 @@ class TestCoverageLoad:
         assert not (tmp_path / "frob-coverage.lock.json").exists()
 
     # frob:ticket T-1236
+    # frob:tests src/frob/gates/_coverage.py::_canary_deflation  # noqa: E501
     def test_stamp_coverage_canary_check_skipped_when_module_unknown(
         self, tmp_path: Path
     ) -> None:
@@ -3861,6 +3891,7 @@ class TestEntrypointCoverage:
         (tmp_path / "coverage.xml").write_text(xml)
 
     # frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_uncovered_guard_fires_cov010  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::entrypoint_coverage_violations  # noqa: E501
     def test_uncovered_guard_fires_cov010(self, tmp_path: Path) -> None:
         from frob.gates._coverage import entrypoint_coverage_violations
 
@@ -3946,6 +3977,7 @@ class TestTestmock001:
     already-shipped instance this rule exists to catch."""
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_fires_when_the_only_binding_test_mocks_every_collaborator  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
     def test_fires_when_the_only_binding_test_mocks_every_collaborator(
         self, tmp_path: Path
     ) -> None:
@@ -3982,6 +4014,7 @@ class TestTestmock001:
         assert "helper" in fires[0].message
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_satisfied_by_a_companion_test_leaving_one_collaborator_real  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
     def test_satisfied_by_a_companion_test_leaving_one_collaborator_real(
         self, tmp_path: Path
     ) -> None:
@@ -4019,6 +4052,7 @@ class TestTestmock001:
         assert [v for v in violations if v.rule == "TESTMOCK001"] == []
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_t3933_shaped_dynamic_dispatch_table_scenario_fires  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
     def test_t3933_shaped_dynamic_dispatch_table_scenario_fires(
         self, tmp_path: Path
     ) -> None:
@@ -4055,6 +4089,7 @@ class TestTestmock001:
         assert "COLLECTORS" in fires[0].message
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_the_symbol_has_no_collaborators  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
     def test_silent_when_the_symbol_has_no_collaborators(self, tmp_path: Path) -> None:
         from frob.gates._coverage import testmock001_violations
 
@@ -4079,6 +4114,7 @@ class TestTestmock001:
         assert [v for v in violations if v.rule == "TESTMOCK001"] == []
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_no_test_resolves_at_all  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
     def test_silent_when_no_test_resolves_at_all(self, tmp_path: Path) -> None:
         """A `frob:tests` target naming a test function that does not
         actually exist resolves to nothing -- TESTMOCK001 reports an

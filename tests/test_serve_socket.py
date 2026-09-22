@@ -107,10 +107,12 @@ class TestSocketPath:
             sock.close()
             new_path.unlink(missing_ok=True)
 
+    # frob:tests src/frob/serve/_socketd.py::socket_path kind="unit"  # noqa: E501
     def test_stable_for_the_same_root(self, root: Path) -> None:
         # frob:tests tests/test_serve_socket.py::TestSocketPath.test_stable_for_the_same_root  # noqa: E501
         assert socket_path(root) == socket_path(root)
 
+    # frob:tests src/frob/serve/_socketd.py::socket_path kind="unit"  # noqa: E501
     def test_distinct_roots_get_distinct_paths(self, tmp_path: Path) -> None:
         # frob:tests tests/test_serve_socket.py::TestSocketPath.test_distinct_roots_get_distinct_paths  # noqa: E501
         root_a = tmp_path / "a"
@@ -130,6 +132,7 @@ class TestAcquireSingletonLock:
         assert result.is_ok
         result.danger_ok.close()
 
+    # frob:tests src/frob/serve/_socketd.py::acquire_singleton_lock kind="unit"  # noqa: E501
     def test_second_caller_loses_while_first_holds(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestAcquireSingletonLock.test_second_caller_loses_while_first_holds  # noqa: E501
@@ -140,6 +143,7 @@ class TestAcquireSingletonLock:
         assert second.danger_err == DaemonError.AlreadyRunning
         first.danger_ok.close()
 
+    # frob:tests src/frob/serve/_socketd.py::acquire_singleton_lock kind="unit"  # noqa: E501
     def test_lock_released_on_close_allows_next_caller(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestAcquireSingletonLock.test_lock_released_on_close_allows_next_caller  # noqa: E501
@@ -253,6 +257,7 @@ class TestAcquireSingletonLockPlatformBackends:
 
 
 class TestDispatchRequest:
+    # frob:tests src/frob/serve/_socketd.py::dispatch_request \
     def test_known_method_ok(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestDispatchRequest.test_known_method_ok
@@ -263,6 +268,8 @@ class TestDispatchRequest:
         # frob:tests src/frob/serve/_socketd.py::run_socket_daemon
         assert response["result"] == []
 
+    # frob:tests src/frob/serve/_socketd.py::run_socket_daemon
+    # frob:tests src/frob/serve/_socketd.py::dispatch_request
     def test_unknown_method_is_error(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestDispatchRequest.test_unknown_method_is_error
@@ -271,6 +278,7 @@ class TestDispatchRequest:
         assert response["id"] == 2
         assert response["error"]["code"] == "unknown_method"
 
+    # frob:tests src/frob/serve/_socketd.py::_RequestHandler._handle_version kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -304,6 +312,7 @@ class TestDispatchRequest:
             assert shutdown.is_ok
             thread.join(timeout=5)
 
+    # frob:tests src/frob/serve/_socketd.py::_RequestHandler._handle_shutdown kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -341,6 +350,10 @@ class TestDispatchRequest:
 
 class TestRunSocketDaemon:
     # frob:tests src/frob/serve/_socketd.py::socket_path kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_socketd.py::send_request kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_socketd.py::run_socket_daemon kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_socketd.py::_RequestHandler.handle kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_socketd.py::_IdleTracker.idle_for_s kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -392,6 +405,7 @@ class TestRunSocketDaemon:
             not _socketd.lock_path(root).exists() or True
         )  # lock file may remain, unlocked
 
+    # frob:tests src/frob/serve/_socketd.py::run_socket_daemon
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -414,6 +428,8 @@ class TestRunSocketDaemon:
         assert result.danger_err == DaemonError.AlreadyRunning
         held.danger_ok.close()
 
+    # frob:tests src/frob/serve/_socketd.py::send_request
+    # frob:tests src/frob/serve/_socketd.py::run_socket_daemon
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -470,6 +486,7 @@ class TestReapMultiprocessingChildren:
     `frob_shutdown` acknowledged but left a forkserver/resource_tracker
     child alive, needing a manual SIGTERM then SIGKILL."""
 
+    # frob:tests src/frob/serve/_socketd.py::_reap_multiprocessing_children  # noqa: E501
     def test_terminates_and_joins_active_children(self) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_terminates_and_joins_active_children  # noqa: E501
@@ -486,6 +503,7 @@ class TestReapMultiprocessingChildren:
                 proc.kill()
                 proc.join(timeout=5)
 
+    # frob:tests src/frob/serve/_socketd.py::_reap_multiprocessing_children  # noqa: E501
     def test_escalates_to_kill_if_terminate_does_not_stick(self, monkeypatch) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_escalates_to_kill_if_terminate_does_not_stick  # noqa: E501

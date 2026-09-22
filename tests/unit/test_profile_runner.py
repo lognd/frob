@@ -128,6 +128,8 @@ class TestProfileRunnerDowngrade:
             run(cfg)
         assert exc.value.code == 1
 
+    # frob:tests src/frob/tickets/_profile.py::downgrade_profile_ratchet  # noqa: E501
+    # frob:tests src/frob/app/profile_runner.py::run  # noqa: E501
     def test_downgrade_clears_a_real_ratchet(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

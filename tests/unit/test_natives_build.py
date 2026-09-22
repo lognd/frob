@@ -237,6 +237,7 @@ class TestBuildNatives:
         assert result.danger_err is NativesError.ExecDisabled
 
     # frob:ticket T-2805
+    # frob:tests src/frob/strata/_native_staleness.py::record_native_build_attempt
     def test_successful_build_records_a_native_build_attempt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

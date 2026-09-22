@@ -124,6 +124,10 @@ class TestDaemonLease:
         # test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths._opt_in.
         monkeypatch.setenv("FROB_DAEMON", "1")
 
+    # frob:tests src/frob/app/_daemon_proxy.py::release_daemon_lease kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_LeaseConnection.close kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_LeaseConnection.call kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -169,6 +173,7 @@ class TestDaemonLease:
         finally:
             _shutdown(root, thread)
 
+    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease kind="unit"  # noqa: E501
     def test_disabled_env_bypasses_lease(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_disabled_en\
@@ -178,6 +183,7 @@ class TestDaemonLease:
         assert result.is_err
         assert result.danger_err is ProxyReason.Disabled
 
+    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease kind="unit"  # noqa: E501
     def test_no_daemon_falls_back_unreachable(self, root: Path, monkeypatch) -> None:
         # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
         # reproducible from a Linux parent-commit repro"
@@ -206,6 +212,7 @@ class TestEnsureDaemonLivenessBranches:
     existing `TestEnsureDaemon` class in tests/test_app_daemon_proxy.py
     covers `NoSocket`/`Live`/`VersionSkew` but not these two."""
 
+    # frob:tests src/frob/app/_daemon_proxy.py::ensure_daemon kind="unit"  # noqa: E501
     def test_wedged_does_not_spawn_a_rival(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_lease_t1276.py.TestEnsureDaemonLivenessBranches.\
@@ -224,6 +231,7 @@ class TestEnsureDaemonLivenessBranches:
             "refuse it), so ensure_daemon must bypass for this run instead"
         )
 
+    # frob:tests src/frob/app/_daemon_proxy.py::ensure_daemon kind="unit"  # noqa: E501
     def test_orphaned_clears_socket_then_spawns(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_lease_t1276.py.TestEnsureDaemonLivenessBranches.\

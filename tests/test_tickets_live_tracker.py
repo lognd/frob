@@ -204,6 +204,7 @@ class TestLiveTrackerCitations:
         assert "notes.py" in citations[0]
 
     # frob:ticket T-4325
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
     def test_changelog_fragment_quoting_whole_directive_not_a_citation(
         self, tmp_path: Path
     ) -> None:
@@ -278,6 +279,7 @@ class TestLiveTrackerCitations:
         assert "mod.py" in citations[0]
 
     # frob:ticket T-1559
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
     def test_finds_comment_waiver_follow_up_attribute(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_follow_up_attribute  # noqa: E501
         """T-1559: a `frob:waive WIRE001 ... follow_up="T-1490"` directive
@@ -440,6 +442,7 @@ class TestLiveTrackerCitations:
         )
         assert len(citations) == 1
 
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
     def test_draft_id_always_clear(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_draft_id_always_clear  # noqa: E501
         _init_repo(tmp_path)
@@ -556,6 +559,7 @@ class TestAnchorMarker:
     nearly instructed to close one (T-1820) in the name of draining the
     queue."""
 
+    # frob:tests src/frob/tickets/_land.py::_refuse_anchor_terminal_land
     def test_terminal_land_refused(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_terminal_land_refused  # noqa: E501
@@ -591,6 +595,7 @@ class TestAnchorMarker:
         result = _refuse_anchor_terminal_land(ordinary)
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_land.py::set_anchor
     def test_set_anchor_requires_reason(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_requires_reason  # noqa: E501
@@ -608,6 +613,7 @@ class TestAnchorMarker:
         assert result.is_err
         assert result.danger_err == TicketError.AnchorReasonMissing
 
+    # frob:tests src/frob/tickets/_land.py::set_anchor
     def test_set_anchor_round_trips(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_round_trips  # noqa: E501

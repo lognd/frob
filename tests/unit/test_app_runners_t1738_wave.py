@@ -67,6 +67,7 @@ class TestWaveCommand:
         assert len(payload["groups"]) == 2
         assert payload["remainder"] == []
 
+    # frob:tests src/frob/app/ticket_runner/_query.py::_wave  # noqa: E501
     def test_plain_render_lists_groups_and_remainder(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -88,6 +89,7 @@ class TestWaveCommand:
         assert any("Remainder" in m for m in messages)
         assert any("T-0003" in m for m in messages)
 
+    # frob:tests src/frob/app/ticket_runner/_query.py::_wave  # noqa: E501
     def test_missing_agents_flag_is_a_clean_error(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_missing_agents_flag_is_a_clean_error  # noqa: E501
         import pytest

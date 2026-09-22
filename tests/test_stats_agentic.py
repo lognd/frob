@@ -211,6 +211,7 @@ def test_tool_call_histogram_counts_completed_calls_by_shape(tmp_path: Path):
     assert by_tool["Bash"].call_count == 2
 
 
+# frob:tests src/frob/stats/_agentic.py::ToolCallShape  # noqa: E501
 def test_tool_call_histogram_counts_unmatched_pre_as_blocked(tmp_path: Path):
     # frob:tests src/frob/stats/_agentic.py::agentic_report
     _write(
@@ -288,6 +289,7 @@ class TestDispatchCostReport:
     `kind="tool"` cost and `kind="ticket"` delivery events in the same
     telemetry stream."""
 
+    # frob:tests src/frob/stats/_agentic_dispatch.py::DispatchCostReport kind="unit"  # noqa: E501
     def test_empty_stream_yields_empty_report(self, tmp_path: Path):
         # frob:ticket T-3059
         # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
@@ -509,6 +511,7 @@ class TestDispatchCostReport:
         # 200 tokens / 2 delivered tickets
         assert report.tokens_per_landed_ticket == 100.0
 
+    # frob:tests src/frob/stats/_agentic_dispatch.py::MarginalRunDelta kind="unit"  # noqa: E501
     def test_marginal_run_deltas_ordered_and_computed_per_worktree(
         self, tmp_path: Path
     ):

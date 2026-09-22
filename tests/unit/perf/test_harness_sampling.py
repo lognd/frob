@@ -147,6 +147,7 @@ class TestHarnessSerialPoolsDecision:
         calls = self._run_with_spy(tmp_path, monkeypatch, "1")
         assert calls == [True]
 
+    # frob:tests src/frob/perf/_harness.py::main  # noqa: E501
     def test_env_zero_skips_serial_pools(self, tmp_path, monkeypatch) -> None:
         """`FROB_PERF_SERIAL_POOLS=0` is NOT `!= "0"` -- `install_serial_
         pools()` is NEVER called. A `!=` -> `==` mutation at the guard

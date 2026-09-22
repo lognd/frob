@@ -43,6 +43,7 @@ class TestTaintFindings:
         assert findings[0].var_name == "ref"
         assert findings[0].sink_call == "run"
 
+    # frob:tests src/frob/vet/_taint.py::taint_findings  # noqa: E501
     def test_validated_value_does_not_fire(self, tmp_path: Path) -> None:
         """The same flow through a `validate_ref(...)` hop clears taint --
         no finding."""
@@ -118,6 +119,7 @@ class TestTaintGate:
     """`frob.gates._taint_gate.taint_gate` -- the tracked-file-scan gate
     wrapper around `taint_findings`."""
 
+    # frob:tests src/frob/gates/_taint_gate.py::taint_gate  # noqa: E501
     def test_taint_gate_no_findings_on_empty_tracked_set(self, tmp_path: Path) -> None:
         """An empty (non-git) directory yields zero violations, not a
         crash -- `git ls-files` failing is handled, not fatal."""

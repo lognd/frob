@@ -33,6 +33,7 @@ def _write(root: Path, rel: str, text: str) -> Path:
 class TestContinuation:
     """`frob:<verb> ... \\` folds onto the following comment line (T-0286)."""
 
+    # frob:tests src/frob/graph/dsl.py::_fold_continuations
     def test_long_reason_continues_across_lines(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::parse_directives
         src = (
@@ -157,6 +158,7 @@ class TestContinuation:
         assert edges[0].target == "tests/a.py::test_foo"
         assert edges[0].attrs["kind"] == "integration"
 
+    # frob:tests src/frob/graph/dsl.py::_fold_continuations
     def test_unrelated_directives_on_consecutive_lines_do_not_fold(
         self, tmp_path: Path
     ) -> None:
@@ -745,6 +747,7 @@ class TestFoldCommentRuns:
     """`fold_comment_runs` (T-0441): same fold as `_fold_continuations`, plus
     the physical-line count each logical entry consumed."""
 
+    # frob:tests src/frob/graph/dsl.py::_fold_comment_runs_with_joins
     def test_run_length_matches_consumed_physical_lines(self) -> None:
         # frob:tests src/frob/graph/dsl.py::fold_comment_runs
         lines = [
@@ -921,6 +924,7 @@ class TestQuotedPositionalTarget:
     spaces (a vitest describe/it title, F-047) can be written as one
     value."""
 
+    # frob:tests src/frob/graph/dsl.py::_parse_target  # noqa: E501
     def test_quoted_target_with_spaces_parses_as_one_value(
         self, tmp_path: Path
     ) -> None:
@@ -951,6 +955,7 @@ class TestQuotedPositionalTarget:
         assert len(edges) == 1
         assert edges[0].target == "src/x.test.ts a title with spaces"
 
+    # frob:tests src/frob/graph/dsl.py::_parse_target  # noqa: E501
     def test_unquoted_target_with_space_is_still_an_error(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_line
         # MUST-FIRE (T-3893): no silent truncation of an unquoted value
@@ -965,6 +970,8 @@ class TestQuotedPositionalTarget:
         assert not edges
         assert len(malformed) == 1
 
+    # frob:tests src/frob/graph/dsl.py::_parse_target  # noqa: E501
+    # frob:tests src/frob/graph/dsl.py::_parse_attrs  # noqa: E501
     def test_nested_quote_in_quoted_target_is_a_named_refusal(
         self, tmp_path: Path
     ) -> None:
@@ -984,6 +991,7 @@ class TestQuotedPositionalTarget:
         assert len(malformed) == 1
         assert "nested quote" in malformed[0].reason
 
+    # frob:tests src/frob/graph/dsl.py::_parse_target  # noqa: E501
     def test_unterminated_quoted_target_is_a_named_refusal(
         self, tmp_path: Path
     ) -> None:
@@ -1046,6 +1054,7 @@ class TestQuotedTestsTitleMustNamePath:
     # frob:ticket T-4197
     # frob:tests \
     # tests/unit/graph/test_dsl.py::TestQuotedTestsTitleMustNamePath.test_pure_prose_quoted_target_is_malformed_not_a_free_pass  # noqa: E501
+    # frob:tests src/frob/graph/dsl.py::_tests_quoted_title_error
     def test_pure_prose_quoted_target_is_malformed_not_a_free_pass(
         self, tmp_path: Path
     ) -> None:

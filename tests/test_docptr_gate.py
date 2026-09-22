@@ -100,6 +100,7 @@ class TestDoc006FilePath:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_dot_frob_runtime_path_not_flagged(self, tmp_path: Path) -> None:
         """`.frob/*` is a real, expected-to-exist runtime artifact this
         repo's own `.gitignore` deliberately keeps untracked -- never a
@@ -356,6 +357,7 @@ class TestDoc006Config:
         assert found
         assert any("bogus.section" in v.message for v in found)
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_real_section_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", '[gates.severity]\nDOC001 = "warn"\n')
@@ -595,6 +597,7 @@ class TestDoc006Symbol:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_class_attribute_chain_not_flagged(self, tmp_path: Path) -> None:
         """`pkg.mod.Real.SOME_ATTR` -- `Real` is a real top-level symbol in
         `pkg.mod`, but a class ATTRIBUTE one level deeper is outside what
@@ -612,6 +615,7 @@ class TestDoc006Symbol:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_reexported_class_attribute_chain_not_flagged(self, tmp_path: Path) -> None:
         """T-1016: `pkg.Real.SOME_ATTR` where `Real` is defined in `pkg.mod`
         and RE-EXPORTED (not locally defined) through `pkg/__init__.py`'s
@@ -628,6 +632,7 @@ class TestDoc006Symbol:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_dunder_init_mid_chain_resolves_to_module(self, tmp_path: Path) -> None:
         """T-1016: `pkg.mod.__init__.real` -- a doc author spelling out a
         package's own `__init__.py` explicitly inside a longer chain
@@ -684,6 +689,7 @@ class TestDoc006TestsTargetShape:
         assert any("TestX::test_y" in v.message for v in found)
         assert all(v.severity == Severity.ERROR for v in found)
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_single_separator_target_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(
@@ -726,6 +732,7 @@ class TestDoc006FileSymbol:
         # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_py_private_twin_noted_in_message(self, tmp_path: Path) -> None:
         """The renamed-to-private awareness case: `digest_sig` was renamed
         `_digest_sig` and the doc was never updated -- the violation
@@ -739,6 +746,7 @@ class TestDoc006FileSymbol:
         assert found
         assert any("_digest_sig" in v.message for v in found)
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_rust_missing_fn_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "crate/src/lib.rs", "pub fn real() {}\n")
@@ -749,6 +757,7 @@ class TestDoc006FileSymbol:
         assert found
         assert any("nonexistent" in v.message for v in found)
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_rust_real_fn_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "crate/src/lib.rs", "pub fn real_fn() {}\n")
@@ -791,6 +800,7 @@ class TestDoc006FileSymbol:
         assert found
         assert any("gone.py" in v.message for v in found)
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_ambiguous_basename_shorthand_not_flagged(self, tmp_path: Path) -> None:
         """T-1228 round-3: a shorthand basename (`_mod.py`, no directory)
         that matches TWO different tracked files cannot be resolved OR
@@ -825,6 +835,7 @@ class TestDoc006BareIdentifier:
         _write(tmp_path, "docs/guide.md", f"# Anchor\n\n{doc_body}")
         _add_all(tmp_path)
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_unanchored_doc_not_checked(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "src/pkg/mod.py", "def real_thing(): pass\n")
@@ -833,6 +844,7 @@ class TestDoc006BareIdentifier:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_anchored_unresolved_without_twin_not_flagged(self, tmp_path: Path) -> None:
         """T-1228 round-3: a code-shaped bare identifier that resolves to
         NEITHER a public NOR a private name is silently skipped -- real-
@@ -849,6 +861,7 @@ class TestDoc006BareIdentifier:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_anchored_real_name_passes(self, tmp_path: Path) -> None:
         self._anchored_repo(
             tmp_path,
@@ -858,6 +871,7 @@ class TestDoc006BareIdentifier:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_anchored_private_twin_noted(self, tmp_path: Path) -> None:
         self._anchored_repo(
             tmp_path,
@@ -869,6 +883,7 @@ class TestDoc006BareIdentifier:
         assert found
         assert any("_digest_sig" in v.message for v in found)
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_plain_prose_word_not_flagged(self, tmp_path: Path) -> None:
         """Even inside an anchored doc, a plain English backtick word
         (no underscore, no multi-hump CamelCase) is not code-shaped and is
@@ -889,6 +904,7 @@ class TestDoc006WrappedSpan:
     a span an editor hard-wrapped mid-token still resolves as the SAME
     token written on one line."""
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_wrapped_backtick_span_resolves(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
@@ -909,6 +925,7 @@ class TestDoc006BareIdentifierNarrowing:
     ledger files outright, and resolves against the WHOLE project's
     symbol table, not just the one anchor file."""
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_multi_anchor_doc_not_checked(self, tmp_path: Path) -> None:
         """A doc describing TWO modules (two distinct frob:doc anchor
         files) is a reference/system doc, not a single-module doc -- kind
@@ -934,6 +951,7 @@ class TestDoc006BareIdentifierNarrowing:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_spec_prose_doc_excluded(self, tmp_path: Path) -> None:
         """A `docs/strata/**` page is spec/design-language prose -- its
         vocabulary is DSL terminology, not python identifiers, even when
@@ -1072,6 +1090,7 @@ class TestDoc006BareIdentifierNarrowing:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_cross_file_real_symbol_passes(self, tmp_path: Path) -> None:
         """A single-anchor doc mentioning a symbol defined in ANOTHER file
         (not its own anchor file) is a real cross-file reference, not
@@ -1092,6 +1111,7 @@ class TestDoc006BareIdentifierNarrowing:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_absent_everywhere_without_twin_not_flagged(self, tmp_path: Path) -> None:
         """T-1228 round-3: a single-anchor, non-spec doc's code-shaped bare
         identifier that resolves NOWHERE in the project (not the anchor
@@ -1142,6 +1162,7 @@ class TestDoc006TicketHistoricalExclusion:
     ticket's body (work still to be done) keeps being checked exactly
     like any other live doc. Positive control both directions."""
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_done_ticket_body_not_flagged(self, tmp_path: Path) -> None:
         """A DONE ticket's `ticket.md` is an immutable record of what was
         true when it was written -- a dangling pointer there must NOT
@@ -1164,6 +1185,7 @@ class TestDoc006TicketHistoricalExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-9001/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_dropped_ticket_body_not_flagged(self, tmp_path: Path) -> None:
         """Same exemption for DROPPED -- the other terminal state."""
         _init_repo(tmp_path)
@@ -1184,6 +1206,7 @@ class TestDoc006TicketHistoricalExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-9002/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_open_ticket_body_still_flagged(self, tmp_path: Path) -> None:
         """An OPEN (queued/in-progress/etc) ticket's body is NOT a
         historical record -- it describes work still to be done, and a
@@ -1208,6 +1231,7 @@ class TestDoc006TicketHistoricalExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert _by_rule(violations, "tickets/T-9003/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_done_report_not_flagged_even_if_state_lookup_fails(
         self, tmp_path: Path
     ) -> None:
@@ -1338,6 +1362,7 @@ class TestDoc006ReasonFieldExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-9010/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_open_ticket_body_still_flagged_alongside_reason(
         self, tmp_path: Path
     ) -> None:
@@ -1387,6 +1412,7 @@ class TestDoc006TitleFieldExclusion:
     frontmatter title is exempt (must-stay-quiet), the ticket BODY (real
     prose) still fires (must-fire), and plain docs/ prose still fires."""
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_single_line_title_not_flagged(self, tmp_path: Path) -> None:
         """A bogus config-section citation sitting entirely on the
         `title:` line itself (no wrap) must not fire."""
@@ -1407,6 +1433,7 @@ class TestDoc006TitleFieldExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-9012/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_wrapped_title_not_flagged(self, tmp_path: Path) -> None:
         """MEASURED CASE (T-3843): the title is long enough that the YAML
         dumper wraps it across a continuation line, and the citation sits
@@ -1430,6 +1457,7 @@ class TestDoc006TitleFieldExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-9013/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_open_ticket_body_still_flagged_alongside_title(
         self, tmp_path: Path
     ) -> None:
@@ -1454,6 +1482,7 @@ class TestDoc006TitleFieldExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert _by_rule(violations, "tickets/T-9014/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_body_violation_below_blanked_title_reports_original_line(
         self, tmp_path: Path
     ) -> None:
@@ -1482,6 +1511,7 @@ class TestDoc006TitleFieldExclusion:
         assert offenders
         assert all(v.line == 10 for v in offenders)
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_docs_prose_pointer_still_flagged(self, tmp_path: Path) -> None:
         """Sanity control outside the ticket ledger entirely: a
         non-resolving config-section pointer in ordinary `docs/` prose is
@@ -1508,6 +1538,7 @@ class TestDoc006OldTextNewTextFieldExclusion:
     `TestDoc006ReasonFieldExclusion`/`TestDoc006TitleFieldExclusion`'s
     shape."""
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_old_text_field_not_flagged(self, tmp_path: Path) -> None:
         """A dead config-section pointer preserved verbatim in `old_text`
         (the historical record of what a criterion used to say) must NOT
@@ -1541,6 +1572,7 @@ class TestDoc006OldTextNewTextFieldExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-9016/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_new_text_field_not_flagged(self, tmp_path: Path) -> None:
         """A PROPOSED config section named in `new_text` -- an amended
         criterion's own current wording, composed at mutation time exactly
@@ -1574,6 +1606,7 @@ class TestDoc006OldTextNewTextFieldExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-9017/ticket.md")
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_open_ticket_body_still_flagged_alongside_old_text_and_new_text(
         self, tmp_path: Path
     ) -> None:
@@ -1610,6 +1643,7 @@ class TestDoc006OldTextNewTextFieldExclusion:
         assert _by_rule(violations, "tickets/T-9018/ticket.md")
 
     # frob:ticket T-4624
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_amend_that_removes_a_doc006_violation_leaves_ticket_clean(
         self, tmp_path: Path
     ) -> None:
@@ -1659,6 +1693,7 @@ class TestBlankTicketReasonFields:
     indent, blank-line-inside-continuation, non-frontmatter passthrough)
     so a future edit cannot silently shift an off-by-one here."""
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_non_frontmatter_text_untouched(self) -> None:
         """No leading `---` line at all -- both `not lines` and `not
         _FRONTMATTER_DELIM_RE.match(...)` must independently short-circuit
@@ -1666,16 +1701,19 @@ class TestBlankTicketReasonFields:
         text = "plain text\nno frontmatter here\n"
         assert _blank_ticket_reason_fields(text) == text
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_empty_text_untouched(self) -> None:
         """`lines` empty -- the other half of the `not lines or ...` guard."""
         assert _blank_ticket_reason_fields("") == ""
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_unterminated_frontmatter_untouched(self) -> None:
         """Opening `---` with no closing `---` -- `end` stays `None`, text
         passes through unchanged rather than blanking past EOF."""
         text = "---\nreason: foo\nno closing delimiter\n"
         assert _blank_ticket_reason_fields(text) == text
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_reason_value_blanked_key_kept(self) -> None:
         """The inline value after `reason:` is removed but the `key:`
         prefix survives verbatim (pins the exact slice arithmetic, not an
@@ -1686,6 +1724,7 @@ class TestBlankTicketReasonFields:
         assert lines[1] == "reason:"
         assert len(lines) == len(text.splitlines())
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_continuation_indented_more_is_blanked(self) -> None:
         """A wrapped continuation line indented MORE than the `reason:`
         key is blanked -- and a SIBLING key at the SAME indent right after
@@ -1705,6 +1744,7 @@ class TestBlankTicketReasonFields:
         assert lines[4] == "  actor: logan"
         assert len(lines) == len(text.splitlines())
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_blank_line_inside_continuation_also_blanked(self) -> None:
         """A genuinely blank line inside a wrapped continuation keeps
         being swallowed by the continuation loop (pins the `strip() ==
@@ -1725,6 +1765,7 @@ class TestBlankTicketReasonFields:
         assert lines[4] == ""
         assert lines[5] == "  actor: logan"
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_reason_key_on_last_frontmatter_line_no_overrun(self) -> None:
         """A `reason:` key sitting on the LAST line before the closing
         `---` must not read or blank past `end` (pins the outer `while i
@@ -1737,6 +1778,7 @@ class TestBlankTicketReasonFields:
         assert lines[3] == "---"
         assert len(lines) == len(text.splitlines())
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_title_value_blanked_key_kept(self) -> None:
         """T-3843: `title:` is blanked exactly like a `reason:` key --
         same slice arithmetic, same key-kept/value-removed shape."""
@@ -1746,6 +1788,7 @@ class TestBlankTicketReasonFields:
         assert lines[1] == "title:"
         assert len(lines) == len(text.splitlines())
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_wrapped_title_continuation_blanked_line_count_preserved(
         self,
     ) -> None:
@@ -1769,6 +1812,7 @@ class TestBlankTicketReasonFields:
         assert lines[4] == "state: queued"
         assert len(lines) == len(text.splitlines())
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_reason_key_blanking_not_regressed_by_title_addition(
         self,
     ) -> None:
@@ -1787,6 +1831,7 @@ class TestDoc006LedgerExclusion:
     pointers -- excluded from BOTH new T-1228 kinds (kind 6 FILE::SYMBOL,
     kind 7 BARE IDENTIFIER)."""
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_ledger_file_symbol_placeholder_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(
@@ -1798,6 +1843,7 @@ class TestDoc006LedgerExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_ledger_bare_identifier_placeholder_not_flagged(
         self, tmp_path: Path
     ) -> None:

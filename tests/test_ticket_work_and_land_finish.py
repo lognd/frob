@@ -421,6 +421,8 @@ class TestAbsorbPreLandFixes:
             assert len(line) <= 88
 
     # frob:ticket T-1404
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths  # noqa: E501
     def test_out_of_scope_file_with_noncanonical_directive_is_left_untouched(
         self, repo: Path
     ) -> None:
@@ -450,6 +452,8 @@ class TestAbsorbPreLandFixes:
         assert out_of_scope.read_text() == original
 
     # frob:ticket T-1404
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths  # noqa: E501
     def test_in_scope_file_with_noncanonical_directive_is_still_fixed(
         self, repo: Path
     ) -> None:
@@ -478,6 +482,7 @@ class TestAbsorbPreLandFixes:
             assert len(line) <= 88
 
     # frob:ticket T-4323
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_ruff_format_pre_land_step
     def test_ruff_format_half_rewrites_a_touched_drifted_file(
         self, repo: Path, monkeypatch, caplog
     ) -> None:
@@ -525,6 +530,7 @@ class TestAbsorbPreLandFixes:
         )
 
     # frob:ticket T-4323
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_ruff_format_pre_land_step
     def test_ruff_format_half_leaves_an_out_of_scope_drifted_file_untouched(
         self, repo: Path, monkeypatch
     ) -> None:
@@ -572,6 +578,7 @@ class TestAbsorbPreLandFixes:
         assert all("out_of_scope.py" not in " ".join(call) for call in detect_calls)
 
     # frob:ticket T-4323
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_ruff_format_pre_land_step
     def test_ruff_format_half_is_silent_on_a_clean_touched_file(
         self, repo: Path, monkeypatch, caplog
     ) -> None:
@@ -611,6 +618,7 @@ class TestAbsorbPreLandFixes:
         )
 
     # frob:ticket T-4323
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_ruff_format_pre_land_step
     def test_ruff_format_half_leaves_the_file_alone_when_ruff_itself_fails(
         self, repo: Path, monkeypatch, caplog
     ) -> None:
@@ -671,6 +679,7 @@ class TestResolveMergeTargetKnownIds:
     of active+archived ids when both load; `measured=False` (never a
     guessed-empty set) when either fails."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_resolve_merge_target_known_ids  # noqa: E501
     def test_measured_unions_active_and_archived_ids(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds.test_measured_unions_active_and_archived_ids  # noqa: E501
         created = _new_ticket(repo, "active ticket on main")
@@ -701,6 +710,7 @@ class TestResolveMergeTargetKnownIds:
         assert active_id in result.ids
         assert "T-9999" in result.ids
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_resolve_merge_target_known_ids  # noqa: E501
     def test_unloadable_active_ledger_is_not_measured(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -717,6 +727,7 @@ class TestResolveMergeTargetKnownIds:
         assert result.measured is False
         assert result.ids == frozenset()
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_resolve_merge_target_known_ids  # noqa: E501
     def test_unloadable_archive_is_not_measured(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -835,6 +846,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
     test proves the actual wiring (cwd, extra-search-path, exit code
     parsing) works end to end, not just that some mocked call happened."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_type_check_pre_land  # noqa: E501
     def test_a_type_error_in_a_touched_file_refuses_the_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_type_error_in_a_touched_file_refuses_the_land  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -851,6 +863,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_type_check_pre_land  # noqa: E501
     def test_a_clean_touched_file_does_not_refuse(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -945,6 +958,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
             frozenset({"pyproject.toml", "tests/fixtures/dup_region/mod_a.py"}),
         )  # must not raise
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_type_check_pre_land  # noqa: E501
     def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -959,6 +973,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
         )  # must not raise
 
     # frob:ticket T-1907
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_type_check_pre_land  # noqa: E501
     def test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error(
         self, repo: Path
     ) -> None:
@@ -1033,6 +1048,7 @@ class TestAssertTouchedFilesLintCleanPreLand:
     `TestAssertTouchedFilesTypeCheckPreLand` one class up, same
     real-subprocess-not-mocked-parser posture."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land  # noqa: E501
     def test_a_lint_error_in_a_touched_file_refuses_the_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_lint_error_in_a_touched_file_refuses_the_land  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -1049,6 +1065,7 @@ class TestAssertTouchedFilesLintCleanPreLand:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land  # noqa: E501
     def test_a_clean_touched_file_does_not_refuse(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -1063,6 +1080,7 @@ class TestAssertTouchedFilesLintCleanPreLand:
             repo, "T-3061", frozenset({"src/good_lint.py"})
         )  # must not raise
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land  # noqa: E501
     def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -1086,6 +1104,7 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
     and rely on the deferred post-land sweep to catch it against an
     already-published commit."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_new_public_symbols_have_doc_and_test_edge_pre_land  # noqa: E501
     def test_a_new_public_symbol_with_no_edges_refuses_the_land(
         self, repo: Path
     ) -> None:
@@ -1104,6 +1123,7 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_new_public_symbols_have_doc_and_test_edge_pre_land  # noqa: E501
     def test_a_new_public_symbol_with_both_edges_does_not_refuse(
         self, repo: Path
     ) -> None:
@@ -1125,6 +1145,7 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
             repo, "T-2114", frozenset({"src/documented.py"})
         )  # must not raise
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_new_public_symbols_have_doc_and_test_edge_pre_land  # noqa: E501
     def test_an_unrelated_land_touching_no_new_public_symbols_is_unaffected(
         self, repo: Path
     ) -> None:
@@ -1347,6 +1368,7 @@ class TestAssertDiffDoesNotWorsenLongFunctions:
     entry -- refuse only a function the CURRENT diff itself pushes past
     threshold, never one already over threshold before the diff."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_worsen_long_functions_pre_land  # noqa: E501
     def test_a_new_over_threshold_function_refuses_the_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_a_new_over_threshold_function_refuses_the_land  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -1363,6 +1385,7 @@ class TestAssertDiffDoesNotWorsenLongFunctions:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_worsen_long_functions_pre_land  # noqa: E501
     def test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse(
         self, repo: Path
     ) -> None:
@@ -1391,6 +1414,7 @@ class TestAssertDiffDoesNotWorsenLongFunctions:
             repo, "T-2214", frozenset({"src/already_long.py"})
         )  # must not raise
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_worsen_long_functions_pre_land  # noqa: E501
     def test_an_unrelated_land_touching_no_python_files_is_unaffected(
         self, repo: Path
     ) -> None:
@@ -1449,6 +1473,8 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
     is the fixture rule (T-2280's own measured motivation: RENDER001 went
     1 -> 4 while other classes were being actively repaired)."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_render001_checker
     def test_a_new_render001_refuses_the_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_new_render001_refuses_the_land  # noqa: E501
         # T-3940 MUST-FIRE fixture: RENDER001's scan set is `src/frob` (plus
@@ -1472,6 +1498,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land  # noqa: E501
     def test_a_pre_existing_render001_merely_touched_does_not_refuse(
         self, repo: Path
     ) -> None:
@@ -1500,6 +1527,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
             repo, "T-2280", frozenset({"src/frob/already_printing.py"})
         )  # must not raise
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_render001_checker
     def test_a_bare_print_outside_the_render001_pathspec_does_not_refuse(
         self, repo: Path
     ) -> None:
@@ -1526,6 +1554,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
             repo, "T-3940", frozenset({"src/printer.py"})
         )  # must not raise -- outside RENDER001's own scan set
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land  # noqa: E501
     def test_a_clean_land_is_unaffected(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_clean_land_is_unaffected  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -1540,6 +1569,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
             repo, "T-2280", frozenset({"src/clean.py"})
         )  # must not raise
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land  # noqa: E501
     def test_a_waived_new_finding_does_not_refuse(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_waived_new_finding_does_not_refuse  # noqa: E501
         # A real RENDER001 waiver comment directly above the call site is
@@ -1591,6 +1621,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
             repo, "T-2280", None
         )  # must not raise
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land  # noqa: E501
     def test_unmeasurable_diff_reports_skipped_unmeasured_and_lands(
         self,
         repo: Path,
@@ -1622,6 +1653,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
             )  # must not raise
         assert any("SKIPPED-UNMEASURED" in record.message for record in caplog.records)
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_render001_checker
     def test_render001_checker_agrees_with_render001_scans_in_and_out_of_scope(
         self, repo: Path
     ) -> None:
@@ -1698,6 +1730,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
     synthetic two-command CLI so this never depends on frob's own live
     command count drifting underneath it."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land  # noqa: E501
     def test_a_new_stale_row_refuses_the_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_a_new_stale_row_refuses_the_land  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
@@ -1727,6 +1760,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
             )
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land  # noqa: E501
     def test_a_pre_existing_stale_row_merely_touched_does_not_refuse(
         self, repo: Path
     ) -> None:
@@ -1799,6 +1833,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
             repo, "T-2941", frozenset({"README.md"})
         )  # must not raise -- thingamajig is genuinely live in this diff
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_assert_diff_does_not_add_new_file_local_errors_pre_land  # noqa: E501
     def test_no_docblocks_config_is_a_no_op(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_no_docblocks_config_is_a_no_op  # noqa: E501
         # No `[[docblocks.commands]]` configured at all -- `_doc005_checker`
@@ -1827,6 +1862,7 @@ class TestReverifyDoneReportClaimsDisclosesUnknownGateState:
     always distinguish "compared and passed" from "never compared at
     all"."""
 
+    # frob:tests src/frob/tickets/_land_verify.py::_reverify_done_report_claims_post_merge  # noqa: E501
     def test_no_captured_claims_section_logs_unknown_not_clean(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1947,6 +1983,7 @@ class TestPostLandUnscopedSweep:
     # frob:ticket T-1456
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_no_new_error_is_a_silent_no_op  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_post_land_unscoped_error_sweep  # noqa: E501
     def test_no_new_error_is_a_silent_no_op(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1967,6 +2004,8 @@ class TestPostLandUnscopedSweep:
     # frob:ticket T-1513
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_post_land_unscoped_error_sweep  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_apply_tier_a_and_commit  # noqa: E501
     def test_new_error_fixed_by_tier_a_lands_with_a_followup_commit(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2002,6 +2041,7 @@ class TestPostLandUnscopedSweep:
     # frob:tests \
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_post_land_unscoped_error_sweep  # noqa: E501
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_revert_land  # noqa: E501
     def test_new_error_absent_before_land_refuses_and_reverts(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2027,6 +2067,7 @@ class TestPostLandUnscopedSweep:
     # frob:ticket T-1513
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_fix_commit_stages_only_touched_paths_not_git_add_dash_a  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_apply_tier_a_and_commit  # noqa: E501
     def test_fix_commit_stages_only_touched_paths_not_git_add_dash_a(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2075,6 +2116,7 @@ class TestPostLandUnscopedSweep:
     # frob:ticket T-1456
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_unmeasurable_baseline_or_fresh_skips_the_sweep  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_post_land_unscoped_error_sweep  # noqa: E501
     def test_unmeasurable_baseline_or_fresh_skips_the_sweep(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2321,6 +2363,7 @@ class TestLandProofAndFinish:
     # pre-commit sweep no longer finds a genuine, unresolvable REF001 on
     # the freshly-spliced tickets-archive.md this test's land produces --
     # the xfail(strict=True) T-3442 put here while blocked is removed.
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land  # noqa: E501
     def test_cli_land_invoked_with_root_equal_to_worktree_still_verifies(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -2416,6 +2459,7 @@ class TestLandProofAndFinish:
         assert _print_land_proof(repo, report) is True
 
     # frob:ticket T-1884
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok  # noqa: E501
     def test_proof_verifies_an_anchor_ticket_left_queued_on_main(
         self, repo: Path
     ) -> None:
@@ -2447,6 +2491,7 @@ class TestLandProofAndFinish:
         assert _print_land_proof(repo, fake_report) is True
 
     # frob:ticket T-1884
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok  # noqa: E501
     def test_proof_still_refuses_a_non_anchor_ticket_left_queued(
         self, repo: Path
     ) -> None:
@@ -2468,6 +2513,7 @@ class TestLandProofAndFinish:
         assert _print_land_proof(repo, fake_report) is False
 
     # frob:ticket T-2129
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok  # noqa: E501
     def test_proof_verifies_a_queued_ticket_with_a_recorded_failure_log(
         self, repo: Path
     ) -> None:
@@ -2600,6 +2646,7 @@ class TestLandProofAndFinish:
 
     # frob:ticket T-1910
     # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_unverified_land_exits_nonzero_even_without_finish  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success  # noqa: E501
     def test_unverified_land_exits_nonzero_even_without_finish(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -2671,6 +2718,7 @@ class TestLandProofAncestorRetry:
     the retry fixes the still-unreproduced T-1895 race; see this ticket's
     own Done report for that disclosure."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_is_ancestor_with_retry  # noqa: E501
     def test_retries_until_ancestor_check_settles_true(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2701,6 +2749,7 @@ class TestLandProofAncestorRetry:
         assert calls["n"] == 3
         assert sleeps == [0.1, 0.2]
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_is_ancestor_with_retry  # noqa: E501
     def test_gives_up_after_exhausting_retries_on_a_genuine_non_ancestor(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2730,6 +2779,7 @@ class TestLandParityFindings:
 
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_none_when_unmeasurable  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::land_parity_findings kind="unit"  # noqa: E501
     def test_none_when_unmeasurable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2741,6 +2791,7 @@ class TestLandParityFindings:
 
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_forces_no_gate_cache_env_on_the_spawn  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::land_parity_findings kind="unit"  # noqa: E501
     def test_forces_no_gate_cache_env_on_the_spawn(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2761,6 +2812,8 @@ class TestLandParityFindings:
 
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::land_parity_findings kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_land_parity kind="unit"  # noqa: E501
     def test_parity_with_the_land_sweeps_own_exemption_function(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2806,6 +2859,7 @@ class TestBranchDriftGuard:
     repro rather than a spontaneous one."""
 
     # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_branch_drift_before_final_commit_refuses_by_construction  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_assert_still_on_expected_branch  # noqa: E501
     def test_branch_drift_before_final_commit_refuses_by_construction(
         self, repo: Path
     ) -> None:
@@ -2890,6 +2944,7 @@ class TestBranchDriftGuard:
         assert main_tip_after == main_tip_before
 
     # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_no_drift_is_a_noop  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_assert_still_on_expected_branch  # noqa: E501
     def test_no_drift_is_a_noop(self, repo: Path) -> None:
         # Sanity/baseline: an ordinary land (no branch movement) must not
         # be refused by the new guard.

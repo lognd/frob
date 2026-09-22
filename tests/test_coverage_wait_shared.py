@@ -68,6 +68,7 @@ def _two_real_worktrees(tmp_path: Path) -> tuple[Path, Path]:
 
 
 class TestTreeDigest:
+    # frob:tests src/frob/testing/_coverage_wait.py::tree_digest kind="unit"  # noqa: E501
     def test_identical_hashes_produce_identical_digest(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_coverage_wait_shared.py::TestTreeDigest.test_identical_hashes_produce_identical_digest  # noqa: E501
@@ -79,6 +80,7 @@ class TestTreeDigest:
         snap2 = build_graph(root2, cache2).danger_ok
         assert tree_digest(snap1) == tree_digest(snap2)
 
+    # frob:tests src/frob/testing/_coverage_wait.py::tree_digest kind="unit"  # noqa: E501
     def test_differing_hashes_produce_differing_digest(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_coverage_wait_shared.py::TestTreeDigest.test_differing_hashes_produce_differing_digest  # noqa: E501
@@ -95,12 +97,14 @@ class TestTreeDigest:
 
 
 class TestSharedStateDir:
+    # frob:tests src/frob/testing/_coverage_wait.py::shared_state_dir kind="unit"  # noqa: E501
     def test_two_worktrees_of_same_clone_share_one_dir(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_two_worktrees_of_same_clone_share_one_dir  # noqa: E501
         wt1, wt2 = _two_real_worktrees(tmp_path)
         assert shared_state_dir(wt1) == shared_state_dir(wt2)
 
+    # frob:tests src/frob/testing/_coverage_wait.py::shared_state_dir kind="unit"  # noqa: E501
     def test_no_git_falls_back_to_worktree_local(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_no_git_falls_back_to_worktree_local  # noqa: E501
@@ -278,6 +282,7 @@ class TestWorktreeLock:
 
     # frob:tests src/frob/testing/_coverage_wait.py::_worktree_lock kind="unit"  # noqa: E501
     # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::release_daemon_lease kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -341,6 +346,8 @@ class TestWorktreeLock:
             "never falling through to the file lock"
         )
 
+    # frob:tests src/frob/testing/_coverage_wait.py::_worktree_lock kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease kind="unit"  # noqa: E501
     def test_falls_back_to_file_lock_when_no_daemon(
         self, tmp_path: Path, monkeypatch
     ) -> None:

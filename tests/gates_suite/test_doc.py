@@ -1010,6 +1010,7 @@ class TestDoc004ConsoleCommandDrift:
         'parser = "frob.__main__:_build_parser"\n'
     )
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_nonexistent_subcommand_is_stale(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", self._CONFIG)
@@ -1030,6 +1031,7 @@ class TestDoc004ConsoleCommandDrift:
             for v in stale
         )
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_real_subcommand_anchored_passes(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", self._CONFIG)
@@ -1046,6 +1048,7 @@ class TestDoc004ConsoleCommandDrift:
 
         assert all(v.severity != Severity.ERROR for v in _by_rule(violations, "DOC004"))
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_real_subcommand_unanchored_warns_unbound(self, tmp_path: Path) -> None:
         # T-3140: T-2374 (the v1.0.0 severity freeze, src/frob/gates/
         # _docblocks_shared.py::_doc004_violation) deliberately promoted
@@ -1070,6 +1073,7 @@ class TestDoc004ConsoleCommandDrift:
         assert unbound
         assert all(v.severity == Severity.ERROR for v in unbound)
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_waive_suppresses_console_stale(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", self._CONFIG)
@@ -1086,6 +1090,7 @@ class TestDoc004ConsoleCommandDrift:
 
         assert _by_rule(violations, "DOC004") == []
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_no_config_means_no_console_checking(self, tmp_path: Path) -> None:
         """No `[[docblocks.commands]]` entries at all -- fail-open, same
         posture as every other namespace source in this module: a project
@@ -1113,6 +1118,7 @@ class TestDoc012CommandSectionGate:
     config DOC004/DOC005 already read, walked via a synthetic two-command
     CLI so these tests never depend on frob's own live command count."""
 
+    # frob:tests src/frob/gates/_docblocks.py::doc012_gate
     def test_undocumented_subcommand_fails(self, tmp_path: Path) -> None:
         # T-2299: promoted WARN -> ERROR once the disclosed T-1783 backlog
         # measured zero (children T-2315/T-2316) -- see
@@ -1137,6 +1143,7 @@ class TestDoc012CommandSectionGate:
         )
         assert not any("widget" in v.message for v in stale)
 
+    # frob:tests src/frob/gates/_docblocks.py::doc012_gate
     def test_documented_subcommand_passes(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", _DOC012_FAKE_CONFIG)
@@ -1156,6 +1163,7 @@ class TestDoc012CommandSectionGate:
 
         assert _by_rule(violations, "DOC012") == []
 
+    # frob:tests src/frob/gates/_docblocks.py::doc012_gate
     def test_table_row_alone_does_not_satisfy(self, tmp_path: Path) -> None:
         """A DOC005-satisfying README table row is not a dedicated
         section -- DOC012 still fires (the whole point of the rule)."""
@@ -1177,6 +1185,7 @@ class TestDoc012CommandSectionGate:
         assert any("widget" in v.message for v in stale)
         assert any("gadget" in v.message for v in stale)
 
+    # frob:tests src/frob/gates/_docblocks.py::doc012_gate
     def test_no_config_means_no_checking(self, tmp_path: Path) -> None:
         """No `[[docblocks.commands]]` entries at all -- fail-open, same
         posture as DOC004/DOC005: a project that has not opted in gets

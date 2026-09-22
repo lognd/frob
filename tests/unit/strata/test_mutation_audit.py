@@ -49,6 +49,8 @@ class TestMayMutationAuditRealRepo:
     # frob:tests \
     # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may_is_load_bearing  # noqa: E501
     # frob:tests src/frob/strata/_mutation_audit.py::MutationFinding.load_bearing
+    # frob:tests src/frob/strata/_mutation_audit.py::run_may_mutation_audit kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_mutation_audit.py::MutationAuditReport.all_load_bearing
     def test_every_may_is_load_bearing(self) -> None:
         """Acceptance [0]+[1]: every single `may` atom's deletion trips
         SYS100 (plus the independent export-syscall diff wherever
@@ -137,6 +139,7 @@ class TestNodeAllowedAppCapabilities:
     # frob:tests \
     # tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_maps_each_app_kind  # noqa: E501
     # frob:ticket T-1328
+    # frob:tests src/frob/strata/_mutation_audit.py::node_allowed_app_capabilities
     def test_maps_each_app_kind(self) -> None:
         """Each of the 7 declared app-level kinds names its own node a
         distinct, non-empty manifest entry set -- the manifest is not a

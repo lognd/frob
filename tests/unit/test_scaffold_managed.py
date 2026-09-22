@@ -40,6 +40,7 @@ class TestScaffoldConformanceStatus:
     """Tests for `scaffold_conformance_status` (T-0736)."""
 
     # frob:ticket T-0736
+    # frob:tests src/frob/scaffold/_managed.py::scaffold_conformance_status
     def test_non_frob_repo_reports_nothing(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_non_frob_repo_reports_nothing  # noqa: E501
         """No `frob.toml` under `root` -- opt-in, nothing to be behind on,
@@ -47,6 +48,7 @@ class TestScaffoldConformanceStatus:
         assert scaffold_conformance_status(tmp_path) == ()
 
     # frob:ticket T-0736
+    # frob:tests src/frob/scaffold/_managed.py::scaffold_conformance_status
     def test_clean_after_apply(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_clean_after_apply  # noqa: E501
         """After `apply_managed_blocks`, every block reports present and
@@ -75,6 +77,7 @@ class TestApplyManagedBlocks:
     """Tests for `apply_managed_blocks` (T-0736)."""
 
     # frob:ticket T-0736
+    # frob:tests src/frob/scaffold/_managed.py::apply_managed_blocks
     def test_creates_missing_and_updates_stale(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_creates_missing_and_updates_stale  # noqa: E501
         """A repo with no Makefile/.gitignore/hooks at all gets every block
@@ -107,6 +110,7 @@ class TestApplyManagedBlocks:
         assert by_id_after["gitignore-standard"].stale is False
 
     # frob:ticket T-0736
+    # frob:tests src/frob/scaffold/_managed.py::apply_managed_blocks
     def test_idempotent_second_run_is_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_idempotent_second_run_is_noop  # noqa: E501
         """Applying twice in a row with no changes in between reports every
@@ -125,6 +129,7 @@ class TestApplyManagedBlocks:
         assert all("already current" in line for line in text_block_lines)
 
     # frob:ticket T-0736
+    # frob:tests src/frob/scaffold/_managed.py::apply_managed_blocks
     def test_refuses_to_clobber_foreign_hook(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_refuses_to_clobber_foreign_hook  # noqa: E501
         """A pre-existing, non-frob `pre-commit` hook is left untouched --
@@ -149,6 +154,8 @@ class TestStashGuardBlock:
     force-updated in place."""
 
     # frob:ticket T-0574
+    # frob:tests src/frob/scaffold/_managed.py::_apply_stash_guard
+    # frob:tests src/frob/scaffold/_managed.py::_stash_guard_status
     def test_refuses_to_clobber_foreign_reference_transaction_hook(
         self, tmp_path: Path
     ) -> None:
@@ -182,6 +189,8 @@ class TestStashGuardBlock:
         assert stash_status.actual_digest is None
 
     # frob:ticket T-0574
+    # frob:tests src/frob/scaffold/_managed.py::_apply_stash_guard
+    # frob:tests src/frob/scaffold/_managed.py::_stash_guard_status
     def test_stale_ours_stash_guard_hook_is_updated(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_hook_is_updated  # noqa: E501
         """A stash-guard hook that IS frob's own (carries the T-0574

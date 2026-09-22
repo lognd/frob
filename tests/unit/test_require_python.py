@@ -60,6 +60,7 @@ class TestRequirePython:
         assert "uv run python" in err
         assert "fleet_status.py" in err
 
+    # frob:tests scripts/_require_python.py::require_python
     def test_supported_interpreter_is_a_silent_noop(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -71,12 +72,14 @@ class TestRequirePython:
         assert out.out == ""
         assert out.err == ""
 
+    # frob:tests scripts/_require_python.py::require_python
     def test_exact_boundary_version_passes(self) -> None:
         """A `sys.version_info` exactly equal to the requirement (not
         just strictly newer) must pass -- `>=`, not `>`."""
         with mock.patch.object(sys, "version_info", (3, 11, 0, "final", 0)):
             require_python_mod.require_python(str(_SCRIPTS / "fleet_status.py"))
 
+    # frob:tests scripts/_require_python.py::require_python
     def test_unknown_requirement_fails_open_never_blocks(self, tmp_path: Path) -> None:
         """MUST-STILL-PASS: when the requirement cannot be determined at
         all (e.g. this guard invoked against a script outside a repo with

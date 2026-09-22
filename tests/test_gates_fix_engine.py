@@ -73,6 +73,7 @@ class TestFixSuppress001PairedSuppression:
 
         assert suppress001_gate(tmp_path, _SNAPSHOT) == ()
 
+    # frob:tests src/frob/gates/_fix_engine_text.py::fix_suppress001_paired_suppression
     def test_idempotent_second_fix_pass_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_idempotent_second_fix_pass_is_a_no_op kind="unit"  # noqa: E501
@@ -392,6 +393,7 @@ class TestFixE501MergeIntroduced:
         rewritten = (root / "pkg" / "mod.py").read_text(encoding="utf-8")
         assert all(len(line) <= 88 for line in rewritten.splitlines())
 
+    # frob:tests src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced  # noqa: E501
     def test_e501_no_merge_shape_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge_shape_is_a_no_op kind="unit"  # noqa: E501
@@ -484,6 +486,7 @@ class TestFixCov002TicketDirectiveInsertion:
         after = _cov002(after_snapshot, queue, after_diff, active_ticket="T-9001")
         assert not [v for v in after if v.file == "pkg/mod.py"]
 
+    # frob:tests src/frob/gates/_fix_engine_sync.py::fix_cov002_ticket_directive_insertion  # noqa: E501
     def test_no_ticket_id_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_no_ticket_id_is_a_no_op kind="unit"  # noqa: E501
@@ -541,6 +544,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
         text = (root / "design" / "frob.strata").read_text(encoding="utf-8")
         assert text.startswith("// frob:ticket T-9001\n")
 
+    # frob:tests src/frob/gates/_fix_engine_sync.py::_insert_ticket_directive_above
     def test_rust_file_gets_slash_slash_leader(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_rust_file_gets_slash_slash_leader kind="unit"  # noqa: E501
@@ -557,6 +561,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
         text = (root / "src" / "lib.rs").read_text(encoding="utf-8")
         assert text.startswith("// frob:ticket T-9001\n")
 
+    # frob:tests src/frob/gates/_fix_engine_sync.py::_insert_ticket_directive_above
     def test_python_file_gets_hash_leader(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_python_file_gets_hash_leader kind="unit"  # noqa: E501
@@ -573,6 +578,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
         text = (root / "pkg" / "mod.py").read_text(encoding="utf-8")
         assert text.startswith("# frob:ticket T-9001\n")
 
+    # frob:tests src/frob/gates/_fix_engine_sync.py::_insert_ticket_directive_above
     def test_unknown_extension_refuses_insertion(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_unknown_extension_refuses_insertion kind="unit"  # noqa: E501
@@ -986,6 +992,7 @@ class TestFixTest010RedundantTestDeclaration:
         )
         return [v for v in violations if v.rule == "TEST010"]
 
+    # frob:tests src/frob/gates/_fix_engine_text.py::fix_test010_redundant_test_declaration
     def test_delete_case_fires_test010_and_fix_removes_the_line(
         self, tmp_path: Path
     ) -> None:

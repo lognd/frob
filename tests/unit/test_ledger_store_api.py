@@ -187,6 +187,8 @@ def test_missing_ticket_is_a_result_error(tmp_path: Path) -> None:
     assert result.danger_err == TicketError.NotFound
 
 
+# frob:tests src/frob/tickets/_store_api.py::put_ticket
+# frob:tests src/frob/tickets/_store_api.py::list_tickets
 def test_put_then_get_round_trips(tmp_path: Path) -> None:
     """A ticket written via `put_ticket` is readable back via `get_ticket`
     with the same id and title, proving the seam's write and read sides
@@ -206,6 +208,9 @@ def test_put_then_get_round_trips(tmp_path: Path) -> None:
     assert ticket.id in listed.danger_ok
 
 
+# frob:tests src/frob/tickets/_store_api.py::put_archived_ticket
+# frob:tests src/frob/tickets/_store_api.py::list_archived_tickets
+# frob:tests src/frob/tickets/_store_api.py::get_archived_ticket
 def test_archived_put_then_get_round_trips(tmp_path: Path) -> None:
     """The archive half of the seam agrees with itself the same way the
     live half does: a ticket written via `put_archived_ticket` comes back

@@ -164,6 +164,7 @@ class TestAggregateDemandGrowth:
 
     # frob:tests \
     # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_growth_scales_seed_before_fan_in  # noqa: E501
+    # frob:tests src/frob/strata/_facts.py::FactBase.aggregate_demand  # noqa: E501
     def test_growth_scales_seed_before_fan_in(self):
         """One year at 100%/year growth doubles a 1000-user seed."""
         facts = _facts_for(

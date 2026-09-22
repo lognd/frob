@@ -69,6 +69,7 @@ def test_tier_patterns_cumulative() -> None:
 
 
 # frob:tests tests/test_clean.py::test_extra_patterns_missing_toml
+# frob:tests src/frob/clean/_rules.py::extra_patterns_from_config
 def test_extra_patterns_missing_toml(tmp_path: Path) -> None:
     """No `frob.toml` at all degrades to no extra patterns, never an error."""
     assert extra_patterns_from_config(tmp_path) == ()
@@ -84,6 +85,7 @@ def test_extra_patterns_from_config(tmp_path: Path) -> None:
 
 # frob:tests tests/test_clean.py::test_scan_tier1_matches_expected
 # frob:tests src/frob/clean/_core.py::scan
+# frob:tests src/frob/clean/_models.py::CleanReport.count
 def test_scan_tier1_matches_expected(repo: Path) -> None:
     """Tier 1 matches exactly the pycache/coverage-fragment/pytest-cache set,
     never the tier 2/3 fixtures or the real source."""
@@ -99,6 +101,7 @@ def test_scan_tier1_matches_expected(repo: Path) -> None:
 
 # frob:tests tests/test_clean.py::test_scan_skips_tracked_files
 # invariant spec: [INV-008](invariants/INV-008.md)
+# frob:tests src/frob/clean/_core.py::scan
 def test_scan_skips_tracked_files(repo: Path) -> None:
     """A file that matches an allowlist pattern but is git-tracked is skipped,
     never reported as a removal candidate."""
@@ -141,6 +144,7 @@ def test_clean_dry_run_removes_nothing(repo: Path) -> None:
 # frob:tests src/frob/clean/_models.py::CleanReport.reclaimed_bytes
 
 # frob:tests tests/test_clean.py::test_clean_execute_removes_matched
+# frob:tests src/frob/clean/_core.py::clean
 def test_clean_execute_removes_matched(repo: Path) -> None:
     """`dry_run=False` removes every tier-1 match and nothing else."""
     report = clean(repo, CleanTier.SAFE, dry_run=False).danger_ok
@@ -156,6 +160,7 @@ def test_clean_execute_removes_matched(repo: Path) -> None:
 
 # frob:tests tests/test_clean.py::test_clean_never_touches_src
 # frob:tests src/frob/clean kind="integration"
+# frob:tests src/frob/clean/_core.py::clean
 def test_clean_never_touches_src(repo: Path) -> None:
     """Every tier leaves `git diff --stat` over the tracked tree empty, and the
     untracked-but-not-an-artifact `src/wip.py` survives even a DEEP clean."""
@@ -211,6 +216,7 @@ def test_deep_clean_preserves_rapid_debt_jsonl(repo: Path) -> None:
 # frob:ticket T-3220
 # frob:tests \
 # tests/test_clean.py::test_deep_clean_still_wholesale_removes_frob_without_the_ledger
+# frob:tests src/frob/clean/_core.py::_protect_excluded_paths
 def test_deep_clean_still_wholesale_removes_frob_without_the_ledger(
     repo: Path,
 ) -> None:

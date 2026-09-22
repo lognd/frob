@@ -47,6 +47,7 @@ class TestNodeBodySpan:
         assert node_body_span(lines, 0) == 5
 
     # frob:ticket T-1895
+    # frob:tests src/frob/strata/_sync_may.py::node_body_span kind="unit"  # noqa: E501
     def test_malformed_input_returns_last_line_best_effort(self):
         """No matching close brace at all: falls back to the last line
         index rather than raising."""

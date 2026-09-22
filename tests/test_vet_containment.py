@@ -97,6 +97,7 @@ class TestFetchCweForCve:
         assert "could not verify" in result.note
 
     # frob:tests src/frob/vet/_cache.py::ttl_cache_get
+    # frob:tests src/frob/vet/_cache.py::ttl_cache_set
     def test_cached_body_parses_cwe_ids(self, tmp_path: Path) -> None:
         cache_path = tmp_path / "vet.db"
         body = (
@@ -164,6 +165,7 @@ class TestFetchCweForCve:
         assert result.cwe_ids == ()
         assert "could not verify" in result.note
 
+    # frob:tests src/frob/vet/_cache.py::ttl_cache_get
     def test_expired_cache_entry_triggers_a_fresh_fetch(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

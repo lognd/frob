@@ -582,6 +582,7 @@ def test_hand_edit_ledger_stays_quiet_on_an_unrelated_file(tmp_path: Path):
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2908
+# frob:tests .claude/hooks/frob-suggest.py::_RULES  # noqa: E501
 def test_recursive_grep_still_fires_unscoped_at_repo_root(tmp_path: Path):
     """`grep -rn ... .` (no real scoping) must still be blocked."""
     home = tmp_path / "home"
@@ -596,6 +597,7 @@ def test_recursive_grep_still_fires_unscoped_at_repo_root(tmp_path: Path):
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2908
 # frob:ticket T-4625
+# frob:tests .claude/hooks/frob-suggest.py::_RULES  # noqa: E501
 def test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path):
     """`grep -rn 'foo' src/frob/strata` (scoped to a real subdirectory,
     unable to walk .venv/, .git/, or a sibling worktree) must stay
@@ -1078,6 +1080,7 @@ class TestAckSegmentation:
 
     # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
     # frob:ticket T-3851
+    # frob:tests .claude/hooks/_shellscan.py::strip_and_blank_prefixed_segments kind="integration"  # noqa: E501
     def test_bare_unacked_trigger_is_still_blocked(self, tmp_path: Path):
         """MUST-FIRE: a bare un-acked trigger command, no change from
         today's behaviour."""

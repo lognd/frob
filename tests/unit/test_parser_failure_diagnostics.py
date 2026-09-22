@@ -28,6 +28,7 @@ def _as_result_dict(result) -> dict:
 
 
 class TestParseFailureResult:
+    # frob:tests src/frob/process/parsers/common.py::tool_parse_failure_result
     def test_attaches_error_diagnostic(self) -> None:
         r = tool_parse_failure_result("mytool", "malformed JSON: boom")
         assert r.exit_code == 1
@@ -84,6 +85,7 @@ class TestNoOutputResult:
     `JSONDecodeError` as "malformed JSON") sends a debugging reader
     auditing the wrong end of the pipeline."""
 
+    # frob:tests src/frob/process/parsers/common.py::tool_no_output_result
     def test_attaches_error(self) -> None:
         r = tool_no_output_result("mytool")
         assert r.exit_code == 1

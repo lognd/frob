@@ -211,6 +211,7 @@ class TestBackfillStaleDraftAttachmentPaths:
 # frob:tests src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths  # noqa: E501
 
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::AttachmentBackfillReport  # noqa: E501
     def test_repairs_a_pre_t2199_stale_draft_pointer(self, tmp_path: Path) -> None:
         real_id = "T-2195"
         draft_id = "T-draft-0bd874ac"
@@ -250,6 +251,7 @@ class TestBackfillStaleDraftAttachmentPaths:
         assert relocated.sha256 == stale_attachment.sha256
 
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_leaves_a_correctly_recorded_attachment_untouched  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths  # noqa: E501
     def test_leaves_a_correctly_recorded_attachment_untouched(
         self, tmp_path: Path
     ) -> None:
@@ -282,6 +284,7 @@ class TestBackfillStaleDraftAttachmentPaths:
         assert unchanged.sha256 == healthy_attachment.sha256
 
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_reports_unresolvable_rather_than_guessing  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths  # noqa: E501
     def test_reports_unresolvable_rather_than_guessing(self, tmp_path: Path) -> None:
         """A stale draft-prefixed pointer whose file is genuinely missing
         (or corrupted) at the ticket's real-id path is reported in
@@ -316,6 +319,8 @@ class TestBackfillStaleDraftAttachmentPaths:
         assert untouched.path == missing_attachment.path
 
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_dry_run_reports_without_writing  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::_relocate_attachment_records  # noqa: E501
     def test_dry_run_reports_without_writing(self, tmp_path: Path) -> None:
         """T-2254 acceptance [5]: `dry_run=True` produces the exact same
         `repaired`/`unresolved` report as a real run, but the ticket file

@@ -55,12 +55,14 @@ class TestCeilingsForProfile:
         assert ceilings.max_depth is None
         assert ceilings.max_age_s is None
 
+    # frob:tests src/frob/verify/_backpressure.py::ceilings_for_profile  # noqa: E501
     def test_standard_default(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_standard_default  # noqa: E501
         ceilings = ceilings_for_profile(ProfileName.STANDARD, tmp_path)
         assert ceilings.max_depth is not None and ceilings.max_depth > 0
         assert ceilings.max_age_s is not None and ceilings.max_age_s > 0
 
+    # frob:tests src/frob/verify/_backpressure.py::ceilings_for_profile  # noqa: E501
     def test_standard_toml_override(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_standard_toml_override  # noqa: E501
         (tmp_path / "frob.toml").write_text(
@@ -103,6 +105,7 @@ class TestSettingsForProfile:
         assert settings.rapid_soft_warning_enabled is False
 
     # frob:ticket T-2360
+    # frob:tests src/frob/verify/_backpressure.py::settings_for_profile  # noqa: E501
     def test_standard_matches_current_branch_logic(self) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_standard_matches_current_branch_logic  # noqa: E501
         settings = settings_for_profile(ProfileName.STANDARD)
@@ -113,6 +116,8 @@ class TestSettingsForProfile:
         assert settings.rapid_soft_warning_enabled is False
 
     # frob:ticket T-2360
+    # frob:tests src/frob/verify/_backpressure.py::settings_for_profile  # noqa: E501
+    # frob:tests src/frob/verify/_backpressure.py::LandProfileSettings  # noqa: E501
     def test_rapid_matches_current_branch_logic(self) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_rapid_matches_current_branch_logic  # noqa: E501
         settings = settings_for_profile(ProfileName.RAPID)
@@ -130,6 +135,7 @@ class TestSettingsForProfile:
         assert settings.rapid_soft_warning_enabled is True
 
     # frob:ticket T-2360
+    # frob:tests src/frob/verify/_backpressure.py::LandProfileSettings  # noqa: E501
     def test_settings_are_frozen(self) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_settings_are_frozen  # noqa: E501
         settings = settings_for_profile(ProfileName.STANDARD)
@@ -137,6 +143,7 @@ class TestSettingsForProfile:
             settings.pre_commit_sweep_enabled = False  # type: ignore[misc]
 
     # frob:ticket T-2360
+    # frob:tests src/frob/verify/_backpressure.py::settings_for_profile  # noqa: E501
     def test_unknown_profile_value_raises(self) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_unknown_profile_value_raises  # noqa: E501
         with pytest.raises(ValueError, match="unrecognized ProfileName"):
@@ -152,6 +159,7 @@ class TestEffectiveProfileOrStandard:
     silently flip this helper's fail-closed default (see T-2361)."""
 
     # frob:ticket T-2361
+    # frob:tests src/frob/verify/_backpressure.py::effective_profile_or_standard  # noqa: E501
     def test_ok_passes_through(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -166,6 +174,7 @@ class TestEffectiveProfileOrStandard:
         assert effective_profile_or_standard(tmp_path) is ProfileName.RAPID
 
     # frob:ticket T-2361
+    # frob:tests src/frob/verify/_backpressure.py::effective_profile_or_standard  # noqa: E501
     def test_err_falls_back_to_standard(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -198,6 +207,7 @@ class TestCurrentStatus:
         assert status.age_s is None
         assert status.tripped is False
 
+    # frob:tests src/frob/verify/_backpressure.py::current_status  # noqa: E501
     def test_depth_ceiling_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_depth_ceiling_trips  # noqa: E501
         _enqueue(tmp_path, "c1")
@@ -211,6 +221,7 @@ class TestCurrentStatus:
         assert status.tripped is True
         assert "depth" in status.reason
 
+    # frob:tests src/frob/verify/_backpressure.py::current_status  # noqa: E501
     def test_age_ceiling_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_age_ceiling_trips  # noqa: E501
         _enqueue(tmp_path, "c1")
@@ -223,6 +234,7 @@ class TestCurrentStatus:
         assert status.tripped is True
         assert "age" in status.reason
 
+    # frob:tests src/frob/verify/_backpressure.py::current_status  # noqa: E501
     def test_unbounded_ceilings_never_trip(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_unbounded_ceilings_never_trip  # noqa: E501
         for i in range(50):
@@ -232,6 +244,7 @@ class TestCurrentStatus:
         assert result.is_ok
         assert result.danger_ok.tripped is False
 
+    # frob:tests src/frob/verify/_backpressure.py::current_status  # noqa: E501
     def test_queue_unreadable_is_an_error(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -256,6 +269,7 @@ class TestBlockUntilWatermarkAdvances:
     """The land-path entrypoint: block at the ceiling, drain to pay back
     the deferred cost, never silently."""
 
+    # frob:tests src/frob/verify/_backpressure.py::block_until_watermark_advances  # noqa: E501
     def test_not_tripped_returns_immediately_without_draining(
         self, tmp_path: Path
     ) -> None:
@@ -268,6 +282,7 @@ class TestBlockUntilWatermarkAdvances:
         assert result.is_ok
         assert calls == []
 
+    # frob:tests src/frob/verify/_backpressure.py::block_until_watermark_advances  # noqa: E501
     def test_tripped_drains_and_unblocks(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_tripped_drains_and_unblocks  # noqa: E501
         # K=2: a third queued entry trips depth. The injected drain_fn
@@ -299,6 +314,7 @@ class TestBlockUntilWatermarkAdvances:
         assert result.danger_ok.depth == 0
         assert result.danger_ok.tripped is False
 
+    # frob:tests src/frob/verify/_backpressure.py::block_until_watermark_advances  # noqa: E501
     def test_persistently_red_batch_times_out(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_persistently_red_batch_times_out  # noqa: E501
         _enqueue(tmp_path, "c1")
@@ -327,6 +343,7 @@ class TestBlockUntilWatermarkAdvances:
         assert result.is_err
         assert result.danger_err is BackpressureError.BlockTimedOut
 
+    # frob:tests src/frob/verify/_backpressure.py::block_until_watermark_advances  # noqa: E501
     def test_unbounded_ceiling_never_blocks(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_unbounded_ceiling_never_blocks  # noqa: E501
         for i in range(100):

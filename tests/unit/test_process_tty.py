@@ -17,6 +17,7 @@ from frob.process._tty import _win32_stdin_has_console, is_interactive_stdin
 # frob:ticket T-4290
 # frob:ticket T-4255
 class TestIsInteractiveStdin:
+    # frob:tests src/frob/process/_tty.py::is_interactive_stdin
     def test_non_tty_stdin_is_never_interactive(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -28,6 +29,7 @@ class TestIsInteractiveStdin:
         monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
         assert is_interactive_stdin() is False
 
+    # frob:tests src/frob/process/_tty.py::is_interactive_stdin
     def test_posix_tty_stdin_is_interactive(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -41,6 +43,7 @@ class TestIsInteractiveStdin:
         assert is_interactive_stdin() is True
 
     # frob:ticket T-4290
+    # frob:tests src/frob/process/_tty.py::is_interactive_stdin
     def test_win32_tty_isatty_but_no_console_is_not_interactive(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -57,6 +60,7 @@ class TestIsInteractiveStdin:
         assert is_interactive_stdin() is False
 
     # frob:ticket T-4290
+    # frob:tests src/frob/process/_tty.py::is_interactive_stdin
     def test_win32_tty_isatty_and_real_console_is_interactive(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

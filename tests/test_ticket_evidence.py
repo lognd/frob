@@ -52,6 +52,7 @@ def _seed_ticket(
 class TestSetKind:
     """`set_kind` -- the single-writer kind mutation (T-0834)."""
 
+    # frob:tests src/frob/tickets/_setters.py::set_kind
     def test_updates_kind_field(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.FEATURE)
@@ -97,6 +98,7 @@ class TestSetKind:
         # must match it exactly -- both ok, or both err.
         assert kind_result.is_ok == priority_result.is_ok
 
+    # frob:tests src/frob/tickets/_setters.py::set_kind
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
         """T-2353: a blank `reason` is refused with `TriageReasonMissing` --
         `set_kind`'s own copy of `set_priority`'s positive control."""
@@ -221,6 +223,7 @@ class TestKindHistory:
     made before any work started stays silent, matching pre-T-1616
     behavior exactly."""
 
+    # frob:tests src/frob/tickets/_setters.py::set_kind  # noqa: E501
     def test_change_before_any_work_not_recorded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_before_any_work_not_recorded  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
@@ -277,6 +280,7 @@ class TestKindHistoryLandNotice:
     """T-1616: `frob ticket land` logs a loud WARNING for every
     `kind_history` entry a landing ticket carries."""
 
+    # frob:tests src/frob/tickets/_land.py::_warn_kind_history_at_land
     def test_notice_logged_at_land(self, caplog: pytest.LogCaptureFixture) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_notice_logged_at_land  # noqa: E501
         from datetime import date
@@ -300,6 +304,7 @@ class TestKindHistoryLandNotice:
             for record in caplog.records
         )
 
+    # frob:tests src/frob/tickets/_land.py::_warn_kind_history_at_land
     def test_no_history_no_notice(self, caplog: pytest.LogCaptureFixture) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_no_history_no_notice  # noqa: E501
         from datetime import date
@@ -325,6 +330,7 @@ class TestSetDesignatedReproTest:
     """`set_designated_repro_test` (T-1670): explicit BUG002 repro
     designation, independent of evidence bind order."""
 
+    # frob:tests src/frob/tickets/_setters.py::set_designated_repro_test
     def test_designates_a_bound_evidence_id(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_designates_a_bound_evidence_id  # noqa: E501
         tid = _seed_ticket(tmp_path)
@@ -342,6 +348,7 @@ class TestSetDesignatedReproTest:
         reloaded = load_active(tmp_path).danger_ok.tickets[tid]
         assert reloaded.designated_repro_test == "tests/test_b.py::test_b"
 
+    # frob:tests src/frob/tickets/_setters.py::set_designated_repro_test
     def test_refuses_an_id_not_in_evidence(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_refuses_an_id_not_in_evidence  # noqa: E501
         tid = _seed_ticket(tmp_path)
@@ -357,6 +364,7 @@ class TestSetDesignatedReproTest:
         reloaded = load_active(tmp_path).danger_ok.tickets[tid]
         assert reloaded.designated_repro_test is None
 
+    # frob:tests src/frob/tickets/_setters.py::set_designated_repro_test
     def test_first_time_designation_appends_no_audit_entry(
         self, tmp_path: Path
     ) -> None:
@@ -370,6 +378,7 @@ class TestSetDesignatedReproTest:
         assert result.is_ok, result.err
         assert result.danger_ok.designated_repro_changes == ()
 
+    # frob:tests src/frob/tickets/_setters.py::set_designated_repro_test
     def test_redesignation_appends_an_audit_entry(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignation_appends_an_audit_entry  # noqa: E501
@@ -392,6 +401,7 @@ class TestSetDesignatedReproTest:
         reloaded = load_active(tmp_path).danger_ok.tickets[tid]
         assert len(reloaded.designated_repro_changes) == 1
 
+    # frob:tests src/frob/tickets/_setters.py::set_designated_repro_test
     def test_redesignating_the_same_id_appends_no_audit_entry(
         self, tmp_path: Path
     ) -> None:

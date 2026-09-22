@@ -73,6 +73,7 @@ def _clean_daemon_status():
 
 
 class TestPollPostLand:
+    # frob:tests src/frob/serve/_daemon.py::_poll_post_land \
     def test_head_unchanged_is_noop(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop
@@ -84,6 +85,7 @@ class TestPollPostLand:
         assert second.checked_at == first.checked_at
         assert second.head == first.head
 
+    # frob:tests src/frob/serve/_daemon.py::_poll_post_land
     def test_head_moved_refreshes_verdict(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollPostLand.test_head_moved_refreshes_verdict
@@ -105,6 +107,7 @@ class TestPollVerifyWorker:
     when `main`'s HEAD has moved since this job last looked, then ticks it
     unconditionally every cycle."""
 
+    # frob:tests src/frob/serve/_daemon.py::_poll_verify_worker
     def test_head_moved_notifies_the_worker(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the_worker  # noqa: E501
@@ -119,6 +122,7 @@ class TestPollVerifyWorker:
         _daemon._poll_verify_worker(repo)
         assert len(notified) == 1
 
+    # frob:tests src/frob/serve/_daemon.py::_poll_verify_worker
     def test_head_unchanged_still_ticks(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ticks  # noqa: E501
@@ -132,6 +136,7 @@ class TestPollVerifyWorker:
         # debounce/floor decision lives inside tick() itself, not here.
         assert len(tick_calls) == 2
 
+    # frob:tests src/frob/serve/_daemon.py::_poll_verify_worker kind="unit"  # noqa: E501
     def test_tick_result_is_returned_when_a_run_happens(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned_when_a_run_happens  # noqa: E501
@@ -155,6 +160,7 @@ class TestWatchThreadNotifiesVerifyWorker:
     worker for the same root, not only publish the `graph-changed`
     event."""
 
+    # frob:tests src/frob/serve/_socketd.py::run_socket_daemon
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="socketd transport is socketserver.ThreadingUnixStreamServer, a POSIX-only unix-domain-socket server -- no Windows equivalent (T-2961)",
@@ -214,12 +220,15 @@ class TestWatchThreadNotifiesVerifyWorker:
 
 # frob:ticket T-0782
 class TestPollRebaseBot:
+    # frob:tests src/frob/serve/_daemon.py::_poll_rebase_bot
     def test_no_leases_is_no_warnings(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings
         warnings = _daemon._poll_rebase_bot(repo)
         assert warnings == ()
 
+    # frob:tests src/frob/serve/_daemon.py::daemon_status
+    # frob:tests src/frob/serve/_daemon.py::_poll_rebase_bot
     def test_conflicting_branch_warns(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns
@@ -241,6 +250,7 @@ class TestPollRebaseBot:
         status = _daemon.daemon_status(repo)
         assert status.rebase_warnings == warnings
 
+    # frob:tests src/frob/serve/_daemon.py::_poll_rebase_bot
     def test_clean_branch_no_warning(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollRebaseBot.test_clean_branch_no_warning
@@ -258,6 +268,7 @@ class TestPollRebaseBot:
         assert warnings == ()
 
     # frob:ticket T-0782
+    # frob:tests src/frob/serve/_daemon.py::_poll_rebase_bot kind="unit"  # noqa: E501
     def test_ttl_expired_lease_skipped_and_logged_once(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -369,6 +380,7 @@ class TestPollRebaseBotLeaseInjectionGuard:
 
 
 class TestRunDaemonCycle:
+    # frob:tests src/frob/serve/_daemon.py::_run_daemon_cycle kind="unit"  # noqa: E501
     def test_runs_both_jobs_and_returns_status(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status  # noqa: E501
@@ -380,6 +392,7 @@ class TestRunDaemonCycle:
 
 
 class TestStartDaemon:
+    # frob:tests src/frob/serve/_daemon.py::_start_daemon
     def test_background_loop_runs_a_cycle_then_stops(
         self, repo: Path, monkeypatch
     ) -> None:
@@ -428,6 +441,7 @@ class TestIdleSelfTermination:
         )
         assert idle == 5.0
 
+    # frob:tests src/frob/serve/_daemon.py::_idle_seconds
     def test_never_having_worked_is_measured_from_start_time(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestIdleSelfTermination.test_never_having_worked_is_measured_from_start_time  # noqa: E501
@@ -441,6 +455,7 @@ class TestIdleSelfTermination:
         )
         assert idle == 42.0
 
+    # frob:tests src/frob/serve/_daemon.py::_idle_seconds
     def test_idle_under_one_hour_is_not_terminal(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_under_one_hour_is_not_terminal  # noqa: E501
@@ -451,6 +466,7 @@ class TestIdleSelfTermination:
         )
         assert idle < _daemon.IDLE_TERMINATION_S
 
+    # frob:tests src/frob/serve/_daemon.py::_idle_seconds
     def test_idle_over_one_hour_is_terminal(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestIdleSelfTermination.test_idle_over_one_hour_is_terminal  # noqa: E501
@@ -461,6 +477,7 @@ class TestIdleSelfTermination:
         )
         assert idle > _daemon.IDLE_TERMINATION_S
 
+    # frob:tests src/frob/serve/_daemon.py::_start_daemon
     def test_loop_self_terminates_after_the_idle_ceiling(
         self, repo: Path, monkeypatch
     ) -> None:
@@ -491,6 +508,7 @@ class TestIdleSelfTermination:
         finally:
             stop.set()
 
+    # frob:tests src/frob/serve/_daemon.py::_start_daemon
     def test_loop_does_not_terminate_while_work_keeps_happening(
         self, repo: Path, monkeypatch
     ) -> None:
@@ -525,6 +543,7 @@ class TestIdleSelfTermination:
 
 
 class TestFrobDaemonStatus:
+    # frob:tests src/frob/serve/_tools.py::frob_daemon_status
     def test_reads_current_status(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status

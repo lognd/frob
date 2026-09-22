@@ -68,6 +68,7 @@ class TestParseRunnerRun:
         run(cfg)
         assert caplog.text.strip()
 
+    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
     def test_reads_from_stdin_and_logs_json(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -82,6 +83,7 @@ class TestParseRunnerRun:
         run(cfg)
         assert '"' in caplog.text  # json output, not the plain-text summary
 
+    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
     def test_passthrough_propagates_failing_exit_code(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_passthrough_propagates_failing_exit_code  # noqa: E501
         src = tmp_path / "ruff_output.txt"
@@ -96,6 +98,7 @@ class TestParseRunnerRun:
             run(cfg)
         assert excinfo.value.code != 0
 
+    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
     def test_no_passthrough_does_not_exit_on_failure(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_no_passthrough_does_not_exit_on_failure  # noqa: E501
         src = tmp_path / "ruff_output.txt"

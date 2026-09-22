@@ -36,9 +36,11 @@ def _content_verify_fn(culprit_index: int, shas: list[str]):
     return verify, calls
 
 
+# frob:tests src/frob/verify/_bisect.py::bisect_unattributed_finding kind="unit"
 class TestBisectUnattributedFinding:
     """`bisect_unattributed_finding` (T-1691)."""
 
+    # frob:tests src/frob/verify/_bisect.py::BisectOutcome
     def test_converges_to_the_known_culprit_within_log2_n_steps(
         self, tmp_path: Path
     ) -> None:

@@ -25,6 +25,7 @@ class TestSubheadingTitlesOutsideFences:
         )
         assert _subheading_titles_outside_fences(section) == ["Changed"]
 
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_real_subheading_after_a_fence_still_detected(self) -> None:
         # frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_real_subheading_after_a_fence_still_detected  # noqa: E501
         section = (
@@ -35,6 +36,7 @@ class TestSubheadingTitlesOutsideFences:
             "Genuine extra section",
         ]
 
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_unterminated_trailing_fence_swallows_rest(self) -> None:
         # frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_unterminated_trailing_fence_swallows_rest  # noqa: E501
         section = "### Changed\n```\n## not a heading, fence never closes\n"
@@ -42,6 +44,7 @@ class TestSubheadingTitlesOutsideFences:
 
 
 class TestDisclosureShapedLanguageFencedChanged:
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_stat_line_starting_with_hash_inside_changed_block_not_flagged(
         self,
     ) -> None:
@@ -55,6 +58,7 @@ class TestDisclosureShapedLanguageFencedChanged:
         )
         assert disclosure_shaped_language(report) is None
 
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_genuine_subheading_outside_fence_still_flagged(self) -> None:
         # frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestDisclosureShapedLanguageFencedChanged.test_genuine_subheading_outside_fence_still_flagged  # noqa: E501
         # A subheading title with no phrase-list overlap, so this exercises

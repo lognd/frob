@@ -403,6 +403,7 @@ class TestCollectionFailureStdoutFallback:
         assert "ModuleNotFoundError: No module named 'demo'" in detail
 
 
+# frob:tests src/frob/testing/_collect_python_cache.py::_parse_platform_skipped
 class TestParsePlatformSkippedWindowsPathShape:
     """T-4408: measured live on Windows CI -- COV003/TEST002 kept flooding
     on POSIX-only test modules T-4382/T-4386's platform-skip attribution

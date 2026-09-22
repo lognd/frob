@@ -32,11 +32,13 @@ def _ticket(*, findings: tuple[tuple[str, str], ...] = ()) -> Ticket:
 class TestRuleShapedFindingsUnresolved:
     """`rule_shaped_findings_unresolved` -- T-4037's close-time mechanism."""
 
+    # frob:tests src/frob/tickets/_models.py::rule_shaped_findings_unresolved
     def test_empty_is_ok(self) -> None:
         """MUST-STAY-QUIET: no `findings` at all -- an ordinary ticket,
         not rule-shaped, never blocked by this check."""
         assert rule_shaped_findings_unresolved(_ticket()) == ()
 
+    # frob:tests src/frob/tickets/_models.py::rule_shaped_findings_unresolved
     def test_loaded_resolves(self) -> None:
         """MUST-STAY-QUIET: a `findings` entry naming a rule id that IS in
         the loaded registry resolves cleanly -- a real gate rule id (any
@@ -48,6 +50,7 @@ class TestRuleShapedFindingsUnresolved:
         ticket = _ticket(findings=((real_rule_id, "src/frob/x.py"),))
         assert rule_shaped_findings_unresolved(ticket) == ()
 
+    # frob:tests src/frob/tickets/_models.py::rule_shaped_findings_unresolved
     def test_unloaded_unresolved(self) -> None:
         """MUST-FIRE: a `findings` entry naming a rule id NOT in the
         loaded registry (a made-up id no gate/policy could ever emit)

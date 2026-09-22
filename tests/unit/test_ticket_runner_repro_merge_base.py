@@ -85,6 +85,7 @@ class TestReproMergeBaseRoot:
     """`_repro_merge_base_root`: prefers `FROB_WORKTREE` over `root`."""
 
     # frob:ticket T-2509
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_repro_merge_base_root  # noqa: E501
     def test_prefers_frob_worktree_env_when_set(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -186,6 +187,7 @@ class TestWarnIfBaseRefNotHonouredExactly:
         assert "could not be honoured exactly" not in caplog.text
 
     # frob:ticket T-2509
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_warn_if_base_ref_not_honoured_exactly  # noqa: E501
     def test_warns_when_base_ref_is_not_an_ancestor(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

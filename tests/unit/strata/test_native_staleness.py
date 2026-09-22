@@ -301,6 +301,7 @@ class TestStaleNatives:
         assert stale_natives(tmp_path) == ()
 
     # frob:ticket T-2805
+    # frob:tests src/frob/strata/_native_staleness.py::record_native_build_attempt
     def test_touch_after_edit_without_a_build_attempt_still_latches(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -354,6 +355,7 @@ class TestStaleNatives:
         assert len(stale) == 1
         assert stale[0].reason == "content-digest"
 
+    # frob:tests src/frob/strata/_native_staleness.py::stale_natives  # noqa: E501
     def test_unbuilt_native_is_not_reported_as_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -372,6 +374,7 @@ class TestStaleNatives:
         assert stale_natives(tmp_path) == ()
         assert stale_native_warning(tmp_path) is None
 
+    # frob:tests src/frob/strata/_native_staleness.py::stale_natives  # noqa: E501
     def test_no_matching_source_dir_is_not_reported(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -451,6 +454,8 @@ class TestSeedWorktreeNativeSourceMtimes:
         assert seeded == (name,)
         assert stale_natives(worktree) == ()
 
+    # frob:tests src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
+    # frob:tests src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
     def test_diverged_source_is_left_untouched_and_still_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -491,6 +496,8 @@ class TestSeedWorktreeNativeSourceMtimes:
         assert len(stale_natives(worktree)) == 1
 
     # frob:ticket T-4434
+    # frob:tests src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
+    # frob:tests src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
     def test_repo_side_untracked_file_does_not_block_seeding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -544,6 +551,7 @@ class TestSeedWorktreeNativeSourceMtimes:
 class TestCheckNativeStalenessOrExit:
     """`check_native_staleness_or_exit`: the `make check` entry point."""
 
+    # frob:tests src/frob/strata/_native_staleness.py::check_native_staleness_or_exit  # noqa: E501
     def test_exits_nonzero_and_prints_when_stale(
         self,
         tmp_path: Path,
@@ -561,6 +569,7 @@ class TestCheckNativeStalenessOrExit:
         assert exc_info.value.code == 1
         assert "STALE NATIVE" in capsys.readouterr().err
 
+    # frob:tests src/frob/strata/_native_staleness.py::check_native_staleness_or_exit  # noqa: E501
     def test_returns_none_when_not_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -39,6 +39,8 @@ _CHECK_JSON_PAYLOAD = (
 # frob:ticket T-0803
 class TestCollectStatus:
     # frob:tests src/frob/fleet/__init__.py::collect_status  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::_gate_summary_probe
+    # frob:tests src/frob/fleet/__init__.py::_git_branch_and_dirty
     def test_collect_status_ok(self, tmp_path: Path, monkeypatch) -> None:
         repo_dir = tmp_path / "repo"
         repo_dir.mkdir()
@@ -65,6 +67,7 @@ class TestCollectStatus:
         assert status.doable_count == 3
         assert status.error is None
 
+    # frob:tests src/frob/fleet/__init__.py::collect_status  # noqa: E501
     def test_collect_status_probes_sibling_pinned_frob_not_bare_path_frob(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -103,12 +106,14 @@ class TestCollectStatus:
             "--json",
         ]
 
+    # frob:tests src/frob/fleet/__init__.py::collect_status  # noqa: E501
     def test_collect_status_missing_path(self, tmp_path: Path) -> None:
         status = collect_status(RepoEntry(name="ghost", path=tmp_path / "nope"))
         assert status.error is not None
         assert status.gates == GateSummary()
         assert status.doable_count == 0
 
+    # frob:tests src/frob/fleet/__init__.py::_git_branch_and_dirty
     def test_git_branch_and_dirty_kill_switch_refuses_without_spawning(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -133,6 +138,7 @@ class TestCollectStatus:
         assert branch is None
         assert dirty is False
 
+    # frob:tests src/frob/fleet/__init__.py::_gate_summary_probe
     def test_gate_summary_probe_kill_switch_refuses_without_spawning(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -155,6 +161,7 @@ class TestCollectStatus:
         assert not spawned
         assert summary == GateSummary()
 
+    # frob:tests src/frob/fleet/__init__.py::_git_branch_and_dirty
     def test_git_branch_and_dirty_subprocess_raises(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -170,6 +177,7 @@ class TestCollectStatus:
         assert branch is None
         assert dirty is False
 
+    # frob:tests src/frob/fleet/__init__.py::_git_branch_and_dirty
     def test_git_branch_and_dirty_clean_tree_stays_not_dirty(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -185,6 +193,7 @@ class TestCollectStatus:
         assert branch == "main"
         assert dirty is False
 
+    # frob:tests src/frob/fleet/__init__.py::_gate_summary_probe
     def test_gate_summary_probe_subprocess_raises(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -199,6 +208,7 @@ class TestCollectStatus:
         summary = fleet_mod._gate_summary_probe(tmp_path)
         assert summary == GateSummary()
 
+    # frob:tests src/frob/fleet/__init__.py::_gate_summary_probe
     def test_gate_summary_probe_non_json_output(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -213,6 +223,7 @@ class TestCollectStatus:
         summary = fleet_mod._gate_summary_probe(tmp_path)
         assert summary == GateSummary(exit_code=2)
 
+    # frob:tests src/frob/fleet/__init__.py::_count_diagnostics
     def test_count_diagnostics_ignores_unknown_severities(self) -> None:
         """A severity other than `"error"`/`"warning"` (e.g. `"info"`)
         must be skipped without affecting either count."""
@@ -229,6 +240,7 @@ class TestCollectStatus:
         errors, warns = fleet_mod._count_diagnostics(payload)
         assert (errors, warns) == (1, 0)
 
+    # frob:tests src/frob/fleet/__init__.py::_doable_count
     def test_doable_count_missing_ledger_returns_zero(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -243,6 +255,7 @@ class TestCollectStatus:
         )
         assert fleet_mod._doable_count(tmp_path) == 0
 
+    # frob:tests src/frob/fleet/__init__.py::_doable_count
     def test_doable_count_delegates_to_tickets_api(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -257,6 +270,7 @@ class TestCollectStatus:
 
 
 class TestRollup:
+    # frob:tests src/frob/fleet/__init__.py::rollup  # noqa: E501
     def test_rollup_orders_reddest_first(self, monkeypatch) -> None:
         clean = RepoStatus(name="clean", path=Path("."), gates=GateSummary())
         one_warn = RepoStatus(

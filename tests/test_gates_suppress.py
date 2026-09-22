@@ -46,6 +46,7 @@ class TestSuppressionDialects:
             assert isinstance(dialect, SuppressionDialect)
             assert dialect.name == name
 
+    # frob:tests src/frob/gates/_suppress.py::suppression_dialects
     def test_available_reflects_path_not_project_config(self) -> None:
         """`available` is a capability check (the tool resolves on
         `PATH`), never a "configured for this project" check -- T-1339's
@@ -183,6 +184,7 @@ class TestSuppress001Gate:
     """`suppress001_gate`: the full evidence-driven correlation, against
     the real `ty`/`mypy` oracles."""
 
+    # frob:tests src/frob/gates/_suppress.py::suppress001_gate
     def test_mypy_suppressed_ty_unsuppressed_fires(self, tmp_path: Path) -> None:
         """Acceptance [0]: a line carrying ONLY a mypy `type: ignore` that
         `ty` still errors on fires SUPPRESS001, naming both dialects and
@@ -204,6 +206,7 @@ class TestSuppress001Gate:
         assert "ty" in v.message
         assert "unresolved-reference" in v.message
 
+    # frob:tests src/frob/gates/_suppress.py::suppress001_gate
     def test_ty_suppressed_mypy_unsuppressed_fires(self, tmp_path: Path) -> None:
         """Symmetric direction: a line carrying ONLY a `ty: ignore` that
         mypy still errors on fires SUPPRESS001 naming mypy's own code."""
@@ -223,6 +226,7 @@ class TestSuppress001Gate:
         assert "mypy" in v.message
         assert "name-defined" in v.message
 
+    # frob:tests src/frob/gates/_suppress.py::suppress001_gate
     def test_both_dialects_present_reports_nothing(self, tmp_path: Path) -> None:
         """Acceptance [1]: a line already carrying BOTH dialects'
         suppressions reports nothing -- fully portable already."""
@@ -250,6 +254,7 @@ class TestSuppress001Gate:
         violations = suppress001_gate(tmp_path, _SNAPSHOT)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_suppress.py::suppress001_gate
     def test_no_available_oracle_reports_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -296,6 +301,7 @@ class TestSuppress001RepoWideLock:
     added without its dialect pair reds main immediately instead of
     silently joining the population."""
 
+    # frob:tests src/frob/gates/_suppress.py::suppress001_gate
     def test_repo_is_currently_clean(self) -> None:
         # frob:tests tests/test_gates_suppress.py::TestSuppress001RepoWideLock.test_repo_is_currently_clean  # noqa: E501
         root = Path(__file__).resolve().parent.parent

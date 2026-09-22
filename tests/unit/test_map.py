@@ -48,6 +48,7 @@ def test_map_as_text(project):
     assert "L" in text
 
 
+# frob:tests src/frob/map/__init__.py::MapResult.as_json
 def test_map_as_json(project):
     import json
 

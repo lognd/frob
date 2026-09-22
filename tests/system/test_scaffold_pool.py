@@ -81,6 +81,7 @@ class TestManifestRoundTrip:
     """Manifest read/write round-tripping."""
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::read_manifest
     def test_write_then_read_round_trips(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestManifestRoundTrip.test_write_then_rea\
@@ -105,6 +106,7 @@ class TestWarmWorktree:
     """`warm_worktree`: git worktree add + build step + manifest entry."""
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::warm_worktree
     def test_creates_worktree_and_marks_ready(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestWarmWorktree.test_creates_worktree_an\
@@ -120,6 +122,7 @@ class TestWarmWorktree:
         assert (Path(entry.path) / "README.md").exists()
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::warm_worktree
     def test_build_failure_marks_not_ready(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestWarmWorktree.test_build_failure_marks\
@@ -139,6 +142,7 @@ class TestWarmPool:
     """`warm_pool`: filling a pool to N slots, idempotently."""
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::warm_pool
     def test_fills_pool_to_n_slots(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestWarmPool.test_fills_pool_to_n_slots  \
@@ -153,6 +157,7 @@ class TestWarmPool:
         assert sorted(e.index for e in entries) == [0, 1, 2]
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::warm_pool
     def test_leaves_existing_ready_slots_alone(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -178,6 +183,7 @@ class TestLeaseWorktree:
     """`lease_worktree`: handing out and refilling a pool slot."""
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::lease_worktree
     def test_leases_ready_slot_and_removes_it(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestLeaseWorktree.test_leases_ready_slot_\
@@ -197,6 +203,7 @@ class TestLeaseWorktree:
         assert status.danger_ok == ()
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::lease_worktree
     def test_empty_pool_returns_err(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestLeaseWorktree.test_empty_pool_returns\
@@ -209,6 +216,7 @@ class TestLeaseWorktree:
         assert result.danger_err is PoolError.Empty
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::lease_worktree
     def test_lease_merges_base_ref_current(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestLeaseWorktree.test_lease_merges_base_\
@@ -233,6 +241,7 @@ class TestRefillAsync:
     """`refill_pool_async`: background re-warm after a lease."""
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::refill_pool_async
     def test_refill_thread_rewarms_slot(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestRefillAsync.test_refill_thread_rewarm\
@@ -265,6 +274,7 @@ class TestPoolStatus:
     """`pool_status`: read-only manifest inspection."""
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::pool_status
     def test_status_reflects_manifest(self, repo: Path, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestPoolStatus.test_status_reflects_manif\

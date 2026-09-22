@@ -41,6 +41,7 @@ class TestStampWorktreeLease:
         assert result.danger_err == ReleaseError.WorktreeLeaseViolation
         assert not (tmp_path / ".frob-release.json").exists()
 
+    # frob:tests src/frob/release/__init__.py::_bump_shortfall  # noqa: E501
     def test_no_lease_succeeds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

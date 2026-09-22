@@ -108,6 +108,7 @@ class TestScanPythonCapabilitiesParity:
         assert isinstance(unresolved, list)
         assert isinstance(spans, list)
 
+    # frob:tests frob-core/src/extract.rs::python_non_executable_byte_spans
     def test_this_repos_own_capability_python_module_matches(
         self, tmp_path: Path
     ) -> None:
@@ -154,6 +155,7 @@ class TestResolvedCandidatesThreading:
         assert threaded == recomputed
         assert "exec" in threaded
 
+    # frob:tests src/frob/vet/_capability_python.py::_python_local_wrapper_capabilities
     def test_local_wrapper_capabilities_with_and_without_precomputed_candidates_agree(
         self, tmp_path: Path
     ) -> None:
@@ -178,6 +180,7 @@ class TestResolvedCandidatesThreading:
         assert threaded == recomputed
         assert "exec" in threaded
 
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities
     def test_scan_file_capabilities_still_resolves_cross_file_wrapper(
         self, tmp_path: Path
     ) -> None:
@@ -195,6 +198,7 @@ class TestResolvedCandidatesThreading:
         found = scan_file_capabilities(caller)
         assert "exec" in found
 
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities
     def test_scan_file_capabilities_sees_a_genuine_sibling_change(
         self, tmp_path: Path
     ) -> None:

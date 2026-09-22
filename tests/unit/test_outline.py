@@ -92,6 +92,7 @@ def test_py_outline_as_text(py_file):
     assert "[L" in text
 
 
+# frob:tests src/frob/outline/__init__.py::ModuleOutline.as_json
 def test_py_outline_as_json(py_file):
     import json
 

@@ -36,6 +36,7 @@ class TestPredicates:
 
     # frob:tests \
     # tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_critical_dependency  # noqa: E501
+    # frob:tests src/frob/strata/_circuit_breaker.py::is_critical_dependency
     def test_is_critical_dependency(self):
         assert is_critical_dependency(("critical",))
         assert not is_critical_dependency(("external",))
@@ -44,6 +45,7 @@ class TestPredicates:
 class TestMissingCircuitBreaker:
     # frob:tests \
     # tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_external_node_without_circuit_breaker_fires  # noqa: E501
+    # frob:tests src/frob/strata/_circuit_breaker.py::check_circuit_breaker_obligations  # noqa: E501
     def test_external_node_without_circuit_breaker_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="payments", trust="untrusted", attrs=("external",)),),

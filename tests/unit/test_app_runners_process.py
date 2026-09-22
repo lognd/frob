@@ -55,6 +55,7 @@ class TestOpsRunnerProcessDelegation:
     """`ops_runner.run` must delegate `ops_command == "process"` into
     `process_runner.run`."""
 
+    # frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
     def test_process_subcommand_delegates_to_process_runner(self) -> None:
         """`ops_command="process"` calls `process_runner.run`, not any
         other branch."""
@@ -101,6 +102,7 @@ class TestProcessRunnerReap:
         out = capsys.readouterr().out
         assert "nothing to reap" in out
 
+    # frob:tests src/frob/app/process_runner.py::run  # noqa: E501
     def test_reap_json_mode_emits_json(self, capsys: pytest.CaptureFixture) -> None:
         """`--json` emits a machine-readable payload instead of prose."""
         cfg = AppConfig(
@@ -114,6 +116,7 @@ class TestProcessRunnerReap:
         out = capsys.readouterr().out
         assert '"reaped_pids": [42]' in out
 
+    # frob:tests src/frob/app/process_runner.py::run  # noqa: E501
     def test_unknown_process_subcommand_exits_1(self) -> None:
         """An unrecognized `process_command` exits 1 rather than
         silently no-oping."""

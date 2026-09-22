@@ -15,6 +15,7 @@ from tests.unit.conftest import (
 class TestLandProcessRows:
     """`fleet_status.land_process_rows` (T-2180, T-2475)."""
 
+    # frob:tests scripts/fleet_status.py::land_process_rows
     def test_parses_matching_rows_and_skips_others(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -51,6 +52,7 @@ class TestLandProcessRows:
         assert fleet_status.land_process_rows() == []
 
     # frob:ticket T-2475
+    # frob:tests scripts/fleet_status.py::land_process_rows
     def test_watcher_pgrep_pattern_is_not_counted_as_a_land(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -86,6 +88,7 @@ class TestLandProcessRows:
         assert [r["pid"] for r in rows] == [101]
 
     # frob:ticket T-4377
+    # frob:tests scripts/fleet_status.py::land_process_rows
     def test_own_ancestor_process_is_not_counted_as_a_land(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -112,6 +115,7 @@ class TestLandProcessRows:
         assert [r["pid"] for r in rows] == [200]
 
     # frob:ticket T-4377
+    # frob:tests scripts/fleet_status.py::land_process_rows
     def test_a_land_in_a_different_repo_is_not_counted(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -164,6 +168,7 @@ class TestLandProcessRows:
 class TestLandInvocations:
     """`fleet_status.land_invocations` (T-2180)."""
 
+    # frob:tests scripts/fleet_status.py::land_invocations
     def test_collapses_process_fan_out_by_ticket_id(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -215,6 +220,7 @@ class TestLandInvocations:
         assert inv["cpu_s"] == 270
 
     # frob:ticket T-2193
+    # frob:tests scripts/fleet_status.py::land_invocations
     def test_must_pass_control_one_land_many_processes_reports_one(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -251,6 +257,7 @@ class TestLandInvocations:
         assert invocations[0]["ticket_id"] == "T-9999"
         assert invocations[0]["cpu_s"] == 67
 
+    # frob:tests scripts/fleet_status.py::land_invocations
     def test_rows_with_no_ticket_id_are_dropped_not_reported(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -329,6 +336,7 @@ class TestDescendantCpuSeconds:
 class TestLandLockHolderPids:
     """`fleet_status.land_lock_holder_pids` (T-2180)."""
 
+    # frob:tests scripts/fleet_status.py::land_lock_holder_pids
     def test_finds_a_pid_holding_the_lock_open(self, tmp_path: Path) -> None:
         """A pid whose `fd` table contains a symlink resolving to
         `.frob/land.lock` is reported as a live holder -- the /proc-fd
@@ -350,6 +358,7 @@ class TestLandLockHolderPids:
 
         assert fleet_status.land_lock_holder_pids(root, proc=proc) == [555]
 
+    # frob:tests scripts/fleet_status.py::land_lock_holder_pids
     def test_no_live_holder_returns_empty(self, tmp_path: Path) -> None:
         """No pid's fd table points at the lock file: reported as no live
         holder, distinct from the lock file's own existence."""
@@ -466,6 +475,7 @@ class TestLandStatusMarkerLines:
 class TestPrintLandStatus:
     """`fleet_status._print_land_status` (T-2180)."""
 
+    # frob:tests scripts/fleet_status.py::read_land_status_marker
     def test_prints_invocations_and_live_lock_holder(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -538,6 +548,7 @@ class TestPrintLandStatus:
         assert "T-2222" in out and "cpu=30s" in out
         assert "cpu=30s (+0s in children)" not in out
 
+    # frob:tests scripts/fleet_status.py::read_land_status_marker
     def test_prints_no_live_holder_as_normal_resting_state_not_stale(
         self,
         tmp_path: Path,
@@ -678,6 +689,7 @@ class TestPrintLandStatus:
         assert "held by pid=" not in land_lock_line
 
     # frob:ticket T-2222
+    # frob:tests scripts/fleet_status.py::read_land_status_marker
     def test_guidance_line_uses_live_count_not_raw_count(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:

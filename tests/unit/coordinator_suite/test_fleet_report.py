@@ -16,6 +16,7 @@ class TestTicketReadiness:
     """`fleet_status.ticket_readiness` (T-2133)."""
 
     # frob:ticket T-2179
+    # frob:tests scripts/fleet_status.py
     def test_dispatchable_when_no_lease_no_commits_no_divergence(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -35,6 +36,7 @@ class TestTicketReadiness:
         assert readiness["worktrees_with_commits"] == []
 
     # frob:ticket T-2179
+    # frob:tests scripts/fleet_status.py
     def test_not_dispatchable_when_a_live_lease_exists(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -63,6 +65,7 @@ class TestTicketReadiness:
         assert fleet_status.ticket_readiness("T-2114")["dispatchable"] is False
 
     # frob:ticket T-2179
+    # frob:tests scripts/fleet_status.py
     def test_not_dispatchable_when_another_branch_already_has_commits(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -82,6 +85,7 @@ class TestTicketReadiness:
         assert readiness["worktrees_with_commits"] == ["sibling"]
 
     # frob:ticket T-2179
+    # frob:tests scripts/fleet_status.py
     def test_flags_scope_divergence_between_the_live_lease_and_main(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -211,6 +215,7 @@ class TestScopeLeaseCollisions:
         )
         return tmp_path
 
+    # frob:tests scripts/fleet_status.py::scope_lease_collisions
     def test_glob_scope_collides_with_a_literal_lease_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -241,6 +246,7 @@ class TestScopeLeaseCollisions:
         assert collisions[0]["ticket_id"] == "T-2215"
         assert any("_land.py" in p for p in collisions[0]["paths"])
 
+    # frob:tests scripts/fleet_status.py::scope_lease_collisions
     def test_no_collision_when_files_are_disjoint(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -263,6 +269,7 @@ class TestScopeLeaseCollisions:
         )
         assert collisions == []
 
+    # frob:tests scripts/fleet_status.py::scope_lease_collisions
     def test_a_reclaimable_lease_is_never_a_collision(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -290,6 +297,7 @@ class TestScopeLeaseCollisions:
         assert collisions == []
 
     # frob:ticket T-2281
+    # frob:tests scripts/fleet_status.py::_land_ticket_collisions
     def test_land_in_progress_ticket_with_no_lease_still_collides(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -318,6 +326,7 @@ class TestScopeLeaseCollisions:
         assert any("_land.py" in p for p in collisions[0]["paths"])
 
     # frob:ticket T-2281
+    # frob:tests scripts/fleet_status.py::_land_ticket_collisions
     def test_land_ticket_disjoint_scope_is_not_a_collision(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -343,6 +352,7 @@ class TestScopeLeaseCollisions:
         assert collisions == []
 
     # frob:ticket T-2281
+    # frob:tests scripts/fleet_status.py::_land_ticket_collisions
     def test_land_ticket_id_matching_a_live_lease_is_not_double_reported(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -366,6 +376,7 @@ class TestScopeLeaseCollisions:
         assert len(collisions) == 1
 
     # frob:ticket T-2281
+    # frob:tests scripts/fleet_status.py::_land_ticket_collisions
     def test_the_ticket_s_own_id_in_land_ticket_ids_is_never_self_collision(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -457,6 +468,7 @@ class TestTicketReadinessScopeCollision:
 class TestFleetStatusMain:
     """`fleet_status.main`."""
 
+    # frob:tests scripts/fleet_status.py::main
     def test_exit_zero_when_clean(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -470,6 +482,7 @@ class TestFleetStatusMain:
         assert fleet_status.main() == 0
         assert "CLEAN" in capsys.readouterr().out
 
+    # frob:tests scripts/fleet_status.py::main
     def test_exit_one_when_dirty(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -582,6 +595,7 @@ class TestPrintTicketReadiness:
     T-2172)."""
 
     # frob:ticket T-2172
+    # frob:tests scripts/fleet_status.py::_ticket_readiness_lines
     def test_prints_dispatchable_true(self, capsys: pytest.CaptureFixture[str]) -> None:
         """A dispatchable, no-lease readiness dict prints the plain shape
         and returns True."""
@@ -600,6 +614,7 @@ class TestPrintTicketReadiness:
         assert "dispatchable: True" in out
 
     # frob:ticket T-2172
+    # frob:tests scripts/fleet_status.py::_ticket_readiness_lines
     def test_prints_lease_scope_divergence_and_sibling_commits(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -634,6 +649,7 @@ class TestPrintFleetReport:
 
     # frob:ticket T-2172
     # frob:ticket T-2180
+    # frob:tests scripts/fleet_status.py::_print_fleet_report
     def test_prints_all_four_sections(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -659,6 +675,7 @@ class TestPrintFleetReport:
 
     # frob:ticket T-2222
     # frob:ticket T-2654
+    # frob:tests scripts/fleet_status.py::_print_fleet_report
     def test_leases_section_shows_classification_per_lease(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -683,6 +700,7 @@ class TestPrintFleetReport:
         assert "T-2114 -> exist  [reclaimable]" in out
 
     # frob:ticket T-2654
+    # frob:tests scripts/fleet_status.py::_print_fleet_report
     def test_leases_section_reports_ledger_leak_missing_from_held(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -747,6 +765,7 @@ class TestPrintFleetReport:
 class TestRottingTickets:
     """`fleet_status.rotting_tickets` (T-2182)."""
 
+    # frob:tests scripts/fleet_status.py::rotting_tickets
     def test_flags_a_ticket_past_its_priority_threshold(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -774,6 +793,7 @@ class TestRottingTickets:
         assert rotting[0]["threshold_days"] == 3
         assert rotting[0]["age_days"] > 3
 
+    # frob:tests scripts/fleet_status.py::rotting_tickets
     def test_ignores_tickets_still_under_threshold(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -789,6 +809,7 @@ class TestRottingTickets:
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         assert fleet_status.rotting_tickets() == []
 
+    # frob:tests scripts/fleet_status.py::rotting_tickets
     def test_only_queued_and_planned_states_are_considered(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -806,6 +827,7 @@ class TestRottingTickets:
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         assert fleet_status.rotting_tickets() == []
 
+    # frob:tests scripts/fleet_status.py::rotting_tickets
     def test_distinguishes_epic_and_story_tier_from_ticket_tier(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1086,6 +1108,7 @@ class TestPrintTicketRot:
         assert "BLOCKED (dependency not yet resolved) (1):" in out
         assert "T-3000" in out
 
+    # frob:tests scripts/fleet_status.py::_print_ticket_rot
     def test_splits_by_tier_under_distinct_action_headings(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1126,6 +1149,7 @@ class TestPrintTicketRot:
         assert "T-0005" in out.split("NEEDS DECOMPOSITION")[1]
 
     # frob:ticket T-2229
+    # frob:tests scripts/fleet_status.py::_print_ticket_rot
     def test_decomposed_epic_prints_under_its_own_heading_not_needs_decomposition(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1167,6 +1191,7 @@ class TestPrintTicketRot:
         assert "T-1623" in out.split("DECOMPOSED, BEING WORKED")[1]
 
     # frob:ticket T-2468
+    # frob:tests scripts/fleet_status.py::_print_ticket_rot
     def test_epic_all_terminal_children_prints_under_needs_close(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1199,6 +1224,7 @@ class TestPrintTicketRot:
         assert "NEEDS DECOMPOSITION" not in out
 
     # frob:ticket T-2475
+    # frob:tests scripts/fleet_status.py::_print_ticket_rot
     def test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1250,6 +1276,7 @@ class TestPrintTicketRot:
         assert "T-2000 priority=" in blocked_section
 
     # frob:ticket T-2468
+    # frob:tests scripts/fleet_status.py::_print_ticket_rot
     def test_epic_with_no_children_at_all_still_prints_under_needs_decomposition(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1280,6 +1307,7 @@ class TestPrintTicketRot:
         assert "T-9000" in out
         assert "NEEDS CLOSE" not in out
 
+    # frob:tests scripts/fleet_status.py::_print_ticket_rot
     def test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1334,6 +1362,7 @@ class TestPrintTicketRot:
 class TestQuarantineState:
     """`fleet_status.quarantine_state` (T-2049)."""
 
+    # frob:tests scripts/fleet_status.py::quarantine_state
     def test_reports_raised_with_undisposed_count(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1356,6 +1385,7 @@ class TestQuarantineState:
         monkeypatch.setattr(fleet_status, "QUARANTINE", store)
         assert fleet_status.quarantine_state() == ("raised", 2)
 
+    # frob:tests scripts/fleet_status.py::quarantine_state
     def test_reports_clear_when_store_says_cleared(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1369,6 +1399,7 @@ class TestQuarantineState:
         monkeypatch.setattr(fleet_status, "QUARANTINE", store)
         assert fleet_status.quarantine_state() == ("clear", 0)
 
+    # frob:tests scripts/fleet_status.py::quarantine_state
     def test_reports_clear_when_no_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1378,6 +1409,7 @@ class TestQuarantineState:
         )
         assert fleet_status.quarantine_state() == ("clear", 0)
 
+    # frob:tests scripts/fleet_status.py::quarantine_state
     def test_unreadable_store_is_unknown_never_clear(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1388,6 +1420,7 @@ class TestQuarantineState:
         monkeypatch.setattr(fleet_status, "QUARANTINE", store)
         assert fleet_status.quarantine_state() == ("unknown", 0)
 
+    # frob:tests scripts/fleet_status.py::quarantine_state
     def test_non_dict_record_is_unknown(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1405,6 +1438,7 @@ class TestVerifyQueueState:
     `quarantine_state`/T-2049)."""
 
     # frob:ticket T-2126
+    # frob:tests scripts/fleet_status.py::verify_queue_state
     def test_reports_depth_and_oldest_age(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1431,6 +1465,7 @@ class TestVerifyQueueState:
         assert oldest_age_s == pytest.approx(3600.0)
 
     # frob:ticket T-2126
+    # frob:tests scripts/fleet_status.py::verify_queue_state
     def test_zero_depth_when_no_file(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1444,6 +1479,7 @@ class TestVerifyQueueState:
         assert fleet_status.verify_queue_state() == (0, None)
 
     # frob:ticket T-2126
+    # frob:tests scripts/fleet_status.py::verify_queue_state
     def test_unreadable_queue_is_unknown_never_zero(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1464,6 +1500,7 @@ class TestFleetStatusMainVerifyQueue:
     """`fleet_status.main`'s VERIFY QUEUE line (T-2126)."""
 
     # frob:ticket T-2126
+    # frob:tests scripts/fleet_status.py::_print_verify_queue_line
     def test_prints_depth_and_age_when_nonempty(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1486,6 +1523,7 @@ class TestFleetStatusMainVerifyQueue:
         assert "1234s old" in out
 
     # frob:ticket T-2126
+    # frob:tests scripts/fleet_status.py::_print_verify_queue_line
     def test_prints_empty_when_zero_depth(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1509,6 +1547,7 @@ class TestFleetStatusMainVerifyQueue:
 class TestFleetStatusMainQuarantine:
     """`fleet_status.main`'s quarantine line (T-2049)."""
 
+    # frob:tests scripts/fleet_status.py::main
     def test_prints_raised_with_undisposed_count_and_consequence(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1528,6 +1567,7 @@ class TestFleetStatusMainQuarantine:
         assert "2" in out
         assert "synchronous" in out
 
+    # frob:tests scripts/fleet_status.py::main
     def test_prints_clear(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -1543,6 +1583,7 @@ class TestFleetStatusMainQuarantine:
         out = capsys.readouterr().out
         assert "QUARANTINE clear" in out
 
+    # frob:tests scripts/fleet_status.py::main
     def test_prints_unknown_as_unsafe(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:

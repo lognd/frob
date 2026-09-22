@@ -443,6 +443,7 @@ class TestCapabilityScan:
         assert "net-connect" in capabilities
         assert decode_to_exec_hit is False
 
+    # frob:tests src/frob/vet/_capability_python.py::_build_wrapper_call_graph
     def test_wrapper_capabilities_resolve_cross_file_via_call_graph(
         self, tmp_path: Path
     ) -> None:

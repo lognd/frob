@@ -64,6 +64,7 @@ def _write_ticket(root: Path, ticket_id: str, state, body: str) -> None:  # noqa
 
 
 class TestClosePromotesPendingDrafts:
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_promote_pending_drafts_after_close  # noqa: E501
     def test_close_promotes_a_draft_the_ticket_filed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_promotes_a_draft_the_ticket_filed  # noqa: E501
         from frob.tickets import TicketState, load_queue
@@ -170,6 +171,7 @@ class TestClosePromotesPendingDrafts:
         # Untouched: still sitting under its own draft id, never renamed.
         assert draft_id in queue.danger_ok.tickets
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_promote_pending_drafts_after_close  # noqa: E501
     def test_close_with_no_drafts_is_unchanged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_with_no_drafts_is_unchanged  # noqa: E501
         from frob.tickets import TicketState, load_queue
@@ -191,6 +193,7 @@ class TestClosePromotesPendingDrafts:
         assert after.is_ok
         assert set(after.danger_ok.tickets) == before_ids
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_promote_pending_drafts_after_close  # noqa: E501
     def test_close_reports_and_exits_nonzero_when_a_draft_cannot_be_promoted(
         self, tmp_path: Path, caplog, monkeypatch: pytest.MonkeyPatch
     ) -> None:

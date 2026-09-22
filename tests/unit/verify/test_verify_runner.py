@@ -47,6 +47,7 @@ class TestBuildStatus:
         assert status.drains_refused_since_watermark == 0
         assert status.last_drain_refused_at is None
 
+    # frob:tests src/frob/app/verify_runner.py::_drain_refusal_fields kind="unit"  # noqa: E501
     def test_reports_drains_refused_since_watermark(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
         # T-2406 criterion 4: a drain refusal must be observable via
@@ -271,6 +272,7 @@ class TestDispose:
         assert record.cleared_at is not None
         assert record.findings[0].disposition == "dismissed"
 
+    # frob:tests src/frob/verify/_quarantine.py::retire_unidentifiable_findings kind="unit"  # noqa: E501
     def test_retire_unidentifiable_flag_retires_and_clears(
         self, tmp_path: Path
     ) -> None:
@@ -296,6 +298,7 @@ class TestDispose:
         assert record.cleared_at is not None
         assert record.findings[0].disposition == "dismissed"
 
+    # frob:tests src/frob/app/verify_runner.py::_retire_unidentifiable_dispose
     def test_retire_unidentifiable_flag_rejects_combination_with_dismiss(
         self, tmp_path: Path
     ) -> None:
@@ -456,6 +459,7 @@ class TestLiveRapidDebt:
     surface, not only in a log file nobody reads."""
 
     # frob:tests src/frob/app/_verify_rapid_debt.py::RapidDebtEntryView
+    # frob:tests src/frob/app/_verify_rapid_debt.py::_live_deferred_sweep_debt
     def test_no_baseline_is_live(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
         _write_rapid_debt_line(
@@ -470,6 +474,7 @@ class TestLiveRapidDebt:
         assert status.rapid_debt_live[0].commit == "abc123"
         assert status.rapid_debt_live[0].ticket_id == "T-9001"
 
+    # frob:tests src/frob/app/_verify_rapid_debt.py::_live_deferred_sweep_debt
     def test_later_baseline_clears(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
         # MEASURED (T-4324): this is the exact shape that made T-4197,
@@ -488,6 +493,7 @@ class TestLiveRapidDebt:
         assert status is not None
         assert status.rapid_debt_live == ()
 
+    # frob:tests src/frob/app/_verify_rapid_debt.py::_live_deferred_sweep_debt
     def test_uncovered_stays_live(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
         shas = _init_git_repo_with_commits(tmp_path, 3)

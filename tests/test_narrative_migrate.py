@@ -30,10 +30,12 @@ if True:
 class TestSplitTicketId:
     """`split_ticket_id` resolves the destination ticket, or refuses."""
 
+    # frob:tests src/frob/narrative/_migrate.py::split_ticket_id
     def test_finds_ticket_id_in_lead_line(self) -> None:
         """A `# T-2961: ...` lead line resolves to `T-2961`."""
         assert split_ticket_id("# T-2961: some text") == "T-2961"
 
+    # frob:tests src/frob/narrative/_migrate.py::split_ticket_id
     def test_no_ticket_id_returns_none(self) -> None:
         """A plain comment with no T-id returns `None`."""
         assert split_ticket_id("# just a comment") is None
@@ -48,6 +50,7 @@ class TestBlockAt:
         extent = block_at(_SOCKETD_LIKE_FILE, 3)
         assert extent == (3, 7)
 
+    # frob:tests src/frob/narrative/_migrate.py::block_at
     def test_non_comment_line_returns_none(self) -> None:
         """A line that isn't a comment at all is refused, not guessed at."""
         assert block_at(_SOCKETD_LIKE_FILE, 1) is None
@@ -69,11 +72,13 @@ class TestParagraphAt:
     """`paragraph_at` (T-2995) is `block_at`'s markdown-prose counterpart:
     a blank-line-delimited span instead of a `#`-comment run."""
 
+    # frob:tests src/frob/narrative/_migrate.py::paragraph_at
     def test_finds_blank_line_delimited_paragraph(self) -> None:
         """The whole paragraph is captured, stopping at the blank line."""
         extent = paragraph_at(_MD_LIKE_FILE, 5)
         assert extent == (5, 6)
 
+    # frob:tests src/frob/narrative/_migrate.py::paragraph_at
     def test_blank_line_returns_none(self) -> None:
         """A blank line itself has no paragraph to find."""
         assert paragraph_at(_MD_LIKE_FILE, 2) is None
@@ -83,6 +88,8 @@ class TestMigrateBlockSplit:
     """The keep/move split -- T-2994's own point: this is a caller
     judgement, not something `migrate_block` decides on its own."""
 
+    # frob:tests src/frob/narrative/_migrate.py::migrate_block
+    # frob:tests src/frob/narrative/_migrate.py::MigrationResult
     def test_whole_block_moves_when_no_keep_lines_given(self) -> None:
         """With `keep_lines=()`, only the one-line reference remains."""
         result = migrate_block(
@@ -101,6 +108,7 @@ class TestMigrateBlockSplit:
         # the historical framing is GONE from the file (moved, not kept)
         assert "T-2918" not in migration.new_file_text
 
+    # frob:tests src/frob/narrative/_migrate.py::migrate_block
     def test_load_bearing_sentence_stays_when_named_as_keep(self) -> None:
         """The T-2993 acceptance case: the import-time-crash sentence
         (KEEP) stays in the file; only the cross-reference lines (MOVE)
@@ -128,6 +136,7 @@ class TestMigrateBlockSplit:
         assert "T-2918" not in migration.new_file_text
         assert "# see T-2961 for the history behind this" in migration.new_file_text
 
+    # frob:tests src/frob/narrative/_migrate.py::migrate_block
     def test_markdown_paragraph_reference_line_is_plain_prose(self) -> None:
         """T-2995: a `.md` paragraph's reference line is a plain sentence,
         never a `#`-comment (which would render as a heading)."""
@@ -144,6 +153,7 @@ class TestMigrateBlockSplit:
         assert "# see" not in migration.new_file_text
 
     # frob:tests src/frob/narrative/_migrate.py::MigrateError
+    # frob:tests src/frob/narrative/_migrate.py::migrate_block
     def test_no_ticket_id_refuses(self) -> None:
         """A block that names no ticket cannot be routed anywhere."""
         text = "# just a comment\n# more comment\n"
@@ -153,6 +163,7 @@ class TestMigrateBlockSplit:
         assert result.is_err
         assert result.danger_err is MigrateError.NoTicketId
 
+    # frob:tests src/frob/narrative/_migrate.py::migrate_block
     def test_keep_line_not_in_block_refuses(self) -> None:
         """A `keep_lines` entry that is not verbatim IN the block is
         refused rather than silently ignored -- ambiguity is a hard
@@ -167,6 +178,7 @@ class TestMigrateBlockSplit:
         assert result.is_err
         assert result.danger_err is MigrateError.AmbiguousKeepLines
 
+    # frob:tests src/frob/narrative/_migrate.py::migrate_block
     def test_bad_line_range_refuses(self) -> None:
         """An out-of-range line pair is `BlockNotFound`, not an IndexError."""
         result = migrate_block(
@@ -180,6 +192,8 @@ class TestIdempotency:
     """T-2994 constraint 4: running the migration twice must not
     duplicate content into the ticket."""
 
+    # frob:tests src/frob/narrative/_migrate.py::moved_text_for_ticket
+    # frob:tests src/frob/narrative/_migrate.py::migrate_block
     def test_marker_already_present_refuses_as_already_migrated(self) -> None:
         """A second call against the same file/line/ticket, with the
         ticket's real body already carrying the marker, refuses cleanly
@@ -232,6 +246,7 @@ class TestNarrativeCli:
         assert args.line == 3
         assert args.reason == "why"
 
+    # frob:tests src/frob/narrative/_cli.py::run_narrative_command
     def test_dry_run_reports_without_writing(self, tmp_path) -> None:
         """`--dry-run` against a fixture file with a real T-id block
         reports the intended move and leaves the file untouched."""

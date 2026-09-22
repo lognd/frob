@@ -331,6 +331,7 @@ class TestDupResultFormat:
         data = json.loads(result.as_json())
         assert isinstance(data, dict)
 
+    # frob:tests src/frob/dup/_legacy.py::DupResult.as_json
     def test_as_json_has_groups_key(self):
         result = find_duplicates(FIXTURES / "dup_python" / "src")
         data = json.loads(result.as_json())

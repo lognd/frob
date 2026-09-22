@@ -251,6 +251,7 @@ class TestAlreadyLandedOnMain:
         assert result.is_ok, result.err
 
     # frob:ticket T-2711
+    # frob:tests src/frob/tickets/_land.py::_branch_vs_base_content_diff
     def test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content(  # noqa: E501
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -298,6 +299,7 @@ class TestAlreadyLandedOnMain:
         assert tid in caplog.text
 
     # frob:ticket T-2711
+    # frob:tests src/frob/tickets/_land.py::_branch_vs_base_content_diff
     def test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref(  # noqa: E501
         self, repo: Path
     ) -> None:

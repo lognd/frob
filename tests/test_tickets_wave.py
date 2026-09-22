@@ -37,6 +37,7 @@ def _queue(*tickets: Ticket) -> TicketQueue:
 
 
 class TestWave:
+    # frob:tests src/frob/tickets/_doable.py::wave
     def test_disjoint_scopes_pack_into_separate_groups(self) -> None:
         # frob:tests \
         # tests/test_tickets_wave.py::TestWave.test_disjoint_scopes_pack_into_separate_\
@@ -49,6 +50,7 @@ class TestWave:
         placed_ids = {t.id for g in result.groups for t in g.tickets}
         assert placed_ids == {"T-0001", "T-0002"}
 
+    # frob:tests src/frob/tickets/_doable.py::wave
     def test_colliding_scopes_share_one_group(self) -> None:
         # frob:tests \
         # tests/test_tickets_wave.py::TestWave.test_colliding_scopes_share_one_group
@@ -62,6 +64,7 @@ class TestWave:
         assert not result.remainder
         assert {t.id for t in result.groups[0].tickets} == {"T-0001", "T-0002"}
 
+    # frob:tests src/frob/tickets/_doable.py::wave  # noqa: E501
     def test_unplaceable_ticket_lands_in_remainder_with_reason(self) -> None:
         # frob:tests \
         # tests/test_tickets_wave.py::TestWave.test_unplaceable_ticket_lands_in_remaind\
@@ -85,6 +88,7 @@ class TestWave:
         assert reason.colliding_ticket_id in {"T-0001", "T-0002"}
         assert reason.glob in {"src/a.py", "src/b.py"}
 
+    # frob:tests src/frob/tickets/_doable.py::wave
     def test_deterministic_for_repeated_calls(self) -> None:
         # frob:tests \
         # tests/test_tickets_wave.py::TestWave.test_deterministic_for_repeated_calls
@@ -98,6 +102,7 @@ class TestWave:
         second_shape = [tuple(t.id for t in g.tickets) for g in second.groups]
         assert first_shape == second_shape
 
+    # frob:tests src/frob/tickets/_doable.py::wave
     def test_fewer_groups_than_agents_is_not_an_error(self) -> None:
         # frob:tests \
         # tests/test_tickets_wave.py::TestWave.test_fewer_groups_than_agents_is_not_an_\

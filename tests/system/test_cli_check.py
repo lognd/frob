@@ -49,6 +49,7 @@ def _make_project(tmp_path: Path, src: str, pkg: str = "mypkg") -> Path:
 
 
 class TestCheckCleanProject:
+    # frob:tests src/frob/app/check_runner.py::run
     def test_clean_code_exits_zero(self, tmp_path):
         # frob:ticket T-0806
         # T-0806: `_make_project` deliberately leaves `tmp_path` git-less
@@ -563,6 +564,8 @@ class TestCheckStampBaselineAndDelta:
         stamp = tmp_path / ".frob" / "baseline"
         assert stamp.exists()
 
+    # frob:tests src/frob/check/_python.py::_gates_success_result  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::run  # noqa: E501
     def test_delta_reports_only_new_violation(self, tmp_path):
         # frob:tests \
         # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
@@ -622,6 +625,7 @@ class TestCheckStageGroups:
     cap instead of running the full check/gates pass in one invocation."""
 
     # frob:ticket T-0627
+    # frob:tests src/frob/app/check_runner.py::_print_stage_list
     def test_only_list_prints_stage_names(self, tmp_path):
         # frob:tests \
         # tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_stage_names  # noqa: E501
@@ -650,6 +654,7 @@ class TestCheckStageGroups:
 
     # frob:ticket T-0627
     # frob:ticket T-4336
+    # frob:tests src/frob/check/__init__.py::available_stages
     def test_available_stages_cover_every_gate_and_tool(self):
         # frob:tests \
         # tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool  # noqa: E501
@@ -808,6 +813,7 @@ class TestCheckAgentRefusal:
     of walking into it; `FROB_ALLOW_FULL_CHECK=1` opts back in deliberately."""
 
     # frob:ticket T-0627
+    # frob:tests src/frob/app/check_runner.py::_refuse_full_check_for_agent  # noqa: E501
     def test_bare_check_refuses_under_frob_agent(self, tmp_path):
         # frob:tests \
         # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
@@ -824,6 +830,7 @@ class TestCheckAgentRefusal:
         assert "--only" in out
 
     # frob:ticket T-0627
+    # frob:tests src/frob/app/check_runner.py::_refuse_full_check_for_agent  # noqa: E501
     def test_stage_selected_check_runs_under_frob_agent(self, tmp_path):
         # frob:tests \
         # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_stage_selected_check_runs_under_frob_agent  # noqa: E501
@@ -840,6 +847,7 @@ class TestCheckAgentRefusal:
         assert r.returncode == 0, out
 
     # frob:ticket T-0627
+    # frob:tests src/frob/app/check_runner.py::_refuse_full_check_for_agent  # noqa: E501
     def test_allow_full_check_override_bypasses_refusal(self, tmp_path):
         # frob:tests \
         # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_allow_full_check_override_bypasses_refusal  # noqa: E501
@@ -932,6 +940,7 @@ class TestCheckPolyglot:
         )
         return tmp_path
 
+    # frob:tests src/frob/app/check_runner.py::run  # noqa: E501
     def test_unpinned_polyglot_runs_python_stage(self, tmp_path):
         """Auto-detect (no --type, no frob.toml check_type) still runs the
         python stage's tools even with a Cargo.toml also present -- the
@@ -968,6 +977,7 @@ class TestCheckPolyglot:
         # wins in the single-winner priority order).
         assert "ruff-check" in tools, tools
 
+    # frob:tests src/frob/app/check_runner.py::run  # noqa: E501
     def test_pinned_check_type_reports_skipped_line(self, tmp_path):
         """`--type python` on the same polyglot repo must name the rust
         stage it is deliberately excluding, not just go quiet about it."""

@@ -58,6 +58,7 @@ class TestPersistRunDefaultPath:
     field would be) must resolve to the current working directory, not
     crash."""
 
+    # frob:tests src/frob/app/perf_runner.py::_run_quiet_if_json kind="unit"  # noqa: E501
     def test_missing_perf_path_resolves_to_cwd(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:

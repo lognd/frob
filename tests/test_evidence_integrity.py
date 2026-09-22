@@ -268,6 +268,7 @@ class TestD02ScopeBinding:
         assert evidence_covers_scope(ticket, snapshot) is False
 
     # frob:ticket T-3156
+    # frob:tests src/frob/tickets/_models.py::scope_has_python_surface
     def test_evidence_covers_scope_true_for_bug_kind_with_no_python_surface(
         self, tmp_path: Path
     ) -> None:
@@ -288,6 +289,7 @@ class TestD02ScopeBinding:
         assert evidence_covers_scope(ticket, snapshot) is True
 
     # frob:ticket T-3156
+    # frob:tests src/frob/tickets/_models.py::scope_has_python_surface
     def test_evidence_covers_scope_false_for_bug_kind_with_real_python_surface(
         self, tmp_path: Path
     ) -> None:
@@ -456,6 +458,7 @@ class TestT4170PreExistingTestOutsideScopeBoundViaDirective:
 # finding `frob ticket land` already refuses on, instead of being exempt.
 # ---------------------------------------------------------------------------
 class TestT0844MutationEvidenceOnClose:
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_rejects_when_mutation_evidence_false(
         self, tmp_path: Path
     ) -> None:
@@ -473,6 +476,7 @@ class TestT0844MutationEvidenceOnClose:
         assert result.is_err
         assert result.danger_err == TicketError.EvidenceConfirmatoryOnly
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_allows_when_mutation_evidence_true(
         self, tmp_path: Path
     ) -> None:
@@ -489,6 +493,7 @@ class TestT0844MutationEvidenceOnClose:
         )
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_permissive_when_mutation_evidence_none(
         self, tmp_path: Path
     ) -> None:
@@ -511,6 +516,7 @@ class TestT0844MutationEvidenceOnClose:
 # ---------------------------------------------------------------------------
 # frob:ticket T-0417
 class TestT0417ReverifyEvidenceOnClose:
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_rejects_when_evidence_reverified_false(
         self, tmp_path: Path
     ) -> None:
@@ -527,12 +533,14 @@ class TestT0417ReverifyEvidenceOnClose:
         assert result.is_err
         assert result.danger_err == TicketError.EvidenceNotPassing
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_allows_when_evidence_reverified_true(
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true  # noqa: E501
         _assert_transition_to_done_allows(tmp_path, evidence_reverified=True)
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_permissive_when_evidence_reverified_none(
         self, tmp_path: Path
     ) -> None:
@@ -548,6 +556,7 @@ class TestT0417ReverifyEvidenceOnClose:
 
 
 class TestD03SubstantiveDoneReport:
+    # frob:tests src/frob/tickets/_models.py::has_substantive_done_report  # noqa: E501
     def test_empty_section_rejected(self) -> None:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_section_rejected  # noqa: E501
@@ -669,6 +678,7 @@ class TestT4167SplitMissingEvidenceDisjunction:
 # a surviving stale copy of the first-round narrative.
 # ---------------------------------------------------------------------------
 class TestDoneReportSectionEndStructuralSentinel:
+    # frob:tests src/frob/tickets/_models.py::_done_report_section_end  # noqa: E501
     def test_narrative_h2_subheadings_do_not_end_the_section(self) -> None:
         # frob:tests tests/test_evidence_integrity.py::TestDoneReportSectionEndStructuralSentinel.test_narrative_h2_subheadings_do_not_end_the_section  # noqa: E501
         body = "## Description\nx\n"
@@ -715,6 +725,7 @@ class TestDoneReportHeadingImpersonation:
     mistaken for a genuine section start."""
 
     # frob:ticket T-0853
+    # frob:tests src/frob/tickets/_models.py::_find_done_report_heading  # noqa: E501
     def test_lookalike_heading_before_real_report_ignored(self) -> None:
         # frob:tests tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation.test_lookalike_heading_before_real_report_ignored  # noqa: E501
         # Description prose written BEFORE any real Done report exists,
@@ -742,6 +753,7 @@ class TestDoneReportHeadingImpersonation:
         assert "Some intro." in after
 
     # frob:ticket T-0853
+    # frob:tests src/frob/tickets/_models.py::_is_real_done_report_heading  # noqa: E501
     def test_lookalike_heading_without_changed_marker_not_real(self) -> None:
         # frob:tests tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation.test_lookalike_heading_without_changed_marker_not_real  # noqa: E501
         # A second `done-report` call must still correctly replace the
@@ -983,6 +995,7 @@ class TestD09EvidenceUnionOnSplice:
 # D-10: cmd: evidence reproducibility is re-checkable
 # ---------------------------------------------------------------------------
 class TestD10CmdEvidenceReverify:
+    # frob:tests src/frob/tickets/_evidence.py::reverify_cmd_evidence
     def test_reverify_true_when_command_still_reproduces(self) -> None:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_true_when_command_still_reproduces  # noqa: E501
@@ -1021,6 +1034,7 @@ class TestD10CmdEvidenceReverify:
 # D-11: collected-match rule is a single shared implementation
 # ---------------------------------------------------------------------------
 class TestD11DedupedMatchRule:
+    # frob:tests src/frob/tickets/_models.py::matches_collected  # noqa: E501
     def test_tickets_and_gates_share_matches_collected(self) -> None:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD11DedupedMatchRule.test_tickets_and_gates_share_matches_collected  # noqa: E501

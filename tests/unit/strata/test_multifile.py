@@ -34,6 +34,7 @@ class TestCheckCrossFileReferences:
 
     # frob:tests \
     # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_missing_node_named_per_file  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::check_cross_file_references
     def test_missing_node_named_per_file(self) -> None:
         """An unresolvable flow src/dst is reported against the file that
         declared the flow, naming the missing id (T-1196 acceptance 1)."""
@@ -46,6 +47,7 @@ class TestCheckCrossFileReferences:
 
     # frob:tests \
     # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_boundary_unknown_flow_named  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::check_cross_file_references
     def test_boundary_unknown_flow_named(self) -> None:
         """A boundary naming an unknown flow id is reported the same way."""
         a = _test_module(
@@ -60,6 +62,7 @@ class TestCheckCrossFileReferences:
 class TestMergeModules:
     # frob:tests \
     # tests/unit/strata/test_multifile.py::TestMergeModules.test_concatenates_declarations  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::merge_modules
     def test_concatenates_declarations(self) -> None:
         """Every declaration from every file lands in the merged `Module`."""
         a = _test_module("module a\nnode client : foreign { clearance Public; }\n")
@@ -71,6 +74,7 @@ class TestMergeModules:
 class TestElaborateMerged:
     # frob:tests \
     # tests/unit/strata/test_multifile.py::TestElaborateMerged.test_resolves_cross_file_flow  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::elaborate_merged
     def test_resolves_cross_file_flow(self) -> None:
         """`elaborate_merged` produces one `KernelModel` where a cross-file
         flow reference resolves (T-1196 acceptance 0)."""
@@ -85,6 +89,7 @@ class TestElaborateMerged:
 
     # frob:tests \
     # tests/unit/strata/test_multifile.py::TestElaborateMerged.test_fails_closed_on_missing_id  # noqa: E501
+    # frob:tests src/frob/strata/_multifile.py::elaborate_merged
     def test_fails_closed_on_missing_id(self) -> None:
         """A reference to an id declared nowhere fails closed, never a
         partial model (T-1196 acceptance 1)."""

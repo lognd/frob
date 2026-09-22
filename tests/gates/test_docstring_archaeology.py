@@ -70,6 +70,7 @@ class TestDocarch001Violations:
         assert violations[0].severity == Severity.WARN
         assert violations[0].symref == "src/a.py::walk"
 
+    # frob:tests src/frob/gates/_docstring_archaeology.py::docarch001_violations
     def test_bare_ticket_reference_stays_quiet(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET: a bare ticket reference for provenance, no
         change-narrative wording -- the legitimate 'see T-#### for the
@@ -87,6 +88,7 @@ class TestDocarch001Violations:
         )
         assert docarch001_violations(tmp_path) == ()
 
+    # frob:tests src/frob/gates/_docstring_archaeology.py::docarch001_violations
     def test_long_utility_docstring_stays_quiet(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET: a genuinely long docstring that is entirely
         utility prose (explains behavior, contract, edge cases) with no
@@ -185,6 +187,7 @@ class TestDocarch001Wiring:
     `frob check`'s production invocation, mirroring
     `tests/test_waive_gate.py::TestWaive009Wiring`'s own end-to-end shape."""
 
+    # frob:tests src/frob/gates/_docstring_archaeology.py::docarch001_violations
     def test_fires_through_run_gates(self, tmp_path: Path) -> None:
         """BEFORE this ticket, DOCARCH001 did not exist; AFTER, a public
         docstring reading as ticket archaeology must surface as a
@@ -208,6 +211,7 @@ class TestDocarch001Wiring:
             "DOCARCH001 did not fire through run_gates -- wiring regression"
         )
 
+    # frob:tests src/frob/gates/_docstring_archaeology.py::docarch001_violations
     def test_utility_only_does_not_fire_through_run_gates(self, tmp_path: Path) -> None:
         """A public docstring with no ticket-archaeology shape must stay
         quiet through the same real `run_gates` pass."""

@@ -17,6 +17,7 @@ class TestTest019DeflatedSymbols:
     `CoverageData.suspect_deflated_symbols` into a WARN-severity TEST019
     Violation; a clean/empty tuple emits nothing."""
 
+    # frob:tests src/frob/gates/__init__.py::_test019_deflated_symbols
     def test_flags_suspect_symbol(self) -> None:
         """A non-empty `suspect_deflated_symbols` tuple produces exactly one
         TEST019 WARN Violation naming every suspect symref in its message."""
@@ -35,6 +36,7 @@ class TestTest019DeflatedSymbols:
         assert violation.severity == Severity.WARN
         assert "src/frob/pkg/a.py::helper" in violation.message
 
+    # frob:tests src/frob/gates/__init__.py::_test019_deflated_symbols
     def test_clean_when_no_suspects(self) -> None:
         """An empty `suspect_deflated_symbols` tuple (the default, and the
         shape of clean input) emits no TEST019 Violation at all."""

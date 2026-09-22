@@ -76,6 +76,8 @@ class TestArtifactSmokeMustFire:
     pin in the `serve` extra must fail `check_serve_extra`, not pass
     silently."""
 
+    # frob:tests scripts/artifact_smoke.py::main
+    # frob:tests scripts/artifact_smoke.py::check_serve_extra
     @pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
     def test_unbounded_mcp_pin_fails_serve_extra_check(self, tmp_path: Path) -> None:
         """Rebuild this repo's own wheel with the PRE-T-3857 unbounded
@@ -133,6 +135,9 @@ class TestArtifactSmokeAbsentCores:
     registry" resolver trace that made CI run 34005559354's failure
     indistinguishable from a wrong version pin."""
 
+    # frob:tests scripts/artifact_smoke.py::_require_core_wheels
+    # frob:tests scripts/artifact_smoke.py::_CoreWheelFindings
+    # frob:tests scripts/artifact_smoke.py::_wheel_version
     @pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
     def test_absent_cores_report_named_core_missing(self, tmp_path: Path) -> None:
         """A real wheel, `--core-wheels-dir` pointed at an EMPTY
@@ -178,6 +183,9 @@ class TestArtifactSmokeMustStayQuiet:
     """MUST-STAY-QUIET: the current, fixed wheel must pass every check
     cleanly."""
 
+    # frob:tests scripts/artifact_smoke.py::main
+    # frob:tests scripts/artifact_smoke.py::check_serve_extra
+    # frob:tests scripts/artifact_smoke.py::check_base_install
     @pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
     # frob:ticket T-4378
     def test_current_pin_passes_serve_extra_check(self, tmp_path: Path) -> None:

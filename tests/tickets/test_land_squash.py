@@ -47,6 +47,7 @@ def _commit(root: Path, message: str) -> None:
     _run(["git", "commit", "-q", "-m", message], root)
 
 
+# frob:tests src/frob/tickets/_land_squash.py::_exclude_dev_merged_ledger_files
 def test_dev_merged_ledger_file_excluded(tmp_path: Path) -> None:
     """A ticket ledger file that arrives ONLY via merging `main` (dev) in
     -- never touched by the worktree's own commits -- is excluded from
@@ -73,6 +74,7 @@ def test_dev_merged_ledger_file_excluded(tmp_path: Path) -> None:
     assert narrowed == frozenset({"src/feature.py"})
 
 
+# frob:tests src/frob/tickets/_land_squash.py::_exclude_dev_merged_ledger_files  # noqa: E501
 def test_own_ledger_edit_after_merge_still_counted(tmp_path: Path) -> None:
     """A ticket ledger file the worktree's OWN commits additionally edit
     AFTER merging main in must NOT be excluded -- it genuinely differs

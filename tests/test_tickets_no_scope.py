@@ -38,6 +38,7 @@ def _init_repo(tmp_path: Path, *, scope: tuple[str, ...] = ()) -> str:
 class TestSetNoScopeDeclared:
     """`set_no_scope_declared`: the mutate-in-place escape hatch."""
 
+    # frob:tests src/frob/tickets/_setters.py::set_no_scope_declared
     def test_sets_both_fields(self, tmp_path: Path) -> None:
         ticket_id = _init_repo(tmp_path)
         result = set_no_scope_declared(tmp_path, ticket_id, "pure decision record")
@@ -51,6 +52,7 @@ class TestSetNoScopeDeclared:
         assert ticket.no_scope_declared is True
         assert ticket.no_scope_declared_reason == "pure decision record"
 
+    # frob:tests src/frob/tickets/_setters.py::set_no_scope_declared
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
         """POSITIVE CONTROL: a blank reason is refused -- this front door
         cannot become a silent, unaccountable escape hatch."""
@@ -160,6 +162,7 @@ class TestRefuseEmptyScopeOnStart:
     """`_refuse_empty_scope_on_start`: the hard gate at `frob ticket
     start` -- the point a lease is actually needed (T-2394)."""
 
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_refuse_empty_scope_on_start
     def test_empty_scope_refuses(self, tmp_path: Path) -> None:
         """MUST-NOW-FIRE fixture: an undeclared empty scope refuses."""
         ticket_id = _init_repo(tmp_path, scope=())
@@ -170,6 +173,7 @@ class TestRefuseEmptyScopeOnStart:
             _refuse_empty_scope_on_start(ticket)
         assert exc_info.value.code != 0
 
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_refuse_empty_scope_on_start
     def test_declared_no_scope_starts_cleanly(self, tmp_path: Path) -> None:
         """A ticket that DECLARED its empty scope intentional is
         distinguishable from mere omission -- it must not be refused."""
@@ -178,6 +182,7 @@ class TestRefuseEmptyScopeOnStart:
         assert declared.is_ok
         _refuse_empty_scope_on_start(declared.danger_ok)  # must not raise
 
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_refuse_empty_scope_on_start
     def test_nonempty_scope_starts_cleanly(self, tmp_path: Path) -> None:
         """MUST-STILL-PASS control: an ordinary ticket with real scope is
         completely unaffected by this ticket's change."""
@@ -259,6 +264,7 @@ class TestWarnEmptyScopeOnNew:
     time -- WARN-only, never a refusal, mirroring T-2123's posture for
     the opposite (over-broad) problem."""
 
+    # frob:tests src/frob/tickets/_new_renumber.py::_warn_empty_scope_on_new
     def test_empty_scope_warns_at_filing_time(self, caplog) -> None:  # noqa: ANN001
         from datetime import date
 
@@ -282,6 +288,7 @@ class TestWarnEmptyScopeOnNew:
             _warn_empty_scope_on_new(ticket)
         assert any("EMPTY scope" in rec.message for rec in caplog.records)
 
+    # frob:tests src/frob/tickets/_new_renumber.py::_warn_empty_scope_on_new
     def test_declared_no_scope_is_silent(self, caplog) -> None:  # noqa: ANN001
         from datetime import date
 
@@ -306,6 +313,7 @@ class TestWarnEmptyScopeOnNew:
             _warn_empty_scope_on_new(ticket)
         assert not any("EMPTY scope" in rec.message for rec in caplog.records)
 
+    # frob:tests src/frob/tickets/_new_renumber.py::_warn_empty_scope_on_new
     def test_nonempty_scope_is_silent(self, caplog) -> None:  # noqa: ANN001
         from datetime import date
 

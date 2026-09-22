@@ -235,6 +235,7 @@ class TestSyncGateRulesCallback:
     yaml` rows in the same commit, with the same fail-closed-unwind
     posture as `bump_version` on a real failure."""
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_gate_rule_sync
     def test_sync_gate_rules_none_is_noop(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
@@ -260,6 +261,7 @@ class TestSyncGateRulesCallback:
         # no unwind happened -- HEAD is untouched by a no-op callback.
         assert _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_gate_rule_sync  # noqa: E501
     def test_sync_gate_rules_failure_unwinds(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
@@ -361,6 +363,7 @@ class TestNewerWinnerQualifiedPreferenceProperty:
 
     # frob:ticket T-1194
     # frob:tests tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty.test_terminal_side_always_wins_over_non_terminal  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer kind="property"  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
         st.booleans(),
@@ -392,6 +395,7 @@ class TestNewerWinnerQualifiedPreferenceProperty:
 
     # frob:ticket T-1194
     # frob:tests tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty.test_strictly_higher_rank_poorer_side_always_wins  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer kind="property"  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
         st.sampled_from([0, 1, 2]),
@@ -428,6 +432,7 @@ class TestNewerWinnerQualifiedPreferenceProperty:
 
     # frob:ticket T-1194
     # frob:tests tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty.test_richer_side_wins_at_equal_or_lower_rank  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer kind="property"  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
         st.sampled_from([0, 1, 2]),

@@ -13,6 +13,7 @@ class TestDisclosureShapedLanguage:
     """A generous phrase match, not an English parser (see the ticket's
     own note: false positives are the acceptable failure mode)."""
 
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_detects_known_phrase(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_detects_known_phrase  # noqa: E501
         # T-2726: signal 1 now scopes to the Done-report section, same
@@ -27,6 +28,7 @@ class TestDisclosureShapedLanguage:
         text = "## Done report\n\nSTILL OUTSTANDING work here\n"
         assert disclosure_shaped_language(text) is not None
 
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_clean_narrative_is_not_flagged(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_clean_narrative_is_not_flagged  # noqa: E501
         text = "Fixed the PERF010 family across every touched file, all clean."
@@ -68,6 +70,7 @@ class TestDisclosureShapedLanguage:
         assert disclosure_shaped_language(text) is None
 
     # frob:ticket T-2726
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_phrase_in_description_before_done_report_is_not_flagged(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_description_before_done_report_is_not_flagged  # noqa: E501
         # T-2726's own confirmed incident: T-2718's ticket DESCRIPTION
@@ -112,6 +115,7 @@ class TestDisclosureShapedLanguage:
         assert disclosure_shaped_language(text) is None
 
     # frob:ticket T-2718
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_tier_a_generated_report_with_no_real_followup_closes_clean(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_tier_a_generated_report_with_no_real_followup_closes_clean  # noqa: E501
         # T-2718's own positive control: a Tier-A `compose_done_report`
@@ -128,6 +132,7 @@ class TestDisclosureShapedLanguage:
         assert disclosure_shaped_language(text) is None
 
     # frob:ticket T-2718
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean(
         self,
     ) -> None:
@@ -143,6 +148,7 @@ class TestDisclosureShapedLanguage:
         assert disclosure_shaped_language(text) is None
 
     # frob:ticket T-2718
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_genuine_hand_typed_subheading_alongside_generated_ones_still_fires(
         self,
     ) -> None:
@@ -163,6 +169,7 @@ class TestDisclosureShapedLanguage:
         assert "Scope boundary" in result
 
     # frob:ticket T-2718
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_renaming_a_generated_heading_still_fires(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_renaming_a_generated_heading_still_fires  # noqa: E501
         # T-2638's own reword-proof guarantee, preserved: the exemption
@@ -179,11 +186,13 @@ class TestDisclosureShapedLanguage:
 class TestFiledFollowupTickets:
     """Parses the playbook's own 'Filed:' Done-report convention."""
 
+    # frob:tests src/frob/tickets/_reporting.py::filed_followup_tickets
     def test_parses_ids_from_filed_line(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets.test_parses_ids_from_filed_line  # noqa: E501
         body = "## Done report\n\nDid X.\n\nFiled: T-1900, T-1901\n"
         assert filed_followup_tickets(body) == ["T-1900", "T-1901"]
 
+    # frob:tests src/frob/tickets/_reporting.py::filed_followup_tickets
     def test_no_filed_line_returns_empty(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets.test_no_filed_line_returns_empty  # noqa: E501
         assert filed_followup_tickets("## Done report\n\nDid X.\n") == []

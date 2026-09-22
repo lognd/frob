@@ -73,6 +73,7 @@ class TestStampRefusesUnbumped:
 
     # frob:tests src/frob/release/__init__.py::stamp kind="unit"
     # frob:ticket T-1381
+    # frob:tests src/frob/release/__init__.py::_bump_shortfall  # noqa: E501
     def test_allows_when_version_is_bumped(self, tmp_path: Path, _snapshot) -> None:
         """The correct order still works: bump first, then stamp."""
         _write_manifest(tmp_path, "0.1.0", {"gone::symbol": "deadbeef"})

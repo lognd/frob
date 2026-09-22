@@ -151,6 +151,7 @@ class TestPerf012DuplicateSpawn:
         violations = duplicate_spawn_violations([parsed])
         assert any(v.rule == "PERF012" and "caller" in v.message for v in violations)
 
+    # frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations  # noqa: E501
     def test_call_site_varying_argument_is_not_flagged(self, tmp_path: Path) -> None:
         """Same multi-hop shape as the true positive, but each leaf spawn's
         argument is genuinely per-call-site distinct (a different
@@ -186,6 +187,7 @@ class TestPerf012DuplicateSpawn:
             v.rule == "PERF012" and "caller" in v.message for v in violations
         )
 
+    # frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations  # noqa: E501
     def test_three_hop_duplicate_split_across_sibling_callees_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -227,6 +229,7 @@ class TestPerf012DuplicateSpawn:
         violations = duplicate_spawn_violations([parsed])
         assert any(v.rule == "PERF012" and "caller" in v.message for v in violations)
 
+    # frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations  # noqa: E501
     def test_unresolvable_dynamic_dispatch_callee_never_manufactures_a_duplicate(
         self, tmp_path: Path
     ) -> None:

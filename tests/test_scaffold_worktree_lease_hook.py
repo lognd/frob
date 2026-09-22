@@ -392,6 +392,7 @@ class TestInstallWorktreeLeaseHook:
         assert commit.returncode == 0, commit.stdout + commit.stderr
 
     # frob:ticket T-1742
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_merge_commit_matching_main_is_allowed(self, tmp_path: Path) -> None:
         # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_merge_commit_matching_main_is_allowed  # noqa: E501
@@ -504,6 +505,7 @@ class TestInstallWorktreeLeaseHook:
         assert "land-owned" in (merge_commit.stdout + merge_commit.stderr)
 
     # frob:ticket T-0731
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_tickets_md_change_warns_but_does_not_refuse(self, tmp_path: Path) -> None:
         # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_tickets_md_change_warns_but_does_not_refuse  # noqa: E501
@@ -531,6 +533,7 @@ class TestInstallWorktreeLeaseHook:
         assert "tickets.md" in (commit.stdout + commit.stderr)
 
     # frob:ticket T-2071
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_agent_context_root_write_refused_without_frob_agent(
         self, tmp_path: Path

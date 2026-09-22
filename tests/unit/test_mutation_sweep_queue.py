@@ -58,6 +58,7 @@ class TestSweepLockPlatformBackend:
 class TestEnqueuePendingSweep:
     """`enqueue_pending_sweep` appends a `pending` entry and persists it."""
 
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::enqueue_pending_sweep  # noqa: E501
     def test_enqueue_persists_entry(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep.test_enqueue_persists_entry  # noqa: E501
         ticket_id = _make_ticket(tmp_path, kind=TicketKind.FEATURE)
@@ -74,6 +75,7 @@ class TestEnqueuePendingSweep:
 class TestPendingSweepCount:
     """`pending_sweep_count` counts only `pending` entries."""
 
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::pending_sweep_count  # noqa: E501
     def test_counts_only_pending_entries(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -131,6 +133,7 @@ class TestRunPendingSweep:
         assert result.danger_ok == 1
         assert pending_sweep_count(tmp_path).danger_ok == 0
 
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
     def test_bug_kind_confirmatory_finding_files_ticket(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -175,6 +178,7 @@ class TestRunPendingSweep:
         ]
         assert len(filed) == 1
 
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
     def test_non_bug_confirmatory_finding_only_warns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

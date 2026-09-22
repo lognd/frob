@@ -63,6 +63,7 @@ class TestInstallStackdumpHandlerForce:
     default every other caller keeps."""
 
     # frob:tests tests/unit/test_land_stackdump.py::TestInstallStackdumpHandlerForce.test_force_installs_regardless_of_env  # noqa: E501
+    # frob:tests src/frob/testing/_stackdump.py::install_stackdump_handler  # noqa: E501
     def test_force_installs_regardless_of_env(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -190,6 +191,7 @@ class TestSilentPhaseDumpThreshold:
         assert _land_cmd._land_silent_phase_dump_threshold_s(tmp_path) == 600.0
 
     # frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseDumpThreshold.test_reads_configured_value  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_dump_threshold_s  # noqa: E501
     def test_reads_configured_value(self, tmp_path: Path) -> None:
         """A configured `[tool.frob] land_silent_phase_dump_s` value is
         read back exactly, as a float."""
@@ -225,6 +227,7 @@ class TestSilentPhaseWatchdog:
         _land_cmd._land_last_phase_log_at = None
 
     # frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseWatchdog.test_fires_once_after_threshold_then_waits_for_next_episode  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_watchdog  # noqa: E501
     def test_fires_once_after_threshold_then_waits_for_next_episode(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -272,6 +275,7 @@ class TestSilentPhaseWatchdog:
             thread.join(timeout=5)
 
     # frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseWatchdog.test_never_fires_while_phase_lines_keep_arriving  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_watchdog  # noqa: E501
     def test_never_fires_while_phase_lines_keep_arriving(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

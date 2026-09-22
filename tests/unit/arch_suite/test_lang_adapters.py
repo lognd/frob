@@ -100,6 +100,8 @@ class TestNormalizedModel:
         restored = NormalizedModule.model_validate(module.model_dump())
         assert restored == module
 
+    # frob:tests src/frob/arch/_normalized.py::LanguageAdapter.adapt  # noqa: E501
+    # frob:tests src/frob/arch/_normalized.py::LanguageAdapter  # noqa: E501
     def test_language_adapter_is_a_runtime_checkable_protocol(self) -> None:
         # No adapter is implemented in this ticket's scope -- only assert
         # the protocol shape itself is usable for an isinstance check, the
@@ -134,6 +136,7 @@ class TestPythonAdapter:
         assert adapter.language == "python"
 
     # frob:tests src/frob/arch/_python.py::PythonAdapter  # noqa: E501
+    # frob:tests src/frob/arch/_python.py::PythonAdapter.adapt  # noqa: E501
     def test_adapt_arch_python_fixture_shape(self) -> None:
         from frob.arch._python import PythonAdapter
         from frob.lang import raw_tree
@@ -657,6 +660,7 @@ class TestTypeScriptAdapter:
         assert restored == module
 # frob:tests src/frob/arch/_typescript.py::TypeScriptAdapter  # noqa: E501
 
+    # frob:tests src/frob/arch/_typescript.py::TypeScriptAdapter.adapt  # noqa: E501
     def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:
         # A denser, more realistic TS module exercising every entity kind
         # at once (import, class w/ inheritance, constructor, override,
@@ -1190,6 +1194,7 @@ class TestRustAdapter:
         assert fn.catches[0].exception_type == "Err"
 # frob:tests src/frob/arch/_rust.py::RustAdapter  # noqa: E501
 
+    # frob:tests src/frob/arch/_rust.py::RustAdapter.adapt  # noqa: E501
     def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:
         # A denser, more realistic rust module exercising every entity
         # kind at once (use imports, a trait, a struct with a trait impl
@@ -1546,6 +1551,7 @@ class TestKotlinAdapter:
         assert any(r.exception_type == "RuntimeException" for r in fn.raises)
 
     # frob:tests src/frob/arch/_kotlin.py::KotlinAdapter  # noqa: E501
+    # frob:tests src/frob/arch/_kotlin.py::KotlinAdapter.adapt  # noqa: E501
     def test_adapt_stays_sane_on_realistic_snippet(self) -> None:
         # A denser, more realistic kotlin module exercising every entity
         # kind at once (imports, an interface, a class implementing it

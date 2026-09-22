@@ -34,6 +34,7 @@ from frob.lang import parse_file
 
 
 # frob:tests src/frob/check/_memo.py::memoize_per_run
+# frob:tests src/frob/check/_memo.py::run_memo_stats
 def test_second_call_with_same_args_is_memo_hit() -> None:
     """Identical arguments hit the memo; call count stays at one."""
     calls: list[tuple[int, int]] = []
@@ -120,6 +121,8 @@ def _write_py_file(root: Path) -> None:
 
 
 # frob:ticket T-0410
+# frob:tests src/frob/graph/__init__.py::build_graph
+# frob:tests src/frob/check/_memo.py::memoize_per_run
 def test_build_graph_second_call_is_memo_hit(tmp_path: Path) -> None:
     """`build_graph` called twice with the same (root, cache) inside one
     scope returns the identical object the second time -- a memo hit, not
@@ -163,6 +166,7 @@ def test_build_graph_outside_scope_is_never_cached(tmp_path: Path) -> None:
     assert second.is_ok
 
 
+# frob:tests src/frob/check/_memo.py::reset_run_memo
 def test_reset_run_memo_activates_an_unbounded_scope(monkeypatch) -> None:  # noqa: ANN001
     """`reset_run_memo` is the unconditionally-active convenience over
     `run_memo_scope` -- a call after it hits the memo, exactly like inside
@@ -219,6 +223,7 @@ def test_run_memo_scope_deactivates_on_exit() -> None:
     assert calls == [2, 2, 2, 2]
 
 
+# frob:tests src/frob/check/_memo.py::run_memo_scope
 def test_run_memo_scope_nests_without_truncating_outer() -> None:
     """A nested `run_memo_scope()` entered inside an already-active one
     must not clear the outer scope's in-progress memo on its own exit --
@@ -240,6 +245,8 @@ def test_run_memo_scope_nests_without_truncating_outer() -> None:
     assert calls == [5]
 
 
+# frob:tests src/frob/check/_memo.py::memoize_per_run
+# frob:tests src/frob/arch/__init__.py::analyze_project
 def test_analyze_project_second_call_is_memo_hit(tmp_path: Path) -> None:
     """`analyze_project` called twice with the same arguments inside one
     scope returns the identical object the second time -- the T-0418 arch
@@ -278,6 +285,7 @@ def test_parse_file_second_call_is_memo_hit(tmp_path: Path) -> None:
         assert misses == 1
 
 
+# frob:tests src/frob/dup/_legacy.py::find_duplicates
 def test_find_duplicates_second_call_is_memo_hit(tmp_path: Path) -> None:
     """`find_duplicates` (T-0491, extending the T-0423 precedent) called
     twice with the same (root, min_lines) inside one scope returns the

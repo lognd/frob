@@ -31,6 +31,7 @@ from frob.gates._waive import known_gate_rule_ids
 
 
 class TestScanEmittedRuleIdsBranches:
+    # frob:tests src/frob/gates/_rule_id_scan.py::_scan_file_for_rule_literals  # noqa: E501
     def test_commented_out_rule_literal_is_skipped(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_commented_out_rule_literal_is_skipped  # noqa: E501
         gates_dir = tmp_path / "src" / "frob" / "gates"
@@ -56,6 +57,7 @@ class TestScanEmittedRuleIdsBranches:
         found = scan_emitted_rule_ids(tmp_path)
         assert found == {}
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids  # noqa: E501
     def test_unresolved_const_ref_is_left_out(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_unresolved_const_ref_is_left_out  # noqa: E501
         gates_dir = tmp_path / "src" / "frob" / "gates"
@@ -71,6 +73,7 @@ class TestScanEmittedRuleIdsBranches:
 
         assert found == {}
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids  # noqa: E501
     def test_const_ref_resolves_against_assignment_in_another_file(
         self, tmp_path: Path
     ) -> None:
@@ -88,6 +91,7 @@ class TestScanEmittedRuleIdsBranches:
 
 
 class TestGeneratedGateRuleIdsRetiredOverride:
+    # frob:tests src/frob/gates/_rule_id_scan.py::generated_gate_rule_ids  # noqa: E501
     def test_default_retired_set_is_module_constant(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride.test_default_retired_set_is_module_constant  # noqa: E501
         gates_dir = tmp_path / "src" / "frob" / "gates"
@@ -110,6 +114,7 @@ class TestScanCandidateRuleIdLiterals:
     `SCANNED_BASES` and independent of the `rule=`/`code=` keyword (if
     any) introducing it."""
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_candidate_rule_id_literals
     def test_finds_bare_positional_argument(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_bare_positional_argument  # noqa: E501
@@ -127,6 +132,7 @@ class TestScanCandidateRuleIdLiterals:
 
         assert found.get("ZZZTEST020") == "src/frob/gates/_synthetic.py:2"
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_candidate_rule_id_literals
     def test_finds_typed_const_assignment(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_typed_const_assignment  # noqa: E501
@@ -143,6 +149,7 @@ class TestScanCandidateRuleIdLiterals:
 
         assert found.get("ZZZTEST021") == "src/frob/strata/_synthetic.py:2"
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_candidate_rule_id_literals
     def test_finds_code_kwarg_outside_scanned_bases(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_code_kwarg_outside_scanned_bases  # noqa: E501
@@ -161,6 +168,7 @@ class TestScanCandidateRuleIdLiterals:
 
         assert found.get("ZZZTEST022") == "src/frob/app/_synthetic.py:2"
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_candidate_rule_id_literals
     def test_inline_comment_example_not_picked_up(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_inline_comment_example_not_picked_up  # noqa: E501
@@ -180,6 +188,7 @@ class TestScanCandidateRuleIdLiterals:
         assert "ZZZTEST023" not in found
         assert "ZZZTEST024" not in found
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_candidate_rule_id_literals
     def test_whole_line_comment_not_picked_up(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_whole_line_comment_not_picked_up  # noqa: E501
@@ -229,6 +238,7 @@ class TestFindUnregisteredRuleIds:
     `_KNOWN_GATE_RULES` must return empty against, repo-wide -- the
     acceptance shape this ticket exists to guarantee."""
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::find_unregistered_rule_ids
     def test_empty_when_every_candidate_is_known_or_retired(
         self, tmp_path: Path
     ) -> None:
@@ -245,6 +255,7 @@ class TestFindUnregisteredRuleIds:
 
         assert missing == {}
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::find_unregistered_rule_ids
     def test_reports_a_candidate_missing_from_both_known_and_retired(
         self, tmp_path: Path
     ) -> None:
@@ -282,6 +293,8 @@ class TestFindUnregisteredRuleIds:
 
         assert missing == {}
 
+    # frob:tests src/frob/gates/_waive.py::_KNOWN_GATE_RULES
+    # frob:tests src/frob/gates/_rule_id_scan.py::find_unregistered_rule_ids
     def test_real_repo_registry_is_complete(self) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete  # noqa: E501
@@ -367,6 +380,7 @@ class TestGateRuleRegistryGate:
     """GATERULE001 (T-2448): `find_unregistered_rule_ids` run repo-wide
     as a STANDING gate, not just at one ticket's own close/land time."""
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
     def test_clean_repo_is_silent(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_clean_repo_is_silent  # noqa: E501
@@ -378,6 +392,7 @@ class TestGateRuleRegistryGate:
         violations = gate_rule_registry_violations(tmp_path)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
     def test_unregistered_id_reported_as_error(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_unregistered_id_reported_as_error  # noqa: E501
@@ -457,6 +472,7 @@ class TestGateRuleRegistryDownstreamRepoExemption:
         violations = gate_rule_registry_violations(tmp_path)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
     def test_downstream_repo_declaring_a_different_project_name_is_silent(
         self, tmp_path: Path
     ) -> None:
@@ -469,6 +485,7 @@ class TestGateRuleRegistryDownstreamRepoExemption:
         violations = gate_rule_registry_violations(tmp_path)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
     def test_frobs_own_repo_still_scanned(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_frobs_own_repo_still_scanned  # noqa: E501

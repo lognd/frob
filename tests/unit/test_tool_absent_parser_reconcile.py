@@ -36,6 +36,7 @@ class TestRuffAbsentToolIsUnmeasured:
         assert r.error_count == 0
         assert not r.passed
 
+    # frob:tests src/frob/process/parsers/ruff.py::parse_ruff  # noqa: E501
     def test_autodetect_wrapper_forwards_stderr(self) -> None:
         r = parse_ruff("", exit_code=2, stderr=_RUFF_SPAWN_FAILURE_STDERR)
         assert r.diagnostics == []
@@ -76,6 +77,7 @@ class TestRuffPresentButBrokenStaysAnError:
     malformed-JSON case is unrelated to T-4354's absent-tool case and
     must stay a hard error regardless of `stderr` content."""
 
+    # frob:tests src/frob/process/parsers/ruff.py::parse_ruff_json  # noqa: E501
     def test_truncated_json_is_still_malformed_even_with_stderr_set(self) -> None:
         r = parse_ruff_json(
             '[{"filename": "a.py", "code": "E501", "mess',
@@ -111,6 +113,7 @@ class TestTyAbsentToolIsUnmeasured:
         r = parse_ty("some unrecognized ty output\n", exit_code=1)
         assert r.diagnostics == []
 
+    # frob:tests src/frob/process/parsers/ty.py::parse_ty  # noqa: E501
     def test_real_diagnostic_still_parses_even_with_nonzero_exit(self) -> None:
         text = "error[unresolved-import]: could not resolve\n  --> a.py:1:1\n"
         r = parse_ty(text, exit_code=1)

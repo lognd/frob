@@ -46,6 +46,7 @@ class TestPostLandSweepDispatchPhaseMarker:
     lines at all."""
 
     # frob:ticket T-4599
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_core_finish_post_land  # noqa: E501
     def test_entry_marker_logged_unconditionally(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -73,6 +74,7 @@ class TestPostLandSweepDispatchPhaseMarker:
         assert messages.index(entry[0]) < messages.index(dispatched[0])
 
     # frob:ticket T-4599
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_core_finish_post_land  # noqa: E501
     def test_entry_marker_logged_even_on_dry_run(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:

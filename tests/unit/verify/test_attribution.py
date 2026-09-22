@@ -86,6 +86,7 @@ class TestAttributeBatch:
         assert attribution.ticket_id == "T-0001"
         assert attribution.reachability_path == ("a.py::caller",)
 
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
     def test_direct_touch_attributes_at_depth_zero(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_direct_touch_attributes_at_depth_zero  # noqa: E501
         snapshot = GraphSnapshot(
@@ -249,6 +250,7 @@ class TestAttributeBatch:
         assert attribution.status == "unattributed"
         assert attribution.candidate_commits == ()
 
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
     def test_missing_line_falls_back_to_whole_file_candidates(
         self, tmp_path: Path
     ) -> None:
@@ -278,6 +280,7 @@ class TestAttributeBatch:
         assert attribution.commit_sha == "commitA"
         assert attribution.symbol is None  # no line -> no single-symbol resolution
 
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
     def test_graph_unavailable_is_an_error_for_the_whole_batch(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

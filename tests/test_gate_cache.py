@@ -62,6 +62,7 @@ class TestTrackedSnapshot:
         assert "a.py" in touched
         assert "b.py" in touched
 
+    # frob:tests src/frob/gates/_gate_cache.py::TrackedSnapshot
     def test_getitem_records_only_accessed_key(self, tmp_path: Path) -> None:
         """frob:tests src/frob/gates/_gate_cache.py::TrackedSnapshot.symbols"""
         _write(tmp_path, "a.py", "def f():\n    pass\n")
@@ -135,6 +136,7 @@ class TestEvaluateCacheableGate:
             "second call with an unchanged snapshot must be a cache HIT"
         )
 
+    # frob:tests src/frob/gates/_gate_cache.py::evaluate_cacheable_gate
     def test_edit_to_untouched_file_stays_a_hit(self, tmp_path: Path) -> None:
         """A file the gate never reads changing content must not invalidate
         its cache entry -- the actual partial-re-evaluation win this ticket
@@ -163,6 +165,7 @@ class TestEvaluateCacheableGate:
         evaluate_cacheable_gate(tmp_path, "fake_gate", snap2, run)
         assert len(calls) == 1, "editing an untouched file must stay a cache HIT"
 
+    # frob:tests src/frob/gates/_gate_cache.py::evaluate_cacheable_gate
     def test_edit_to_touched_file_forces_miss(self, tmp_path: Path) -> None:
         """A file the gate DID read changing content must force re-evaluation."""
         _write(tmp_path, "a.py", "def f():\n    pass\n")
@@ -317,6 +320,7 @@ class TestColdDiffOracle:
     scalar-extra (`debt`'s `current_date`/`current_version`) changes."""
 
     # frob:tests tests/test_gate_cache.py::TestColdDiffOracle.test_cache_agrees_with_cold_across_random_edits  # noqa: E501
+    # frob:tests src/frob/gates/_gate_cache.py::evaluate_cacheable_gate
     def test_cache_agrees_with_cold_across_random_edits(self, tmp_path: Path) -> None:
         """frob:tests src/frob/gates/__init__.py::run_gates"""
         rng = random.Random(1729)
@@ -719,6 +723,7 @@ class TestRunReplay:
         return [ToolResult(tool=tool, exit_code=0, summary="0 errors, 0 warnings")]
 
     # frob:ticket T-2585
+    # frob:tests src/frob/gates/_gate_cache.py::GateRunReplay
     def test_unchanged_tree_replays(self, tmp_path: Path) -> None:
         """frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
         frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay

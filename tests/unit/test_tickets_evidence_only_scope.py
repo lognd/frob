@@ -198,6 +198,7 @@ class TestDemoteToEvidenceOnly:
     --remove` with no demotion still refuses, tested separately)."""
 
     # frob:ticket T-1944
+    # frob:tests src/frob/tickets/_scope.py::demote_to_evidence_only
     def test_demote_releases_the_lease_and_keeps_evidence_covered(
         self, tmp_path: Path
     ) -> None:
@@ -258,6 +259,7 @@ class TestDemoteToEvidenceOnly:
         assert evidence_covers_scope(updated, empty_snapshot) is True
 
     # frob:ticket T-1944
+    # frob:tests src/frob/tickets/_scope.py::demote_to_evidence_only
     def test_demote_refuses_an_undeclared_glob(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test\

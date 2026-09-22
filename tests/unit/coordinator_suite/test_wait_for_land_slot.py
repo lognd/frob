@@ -26,6 +26,7 @@ class TestWaitForSlot:
 
         return now, sleep
 
+    # frob:tests scripts/wait_for_land_slot.py::wait_for_slot
     def test_slot_already_free_returns_immediately(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -45,6 +46,7 @@ class TestWaitForSlot:
         # fixed sleep -- zero time should have elapsed.
         assert now() == 0.0
 
+    # frob:tests scripts/wait_for_land_slot.py::wait_for_slot
     def test_land_in_flight_then_free_blocks_then_returns(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -66,6 +68,7 @@ class TestWaitForSlot:
         assert code == wait_for_land_slot.EXIT_SLOT_FREE
         assert now() == 30.0  # blocked through 3 non-qualifying polls
 
+    # frob:tests scripts/wait_for_land_slot.py::wait_for_slot
     def test_always_in_flight_times_out(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(wait_for_land_slot, "probe_lands_in_flight", lambda cmd: 5)
         now, sleep = self._fake_clock()
@@ -81,6 +84,7 @@ class TestWaitForSlot:
         assert "timeout" in summary
         assert "last measured LANDS IN FLIGHT=5" in summary
 
+    # frob:tests scripts/wait_for_land_slot.py::wait_for_slot
     def test_always_unmeasurable_never_returns_zero(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -105,6 +109,7 @@ class TestWaitForSlot:
         assert code != wait_for_land_slot.EXIT_SLOT_FREE
         assert "measurement failed" in summary
 
+    # frob:tests scripts/wait_for_land_slot.py::wait_for_slot
     def test_measured_then_unmeasurable_is_timeout_not_measurement_failure(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -163,6 +168,7 @@ class TestWaitForLandSlotMain:
     ticket's own required positive control) uses to force a real,
     end-to-end measurement failure without touching the live fleet."""
 
+    # frob:tests scripts/wait_for_land_slot.py::main
     def test_quiet_by_default_prints_one_summary_line(
         self,
         monkeypatch: pytest.MonkeyPatch,
@@ -176,6 +182,7 @@ class TestWaitForLandSlotMain:
         assert "slot free" in out.out
         assert out.err == ""
 
+    # frob:tests scripts/wait_for_land_slot.py::main
     def test_verbose_adds_per_tick_lines_to_stderr(
         self,
         monkeypatch: pytest.MonkeyPatch,
@@ -194,6 +201,7 @@ class TestWaitForLandSlotMain:
         assert "LANDS IN FLIGHT=1" in out.err
         assert "LANDS IN FLIGHT=0" in out.err
 
+    # frob:tests scripts/wait_for_land_slot.py::main
     def test_end_to_end_forced_probe_failure_via_fleet_status_cmd(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:

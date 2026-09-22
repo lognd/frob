@@ -1039,6 +1039,7 @@ class TestPerf007RedundantComputation:
         # And wired all the way through perf_rules, per T-0413's plan.
         assert any(v.rule == "PERF007" for v in perf_rules(snapshot, [parsed]))
 
+    # frob:tests src/frob/perf/_redundancy.py::redundant_computation_violations
     def test_single_shared_call_site_is_not_flagged(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(
@@ -1061,6 +1062,7 @@ class TestPerf007RedundantComputation:
         violations = redundant_computation_violations(tmp_path, [parsed])
         assert not any(v.rule == "PERF007" for v in violations)
 
+    # frob:tests src/frob/perf/_redundancy.py::redundant_computation_violations
     def test_cached_definition_suppresses_the_warning(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(
@@ -1084,6 +1086,7 @@ class TestPerf007RedundantComputation:
         violations = redundant_computation_violations(tmp_path, [parsed])
         assert not any(v.rule == "PERF007" for v in violations)
 
+    # frob:tests src/frob/perf/_redundancy.py::redundant_computation_violations
     def test_no_config_means_no_perf007_checking(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         src = (

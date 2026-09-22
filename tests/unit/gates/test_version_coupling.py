@@ -123,6 +123,7 @@ class TestVersionCouplingGate:
             for v in violations
         )
 
+    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
     def test_skewed_default_dependency_pin_fires(self, tmp_path: Path) -> None:
         """T-3903: a skewed pin in `[project].dependencies` -- the second
         pin site T-3845 added -- fires, not just a skew inside the
@@ -139,6 +140,7 @@ class TestVersionCouplingGate:
             for v in violations
         )
 
+    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
     def test_loose_default_dependency_pin_fires(self, tmp_path: Path) -> None:
         """T-3903: a loose (`>=`) pin in `[project].dependencies` fires,
         same as it already does for the `native` extra -- the check is not
@@ -152,6 +154,7 @@ class TestVersionCouplingGate:
             for v in violations
         )
 
+    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
     def test_pin_in_new_extra_fires(self, tmp_path: Path) -> None:
         """T-3903: a skewed pin inside a NEWLY ADDED extra (not named
         `native`) fires -- proof the gate matches by package name across

@@ -100,6 +100,7 @@ class TestExploreRunner:
             explore_run(cfg)
         assert exc.value.code == 1
 
+    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
     def test_docs_search_subcommand_missing_path_exits_1(self, caplog):
         """`explore_command="docs-search"` with no path errors cleanly."""
         cfg = AppConfig(explore_command="docs-search", docs_path=None)
@@ -107,6 +108,7 @@ class TestExploreRunner:
             explore_run(cfg)
         assert exc.value.code == 1
 
+    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
     def test_unknown_subcommand_exits_1(self, caplog):
         """No `explore_command` at all (bare `frob explore`) errors cleanly
         instead of silently no-op'ing."""
@@ -310,6 +312,9 @@ class TestExportsRunner:
             exports_run(cfg)
         assert caplog.records
 
+    # frob:tests src/frob/exports/__init__.py::ExportsResult.as_json  # noqa: E501
+    # frob:tests src/frob/app/exports_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/exports_runner.py::_try_exports_via_daemon kind="unit"  # noqa: E501
     def test_json_mode_logs_result(self, tmp_path, caplog):
         """JSON mode logs the JSON rendering of package exports."""
         _make_py_project(tmp_path)
@@ -354,6 +359,7 @@ class TestExportsRunner:
         assert any('"symbol"' in r.message for r in caplog.records)
 
     # frob:ticket T-0876
+    # frob:tests src/frob/app/exports_runner.py::_run_consumers  # noqa: E501
     def test_consumers_mode_err_result_exits_1(self, tmp_path, caplog):
         """`--consumers` over a directory with no source files exits 1."""
         empty = tmp_path / "empty"
@@ -621,6 +627,7 @@ class TestQualityRunner:
             quality_run(cfg)
         assert any("{" in r.message for r in caplog.records)
 
+    # frob:tests src/frob/app/quality_runner.py::run  # noqa: E501
     def test_mutate_subcommand_missing_file_exits_nonzero(self):
         """`quality_command="mutate"` with no `mutate_file` errors like the
         standalone `frob mutate`."""
@@ -628,6 +635,7 @@ class TestQualityRunner:
         with pytest.raises(SystemExit):
             quality_run(cfg)
 
+    # frob:tests src/frob/app/quality_runner.py::run
     def test_unknown_subcommand_exits_1(self, caplog):
         """No `quality_command` at all (bare `frob quality`) errors cleanly
         instead of silently no-op'ing."""
@@ -703,6 +711,7 @@ class TestDesignRunner:
         design_run(cfg)
         assert any("hello" in r.message for r in caplog.records)
 
+    # frob:tests src/frob/app/design_runner.py::run
     def test_unknown_subcommand_exits_1(self, caplog):
         """No `design_command` at all (bare `frob design`) errors cleanly
         instead of silently no-op'ing."""

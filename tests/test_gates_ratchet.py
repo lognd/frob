@@ -23,6 +23,7 @@ from frob.gates._ratchet import (
 
 # frob:ticket T-0569
 class TestSnapshotRatchet:
+    # frob:tests src/frob/gates/_ratchet.py::snapshot_ratchet  # noqa: E501
     def test_first_snapshot_baselines_every_key(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_ratchet.py::TestSnapshotRatchet.test_first_snapshot_baselines_every_key  # noqa: E501
         result = snapshot_ratchet(tmp_path, "DEAD001", ["a.py:1", "b.py:2"])
@@ -42,6 +43,7 @@ class TestSnapshotRatchet:
         assert second.keys == {"a.py:1", "c.py:3"}
 
     # frob:ticket T-0569
+    # frob:tests src/frob/gates/_ratchet.py::load_ratchet_lock  # noqa: E501
     def test_writes_committed_lock_file(self, tmp_path: Path) -> None:
         snapshot_ratchet(tmp_path, "DEAD001", ["a.py:1"])
         assert (tmp_path / "frob-ratchet.lock.json").is_file()
@@ -60,6 +62,7 @@ class TestSnapshotRatchet:
 
 # frob:ticket T-0569
 class TestResolveRatchetSeverity:
+    # frob:tests src/frob/gates/_ratchet.py::resolve_ratchet_severity  # noqa: E501
     def test_baselined_finding_stays_warn(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_ratchet.py::TestResolveRatchetSeverity.test_baselined_finding_stays_warn  # noqa: E501
         snapshot_ratchet(tmp_path, "DEAD001", ["a.py:1"])
@@ -143,6 +146,7 @@ class TestClearRatchetEntry:
         assert result.danger_err is RatchetError.ClearReasonMissing
 
     # frob:ticket T-0569
+    # frob:tests src/frob/gates/_ratchet.py::clear_ratchet_entry  # noqa: E501
     def test_clearing_with_reason_removes_entry_and_it_now_errors(
         self, tmp_path: Path
     ) -> None:
@@ -169,6 +173,7 @@ class TestRatchetEnabledRules:
         assert ratchet_enabled_rules(tmp_path) == frozenset()
 
     # frob:ticket T-0569
+    # frob:tests src/frob/gates/_ratchet.py::ratchet_enabled_rules  # noqa: E501
     def test_reads_configured_rules(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text(
             '[gates.ratchet]\nrules = ["DEAD001", "PII010"]\n', encoding="utf-8"
@@ -193,6 +198,7 @@ class TestBaselineOverrunViolations:
     itself."""
 
     # frob:tests tests/test_gates_ratchet.py::TestBaselineOverrunViolations.test_current_count_exceeding_baseline_fires_base001  # noqa: E501
+    # frob:tests src/frob/gates/_ratchet.py::baseline_overrun_violations  # noqa: E501
     def test_current_count_exceeding_baseline_fires_base001(
         self, tmp_path: Path
     ) -> None:

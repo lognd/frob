@@ -88,6 +88,7 @@ class TestScopeDigestParity:
         assert scope_digest((), snapshot) == scope_digest(("no/such/dir/**",), snapshot)
 
     # frob:ticket T-0355
+    # frob:tests src/frob/gates/__init__.py::scope_digest
     def test_digest_is_content_only_portable_across_checkouts(self, tmp_path):
         """T-0355 (item 3): `scope_digest` keys on (repo-relative path,
         sha256-of-content) -- `_content_hash` never folds in mtime/size, so

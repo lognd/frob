@@ -81,6 +81,7 @@ class TestWaiveLitmus:
 
     # frob:tests src/frob/strata/_waive.py::apply_waivers kind="unit"
     # invariant spec: [INV-036](invariants/INV-036.md)
+    # frob:tests src/frob/strata/_waive.py::_split_kept_and_waived  # noqa: E501
     def test_sub_target_waiver_does_not_suppress_a_different_sub_target(self):
         """T-0174 REJECT round, the critical fixture: `node_multi` fires
         THREAT003 for BOTH CWE-78 (exec) and CWE-89 (sql). It declares

@@ -564,6 +564,7 @@ class TestCommittedWaiveDeletionRefusal:
         assert result_b.is_ok, result_b.err
 
     # frob:ticket T-1922
+    # frob:tests src/frob/tickets/_land.py::_restrict_to_branch_own_files
     def test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse(  # noqa: E501
         self, repo: Path
     ) -> None:
@@ -609,6 +610,7 @@ class TestCommittedWaiveDeletionRefusal:
         assert result.is_ok, result.err
 
     # frob:ticket T-1922
+    # frob:tests src/frob/tickets/_land.py::_restrict_to_branch_own_files
     def test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses(
         self, repo: Path
     ) -> None:

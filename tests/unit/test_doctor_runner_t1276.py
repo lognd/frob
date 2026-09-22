@@ -138,6 +138,7 @@ class TestDoctorRunnerPlainPathQuieted:
 
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_path_raises_stdout_handlers_to_warning_by_default  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_run_plain
     def test_plain_path_raises_stdout_handlers_to_warning_by_default(
         self, monkeypatch
     ) -> None:
@@ -165,6 +166,7 @@ class TestDoctorRunnerPlainPathQuieted:
 
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_run_plain
     def test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose(
         self, monkeypatch
     ) -> None:
@@ -195,6 +197,7 @@ class TestDoctorRunnerUnhealthy:
     # frob:tests src/frob/app/doctor_runner.py::run  # noqa: E501
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plain_exits_1_and_prints_remediation  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_print_unhealthy_summary
     def test_unhealthy_plain_exits_1_and_prints_remediation(
         self, monkeypatch, capsys
     ) -> None:
@@ -216,6 +219,7 @@ class TestDoctorRunnerUnhealthy:
 
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_no_remediation_prints_empty_not_none  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::run  # noqa: E501
     def test_unhealthy_no_remediation_prints_empty_not_none(
         self, monkeypatch, capsys
     ) -> None:
@@ -236,6 +240,7 @@ class TestDoctorRunnerUnhealthy:
 
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_json_exits_1  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::run  # noqa: E501
     def test_unhealthy_json_exits_1(self, monkeypatch) -> None:
         """`--json` on an unhealthy report still exits 1, matching the
         plain-mode preflight-check contract."""
@@ -263,6 +268,7 @@ class TestDoctorRunnerOrphanedLandLockDisclosure:
     # frob:ticket T-1634
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_print_orphaned_land_lock_disclosure
     def test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line(
         self, monkeypatch, capsys
     ) -> None:
@@ -292,6 +298,7 @@ class TestDoctorRunnerOrphanedLandLockDisclosure:
     # frob:ticket T-1634
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.test_healthy_report_with_no_land_lock_prints_nothing_extra  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_print_orphaned_land_lock_disclosure
     def test_healthy_report_with_no_land_lock_prints_nothing_extra(
         self, monkeypatch, capsys
     ) -> None:
@@ -320,6 +327,7 @@ class TestDoctorRunnerScaffoldDisclosure:
 
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healthy_report_with_scaffold_needs_apply_prints_disclosure_line  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_print_scaffold_disclosure
     def test_healthy_report_with_scaffold_needs_apply_prints_disclosure_line(
         self, monkeypatch, capsys
     ) -> None:
@@ -350,6 +358,7 @@ class TestDoctorRunnerScaffoldDisclosure:
 
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healthy_report_with_no_scaffold_blocks_prints_nothing_extra  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_print_scaffold_disclosure
     def test_healthy_report_with_no_scaffold_blocks_prints_nothing_extra(
         self, monkeypatch, capsys
     ) -> None:
@@ -376,6 +385,7 @@ class TestDoctorRunnerProfileRecommendation:
 
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerProfileRecommendation.test_recommendation_printed_when_present  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_print_profile_recommendation  # noqa: E501
     def test_recommendation_printed_when_present(self, monkeypatch, capsys) -> None:
         """A healthy report carrying a recommendation string prints it,
         without affecting the exit code."""
@@ -398,6 +408,7 @@ class TestDoctorRunnerProfileRecommendation:
 
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerProfileRecommendation.test_no_recommendation_prints_nothing_extra  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::_print_profile_recommendation  # noqa: E501
     def test_no_recommendation_prints_nothing_extra(self, monkeypatch, capsys) -> None:
         """A report with no recommendation (the common, below-threshold
         case) prints nothing about profiles at all."""

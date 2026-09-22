@@ -84,6 +84,7 @@ class TestResolveStream:
         )
 
     # frob:tests src/frob/perf/_hotgraph.py::resolve_stream  # noqa: E501
+    # frob:tests src/frob/perf/_hotgraph.py::build_section_index  # noqa: E501
     def test_leaf_in_loop_body_attributes_to_loop_section(self) -> None:
         """A sample whose leaf frame is inside the loop's line range (but
         not the branch's) resolves to the loop section, not the
@@ -153,6 +154,7 @@ class TestResolveStream:
             resolved_kinds = {s.kind for s in index[path] if s.id == hit.section_id}
             assert resolved_kinds <= {"loop", "function"}
 
+    # frob:tests src/frob/perf/_hotgraph.py::resolve_stream  # noqa: E501
     def test_call_edge_classified_external_when_callee_unmodeled(self) -> None:
         """A caller frame resolving to the loop section, whose callee
         frame (an unmodeled stdlib/third-party file) resolves to nothing,
@@ -200,6 +202,7 @@ class TestResolveStream:
         assert stream.edge_hits[0].is_external is False
 
     # frob:tests src/frob/perf/_hotgraph.py::HitStream.unattributed_weight  # noqa: E501
+    # frob:tests src/frob/perf/_hotgraph.py::resolve_stream  # noqa: E501
     def test_unresolvable_leaf_is_unattributed_never_dropped(self) -> None:
         """NO-FAIL-SILENT: a frame matching no section in any known file
         still produces a SectionHit (sentinel id), and its weight is
@@ -237,6 +240,7 @@ class TestStackSampler:
             total += i * i
         assert total >= 0  # keep the loop from being optimized away by intent
 
+    # frob:tests src/frob/perf/_sampler.py::run_sampled  # noqa: E501
     def test_collects_at_least_one_sample_over_a_hot_loop(self) -> None:
         """A workload that runs comfortably longer than one sampling
         interval yields at least one SampledStack with a nonempty frame

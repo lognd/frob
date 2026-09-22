@@ -206,6 +206,7 @@ class TestKrb004:
 class TestKrbScen:
     # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived \
     # kind="unit"
+    # frob:tests src/frob/strata/_scenarios.py::build_compromised_krb_scenario kind="unit"
     def test_all(self):
         """A compromised node with unconstrained delegation can reach ANY
         other node -- the true worst-case blast radius KRB001 names.

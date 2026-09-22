@@ -26,6 +26,8 @@ class TestFmt001Gate:
 
     # frob:ticket T-0851
     # frob:ticket T-1763
+    # frob:tests src/frob/gates/_todo_fmt.py::fmt_gate
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_file
     def test_directive_run_over_limit_flagged(self, tmp_path: Path) -> None:
         """A single-physical-line `frob:waive` directive over the default
         88-col limit is FMT001, naming `frob fmt <path>` as the fix."""
@@ -45,6 +47,7 @@ class TestFmt001Gate:
         assert "frob fmt src/a.py" in hit.message
 
     # frob:ticket T-0851
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_file
     def test_ordinary_long_comment_not_flagged(self, tmp_path: Path) -> None:
         """An over-limit comment line that is NOT a `frob:` directive
         (near-miss #1) never fires FMT001 -- `frob fmt` would not touch it
@@ -57,6 +60,7 @@ class TestFmt001Gate:
         assert not any(v.rule == "FMT001" for v in violations)
 
     # frob:ticket T-0851
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_file
     def test_long_code_line_not_flagged(self, tmp_path: Path) -> None:
         """An over-limit CODE line (near-miss #2, no comment marker at all)
         never fires FMT001."""
@@ -68,6 +72,7 @@ class TestFmt001Gate:
 
     # frob:ticket T-0851
     # frob:ticket T-1763
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_file
     def test_untouched_line_not_flagged(self, tmp_path: Path) -> None:
         """An over-limit directive line the diff does NOT touch is not
         flagged -- FMT001 is diff-scoped, same posture as TODO001."""
@@ -83,6 +88,7 @@ class TestFmt001Gate:
         assert not any(v.rule == "FMT001" for v in violations)
 
     # frob:ticket T-0851
+    # frob:tests src/frob/gates/_todo_fmt.py::_fmt001_file
     def test_short_directive_not_flagged(self, tmp_path: Path) -> None:
         """A `frob:` directive line that already fits within the limit is
         not flagged, even when touched."""
@@ -169,6 +175,7 @@ class TestDsl001:
             f"DSL001 false-positive(s) reintroduced in gates/__init__.py: {hits}"
         )
 
+    # frob:tests src/frob/gates/_waive.py::_dsl001_violations
     def test_waive_reason_and_tests_kind_not_double_flagged(
         self, tmp_path: Path
     ) -> None:

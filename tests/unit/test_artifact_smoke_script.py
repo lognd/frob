@@ -75,6 +75,7 @@ def _touch_core_wheels(core_dir: Path) -> None:
 class TestCheckBaseInstall:
     """`check_base_install`: venv, install, `--version`, `doctor`."""
 
+    # frob:tests scripts/artifact_smoke.py::check_base_install
     def test_installs_and_runs_version_and_doctor(self, tmp_path: Path) -> None:
         """All four underlying commands succeed -> no exception, and the
         install call includes `--find-links` for the core wheels dir."""
@@ -111,6 +112,7 @@ class TestCheckBaseInstall:
                     tmp_path / "frob.whl", tmp_path, tmp_path / "cores"
                 )
 
+    # frob:tests scripts/artifact_smoke.py::check_base_install
     def test_doctor_runs_outside_work_dir_not_process_cwd(self, tmp_path: Path) -> None:
         """T-3980: `frob doctor`'s subprocess call must pass a `cwd` that
         is NOT `None` (i.e. not "inherit the smoke script's own process
@@ -139,6 +141,7 @@ class TestCheckBaseInstall:
 class TestCheckServeExtra:
     """`check_serve_extra`: the exact T-3857 regression shape, mocked."""
 
+    # frob:tests scripts/artifact_smoke.py::check_serve_extra
     def test_installs_and_imports_mcp(self, tmp_path: Path) -> None:
         """A clean install and a clean mcp import -> no exception, and
         the install spec carries the `[serve]` extra."""
@@ -176,6 +179,7 @@ class TestCheckServeExtra:
 class TestCheckNativeExtra:
     """`check_native_extra`: bare import AND frob's own doctor path."""
 
+    # frob:tests scripts/artifact_smoke.py::check_native_extra
     def test_installs_and_imports_natives_via_doctor(self, tmp_path: Path) -> None:
         """A clean install, a clean bare import, and a `doctor` output
         that mentions "native" -> no exception."""
@@ -190,6 +194,7 @@ class TestCheckNativeExtra:
                 tmp_path / "frob.whl", tmp_path, tmp_path / "cores"
             )
 
+    # frob:tests scripts/artifact_smoke.py::check_native_extra
     def test_doctor_runs_outside_work_dir_not_process_cwd(self, tmp_path: Path) -> None:
         """T-4473: `check_native_extra`'s `doctor` subprocess call must
         pass a `cwd` under `work_dir` (its own scratch area), never
@@ -243,6 +248,9 @@ class TestRequireCoreWheels:
     ``test_absent_cores_report_named_core_missing`` is the real,
     unmocked proof against `main` end-to-end."""
 
+    # frob:tests scripts/artifact_smoke.py::_require_core_wheels
+    # frob:tests scripts/artifact_smoke.py::_CoreWheelFindings
+    # frob:tests scripts/artifact_smoke.py::_wheel_version
     def test_both_cores_absent_names_both(self, tmp_path: Path) -> None:
         """An empty `core_wheels_dir` -> `SmokeCheckError` naming BOTH
         missing cores, not a generic failure."""
@@ -253,6 +261,9 @@ class TestRequireCoreWheels:
         assert "frob-core" in str(exc_info.value)
         assert "frob-strata" in str(exc_info.value)
 
+    # frob:tests scripts/artifact_smoke.py::_require_core_wheels
+    # frob:tests scripts/artifact_smoke.py::_CoreWheelFindings
+    # frob:tests scripts/artifact_smoke.py::_wheel_version
     def test_one_core_absent_names_only_that_one(self, tmp_path: Path) -> None:
         """Only `frob-strata`'s wheel is missing -> the error names
         exactly that one, not `frob-core` (which IS present)."""
@@ -267,12 +278,16 @@ class TestRequireCoreWheels:
         # frob-core by name regardless, so check the specific clause.
         assert "wheel for: frob-strata." in str(exc_info.value)
 
+    # frob:tests scripts/artifact_smoke.py::_require_core_wheels
+    # frob:tests scripts/artifact_smoke.py::_CoreWheelFindings
+    # frob:tests scripts/artifact_smoke.py::_wheel_version
     def test_both_cores_present_does_not_raise(self, tmp_path: Path) -> None:
         """Both wheels present -> no exception."""
         core_dir = tmp_path / "cores"
         _touch_core_wheels(core_dir)
         artifact_smoke._require_core_wheels(core_dir)  # must not raise
 
+    # frob:tests scripts/artifact_smoke.py::_wheel_matches_host_platform
     def test_wrong_platform_wheel_names_the_mismatch(self, tmp_path: Path) -> None:
         """T-3980 MUST-FIRE fixture: a wheel that glob-matches
         `frob_core-*.whl`/`frob_strata-*.whl` but was built for a
@@ -295,6 +310,7 @@ class TestRequireCoreWheels:
         assert "frob-core" in message
         assert "frob-strata" in message
 
+    # frob:tests scripts/artifact_smoke.py::_wheel_matches_host_platform
     def test_matching_platform_wheel_does_not_raise(self, tmp_path: Path) -> None:
         """T-3980 MUST-STAY-QUIET fixture: a wheel tagged for THIS host
         must not be flagged as wrong-platform."""
@@ -302,6 +318,8 @@ class TestRequireCoreWheels:
         _touch_core_wheels(core_dir)
         artifact_smoke._require_core_wheels(core_dir)  # must not raise
 
+    # frob:tests scripts/artifact_smoke.py::_require_core_wheels
+    # frob:tests scripts/artifact_smoke.py::_CoreWheelFindings
     def test_stale_version_wheel_names_versions(self, tmp_path: Path) -> None:
         """T-4465 MUST-FIRE fixture: a wheel that glob-matches but carries
         an OLDER version than `pins` names must fail, naming the stale
@@ -322,6 +340,8 @@ class TestRequireCoreWheels:
         assert "0.531.0" in message
         assert "frob-strata" not in message.split("frob-core", 1)[0]
 
+    # frob:tests scripts/artifact_smoke.py::_require_core_wheels
+    # frob:tests scripts/artifact_smoke.py::_CoreWheelFindings
     def test_matching_version_wheel_does_not_raise(self, tmp_path: Path) -> None:
         """T-4465 MUST-STAY-QUIET fixture: both wheels at exactly the
         pinned version must not be flagged as stale."""
@@ -341,6 +361,7 @@ class TestRequireCoreWheels:
         _touch_core_wheels(core_dir)  # writes 0.1.0-tagged wheels
         artifact_smoke._require_core_wheels(core_dir)  # must not raise
 
+    # frob:tests scripts/artifact_smoke.py::_wheel_matches_host_platform
     def test_wheel_matches_host_platform_rejects_foreign_tag(self) -> None:
         """`_wheel_matches_host_platform` directly: a wheel tagged for a
         foreign os+arch is rejected regardless of this test's own host."""
@@ -396,6 +417,7 @@ class TestReadCorePins:
     METADATA -- the value `_require_core_wheels` checks a candidate
     wheel's filename version against."""
 
+    # frob:tests scripts/artifact_smoke.py::_read_core_pins
     def test_reads_both_pins_from_metadata(self, tmp_path: Path) -> None:
         """A wheel whose METADATA carries both `Requires-Dist` lines ->
         both pins parsed exactly."""
@@ -407,6 +429,7 @@ class TestReadCorePins:
         pins = artifact_smoke._read_core_pins(wheel)
         assert pins == {"frob-core": "0.531.0", "frob-strata": "0.531.0"}
 
+    # frob:tests scripts/artifact_smoke.py::_read_core_pins
     def test_unreadable_wheel_returns_empty(self, tmp_path: Path) -> None:
         """A placeholder/non-wheel file (this script's own `main`-level
         tests write `wheel.write_bytes(b"")`) must return an empty dict,
@@ -421,6 +444,7 @@ class TestMain:
     """`main`: end-to-end argv parsing and the aggregate pass/fail exit
     code, with every underlying command mocked."""
 
+    # frob:tests scripts/artifact_smoke.py::main
     def test_all_checks_pass_exits_zero(
         self, tmp_path: Path, capsys: pytest.CaptureFixture
     ) -> None:

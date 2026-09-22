@@ -81,6 +81,7 @@ def _visible_on_primary(primary: Path, needle: str, ticket_id: str = "T-0001") -
 
 class TestLedgerMirrorReachesMain:
     # frob:ticket T-2563
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_ledger_change_to_primary
     def test_scope_edit_from_worktree_is_visible_on_primary(
         self, tmp_path: Path
     ) -> None:
@@ -131,6 +132,7 @@ class TestLedgerMirrorReachesMain:
         assert _visible_on_primary(primary, "milestone: 0.1.0")
 
     # frob:ticket T-2840
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::LEDGER_VERB_STRATEGY
     def test_requeue_edit_from_worktree_is_visible_on_primary(
         self, tmp_path: Path
     ) -> None:
@@ -223,6 +225,7 @@ class TestLedgerMirrorReachesMain:
 
 class TestLedgerMirrorCarriesNothingElse:
     # frob:ticket T-2563
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_ledger_change_to_primary
     def test_worktree_source_changes_do_not_leak_to_primary(
         self, tmp_path: Path
     ) -> None:
@@ -306,6 +309,7 @@ class TestLedgerMirrorCarriesNothingElse:
 
 class TestLedgerMirrorScope:
     # frob:ticket T-2563
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::MIRRORED_LEDGER_VERBS
     @pytest.mark.parametrize("verb", ["start", "close", "done-report", "evidence"])
     def test_state_machine_verbs_are_not_mirrored(
         self, tmp_path: Path, verb: str
@@ -337,6 +341,7 @@ class TestLedgerMirrorScope:
         assert _git("status", "--porcelain", cwd=primary).stdout.strip() == ""
 
     # frob:ticket T-2840
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::LEDGER_VERB_STRATEGY
     def test_requeue_running_in_the_primary_checkout_is_a_no_op(
         self, tmp_path: Path
     ) -> None:
@@ -372,6 +377,7 @@ class TestVerbStrategy:
 
     # frob:ticket T-2603
     # frob:ticket T-2675
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::LEDGER_VERB_STRATEGY
     def test_derived_sets_track_the_live_strategy_table(self) -> None:
         """Asserts `OWN_TRANSACTION_VERBS`/`MIRRORED_LEDGER_VERBS` equal a
         filter recomputed fresh from the live `LEDGER_VERB_STRATEGY` table
@@ -397,6 +403,7 @@ class TestVerbStrategy:
         )
 
     # frob:ticket T-2603
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::ledger_write_strategy_for
     def test_missing_raises(self) -> None:
         """Asserts a verb `_ticket_dispatch_table()` knows about but
         `LEDGER_VERB_STRATEGY` does not raises `KeyError` naming the gap,
@@ -602,6 +609,7 @@ class TestPromoteMirror:
     mirror runs -- the gap T-2197 could only warn about."""
 
     # frob:ticket T-2587
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_promote_to_primary
     def test_promote_from_worktree_is_visible_on_primary_without_a_land(
         self, tmp_path: Path
     ) -> None:
@@ -620,6 +628,7 @@ class TestPromoteMirror:
         assert not (primary / "tickets" / "T-draft-abc123").exists()
 
     # frob:ticket T-2587
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_promote_to_primary
     def test_promote_mirror_does_not_leak_source_changes_or_duplicate_the_draft(
         self, tmp_path: Path
     ) -> None:
@@ -754,6 +763,7 @@ class TestFailNotVisibleOnPrimaryWarning:
     LOUD rather than let a caller believe a successful-looking `fail`
     reached the fleet."""
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_warn_if_fail_not_visible_on_primary  # noqa: E501
     def test_fail_from_worktree_warns_when_not_visible_on_primary(
         self,
         _fail_fixture: tuple[Path, Path],
@@ -788,6 +798,7 @@ class TestFailNotVisibleOnPrimaryWarning:
         shown = _git("log", "-1", "--format=%s", cwd=worktree)
         assert "fail-logged" in shown.stdout
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_warn_if_fail_not_visible_on_primary  # noqa: E501
     def test_fail_from_primary_is_quiet(
         self,
         _fail_fixture: tuple[Path, Path],
@@ -825,6 +836,7 @@ class TestDoneReportNotVisibleOnPrimaryWarning:
     reached main; `_warn_if_done_report_not_visible_on_primary` makes
     that gap loud instead."""
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_warn_if_done_report_not_visible_on_primary  # noqa: E501
     def test_done_report_from_worktree_warns_when_not_visible_on_primary(
         self,
         _fail_fixture: tuple[Path, Path],
@@ -848,6 +860,7 @@ class TestDoneReportNotVisibleOnPrimaryWarning:
             for r in caplog.records
         ), [r.message for r in caplog.records]
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_warn_if_done_report_not_visible_on_primary  # noqa: E501
     def test_done_report_from_primary_is_quiet(
         self,
         _fail_fixture: tuple[Path, Path],
@@ -906,6 +919,8 @@ class TestEvidenceRebindMirror:
         assert write_result.is_ok, write_result.err
 
     # frob:ticket T-4267
+    # frob:tests src/frob/tickets/_evidence.py::replace_evidence
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
     def test_replace_from_worktree_is_visible_on_primary(self, tmp_path: Path) -> None:
         """The headline positive control: `replace_evidence` run in a
         worktree must reach the primary checkout without a land."""
@@ -935,6 +950,8 @@ class TestEvidenceRebindMirror:
         )
 
     # frob:ticket T-4267
+    # frob:tests src/frob/tickets/_evidence.py::remove_evidence
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
     def test_remove_from_worktree_is_visible_on_primary(self, tmp_path: Path) -> None:
         """Same headline control for `remove_evidence`."""
         from frob.tickets._evidence import remove_evidence
@@ -970,6 +987,7 @@ class TestEvidenceRebindMirror:
         assert _visible_on_primary(primary, "- tests/kept.py::test_kept")
 
     # frob:ticket T-4267
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
     def test_prior_scope_mirror_then_replace_does_not_leave_the_old_id_resurrectable(
         self, tmp_path: Path
     ) -> None:
@@ -1028,6 +1046,7 @@ class TestEvidenceRebindMirror:
         assert "- tests/a.py::test_new" in merged_text
 
     # frob:ticket T-4267
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
     def test_running_in_the_primary_checkout_is_a_no_op(self, tmp_path: Path) -> None:
         """Same coordinator-cost-nothing contract as the generic mirror:
         `replace_evidence` run directly in the primary checkout must not
@@ -1107,6 +1126,7 @@ class TestMirrorPreservesEvidence:
         assert write_result.is_ok, write_result.err
 
     # frob:ticket T-3892
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::_preserve_primary_only_evidence
     def test_preserve_evidence_helper_unions_primary_only_ids(self) -> None:
         """Unit-level control on the pure helper: an evidence id present
         only on the primary side is unioned into the mirrored text, in

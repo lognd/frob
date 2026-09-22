@@ -88,6 +88,7 @@ class TestPythonNamespace:
         assert any("fake_func" in v.message for v in stale)
         assert not any("real_func" in v.message for v in stale)
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_anchored_block_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "widget"\n')
@@ -110,6 +111,7 @@ class TestPythonNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_unanchored_but_valid_import_warns_unbound(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "widget"\n')
@@ -134,6 +136,7 @@ class TestPythonNamespace:
         assert matches[0].severity == Severity.ERROR
         assert matches[0].rule == "DOC004"
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_waive_doc004_suppresses(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "widget"\n')
@@ -151,6 +154,7 @@ class TestPythonNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_generic_external_shell_block_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "pyproject.toml", '[project]\nname = "widget"\n')
@@ -168,6 +172,7 @@ class TestPythonNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_package_name_differs_from_directory_name(self, tmp_path: Path) -> None:
         """pyproject.toml's [project].name (not the checkout dir name) is
         the namespace root -- T-0436 refinement 3's `logand.app` example,
@@ -214,6 +219,7 @@ class TestRustNamespace:
             "pub fn real_thing() -> i32 { 42 }\n",
         )
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_rust_use_of_missing_item_is_stale(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         self._write_workspace(tmp_path)
@@ -230,6 +236,7 @@ class TestRustNamespace:
         stale = [v for v in violations if v.severity == Severity.ERROR]
         assert any("missing_thing" in v.message for v in stale)
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_rust_use_of_real_item_passes_or_warns_never_stale(
         self, tmp_path: Path
     ) -> None:
@@ -248,6 +255,7 @@ class TestRustNamespace:
 
         assert _rule_ids(violations, "docs/guide.md") == []
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_external_crate_use_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         self._write_workspace(tmp_path)
@@ -383,6 +391,7 @@ class TestDoc005ReadmeTableDrift:
     walked via a synthetic two-command CLI so these tests never depend on
     frob's own live command count."""
 
+    # frob:tests src/frob/gates/_docblocks.py::doc005_gate
     def test_missing_row_for_real_command_fails(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -403,6 +412,7 @@ class TestDoc005ReadmeTableDrift:
             for v in violations
         )
 
+    # frob:tests src/frob/gates/_docblocks.py::doc005_gate
     def test_stale_row_for_removed_command_fails(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -426,6 +436,7 @@ class TestDoc005ReadmeTableDrift:
             for v in violations
         )
 
+    # frob:tests src/frob/gates/_docblocks.py::doc005_gate
     def test_fully_covered_table_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -443,6 +454,7 @@ class TestDoc005ReadmeTableDrift:
 
         assert violations == ()
 
+    # frob:tests src/frob/gates/_docblocks.py::doc005_gate
     def test_count_claim_mismatch_fails(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -466,6 +478,7 @@ class TestDoc005ReadmeTableDrift:
             for v in violations
         )
 
+    # frob:tests src/frob/gates/_docblocks.py::doc005_gate
     def test_count_claim_matching_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -484,6 +497,7 @@ class TestDoc005ReadmeTableDrift:
 
         assert violations == ()
 
+    # frob:tests src/frob/gates/_docblocks.py::doc005_gate
     def test_no_config_means_no_readme_checking(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(
@@ -534,6 +548,7 @@ class TestCliCommandTableGenerator:
         # sorted: gadget before widget.
         assert generated.index("gadget") < generated.index("widget")
 
+    # frob:tests src/frob/gates/_docblocks.py::generate_cli_command_table  # noqa: E501
     def test_generate_no_config_is_none(self, tmp_path: Path) -> None:
         from frob.gates._docblocks import generate_cli_command_table
 
@@ -542,6 +557,8 @@ class TestCliCommandTableGenerator:
 
         assert generate_cli_command_table(tmp_path) is None
 
+    # frob:tests src/frob/gates/_docblocks.py::_doc005_cli_table_freshness_violations  # noqa: E501
+    # frob:tests src/frob/gates/_docblocks.py::sync_cli_command_table  # noqa: E501
     def test_sync_replaces_only_the_marked_block(self, tmp_path: Path) -> None:
         from frob.gates._docblocks import sync_cli_command_table
 
@@ -568,6 +585,7 @@ class TestCliCommandTableGenerator:
         assert wrote_again is True
         assert (tmp_path / "docs/modules/cli.md").read_text() == again_text_before
 
+    # frob:tests src/frob/gates/_docblocks.py::sync_cli_command_table  # noqa: E501
     def test_sync_no_markers_returns_false(self, tmp_path: Path) -> None:
         from frob.gates._docblocks import sync_cli_command_table
 
@@ -578,6 +596,8 @@ class TestCliCommandTableGenerator:
 
         assert sync_cli_command_table(tmp_path) is False
 
+    # frob:tests src/frob/gates/_docblocks.py::_doc005_cli_table_freshness_violations  # noqa: E501
+    # frob:tests src/frob/gates/_docblocks.py::generate_cli_command_table  # noqa: E501
     def test_doc005_freshness_flags_stale_generated_block(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _FAKE_CONFIG)
@@ -598,6 +618,7 @@ class TestCliCommandTableGenerator:
             for v in violations
         )
 
+    # frob:tests src/frob/gates/_docblocks.py::doc005_gate  # noqa: E501
     def test_doc005_freshness_passes_after_sync(self, tmp_path: Path) -> None:
         from frob.gates._docblocks import sync_cli_command_table
 

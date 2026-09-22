@@ -853,6 +853,7 @@ class TestCSharp:
         assert "Frob.Sample.Widget.hidden" not in names
 
     # frob:ticket T-1600
+    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
     def test_enum_is_a_type_symbol(self) -> None:
         # frob:tests src/frob/lang/_walk_csharp.py::_cs_enum_symbol
         pf = parse_file(_FIXTURES / "sample.cs").danger_ok
@@ -861,6 +862,7 @@ class TestCSharp:
         assert color.public is True
 
     # frob:ticket T-1600
+    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp  # noqa: E501
     def test_namespace_is_a_transparent_qualname_container(self) -> None:
         # frob:tests src/frob/lang/_walk_csharp.py::_cs_dispatch
         pf = parse_file(_FIXTURES / "sample.cs").danger_ok
@@ -877,6 +879,7 @@ class TestCSharp:
         assert do.public is True
 
     # frob:ticket T-1600
+    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp  # noqa: E501
     def test_file_scoped_namespace_is_a_transparent_qualname_container(
         self, tmp_path: Path
     ) -> None:
@@ -1058,6 +1061,7 @@ class TestJava:
         assert color.public is False
 
     # frob:ticket T-1601
+    # frob:tests src/frob/lang/_walk_java.py::_walk_java  # noqa: E501
     def test_inner_class_is_a_transparent_qualname_container(self) -> None:
         # frob:tests src/frob/lang/_walk_java.py::_java_dispatch
         pf = parse_file(_FIXTURES / "sample.java").danger_ok
@@ -1074,6 +1078,7 @@ class TestJava:
         assert do_it.public is True
 
     # frob:ticket T-1601
+    # frob:tests src/frob/lang/_walk_java.py::_walk_java
     def test_interface_default_method_is_implicitly_public(self) -> None:
         # frob:tests src/frob/lang/_walk_java.py::_java_public
         pf = parse_file(_FIXTURES / "sample.java").danger_ok
@@ -1173,6 +1178,7 @@ class TestCuda:
         assert visible.public is True
 
     # frob:ticket T-1602
+    # frob:tests src/frob/lang/_walk_cuda.py::_walk_cuda
     def test_class_method_with_device_qualifier(self) -> None:
         # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
         pf = parse_file(_FIXTURES / "sample.cu").danger_ok
@@ -1263,6 +1269,7 @@ class TestZig:
         assert max_const.public is True
 
     # frob:ticket T-1603
+    # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
     def test_error_union_return_type_is_captured_in_signature(self) -> None:
         # frob:tests src/frob/lang/_walk_zig.py::_zig_function_symbol
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
@@ -1273,12 +1280,14 @@ class TestZig:
         assert "!" not in add.sig_tokens
 
     # frob:ticket T-1603
+    # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
     def test_triple_slash_doc_comment_binds_as_doc_text(self) -> None:
         # frob:tests src/frob/lang/_walk_zig.py::_zig_leading_doc
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
         assert _symbol(pf, "add").doc_text == "Adds two numbers."
 
     # frob:ticket T-1603
+    # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
     def test_plain_comment_does_not_bind_as_doc_text(self) -> None:
         # frob:tests src/frob/lang/_walk_zig.py::_zig_leading_doc
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
@@ -1287,6 +1296,7 @@ class TestZig:
         assert any("plain comment, not a doc comment" in c.text for c in pf.comments)
 
     # frob:ticket T-1603
+    # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
     def test_comptime_block_is_not_walked_for_symbols(self) -> None:
         # frob:tests src/frob/lang/_walk_zig.py::_zig_visit
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
@@ -1480,6 +1490,8 @@ class TestSizeCapAndTimeout:
     parse) -- see `frob.lang._check_size_cap`/`_run_parse_with_timeout`."""
 
     # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_oversized_file_is_skipped_loudly  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::_read_source_under_cap  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::_check_size_cap  # noqa: E501
     def test_oversized_file_is_skipped_loudly(
         self, caplog: pytest.LogCaptureFixture, tmp_path: Path, monkeypatch
     ) -> None:
@@ -1533,6 +1545,7 @@ class TestSizeCapAndTimeout:
 
     # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
     # frob:tests src/frob/_daemon_timeout.py::_run_bounded  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::_run_parse_with_timeout  # noqa: E501
     def test_timed_out_worker_is_daemon_not_registered(self, tmp_path: Path) -> None:
         """T-3708 regression: an abandoned-on-timeout worker must not be
         able to block interpreter shutdown.
@@ -1658,6 +1671,7 @@ class TestParseCache:
         second = parse_file(path).danger_ok
         assert first == second
 
+    # frob:tests src/frob/lang/__init__.py::partial_parse_files  # noqa: E501
     def test_reset_clears_counters(self, tmp_path: Path) -> None:
         # frob:tests src/frob/lang/__init__.py::reset_parse_cache
         path = _write(tmp_path, "d.py", "x = 1\n")
@@ -2065,6 +2079,7 @@ class TestNativeIndependentParsing:
                 if mod is not None:
                     sys.modules[name] = mod
 
+    # frob:tests src/frob/lang/__init__.py::parse_file
     def test_corpus_parses_identically_with_and_without_natives(self) -> None:
         """The differential test T-3895 asks for: `frob.lang.parse_file`
         produces the same symbols/comments/content-hash for every corpus
@@ -2108,6 +2123,7 @@ class TestKnownGrammarGaps:
     needs it.
     """
 
+    # frob:tests src/frob/lang/__init__.py::parse_file
     def test_anonymous_bitfield_partial_parse_is_native_independent(self) -> None:
         """`anonymous_bitfield.c` (an ISO-C11-legal, HAL-representative
         fixture) is only PARTIALLY parsed by `frob.lang`'s tree-sitter "c"

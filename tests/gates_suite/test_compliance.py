@@ -103,6 +103,7 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
     def test_ts_process_env_fires(self, tmp_path: Path) -> None:
         """`process.env.SECRET_KEY` fires SEC110 -- the TS equivalent of
         `os.environ[...]`/`os.getenv(...)`."""
@@ -173,6 +174,7 @@ class TestPiiStructuralCrossLanguage:
         assert not any("clean_env.ts" in v.file for v in _by_rule(violations, "SEC110"))
 
     # frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_rust_struct_ssn_field_fires  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
     def test_rust_struct_ssn_field_fires(self, tmp_path: Path) -> None:
         """A Rust `struct` named field `ssn` fires PII010 -- the
         `field_declaration_list` equivalent of a Python dataclass field."""
@@ -200,6 +202,7 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
     def test_rust_env_var_fires(self, tmp_path: Path) -> None:
         """`std::env::var("API_KEY")` fires SEC110 -- the Rust equivalent
         of `os.getenv(...)`."""
@@ -371,6 +374,7 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:ticket T-0897
     # frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_unparseable_python_file_fires_parse001  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
     def test_unparseable_python_file_fires_parse001(self, tmp_path: Path) -> None:
         """A `.py` file with a syntax error fires PARSE001 instead of
         being silently dropped from the PII010/SEC110 scan with zero
@@ -385,6 +389,7 @@ class TestPiiStructuralCrossLanguage:
 
     # frob:ticket T-0897
     # frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_unparseable_file_under_graph_exclude_is_silent  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
     def test_unparseable_file_under_graph_exclude_is_silent(
         self, tmp_path: Path
     ) -> None:
@@ -502,6 +507,7 @@ class TestComplianceGate:
 
     # frob:ticket T-1244
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance007_registered_in_known_gate_rules  # noqa: E501
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     def test_compliance007_registered_in_known_gate_rules(self) -> None:
         """COMPLIANCE007 (T-1244) is a real, registered gate rule id, same
         requirement COMPLIANCE005 already carries."""
@@ -509,6 +515,7 @@ class TestComplianceGate:
 
     # frob:ticket T-1244
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance007_fires_warn_on_self_referential_handled_by  # noqa: E501
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     def test_compliance007_fires_warn_on_self_referential_handled_by(
         self, tmp_path: Path
     ) -> None:
@@ -531,6 +538,7 @@ class TestComplianceGate:
 
     # frob:ticket T-1244
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance007_silent_on_frob_catalog_entries_self_reference  # noqa: E501
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     def test_compliance007_silent_on_frob_catalog_entries_self_reference(
         self, tmp_path: Path
     ) -> None:
@@ -548,6 +556,7 @@ class TestComplianceGate:
 
     # frob:ticket T-1244
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance007_real_repo_registry_surfaces_known_gap  # noqa: E501
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     def test_compliance007_real_repo_registry_surfaces_known_gap(self) -> None:
         """The honest "real repo scan" smoke test for COMPLIANCE007: this
         repo's OWN `compliance.yaml` once had 16 CMPL units riding the
@@ -878,6 +887,7 @@ class TestExhaustiveHandlingGate:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_not_a_boundary  # noqa: E501
+    # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate  # noqa: E501
     def test_function_with_no_catches_is_not_a_boundary(self, tmp_path: Path) -> None:
         """`caller` calls `risky` (which raises TypeError) but has no
         `except` clause of its own -- it is plain propagation, not a
@@ -913,6 +923,7 @@ class TestFfiBoundaryGate:
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001  # noqa: E501
     # frob:tests src/frob/arch/_ffi.py::scan_pyo3_raises
+    # frob:tests src/frob/arch/_ffi.py::parse_pyi_declared_raises
     def test_pyo3_drift_fires_ffi001(self, tmp_path: Path) -> None:
         """The Rust side constructs PyValueError but the `.pyi` stub's
         `frob:raises` omits it -- FFI001 names both sides."""
@@ -953,6 +964,8 @@ class TestFfiBoundaryGate:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
+    # frob:tests src/frob/arch/_ffi.py::parse_pyi_declared_raises  # noqa: E501
+    # frob:tests src/frob/arch/_ffi.py::scan_pyo3_raises  # noqa: E501
     def test_pyo3_declared_matches_no_drift(self, tmp_path: Path) -> None:
         """Same Rust side, but the `.pyi` stub declares `# frob:raises
         ValueError` above `def foo` -- no FFI001."""
@@ -1012,6 +1025,8 @@ class TestFfiBoundaryGate:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_clean  # noqa: E501
+    # frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate  # noqa: E501
+    # frob:tests src/frob/arch/_ffi.py::scan_ctypes_boundary_calls  # noqa: E501
     def test_ctypes_call_with_empty_declaration_clean(self, tmp_path: Path) -> None:
         """The same call, but with a bare `# frob:callee-raises` comment
         (the valid "raises nothing, errno convention" declaration) on its
@@ -1110,6 +1125,7 @@ class TestErrorsAsValuesAdvisory:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_private_raiser_not_flagged  # noqa: E501
+    # frob:tests src/frob/arch/_exceptions.py::check_errors_as_values  # noqa: E501
     def test_private_raiser_not_flagged(self) -> None:
         from frob.arch._exceptions import check_errors_as_values
         from frob.arch._normalized import (
@@ -1132,6 +1148,7 @@ class TestErrorsAsValuesAdvisory:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_only_ubiquitous_or_unknown_raises_not_flagged  # noqa: E501
+    # frob:tests src/frob/arch/_exceptions.py::check_errors_as_values  # noqa: E501
     def test_only_ubiquitous_or_unknown_raises_not_flagged(self) -> None:
         """`risky` calls an unresolvable function only (contributes solely
         `UNKNOWN`, no `_RECOVERABLE_EXCEPTION_TYPES` member) -- never

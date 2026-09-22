@@ -249,6 +249,7 @@ class TestLandCallsReclaimAtStartup:
         )
 
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
     def test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal(  # noqa: E501
         self, tmp_path: Path
     ) -> None:

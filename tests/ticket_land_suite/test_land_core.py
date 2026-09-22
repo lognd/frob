@@ -205,6 +205,7 @@ class TestLand:
             "tests/test_x.py::TestFoo::test_renamed",
         )
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
     def test_refuses_on_dirty_main(self, repo: Path) -> None:
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-c", str(wt)], repo)
@@ -249,6 +250,7 @@ class TestRecordLandCommit:
 
     # frob:ticket T-2220
     # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_land_commit_is_derivable_with_no_follow_up_commit  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_finish_real_land_report  # noqa: E501
     def test_land_commit_is_derivable_with_no_follow_up_commit(
         self, repo: Path
     ) -> None:
@@ -1384,6 +1386,8 @@ class TestLandRetryAfterFinalizeThenFail:
         assert _status_ignoring_frob(repo) == ""
 
     # frob:ticket T-2220
+    # frob:tests src/frob/tickets/_land_squash.py::_report_stacked_sibling_absorption kind="integration"  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_absorption_verified kind="integration"  # noqa: E501
     def test_retry_after_full_success_reports_absorption_not_commit_failed(
         self, repo: Path
     ) -> None:
@@ -1750,6 +1754,7 @@ class TestMergeMainIntoWorktreeRicherState:
     worktree's Done-reported copy WHEN the worktree's copy also outranks
     it -- the original T-0682 field incident."""
 
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer  # noqa: E501
     def test_landing_tickets_in_progress_report_survives_the_merge_stage(
         self, repo: Path
     ) -> None:

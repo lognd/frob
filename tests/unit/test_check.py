@@ -664,6 +664,7 @@ class TestDerivedStateIntegrityGate:
     `_derived_state_integrity_result`'s docstring in
     `frob.check.__init__` for the race this avoids."""
 
+    # frob:tests src/frob/check/__init__.py::_derived_state_integrity_result
     def test_corrupt_artifact_fails_closed_before_any_stage_runs(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -755,6 +756,7 @@ class TestNativeStalenessResult:
 class TestRunGatesDelta:
     """T-0095: --delta filters to violations new since .frob/baseline."""
 
+    # frob:tests src/frob/check/_python.py::_gates_success_result  # noqa: E501
     def test_no_baseline_falls_back_to_full_set_with_warning(
         self, tmp_path: Path
     ) -> None:
@@ -932,6 +934,7 @@ class TestSummarySeverityHonesty:
     bare, alarming 'violation(s)' count -- every summary line splits into
     errors/warnings (and waived, for gates)."""
 
+    # frob:tests src/frob/check/_python.py::_gates_success_result  # noqa: E501
     def test_warn_only_gate_summary_splits_errors_and_warnings(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -2633,6 +2636,7 @@ class TestRunTyRealPaths:
         assert result.tool == "ty"
 
     # frob:ticket T-4154
+    # frob:tests src/frob/check/_python.py::_nested_worktree_ty_excludes
     def test_nested_claude_worktrees_are_excluded(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -2786,6 +2790,7 @@ class TestRunTyMultiPlatform:
         assert result.passed
         assert result.diagnostics == []
 
+    # frob:tests src/frob/check/_python.py::_run_ty
     def test_configured_target_platforms_override_default(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -3097,6 +3102,7 @@ class TestGatesErrorResultQueueUnavailable:
 
     # frob:tests \
     # tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_queue_unavailable_sets_real_code_and_no_stale_path  # noqa: E501
+    # frob:tests src/frob/check/_python.py::_gates_error_result
     def test_queue_unavailable_sets_real_code_and_no_stale_path(self) -> None:
         """Must-fire control: a QueueUnavailable error produces exactly
         one ERROR diagnostic with code="QUEUE001" and file=None -- never
@@ -3117,6 +3123,7 @@ class TestGatesErrorResultQueueUnavailable:
 
     # frob:tests \
     # tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_other_gate_error_is_a_soft_skip_not_an_error  # noqa: E501
+    # frob:tests src/frob/check/_python.py::_gates_error_result
     def test_other_gate_error_is_a_soft_skip_not_an_error(self) -> None:
         """Must-NOT-regress control: any OTHER GateError value is still a
         soft, zero-diagnostic skip -- QUEUE001 is scoped to exactly the
@@ -3140,6 +3147,7 @@ class TestGatesErrorResultTotalAbort:
     ran) must surface as a hard error, not `exit_code=0`. See T-4019 for
     the design rationale."""
 
+    # frob:tests src/frob/check/_python.py::_gates_error_result
     def test_config_malformed_is_a_hard_error_not_a_pass(self) -> None:
         from frob.check._python import _gates_error_result
         from frob.gates import GateError
@@ -3153,6 +3161,7 @@ class TestGatesErrorResultTotalAbort:
         assert result.diagnostics[0].code == "GATES001"
         assert "skipped" not in result.summary.lower() or "FAILED" in result.summary
 
+    # frob:tests src/frob/check/_python.py::_gates_error_result
     def test_graph_unavailable_is_a_hard_error_not_a_pass(self) -> None:
         from frob.check._python import _gates_error_result
         from frob.gates import GateError
@@ -3180,6 +3189,7 @@ class TestGatesErrorResultRealTicketError:
 
     # frob:tests \
     # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_real_ticket_error_names_specific_mode  # noqa: E501
+    # frob:tests src/frob/check/_python.py::_gates_error_result
     def test_real_ticket_error_names_specific_mode(self) -> None:
         """Must-fire control: a genuine `TicketError` (standing in for
         what `frob.gates._load_graph_queue_lock` now propagates on a real
@@ -3207,6 +3217,7 @@ class TestGatesErrorResultRealTicketError:
 
     # frob:tests \
     # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_dummy_sentinel_still_a_defensive_fallback  # noqa: E501
+    # frob:tests src/frob/check/_python.py::_gates_error_result
     def test_dummy_sentinel_still_a_defensive_fallback(self) -> None:
         """Must-NOT-regress control: the pre-T-2710 bare
         `GateError.QueueUnavailable` sentinel (nothing constructs it any
@@ -3346,6 +3357,7 @@ class TestProjectToolSpawnNonMutation:
         assert proc.returncode == 0
         assert proc.stdout.strip() == "ok"
 
+    # frob:tests src/frob/process/_project_tool.py::project_import_argv
     def test_import_spawn_does_not_mutate_an_already_present_env(
         self, tmp_path: Path
     ) -> None:

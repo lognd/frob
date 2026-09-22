@@ -365,6 +365,7 @@ class TestGrowthPeriodSeconds:
     # frob:tests \
     # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_resolves_known_t\
     # ime_unit kind="unit"
+    # frob:tests src/frob/strata/_models.py::Growth.period_seconds
     def test_resolves_known_time_unit(self) -> None:
         """A recognized time-dimension period unit (e.g. `"w"`) resolves to
         its length in seconds, `Ok`."""
@@ -376,6 +377,7 @@ class TestGrowthPeriodSeconds:
     # frob:tests \
     # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_unknown_unit_is_\
     # err kind="unit"
+    # frob:tests src/frob/strata/_models.py::Growth.period_seconds
     def test_unknown_unit_is_err(self) -> None:
         """An unrecognized period unit fails closed with
         `StrataError.UnknownUnit`, never silently defaulting."""

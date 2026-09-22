@@ -70,11 +70,13 @@ def _commit_file(root: Path, rel: str, content: str, message: str) -> str:
 # frob:ticket T-3009
 class TestSymrefHelpers:
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::symref_path  # noqa: E501
     def test_symref_path_splits_on_double_colon(self) -> None:
         assert symref_path("src/m.py::Foo.bar") == "src/m.py"
         assert symref_path("src/m.py") == "src/m.py"
 
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::symref_qualname  # noqa: E501
     def test_symref_qualname_keeps_the_full_dotted_path(self) -> None:
         assert symref_qualname("src/m.py::Foo.bar") == "Foo.bar"
         assert symref_qualname("src/m.py::bar") == "bar"
@@ -84,6 +86,7 @@ class TestSymrefHelpers:
 # frob:ticket T-3009
 class TestAstQualnames:
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::_ast_qualnames  # noqa: E501
     def test_collects_nested_dotted_qualnames(self) -> None:
         # frob:tests tests/gates/test_tdd_order.py::TestAstQualnames.test_collects_nested_dotted_qualnames  # noqa: E501
         source = (
@@ -112,6 +115,7 @@ class TestAstQualnames:
 # frob:ticket T-3009
 class TestResolveSymbolIntroduction:
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::resolve_symbol_introduction  # noqa: E501
     def test_resolves_the_commit_that_added_the_symbol(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _commit_file(tmp_path, "m.py", "def unrelated():\n    pass\n", "unrelated")
@@ -131,6 +135,7 @@ class TestResolveSymbolIntroduction:
         assert resolved == added_sha
 
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::resolve_symbol_introduction  # noqa: E501
     def test_returns_none_for_a_symbol_never_added(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _commit_file(tmp_path, "m.py", "def real():\n    pass\n", "seed")
@@ -190,6 +195,8 @@ class TestClassifyOrder:
         )
 
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::classify_order  # noqa: E501
+    # frob:tests src/frob/gates/_tdd_order.py::TDDOrder  # noqa: E501
     def test_fires_when_commits_are_identical(self, tmp_path: Path) -> None:
         # a same-commit pair is a DETERMINATE non-test-first fact (the
         # squashed-land shape), not an unknown -- see this module's own
@@ -203,6 +210,7 @@ class TestClassifyOrder:
         )
 
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::classify_order  # noqa: E501
     def test_reports_unresolved_when_either_commit_is_unresolvable(
         self, tmp_path: Path
     ) -> None:
@@ -222,6 +230,7 @@ class TestClassifyOrder:
         )
 
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::classify_order  # noqa: E501
     def test_reports_unresolved_on_diverged_history(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         base = _commit_file(tmp_path, "base.py", "z = 0\n", "base")
@@ -290,6 +299,7 @@ class TestTddOrderViolations:
         assert violations[0].severity is Severity.ERROR
 
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations  # noqa: E501
     def test_reports_unresolved_rather_than_passing_on_an_unresolvable_pair(
         self, tmp_path: Path
     ) -> None:
@@ -307,6 +317,7 @@ class TestTddOrderViolations:
         assert violations[0].severity is Severity.UNRESOLVED
 
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations  # noqa: E501
     def test_ignores_non_tests_edges(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _commit_file(tmp_path, "m.py", "def widget():\n    pass\n", "impl")
@@ -319,6 +330,7 @@ class TestTddOrderViolations:
         assert tdd_order_violations(tmp_path, [edge]) == []
 
     # frob:ticket T-4260
+    # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
     def test_self_referential_edge_is_a_malformed_directive_not_an_ordering_violation(
         self, tmp_path: Path
     ) -> None:
@@ -344,6 +356,7 @@ class TestTddOrderViolations:
         assert "fix the frob:tests directive" in violations[0].message.lower()
 
     # frob:ticket T-4260
+    # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
     def test_backwards_edge_is_reported_as_a_backwards_directive(
         self, tmp_path: Path
     ) -> None:
@@ -367,6 +380,7 @@ class TestTddOrderViolations:
         assert "fix the direction of this directive" in violations[0].message.lower()
 
     # frob:ticket T-4260
+    # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
     def test_role_validation_never_spawns_git_for_a_malformed_edge(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -403,6 +417,7 @@ class TestPerfShape:
     regression)."""
 
     # frob:ticket T-3618
+    # frob:tests src/frob/gates/_tdd_order.py::_revisions_oldest_first  # noqa: E501
     def test_since_bounds_the_log_walk_to_a_revision_range(
         self, tmp_path: Path, monkeypatch
     ) -> None:

@@ -96,6 +96,7 @@ def _write_v2_archived_ticket(
 class TestRestore:
     """`frob.tickets.restore` -- the core git-mv-back primitive."""
 
+    # frob:tests src/frob/tickets/_archive.py::restore
     def test_restores_a_non_terminal_archived_ticket_to_active(
         self, tmp_path: Path
     ) -> None:
@@ -158,6 +159,7 @@ class TestRestore:
         restored = result.danger_ok
         assert restored.attachments[0].path == "T-0451/attachments/01-note.txt"
 
+    # frob:tests src/frob/tickets/_archive.py::restore
     def test_refuses_when_not_archived(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_ticket_restore.py::TestRestore.test_refuses_when_not_archived
@@ -170,6 +172,7 @@ class TestRestore:
         assert result.is_err
         assert result.danger_err is TicketError.RestoreNotArchived
 
+    # frob:tests src/frob/tickets/_archive.py::restore
     def test_refuses_when_destination_already_exists(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_ticket_restore.py::TestRestore.test_refuses_when_destination_\
@@ -202,6 +205,7 @@ class TestRestore:
         assert result.is_err
         assert result.danger_err is TicketError.RestoreDestinationExists
 
+    # frob:tests src/frob/tickets/_archive.py::restore
     def test_refuses_a_blank_reason(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_ticket_restore.py::TestRestore.test_refuses_a_blank_reason
@@ -306,6 +310,7 @@ class TestArchiveRefusesNonTerminal:
 class TestRestoreCli:
     """`_restore` -- the CLI dispatch wrapper (`frob ticket restore`)."""
 
+    # frob:tests src/frob/app/ticket_runner/_archive.py::_restore
     def test_restore_cli_wiring_delegates_and_commits(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_cli_wiring_del\

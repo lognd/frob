@@ -72,6 +72,7 @@ class TestDetermineCiStatus:
         assert result.status == "undetermined"
         assert "503" in result.detail
 
+    # frob:tests scripts/verify_release_ci_status.py::determine_ci_status kind="unit"  # noqa: E501
     def test_undetermined_on_no_matching_run(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_undetermined_on_no_matching_run  # noqa: E501
         payload = json.dumps({"total_count": 0, "workflow_runs": []})
@@ -81,6 +82,7 @@ class TestDetermineCiStatus:
         assert result.status == "undetermined"
         assert "no ci.yml run found" in result.detail
 
+    # frob:tests scripts/verify_release_ci_status.py::determine_ci_status kind="unit"  # noqa: E501
     def test_undetermined_on_unparseable_json(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_undetermined_on_unparseable_json  # noqa: E501
         result = verify_release_ci_status.determine_ci_status(
@@ -89,6 +91,7 @@ class TestDetermineCiStatus:
         assert result.status == "undetermined"
         assert "unparseable JSON" in result.detail
 
+    # frob:tests scripts/verify_release_ci_status.py::determine_ci_status kind="unit"  # noqa: E501
     def test_undetermined_on_run_still_in_progress(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_undetermined_on_run_still_in_progress  # noqa: E501
         payload = _runs_payload(status="in_progress", conclusion=None)
@@ -98,6 +101,7 @@ class TestDetermineCiStatus:
         assert result.status == "undetermined"
         assert "in_progress" in result.detail
 
+    # frob:tests scripts/verify_release_ci_status.py::determine_ci_status kind="unit"  # noqa: E501
     def test_resolves_by_exact_sha_not_branch_or_latest(self) -> None:
         """The `head_sha=<sha>` query param, not branch name and not an
         unfiltered "latest run" -- confirmed by checking the argv `gh` is
@@ -117,6 +121,7 @@ class TestDetermineCiStatus:
 
 
 class TestDecide:
+    # frob:tests scripts/verify_release_ci_status.py::decide kind="unit"  # noqa: E501
     def test_green_always_proceeds(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_green_always_proceeds  # noqa: E501
         result = verify_release_ci_status.CiStatusResult(status="green", detail="ok")
@@ -126,6 +131,7 @@ class TestDecide:
         assert code == 0
         assert "GREEN" in msg
 
+    # frob:tests scripts/verify_release_ci_status.py::decide kind="unit"  # noqa: E501
     def test_red_without_override_refuses(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_red_without_override_refuses  # noqa: E501
         result = verify_release_ci_status.CiStatusResult(status="red", detail="boom")
@@ -135,6 +141,7 @@ class TestDecide:
         assert code == 1
         assert "RED" in msg
 
+    # frob:tests scripts/verify_release_ci_status.py::decide kind="unit"  # noqa: E501
     def test_undetermined_without_override_refuses(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_undetermined_without_override_refuses  # noqa: E501
         result = verify_release_ci_status.CiStatusResult(
@@ -146,6 +153,7 @@ class TestDecide:
         assert code == 1
         assert "UNDETERMINED" in msg
 
+    # frob:tests scripts/verify_release_ci_status.py::decide kind="unit"  # noqa: E501
     def test_red_with_override_and_reason_proceeds(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_red_with_override_and_reason_proceeds  # noqa: E501
         result = verify_release_ci_status.CiStatusResult(status="red", detail="boom")
@@ -158,6 +166,7 @@ class TestDecide:
         assert "OVERRIDDEN" in msg
         assert "hotfix for a CI infra outage" in msg
 
+    # frob:tests scripts/verify_release_ci_status.py::decide kind="unit"  # noqa: E501
     def test_override_without_reason_is_refused_even_when_requested(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDecide.test_override_without_reason_is_refused_even_when_requested  # noqa: E501
         result = verify_release_ci_status.CiStatusResult(status="red", detail="boom")
@@ -169,6 +178,7 @@ class TestDecide:
 
 
 class TestRunGh:
+    # frob:tests scripts/verify_release_ci_status.py::_run_gh kind="unit"  # noqa: E501
     def test_spawn_failure_reports_as_nonzero_with_stderr(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestRunGh.test_spawn_failure_reports_as_nonzero_with_stderr  # noqa: E501
         code, out, err = verify_release_ci_status._run_gh(("__not_a_real_binary__",))
@@ -185,6 +195,7 @@ class TestCiStatusResultInvariant:
         result = verify_release_ci_status.CiStatusResult(status="green", detail="ok")
         assert result.status == "green"
 
+    # frob:tests scripts/verify_release_ci_status.py::CiStatusResult.model_post_init kind="unit"  # noqa: E501
     def test_invalid_status_literal_raises(self) -> None:
         """pydantic wraps `model_post_init`'s `AssertionError` into its own
         `ValidationError` -- the underlying assertion message still names
@@ -207,6 +218,7 @@ class TestMain:
     call path resolves through, matching how `release.yml`'s own step
     actually invokes this script."""
 
+    # frob:tests scripts/verify_release_ci_status.py::main kind="unit"  # noqa: E501
     def test_green_path_prints_green_and_exits_zero(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestMain.test_green_path_prints_green_and_exits_zero  # noqa: E501
         payload = _runs_payload(status="completed", conclusion="success")
@@ -216,6 +228,7 @@ class TestMain:
         )
         assert code == 0
 
+    # frob:tests scripts/verify_release_ci_status.py::main kind="unit"  # noqa: E501
     def test_red_path_without_override_exits_nonzero(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestMain.test_red_path_without_override_exits_nonzero  # noqa: E501
         payload = _runs_payload(status="completed", conclusion="failure")

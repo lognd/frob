@@ -77,6 +77,7 @@ class TestResourceLeaseManager:
         assert mgr.acquire("coverage", "b", timeout_s=1.0) is True
         assert mgr.acquire("collection", "b", timeout_s=1.0) is True
 
+    # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"  # noqa: E501
     def test_distinct_resources_do_not_contend(self) -> None:
         # frob:tests \
         # tests/test_serve_leases.py::TestResourceLeaseManager.test_distinct_resources_do_not_contend  # noqa: E501
@@ -162,6 +163,7 @@ def _shutdown(root: Path, thread: threading.Thread) -> None:
 class TestLeaseRpc:
     """T-1097 acceptance [0]: real socket clients serialize on a lease."""
 
+    # frob:tests src/frob/serve/_socketd.py::_RequestHandler._handle_lease_acquire kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -212,6 +214,7 @@ class TestLeaseRpc:
         finally:
             _shutdown(root, thread)
 
+    # frob:tests src/frob/serve/_socketd.py::_RequestHandler._handle_lease_release kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -251,6 +254,7 @@ class TestConnectionCrashReleasesLease:
     """T-1097 acceptance [1]: a crashed/disconnected client's lease is
     released automatically, with no daemon restart needed."""
 
+    # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager.release_holder kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(

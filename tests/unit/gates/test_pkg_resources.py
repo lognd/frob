@@ -153,6 +153,7 @@ class TestPkg003NoDeclaredLongDescription:
     explicitly (UNRESOLVED), never a crash and never a silent pass --
     the THIRD fixture from T-4219's own body."""
 
+    # frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate  # noqa: E501
     def test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass(
         self, tmp_path: Path
     ) -> None:

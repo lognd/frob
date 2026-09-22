@@ -69,6 +69,7 @@ def _patch_passing(monkeypatch: pytest.MonkeyPatch) -> None:
 class TestUnboundAcceptance:
     """`frob.tickets.unbound_acceptance` (T-0572)."""
 
+    # frob:tests src/frob/tickets/_models.py::unbound_acceptance  # noqa: E501
     def test_empty_acceptance_list_is_never_unbound(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestUnboundAcceptance.test_empty_acceptance_list_is_never_unbound  # noqa: E501
         new_ticket(
@@ -727,6 +728,7 @@ class TestAmendAcceptance:
         reloaded = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         assert reloaded.acceptance[0].text == "first criterion"
 
+    # frob:tests src/frob/tickets/_accept.py::amend_acceptance  # noqa: E501
     def test_amend_refuses_on_terminal_ticket(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_refuses_on_terminal_ticket  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, ["first criterion"])
@@ -792,6 +794,7 @@ class TestAmendAcceptance:
         assert reloaded.acceptance[1].text == "second criterion"
         assert reloaded.acceptance_amendments == ()
 
+    # frob:tests src/frob/tickets/_accept.py::remove_acceptance  # noqa: E501
     def test_remove_refuses_on_terminal_ticket(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_refuses_on_terminal_ticket  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, ["first criterion"])

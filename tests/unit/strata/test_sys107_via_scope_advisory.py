@@ -51,6 +51,7 @@ class TestViaLessLargeNodeAdvisory:
         assert any(v.node == "widget" for v in hit)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:tests src/frob/strata/_selfconform_binding_rules.py::_via_less_large_node_violations  # noqa: E501
     def test_via_less_grant_on_small_node_is_silent(self, tmp_path: Path):
         """A small node (file count at or under the threshold) never fires
         SYS107, no matter how it declares `may`."""
@@ -73,6 +74,7 @@ class TestViaLessLargeNodeAdvisory:
         )
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:tests src/frob/strata/_selfconform_binding_rules.py::_via_less_large_node_violations  # noqa: E501
     def test_via_scoped_grant_on_large_node_is_silent(self, tmp_path: Path):
         """A large node whose ONLY `may` grant is fully `via`-scoped never
         fires SYS107 -- it has already done the narrowing the advisory

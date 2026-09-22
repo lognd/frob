@@ -35,6 +35,7 @@ class TestLockfileParsers:
         lockfile.write_text(UV_LOCK)
         assert _find_lockfile(lockfile) == lockfile
 
+    # frob:tests src/frob/vet/_lockfile.py::_find_lockfile
     def test_find_lockfile_bad_name(self, tmp_path: Path) -> None:
         """A file path that isn't one of the supported lockfile names is not
         silently accepted just because it exists."""

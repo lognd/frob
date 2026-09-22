@@ -32,6 +32,7 @@ class TestCheckRatchet:
         current = _sketch([10.0])
         assert check_ratchet("key", "label", None, current, tolerance=0.5) is None
 
+    # frob:tests src/frob/perf/_ratchet.py::check_ratchet  # noqa: E501
     def test_within_tolerance_does_not_fire(self) -> None:
         prior = _sketch([10.0] * 20)
         current = _sketch([11.0] * 20)  # ~10% shift, under 50% tolerance
@@ -54,6 +55,7 @@ class TestPersistRoundTrip:
     # frob:tests src/frob/perf/_ratchet.py::load_ratchet_findings  # noqa: E501
     """`save_ratchet_findings`/`load_ratchet_findings` round trip."""
 
+    # frob:tests src/frob/perf/_ratchet.py::save_ratchet_findings  # noqa: E501
     def test_save_then_load_round_trips(self, tmp_path: Path) -> None:
         findings = [
             RatchetFinding(
@@ -68,9 +70,11 @@ class TestPersistRoundTrip:
         loaded = load_ratchet_findings(tmp_path)
         assert loaded == findings
 
+    # frob:tests src/frob/perf/_ratchet.py::load_ratchet_findings  # noqa: E501
     def test_missing_file_is_empty(self, tmp_path: Path) -> None:
         assert load_ratchet_findings(tmp_path) == []
 
+    # frob:tests src/frob/perf/_ratchet.py::load_ratchet_findings  # noqa: E501
     def test_malformed_json_is_empty_not_a_crash(self, tmp_path: Path) -> None:
         """A file that is not valid JSON hits the `json.JSONDecodeError`
         branch and fails open to `[]`, matching the "no run yet" case --
@@ -80,6 +84,7 @@ class TestPersistRoundTrip:
         path.write_text("{not valid json", encoding="utf-8")
         assert load_ratchet_findings(tmp_path) == []
 
+    # frob:tests src/frob/perf/_ratchet.py::load_ratchet_findings  # noqa: E501
     def test_wrong_schema_json_is_empty_not_a_crash(self, tmp_path: Path) -> None:
         """Valid JSON that does not match `RatchetFinding`'s schema (a
         required field missing) hits the `model_validate` `ValueError`
@@ -93,9 +98,11 @@ class TestPersistRoundTrip:
 class TestRatchetViolations:
     """`ratchet_violations` -- PERF009's gate-facing shape."""
 
+    # frob:tests src/frob/perf/_ratchet.py::ratchet_violations  # noqa: E501
     def test_no_findings_file_is_zero_violations(self, tmp_path: Path) -> None:
         assert ratchet_violations(tmp_path) == []
 
+    # frob:tests src/frob/perf/_ratchet.py::ratchet_violations  # noqa: E501
     def test_findings_become_perf009_violations(self, tmp_path: Path) -> None:
         findings = [
             RatchetFinding(

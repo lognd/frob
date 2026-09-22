@@ -71,6 +71,7 @@ def _ticket(
 class TestPriorityRank:
     """PRIORITY_RANK orders the four levels consistently."""
 
+    # frob:tests src/frob/tickets/_models.py::PRIORITY_RANK
     def test_critical_outranks_low(self) -> None:
         """CRITICAL must rank strictly above LOW so `doable`'s sort key
         (`-PRIORITY_RANK[...]`) surfaces critical tickets first."""
@@ -168,6 +169,8 @@ class TestSetPriority:
         assert blank.is_err
         assert blank.danger_err is TicketError.TriageReasonMissing
 
+    # frob:tests src/frob/tickets/_setters.py::set_priority
+    # frob:tests src/frob/tickets/_models.py::TriageChangeEntry
     def test_reasoned_change_records_triage_entry(self, tmp_path: Path) -> None:
         """T-2353: a reasoned priority change appends a `TriageChangeEntry`
         to `ticket.triage_changes` recording the field, old/new value,
@@ -318,6 +321,7 @@ class TestTick004QueueRot:
         assert "work it" not in matches[0].message
 
     # frob:ticket T-4424
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick004_triage_date
     def test_sprinted_ticket_past_2x_threshold_since_created_is_quiet(
         self, tmp_path: Path
     ) -> None:
@@ -351,6 +355,7 @@ class TestTick004QueueRot:
         assert not any(v.rule == "TICK004" for v in violations)
 
     # frob:ticket T-4424
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick004_queue_rot
     def test_unsprinted_ticket_past_2x_threshold_still_errors(
         self, tmp_path: Path
     ) -> None:
@@ -371,6 +376,7 @@ class TestTick004QueueRot:
         assert matches[0].severity is Severity.ERROR
 
     # frob:ticket T-4424
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick004_triage_date
     def test_sprinted_ticket_with_no_recorded_assignment_date_fails_safe_quiet(
         self, tmp_path: Path
     ) -> None:
@@ -391,6 +397,7 @@ class TestTick004QueueRot:
         assert not any(v.rule == "TICK004" for v in violations)
 
     # frob:ticket T-4424
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick004_queue_rot
     def test_epic_with_in_progress_child_stays_quiet_regardless_of_sprint(
         self, tmp_path: Path
     ) -> None:

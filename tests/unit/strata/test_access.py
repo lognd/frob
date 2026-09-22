@@ -82,6 +82,7 @@ class TestNodeAccessDeclarations:
 class TestModeConflict:
     # frob:tests \
     # tests/unit/strata/test_access.py::TestModeConflict.test_read_read_is_safe
+    # frob:tests src/frob/strata/_access.py::mode_conflict
     def test_read_read_is_safe(self):
         """Any number of readers coexist -- read+read never conflicts."""
         assert mode_conflict(AccessMode.READ, AccessMode.READ) is False
@@ -131,6 +132,7 @@ class TestModeConflict:
 class TestResourceContentionViolations:
     # frob:tests \
     # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_two_writers_no_arbiter_fires  # noqa: E501
+    # frob:tests src/frob/strata/_access.py::resource_contention_violations  # noqa: E501
     def test_two_writers_no_arbiter_fires(self):
         """Two nodes with write-mode access to the same resource and no
         declared arbiter -- SYS204 fires (T-0700 acceptance criterion)."""

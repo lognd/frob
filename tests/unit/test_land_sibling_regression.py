@@ -120,6 +120,7 @@ class TestSiblingStateRegressionGuard:
 
     # frob:tests \
     # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_no_regression_when_sibling_state_only_improves_or_holds  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_assert_no_sibling_state_regression
     def test_no_regression_when_sibling_state_only_improves_or_holds(
         self, tmp_path: Path
     ) -> None:
@@ -149,6 +150,7 @@ class TestSiblingStateRegressionGuard:
 
     # frob:tests \
     # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_regressed_sibling_is_detected_by_rank_comparison  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_assert_no_sibling_state_regression
     def test_regressed_sibling_is_detected_by_rank_comparison(
         self, tmp_path: Path
     ) -> None:
@@ -174,6 +176,7 @@ class TestSiblingStateRegressionGuard:
 
     # frob:tests \
     # tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_pre_fix_shape_would_have_silently_reverted_sibling  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_sibling_ticket_states
     def test_pre_fix_shape_would_have_silently_reverted_sibling(
         self, v2_repo: Path
     ) -> None:
@@ -261,6 +264,7 @@ class TestSelfConflictAutoResolve:
 
     # frob:tests \
     # tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_self_conflict_lands_by_keeping_newer_state  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::_resolve_self_conflict_by_newer_state  # noqa: E501
     def test_self_conflict_lands_by_keeping_newer_state(self, v2_repo: Path) -> None:
         created = new_ticket(v2_repo, _spec("Land L", scope=("src/widget.py",)))
         assert created.is_ok
@@ -371,10 +375,12 @@ class TestAuditedReopenEscape:
     hand-resolved-merge resurrection with no reopen record at all."""
 
     # frob:ticket T-4287
+    # frob:tests src/frob/tickets/_land.py::_reopen_log_entries
     def test_no_reopen_log_returns_empty(self) -> None:
         assert _reopen_log_entries("## Done report\n\nsomething\n") == ()
 
     # frob:ticket T-4287
+    # frob:tests src/frob/tickets/_land.py::_reopen_log_entries
     def test_new_reopen_log_entry_is_the_signature(self) -> None:
         body = (
             "## Reopen log\n"
@@ -389,6 +395,7 @@ class TestAuditedReopenEscape:
     # frob:tests \
     # tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_audited_reopen_is_not_flagged_as_regression  # noqa: E501
     # frob:ticket T-4287
+    # frob:tests src/frob/tickets/_land.py::_assert_no_sibling_state_regression
     def test_audited_reopen_is_not_flagged_as_regression(self, v2_repo: Path) -> None:
         sibling = _seed_v2_ticket(v2_repo, "T-3030", scope=("src/sibling2.py",))
         assert sibling.id == "T-3030"
@@ -429,6 +436,7 @@ class TestAuditedReopenEscape:
     # frob:tests \
     # tests/unit/test_land_sibling_regression.py::TestAuditedReopenEscape.test_hand_resurrection_without_reopen_log_is_still_refused  # noqa: E501
     # frob:ticket T-4287
+    # frob:tests src/frob/tickets/_land.py::_assert_no_sibling_state_regression
     def test_hand_resurrection_without_reopen_log_is_still_refused(
         self, v2_repo: Path
     ) -> None:
@@ -502,6 +510,7 @@ class TestNamesStrandedWorktreesBeforeReopen:
     # frob:tests \
     # tests/unit/test_land_sibling_regression.py::TestNamesStrandedWorktreesBeforeReopen.test_worktrees_carrying_terminal_copy_are_named  # noqa: E501
     # frob:ticket T-4287
+    # frob:tests src/frob/tickets/_reporting.py::reopen_ticket
     def test_worktrees_carrying_terminal_copy_are_named(self, v2_repo: Path) -> None:
         from frob.tickets._reporting import _worktrees_carrying_terminal_copy
 
@@ -547,6 +556,7 @@ class TestSharedSiblingLoad:
 
     # frob:tests \
     # tests/unit/test_land_sibling_regression.py::TestSharedSiblingLoad.test_shared_load_is_reused_by_both_helpers  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_sibling_ticket_states
     def test_shared_load_is_reused_by_both_helpers(self, tmp_path: Path) -> None:
         """A single `_timed_load_all` result, passed as `loaded=` to both
         helpers, is read verbatim -- no second `load_all` call happens

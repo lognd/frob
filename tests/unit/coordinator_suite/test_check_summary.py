@@ -22,6 +22,7 @@ class TestLoadReport:
         path.write_text(json.dumps(report), encoding="utf-8")
         assert check_summary.load_report(str(path)) == report
 
+    # frob:tests scripts/check_summary.py::load_report
     def test_reads_stdin(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """`None` (or '-') reads and parses JSON from stdin."""
         report = _report(results=[])
@@ -43,6 +44,7 @@ def _diag(severity: str, code: str = "X001", file: str = "a.py", line: int = 1) 
 class TestIterDiagnostics:
     """`check_summary.iter_diagnostics`."""
 
+    # frob:tests scripts/check_summary.py::iter_diagnostics
     def test_yields_tool_and_diagnostic(self) -> None:
         """Each diagnostic under a tool record's `diagnostics` list is yielded
         paired with that record's `tool` name."""
@@ -56,6 +58,7 @@ class TestIterDiagnostics:
         assert [tool for tool, _ in pairs] == ["ruff", "ruff", "ty"]
         assert len(pairs) == 3
 
+    # frob:tests scripts/check_summary.py::iter_diagnostics
     def test_empty_results(self) -> None:
         """No `results` key yields nothing, rather than raising."""
         assert list(check_summary.iter_diagnostics({})) == []
@@ -64,6 +67,7 @@ class TestIterDiagnostics:
 class TestSummarise:
     """`check_summary.summarise`."""
 
+    # frob:tests scripts/check_summary.py::summarise
     def test_counts_by_severity(self) -> None:
         """Severity counts tally every diagnostic across every tool record."""
         report = _report(
@@ -75,6 +79,7 @@ class TestSummarise:
         severities, _ = check_summary.summarise(report)
         assert severities == {"warning": 1, "note": 1, "error": 1}
 
+    # frob:tests scripts/check_summary.py::summarise
     def test_collects_error_rows(self) -> None:
         """Only `severity == "error"` diagnostics become error rows, in order."""
         report = _report(
@@ -97,6 +102,7 @@ class TestSummarise:
 class TestFindTest006:
     """`check_summary.find_test006` (T-2763)."""
 
+    # frob:tests scripts/check_summary.py::find_test006
     def test_finds_test006_diagnostics(self) -> None:
         """A TEST006 diagnostic is returned with its tool and message."""
         report = _report(
@@ -114,6 +120,7 @@ class TestFindTest006:
         assert len(found) == 1
         assert found[0][0] == "gate:TEST"
 
+    # frob:tests scripts/check_summary.py::find_test006
     def test_empty_when_no_test006(self) -> None:
         """No TEST006 diagnostics anywhere returns an empty list."""
         report = _report(
@@ -125,6 +132,7 @@ class TestFindTest006:
 class TestCheckSummaryMain:
     """`check_summary.main`."""
 
+    # frob:tests scripts/check_summary.py::main
     def test_exit_zero_when_clean(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -136,6 +144,7 @@ class TestCheckSummaryMain:
         out = capsys.readouterr().out
         assert "ERRORS   0" in out
 
+    # frob:tests scripts/check_summary.py::main
     def test_exit_one_when_errors(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -150,6 +159,7 @@ class TestCheckSummaryMain:
         assert "ERRORS   1" in out
         assert "E1" in out
 
+    # frob:tests scripts/check_summary.py::main
     def test_test006_banner_leads_output_when_present(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -166,6 +176,7 @@ class TestCheckSummaryMain:
         assert "COVERAGE STALE/MISSING (TEST006)" in out
         assert out.index("COVERAGE STALE/MISSING") < out.index("SEVERITY")
 
+    # frob:tests scripts/check_summary.py::main
     def test_no_banner_when_test006_absent(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:

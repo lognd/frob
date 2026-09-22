@@ -152,6 +152,7 @@ class TestCrossTicketLeakagePostMutationRecheck:
 
         return wt, held_id, landing_id
 
+    # frob:tests src/frob/tickets/_land.py::_reverify_cross_ticket_leakage_post_mutation
     def test_guard_refusal_survives_an_uncommitted_reintroduction(
         self, repo: Path
     ) -> None:
@@ -195,6 +196,7 @@ class TestCrossTicketLeakagePostMutationRecheck:
         assert not (repo / "src" / "fix.py").exists()
         assert not (repo / "src" / "held.py").exists()
 
+    # frob:tests src/frob/tickets/_land.py::_reverify_cross_ticket_leakage_post_mutation
     def test_clean_land_is_unaffected(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test_clean_land_is_unaffected  # noqa: E501
         # Sanity/regression guard: the new post-mutation re-check must not

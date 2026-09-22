@@ -39,6 +39,7 @@ class TestVmodelGate:
         """No design/ directory at all -- silent, same posture as sys_gate."""
         assert vmodel_gate(tmp_path) == ()
 
+    # frob:tests src/frob/gates/_vmodel.py::vmodel_gate
     def test_noop_no_vmodel_declarations(self, tmp_path: Path) -> None:
         """A design dir with ordinary .strata files but zero vmodel_node/
         vmodel_edge statements must stay silent -- frob has no V-model
@@ -69,6 +70,7 @@ class TestVmodelGate:
         assert all(v.severity.value == "warn" for v in violations)
         assert any("construction error" in v.message for v in violations)
 
+    # frob:tests src/frob/gates/_vmodel.py::vmodel_gate
     def test_fires_vmod001_on_closure_violation(self, tmp_path: Path) -> None:
         """T-3043's exact escape, authored through the new grammar and
         checked through the full gate: a mutual-satisfies pair of design
@@ -95,6 +97,7 @@ class TestVmodelGate:
         assert "'orphan_requirement'" in rule_names
         assert "'unjustified_design'" in rule_names
 
+    # frob:tests src/frob/gates/_vmodel.py::vmodel_gate
     def test_quiet_on_a_genuinely_closed_graph(self, tmp_path: Path) -> None:
         """Positive control: a real requirement -> design chain, verified
         at each paired level, produces zero findings -- the gate does not

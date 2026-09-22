@@ -644,6 +644,7 @@ class TestJsonStdoutStructuralGuard:
 
     # frob:ticket T-2486
     # frob:tests src/frob/app/_json_guard.py::_StderrRedirectStdout.write kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/_json_guard.py::_StderrRedirectStdout.flush kind="unit"  # noqa: E501
     def test_planted_print_still_reaches_stderr(
         self,
         tmp_path: Path,
@@ -813,6 +814,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert "coverage stamp written" in caplog.text
 
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
     def test_stamp_coverage_failure_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -859,6 +861,7 @@ class TestCheckRunner:
         assert received["snapshot"] is sentinel_snapshot
 
     # frob:ticket T-1419
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
     def test_stamp_coverage_lock_source_sha_mismatch_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -893,6 +896,7 @@ class TestCheckRunner:
         assert "did not durably persist" in caplog.text
 
     # frob:ticket T-1419
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
     def test_stamp_coverage_lock_source_sha_match_succeeds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -918,6 +922,7 @@ class TestCheckRunner:
         assert "did not durably persist" not in caplog.text
 
     # frob:ticket T-1419
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
     def test_stamp_coverage_no_snapshot_skips_durability_check(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -972,6 +977,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert "baseline stamp written" in caplog.text
 
+    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_baseline_chunks  # noqa: E501
     def test_stamp_baseline_gate_error_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1047,6 +1053,7 @@ class TestCheckRunner:
         assert chunks_path.exists()
 
     # frob:ticket T-0751
+    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_stamp_baseline  # noqa: E501
     def test_stamp_baseline_only_chunk_completes_and_stamps(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -1221,6 +1228,7 @@ class TestCheckRunner:
         assert out
 
     # frob:ticket T-0563
+    # frob:tests src/frob/check/__init__.py::CheckResult.as_json
     def test_json_mode_prints_json_and_errors_exit_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -1323,6 +1331,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert "frob.toml unreadable" in caplog.text
 
+    # frob:tests src/frob/app/check_runner.py::_opt_in_deploy_stage_result kind="unit"  # noqa: E501
     def test_deploy_stages_appended_when_deploy_dir_present(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -1407,6 +1416,7 @@ class TestSkipUnchangedLanguage:
         out = capsys.readouterr().out
         assert "SKIPPED: python (unchanged since base)" in out
 
+    # frob:tests src/frob/app/check_runner.py::_run_all_detected  # noqa: E501
     def test_changed_python_still_runs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -1428,6 +1438,7 @@ class TestSkipUnchangedLanguage:
         out = capsys.readouterr().out
         assert "SKIPPED: python" not in out
 
+    # frob:tests src/frob/app/check_runner.py::_run_all_detected  # noqa: E501
     def test_absent_language_never_shown(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -1456,6 +1467,7 @@ class TestTaskProgressCallback:
     total)` hook `run_check`'s `on_task_done` expects, closing over a
     `Progress` and a language label."""
 
+    # frob:tests src/frob/app/check_runner.py::_task_progress_callback
     def test_none_progress_returns_none(self) -> None:
         # frob:tests \
         # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_none_progress_returns_none  # noqa: E501
@@ -1463,6 +1475,7 @@ class TestTaskProgressCallback:
 
         assert _task_progress_callback(None, "python") is None
 
+    # frob:tests src/frob/app/check_runner.py::_task_progress_callback
     def test_updates_progress_with_language_qualified_label(self) -> None:
         # frob:tests \
         # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_updates_progress_with_language_qualified_label  # noqa: E501

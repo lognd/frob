@@ -419,6 +419,7 @@ class TestModeQualifiedFsConformance:
         assert report.violations[0].kind == "fs.write"
 
 
+# frob:tests src/frob/strata/_effects.py::check_legacy_capability_aliases kind="unit"
 class TestLegacyCapabilityAliases:
     """T-0717 acceptance clauses 2/3: `fs-write`/`fs-read` are deprecated
     aliases of `fs.write`/`fs.read` -- they keep working (WARN) inside
@@ -773,6 +774,7 @@ class TestCapabilityRatchet:
     section, not just the happy path."""
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    # frob:tests src/frob/strata/_effects.py::capability_via_site_counts  # noqa: E501
     def test_growth_without_lock_entry_fails(self, tmp_path: Path) -> None:
         """The core enforcement shape: a scoped via-list with NO lock
         entry at all (accepted_count defaults to 0) fires on any
@@ -807,6 +809,7 @@ class TestCapabilityRatchet:
         assert found[0].accepted_count == 2
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    # frob:tests src/frob/strata/_effects.py::capability_via_site_counts
     def test_shrink_is_silent(self, tmp_path: Path) -> None:
         """A via-list may shrink freely -- no lock update, no finding."""
         _write_lock(
@@ -915,6 +918,7 @@ class TestAmbientCapabilityReason:
 
     # frob:tests src/frob/strata/_effects.py::check_ambient_capability_reasons \
     # kind="unit"
+    # frob:tests src/frob/strata/_effects.py::AmbientCapabilityReasonViolation
     def test_missing_reason_is_flagged(self, tmp_path: Path) -> None:
         _write(tmp_path, "x.strata", 'node App : trusted {\n    may "exec";\n}\n')
         found = check_ambient_capability_reasons((tmp_path / "x.strata",))

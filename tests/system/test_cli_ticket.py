@@ -344,6 +344,7 @@ class TestBulkRenumberCliRemoved:
     primitive."""
 
     # frob:ticket T-1882
+    # frob:tests src/frob/app/ticket_runner/_query.py::_renumber
     def test_no_args_always_refuses(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_no_args_always_refuses  # noqa: E501
@@ -375,6 +376,7 @@ class TestBulkRenumberCliRemoved:
         assert set(after.danger_ok) == before_ids, "refusal must never write"
 
     # frob:ticket T-1882
+    # frob:tests src/frob/app/ticket_runner/_query.py::_renumber
     def test_dry_run_still_previews_read_only(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_dry_run_still_previews_read_only  # noqa: E501

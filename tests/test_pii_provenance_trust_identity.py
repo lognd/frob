@@ -110,6 +110,7 @@ class TestSys116UndeclaredProvenance:
 
     # frob:tests src/frob/gates/_sys_provenance.py::check_undeclared_provenance \
     # kind="unit"
+    # frob:tests src/frob/strata/_pii.py::node_derived_from
     def test_declared_helper_does_not_fire_sys116(self):
         """A tag with a declared derived_from helper must NOT fire."""
         node = _node(
@@ -136,6 +137,7 @@ class TestSys117TrustIdentityWithoutCarries:
     # frob:tests \
     # src/frob/gates/_sys_provenance.py::check_trust_identity_without_carries \
     # kind="unit"
+    # frob:tests src/frob/strata/_pii.py::node_trust_identity_tags
     def test_trust_identity_without_carries_fires_sys117(self):
         node = _node("auth", attrs=("trust_identity:identifier.client_ip",))
         model = KernelModel(nodes=(node,))
@@ -146,6 +148,7 @@ class TestSys117TrustIdentityWithoutCarries:
     # frob:tests \
     # src/frob/gates/_sys_provenance.py::check_trust_identity_without_carries \
     # kind="unit"
+    # frob:tests src/frob/strata/_pii.py::node_trust_identity_tags
     def test_trust_identity_with_matching_carries_does_not_fire(self):
         node = _node(
             "auth",

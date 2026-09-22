@@ -55,6 +55,7 @@ class TestSummarize:
 
     # frob:tests \
     # tests/unit/strata/test_native_test.py::TestSummarize.test_no_gaps_reports_proved
+    # frob:tests src/frob/strata/_selfconform_models.py::SelfConformReport  # noqa: E501
     def test_no_gaps_reports_proved(self) -> None:
         """Zero unwaived gaps on both the exhaustiveness and
         self-conformance reports takes `_summarize`'s ELSE branch."""

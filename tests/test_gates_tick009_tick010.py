@@ -211,6 +211,7 @@ class TestTick010StaleLeaseReport:
         assert result.is_ok
 
     # frob:ticket T-4319
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick010_holder_dead_pass
     def test_holder_dead_lease_reports_as_error_with_remedy(
         self, tmp_path: Path
     ) -> None:
@@ -253,6 +254,7 @@ class TestTick010StaleLeaseReport:
         assert "frob worktree release-lease T-2200" in violations[0].message
 
     # frob:ticket T-4319
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick010_stale_lease_report
     def test_live_holder_lease_is_silent(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_live_ho\

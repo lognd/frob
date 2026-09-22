@@ -39,6 +39,7 @@ class TestShrinkReportDropsStaleGrants:
     files."""
 
     # frob:tests src/frob/strata/_shrink.py::ShrinkDrop kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_shrink.py::shrink_report kind="unit"  # noqa: E501
     def test_drops_declared_but_never_observed_capability(self, tmp_path: Path):
         """A node declares `eval` but its bound file never performs it
         (a stale SYS101 grant) -- shrink drops the line, leaving every
@@ -67,6 +68,8 @@ class TestShrinkReportDropsStaleGrants:
         assert 'may "eval"' not in f.new_text
         assert 'code "api/**"' in f.new_text  # everything else preserved
 
+    # frob:tests src/frob/strata/_shrink.py::ShrinkReport.has_drift kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_shrink.py::ShrinkReport kind="unit"  # noqa: E501
     def test_no_drift_when_everything_observed(self, tmp_path: Path):
         """A node whose every declared capability has a real observed
         site reports zero drift -- shrink is a genuine no-op here."""
@@ -85,6 +88,7 @@ class TestShrinkReportDropsStaleGrants:
         assert result.is_ok
         assert not result.danger_ok.has_drift
 
+    # frob:tests src/frob/strata/_shrink.py::PartialStaleSkip kind="unit"  # noqa: E501
     def test_partially_stale_kind_is_left_untouched(self, tmp_path: Path):
         """Two via-scoped grants for the SAME kind on one node, one
         observed and one stale: shrink must NOT guess which to drop --
@@ -109,6 +113,9 @@ class TestShrinkReportDropsStaleGrants:
         assert not report.files or not report.files[0].drops
         assert any(s.node == "Api" and s.kind == "net.connect" for s in report.skipped)
 
+    # frob:tests src/frob/strata/_shrink.py::apply_shrink kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_shrink.py::FileShrinkResult.changed kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_shrink.py::FileShrinkResult kind="unit"  # noqa: E501
     def test_apply_shrink_writes_only_changed_files(self, tmp_path: Path):
         """`apply_shrink` writes the dropped-grant text back to disk and
         returns the relative path written; a clean report writes

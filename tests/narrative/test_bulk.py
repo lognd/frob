@@ -79,6 +79,7 @@ class TestFindBlocks:
         assert blocks == ((1, 14),)
 
     # frob:ticket T-4697
+    # frob:tests src/frob/narrative/_bulk.py::find_blocks
     def test_finds_markdown_paragraph(self) -> None:
         """A blank-line-delimited paragraph citing a ticket id is
         discovered in a `.md` file."""
@@ -101,12 +102,14 @@ class TestDiscoverTargets:
     """`discover_targets` -- file vs. directory dispatch."""
 
     # frob:ticket T-4697
+    # frob:tests src/frob/narrative/_bulk.py::discover_targets
     def test_file_returns_itself(self, tmp_path: Path) -> None:
         """A file target returns exactly itself."""
         f = _write(tmp_path, "a.py", "# x\n")
         assert discover_targets(f) == (f,)
 
     # frob:ticket T-4697
+    # frob:tests src/frob/narrative/_bulk.py::discover_targets  # noqa: E501
     def test_directory_returns_scanned_suffixes_recursively(
         self, tmp_path: Path
     ) -> None:
@@ -125,6 +128,8 @@ class TestPlanBulk:
 
     # frob:ticket T-4697
     # frob:tests src/frob/narrative/_bulk.py::BulkItem  # noqa: E501
+    # frob:tests src/frob/narrative/_bulk.py::plan_bulk  # noqa: E501
+    # frob:tests src/frob/narrative/_bulk.py::BulkPlan  # noqa: E501
     def test_plan_lists_every_block_with_its_ticket(self, tmp_path: Path) -> None:
         """The plan enumerates each block found, its resolved ticket id
         (or `None`), and writes nothing."""
@@ -179,6 +184,7 @@ class TestApplyBulk:
         return sweep_dir
 
     # frob:ticket T-4697
+    # frob:tests src/frob/narrative/_bulk.py::apply_bulk
     def test_apply_false_writes_nothing(self, tmp_path: Path) -> None:
         """Omitting `--apply` (apply=False) returns the plan and writes
         neither source files nor any ticket body."""
@@ -229,6 +235,7 @@ class TestApplyBulk:
         assert load_all(tmp_path).is_ok
 
     # frob:ticket T-4697
+    # frob:tests src/frob/narrative/_bulk.py::apply_bulk  # noqa: E501
     def test_second_apply_is_idempotent_noop(self, tmp_path: Path) -> None:
         """Running `--apply` a second time changes nothing in any file or
         ticket body (T-2994 constraint 4)."""

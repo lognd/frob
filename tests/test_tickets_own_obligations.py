@@ -60,6 +60,7 @@ class TestT1384OwnObligationsOnClose:
     remedy; `True` allows it; `None` (the default) is fully permissive --
     mirroring T-0844's own injected-boolean test shape."""
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_rejects_when_own_obligations_clean_false(
         self, tmp_path: Path
     ) -> None:
@@ -75,6 +76,7 @@ class TestT1384OwnObligationsOnClose:
         assert result.is_err
         assert result.danger_err == TicketError.OwnObligationsUnclean
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_allows_when_own_obligations_clean_true(
         self, tmp_path: Path
     ) -> None:
@@ -89,6 +91,7 @@ class TestT1384OwnObligationsOnClose:
         )
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_evidence.py::transition
     def test_transition_permissive_when_own_obligations_clean_none(
         self, tmp_path: Path
     ) -> None:

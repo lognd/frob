@@ -187,6 +187,7 @@ class TestExportsConsumers:
         assert result.is_err
         assert result.danger_err == ExportsError.NoSourceFiles
 
+    # frob:tests src/frob/exports/__init__.py::ConsumersResult.as_text
     def test_as_text_output(self, tmp_path):
         (tmp_path / "producer.py").write_text("def widget(): ...\n")
         (tmp_path / "consumer.py").write_text("from producer import widget\n")
@@ -195,6 +196,7 @@ class TestExportsConsumers:
         assert "widget" in text
         assert "consumer.py" in text
 
+    # frob:tests src/frob/exports/__init__.py::ConsumersResult.as_json
     def test_as_json_output(self, tmp_path):
         (tmp_path / "producer.py").write_text("def widget(): ...\n")
         (tmp_path / "consumer.py").write_text("from producer import widget\n")

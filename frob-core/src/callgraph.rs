@@ -31,6 +31,8 @@ fn is_identifier_token(tok: &str) -> bool {
 /// order with duplicates kept (`_ordered_called_names`'s contract) --
 /// same scan, two output shapes, avoiding two near-identical loops.
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:tests frob-core/src/lib.rs::tests.ordered_called_names_preserves_order_and_duplicates kind="unit"
+// frob:tests frob-core/src/lib.rs::tests.called_names_rescues_wrapper_marker_argument kind="unit"
 pub(crate) fn scan_call_tokens(body_tokens: &[String], wrapper_markers: &[String], ordered: bool) -> Vec<String> {
     let markers: std::collections::HashSet<&str> =
         wrapper_markers.iter().map(|s| s.as_str()).collect();
@@ -63,6 +65,7 @@ pub(crate) fn scan_call_tokens(body_tokens: &[String], wrapper_markers: &[String
 /// scan (see `scan_call_tokens`).
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
 // frob:ticket T-3481
+// frob:tests frob-core/src/lib.rs::tests.called_names_rescues_wrapper_marker_argument kind="unit"
 #[pyfunction]
 pub fn called_names(
     py: Python<'_>,
@@ -105,6 +108,7 @@ pub fn referenced_names(
 }
 
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:tests frob-core/src/lib.rs::tests.referenced_names_covers_signature_and_body_deduped kind="unit"
 pub(crate) fn referenced_names_impl(sig_tokens: Vec<String>, body_tokens: Vec<String>) -> Vec<String> {
     let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut out: Vec<String> = Vec::new();
@@ -129,6 +133,7 @@ pub fn unresolved_exempt_names(py: Python<'_>, body_tokens: Vec<String>) -> Vec<
 }
 
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:tests frob-core/src/lib.rs::tests.unresolved_exempt_names_exempts_only_pure_foreign_attribute_calls kind="unit"
 pub(crate) fn unresolved_exempt_names_impl(body_tokens: Vec<String>) -> Vec<String> {
     let mut confident: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut all_calls: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -194,6 +199,7 @@ pub fn resolve_call_edges(
 }
 
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:tests frob-core/src/lib.rs::tests.resolve_call_edges_matches_private_callee_and_skips_self_and_public kind="unit"
 pub(crate) fn resolve_call_edges_impl(
     callers: Vec<String>,
     names_per_caller: Vec<Vec<String>>,
@@ -417,6 +423,8 @@ fn arch_sim_matching_blocks(
 /// `M` is the total matched length from `get_matching_blocks` and `T` is
 /// `len(a) + len(b)` (1.0 when both are empty, matching CPython's
 /// `_calculate_ratio`'s zero-length special case).
+// frob:tests frob-core/src/lib.rs::tests.arch_sim_ratio_autojunk_matches_difflib kind="unit"
+// frob:tests frob-core/src/lib.rs::tests.arch_sim_ratio_matches_difflib_golden_values kind="unit"
 pub(crate) fn arch_sim_ratio(a: &[char], b: &[char]) -> f64 {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let (b2j, bjunk) = arch_sim_build_b2j(b);
@@ -447,6 +455,7 @@ pub fn near_duplicate_indices(py: Python<'_>, bodies: Vec<String>, threshold: f6
 }
 
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:tests frob-core/src/lib.rs::tests.near_duplicate_indices_matches_python_reference_cluster kind="unit"
 pub(crate) fn near_duplicate_indices_impl(bodies: Vec<String>, threshold: f64) -> Vec<usize> {
     let chars: Vec<Vec<char>> = bodies.iter().map(|s| s.chars().collect()).collect();
     let mut cluster: std::collections::HashSet<usize> = std::collections::HashSet::new();

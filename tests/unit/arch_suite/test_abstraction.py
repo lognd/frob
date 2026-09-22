@@ -741,6 +741,7 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
+    # frob:tests src/frob/arch/_patterns.py::_check_state_field_chain  # noqa: E501
     def test_state_field_chain_recommends_state_machine(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -784,6 +785,7 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
+    # frob:tests src/frob/arch/_patterns.py::_check_telescoping_ctor  # noqa: E501
     def test_telescoping_ctor_recommends_builder(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -812,6 +814,8 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
+    # frob:tests src/frob/arch/_patterns.py::new_construction_accumulator  # noqa: E501
+    # frob:tests src/frob/arch/_patterns.py::_collect_file_constructions  # noqa: E501
     def test_scattered_construction_across_files_recommends_factory(
         self, tmp_path: Path
     ) -> None:
@@ -836,6 +840,7 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
+    # frob:tests src/frob/arch/_patterns.py::_check_wrap_delegate  # noqa: E501
     def test_wrap_delegate_recommends_decorator(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -883,6 +888,7 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
+    # frob:tests src/frob/arch/_patterns.py::_check_god_object_escape  # noqa: E501
     def test_god_class_pairs_with_srp_escape(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -913,6 +919,7 @@ class TestPatternRecommender:
         assert "god-class" not in categories
         assert "anti-pattern-escape" not in categories
 
+    # frob:tests src/frob/arch/_patterns.py::_check_stringly_typed  # noqa: E501
     def test_stringly_typed_recommends_newtype(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -962,6 +969,7 @@ class TestPatternRecommender:
 
     # -- T-0605: interface-translate -> Adapter -----------------------------
 
+    # frob:tests src/frob/arch/_patterns.py::_check_interface_translate  # noqa: E501
     def test_translating_wrapper_recommends_adapter(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -1035,6 +1043,7 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
+    # frob:tests src/frob/arch/_patterns.py::_check_interface_translate  # noqa: E501
     def test_mixed_delegate_and_translate_methods_fires_both(
         self, tmp_path: Path
     ) -> None:
@@ -1078,6 +1087,7 @@ class TestPatternRecommender:
 
     # -- T-0605: manual-callback-list -> Observer ----------------------------
 
+    # frob:tests src/frob/arch/_patterns.py::_check_manual_callback_list  # noqa: E501
     def test_manual_callback_list_recommends_observer(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -1141,6 +1151,7 @@ class TestPatternRecommender:
 
     # -- T-0605: anemic-accessors -> move behavior to data -------------------
 
+    # frob:tests src/frob/arch/_patterns.py::_check_anemic_accessors  # noqa: E501
     def test_anemic_accessors_recommends_move_behavior(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -1226,6 +1237,7 @@ class TestPatternRecommender:
             if s.category == "anti-pattern-escape"
         )
 
+    # frob:tests src/frob/arch/_patterns.py::_check_dataclass_boilerplate  # noqa: E501
     def test_dataclass_boilerplate_recommends_dataclass(self, tmp_path: Path) -> None:
         # T-0849: a plain class whose only method is a pure
         # assign-every-param `__init__` recommends `@dataclass`.
@@ -1345,6 +1357,7 @@ class TestPatternRecommender:
             if s.category == "pattern-recommendation"
         )
 
+    # frob:tests src/frob/arch/_patterns.py::_check_manual_decorator_wrap  # noqa: E501
     def test_manual_decorator_wrap_recommends_decorator_syntax(
         self, tmp_path: Path
     ) -> None:

@@ -65,6 +65,7 @@ class TestOverrideRaisesNotImplemented:
         assert out[0].category == "lsp-not-implemented-override"
         assert out[0].symref == "pkg/mod.py::Sub.greet"
 
+    # frob:tests src/frob/arch/_solid.py::check_override_raises_not_implemented  # noqa: E501
     def test_base_itself_raising_not_implemented_is_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedClass,
@@ -161,6 +162,7 @@ class TestOverrideSignatureVariance:
         assert out[0].category == "lsp-signature-variance"
         assert out[0].metric == 1
 
+    # frob:tests src/frob/arch/_solid.py::check_override_signature_variance  # noqa: E501
     def test_wider_return_type_flagged(self) -> None:
         from frob.arch._normalized import NormalizedClass, NormalizedFunction
         from frob.arch._solid import check_override_signature_variance
@@ -198,6 +200,7 @@ class TestOverrideSignatureVariance:
         assert len(out) == 1
         assert out[0].category == "lsp-signature-variance"
 
+    # frob:tests src/frob/arch/_solid.py::check_override_signature_variance  # noqa: E501
     def test_same_shape_signature_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedClass,
@@ -245,6 +248,7 @@ class TestOverrideStrengthenedPrecondition:
     """ARCH106: `check_override_strengthened_precondition`
     (docs/modules/arch.md#lsp-checks)."""
 
+    # frob:tests src/frob/arch/_solid.py::check_override_strengthened_precondition  # noqa: E501
     def test_added_guard_raise_on_shared_param_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -297,6 +301,7 @@ class TestOverrideStrengthenedPrecondition:
         assert out[0].category == "lsp-strengthened-precondition"
         assert out[0].metric == 1
 
+    # frob:tests src/frob/arch/_solid.py::check_override_strengthened_precondition  # noqa: E501
     def test_guard_raise_present_in_base_too_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -354,6 +359,7 @@ class TestOverrideWeakenedPostcondition:
     """ARCH107: `check_override_weakened_postcondition`
     (docs/modules/arch.md#lsp-checks)."""
 
+    # frob:tests src/frob/arch/_solid.py::check_override_weakened_postcondition  # noqa: E501
     def test_bare_return_where_base_always_returns_value_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedClass,
@@ -395,6 +401,7 @@ class TestOverrideWeakenedPostcondition:
         assert len(out) == 1
         assert out[0].category == "lsp-weakened-postcondition"
 
+    # frob:tests src/frob/arch/_solid.py::check_override_weakened_postcondition  # noqa: E501
     def test_override_also_always_returning_value_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedClass,
@@ -439,6 +446,7 @@ class TestOverrideWeakenedPostcondition:
 class TestNoOpOverride:
     """ARCH108: `check_noop_override` (docs/modules/arch.md#lsp-checks)."""
 
+    # frob:tests src/frob/arch/_solid.py::check_noop_override  # noqa: E501
     def test_empty_body_override_of_value_returning_base_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedClass,
@@ -480,6 +488,7 @@ class TestNoOpOverride:
         assert len(out) == 1
         assert out[0].category == "lsp-noop-override"
 
+    # frob:tests src/frob/arch/_solid.py::check_noop_override  # noqa: E501
     def test_override_with_real_body_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedCall,
@@ -527,6 +536,7 @@ class TestRunLspChecks:
     """`run_lsp_checks` combines every ARCH1xx LSP check
     (docs/modules/arch.md#lsp-checks)."""
 
+    # frob:tests src/frob/arch/_solid.py::run_lsp_checks  # noqa: E501
     def test_combines_multiple_checks(self) -> None:
         from frob.arch._normalized import (
             NormalizedClass,
@@ -574,6 +584,7 @@ class TestRunLspChecks:
 class TestFatInterface:
     """ARCH109: `check_fat_interface` (docs/modules/arch.md#isp-checks)."""
 
+    # frob:tests src/frob/arch/_solid.py::check_fat_interface  # noqa: E501
     def test_mostly_stubbed_implementers_flag_fat_interface(self) -> None:
         from frob.arch._normalized import NormalizedClass
         from frob.arch._solid import check_fat_interface
@@ -619,6 +630,7 @@ class TestFatInterface:
         assert out[0].symref == "Repo"
         assert out[0].metric == 6  # 3 stubbed methods x 2 implementers
 
+    # frob:tests src/frob/arch/_solid.py::check_fat_interface  # noqa: E501
     def test_mostly_implemented_methods_not_flagged(self) -> None:
         from frob.arch._normalized import NormalizedClass
         from frob.arch._solid import check_fat_interface
@@ -666,6 +678,7 @@ class TestNarrowClientUsage:
     """ARCH110: `check_narrow_client_usage`
     (docs/modules/arch.md#isp-checks)."""
 
+    # frob:tests src/frob/arch/_solid.py::check_narrow_client_usage  # noqa: E501
     def test_client_using_small_method_subset_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedCall,
@@ -705,6 +718,7 @@ class TestNarrowClientUsage:
         assert out[0].symref == "save_once"
         assert out[0].metric == 4  # 5 methods - 1 used
 
+    # frob:tests src/frob/arch/_solid.py::check_narrow_client_usage  # noqa: E501
     def test_client_using_most_of_interface_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedCall,
@@ -750,6 +764,7 @@ class TestRunIspChecks:
     """`run_isp_checks` combines every ARCH1xx ISP check
     (docs/modules/arch.md#isp-checks)."""
 
+    # frob:tests src/frob/arch/_solid.py::run_isp_checks  # noqa: E501
     def test_combines_both_checks(self) -> None:
         from frob.arch._normalized import (
             NormalizedCall,

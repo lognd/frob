@@ -34,6 +34,7 @@ class TestRecordRapidDebt:
         assert [entry["ticket"] for entry in entries] == ["T-0001", "T-0002"]
         assert [entry["skipped"] for entry in entries] == ["test016", "rel001"]
 
+    # frob:tests src/frob/tickets/_evidence.py::record_rapid_debt
     def test_records_a_commit_field_even_outside_a_git_repo(
         self, tmp_path: Path
     ) -> None:
@@ -49,6 +50,7 @@ class TestRecordRapidDebt:
         )
         assert entry["commit"] == "unknown"
 
+    # frob:tests src/frob/tickets/_evidence.py::record_rapid_debt
     def test_lives_under_dot_frob_not_the_tracked_root(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_lives_under_dot_frob_not_the_tracked_root  # noqa: E501
         # T-2997: reversed from the pre-move contract -- this file must
@@ -58,6 +60,7 @@ class TestRecordRapidDebt:
         assert (tmp_path / ".frob" / "rapid-debt.jsonl").exists()
         assert not (tmp_path / "rapid-debt.jsonl").exists()
 
+    # frob:tests src/frob/tickets/_evidence.py::record_rapid_debt
     def test_creates_dot_frob_when_missing(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_creates_dot_frob_when_missing  # noqa: E501
         # A fresh checkout may not have run anything that creates .frob/
@@ -67,6 +70,7 @@ class TestRecordRapidDebt:
         record_rapid_debt(tmp_path, "T-0006", "sweep")
         assert (tmp_path / ".frob" / "rapid-debt.jsonl").exists()
 
+    # frob:tests src/frob/tickets/_evidence.py::record_rapid_debt
     def test_an_unwritable_path_never_raises(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

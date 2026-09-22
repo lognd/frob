@@ -91,6 +91,7 @@ class TestAckRunnerRun:
         assert "ack failed" in caplog.text
         assert not (tmp_path / "frob.lock").exists()
 
+    # frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
     def test_graph_unavailable_after_failed_build_exits_with_error(
         self,
         tmp_path: Path,
@@ -116,6 +117,7 @@ class TestAckRunnerRun:
             run(cfg)
         assert "graph unavailable" in caplog.text
 
+    # frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
     def test_malformed_lock_file_exits_with_error(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -130,6 +132,7 @@ class TestAckRunnerRun:
             run(cfg)
         assert "frob.lock" in caplog.text
 
+    # frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
     def test_write_lock_failure_exits_with_error(
         self,
         tmp_path: Path,

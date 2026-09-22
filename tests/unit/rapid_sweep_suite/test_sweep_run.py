@@ -27,6 +27,7 @@ class TestPersistBaseline:
     baseline persistence. See T-4335 for the design rationale."""
 
     # frob:ticket T-4335
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_baseline  # noqa: E501
     def test_writes_and_logs_survival_warning_on_loss(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -49,6 +50,7 @@ class TestDeferredSweepRun:
             "frob.tickets._evidence.record_rapid_debt", lambda *a, **k: None
         )
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep  # noqa: E501
     def test_unmeasurable_check_leaves_the_baseline_untouched(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -63,6 +65,7 @@ class TestDeferredSweepRun:
         assert result.danger_err is RapidSweepError.Unmeasurable
         assert _read_baseline(tmp_path) == frozenset({("COV003", "a.py")})
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep  # noqa: E501
     def test_first_sweep_records_a_baseline_and_files_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -83,6 +86,7 @@ class TestDeferredSweepRun:
         assert _read_baseline(tmp_path) == fresh
 
     # frob:ticket T-4318
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_measure_fresh_sweep_state
     def test_calls_unscoped_error_findings_with_full_true(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -111,6 +115,7 @@ class TestDeferredSweepRun:
         assert result.is_ok
         assert calls == [{"full": True}]
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep
     def test_no_new_findings_is_clean(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -130,6 +135,7 @@ class TestDeferredSweepRun:
         assert result.danger_ok is None
         assert filed == []
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep  # noqa: E501
     def test_new_findings_file_a_ticket_and_rebaseline(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -159,6 +165,7 @@ class TestDeferredSweepRun:
     # frob:ticket T-4335
     # frob:tests \
     # src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_refuse_filing_for_stale_verification_queue
     def test_stale_baseline_refuses_to_file_and_records_debt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -215,6 +222,8 @@ class TestDeferredSweepRun:
         assert _read_baseline(tmp_path) == frozenset({("COV003", "a.py")})
 
     # frob:ticket T-2929
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_refuse_filing_for_stale_verification_queue
     def test_fresh_baseline_files_normally_no_new_noise(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -253,6 +262,7 @@ class TestDeferredSweepRun:
         assert _read_baseline(tmp_path) == fresh
 
     # frob:ticket T-4335
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep
     def test_stale_baseline_refusal_is_still_new_on_the_next_sweep(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -308,6 +318,7 @@ class TestDeferredSweepRun:
         assert _read_baseline(tmp_path) == fresh
 
     # frob:ticket T-4335
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep
     def test_inherited_debt_is_reported_as_debt_not_clean(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -335,6 +346,7 @@ class TestDeferredSweepRun:
         assert any("TOLERATED DEBT" in m for m in messages), messages
 
     # frob:ticket T-4335
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep
     def test_genuinely_zero_errors_still_says_clean(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -540,6 +552,7 @@ class TestClaimDivergencePostLand:
 class TestDeferredSweepSpawn:
     """The spawn records debt BEFORE spawning and never blocks."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::spawn_deferred_post_land_sweep  # noqa: E501
     def test_exec_disabled_records_debt_and_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -612,6 +625,7 @@ class TestDetachedSweepEnvPublicSeam:
 
     # frob:ticket T-2450
     # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnvPublicSeam.test_delegates_to_the_private_implementation  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::detached_sweep_env
     def test_delegates_to_the_private_implementation(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -628,6 +642,7 @@ class TestDetachedSweepEnvPublicSeam:
 class TestDetachedSweepEnv:
     """T-2030: `_detached_sweep_env`'s own unit-level contract."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_detached_sweep_env  # noqa: E501
     def test_pins_frob_root_to_the_correct_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -638,6 +653,7 @@ class TestDetachedSweepEnv:
         env = _detached_sweep_env(tmp_path)
         assert env["FROB_ROOT"] == str(tmp_path)
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_detached_sweep_env  # noqa: E501
     def test_strips_worktree_lease_env(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

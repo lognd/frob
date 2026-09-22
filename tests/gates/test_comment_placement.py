@@ -106,6 +106,7 @@ class TestCplace001:
         violations = scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text)
         assert violations[0].symref is None
 
+    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
     def test_must_stay_quiet_ordinary_one_line_waive(self) -> None:
         """An ordinary compliant one-line `frob:waive ... reason="..."`
         must never fire -- T-3218's own must-stay-quiet requirement,
@@ -114,6 +115,7 @@ class TestCplace001:
         text = '# frob:waive SOME001 reason="narrow, load-bearing reason"\nx = 1\n'
         assert scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
 
+    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
     def test_must_stay_quiet_frob_ticket_directive_any_length(self) -> None:
         """`frob:ticket`/`frob:tests`/`frob:doc` stay exempt at any
         length -- pure binding syntax, not narrative, per T-2987's own
@@ -129,6 +131,7 @@ class TestCplace001:
         )
         assert scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
 
+    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
     def test_does_not_fire_on_prose_mentioning_frobwaive_by_name(self) -> None:
         """Regression: a long ordinary comment block that merely MENTIONS
         `frob:waive` by name in prose (not a directive-start line) must
@@ -166,6 +169,7 @@ class TestCplace001:
 class TestCplace002:
     """`docs/modules/**/*.md` ticket-narrative-outside-provenance."""
 
+    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace002_docs_narrative
     def test_must_fire_long_narrative_paragraph(self) -> None:
         """A prose paragraph citing a ticket id, well past the word
         limit, outside any table row, fires."""
@@ -180,6 +184,7 @@ class TestCplace002:
         violations = scan_cplace002_docs_narrative(Path("docs/modules/gates.md"), text)
         assert _rule_ids(violations) == ["CPLACE002"]
 
+    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace002_docs_narrative
     def test_must_stay_quiet_table_row_citation(self) -> None:
         """A bare `(T-1234)`-shaped citation inside a markdown table row
         is provenance-by-construction and never fires, regardless of the
@@ -192,12 +197,14 @@ class TestCplace002:
         )
         assert scan_cplace002_docs_narrative(Path("docs/modules/gates.md"), text) == ()
 
+    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace002_docs_narrative
     def test_must_stay_quiet_short_attribution(self) -> None:
         """A short `# T-1234: keep the sort stable`-style attribution (a
         handful of words) stays under the word limit and never fires."""
         text = "# Heading\n\nSee T-1234 for why this stays stable.\n"
         assert scan_cplace002_docs_narrative(Path("docs/modules/gates.md"), text) == ()
 
+    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace002_docs_narrative
     def test_must_stay_quiet_exempt_path(self) -> None:
         """`docs/decisions/**` (and the other T-2994 provenance-exempt
         paths) never fire even with a long narrative paragraph."""
@@ -227,6 +234,7 @@ class TestCplace002:
 class TestCommentPlacementGate:
     """The repo-scanning entrypoint wires both rules together."""
 
+    # frob:tests src/frob/gates/_comment_placement.py::comment_placement_gate
     def test_fires_across_both_surfaces(self, tmp_path: Path) -> None:
         """`comment_placement_gate` reports both CPLACE001 (src) and
         CPLACE002 (docs) findings from one repo-root scan, and skips a

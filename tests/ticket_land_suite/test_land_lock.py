@@ -119,6 +119,7 @@ class TestLandLockHolderMetadataAndTimeout:
     # frob:tests \
     # tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged  # noqa: E501
     # frob:ticket T-1634
+    # frob:tests src/frob/tickets/_land.py::_probe_land_lock_pid_liveness
     def test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -245,6 +246,7 @@ class TestLandStatus:
     # frob:ticket T-4266
     # frob:tests \
     # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_phase_transitions_are_pollable  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_write_land_status
     def test_phase_transitions_are_pollable(self, tmp_path: Path) -> None:
         """Successive `_write_land_status` calls for the SAME ticket
         preserve `started_at` across phase transitions (T-2691's own
@@ -292,6 +294,7 @@ class TestLandStatus:
     # frob:ticket T-4266
     # frob:tests \
     # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_write_failure_is_best_effort_and_never_raises  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_write_land_status
     def test_write_failure_is_best_effort_and_never_raises(
         self, tmp_path: Path
     ) -> None:
@@ -308,6 +311,7 @@ class TestLandStatus:
     # frob:ticket T-4266
     # frob:tests \
     # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_concurrent_lands_each_get_their_own_entry  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_write_land_status
     def test_concurrent_lands_each_get_their_own_entry(self, tmp_path: Path) -> None:
         """T-4266's own incident, reproduced directly: two DIFFERENT pids
         writing to the SAME marker each keep their own entry -- a second
@@ -395,6 +399,7 @@ class TestLandStatus:
         assert str(dead_pid) not in live
 
     # frob:ticket T-5084
+    # frob:tests src/frob/tickets/_land.py::_live_land_status_entries  # noqa: E501
     def test_live_entries_keeps_ambiguous_and_alive_pids(self, tmp_path: Path) -> None:
         """A pid this process's OWN process just wrote (genuinely alive)
         stays in `_live_land_status_entries`; a pid whose liveness this

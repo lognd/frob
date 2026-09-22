@@ -48,6 +48,7 @@ class TestStackThresholdOffByOne:
         snapshot = _snapshot(self._edges_for_count(DEFAULT_STACK_THRESHOLD - 1))
         assert stack_lint_violations(snapshot) == ()
 
+    # frob:tests src/frob/gates/_directive_stack.py::stack_lint_violations
     def test_n_is_exactly_one_finding(self) -> None:
         # frob:tests tests/test_gates_directive_stack.py::TestStackThresholdOffByOne.test_n_is_exactly_one_finding  # noqa: E501
         snapshot = _snapshot(self._edges_for_count(DEFAULT_STACK_THRESHOLD))
@@ -156,6 +157,7 @@ class TestDstack001MergeFix:
         }
 
     # frob:tests src/frob/gates/_directive_stack.py::edges_for_stack
+    # frob:tests src/frob/gates/_fix_engine_text.py::fix_dstack001_merge
     def test_interleaved_doc_tests_doc_collapses_to_one_doc_then_one_tests(
         self, tmp_path
     ) -> None:

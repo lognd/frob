@@ -101,6 +101,7 @@ class TestLoadIds:
         assert len(ids.errors) == 1
         assert ids.channels == frozenset({"f_login"})
 
+    # frob:tests src/frob/strata/_design_load.py::load_design_ids
     def test_excluded_no_ids(self, tmp_path: Path) -> None:
         # T-0080 REJECT round 1: an excluded .strata path (e.g. design/litmus/**
         # per [graph].exclude, T-0130) must contribute no ids/models -- the

@@ -107,6 +107,7 @@ class TestWarnOverBroadScopeOnNew:
         assert "CATASTROPHICALLY" not in caplog.text
 
     # frob:ticket T-2123
+    # frob:tests src/frob/tickets/_new_renumber.py::_warn_over_broad_scope_on_new  # noqa: E501
     def test_ack_bypasses_the_warning(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -149,6 +150,7 @@ class TestWarnOverBroadScopeOnNew:
 
     # frob:ticket T-2123
     # frob:ticket T-2771
+    # frob:tests src/frob/tickets/_new_renumber.py::_warn_over_broad_scope_on_new  # noqa: E501
     def test_severity_scales_with_a_catastrophic_match_count(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

@@ -412,6 +412,7 @@ class TestAdmissionRegistryAnchor:
         subprocess.run(["git", "add", "-A"], cwd=root, check=True)
         subprocess.run(["git", "commit", "-qm", "c"], cwd=root, check=True)
 
+    # frob:tests src/frob/check/__init__.py::_admission_registry_anchor
     def test_non_git_root_falls_back_to_itself(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET half: a plain (non-git) directory anchors to
         itself, exactly T-3256's original per-`root` behavior -- and
@@ -420,12 +421,14 @@ class TestAdmissionRegistryAnchor:
         would make every non-git `frob check` invocation noisy here)."""
         assert check_mod._admission_registry_anchor(tmp_path) == tmp_path
 
+    # frob:tests src/frob/check/__init__.py::_admission_registry_anchor
     def test_primary_checkout_anchors_to_itself(self, tmp_path: Path) -> None:
         """A plain (non-worktree) git checkout anchors to its own root --
         the single-repo case is unaffected by the T-3287 change."""
         self._init_repo(tmp_path)
         assert check_mod._admission_registry_anchor(tmp_path) == tmp_path.resolve()
 
+    # frob:tests src/frob/check/__init__.py::_admission_registry_anchor
     def test_two_worktrees_of_one_repo_share_one_anchor(self, tmp_path: Path) -> None:
         """MUST-FIRE: two DIFFERENT linked worktrees of the SAME repo
         resolve to the IDENTICAL anchor -- so two `frob check` runs, one
@@ -456,6 +459,7 @@ class TestAdmissionRegistryAnchor:
 
         assert anchor_a == anchor_b == primary.resolve()
 
+    # frob:tests src/frob/check/__init__.py::_admission_dir
     def test_two_worktrees_see_each_others_markers(self, tmp_path: Path) -> None:
         """MUST-FIRE, end to end: registering from two different linked
         worktrees, `_live_concurrent_checks` called from EITHER worktree
@@ -505,6 +509,7 @@ class TestAdmissionRegistryAnchor:
         assert not (wt_a / ".frob" / "check-admission").exists()
         assert not (wt_b / ".frob" / "check-admission").exists()
 
+    # frob:tests src/frob/check/__init__.py::_admission_registry_anchor
     def test_two_unrelated_repos_do_not_throttle_each_other(
         self, tmp_path: Path
     ) -> None:
@@ -524,6 +529,7 @@ class TestAdmissionRegistryAnchor:
         assert check_mod._live_concurrent_checks(repo_a) == 1
         assert check_mod._live_concurrent_checks(repo_b) == 0
 
+    # frob:tests src/frob/check/__init__.py::_admission_dir
     def test_stale_marker_from_dead_pid_does_not_permanently_deflate_shared_budget(
         self, tmp_path: Path
     ) -> None:

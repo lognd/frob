@@ -131,6 +131,7 @@ class TestDeepNestingArchExempt:
 
 
 class TestLargeFile:
+    # frob:tests src/frob/arch/__init__.py::_check_large_file
     def test_large_test_file_not_flagged(self, tmp_path):
         # frob:tests src/frob/arch/__init__.py::analyze_project
         tests_dir = tmp_path / "tests"
@@ -141,6 +142,7 @@ class TestLargeFile:
         categories = {s.category for s in result.suggestions}
         assert "large-file" not in categories
 
+    # frob:tests src/frob/arch/__init__.py::_check_large_file
     def test_large_src_file_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/__init__.py::analyze_project
         src_dir = tmp_path / "src"
@@ -162,6 +164,7 @@ class TestLargeFile:
         categories = {s.category for s in result.suggestions}
         assert "large-file" not in categories
 
+    # frob:tests src/frob/arch/__init__.py::_check_large_file
     def test_large_json_data_not_flagged(self, tmp_path):
         # T-0372: a generated/data JSON file has no tree-sitter grammar --
         # it is not a "code module" arch's size heuristic is meant to judge.
@@ -173,6 +176,7 @@ class TestLargeFile:
         categories = {s.category for s in result.suggestions}
         assert "large-file" not in categories
 
+    # frob:tests src/frob/arch/__init__.py::_check_large_file
     def test_large_md_ledger_not_flagged(self, tmp_path):
         # T-0372: a ticket-ledger-style markdown file (e.g. tickets-archive.md)
         # has no tree-sitter grammar and should not be judged as an
@@ -186,6 +190,7 @@ class TestLargeFile:
         categories = {s.category for s in result.suggestions}
         assert "large-file" not in categories
 
+    # frob:tests src/frob/arch/__init__.py::_check_large_file
     def test_large_py_src_still_flagged(self, tmp_path):
         # T-0372: real source (has a tree-sitter grammar) must never be
         # exempted by this data-file skip.

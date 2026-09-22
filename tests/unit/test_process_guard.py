@@ -381,26 +381,31 @@ class TestDefaultTextEncoding:
     crashed `frob natives build`'s maturin call on windows-latest CI
     before the native extension was even built."""
 
+    # frob:tests src/frob/process/_guard.py::_default_text_encoding  # noqa: E501
     def test_injects_utf8_replace_when_text_true_and_no_encoding(self) -> None:
         result = _default_text_encoding({"text": True, "capture_output": True})
         assert result["encoding"] == "utf-8"
         assert result["errors"] == "replace"
 
+    # frob:tests src/frob/process/_guard.py::_default_text_encoding  # noqa: E501
     def test_injects_when_universal_newlines_true(self) -> None:
         result = _default_text_encoding({"universal_newlines": True})
         assert result["encoding"] == "utf-8"
         assert result["errors"] == "replace"
 
+    # frob:tests src/frob/process/_guard.py::_default_text_encoding  # noqa: E501
     def test_never_overrides_explicit_encoding(self) -> None:
         result = _default_text_encoding({"text": True, "encoding": "latin-1"})
         assert result["encoding"] == "latin-1"
         assert "errors" not in result
 
+    # frob:tests src/frob/process/_guard.py::_default_text_encoding  # noqa: E501
     def test_never_overrides_explicit_errors(self) -> None:
         result = _default_text_encoding({"text": True, "errors": "strict"})
         assert result["encoding"] == "utf-8"
         assert result["errors"] == "strict"
 
+    # frob:tests src/frob/process/_guard.py::_default_text_encoding  # noqa: E501
     def test_no_op_without_text_mode(self) -> None:
         result = _default_text_encoding({"capture_output": True})
         assert "encoding" not in result

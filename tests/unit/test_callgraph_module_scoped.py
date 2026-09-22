@@ -29,6 +29,7 @@ def _write(root: Path, rel: str, text: str) -> Path:
 
 class TestBuildReferenceGraphModuleScoped:
     # frob:tests tests/unit/test_callgraph_module_scoped.py::TestBuildReferenceGraphModuleScoped.test_does_not_cross_wire_same_named_helpers_in_unrelated_files kind="unit"  # noqa: E501
+    # frob:tests src/frob/graph/callgraph.py::build_reference_graph_module_scoped
     def test_does_not_cross_wire_same_named_helpers_in_unrelated_files(
         self, tmp_path: Path
     ) -> None:

@@ -17,6 +17,7 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
+# frob:tests src/frob/app/cycle_runner.py::run  # noqa: E501
 class TestCycleRunnerDocWaiver:
     """Doc content and waiver-removal checks for the T-2598 fix."""
 

@@ -39,6 +39,7 @@ class TestDeriveBootstrapModelRefusesAnExistingModel:
     """The whole bootstrap-not-sync contract: refuse, write nothing, once
     any `.strata` file already exists."""
 
+    # frob:tests src/frob/strata/_bootstrap.py::derive_bootstrap_model
     def test_refuses_when_a_strata_file_already_exists(self, tmp_path: Path):
         """A pre-existing `design/*.strata` file (any content) makes
         `derive_bootstrap_model` return `Err` without touching anything."""
@@ -51,6 +52,7 @@ class TestDeriveBootstrapModelRefusesAnExistingModel:
         assert result.is_err
         assert result.danger_err == StrataError.DuplicateId
 
+    # frob:tests src/frob/strata/_bootstrap.py::existing_design_files
     def test_existing_design_files_lists_the_real_files(self, tmp_path: Path):
         """`existing_design_files` is the exact refuse-check `sys_runner`
         uses to print which files caused the refusal."""
@@ -109,6 +111,7 @@ class TestDeriveBootstrapModelComponentsAndFlows:
         assert globs["pkg_alpha"] == ("src/pkg/alpha/**",)
         assert globs["pkg_beta"] == ("src/pkg/beta/**",)
 
+    # frob:tests src/frob/strata/_bootstrap.py::BootstrapFlow
     def test_real_import_edge_becomes_a_flow_in_the_right_direction(
         self, tmp_path: Path
     ):
@@ -188,6 +191,8 @@ class TestRenderedTextParsesAndElaborates:
         elaborated = elaborate(parsed.danger_ok)
         assert elaborated.is_ok, elaborated.err
 
+    # frob:tests src/frob/strata/_bootstrap.py::render_bootstrap_text
+    # frob:tests src/frob/strata/_bootstrap.py::BootstrapModel
     def test_empty_model_still_parses(self, tmp_path: Path):
         """Even the zero-component/zero-flow model (bare `module <name>`)
         is valid `.strata` text on its own."""
@@ -205,6 +210,7 @@ class TestRenderedTextParsesAndElaborates:
 class TestWriteBootstrapModel:
     """The one write path, and only ever to a fresh path."""
 
+    # frob:tests src/frob/strata/_bootstrap.py::write_bootstrap_model
     def test_writes_module_named_strata_file_under_design_dir(self, tmp_path: Path):
         _write(tmp_path, "src/pkg/alpha/handler.py", "x = 1\n")
         _git_init_and_track(tmp_path)

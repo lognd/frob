@@ -53,6 +53,7 @@ class TestLandProofClaimsOutcome:
     """`_print_land_proof` consulting `_LAST_CLAIMS_OUTCOME` (T-2091)."""
 
     # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_skipped_unmeasured_is_not_printed_as_verified_true  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_LAST_CLAIMS_OUTCOME
     def test_skipped_unmeasured_is_not_printed_as_verified_true(
         self,
         monkeypatch: pytest.MonkeyPatch,
@@ -99,6 +100,7 @@ class TestLandProofClaimsOutcome:
         assert seen_target_branch == ["main"]
 
     # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_passed_healthy_path_is_unchanged  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_LAST_CLAIMS_OUTCOME
     def test_passed_healthy_path_is_unchanged(
         self,
         monkeypatch: pytest.MonkeyPatch,

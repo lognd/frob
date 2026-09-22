@@ -123,6 +123,7 @@ class TestLoadPlaybookSections:
         assert _load_playbook_sections(tmp_path) == ()
 
     # frob:ticket T-0568
+    # frob:tests src/frob/tickets/_brief.py::_load_playbook_sections
     def test_reads_real_file(self, tmp_path: Path) -> None:
         playbook = tmp_path / "docs" / "guides"
         playbook.mkdir(parents=True)
@@ -134,6 +135,7 @@ class TestLoadPlaybookSections:
 # frob:ticket T-0568
 class TestInferVerifyCommands:
     # frob:ticket T-0568
+    # frob:tests src/frob/tickets/_brief.py::_infer_verify_commands  # noqa: E501
     def test_scope_naming_tests_dir_is_used_directly(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestInferVerifyCommands.test_scope_naming_tests_dir_is_used_directly  # noqa: E501
         ticket = _ticket(scope=("tests/test_foo.py",))
@@ -161,6 +163,7 @@ class TestInferVerifyCommands:
 # frob:ticket T-0568
 class TestGateBaselineSummary:
     # frob:ticket T-0568
+    # frob:tests src/frob/tickets/_brief.py::_gate_baseline_summary
     def test_missing_baseline(self, tmp_path: Path) -> None:
         assert "no baseline stamped" in _gate_baseline_summary(tmp_path)
 
@@ -179,6 +182,7 @@ class TestCurrentVersion:
         assert _current_version(tmp_path) is None
 
     # frob:ticket T-0568
+    # frob:tests src/frob/tickets/_brief.py::_current_version
     def test_reads_project_version(self, tmp_path: Path) -> None:
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "x"\nversion = "1.2.3"\n', encoding="utf-8"
@@ -189,6 +193,7 @@ class TestCurrentVersion:
 # frob:ticket T-1347
 class TestConcurrentLeases:
     # frob:ticket T-1347
+    # frob:tests src/frob/tickets/_brief.py::_concurrent_leases_section
     def test_lists_others(self) -> None:
         # frob:tests tests/test_tickets_brief.py::TestConcurrentLeases.test_lists_others
         mine = _ticket(ticket_id="T-0001", state=TicketState.IN_PROGRESS)
@@ -237,6 +242,8 @@ class TestBriefTicket:
         assert "DirtyMain" in text
 
     # frob:ticket T-1347
+    # frob:tests src/frob/tickets/_reporting.py::brief_ticket
+    # frob:tests src/frob/tickets/_brief.py::compose_brief
     def test_concurrent_leases(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_concurrent_leases
         _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.IN_PROGRESS))
@@ -314,6 +321,7 @@ class TestClusterDescendants:
         assert [t.id for t in members] == ["T-0003", "T-0002"]
 
     # frob:ticket T-1243
+    # frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
     def test_excludes_leaf_blocked_from_outside_the_cluster(
         self, tmp_path: Path
     ) -> None:
@@ -331,6 +339,7 @@ class TestClusterDescendants:
         assert members == ()
 
     # frob:ticket T-1243
+    # frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
     def test_unknown_cluster_returns_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_unknown_cluster_returns_empty  # noqa: E501
         from frob.tickets import load_queue
@@ -343,6 +352,7 @@ class TestClusterDescendants:
 # frob:ticket T-1243
 class TestClusterUnionScope:
     # frob:ticket T-1243
+    # frob:tests src/frob/tickets/_brief.py::cluster_union_scope  # noqa: E501
     def test_deduplicates_and_preserves_first_seen_order(self) -> None:
         # frob:tests tests/test_tickets_brief.py::TestClusterUnionScope.test_deduplicates_and_preserves_first_seen_order  # noqa: E501
         members = (
@@ -355,6 +365,8 @@ class TestClusterUnionScope:
 # frob:ticket T-1243
 class TestClusterBrief:
     # frob:ticket T-1243
+    # frob:tests src/frob/tickets/_reporting.py::brief_cluster
+    # frob:tests src/frob/tickets/_brief.py::compose_cluster_brief  # noqa: E501
     def test_composes_one_briefing_for_the_whole_cluster(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
         _write(

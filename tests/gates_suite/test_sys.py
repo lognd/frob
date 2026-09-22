@@ -132,6 +132,7 @@ class TestSysGate:
         assert sys003[0].severity == Severity.ERROR
 
     # frob:tests src/frob/gates/_sys.py::_sys004
+    # frob:tests src/frob/gates/_sys.py::sys_gate
     def test_sys004_load_failure(self, tmp_path: Path) -> None:
         # T-0080 REJECT round 1: a malformed .strata file must be reported
         # as its own SYS004 violation naming the file, not silently dropped.
@@ -145,6 +146,7 @@ class TestSysGate:
         assert sys004[0].severity == Severity.ERROR
 # frob:tests src/frob/gates/_sys.py::_sys004  # noqa: E501
 
+    # frob:tests src/frob/gates/_sys.py::sys_gate
     def test_sys004_suppresses_sys001(self, tmp_path: Path) -> None:
         # T-0080 REJECT round 1: when a sibling .strata file fails to load,
         # ids are merged with no per-file provenance, so a directive
@@ -194,6 +196,7 @@ class TestSysGate:
         assert "strata_core" in sys004[0].message
 
     # frob:ticket T-2707
+    # frob:tests src/frob/gates/_sys.py::_sys004  # noqa: E501
     def test_sys004_names_missing_native_hint_when_genuinely_absent(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -214,6 +217,7 @@ class TestSysGate:
         assert "actual import error" not in sys004[0].message
 
     # frob:ticket T-2707
+    # frob:tests src/frob/gates/_sys.py::_sys004  # noqa: E501
     def test_sys004_names_real_exception_when_strata_core_fails_differently(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -238,6 +242,7 @@ class TestSysGate:
         assert len(sys004) == 1
         assert "undefined symbol" in sys004[0].message
 
+    # frob:tests src/frob/gates/_sys.py::sys_gate
     def test_doc003_proved_claim_passes(self, tmp_path: Path, monkeypatch) -> None:
         """T-0085: a `frob:claims <view>` marker whose obligations are all
         discharged produces no DOC003 violation."""
@@ -267,6 +272,7 @@ class TestSysGate:
         snapshot = _snapshot(tmp_path)
         assert _by_rule(sys_gate(tmp_path, snapshot), "DOC003") == []
 
+    # frob:tests src/frob/gates/_sys.py::sys_gate
     def test_doc003_refutes_names_obligations(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -292,6 +298,7 @@ class TestSysGate:
         assert doc003[0].file == "README.md"
         assert doc003[0].severity == Severity.ERROR
 
+    # frob:tests src/frob/gates/_sys.py::sys_gate
     def test_doc003_unclaimed_view_ignored(self, tmp_path: Path, monkeypatch) -> None:
         """T-0085: no `frob:claims` marker anywhere means DOC003 does not
         even evaluate the model -- an unclaimed view is silent, by design."""
@@ -311,6 +318,7 @@ class TestSysGate:
         snapshot = _snapshot(tmp_path)
         assert _by_rule(sys_gate(tmp_path, snapshot), "DOC003") == []
 
+    # frob:tests src/frob/gates/_sys.py::sys_gate
     def test_doc003_unknown_view(self, tmp_path: Path, monkeypatch) -> None:
         """T-0085: a `frob:claims` marker naming a view the catalog does
         not ship is its own DOC003 error, not a silent pass."""
@@ -479,6 +487,7 @@ class TestSelfAuditGate:
         assert "widget" in selfaudit[0].message
 
     # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violations
     def test_selfaudit001_clean_model_no_violations(self, tmp_path: Path) -> None:
         """GIVEN a design model whose declared `may` capabilities are
         exactly what the bound code exercises WHEN `sys_gate` runs THEN it
@@ -551,6 +560,7 @@ class TestSelfAuditGate:
         assert [v for v in selfaudit if "SYS112" in v.message] == []
 
     # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violations  # noqa: E501
     def test_selfaudit001_suppressed_on_design_load_error(self, tmp_path: Path) -> None:
         """A `.strata` file that fails to parse suppresses SELFAUDIT001
         entirely (matches DOC003/SYS001's suppression posture) -- a broken
@@ -1340,10 +1350,12 @@ class TestKnownGateRuleIds:
     rule-id-shaped references against; production callsites (T-0499)
     thread it in instead of silently defaulting to empty."""
 
+    # frob:tests src/frob/gates/_waive.py::known_gate_rule_ids
     def test_returns_known_rule_id(self) -> None:
         """A real, stable gate rule id is present in the returned set."""
         assert "SEC001" in known_gate_rule_ids()
 
+    # frob:tests src/frob/gates/_waive.py::known_gate_rule_ids
     def test_is_frozenset(self) -> None:
         """Return type is an immutable frozenset, not a mutable copy a
         caller could accidentally mutate shared state through."""
@@ -1399,6 +1411,7 @@ class TestKnownGateRuleIds:
     # frob:ticket T-1010
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
+    # frob:tests src/frob/gates/_waive.py::_KNOWN_GATE_RULES
     def test_every_emitted_rule_literal_is_known(self) -> None:
         """Generator-freshness drift-lock (T-1010, inverting the T-0964
         scan): every rule id `frob.gates._rule_id_scan.
@@ -1533,6 +1546,7 @@ class TestRuleFixability:
             generated_fixability(frozenset({"DOC007"}))
 
     # frob:ticket T-1264
+    # frob:tests src/frob/gates/_fixability_scan.py::generated_fixability
     def test_checked_in_literal_matches_a_fresh_scan(self) -> None:
         """GIVEN the checked-in `_KNOWN_RULE_FIXABILITY` literal WHEN it
         drifts from a fresh `generated_fixability()` scan (a handler added
@@ -1624,6 +1638,7 @@ class TestRenderLintGate:
     # frob:tests src/frob/gates/_render_lint.py::render_lint_gate  # noqa: E501
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestRenderLintGate.test_render_package_exempt
+    # frob:tests src/frob/gates/_walk_lint.py::tracked_python_files_for_gate
     def test_render_package_exempt(self, tmp_path: Path) -> None:
         """`src/frob/render/` itself is the one sanctioned home for these
         calls (`Renderer._emit`'s own `print`) and is never scanned."""
@@ -1645,6 +1660,7 @@ class TestRenderLintGate:
 
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
+    # frob:tests src/frob/gates/_render_lint.py::render_lint_gate  # noqa: E501
     def test_stderr_directed_print_is_silent(self, tmp_path: Path) -> None:
         """A `print(..., file=sys.stderr)` call is never flagged --
         INV-RENDER-SOLE-STDOUT governs stdout only."""
@@ -1668,6 +1684,7 @@ class TestRenderLintGate:
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
     # frob:ticket T-0897
+    # frob:tests src/frob/gates/_parse_failures.py::local_parse001_violation  # noqa: E501
     def test_unparseable_file_fires_parse001(self, tmp_path: Path) -> None:
         """A file with a Python syntax error fires PARSE001 instead of
         being silently dropped from the scan with zero Violation (T-0897)."""
@@ -1718,6 +1735,7 @@ class TestRenderLintGate:
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestRenderLintGate.test_fleet_status_file_exempt
     # frob:ticket T-2719
+    # frob:tests src/frob/gates/_render_lint.py::render_lint_gate
     def test_fleet_status_file_exempt(self, tmp_path: Path) -> None:
         """A bare `print(...)` in `scripts/fleet_status.py` does NOT fire
         RENDER001 (T-2719) -- same standalone, no-frob-import constraint
@@ -1740,6 +1758,7 @@ class TestRenderLintGate:
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestRenderLintGate.test_exemption_is_file_scoped_not_dir_scoped  # noqa: E501
     # frob:ticket T-2719
+    # frob:tests src/frob/gates/_render_lint.py::render_lint_gate  # noqa: E501
     def test_exemption_is_file_scoped_not_dir_scoped(self) -> None:
         """Control on the exemption predicate itself: `scripts/
         fleet_status.py` is exempt as a single NAMED file, not a blanket
@@ -1765,6 +1784,7 @@ class TestRenderLintGate:
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestRenderLintGate.test_scan_now_covers_hooks_and_fleet_status  # noqa: E501
     # frob:ticket T-2719
+    # frob:tests src/frob/gates/_render_lint.py::render_lint_gate  # noqa: E501
     def test_scan_now_covers_hooks_and_fleet_status(self, tmp_path: Path) -> None:
         """BUG002 repro (T-2719): before this fix, `.claude/hooks/**` and
         `scripts/fleet_status.py` were NOT scanned by RENDER001 at all --
@@ -1810,6 +1830,7 @@ class TestRenderLintGate:
         assert render001_scans(tmp_path, "src/frob/mod.py") is True
 
     # frob:ticket T-2740
+    # frob:tests src/frob/gates/_render_lint.py::render001_scans
     def test_render001_scans_false_for_an_exempt_path(self, tmp_path: Path) -> None:
         """`render001_scans` (T-2740): `.claude/hooks/` is exempt by
         `_EXEMPT_PREFIXES` -- the exact structural signal T-2733's own
@@ -1825,6 +1846,7 @@ class TestRenderLintGate:
         assert render001_scans(tmp_path, ".claude/hooks/some-hook.py") is False
 
     # frob:ticket T-2740
+    # frob:tests src/frob/gates/_render_lint.py::render001_scans
     def test_render001_scans_false_for_a_path_outside_any_pathspec(
         self, tmp_path: Path
     ) -> None:

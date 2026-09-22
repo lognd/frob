@@ -143,6 +143,7 @@ class TestRunCoalescedVerification:
         assert watermark.danger_ok.commit_sha == "c0"
 
     # frob:ticket T-2324
+    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings  # noqa: E501
     def test_new_findings_that_cannot_be_filed_still_do_not_advance(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -226,6 +227,8 @@ class TestRunCoalescedVerification:
         assert watermark.danger_ok is None
 
     # frob:ticket T-3464
+    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_vanished_pairs_appended_since  # noqa: E501
     def test_all_vanished_findings_advance_the_watermark(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -276,6 +279,8 @@ class TestRunCoalescedVerification:
         assert watermark.danger_ok.commit_sha == "c0"
 
     # frob:ticket T-3464
+    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_vanished_pairs_appended_since  # noqa: E501
     def test_partially_vanished_findings_still_pin_the_watermark(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -407,6 +412,7 @@ class TestUnleasedRootEnv:
         assert seen_agent == [None]
 
     # frob:ticket T-3379
+    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"  # noqa: E501
     def test_ambient_lease_env_is_restored_after_filing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -439,6 +445,7 @@ class TestUnleasedRootEnv:
         assert _worker_mod.os.environ.get("FROB_AGENT") == "1"
 
     # frob:ticket T-3379
+    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"  # noqa: E501
     def test_no_ambient_lease_stays_unset_after_filing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -601,6 +608,7 @@ class TestBackpressure:
         assert any("yielding" in rec.message for rec in caplog.records)
         assert any("lease count" in rec.message for rec in caplog.records)
 
+    # frob:tests src/frob/verify/_worker.py::_worker_backpressure_reason
     def test_resumes_below_lease_ceiling(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_resumes_below_lease_ceiling  # noqa: E501
         _enqueue_n(tmp_path, 1)
@@ -631,6 +639,7 @@ class TestBackpressure:
         assert result.is_ok
         assert len(calls) == 1
 
+    # frob:tests src/frob/verify/_worker.py::_worker_backpressure_reason
     def test_yields_below_memory_floor(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -657,6 +666,7 @@ class TestBackpressure:
         assert calls == []
         assert any("available memory" in rec.message for rec in caplog.records)
 
+    # frob:tests src/frob/verify/_worker.py::_worker_backpressure_reason  # noqa: E501
     def test_unmeasurable_memory_never_blocks_a_run(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_unmeasurable_memory_never_blocks_a_run  # noqa: E501
         _enqueue_n(tmp_path, 1)
@@ -687,6 +697,7 @@ class TestEnsureReducedPriority:
     process, best-effort on both axes."""
 
     # frob:ticket T-3764
+    # frob:tests src/frob/verify/_worker.py::_ensure_reduced_priority  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="os.nice does not exist on Windows; Linux/POSIX-only primitive",
@@ -704,6 +715,7 @@ class TestEnsureReducedPriority:
         assert nice_calls == [10]  # only the FIRST call actually ran os.nice
 
     # frob:ticket T-3764
+    # frob:tests src/frob/verify/_worker.py::_ensure_reduced_priority  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="os.nice does not exist on Windows; Linux/POSIX-only primitive",
@@ -760,6 +772,7 @@ class TestReconcileStaleInFlightMarker:
         assert watermark.is_ok
         assert watermark.danger_ok is None
 
+    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
     def test_stale_marker_matching_current_watermark_is_reported_recovered(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -784,6 +797,7 @@ class TestReconcileStaleInFlightMarker:
         assert watermark.danger_ok is not None
         assert watermark.danger_ok.commit_sha == "c0"
 
+    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
     def test_unreadable_marker_is_reported_unverified_and_cleared(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

@@ -63,6 +63,8 @@ class TestMustStillPassWaiver:
     `frob.gates._mutation_evidence._bug002_waiver_reason`'s own shape."""
 
     # frob:ticket T-2215
+    # frob:tests src/frob/tickets/_land.py::_must_still_pass_land_violations
+    # frob:tests src/frob/tickets/_land.py::_must_still_pass_waiver_reason
     def test_reason_present_suppresses(self) -> None:
         """A well-formed `frob:waive BUG003 reason="..."` line is found
         and its reason text extracted."""
@@ -74,6 +76,7 @@ class TestMustStillPassWaiver:
         assert _must_still_pass_waiver_reason(ticket) == "known infra gap"
 
     # frob:ticket T-2215
+    # frob:tests src/frob/tickets/_land.py::_must_still_pass_waiver_reason
     def test_bare_directive_without_reason_does_not_suppress(self) -> None:
         """A `frob:waive BUG003` line with no `reason="..."` clause is
         NOT a well-formed waiver -- `None`, not suppression."""
@@ -98,6 +101,7 @@ class TestMustStillPassWiring:
     zero callers on current main."""
 
     # frob:ticket T-2215
+    # frob:tests src/frob/tickets/_land.py::_must_still_pass_land_violations
     @pytest.mark.parametrize(
         "body",
         [
@@ -131,6 +135,7 @@ class TestMustStillPassWiring:
         assert result == ()
 
     # frob:ticket T-2215
+    # frob:tests src/frob/tickets/_land.py::_must_still_pass_land_violations
     def test_land_refuses_when_control_broke_at_fix(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -191,6 +196,7 @@ class TestMustStillPassCombinesWithBug002:
     both, not merely defers to BUG002 alone."""
 
     # frob:ticket T-2215
+    # frob:tests src/frob/tickets/_land.py::_mutation_evidence_deferred
     def test_land_deferred_refuses_on_bug003_alone(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -219,6 +225,7 @@ class TestMustStillPassCombinesWithBug002:
         assert result.is_err
 
     # frob:ticket T-2215
+    # frob:tests src/frob/tickets/_land.py::_mutation_evidence_synchronous
     def test_land_synchronous_refuses_on_bug003_alone(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -244,6 +251,7 @@ class TestMustStillPassCombinesWithBug002:
         assert result.is_err
 
     # frob:ticket T-2215
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_close_mutation_evidence_for_ticket  # noqa: E501
     def test_close_refuses_on_bug003_alone(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

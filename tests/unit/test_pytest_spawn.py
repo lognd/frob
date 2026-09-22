@@ -24,6 +24,7 @@ class TestPytestImportable:
         assert pytest_importable(sys.executable) is True
 
     # frob:ticket T-3311
+    # frob:tests src/frob/process/_pytest_spawn.py::pytest_importable  # noqa: E501
     def test_false_when_not_importable(self) -> None:
         # frob:tests tests/unit/test_pytest_spawn.py::TestPytestImportable.test_false_when_not_importable  # noqa: E501
         # A python that genuinely does not exist -- guarded_subprocess_run's
@@ -46,6 +47,7 @@ class TestResolvePytestArgv:
         assert argv[1:3] == ["-m", "pytest"]
 
     # frob:ticket T-3311
+    # frob:tests src/frob/process/_pytest_spawn.py::resolve_pytest_argv  # noqa: E501
     def test_appends_extra_args(self) -> None:
         # frob:tests tests/unit/test_pytest_spawn.py::TestResolvePytestArgv.test_appends_extra_args  # noqa: E501
         result = resolve_pytest_argv("tests/test_x.py::test_y", "-q", "-o", "addopts=")
@@ -62,6 +64,7 @@ class TestResolvePytestArgv:
 
     # frob:ticket T-3311
     # frob:tests src/frob/process/_pytest_spawn.py::PytestSpawnError  # noqa: E501
+    # frob:tests src/frob/process/_pytest_spawn.py::resolve_pytest_argv  # noqa: E501
     def test_err_when_not_importable(self) -> None:
         # frob:tests tests/unit/test_pytest_spawn.py::TestResolvePytestArgv.test_err_when_not_importable  # noqa: E501
         with patch("frob.process._pytest_spawn.pytest_importable", return_value=False):

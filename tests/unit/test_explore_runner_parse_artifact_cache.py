@@ -17,6 +17,7 @@ class TestStampReadOnlyParseArtifactCacheEnv:
     already exists, and never creates it itself -- see T-5201 for the
     design rationale."""
 
+    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
     def test_stamps_env_when_cache_db_exists(self, tmp_path: Path, monkeypatch) -> None:
         # frob:tests \
         # src/frob/app/explore_runner.py::_stamp_read_only_parse_artifact_cache_env \

@@ -68,6 +68,7 @@ def test_pytest_summary_present():
     assert "failed" in r.summary.lower() or "1" in r.summary
 
 
+# frob:tests src/frob/process/parsers/common.py::ToolResult.as_text
 def test_pytest_as_text_shows_failures():
     r = parse_pytest(PYTEST_FAIL, exit_code=1)
     text = r.as_text()
@@ -87,6 +88,7 @@ def test_pytest_skipped():
     assert len(skipped) == 1
 
 
+# frob:tests src/frob/process/parsers/common.py::ToolResult.as_json
 def test_pytest_as_json():
     import json
 
@@ -376,6 +378,7 @@ class TestToolResultMeasurement:
         assert r.measurement == "measured"
         assert r.measurement_reason == ""
 
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement  # noqa: E501
     def test_measured_when_a_real_error_is_present(self) -> None:
         # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_a_real_error_is_present  # noqa: E501
         from frob.process.parsers.common import Diagnostic, ToolResult
@@ -386,6 +389,8 @@ class TestToolResultMeasurement:
         )
         assert r.measurement == "measured"
 
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement_reason  # noqa: E501
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement  # noqa: E501
     def test_not_measured_when_every_diagnostic_is_unresolved_info(self) -> None:
         # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
         from frob.process.parsers.common import Diagnostic, ToolResult
@@ -399,6 +404,7 @@ class TestToolResultMeasurement:
         assert r.measurement == "not_measured"
         assert "no commands declared" in r.measurement_reason
 
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement  # noqa: E501
     def test_measured_when_unresolved_mixes_with_a_real_warning(self) -> None:
         # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_unresolved_mixes_with_a_real_warning  # noqa: E501
         from frob.process.parsers.common import Diagnostic, ToolResult
@@ -459,6 +465,7 @@ class TestSubjectCount:
         r = ToolResult(tool="gate:PROFILE")
         assert r.subject_count is None
 
+    # frob:tests src/frob/process/parsers/common.py::ToolResult
     def test_populated_zero_is_distinct_from_none(self) -> None:
         # frob:tests \
         # tests/unit/test_process.py::TestSubjectCount.test_populated_zero_is_distinct_from_none  # noqa: E501
@@ -491,6 +498,7 @@ class TestEnforcingZeroSubjectDiagnostic:
             is None
         )
 
+    # frob:tests src/frob/process/parsers/common.py::enforcing_zero_subject_diagnostic
     def test_none_when_subject_count_is_none(self) -> None:
         # frob:tests \
         # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_subject_count_is_none  # noqa: E501
@@ -503,6 +511,7 @@ class TestEnforcingZeroSubjectDiagnostic:
             is None
         )
 
+    # frob:tests src/frob/process/parsers/common.py::enforcing_zero_subject_diagnostic
     def test_none_when_subject_count_is_positive(self) -> None:
         # frob:tests \
         # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_subject_count_is_positive  # noqa: E501
@@ -515,6 +524,7 @@ class TestEnforcingZeroSubjectDiagnostic:
             is None
         )
 
+    # frob:tests src/frob/process/parsers/common.py::enforcing_zero_subject_diagnostic
     def test_fires_when_enforcing_and_zero(self) -> None:
         # frob:tests \
         # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_fires_when_enforcing_and_zero  # noqa: E501

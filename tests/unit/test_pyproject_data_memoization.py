@@ -34,6 +34,7 @@ class TestPyprojectDataMemo:
     detect (a changed `pyproject.toml`), not just a "second call returns
     the same answer" timing assertion a broken cache would also pass."""
 
+    # frob:tests src/frob/lang/_nodes.py::_dict_or_empty  # noqa: E501
     def test_memoized(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests src/frob/lang/_nodes.py::_pyproject_data kind="unit"
         _seed_pyproject(tmp_path, "widget")
@@ -98,6 +99,7 @@ class TestPyprojectDataMemo:
             assert declared_project_package_name(tmp_path) is None
         assert calls["n"] == 0
 
+    # frob:tests src/frob/tickets/_models.py::over_broad_literal_globs  # noqa: E501
     def test_scales_across_many_candidates_and_leases(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

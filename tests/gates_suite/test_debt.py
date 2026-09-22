@@ -113,6 +113,7 @@ class TestDebtGate:
         )
         assert not any(v.rule == "DEBT003" for v in violations)
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::debt_gate  # noqa: E501
     def test_debt003_expired_by_version_is_reported(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_expired_by_version_is_reported  # noqa: E501
@@ -149,6 +150,7 @@ class TestDebtGate:
         assert v.severity == Severity.ERROR
         assert "ticket" in v.message
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::debt_gate  # noqa: E501
     def test_clean_debt_produces_no_violations(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_debt.py::TestDebtGate.test_clean_debt_produces_no_violations  # noqa: E501
@@ -166,6 +168,7 @@ class TestDebtGate:
         )
         assert violations == ()
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::list_debt  # noqa: E501
     def test_lists_every_debt_entry(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_debt.py::TestDebtGate.test_lists_every_debt_entry
@@ -206,6 +209,7 @@ class TestDebtGate:
         assert any(v.rule == "REL001" and "frob:debt" in v.message for v in violations)
 
     # frob:ticket T-0731
+    # frob:tests src/frob/gates/__init__.py::_rel001_bump_suppressed_under_agent
     def test_release_gate_bump_fires_without_frob_agent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -234,6 +238,7 @@ class TestDebtGate:
         )
 
     # frob:ticket T-0731
+    # frob:tests src/frob/gates/__init__.py::_rel001_bump_suppressed_under_agent
     def test_release_gate_bump_suppressed_under_frob_agent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -269,6 +274,7 @@ class TestDebtGate:
         )
 
     # frob:ticket T-0807
+    # frob:tests src/frob/gates/__init__.py::_rel001_land_owned
     def test_rel001_not_land_owned_root_checkout_no_ticket(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -307,6 +313,8 @@ class TestDebtGate:
         )
 
     # frob:ticket T-0807
+    # frob:tests src/frob/gates/__init__.py::_rel001_land_note
+    # frob:tests src/frob/gates/__init__.py::_rel001_land_owned
     def test_rel001_land_owned_via_linked_worktree_no_ticket(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -362,6 +370,8 @@ class TestDebtGate:
 
     # frob:ticket T-0807
     # frob:ticket T-0601
+    # frob:tests src/frob/gates/__init__.py::_rel001_land_note
+    # frob:tests src/frob/gates/__init__.py::_rel001_land_owned
     def test_rel001_land_owned_via_ticket_lease(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -417,6 +427,7 @@ class TestDebtGate:
         )
 
     # frob:ticket T-0807
+    # frob:tests src/frob/gates/__init__.py::_rel001_is_linked_worktree
     def test_rel001_linked_worktree_detected(self, tmp_path: Path) -> None:
         """T-0807: `_rel001_is_linked_worktree` is `True` for a linked
         worktree and `False` for the main checkout it was created from."""
@@ -492,6 +503,7 @@ class TestReleaseOpenMilestoneViolations:
         assert "T-0001" in violations[0].message
         assert "1.0.0" in violations[0].message
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations  # noqa: E501
     def test_open_ticket_in_other_milestone_does_not_refuse(
         self, tmp_path: Path
     ) -> None:
@@ -503,6 +515,7 @@ class TestReleaseOpenMilestoneViolations:
         write_ticket(tmp_path, t).danger_ok
         assert _release_open_milestone_violations(tmp_path, "1.0.0") == ()
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations  # noqa: E501
     def test_terminal_ticket_in_cut_milestone_does_not_refuse(
         self, tmp_path: Path
     ) -> None:
@@ -516,6 +529,7 @@ class TestReleaseOpenMilestoneViolations:
         write_ticket(tmp_path, t).danger_ok
         assert _release_open_milestone_violations(tmp_path, "1.0.0") == ()
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations  # noqa: E501
     def test_no_open_tickets_in_milestone_succeeds(self, tmp_path: Path) -> None:
         """Explicit acceptance case: a release cut with no open tickets in
         that milestone at all must succeed (empty queue)."""
@@ -523,6 +537,7 @@ class TestReleaseOpenMilestoneViolations:
 
         assert _release_open_milestone_violations(tmp_path, "1.0.0") == ()
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations  # noqa: E501
     def test_names_every_blocking_ticket(self, tmp_path: Path) -> None:
         """Two separate open tickets in the cut milestone -- the refusal
         must name BOTH, not just report that something blocks."""
@@ -537,6 +552,7 @@ class TestReleaseOpenMilestoneViolations:
         assert "T-0001" in violations[0].message
         assert "T-0002" in violations[0].message
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations
     def test_v_prefixed_ticket_milestone_refuses(self, tmp_path: Path) -> None:
         """T-4463: an open ticket carrying milestone "v1.0.0" must still
         block a "1.0.0" release cut -- REL001's old literal string
@@ -551,6 +567,7 @@ class TestReleaseOpenMilestoneViolations:
         assert violations[0].rule == "REL001"
         assert "T-0001" in violations[0].message
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations  # noqa: E501
     def test_queue_unavailable_does_not_crash(self, tmp_path: Path) -> None:
         """A queue-load failure degrades to "skip this check", never a
         hard crash of the whole release gate -- write a malformed ledger
@@ -600,6 +617,7 @@ class TestDeprecatedGate:
         assert v is not None
         assert v.severity == Severity.ERROR
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_gate  # noqa: E501
     def test_depr002_closed_ticket_is_reported(self, tmp_path: Path) -> None:
         """T-0576: a frob:deprecated bound to a closed ticket is DEPR002 --
         the ticket closed but the directive (presumably the symbol) is
@@ -620,6 +638,7 @@ class TestDeprecatedGate:
         assert v.severity == Severity.ERROR
         assert not any(v.rule in ("DEPR003", "DEPR004") for v in violations)
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_gate  # noqa: E501
     def test_depr003_in_window_warns(self, tmp_path: Path) -> None:
         """T-0576: an open, not-yet-sunset frob:deprecated is a WARNING --
         visible, but does not fail `frob check`."""
@@ -639,6 +658,7 @@ class TestDeprecatedGate:
         assert v.severity == Severity.WARN
         assert not any(v.rule == "DEPR004" for v in violations)
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_gate  # noqa: E501
     def test_depr004_past_sunset_errors(self, tmp_path: Path) -> None:
         """T-0576: an open frob:deprecated past its sunset date escalates
         from a warning to DEPR004, an ERROR."""
@@ -658,6 +678,7 @@ class TestDeprecatedGate:
         assert v.severity == Severity.ERROR
         assert not any(v.rule == "DEPR003" for v in violations)
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_gate  # noqa: E501
     def test_clean_deprecated_produces_no_violations(self, tmp_path: Path) -> None:
         """T-0576: a well-formed, open, still-in-window deprecation whose
         ticket is open produces only the DEPR003 warning, nothing else."""
@@ -673,6 +694,7 @@ class TestDeprecatedGate:
         violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         assert _rules(violations) == ["DEPR003"]
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::list_deprecated  # noqa: E501
     def test_lists_every_deprecated_entry(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_lists_every_deprecated_entry  # noqa: E501
@@ -691,6 +713,7 @@ class TestDeprecatedGate:
         assert entry.sunset == "2099-01-01"
         assert entry.expired is False
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_current_references kind="unit"  # noqa: E501
     def test_depr005_reference_set_combines_consumers_and_xref(
         self, tmp_path: Path
     ) -> None:
@@ -709,6 +732,7 @@ class TestDeprecatedGate:
         assert any(r.endswith("importer.py:1") for r in refs)
         assert not any(r.startswith("lib.py") or "/lib.py" in r for r in refs)
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_gate  # noqa: E501
     def test_depr005_new_caller_errors(self, tmp_path: Path) -> None:
         """T-0639: a `frob:deprecated` symbol with a baselined entry that
         omits a currently-observed reference fires DEPR005, naming the new
@@ -739,6 +763,7 @@ class TestDeprecatedGate:
         assert v.file.endswith("caller.py")
         assert "src/a.py::helper" in v.message
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_gate  # noqa: E501
     def test_depr005_no_baseline_entry_is_silent(self, tmp_path: Path) -> None:
         """T-0639: a deprecated symbol never baselined fires no DEPR005 --
         seeding, not flagging, is `tighten_deprecated_baseline`'s job."""

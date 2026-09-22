@@ -57,6 +57,7 @@ class TestChangelogNoteForTicket:
     changed" line instead of always falling back to the (problem-stated)
     ticket title."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_changelog_note_for_ticket  # noqa: E501
     def test_prefers_recovered_why_narrative(self) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket.test_prefers_recovered_why_narrative  # noqa: E501
         note = ticket_runner._changelog_note_for_ticket(_FakeTicketWithNarrative())
@@ -65,6 +66,7 @@ class TestChangelogNoteForTicket:
             "planted cycle in top-level layout is actually caught."
         )
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_changelog_note_for_ticket  # noqa: E501
     def test_falls_back_to_title_with_no_narrative(self) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket.test_falls_back_to_title_with_no_narrative  # noqa: E501
         note = ticket_runner._changelog_note_for_ticket(_FakeTicket())
@@ -224,7 +226,9 @@ class TestApplyReleaseBumpForLand:
         monkeypatch.setattr(
             ticket_runner, "_root_release_manifest", lambda root: manifest
         )
-        monkeypatch.setattr(ticket_runner, "_graph_snapshot", lambda root: Err("boom"))
+        monkeypatch.setattr(
+            ticket_runner, "_fresh_graph_snapshot", lambda root: Err("boom")
+        )
 
         result = ticket_runner._apply_release_bump_for_land(
             tmp_path, _FakeTicket(), "T-0001"

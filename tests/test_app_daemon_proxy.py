@@ -90,6 +90,7 @@ class TestQuery:
         overrides this with FROB_NO_DAEMON, which still wins."""
         monkeypatch.setenv("FROB_DAEMON", "1")
 
+    # frob:tests src/frob/app/_daemon_proxy.py::query kind="unit"  # noqa: E501
     def test_no_daemon_env_bypass(self, root: Path, monkeypatch) -> None:
         # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_env_bypass
         monkeypatch.setenv("FROB_NO_DAEMON", "1")
@@ -116,6 +117,7 @@ class TestQuery:
 
     # frob:ticket T-3508
     # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_win32_refuses_before_touching_af_unix  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::query  # noqa: E501
     def test_win32_refuses_before_touching_af_unix(
         self, root: Path, monkeypatch
     ) -> None:
@@ -138,6 +140,7 @@ class TestQuery:
         assert result.is_err
         assert result.danger_err is ProxyReason.PlatformUnsupported
 
+    # frob:tests src/frob/app/_daemon_proxy.py::query kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -159,6 +162,7 @@ class TestQuery:
         finally:
             _shutdown(root, thread)
 
+    # frob:tests src/frob/app/_daemon_proxy.py::query kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -198,6 +202,7 @@ def _shutdown(root: Path, thread: threading.Thread) -> None:
 
 
 class TestEnsureDaemon:
+    # frob:tests src/frob/app/_daemon_proxy.py::ensure_daemon kind="unit"  # noqa: E501
     def test_spawns_when_nothing_recorded(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_spawns_when_nothing_recorded  # noqa: E501
@@ -213,6 +218,7 @@ class TestEnsureDaemon:
         ensure_daemon(root)
         assert spawned == [root]
 
+    # frob:tests src/frob/app/_daemon_proxy.py::ensure_daemon kind="unit"  # noqa: E501
     def test_noop_when_version_matches(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_matches  # noqa: E501
@@ -229,6 +235,7 @@ class TestEnsureDaemon:
         ensure_daemon(root)
         assert spawned == []
 
+    # frob:tests src/frob/app/_daemon_proxy.py::ensure_daemon kind="unit"  # noqa: E501
     def test_restarts_on_version_skew(self, root: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_restarts_on_version_skew
@@ -247,6 +254,7 @@ class TestEnsureDaemon:
         assert shutdown_calls == [root]
         assert spawned == [root]
 
+    # frob:tests src/frob/app/_daemon_proxy.py::ensure_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -279,6 +287,7 @@ class TestSourceHeadSha:
     version-string-blind self-heal gap."""
 
     # frob:tests src/frob/serve/_socketd.py::_source_head_sha
+    # frob:tests src/frob/app/_daemon_proxy.py::_client_source_sha
     def test_finds_git_ancestor(self) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_finds_git_ancestor
@@ -297,6 +306,8 @@ class TestSourceHeadSha:
         assert sha == expected
         _daemon_proxy._client_source_sha.cache_clear()
 
+    # frob:tests src/frob/serve/_socketd.py::_source_head_sha  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_client_source_sha  # noqa: E501
     def test_none_when_no_git_ancestor(self, monkeypatch, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_none_when_no_git_ancestor  # noqa: E501
@@ -458,6 +469,7 @@ class TestDifferentialParity:
         # identical, not the diagnostic narration around it.
         _assert_daemon_parity(project, ["perf", "hot", "--json"])
 
+    # frob:tests src/frob/app/graph_runner.py::_try_affects_via_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -481,6 +493,8 @@ class TestDifferentialParity:
             project, ["graph", "affects", "helper.py::helper", "--json"]
         )
 
+    # frob:tests src/frob/serve/_tools.py::frob_graph_query kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/graph_runner.py::_try_query_via_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -532,6 +546,7 @@ class TestDifferentialParity:
 
         _assert_daemon_parity(project, ["ticket", "doable", "--json"])
 
+    # frob:tests src/frob/app/check_runner.py::_try_check_delta_via_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -602,6 +617,8 @@ class TestDifferentialParity:
         # `_try_touched_via_daemon` special-case identically (T-1128).
         _assert_daemon_parity(project, ["test", "--json"])
 
+    # frob:tests src/frob/serve/_tools.py::frob_exports kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/exports_runner.py::_try_exports_via_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -634,6 +651,7 @@ class TestDifferentialParity:
         _assert_daemon_parity(project, ["exports", "pkg", "--json"])
 
     # frob:tests src/frob/app/stats_runner.py::_try_stats_via_daemon kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_tools.py::frob_stats kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -654,6 +672,7 @@ class TestDifferentialParity:
         _assert_daemon_parity(project, ["stats", "--json"])
 
     # frob:tests src/frob/app/map_runner.py::_try_map_via_daemon kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_tools.py::frob_map kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -826,6 +845,7 @@ class TestProbeDaemon:
         # must not flake on a loaded box the way a tight bound would.
         assert elapsed < 3.0, f"probe took {elapsed:.2f}s, budget was 0.2s"
 
+    # frob:tests src/frob/app/_daemon_proxy.py::_clear_orphaned_socket  # noqa: E501
     def test_orphaned_socket_is_unlinked(self, tmp_path):
         """The orphan must be cleared, so the NEXT probe is a clean
         NoSocket instead of another refused connect forever."""
@@ -924,6 +944,7 @@ class TestProbeDaemonVersion:
         thread.start()
         return server, thread
 
+    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
     def test_matching_version_is_live(self, tmp_path):
         from frob.app._daemon_proxy import (
             DaemonLiveness,
@@ -958,6 +979,7 @@ class TestProbeDaemonVersion:
             server.close()
             thread.join(timeout=2)
 
+    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
     def test_matching_version_different_source_sha_is_skew(self, tmp_path):
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_matching_version_different_source_sha_is_skew  # noqa: E501
@@ -982,6 +1004,7 @@ class TestProbeDaemonVersion:
             server.close()
             thread.join(timeout=2)
 
+    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
     def test_missing_source_sha_is_skew_not_live(self, tmp_path):
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_missing_source_sha_is_skew_not_live  # noqa: E501
@@ -1015,6 +1038,7 @@ class TestDaemonOptIn:
     must not engage unless explicitly asked for. Opt-out meant every
     unsuspecting session paid for those defects by default."""
 
+    # frob:tests src/frob/app/_daemon_proxy.py::_daemon_enabled  # noqa: E501
     def test_unset_env_disables_the_daemon(self, tmp_path, monkeypatch):
         """The default. Nothing set -> no daemon, no spawn."""
         from frob.app._daemon_proxy import ProxyReason, query
@@ -1025,6 +1049,7 @@ class TestDaemonOptIn:
         assert result.is_err
         assert result.danger_err is ProxyReason.Disabled
 
+    # frob:tests src/frob/app/_daemon_proxy.py::_daemon_enabled  # noqa: E501
     def test_frob_daemon_1_enables_the_daemon(self, monkeypatch):
         """The opt-in must actually opt in -- a flag stuck off is as broken
         as one stuck on."""

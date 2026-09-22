@@ -84,6 +84,7 @@ class TestPerf008LoopInvariantEffect:
         )
         assert any(v.rule == "PERF008" for v in violations)
 
+    # frob:tests src/frob/perf/_loop_effects.py::loop_invariant_effect_violations  # noqa: E501
     def test_ticket_row_rev_parse_shape_fires_on_real_repo_history_fixture(
         self, tmp_path: Path
     ) -> None:
@@ -168,6 +169,8 @@ class TestPerf008LoopInvariantEffect:
         violations = loop_invariant_effect_violations([parsed])
         assert violations == ()
 
+    # frob:tests src/frob/perf/_loop_effects.py::loop_invariant_effect_violations  # noqa: E501
+    # frob:tests src/frob/perf/_effect_summaries.py::EffectGraph.reachable_effect  # noqa: E501
     def test_loop_invariant_spawn_call_three_hops_deep_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -215,6 +218,7 @@ class TestPerf008LoopInvariantEffect:
         violations = loop_invariant_effect_violations(files)
         assert any(v.rule == "PERF008" for v in violations)
 
+    # frob:tests src/frob/perf/_loop_effects.py::loop_invariant_effect_violations  # noqa: E501
     def test_unresolvable_callee_does_not_crash_and_does_not_fire(
         self, tmp_path: Path
     ) -> None:
@@ -235,6 +239,7 @@ class TestPerf008LoopInvariantEffect:
         violations = loop_invariant_effect_violations([parsed])
         assert violations == ()
 
+    # frob:tests src/frob/perf/_effect_summaries.py::EffectGraph.callee_is_memoized  # noqa: E501
     def test_loop_invariant_call_to_lru_cached_helper_is_not_flagged(
         self, tmp_path: Path
     ) -> None:

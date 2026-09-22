@@ -149,6 +149,7 @@ class TestRecordLandCommitOutOfTree:
     """The out-of-tree record's before/after pair, with the probe's own
     positive control, plus its compare-and-swap refusal path."""
 
+    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit  # noqa: E501
     def test_probe_catches_the_in_root_write_positive_control(
         self, landed_root: Path
     ) -> None:
@@ -194,6 +195,7 @@ class TestRecordLandCommitOutOfTree:
         )
 
     # frob:ticket T-3442
+    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit  # noqa: E501
     def test_root_never_goes_dirty_while_the_record_is_made(
         self, landed_root: Path
     ) -> None:
@@ -244,6 +246,7 @@ class TestRecordLandCommitOutOfTree:
         assert reloaded.is_ok
         assert reloaded.danger_ok.land_commit == land_sha
 
+    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit  # noqa: E501
     def test_record_publishes_by_cas_and_refuses_a_moved_ref(
         self, landed_root: Path
     ) -> None:
@@ -277,6 +280,7 @@ class TestDeriveLandCommitByGrep:
     from the primary land path -- this is the fallback readers use in its
     place."""
 
+    # frob:tests src/frob/tickets/_land_squash.py::derive_land_commit_by_grep  # noqa: E501
     def test_finds_the_squash_apply_commit_by_id_and_title_grep(
         self, tmp_path: Path
     ) -> None:
@@ -302,6 +306,7 @@ class TestDeriveLandCommitByGrep:
 
         assert found == expected_sha
 
+    # frob:tests src/frob/tickets/_land_squash.py::derive_land_commit_by_grep  # noqa: E501
     def test_returns_none_when_no_matching_commit_exists(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep.test_returns_none_when_no_matching_commit_exists  # noqa: E501
         """MUST-STAY-QUIET: an ordinary commit history with no matching

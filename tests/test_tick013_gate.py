@@ -80,6 +80,7 @@ class TestTick013EmptyScope:
         assert "T-2700" in tick013[0].message
 
     # frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_planned_empty_scope_fires  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick013_empty_scope_without_declaration  # noqa: E501
     def test_planned_empty_scope_fires(self, tmp_path: Path) -> None:
         """Must-fire control: PLANNED is treated the same as IN_PROGRESS
         (mirroring TICK009's own scan population)."""
@@ -89,6 +90,7 @@ class TestTick013EmptyScope:
         assert any(v.rule == "TICK013" for v in violations)
 
     # frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_declared_no_scope_is_silent  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick013_empty_scope_without_declaration  # noqa: E501
     def test_declared_no_scope_is_silent(self, tmp_path: Path) -> None:
         """Must-not-fire control: `no_scope_declared=True` is the
         first-class, justified opt-out (T-2394) -- an empty scope that
@@ -104,6 +106,7 @@ class TestTick013EmptyScope:
         assert not any(v.rule == "TICK013" for v in violations)
 
     # frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_nonempty_scope_is_silent  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick013_empty_scope_without_declaration  # noqa: E501
     def test_nonempty_scope_is_silent(self, tmp_path: Path) -> None:
         """Must-not-fire control: a legitimately declared, non-empty
         scope never fires TICK013."""
@@ -115,6 +118,7 @@ class TestTick013EmptyScope:
         assert not any(v.rule == "TICK013" for v in violations)
 
     # frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_terminal_state_empty_scope_is_silent  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick013_empty_scope_without_declaration  # noqa: E501
     def test_terminal_state_empty_scope_is_silent(self, tmp_path: Path) -> None:
         """Must-not-fire control: a DONE ticket with an empty scope holds
         no lease at all -- terminal states are exempt entirely."""
@@ -124,6 +128,7 @@ class TestTick013EmptyScope:
         assert not any(v.rule == "TICK013" for v in violations)
 
     # frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_queued_empty_scope_is_silent  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick013_empty_scope_without_declaration  # noqa: E501
     def test_queued_empty_scope_is_silent(self, tmp_path: Path) -> None:
         """Must-not-fire control: a QUEUED ticket's scope is a pre-work
         prediction (T-1645's own reasoning, shared with TICK009) -- not

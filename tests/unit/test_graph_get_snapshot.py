@@ -26,6 +26,7 @@ class TestGetSnapshot:
     T-4688 introduced to replace 18 independently duplicated
     `load_graph`-then-`build_graph` call sites across src/frob."""
 
+    # frob:tests src/frob/graph/__init__.py::get_snapshot
     def test_second_call_on_unchanged_tree_does_not_rebuild(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -54,6 +55,7 @@ class TestGetSnapshot:
         assert second.is_ok
         assert build_calls == []
 
+    # frob:tests src/frob/graph/__init__.py::get_snapshot
     def test_changed_file_triggers_exactly_one_rebuild(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -81,6 +83,7 @@ class TestGetSnapshot:
         assert result.is_ok
         assert len(build_calls) == 1
 
+    # frob:tests src/frob/graph/__init__.py::get_snapshot
     def test_load_failure_falls_back_to_build(self, tmp_path: Path) -> None:
         """A never-built cache (no `.frob/cache.db` yet) is a `load_graph`
         miss that `get_snapshot` transparently covers via `build_graph`."""

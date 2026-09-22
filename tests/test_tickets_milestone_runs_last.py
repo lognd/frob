@@ -95,6 +95,7 @@ class TestRunsLastMilestoneScoping:
         result = doable(queue)
         assert last.id not in {t.id for t in result}
 
+    # frob:tests src/frob/tickets/_doable.py::_other_open_tickets  # noqa: E501
     def test_milestoned_runs_last_doable_once_same_milestone_work_terminal(
         self,
     ) -> None:
@@ -107,6 +108,7 @@ class TestRunsLastMilestoneScoping:
         result = doable(queue)
         assert last.id in {t.id for t in result}
 
+    # frob:tests src/frob/tickets/_doable.py::_other_open_tickets  # noqa: E501
     def test_milestoned_runs_last_not_blocked_by_other_milestone_open_work(
         self,
     ) -> None:
@@ -122,6 +124,7 @@ class TestRunsLastMilestoneScoping:
         result = doable(queue)
         assert last.id in {t.id for t in result}
 
+    # frob:tests src/frob/tickets/_doable.py::_other_open_tickets  # noqa: E501
     def test_runs_last_sibling_carve_out_preserved_within_a_milestone(
         self,
     ) -> None:

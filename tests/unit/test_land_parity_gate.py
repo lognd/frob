@@ -100,6 +100,7 @@ class TestLandParityDocTestGate:
         assert land_parity_doc_test_gate(repo) == ()
 
     # frob:tests tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate.test_no_diff_is_quiet  # noqa: E501
+    # frob:tests src/frob/gates/_land_parity.py::land_parity_doc_test_gate  # noqa: E501
     def test_no_diff_is_quiet(self, repo: Path) -> None:
         """Must-still-pass control: a clean checkout with no working-tree
         diff against `main` reports nothing (fail-open on an empty diff,
@@ -133,6 +134,7 @@ class TestLandParityLongFunctionGate:
         assert "brand_new_giant_function" in violations[0].message
 
     # frob:tests tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate.test_pre_existing_over_threshold_function_merely_touched_is_quiet  # noqa: E501
+    # frob:tests src/frob/gates/_land_parity.py::land_parity_long_function_gate  # noqa: E501
     def test_pre_existing_over_threshold_function_merely_touched_is_quiet(
         self, repo: Path
     ) -> None:
@@ -157,6 +159,7 @@ class TestLandParityLongFunctionGate:
         assert land_parity_long_function_gate(repo) == ()
 
     # frob:tests tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate.test_no_diff_is_quiet  # noqa: E501
+    # frob:tests src/frob/gates/_land_parity.py::land_parity_long_function_gate  # noqa: E501
     def test_no_diff_is_quiet(self, repo: Path) -> None:
         """Must-still-pass control: a clean checkout with no working-tree
         diff against `main` reports nothing."""

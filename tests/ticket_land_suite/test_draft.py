@@ -175,6 +175,8 @@ class TestStandaloneSiblingDraftSurvivesLand:
     nor already present on main) -- it must survive and land with a real,
     finalized id."""
 
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_carry_forward_new_worktree_tickets  # noqa: E501
+    # frob:tests src/frob/tickets/_land_finalize.py::_finalize_sibling_drafts  # noqa: E501
     def test_sibling_draft_ticket_finalized_and_lands_alongside(
         self, repo: Path
     ) -> None:
@@ -391,6 +393,7 @@ class TestDraftReferenceRewriteOnLand:
     own (pre-finalize) draft id must come out with that reference rewritten
     to the final id, and zero `T-draft-` ids left anywhere in the ledger."""
 
+    # frob:tests src/frob/tickets/_land_finalize.py::_rewrite_draft_references_in_one_ledger  # noqa: E501
     def test_land_rewrites_own_draft_id_reference_in_done_report(
         self, repo: Path
     ) -> None:
@@ -534,6 +537,7 @@ class TestDraftReferenceRewriteOnLand:
         ledger_text = ledger_path(repo).read_text(encoding="utf-8")
         assert "T-draft-" not in ledger_text
 
+    # frob:tests src/frob/tickets/_land_finalize.py::_rewrite_draft_references_in_waive_sites  # noqa: E501
     def test_land_rewrites_strata_waive_clause_draft_id_reference(
         self, repo: Path
     ) -> None:

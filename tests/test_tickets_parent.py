@@ -187,6 +187,7 @@ class TestSetParent:
         assert result.is_err
         assert result.danger_err is TicketError.ParentCycle
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_longer_ring_cycle_refuses(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_longer_ring_cycle_refuses  # noqa: E501
         # A -> B -> C (parent chain); re-pointing C's parent at A closes a
@@ -202,6 +203,7 @@ class TestSetParent:
         assert result.is_err
         assert result.danger_err is TicketError.ParentCycle
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_tier_inversion_refuses(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_tier_inversion_refuses  # noqa: E501
         # A tier=ticket cannot parent a tier=epic.
@@ -214,6 +216,7 @@ class TestSetParent:
         assert result.is_err
         assert result.danger_err is TicketError.ParentTierInversion
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_epic_can_parent_epic(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_epic_can_parent_epic  # noqa: E501
         # Positive control: same-tier chaining is allowed, not just
@@ -228,6 +231,7 @@ class TestSetParent:
         assert result.is_ok
         assert result.danger_ok.parent == "T-0001"
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_story_cannot_parent_epic(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_story_cannot_parent_epic  # noqa: E501
         # A lower tier (story) cannot parent a higher one (epic), same
@@ -241,6 +245,7 @@ class TestSetParent:
         assert result.is_err
         assert result.danger_err is TicketError.ParentTierInversion
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_reason_missing_refuses  # noqa: E501
         leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET)
@@ -252,6 +257,7 @@ class TestSetParent:
         assert result.is_err
         assert result.danger_err is TicketError.ParentTicketReasonMissing
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent  # noqa: E501
     def test_moving_an_existing_parent_drops_the_old_edge(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_moving_an_existing_parent_drops_the_old_edge  # noqa: E501
         old_epic = _ticket(ticket_id="T-0001", tier=TicketTier.EPIC)
@@ -269,6 +275,7 @@ class TestSetParent:
         assert loaded.is_ok
         assert loaded.danger_ok["T-0003"].parent == "T-0002"
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent  # noqa: E501
     def test_archived_ticket_routes_to_archive_path(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_archived_ticket_routes_to_archive_path  # noqa: E501
         # Mirrors T-2678's set_body fix: re-parenting an ARCHIVED ticket

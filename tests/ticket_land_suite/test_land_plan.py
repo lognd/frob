@@ -43,6 +43,8 @@ class TestLandPlan:
 
     # frob:ticket T-1269
     # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::land_plan
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_plan_check_ticks_fn  # noqa: E501
     def test_merges_and_finalizes_every_draft_atomically(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -81,6 +83,7 @@ class TestLandPlan:
     # frob:tests \
     # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_dry_run_unwinds_the_\
     # merge
+    # frob:tests src/frob/tickets/_land.py::land_plan
     def test_dry_run_unwinds_the_merge(self, repo: Path, tmp_path: Path) -> None:
         from frob.tickets._land import land_plan
 
@@ -102,6 +105,7 @@ class TestLandPlan:
     # frob:tests \
     # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merge_conflict_abort\
     # s_and_refuses
+    # frob:tests src/frob/tickets/_land.py::land_plan
     def test_merge_conflict_aborts_and_refuses(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -127,6 +131,7 @@ class TestLandPlan:
     # frob:ticket T-1269
     # frob:ticket T-1522
     # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::land_plan
     def test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -206,6 +211,7 @@ class TestLandPlan:
 
     # frob:ticket T-1269
     # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_plan_cmd  # noqa: E501
     def test_cli_dispatches_to_land_plan_and_reports(
         self, repo: Path, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -231,6 +237,10 @@ class TestLandPlan:
     # frob:ticket T-2198
     # frob:tests \
     # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_plan_cmd  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_plan_check_ticks_fn  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_plan_pre_merge_tick_baseline  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_plan_tick_findings  # noqa: E501
     def test_pre_existing_tick004_does_not_block_ledger_only_plan_land(
         self, repo: Path, tmp_path: Path
     ) -> None:

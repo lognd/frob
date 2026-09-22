@@ -22,6 +22,7 @@ from frob.process._project_tool import (
 class TestProjectToolArgv:
     """`project_tool_argv` -- the one correct argv shape."""
 
+    # frob:tests src/frob/process/_project_tool.py::project_tool_argv
     def test_shape(self, tmp_path: Path) -> None:
         """`uv run --no-sync --project <root> <tool> <*args>`, in that
         order -- T-4163: `--no-sync` stops a read-only tool spawn from
@@ -53,6 +54,8 @@ class TestProjectToolArgv:
 
 
 class TestToolIdentity:
+    # frob:tests src/frob/process/_project_tool.py::ToolIdentity.describe
+    # frob:tests src/frob/process/_project_tool.py::ToolIdentity
     def test_describe(self) -> None:
         """`describe()` renders `<path> (<version>)`."""
         identity = ToolIdentity(path="/x/ty", version="ty 0.0.46")
@@ -62,6 +65,7 @@ class TestToolIdentity:
 class TestResolveProjectTool:
     """`resolve_project_tool` -- resolved path + version, both Ok/Err."""
 
+    # frob:tests src/frob/process/_project_tool.py::resolve_project_tool  # noqa: E501
     def test_ok_resolves_path_and_version(self, tmp_path: Path) -> None:
         """Two successful spawns yield `Ok(ToolIdentity(...))` built from
         their stdout."""
@@ -143,6 +147,7 @@ class TestResolveProjectTool:
         assert result.is_ok
         assert result.danger_ok.path == "<unresolved:ty>"
 
+    # frob:tests src/frob/process/_project_tool.py::resolve_project_tool
     def test_absent_err(self, tmp_path: Path) -> None:
         """T-4354: when the `--version` spawn is `uv run` itself failing
         to spawn `tool` (not a diagnostic `tool` printed), the result is
@@ -173,6 +178,7 @@ class TestToolAbsent:
     run`'s own "could not spawn `tool` at all" failure, distinct from any
     diagnostic `tool` itself might print on a nonzero exit."""
 
+    # frob:tests src/frob/process/_project_tool.py::tool_absent_from_project
     def test_true_on_spawn_failure(self) -> None:
         """The exact shape reproduced locally with PATH cleared: exit 2
         and uv's own "Failed to spawn: `<tool>`" line."""
@@ -182,12 +188,14 @@ class TestToolAbsent:
         )
         assert tool_absent_from_project("ty", 2, stderr) is True
 
+    # frob:tests src/frob/process/_project_tool.py::tool_absent_from_project
     def test_false_unrelated_exit(self) -> None:
         """A real diagnostic exit (e.g. `ty` finding type errors) is
         never mistaken for a missing binary, even at the same exit
         code some tools happen to also use."""
         assert tool_absent_from_project("ty", 2, "error[missing-argument]") is False
 
+    # frob:tests src/frob/process/_project_tool.py::tool_absent_from_project
     def test_false_wrong_tool(self) -> None:
         """Matches only the SPECIFIC tool's own spawn-failure line --
         another tool's identical failure text must not false-positive

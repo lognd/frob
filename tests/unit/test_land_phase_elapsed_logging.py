@@ -33,6 +33,7 @@ class TestLandPhaseElapsedLogging:
 
     # frob:ticket T-4417
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_phase_elapsed_seconds
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_LandPhaseElapsedFilter
     def test_elapsed_seconds_is_monotonic_across_phase_lines(self, caplog) -> None:
         """Two "ticket land: ..." lines a measurable gap apart must carry
         strictly increasing elapsed-seconds prefixes, and the very first
@@ -62,6 +63,7 @@ class TestLandPhaseElapsedLogging:
         assert second_elapsed > first_elapsed
 
     # frob:ticket T-4417
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_LandPhaseElapsedFilter
     def test_non_phase_log_lines_are_left_untouched(self, caplog) -> None:
         """A log line from this same logger that is NOT a "ticket land:
         ..." phase-transition line must pass through completely

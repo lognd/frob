@@ -102,6 +102,7 @@ class TestApplyReleaseBumpOutOfTree:
         status = _run(["git", "status", "--porcelain"], scratch_repo).stdout
         assert status == ""
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_release_bump_out_of_tree
     def test_bump_folds_into_a_new_commit_on_composed_commit(
         self, scratch_repo: Path
     ) -> None:
@@ -137,6 +138,7 @@ class TestApplyReleaseBumpOutOfTree:
         parent = _run(["git", "rev-parse", f"{new_sha}^"], scratch_repo).stdout.strip()
         assert parent == pre_land_tip
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_release_bump_out_of_tree
     def test_no_bump_returns_composed_commit_unchanged(
         self, scratch_repo: Path
     ) -> None:
@@ -153,6 +155,7 @@ class TestApplyReleaseBumpOutOfTree:
         assert result.is_ok, result.err
         assert result.danger_ok == composed
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_release_bump_out_of_tree
     def test_bump_failure_leaves_repo_working_tree_untouched(
         self, scratch_repo: Path
     ) -> None:

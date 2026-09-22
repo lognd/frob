@@ -20,6 +20,7 @@ class TestUnscopedErrorFindingsPublicSeam:
 
     # frob:ticket T-2450
     # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam.test_delegates_with_the_same_arguments  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::unscoped_error_findings
     def test_delegates_with_the_same_arguments(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -499,6 +500,7 @@ class TestRecordVerifyIntentForLandedCommit:
         )
 
     # frob:ticket T-1736
+    # frob:tests src/frob/tickets/_land.py::_record_verify_intent_for_landed_commit
     def test_dry_run_is_a_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_dry_run_is_a_noop  # noqa: E501
         from frob.verify import queue_status
@@ -509,6 +511,7 @@ class TestRecordVerifyIntentForLandedCommit:
         assert queue_status(tmp_path).danger_ok == ()
 
     # frob:ticket T-1736
+    # frob:tests src/frob/tickets/_land.py::_record_verify_intent_for_landed_commit
     def test_real_land_records_an_intent_entry(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -548,6 +551,7 @@ class TestRecordVerifyIntentForLandedCommit:
         assert entry.touched_symbols == ("a.py::fn",)
 
     # frob:ticket T-1736
+    # frob:tests src/frob/tickets/_land.py::_record_verify_intent_for_landed_commit
     def test_no_resolvable_symbols_records_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -567,6 +571,7 @@ class TestRecordVerifyIntentForLandedCommit:
         assert queue_status(tmp_path).danger_ok == ()
 
     # frob:ticket T-1736
+    # frob:tests src/frob/tickets/_land.py::_record_verify_intent_for_landed_commit
     def test_diff_failure_is_logged_not_raised(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -585,6 +590,7 @@ class TestRecordVerifyIntentForLandedCommit:
         assert queue_status(tmp_path).danger_ok == ()
 
     # frob:ticket T-4634
+    # frob:tests src/frob/tickets/_land.py::_record_verify_intent_for_landed_commit
     def test_given_snapshot_is_reused_never_reloaded(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -113,6 +113,7 @@ def test_partial_override(tmp_path: Path) -> None:
     assert cfg["max_class_methods"] == ARCH_DEFAULT_MAX_CLASS_METHODS
 
 
+# frob:tests src/frob/repo_meta.py::load_arch_config
 def test_malformed_toml_defaults(tmp_path: Path) -> None:
     """A frob.toml that fails to parse degrades to the calibrated defaults, not a crash."""
     (tmp_path / "frob.toml").write_text("this is not [valid toml")
@@ -127,6 +128,7 @@ def _write_frob_pyproject(root: Path, version: str) -> None:
     )
 
 
+# frob:tests src/frob/repo_meta.py::stale_install_warning  # noqa: E501
 def test_stale_install_warning_flags_version_mismatch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -152,6 +154,7 @@ def test_stale_install_warning_flags_version_mismatch(
     assert "0.27.0" in warning
 
 
+# frob:tests src/frob/repo_meta.py::stale_install_warning  # noqa: E501
 def test_stale_install_warning_none_for_editable_checkout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -172,6 +175,7 @@ def test_stale_install_warning_none_for_editable_checkout(
     assert stale_install_warning(tmp_path) is None
 
 
+# frob:tests src/frob/repo_meta.py::stale_install_warning  # noqa: E501
 def test_stale_install_warning_none_when_versions_match(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -192,6 +196,8 @@ def test_stale_install_warning_none_when_versions_match(
 
 
 # frob:ticket T-1218
+# frob:tests src/frob/repo_meta.py::stale_binary_warning  # noqa: E501
+# frob:tests src/frob/repo_meta.py::declared_min_frob_version  # noqa: E501
 def test_stale_binary_warning_flags_version_below_floor(tmp_path: Path) -> None:
     """T-1218: the invoked frob's own version reading below a repo's
     declared frob.toml min_frob_version floor gets a loud warning naming
@@ -206,6 +212,7 @@ def test_stale_binary_warning_flags_version_below_floor(tmp_path: Path) -> None:
 
 
 # frob:ticket T-1218
+# frob:tests src/frob/repo_meta.py::stale_binary_warning  # noqa: E501
 def test_stale_binary_warning_none_when_no_floor_declared(tmp_path: Path) -> None:
     """No warning when frob.toml declares no min_frob_version at all (the
     overwhelming majority of repos today) -- absence of a floor is not a
@@ -216,6 +223,7 @@ def test_stale_binary_warning_none_when_no_floor_declared(tmp_path: Path) -> Non
 
 
 # frob:ticket T-1218
+# frob:tests src/frob/repo_meta.py::stale_binary_warning  # noqa: E501
 def test_stale_binary_warning_none_when_version_meets_floor(tmp_path: Path) -> None:
     """No warning when the invoked version meets or exceeds the declared
     floor -- ordering, not equality, and the floor itself passes."""

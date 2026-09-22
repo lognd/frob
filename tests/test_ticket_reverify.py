@@ -87,6 +87,7 @@ class TestRecoverDoneReportWhy:
     """`frob.tickets._models.recover_done_report_why` -- the mechanical
     inverse of `compose_done_report`'s narrative half."""
 
+    # frob:tests src/frob/tickets/_models.py::recover_done_report_why
     def test_recovers_narrative_before_changed_marker(self) -> None:
         # frob:tests tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_recovers_narrative_before_changed_marker  # noqa: E501
         body = (
@@ -98,10 +99,12 @@ class TestRecoverDoneReportWhy:
         )
         assert recover_done_report_why(body) == "did the thing, for real reasons"
 
+    # frob:tests src/frob/tickets/_models.py::recover_done_report_why
     def test_none_when_no_done_report_section(self) -> None:
         # frob:tests tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_done_report_section  # noqa: E501
         assert recover_done_report_why("## Description\nx\n") is None
 
+    # frob:tests src/frob/tickets/_models.py::recover_done_report_why
     def test_none_when_no_changed_marker_to_anchor_against(self) -> None:
         # frob:tests tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_changed_marker_to_anchor_against  # noqa: E501
         # A terse, hand-typed Done report predating T-0458's auto-fill
@@ -149,6 +152,7 @@ class TestReverifyCloseGuard:
     wraps the SAME `_done_transition_guard` `transition(..., DONE, ...)`
     runs at close time, with no write on either outcome."""
 
+    # frob:tests src/frob/tickets/_evidence.py::reverify_close_guard
     def test_passes_on_strengthened_done_ticket(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_passes_on_strengthened_done_ticket  # noqa: E501
         _write(tmp_path, _ticket())
@@ -163,6 +167,7 @@ class TestReverifyCloseGuard:
         reloaded = load_queue(tmp_path).danger_ok.tickets["T-0001"]
         assert reloaded.state == TicketState.DONE
 
+    # frob:tests src/frob/tickets/_evidence.py::reverify_close_guard
     def test_fails_loudly_on_now_failing_evidence(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_fails_loudly_on_now_failing_evidence  # noqa: E501
         _write(tmp_path, _ticket())
@@ -177,6 +182,7 @@ class TestReverifyCloseGuard:
         reloaded = load_queue(tmp_path).danger_ok.tickets["T-0001"]
         assert reloaded.state == TicketState.DONE
 
+    # frob:tests src/frob/tickets/_evidence.py::reverify_close_guard
     def test_refuses_non_done_ticket(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_refuses_non_done_ticket  # noqa: E501
         _write(tmp_path, _ticket(state=TicketState.IN_PROGRESS))
@@ -233,6 +239,7 @@ class TestReverifyCli:
         assert ticket.state == TicketState.DONE
         assert "### Changed" in ticket.body
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_reverify  # noqa: E501
     def test_reruns_verification_and_refreshes_recap_state_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -264,6 +271,7 @@ class TestReverifyCli:
         # Narrative carried through verbatim, not replaced.
         assert "initial narrative" in after.body
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_reverify  # noqa: E501
     def test_surfaces_now_failing_evidence_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -290,6 +298,7 @@ class TestReverifyCli:
         assert after.state == TicketState.DONE
         assert after.body == before.body
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_reverify
     def test_refuses_non_done_ticket(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

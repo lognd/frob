@@ -93,6 +93,7 @@ class TestLockHolderNaming:
         assert "no process found" in desc
 
     # frob:tests src/frob/graph/cache.py::_with_lock_retry
+    # frob:tests src/frob/graph/cache.py::_should_retry_lock_error
     def test_with_lock_retry_names_holder_in_cache_locked_message(
         self, monkeypatch
     ) -> None:

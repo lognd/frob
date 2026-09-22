@@ -368,6 +368,7 @@ class TestRunners:
         assert len(specs) == 1
         assert specs[0].language == "python"
 
+    # frob:tests src/frob/gitio.py::excerpt
     def test_exit_code_is_data(self, tmp_path: Path) -> None:
         # frob:tests src/frob/testing/_runners.py::run_selected
         from frob.testing._models import SelectionReport

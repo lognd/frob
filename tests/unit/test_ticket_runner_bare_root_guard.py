@@ -25,6 +25,7 @@ class TestTicketRunnerBareRootGuard:
     (cwd) root has neither a `frob.toml` nor a `.git`, instead of silently
     writing a ledger nowhere anything will read it."""
 
+    # frob:tests src/frob/app/ticket_runner/__init__.py::run
     def test_ambient_cwd_with_no_frob_toml_or_git_is_refused(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -42,6 +43,7 @@ class TestTicketRunnerBareRootGuard:
         assert str(tmp_path.resolve()) in caplog.text
         assert not (tmp_path / "tickets").exists()
 
+    # frob:tests src/frob/app/ticket_runner/__init__.py::run
     def test_ambient_cwd_inside_a_real_frob_repo_still_works(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -60,6 +62,7 @@ class TestTicketRunnerBareRootGuard:
         ticket_run(cfg)
         assert (tmp_path / "tickets").exists()
 
+    # frob:tests src/frob/app/ticket_runner/__init__.py::run
     def test_explicit_path_to_a_bare_directory_is_still_trusted(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -332,6 +332,7 @@ class TestDoctorDerivedStateDrift:
         assert (frob_dir / "derived-state-manifest.json").exists()
 
     # frob:tests src/frob/doctor.py
+    # frob:tests src/frob/doctor.py::_detect_derived_state_drift
     def test_rewritten_artifact_between_two_runs_reports_drift(
         self, tmp_path: Path
     ) -> None:
@@ -497,6 +498,7 @@ class TestDoctorMutateJournal:
         assert report.healthy is True
 
     # frob:tests src/frob/doctor.py
+    # frob:tests src/frob/doctor.py::_mutate_journal_remediation
     def test_run_diagnosis_unhealthy_with_stale_mutate_journal(
         self, tmp_path: Path
     ) -> None:
@@ -1002,6 +1004,7 @@ class TestDoctorLiveLandProcess:
 
     # frob:tests src/frob/doctor.py::scan_live_land_processes
     # frob:ticket T-1515
+    # frob:tests src/frob/tickets/_land.py::_probe_land_lock_pid_liveness
     def test_live_holder_pid_is_reported_alive_and_healthy(
         self, tmp_path: Path
     ) -> None:
@@ -1097,6 +1100,7 @@ class TestDoctorLiveLandProcess:
     # frob:tests src/frob/doctor.py::scan_live_land_processes
     # frob:ticket T-1515
     # frob:ticket T-1634
+    # frob:tests src/frob/tickets/_land.py::_probe_land_lock_pid_liveness
     def test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy(
         self, tmp_path: Path
     ) -> None:
@@ -1142,6 +1146,7 @@ class TestDoctorLiveLandProcess:
 
     # frob:tests src/frob/doctor.py::scan_live_land_processes
     # frob:ticket T-1634
+    # frob:tests src/frob/tickets/_land.py::_probe_land_lock_pid_liveness
     def test_ambiguous_holder_liveness_is_reported_unhealthy(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

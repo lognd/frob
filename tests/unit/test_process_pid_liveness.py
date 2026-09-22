@@ -102,6 +102,7 @@ class TestPidAliveTristatePosix:
     plain `pid_alive` -- the whole reason `_land.py`'s reclaim logic
     needs the three-state variant."""
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive_tristate  # noqa: E501
     def test_process_lookup_error_is_confirmed_dead(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -109,6 +110,7 @@ class TestPidAliveTristatePosix:
         monkeypatch.setattr(_pid_liveness.os, "kill", _make_raiser(ProcessLookupError))
         assert _pid_liveness.pid_alive_tristate(999999) is False
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive_tristate  # noqa: E501
     def test_permission_error_is_ambiguous_not_alive(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -116,6 +118,7 @@ class TestPidAliveTristatePosix:
         monkeypatch.setattr(_pid_liveness.os, "kill", _make_raiser(PermissionError))
         assert _pid_liveness.pid_alive_tristate(1) is None
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive_tristate  # noqa: E501
     def test_live_pid_is_true(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(_pid_liveness, "_kernel32", None)
         assert _pid_liveness.pid_alive_tristate(os.getpid()) is True
@@ -134,6 +137,7 @@ class TestPidAliveWindowsBackend:
         monkeypatch.setattr(_pid_liveness, "_kernel32", fake)
         assert _pid_liveness.pid_alive(4242) is True
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
     def test_exited_pid_reports_false(self, monkeypatch: pytest.MonkeyPatch) -> None:
         fake = _FakeKernel32(alive_pids=set())
         monkeypatch.setattr(_pid_liveness, "_kernel32", fake)
@@ -142,6 +146,7 @@ class TestPidAliveWindowsBackend:
         # Windows process.
         assert _pid_liveness.pid_alive(1) is False
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
     def test_unknown_pid_open_process_fails_reports_false(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -149,6 +154,7 @@ class TestPidAliveWindowsBackend:
         monkeypatch.setattr(_pid_liveness, "_kernel32", fake)
         assert _pid_liveness.pid_alive(7777) is False
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
     def test_never_requests_kill_capable_access_rights(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -167,6 +173,7 @@ class TestPidAliveWindowsBackend:
         _pid_liveness.pid_alive(1)
         assert seen_access == [_pid_liveness._PROCESS_QUERY_LIMITED_INFORMATION]
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive_tristate  # noqa: E501
     def test_tristate_never_returns_ambiguous_on_windows_backend(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -80,6 +80,7 @@ class TestScanCommentLength:
         violations = scan_comment_length(Path("a.py"), text)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length  # noqa: E501
     def test_leading_license_header_is_exempt(self) -> None:
         """MUST-STAY-QUIET: a 20-line module license header (the file's
         first comment run) is exempt by position, not by wording."""
@@ -88,6 +89,7 @@ class TestScanCommentLength:
         violations = scan_comment_length(Path("a.py"), text)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length  # noqa: E501
     def test_long_docstring_flagged_short_is_quiet(self) -> None:
         """A 25-line docstring is flagged at the default `docstring_max`
         of 20; a 15-line one is not."""
@@ -101,6 +103,7 @@ class TestScanCommentLength:
         assert any("long_fn" in (v.symref or "") for v in violations)
         assert not any("short_fn" in (v.symref or "") for v in violations)
 
+    # frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length  # noqa: E501
     def test_config_override_silences_default_fixture(self) -> None:
         """`comment_run_max = 30` silences the 20-line fixture, proving
         the config path is live and not just the built-in default."""
@@ -118,6 +121,7 @@ class TestScanCommentLength:
 class TestScanCitationShape:
     """`scan_citation_shape` -- check 2, citations must be directives."""
 
+    # frob:tests src/frob/gates/_docarch_structural.py::scan_citation_shape  # noqa: E501
     def test_directive_and_pointer_are_quiet(self) -> None:
         """MUST-STAY-QUIET: `frob:ticket T-1234` and a single-line
         `# see T-1234` pointer are both quiet under check 2."""
@@ -130,6 +134,7 @@ class TestScanCitationShape:
         violations = scan_citation_shape(Path("a.py"), text)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_docarch_structural.py::scan_citation_shape  # noqa: E501
     def test_bare_citation_with_prose_is_flagged(self) -> None:
         """MUST-FIRE: a `# T-1234:` line followed by 3 prose lines is
         flagged (2+ comment lines under a bare citation)."""
@@ -148,6 +153,7 @@ class TestScanCitationShape:
 class TestDocarch002RatchetSeverity:
     """`docarch002_violations` -- ratchet-adjusted repo scan (T-0569)."""
 
+    # frob:tests src/frob/gates/_docarch_structural.py::docarch002_violations  # noqa: E501
     def test_baselined_finding_stays_warn_new_one_errors(self, tmp_path: Path) -> None:
         """A finding already baselined into the DOCARCH002 pool stays
         WARN; a brand-new one at a different site reports ERROR."""
@@ -195,6 +201,7 @@ class TestGateEntry:
     """`docarch_structural_gate` -- the `GATE_RUNNERS` entry point wrapper
     around `docarch002_violations` (T-4693)."""
 
+    # frob:tests src/frob/gates/_docarch_structural.py::docarch_structural_gate
     def test_delegates(self, tmp_path: Path) -> None:
         """The gate entry point returns exactly what `docarch002_violations`
         reports for the same root, proving the wiring is a pure alias."""

@@ -78,6 +78,7 @@ class TestUnblock:
         assert queue.tickets["T-0001"].blocked_by == ("T-0003",)
 
     # frob:ticket T-2681
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock  # noqa: E501
     def test_unblock_refuses_when_not_present(self, tmp_path: Path) -> None:
         """MUST-FAIL POSITIVE CONTROL: `--by` naming a ticket that is NOT
         currently in `blocked_by` refuses loudly (SystemExit(1)) rather
@@ -98,6 +99,7 @@ class TestUnblock:
         assert queue.tickets["T-0001"].blocked_by == ("T-0003",)
 
     # frob:ticket T-2681
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock
     def test_unblock_refuses_invalid_ref(self, tmp_path: Path) -> None:
         """MUST-FAIL POSITIVE CONTROL: a malformed `--by` (not a `T-####`/
         `T-draft-<hex>` ref) refuses before ever touching the ledger --
@@ -117,6 +119,7 @@ class TestUnblock:
         assert queue.tickets["T-0001"].blocked_by == ("T-0002",)
 
     # frob:ticket T-3113
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock
     def test_unblock_requires_reason(self, tmp_path: Path) -> None:
         """MUST-FAIL POSITIVE CONTROL (T-3113): a missing/blank `--reason`
         refuses (SystemExit(1)) before the edge is ever touched -- the
@@ -137,6 +140,7 @@ class TestUnblock:
         assert queue.tickets["T-0001"].blocked_by == ("T-0002",)
 
     # frob:ticket T-3113
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock  # noqa: E501
     def test_unblock_records_reason_in_unblock_log(self, tmp_path: Path) -> None:
         """A successful unblock appends a dated `## Unblock log` line
         naming the removed blocker and the caller's reason -- the record
@@ -157,6 +161,7 @@ class TestUnblock:
         assert "blocked the wrong ticket by mistake" in body
 
     # frob:ticket T-3113
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock  # noqa: E501
     def test_unblock_leaves_other_blockers_intact(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET: removing one of several blockers must not
         touch the others' entries -- `_unblock` filters exactly one

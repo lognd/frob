@@ -30,6 +30,7 @@ class TestSysTrace:
     """`frob sys trace <from> [to]`: the influence-closure witness-path CLI
     wrapper over `FactBase.reachable` (T-1480)."""
 
+    # frob:tests src/frob/app/sys_runner.py::_run_trace  # noqa: E501
     def test_trace_prints_witness_path_to_destination(
         self, tmp_path: Path, caplog
     ) -> None:

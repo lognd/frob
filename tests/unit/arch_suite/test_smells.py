@@ -35,6 +35,7 @@ class TestMutableDefaultArg:
         assert len(out) == 1
         assert out[0].category == "mutable-default-arg"
 
+    # frob:tests src/frob/arch/_smells.py::check_mutable_default_arg  # noqa: E501
     def test_none_default_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedFunction,
@@ -88,6 +89,7 @@ class TestFeatureEnvy:
         assert len(out) == 1
         assert out[0].category == "feature-envy"
 
+    # frob:tests src/frob/arch/_smells.py::check_feature_envy  # noqa: E501
     def test_method_calling_self_more_than_others_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedCall,
@@ -117,6 +119,7 @@ class TestFeatureEnvy:
 class TestDataClumps:
     """`check_data_clumps` (docs/modules/arch.md#misc-design-smells)."""
 
+    # frob:tests src/frob/arch/_smells.py::check_data_clumps  # noqa: E501
     def test_same_three_keyword_group_at_three_sites_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedCall,
@@ -149,6 +152,7 @@ class TestDataClumps:
         assert out[0].category == "data-clumps"
         assert out[0].metric == 3
 
+    # frob:tests src/frob/arch/_smells.py::check_data_clumps  # noqa: E501
     def test_group_at_two_sites_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedCall,
@@ -182,6 +186,7 @@ class TestDataClumps:
 class TestMagicLiteral:
     """`check_magic_literal` (docs/modules/arch.md#misc-design-smells)."""
 
+    # frob:tests src/frob/arch/_smells.py::check_magic_literal  # noqa: E501
     def test_bare_number_in_condition_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -203,6 +208,7 @@ class TestMagicLiteral:
         assert len(out) == 1
         assert out[0].category == "magic-literal"
 
+    # frob:tests src/frob/arch/_smells.py::check_magic_literal  # noqa: E501
     def test_zero_and_one_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -228,6 +234,7 @@ class TestDeadPrivateCode:
     """`check_dead_private_code`
     (docs/modules/arch.md#misc-design-smells)."""
 
+    # frob:tests src/frob/arch/_smells.py::check_dead_private_code  # noqa: E501
     def test_unreferenced_private_function_flagged(self) -> None:
         from frob.arch._normalized import NormalizedFunction, NormalizedModule
         from frob.arch._smells import check_dead_private_code
@@ -240,6 +247,7 @@ class TestDeadPrivateCode:
         assert len(out) == 1
         assert out[0].category == "dead-private-code"
 
+    # frob:tests src/frob/arch/_smells.py::check_dead_private_code  # noqa: E501
     def test_referenced_private_function_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedCall,
@@ -265,6 +273,7 @@ class TestDeadPrivateCode:
 class TestDeepInheritance:
     """`check_deep_inheritance` (docs/modules/arch.md#misc-design-smells)."""
 
+    # frob:tests src/frob/arch/_smells.py::check_deep_inheritance  # noqa: E501
     def test_chain_beyond_threshold_flagged(self) -> None:
         from frob.arch._normalized import NormalizedClass, NormalizedModule
         from frob.arch._smells import check_deep_inheritance
@@ -280,6 +289,7 @@ class TestDeepInheritance:
         out = check_deep_inheritance(module)
         assert any(s.symref == "pkg/mod.py::E" for s in out)
 
+    # frob:tests src/frob/arch/_smells.py::check_deep_inheritance  # noqa: E501
     def test_shallow_chain_not_flagged(self) -> None:
         from frob.arch._normalized import NormalizedClass, NormalizedModule
         from frob.arch._smells import check_deep_inheritance
@@ -297,6 +307,7 @@ class TestTemporalCoupling:
     """`check_temporal_coupling`
     (docs/modules/arch.md#misc-design-smells)."""
 
+    # frob:tests src/frob/arch/_smells.py::check_temporal_coupling  # noqa: E501
     def test_guard_clause_on_initialized_flag_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -327,6 +338,7 @@ class TestTemporalCoupling:
         assert len(out) == 1
         assert out[0].category == "temporal-coupling"
 
+    # frob:tests src/frob/arch/_smells.py::check_temporal_coupling  # noqa: E501
     def test_field_not_guarded_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedClass,
@@ -354,6 +366,7 @@ class TestRunSmellChecks:
     """`run_smell_checks` combines every ARCH1xx misc design-smell check
     (docs/modules/arch.md#misc-design-smells)."""
 
+    # frob:tests src/frob/arch/_smells.py::run_smell_checks  # noqa: E501
     def test_combines_all_seven_checks(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,

@@ -85,6 +85,7 @@ class TestReleaseLeaseLifecycle:
     own `test_release_on_close_removes_the_lease`), drop, fail-then-
     requeue, and a bare requeue."""
 
+    # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
     def test_drop_releases_lease(self, repo: Path) -> None:
         # frob:tests \
         # tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_drop_releases_lease  # noqa: E501
@@ -104,6 +105,7 @@ class TestReleaseLeaseLifecycle:
         assert transition(repo, sibling.danger_ok.id, TicketState.PLANNED).is_ok
         assert transition(repo, sibling.danger_ok.id, TicketState.IN_PROGRESS).is_ok
 
+    # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
     def test_fail_releases_lease(self, repo: Path) -> None:
         # frob:tests \
         # tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_fail_releases_lease  # noqa: E501
@@ -121,6 +123,7 @@ class TestReleaseLeaseLifecycle:
         assert transition(repo, tid, TicketState.QUEUED).is_ok
         assert not lease_path.exists()
 
+    # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
     def test_requeue_releases_lease(self, repo: Path) -> None:
         # frob:tests \
         # tests/unit/test_lease_lifecycle.py::TestReleaseLeaseLifecycle.test_requeue_releases_lease  # noqa: E501
@@ -137,6 +140,7 @@ class TestReleaseLeaseHardening:
     best-effort (`Ok(None)`), but now logged at ERROR, not WARNING, since
     a real removal failure means the lease keeps blocking sibling work."""
 
+    # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
     def test_missing_lease_is_a_silent_ok(self, repo: Path) -> None:
         """Releasing a ticket id with no recorded lease at all is `Ok
         (None)` -- `release_lease` must be safe to call unconditionally on
@@ -148,6 +152,7 @@ class TestReleaseLeaseHardening:
         result = release_lease(repo, "T-9999")
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
     def test_real_unlink_failure_logs_at_error(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

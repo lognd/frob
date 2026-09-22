@@ -20,6 +20,7 @@ from frob.excludes import (
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+# frob:tests src/frob/excludes.py::is_test_file
 def test_is_test_file_by_dir_component():
     """A file under any `tests/` directory component is a test file."""
     assert is_test_file("tests/test_foo.py")
@@ -27,12 +28,14 @@ def test_is_test_file_by_dir_component():
     assert is_test_file("a/b/tests/c/d.py")
 
 
+# frob:tests src/frob/excludes.py::is_test_file
 def test_is_test_file_by_name_prefix_suffix():
     """Python `test_*`/`*_test` naming marks a test file anywhere."""
     assert is_test_file("pkg/test_module.py")
     assert is_test_file("pkg/module_test.py")
 
 
+# frob:tests src/frob/excludes.py::is_test_file
 def test_is_test_file_typescript_naming():
     """TS/JS `*.test.*` and `*_test.*` naming is recognized (the drift the
     three former private copies missed)."""
@@ -41,6 +44,7 @@ def test_is_test_file_typescript_naming():
     assert is_test_file("web/src/app_test.js")
 
 
+# frob:tests src/frob/excludes.py::is_test_file
 def test_is_test_file_false_for_production_module():
     """A plain production module is not a test file."""
     assert not is_test_file("src/frob/gates/__init__.py")
@@ -370,6 +374,7 @@ class TestWalkPrunedHonorsIgnoreFile:
 
     # frob:ticket T-4306
     # frob:ticket T-4623
+    # frob:tests src/frob/excludes.py::_should_prune_dir
     def test_negated_reinclusion_not_pruned_wholesale(self, tmp_path: Path):
         """Asserts a coarse ignore prefix (`.claude/*`) paired with a
         `!`-negation re-including one subdirectory (`.claude/hooks/**`)

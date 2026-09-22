@@ -275,6 +275,7 @@ class TestReconcileApplyLandInProgressGuard:
             status_after = _run(["git", "status", "--porcelain"], repo).stdout
             assert status_after == status_before
 
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
     def test_apply_still_requeues_when_no_land_in_progress(self, repo: Path) -> None:
         """Positive control: with no land lock held, `apply=True` still
         performs the ordinary requeue -- the new guard must not weaken the
@@ -682,6 +683,8 @@ class TestReconcileUnlandedBranchWork:
 # frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
 # frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"  # noqa: E501
 
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_save_unlanded_summary_cache kind="unit"  # noqa: E501
     def test_populates_the_doable_summary_cache(self, repo: Path) -> None:
         """T-3522: reconcile now calls `_save_unlanded_summary_cache` with
         the branches its own scan just found -- the production write side
@@ -704,6 +707,7 @@ class TestReconcileUnlandedBranchWork:
         assert cached is not None
         assert cached.branches == ("runner-wiring",)
 
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
     def test_populates_the_cache_even_on_a_dry_run(self, repo: Path) -> None:
         """The cache write is a best-effort performance memoization, not
         ticket state -- it refreshes on `apply=False` dry-runs too, unlike
@@ -724,6 +728,8 @@ class TestReconcileUnlandedBranchWork:
         assert cached is not None
         assert cached.branches == ("runner-wiring",)
 
+    # frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"  # noqa: E501
     def test_skips_the_cache_write_when_frob_dir_is_not_gitignored(
         self, repo: Path
     ) -> None:
@@ -748,6 +754,7 @@ class TestReconcileUnlandedBranchWork:
         assert ".frob" not in status
 
     # frob:ticket T-3731
+    # frob:tests src/frob/tickets/_unlanded.py::_unlanded_branch_work kind="unit"  # noqa: E501
     def test_reconcile_does_not_hang_with_many_branches(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

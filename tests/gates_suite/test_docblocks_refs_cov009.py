@@ -46,6 +46,7 @@ class TestSharedDocAnchorGrouping:
             "pkg/b.py::bar",
         )
 
+    # frob:tests src/frob/gates/_docblocks_refs.py::_shared_doc_anchor_groups
     def test_lone_anchor_participant_is_not_a_group(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -59,6 +60,8 @@ class TestSharedDocAnchorGrouping:
 class TestCov009SharedAnchorReview:
     """`cov009_violations` -- the end-to-end diff-driven gate."""
 
+    # frob:tests src/frob/gates/_docblocks_refs.py::cov009_gate  # noqa: E501
+    # frob:tests src/frob/gates/_docblocks_refs.py::cov009_violations
     def test_touching_one_sibling_flags_the_other(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -79,6 +82,7 @@ class TestCov009SharedAnchorReview:
         assert violations[0].file == "pkg/b.py"
         assert "pkg/a.py::foo" in violations[0].message
 
+    # frob:tests src/frob/gates/_docblocks_refs.py::cov009_violations
     def test_touching_both_siblings_flags_neither(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -98,6 +102,7 @@ class TestCov009SharedAnchorReview:
         violations = cov009_violations(snapshot, diff)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_docblocks_refs.py::cov009_violations
     def test_untouched_group_is_silent(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -114,6 +119,7 @@ class TestCov009SharedAnchorReview:
         violations = cov009_violations(snapshot, diff)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_docblocks_refs.py::cov009_violations
     def test_lone_anchor_participant_is_not_a_group(self, tmp_path: Path) -> None:
         """A symbol with no sibling sharing its anchor never fires, even
         when this diff touches it directly."""

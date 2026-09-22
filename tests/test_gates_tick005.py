@@ -176,6 +176,7 @@ class TestTick005MergeStateRegression:
     # frob:tests \
     # tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_hand_resolved_c\
     # onflict_resurrecting_done_ticket_is_flagged_on_v2_ledger
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick005_merge_state_regression
     def test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged_on_v2_ledger(
         self, tmp_path: Path
     ) -> None:
@@ -221,6 +222,7 @@ class TestTick005MergeStateRegression:
     # frob:tests \
     # tests/test_gates_tick005.py::TestTick005MergeStateRegression.test_forward_progres\
     # s_across_a_merge_is_clean_on_v2_ledger
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick005_merge_state_regression
     def test_forward_progress_across_a_merge_is_clean_on_v2_ledger(
         self, tmp_path: Path
     ) -> None:

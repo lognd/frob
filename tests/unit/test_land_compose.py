@@ -65,6 +65,7 @@ class TestComposeTreeOutOfTree:
     """`compose_tree_out_of_tree` builds a commit object without ever
     touching the checked-out working tree or HEAD."""
 
+    # frob:tests src/frob/tickets/_land_compose.py::compose_tree_out_of_tree
     def test_worktree_untouched_by_compose(self, scratch_repo: Path) -> None:
         """Given a scratch repo, when compose_tree_out_of_tree builds a
         commit, then the checked-out working tree is never touched
@@ -93,6 +94,7 @@ class TestComposeTreeOutOfTree:
         head = _run(["git", "symbolic-ref", "HEAD"], scratch_repo).stdout.strip()
         assert head == "refs/heads/main"
 
+    # frob:tests src/frob/tickets/_land_compose.py::compose_tree_out_of_tree
     def test_composed_commit_contains_the_patch(self, scratch_repo: Path) -> None:
         """The composed commit's tree really does contain the feature
         branch's change, proving this is a real compose and not a no-op."""
@@ -109,6 +111,7 @@ class TestComposeTreeOutOfTree:
         assert parent == base
 
     # frob:tests src/frob/tickets/_land_compose.py::LandComposeError
+    # frob:tests src/frob/tickets/_land_compose.py::compose_tree_out_of_tree
     def test_compose_failure_returns_err(self, scratch_repo: Path) -> None:
         """A base commit that does not exist fails cleanly with
         Err(ComposeFailed), never raising."""
@@ -122,6 +125,7 @@ class TestPublishRefCas:
     """`publish_ref_cas` is `git update-ref <ref> <new> <old>` with a
     distinct RefMoved error on a lost race."""
 
+    # frob:tests src/frob/tickets/_land_compose.py::publish_ref_cas
     def test_sequential_publishes_succeed(self, scratch_repo: Path) -> None:
         """Must-stay-quiet fixture: sequential (non-racing) compose+publish
         pairs succeed every time."""
@@ -137,6 +141,8 @@ class TestPublishRefCas:
         tip = _run(["git", "rev-parse", "main"], scratch_repo).stdout.strip()
         assert tip == new_sha
 
+    # frob:tests src/frob/tickets/_land_compose.py::publish_ref_cas
+    # frob:tests src/frob/tickets/_land_compose.py::LandComposeError
     def test_racing_publish_second_gets_ref_moved(self, scratch_repo: Path) -> None:
         """Given two racing publish_ref_cas calls with the same
         expected_old_sha, when the second runs after the first succeeds,
@@ -209,6 +215,8 @@ class TestDisposableSquashWorktree:
     three-way squash merge somewhere that is not the shared checkout, and
     reports conflicts as data rather than collapsing them into a failure."""
 
+    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests src/frob/tickets/_land_compose.py::SquashStage
     def test_clean_squash_reports_no_conflicts(self, scratch_repo: Path) -> None:
         """Given a disjoint feature branch, when it is squashed in a
         disposable worktree, then nothing is reported unmerged and the
@@ -223,6 +231,7 @@ class TestDisposableSquashWorktree:
             assert (stage.worktree / "b.txt").read_text() == "feature content\n"
 
     # frob:ticket T-4431
+    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_native_source_mtimes_are_seeded_against_the_disposable_worktree(
         self, scratch_repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -247,6 +256,7 @@ class TestDisposableSquashWorktree:
             assert seeded_worktree == staged.danger_ok.worktree
 
     # frob:ticket T-4411
+    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_cache_db_is_seeded_against_the_disposable_worktree(
         self, scratch_repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -304,6 +314,8 @@ class TestDisposableSquashWorktree:
             "load_graph cold-started against a warm-seeded worktree cache"
         )
 
+    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests src/frob/tickets/_land_compose.py::SquashStage
     def test_conflicting_squash_reports_the_conflicted_paths(
         self, conflicting_repo: Path
     ) -> None:
@@ -316,6 +328,7 @@ class TestDisposableSquashWorktree:
             assert staged.is_ok, "a conflict must be data, not an Err"
             assert staged.danger_ok.conflicted == ("a.txt",)
 
+    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_root_worktree_untouched_by_clean_squash(self, scratch_repo: Path) -> None:
         """Given a clean squash, when it runs, then the shared checkout's
         porcelain status and HEAD are byte-identical before and after."""
@@ -331,6 +344,7 @@ class TestDisposableSquashWorktree:
         assert _git_out(scratch_repo, "status", "--porcelain") == before
         assert _git_out(scratch_repo, "rev-parse", "HEAD").strip() == before_head
 
+    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_root_worktree_untouched_by_conflicted_squash(
         self, conflicting_repo: Path
     ) -> None:
@@ -354,6 +368,7 @@ class TestFoldWorktreeIntoCommit:
     """T-3107: `fold_worktree_into_commit` turns a prepared disposable
     worktree into a commit object, and refuses to fold an unresolved one."""
 
+    # frob:tests src/frob/tickets/_land_compose.py::fold_worktree_into_commit
     def test_folded_commit_contains_both_sides(self, scratch_repo: Path) -> None:
         """Given a clean squash staged in a disposable worktree, when it is
         folded, then the resulting commit's tree carries both sides and its
@@ -384,6 +399,7 @@ class TestFoldWorktreeIntoCommit:
         ).stdout.strip()
         assert parent == _git_out(scratch_repo, "rev-parse", "HEAD").strip()
 
+    # frob:tests src/frob/tickets/_land_compose.py::fold_worktree_into_commit
     def test_fold_refuses_while_paths_are_unmerged(
         self, conflicting_repo: Path
     ) -> None:
@@ -419,6 +435,7 @@ class TestResyncRootToPublishedTip:
         return old_tip, new_tip
 
     # frob:ticket T-3114
+    # frob:tests src/frob/tickets/_land_compose.py::commits_touch_only_ledger_paths
     def test_unrelated_dirty_path_resyncs_and_is_preserved(
         self, scratch_repo: Path
     ) -> None:
@@ -438,6 +455,7 @@ class TestResyncRootToPublishedTip:
         assert _git_out(scratch_repo, "status", "--porcelain").strip() == "M a.txt"
 
     # frob:ticket T-3114
+    # frob:tests src/frob/tickets/_land_compose.py::commits_touch_only_ledger_paths
     def test_dirty_path_the_land_also_changed_blocks_atomically(
         self, scratch_repo: Path
     ) -> None:

@@ -39,6 +39,7 @@ class TestNoBehaviorChangeCli:
     `frob ticket close --no-behavior-change` runs before BUG002's own
     check (T-2393)."""
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_apply_no_behavior_change_directive
     def test_flag_writes_directive_before_close(self, tmp_path: Path) -> None:
         """`--no-behavior-change --no-behavior-change-reason TEXT` appends
         a `frob:no-behavior-change reason="TEXT"` line to the ticket body,
@@ -65,6 +66,7 @@ class TestNoBehaviorChangeCli:
         assert len(ticket.body_changes) == 1
         assert ticket.body_changes[0].mode == "append"
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_apply_no_behavior_change_directive
     def test_reason_missing_exits_nonzero(self, tmp_path: Path) -> None:
         """`--no-behavior-change` with NO reason given exits nonzero
         rather than writing an unreasoned/empty directive -- the positive

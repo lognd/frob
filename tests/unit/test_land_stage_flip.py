@@ -151,6 +151,7 @@ class TestDisposableStageFlip:
     in-root path rather than handing that sweep a checkout it cannot
     measure."""
 
+    # frob:tests src/frob/tickets/_land.py::_squash_apply_on_disposable_stage
     def test_root_never_goes_dirty_during_the_squash_apply(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_root_never_goes_dirty_during_the_squash_apply  # noqa: E501
         """MUST FIRE (acceptance 0): poll root's porcelain status
@@ -202,6 +203,7 @@ class TestDisposableStageFlip:
         assert _porcelain(v2_main) == ""
 
     # frob:ticket T-3135
+    # frob:tests src/frob/tickets/_land.py::_squash_apply_on_disposable_stage
     def test_pre_commit_sweep_engages_the_warm_stage_not_root(
         self, v2_main: Path
     ) -> None:
@@ -231,6 +233,7 @@ class TestDisposableStageFlip:
         assert seen[0] == v2_main / ".frob" / "warm-sweep-stage"
 
     # frob:ticket T-3135
+    # frob:tests src/frob/tickets/_land.py::_squash_apply_on_disposable_stage
     def test_warm_stage_reused_across_lands(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_reused_across_lands  # noqa: E501
         """MUST FIRE (T-3135): a SECOND land reuses the exact same warm
@@ -255,6 +258,7 @@ class TestDisposableStageFlip:
         assert seen[0] == seen[1]
 
     # frob:ticket T-3135
+    # frob:tests src/frob/tickets/_land.py::_squash_apply_on_disposable_stage
     def test_warm_stage_unavailable_falls_back_to_root(
         self, v2_main: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -280,6 +284,7 @@ class TestDisposableStageFlip:
         assert seen == [v2_main]
 
     # frob:ticket T-4381
+    # frob:tests src/frob/tickets/_land.py::_default_touched_format_sweep
     def test_rapid_shape_default_sweep_formats_touched_files(
         self, v2_main: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -327,6 +332,7 @@ class TestDisposableStageFlip:
         assert (v2_main / "src" / "staged.py").read_text() == "x = 1\n"
 
     # frob:ticket T-4381
+    # frob:tests src/frob/tickets/_land.py::_default_touched_format_sweep
     def test_explicit_sweep_is_never_overridden_by_the_default(
         self, v2_main: Path
     ) -> None:
@@ -356,6 +362,7 @@ class TestDisposableStageFlip:
         assert len(seen) == 1
         assert (v2_main / "src" / "staged.py").read_text() == "y=2\n"
 
+    # frob:tests src/frob/tickets/_land.py::_squash_apply_on_disposable_stage
     def test_worktree_setup_failure_refuses_without_touching_root(
         self, v2_main: Path
     ) -> None:
@@ -389,6 +396,8 @@ class TestPublishSquashApply:
     resync, a lost CAS surfaced as the EXISTING `DirtyMain` refusal, and a
     blocked resync that is loudly reported but is NOT a land failure."""
 
+    # frob:tests src/frob/tickets/_land_squash.py::_seal_squash_apply  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
     def test_clean_publish_advances_root_and_resyncs(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_clean_publish_advances_root_and_resyncs  # noqa: E501
         """The published commit is parented on `pre_land_tip`, `main` names
@@ -415,6 +424,7 @@ class TestPublishSquashApply:
         )
         assert (v2_main / "src" / "staged.py").read_text().startswith("# staged")
 
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
     def test_racing_publish_surfaces_dirtymain(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_racing_publish_surfaces_dirtymain  # noqa: E501
         """MUST FIRE (acceptance 1): when `main` moves after this land
@@ -438,6 +448,7 @@ class TestPublishSquashApply:
         assert (v2_main / "src" / "sibling.py").exists()
         assert not (v2_main / "src" / "staged.py").exists()
 
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
     def test_blocked_resync_is_not_a_land_failure(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_blocked_resync_is_not_a_land_failure  # noqa: E501
         """MUST FIRE (acceptance 2): a sibling holding an uncommitted edit

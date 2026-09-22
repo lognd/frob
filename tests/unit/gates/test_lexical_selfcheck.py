@@ -162,6 +162,7 @@ class TestLexcheck001:
     #: reaching for a blind `== []`.
     _KNOWN_SUPPLYCHAIN_LEXCHECK001_BACKLOG: frozenset[tuple[str, str]] = frozenset()
 
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
     def test_supplychain_lexcheck001_backlog_is_empty_t2469(self) -> None:
         """This repo's OWN `DETECTOR_PACKAGE_ROOTS` scan (T-2466: widened
         past `src/frob/gates/**` alone to include `vet/`/`strata/`/
@@ -186,6 +187,7 @@ class TestLexcheck001:
         hit_keys = {(hit.file, hit.message.split(" ")[2]) for hit in hits}
         assert hit_keys == self._KNOWN_SUPPLYCHAIN_LEXCHECK001_BACKLOG
 
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
     def test_vet_needle_matcher_shape_is_flagged(self, tmp_path: Path) -> None:
         """Proves `lexical_selfcheck_gate` flags a detector under
         `src/frob/vet/` that decides via `bytes.find` needle matching and
@@ -219,6 +221,7 @@ class TestLexcheck001:
         assert hits[0].file == "src/frob/vet/_offender_capability.py"
         assert "_matched_capabilities" in hits[0].message
 
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
     def test_elementtree_find_is_not_a_trigger(self, tmp_path: Path) -> None:
         """The `.find(` trigger excludes an ElementTree-shaped call (this
         repo's own `_el`/`_element` naming convention, `_coverage.py`'s
@@ -245,6 +248,7 @@ class TestLexcheck001:
         violations = lexical_selfcheck_gate(tmp_path)
         assert [v for v in violations if v.rule == "LEXCHECK001"] == []
 
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
     def test_scans_scope_is_disclosed_in_log(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

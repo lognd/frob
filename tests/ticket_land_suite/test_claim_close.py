@@ -84,6 +84,7 @@ class TestClaimDivergencePostMerge:
         )
         assert write_ticket(root, ticket).is_ok
 
+    # frob:tests src/frob/tickets/_land_verify.py::_reverify_test_count_claim kind="integration"  # noqa: E501
     def test_matching_claims_land_succeeds(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_matching_claims_land_succeeds  # noqa: E501
         wt = repo.parent / "wt"
@@ -106,6 +107,7 @@ class TestClaimDivergencePostMerge:
 
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_land_verify.py::_reverify_test_count_claim kind="integration"  # noqa: E501
     def test_divergent_test_count_refuses_land(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_divergent_test_count_refuses_land  # noqa: E501
         """`passed()` still reports the ticket's one real evidence id as
@@ -146,6 +148,8 @@ class TestClaimDivergencePostMerge:
         )
         assert _run(["git", "log", "--oneline", "--all"], wt).stdout == wt_log_before
 
+    # frob:tests src/frob/tickets/_land_verify.py::_rewrite_claims_section kind="integration"  # noqa: E501
+    # frob:tests src/frob/tickets/_land_verify.py::_reverify_test_count_claim kind="integration"  # noqa: E501
     def test_strictly_improved_test_count_auto_accepts_and_rewrites_recap(
         self, repo: Path
     ) -> None:
@@ -215,6 +219,7 @@ class TestClaimDivergencePostMerge:
         assert result.is_err
         assert result.danger_err == LandError.ClaimDivergence
 
+    # frob:tests src/frob/tickets/_land_verify.py::_reverify_done_report_claims_post_merge kind="integration"  # noqa: E501
     def test_lower_gate_error_count_than_claim_still_lands(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_lower_gate_error_count_than_claim_still_lands  # noqa: E501
         """T-0846: a fresh post-merge error count LOWER than the captured
@@ -250,6 +255,8 @@ class TestClaimDivergencePostMerge:
         assert result.is_ok
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity  # noqa: E501
+    # frob:tests src/frob/tickets/_reporting.py::set_done_report
+    # frob:tests src/frob/tickets/_models.py::DoneReportClaims kind="integration"  # noqa: E501
     def test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity(
         self, repo: Path
     ) -> None:
@@ -428,6 +435,9 @@ class TestClaimDivergencePostMerge:
         assert "-1" not in notices[0].replace(tid, "<TID>")
 # frob:tests src/frob/tickets/_land_verify.py::_reverify_done_report_claims_post_merge kind="integration"  # noqa: E501
 
+    # frob:tests src/frob/tickets/_reporting.py::set_done_report
+    # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="integration"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::render_claims_block kind="integration"  # noqa: E501
     def test_two_unmeasured_gate_claims_never_vacuously_match(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match  # noqa: E501
         """T-0832 regression: the T-0830 incident was NOT merely that land
@@ -520,6 +530,7 @@ class TestSkipInlineClaimsReverifyUnderRapid:
         )
         assert write_ticket(root, ticket).is_ok
 
+    # frob:tests src/frob/tickets/_land.py::_land_should_skip_inline_claims_reverify
     def test_rapid_profile_skips_inline_check_gates_spawn(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid.test_rapid_profile_skips_inline_check_gates_spawn  # noqa: E501
         """must-be-faster / must-still-catch, rapid side: a divergent
@@ -560,6 +571,7 @@ class TestSkipInlineClaimsReverifyUnderRapid:
         assert result.is_ok
         assert calls == []
 
+    # frob:tests src/frob/tickets/_land.py::_land_should_skip_inline_claims_reverify
     def test_non_rapid_profile_still_runs_inline_check_gates_spawn(
         self, repo: Path
     ) -> None:
@@ -656,6 +668,7 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
     T-2774 already uses for the land-lock wait)."""
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_insufficient_deadline_skips_regardless_of_profile  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
     def test_insufficient_deadline_skips_regardless_of_profile(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -674,6 +687,7 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
         assert _land_should_skip_inline_claims_reverify(worktree) is True
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_ample_deadline_still_runs_the_spawn  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
     def test_ample_deadline_still_runs_the_spawn(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -690,6 +704,7 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
         assert _land_should_skip_inline_claims_reverify(worktree) is False
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_no_declared_deadline_is_unchanged  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
     def test_no_declared_deadline_is_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -705,6 +720,7 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
         assert _land_should_skip_inline_claims_reverify(worktree) is False
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_unparseable_deadline_is_unchanged  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
     def test_unparseable_deadline_is_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -740,6 +756,7 @@ class TestDoneReportThenLandRealClosuresEndToEnd:
     run twice, can."""
 
     # frob:tests src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_check_gate_findings_fn kind="integration"  # noqa: E501
     def test_real_closures_done_report_then_land_succeeds(self, tmp_path: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds  # noqa: E501
         from frob.app.ticket_runner import (
@@ -1105,6 +1122,7 @@ class TestCheckTddOrder:
             ),
         )
 
+    # frob:tests src/frob/tickets/_land.py::_check_tdd_order
     def test_logs_a_warning_for_an_implementation_first_pair_without_blocking(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: Any
     ) -> None:
@@ -1144,6 +1162,7 @@ class TestCheckTddOrder:
         assert result.is_ok
         assert any("TDD001" in r.message for r in caplog.records)
 
+    # frob:tests src/frob/tickets/_land.py::_check_tdd_order
     def test_stays_quiet_when_no_tests_edges_are_touched(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1166,6 +1185,7 @@ class TestCheckTddOrder:
         result = _land_mod._check_tdd_order(tmp_path, ticket, "main")
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_land.py::_check_tdd_order
     def test_never_refuses_the_land(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1210,6 +1230,7 @@ class TestCheckTddOrder:
         result = _land_mod._check_tdd_order(tmp_path, ticket, "main")
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_land.py::_check_tdd_order
     def test_passes_the_resolved_merge_base_as_since(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1256,6 +1277,7 @@ class TestCheckTddOrder:
         assert result.is_ok
         assert received["since"] == "abc123"
 
+    # frob:tests src/frob/tickets/_land.py::_check_tdd_order
     def test_falls_back_to_unbounded_when_merge_base_is_unresolvable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: Any
     ) -> None:
@@ -1674,6 +1696,7 @@ class TestReverifyEvidenceForClose:
         assert "could not be measured" not in caplog.text
 
     # frob:ticket T-2569
+    # frob:tests src/frob/app/ticket_runner/_verify.py::VerifyOutcome  # noqa: E501
     def test_unmeasured_returns_false_with_distinct_message(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:

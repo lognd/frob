@@ -23,6 +23,7 @@ def _row(argv: str) -> dict:
 class TestProbeUnattributedLandProcess:
     """`probe_unattributed_land_process`: the T-2807 fix itself."""
 
+    # frob:tests scripts/wait_for_land_slot.py::probe_unattributed_land_process
     def test_true_when_a_row_has_no_parseable_ticket_id(self) -> None:
         """A live `frob ticket land` process whose argv carries no
         `T-####` token (e.g. a `--queue`/`--drain` batch invocation) --
@@ -31,6 +32,7 @@ class TestProbeUnattributedLandProcess:
         rows = [_row("uv run frob ticket land --queue --worktree /repo")]
         assert wait_for_land_slot.probe_unattributed_land_process(rows) is True
 
+    # frob:tests scripts/wait_for_land_slot.py::probe_unattributed_land_process
     def test_false_when_every_row_has_a_ticket_id(self) -> None:
         """A normal, fully-attributed `frob ticket land T-1234` row must
         not be reported as unattributed -- it is already correctly
@@ -38,6 +40,7 @@ class TestProbeUnattributedLandProcess:
         rows = [_row("uv run frob ticket land T-1234 --worktree /repo")]
         assert wait_for_land_slot.probe_unattributed_land_process(rows) is False
 
+    # frob:tests scripts/wait_for_land_slot.py::probe_unattributed_land_process
     def test_false_when_no_rows_at_all(self) -> None:
         """No live land processes at all: never reported as unattributed
         (an empty scan is not evidence of an unattributed one)."""
@@ -48,6 +51,7 @@ class TestWaitForSlotUnattributedGate:
     """`wait_for_slot`'s new `unattributed_probe` gate -- the two T-2807
     positive controls, both directions."""
 
+    # frob:tests scripts/wait_for_land_slot.py::wait_for_slot
     def test_unattributed_land_process_blocks_an_otherwise_free_slot(
         self,
     ) -> None:
@@ -82,6 +86,7 @@ class TestWaitForSlotUnattributedGate:
         assert "LANDS IN FLIGHT" in summary
         assert ticks  # the probe genuinely ran and measured reading=0
 
+    # frob:tests scripts/wait_for_land_slot.py::wait_for_slot
     def test_no_land_at_all_still_returns_free_promptly(self) -> None:
         """T-2807 positive control (direction 2, the must-still-pass
         control): with no land in flight AND `unattributed_probe`

@@ -132,6 +132,7 @@ class TestTouchedPythonFiles:
         assert _touched_python_files(repo, ticket, "main") == ()
 
     # frob:ticket T-0855
+    # frob:tests src/frob/tickets/_mutation_evidence.py::_touched_python_files kind="unit"  # noqa: E501
     def test_already_landed_sibling_content_excluded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_already_landed_sibling_content_excluded  # noqa: E501
         """T-0855 repro: a sibling ticket committed earlier in this same
@@ -221,6 +222,7 @@ def _repo_with_add_change(tmp_path: Path) -> Path:
 class TestCheckTicketMutationEvidence:
     # frob:tests src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence  # noqa: E501
     # frob:ticket T-1741
+    # frob:tests src/frob/tickets/_mutation_evidence.py::_changed_line_ranges  # noqa: E501
     def test_confirmatory_test_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
         repo = _repo_with_add_change(tmp_path)
@@ -238,6 +240,7 @@ class TestCheckTicketMutationEvidence:
         assert findings[0].tests == ("test_m.py::test_add",)
 
     # frob:ticket T-1741
+    # frob:tests src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence  # noqa: E501
     def test_adversarial_test_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
         repo = _repo_with_add_change(tmp_path)
@@ -253,6 +256,7 @@ class TestCheckTicketMutationEvidence:
         assert result.danger_ok == ()
 
     # frob:ticket T-1741
+    # frob:tests src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence  # noqa: E501
     def test_no_test_evidence_is_ok_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
         repo = _repo_with_add_change(tmp_path)
@@ -291,6 +295,7 @@ class TestCheckTicketMutationEvidence:
         assert result.is_err
         assert result.danger_err is MutationEvidenceError.ExecDisabled
 
+    # frob:tests src/frob/tickets/_mutation_evidence.py::_changed_line_ranges  # noqa: E501
     def test_large_file_unmutable_changed_lines_is_skipped_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -438,6 +443,7 @@ class TestCheckTicketMutationEvidence:
         assert finding.file == "m.py"
 
     # frob:ticket T-1741
+    # frob:tests src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence
     def test_real_subprocess_spawning_evidence_stays_bounded_not_hung(
         self, tmp_path: Path
     ) -> None:

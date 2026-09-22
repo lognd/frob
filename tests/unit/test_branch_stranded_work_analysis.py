@@ -33,6 +33,7 @@ def _stub_run(
 class TestIsMerged:
     """`branch_analysis.is_merged`."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::is_merged
     def test_true_when_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Exit code 0 from `merge-base --is-ancestor` means merged."""
         _stub_run(
@@ -40,6 +41,7 @@ class TestIsMerged:
         )
         assert branch_analysis.is_merged("b", "main") is True
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::is_merged
     def test_false_when_not_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A nonzero exit code means not merged."""
         _stub_run(
@@ -51,6 +53,7 @@ class TestIsMerged:
 class TestTicketIdsOnBranch:
     """`branch_analysis.ticket_ids_on_branch`."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::ticket_ids_on_branch
     def test_ledger_path_yields_its_own_id(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -60,6 +63,7 @@ class TestTicketIdsOnBranch:
         ids = branch_analysis.ticket_ids_on_branch("b", ["tickets/T-0042/ticket.md"])
         assert ids == {"T-0042"}
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::ticket_ids_on_branch
     def test_directive_comment_in_non_ticket_file_is_found(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -120,6 +124,7 @@ class TestClassifyBranch:
     """`branch_analysis.classify_branch` -- the full three-way decision."""
 
     # frob:tests scripts/branch_stranded_work_analysis.py::BranchResult
+    # frob:tests scripts/branch_stranded_work_analysis.py::classify_branch
     def test_merged_when_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """An ancestor branch classifies (a) merged without touching the
         diff/ticket-signal machinery at all."""
@@ -129,6 +134,7 @@ class TestClassifyBranch:
         result = branch_analysis.classify_branch("b", "main")
         assert result.class_ == "merged"
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::classify_branch
     def test_ticket_done_when_all_ids_terminal(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -152,6 +158,7 @@ class TestClassifyBranch:
         assert result.class_ == "ticket-done"
         assert result.ticket_ids == ["T-0100"]
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::classify_branch
     def test_stranded_when_ticket_not_terminal(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -234,6 +241,7 @@ class TestClassifyBranch:
 class TestLocalBranches:
     """`branch_analysis.local_branches`."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::local_branches
     def test_excludes_ref_and_blanks(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """`main` itself and blank lines are filtered out of the listing."""
         _stub_run(
@@ -247,6 +255,7 @@ class TestLocalBranches:
         )
         assert branch_analysis.local_branches("main") == ["feat-a", "feat-b"]
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::local_branches
     def test_empty_on_git_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A nonzero exit code degrades to an empty list, never a raise --
         matches `frob.tickets._unlanded._local_branch_names`'s own
@@ -260,11 +269,13 @@ class TestLocalBranches:
 class TestTreeIdentical:
     """`branch_analysis.tree_identical`."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::tree_identical
     def test_true_on_empty_diff(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """`git diff --quiet` exit 0 means no content difference."""
         _stub_run(monkeypatch, {("git", "diff", "--quiet", "main...b"): (0, "")})
         assert branch_analysis.tree_identical("b", "main") is True
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::tree_identical
     def test_false_on_real_diff(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """`git diff --quiet` exit 1 means a real difference."""
         _stub_run(monkeypatch, {("git", "diff", "--quiet", "main...b"): (1, "")})
@@ -274,6 +285,7 @@ class TestTreeIdentical:
 class TestOwnChangedFiles:
     """`branch_analysis.own_changed_files`."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::own_changed_files
     def test_returns_diff_against_merge_base(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -288,6 +300,7 @@ class TestOwnChangedFiles:
         )
         assert branch_analysis.own_changed_files("b", "main") == ["a.py", "b.py"]
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::own_changed_files
     def test_empty_when_merge_base_fails(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A merge-base failure degrades to an empty list, never a raise."""
         _stub_run(monkeypatch, {("git", "merge-base", "main", "b"): (1, "")})
@@ -297,11 +310,13 @@ class TestOwnChangedFiles:
 class TestBlobText:
     """`branch_analysis.blob_text`."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::blob_text
     def test_returns_stdout_on_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A successful `git show <ref>:<path>` returns its stdout verbatim."""
         _stub_run(monkeypatch, {("git", "show", "main:a.py"): (0, "content\n")})
         assert branch_analysis.blob_text("main", "a.py") == "content\n"
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::blob_text
     def test_none_when_path_does_not_exist(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -315,6 +330,7 @@ class TestBlobText:
 class TestTicketStateOnMain:
     """`branch_analysis.ticket_state_on_main`."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::ticket_state_on_main
     def test_reads_active_ledger_state(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """The active `tickets/T-####/ticket.md` path is tried first."""
         _stub_run(
@@ -323,6 +339,7 @@ class TestTicketStateOnMain:
         )
         assert branch_analysis.ticket_state_on_main("T-0042", "main") == "queued"
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::ticket_state_on_main
     def test_falls_back_to_archive_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A ticket absent from the active ledger but present in the v2
         archive still resolves its state."""
@@ -358,6 +375,7 @@ class TestMain:
     """`branch_analysis.main` -- the CLI entry point, end to end against a
     stubbed `_run`."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::main
     def test_reports_zero_branches_cleanly(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:

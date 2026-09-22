@@ -72,6 +72,7 @@ def _run_captured(cfg: AppConfig) -> str:
 class TestContentionCommand:
     """`frob ticket contention [--json]` (T-2395)."""
 
+    # frob:tests src/frob/app/ticket_runner/_query.py::_contention
     def test_plain_render_ranks_and_names_owners(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand.test_plain_render_ranks_and_names_owners  # noqa: E501
         (tmp_path / "src.py").write_text("x\n", encoding="utf-8")
@@ -100,6 +101,8 @@ class TestContentionCommand:
         )
         assert "zero contention" in out
 
+    # frob:tests src/frob/app/ticket_runner/_query.py::_ContentionOutcome
+    # frob:tests src/frob/app/ticket_runner/_query.py::_ContentionEntry
     def test_json_render_shape(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand.test_json_render_shape  # noqa: E501
         (tmp_path / "src.py").write_text("x\n", encoding="utf-8")

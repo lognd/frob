@@ -72,6 +72,7 @@ class _Queue:
 
 
 class TestOpenBlockersAtClose:
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_open_blockers_at_close  # noqa: E501
     def test_open_blocker_names_the_open_ticket_not_the_terminal_one(
         self, tmp_path: Path
     ) -> None:
@@ -109,6 +110,7 @@ class TestOpenBlockersAtClose:
 
         assert open_ids == ()
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_open_blockers_at_close  # noqa: E501
     def test_no_blocked_by_returns_empty(self, tmp_path: Path) -> None:
         from frob.tickets import TicketState
 
@@ -117,6 +119,7 @@ class TestOpenBlockersAtClose:
 
         assert _open_blockers_at_close(blocked, queue) == ()
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_open_blockers_at_close  # noqa: E501
     def test_unresolvable_blocker_id_is_ignored(self, tmp_path: Path) -> None:
         from frob.tickets import TicketState
 

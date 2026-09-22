@@ -35,6 +35,7 @@ class TestBareToolchainFindings:
         findings = bare_toolchain_findings(f)
         assert [fi.tool for fi in findings] == ["ruff"]
 
+    # frob:tests src/frob/vet/_bare_toolchain.py::bare_toolchain_findings  # noqa: E501
     def test_clean_on_project_tool_argv_spelling(self, tmp_path: Path) -> None:
         """The correct `['uv', 'run', '--project', ..., 'ty', ...]`
         shape (first element `'uv'`, not a bare tool name) is not
@@ -92,6 +93,7 @@ class TestBareToolchainGate:
         assert violations[0].file == "mod.py"
         assert violations[0].line == 1
 
+    # frob:tests src/frob/gates/_bare_toolchain.py::bare_toolchain_gate  # noqa: E501
     def test_clean_on_project_tool_argv_spelling(self, tmp_path: Path) -> None:
         """A tracked file using the correct `project_tool_argv` spelling
         (`'uv'` first) reports zero violations."""

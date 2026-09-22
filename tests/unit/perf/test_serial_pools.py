@@ -78,6 +78,7 @@ class TestStackSamplerAllThreads:
     thread that called `start()` -- the fix that makes a `ThreadPoolExecutor`
     worker thread visible with no dispatch-site change at all."""
 
+    # frob:tests src/frob/perf/_sampler.py::StackSampler.start  # noqa: E501
     def test_samples_a_threadpool_worker_thread(self) -> None:
         """A `ThreadPoolExecutor` job running concurrently with the
         sampled main thread shows up in the collected stacks, attributed
@@ -106,6 +107,7 @@ class TestSerialExecutor:
     """`SerialExecutor` is a transparent, same-thread drop-in for both
     pool executor shapes (T-0948)."""
 
+    # frob:tests src/frob/perf/_serial_pools.py::SerialExecutor.submit  # noqa: E501
     def test_submit_runs_inline_and_resolves(self) -> None:
         """`submit` runs `fn` on the calling thread (same ident) and
         returns an already-resolved `Future`."""
@@ -148,6 +150,7 @@ class TestSerialExecutor:
         future = executor.submit(_pool_worker, 5)
         assert future.result() == sum(i * i for i in range(5))
 
+    # frob:tests src/frob/perf/_serial_pools.py::SerialExecutor.map  # noqa: E501
     def test_map_runs_eagerly_inline(self) -> None:
         """`map` runs `fn` over every argument eagerly, on the calling
         thread, ignoring `timeout`/`chunksize`."""
@@ -155,6 +158,7 @@ class TestSerialExecutor:
         results = list(executor.map(_pool_worker, [1, 2, 3], timeout=5, chunksize=2))
         assert results == [_pool_worker(1), _pool_worker(2), _pool_worker(3)]
 
+    # frob:tests src/frob/perf/_serial_pools.py::SerialExecutor.shutdown  # noqa: E501
     def test_shutdown_is_a_no_op(self) -> None:
         """`shutdown` never raises, with or without `wait`/`cancel_futures`,
         and does not affect a `Future` already resolved by `submit`."""
@@ -264,6 +268,7 @@ class TestInstallSerialPools:
             "need >= 1.5)"
         )
 
+    # frob:tests src/frob/perf/_serial_pools.py::install_serial_pools  # noqa: E501
     def test_with_serial_pools_worker_is_majority_attributed(self) -> None:
         """With `install_serial_pools()` applied first, BOTH the thread-
         pool and process-pool dispatched calls run inline on the profiled

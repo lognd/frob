@@ -41,6 +41,7 @@ land = ["ledger"]
 
 # frob:tests tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red
 # frob:tests src/frob/gates/_arch.py::arch_gate
+# frob:tests src/frob/arch/_layering.py::check_layering_violations
 def test_upward_import_is_arch10x_red(tmp_path: Path) -> None:
     """POSITIVE CONTROL (T-4663 acceptance [2]): plant an import from the
     `ledger` layer back UP into `land` -- an edge nothing in `ledger.
@@ -72,6 +73,7 @@ def test_upward_import_is_arch10x_red(tmp_path: Path) -> None:
 
 # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
 # frob:tests tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked
+# frob:tests src/frob/arch/_layering.py::check_layering_edges
 def test_layering_job_reports_edges_checked(tmp_path: Path) -> None:
     """POSITIVE CONTROL (T-4663 acceptance [3]): given NO violation, the
     layering scan still reports a NONZERO edges-checked count -- proof the

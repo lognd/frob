@@ -61,6 +61,7 @@ def test_write_journal_is_idempotent_for_same_content(tmp_path):
     assert _journal_file_count(tmp_path) == 1
 
 
+# frob:tests src/frob/mutate/_journal.py::write_journal
 def test_write_journal_refuses_on_content_collision(tmp_path):
     # frob:tests \
     # tests/test_mutate_journal.py::test_write_journal_refuses_on_content_collision
@@ -76,6 +77,7 @@ def test_write_journal_refuses_on_content_collision(tmp_path):
     assert _journal_file_count(tmp_path) == 1
 
 
+# frob:tests src/frob/mutate/_journal.py::remove_journal \
 def test_remove_journal_after_restore(tmp_path):
     # frob:tests tests/test_mutate_journal.py::test_remove_journal_after_restore
     target = tmp_path / "m.py"
@@ -88,6 +90,7 @@ def test_remove_journal_after_restore(tmp_path):
     remove_journal(tmp_path, target)
 
 
+# frob:tests src/frob/mutate/_journal.py::list_stale_journals
 def test_list_stale_journals_reports_without_restoring(tmp_path):
     # frob:tests \
     # tests/test_mutate_journal.py::test_list_stale_journals_reports_without_restoring
@@ -103,6 +106,7 @@ def test_list_stale_journals_reports_without_restoring(tmp_path):
     assert len(list_stale_journals(tmp_path)) == 1
 
 
+# frob:tests src/frob/mutate/_journal.py::restore_stale_journals
 def test_restore_stale_journals_is_byte_exact_crlf(tmp_path):
     # frob:tests \
     # tests/test_mutate_journal.py::test_restore_stale_journals_is_byte_exact_crlf
@@ -127,6 +131,7 @@ def test_restore_stale_journals_is_byte_exact_crlf(tmp_path):
     assert list_stale_journals(tmp_path) == ()
 
 
+# frob:tests src/frob/mutate/_journal.py::restore_stale_journals
 def test_restore_stale_journals_after_simulated_crash(tmp_path):
     # frob:tests \
     # tests/test_mutate_journal.py::test_restore_stale_journals_after_simulated_crash
@@ -382,6 +387,7 @@ def test_run_mutations_journal_collision_aborts_with_journal_collision_error(
     assert target.read_text(encoding="utf-8") == original
 
 
+# frob:tests src/frob/mutate/_journal.py::record_journal_progress
 def test_record_journal_progress_tracks_last_written_content(tmp_path):
     # frob:tests \
     # tests/test_mutate_journal.py::test_record_journal_progress_tracks_last_written_content  # noqa: E501
@@ -409,6 +415,7 @@ def test_record_journal_progress_tracks_last_written_content(tmp_path):
     assert after["current_sha256"] == hashlib.sha256(mutant).hexdigest()
 
 
+# frob:tests src/frob/mutate/_journal.py::record_journal_progress
 def test_record_journal_progress_is_a_noop_with_no_journal(tmp_path):
     # frob:tests \
     # tests/test_mutate_journal.py::test_record_journal_progress_is_a_noop_with_no_journal kind="unit"  # noqa: E501
@@ -422,6 +429,7 @@ def test_record_journal_progress_is_a_noop_with_no_journal(tmp_path):
     assert _journal_file_count(tmp_path) == 0
 
 
+# frob:tests src/frob/mutate/_journal.py::record_journal_progress
 def test_record_journal_progress_swallows_write_failure(tmp_path, monkeypatch):
     # frob:tests \
     # tests/test_mutate_journal.py::test_record_journal_progress_swallows_write_failur\
@@ -447,6 +455,7 @@ def test_record_journal_progress_swallows_write_failure(tmp_path, monkeypatch):
     monkeypatch.setattr(journal_mod.os, "replace", real_replace)
 
 
+# frob:tests src/frob/mutate/_journal.py::remove_journal \
 def test_remove_journal_swallows_oserror(tmp_path, monkeypatch):
     # frob:tests tests/test_mutate_journal.py::test_remove_journal_swallows_oserror \
     # kind="unit"

@@ -36,6 +36,7 @@ _BOUNDARY_SRC = (
 
 
 # frob:ticket T-3948
+# frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
 def test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production(
     tmp_path: Path,
 ) -> None:
@@ -58,6 +59,7 @@ def test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production(
 
 
 # frob:ticket T-3948
+# frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
 def test_rel_path_fed_to_exclude_and_test_checks_is_posix_style(
     tmp_path: Path,
 ) -> None:
@@ -79,6 +81,7 @@ def test_rel_path_fed_to_exclude_and_test_checks_is_posix_style(
 
 
 # frob:ticket T-3948
+# frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
 def test_windows_shaped_rel_path_mechanism() -> None:
     """T-3948 binds T-3947's own `test_windows_shaped_rel_path_mechanism`
     (tests/unit/gates/test_ffi_boundary_path_shape.py) as its own

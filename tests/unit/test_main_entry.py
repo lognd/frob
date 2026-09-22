@@ -40,6 +40,7 @@ class TestMainSigint:
         assert "interrupted" in captured.err
         assert "Traceback" not in captured.err
 
+    # frob:tests src/frob/__main__.py::main
     def test_normal_dispatch_is_unaffected(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_normal_dispatch_is_unaffected  # noqa: E501
         calls: list[list[str]] = []
@@ -63,6 +64,7 @@ class TestMainInstallsSigtermReaper:
     runs on every real CLI invocation, before whatever subcommand follows
     has a chance to construct a process pool."""
 
+    # frob:tests src/frob/__main__.py::main  # noqa: E501
     def test_main_installs_the_reaper_before_dispatch(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestMainInstallsSigtermReaper.test_main_installs_the_reaper_before_dispatch  # noqa: E501
         calls: list[str] = []
@@ -135,6 +137,7 @@ class TestRefactorDispatch:
     uniform `run(AppConfig)` shape every `Subcommand`-mapped runner
     shares."""
 
+    # frob:tests src/frob/__main__.py::_dispatch_refactor
     def test_refactor_subcommand_dispatches_to_run_refactor_command(
         self, monkeypatch
     ) -> None:
@@ -156,6 +159,7 @@ class TestRefactorDispatch:
         assert calls[0].source.qualname == "x"
         assert calls[0].destination.qualname == "y"
 
+    # frob:tests src/frob/__main__.py::_dispatch_refactor
     def test_refactor_exit_code_propagates(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_exit_code_propagates  # noqa: E501
         monkeypatch.setattr("frob.refactor._cli.run_refactor_command", lambda args: 1)
@@ -173,6 +177,7 @@ class TestHelpListsDirectDispatchVerbs:
     on the real parser tree and show up in `frob --help`'s subcommand
     list. See T-3125 for the design rationale."""
 
+    # frob:tests src/frob/_cli_parsers/_root.py::_add_analysis_subparsers  # noqa: E501
     def test_help_lists_refactor_and_narrative(self, capsys) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestHelpListsDirectDispatchVerbs.test_help_lists_refactor_and_narrative  # noqa: E501
         parser = main_module._build_parser()
@@ -333,6 +338,8 @@ class TestDidYouMean:
         assert "did you mean: --limit?" not in capsys.readouterr().err
 
     # frob:ticket T-2107
+    # frob:tests src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.error kind="unit"  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.parse_known_args kind="unit"  # noqa: E501
     def test_unrecognized_flag_error_shows_invoked_subcommand_usage(
         self, capsys
     ) -> None:
@@ -397,6 +404,7 @@ class TestLazyLogHandlers:
         monkeypatch.setattr(sys, attr, second)
         assert handler.stream is second
 
+    # frob:tests src/frob/logging/handler.py::_LazyStderrHandler.stream
     def test_stderr_handler_never_emits_against_a_closed_captured_stream(
         self, monkeypatch
     ) -> None:
@@ -445,6 +453,7 @@ class TestEnsureVenv:
         finally:
             main_module.os.environ.pop("VIRTUAL_ENV", None)
 
+    # frob:tests src/frob/__main__.py::_ensure_ambient_virtual_env
     def test_leaves_existing(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_leaves_existing
         monkeypatch.setenv("VIRTUAL_ENV", "/already/active/venv")
@@ -453,6 +462,7 @@ class TestEnsureVenv:
         main_module._ensure_ambient_virtual_env()
         assert main_module.os.environ["VIRTUAL_ENV"] == "/already/active/venv"
 
+    # frob:tests src/frob/__main__.py::_ensure_ambient_virtual_env
     def test_skips_non_venv(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_skips_non_venv
         monkeypatch.delenv("VIRTUAL_ENV", raising=False)
@@ -472,10 +482,12 @@ class TestIsRealVenv:
     -- not just `_ensure_ambient_virtual_env`'s mocked call to it -- is
     covered."""
 
+    # frob:tests src/frob/__main__.py::_is_real_venv  # noqa: E501
     def test_true_for_this_process_own_venv(self) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestIsRealVenv.test_true_for_this_process_own_venv  # noqa: E501
         assert main_module._is_real_venv(Path(sys.prefix)) is True
 
+    # frob:tests src/frob/__main__.py::_is_real_venv  # noqa: E501
     def test_false_for_a_path_with_no_pyvenv_cfg(self, tmp_path) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestIsRealVenv.test_false_for_a_path_with_no_pyvenv_cfg  # noqa: E501
         assert main_module._is_real_venv(tmp_path) is False
@@ -516,6 +528,7 @@ class TestVerboseFlag:
             # which would silently put the leak right back.
             main_module.os.environ.pop("FROB_VERBOSE", None)
 
+    # frob:tests src/frob/__main__.py::_apply_verbose_env_override  # noqa: E501
     def test_dash_dash_verbose_sets_debug_env_var(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_dash_verbose_sets_debug_env_var  # noqa: E501
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
@@ -529,6 +542,7 @@ class TestVerboseFlag:
             # `monkeypatch.delenv` here would stage a re-add at teardown.
             main_module.os.environ.pop("FROB_VERBOSE", None)
 
+    # frob:tests src/frob/__main__.py::_apply_verbose_env_override  # noqa: E501
     def test_no_verbose_flag_leaves_env_var_untouched(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_no_verbose_flag_leaves_env_var_untouched  # noqa: E501
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
@@ -536,6 +550,7 @@ class TestVerboseFlag:
         main_module._apply_verbose_env_override(["doctor"])
         assert "FROB_VERBOSE" not in main_module.os.environ
 
+    # frob:tests src/frob/__main__.py::_apply_verbose_env_override  # noqa: E501
     def test_existing_explicit_frob_log_level_is_not_clobbered(
         self, monkeypatch
     ) -> None:
@@ -588,6 +603,7 @@ class TestGroupedHelpFormatter:
         scaffold_idx = help_text.index("\n    scaffold ")
         assert scaffold_idx > rest_idx
 
+    # frob:tests src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter  # noqa: E501
     def test_section_headers_indent_strictly_less_than_entries(self) -> None:
         """T-2385: each section header renders at a strictly SMALLER indent
         than the command entries beneath it, so it can no longer be
@@ -612,6 +628,7 @@ class TestGroupedHelpFormatter:
                 f"than its first entry's indent ({entry_indent})"
             )
 
+    # frob:tests src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter  # noqa: E501
     def test_no_help_text_breaks_inside_a_word(self) -> None:
         """Asserts no rendered `--help` line ends mid-word: a genuine
         word-wrap break always falls on whitespace (textwrap never
@@ -635,6 +652,7 @@ class TestGroupedHelpFormatter:
                 f"line appears to break mid-word: {stripped!r}"
             )
 
+    # frob:tests src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter  # noqa: E501
     def test_nested_subparser_help_is_unaffected(self) -> None:
         """`frob quality --help` keeps the ordinary flat argparse listing
         -- `formatter_class` is not inherited by `add_parser()`-created

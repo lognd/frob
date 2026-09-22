@@ -26,6 +26,8 @@ class TestRegisterGate:
     """`register_gate` itself: success, duplicate job, duplicate rule id,
     empty rule ids."""
 
+    # frob:tests src/frob/gates/_registry.py::register_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry.py::GateRegistration  # noqa: E501
     def test_register_returns_the_stored_registration(self) -> None:
         """A fresh job name registers cleanly and round-trips its fields."""
         result = _registry.register_gate(
@@ -68,6 +70,7 @@ class TestRegisterGate:
         assert result.is_err
         assert result.danger_err is _registry.RegistryError.DuplicateRuleId
 
+    # frob:tests src/frob/gates/_registry.py::reset_registry_for_tests  # noqa: E501
     def test_empty_rule_ids_is_refused(self) -> None:
         """A registration declaring zero rule ids is refused -- a
         detector with no rule id is not a gate, it is a bug."""
@@ -81,6 +84,8 @@ class TestRegisterGate:
 class TestGateDecorator:
     """The `@gate(...)` decorator form used at module-import time."""
 
+    # frob:tests src/frob/gates/_registry.py::derive_known_rule_ids  # noqa: E501
+    # frob:tests src/frob/gates/_registry.py::gate  # noqa: E501
     def test_decorator_registers_and_returns_function_unchanged(self) -> None:
         """The decorated function is returned unchanged and callable, and
         its rule id is now known to the registry."""
@@ -110,6 +115,7 @@ class TestGateDecorator:
 class TestSeedLegacyBulk:
     """The one-time legacy-baseline seed and its idempotence."""
 
+    # frob:tests src/frob/gates/_registry.py::seed_legacy_bulk  # noqa: E501
     def test_seed_is_idempotent(self) -> None:
         """Seeding twice with identical data is a no-op Ok, not a
         DuplicateJob refusal -- multiple gate-adjacent modules may each
@@ -133,6 +139,7 @@ class TestDerivedViewsMatchLegacyExactly:
     today's hand-maintained `_ALL_GATES`/`_KNOWN_GATE_RULES` exactly, no
     rule gained or lost, once the legacy baseline is seeded."""
 
+    # frob:tests src/frob/gates/_registry.py::derive_job_names  # noqa: E501
     def test_derived_job_names_equal_all_gates(self) -> None:
         """`derive_job_names()` seeded from `_ALL_GATES` equals it exactly."""
         _registry.seed_legacy_bulk(job_names=_ALL_GATES, rule_ids=_KNOWN_GATE_RULES)
@@ -152,6 +159,9 @@ class TestAddingADetectorTouchesOneFile:
     Fails on dev today (no registry exists at all; the fake rule id
     would be reported as unregistered against `_KNOWN_GATE_RULES`)."""
 
+    # frob:tests src/frob/gates/_registry.py::derive_doc_rule_table  # noqa: E501
+    # frob:tests src/frob/gates/_registry.py::derive_check_coverage_entries  # noqa: E501
+    # frob:tests src/frob/gates/_registry.py::CheckCoverageEntry  # noqa: E501
     def test_adding_a_detector_touches_one_file(self) -> None:
         """Registering `FAKE_T4661_001` via `register_gate` alone makes it
         appear in the derived job list, known-rule-id set, and
@@ -183,6 +193,7 @@ class TestUnregisteredLiveRuleIsReported:
     registry is reported, not silently accepted -- the existing
     `_rule_id_scan` behaviour, now sourced from this registry."""
 
+    # frob:tests src/frob/gates/_registry.py::find_unregistered_live_rule_ids  # noqa: E501
     def test_registered_ids_are_not_reported(self) -> None:
         """A candidate scan that only finds already-registered ids
         reports nothing unregistered."""

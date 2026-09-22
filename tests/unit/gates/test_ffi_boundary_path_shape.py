@@ -54,6 +54,7 @@ def test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production(
 
 
 # frob:ticket T-3947
+# frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
 def test_rel_path_fed_to_exclude_and_test_checks_is_posix_style(
     tmp_path: Path,
 ) -> None:
@@ -75,6 +76,9 @@ def test_rel_path_fed_to_exclude_and_test_checks_is_posix_style(
 
 # frob:ticket T-4102
 # frob:ticket T-4155
+# frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
+# frob:tests src/frob/excludes.py::is_excluded
+# frob:tests src/frob/excludes.py::_compiled_globs
 def test_windows_shaped_rel_path_mechanism() -> None:
     """T-4102 fixed the CASE half of `is_excluded`'s platform-dependence
     (fnmatch's `os.path.normcase`); T-4155 fixed the SEPARATOR half. This

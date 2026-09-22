@@ -49,12 +49,14 @@ class TestParseKotlin:
         assert not tree.root_node.has_error
         assert tree.root_node.type == "source_file"
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::parse_kotlin  # noqa: E501
     def test_kts_fixture_parses_without_error(self) -> None:
         """A trivial `.kts` script fixture parses with no `ERROR`/`MISSING` nodes."""
         tree = parse_kotlin(_KTS_SOURCE)
         assert not tree.root_node.has_error
         assert tree.root_node.type == "source_file"
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::parse_kotlin  # noqa: E501
     def test_top_level_node_types_include_class_and_fun(self) -> None:
         """The `.kt` fixture's parse tree has a top-level class and a
         nested function declaration -- the acceptance criteria's "class,
@@ -76,12 +78,14 @@ class TestParseKotlin:
 class TestRawKotlinTree:
     """`raw_kotlin_tree` exposes the parse as a `TreeNode`, comments stripped."""
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::raw_kotlin_tree
     def test_returns_tree_node(self) -> None:
         """The export is a `TreeNode`, matching every other language's raw-walk shape."""
         node = raw_kotlin_tree(_KT_SOURCE)
         assert isinstance(node, TreeNode)
         assert node.label == "source_file"
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::raw_kotlin_tree  # noqa: E501
     def test_comments_are_stripped(self) -> None:
         """A leading `// ...` comment never appears as an exported child node."""
         node = raw_kotlin_tree(_KT_SOURCE)
@@ -150,6 +154,7 @@ class TestWalkKotlin:
         assert by_qualname["Greeter.greet"].kind == SymbolKind.METHOD
         assert "hello" in " ".join(by_qualname["Greeter.greet"].body_tokens)
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::_walk_kotlin  # noqa: E501
     def test_interface_method_has_no_body(self) -> None:
         """A bodyless interface method still binds (kotlin folds `interface`
         into the same `class_declaration` node type as `class`)."""
@@ -159,6 +164,7 @@ class TestWalkKotlin:
         assert by_qualname["Iface"].kind == SymbolKind.CLASS
         assert by_qualname["Iface.greet"].body_tokens == ()
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::_walk_kotlin  # noqa: E501
     def test_private_symbol_is_not_public(self) -> None:
         """An explicit `private` modifier marks the symbol non-public."""
         tree = parse_kotlin(_WALK_SOURCE)
@@ -166,6 +172,7 @@ class TestWalkKotlin:
         by_qualname = {s.qualname: s for s in symbols}
         assert by_qualname["Greeter.helper"].public is False
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::_walk_kotlin  # noqa: E501
     def test_top_level_property_and_typealias(self) -> None:
         """A top-level `val` becomes a `CONST`, a `typealias` becomes a `TYPE`."""
         tree = parse_kotlin(_WALK_SOURCE)
@@ -174,6 +181,7 @@ class TestWalkKotlin:
         assert by_qualname["topLevel"].kind == SymbolKind.CONST
         assert by_qualname["Str"].kind == SymbolKind.TYPE
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::_walk_kotlin  # noqa: E501
     def test_leading_kdoc_comment_binds_as_doc_text(self) -> None:
         """A `/** ... */` KDoc block directly above a class/fn binds as `doc_text`."""
         tree = parse_kotlin(_WALK_SOURCE)

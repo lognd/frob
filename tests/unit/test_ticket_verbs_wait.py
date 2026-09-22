@@ -113,6 +113,7 @@ class TestAddWaitArg:
         ns = self._parser().parse_args(["--wait"])
         assert ns.ticket_wait_s == _TICKET_WAIT_DEFAULT_S
 
+    # frob:tests src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_wait_arg  # noqa: E501
     def test_explicit_seconds_is_used_verbatim(self) -> None:
         """`--wait N` sets `ticket_wait_s` to exactly `N`."""
         ns = self._parser().parse_args(["--wait", "12.5"])

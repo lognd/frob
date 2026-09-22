@@ -1382,6 +1382,7 @@ class TestTestGate:
         )
 
     # frob:ticket T-0557
+    # frob:tests src/frob/gates/__init__.py::_STALE_DISCLOSURE_PREFIX
     def test_test005_unmeasured_symbol_in_measured_file_flags_as_zero(
         self, tmp_path: Path
     ) -> None:
@@ -1417,6 +1418,7 @@ class TestTestGate:
         assert "0.0%" in v.message
 
     # frob:ticket T-0557
+    # frob:tests src/frob/gates/__init__.py::_STALE_DISCLOSURE_PREFIX
     def test_test005_symbol_in_unmeasured_file_still_skipped(
         self, tmp_path: Path
     ) -> None:
@@ -1933,6 +1935,7 @@ class TestTestGate:
         violations = _test006(snap)
         assert any(v.rule == "TEST006" for v in violations)
 
+    # frob:tests src/frob/gates/__init__.py::_changelog_mentions
     def test_changelog_mentions_rejects_substring_in_prose(
         self, tmp_path: Path
     ) -> None:
@@ -1951,6 +1954,7 @@ class TestTestGate:
         # line, but there is no real heading entry for "1.2.3" itself.
         assert _changelog_mentions(tmp_path, "1.2.3") is False
 
+    # frob:tests src/frob/gates/__init__.py::_changelog_mentions
     def test_changelog_mentions_accepts_real_heading_entry(
         self, tmp_path: Path
     ) -> None:
@@ -1963,6 +1967,7 @@ class TestTestGate:
         )
         assert _changelog_mentions(tmp_path, "1.2.3") is True
 
+    # frob:tests src/frob/gates/__init__.py::_test006_stale
     def test_test006_stale_on_new_file_not_in_stamp(self, tmp_path: Path) -> None:
         """A file added after the last stamp, with no entry in
         `file_hashes` at all, is reported stale rather than silently
@@ -2308,6 +2313,7 @@ class TestTest013NativeUnverified:
     not stay silently indistinguishable from a real, executed test."""
 
     # frob:ticket T-0552
+    # frob:tests src/frob/gates/__init__.py::_test013_native_unverified
     def test_fires_on_structural_only_edge(self, tmp_path: Path) -> None:
         # frob:tests tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
         from typani.option import Nothing
@@ -2329,6 +2335,7 @@ class TestTest013NativeUnverified:
         assert "unverified" in test013[0].message
 
     # frob:ticket T-0552
+    # frob:tests src/frob/gates/__init__.py::_test013_native_unverified
     def test_silent_on_executed_edge(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
@@ -2579,6 +2586,8 @@ class TestNativeTestCollectors:
     # frob:ticket T-4386
     # frob:tests \
     # tests/gates_suite/test_test_gate.py::TestNativeTestCollectors.test_test002_platform_skipped_edge_reports_unresolved_not_error  # noqa: E501
+    # frob:tests src/frob/gates/__init__.py::_test002_platform_skipped
+    # frob:tests src/frob/gates/__init__.py::_edges_platform_skip_reason
     def test_test002_platform_skipped_edge_reports_unresolved_not_error(
         self, tmp_path: Path
     ) -> None:
@@ -2925,6 +2934,7 @@ class TestTest014AmbiguousConventionMatch:
     both clear TEST001 off one test that only actually exercises one."""
 
     # frob:ticket T-0547
+    # frob:tests src/frob/gates/__init__.py::_test014_ambiguous_convention
     def test_fires_on_cross_file_same_test_collision(self, tmp_path: Path) -> None:
         # frob:tests tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
         # The audit's own repro: two `def parse()` in different modules,
@@ -2949,6 +2959,7 @@ class TestTest014AmbiguousConventionMatch:
         assert "pkg_b/mod.py::parse" in test014[0].message
 
     # frob:ticket T-0547
+    # frob:tests src/frob/gates/__init__.py::_test014_ambiguous_convention
     def test_silent_when_symbol_has_explicit_edge(self, tmp_path: Path) -> None:
         # frob:tests tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
         # An explicit frob:tests edge on either colliding symbol removes it
@@ -2973,6 +2984,7 @@ class TestTest014AmbiguousConventionMatch:
         assert "TEST014" not in _rules(violations)
 
     # frob:ticket T-0547
+    # frob:tests src/frob/gates/__init__.py::_test014_ambiguous_convention
     def test_silent_when_no_leaf_name_collision(self, tmp_path: Path) -> None:
         # frob:tests tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
         from typani.option import Nothing
@@ -2998,6 +3010,7 @@ class TestTest015VacuousCredit:
     reuses T-0549's existing assertion heuristic to make that loud."""
 
     # frob:ticket T-0548
+    # frob:tests src/frob/gates/__init__.py::_test015_vacuous_credit
     def test_fires_on_no_op_test_body(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
@@ -3019,6 +3032,7 @@ class TestTest015VacuousCredit:
         assert "test_helper" in test015[0].message
 
     # frob:ticket T-0548
+    # frob:tests src/frob/gates/__init__.py::_test015_vacuous_credit
     def test_silent_when_any_matching_test_asserts(self, tmp_path: Path) -> None:
         # frob:tests tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asserts  # noqa: E501
         from typani.option import Nothing
@@ -3038,6 +3052,7 @@ class TestTest015VacuousCredit:
         assert "TEST015" not in _rules(violations)
 
     # frob:ticket T-0548
+    # frob:tests src/frob/gates/__init__.py::_test015_vacuous_credit
     def test_silent_when_no_test_matches_at_all(self, tmp_path: Path) -> None:
         # frob:tests tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit.test_silent_when_no_test_matches_at_all  # noqa: E501
         # No matching test at all is TEST001's own job (already ERROR) --

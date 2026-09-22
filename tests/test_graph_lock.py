@@ -271,6 +271,7 @@ class TestAckDrift:
         assert first == second
         assert first.endswith(b"\n")
 
+    # frob:tests src/frob/graph/lock.py::write_lock
     def test_write_lock_is_atomic(self, tmp_path: Path, monkeypatch) -> None:
         snap = self._snapshot(tmp_path)
         lock = load_lock(tmp_path / "frob.lock").danger_ok
@@ -344,6 +345,7 @@ class TestCacheLockRetry:
     rather than the bare sqlite exception."""
 
     # frob:tests src/frob/graph/cache.py::_with_lock_retry
+    # frob:tests src/frob/graph/cache.py::_should_retry_lock_error
     def test_retries_then_succeeds_past_a_transient_lock(self, monkeypatch) -> None:
         calls = {"n": 0}
 
@@ -359,6 +361,7 @@ class TestCacheLockRetry:
         assert calls["n"] == 3
 
     # frob:tests src/frob/graph/cache.py::_with_lock_retry
+    # frob:tests src/frob/graph/cache.py::CacheLocked
     def test_raises_cache_locked_once_budget_exhausted(self, monkeypatch) -> None:
         def _always_locked() -> None:
             raise sqlite3.OperationalError("database is locked")
@@ -373,6 +376,8 @@ class TestCacheLockRetry:
             raise AssertionError("expected CacheLocked to be raised")
 
     # frob:tests src/frob/graph/cache.py::_with_lock_retry
+    # frob:tests src/frob/graph/cache.py::_should_retry_lock_error
+    # frob:tests src/frob/graph/cache.py::_is_transient_lock_error
     def test_non_locked_operational_error_is_not_retried(self) -> None:
         def _other_error() -> None:
             raise sqlite3.OperationalError("disk I/O error")
@@ -385,6 +390,7 @@ class TestCacheLockRetry:
             raise AssertionError("expected the original OperationalError to propagate")
 
     # frob:tests src/frob/graph/cache.py::store_file_data
+    # frob:tests src/frob/graph/cache.py::_should_retry_lock_error
     def test_store_file_data_retries_past_a_held_exclusive_lock(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -422,6 +428,7 @@ class TestCacheLockRetry:
             conn.close()
 
     # frob:tests src/frob/graph/build_graph
+    # frob:tests src/frob/graph/cache.py::CacheLocked
     def test_build_graph_reports_err_instead_of_crashing_on_cache_locked(
         self, tmp_path: Path, monkeypatch
     ) -> None:

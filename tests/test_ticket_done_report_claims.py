@@ -29,6 +29,8 @@ class TestDoneReportClaimsModel:
     """Round-trip of `render_claims_block`/`parse_claims_from_done_report`
     via `DoneReportClaims`, independent of `set_done_report`."""
 
+    # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::render_claims_block kind="unit"  # noqa: E501
     def test_round_trips_through_a_done_report_body(self) -> None:
         # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body  # noqa: E501
         from frob.tickets._models import render_claims_block
@@ -46,6 +48,9 @@ class TestDoneReportClaimsModel:
 
     # frob:ticket T-0846
     # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::render_claims_block kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::DoneReportClaims kind="unit"  # noqa: E501
     def test_error_findings_round_trips_through_a_done_report_body(self) -> None:
         """T-0846: a claim carrying a real (possibly-empty) `error_findings`
         identity set round-trips distinctly from one carrying `None` (no
@@ -70,6 +75,9 @@ class TestDoneReportClaimsModel:
 
     # frob:ticket T-0846
     # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::render_claims_block kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::DoneReportClaims kind="unit"  # noqa: E501
     def test_measured_empty_error_findings_differs_from_none(self) -> None:
         """A MEASURED-but-empty `error_findings` set (a real check ran and
         found zero errors) must round-trip as `frozenset()`, never as
@@ -94,11 +102,13 @@ class TestDoneReportClaimsModel:
         assert parsed.error_findings == frozenset()
         assert parsed.error_findings is not None
 
+    # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="unit"  # noqa: E501
     def test_missing_section_returns_none(self) -> None:
         # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_missing_section_returns_none  # noqa: E501
         body = "## Done report\n\nwhy\n\n### Evidence\n(none)\n"
         assert parse_claims_from_done_report(body) is None
 
+    # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="unit"  # noqa: E501
     def test_free_prose_elsewhere_never_masquerades_as_claims(self) -> None:
         # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_free_prose_elsewhere_never_masquerades_as_claims  # noqa: E501
         """Security property (T-0754 review round 2 fix #5): a narrative
@@ -152,6 +162,7 @@ class TestSetDoneReportClaims:
         assert result.is_ok
         assert "### Captured claims" not in result.danger_ok.body
 
+    # frob:tests src/frob/tickets/_reporting.py::set_done_report
     def test_claims_captured_from_real_callables(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
         """The whole point: the recorded count/gate-counts come from the

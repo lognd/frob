@@ -28,6 +28,7 @@ class TestStackdumpHandler:
     any pytest-specific wiring."""
 
     # frob:tests tests/unit/test_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled  # noqa: E501
+    # frob:tests src/frob/testing/_stackdump.py::dump_all_thread_stacks  # noqa: E501
     def test_sigusr1_writes_all_thread_stacks_when_enabled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

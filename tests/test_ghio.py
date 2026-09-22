@@ -151,6 +151,7 @@ class TestPreflight:
         assert result.is_err
         assert result.danger_err == GhError.NetworkUnreachable
 
+    # frob:tests src/frob/ghio.py::GhEnvironment
     def test_success(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests src/frob/ghio.py::preflight
         _scripted(
@@ -195,6 +196,7 @@ class TestListRuns:
         assert result.is_err
         assert result.danger_err == GhError.NotFound
 
+    # frob:tests src/frob/ghio.py::RunSummary
     def test_success_parses_rows(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -231,6 +233,8 @@ class TestViewRun:
         assert result.is_err
         assert result.danger_err == GhError.NotFound
 
+    # frob:tests src/frob/ghio.py::RunDetail
+    # frob:tests src/frob/ghio.py::JobSummary
     def test_success_parses_jobs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -332,6 +336,7 @@ class TestJobLog:
             },
         )
 
+    # frob:tests src/frob/ghio.py::GhError
     def test_empty_log_for_a_failed_job_is_named(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -398,6 +403,7 @@ class TestJobLog:
         )
         assert _classify_gh_failure(result) == GhError.RunInProgress
 
+    # frob:tests src/frob/ghio.py::JobLog
     def test_truncated_log_for_cancelled_run(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

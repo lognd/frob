@@ -527,6 +527,7 @@ class TestListAgentWorktrees:
 class TestSweepWorktrees:
     """`sweep_worktrees`'s core removal decision: clean AND no live lease."""
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
     def test_clean_no_lease_removed(self, sweep_repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed
@@ -539,6 +540,7 @@ class TestSweepWorktrees:
         assert verdicts[0].verdict == "removed"
         assert not wt.exists()
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
     def test_clean_live_lease_kept(self, sweep_repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept
@@ -571,6 +573,7 @@ class TestSweepWorktrees:
         assert verdicts[0].verdict == "kept:dirty"
         assert wt.exists()
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
     def test_expired_lease_clean_removed(self, sweep_repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_expired_lease_clean_removed  # noqa: E501
         wt = _add_agent_worktree(sweep_repo, "wt1")
@@ -586,6 +589,7 @@ class TestSweepWorktrees:
         assert verdicts[0].verdict == "removed"
         assert not wt.exists()
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
     def test_dry_run_removes_nothing(self, sweep_repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing
@@ -604,6 +608,7 @@ class TestSweepWorktrees:
         assert result2.is_ok
         assert not wt.exists()
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
     def test_branches_survive_removal(self, sweep_repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal
@@ -615,6 +620,7 @@ class TestSweepWorktrees:
         assert result.danger_ok[0].verdict == "removed"
         assert _branch_exists(sweep_repo, "agent-wt1")
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
     def test_min_age_keeps_recent_worktree(self, sweep_repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree  # noqa: E501
         wt = _add_agent_worktree(sweep_repo, "wt1")
@@ -898,6 +904,7 @@ class TestCommitStartTransition:
     in-progress` ledger write into `root`, not leave `root` dirty for the
     next `frob ticket land` (any worktree) to trip DirtyMain on."""
 
+    # frob:tests src/frob/tickets/_leases.py::commit_start_transition kind="unit"  # noqa: E501
     def test_commits_dirty_ledger_with_expected_message(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_commits_dirty_ledger_with_expected_message  # noqa: E501
         ticket_run(
@@ -914,6 +921,7 @@ class TestCommitStartTransition:
         assert loaded.is_ok
         assert loaded.danger_ok["T-0001"].state == TicketState.IN_PROGRESS
 
+    # frob:tests src/frob/tickets/_leases.py::commit_start_transition kind="unit"  # noqa: E501
     def test_no_op_when_ledger_already_clean(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitStartTransition.test_no_op_when_ledger_already_clean  # noqa: E501
         from frob.tickets._leases import commit_start_transition
@@ -924,6 +932,7 @@ class TestCommitStartTransition:
         status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
+    # frob:tests src/frob/tickets/_leases.py::commit_start_transition kind="unit"  # noqa: E501
     def test_reports_exact_recovery_command_on_commit_failure(
         self, repo: Path, caplog
     ) -> None:
@@ -1002,6 +1011,7 @@ class TestCommitTicketLedgerChange:
     that `frob ticket new`/`drop`/`fail` now use for the same auto-commit
     parity T-1054 gave `start`."""
 
+    # frob:tests src/frob/tickets/_leases.py::commit_ticket_ledger_change kind="unit"  # noqa: E501
     def test_commits_dirty_ledger_with_given_message(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commits_dirty_ledger_with_given_message  # noqa: E501
         from frob.tickets import transition
@@ -1021,6 +1031,8 @@ class TestCommitTicketLedgerChange:
         assert log.stdout.strip() == "chore(tickets): drop T-0001"
 
     # frob:ticket T-3578
+    # frob:tests src/frob/tickets/_leases.py::_log_ledger_commit_failure  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_proc_result_failed  # noqa: E501
     def test_commit_failure_names_the_failing_step_and_git_detail(
         self, repo: Path, caplog
     ) -> None:
@@ -1073,6 +1085,8 @@ class TestCommitTicketLedgerChange:
         assert "stdout=" in caplog.text
 
     # frob:ticket T-4273
+    # frob:tests src/frob/tickets/_leases.py::_is_resolved_concurrent_commit_race
+    # frob:tests src/frob/tickets/_leases.py::_GIT_NOTHING_TO_COMMIT_MARKERS
     def test_resolved_race_is_not_reported_as_commit_failed(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1109,6 +1123,7 @@ class TestCommitTicketLedgerChange:
             for r in caplog.records
         ), [r.message for r in caplog.records]
 
+    # frob:tests src/frob/tickets/_leases.py::commit_ticket_ledger_change kind="unit"  # noqa: E501
     def test_no_op_when_ledger_already_clean(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean  # noqa: E501
         from frob.tickets._leases import commit_ticket_ledger_change
@@ -1121,6 +1136,7 @@ class TestCommitTicketLedgerChange:
         status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
+    # frob:tests src/frob/tickets/_leases.py::commit_ticket_ledger_change kind="unit"  # noqa: E501
     def test_no_commit_flag_skips_entirely_even_when_dirty(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_skips_entirely_even_when_dirty  # noqa: E501
         from frob.tickets import transition
@@ -1138,6 +1154,7 @@ class TestCommitTicketLedgerChange:
         assert status.stdout.strip() != ""
 
     # frob:ticket T-1615
+    # frob:tests src/frob/tickets/_leases.py::commit_ticket_ledger_change kind="unit"  # noqa: E501
     def test_no_commit_flag_warns_when_dirty(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1162,6 +1179,7 @@ class TestCommitTicketLedgerChange:
         assert any("DirtyMain-block" in w and "T-0001" in w for w in warnings)
 
     # frob:ticket T-1891
+    # frob:tests src/frob/tickets/_leases.py::commit_ticket_ledger_change kind="unit"  # noqa: E501
     def test_no_commit_flag_with_warn_if_dirty_false_stays_silent(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1195,6 +1213,7 @@ class TestCommitTicketLedgerChange:
 
     # frob:ticket T-2937
     # frob:ticket T-3612
+    # frob:tests src/frob/tickets/_leases.py::_rollback_pathspecs kind="unit"  # noqa: E501
     def test_rollback_on_land_in_progress_leaves_root_clean(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_rollback_on_land_in_progress_leaves_root_clean  # noqa: E501
         """`rollback_on_land_in_progress=True` paired with a short
@@ -1253,6 +1272,7 @@ class TestCommitTicketLedgerChange:
         )
 
     # frob:ticket T-1615
+    # frob:tests src/frob/tickets/_leases.py::commit_ticket_ledger_change kind="unit"  # noqa: E501
     def test_no_commit_flag_does_not_warn_when_clean(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1275,6 +1295,7 @@ class TestCommitTicketLedgerChange:
         assert not any("DirtyMain-block" in w for w in warnings)
 
     # frob:ticket T-1432
+    # frob:tests src/frob/tickets/_leases.py::_rollback_pathspecs  # noqa: E501
     def test_pre_staged_unrelated_file_never_rides_along_into_the_commit(
         self, repo: Path
     ) -> None:
@@ -1334,6 +1355,7 @@ class TestCommitTicketLedgerChange:
     # names (the same terminology git's own docs use), not a real credential/PII value \
     # -- this whole test is ABOUT the absence of git identity config, so the config key \
     # names appear repeatedly in comments explaining that absence"  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_retry_commit_with_fallback_identity  # noqa: E501
     def test_identity_less_environment_falls_back_to_throwaway_git_identity(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
@@ -1416,12 +1438,15 @@ class TestLedgerCommitRepairMarker:
     reconciled -- by finishing the already-staged commit, never by
     discarding it -- at the start of the next ledger commit."""
 
+    # frob:tests src/frob/tickets/_leases.py::_repair_stale_ledger_commit_markers  # noqa: E501
     def test_no_marker_is_a_silent_no_op(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
         from frob.tickets._leases import _repair_stale_ledger_commit_markers
 
         _repair_stale_ledger_commit_markers(repo)  # must not raise
 
+    # frob:tests src/frob/tickets/_leases.py::_finish_ledger_commit_marker  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_repair_stale_ledger_commit_markers  # noqa: E501
     def test_finishes_a_killed_commit_when_the_staged_content_is_still_there(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1459,6 +1484,8 @@ class TestLedgerCommitRepairMarker:
         marker = repo / ".frob" / "ledger-commit-repair" / "T-0001.json"
         assert not marker.exists()
 
+    # frob:tests src/frob/tickets/_leases.py::_load_ledger_commit_marker  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_repair_stale_ledger_commit_markers  # noqa: E501
     def test_already_advanced_tip_just_clears_the_marker(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_already_advanced_tip_just_clears_the_marker  # noqa: E501
         from frob.tickets import transition
@@ -1496,6 +1523,8 @@ class TestLedgerCommitRepairMarker:
         status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() != ""
 
+    # frob:tests src/frob/tickets/_leases.py::_load_ledger_commit_marker  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_repair_stale_ledger_commit_markers  # noqa: E501
     def test_nothing_dirty_clears_the_marker_silently(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_nothing_dirty_clears_the_marker_silently  # noqa: E501
         from frob.tickets._leases import (
@@ -1523,6 +1552,7 @@ class TestLedgerCommitRepairMarker:
     # frob:ticket T-4273
     # frob:ticket T-4290
     # frob:ticket T-4625
+    # frob:tests src/frob/tickets/_leases.py::_handle_finish_marker_retry_failure
     def test_resolved_race_clears_the_marker_without_a_false_alarm(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1566,6 +1596,9 @@ class TestLedgerCommitRepairMarker:
         ), [r.message for r in caplog.records]
         assert not marker_path.exists()
 
+    # frob:tests src/frob/tickets/_leases.py::_handle_finish_marker_retry_failure
+    # frob:tests src/frob/tickets/_leases.py::_finish_ledger_commit_marker  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_repair_stale_ledger_commit_markers  # noqa: E501
     def test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1615,6 +1648,7 @@ class TestCommitFullLedgerChange:
     change`'s twin for a write not scoped to one ticket id (`frob ticket
     archive`, which can move MANY tickets in one call)."""
 
+    # frob:tests src/frob/tickets/_leases.py::commit_full_ledger_change kind="unit"  # noqa: E501
     def test_commits_dirty_whole_ledger(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_commits_dirty_whole_ledger  # noqa: E501
         from frob.tickets._leases import commit_full_ledger_change
@@ -1633,6 +1667,7 @@ class TestCommitFullLedgerChange:
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
         assert log.stdout.strip() == "chore(tickets): archive 1 ticket(s)"
 
+    # frob:tests src/frob/tickets/_leases.py::commit_full_ledger_change
     def test_no_op_when_clean(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean
@@ -1643,6 +1678,7 @@ class TestCommitFullLedgerChange:
         status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
+    # frob:tests src/frob/tickets/_leases.py::commit_full_ledger_change kind="unit"  # noqa: E501
     def test_no_commit_flag_warns_when_dirty(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1714,6 +1750,7 @@ class TestTicketsLedgerLockRelSingleSource:
     copy -- T-3612 had introduced exactly that drift-prone duplicate
     because `_store.py` was out of its declared scope."""
 
+    # frob:tests src/frob/tickets/_store.py::TICKETS_LEDGER_LOCK_REL  # noqa: E501
     def test_leases_constant_is_the_store_constant(self) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestTicketsLedgerLockRelSingleSource.test_leases_constant_is_the_store_constant  # noqa: E501
@@ -1732,6 +1769,7 @@ class TestRefuseIfLandInProgress:
     a `frob ticket new`/`close`/`drop`/`fail`/`requeue`/`block`/`start`/
     `evidence` commit against the same `root`."""
 
+    # frob:tests src/frob/tickets/_leases.py::refuse_if_land_in_progress
     def test_allows_when_no_lock_file(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file  # noqa: E501
         from frob.tickets._leases import refuse_if_land_in_progress
@@ -1744,6 +1782,7 @@ class TestRefuseIfLandInProgress:
 
     # frob:ticket T-3612
     # frob:ticket T-4625
+    # frob:tests src/frob/tickets/_leases.py::refuse_if_land_in_progress  # noqa: E501
     def test_refuses_while_land_lock_held(self, repo: Path, caplog) -> None:
         """`refuse_if_land_in_progress` probes `tickets.lock` only -- a
         live `land.lock` holder (held for a land's whole slow phase:
@@ -1772,6 +1811,7 @@ class TestRefuseIfLandInProgress:
 
     # frob:ticket T-3612
     # frob:ticket T-4625
+    # frob:tests src/frob/tickets/_leases.py::refuse_if_land_in_progress  # noqa: E501
     def test_refuses_while_ledger_lock_held(self, repo: Path, caplog) -> None:
         """`tickets.lock` held (the land's actual splice, or any other
         ledger write) must still refuse, and still name the correlated
@@ -1814,6 +1854,7 @@ class TestRefuseIfLandInProgress:
             os.close(holder_fd)
 
     # frob:ticket T-3612
+    # frob:tests src/frob/tickets/_leases.py::refuse_if_land_in_progress  # noqa: E501
     def test_allows_after_a_killed_lands_lock_is_os_released(self, repo: Path) -> None:
         if sys.platform == "win32":
             pytest.skip(
@@ -2123,6 +2164,7 @@ class TestRefuseIfLandInProgress:
             os.close(holder_fd)
 
     # frob:ticket T-3612
+    # frob:tests src/frob/tickets/_leases.py::_scan_for_live_land_process  # noqa: E501
     @pytest.mark.skipif(
         not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
     )
@@ -2167,6 +2209,7 @@ class TestRefuseIfLandInProgress:
             holder.kill()
             holder.wait(timeout=5)
 
+    # frob:tests src/frob/tickets/_leases.py::_scan_for_live_land_process
     @pytest.mark.skipif(
         not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
     )
@@ -2218,6 +2261,7 @@ class TestRefuseIfLandInProgress:
             holder.kill()
             holder.wait(timeout=5)
 
+    # frob:tests src/frob/tickets/_leases.py::_scan_for_live_land_process
     @pytest.mark.skipif(
         not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
     )
@@ -2673,6 +2717,7 @@ class TestOrphanedTicketLocks:
     ticket's own instruction: a genuinely orphaned lock must be reported,
     and a lock belonging to an in-flight creation must not be."""
 
+    # frob:tests src/frob/tickets/_leases.py::_lock_file_held_by_live_process
     def test_lock_gone_ticket_is_orphaned(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
         from frob.tickets._leases import orphaned_ticket_locks
@@ -2684,6 +2729,7 @@ class TestOrphanedTicketLocks:
 
         assert orphaned_ticket_locks(repo) == ("T-9999",)
 
+    # frob:tests src/frob/tickets/_leases.py::_lock_file_held_by_live_process
     def test_real_ticket_not_orphaned(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
         from frob.tickets._leases import orphaned_ticket_locks
@@ -2696,6 +2742,7 @@ class TestOrphanedTicketLocks:
 
         assert orphaned_ticket_locks(repo) == ()
 
+    # frob:tests src/frob/tickets/_leases.py::_lock_file_held_by_live_process
     def test_archived_ticket_not_orphaned(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
         from datetime import date
@@ -2752,6 +2799,7 @@ class TestOrphanedTicketLocks:
         finally:
             os.close(fd)
 
+    # frob:tests src/frob/tickets/_leases.py::_lock_file_held_by_live_process
     def test_bad_ledger_degrades_to_none(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
         from typani.result import Err
@@ -2772,6 +2820,8 @@ class TestOrphanedTicketLocks:
         ):
             assert orphaned_ticket_locks(repo) == ()
 
+    # frob:tests src/frob/tickets/_leases.py::_is_ticket_lock_baseline_excluded
+    # frob:tests src/frob/tickets/_leases.py::_ORPHAN_DRAFT_ID_PREFIX
     def test_draft_id_never_reported(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
         # T-4348: a `T-draft-*` id's lock is left behind BY DESIGN when the
@@ -2788,6 +2838,8 @@ class TestOrphanedTicketLocks:
 
         assert orphaned_ticket_locks(repo) == ()
 
+    # frob:tests src/frob/tickets/_leases.py::_is_ticket_lock_baseline_excluded
+    # frob:tests src/frob/tickets/_leases.py::_ORPHAN_LOCK_BASELINE_CUTOVER
     def test_pre_cutover_lock_is_baseline_silent(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
         # T-4348: a lock whose mtime predates the fixed historical cutover
@@ -2811,6 +2863,8 @@ class TestOrphanedTicketLocks:
 
         assert orphaned_ticket_locks(repo) == ()
 
+    # frob:tests src/frob/tickets/_leases.py::_is_ticket_lock_baseline_excluded
+    # frob:tests src/frob/tickets/_leases.py::_ORPHAN_LOCK_BASELINE_CUTOVER
     def test_post_cutover_lock_still_reports(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_ticket_locks kind="unit"
         # T-4348: DO NOT WEAKEN DETECTION -- a lock created after the
@@ -2833,6 +2887,7 @@ class TestOrphanedTicketLocks:
 
         assert orphaned_ticket_locks(repo) == ("T-3334",)
 
+    # frob:tests src/frob/tickets/_leases.py
     def test_warn_logs_once_per_id(self, repo: Path, caplog) -> None:
         # frob:tests src/frob/tickets/_leases.py::warn_orphaned_ticket_locks kind="unit"
         import logging
@@ -3156,6 +3211,7 @@ class TestLeaseStalenessReason:
         assert lease_staleness_reason(repo, record) == "holder-dead"
 
     # frob:ticket T-2264
+    # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason
     def test_land_shields_lease(self, repo: Path, second_worktree: Path) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
@@ -3389,6 +3445,9 @@ class TestReadAllLeasesReconciliation:
     though the lease's worktree is still perfectly live -- worktree
     liveness alone is not enough to keep a lease active."""
 
+    # frob:tests src/frob/tickets/_leases.py::_unlink_terminal_ticket_lease kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_live_leases_pruning_stale kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_ticket_ledger_staleness_shape kind="unit"  # noqa: E501
     def test_terminal_lease_does_not_block(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -3459,6 +3518,7 @@ class TestReadAllLeasesReconciliation:
         leases = read_all_leases(repo)
         assert "T-0001" not in {lease.ticket_id for lease in leases}
 
+    # frob:tests src/frob/tickets/_leases.py::_live_leases_pruning_stale kind="unit"  # noqa: E501
     def test_in_progress_lease_still_blocks(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -3625,6 +3685,7 @@ class TestWorktreeReleaseLeaseCli:
         assert exc_info.value.code == 1
 
     # frob:ticket T-1777
+    # frob:tests src/frob/tickets/_leases.py::force_release_lease
     def test_release_lease_cli_force_releases_a_live_looking_lease(
         self, repo: Path, second_worktree: Path, capsys
     ) -> None:
@@ -4177,6 +4238,7 @@ class TestWarnIfWorktreeStale:
     instead of silently carrying a stale base through a whole session."""
 
     # frob:ticket T-1059
+    # frob:tests src/frob/tickets/_leases.py::warn_if_worktree_stale kind="unit"  # noqa: E501
     def test_warns_when_behind_threshold(self, second_worktree: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_warns_when_behind_threshold  # noqa: E501
         from frob.tickets._leases import warn_if_worktree_stale
@@ -4206,6 +4268,7 @@ class TestWarnIfWorktreeStale:
         assert any("T-1030" in msg for msg in records)
 
     # frob:ticket T-1059
+    # frob:tests src/frob/tickets/_leases.py::warn_if_worktree_stale kind="unit"  # noqa: E501
     def test_silent_when_within_threshold(self, second_worktree: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_when_within_threshold  # noqa: E501
         from frob.tickets._leases import warn_if_worktree_stale
@@ -4233,6 +4296,7 @@ class TestWarnIfWorktreeStale:
         assert not any("commit(s) behind" in msg for msg in records)
 
     # frob:ticket T-1059
+    # frob:tests src/frob/tickets/_leases.py::warn_if_worktree_stale
     def test_silent_on_non_git_root(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_on_non_git_root  # noqa: E501
         from frob.tickets._leases import warn_if_worktree_stale
@@ -4243,6 +4307,7 @@ class TestWarnIfWorktreeStale:
         warn_if_worktree_stale(not_a_repo, "T-0001", main_ref="main")
 
     # frob:ticket T-1059
+    # frob:tests src/frob/tickets/_leases.py::warn_if_worktree_stale kind="unit"  # noqa: E501
     def test_respects_configured_threshold(self, second_worktree: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_respects_configured_threshold  # noqa: E501
         from frob.tickets._leases import warn_if_worktree_stale
@@ -4281,6 +4346,7 @@ class TestLoadPositiveIntConfig:
     `_load_stale_worktree_warn_commits` (T-1059) now delegate to."""
 
     # frob:ticket T-1059
+    # frob:tests src/frob/tickets/_leases.py::load_positive_int_config kind="unit"  # noqa: E501
     def test_returns_default_when_frob_toml_absent(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_returns_default_when_frob_toml_absent  # noqa: E501
         from frob.tickets._leases import load_positive_int_config
@@ -4288,6 +4354,7 @@ class TestLoadPositiveIntConfig:
         assert load_positive_int_config(tmp_path, "some_key", 7) == 7
 
     # frob:ticket T-1059
+    # frob:tests src/frob/tickets/_leases.py::load_positive_int_config
     def test_reads_configured_value(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_reads_configured_value  # noqa: E501
         from frob.tickets._leases import load_positive_int_config
@@ -4296,6 +4363,7 @@ class TestLoadPositiveIntConfig:
         assert load_positive_int_config(tmp_path, "some_key", 7) == 42
 
     # frob:ticket T-1059
+    # frob:tests src/frob/tickets/_leases.py::load_positive_int_config kind="unit"  # noqa: E501
     def test_non_positive_value_falls_back_to_default(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_non_positive_value_falls_back_to_default  # noqa: E501
         from frob.tickets._leases import load_positive_int_config
@@ -4304,6 +4372,7 @@ class TestLoadPositiveIntConfig:
         assert load_positive_int_config(tmp_path, "some_key", 7) == 7
 
     # frob:ticket T-1059
+    # frob:tests src/frob/tickets/_leases.py::load_positive_int_config kind="unit"  # noqa: E501
     def test_malformed_toml_falls_back_to_default(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_malformed_toml_falls_back_to_default  # noqa: E501
         from frob.tickets._leases import load_positive_int_config
@@ -4319,6 +4388,7 @@ class TestRenameLease:
     otherwise a worktree that held the draft's lease looks lease-less the
     moment `frob ticket land` renumbers it in that same worktree."""
 
+    # frob:tests src/frob/tickets/_leases.py::rename_lease kind="unit"  # noqa: E501
     def test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field(
         self, repo: Path
     ) -> None:
@@ -4346,6 +4416,7 @@ class TestRenameLease:
         assert migrated.branch == "main"
         assert migrated.recorded_at == recorded_at
 
+    # frob:tests src/frob/tickets/_leases.py::rename_lease kind="unit"  # noqa: E501
     def test_rename_is_a_no_op_when_no_lease_exists_for_old_id(
         self, repo: Path
     ) -> None:
@@ -4465,6 +4536,7 @@ class TestWarnIfWorktreeStaleFailureBranches:
     count -- each must still return `None` and log nothing, never raise."""
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::warn_if_worktree_stale kind="unit"  # noqa: E501
     def test_silent_when_main_ref_does_not_exist(self, second_worktree: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_main_ref_does_not_exist  # noqa: E501
         import logging
@@ -4490,6 +4562,7 @@ class TestWarnIfWorktreeStaleFailureBranches:
         assert not any("commit(s) behind" in msg for msg in records)
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::warn_if_worktree_stale kind="unit"  # noqa: E501
     def test_silent_when_rev_list_count_fails(self, second_worktree: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_rev_list_count_fails  # noqa: E501
         from frob import gitio
@@ -4510,6 +4583,7 @@ class TestWarnIfWorktreeStaleFailureBranches:
             warn_if_worktree_stale(second_worktree, "T-0001", main_ref="main")
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::warn_if_worktree_stale kind="unit"  # noqa: E501
     def test_silent_when_count_is_not_numeric(self, second_worktree: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_count_is_not_numeric  # noqa: E501
         from frob import gitio
@@ -4531,6 +4605,7 @@ class TestWarnIfWorktreeStaleFailureBranches:
             warn_if_worktree_stale(second_worktree, "T-0001", main_ref="main")
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::warn_if_worktree_stale kind="unit"  # noqa: E501
     def test_silent_when_config_lookup_raises(self, second_worktree: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_config_lookup_raises  # noqa: E501
         with patch(
@@ -4552,6 +4627,7 @@ class TestLeaseAgeSecondsExceptionBranch:
     fallback the `ValueError`-only existing tests never reach."""
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::lease_age_seconds kind="unit"  # noqa: E501
     def test_none_when_recorded_at_is_not_a_string(self) -> None:
         # frob:tests tests/test_ticket_leases.py::TestLeaseAgeSecondsExceptionBranch.test_none_when_recorded_at_is_not_a_string  # noqa: E501
         record = _LeaseRecord(
@@ -4667,6 +4743,7 @@ class TestRecordReleaseRenameLeaseErrorBranches:
     make reachable without mocking the lease layer's own file model."""
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::record_lease kind="unit"  # noqa: E501
     def test_record_lease_degrades_on_mkdir_failure(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_mkdir_failure  # noqa: E501
         with patch(
@@ -4679,6 +4756,7 @@ class TestRecordReleaseRenameLeaseErrorBranches:
         assert result.is_ok
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::record_lease kind="unit"  # noqa: E501
     def test_record_lease_degrades_on_write_failure(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_write_failure  # noqa: E501
         with patch(
@@ -4708,6 +4786,7 @@ class TestRecordReleaseRenameLeaseErrorBranches:
         assert result.is_ok
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::rename_lease kind="unit"  # noqa: E501
     def test_rename_lease_degrades_on_malformed_old_record(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_rename_lease_degrades_on_malformed_old_record  # noqa: E501
         resolved = leases_dir(repo)
@@ -4727,6 +4806,7 @@ class TestRecordReleaseRenameLeaseErrorBranches:
         assert not new_path.exists()
 
     # frob:ticket T-1650
+    # frob:tests src/frob/tickets/_leases.py::rename_lease kind="unit"  # noqa: E501
     def test_rename_lease_degrades_on_write_failure(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_rename_lease_degrades_on_write_failure  # noqa: E501
         recorded = record_lease(repo, "T-0005", ("src/z.py",))

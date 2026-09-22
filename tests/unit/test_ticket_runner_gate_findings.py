@@ -448,6 +448,7 @@ class TestCheckGateFindingsFn:
         )
 
     # frob:ticket T-0850
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_check_gate_findings_fn kind="unit"  # noqa: E501
     def test_scoped_run_flaky_rule_excluded_from_findings(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -581,6 +582,7 @@ class TestCheckGatesSummaryFn:
     base-drift noise the identity path already excludes."""
 
     # frob:ticket T-0850
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn kind="unit"  # noqa: E501
     def test_scoped_run_flaky_rule_excluded_from_error_count(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -698,6 +700,7 @@ class TestParseErrorFindingsFromJson:
     since extraction reads structured `code`/`file` fields directly."""
 
     # frob:ticket T-1703
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_gates_stage_ran
     def test_ty_and_gate_error_both_appear_in_parsed_set(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -811,6 +814,7 @@ class TestParseErrorFindingsFromJson:
         assert findings is None
 
     # frob:ticket T-2793
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_gates_stage_ran
     def test_native_staleness_abort_yields_none_not_the_abort_findings(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -827,6 +831,7 @@ class TestParseErrorFindingsFromJson:
         assert findings is None
 
     # frob:ticket T-2793
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_gates_stage_ran
     def test_other_pre_gate_abort_also_yields_none_not_only_native001(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -860,6 +865,7 @@ class TestBudgetSkippedGroupsFromPayload:
     stage_groups` alone cannot see."""
 
     # frob:ticket T-2713
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_skipped_groups_from_payload
     def test_reads_top_level_skipped_groups(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_reads_top_level_skipped_groups  # noqa: E501
@@ -872,6 +878,7 @@ class TestBudgetSkippedGroupsFromPayload:
         assert skipped == ("gates-fast", "gates-native", "lint", "static")
 
     # frob:ticket T-2713
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_skipped_groups_from_payload
     def test_empty_when_complete_or_absent(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_empty_when_complete_or_absent  # noqa: E501
@@ -899,6 +906,7 @@ class TestBudgetDeferredGroupsFromStdout:
     ran, not just that the sweep is unmeasured."""
 
     # frob:ticket T-2456
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
     def test_extracts_deferred_groups_from_json_stdout(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_extracts_deferred_groups_from_json_stdout  # noqa: E501
@@ -911,6 +919,7 @@ class TestBudgetDeferredGroupsFromStdout:
         assert deferred == ("static",)
 
     # frob:ticket T-2456
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
     def test_empty_for_non_json_stdout(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_for_non_json_stdout  # noqa: E501
@@ -919,6 +928,7 @@ class TestBudgetDeferredGroupsFromStdout:
         assert ticket_runner._budget_deferred_groups_from_stdout("not json") == ()
 
     # frob:ticket T-2456
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
     def test_empty_when_no_deferral_present(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_when_no_deferral_present  # noqa: E501
@@ -957,6 +967,9 @@ class TestBudgetDeferredGroupsFromStdout:
 
 
 # frob:ticket T-3305
+# frob:tests src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn \
+# frob:tests src/frob/app/ticket_runner/_verify.py::_python_for_tree \
+# frob:tests src/frob/app/ticket_runner/_verify.py::_venv_python_has_frob_importable \
 class TestPythonForTree:
     """Covers `_python_for_tree` interpreter resolution; each method below
     carries its own `frob:tests` edge."""
@@ -1088,6 +1101,7 @@ class TestPythonForTree:
 
 
 # frob:ticket T-2076
+# frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
 class TestSharedCheckSpawnFn:
     """Asserts `_shared_check_spawn_fn` spawns `frob check --ticket <id>`
     at most once and caches the result for every later call, so
@@ -1147,6 +1161,7 @@ class TestSharedCheckSpawnFn:
         assert captured["check"] is False
 
     # frob:ticket T-0919
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn kind="unit"  # noqa: E501
     def test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1182,6 +1197,7 @@ class TestSharedCheckSpawnFn:
         )
 
     # frob:ticket T-0919
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_check_gate_findings_fn kind="unit"  # noqa: E501
     def test_default_spawn_none_keeps_each_closure_independent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1523,6 +1539,7 @@ class TestUnmeasuredReasonFromResult:
         assert "refus" in reason.lower()
 
     # frob:ticket T-4281
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result  # noqa: E501
     def test_cache_lock_contention_names_the_holder(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_cache_lock_contention_names_the_holder  # noqa: E501
@@ -1545,6 +1562,7 @@ class TestUnmeasuredReasonFromResult:
         assert "held by pid 12345" in reason
 
     # frob:ticket T-4281
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result  # noqa: E501
     def test_nonzero_exit_without_lock_marker_is_a_generic_crash(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_nonzero_exit_without_lock_marker_is_a_generic_crash  # noqa: E501
@@ -1557,6 +1575,7 @@ class TestUnmeasuredReasonFromResult:
         assert reason == "frob check exited 2 (see stderr for detail)"
 
     # frob:ticket T-4281
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result  # noqa: E501
     def test_clean_exit_is_never_a_reason(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_clean_exit_is_never_a_reason  # noqa: E501
