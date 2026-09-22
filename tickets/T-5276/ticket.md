@@ -1,5 +1,5 @@
 ---
-id: T-draft-23e2a7f8
+id: T-5276
 title: 'Post-land sweep residue 2026-09-22_0413: COV001:src/frob/gates/_directive_stack.py
   COV001:src/frob/graph/dsl.py COV002:src/frob/_cli_parsers/_ticket/__init__.py COV002:src/frob/gate'
 state: queued
