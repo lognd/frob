@@ -23,10 +23,17 @@ scope:
 - src/frob/gates/_land_parity.py
 - tests/test_land_parity.py
 - tests/gates_suite/test_land_parity.py
+- tests/unit/test_land_parity_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_parity_gate.py
+  reason: T-2114 doc/test-edge coverage lives here, the actual test file to touch
+  actor: logan
+  at: '2026-09-22'
 designated_repro_test: null
 threat: null
 component: null
