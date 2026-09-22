@@ -21,13 +21,50 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_exports.py
-- src/frob/doctor
-- src/frob/arch/_layering.py
-- src/frob/vet/_osv.py
+- src/frob/__init__.py
+- src/frob/arch/__init__.py
+- src/frob/vet/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/doctor
+  reason: fix is re-exporting existing symbols in each package __init__.py, no need
+    to touch the source modules themselves
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/arch/_layering.py
+  reason: fix is re-exporting existing symbols in each package __init__.py, no need
+    to touch the source modules themselves
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/vet/_osv.py
+  reason: fix is re-exporting existing symbols in each package __init__.py, no need
+    to touch the source modules themselves
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/__init__.py
+  reason: fix is re-exporting existing symbols in each package __init__.py, no need
+    to touch the source modules themselves
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/arch/__init__.py
+  reason: fix is re-exporting existing symbols in each package __init__.py, no need
+    to touch the source modules themselves
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/vet/__init__.py
+  reason: fix is re-exporting existing symbols in each package __init__.py, no need
+    to touch the source modules themselves
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: points
   old_value: null
