@@ -31,6 +31,9 @@ scope:
 - docs/modules/tickets-data-storage.md
 - src/frob/app/ticket_runner/_lifecycle.py
 - src/frob/tickets/_new_renumber.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/_progress.py
+- src/frob/_cli_parsers/_ticket/_new.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: one model field threaded through new, setter, flow, sprint
   show and docs; each file is a one-hunk change
@@ -47,6 +50,27 @@ scope_changes:
   glob: src/frob/tickets/_new_renumber.py
   reason: TicketSpec.points validation (validate_points, mirroring validate_milestone)
     lives in _validate_new_ticket_spec here
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: argparse wiring for --points/--unsized-ack/frob ticket points/tokens verbs
+    lives in _cli_parsers/_ticket, implicit_scope's CLI-wiring grant covers __main__.py/config.py/ticket_runner/__init__.py
+    but not this sibling parser package
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: argparse wiring for --points/--unsized-ack/frob ticket points/tokens verbs
+    lives in _cli_parsers/_ticket, implicit_scope's CLI-wiring grant covers __main__.py/config.py/ticket_runner/__init__.py
+    but not this sibling parser package
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: argparse wiring for --points/--unsized-ack/frob ticket points/tokens verbs
+    lives in _cli_parsers/_ticket, implicit_scope's CLI-wiring grant covers __main__.py/config.py/ticket_runner/__init__.py
+    but not this sibling parser package
   actor: logan
   at: '2026-09-22'
 triage_changes:
