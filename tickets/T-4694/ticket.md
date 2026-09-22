@@ -27,10 +27,18 @@ scope:
 - src/frob/gates/_fix_engine.py
 - docs/commands/narrative.md
 - tests/narrative
+- tests/gates_suite/test_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates_suite/test_fix_engine.py
+  reason: TIER_A_HANDLERS coverage assertion in this file must include the new DOCARCH002
+    entry
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
