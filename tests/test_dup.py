@@ -979,6 +979,7 @@ class TestCoreAvailable:
 
     # frob:tests \
     # tests/test_dup.py::TestCoreAvailable.test_import_error_returns_false_and_logs
+    # frob:tests src/frob/dup/_core.py::core_available  # noqa: E501
     def test_import_error_returns_false_and_logs(self, monkeypatch) -> None:
         dup_core.core_available.cache_clear()
         real_import = (

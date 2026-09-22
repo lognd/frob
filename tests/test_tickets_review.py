@@ -242,6 +242,7 @@ class TestHasApprovedReviewForCommit:
 
 
 class TestLoadRequireReviewForClose:
+    # frob:tests src/frob/tickets/__init__.py::load_require_review_for_close  # noqa: E501
     def test_defaults_false_with_no_frob_toml(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_defaults_false_with_no_frob_toml  # noqa: E501
         assert load_require_review_for_close(tmp_path) is False

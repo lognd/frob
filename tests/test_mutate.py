@@ -147,6 +147,7 @@ def test_generate_mutants_line_ranges_no_match_is_empty():
     assert result == ()
 
 
+# frob:tests src/frob/mutate/__init__.py::_PointCollector.visit_Compare kind="unit"  # noqa: E501
 def test_point_collector_indexing_matches_mutator():
     # frob:tests src/frob/mutate/__init__.py::_PointCollector
     # _PointCollector's whole contract is index parity: point index N in

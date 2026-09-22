@@ -486,6 +486,7 @@ class TestClaudeConfigDriftStage:
     # frob:tests \
     # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_home_claude_present_but_file_differs  # noqa: E501
     # frob:ticket T-4624
+    # frob:tests src/frob/app/check_runner.py::_claude_config_drift_result
     def test_reports_drift_when_home_claude_present_but_file_differs(
         self, tmp_path: Path, monkeypatch
     ) -> None:

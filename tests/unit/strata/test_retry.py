@@ -29,6 +29,7 @@ class TestMissingBackoff:
     # frob:tests \
     # tests/unit/strata/test_retry.py::TestMissingBackoff.test_retry_flow_without_backo\
     # ff_fires
+    # frob:tests src/frob/strata/_retry.py::check_retry_obligations  # noqa: E501
     def test_retry_flow_without_backoff_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

@@ -35,6 +35,7 @@ class TestLexcheck001:
     """`lexical_selfcheck_gate`: flags a NEW single-function lexical
     decider, stays silent on allowlisted and non-decision code."""
 
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
     def test_new_lexical_decider_is_flagged(self, tmp_path: Path) -> None:
         """A function that both `re.search`-decides and constructs a
         symref-less `Violation` -- the exact REF001-pre-fix shape -- is
@@ -62,6 +63,7 @@ class TestLexcheck001:
         assert len(hits) == 1
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert "_bad_gate" in hits[0].message
+# frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
 
     def test_allowlisted_function_is_silent(self, tmp_path: Path) -> None:
         """The identical decider shape, at an `_ALLOWLIST`-listed (module,
@@ -89,6 +91,7 @@ class TestLexcheck001:
             "_stale_fake_marker_violations",
         ) in mod._ALLOWLIST
         violations = lexical_selfcheck_gate(tmp_path)
+        # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
         assert [v for v in violations if v.rule == "LEXCHECK001"] == []
 
     def test_semantic_function_with_incidental_regex_is_silent(
@@ -112,6 +115,7 @@ class TestLexcheck001:
         )
         _commit(tmp_path)
 
+        # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
         violations = lexical_selfcheck_gate(tmp_path)
         assert [v for v in violations if v.rule == "LEXCHECK001"] == []
 

@@ -207,6 +207,7 @@ class TestIsOrphanedForkserver:
     """`_is_orphaned_forkserver` must match forkserver cmdline + ppid==1,
     and nothing else."""
 
+    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver  # noqa: E501
     def test_matches_forkserver_reparented_to_init(self, tmp_path: Path) -> None:
         _write_proc_entry(
             tmp_path,
@@ -215,6 +216,7 @@ class TestIsOrphanedForkserver:
             ppid=1,
         )
         assert _is_orphaned_forkserver(4242, tmp_path) is True
+# frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver  # noqa: E501
 
     def test_forkserver_with_live_parent_is_not_orphaned(self, tmp_path: Path) -> None:
         _write_proc_entry(
@@ -237,6 +239,7 @@ class TestReapOrphanedForkservers:
     """`reap_orphaned_forkservers` (T-2443's defensive startup sweep) only
     signals a forkserver that is BOTH reparented to init AND older than the
     age floor -- never a young one, never a non-forkserver process."""
+# frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
 
     # frob:ticket T-3760
     @pytest.mark.skipif(
@@ -258,6 +261,7 @@ class TestReapOrphanedForkservers:
             _reap.os, "kill", lambda pid, sig: killed.append((pid, sig))
         )
         reaped = reap_orphaned_forkservers(age_floor_s=300.0, proc=tmp_path)
+        # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
         assert reaped == [4242]
         assert killed == [(4242, signal.SIGTERM)]
 
@@ -436,6 +440,7 @@ class TestIsLiveCheckProcess:
 class TestForkserverRootIsLiveCheck:
     """`_forkserver_root_is_live_check` (T-3072): the multi-hop ancestry
     walk `reap_orphaned_forkservers` now uses instead of a one-hop
+    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
     `ppid == 1` test."""
 
     def test_direct_child_of_live_check_is_not_orphaned(self, tmp_path: Path) -> None:
@@ -589,6 +594,7 @@ class TestCountRunningChecks:
 
 # frob:ticket T-2849
 # frob:ticket T-2880
+# frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
 class TestArmParentDeathSignal:
     """`arm_parent_death_signal` -- T-2849's root-cause primitive: arms
     `PR_SET_PDEATHSIG` on the calling process so the kernel signals it the
@@ -608,6 +614,7 @@ class TestArmParentDeathSignal:
             os._exit(0)
         os.close(write_fd)
         try:
+            # frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
             outcome = os.read(read_fd, 1)
         finally:
             os.close(read_fd)
@@ -717,6 +724,7 @@ class TestArmParentDeathSignal:
         assert result is True
         assert killed == [(os.getpid(), signal.SIGKILL)]
 
+# frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
 
 # frob:ticket T-2849
 class TestArmForkserverHelperPdeathsigIfRequested:

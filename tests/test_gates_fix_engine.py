@@ -41,6 +41,7 @@ def _write(root: Path, rel: str, text: str) -> None:
 class TestFixSuppress001PairedSuppression:
     """`fix_suppress001_paired_suppression`: the end-to-end Tier-A fix."""
 
+    # frob:tests src/frob/gates/_fix_engine_text.py::fix_suppress001_paired_suppression
     def test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression(
         self, tmp_path: Path
     ) -> None:
@@ -338,6 +339,7 @@ class TestFixE501MergeIntroduced:
     over exactly the `.py` files a land-time merge touched, applied ONLY
     when a resulting E501 finding is actually resolved by the format
     pass."""
+# frob:tests src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced  # noqa: E501
 
     def test_e501_merge_introduced_targeted_format_applies(
         self, tmp_path: Path
@@ -422,6 +424,7 @@ class TestFixCov002TicketDirectiveInsertion:
 
         return build_graph(root, root / ".frob" / "cache.db").danger_ok
 
+    # frob:tests src/frob/gates/_fix_engine_sync.py::fix_cov002_ticket_directive_insertion  # noqa: E501
     def test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean(
         self, tmp_path: Path
     ) -> None:
@@ -521,6 +524,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
     suffix to `#` (the exact defect that broke `design/frob.strata` during
     T-1548's own land)."""
 
+    # frob:tests src/frob/gates/_fix_engine_sync.py::_insert_ticket_directive_above
     def test_strata_file_gets_slash_slash_leader(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_strata_file_gets_slash_slash_leader kind="unit"  # noqa: E501

@@ -108,6 +108,7 @@ class TestComposeTreeOutOfTree:
         parent = _run(["git", "rev-parse", f"{new_sha}^"], scratch_repo).stdout.strip()
         assert parent == base
 
+    # frob:tests src/frob/tickets/_land_compose.py::LandComposeError
     def test_compose_failure_returns_err(self, scratch_repo: Path) -> None:
         """A base commit that does not exist fails cleanly with
         Err(ComposeFailed), never raising."""

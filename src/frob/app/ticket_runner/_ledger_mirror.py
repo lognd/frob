@@ -53,7 +53,6 @@ _log = logging.getLogger(__name__)
 
 # frob:ticket T-2603
 # frob:doc docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603
-# frob:tests \
 # tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_promote_kind
 class LedgerWriteStrategy(enum.Enum):
     """The one property every `frob ticket` verb's ledger write needs
@@ -181,6 +180,16 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     # locally but never mirrored to the primary checkout, invisible to
     # the fleet until the ticket landed.
     "milestone": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # frob:ticket T-5132
+    # T-5132's `frob ticket points`/`frob ticket tokens` setters missed
+    # this registration when they landed (_ledger_mirror.py was not in
+    # T-5132's declared scope) -- every invocation crashed with "has no
+    # LEDGER_VERB_STRATEGY entry" until this fix. Same GENERIC_COMMIT_
+    # MIRRORED strategy `milestone`/`priority` above use: a worktree
+    # agent's write needs to mirror to the primary checkout immediately,
+    # not wait for land.
+    "points": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "tokens": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "priority": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     # frob:ticket T-4696
     "set": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,

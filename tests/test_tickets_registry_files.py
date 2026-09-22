@@ -46,9 +46,11 @@ def _git_repo(tmp_path: Path) -> Path:
 class TestRegistryFiles:
     """`registry_files`/`is_registry_file` (T-4650)."""
 
+    # frob:tests src/frob/tickets/_registry_files.py::registry_files  # noqa: E501
     def test_no_root_returns_default(self) -> None:
         """`registry_files(None)` returns the documented default set."""
         assert registry_files(None) == DEFAULT_REGISTRY_FILES
+# frob:tests src/frob/tickets/_registry_files.py::registry_files  # noqa: E501
 
     def test_no_frob_toml_returns_default(self, tmp_path: Path) -> None:
         """A repo root with no `frob.toml` at all falls back to default."""
@@ -77,6 +79,7 @@ class TestRegistryFiles:
 
 class TestIsAdditiveDiffText:
     """`is_additive_diff_text` (T-4650 acceptances b/c): the
+    # frob:tests src/frob/tickets/_registry_files.py::is_additive_diff_text  # noqa: E501
     pure, no-subprocess unified-diff scan."""
 
     def test_pure_append_is_additive(self) -> None:

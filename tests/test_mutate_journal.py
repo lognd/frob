@@ -49,6 +49,7 @@ def _journal_file_count(root: Path) -> int:
     return len(list(journal_dir.glob("*.json")))
 
 
+# frob:tests src/frob/mutate/_journal.py::write_journal
 def test_write_journal_is_idempotent_for_same_content(tmp_path):
     # frob:tests \
     # tests/test_mutate_journal.py::test_write_journal_is_idempotent_for_same_content

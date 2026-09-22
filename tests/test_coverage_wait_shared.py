@@ -282,6 +282,8 @@ class TestWorktreeLock:
     daemon (not a mock), per this file's own `TestCrossWorktreeSingleFlight`
     precedent."""
 
+    # frob:tests src/frob/testing/_coverage_wait.py::_worktree_lock kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -395,6 +397,7 @@ class TestCoverageLockPlatformBackends:
     PLATFORM001-shaped fix T-2918/T-2934 applied elsewhere, closing this
     module's own former bare, unconditional `import fcntl` (which crashed
     every caller's import on Windows, not just coverage locking)."""
+# frob:tests src/frob/testing/_coverage_wait.py::CoverageLockUnavailable
 
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

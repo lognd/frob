@@ -368,6 +368,7 @@ class TestUnleasedRootEnv:
     naming a dispatched agent's leased worktree, distinct from `root`."""
 
     # frob:ticket T-3379
+    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"  # noqa: E501
     def test_filing_call_sees_no_worktree_lease_env(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -572,6 +573,7 @@ class TestBackpressure:
     """T-1695: the worker must yield rather than run while foreground
     agents hold too many leases, or too little memory is available --
     never starve foreground work, never run silently unmeasured."""
+# frob:tests src/frob/verify/_worker.py::_worker_backpressure_reason
 
     def test_yields_at_lease_ceiling(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
@@ -726,12 +728,14 @@ class TestReconcileStaleInFlightMarker:
     -- mirrors `TestPostLandVerifyPendingMarker`'s shape for the T-1523
     marker this reuses the pattern from: write/read/clear round-trips,
     then the "does a leftover marker get reconciled correctly" case."""
+# frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
 
     def test_no_marker_is_a_silent_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_no_marker_is_a_silent_noop  # noqa: E501
         marker = _worker_mod._in_flight_marker_path(tmp_path)
         assert not marker.exists()
         _worker_mod._reconcile_stale_in_flight_marker(tmp_path)
+        # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
         assert not marker.exists()
 
     def test_stale_marker_with_no_matching_watermark_is_reported_unverified(

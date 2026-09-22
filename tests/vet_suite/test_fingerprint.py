@@ -758,6 +758,7 @@ class TestFingerprintBindingResolution:
 
 class TestObfuscationEnsemble:
     # invariant spec: [INV-025](invariants/INV-025.md)
+    # frob:tests src/frob/vet/_scan_violations.py::_vet004_violation
     def test_high_entropy_string_flagged(self) -> None:
         # frob:tests src/frob/vet/_obfuscation.py::_scan_text_obfuscation kind="unit"
         from frob.vet._obfuscation import _scan_text_obfuscation

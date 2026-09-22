@@ -27,6 +27,7 @@ def _diff(*hunks: Hunk) -> Diff:
 class TestSharedDocAnchorGrouping:
     """`_shared_doc_anchor_groups` -- the grouping helper in isolation."""
 
+    # frob:tests src/frob/gates/_docblocks_refs.py::_shared_doc_anchor_groups
     def test_two_symbols_same_anchor_form_a_group(self, tmp_path: Path) -> None:
         _write(
             tmp_path,

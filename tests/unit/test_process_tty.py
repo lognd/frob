@@ -76,6 +76,7 @@ class TestIsInteractiveStdin:
 
 # frob:ticket T-4255
 class TestWin32StdinHasConsole:
+    # frob:tests src/frob/process/_tty.py::_win32_stdin_has_console
     def test_never_raises_when_ctypes_windll_is_unavailable(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

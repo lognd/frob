@@ -22,6 +22,7 @@ class TestTaintFindings:
     """`frob.vet._taint.taint_findings` over small synthetic fixtures --
     the T-0781 acceptance criterion, both the firing and the clean side."""
 
+    # frob:tests src/frob/vet/_taint.py::taint_findings  # noqa: E501
     def test_unvalidated_state_read_reaching_argv_fires(self, tmp_path: Path) -> None:
         """A `.frob/`-sourced value in a subprocess argv list, no
         validator/`--` in between, is a finding naming source and sink."""
@@ -122,6 +123,7 @@ class TestTaintGate:
         crash -- `git ls-files` failing is handled, not fatal."""
         assert taint_gate(tmp_path) == ()
 
+    # frob:tests src/frob/gates/_taint_gate.py::taint_gate  # noqa: E501
     def test_taint_gate_emits_warn_severity_violation(self, tmp_path: Path) -> None:
         """A real git repo with one unsafe file produces exactly one
         `SEC005` `Violation` at `Severity.WARN`."""

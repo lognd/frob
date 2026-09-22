@@ -3230,6 +3230,7 @@ class TestProjectImportArgv:
     (importing the target's own modules, never syncing an environment to
     make that import possible)."""
 
+    # frob:tests src/frob/process/_project_tool.py::project_import_argv
     def test_shape(self, tmp_path: Path) -> None:
         """Identical shape to `project_tool_argv`: `uv run --no-sync
         --project <root> <tool> <*args>` -- T-4171: the importing kind
@@ -3249,6 +3250,7 @@ class TestProjectImportArgv:
             "-c",
             "import x",
         ]
+# frob:tests src/frob/process/_project_tool.py::project_import_argv
 
     def test_same_shape_as_run_only(self, tmp_path: Path) -> None:
         """`project_tool_argv` and `project_import_argv` build the exact

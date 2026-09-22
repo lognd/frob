@@ -23,6 +23,7 @@ _SAMPLE_PY = (
 
 
 class TestWatchTick:
+    # frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"  # noqa: E501
     def test_no_change_leaves_state_cached(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_serve_watch.py::TestWatchTick.test_no_change_leaves_state_cached
@@ -36,6 +37,7 @@ class TestWatchTick:
         second_key, second_changed = watch_tick(tmp_path, first_key)
         assert second_changed is False
         assert second_key == first_key
+# frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"  # noqa: E501
 
     def test_change_invalidates_and_prewarms(self, tmp_path: Path) -> None:
         # frob:tests \

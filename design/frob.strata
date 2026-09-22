@@ -1549,7 +1549,6 @@ store tickets_ledger : trusted {
 // discharged by the declared lock, matching the flock's real behavior.
 // frob:doc docs/strata/host.md#resource-access-modes-t-0700
 // frob:ticket T-0956
-// frob:tests \
 // tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violations
 resource tickets_ledger {
     lock "tickets.lock";

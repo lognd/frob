@@ -470,6 +470,7 @@ class TestStaleDesign:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # invariant spec: [INV-026](invariants/INV-026.md)
+    # frob:tests src/frob/strata/_selfconform_core_rules.py::_stale_design_violations  # noqa: E501
     def test_stale_design_skips_node_fully_within_graph_exclude(self, tmp_path: Path):
         """T-0310: a node whose ENTIRE `code=` glob resolves only to
         `[graph].exclude`'d paths (aprog-public's activities/slidegen/
@@ -1039,6 +1040,7 @@ class TestExtendedKindsDriftLock:
             kind for table in _PATTERNS.values() for kind in table
         )
         assert _EXTENDED_KINDS | frozenset(_KIND_MAP.keys()) == all_pattern_kinds
+# frob:tests src/frob/strata/_selfconform_kinds.py::_observed_extended_kinds_by_node  # noqa: E501
 
     def test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds(
         self, tmp_path: Path

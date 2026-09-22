@@ -35,6 +35,7 @@ from frob.app.config import (
 )
 
 
+# frob:tests src/frob/repo_meta.py::load_arch_config
 def test_reads_override(tmp_path: Path) -> None:
     """A frob.toml [arch] table fully overrides the calibrated defaults.
 
@@ -68,6 +69,7 @@ def test_reads_override(tmp_path: Path) -> None:
         ),
     }
 
+# frob:tests src/frob/repo_meta.py::load_arch_config
 
 def test_missing_toml_defaults(tmp_path: Path) -> None:
     """No frob.toml at all falls back to the calibrated 60/800/etc defaults
@@ -89,6 +91,7 @@ def test_missing_toml_defaults(tmp_path: Path) -> None:
     }
     assert cfg["max_function_lines"] == 60
     assert cfg["max_file_lines"] == 800
+# frob:tests src/frob/repo_meta.py::load_arch_config
 
 
 def test_missing_section_defaults(tmp_path: Path) -> None:
@@ -96,6 +99,7 @@ def test_missing_section_defaults(tmp_path: Path) -> None:
     (tmp_path / "frob.toml").write_text('[graph]\nexclude = ["vendor/**"]\n')
     cfg = load_arch_config(tmp_path)
     assert cfg["max_function_lines"] == 60
+    # frob:tests src/frob/repo_meta.py::load_arch_config  # noqa: E501
     assert cfg["max_file_lines"] == 800
 
 

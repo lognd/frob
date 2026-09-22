@@ -28,6 +28,7 @@ def _init_repo(root: Path) -> None:
 
 
 class TestStampWorktreeLease:
+    # frob:tests src/frob/release/__init__.py::_bump_shortfall  # noqa: E501
     def test_mismatched_lease_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

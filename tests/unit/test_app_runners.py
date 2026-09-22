@@ -70,6 +70,7 @@ class TestExploreRunner:
     """`frob explore <map|outline|xref|docs-search>`: T-1238's verb-group
     front door delegates straight into the standalone runners."""
 
+    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
     def test_map_subcommand_delegates_to_map_runner(self, tmp_path, caplog):
         """`explore_command="map"` produces the same output as `frob map`."""
         _make_py_project(tmp_path)
@@ -77,6 +78,7 @@ class TestExploreRunner:
         with caplog.at_level("INFO"):
             explore_run(cfg)
         assert any("{" in r.message for r in caplog.records)
+# frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
 
     def test_outline_subcommand_delegates_to_outline_runner(self, tmp_path, caplog):
         """`explore_command="outline"` produces the same output as `frob
@@ -86,6 +88,7 @@ class TestExploreRunner:
         cfg = AppConfig(explore_command="outline", outline_file=target)
         with caplog.at_level("INFO"):
             explore_run(cfg)
+        # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
         assert any("hello" in r.message for r in caplog.records)
 
     def test_xref_subcommand_missing_symbol_exits_1(self, caplog):
@@ -137,6 +140,7 @@ class TestGitlogRunner:
         cfg = AppConfig(gitlog_path=tmp_path, gitlog_json=False)
         gitlog_run(cfg)
         out = capsys.readouterr().out
+        # frob:tests src/frob/app/gitlog_runner.py::run
         assert out.strip() != ""
 
     # frob:ticket T-0563
@@ -201,6 +205,7 @@ class TestXrefRunner:
         """A found symbol logs its text rendering."""
         _make_py_project(tmp_path)
         cfg = AppConfig(xref_symbol="hello", xref_path=tmp_path, xref_json=False)
+        # frob:tests src/frob/app/xref_runner.py::run
         with caplog.at_level("INFO"):
             xref_run(cfg)
         assert caplog.records
@@ -317,6 +322,7 @@ class TestExportsRunner:
             exports_run(cfg)
         init_path = tmp_path / "pkg" / "__init__.py"
         assert init_path.exists()
+        # frob:tests src/frob/app/exports_runner.py::_run_consumers  # noqa: E501
         assert init_path.read_text().strip() != ""
 
     # frob:ticket T-0876
@@ -326,6 +332,7 @@ class TestExportsRunner:
         (tmp_path / "consumer.py").write_text("from producer import widget\n")
         cfg = AppConfig(exports_path=tmp_path, exports_consumers="widget")
         with caplog.at_level("INFO"):
+            # frob:tests src/frob/app/exports_runner.py::_run_consumers  # noqa: E501
             exports_run(cfg)
         assert any("consumer.py" in r.message for r in caplog.records)
 
@@ -375,6 +382,7 @@ class TestArchRunner:
             arch_run(cfg)
         assert caplog.records
 
+    # frob:tests src/frob/app/arch_runner.py::run
     def test_json_mode(self, tmp_path, caplog):
         """JSON mode logs the JSON rendering of the analysis."""
         _make_py_project(tmp_path)
@@ -403,6 +411,7 @@ class TestOutlineRunner:
         assert caplog.records
 
     def test_file_target_text_mode(self, tmp_path, caplog):
+        # frob:tests src/frob/app/outline_runner.py::run  # noqa: E501
         """A file target logs the text rendering of its outline."""
         _make_py_project(tmp_path)
         cfg = AppConfig(outline_file=tmp_path / "pkg" / "mod.py", outline_json=False)
@@ -464,6 +473,7 @@ class TestMutateRunner:
         import frob.mutate as mutate_mod
 
         monkeypatch.setattr(mutate_mod, "run_mutations", fake_run_mutations)
+        # frob:tests src/frob/app/mutate_runner.py::run  # noqa: E501
         cfg = AppConfig(
             mutate_file=tmp_path / "f.py", mutate_path=tmp_path, mutate_argv=[]
         )
@@ -556,6 +566,7 @@ class TestQualityRunner:
         elif quality_command == "test":
             import frob.app.test_runner as mod
         elif quality_command == "dup":
+            # frob:tests src/frob/app/quality_runner.py::run  # noqa: E501
             import frob.app.dup_runner as mod
         elif quality_command == "cycle":
             import frob.app.cycle_runner as mod
@@ -579,6 +590,7 @@ class TestQualityRunner:
         called = {}
         monkeypatch.setattr(
             target_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
+        # frob:tests src/frob/app/quality_runner.py::run  # noqa: E501
         )
         cfg = AppConfig(quality_command=quality_command)
         quality_run(cfg)
@@ -638,6 +650,7 @@ class TestDesignRunner:
         else:  # pragma: no cover -- unreachable: design_command is parametrized above
             raise AssertionError(design_command)
         return mod
+# frob:tests src/frob/app/design_runner.py::run  # noqa: E501
 
     @pytest.mark.parametrize("design_command", ["sys", "registry", "docs", "graph"])
     def test_subcommand_delegates_to_matching_runner(self, monkeypatch, design_command):
@@ -658,6 +671,7 @@ class TestDesignRunner:
     # end-to-end delegation test (same real-fixture-plus-caplog shape, T-1567 \
     # precedent) -- one member of this verb group needs a real end-to-end check (not a \
     # monkeypatch) to prove the delegation path actually works, and that necessarily \
+    # frob:tests src/frob/app/design_runner.py::run
     # reads like the sibling group's own version of the same proof"
     # frob:ticket T-2097
     def test_exports_subcommand_delegates_to_exports_runner(self, tmp_path, caplog):
@@ -711,6 +725,7 @@ class TestOpsRunner:
             import frob.app.clean_runner as mod
         elif ops_command == "fleet":
             import frob.app.fleet_runner as mod
+        # frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
         elif ops_command == "deploy":
             import frob.app.deploy_runner as mod
         elif ops_command == "scaffold":
@@ -743,6 +758,7 @@ class TestOpsRunner:
         called = {}
         monkeypatch.setattr(
             target_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
+        # frob:tests src/frob/app/ops_runner.py::run
         )
         cfg = AppConfig(ops_command=ops_command)
         ops_run(cfg)
@@ -766,6 +782,7 @@ class TestOpsRunner:
             ["git", "config", "user.email", "a@b.c"],
             cwd=tmp_path,
             check=True,
+        # frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
         )
         subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
         (tmp_path / "f.txt").write_text("x")

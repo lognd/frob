@@ -28,6 +28,7 @@ class TestMissingDeliverySemantics:
     # frob:tests \
     # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_q\
     # ueue_node_without_delivery_semantics_fires
+    # frob:tests src/frob/strata/_delivery_semantics.py::check_delivery_semantics_obligations  # noqa: E501
     def test_queue_node_without_delivery_semantics_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="ingest_queue", trust="trusted", attrs=("queue",)),),

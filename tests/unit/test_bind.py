@@ -33,6 +33,7 @@ def test_scan_sources_finds_header_and_rust(tmp_path):
     assert any("add" in d.signature for d in decls)
 
 
+# frob:tests src/frob/bind/__init__.py::check
 def test_check_reports_mismatch_for_unbound_binding(tmp_path):
     # frob:tests src/frob/bind kind="integration"
     # check() drives scan_bindings + scan_sources together end to end and

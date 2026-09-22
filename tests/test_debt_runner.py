@@ -24,6 +24,8 @@ def _write(root: Path, rel: str, text: str) -> Path:
 # frob:ticket T-0563
 class TestDebtRunner:
     # frob:ticket T-0563
+    # frob:tests src/frob/app/debt_runner.py::run
+    # frob:tests src/frob/app/_snapshot.py::load_or_build_snapshot
     def test_json_mode_lists_debt_entries(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

@@ -98,6 +98,7 @@ class TestArchiveRaceWithConcurrentNew:
     # thread scheduling under CI load is nondeterministic even with a
     # barrier gate, seen flaking earlier while the underlying T-0633 fix
     # itself is not in question.
+    # frob:tests src/frob/tickets/_archive.py::archive  # noqa: E501
     @pytest.mark.flaky(reruns=2, reruns_delay=1)
     def test_concurrent_new_ticket_survives_a_racing_archive(
         self, tmp_path: Path

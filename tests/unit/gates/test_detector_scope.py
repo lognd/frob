@@ -16,6 +16,7 @@ class TestDetectorScope:
     """`DETECTOR_PACKAGE_ROOTS`/`is_detector_package_file`: membership by
     prefix, measured (not guessed) package set."""
 
+    # frob:tests src/frob/gates/_detector_scope.py::DETECTOR_PACKAGE_ROOTS kind="unit"  # noqa: E501
     def test_gates_vet_strata_check_are_members(self) -> None:
         """The four MEASURED detector packages (module docstring) are all
         present -- `vet/` specifically, since T-2457's own bug is the
@@ -24,6 +25,7 @@ class TestDetectorScope:
         assert is_detector_package_file("src/frob/vet/_capability_core.py")
         assert is_detector_package_file("src/frob/strata/_selfconform.py")
         assert is_detector_package_file("src/frob/check/_python.py")
+# frob:tests src/frob/gates/_detector_scope.py::DETECTOR_PACKAGE_ROOTS kind="unit"  # noqa: E501
 
     def test_arch_is_not_a_member(self) -> None:
         """`arch/` was measured (module docstring) to construct ZERO

@@ -31,6 +31,7 @@ class TestPiiStructuralCrossLanguage:
         path.write_text(text)
 
     # frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_ts_interface_email_field_fires  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
     def test_ts_interface_email_field_fires(self, tmp_path: Path) -> None:
         """A TS `interface` field named `email` is the field-shape
         equivalent of a pydantic `BaseModel` field -- fires PII010."""
@@ -426,6 +427,7 @@ class TestComplianceGate:
 
     # frob:ticket T-0788
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_registered_in_known_gate_rules  # noqa: E501
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     def test_compliance005_registered_in_known_gate_rules(self) -> None:
         """COMPLIANCE005 is in the live `_KNOWN_GATE_RULES` union -- the
         exact gap T-0607 disclosed (the rule existed in code but was not a
@@ -433,6 +435,7 @@ class TestComplianceGate:
         assert "COMPLIANCE005" in known_gate_rule_ids()
 
     # frob:ticket T-0788
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_fires_on_deferred_disposition  # noqa: E501
     def test_compliance005_fires_on_deferred_disposition(self, tmp_path: Path) -> None:
         """A `CMPL_REGISTRY_UNIT_IDS` member left `deferred:*` fires
@@ -451,6 +454,7 @@ class TestComplianceGate:
         assert entry_id in cmpl005[0].message
         assert cmpl005[0].severity == Severity.ERROR
 
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     # frob:ticket T-0788
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_silent_on_handled_by_and_out_of_scope  # noqa: E501
     def test_compliance005_silent_on_handled_by_and_out_of_scope(
@@ -470,6 +474,7 @@ class TestComplianceGate:
         )
         violations = compliance_gate(tmp_path, registry_dir)
         assert not any(v.rule == "COMPLIANCE005" for v in violations)
+# frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
 
     # frob:ticket T-0788
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_missing_registry_dir_is_silent  # noqa: E501
@@ -478,6 +483,7 @@ class TestComplianceGate:
         registry) makes no COMPLIANCE005 claim -- matches `registry_gate`'s
         own missing-directory posture, not a false-positive load error."""
         violations = compliance_gate(tmp_path)
+        # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
         assert violations == ()
 
     # frob:ticket T-0788
@@ -563,6 +569,7 @@ class TestComplianceGate:
         all stays silent -- COMPLIANCE006 must not fire on a genuinely
         never-adopted registry, only on one that existed and was deleted."""
         _git_init(tmp_path)
+        # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
         violations = compliance_gate(tmp_path)
         assert not any(v.rule == "COMPLIANCE006" for v in violations)
 
@@ -606,6 +613,7 @@ class TestExhaustiveHandlingGate:
     EXHAUST001 ONLY when the Unknown traces to the function's own
     ambiguous bare re-raise (a real in-source construct); when it traces
     only to an unresolved callee (a call-graph resolution gap, not a
+    # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate  # noqa: E501
     confirmed unhandled error) it fires the quieter EXHAUST003 instead. A
     boundary that leaks a named type not declared via `# frob:raises
     <Type>` fires EXHAUST002."""
@@ -743,6 +751,7 @@ class TestExhaustiveHandlingGate:
             ),
         )
         violations = exhaustive_handling_gate(tmp_path)
+        # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate  # noqa: E501
         assert not _by_rule(violations, "EXHAUST001")
         found = _by_rule(violations, "EXHAUST003")
         assert found
@@ -770,6 +779,7 @@ class TestExhaustiveHandlingGate:
                 "        pass\n"
             ),
         )
+        # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate  # noqa: E501
         violations = exhaustive_handling_gate(tmp_path)
         assert not _by_rule(violations, "EXHAUST001")
         found = _by_rule(violations, "EXHAUST003")
@@ -799,6 +809,7 @@ class TestExhaustiveHandlingGate:
                 "    except ValueError:\n"
                 "        pass\n"
             ),
+        # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
         )
         violations = exhaustive_handling_gate(tmp_path)
         found = _by_rule(violations, "EXHAUST001")
@@ -850,6 +861,7 @@ class TestExhaustiveHandlingGate:
                 "# frob:raises TypeError\n"
                 "def boundary():\n"
                 "    try:\n"
+                # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
                 "        risky()\n"
                 "    except ValueError:\n"
                 "        pass\n"
@@ -882,6 +894,7 @@ class TestExhaustiveHandlingGate:
         assert not _by_rule(violations, "EXHAUST002")
 
 
+# frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
 # frob:ticket T-0690
 class TestFfiBoundaryGate:
     """T-0690: frob.gates._ffi_boundary.ffi_boundary_gate -- FFI001 cross-
@@ -893,6 +906,7 @@ class TestFfiBoundaryGate:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001  # noqa: E501
+    # frob:tests src/frob/arch/_ffi.py::scan_pyo3_raises
     def test_pyo3_drift_fires_ffi001(self, tmp_path: Path) -> None:
         """The Rust side constructs PyValueError but the `.pyi` stub's
         `frob:raises` omits it -- FFI001 names both sides."""
@@ -919,6 +933,7 @@ class TestFfiBoundaryGate:
                 '"""Stub.\n'
                 "\n"
                 "frob:describes crate/lib.rs\n"
+                # frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate  # noqa: E501
                 '"""\n'
                 "\n"
                 "def foo(x: int) -> int: ...\n"
@@ -955,6 +970,7 @@ class TestFfiBoundaryGate:
             tmp_path,
             "crate.pyi",
             (
+                # frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
                 '"""Stub.\n'
                 "\n"
                 "frob:describes crate/lib.rs\n"
@@ -968,6 +984,7 @@ class TestFfiBoundaryGate:
         assert not _by_rule(violations, "FFI001")
 
     # frob:tests \
+    # frob:tests src/frob/arch/_ffi.py::scan_ctypes_boundary_calls  # noqa: E501
     # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
     def test_ctypes_call_without_declaration_fires_ffi002(self, tmp_path: Path) -> None:
         """A call through a ctypes.CDLL-loaded handle with no callee-raises
@@ -1015,6 +1032,7 @@ class TestErrorsAsValuesAdvisory:
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_no_handling_caller_recommends_result  # noqa: E501
+    # frob:tests src/frob/arch/_exceptions.py::check_errors_as_values  # noqa: E501
     def test_public_raiser_with_no_handling_caller_recommends_result(
         self,
     ) -> None:
@@ -1049,6 +1067,7 @@ class TestErrorsAsValuesAdvisory:
         assert any(s.symref == "mod.py::risky" for s in matches)
 
     # frob:tests \
+    # frob:tests src/frob/arch/_exceptions.py::check_errors_as_values  # noqa: E501
     # tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_handling_caller_not_flagged  # noqa: E501
     def test_public_raiser_with_handling_caller_not_flagged(self) -> None:
         from frob.arch._exceptions import check_errors_as_values

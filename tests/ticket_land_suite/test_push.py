@@ -248,6 +248,7 @@ class TestSyncGateRulesCallback:
         assert result.is_ok
         assert result.danger_ok is None
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_gate_rule_sync  # noqa: E501
     def test_sync_gate_rules_applies_and_stages(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok

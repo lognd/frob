@@ -96,6 +96,7 @@ class TestBisectUnattributedFinding:
         assert outcome.steps_used == 0
         assert calls == []
 
+    # frob:tests src/frob/verify/_bisect.py::BisectError
     def test_empty_candidates_refuses(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_bisect.py::bisect_unattributed_finding
         def verify(_snapshot: Path, _commit: str):

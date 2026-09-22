@@ -38,6 +38,7 @@ _CHECK_JSON_PAYLOAD = (
 
 # frob:ticket T-0803
 class TestCollectStatus:
+    # frob:tests src/frob/fleet/__init__.py::collect_status  # noqa: E501
     def test_collect_status_ok(self, tmp_path: Path, monkeypatch) -> None:
         repo_dir = tmp_path / "repo"
         repo_dir.mkdir()

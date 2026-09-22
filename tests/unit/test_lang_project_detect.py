@@ -25,6 +25,7 @@ def _make_unity_project(root: Path, *, with_manifest: bool = True) -> None:
         (packages / "manifest.json").write_text("{}\n")
 
 
+# frob:tests src/frob/lang/_project_detect.py::UnityProjectInfo
 def test_detects_unity_project(tmp_path: Path):
     """MUST-FIRE: Assets/ + ProjectSettings/ProjectVersion.txt +
     Packages/manifest.json all present detects as a Unity project and
@@ -50,6 +51,7 @@ def test_reports_packages_manifest_presence(tmp_path: Path):
     assert result.danger_ok.has_packages_manifest is False
 
 
+# frob:tests src/frob/lang/_project_detect.py::UnityProjectDetectError
 def test_not_unity_project_without_markers(tmp_path: Path):
     """MUST-NOT-FIRE: a plain (non-Unity) tree with no Assets/ directory is
     not misidentified as a Unity project."""

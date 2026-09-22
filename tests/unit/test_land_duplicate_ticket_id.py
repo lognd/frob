@@ -139,6 +139,7 @@ class TestDetectDuplicateTicketIdCollisions:
     the other."""
 
     # frob:tests tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_flags_id_with_genuinely_different_content_on_both_sides  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::detect_duplicate_ticket_id_collisions
     def test_flags_id_with_genuinely_different_content_on_both_sides(
         self, tmp_path: Path
     ) -> None:

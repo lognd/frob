@@ -73,6 +73,7 @@ def _fold_lines(physical: list[str], marker: str) -> str:
 class TestMarkerFor:
     """Language-suffix to line-comment-marker lookup."""
 
+    # frob:tests src/frob/gates/_fmt_directives.py::marker_for
     def test_python_uses_hash(self) -> None:
         # frob:tests \
         # tests/test_gates_fmt_directives.py::TestMarkerFor.test_python_uses_hash

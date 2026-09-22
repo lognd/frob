@@ -58,6 +58,7 @@ class TestRunsLastMilestoneScoping:
     """T-2578: a `runs_last` ticket's "other open tickets" count is scoped
     to its own effective milestone, not the whole ledger."""
 
+    # frob:tests src/frob/tickets/_doable.py::_other_open_tickets  # noqa: E501
     def test_unmilestoned_runs_last_keeps_global_semantics(self) -> None:
         """Back-compat control: a `runs_last` ticket with NO milestone
         anywhere in its chain stays blocked by ANY other open ticket,
@@ -67,6 +68,7 @@ class TestRunsLastMilestoneScoping:
         queue = TicketQueue(tickets={last.id: last, other.id: other})
         result = doable(queue)
         assert last.id not in {t.id for t in result}
+# frob:tests src/frob/tickets/_doable.py::_other_open_tickets  # noqa: E501
 
     def test_unmilestoned_runs_last_becomes_doable_once_all_else_terminal(
         self,
@@ -78,6 +80,7 @@ class TestRunsLastMilestoneScoping:
         other = _ticket(ticket_id="T-9002", state=TicketState.DONE, milestone="1.0.0")
         queue = TicketQueue(tickets={last.id: last, other.id: other})
         result = doable(queue)
+        # frob:tests src/frob/tickets/_doable.py::_other_open_tickets  # noqa: E501
         assert last.id in {t.id for t in result}
 
     def test_milestoned_runs_last_blocked_by_same_milestone_open_work(

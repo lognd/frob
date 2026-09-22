@@ -377,6 +377,7 @@ class TestRenumberV2StaleSnapshotGuard:
     `load_all` and `write_all` calls, mirroring `renumber_one`'s v2-mode
     dispatch."""
 
+    # frob:tests src/frob/tickets/_new_renumber.py::renumber
     def test_renumber_root_refuses_when_a_ticket_changes_under_it(
         self, tmp_path: Path, monkeypatch
     ) -> None:

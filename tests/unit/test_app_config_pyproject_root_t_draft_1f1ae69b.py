@@ -23,6 +23,7 @@ from frob.app.config import _pyproject_file_for_args
 
 
 class TestPyprojectFileForArgs:
+    # frob:tests src/frob/app/config.py::_pyproject_file_for_args kind="unit"  # noqa: E501
     def test_explicit_ticket_path_wins_over_cwd(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_app_config_pyproject_root_t_draft_1f1ae69b.py::TestPyprojectFileForArgs.test_explicit_ticket_path_wins_over_cwd  # noqa: E501
@@ -30,6 +31,7 @@ class TestPyprojectFileForArgs:
         root.mkdir()
         args = argparse.Namespace(ticket_path=str(root))
         assert _pyproject_file_for_args(args) == root / "pyproject.toml"
+# frob:tests src/frob/app/config.py::_pyproject_file_for_args kind="unit"  # noqa: E501
 
     def test_frob_root_env_wins_over_cwd_when_no_explicit_path(
         self, tmp_path: Path, monkeypatch

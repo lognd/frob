@@ -21,6 +21,7 @@ class TestMainSigint:
     """A `KeyboardInterrupt` during dispatch must print a clean one-line
     message and exit 130 (128+SIGINT), not spill a bare traceback (T-0355)."""
 
+    # frob:tests src/frob/__main__.py::main  # noqa: E501
     def test_keyboard_interrupt_prints_clean_message_and_exits_130(
         self, monkeypatch, capsys
     ) -> None:
@@ -314,6 +315,8 @@ class TestDidYouMean:
             parser.parse_args(["ticket", "list", "--zzzzzzzzzzz"])
         assert "did you mean" not in capsys.readouterr().err
 
+    # frob:tests src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.error kind="unit"  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.parse_known_args kind="unit"  # noqa: E501
     # frob:ticket T-2107
     def test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand(
         self, capsys
@@ -372,6 +375,7 @@ class TestLazyLogHandlers:
     """`_LazyStdoutHandler`/`_LazyStderrHandler` must resolve sys.stdout/
     sys.stderr live at emit time, never cache the stream dictConfig saw at
     bind time -- otherwise a pytest capsys/capfd stream closed at test
+    # frob:tests src/frob/logging/handler.py::_LazyStdoutHandler.stream
     teardown leaves a stale handle that raises on the next emit and
     pollutes an unrelated test's captured stderr (T-1385)."""
 
@@ -417,6 +421,7 @@ class TestEnsureVenv:
     (project-scoped tool resolution, pytest collection) can still fall
     back to an active venv the same way they do when `uv run` DID launch
     this process."""
+# frob:tests src/frob/__main__.py::_ensure_ambient_virtual_env
 
     def test_sets_when_unset(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_sets_when_unset
@@ -479,6 +484,7 @@ class TestVerboseFlag:
     """`_apply_verbose_env_override` (T-2979): the global `-v`/`--verbose`
     argv scan that sets `FROB_VERBOSE=1` before `main` dispatches, so the
     flag reaches every subcommand -- including the direct-dispatch verbs
+    # frob:tests src/frob/__main__.py::_apply_verbose_env_override  # noqa: E501
     that bypass the main argparse tree entirely."""
 
     def test_dash_v_sets_debug_env_var(self, monkeypatch) -> None:
@@ -540,6 +546,7 @@ class TestVerboseFlag:
 
 
 # frob:ticket T-1571
+# frob:tests src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter  # noqa: E501
 class TestGroupedHelpFormatter:
     """`frob --help` (T-1571, acceptance[0] on T-1238): the root parser's
     subcommand listing presents verb groups first, then every other
@@ -560,6 +567,7 @@ class TestGroupedHelpFormatter:
         groups_section = help_text[groups_idx:rest_idx]
         for name in main_module._VERB_GROUP_NAMES:
             # T-2385: entries render one indent level DEEPER (4 spaces) than
+            # frob:tests src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter  # noqa: E501
             # their section header (2 spaces) -- see
             # test_section_headers_indent_strictly_less_than_entries below.
             assert f"\n    {name} " in groups_section, (

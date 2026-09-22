@@ -281,6 +281,7 @@ class TestSourceHeadSha:
     `None` -- the content-sensitive identity that closes the
     version-string-blind self-heal gap."""
 
+    # frob:tests src/frob/serve/_socketd.py::_source_head_sha
     def test_finds_git_ancestor(self) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_finds_git_ancestor
@@ -514,7 +515,9 @@ class TestDifferentialParity:
         _assert_daemon_parity(
             project, ["graph", "query", "helper.py::helper", "--json"]
         )
+# frob:tests src/frob/serve/_tools.py::frob_doable_tickets kind="unit"  # noqa: E501
 
+    # frob:tests src/frob/app/ticket_runner/_query.py::_try_doable_via_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -641,6 +644,7 @@ class TestDifferentialParity:
 
         _assert_daemon_parity(project, ["exports", "pkg", "--json"])
 
+    # frob:tests src/frob/app/stats_runner.py::_try_stats_via_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -661,6 +665,7 @@ class TestDifferentialParity:
 
         _assert_daemon_parity(project, ["stats", "--json"])
 
+    # frob:tests src/frob/app/map_runner.py::_try_map_via_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -747,6 +752,7 @@ class TestProbeDaemon:
         (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
         return tmp_path
 
+    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
     def test_missing_socket_is_nosocket(self, tmp_path):
         """Nothing there at all -- the spawn case."""
         if sys.platform == "win32":
@@ -760,6 +766,7 @@ class TestProbeDaemon:
         liveness, version = probe_daemon(self._socket_dir(tmp_path))
         assert liveness is DaemonLiveness.NoSocket
         assert version is None
+# frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
 
     def test_dead_socket_file_is_orphaned(self, tmp_path):
         """A socket file that no process is listening on. This is the state
@@ -781,6 +788,7 @@ class TestProbeDaemon:
 
         liveness, version = probe_daemon(root)
         assert liveness is DaemonLiveness.Orphaned
+        # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
         assert version is None
 
     def test_silent_listener_is_wedged(self, tmp_path):
@@ -853,6 +861,7 @@ class TestProbeDaemon:
         _clear_orphaned_socket(root)
         assert not path.exists()
         assert probe_daemon(root)[0] is DaemonLiveness.NoSocket
+# frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
 
     # frob:ticket T-3508
     # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_win32_refuses_before_touching_af_unix  # noqa: E501

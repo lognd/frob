@@ -47,6 +47,7 @@ def git_repo(tmp_path: Path) -> Path:
 class TestCleanRunnerRun:
     """`clean_runner.run` dry-run/execute wiring over an empty tree."""
 
+    # frob:tests src/frob/app/clean_runner.py::_print_disposable_sweep_report kind="unit"  # noqa: E501
     def test_dry_run_reports_nothing_to_clean(self, git_repo, capsys):
         """A clean repo dry-run prints the `nothing to clean` message."""
         cfg = AppConfig(clean_path=git_repo, clean_yes=False, clean_json=False)
@@ -68,6 +69,7 @@ class TestCleanRunnerRun:
 
 class TestRegistryRunnerRun:
     """`registry_runner.run` audit wiring when the registry dir is absent."""
+# frob:tests src/frob/app/registry_runner.py::run kind="unit"  # noqa: E501
 
     def test_missing_registry_dir_logs_and_returns(self, tmp_path, caplog):
         """A nonexistent `--registry-path` logs an info line and returns cleanly."""

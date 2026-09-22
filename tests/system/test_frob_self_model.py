@@ -397,6 +397,7 @@ class TestFrobSelfModel:
     # catches genuine hangs everywhere else (docs/guides/testing.md#per-test-
     # timeout-ci-hardening, same reasoning T-0742 used for
     # test_scaffold_dx.py).
+    # frob:tests design/frob.strata::frob.tickets_ledger
     @pytest.mark.timeout(300)
     def test_sys_gate_zero_violations(self, frob_self_scan_artifacts) -> None:
         """`frob check --only sys` against the live repo reports zero violations.

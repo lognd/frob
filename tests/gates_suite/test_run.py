@@ -1536,6 +1536,7 @@ class TestLoadQueueMemoization:
         assert load_queue(tmp_path).is_ok
         assert len(calls) == 2
 
+    # frob:tests src/frob/tickets/_archive.py::load_queue_run_scope
     def test_load_queue_run_scope_caches_within_the_with_block(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

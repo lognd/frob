@@ -28,6 +28,7 @@ class TestMissingOrderingStrategy:
     # frob:tests \
     # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_clock_\
     # dependent_flow_without_ordering_strategy_fires
+    # frob:tests src/frob/strata/_clock_ordering.py::check_clock_ordering_obligations  # noqa: E501
     def test_clock_dependent_flow_without_ordering_strategy_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

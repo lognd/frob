@@ -132,6 +132,7 @@ class TestAskVersionOverSocket:
 class TestClassifyVersionReply:
     """`_classify_version_reply`'s malformed/unreadable-reply branches."""
 
+    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
     def test_malformed_json_is_wedged(self) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.t\
@@ -139,6 +140,7 @@ class TestClassifyVersionReply:
         liveness, version = _classify_version_reply(b"not json at all\n")
         assert liveness is DaemonLiveness.Wedged
         assert version is None
+# frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
 
     def test_non_dict_result_is_wedged(self) -> None:
         # frob:tests \

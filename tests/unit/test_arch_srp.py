@@ -41,6 +41,7 @@ def _method(name: str, field_names: list[str]) -> NormalizedFunction:
 class TestLcom4:
     """ARCH101."""
 
+    # frob:tests src/frob/arch/_srp.py::check_lcom4  # noqa: E501
     def test_disjoint_field_groups_trigger_lcom4(self) -> None:
         cls = NormalizedClass(
             name="BigService",
@@ -124,6 +125,7 @@ def _free_function(name: str, calls: list[str] | None = None) -> NormalizedFunct
 
 class TestGodModule:
     """ARCH102."""
+# frob:tests src/frob/arch/_srp.py::check_god_module  # noqa: E501
 
     def test_unrelated_export_clusters_trigger_god_module(self) -> None:
         functions = (
@@ -509,11 +511,13 @@ class TestArchGateSrpWiring:
         (tmp_path / "mod.py").write_text(_LCOM4_TWO_CLUSTER_SOURCE)
         violations = [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
         assert len(violations) == 1
+        # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
         assert violations[0].symref == "mod.py::BigService"
 
     def test_cohesive_class_does_not_fire_arch101(self, tmp_path: Path) -> None:
         from frob.gates._arch import arch_gate
 
+        # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
         (tmp_path / "mod.py").write_text(_LCOM4_COHESIVE_SOURCE)
         assert not [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
 
@@ -525,6 +529,7 @@ class TestArchGateSrpWiring:
 
     def test_mixed_concern_function_fires_arch103(self, tmp_path: Path) -> None:
         from frob.gates._arch import arch_gate
+# frob:tests src/frob/gates/_arch.py::arch_gate
 
         (tmp_path / "mod.py").write_text(_MIXED_CONCERN_SOURCE)
         assert [v for v in arch_gate(tmp_path) if v.rule == "ARCH103"]

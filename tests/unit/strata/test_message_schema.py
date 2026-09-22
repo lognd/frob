@@ -42,6 +42,7 @@ class TestMissingSchemaVersion:
     # frob:tests \
     # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_queue_nod\
     # e_without_schema_version_fires
+    # frob:tests src/frob/strata/_message_schema.py::check_message_schema_obligations  # noqa: E501
     def test_queue_node_without_schema_version_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="ingest_queue", trust="trusted", attrs=("queue",)),),

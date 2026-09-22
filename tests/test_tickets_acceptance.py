@@ -627,6 +627,7 @@ class TestAmendAcceptance:
     that was WRONG (amend) or unsatisfiable by construction (remove),
     modelled on the two real incidents named in T-1422's own body."""
 
+    # frob:tests src/frob/tickets/_accept.py::amend_acceptance  # noqa: E501
     def test_amend_replaces_text_and_records_reason(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_amend_replaces_text_and_records_reason  # noqa: E501
         # Models the T-1411 incident: criterion [0] was mis-specified (a
@@ -736,6 +737,7 @@ class TestAmendAcceptance:
         )
         assert result.is_err
         assert result.danger_err == TicketError.AcceptanceAmendTerminalState
+# frob:tests src/frob/tickets/_accept.py::remove_acceptance  # noqa: E501
 
     def test_remove_drops_criterion_and_records_reason(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_drops_criterion_and_records_reason  # noqa: E501

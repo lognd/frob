@@ -158,6 +158,7 @@ class TestCrossWorktreeLeaseVisibility:
         offered = doable(queue, second_worktree)
         assert all(t.id != tid_b for t in offered)
 
+    # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
     def test_release_on_close_removes_the_lease(
         self, repo: Path, second_worktree: Path
     ) -> None:

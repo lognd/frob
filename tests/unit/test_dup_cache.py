@@ -238,6 +238,7 @@ class TestConnectionReuse:
         assert conn1 is conn2
 
     # frob:ticket T-0565
+    # frob:tests src/frob/dup/_cache.py::_close_all  # noqa: E501
     def test_close_all_drops_cached_connections(self, tmp_path: Path):
         # T-0565: the `frob:tests` directive binding this test to
         # `_cache._close_all` moved to sit above `_close_all` itself

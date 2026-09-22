@@ -377,6 +377,7 @@ pub fn apted_similarity(
 // generic-shaped functions (branch_condition_text, walk_leaves, Parser.parse_unit, etc.) -- \
 // T-3481 only renamed/split the pre-existing apted_similarity body into this _impl sibling, no \
 // new logic was written; permanent exemption, not deferred work"
+// frob:tests frob-core/src/lib.rs::tests.apted_identical_trees_is_similarity_one kind="unit"
 pub(crate) fn apted_similarity_impl(
     labels_a: Vec<String>,
     parents_a: Vec<i64>,

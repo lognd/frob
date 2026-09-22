@@ -44,6 +44,7 @@ def _init_repo(root: Path) -> None:
 
 
 class TestLoadWatermark:
+    # frob:tests src/frob/gates/_waive_audit_watermark.py::WaiveAuditWatermarkError
     def test_missing_file_is_not_found(self, tmp_path: Path) -> None:
         result = load_watermark(tmp_path)
         assert result.is_err

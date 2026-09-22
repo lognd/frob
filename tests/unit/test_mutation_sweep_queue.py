@@ -41,6 +41,7 @@ class TestSweepLockPlatformBackend:
     silent, POSIX-only no-op that never actually serialized concurrent
     sweep-queue mutations on any platform without `fcntl`."""
 
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::SweepQueueLockUnavailable  # noqa: E501
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -98,11 +99,13 @@ class TestPendingSweepCount:
 
 class TestRunPendingSweep:
     """`run_pending_sweep` processes every pending entry."""
+# frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
 
     def test_empty_queue_is_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_empty_queue_is_noop  # noqa: E501
         result = run_pending_sweep(tmp_path)
         assert result.is_ok
+        # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
         assert result.danger_ok == 0
 
     def test_clean_finding_marks_swept_no_ticket_filed(

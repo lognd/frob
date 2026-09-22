@@ -49,6 +49,7 @@ class TestVersionCovers:
         # tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_equal_covers
         assert _version_covers("0.356.0", "0.356.0") is True
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_version_covers
     def test_higher_covers(self) -> None:
         # frob:tests \
         # tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_higher_covers

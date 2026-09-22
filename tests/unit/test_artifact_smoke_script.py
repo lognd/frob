@@ -94,6 +94,7 @@ class TestCheckBaseInstall:
         assert any("--version" in c for c in calls)
         assert any("doctor" in c for c in calls)
 
+    # frob:tests scripts/artifact_smoke.py::SmokeCheckError
     def test_failing_doctor_raises_smoke_check_error(self, tmp_path: Path) -> None:
         """A non-zero `frob doctor` must raise `SmokeCheckError`, not pass
         silently -- this is the exact failure mode the gate exists to

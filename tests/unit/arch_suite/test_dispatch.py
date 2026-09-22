@@ -70,6 +70,7 @@ class TestArchResultFormat:
         data = json.loads(result.as_json())
         assert len(data["suggestions"]) == len(result.suggestions)
 
+    # frob:tests src/frob/arch/_models.py::ArchResult.as_text
     def test_as_text_clean_project(self):
         result = analyze_project(FIXTURES / "simple_python" / "src")
         text = result.as_text()

@@ -37,6 +37,7 @@ def _new(tmp_path: Path, *, scope: list[str] | None = None) -> None:
 class TestWaveCommand:
     """`frob ticket wave --agents N [--json]` (T-1738)."""
 
+    # frob:tests src/frob/app/ticket_runner/_query.py::_wave  # noqa: E501
     def test_json_render_shape(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_json_render_shape  # noqa: E501
         _new(tmp_path, scope=["src/a.py"])

@@ -30,6 +30,7 @@ class TestScanPythonCapabilitiesParity:
     existing Python resolver (`_capability_python`/`_capability_core`),
     across representative shapes plus this repo's own source."""
 
+    # frob:tests frob-core/src/extract.rs::python_non_executable_byte_spans
     def test_import_alias_and_scope_shadowing(self, tmp_path: Path) -> None:
         # frob:tests frob-core/src/capability_python.rs::scan_python_capabilities \
         # kind="unit"
@@ -135,6 +136,7 @@ class TestResolvedCandidatesThreading:
     call-site rewrite), and the wrapper-resolution path -- the one place
     a naive content-hash cache would have been unsound, since it reads a
     SIBLING file -- must still fire on a real cross-file case."""
+# frob:tests src/frob/vet/_capability_python.py::_python_binding_capabilities
 
     def test_binding_capabilities_with_and_without_precomputed_candidates_agree(
         self, tmp_path: Path

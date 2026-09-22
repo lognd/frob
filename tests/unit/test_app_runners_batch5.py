@@ -147,6 +147,7 @@ class TestDupRunner:
             dup_run(cfg)
         assert exc.value.code == 1
 
+    # frob:tests src/frob/app/dup_runner.py::run  # noqa: E501
     def test_scan_text_mode_logs_result(self, tmp_path, caplog):
         """A successful scan (text mode) logs the text rendering."""
         _make_py_project(tmp_path)
@@ -330,6 +331,7 @@ class TestBindRunner:
         out = capsys.readouterr().out
         assert "wrap.cpp:1:" in out
 
+    # frob:tests src/frob/app/bind_runner.py::run  # noqa: E501
     def test_mismatch_json_mode_no_exit(self, tmp_path, capsys):
         """`--json` with mismatches prints the payload and does NOT exit non-zero."""
         _make_mismatching_binding_project(tmp_path)
@@ -370,6 +372,7 @@ class TestCycleRunner:
         with caplog.at_level("INFO"):
             cycle_run(cfg)
         assert any("no cycles found" in r.message for r in caplog.records)
+# frob:tests src/frob/app/cycle_runner.py::run  # noqa: E501
 
     def test_cycle_found_with_suggest(self, tmp_path, caplog):
         """A real import cycle is reported, with a suggestion when requested."""
@@ -434,6 +437,7 @@ class TestDocsRunner:
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
             docs_run(cfg)
         assert exc.value.code == 1
+# frob:tests src/frob/app/docs_runner.py::_run_sync_commands  # noqa: E501
 
     # frob:ticket T-1011
     def test_sync_commands_writes(self, tmp_path, caplog):
@@ -569,6 +573,7 @@ class TestReleaseRunner:
     def test_stamp_missing_pyproject_exits_1(self, tmp_path, caplog):
         """`stamp` with no pyproject.toml errors and exits 1."""
         cfg = AppConfig(release_command="stamp", release_path=tmp_path)
+        # frob:tests src/frob/app/release_runner.py::run  # noqa: E501
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
             release_run(cfg)
         assert exc.value.code == 1

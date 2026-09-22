@@ -417,6 +417,7 @@ class TestIdleSelfTermination:
     more than an hour terminates itself -- idleness measured by work
     actually performed, never by whether the poll loop merely ran."""
 
+    # frob:tests src/frob/serve/_daemon.py::_record_useful_work
     def test_record_useful_work_updates_the_timestamp(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestIdleSelfTermination.test_record_useful_work_updates_the_timestamp  # noqa: E501

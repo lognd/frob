@@ -68,11 +68,13 @@ class TestEffectiveMilestone:
     """`effective_milestone(queue, ticket)` -- own-or-inherited value, and
     whether it was declared or inherited."""
 
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
     def test_own_milestone_is_declared(self) -> None:
         """A ticket with its own `milestone` set never looks at `parent`."""
         t = _ticket(ticket_id="T-1", milestone="1.0.0")
         queue = TicketQueue(tickets={t.id: t})
         assert effective_milestone(queue, t) == ("1.0.0", MilestoneSource.DECLARED)
+# frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
 
     def test_inherits_from_parent_story(self) -> None:
         """No own milestone, but the immediate parent (a story) has one:
@@ -80,6 +82,7 @@ class TestEffectiveMilestone:
         story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY, milestone="1.1.0")
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
+        # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
         assert effective_milestone(queue, leaf) == ("1.1.0", MilestoneSource.INHERITED)
 
     def test_inherits_from_grandparent_epic(self) -> None:
@@ -88,6 +91,7 @@ class TestEffectiveMilestone:
         epic = _ticket(ticket_id="T-EPIC", tier=TicketTier.EPIC, milestone="2.0.0")
         story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY, parent=epic.id)
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
+        # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
         queue = TicketQueue(tickets={epic.id: epic, story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == ("2.0.0", MilestoneSource.INHERITED)
 

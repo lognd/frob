@@ -164,6 +164,8 @@ class TestResolveSymbolIntroduction:
 # frob:ticket T-3009
 class TestClassifyOrder:
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::classify_order  # noqa: E501
+    # frob:tests src/frob/gates/_tdd_order.py::TDDOrder  # noqa: E501
     def test_fires_when_implementation_precedes_test(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         impl_sha = _commit_file(tmp_path, "m.py", "x = 1\n", "impl first")
@@ -173,6 +175,7 @@ class TestClassifyOrder:
             is TDDOrder.IMPLEMENTATION_FIRST
         )
 
+    # frob:tests src/frob/gates/_tdd_order.py::TDDOrder  # noqa: E501
     # frob:ticket T-3009
     def test_stays_quiet_when_test_precedes_implementation(
         self, tmp_path: Path
@@ -183,6 +186,7 @@ class TestClassifyOrder:
         assert (
             classify_order(tmp_path, artifact_commit=impl_sha, test_commit=test_sha)
             is TDDOrder.TEST_FIRST
+        # frob:tests src/frob/gates/_tdd_order.py::classify_order  # noqa: E501
         )
 
     # frob:ticket T-3009
@@ -240,6 +244,7 @@ def _tests_edge(artifact_symref: str, test_symref: str) -> Edge:
         origin=symref_path(artifact_symref),
     )
 
+# frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations  # noqa: E501
 
 # frob:ticket T-3009
 class TestTddOrderViolations:
@@ -260,6 +265,7 @@ class TestTddOrderViolations:
     def test_stays_quiet_on_a_genuine_test_first_pair(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _commit_file(tmp_path, "t.py", "def test_widget():\n    pass\n", "test first")
+        # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
         _commit_file(tmp_path, "m.py", "def widget():\n    pass\n", "impl second")
         edges = [_tests_edge("m.py::widget", "t.py::test_widget")]
         assert tdd_order_violations(tmp_path, edges) == []
@@ -276,6 +282,7 @@ class TestTddOrderViolations:
             "squashed land: test and impl in one commit",
         )
         edges = [_tests_edge("m.py::widget", "m.py::test_widget")]
+        # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
         violations = tdd_order_violations(tmp_path, edges)
         assert len(violations) == 1
         assert violations[0].rule == "TDD001"
@@ -416,6 +423,7 @@ class TestPerfShape:
         monkeypatch.setattr(_tdd_order_mod, "run_argv", _spy)
 
         _tdd_order_mod._revisions_oldest_first(tmp_path, "m.py", since=base)
+# frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
 
         log_calls = [argv for argv in seen_argv if "log" in argv]
         assert len(log_calls) == 1

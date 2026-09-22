@@ -98,6 +98,7 @@ class TestParsePytestLog:
 
 
 class TestBuildJobReport:
+    # frob:tests src/frob/ci_report.py::JobReport
     def test_clean_job(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests src/frob/ci_report.py::build_job_report
         job = JobSummary(

@@ -47,6 +47,7 @@ class TestSnapshotRatchet:
         assert (tmp_path / "frob-ratchet.lock.json").is_file()
 
     # frob:ticket T-0569
+    # frob:tests src/frob/gates/_ratchet.py::RatchetLock.pool_for  # noqa: E501
     def test_two_rules_do_not_clobber_each_other(self, tmp_path: Path) -> None:
         snapshot_ratchet(tmp_path, "DEAD001", ["a.py:1"])
         snapshot_ratchet(tmp_path, "PII010", ["b.py:2"])

@@ -56,6 +56,7 @@ def _snapshot(
 
 
 class TestClassifyTest:
+    # frob:tests src/frob/ci_validity.py::TestValidity  # noqa: E501
     def test_still_valid_when_nothing_relevant_changed(self) -> None:
         # frob:tests src/frob/ci_validity.py::classify_test
         snap = _snapshot(
@@ -149,6 +150,7 @@ class TestClassifyTest:
 
 
 class TestValidityForRunHeadSha:
+    # frob:tests src/frob/ci_validity.py::ValidityError  # noqa: E501
     def test_diff_failure_is_err(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

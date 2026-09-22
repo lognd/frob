@@ -25,6 +25,7 @@ class TestCommitRapidDebt:
     uncommitted debt line deadlocked a whole three-agent wave, because
     every later land refused with DirtyMain."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt
     def test_leaves_the_repo_clean(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_leaves_the_repo_clean  # noqa: E501
@@ -112,6 +113,7 @@ class TestCommitRapidDebt:
         head_before = _git(repo, "rev-parse", "HEAD").strip()
         _rapid_sweep._commit_rapid_debt(repo, "T-0003")
         assert _git(repo, "rev-parse", "HEAD").strip() == head_before
+# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt
 
     def test_a_non_repo_never_raises(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_a_non_repo_never_raises  # noqa: E501
@@ -260,6 +262,7 @@ class TestPersistCommitStepFailure:
     thing missing when the ticket's own DirtyMain recurrence could not be
     diagnosed because no land-invocation output survived it."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
     def test_writes_proc_result_diagnostics(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure.test_writes_proc_result_diagnostics  # noqa: E501
         from typani.result import Ok

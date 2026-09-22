@@ -133,6 +133,7 @@ class TestFileReferenceCounts:
     """`file_reference_counts`: projects a `file:line` reference set down
     to per-file counts, dropping line numbers (T-1052)."""
 
+    # frob:tests src/frob/gates/_deprecated_baseline.py::file_reference_counts  # noqa: E501
     def test_buckets_by_file(self) -> None:
         """T-1052: two references in the same file bucket to one count of
         2; a lone reference in another file buckets to 1 -- line numbers
@@ -241,6 +242,7 @@ class TestTighten:
         entry = tightened.for_symbol("src/a.py::helper")
         assert entry is not None
         assert entry.references == ("src/b.py#1",)
+# frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
 
     def test_shrinkage_drops_stale_references(self, tmp_path: Path) -> None:
         """T-0639: a referencing file present in the baseline but no longer
@@ -282,6 +284,7 @@ class TestTighten:
         tightened = tighten_deprecated_baseline(tmp_path, current)
         entry = tightened.for_symbol("src/a.py::helper")
         assert entry is not None
+        # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
         assert entry.file_counts() == {"src/b.py": 1}
 
     def test_never_absorbs_a_new_reference(self, tmp_path: Path) -> None:

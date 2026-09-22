@@ -499,6 +499,7 @@ class TestVerifyOneBucketPassingSpawnFailureIsUnmeasured:
     from a genuine failure rather than collapsing both into one "not
     passing" bit. See T-2569 for the design rationale."""
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::VerifyStatus  # noqa: E501
     def test_spawn_failed_is_unmeasured_not_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

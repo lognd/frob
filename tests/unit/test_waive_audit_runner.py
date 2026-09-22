@@ -53,6 +53,7 @@ def _write_waiver(tmp_path: Path, name: str, rule: str) -> None:
 
 
 class TestRunScan:
+    # frob:tests src/frob/app/ticket_runner/_waive_audit.py::AuditVerdict
     def test_no_watermark_bounds_catchup(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -16,6 +16,7 @@ from frob.app.config import AppConfig
 
 
 class TestEnumFieldValidation:
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
     def test_invalid_ticket_state_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:
@@ -24,14 +25,17 @@ class TestEnumFieldValidation:
         assert "'open' is not a valid ticket state" in message
         for valid in ("queued", "planned", "in-progress", "blocked", "done", "dropped"):
             assert valid in message
+# frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
 
     def test_valid_ticket_state_passes_through(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_valid_ticket_state_passes_through  # noqa: E501
         cfg = AppConfig(ticket_state="queued")
+        # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
         assert cfg.ticket_state == "queued"
 
     def test_none_ticket_state_passes_through(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_none_ticket_state_passes_through  # noqa: E501
+        # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
         cfg = AppConfig()
         assert cfg.ticket_state is None
 

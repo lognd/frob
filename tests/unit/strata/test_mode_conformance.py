@@ -22,6 +22,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestCheckModeConformance:
     # frob:tests \
     # tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance.test_read_mode_fails_on_a_write_open  # noqa: E501
+    # frob:tests src/frob/strata/_mode_conformance.py::check_mode_conformance  # noqa: E501
     def test_read_mode_fails_on_a_write_open(self, tmp_path: Path):
         """GIVEN a node declaring mode=read whose bound code opens the
         resource for writing WHEN sys checks run THEN a fail-closed error

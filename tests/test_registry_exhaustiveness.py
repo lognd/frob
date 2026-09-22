@@ -46,6 +46,7 @@ def _rules(*rule_ids: str) -> list[str]:
 class TestDisposition:
     """REG001/REG002/REG003 -- the anti-lie mandate's core three checks."""
 
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
     def test_undispositioned_entry_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -65,6 +66,7 @@ entries:
 
         rules = _rules(*(v.rule for v in violations))
         assert "REG001" in rules
+# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
 
     def test_dangling_handled_by_fails(self, tmp_path: Path) -> None:
         _write_manifest(
@@ -209,6 +211,7 @@ entries:
 
         violations = registry_gate(tmp_path, queue, frozenset(), registry_dir)
 
+        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
         assert violations == ()
 
     def test_fully_dispositioned_fixture_passes(self, tmp_path: Path) -> None:
@@ -539,6 +542,7 @@ entries:
 
 
 class TestDuplicateId:
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
     """REG007 (T-0407) -- the same id defined by two or more entries is a
     real collision, distinct from an intentional `duplicate_of:` link."""
 
@@ -634,6 +638,7 @@ def _snapshot(*edges: Edge) -> GraphSnapshot:
 class TestEnforcesConformance:
     """T-0428: REG008/REG009, the derived-coverage two-SSOT (code
     `frob:enforces` <-> yaml `handled_by`) bidirectional conformance
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
     check."""
 
     # frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_handled_by_with_no_frob_enforces_edge_warns  # noqa: E501
@@ -664,6 +669,7 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG008" in rules
         reg008 = next(v for v in violations if v.rule == "REG008")
+        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
         # T-2369: REG008 promoted WARN -> ERROR once the corpus's
         # undeclared-enforcement count reached true zero.
         assert reg008.severity == Severity.ERROR
@@ -761,6 +767,7 @@ entries:
             tmp_path, _queue(), frozenset({"REF001"}), registry_dir, snapshot=snapshot
         )
 
+        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
         rules = _rules(*(v.rule for v in violations))
         assert "REG009" in rules
         reg009 = next(v for v in violations if v.rule == "REG009")
@@ -932,6 +939,7 @@ class TestPathEverTracked:
     built so registry-backed gates can distinguish never-adopted from
     adopted-then-deleted."""
 
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked  # noqa: E501
     def test_never_committed_path_is_false(self, tmp_path: Path) -> None:
         """A path with no commit history at all is False -- the ordinary
         never-adopted case."""
@@ -939,6 +947,7 @@ class TestPathEverTracked:
 
         _git_init(tmp_path)
         assert path_ever_tracked(tmp_path, "docs/design/registry") is False
+# frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked  # noqa: E501
 
     def test_deleted_after_commit_is_true(self, tmp_path: Path) -> None:
         """A path committed once and then deleted from the working tree

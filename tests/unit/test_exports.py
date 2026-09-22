@@ -89,6 +89,7 @@ class TestExportsPackage:
         assert result.is_err
         assert result.danger_err == ExportsError.NoSourceFiles
 
+    # frob:tests src/frob/exports/__init__.py::ExportsResult.as_text
     def test_as_text_output(self, tmp_path):
         pkg = self._make_pkg(
             tmp_path,
@@ -237,7 +238,10 @@ class TestFrobExportsPolicyResidue:
                     missing.append(f"{mod.module}.{sym}")
         return missing
 
+    # frob:tests src/frob/testing/__init__.py kind="unit"  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py kind="unit"  # noqa: E501
     # frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
+    # frob:tests src/frob/__init__.py kind="unit"  # noqa: E501
     def test_all_nine_packages_report_zero_missing_symbols(self):
         repo_root = Path(__file__).resolve().parents[2]
         offenders: dict[str, list[str]] = {}

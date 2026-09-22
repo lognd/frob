@@ -86,6 +86,7 @@ class TestFinalizeDraftRelocatesAttachmentRecords:
     already moved, not keep citing the vanished draft directory."""
 
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords.test_attachment_path_follows_the_rename  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::_relocate_attachment_records  # noqa: E501
     def test_attachment_path_follows_the_rename(self, tmp_path: Path) -> None:
         draft_id = "T-draft-0bd874ac"
         assert _store_mode(tmp_path) == "v2"
@@ -125,6 +126,7 @@ class TestFinalizeDraftRelocatesAttachmentRecords:
         # case of "both locations happen to have a copy".
         assert not (tmp_path / "tickets" / draft_id).exists()
 
+    # frob:tests src/frob/tickets/_draft_finalize.py::_relocate_attachment_records  # noqa: E501
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords.test_sha256_is_reverified_at_the_new_location  # noqa: E501
     def test_sha256_is_reverified_at_the_new_location(self, tmp_path: Path) -> None:
         """A relocated record must still carry the SAME verified sha256 --
@@ -206,6 +208,7 @@ class TestBackfillStaleDraftAttachmentPaths:
     `attachments[].path` field a pre-T-2199 promotion left dangling at a
     vanished `T-draft-<hash>` directory, without touching a healthy
     record."""
+# frob:tests src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths  # noqa: E501
 
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
     def test_repairs_a_pre_t2199_stale_draft_pointer(self, tmp_path: Path) -> None:

@@ -133,6 +133,7 @@ class TestPythonAdapter:
         assert isinstance(adapter, LanguageAdapter)
         assert adapter.language == "python"
 
+    # frob:tests src/frob/arch/_python.py::PythonAdapter  # noqa: E501
     def test_adapt_arch_python_fixture_shape(self) -> None:
         from frob.arch._python import PythonAdapter
         from frob.lang import raw_tree
@@ -654,6 +655,7 @@ class TestTypeScriptAdapter:
 
         restored = NormalizedModule.model_validate(module.model_dump())
         assert restored == module
+# frob:tests src/frob/arch/_typescript.py::TypeScriptAdapter  # noqa: E501
 
     def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:
         # A denser, more realistic TS module exercising every entity kind
@@ -1186,6 +1188,7 @@ class TestRustAdapter:
         fn = module.functions[0]
         assert len(fn.catches) == 1
         assert fn.catches[0].exception_type == "Err"
+# frob:tests src/frob/arch/_rust.py::RustAdapter  # noqa: E501
 
     def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:
         # A denser, more realistic rust module exercising every entity
@@ -1542,6 +1545,7 @@ class TestKotlinAdapter:
         assert fn.catches[0].exception_type == "RuntimeException"
         assert any(r.exception_type == "RuntimeException" for r in fn.raises)
 
+    # frob:tests src/frob/arch/_kotlin.py::KotlinAdapter  # noqa: E501
     def test_adapt_stays_sane_on_realistic_snippet(self) -> None:
         # A denser, more realistic kotlin module exercising every entity
         # kind at once (imports, an interface, a class implementing it

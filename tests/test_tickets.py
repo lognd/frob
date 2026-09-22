@@ -122,6 +122,7 @@ class TestQueue:
         assert result.danger_ok.tickets["T-0001"].body == body
 
     # invariant spec: [INV-004](invariants/INV-004.md)
+    # frob:tests src/frob/tickets/_archive.py::load_queue
     def test_malformed_frontmatter_is_err(self, tmp_path: Path) -> None:
         tickets_dir = tmp_path / "tickets"
         tickets_dir.mkdir()
@@ -2488,6 +2489,7 @@ class TestSchemaExtras:
         q2 = load_queue(tmp_path).danger_ok
         assert "T-0001" in q2.tickets
 
+    # frob:tests src/frob/tickets/_new_renumber.py::renumber
     # frob:ticket T-1882
     def test_renumber_dry_run_previews_without_writing(self, tmp_path):
         """T-1882 requirement 2: `renumber(root, dry_run=True)` reports the
@@ -2917,6 +2919,7 @@ class TestUnknownFieldForwardCompat:
         extras = ticket.__pydantic_extra__
         assert extras is not None
         assert extras["reviews_v2"] == [{"reviewer": "bob", "stance": "strong-approve"}]
+# frob:tests src/frob/tickets/_models.py::Ticket._warn_unknown_extras  # noqa: E501
 
     def test_unknown_field_logs_warning_named(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
@@ -3202,6 +3205,7 @@ class TestAddAcceptance:
         assert [c.text for c in reloaded.acceptance] == texts
 
     # frob:ticket T-1029
+    # frob:tests src/frob/tickets/__init__.py::add_acceptance
     def test_empty_criteria_is_rejected(self, tmp_path: Path) -> None:
         spec = TicketSpec(
             title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
@@ -3718,6 +3722,7 @@ class TestHollowDoneReportGuard:
         "### Evidence\n(no evidence recorded)\n"
     )
 
+    # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report  # noqa: E501
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_rapid_hollow_report_refused  # noqa: E501
     # frob:ticket T-3336
     def test_rapid_hollow_report_refused(self, tmp_path: Path) -> None:
@@ -3795,6 +3800,7 @@ class TestHollowDoneReportGuard:
             rapid=True,
             debt_sink=lambda tid, what: None,
         )
+        # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report  # noqa: E501
         assert result.is_ok
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_real_evidence_never_flagged_as_hollow  # noqa: E501
@@ -3864,6 +3870,7 @@ class TestStaleClaimsGuard:
         "passing when recorded)\n\n"
         "### Captured claims\n"
         "- tests: {test_count} passed (from {evidence_count} evidence id(s))\n"
+        # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason  # noqa: E501
         "- gates: unmeasured\n"
     )
 

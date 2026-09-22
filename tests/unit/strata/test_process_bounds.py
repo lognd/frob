@@ -29,6 +29,7 @@ class TestMissingInterfaceClassification:
     # frob:tests \
     # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test\
     # _kernel_interface_node_without_classification_fires
+    # frob:tests src/frob/strata/_process_bounds.py::check_process_bounds_obligations  # noqa: E501
     def test_kernel_interface_node_without_classification_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

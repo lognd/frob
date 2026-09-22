@@ -34,6 +34,7 @@ def _load(filename: str) -> tuple[Module, KernelModel]:
 class TestDuplicatePort:
     # frob:tests \
     # tests/unit/strata/test_contention.py::TestDuplicatePort.test_two_nodes_same_port_fires  # noqa: E501
+    # frob:tests src/frob/strata/_contention.py::check_resource_contention  # noqa: E501
     def test_two_nodes_same_port_fires(self):
         _module, model = _load("contention_port_vuln.strata")
         report = check_resource_contention(model)

@@ -18,6 +18,7 @@ from frob.gates import (
 )
 
 
+# frob:tests src/frob/gates/__init__.py::_macro_symbol_file
 class TestMacroSymbolFile:
     """`_macro_symbol_file` recognizes a T-0318 macro stand-in symref and
     extracts its file path; anything else yields None."""

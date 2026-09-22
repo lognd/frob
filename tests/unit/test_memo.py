@@ -33,6 +33,7 @@ from frob.graph import build_graph
 from frob.lang import parse_file
 
 
+# frob:tests src/frob/check/_memo.py::memoize_per_run
 def test_second_call_with_same_args_is_memo_hit() -> None:
     """Identical arguments hit the memo; call count stays at one."""
     calls: list[tuple[int, int]] = []
@@ -194,6 +195,7 @@ def test_reset_run_memo_activates_an_unbounded_scope(monkeypatch) -> None:  # no
     assert misses == 1
 
 
+# frob:tests src/frob/check/_memo.py::run_memo_scope
 def test_run_memo_scope_deactivates_on_exit() -> None:
     """Outside `run_memo_scope()`, `memoize_per_run` is a pure passthrough
     -- no caching, no staleness risk."""
@@ -253,6 +255,7 @@ def test_analyze_project_second_call_is_memo_hit(tmp_path: Path) -> None:
         assert hits == 1
         assert misses == 1
 
+# frob:tests src/frob/lang/__init__.py::parse_file
 
 # frob:ticket T-0410
 def test_parse_file_second_call_is_memo_hit(tmp_path: Path) -> None:

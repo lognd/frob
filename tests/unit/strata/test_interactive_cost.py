@@ -26,6 +26,7 @@ class TestMissingBoundedCost:
     # frob:tests \
     # tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost.test_interacti\
     # ve_node_without_bounded_cost_fires
+    # frob:tests src/frob/strata/_interactive_cost.py::check_interactive_cost_obligations  # noqa: E501
     def test_interactive_node_without_bounded_cost_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

@@ -74,6 +74,7 @@ def _report(
 class TestDoctorRunnerHealthy:
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_plain_prints_all_available_and_does_not_exit  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::run  # noqa: E501
     def test_healthy_plain_prints_all_available_and_does_not_exit(
         self, monkeypatch, capsys
     ) -> None:
@@ -92,6 +93,7 @@ class TestDoctorRunnerHealthy:
         assert "frob_core" in out and "strata_core" in out
 
     # frob:tests \
+    # frob:tests src/frob/app/doctor_runner.py::run  # noqa: E501
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy.test_healthy_json_emits_parseable_report  # noqa: E501
     def test_healthy_json_emits_parseable_report(self, monkeypatch, caplog) -> None:
         """`--json` emits the report's JSON on the log channel and does not
@@ -190,6 +192,7 @@ class TestDoctorRunnerPlainPathQuieted:
 
 
 class TestDoctorRunnerUnhealthy:
+    # frob:tests src/frob/app/doctor_runner.py::run  # noqa: E501
     # frob:tests \
     # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plain_exits_1_and_prints_remediation  # noqa: E501
     def test_unhealthy_plain_exits_1_and_prints_remediation(

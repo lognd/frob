@@ -85,6 +85,7 @@ class TestDoc006TicketBodyCliPointerSkip:
     no DOC006 finding, while a real unresolved CLI pointer in an ordinary
     doc still fires."""
 
+    # frob:tests src/frob/gates/_docptr.py::_is_ticket_body_doc  # noqa: E501
     def test_open_ticket_planned_cli_pointer_not_flagged(
         self, tmp_path: Path
     ) -> None:

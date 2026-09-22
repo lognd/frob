@@ -25,6 +25,7 @@ class TestLangConformanceGate:
     """LANG001 over the live, real `frob.lang` language-support registry."""
 
     # frob:ticket T-0405
+    # frob:tests src/frob/gates/_lang_conformance.py::lang_conformance_gate  # noqa: E501
     def test_real_registry_is_clean(self) -> None:
         """The repo's own registered languages are all fully accounted
         for today -- this gate is clean, not just wired-but-untested."""
@@ -55,6 +56,7 @@ class TestLangConformanceGate:
 class TestProjectLangConformanceGate:
     """LANG002/LANG003 over a synthetic downstream repo tree (T-0406)."""
 
+    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate  # noqa: E501
     # frob:ticket T-0406
     def test_unregistered_language_file_fails(self, tmp_path: Path) -> None:
         """A Swift file in a downstream repo -- a language frob has NO
@@ -84,6 +86,7 @@ class TestProjectLangConformanceGate:
         violations = project_lang_conformance_gate(tmp_path)
         lang002 = [v for v in violations if v.rule == "LANG002"]
         assert lang002 == []
+# frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate  # noqa: E501
 
     # frob:ticket T-0406
     def test_all_conformant_project_passes(self, tmp_path: Path) -> None:

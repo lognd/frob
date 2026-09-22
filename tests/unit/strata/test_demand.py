@@ -23,6 +23,7 @@ class TestAggregateDemand:
     # frob:tests \
     # tests/unit/strata/test_demand.py::TestAggregateDemand.test_two_entry_nodes_sum_at\
     # _fan_in
+    # frob:tests src/frob/strata/_facts.py::FactBase.aggregate_demand  # noqa: E501
     def test_two_entry_nodes_sum_at_fan_in(self):
         """T-0702 acceptance criterion: two entry nodes declaring users
         300000/200000 both flowing into one resource sum to 500000."""

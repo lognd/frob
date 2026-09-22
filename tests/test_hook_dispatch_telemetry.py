@@ -230,6 +230,7 @@ def _run_tool_call_hook(payload: dict, *, cwd: Path):
     )
 
 
+# frob:tests .claude/hooks/tool-call-telemetry.py::main kind="integration"  # noqa: E501
 def test_pre_tool_use_records_attempt_event(tmp_path: Path):
     # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
     _init_repo_with_commit(tmp_path)

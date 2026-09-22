@@ -44,6 +44,7 @@ def _git_init(root: Path) -> None:
 class TestScanCommentLength:
     """`scan_comment_length` -- check 1, the content-blind length cap."""
 
+    # frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length  # noqa: E501
     def test_flags_long_pure_algorithm_run(self) -> None:
         """MUST-FIRE: a 20-line pure-algorithm comment run with no ticket
         citation is flagged -- content-blind, no wording test. Placed
@@ -55,11 +56,13 @@ class TestScanCommentLength:
         text += "\ndef f():\n    pass\n"
         violations = scan_comment_length(Path("a.py"), text)
         assert any(v.rule == "DOCARCH002" for v in violations)
+# frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length  # noqa: E501
 
     def test_short_run_is_quiet(self) -> None:
         """MUST-STAY-QUIET: a 5-line comment run stays under the cap."""
         text = "\n".join(f"# line {i}" for i in range(5)) + "\ndef f():\n    pass\n"
         violations = scan_comment_length(Path("a.py"), text)
+        # frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length  # noqa: E501
         assert violations == ()
 
     def test_directive_run_is_exempt(self) -> None:

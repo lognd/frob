@@ -322,6 +322,7 @@ class TestChangelogFragments:
     numeric (not lexical) ticket-id ordering, fail-closed parsing, and
     deterministic/idempotent CHANGELOG.md section assembly."""
 
+    # frob:tests src/frob/release/_fragments.py::ChangelogFragment  # noqa: E501
     def test_write_then_read_round_trips(self, tmp_path):
         # frob:tests \
         # tests/test_release.py::TestChangelogFragments.test_write_then_read_round_trips
@@ -350,6 +351,7 @@ class TestChangelogFragments:
         fragments = read_changelog_fragments(tmp_path)
         assert fragments.is_ok
         assert fragments.danger_ok == ()
+# frob:tests src/frob/release/_fragments.py::read_changelog_fragments  # noqa: E501
 
     def test_read_sorts_numerically_not_lexically(self, tmp_path):
         # frob:tests \
@@ -388,6 +390,7 @@ class TestChangelogFragments:
         assembled = assemble_changelog_from_fragments(tmp_path, "2.0.0")
         assert assembled.is_ok
         assert assembled.danger_ok == 0
+        # frob:tests src/frob/release/_fragments.py::assemble_changelog_from_fragments  # noqa: E501
         assert (tmp_path / "CHANGELOG.md").read_text() == "# Changelog\n"
 
     def test_assemble_writes_every_fragment_as_a_bullet(self, tmp_path):
@@ -806,6 +809,7 @@ class _StubProc:
 class TestPublish:
     """`publish` (T-2242): the bump+stamp+sync+commit+push+build+publish
     composition, with every git/uv step stubbed via `frob.gitio.run_argv`
+    # frob:tests src/frob/release/_publish.py::PublishPlan
     -- never a real git push or a real PyPI publish (T-2242's own
     non-negotiable safety constraint)."""
 
@@ -940,6 +944,7 @@ class TestRunReleasePublishCommand:
     """`frob.release._cli.run_release_publish_command` -- the CLI-facing
     wrapper `frob.__main__._dispatch` calls for `frob release publish`."""
 
+    # frob:tests src/frob/release/_cli.py::run_release_publish_command  # noqa: E501
     def test_dry_run_prints_the_plan_and_exits_0(self, tmp_path, monkeypatch, capsys):
         # frob:tests \
         # tests/test_release.py::TestRunReleasePublishCommand.test_dry_run_prints_the_plan_and_exits_0  # noqa: E501
@@ -979,6 +984,7 @@ class TestAddReleasePublishParser:
 
     # frob:tests \
     # tests/test_release.py::TestAddReleasePublishParser.test_registers_release_publish_with_dry_run_flag  # noqa: E501
+    # frob:tests src/frob/release/_cli.py::add_release_publish_parser
     def test_registers_release_publish_with_dry_run_flag(self):
         import argparse
 

@@ -29,6 +29,7 @@ class TestTypeDispatchSmell:
     (`frob.arch._patterns.iter_type_switch_chains`) and is ALSO reported as
     an OCP violation, not just a pattern recommendation."""
 
+    # frob:tests src/frob/arch/_ocp.py::_check_type_dispatch_smell  # noqa: E501
     def test_isinstance_chain_flags_ocp_violation(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()

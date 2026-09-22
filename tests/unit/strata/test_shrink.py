@@ -38,6 +38,7 @@ class TestShrinkReportDropsStaleGrants:
     declared `may` atom with zero observed sites anywhere in its node's
     files."""
 
+    # frob:tests src/frob/strata/_shrink.py::ShrinkDrop kind="unit"  # noqa: E501
     def test_drops_declared_but_never_observed_capability(self, tmp_path: Path):
         """A node declares `eval` but its bound file never performs it
         (a stale SYS101 grant) -- shrink drops the line, leaving every

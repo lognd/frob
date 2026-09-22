@@ -22,6 +22,7 @@ from frob.vet._capability_modes import (
 
 
 class TestModeQualified:
+    # frob:tests src/frob/vet/_capability_modes.py::_mode_qualified kind="unit"  # noqa: E501
     def test_joins_family_and_mode(self):
         assert _mode_qualified("fs", "read") == "fs.read"
 

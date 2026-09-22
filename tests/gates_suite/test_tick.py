@@ -386,6 +386,7 @@ class TestTick011DisclosedCutWithoutTicket:
         return TicketQueue(tickets={t.id: t for t in tickets})
 
     # frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket  # noqa: E501
     def test_disclosed_follow_up_with_no_citation_fires(self, tmp_path: Path) -> None:
         """The real T-1085 shape: "deliberately left for a follow-up
         pass" with no `T-####` anywhere nearby -- must fire."""
@@ -606,6 +607,7 @@ class TestTick011DisclosedCutWithoutTicket:
         assert not any(v.rule == "TICK011" for v in violations)
 
     # frob:tests \
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket  # noqa: E501
     # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_recent_ticket_outside_old_window_still_fires_exactly_as_today  # noqa: E501
     def test_recent_ticket_outside_old_window_still_fires_exactly_as_today(
         self, tmp_path: Path
@@ -873,6 +875,7 @@ class TestTick008UnknownLedgerFields:
         assert "priorty" in tick008[0].message
         assert "did you mean 'priority'" in tick008[0].message
 
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick008_unknown_ledger_fields
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
     def test_silent_on_clean_ledger(self, tmp_path: Path) -> None:

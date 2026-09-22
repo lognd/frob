@@ -29,6 +29,7 @@ class TestRuffAbsentToolIsUnmeasured:
     what happened -- matching `parse_ty`'s existing treatment of the
     identical condition."""
 
+    # frob:tests src/frob/process/parsers/ruff.py::parse_ruff_json  # noqa: E501
     def test_spawn_failure_is_unmeasured_not_error(self) -> None:
         r = parse_ruff_json("", exit_code=2, stderr=_RUFF_SPAWN_FAILURE_STDERR)
         assert r.diagnostics == []
@@ -51,6 +52,7 @@ class TestRuffEmptyOutputWithoutStderrEvidenceStaysAnError:
     T-4308's original hard-ERROR behavior -- the distinction that must
     survive: "not installed" is unmeasured, but "ran and produced
     nothing parseable, for an unknown reason" is still a real failure."""
+# frob:tests src/frob/process/parsers/ruff.py::parse_ruff_json  # noqa: E501
 
     def test_no_stderr_argument_is_still_an_error(self) -> None:
         r = parse_ruff_json("", exit_code=2)
@@ -93,11 +95,13 @@ class TestRuffPresentButBrokenStaysAnError:
 class TestTyAbsentToolIsUnmeasured:
     """T-4358: `parse_ty` now recognizes the absent-tool shape explicitly
     (its real caller already concatenates stdout+stderr into the single
+    # frob:tests src/frob/process/parsers/ty.py::parse_ty  # noqa: E501
     `stdout` argument, so the spawn-failure text is visible here)."""
 
     def test_spawn_failure_text_is_unmeasured(self) -> None:
         r = parse_ty(_TY_SPAWN_FAILURE_STDERR, exit_code=2)
         assert r.diagnostics == []
+        # frob:tests src/frob/process/parsers/ty.py::parse_ty  # noqa: E501
         assert r.error_count == 0
         assert not r.passed
 

@@ -213,6 +213,7 @@ class TestFlagCoverageGate:
         assert "forwarded=" in violations[0].message
 
     # frob:tests src/frob/gates/_flag_coverage.py::flag_coverage_gate kind="unit"
+    # frob:tests src/frob/gates/_docblocks_shared.py::resolve_dotted_symbol
     def test_unresolvable_parser_is_unresolved_not_a_crash(
         self, tmp_path: Path
     ) -> None:

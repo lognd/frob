@@ -76,6 +76,7 @@ class TestCollectStacksViaSamplerArgvStripping:
         perf_runner._collect_stacks_via_sampler(cfg)
         return captured["argv"]
 
+    # frob:tests src/frob/app/perf_runner.py::_collect_stacks_via_sampler  # noqa: E501
     def test_non_marker_first_arg_is_not_stripped(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

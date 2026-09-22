@@ -96,6 +96,7 @@ def _write_ticket(root: Path, ticket: Ticket, slug: str = "sample") -> Path:
 
 class TestNewGateRuleIds:
     # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_detects_freshly_added_rule_id  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids  # noqa: E501
     def test_detects_freshly_added_rule_id(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write_gates_source(tmp_path, _BASE_GATES_SOURCE)
@@ -109,12 +110,14 @@ class TestNewGateRuleIds:
         found = new_gate_rule_ids(tmp_path, base_ref="main")
         assert found == ("NEWRULE001",)
 
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids  # noqa: E501
     # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_no_new_rules_is_empty  # noqa: E501
     def test_no_new_rules_is_empty(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write_gates_source(tmp_path, _BASE_GATES_SOURCE)
         _commit_all(tmp_path, "base gates")
         assert new_gate_rule_ids(tmp_path, base_ref="main") == ()
+# frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids  # noqa: E501
 
     # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_unresolvable_base_ref_degrades_to_none  # noqa: E501
     def test_unresolvable_base_ref_degrades_to_none(self, tmp_path: Path) -> None:

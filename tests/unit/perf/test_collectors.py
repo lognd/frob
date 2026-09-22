@@ -39,6 +39,7 @@ _FIXTURES = Path(__file__).parent / "fixtures"
 class TestParsePerfScript:
     """Linux `perf script` textual output -> `SampledStack`s."""
 
+    # frob:tests src/frob/perf/_collectors.py::parse_perf_script kind="unit"  # noqa: E501
     def test_parses_committed_fixture_into_leaf_first_stacks(self) -> None:
         """Frames within one sample are ordered leaf-first, matching perf
         script's own top-to-bottom record order."""

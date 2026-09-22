@@ -90,6 +90,7 @@ class TestDeriveBootstrapModelComponentsAndFlows:
     """Node/`code=`/`flow` derivation from a real package layout + real
     import edges."""
 
+    # frob:tests src/frob/strata/_bootstrap.py::BootstrapComponent
     def test_single_top_package_splits_by_subdirectory(self, tmp_path: Path):
         """A `src/pkg/**` single-package layout gets one node per
         SUBdirectory of `pkg`, not one useless whole-package node."""

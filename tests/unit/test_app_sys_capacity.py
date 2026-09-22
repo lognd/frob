@@ -63,6 +63,7 @@ class TestSysCapacity:
     """`frob sys capacity [--population N]`: the CAP001 demand-vs-capacity
     printer, optionally projected via T-1927's `project_capacity`."""
 
+    # frob:tests src/frob/app/sys_runner.py::_print_capacity_report  # noqa: E501
     def test_no_population_reports_current_violations(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -151,6 +152,7 @@ class TestSysCapacity:
         assert cfg.sys_capacity_since == datetime(2026, 1, 1)
         assert cfg.sys_capacity_at == datetime(2027, 1, 1)
 
+    # frob:tests src/frob/app/_config_external.py::_FLOAT_FIELDS  # noqa: E501
     def test_population_flag_survives_real_argv_parsing(self) -> None:
         """Regression guard (T-1927's own live-fire incident): `--population`
         is a `float` CLI flag, and `AppConfig.from_external`'s generic

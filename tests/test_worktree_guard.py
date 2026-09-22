@@ -75,6 +75,7 @@ def _write_lease(root: Path, ticket_id: str, worktree: Path) -> None:
 
 
 class TestEnforceWorktreeLease:
+    # frob:tests src/frob/tickets/_worktree_guard.py::enforce_worktree_lease  # noqa: E501
     def test_no_env_var_is_unrestricted(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -82,6 +83,7 @@ class TestEnforceWorktreeLease:
         monkeypatch.delenv(FROB_WORKTREE_ENV, raising=False)
         _init_repo(tmp_path)
         assert enforce_worktree_lease(tmp_path).is_ok
+# frob:tests src/frob/tickets/_worktree_guard.py::enforce_worktree_lease  # noqa: E501
 
     def test_matching_worktree_passes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -194,6 +196,7 @@ class TestAgentEnvExports:
         _init_repo(tmp_path)
         result = agent_env_exports(tmp_path)
         assert result.is_ok
+        # frob:tests src/frob/tickets/_worktree_guard.py::agent_env_exports
         assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV not in result.danger_ok
 
     def test_fleet_context_bounds_xdist_workers(self, tmp_path: Path) -> None:
@@ -544,6 +547,7 @@ class TestWarnIfTestmonPluginMissing:
 class TestAgentRunnerEnv:
     """T-0574: `frob agent env` CLI wiring (`frob.app.agent_runner`)."""
 
+    # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
     def test_env_prints_export_lines_for_worktree(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -553,6 +557,7 @@ class TestAgentRunnerEnv:
         out = capsys.readouterr().out
         assert f"export FROB_WORKTREE={shlex.quote(str(tmp_path.resolve()))}" in out
         assert f"export FROB_AGENT={shlex.quote('1')}" in out
+# frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
 
     def test_env_defaults_to_cwd(
         self,
@@ -565,6 +570,7 @@ class TestAgentRunnerEnv:
         monkeypatch.chdir(tmp_path)
         agent_run(["env"])
         out = capsys.readouterr().out
+        # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
         assert f"export FROB_WORKTREE={shlex.quote(str(tmp_path.resolve()))}" in out
 
     def test_env_non_repo_path_exits_nonzero(
@@ -607,6 +613,7 @@ class TestAgentEnvStdoutPurity:
     sees the `gitio`/`process` DEBUG/INFO tracing that a real process's
     `_LazyStdoutHandler` prints. These tests shell out to the actual `frob`
     entry point as a real subprocess -- the only way to exercise the real
+    # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
     logging handlers -- and assert on every stdout line, not merely that
     the exports are present among other noise."""
 

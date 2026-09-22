@@ -90,6 +90,7 @@ def _isolated_hardened_model() -> KernelModel:
 class TestLateralIsolation:
     # frob:tests \
     # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::HostIsolationViolation
     def test_skips_below_two_users(self):
         node = Node(id="solo", trust="trusted", attrs=("runs_as=svc-a", "unit"))
         model = KernelModel(nodes=(node,))

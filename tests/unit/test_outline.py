@@ -83,6 +83,7 @@ def test_py_outline_signature_includes_return(py_file):
     assert "-> str" in helper.signature
 
 
+# frob:tests src/frob/outline/__init__.py::ModuleOutline.as_text
 def test_py_outline_as_text(py_file):
     outline = outline_file(py_file).danger_ok
     text = outline.as_text()

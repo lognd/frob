@@ -28,6 +28,7 @@ class TestPerf008LoopInvariantEffect:
     effectful call (including the real pre-T-0773 ticket-row shape),
     never on a loop-varying one."""
 
+    # frob:tests src/frob/perf/_loop_effects.py::loop_invariant_effect_violations  # noqa: E501
     def test_fs_walk_direct_call_in_loop_is_flagged(self, tmp_path: Path) -> None:
         """`os.walk(fixed_root)` inside a loop with no per-iteration
         variation in its argument is a direct PERF008 hit."""
@@ -44,6 +45,7 @@ class TestPerf008LoopInvariantEffect:
         violations = loop_invariant_effect_violations([parsed])
         assert any(v.rule == "PERF008" for v in violations)
 
+    # frob:tests src/frob/perf/_loop_effects.py::loop_invariant_effect_violations  # noqa: E501
     def test_loop_invariant_spawn_call_two_hops_deep_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -120,6 +122,7 @@ class TestPerf008LoopInvariantEffect:
             v.rule == "PERF008"
             for v in perf_rules(snapshot, [gitio_parsed, tickets_parsed])
         )
+# frob:tests src/frob/perf/_loop_effects.py::loop_invariant_effect_violations  # noqa: E501
 
     def test_loop_varying_argument_is_not_flagged(self, tmp_path: Path) -> None:
         """The exact same shape, but the call's argument is the loop's own

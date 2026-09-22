@@ -172,6 +172,7 @@ class TestScopedMayViaConformance:
     covers only the files it names, not the whole node."""
 
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    # frob:tests src/frob/strata/_effects.py::_declared_kinds_for_file
     def test_observation_outside_via_surface_is_a_violation(self, tmp_path: Path):
         # acceptance clause 0: a node with `may X via glob` still fires
         # SYS100 for a file the glob does not cover, even though the node

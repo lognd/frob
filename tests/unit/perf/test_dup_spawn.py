@@ -29,6 +29,7 @@ class TestPerf012DuplicateSpawn:
     SAME argument shape (the before-fix `_done_report` shape), never when
     the two helpers' spawn arguments differ, and never for a single call."""
 
+    # frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations  # noqa: E501
     def test_two_helpers_spawning_identical_subprocess_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -60,6 +61,7 @@ class TestPerf012DuplicateSpawn:
 
         violations = duplicate_spawn_violations([parsed])
         assert any(v.rule == "PERF012" for v in violations)
+# frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations  # noqa: E501
 
     def test_two_helpers_spawning_different_subprocess_args_is_not_flagged(
         self, tmp_path: Path
@@ -88,6 +90,7 @@ class TestPerf012DuplicateSpawn:
         parsed = parse_file(path).danger_ok
 
         violations = duplicate_spawn_violations([parsed])
+        # frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations  # noqa: E501
         assert not any(v.rule == "PERF012" for v in violations)
 
     def test_single_helper_call_is_not_flagged(self, tmp_path: Path) -> None:
@@ -106,6 +109,7 @@ class TestPerf012DuplicateSpawn:
         path = _write(tmp_path, "mod.py", src)
         parsed = parse_file(path).danger_ok
 
+        # frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations  # noqa: E501
         violations = duplicate_spawn_violations([parsed])
         assert not any(v.rule == "PERF012" for v in violations)
 

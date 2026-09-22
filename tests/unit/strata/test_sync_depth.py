@@ -32,6 +32,7 @@ class TestSyncDepth:
 
     # frob:tests \
     # tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_chain_at_bound_fires
+    # frob:tests src/frob/strata/_sync_depth.py::check_sync_chain_depth
     def test_chain_at_bound_fires(self):
         nodes, flows = _chain(SYNC_CHAIN_MAX_DEPTH)
         model = KernelModel(nodes=nodes, flows=flows)

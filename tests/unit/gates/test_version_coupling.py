@@ -68,10 +68,12 @@ version = "{frob_version}"
 class TestVersionCouplingGate:
     """`version_coupling_gate`'s clean and skewed shapes."""
 
+    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
     def test_matched_versions_clean(self, tmp_path: Path) -> None:
         """All three versions matching, exact `==` pins: zero violations."""
         root = _write_repo(tmp_path)
         assert version_coupling_gate(root) == ()
+# frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
 
     def test_skewed_core_version_fires(self, tmp_path: Path) -> None:
         """`frob-core/pyproject.toml`'s own version disagreeing with
@@ -81,6 +83,7 @@ class TestVersionCouplingGate:
         violations = version_coupling_gate(root)
         assert violations
         assert all(v.rule == "VERSION001" for v in violations)
+        # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
         assert any("frob-core" in v.message for v in violations)
 
     def test_loose_pin_fires(self, tmp_path: Path) -> None:
@@ -101,6 +104,7 @@ class TestVersionCouplingGate:
         available to opt into."""
         root = _write_repo(tmp_path, native_extra=[])
         violations = version_coupling_gate(root)
+        # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
         assert len(violations) == 2
         assert all(v.rule == "VERSION001" for v in violations)
 
@@ -113,6 +117,7 @@ class TestVersionCouplingGate:
         )
         violations = version_coupling_gate(root)
         assert any(
+            # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
             v.rule == "VERSION001" and "frob-core is pinned to" in v.message
             for v in violations
         )

@@ -14,6 +14,7 @@ from frob.tickets._reporting import (
 
 
 class TestSubheadingTitlesOutsideFences:
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_hash_line_inside_fence_not_a_subheading(self) -> None:
         # frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_hash_line_inside_fence_not_a_subheading  # noqa: E501
         section = (

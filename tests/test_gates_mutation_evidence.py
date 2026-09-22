@@ -56,6 +56,7 @@ _FINDING = ConfirmatoryFinding(
 
 
 class TestMutationEvidenceViolations:
+    # frob:tests src/frob/gates/_mutation_evidence.py::mutation_evidence_violations  # noqa: E501
     def test_confirmatory_finding_is_warn_for_feature_kind(
         self, tmp_path: Path
     ) -> None:
@@ -69,6 +70,7 @@ class TestMutationEvidenceViolations:
         assert len(violations) == 1
         assert violations[0].rule == "TEST016"
         assert violations[0].severity == "warn"
+# frob:tests src/frob/gates/_mutation_evidence.py::mutation_evidence_violations  # noqa: E501
 
     def test_confirmatory_finding_is_error_for_security_kind(
         self, tmp_path: Path
@@ -221,6 +223,7 @@ class TestQuotedRanges:
     """`_quoted_char_ranges` (T-2218): the shared markdown-structure
     primitive `_bug002_waiver_reason`/`_no_behavior_change_reason`/
     `_must_still_pass_controls` all apply before accepting a directive
+    # frob:tests src/frob/gates/_mutation_evidence.py::_quoted_char_ranges
     match as a live declaration."""
 
     def test_fenced_quoted(self) -> None:
@@ -229,6 +232,7 @@ class TestQuotedRanges:
 
         body = 'text\n```\nfrob:waive BUG002 reason="x"\n```\nmore\n'
         ranges = _quoted_char_ranges(body)
+        # frob:tests src/frob/gates/_mutation_evidence.py::_quoted_char_ranges
         needle = body.index("frob:waive")
         assert any(start <= needle < end for start, end in ranges)
 
@@ -310,6 +314,7 @@ class TestQuotedRanges:
 
 
 class TestBug002Waiver:
+    # frob:tests src/frob/gates/_bug_repro.py::_bug002_waiver_reason
     def test_reason_present_suppresses(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_reason_present_suppresses  # noqa: E501
         body = '## Description\nsomething\nfrob:waive BUG002 reason="nondeterministic crash, cannot repro in a test"\n'  # noqa: E501
@@ -462,6 +467,7 @@ class TestNoBehaviorChange:
     """`_no_behavior_change_reason` (T-1616): parses `frob:no-behavior-
     change reason="..."` out of a ticket's body, same shape/precedent as
     `_bug002_waiver_reason`."""
+# frob:tests src/frob/gates/_bug_repro.py::_no_behavior_change_reason  # noqa: E501
 
     def test_reason_present_recognized(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_reason_present_recognized  # noqa: E501
@@ -760,6 +766,7 @@ class TestBugReproTimeout:
         )
         assert outcome is _BugReproOutcome.FAILED_AT_PARENT
 
+# frob:tests src/frob/gates/_bug_repro.py::bug_repro_violations  # noqa: E501
 
 class TestBugReproViolations:
     def test_non_bug_kind_never_checked(self, tmp_path: Path) -> None:
@@ -767,11 +774,13 @@ class TestBugReproViolations:
         ticket = _bug_ticket(kind=TicketKind.FEATURE)
         with patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as mocked:
             violations = bug_repro_violations(tmp_path, ticket, "main")
+        # frob:tests src/frob/gates/_bug_repro.py::bug_repro_violations  # noqa: E501
         mocked.assert_not_called()
         assert violations == ()
 
     def test_no_pytest_evidence_no_violation(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_no_pytest_evidence_no_violation  # noqa: E501
+        # frob:tests src/frob/gates/_bug_repro.py::bug_repro_violations  # noqa: E501
         ticket = _bug_ticket(evidence=("cmd:make lint exit=0 sha256=0123456789ab",))
         violations = bug_repro_violations(tmp_path, ticket, "main")
         assert violations == ()
@@ -782,6 +791,7 @@ class TestBugReproViolations:
             '## Description\nfrob:waive BUG002 reason="doc correction filed as bug"\n'  # noqa: E501
         )
         ticket = _bug_ticket(body=body)
+        # frob:tests src/frob/gates/_bug_repro.py::bug_repro_violations kind="integration"  # noqa: E501
         with patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as mocked:
             violations = bug_repro_violations(tmp_path, ticket, "main")
         mocked.assert_not_called()
@@ -988,6 +998,7 @@ class TestBugRepro:
 
 class TestMustStillPassControls:
     """`_must_still_pass_controls` (T-2193): extracting `frob:must-still-
+    # frob:tests src/frob/gates/_bug_repro.py::_must_still_pass_controls  # noqa: E501
     pass NODE-ID` directives from a ticket's body."""
 
     def test_single_directive_extracted(self) -> None:
@@ -1228,6 +1239,7 @@ class TestMustStillPassIntegration:
 
 
 class TestEnvAbsent:
+    # frob:tests src/frob/gates/_bug_repro.py::_env_absent_vars  # noqa: E501
     """`_env_absent_vars` (T-3104): extracting `frob:env-absent
     VAR1,VAR2,...` directives from a ticket's body."""
 

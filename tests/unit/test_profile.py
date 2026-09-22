@@ -16,11 +16,13 @@ from frob.tickets._profile import (
 class TestConfiguredProfile:
     """`configured_profile` reads the raw `[profile]` value, no ratchet."""
 
+    # frob:tests src/frob/tickets/_profile.py::configured_profile  # noqa: E501
     def test_absent_frob_toml_is_standard(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_absent_frob_toml_is_standard  # noqa: E501
         result = configured_profile(tmp_path)
         assert result.is_ok
         assert result.danger_ok is ProfileName.STANDARD
+# frob:tests src/frob/tickets/_profile.py::configured_profile  # noqa: E501
 
     def test_explicit_rapid_parses(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_explicit_rapid_parses  # noqa: E501
@@ -42,6 +44,7 @@ class TestConfiguredProfile:
 
 class TestEffectiveProfile:
     """`effective_profile` applies the one-way auto-ratchet on top of
+    # frob:tests src/frob/tickets/_profile.py::effective_profile  # noqa: E501
     `configured_profile`."""
 
     def test_standard_is_unaffected_by_ratchet(self, tmp_path: Path) -> None:
@@ -127,6 +130,7 @@ class TestDowngrade:
 # frob:ticket T-1684
 class TestRatchetOverride:
     """`ratchet_override_enabled` (T-1681): the explicit, tracked owner
+    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled  # noqa: E501
     decision to keep `rapid` in a repo the size ratchet would upgrade."""
 
     def test_absent_frob_toml_is_not_overridden(self, tmp_path: Path) -> None:

@@ -221,6 +221,7 @@ class TestFinishWorktree:
     """`_finish_worktree`'s own liveness-refusal wiring."""
 
     # frob:ticket T-3763
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",

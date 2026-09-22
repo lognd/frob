@@ -111,6 +111,7 @@ class TestCloseRefusesBug002ShapeEndToEnd:
     -- the acceptance test this series exists for: BUG002 must refuse this
     through the real close path, not just its own unit tests."""
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_close_mutation_evidence_for_ticket  # noqa: E501
     def test_close_refuses_when_evidence_passes_at_parent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -136,6 +137,7 @@ class TestCloseRefusesBug002ShapeEndToEnd:
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         assert loaded.danger_ok["T-0901"].state == TicketState.IN_PROGRESS
+# frob:tests src/frob/app/ticket_runner/_close_cmd.py::_close_mutation_evidence_for_ticket  # noqa: E501
 
     def test_close_succeeds_when_evidence_fails_at_parent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -54,6 +54,7 @@ class TestGraphRunner:
         assert exc.value.code == 1
         assert "usage: frob graph" in caplog.text
 
+    # frob:tests src/frob/app/graph_runner.py::run
     def test_build_success_logs_stats(self, tmp_path: Path, caplog) -> None:
         _make_py_project(tmp_path)
         cfg = AppConfig(graph_command="build", graph_path=tmp_path)
@@ -291,6 +292,7 @@ class TestPerfRunner:
         perf_run(heat_cfg)
         heat_out = capsys.readouterr()
         assert "unattributed" in (heat_out.out + heat_out.err)
+# frob:tests src/frob/app/perf_runner.py::_run_quiet_if_json kind="unit"  # noqa: E501
 
     def test_heat_json_mode(self, tmp_path: Path, capsys) -> None:
         script = _make_workload_script(tmp_path)
@@ -641,6 +643,7 @@ class TestJsonStdoutStructuralGuard:
         assert "results" in data
 
     # frob:ticket T-2486
+    # frob:tests src/frob/app/_json_guard.py::_StderrRedirectStdout.write kind="unit"  # noqa: E501
     def test_planted_print_still_reaches_stderr(
         self,
         tmp_path: Path,
@@ -793,6 +796,7 @@ class TestCheckRunner:
         assert exc.value.code == 1
         assert "path does not exist" in caplog.text
 
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
     # frob:ticket T-1419
     def test_stamp_coverage_mode_calls_stamp_and_returns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
@@ -825,6 +829,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert exc.value.code == 1
 
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
     # frob:ticket T-1419
     def test_stamp_coverage_mode_passes_loaded_snapshot(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -948,6 +953,7 @@ class TestCheckRunner:
         assert "coverage stamp written" in caplog.text
         assert not (tmp_path / "frob-coverage.lock.json").exists()
 
+    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_baseline_chunks  # noqa: E501
     def test_stamp_baseline_mode_calls_stamp_and_returns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -980,6 +986,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert exc.value.code == 1
 
+    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_stamp_baseline  # noqa: E501
     # frob:ticket T-0751
     def test_stamp_baseline_only_chunk_records_without_stamping(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
@@ -1375,6 +1382,7 @@ class TestSkipUnchangedLanguage:
         """Stage and commit everything under `tmp_path`."""
         import subprocess
 
+        # frob:tests src/frob/app/check_runner.py::_run_all_detected  # noqa: E501
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(["git", "commit", "-q", "-m", msg], cwd=tmp_path, check=True)
 

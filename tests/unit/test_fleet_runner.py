@@ -15,6 +15,7 @@ from frob.fleet import FleetReport, GateSummary, RepoStatus
 
 
 class TestFleetRunner:
+    # frob:tests src/frob/app/fleet_runner.py::run
     def test_run_status_table(self, tmp_path: Path, monkeypatch, capsys) -> None:
         manifest_path = tmp_path / "fleet.toml"
         manifest_path.write_text('[[repo]]\nname = "a"\npath = "."\n')
@@ -40,6 +41,7 @@ class TestFleetRunner:
         assert "repo" in out
         assert "a" in out
         assert "main" in out
+# frob:tests src/frob/app/fleet_runner.py::run
 
     def test_run_status_missing_manifest(self, tmp_path: Path) -> None:
         cfg = AppConfig(fleet_manifest=tmp_path / "nope.toml")

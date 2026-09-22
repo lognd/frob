@@ -99,6 +99,7 @@ def test_dec001_dangling_decision_edge(tmp_path):
 
 
 # invariant spec: [INV-010](invariants/INV-010.md)
+# frob:tests src/frob/gates/decisions.py::_dec002
 def test_dec002_accepted_decision_unanchored(tmp_path):
     _record(tmp_path, "AD-001", "accepted")
     (tmp_path / "src").mkdir()

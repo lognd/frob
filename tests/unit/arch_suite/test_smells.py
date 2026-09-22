@@ -13,6 +13,7 @@ class TestMutableDefaultArg:
     """`check_mutable_default_arg`
     (docs/modules/arch.md#misc-design-smells)."""
 
+    # frob:tests src/frob/arch/_smells.py::check_mutable_default_arg  # noqa: E501
     def test_list_literal_default_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedFunction,
@@ -59,6 +60,7 @@ class TestMutableDefaultArg:
 
 class TestFeatureEnvy:
     """`check_feature_envy` (docs/modules/arch.md#misc-design-smells)."""
+# frob:tests src/frob/arch/_smells.py::check_feature_envy  # noqa: E501
 
     def test_method_calling_other_receiver_more_than_self_flagged(self) -> None:
         from frob.arch._normalized import (

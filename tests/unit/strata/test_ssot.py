@@ -26,6 +26,7 @@ class TestMissingOwner:
     # frob:tests \
     # tests/unit/strata/test_ssot.py::TestMissingOwner.test_multi_writer_store_without_\
     # owner_fires
+    # frob:tests src/frob/strata/_ssot.py::check_ssot_obligations  # noqa: E501
     def test_multi_writer_store_without_owner_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

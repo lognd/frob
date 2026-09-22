@@ -98,6 +98,7 @@ def _write(root: Path, ticket: Ticket, slug: str = "sample-ticket") -> Path:
 # frob:ticket T-0568
 class TestParsePlaybookSections:
     # frob:ticket T-0568
+    # frob:tests src/frob/tickets/_brief.py::_parse_playbook_sections  # noqa: E501
     def test_parses_numbered_headings_only(self) -> None:
         # frob:tests tests/test_tickets_brief.py::TestParsePlaybookSections.test_parses_numbered_headings_only  # noqa: E501
         sections = _parse_playbook_sections(_PLAYBOOK_SAMPLE)
@@ -210,6 +211,8 @@ class TestConcurrentLeases:
 
 # frob:ticket T-0568
 class TestBriefTicket:
+    # frob:tests src/frob/tickets/_reporting.py::brief_ticket
+    # frob:tests src/frob/tickets/_brief.py::compose_brief
     # frob:ticket T-0568
     def test_composes_full_briefing(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing  # noqa: E501
@@ -285,6 +288,7 @@ class TestBriefCli:
 
 
 # frob:ticket T-1243
+# frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
 class TestClusterDescendants:
     # frob:ticket T-1243
     def test_dependency_order_respects_intra_cluster_blocked_by(

@@ -66,6 +66,7 @@ class TestLangChoicesDeriveFromFrobLangRegistry:
             )
         )
 
+    # frob:tests src/frob/_cli_parsers/_core.py::_LANG_CHOICES  # noqa: E501
     def test_lang_choices_track_frob_lang_registry(self) -> None:
         """The registry-derived set is neither the old, narrower
         `['python', 'cpp', 'c']` literal nor empty -- a real, current

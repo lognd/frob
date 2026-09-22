@@ -746,6 +746,7 @@ class TestFileRegressionTicket:
         assert record is not None
         assert record.cleared_at is None  # still raised, not phantom-cleared
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none  # noqa: E501
     def test_attributed_to_open_ticket_is_not_refiled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

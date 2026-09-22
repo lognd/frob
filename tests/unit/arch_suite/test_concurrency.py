@@ -16,6 +16,7 @@ class TestForkPoolHazards:
     pipe-wait-deadlock, self-join-deadlock (docs/modules/arch.md#fork-pool-
     hazards)."""
 
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
     def test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool(
         self, tmp_path
     ):
@@ -39,6 +40,7 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].severity == "warning"
         assert hits[0].symref == "combined.py::run_combined"
+# frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
 
     def test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs(self):
         """Acceptance (T-0767): the restructured gates tree carries ZERO
@@ -83,6 +85,7 @@ class TestForkPoolHazards:
             "self-join-deadlock",
         }
         hits = [s for s in result.suggestions if s.category in hazard_categories]
+        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
         assert hits == []
 
     def test_fork_after_threads_fires_when_fork_follows_thread_start(self, tmp_path):
@@ -102,6 +105,7 @@ class TestForkPoolHazards:
         )
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "fork-after-threads"]
+        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
         assert len(hits) == 1
         assert hits[0].symref == "forker.py::spawn_then_fork"
 
@@ -120,6 +124,7 @@ class TestForkPoolHazards:
             "    t.start()\n"
             "    return pid\n"
         )
+        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "fork-after-threads"]
         assert hits == []
@@ -138,6 +143,7 @@ class TestForkPoolHazards:
             "    proc.wait()\n"
             "    return proc.returncode\n"
         )
+        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "pipe-wait-deadlock"]
         assert len(hits) == 1
@@ -272,6 +278,7 @@ class TestAsyncEventLoopHazards:
     child 3 of the T-0693 concurrency-hazard umbrella), and
     sequential-independent-awaits (T-1027, T-0698's own disclosed cut)."""
 
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
     def test_blocking_call_in_async_fires_on_time_sleep(self, tmp_path):
         """`time.sleep` reachable inside an `async def` body, with no
         executor dispatch, fires `blocking-call-in-async`."""
@@ -289,6 +296,7 @@ class TestAsyncEventLoopHazards:
         assert len(hits) == 1
         assert hits[0].symref == "blocker.py::poll"
         assert hits[0].severity == "warning"
+# frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
 
     def test_blocking_call_in_async_does_not_fire_via_to_thread(self, tmp_path):
         """The same `time.sleep` call, but dispatched via
@@ -306,6 +314,7 @@ class TestAsyncEventLoopHazards:
         )
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "blocking-call-in-async"]
+        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
         assert hits == []
 
     def test_nested_event_loop_fires_on_asyncio_run_inside_coroutine(self, tmp_path):
@@ -324,6 +333,7 @@ class TestAsyncEventLoopHazards:
         )
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "nested-event-loop"]
+        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
         assert len(hits) == 1
         assert hits[0].symref == "nested.py::outer"
 
@@ -340,6 +350,7 @@ class TestAsyncEventLoopHazards:
             "def cli():\n"
             "    asyncio.run(main())\n"
         )
+        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "nested-event-loop"]
         assert hits == []
@@ -357,6 +368,7 @@ class TestAsyncEventLoopHazards:
             "def trigger():\n"
             "    fetch()\n"
         )
+        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "unawaited-coroutine"]
         assert len(hits) == 1
@@ -484,6 +496,7 @@ class TestAsyncEventLoopHazards:
         )
         result = analyze_project(src_dir)
         hits = [
+            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
             s
             for s in result.suggestions
             if s.category == "sequential-independent-awaits"
@@ -512,6 +525,7 @@ class TestLockOrderingHazards:
             "        with lock_b:\n"
             "            pass\n\n\n"
             "def g():\n"
+            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
             "    with lock_b:\n"
             "        with lock_a:\n"
             "            pass\n"
@@ -543,6 +557,7 @@ class TestLockOrderingHazards:
             "        pass\n\n\n"
             "def helper_a():\n"
             "    with lock_a:\n"
+            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
             "        pass\n\n\n"
             "def f():\n"
             "    with lock_a:\n"
@@ -621,6 +636,7 @@ class TestLockOrderingHazards:
             s for s in result.suggestions if s.category == "lock-identity-unresolved"
         ]
         assert len(unresolved_hits) == 1
+        # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
         assert unresolved_hits[0].symref == "unresolved.py::f"
         assert unresolved_hits[0].severity == "suggestion"
         open_hits = [
@@ -643,6 +659,7 @@ class TestSharedStateRaceHazards:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
         (src_dir / "race.py").write_text(
+            # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
             "from __future__ import annotations\n"
             "from concurrent.futures import ThreadPoolExecutor\n\n"
             "cache = {}\n\n\n"
@@ -664,6 +681,7 @@ class TestSharedStateRaceHazards:
         must stay silent."""
         src_dir = tmp_path / "src"
         src_dir.mkdir()
+        # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
         (src_dir / "race_guarded.py").write_text(
             "from __future__ import annotations\n"
             "import threading\n"
@@ -738,6 +756,7 @@ class TestSharedStateRaceHazards:
             "async def dispatch():\n"
             "    asyncio.create_task(worker())\n"
         )
+        # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch  # noqa: E501
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
         assert len(hits) == 1
@@ -762,6 +781,7 @@ class TestConcurrencyModelMismatch:
             "    total = 0\n"
             "    for i in range(10_000_000):\n"
             "        total += i * i\n"
+            # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch  # noqa: E501
             "    return total\n\n\n"
             "def dispatch():\n"
             "    with ThreadPoolExecutor() as ex:\n"

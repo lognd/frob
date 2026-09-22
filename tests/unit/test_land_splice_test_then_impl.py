@@ -31,6 +31,7 @@ class TestClassifyTestThenImplPaths:
     """Mechanical, path-based, no-guessing classification -- `None` is the
     only "no clean split" signal, never a fabricated split."""
 
+    # frob:tests src/frob/tickets/_land_splice.py::classify_test_then_impl_paths
     def test_mixed_paths_split_into_two_groups(self) -> None:
         # frob:tests \
         # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.\

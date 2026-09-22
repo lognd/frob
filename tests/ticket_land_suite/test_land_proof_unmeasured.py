@@ -31,18 +31,21 @@ class TestEnforceClaimsReverifyVerdict:
     genuine `INFRA_UNMEASURED` measurement failure refuses, unless
     `force=True` records a real, non-blank reason."""
 
+    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
     def test_passed_is_ok(self, tmp_path: Path) -> None:
         result = _enforce_claims_reverify_verdict(
             tmp_path, "T-0001", _ClaimsReverifyOutcome.PASSED
         )
         assert result.is_ok
         assert not (tmp_path / "force-overrides.jsonl").exists()
+# frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
 
     def test_deliberate_skip_is_ok_not_gated(self, tmp_path: Path) -> None:
         result = _enforce_claims_reverify_verdict(
             tmp_path, "T-0001", _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
         )
         assert result.is_ok
+        # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
         assert not (tmp_path / "force-overrides.jsonl").exists()
 
     def test_infra_unmeasured_refuses_without_force(self, tmp_path: Path) -> None:

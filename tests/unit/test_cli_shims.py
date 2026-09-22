@@ -20,9 +20,11 @@ class TestIsPastSunset:
     date comparison -- both the runtime shim and this test call it rather
     than duplicating the comparison as a literal."""
 
+    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset  # noqa: E501
     def test_before_sunset_is_false(self) -> None:
         """A date strictly before the sunset has not yet passed it."""
         assert not is_past_sunset("2026-12-01", today=dt.date(2026, 11, 30))
+# frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset  # noqa: E501
 
     def test_on_sunset_is_false(self) -> None:
         """The sunset date itself is still within the working window
@@ -36,6 +38,7 @@ class TestIsPastSunset:
 
 class TestAnnounceShim:
     """`announce_shim` is what every deleted verb's runner calls once, at
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
     the top of its `run()` (the fmt_runner precedent, generalized)."""
 
     def test_before_sunset_prints_notice_and_returns(self, capsys) -> None:

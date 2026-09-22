@@ -170,6 +170,7 @@ class TestPortableFlock:
     `frob.testing._coverage_wait`). See T-3506 for the design
     rationale."""
 
+    # frob:tests src/frob/process/_lock.py::portable_flock_acquire  # noqa: E501
     def test_posix_blocking_acquire_release_round_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
         import frob.process._lock as _lock_mod
@@ -216,6 +217,7 @@ class TestPortableFlock:
             os.close(holder_fd)
             os.close(contender_fd)
 
+    # frob:tests src/frob/process/_lock.py::PortableLockUnavailable  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="the fake msvcrt backend below is real fcntl.flock under "
@@ -264,6 +266,7 @@ class TestPortableFlock:
         finally:
             os.close(fd)
         assert calls == ["lock", "unlock"]
+# frob:tests src/frob/process/_lock_msvcrt.py::_msvcrt_acquire_blocking  # noqa: E501
 
     # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_blocking_reentry_raises_instead_of_hanging_forever  # noqa: E501
     def test_windows_blocking_reentry_raises_instead_of_hanging_forever(
@@ -507,6 +510,7 @@ class TestCrossProcessPoolInheritance:
     constructing the pool."""
 
     # frob:tests tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worker_under_parent_shared_holder_completes  # noqa: E501
+    # frob:tests src/frob/process/_derived_lock.py::held_registry_keys
     def test_real_pool_worker_under_parent_shared_holder_completes(
         self, tmp_path: Path
     ) -> None:
@@ -836,6 +840,7 @@ class TestSharedIdCounter:
         self._git("config", "user.email", "test@example.com", cwd=root)
         self._git("config", "user.name", "Test", cwd=root)
         (root / "seed.txt").write_text("seed\n")
+        # frob:tests src/frob/tickets/_new_renumber.py::_next_ticket_id_shared  # noqa: E501
         self._git("add", "-A", cwd=root)
         self._git("commit", "-q", "-m", "seed", cwd=root)
 

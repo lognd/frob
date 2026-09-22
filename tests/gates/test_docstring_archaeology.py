@@ -45,6 +45,7 @@ def _git_init(root: Path) -> None:
 class TestDocarch001Violations:
     """`docarch001_violations` -- the assembled repo-scan entrypoint."""
 
+    # frob:tests src/frob/gates/_docstring_archaeology.py::docarch001_violations
     def test_ticket_plus_narrative_wording_warns(self, tmp_path: Path) -> None:
         """MUST-FIRE: a public function's docstring cites a ticket AND
         narrates a change -- the T-2988 worked example's own shape."""

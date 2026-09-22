@@ -210,6 +210,7 @@ class TestSelect:
         assert ALL_SENTINEL in report.selected["python"]
 
     # invariant spec: [INV-023](invariants/INV-023.md)
+    # frob:tests src/frob/testing/_select.py::_edge_test_and_source  # noqa: E501
     def test_reversed_directive_never_selects_the_source_symbol(
         self, tmp_path: Path
     ) -> None:
@@ -2774,6 +2775,7 @@ class TestCollectCsharpTests:
         shutil.copyfile(self._FIXTURES_DIR / name, dest)
 
     # frob:ticket T-4517
+    # frob:tests src/frob/testing/_collect_csharp.py::parse_csharp
     def test_collect_csharp_tests_collects_test_and_unitytest(
         self, tmp_path: Path
     ) -> None:

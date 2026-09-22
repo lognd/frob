@@ -125,6 +125,7 @@ class TestTicketRunnerRootResolution:
     ambient-cwd-drift incident, explicit `--path` always winning over it,
     and the resolved root logged unconditionally for a mutating verb."""
 
+    # frob:tests src/frob/app/ticket_runner/__init__.py::run
     def test_frob_root_env_used_when_path_not_explicit(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -136,6 +137,7 @@ class TestTicketRunnerRootResolution:
         monkeypatch.setenv("FROB_ROOT", str(target))
         cfg = AppConfig(ticket_command="new")
         assert _resolve_ticket_root(cfg) == target.resolve()
+# frob:tests src/frob/app/ticket_runner/__init__.py::run
 
     def test_explicit_path_wins_over_frob_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -1552,6 +1554,7 @@ class TestTicketAttachBackfillDrafts:
     itself (repair correctness, must-still-pass control, unresolved
     reporting) is covered by `tests/unit/test_draft_finalize_attachments.
     py::TestBackfillStaleDraftAttachmentPaths`; these exercise the CLI
+    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch  # noqa: E501
     plumbing (flag routing, dry-run-by-default, --apply writes+commits)."""
 
     def test_backfill_drafts_dry_run_does_not_write(

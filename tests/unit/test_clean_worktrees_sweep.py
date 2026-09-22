@@ -60,6 +60,8 @@ class TestSweepDisposableWorktrees:
     """`sweep_disposable_worktrees`'s liveness classification and removal
     (T-4437 acceptance criteria 1-3)."""
 
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::DisposableWorktreeEntry  # noqa: E501
     def test_dead_stamped_worktree_is_removed(
         self, tmp_path: Path, git_repo: Path
     ) -> None:
@@ -83,6 +85,7 @@ class TestSweepDisposableWorktrees:
             capture_output=True,
             text=True,
         ).stdout
+        # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
         assert "wt" not in listing
 
     def test_live_stamped_worktree_is_kept(

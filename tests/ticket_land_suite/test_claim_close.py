@@ -371,6 +371,7 @@ class TestClaimDivergencePostMerge:
 
         assert result.is_ok
 
+    # frob:tests src/frob/tickets/_land_verify.py::_reverify_done_report_claims_post_merge kind="integration"  # noqa: E501
     def test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -425,6 +426,7 @@ class TestClaimDivergencePostMerge:
         # catches a genuine `-1` in the FORMATTED numbers this message is
         # actually guarding against.
         assert "-1" not in notices[0].replace(tid, "<TID>")
+# frob:tests src/frob/tickets/_land_verify.py::_reverify_done_report_claims_post_merge kind="integration"  # noqa: E501
 
     def test_two_unmeasured_gate_claims_never_vacuously_match(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match  # noqa: E501
@@ -737,6 +739,7 @@ class TestDoneReportThenLandRealClosuresEndToEnd:
     cannot see this class of bug at all -- only a real subprocess spawn,
     run twice, can."""
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn kind="unit"  # noqa: E501
     def test_real_closures_done_report_then_land_succeeds(self, tmp_path: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds  # noqa: E501
         from frob.app.ticket_runner import (

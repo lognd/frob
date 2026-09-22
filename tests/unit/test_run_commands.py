@@ -32,6 +32,7 @@ class TestLoadCommands:
         assert result.is_ok
         assert result.danger_ok.entries == {}
 
+    # frob:tests src/frob/app/run_runner.py::load_commands  # noqa: E501
     def test_three_step_sequence_composes(self, tmp_path):
         """`check = ["fmt", "lint", "test"]` composes three declared entries
         in order, each element resolved as a name reference (not literal
@@ -56,6 +57,7 @@ class TestLoadCommands:
             ("ruff", "check", "."),
             ("pytest", "-q"),
         )
+# frob:tests src/frob/policy/_models.py::CommandEntry  # noqa: E501
 
     def test_single_command_entry_is_one_literal_argv(self, tmp_path):
         """A flat string array that does NOT match declared entry names is
@@ -133,6 +135,7 @@ class TestRun:
         result = _execute_sequence(steps, dry_run=True)
         assert result.is_ok
 
+    # frob:tests src/frob/app/run_runner.py::RunError
     def test_unknown_command_is_err(self, tmp_path):
         """A name that is neither declared nor a native default is a
         clean `Err`, not a crash."""

@@ -75,6 +75,7 @@ class TestLandIdsBetween:
     lands (and which) actually landed in a commit range, instead of
     assuming it was always exactly the one that spawned this sweep."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between  # noqa: E501
     def test_single_land_in_range(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_single_land_in_range  # noqa: E501
         _init_git_repo(tmp_path)

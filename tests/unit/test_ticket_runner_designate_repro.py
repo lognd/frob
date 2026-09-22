@@ -85,6 +85,7 @@ class TestValidateDesignateReproAtParent:
     """Requirement A: `--designate-repro` refuses unless the node id
     genuinely FAILED_AT_PARENT."""
 
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_validate_designate_repro_at_parent  # noqa: E501
     def test_refuses_passed_at_parent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -111,6 +112,7 @@ class TestValidateDesignateReproAtParent:
         assert exc.value.code == 1
         ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         assert ticket.designated_repro_test is None
+# frob:tests src/frob/app/ticket_runner/_verify.py::_validate_designate_repro_at_parent  # noqa: E501
 
     def test_refuses_no_verdict(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

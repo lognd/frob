@@ -177,6 +177,7 @@ def _ticket(ticket_id: str = "T-0001", title: str = "Sample ticket") -> Ticket:
     )
 
 
+# frob:tests src/frob/tickets/_store_api.py::get_ticket
 def test_missing_ticket_is_a_result_error(tmp_path: Path) -> None:
     """`get_ticket` on an id that does not exist returns an `Err`, never
     raises -- the fallible-path contract this seam exists to enforce."""

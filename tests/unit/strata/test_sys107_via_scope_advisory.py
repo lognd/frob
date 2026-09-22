@@ -27,6 +27,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestViaLessLargeNodeAdvisory:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:tests src/frob/strata/_selfconform_binding_rules.py::_via_less_large_node_violations  # noqa: E501
     def test_via_less_grant_on_large_node_fires(self, tmp_path: Path):
         """A node bound to more files than the threshold, with a via-less
         `may`, is an advisory SYS107 finding."""

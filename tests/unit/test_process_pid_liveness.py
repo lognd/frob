@@ -74,15 +74,18 @@ def _make_raiser(exc_type: type[Exception]):
 class TestPidAlivePosix:
     """POSIX path: `_kernel32 is None`, real `os.kill(pid, 0)`."""
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
     def test_current_process_is_alive(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(_pid_liveness, "_kernel32", None)
         assert _pid_liveness.pid_alive(os.getpid()) is True
+# frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
 
     def test_process_lookup_error_is_dead(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setattr(_pid_liveness, "_kernel32", None)
         monkeypatch.setattr(_pid_liveness.os, "kill", _make_raiser(ProcessLookupError))
+        # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
         assert _pid_liveness.pid_alive(999999) is False
 
     def test_permission_error_is_conservatively_alive(
@@ -120,6 +123,7 @@ class TestPidAliveTristatePosix:
 class TestPidAliveWindowsBackend:
     """T-3018/T-3003: the query-only Windows probe never opens a
     `TerminateProcess`-capable handle -- proven here by a fake `kernel32`
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
     that would raise if `OpenProcess` were ever called with kill rights
     instead of `PROCESS_QUERY_LIMITED_INFORMATION`."""
 

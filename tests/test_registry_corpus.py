@@ -37,6 +37,7 @@ class TestFormatEntryBlock:
     # tests/test_registry_corpus.py::TestFormatEntryBlock.test_pending_disposition_alwa\
     # ys
     # frob:ticket T-0429
+    # frob:tests src/frob/registry/_corpus.py::format_entry_block
     def test_pending_disposition_always(self) -> None:
         block = format_entry_block("EX-THREE", "Example Three")
         assert 'disposition: "pending"' in block

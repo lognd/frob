@@ -56,6 +56,7 @@ class TestLoadLandCommit:
     """`verify_lands.load_land_commit` -- T-2220's ticket-id resolution."""
 
     # frob:ticket T-2220
+    # frob:tests scripts/verify_lands.py::load_land_commit
     def test_returns_land_commit_for_a_landed_ticket(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -182,6 +183,7 @@ class TestProbeLandsInFlight:
     """`wait_for_land_slot.probe_lands_in_flight` -- the ONLY place that
     parses the status probe's output; `None` (unmeasured) must never be
     confused with a genuine `0` reading."""
+# frob:tests scripts/wait_for_land_slot.py::probe_lands_in_flight
 
     def test_reads_a_genuine_count(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(

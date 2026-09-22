@@ -129,6 +129,7 @@ class TestNativeMissingFailsLoud:
         assert r.returncode != 0, out
         assert "NativeExtensionUnavailable" in out or "native extension" in out, out
 
+    # frob:tests src/frob/gates/_vmodel.py::_collect_vmodel_graph  # noqa: E501
     def test_check_fails_loud_with_sys004_when_strata_present(
         self, tmp_path: Path
     ) -> None:

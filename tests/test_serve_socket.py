@@ -57,6 +57,7 @@ class TestSocketPath:
     CI matrix (`OSError: AF_UNIX path too long`, `sockaddr_un.sun_path`
     capped at 104 bytes on macOS / 108 on Linux)."""
 
+    # frob:tests src/frob/serve/_socketd.py::socket_path kind="unit"  # noqa: E501
     def test_short_regardless_of_root_depth(self, tmp_path: Path) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
@@ -119,6 +120,7 @@ class TestSocketPath:
         assert socket_path(root_a) != socket_path(root_b)
 
 
+# frob:tests src/frob/serve/_socketd.py::acquire_singleton_lock kind="unit"  # noqa: E501
 class TestAcquireSingletonLock:
     def test_first_caller_wins(self, root: Path) -> None:
         # frob:tests \
@@ -262,6 +264,7 @@ class TestDispatchRequest:
         response = dispatch_request(root, request)
         assert response["id"] == 1
         assert "result" in response
+        # frob:tests src/frob/serve/_socketd.py::run_socket_daemon
         assert response["result"] == []
 
     def test_unknown_method_is_error(self, root: Path) -> None:
@@ -343,6 +346,7 @@ class TestDispatchRequest:
 
 
 class TestRunSocketDaemon:
+    # frob:tests src/frob/serve/_socketd.py::socket_path kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(

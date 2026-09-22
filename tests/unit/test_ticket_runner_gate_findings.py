@@ -1512,6 +1512,7 @@ class TestUnmeasuredReasonFromResult:
     deliberate skip instead of collapsing both onto one string."""
 
     # frob:ticket T-4281
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result  # noqa: E501
     def test_none_result_is_a_refusal(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_none_result_is_a_refusal  # noqa: E501

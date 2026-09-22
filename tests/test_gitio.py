@@ -264,6 +264,7 @@ class TestWorkingDiff:
         files = {hunk.file for hunk in result.danger_ok.hunks}
         assert "pkg/mod.py" in files
 
+    # frob:tests src/frob/gitio.py::excerpt
     def test_bad_base_ref_is_git_failed(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)
@@ -273,6 +274,7 @@ class TestWorkingDiff:
         result = working_diff(repo, "does-not-exist")
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
+# frob:tests src/frob/gitio.py::excerpt
 
     def test_diff_command_failure_propagates(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

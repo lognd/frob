@@ -101,6 +101,7 @@ def test_no_files_found(tmp_path):
 # ---------------------------------------------------------------------------
 
 
+# frob:tests src/frob/xref/__init__.py::XrefResult.as_text
 def test_as_text(py_file):
     xr = xref("helper", py_file).danger_ok
     text = xr.as_text()

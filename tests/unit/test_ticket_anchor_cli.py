@@ -67,6 +67,7 @@ class TestAnchorCli:
         assert ticket.anchor is True
         assert ticket.anchor_reason == "WIRE001 follow_up anchor, permanent by design"
 
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_anchor
     def test_clear_anchor_via_cli(self, tmp_path: Path) -> None:
         from frob.tickets._land import set_anchor
 

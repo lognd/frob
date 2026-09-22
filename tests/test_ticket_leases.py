@@ -512,6 +512,7 @@ class TestListAgentWorktrees:
     """`_list_agent_worktrees` returns only `.claude/worktrees/`-shaped
     paths, never the repo's own primary checkout."""
 
+    # frob:tests src/frob/tickets/_worktree_sweep.py::_list_agent_worktrees kind="unit"  # noqa: E501
     def test_lists_only_dot_claude_worktrees_paths(self, sweep_repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestListAgentWorktrees.test_lists_only_dot_claude_worktrees_paths  # noqa: E501
         wt = _add_agent_worktree(sweep_repo, "wt1")
@@ -556,6 +557,7 @@ class TestSweepWorktrees:
         assert verdicts[0].verdict == "kept:lease"
         assert "T-0900" in verdicts[0].detail
         assert wt.exists()
+# frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
 
     def test_dirty_kept(self, sweep_repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept
@@ -736,6 +738,7 @@ class TestWorktreeSweepCli:
     """`frob worktree sweep`'s CLI entry point (`frob.app.worktree_runner.
     run`) prints one verdict line per worktree plus a summary count."""
 
+    # frob:tests src/frob/app/worktree_runner.py::run  # noqa: E501
     def test_sweep_cli_prints_verdicts_and_summary(
         self, sweep_repo: Path, capsys
     ) -> None:
@@ -826,6 +829,7 @@ class TestWorktreeSweepCli:
 class TestWorktreeRemoveCli:
     """`frob worktree remove PATH`'s CLI entry point (T-1779) -- the safe
     single-worktree alternative to raw `git worktree remove`."""
+# frob:tests src/frob/app/worktree_runner.py::run  # noqa: E501
 
     def test_remove_cli_removes_a_clean_unleased_worktree(
         self, sweep_repo: Path, capsys
@@ -863,6 +867,7 @@ class TestWorktreeRemoveCli:
                 worktree_run(["remove", str(not_a_worktree)])
         finally:
             _os.chdir(cwd)
+        # frob:tests src/frob/app/worktree_runner.py::run  # noqa: E501
         assert exc_info.value.code == 1
 
     def test_remove_cli_exits_1_when_kept(self, sweep_repo: Path, capsys) -> None:
@@ -4684,6 +4689,7 @@ class TestRecordReleaseRenameLeaseErrorBranches:
         # And no lease file exists, since the write never happened.
         resolved = leases_dir(repo)
         assert resolved.is_ok
+        # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
         assert not _lease_path(resolved.danger_ok, "T-0001").exists()
 
     # frob:ticket T-1650

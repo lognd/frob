@@ -514,6 +514,7 @@ class TestProtocolLanguageExcuseDischarge:
     (Rust/C++/TypeScript/GC, disclosed T-0839 follow-up; see
     docs/modules/gates.md#proto002-proto003-t-0746)."""
 
+    # frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge  # noqa: E501
     def test_rust_drop_impl_discharges(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_discharges  # noqa: E501
@@ -523,6 +524,7 @@ class TestProtocolLanguageExcuseDischarge:
         result = rust_drop_discharge(source, "Net")
         assert result.discharged
         assert result.mechanism == "rust-drop"
+# frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge  # noqa: E501
 
     def test_rust_mem_forget_revokes_the_drop_discharge(self) -> None:
         # frob:tests \
@@ -593,6 +595,7 @@ class TestProtocolLanguageExcuseDischarge:
         from frob.arch._protocol_excuse import python_with_discharge
 
         result = python_with_discharge("Net().connect()\n", "Net")
+        # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge  # noqa: E501
         assert not result.discharged
 
     def test_typescript_using_discharges(self) -> None:

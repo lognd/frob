@@ -20,6 +20,7 @@ from tests.unit.verify.conftest import make_queue_entry, make_symbol
 class TestSelectBatchTests:
     """The pure union-touched-set selection algorithm."""
 
+    # frob:tests src/frob/verify/_selection.py::select_batch_tests  # noqa: E501
     def test_union_of_two_entries_selects_once(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_union_of_two_entries_selects_once  # noqa: E501
         snapshot = GraphSnapshot(
@@ -53,6 +54,7 @@ class TestSelectBatchTests:
         selected_ids = {i for ids in result.report.selected.values() for i in ids}
         assert "tests/test_a.py::test_foo" in selected_ids
         assert "tests/test_b.py::test_bar" in selected_ids
+# frob:tests src/frob/verify/_selection.py::select_batch_tests  # noqa: E501
 
     def test_empty_batch_selects_nothing(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_empty_batch_selects_nothing  # noqa: E501

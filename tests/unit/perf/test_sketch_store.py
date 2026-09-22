@@ -87,6 +87,7 @@ class TestQuantileSketchAlgebra:
 
         assert sketch_size_bytes(sketch) < 1024
 
+    # frob:tests src/frob/stats/_sketch.py::merge_sketches  # noqa: E501
     def test_merge_is_associative(self) -> None:
         """`merge(merge(a, b), c) == merge(a, merge(b, c))` -- the core
         mergeability property a decayed cross-run store depends on
@@ -144,6 +145,7 @@ class TestQuantileSketchAlgebra:
         assert sketch.buckets == {}
         assert quantile(sketch, 0.5) == 0.0
 
+    # frob:tests src/frob/stats/_sketch.py::add_value  # noqa: E501
     def test_negative_value_is_dropped_not_raised(self) -> None:
         """NO-FAIL-SILENT-but-not-a-crash: this sketch models non-negative
         latencies; a negative input is logged and dropped rather than
@@ -152,6 +154,7 @@ class TestQuantileSketchAlgebra:
         result = add_value(sketch, -5.0)
         assert result == sketch
 
+    # frob:tests src/frob/stats/_sketch.py::new_sketch  # noqa: E501
     def test_quantile_on_empty_sketch_is_zero(self) -> None:
         assert quantile(new_sketch(), 0.5) == 0.0
 
@@ -182,6 +185,7 @@ class TestSketchStore:
     def test_get_on_never_seen_key_is_none(self, tmp_path: Path) -> None:
         assert get_sketch(tmp_path, "no-such-key") is None
 
+    # frob:tests src/frob/perf/_sketch_store.py::put_sketch  # noqa: E501
     def test_put_then_get_round_trips(self, tmp_path: Path) -> None:
         key = stable_section_key(self._section())
         run_sketch = _sketch_from_values([1.0, 1.0, 100.0])
@@ -282,13 +286,16 @@ class TestSketchStore:
         assert sketch.buckets == {}
         assert sketch.zero_count == 0.0
 
+# frob:tests src/frob/tomlio.py::read_toml_lenient  # noqa: E501
 
 class TestSketchStoreConfig:
     """`load_sketch_config`'s `[perf.sketch]` frob.toml parsing."""
 
+    # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config  # noqa: E501
     def test_missing_frob_toml_returns_defaults(self, tmp_path: Path) -> None:
         config = load_sketch_config(tmp_path)
         assert config == SketchStoreConfig()
+# frob:tests src/frob/perf/_sketch_store.py::load_sketch_config  # noqa: E501
 
     def test_parses_perf_sketch_table(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text(

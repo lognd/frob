@@ -59,6 +59,7 @@ _MUST_FIRE = "\n".join(
 class TestNarrativeBlocksGate:
     """Both fixture directions required by T-2993's acceptance."""
 
+    # frob:tests src/frob/gates/_narrative_blocks.py::scan_narrative_blocks
     def test_must_fire_long_archaeology_block(self) -> None:
         """A block well past the threshold, with no code-facing content,
         raises NARR001."""

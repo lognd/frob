@@ -64,6 +64,7 @@ class _FakeProc:
         self.returncode = returncode
 
 
+# frob:tests src/frob/gates/_land_format.py::land_format_gate
 def test_diff_touched_unformatted_file_fires(repo: Path, monkeypatch) -> None:
     """A diff-touched `.py` file `ruff format --check` reports as
     needing a rewrite fires LANDFMT001 -- the T-4298 acceptance

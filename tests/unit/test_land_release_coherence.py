@@ -175,6 +175,7 @@ class TestUvLockCoherenceWhenAlreadyBumped:
     nothing to do. Asserts the lock's own RECORDED VERSION after the
     call, not merely that a sync helper was invoked."""
 
+    # frob:tests src/frob/tickets/_land_release.py::_ensure_release_quartet_coherent  # noqa: E501
     def test_stale_lock_resynced_even_when_pyproject_and_manifest_agree(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

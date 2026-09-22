@@ -57,6 +57,7 @@ def repo(tmp_path: Path) -> Path:
 
 
 # frob:tests tests/test_clean.py::test_tier_patterns_cumulative
+# frob:tests src/frob/clean/_rules.py::tier_patterns
 def test_tier_patterns_cumulative() -> None:
     """`tier_patterns` is strictly cumulative: SAFE subset of ALL subset of DEEP."""
     safe = set(tier_patterns(CleanTier.SAFE))
@@ -73,6 +74,7 @@ def test_extra_patterns_missing_toml(tmp_path: Path) -> None:
     assert extra_patterns_from_config(tmp_path) == ()
 
 
+# frob:tests src/frob/clean/_rules.py::extra_patterns_from_config
 # frob:tests tests/test_clean.py::test_extra_patterns_from_config
 def test_extra_patterns_from_config(tmp_path: Path) -> None:
     """`[clean].extra_patterns` in `frob.toml` is read verbatim."""
@@ -81,6 +83,7 @@ def test_extra_patterns_from_config(tmp_path: Path) -> None:
 
 
 # frob:tests tests/test_clean.py::test_scan_tier1_matches_expected
+# frob:tests src/frob/clean/_core.py::scan
 def test_scan_tier1_matches_expected(repo: Path) -> None:
     """Tier 1 matches exactly the pycache/coverage-fragment/pytest-cache set,
     never the tier 2/3 fixtures or the real source."""
@@ -124,6 +127,7 @@ def _snapshot_ignoring_git_maintenance(repo: Path) -> list[Path]:
     )
 
 
+# frob:tests src/frob/clean/_core.py::clean
 # frob:tests tests/test_clean.py::test_clean_dry_run_removes_nothing
 def test_clean_dry_run_removes_nothing(repo: Path) -> None:
     """The default (`dry_run=True`) never mutates the tree."""
@@ -134,6 +138,7 @@ def test_clean_dry_run_removes_nothing(repo: Path) -> None:
     assert report.dry_run is True
     assert report.count > 0
 
+# frob:tests src/frob/clean/_models.py::CleanReport.reclaimed_bytes
 
 # frob:tests tests/test_clean.py::test_clean_execute_removes_matched
 def test_clean_execute_removes_matched(repo: Path) -> None:
@@ -183,6 +188,7 @@ def test_clean_deep_removes_frob_state(repo: Path) -> None:
 
 # frob:ticket T-3220
 # frob:tests tests/test_clean.py::test_deep_clean_preserves_rapid_debt_jsonl
+# frob:tests src/frob/clean/_core.py::_protect_excluded_paths
 def test_deep_clean_preserves_rapid_debt_jsonl(repo: Path) -> None:
     """T-3220 must-fire: T-2997 moved `rapid-debt.jsonl` (a durable
     RECORD, not a regenerable cache) to `.frob/rapid-debt.jsonl`; a DEEP

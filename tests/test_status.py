@@ -145,6 +145,7 @@ class TestFindingsMovementModel:
     behavior already covered above."""
 
     # frob:tests tests/test_status.py::TestFindingsMovementModel.test_defaults_are_unmeasured_shaped kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/status_runner.py::FindingsMovement kind="unit"  # noqa: E501
     def test_defaults_are_unmeasured_shaped(self) -> None:
         movement = FindingsMovement(measured=False, note="x")
         assert movement.healed is None
@@ -306,6 +307,7 @@ class TestRunEndToEnd:
     rendering mode -- covers the one public symbol not otherwise exercised
     by the pure-function/integration tests above."""
 
+    # frob:tests src/frob/app/status_runner.py::run kind="unit"  # noqa: E501
     # frob:tests tests/test_status.py::TestRunEndToEnd.test_run_prints_human_text_by_default kind="unit"  # noqa: E501
     def test_run_prints_human_text_by_default(self, tmp_path: Path, capsys) -> None:
         """`run(cfg)` with no `--json` prints the human-readable sections,
@@ -379,6 +381,7 @@ class TestAddStatusParser:
     single `from ._status import` in `_cli_parsers/__init__.py`)."""
 
     # frob:tests tests/test_status.py::TestAddStatusParser.test_registers_status_subcommand_with_expected_flags kind="unit"  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_status.py::_add_status_parser kind="unit"  # noqa: E501
     def test_registers_status_subcommand_with_expected_flags(self) -> None:
         """`frob status --path DIR --json --only GATE --tickets
         --no-tickets` parses into the exact `status_*` dest names

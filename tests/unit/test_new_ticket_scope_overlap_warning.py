@@ -57,6 +57,7 @@ class TestScopeOverlapWarnings:
     overlapping resolved path(s)."""
 
     # frob:ticket T-2257
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings  # noqa: E501
     def test_overlapping_scope_names_the_other_ticket_and_path(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

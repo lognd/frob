@@ -455,6 +455,7 @@ class TestLiveRapidDebt:
     a refused spawn, or historical debt) must be visible on this status
     surface, not only in a log file nobody reads."""
 
+    # frob:tests src/frob/app/_verify_rapid_debt.py::RapidDebtEntryView
     def test_no_baseline_is_live(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
         _write_rapid_debt_line(

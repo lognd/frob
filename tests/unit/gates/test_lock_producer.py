@@ -82,6 +82,7 @@ class TestProducerStatusVerdicts:
         assert status.code_commits_since == 3
 
     # frob:tests src/frob/gates/_lock_producer.py::producer_status kind="unit"
+    # frob:tests src/frob/gates/_lock_producer.py::LockPin kind="unit"  # noqa: E501
     def test_must_stay_quiet_when_pinned(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

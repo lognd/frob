@@ -27,6 +27,7 @@ def _sketch(values: list[float]):
 class TestCheckRatchet:
     """`check_ratchet`'s pure comparison logic."""
 
+    # frob:tests src/frob/perf/_ratchet.py::check_ratchet  # noqa: E501
     def test_no_prior_never_fires(self) -> None:
         current = _sketch([10.0])
         assert check_ratchet("key", "label", None, current, tolerance=0.5) is None
@@ -35,6 +36,7 @@ class TestCheckRatchet:
         prior = _sketch([10.0] * 20)
         current = _sketch([11.0] * 20)  # ~10% shift, under 50% tolerance
         assert check_ratchet("key", "label", prior, current, tolerance=0.5) is None
+# frob:tests src/frob/perf/_ratchet.py::check_ratchet  # noqa: E501
 
     def test_regression_beyond_tolerance_fires(self) -> None:
         prior = _sketch([10.0] * 20)
@@ -49,6 +51,7 @@ class TestCheckRatchet:
 
 
 class TestPersistRoundTrip:
+    # frob:tests src/frob/perf/_ratchet.py::load_ratchet_findings  # noqa: E501
     """`save_ratchet_findings`/`load_ratchet_findings` round trip."""
 
     def test_save_then_load_round_trips(self, tmp_path: Path) -> None:

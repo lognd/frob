@@ -720,6 +720,7 @@ class TestBash:
         assert fn.doc_text == "Adds two numbers."
 
     # frob:ticket T-1604
+    # frob:tests src/frob/lang/_walk_bash.py::_walk_bash
     def test_private_symbol_is_not_public(self) -> None:
         # frob:tests src/frob/lang/_walk_bash.py::_bash_public
         # frob:waive COV006 reason="genuinely reachable via parse_file -> \
@@ -733,6 +734,7 @@ class TestBash:
         assert hidden.kind == SymbolKind.FUNCTION
         assert hidden.public is False
 
+    # frob:tests src/frob/lang/_walk_bash.py::_walk_bash
     # frob:ticket T-1604
     def test_top_level_variable_assignment(self) -> None:
         # frob:tests src/frob/lang/_walk_bash.py::_bash_const_symbol
@@ -820,6 +822,7 @@ class TestCSharp:
         method = _symbol(pf, "Frob.Sample.Widget.Render")
         assert method.kind == SymbolKind.METHOD
         assert method.public is True
+# frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
 
     # frob:ticket T-1600
     def test_private_method_is_not_public(self) -> None:
@@ -827,6 +830,7 @@ class TestCSharp:
         pf = parse_file(_FIXTURES / "sample.cs").danger_ok
         hidden = _symbol(pf, "Frob.Sample.Widget.Add")
         assert hidden.kind == SymbolKind.METHOD
+        # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
         assert hidden.public is False
 
     # frob:ticket T-1600
@@ -834,6 +838,7 @@ class TestCSharp:
         # frob:tests src/frob/lang/_walk_csharp.py::_cs_property_symbol
         pf = parse_file(_FIXTURES / "sample.cs").danger_ok
         prop = _symbol(pf, "Frob.Sample.Widget.Count")
+        # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp  # noqa: E501
         assert prop.kind == SymbolKind.CONST
         assert prop.public is True
 
@@ -1002,6 +1007,7 @@ class TestJava:
         assert cls.kind == SymbolKind.CLASS
         assert cls.public is True
         assert cls.doc_text == "Adds two numbers."
+        # frob:tests src/frob/lang/_walk_java.py::_walk_java
         method = _symbol(pf, "Widget.render")
         assert method.kind == SymbolKind.METHOD
         assert method.public is True
@@ -1017,6 +1023,7 @@ class TestJava:
     # frob:ticket T-1601
     def test_private_method_is_not_public(self) -> None:
         # frob:tests src/frob/lang/_walk_java.py::_java_public
+        # frob:tests src/frob/lang/_walk_java.py::_walk_java
         pf = parse_file(_FIXTURES / "sample.java").danger_ok
         hidden = _symbol(pf, "Widget.add")
         assert hidden.kind == SymbolKind.METHOD
@@ -1024,12 +1031,14 @@ class TestJava:
 
     # frob:ticket T-1601
     def test_static_final_field_is_a_const_symbol(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_walk_java
         # frob:tests src/frob/lang/_walk_java.py::_java_const_field_symbol
         pf = parse_file(_FIXTURES / "sample.java").danger_ok
         const = _symbol(pf, "Widget.MAX_WIDGETS")
         assert const.kind == SymbolKind.CONST
         assert const.public is True
 
+    # frob:tests src/frob/lang/_walk_java.py::_walk_java
     # frob:ticket T-1601
     def test_plain_field_is_not_extracted(self) -> None:
         # frob:tests src/frob/lang/_walk_java.py::_java_const_field_symbol
@@ -1109,6 +1118,7 @@ class TestCuda:
     """CUDA walker (`frob.lang._walk_cuda`) -- a thin C++-dialect-flag
     wrapper around `_walk_c_family` (`_walk_c.py`'s `visibility_override`
     hook), covering the kernel-qualifier publicness decision the ticket
+    # frob:tests src/frob/lang/_walk_cuda.py::_walk_cuda
     named: a `__global__` kernel is always public, a `__device__`-only
     function is always private, everything else defers to C++'s own
     static-based rule."""
@@ -1118,6 +1128,7 @@ class TestCuda:
         # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
         pf = parse_file(_FIXTURES / "sample.cu").danger_ok
         assert pf.language == "cuda"
+        # frob:tests src/frob/lang/_walk_cuda.py::_walk_cuda
         kernel = _symbol(pf, "vecAdd")
         assert kernel.kind == SymbolKind.FUNCTION
         assert kernel.public is True
@@ -1125,6 +1136,7 @@ class TestCuda:
 
     # frob:ticket T-1602
     def test_device_only_function_is_not_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_cuda.py::_walk_cuda
         # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
         pf = parse_file(_FIXTURES / "sample.cu").danger_ok
         device_fn = _symbol(pf, "addOne")
@@ -1132,6 +1144,7 @@ class TestCuda:
         assert device_fn.public is False
 
     # frob:ticket T-1602
+    # frob:tests src/frob/lang/_walk_cuda.py::_walk_cuda
     def test_host_device_function_defers_to_cpp_rule(self) -> None:
         # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
         pf = parse_file(_FIXTURES / "sample.cu").danger_ok
@@ -1187,6 +1200,7 @@ class TestZig:
     named fields, mirrors `_walk_kotlin.py`'s grammar shape), `pub`-only
     publicness (default private, the opposite of kotlin's default), and
     the doc-comment-vs-ordinary-comment decision the ticket named
+    # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
     (`///` only, never `//`/`//!`)."""
 
     # frob:ticket T-1603
@@ -1194,6 +1208,7 @@ class TestZig:
         # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
         assert pf.language == "zig"
+        # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
         fn = _symbol(pf, "add")
         assert fn.kind == SymbolKind.FUNCTION
         assert fn.public is True
@@ -1215,6 +1230,7 @@ class TestZig:
         assert widget.kind == SymbolKind.CLASS
         assert widget.public is False
         init = _symbol(pf, "Widget.init")
+        # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
         assert init.kind == SymbolKind.METHOD
         assert init.public is True
         assert init.doc_text == "Initializes a Widget."
@@ -1222,6 +1238,7 @@ class TestZig:
         assert helper.public is False
 
     # frob:ticket T-1603
+    # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
     def test_enum_is_a_type_symbol(self) -> None:
         # frob:tests src/frob/lang/_walk_zig.py::_zig_container_symbol
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
@@ -1408,6 +1425,7 @@ class TestErrors:
         assert len(warnings) == 2
 
     # invariant spec: [INV-015](invariants/INV-015.md)
+    # frob:tests src/frob/lang/__init__.py::parse_file
     def test_syntax_error_yields_partial_symbols(self) -> None:
         result = parse_file(_FIXTURES / "broken.py")
         assert result.is_ok
@@ -1477,6 +1495,7 @@ class TestSizeCapAndTimeout:
         )
 
     # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_parse_timeout_returns_err_not_hang  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::_run_parse_with_timeout  # noqa: E501
     def test_parse_timeout_returns_err_not_hang(
         self, caplog: pytest.LogCaptureFixture, tmp_path: Path
     ) -> None:
@@ -1505,6 +1524,7 @@ class TestSizeCapAndTimeout:
         ), messages
 
     # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
+    # frob:tests src/frob/_daemon_timeout.py::_run_bounded  # noqa: E501
     def test_timed_out_worker_is_daemon_not_registered(self, tmp_path: Path) -> None:
         """T-3708 regression: an abandoned-on-timeout worker must not be
         able to block interpreter shutdown.

@@ -48,6 +48,7 @@ def _snapshot(root: Path) -> GraphSnapshot:
 
 
 class TestTrackedSnapshot:
+    # frob:tests src/frob/gates/_gate_cache.py::TrackedSnapshot
     def test_symbol_iteration_records_file(self, tmp_path: Path) -> None:
         """frob:tests src/frob/gates/_gate_cache.py::TrackedSnapshot.symbols"""
         _write(tmp_path, "a.py", "def f():\n    pass\n")
@@ -179,6 +180,7 @@ class TestEvaluateCacheableGate:
         snap2 = _snapshot(tmp_path)
         evaluate_cacheable_gate(tmp_path, "fake_gate", snap2, run)
         assert len(calls) == 2, "editing a touched file must force a cache MISS"
+# frob:tests src/frob/gates/_gate_cache.py::evaluate_cacheable_gate
 
     def test_new_untouched_file_forces_miss_membership_guard(
         self, tmp_path: Path

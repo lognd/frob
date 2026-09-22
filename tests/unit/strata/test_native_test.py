@@ -88,6 +88,7 @@ class TestSummarize:
     # frob:tests \
     # tests/unit/strata/test_native_test.py::TestSummarize.test_format_selfconform_one_\
     # line_per_violation
+    # frob:tests src/frob/strata/_selfconform_models.py::SelfConformViolation  # noqa: E501
     def test_format_selfconform_one_line_per_violation(self) -> None:
         """`_format_selfconform` renders one `GAP family=sys` line per
         unwaived `SelfConformViolation`, independent of `_format_gaps`."""

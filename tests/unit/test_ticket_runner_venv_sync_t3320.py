@@ -37,6 +37,7 @@ class TestSyncVenvForWork:
     """`_sync_venv_for_work` (T-3320)."""
 
     # frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_runs_uv_sync_in_the_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_sync_venv_for_work  # noqa: E501
     def test_runs_uv_sync_in_the_worktree(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

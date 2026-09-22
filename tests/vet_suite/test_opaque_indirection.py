@@ -1558,6 +1558,7 @@ class TestNeedleMatchesResolvedTokenBoundary:
         assert _needle_matches_resolved("Popen(", "Popen") is True
         assert _needle_matches_resolved("Popen", "Popen") is True
 
+    # frob:tests src/frob/vet/_capability_core.py::_dotted_segments
     def test_family_prefix_still_reaches_sibling_family(self) -> None:
         """`"os.exec"` (no trailing marker) is a deliberate family prefix
         meant to reach `os.execv`/`os.execve`/etc -- unaffected by the

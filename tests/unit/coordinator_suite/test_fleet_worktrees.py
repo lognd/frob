@@ -14,6 +14,7 @@ from tests.unit.conftest import (
 class TestRootDirt:
     """`fleet_status.root_dirt`."""
 
+    # frob:tests scripts/fleet_status.py::root_dirt
     def test_clean_repo(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Empty porcelain output means no dirt lines."""
         monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(""))
@@ -910,6 +911,7 @@ class TestWorktreesTouchingTicket:
     """`fleet_status.worktrees_touching_ticket` (T-2133, scope-aware per
     T-draft-05563e8d)."""
 
+    # frob:tests scripts/fleet_status.py::worktrees_touching_ticket
     # frob:ticket T-2179
     def test_finds_a_branch_with_unlanded_commits(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

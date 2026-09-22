@@ -54,6 +54,7 @@ class TestPythonNamespace:
     """Python: pyproject.toml [project.name] derives the namespace; a
     `from <ns> import <missing>` is flagged stale, a resolving one passes."""
 
+    # frob:tests src/frob/gates/_docblocks.py::doc004_gate
     def test_python_import_of_nonexistent_symbol_is_stale(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(
@@ -513,6 +514,8 @@ class TestCliCommandTableGenerator:
     a fresh regeneration -- reuses `TestDoc005ReadmeTableDrift`'s synthetic
     `acme widget`/`acme gadget` CLI (`_fake_parser_factory`) so these
     tests never depend on frob's own live command count."""
+# frob:tests src/frob/gates/_docblocks.py::_doc005_cli_table_freshness_violations  # noqa: E501
+# frob:tests src/frob/gates/_docblocks.py::generate_cli_command_table  # noqa: E501
 
     def test_generate_sorts_rows_across_sources(self, tmp_path: Path) -> None:
         from frob.gates._docblocks import generate_cli_command_table

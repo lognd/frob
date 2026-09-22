@@ -655,6 +655,7 @@ class TestUnlandedBranchWorkScanBudget:
 
     # frob:tests \
     # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_budget_of_zero_scans_no_branches  # noqa: E501
+    # frob:tests src/frob/tickets/_unlanded.py::_unlanded_branch_work kind="unit"  # noqa: E501
     def test_budget_of_zero_scans_no_branches(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -682,6 +683,7 @@ class TestUnlandedBranchWorkScanBudget:
         )
 
     # frob:tests \
+    # frob:tests src/frob/tickets/_unlanded.py::_unlanded_branch_work kind="unit"  # noqa: E501
     # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_a_generous_budget_still_scans_everything  # noqa: E501
     def test_a_generous_budget_still_scans_everything(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch

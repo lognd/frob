@@ -64,6 +64,7 @@ class TestDefaultPoolDir:
     """`default_pool_dir` resolution."""
 
     # frob:ticket T-0738
+    # frob:tests src/frob/scaffold/_pool.py::default_pool_dir
     def test_resolves_under_git_common_dir(self, repo: Path) -> None:
         # frob:tests \
         # tests/system/test_scaffold_pool.py::TestDefaultPoolDir.test_resolves_under_gi\

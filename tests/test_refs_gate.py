@@ -444,6 +444,7 @@ class TestNativeStubLinking:
     frob:ticket T-0449
     """
 
+    # frob:tests src/frob/gates/_refs.py::_native_stub_pairs  # noqa: E501
     def test_linked_pyi_beside_matching_manifest_does_not_fire_ref001(
         self, tmp_path: Path
     ) -> None:
@@ -862,6 +863,7 @@ class TestVendoredTreeExempt:
     exempt from REF001/REF002, since `ref_gate` consults the built-in
     skip set in addition to `[graph].exclude` globs."""
 
+    # frob:tests src/frob/gates/_refs.py::_is_under_vendored_tree kind="unit"  # noqa: E501
     def test_node_modules_root_entry_is_exempt(self, tmp_path: Path) -> None:
         # frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_node_modules_root_entry_is_exempt kind="unit"  # noqa: E501
         _init_repo(tmp_path)

@@ -14,6 +14,7 @@ pytestmark = pytest.mark.skipif(not HAS_ARCH, reason="frob.arch not available")
 class TestLayeringConfig:
     """`LayeringConfig.layer_for` (docs/modules/arch.md#dip-layering-contract)."""
 
+    # frob:tests src/frob/arch/_layering.py::LayeringConfig.layer_for  # noqa: E501
     def test_layer_for_longest_prefix_match(self) -> None:
         from frob.arch._layering import LayeringConfig
 
@@ -36,6 +37,7 @@ class TestLayeringConfig:
 
 class TestLoadLayeringConfig:
     """`load_layering_config` (docs/modules/arch.md#dip-layering-contract)."""
+# frob:tests src/frob/arch/_layering.py::load_layering_config  # noqa: E501
 
     def test_missing_frob_toml_returns_none(self, tmp_path: Path) -> None:
         from frob.arch._layering import load_layering_config
@@ -61,6 +63,7 @@ class TestLoadLayeringConfig:
 
 class TestLayeringViolations:
     """`check_layering_violations`
+    # frob:tests src/frob/arch/_layering.py::check_layering_edges  # noqa: E501
     (docs/modules/arch.md#dip-layering-contract)."""
 
     def test_disallowed_cross_layer_edge_flagged(self, tmp_path: Path) -> None:
@@ -207,6 +210,7 @@ class TestNoDiConstructionSmell:
 
 
 class TestIllegalStatesRepresentable:
+    # frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable  # noqa: E501
     """`check_illegal_states_representable`
     (docs/modules/arch.md#type-driven-design-checks)."""
 
@@ -280,6 +284,7 @@ class TestIllegalStatesRepresentable:
         assert out == []
 
 
+# frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession  # noqa: E501
 class TestPrimitiveObsession:
     """`check_primitive_obsession`
     (docs/modules/arch.md#type-driven-design-checks)."""

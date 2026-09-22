@@ -65,6 +65,7 @@ class TestLandParityDocTestGate:
     edge_pre_land`)."""
 
     # frob:tests tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate.test_new_public_symbol_missing_both_directives_fires  # noqa: E501
+    # frob:tests src/frob/gates/_land_parity.py::land_parity_doc_test_gate  # noqa: E501
     def test_new_public_symbol_missing_both_directives_fires(self, repo: Path) -> None:
         """MUST-FIRE fixture (T-3456's own acceptance, T-3302's original
         MUST-FIRE): a new public symbol with no `frob:doc`/`frob:tests`
@@ -81,6 +82,7 @@ class TestLandParityDocTestGate:
         assert violations[0].file == "src/undocumented.py"
         assert "brand_new_public_function" in violations[0].message
 
+    # frob:tests src/frob/gates/_land_parity.py::land_parity_doc_test_gate  # noqa: E501
     # frob:tests tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate.test_new_public_symbol_with_both_directives_is_quiet  # noqa: E501
     def test_new_public_symbol_with_both_directives_is_quiet(self, repo: Path) -> None:
         """Must-still-pass control: both directives present -> no
@@ -109,6 +111,7 @@ class TestLandParityLongFunctionGate:
     """LANDPARITY002: `frob check`-visible mirror of T-2214's own
     diff-scoped ARCH001 pre-land assertion (`_assert_diff_does_not_
     worsen_long_functions_pre_land`)."""
+# frob:tests src/frob/gates/_land_parity.py::land_parity_long_function_gate  # noqa: E501
 
     # frob:tests tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate.test_new_over_threshold_function_fires  # noqa: E501
     def test_new_over_threshold_function_fires(self, repo: Path) -> None:

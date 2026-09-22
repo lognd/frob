@@ -41,6 +41,8 @@ def _runs_payload(*, status: str, conclusion: str | None, run_id: int = 1) -> st
 
 
 class TestDetermineCiStatus:
+    # frob:tests scripts/verify_release_ci_status.py::determine_ci_status kind="unit"  # noqa: E501
+    # frob:tests scripts/verify_release_ci_status.py::CiStatusResult kind="unit"  # noqa: E501
     def test_green_on_success_conclusion(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_green_on_success_conclusion  # noqa: E501
         payload = _runs_payload(status="completed", conclusion="success")
@@ -48,6 +50,7 @@ class TestDetermineCiStatus:
             _REPO, _SHA, run_gh=_fake_gh(0, payload)
         )
         assert result.status == "green"
+        # frob:tests scripts/verify_release_ci_status.py::determine_ci_status kind="unit"  # noqa: E501
         assert _SHA in result.detail
 
     def test_red_on_failure_conclusion(self) -> None:
@@ -56,6 +59,7 @@ class TestDetermineCiStatus:
         result = verify_release_ci_status.determine_ci_status(
             _REPO, _SHA, run_gh=_fake_gh(0, payload)
         )
+        # frob:tests scripts/verify_release_ci_status.py::determine_ci_status kind="unit"  # noqa: E501
         assert result.status == "red"
         assert "failure" in result.detail
 
@@ -172,6 +176,7 @@ class TestRunGh:
         assert err
 
 
+# frob:tests scripts/verify_release_ci_status.py::CiStatusResult.model_post_init kind="unit"  # noqa: E501
 class TestCiStatusResultInvariant:
     def test_valid_status_literal_constructs(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestCiStatusResultInvariant.test_valid_status_literal_constructs  # noqa: E501

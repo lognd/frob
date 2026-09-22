@@ -84,6 +84,7 @@ class TestResolveCovTarget:
     coverage` in a repo whose package is NOT `frob` measures that repo's
     own package."""
 
+    # frob:tests src/frob/testing/_coverage_refresh.py::_resolve_cov_target kind="unit"  # noqa: E501
     def test_non_frob_repo_resolves_its_own_package(self, tmp_path: Path) -> None:
         """A repo whose `pyproject.toml [project].name` is `lograder`
         (src-layout, `src/lograder/`) resolves to `src/lograder`, not
@@ -148,6 +149,7 @@ class TestResolveCovTarget:
         )
 
 
+# frob:tests src/frob/testing/_incremental_coverage.py::python_coverage_targets kind="unit"  # noqa: E501
 class TestPythonCoverageTargets:
     def test_touched_source_selects_test(self, tmp_path: Path) -> None:
         """T-0484: a source file changed since `base` selects the test bound
@@ -184,6 +186,7 @@ class TestPythonCoverageTargets:
         )
         snapshot = build_graph(tmp_path, tmp_path.parent / "cache.db").danger_ok
         targets = python_coverage_targets(tmp_path, snapshot, "main")
+        # frob:tests src/frob/testing/_incremental_coverage.py::python_coverage_targets kind="unit"  # noqa: E501
         assert any("test_widget" in t for t in targets)
 
     def test_nothing_touched_returns_empty(self, tmp_path: Path) -> None:
@@ -421,10 +424,12 @@ class TestCoverageFileCache:
     `coverage.xml` or pytest run involved."""
 
     # frob:ticket T-1517
+    # frob:tests src/frob/testing/_coverage_cache.py::load_file_cache  # noqa: E501
     def test_load_missing_returns_empty(self, tmp_path: Path) -> None:
         """No cache file on disk is a cold start, not an error."""
         assert load_file_cache(tmp_path) == {}
 
+    # frob:tests src/frob/testing/_coverage_cache.py::fill_from_cache  # noqa: E501
     # frob:ticket T-1517
     def test_fill_from_cache_backfills_unchanged_file(self, tmp_path: Path) -> None:
         """A file absent from this run's `module_line` but present in the
@@ -729,6 +734,7 @@ class TestNativeCoverageRefresh:
             return Ok(Unit()) if ok else Err("boom")
 
         monkeypatch.setattr(coverage_mod, "stamp_coverage", _fake_stamp)
+        # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
         return calls
 
     # frob:ticket T-1516
@@ -750,6 +756,7 @@ class TestNativeCoverageRefresh:
         assert result.is_ok
         assert "pytest" in calls[0]
         assert "--cov-append" not in calls[0]
+        # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
         assert calls[1] == ["coverage", "xml", "-i"]
         assert len(stamp_calls) == 1
 
@@ -950,6 +957,7 @@ class TestSubprocessCoverageRc:
     TestSubprocessRcIsAbsoluteAndConcurrencyAware` class made, now proven
     directly against `_write_coverage_subprocess_rc`/
     `_pytest_subprocess_env` instead of a retired Makefile recipe."""
+# frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc  # noqa: E501
 
     # frob:ticket T-1235
     # frob:ticket T-2527

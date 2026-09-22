@@ -70,6 +70,7 @@ class TestRglob:
     """WALK001: raw `Path.rglob` always fires (unconditionally recursive)."""
 
     # invariant spec: [INV-005](invariants/INV-005.md)
+    # frob:tests src/frob/gates/_walk_lint.py::tracked_python_files_for_gate
     def test_raw_rglob_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_python_walks
         src = "def f(root):\n    return list(root.rglob('*'))\n"
@@ -272,16 +273,19 @@ class TestPlatform001:
         "        raise LockUnavailable('no lock primitive on this platform')\n"
         "    yield\n"
     )
+# frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
 
     def test_warn_and_continue_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
         tree = ast.parse(self._WARN_AND_CONTINUE_SRC)
         sites = _scan_platform_guards(tree)
         assert len(sites) == 1
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
         assert sites[0].names == ("fcntl",)
 
     def test_loud_refusal_is_quiet(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
         tree = ast.parse(self._LOUD_REFUSAL_SRC)
         assert _scan_platform_guards(tree) == ()
 
@@ -438,6 +442,7 @@ class TestPlatform001StringGuard:
         "        subprocess.run(['echo', 'done'])\n"
         "    else:\n"
         "        subprocess.run(['kill', str(proc.pid)])\n"
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
         "        subprocess.run(['echo', 'done'])\n"
     )
 
@@ -445,11 +450,13 @@ class TestPlatform001StringGuard:
     def test_silent_string_guard_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_string_guards
         tree = ast.parse(self._SILENT_STRING_GUARD_SRC)
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
         sites = _scan_platform_string_guards(tree)
         assert len(sites) == 1
         assert sites[0].lineno == 4
 
     # frob:ticket T-2944
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
     def test_logged_string_guard_is_quiet(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_string_guards
         tree = ast.parse(self._LOGGED_STRING_GUARD_SRC)
@@ -499,6 +506,7 @@ class TestPlatform001BareImport:
     #: `src/frob/tickets/_new_renumber.py:31` shape.
     _BARE_IMPORT_SRC = "import fcntl\n\ndef lock(fd):\n    fcntl.flock(fd, 1)\n"
 
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
     #: Must-stay-quiet fixture: the standard guarded idiom this repo's
     #: other ~10 platform-optional call sites already use.
     _GUARDED_IMPORT_SRC = (
@@ -506,6 +514,7 @@ class TestPlatform001BareImport:
     )
 
     # frob:ticket T-2944
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
     def test_bare_import_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_bare_restricted_imports
         tree = ast.parse(self._BARE_IMPORT_SRC)

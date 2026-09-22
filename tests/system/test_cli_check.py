@@ -141,6 +141,7 @@ class TestCheckBadCode:
         )
         assert r.returncode != 0
 
+    # frob:tests src/frob/app/check_runner.py::_ColorizedLevelFormatter.format kind="unit"  # noqa: E501
     def test_unused_import_output_mentions_error(self, tmp_path):
         src = "import os\n\ndef foo() -> None:\n    pass\n"
         _make_project(tmp_path, src)
@@ -1131,6 +1132,8 @@ class TestGitlessTargetGateSeverity:
         out = r.stdout + r.stderr
         for gate in ("secrets_gate", "pii_structural_gate", "walk_lint_gate"):
             assert f"ERROR: {gate}: git ls-files" not in out, out
+# frob:tests src/frob/logging/logger.py::_init  # noqa: E501
+# frob:tests src/frob/logging/formatter.py::_FrobFormatter.format  # noqa: E501
 
     def test_render_lint_gate_warns_not_errors_on_gitless_root(
         self, capsys, tmp_path, monkeypatch

@@ -62,6 +62,7 @@ class TestFrobDoableTicketsRevalidation:
         return Ok(_Proc(stdout))
 
     # frob:ticket T-2027
+    # frob:tests src/frob/serve/_tools.py::frob_doable_tickets  # noqa: E501
     def test_resolved_sweep_ticket_is_dropped_before_listing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

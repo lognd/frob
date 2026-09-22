@@ -40,6 +40,7 @@ class TestScanTreeLockArg:
 
 
 class TestVetRunnerLockArg:
+    # frob:tests src/frob/app/vet_runner.py::run
     def test_run_lockfile_arg(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -255,6 +256,7 @@ class TestScanTreeMultipleLockfiles:
 
 
 class TestScanTreeTimeout:
+    # frob:tests src/frob/vet/_scan.py::_bounded_process_dependency  # noqa: E501
     # frob:tests src/frob/vet/_scan.py::_run_with_timeout kind="unit"
     def test_slow_package_returns_within_timeout_not_task_duration(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -165,6 +165,7 @@ class TestInvariantGate:
 
 class TestInv003Gate:
     # frob:tests src/frob/gates/_inv.py::inv003_gate
+    # frob:tests src/frob/gates/invariants.py::find_exclusivity_claims kind="unit"  # noqa: E501
     def test_exclusivity_claim_without_marker_warns(self, tmp_path: Path) -> None:
         # T-0509: INV003 is scoped to INV003_SPEC_DIRS (docs/modules,
         # docs/strata), not all of docs/**.md -- fixture must live there.
@@ -1137,6 +1138,8 @@ class TestTimeStableGate:
         )
 
     # frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_fails_once_clock_advances_past_horizon  # noqa: E501
+    # frob:tests src/frob/gates/_inv.py::time_stable_gate  # noqa: E501
+    # frob:tests src/frob/gates/_inv.py::time_stable_offset_s  # noqa: E501
     def test_fails_once_clock_advances_past_horizon(self, tmp_path: Path) -> None:
         """Must-fire: a synthetic time-dependent test that passes at
         offset=0 (today) but fails once `FROB_TIME_STABLE_OFFSET_S`
@@ -1160,6 +1163,7 @@ class TestTimeStableGate:
         assert violations[0].rule == "INV010"
         assert violations[0].severity == Severity.WARN
         assert "INV-042" in violations[0].message
+# frob:tests src/frob/gates/_inv.py::time_stable_gate  # noqa: E501
 
     # frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_stays_quiet_when_still_passing_at_horizon  # noqa: E501
     def test_stays_quiet_when_still_passing_at_horizon(self, tmp_path: Path) -> None:
@@ -1223,6 +1227,7 @@ class TestRace001Violations:
     shape T-3919/T-3942's delta audits kept re-finding un-tracked; a
     docstring claiming cap/quota/single-use/idempotent behavior with no
     concurrent-callers test among its `frob:tests` bindings is the same
+    # frob:tests src/frob/gates/_inv.py::race001_violations  # noqa: E501
     defect one layer up (the shape was never even test-obligated)."""
 
     # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_fires_on_unlocked_read_then_write_same_key  # noqa: E501

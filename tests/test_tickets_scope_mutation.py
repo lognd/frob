@@ -57,6 +57,7 @@ class TestScopeLeaseConflict:
     predicate `mutate_scope`'s `--add` validation and `frob ticket start`'s
     own grant-time refusal both call."""
 
+    # frob:tests src/frob/tickets/_scope.py::scope_lease_conflict  # noqa: E501
     def test_no_collision_is_none(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_no_collisio\
@@ -152,6 +153,7 @@ class TestScopeLeaseConflict:
         assert holder_glob == "src/frob/gates/**"
 
 
+# frob:tests src/frob/tickets/_scope.py::mutate_scope  # noqa: E501
 class TestMutateScope:
     def test_add_free_path_granted(self, tmp_path: Path) -> None:
         # frob:tests \
@@ -337,6 +339,7 @@ class TestNewFileCarveOut:
     """
 
     # frob:ticket T-0422
+    # frob:tests src/frob/tickets/_scope.py::_scope_add_conflicts  # noqa: E501
     def test_new_file_under_broad_lease_is_exempt(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_under_broad_lease_is_exempt  # noqa: E501
         # The exact T-0561 repro shape: a broad tests/** epic in progress,
@@ -355,6 +358,7 @@ class TestNewFileCarveOut:
         assert "tests/unit/test_app_runners_batch6.py" in result.danger_ok.scope
         assert holder.state is TicketState.IN_PROGRESS
 
+    # frob:tests src/frob/tickets/_scope.py::_scope_add_conflicts  # noqa: E501
     # frob:ticket T-0422
     def test_existing_file_under_broad_lease_still_conflicts(
         self, tmp_path: Path
@@ -445,6 +449,7 @@ class TestGlobIsSubset:
 
 
 class TestScopeCli:
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_apply_demote_to_evidence_only  # noqa: E501
     def test_cli_add_free_path(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_free_path

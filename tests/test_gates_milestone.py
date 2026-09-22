@@ -148,6 +148,7 @@ class TestMile003:
     """`milestone_gate(root, queue)` -- MILE003, an OPEN ticket whose
     effective milestone cannot be resolved."""
 
+    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
     def test_fires_on_open_ticket_with_no_resolvable_milestone(
         self, tmp_path: Path
     ) -> None:
@@ -159,6 +160,7 @@ class TestMile003:
         violations = milestone_gate(tmp_path, queue)
         assert [v.rule for v in violations] == ["MILE003"]
         assert "T-1" in violations[0].message
+# frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
 
     def test_silent_once_stamped(self, tmp_path: Path) -> None:
         """Positive control (this ticket's own original body): stamping
@@ -166,6 +168,7 @@ class TestMile003:
         _write_frob_toml(tmp_path, default_milestone=None)
         t = _ticket(ticket_id="T-1", milestone="1.0.0")
         queue = TicketQueue(tickets={t.id: t})
+        # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
         assert milestone_gate(tmp_path, queue) == ()
 
     def test_silent_on_configured_default(self, tmp_path: Path) -> None:
@@ -211,6 +214,7 @@ class TestMile003:
 # frob:ticket T-2580
 class TestMile001:
     """MILE001 (T-2580 M5): a `blocked_by` edge pointing INTO a later
+    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
     effective milestone is a provable release deadlock -- the blocked
     ticket's own (earlier) milestone can never ship first."""
 
@@ -222,6 +226,7 @@ class TestMile001:
         t = _ticket(ticket_id="T-1", milestone="1.0.0", blocked_by=("T-2",))
         queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
+        # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
         assert len(violations) == 1
         assert "T-1" in violations[0].message
         assert "T-2" in violations[0].message
@@ -290,6 +295,7 @@ class TestMile001:
         assert violations == []
 
 
+# frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone
 # frob:ticket T-2580
 class TestMile002:
     """MILE002 (T-2580 M5): the same deadlock as MILE001, reached via the

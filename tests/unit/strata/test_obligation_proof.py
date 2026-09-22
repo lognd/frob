@@ -23,6 +23,7 @@ class TestOwnerIndex:
     # frob:tests \
     # tests/unit/strata/test_obligation_proof.py::TestOwnerIndex.test_inverts_file_to_n\
     # ode_map
+    # frob:tests src/frob/strata/_obligation_proof.py::owner_index  # noqa: E501
     def test_inverts_file_to_node_map(self):
         owner = {"src/a.py": "node_a", "src/b.py": "node_a", "src/c.py": "node_b"}
         by_node = owner_index(owner)

@@ -397,6 +397,7 @@ class TestAbsorbPreLandFixes:
     machinery); `_assert_design_loads_pre_land`'s own load-guard behavior
     is exercised separately below (TestAssertDesignLoadsPreLand)."""
 
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes  # noqa: E501
     def test_fmt_half_canonicalizes_a_non_canonical_directive(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_fmt_half_canonicalizes_a_non_canonical_directive  # noqa: E501
@@ -1999,6 +2000,7 @@ class TestPostLandUnscopedSweep:
     # frob:ticket T-1456
     # frob:ticket T-1513
     # frob:tests \
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_post_land_unscoped_error_sweep  # noqa: E501
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
     def test_new_error_absent_before_land_refuses_and_reverts(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -70,6 +70,7 @@ class TestFindBlocks:
     """`find_blocks` -- discovery over both source and markdown shapes."""
 
     # frob:ticket T-4697
+    # frob:tests src/frob/narrative/_bulk.py::find_blocks
     def test_finds_python_ticket_lead_block(self) -> None:
         """A `# T-####:`-lead comment run of 13+ lines (NARR001's own
         shape) is discovered in a `.py` file."""
@@ -123,6 +124,7 @@ class TestPlanBulk:
     """`plan_bulk` -- the dry-run listing (no writes)."""
 
     # frob:ticket T-4697
+    # frob:tests src/frob/narrative/_bulk.py::BulkItem  # noqa: E501
     def test_plan_lists_every_block_with_its_ticket(self, tmp_path: Path) -> None:
         """The plan enumerates each block found, its resolved ticket id
         (or `None`), and writes nothing."""
@@ -189,6 +191,7 @@ class TestApplyBulk:
             tmp_path / "tickets" / "archive" / "T-1002" / "ticket.md"
         ).read_text()
         assert "archived narrative" not in archived_body
+# frob:tests src/frob/narrative/_bulk.py::apply_bulk
 
     # frob:ticket T-4697
     def test_apply_moves_live_and_archived_skips_untargeted(

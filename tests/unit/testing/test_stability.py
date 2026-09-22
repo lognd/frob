@@ -40,6 +40,7 @@ from frob.tickets import (
 
 
 class TestRecord:
+    # frob:tests src/frob/testing/_stability.py::load_stability
     def test_persists(self, tmp_path: Path) -> None:
         # frob:tests src/frob/testing/_stability.py::record_outcomes
         entries = record_outcomes(tmp_path, {"tests/t.py::a": True}).danger_ok

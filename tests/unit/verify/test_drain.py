@@ -41,6 +41,7 @@ class TestRunDrainAsync:
     """`run_drain_async`: the detached `drain-async` child's own body --
     T-2310's constraints 3 (idle-fleet-only) and 4 (bounded, resumable)."""
 
+    # frob:tests src/frob/verify/_drain.py::DrainError  # noqa: E501
     def test_declines_while_a_land_is_in_progress(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

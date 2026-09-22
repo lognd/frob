@@ -82,6 +82,7 @@ class TestPriorityRank:
 class TestDoablePriorityOrdering:
     """`doable` orders by priority first, then age, per T-0411."""
 
+    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key  # noqa: E501
     def test_high_priority_surfaces_before_older_low_priority(self) -> None:
         """A newer HIGH ticket must precede an older LOW ticket -- the exact
         T-0177-rot scenario T-0411's Description describes."""
@@ -107,6 +108,7 @@ class TestDoablePriorityOrdering:
 
 class TestSetPriority:
     """`set_priority` writes the ticket's priority field via the ledger."""
+# frob:tests src/frob/tickets/_setters.py::set_priority
 
     def test_updates_priority_field(self, tmp_path: Path) -> None:
         """Round-trips a priority change through `new_ticket` + `set_priority`
@@ -137,6 +139,7 @@ class TestSetPriority:
 
         reloaded = load_active(tmp_path)
         assert reloaded.is_ok
+        # frob:tests src/frob/tickets/_setters.py::set_priority
         assert reloaded.danger_ok.tickets[ticket_id].priority == Priority.CRITICAL
 
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
@@ -215,6 +218,7 @@ class TestTick004QueueRot:
         assert any(v.rule == "TICK004" and "T-3001" in v.message for v in violations)
 
     # frob:ticket T-4393
+    # frob:tests src/frob/gates/_tickets_gate.py::_utc_today
     def test_severity_is_utc_deterministic_across_local_timezones(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

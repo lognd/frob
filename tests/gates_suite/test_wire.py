@@ -1550,6 +1550,7 @@ class TestWireGate:
         assert violations == []
 
     # frob:ticket T-3115
+    # frob:tests src/frob/gates/_wire.py::_wire003_hidden_verb_tokens kind="unit"  # noqa: E501
     def test_wire003_direct_dispatch_verb_refactor_is_not_flagged(
         self, tmp_path: Path
     ) -> None:

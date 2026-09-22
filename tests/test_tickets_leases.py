@@ -162,6 +162,7 @@ class TestTicketLeasePin:
     cases `resolve_lease` alone does not decide (it always requires a
     specific lease file to already resolve one way or the other)."""
 
+    # frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin kind="unit"  # noqa: E501
     def test_no_lease_mechanism_engaged_passes_through(self, repo: Path) -> None:
         """No ticket anywhere in this repo has ever been `frob ticket
         start`ed -- the leases directory does not exist yet. Must pass
@@ -171,6 +172,7 @@ class TestTicketLeasePin:
 
         result = ticket_lease_pin(repo, "T-0787")
         assert result.is_ok
+# frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin kind="unit"  # noqa: E501
 
     def test_pinned_lease_for_this_worktree_passes(self, repo: Path) -> None:
         """A lease recorded for exactly this worktree resolves `Ok`."""
@@ -178,6 +180,7 @@ class TestTicketLeasePin:
 
         _write_lease(repo, "T-0787", repo)
         result = ticket_lease_pin(repo, "T-0787")
+        # frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin
         assert result.is_ok
 
     def test_lease_absent_for_this_worktree_refuses(self, repo: Path) -> None:
@@ -535,14 +538,17 @@ class TestLeaseTtl:
             scope=(),
             worktree="/tmp/whatever",
             branch="main",
+            # frob:tests src/frob/tickets/_leases.py::lease_age_seconds
             recorded_at=recorded_at,
         )
 
     def test_age_seconds_computes_elapsed_time(self) -> None:
         recorded = datetime(2026, 7, 23, 0, 0, 0, tzinfo=UTC)
+        # frob:tests src/frob/tickets/_leases.py::lease_age_seconds kind="unit"  # noqa: E501
         now = recorded + timedelta(hours=2)
         record = self._record(recorded.isoformat())
         assert lease_age_seconds(record, now=now) == 7200.0
+# frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
 
     def test_age_seconds_none_for_unparseable_timestamp(self) -> None:
         record = self._record("not-a-timestamp")

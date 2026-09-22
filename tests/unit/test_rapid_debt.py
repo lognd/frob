@@ -19,6 +19,7 @@ class TestRecordRapidDebt:
     never able to fail its caller."""
 
     # frob:invariant INV-052
+    # frob:tests src/frob/tickets/_evidence.py::record_rapid_debt
     def test_appends_one_json_line_per_call(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_appends_one_json_line_per_call  # noqa: E501
         record_rapid_debt(tmp_path, "T-0001", "test016")

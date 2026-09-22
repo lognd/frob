@@ -39,6 +39,7 @@ class TestMissingGateRuleIds:
     # tests/test_registry_staleness.py::TestMissingGateRuleIds.test_finds_rules_with_no\
     # _entry
     # frob:ticket T-0560
+    # frob:tests src/frob/registry/_staleness.py::missing_gate_rule_ids
     def test_finds_rules_with_no_entry(self, tmp_path: Path) -> None:
         path = _write_fixture(tmp_path)
         missing = missing_gate_rule_ids(path, frozenset({"REF001", "COV001"}))

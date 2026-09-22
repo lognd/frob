@@ -42,6 +42,7 @@ class TestRequiredVersion:
 class TestRequirePython:
     """`_require_python.require_python` (T-2236)."""
 
+    # frob:tests scripts/_require_python.py::require_python
     def test_older_interpreter_exits_nonzero_with_actionable_message(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:

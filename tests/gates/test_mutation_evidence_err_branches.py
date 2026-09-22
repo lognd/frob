@@ -40,6 +40,7 @@ def _ticket(kind: TicketKind) -> Ticket:
 
 
 class TestMutationEvidenceErrBranches:
+    # frob:tests src/frob/gates/_mutation_evidence.py::mutation_evidence_violations  # noqa: E501
     def test_exec_disabled_degrades_to_no_violations(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches.test_exec_disabled_degrades_to_no_violations  # noqa: E501
         ticket = _ticket(TicketKind.SECURITY)

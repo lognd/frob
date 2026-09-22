@@ -75,6 +75,7 @@ class TestProfileBoundarySubjectCount:
     this count."""
 
     # frob:ticket T-3985
+    # frob:tests src/frob/gates/_profile_boundary.py::profile_boundary_subject_count
     def test_counts_every_usage_examined(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundaryS\

@@ -24,6 +24,7 @@ from frob.app.config import AppConfig, Subcommand
 
 
 class TestFromExternal:
+    # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"  # noqa: E501
     def test_missing_file_falls_back_to_defaults(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_miss\

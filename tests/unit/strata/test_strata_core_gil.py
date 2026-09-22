@@ -42,6 +42,7 @@ class TestTimeoutFiresDuringLongNativeCall:
     preempt a long strata_core call. Run as a subprocess so the
     watchdog's own `os._exit(1)` cannot tear down this test's process."""
 
+    # frob:tests strata-core/src/lib.rs::run_on_big_stack
     def test_timeout_fires_during_worst_age(self, tmp_path: Path) -> None:
         """A ~6s `worst_age` call under `--timeout=2 --timeout-method=thread`
         is killed near the 2s mark, not left to run to completion -- the

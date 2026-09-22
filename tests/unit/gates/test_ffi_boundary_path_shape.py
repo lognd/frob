@@ -31,6 +31,7 @@ _CTYPES_SRC = 'import ctypes\nlib = ctypes.CDLL("libfoo.so")\nlib.do_thing(1)\n'
 
 
 # frob:ticket T-3947
+# frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
 def test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production(
     tmp_path: Path,
 ) -> None:

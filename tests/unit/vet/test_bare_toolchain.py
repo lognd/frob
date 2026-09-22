@@ -14,6 +14,7 @@ from frob.vet._bare_toolchain import bare_toolchain_findings
 class TestBareToolchainFindings:
     """`bare_toolchain_findings` -- the AST finder."""
 
+    # frob:tests src/frob/vet/_bare_toolchain.py::BareToolchainFinding  # noqa: E501
     def test_flags_bare_argv_literal(self, tmp_path: Path) -> None:
         """A `cmd = ["ty", "check", ...]` literal, spawned lines later
         (T-4125's own measured `_land_cmd.py` shape), is flagged."""
@@ -77,6 +78,7 @@ class TestBareToolchainFindings:
 class TestBareToolchainGate:
     """`bare_toolchain_gate` -- the tracked-file-scan wiring."""
 
+    # frob:tests src/frob/gates/_bare_toolchain.py::bare_toolchain_gate  # noqa: E501
     def test_flags_bare_argv_literal(self, tmp_path: Path) -> None:
         """A tracked file with a bare-name argv literal reports one
         WARN-severity BARETOOL001 violation naming the file and line."""

@@ -1225,6 +1225,7 @@ class TestTestSideDeclarationReorientation:
     consumer (TDD001's backwards check chief among them) sees one
     orientation regardless of which side declared it."""
 
+    # frob:tests src/frob/graph/dsl.py::looks_like_test_path  # noqa: E501
     def test_test_side_declaration_is_reoriented_to_canonical_shape(
         self, tmp_path: Path, monkeypatch
     ) -> None:

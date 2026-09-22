@@ -37,6 +37,7 @@ class TestMissingObservability:
     # frob:tests \
     # tests/unit/strata/test_observability.py::TestMissingObservability.test_boundary_f\
     # low_without_observability_fires
+    # frob:tests src/frob/strata/_observability.py::check_observability_obligations  # noqa: E501
     def test_boundary_flow_without_observability_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

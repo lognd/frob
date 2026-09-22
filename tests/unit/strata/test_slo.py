@@ -25,6 +25,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestMissingSlo:
     # frob:tests \
     # tests/unit/strata/test_slo.py::TestMissingSlo.test_service_node_without_slo_fires
+    # frob:tests src/frob/strata/_slo.py::check_slo_obligations
     def test_service_node_without_slo_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="checkout_svc", trust="trusted", attrs=("service",)),),

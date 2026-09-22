@@ -28,6 +28,7 @@ class TestUnknownIdentityEquality:
     occurrence widen visibility without ever manufacturing a false
     duplicate-detection match."""
 
+    # frob:tests src/frob/perf/_effect_summaries.py::Unknown  # noqa: E501
     def test_two_unknowns_with_the_same_reason_text_are_not_equal(self) -> None:
         """Even identical `reason` strings never make two `Unknown`
         instances compare equal -- equality is plain object identity."""

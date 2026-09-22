@@ -108,6 +108,7 @@ class TestTicketArchiveForceCLI:
         assert "T-0001" in active.tickets
         assert active.tickets["T-0001"].state == TicketState.DONE
 
+    # frob:tests src/frob/app/ticket_runner/_archive.py::_require_reason_for_archive_force kind="unit"  # noqa: E501
     def test_force_overrides_the_live_lease_refusal(
         self, tmp_path: Path, caplog
     ) -> None:

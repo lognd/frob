@@ -53,6 +53,7 @@ class TestWarnOverBroadScopeOnNew:
 
     # frob:ticket T-2123
     # frob:ticket T-2771
+    # frob:tests src/frob/tickets/_new_renumber.py::_warn_over_broad_scope_on_new  # noqa: E501
     def test_over_broad_scope_warns_at_filing_time(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -84,6 +85,7 @@ class TestWarnOverBroadScopeOnNew:
         assert "T-0001" in queue.tickets
         assert queue.tickets["T-0001"].state == TicketState.QUEUED
 
+    # frob:tests src/frob/tickets/_new_renumber.py::_warn_over_broad_scope_on_new  # noqa: E501
     # frob:ticket T-2123
     def test_precise_scope_is_silent_at_filing_time(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture

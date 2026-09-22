@@ -53,6 +53,7 @@ class TestAttributeBatch:
     commit whose touched symbols REACH it, never a lexical file match or
     a newest-commit tiebreak."""
 
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
     def test_caller_break_attributes_to_the_caller_commit(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_caller_break_attributes_to_the_caller_commit  # noqa: E501
         # Commit A touches `caller`, which calls `callee` -- commit B
@@ -196,6 +197,7 @@ class TestAttributeBatch:
         (attribution,) = result.danger_ok
         assert attribution.status == "unattributed"
         assert attribution.candidate_commits == ()
+# frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
 
     def test_two_reaching_commits_is_unattributed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_two_reaching_commits_is_unattributed  # noqa: E501
@@ -223,6 +225,7 @@ class TestAttributeBatch:
         assert attribution.status == "unattributed"
         assert set(attribution.candidate_commits) == {"commitA", "commitB"}
         assert attribution.commit_sha is None
+        # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
         assert attribution.ticket_id is None
 
     def test_zero_reaching_commits_is_unattributed(self, tmp_path: Path) -> None:
@@ -451,6 +454,7 @@ class TestLoadAttributionContext:
     explain`) build the graph snapshot + call graph pair ONCE and thread
     it into both `build_ad_hoc_batch` and `attribute_batch`."""
 
+    # frob:tests src/frob/verify/_attribution.py::load_attribution_context  # noqa: E501
     def test_returns_a_usable_snapshot_and_call_graph(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

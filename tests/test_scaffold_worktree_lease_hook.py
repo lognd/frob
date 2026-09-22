@@ -51,6 +51,7 @@ def _setup_repo_with_worktree(tmp_path: Path) -> tuple[Path, Path]:
 
 # frob:ticket T-0731
 class TestInstallWorktreeLeaseHook:
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
     def test_installs_pre_commit_and_pre_merge_commit(self, tmp_path: Path) -> None:
         # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_installs_pre_commit_and_pre_merge_commit  # noqa: E501
         _init_repo(tmp_path)
@@ -62,6 +63,7 @@ class TestInstallWorktreeLeaseHook:
         for path in paths:
             assert path.exists()
             assert os.access(path, os.X_OK)
+# frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
 
     def test_refuses_existing_hook_without_force(self, tmp_path: Path) -> None:
         # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_refuses_existing_hook_without_force  # noqa: E501
@@ -199,6 +201,7 @@ class TestInstallWorktreeLeaseHook:
             check=False,
         )
         assert merged.returncode == 0, merged.stdout + merged.stderr
+# frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
 
     # frob:ticket T-0731
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
@@ -262,6 +265,7 @@ class TestInstallWorktreeLeaseHook:
         )
         assert commit.returncode != 0
         assert "changelog.d/T-9999.md" in (commit.stdout + commit.stderr)
+        # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
         assert "land-owned" in (commit.stdout + commit.stderr)
 
     # frob:ticket T-0731
@@ -323,6 +327,7 @@ class TestInstallWorktreeLeaseHook:
             text=True,
             check=False,
         )
+        # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
         assert commit.returncode != 0
         assert "version bump is land-owned" in (commit.stdout + commit.stderr)
 
@@ -490,6 +495,7 @@ class TestInstallWorktreeLeaseHook:
             text=True,
             check=False,
         )
+        # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
         assert merge_commit.returncode != 0
         assert "CHANGELOG.md" in (merge_commit.stdout + merge_commit.stderr)
         assert "land-owned" in (merge_commit.stdout + merge_commit.stderr)
@@ -771,6 +777,7 @@ class TestOursMarkerMigration:
         assert _OURS_MARKER in body
 
     # frob:ticket T-2565
+    # frob:tests src/frob/scaffold/_managed.py::_is_ours  # noqa: E501
     def test_legacy_marker_still_recognised_as_ours(self) -> None:
         """The migration control. A hook installed by an older frob must
         keep being recognised, or it silently stops being maintained."""

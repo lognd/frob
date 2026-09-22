@@ -16,6 +16,7 @@ pytestmark = pytest.mark.skipif(not HAS_ARCH, reason="frob.arch not available")
 
 
 class TestGodClass:
+    # frob:tests src/frob/arch/__init__.py::_collect_files
     def test_big_class_triggers_god_class(self):
         # Use a single-file path as root -- analyze_project walks the root dir
         root = FIXTURES / "arch_python" / "src"

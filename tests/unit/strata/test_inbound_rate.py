@@ -23,6 +23,7 @@ def _node(node_id: str, trust: str, attrs: tuple[str, ...] = ()) -> Node:
 
 class TestMissingInboundRate:
     # frob:tests src/frob/strata/_inbound_rate.py::check_inbound_rate kind="unit"
+    # frob:tests src/frob/strata/_inbound_rate.py::InboundRateViolation  # noqa: E501
     def test_unauthenticated_write_with_retention_but_no_rate_fires(self):
         route = _node("public_route", "foreign")
         store = _node(

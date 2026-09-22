@@ -54,6 +54,7 @@ flow f1 : evil -> web
         assert "GAP" in out
         assert "CWE-89" in out
 
+    # frob:tests src/frob/app/sys_runner.py::_resolve_design_root
     def test_file_arg_fails(self, tmp_path: Path) -> None:
         """`frob sys audit <file.strata>` (a file, not a directory) must
         fail loudly and name the expected directory invocation, never

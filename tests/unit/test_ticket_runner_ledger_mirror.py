@@ -406,6 +406,7 @@ class TestVerbStrategy:
             ledger_write_strategy_for("hypothetical-new-verb")
 
     # frob:ticket T-2603
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::LedgerWriteStrategy
     def test_promote_kind(self) -> None:
         """`promote` is neither a plain `OWN_TRANSACTION` verb nor a
         `GENERIC_COMMIT_MIRRORED` one -- it gets its own enum value,

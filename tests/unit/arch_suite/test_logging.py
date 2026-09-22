@@ -13,6 +13,7 @@ class TestUnloggedErrorPath:
     """`check_unlogged_error_path`
     (docs/modules/arch.md#logging-discipline-checks)."""
 
+    # frob:tests src/frob/arch/_logging_checks.py::check_unlogged_error_path  # noqa: E501
     def test_catch_with_no_nearby_log_call_flagged(self) -> None:
         from frob.arch._logging_checks import check_unlogged_error_path
         from frob.arch._normalized import (
@@ -61,6 +62,7 @@ class TestUnloggedErrorPath:
 class TestUnloggedBoundary:
     """`check_unlogged_boundary`
     (docs/modules/arch.md#logging-discipline-checks)."""
+# frob:tests src/frob/arch/_logging_checks.py::check_unlogged_boundary  # noqa: E501
 
     def test_public_entry_point_with_no_log_call_flagged(self) -> None:
         from frob.arch._logging_checks import check_unlogged_boundary
@@ -196,6 +198,7 @@ class TestUnhandledResult:
     """`check_unhandled_result`
     (docs/modules/arch.md#fallibility-checks)."""
 
+    # frob:tests src/frob/arch/_fallibility.py::check_unhandled_result  # noqa: E501
     def test_bare_statement_call_to_result_function_flagged(self) -> None:
         from frob.arch._fallibility import check_unhandled_result
         from frob.arch._normalized import (
@@ -250,6 +253,7 @@ class TestUnhandledResult:
 class TestSwallowedException:
     """`check_swallowed_exception`
     (docs/modules/arch.md#fallibility-checks)."""
+# frob:tests src/frob/arch/_fallibility.py::check_swallowed_exception  # noqa: E501
 
     def test_bare_except_with_no_reaction_flagged(self) -> None:
         from frob.arch._fallibility import check_swallowed_exception
@@ -347,6 +351,7 @@ class TestRecoverableErrorWrongSignature:
 
 class TestOverBroadExcept:
     """`check_over_broad_except`
+    # frob:tests src/frob/arch/_fallibility.py::check_over_broad_except  # noqa: E501
     (docs/modules/arch.md#fallibility-checks)."""
 
     def test_bare_except_flagged(self) -> None:

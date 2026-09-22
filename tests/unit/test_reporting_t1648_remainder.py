@@ -90,6 +90,7 @@ class TestDisclosureShapedLanguage:
         assert disclosure_shaped_language(text) is None
 
     # frob:ticket T-2726
+    # frob:tests src/frob/tickets/_reporting.py::disclosure_shaped_language
     def test_phrase_in_done_report_still_fires(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_done_report_still_fires  # noqa: E501
         # The positive control the narrowing must not remove: a genuine

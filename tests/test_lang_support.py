@@ -158,6 +158,7 @@ class TestConformanceViolations:
 
     # frob:ticket T-0405
     # frob:ticket T-0406
+    # frob:tests src/frob/lang/_support.py::_unreasoned_names  # noqa: E501
     def test_unreasoned_known_gap_fails(self) -> None:
         """A KNOWN_GAP/NOT_APPLICABLE cell with a blank detail is exactly
         as unaccountable as a missing cell."""
@@ -264,6 +265,7 @@ class TestDeriveCapabilityRegistry:
             assert status.state == FacetState.KNOWN_GAP
             assert "absent from frob.lang._extract._IMPORT_WALKERS" in status.detail
 
+    # frob:tests src/frob/lang/_support.py::_capability_test_discovery_status
     # frob:ticket T-2499
     def test_kotlin_test_discovery_is_implemented(self) -> None:
         """T-2499: kotlin has a real `frob.testing.collect_kotlin_tests`
@@ -341,6 +343,7 @@ class TestCapabilityConformanceViolations:
         assert "call_graph" in violations[0]
 
     # frob:ticket T-2365
+    # frob:tests src/frob/lang/_support.py::CapabilityRequirement  # noqa: E501
     def test_fully_registered_language_passes(self) -> None:
         registry = {
             "fixture-lang": AdapterCapabilitySupport(

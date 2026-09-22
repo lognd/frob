@@ -91,6 +91,7 @@ def test_get_logger_returns_named_logger():
 
 
 # invariant spec: [INV-016](invariants/INV-016.md)
+# frob:tests src/frob/logging/filter.py::_BelowLevelFilter
 def test_below_level_filter():
     # frob:tests src/frob/logging/filter.py::_BelowLevelFilter.filter kind="unit"
     f = _BelowLevelFilter("WARNING")

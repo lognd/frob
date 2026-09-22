@@ -139,6 +139,7 @@ class TestT2320RuffFlagsReachAppConfig:
     (parses + has coverage on the function it configures, but the config
     layer never carries it there) cannot regress silently again."""
 
+    # frob:tests src/frob/app/_config_external.py::_BOOL_FLAGS  # noqa: E501
     def test_from_external_carries_all_three_ruff_flags_from_parsed_argv(
         self,
     ) -> None:

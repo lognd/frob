@@ -41,6 +41,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
     """`markdown_anchors`'s T-1229 additions: `frob:until` and the
     negative-existence phrase heuristic."""
 
+    # frob:tests src/frob/graph/dsl.py::markdown_anchors  # noqa: E501
     def test_until_directive_emits_until_edge(self) -> None:
         """`<!-- frob:until T-0042 -->` under a heading becomes an UNTIL
         edge whose target is the ticket id and src is the doc anchor."""
@@ -50,6 +51,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         assert len(until_edges) == 1
         assert until_edges[0].target == "T-0042"
         assert until_edges[0].src == "doc.md#section"
+# frob:tests src/frob/graph/dsl.py::markdown_anchors  # noqa: E501
 
     def test_negative_existence_phrase_emits_claims_absence_edge(self) -> None:
         """A "does not exist yet" line under a heading becomes a
@@ -109,6 +111,7 @@ class TestNegexist001Gate:
     """`negexist001_gate`'s unbound/stale grouping over already-parsed
     edges (T-1229)."""
 
+    # frob:tests src/frob/gates/_negexist.py::negexist001_gate  # noqa: E501
     def test_unbound_claim_is_flagged(self) -> None:
         """A CLAIMS_ABSENCE edge with no sibling UNTIL edge in the same
         anchor fires NEGEXIST001."""
@@ -124,6 +127,7 @@ class TestNegexist001Gate:
         assert len(violations) == 1
         assert violations[0].rule == "NEGEXIST001"
         assert "no `frob:until" in violations[0].message
+# frob:tests src/frob/gates/_negexist.py::negexist001_gate  # noqa: E501
 
     def test_claim_bound_to_open_ticket_is_clean(self) -> None:
         """A CLAIMS_ABSENCE edge sharing its anchor with an UNTIL edge
@@ -143,6 +147,7 @@ class TestNegexist001Gate:
             ),
         )
         queue = _test_queue("T-0042", TicketState.QUEUED)
+        # frob:tests src/frob/gates/_negexist.py::negexist001_gate  # noqa: E501
         assert negexist001_gate(_test_snapshot(edges), queue) == ()
 
     def test_claim_bound_to_closed_ticket_is_stale(self) -> None:

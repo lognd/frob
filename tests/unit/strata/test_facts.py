@@ -321,6 +321,7 @@ class TestFactsStrataCoreImportError:
 
     # frob:ticket T-2707
     # frob:tests tests/unit/strata/test_facts.py::TestFactsStrataCoreImportError.test_names_the_real_exception  # noqa: E501
+    # frob:tests src/frob/strata/_facts.py::strata_core_import_error  # noqa: E501
     def test_names_the_real_exception(self, monkeypatch: pytest.MonkeyPatch) -> None:
         facts_mod = sys.modules["frob.strata._facts"]
         monkeypatch.setattr(facts_mod, "strata_core", None)

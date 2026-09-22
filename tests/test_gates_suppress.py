@@ -36,6 +36,7 @@ def _write(root: Path, rel: str, text: str) -> None:
 class TestSuppressionDialects:
     """`suppression_dialects` / `SuppressionDialect` registry shape."""
 
+    # frob:tests src/frob/gates/_suppress.py::SuppressionDialect
     def test_registers_ty_mypy_ruff(self) -> None:
         """The registry names exactly `ty`, `mypy`, `ruff` (T-1340's Phase
         1 mandate: python entries for all three)."""

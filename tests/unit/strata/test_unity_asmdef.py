@@ -57,6 +57,7 @@ class TestDiscoverAsmdefs:
         by_name = {info.name: info for info in infos}
         assert by_name["Game.Runtime"].guid == "11111111111111111111111111111111"
 
+    # frob:tests src/frob/strata/_unity_asmdef.py::UnityAsmdefError  # noqa: E501
     def test_not_a_unity_project_errs(self, tmp_path):
         """A directory with none of Unity's own markers is Err, not []."""
         result = discover_asmdefs(tmp_path)
@@ -66,6 +67,7 @@ class TestDiscoverAsmdefs:
 
 class TestBuildComponentNodes:
     """`build_component_nodes` maps discovered asmdefs to strata nodes."""
+# frob:tests src/frob/strata/_unity_asmdef.py::build_component_nodes  # noqa: E501
 
     def test_two_asmdefs_two_distinct_nodes(self):
         """Acceptance 1: each discovered asmdef becomes its own node id."""

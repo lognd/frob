@@ -28,6 +28,7 @@ class TestUtilization:
     # frob:tests \
     # tests/unit/strata/test_starvation.py::TestUtilization.test_over_capacity_demand_f\
     # ires_with_arithmetic
+    # frob:tests src/frob/strata/_starvation.py::check_starvation_obligations  # noqa: E501
     def test_over_capacity_demand_fires_with_arithmetic(self):
         """T-0703 acceptance criterion: 500k declared users flowing to a
         db with mode=exclusive and no declared capacity (default holding

@@ -131,6 +131,7 @@ def _cfg(**overrides: object) -> AppConfig:
 class TestDriftReport:
     # frob:tests \
     # tests/unit/test_claude_runner.py::TestDriftReport.test_reports_drifted_and_missing
+    # frob:tests src/frob/app/claude_runner.py::drift_report
     def test_reports_drifted_and_missing(self, _repo_and_home: Path) -> None:
         report = claude_runner.drift_report(_repo_and_home)
         assert report is not None
@@ -151,6 +152,7 @@ class TestHomeClaudeMissing:
 
     # frob:tests \
     # tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_true_when_home_claud\
+    # frob:tests src/frob/app/claude_runner.py::home_claude_missing  # noqa: E501
     # e_absent
     def test_true_when_home_claude_absent(self, _repo_and_home: Path) -> None:
         """`_repo_and_home`'s own `$HOME` fixture never creates

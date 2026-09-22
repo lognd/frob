@@ -234,6 +234,7 @@ class TestFoldPublishAndResync:
         _run(["git", "add", "code.py"], stage)
         return stage, pre_land_tip
 
+    # frob:tests src/frob/tickets/_land_squash.py::_fold_publish_and_resync
     def test_ledger_only_cas_miss_rebases_and_retries_without_regates(
         self, scratch_repo: Path
     ) -> None:

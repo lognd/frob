@@ -26,6 +26,7 @@ _SAMPLE_PY = (
 
 
 class TestEventBus:
+    # frob:tests src/frob/serve/_events.py::_EventBus kind="unit"  # noqa: E501
     def test_publish_reaches_all_subscribers(self) -> None:
         # frob:tests \
         # tests/test_serve_events.py::TestEventBus.test_publish_reaches_all_subscribers
@@ -85,6 +86,7 @@ def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
     raise AssertionError("daemon never became reachable")
 
 
+# frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"  # noqa: E501
 class TestSubscribeAndWait:
     @pytest.mark.skipif(
         sys.platform == "win32",

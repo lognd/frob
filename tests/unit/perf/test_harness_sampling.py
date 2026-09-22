@@ -133,11 +133,13 @@ class TestHarnessSerialPoolsDecision:
         assert code == 0
         return calls
 
+    # frob:tests src/frob/perf/_harness.py::main  # noqa: E501
     def test_env_unset_installs_serial_pools(self, tmp_path, monkeypatch) -> None:
         """Unset `FROB_PERF_SERIAL_POOLS` falls through to the "1" default,
         which is `!= "0"` -- `install_serial_pools()` IS called."""
         calls = self._run_with_spy(tmp_path, monkeypatch, None)
         assert calls == [True]
+# frob:tests src/frob/perf/_harness.py::main  # noqa: E501
 
     def test_env_one_installs_serial_pools(self, tmp_path, monkeypatch) -> None:
         """`FROB_PERF_SERIAL_POOLS=1` explicitly is `!= "0"` -- `install_

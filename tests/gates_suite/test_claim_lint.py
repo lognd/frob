@@ -15,6 +15,7 @@ from frob.gates._claim_lint import claim_lint_gate
 from tests.conftest import _by_rule, _git_init, _write
 
 
+# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate  # noqa: E501
 def test_claim001_fires_on_unbound_never_claim(tmp_path: Path) -> None:
     """Must-fire: a function's docstring says "this never raises" with no
     `frob:invariant` directive anywhere in its span."""
@@ -34,6 +35,7 @@ def test_claim001_fires_on_unbound_never_claim(tmp_path: Path) -> None:
     assert len(violations) == 1
     assert violations[0].symref == "pkg/mod.py::parse"
 
+# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate  # noqa: E501
 
 def test_claim001_quiet_when_invariant_directive_present(tmp_path: Path) -> None:
     """Must-stay-quiet: the SAME docstring text, but WITH a

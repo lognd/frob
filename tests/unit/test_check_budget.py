@@ -98,6 +98,7 @@ class TestDerivePostLandSweepBudget:
     hardcoded `_POST_LAND_SWEEP_BUDGET_S` constant that drifted stale
     against the repo's real measured total (T-2715)."""
 
+    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s  # noqa: E501
     def test_derives_from_measured_timing_with_headroom(self, tmp_path: Path) -> None:
         """Asserts a budget derived from a recorded total of 492.18s
         across five measured stage groups covers that total, unlike a
@@ -210,6 +211,7 @@ class TestDerivePostLandSweepBudget:
 class TestBudgetTimingSampleWindow:
     """`_record_budget_timing_sample`'s rolling per-group window."""
 
+    # frob:tests src/frob/app/_check_chunking.py::_record_budget_timing_sample  # noqa: E501
     def test_appends_and_caps_window(self, tmp_path: Path) -> None:
         """More than `_BUDGET_TIMING_SAMPLE_WINDOW` samples for one group
         keeps only the most recent `_BUDGET_TIMING_SAMPLE_WINDOW`, oldest
@@ -237,6 +239,7 @@ class TestRunBudgetedCheck:
         return CheckResult(
             path=".",
             results=[ToolResult(tool=group, exit_code=0, summary=f"{group} ok")],
+        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
         )
 
     def test_runs_selected_chunks_and_reports_result(
@@ -257,6 +260,7 @@ class TestRunBudgetedCheck:
         with caplog.at_level("INFO"):
             check_run(cfg)
         assert calls == ["g1", "g2"]
+        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
         assert "BUDGET001" not in caplog.text
         assert not (tmp_path / ".frob" / "check-budget-state.json").exists()
 
@@ -334,6 +338,7 @@ class TestRunBudgetedCheck:
             for r in caplog.records
             if r.message.strip().startswith("{")
         )
+        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
         assert data["results"][0]["tool"] == "g1"
         tool_names = [r["tool"] for r in data["results"]]
         assert "budget" in tool_names
@@ -352,6 +357,7 @@ class TestRunBudgetedCheck:
             return self._fake_result(group)
 
         monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
+        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
         check_chunking_mod._save_budget_remaining(tmp_path, ["g2"])
         cfg = AppConfig(check_path=tmp_path, check_budget=1000)
         check_run(cfg)

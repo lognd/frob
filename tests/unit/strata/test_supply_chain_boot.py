@@ -29,6 +29,7 @@ class TestMissingAbiCompatWindow:
     # frob:tests \
     # tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_comp\
     # iled_artifact_node_without_compat_window_fires
+    # frob:tests src/frob/strata/_supply_chain_boot.py::check_supply_chain_boot_obligations  # noqa: E501
     def test_compiled_artifact_node_without_compat_window_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

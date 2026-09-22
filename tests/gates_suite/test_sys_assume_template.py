@@ -47,6 +47,7 @@ class TestFindTemplatedAssumes:
     """`find_templated_assumes` (pure, no design tree needed)."""
 
     # frob:tests src/frob/strata/_assume_template.py::find_templated_assumes kind="unit"
+    # frob:tests src/frob/strata/_assume_template.py::TemplatedAssumeGroup
     def test_red_on_monolith_cwe78_cluster(self) -> None:
         """GIVEN 3 assumes shaped exactly like design/frob.strata's CWE-78
         cluster (same weakness code, same owner/review, only the node

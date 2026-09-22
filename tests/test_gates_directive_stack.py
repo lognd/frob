@@ -155,6 +155,7 @@ class TestDstack001MergeFix:
             for e in edges
         }
 
+    # frob:tests src/frob/gates/_directive_stack.py::edges_for_stack
     def test_interleaved_doc_tests_doc_collapses_to_one_doc_then_one_tests(
         self, tmp_path
     ) -> None:

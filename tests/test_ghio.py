@@ -52,6 +52,7 @@ def _scripted(monkeypatch: pytest.MonkeyPatch, responses: dict[str, object]) -> 
 
 
 class TestPreflight:
+    # frob:tests src/frob/ghio.py::GhError
     def test_not_installed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -165,6 +166,7 @@ class TestPreflight:
         env = result.danger_ok
         assert env.account == "acme/frob"
         assert "2.40.0" in env.gh_version
+# frob:tests src/frob/ghio.py::preflight
 
     def test_no_gh_no_auth_no_remote_never_crashes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

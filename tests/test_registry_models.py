@@ -17,6 +17,7 @@ from frob.registry._models import (
 class TestParseDisposition:
     """`parse_disposition` -- the one grammar every registry consumer shares."""
 
+    # frob:tests src/frob/registry/_models.py::parse_disposition
     def test_handled_by(self) -> None:
         d = parse_disposition("handled_by:REF001")
         assert d.kind is DispositionKind.HANDLED_BY
@@ -35,6 +36,7 @@ class TestParseDisposition:
         d = parse_disposition("out-of-scope(manifest-extraction-artifact)")
         assert d.kind is DispositionKind.OUT_OF_SCOPE
         assert d.target == "manifest-extraction-artifact"
+# frob:tests src/frob/registry/_models.py::parse_disposition  # noqa: E501
 
     def test_undispositioned_pending(self) -> None:
         assert parse_disposition("pending").kind is DispositionKind.UNDISPOSITIONED

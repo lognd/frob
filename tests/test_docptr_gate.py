@@ -67,6 +67,7 @@ class TestDoc006FilePath:
     """Kind 1: FILE/PATH -- a repo-relative path mentioned in prose must
     exist as a tracked file."""
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_missing_path_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "docs/guide.md", "See `src/frob/gone.py` for details.\n")
@@ -76,6 +77,7 @@ class TestDoc006FilePath:
         assert found
         assert any("gone.py" in v.message for v in found)
         assert all(v.severity == Severity.ERROR for v in found)
+# frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     def test_real_path_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -83,6 +85,7 @@ class TestDoc006FilePath:
         _write(tmp_path, "docs/guide.md", "See `src/pkg/real.py` for details.\n")
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert not _by_rule(violations, "docs/guide.md")
 
     def test_unrecognized_prose_not_flagged(self, tmp_path: Path) -> None:
@@ -110,6 +113,7 @@ class TestDoc006FilePath:
 
 
 class TestDoc006DocAnchor:
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     """Kind 5: DOC-ANCHOR LINK -- `docs/x.md#anchor` must resolve both the
     file and a real heading/`<a id>` slug in it."""
 
@@ -121,6 +125,7 @@ class TestDoc006DocAnchor:
         )
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         found = _by_rule(violations, "docs/guide.md")
         assert found
         assert any("nonexistent-anchor" in v.message for v in found)
@@ -136,6 +141,7 @@ class TestDoc006DocAnchor:
 
 # frob:ticket T-2559
 # frob:ticket T-4624
+# frob:tests src/frob/gates/_docptr.py::doc006_gate
 class TestDoc006Cli:
     """Kind 2: CLI INVOCATION -- `<prog> <subcommand>` / `--flag` checked
     against the live argparse registry (same [[docblocks.commands]] config
@@ -145,6 +151,7 @@ class TestDoc006Cli:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
         _write(tmp_path, "docs/guide.md", "Run `frob nonexistent-subcommand` first.\n")
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         found = _by_rule(violations, "docs/guide.md")
@@ -156,6 +163,7 @@ class TestDoc006Cli:
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
         _write(
             tmp_path, "docs/guide.md", "Run `frob check --nonexistent-flag` first.\n"
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         )
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
@@ -323,6 +331,7 @@ class TestDoc006Config:
     """Kind 3: CONFIG REFERENCE -- `[section]`/`[section.key]` checked
     against this project's own loaded frob.toml.
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     T-2703: candidates now come from the CODE-SPAN-STRIPPED prose (plain
     text, not backtick-wrapped) -- a `[section]`/`[section.key]` shape
     INSIDE a backtick span is deliberately inert (see
@@ -416,6 +425,7 @@ class TestDoc006Config:
             tmp_path,
             "docs/guide.md",
             "See the [v2.1] release notes.\n"
+            # frob:tests src/frob/gates/_docptr.py::doc006_gate
             "Also add [bogus.section] to frob.toml.\n\n"
             "[v2.1]: https://example.com/v2.1\n",
         )
@@ -427,6 +437,7 @@ class TestDoc006Config:
 
     def test_all_caps_citation_tag_not_flagged(self, tmp_path: Path) -> None:
         """T-1016: `[IN-REPO]`-shaped tokens are prose citation TAGS, not
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         `[section]` TOML pointers -- every real config table this repo's
         own loaders read is lowercase (optionally dotted), so an ALL-CAPS
         bracketed root is structurally never a config reference."""
@@ -520,6 +531,7 @@ class TestDoc006Config:
             "Example:\n\n```toml\n[bogus.section]\n```\n",
         )
         _add_all(tmp_path)
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
@@ -531,6 +543,7 @@ class TestDoc006Symbol:
 
     def test_nonexistent_symbol_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _write(tmp_path, "pyproject.toml", '[project]\nname = "pkg"\n')
         _write(tmp_path, "src/pkg/__init__.py", "")
         _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
@@ -540,6 +553,7 @@ class TestDoc006Symbol:
         found = _by_rule(violations, "docs/guide.md")
         assert found
         assert any("nonexistent_symbol" in v.message for v in found)
+# frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     def test_real_symbol_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -631,6 +645,7 @@ class TestDoc006Waive:
             "See `src/frob/gone.py` for details.\n",
         )
         _add_all(tmp_path)
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
@@ -643,6 +658,7 @@ class TestDoc006TestsTargetShape:
     separator) is a recognized wrong shape, flagged directly regardless of
     doc content."""
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_double_separator_target_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(
@@ -677,6 +693,7 @@ class TestDoc006FileSymbol:
 
     def test_py_missing_symbol_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
         _write(tmp_path, "docs/guide.md", "See `src/pkg/mod.py::nonexistent` here.\n")
         _add_all(tmp_path)
@@ -726,6 +743,7 @@ class TestDoc006FileSymbol:
 
     def test_rust_non_pub_trait_impl_fn_passes(self, tmp_path: Path) -> None:
         """T-1228 round-3: a real, currently-defined rust function that is
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         a TRAIT-IMPL method never carries its own explicit `pub` keyword
         (visibility is inherited from the trait) -- real-corpus
         verification found several genuine functions (`parse_node`,
@@ -734,6 +752,7 @@ class TestDoc006FileSymbol:
         unlike the crate-wide `use` check kind 2 reuses."""
         _init_repo(tmp_path)
         _write(
+            # frob:tests src/frob/gates/_docptr.py::doc006_gate
             tmp_path,
             "crate/src/lib.rs",
             "impl Visitor for Walker {\n    fn parse_node(&mut self) {}\n}\n",
@@ -1269,6 +1288,7 @@ class TestDoc006ReasonFieldExclusion:
     frontmatter reason is exempt, the ticket BODY (real prose) still
     fires."""
 
+    # frob:tests src/frob/gates/_docptr.py::_blank_ticket_reason_fields
     def test_scope_change_reason_not_flagged(self, tmp_path: Path) -> None:
         """A dangling-looking backtick span inside `scope_changes[].reason`
         must NOT fire -- it is free text a human/agent wrote to justify a

@@ -158,6 +158,7 @@ class TestLegacyFlagsDeprecated:
         assert len(seen_stages) == 20
 
 
+# frob:tests src/frob/app/check_runner.py::_refuse_skip_only_conflict
 class TestSkipOnlyConflict:
     """Criterion 3: `--skip` and `--only` naming the same stage refuses."""
 

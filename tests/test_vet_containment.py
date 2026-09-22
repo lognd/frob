@@ -96,6 +96,7 @@ class TestFetchCweForCve:
         assert result.ok is False
         assert "could not verify" in result.note
 
+    # frob:tests src/frob/vet/_cache.py::ttl_cache_get
     def test_cached_body_parses_cwe_ids(self, tmp_path: Path) -> None:
         cache_path = tmp_path / "vet.db"
         body = (

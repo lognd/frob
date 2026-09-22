@@ -47,6 +47,7 @@ def _make_src_layout_project(root: Path, *, cyclic: bool) -> None:
 _PATH_SHAPES = ("src/pkg", "src", ".")
 
 
+# frob:tests src/frob/app/cycle_runner.py::run  # noqa: E501
 class TestCycleRunnerRootResolution:
     """`_build_graph`'s project-root resolution (T-2588): node identity and
     import-edge resolution must both anchor on the resolved project root,

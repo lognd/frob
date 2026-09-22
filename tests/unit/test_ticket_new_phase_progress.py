@@ -22,6 +22,7 @@ class TestPhaseProgress:
     threshold, one INFO line naming the phase once it is crossed, and
     always quiet with no command-wide clock (`start_time=None`)."""
 
+    # frob:tests src/frob/app/ticket_runner/_new.py::_report_phase_progress  # noqa: E501
     def test_fast_run_stays_quiet(self, caplog) -> None:  # noqa: ANN001
         """A run well under `_PHASE_PROGRESS_THRESHOLD_S` emits nothing --
         the fast common case must not spam phase lines (MUST-STAY-QUIET)."""
@@ -29,6 +30,7 @@ class TestPhaseProgress:
         start_time = time.monotonic()
         _report_phase_progress("ticket new", start_time, "a fast phase")
         assert caplog.records == []
+# frob:tests src/frob/app/ticket_runner/_new.py::_report_phase_progress  # noqa: E501
 
     def test_slow_run_names_the_phase(self, caplog) -> None:  # noqa: ANN001
         """A run already past the threshold logs one INFO line that names

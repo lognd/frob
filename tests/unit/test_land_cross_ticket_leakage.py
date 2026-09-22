@@ -1179,6 +1179,7 @@ class TestPassengerTickets:
         assert not (repo / "src" / "fix.py").exists()
 
     # frob:ticket T-4474
+    # frob:tests src/frob/tickets/_land_passenger_identity.py::normalize_directive_text kind="unit"  # noqa: E501
     def test_moved_and_rewrapped_directive_does_not_refuse(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -1220,6 +1221,7 @@ class TestPassengerTickets:
         assert prior_id in caplog.text
         assert "MOVED" in caplog.text
 
+    # frob:tests src/frob/tickets/_land_passenger_identity.py::classify_directive_ids kind="unit"  # noqa: E501
     # frob:ticket T-4474
     def test_refusal_message_distinguishes_new_from_moved_ids(
         self, repo: Path, caplog: pytest.LogCaptureFixture

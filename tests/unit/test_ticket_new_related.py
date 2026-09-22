@@ -55,6 +55,7 @@ def _archive_a_done_ticket(root: Path, ticket_id: str, title: str) -> None:
 
 
 class TestRelatedTicketsSearch:
+    # frob:tests src/frob/app/ticket_runner/_new.py::related_tickets
     def test_finds_an_archived_close_title_match(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_finds_an_archived_close_title_match  # noqa: E501
         _archive_a_done_ticket(

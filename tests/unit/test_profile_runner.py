@@ -31,6 +31,7 @@ def _json_records(caplog: pytest.LogCaptureFixture) -> list[dict]:
 class TestProfileRunnerShow:
     """`frob profile show`: read-only, reports configured vs effective."""
 
+    # frob:tests src/frob/app/profile_runner.py::run  # noqa: E501
     def test_show_reports_configured_and_effective(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -102,6 +103,7 @@ class TestProfileRunnerShow:
 class TestProfileRunnerDowngrade:
     """`frob profile downgrade --reason TEXT`: the ONLY sanctioned caller
     of `downgrade_profile_ratchet`."""
+# frob:tests src/frob/app/profile_runner.py::run  # noqa: E501
 
     def test_downgrade_requires_a_reason(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile_runner.py::TestProfileRunnerDowngrade.test_downgrade_requires_a_reason  # noqa: E501

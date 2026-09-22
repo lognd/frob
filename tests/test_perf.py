@@ -531,6 +531,7 @@ def test_perf003_call_operand_join_stays_narrow_no_recursive_unwind(tmp_path):
 
 
 # invariant spec: [INV-018](invariants/INV-018.md)
+# frob:tests src/frob/perf/_recursion.py::_termination_reasoned
 def test_perf005_fires_on_unproven_self_recursion(tmp_path):
     """PERF005: a self-recursive function with no descent/guard shape and
     no `frob:invariant terminates` directive is unproven -- ERROR."""
@@ -1009,6 +1010,7 @@ class TestPerf007RedundantComputation:
     """T-0413 (the PERF META-GAP): the same `frob.toml`-configured expensive
     call invoked from 2+ distinct top-level symbols with no shared cache is
     PERF007; a single call site, or a cached definition, is not."""
+# frob:tests src/frob/perf/_redundancy.py::redundant_computation_violations
 
     def test_two_stages_calling_the_same_uncached_parse_is_flagged(
         self, tmp_path: Path

@@ -25,6 +25,7 @@ class TestNodeAccessDeclarations:
     # frob:tests \
     # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_reads_access_at\
     # trs
+    # frob:tests src/frob/strata/_access.py::node_access_declarations  # noqa: E501
     def test_reads_access_attrs(self):
         """`access=<resource>:<mode>` attrs read back as typed `NodeAccess`
         pairs, in declaration order."""

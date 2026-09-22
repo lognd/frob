@@ -74,6 +74,7 @@ class TestApplyReleaseBumpOutOfTree:
     disposable worktree and folds the result into a new commit, without
     ever touching `repo`'s own checked-out files."""
 
+    # frob:tests src/frob/tickets/_land_release.py::_apply_release_bump_out_of_tree
     def test_worktree_untouched_by_out_of_tree_bump(self, scratch_repo: Path) -> None:
         """Given a real repo, when the out-of-tree bump runs a
         `bump_version` callback that writes pyproject.toml, then

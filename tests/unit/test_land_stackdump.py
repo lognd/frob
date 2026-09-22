@@ -32,6 +32,7 @@ class TestWriteStackDump:
     `dump_all_thread_stacks` and the land watchdog both call."""
 
     # frob:tests tests/unit/test_land_stackdump.py::TestWriteStackDump.test_writes_and_returns_dump_path  # noqa: E501
+    # frob:tests src/frob/testing/_stackdump.py::write_stack_dump  # noqa: E501
     def test_writes_and_returns_dump_path(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -183,6 +184,7 @@ class TestSilentPhaseDumpThreshold:
     600.0 seconds."""
 
     # frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseDumpThreshold.test_default_when_key_absent  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_dump_threshold_s  # noqa: E501
     def test_default_when_key_absent(self, tmp_path: Path) -> None:
         """No `pyproject.toml` at all -> the documented 600.0s default."""
         assert _land_cmd._land_silent_phase_dump_threshold_s(tmp_path) == 600.0

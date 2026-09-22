@@ -59,6 +59,7 @@ class TestUnblock:
     the malformed-`--by` refusal `_block` already carries."""
 
     # frob:ticket T-2681
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock  # noqa: E501
     def test_unblock_removes_edge(self, tmp_path: Path) -> None:
         """The real-world case (T-2076/T-1599): a genuinely obsolete
         `blocked_by` edge is cleared through the CLI, no store-API

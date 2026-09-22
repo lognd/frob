@@ -26,6 +26,7 @@ class TestLockfileParsers:
     def test_find_lockfile_none(self, tmp_path: Path) -> None:
         assert _find_lockfile(tmp_path) is None
 
+    # frob:tests src/frob/vet/_lockfile.py::_find_lockfile
     def test_find_lockfile_direct(self, tmp_path: Path) -> None:
         """T-0221: `frob vet uv.lock` passes the lockfile itself as `root`;
         it must resolve directly, not be misread as a directory to search

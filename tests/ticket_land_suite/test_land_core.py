@@ -290,6 +290,7 @@ class TestRecordLandCommit:
 
     # frob:ticket T-2274
     # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit  # noqa: E501
     def test_record_land_commit_never_absorbs_a_bystanders_dirty_file(
         self, v2_repo: Path
     ) -> None:
@@ -343,6 +344,7 @@ class TestRecordLandCommit:
 
     # frob:ticket T-2220
     # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit  # noqa: E501
     def test_plan_land_finalized_ticket_is_resolvable_by_ticket_id(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -905,6 +907,7 @@ class TestPreworkSweepRefresh:
     failure (or a reviewer's `frob check --ticket` run in the interim)
     never sees a sweep stale for a reason outside the ticket's own control."""
 
+    # frob:tests src/frob/gates/_prework.py::sweep_ticket kind="unit"  # noqa: E501
     def test_land_refreshes_stale_sweep_after_unrelated_main_change(
         self, repo: Path
     ) -> None:

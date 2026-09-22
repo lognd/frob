@@ -39,6 +39,7 @@ def test_map_depth_limits_recursion(project):
     assert not any("bar.cpp" in p for p in paths)
 
 
+# frob:tests src/frob/map/__init__.py::MapResult.as_text
 def test_map_as_text(project):
     result = map_project(project)
     text = result.as_text()

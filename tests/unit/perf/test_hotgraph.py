@@ -83,6 +83,7 @@ class TestResolveStream:
             path=path, language=language, functions=[_hot_loop_function()]
         )
 
+    # frob:tests src/frob/perf/_hotgraph.py::resolve_stream  # noqa: E501
     def test_leaf_in_loop_body_attributes_to_loop_section(self) -> None:
         """A sample whose leaf frame is inside the loop's line range (but
         not the branch's) resolves to the loop section, not the
@@ -198,6 +199,7 @@ class TestResolveStream:
         assert len(stream.edge_hits) == 1
         assert stream.edge_hits[0].is_external is False
 
+    # frob:tests src/frob/perf/_hotgraph.py::HitStream.unattributed_weight  # noqa: E501
     def test_unresolvable_leaf_is_unattributed_never_dropped(self) -> None:
         """NO-FAIL-SILENT: a frame matching no section in any known file
         still produces a SectionHit (sentinel id), and its weight is
@@ -220,6 +222,7 @@ class TestResolveStream:
         stream = resolve_stream(index, [SampledStack(frames=())])
         assert stream.section_hits == ()
         assert stream.edge_hits == ()
+# frob:tests src/frob/perf/_sampler.py::StackSampler
 
 
 class TestStackSampler:

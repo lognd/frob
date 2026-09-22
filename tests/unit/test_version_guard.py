@@ -81,6 +81,7 @@ def test_editable_in_tree_run_is_quiet(
     assert binary_fingerprint_warning(tmp_path) is None
 
 
+# frob:tests src/frob/app/_version_guard.py::binary_fingerprint_warning
 def test_matching_sha_is_quiet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """T-3129 must-stay-quiet: the running binary lives OUTSIDE repo_root's
     own src/frob/ (a separate editable checkout, e.g. a sibling worktree)
@@ -120,6 +121,7 @@ def test_matching_sha_is_quiet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     result = binary_fingerprint_warning(tmp_path)
     assert result is None, f"expected quiet for matching sha {repo_sha}, got: {result}"
 
+# frob:tests src/frob/app/_version_guard.py::binary_fingerprint_warning
 
 def test_mismatched_sha_warns_loudly(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -152,6 +154,7 @@ def test_mismatched_sha_warns_loudly(
     assert repo_sha in warning
     assert other_sha in warning
     assert "version" in warning.lower()
+# frob:tests src/frob/app/_version_guard.py::binary_fingerprint_warning
 
 
 def test_unresolvable_running_sha_warns(

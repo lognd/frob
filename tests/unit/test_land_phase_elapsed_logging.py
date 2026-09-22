@@ -32,6 +32,7 @@ class TestLandPhaseElapsedLogging:
         _land_cmd._land_phase_timer_start = None
 
     # frob:ticket T-4417
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_phase_elapsed_seconds
     def test_elapsed_seconds_is_monotonic_across_phase_lines(self, caplog) -> None:
         """Two "ticket land: ..." lines a measurable gap apart must carry
         strictly increasing elapsed-seconds prefixes, and the very first

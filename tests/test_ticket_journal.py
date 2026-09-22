@@ -20,6 +20,7 @@ from frob.tickets._journal import (
 
 
 class TestWriteIntent:
+    # frob:tests src/frob/tickets/_journal.py::_write_intent  # noqa: E501
     def test_write_then_read_round_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_journal.py::TestWriteIntent.test_write_then_read_round_trips  # noqa: E501
         result = _write_intent(tmp_path, "T-0001", tmp_path / "worktree")
@@ -47,6 +48,7 @@ class TestWriteIntent:
         assert result.danger_err == _JournalError.WriteFailed
 
 
+# frob:tests src/frob/tickets/_journal.py::_clear_intent  # noqa: E501
 class TestClearIntent:
     def test_clear_removes_the_file(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_removes_the_file  # noqa: E501
@@ -59,6 +61,7 @@ class TestClearIntent:
         # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_missing_file_is_a_no_op  # noqa: E501
         _clear_intent(tmp_path, "T-does-not-exist")  # must not raise
 
+# frob:tests src/frob/tickets/_journal.py::_read_all_intents  # noqa: E501
 
 class TestReadAllIntents:
     def test_reads_every_recorded_intent(self, tmp_path: Path) -> None:

@@ -25,9 +25,11 @@ class TestPolicyWeakeningGate:
     """`policy_weakening_gate` (INV051)."""
 
     # frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_no_design_dir_noop  # noqa: E501
+    # frob:tests src/frob/gates/_policy_weakening_gate.py::policy_weakening_gate  # noqa: E501
     def test_no_design_dir_noop(self, tmp_path: Path) -> None:
         assert policy_weakening_gate(tmp_path) == ()
 
+    # frob:tests src/frob/gates/_policy_weakening_gate.py::policy_weakening_gate  # noqa: E501
     # frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_weakening_detected  # noqa: E501
     def test_weakening_detected(self, tmp_path: Path) -> None:
         _write_design(

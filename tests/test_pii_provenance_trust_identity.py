@@ -97,6 +97,7 @@ class TestPii005DerivedFromContradiction:
 class TestSys116UndeclaredProvenance:
     # frob:tests src/frob/gates/_sys_provenance.py::check_undeclared_provenance \
     # kind="unit"
+    # frob:tests src/frob/strata/_pii.py::node_derived_from
     def test_undeclared_helper_fires_sys116(self):
         """Positive control: the F-273 shape -- a node carrying an
         identifier tag with NO derived_from attr at all must fire."""

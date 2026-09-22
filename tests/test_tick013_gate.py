@@ -67,6 +67,7 @@ class TestTick013EmptyScope:
         return TicketQueue(tickets={t.id: t for t in tickets})
 
     # frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_in_progress_empty_scope_fires  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick013_empty_scope_without_declaration  # noqa: E501
     def test_in_progress_empty_scope_fires(self, tmp_path: Path) -> None:
         """Must-fire control: an IN_PROGRESS ticket with an empty scope
         and no `no_scope_declared` opt-out -- the T-2377 incident shape."""

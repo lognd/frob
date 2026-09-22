@@ -81,6 +81,7 @@ class TestResolveProjectTool:
         assert identity.path == "/proj/.venv/bin/ty"
         assert identity.version == "ty 0.0.46"
 
+    # frob:tests src/frob/process/_project_tool.py::ProjectToolError  # noqa: E501
     def test_which_spawn_failure_is_err(self, tmp_path: Path) -> None:
         """A failed `which`-probe spawn is `Err(ResolveFailed)`, never a
         raised exception."""

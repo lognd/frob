@@ -39,6 +39,7 @@ class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),
     non-open ticket (DEBT002), expired until boundary (DEBT003)."""
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::debt_gate  # noqa: E501
     def test_debt002_closed_ticket_is_reported(self, tmp_path: Path) -> None:
         """T-0412: a frob:debt bound to a closed ticket is DEBT002 -- a debt
         must point at real, OPEN, owed work."""
@@ -76,6 +77,7 @@ class TestDebtGate:
             snap, queue, current_date="2026-01-01", current_version="0.1.0"
         )
         assert not any(v.rule == "DEBT002" for v in violations)
+# frob:tests src/frob/gates/_debt_deprecated.py::debt_gate  # noqa: E501
 
     def test_debt003_expired_by_date_is_reported(self, tmp_path: Path) -> None:
         # frob:tests \
@@ -134,6 +136,7 @@ class TestDebtGate:
         v = _first_rule(violations, "DEBT003")
         assert v is not None
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::debt_gate  # noqa: E501
     def test_debt001_malformed_directive_is_reported(self, tmp_path: Path) -> None:
         """T-0412: frob:debt requires BOTH reason= and ticket= -- missing
         either is DEBT001, mirroring WAIVE001's shape for frob:waive."""
@@ -480,6 +483,7 @@ class TestReleaseOpenMilestoneViolations:
             evidence=(),
             attachments=(),
             body="## Description\nx\n\n## Done report\ndone\n",
+            # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations
             milestone=milestone,
         )
 
@@ -569,6 +573,7 @@ class TestReleaseOpenMilestoneViolations:
 
 class TestDeprecatedGate:
     """T-0576: frob:deprecated -- frob:debt generalized to a public API's
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_gate  # noqa: E501
     own sunset. Malformed directive (DEPR001), non-open ticket (DEPR002),
     still-in-window warning (DEPR003), past-sunset error (DEPR004)."""
 

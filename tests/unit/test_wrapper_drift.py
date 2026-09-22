@@ -96,6 +96,7 @@ class TestWrapperDriftGate:
         apply_managed_blocks(tmp_path)
         assert wrapper_drift_gate(tmp_path) == ()
 
+    # frob:tests src/frob/gates/_wrapper_drift.py::wrapper_drift_gate  # noqa: E501
     def test_inline_sequence_in_target_body_is_wrap001(self, tmp_path):
         """Acceptance criterion 1: a target body that expands two steps
         inline is reported, and the message names the target."""
@@ -109,6 +110,7 @@ class TestWrapperDriftGate:
         makefile.write_text(text)
         violations = wrapper_drift_gate(tmp_path)
         assert any(v.rule == "WRAP001" and "check" in v.message for v in violations)
+# frob:tests src/frob/gates/_wrapper_drift.py::wrapper_drift_gate  # noqa: E501
 
     def test_target_for_removed_commands_entry_is_wrap002(self, tmp_path):
         """Acceptance criterion 2: a Makefile target naming an entry that

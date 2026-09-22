@@ -1016,6 +1016,8 @@ class TestYamlLoader:
         monkeypatch.setattr(yaml, "__with_libyaml__", False)
         assert _yaml_loader() is yaml.SafeLoader
 
+    # frob:tests src/frob/yamlio.py::_coverage_tracer_active
+    # frob:tests src/frob/tickets/_store.py::_coverage_tracer_active
     def test_detects_coverage_tracer_by_module_name(self, monkeypatch) -> None:
         """T-1333: a `sys.gettrace()` callable whose `__module__` starts
         with 'coverage' is recognized as a coverage.py tracer."""
@@ -1278,6 +1280,7 @@ class TestLedgerLockPlatformBackends:
     own (which no longer exist as module attributes) -- `ledger_lock`
     itself still raises its own `TicketLockUnavailable`, unchanged."""
 
+    # frob:tests src/frob/tickets/_store.py::TicketLockUnavailable  # noqa: E501
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1510,6 +1513,7 @@ class TestRenderChangedBlock:
 # frob:ticket T-0458
 # frob:ticket T-1536
 class TestComposeDoneReport:
+    # frob:tests src/frob/tickets/_reporting.py::compose_done_report
     def test_composes_all_three_sections(self) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_composes_all_three_sections  # noqa: E501
         from frob.tickets import compose_done_report

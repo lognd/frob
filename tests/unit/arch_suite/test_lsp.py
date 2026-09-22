@@ -19,6 +19,7 @@ class TestOverrideRaisesNotImplemented:
     """ARCH104: `check_override_raises_not_implemented`
     (docs/modules/arch.md#lsp-checks)."""
 
+    # frob:tests src/frob/arch/_solid.py::check_override_raises_not_implemented  # noqa: E501
     def test_concrete_override_raising_not_implemented_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedClass,
@@ -112,6 +113,7 @@ class TestOverrideRaisesNotImplemented:
 class TestOverrideSignatureVariance:
     """ARCH105: `check_override_signature_variance`
     (docs/modules/arch.md#lsp-checks)."""
+# frob:tests src/frob/arch/_solid.py::check_override_signature_variance  # noqa: E501
 
     def test_narrower_required_params_flagged(self) -> None:
         from frob.arch._normalized import (

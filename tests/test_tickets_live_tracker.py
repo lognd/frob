@@ -84,6 +84,7 @@ class TestLiveTrackerCitations:
         _commit_all(tmp_path, "init")
         assert live_tracker_citations(tmp_path, "T-0605") == ()
 
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
     def test_finds_registry_deferred_disposition(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_registry_deferred_disposition  # noqa: E501
         _init_repo(tmp_path)
@@ -262,6 +263,7 @@ class TestLiveTrackerCitations:
         )
         _commit_all(tmp_path, "add registry")
         assert live_tracker_citations(tmp_path, "T-0605") == ()
+# frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
 
     def test_finds_comment_waiver_ticket_attribute(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_ticket_attribute  # noqa: E501
@@ -349,6 +351,7 @@ class TestLiveTrackerCitations:
             encoding="utf-8",
         )
         _commit_all(tmp_path, "add waiver")
+        # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
         assert live_tracker_citations(tmp_path, "T-0605") == ()
 
     def test_own_scope_citation_excluded(self, tmp_path: Path) -> None:
@@ -374,6 +377,7 @@ class TestLiveTrackerCitations:
         # No further edit to mod.py -- the citation is untouched relative
         # to "main" (the only commit so far) -- must be REFUSED, not
         # excluded.
+        # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
         citations = live_tracker_citations(tmp_path, "T-0605", base_ref="main")
         assert len(citations) == 1
 

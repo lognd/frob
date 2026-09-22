@@ -609,6 +609,7 @@ def test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2932
+# frob:tests .claude/hooks/frob-suggest.py::_RULES  # noqa: E501
 def test_recursive_grep_stays_quiet_when_scoped_with_a_trailing_redirect(
     tmp_path: Path,
 ):
@@ -628,6 +629,7 @@ def test_recursive_grep_stays_quiet_when_scoped_with_a_trailing_redirect(
 
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:tests .claude/hooks/frob-suggest.py::_RULES  # noqa: E501
 # frob:ticket T-2932
 def test_recursive_grep_still_fires_unscoped_with_a_trailing_redirect(
     tmp_path: Path,
@@ -1137,6 +1139,7 @@ class TestAckSegmentation:
 
     # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
     # frob:ticket T-3851
+    # frob:tests .claude/hooks/_shellscan.py::segment_spans kind="integration"  # noqa: E501
     def test_ack_leading_its_own_segment_after_cd_disarms(self, tmp_path: Path):
         """MUST-STAY-QUIET: the reporter's measured case -- the ack leads
         its OWN segment after a `cd ... &&`, not the whole line. Must

@@ -45,6 +45,7 @@ class TestParseUnityBatchmodeXml:
         }
 
     # frob:tests tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml.test_malformed_xml_is_err_not_empty  # noqa: E501
+    # frob:tests src/frob/testing/_unity_batchmode.py::UnityBatchmodeError  # noqa: E501
     def test_malformed_xml_is_err_not_empty(self) -> None:
         # frob:tests src/frob/testing/_unity_batchmode.py::parse_unity_batchmode_xml
         text = (_FIXTURES_DIR / "malformed_results.xml").read_text(encoding="utf-8")

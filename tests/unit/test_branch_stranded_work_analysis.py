@@ -119,6 +119,7 @@ class TestTicketIdsOnBranch:
 class TestClassifyBranch:
     """`branch_analysis.classify_branch` -- the full three-way decision."""
 
+    # frob:tests scripts/branch_stranded_work_analysis.py::BranchResult
     def test_merged_when_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """An ancestor branch classifies (a) merged without touching the
         diff/ticket-signal machinery at all."""

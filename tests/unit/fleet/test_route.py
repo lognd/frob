@@ -27,6 +27,7 @@ def _init_git_repo(path: Path, *, frob_enabled: bool = True) -> None:
 
 
 class TestRouteTicket:
+    # frob:tests src/frob/fleet/__init__.py::route_ticket
     def test_route_ticket_ok(self, tmp_path: Path) -> None:
         repo_dir = tmp_path / "target-repo"
         _init_git_repo(repo_dir)

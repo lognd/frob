@@ -41,6 +41,7 @@ _REASON = "re-verified against the current render() body, still accurate"
 
 
 class TestAckRunnerRun:
+    # frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
     def test_no_refs_exits_with_error(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -51,6 +52,7 @@ class TestAckRunnerRun:
         with pytest.raises(SystemExit):
             run(cfg)
         assert "requires at least one" in caplog.text
+# frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
 
     def test_success_path_builds_cache_and_writes_lock(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
@@ -69,6 +71,7 @@ class TestAckRunnerRun:
 
         assert (tmp_path / "frob.lock").exists()
         assert f"acked {ref}" in caplog.text
+        # frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
         assert "is informational" in caplog.text
 
     def test_unresolvable_ref_exits_with_error(

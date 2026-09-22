@@ -228,6 +228,7 @@ class TestKindHistory:
         assert result.is_ok
         assert result.danger_ok.kind_history == ()
 
+    # frob:tests src/frob/tickets/_setters.py::set_kind  # noqa: E501
     def test_change_after_evidence_recorded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded  # noqa: E501
         from frob.tickets._evidence import add_evidence

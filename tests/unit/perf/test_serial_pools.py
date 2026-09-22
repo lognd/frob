@@ -101,6 +101,7 @@ class TestStackSamplerAllThreads:
         assert hit_worker, "expected at least one sample rooted in this test module"
 
 
+# frob:tests src/frob/perf/_serial_pools.py::SerialExecutor
 class TestSerialExecutor:
     """`SerialExecutor` is a transparent, same-thread drop-in for both
     pool executor shapes (T-0948)."""

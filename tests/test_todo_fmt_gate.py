@@ -48,6 +48,7 @@ class TestTodo002Edges:
     """`_todo_fmt._todo002_edges`: a `frob:todo` edge bound to a non-open
     (or missing) ticket."""
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo002_edges
     def test_open_ticket_no_violation(self) -> None:
         """A `frob:todo` edge bound to a still-open ticket raises nothing."""
         queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
@@ -108,6 +109,7 @@ class TestTodo002Edges:
 class TestTodo001BareComment:
     """`_todo_fmt._todo001_bare_comment`: bare (non-`frob:`), untracked
     deferral-marker lines inside one parsed comment."""
+# frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
 
     def test_bare_todo_fires(self) -> None:
         """A plain untracked deferral-marker comment fires TODO001 at its
@@ -124,6 +126,7 @@ class TestTodo001BareComment:
         assert v.rule == "TODO001"
         assert v.severity == Severity.WARN
         assert v.file == "pkg/mod.py"
+        # frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
         assert v.line == 12
 
     def test_frob_prefixed_line_is_not_bare(self) -> None:

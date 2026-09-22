@@ -23,6 +23,7 @@ class TestProcessReapParser:
     process_command`/`process_reap_json` -- the T-2004 "tested is not
     reached" class of gap this repo has been bitten by before."""
 
+    # frob:tests src/frob/_cli_parsers/_ops.py::_add_ops_parser  # noqa: E501
     def test_process_reap_parses_and_dispatches(self) -> None:
         """Bare `frob ops process reap` parses with `process_command ==
         'reap'` and `process_reap_json` defaulting False."""
@@ -69,6 +70,7 @@ class TestProcessRunnerReap:
     """`process_runner.run`'s `reap` branch: reports what `reap_orphaned_
     forkservers` actually did, in both text and `--json` modes, and
     refuses cleanly on an unknown subcommand."""
+# frob:tests src/frob/app/process_runner.py::run  # noqa: E501
 
     def test_reap_reports_reaped_pids(self, capsys: pytest.CaptureFixture) -> None:
         """A non-empty reap result is reported by pid, human-readable
@@ -81,6 +83,7 @@ class TestProcessRunnerReap:
         out = capsys.readouterr().out
         assert "1234" in out
         assert "5678" in out
+        # frob:tests src/frob/app/process_runner.py::run  # noqa: E501
         assert "SIGTERM" in out
 
     def test_reap_reports_nothing_reaped(self, capsys: pytest.CaptureFixture) -> None:

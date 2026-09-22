@@ -27,6 +27,7 @@ def _rule_ids(violations) -> list[str]:
 class TestCplace001:
     """`src/**/*.py` frob:waive reason-length cap."""
 
+    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
     def test_must_fire_long_waive_reason(self) -> None:
         """A `frob:waive` directive whose folded reason spans more than
         `CPLACE001_WAIVE_REASON_LIMIT_LINES` physical lines fires."""

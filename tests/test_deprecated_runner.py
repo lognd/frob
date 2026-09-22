@@ -54,6 +54,7 @@ class TestDeprecatedRunner:
     status tri-state."""
 
     # frob:ticket T-0638
+    # frob:tests src/frob/app/deprecated_runner.py::run
     def test_json_mode_lists_deprecated_entries(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

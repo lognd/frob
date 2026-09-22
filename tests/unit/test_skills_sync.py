@@ -31,6 +31,8 @@ def _make_entry(root: Path, *parts: str, content: str = "x") -> Path:
 class TestSyncSkills:
     """`sync_skills(repo_root, claude_dir)` -- the pure sync function."""
 
+    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+    # frob:tests src/frob/scaffold/_skills_sync.py::SkillsSyncReport  # noqa: E501
     def test_syncs_new_repo_entries(self, tmp_path: Path) -> None:
         """A repo-side agents/skills entry appears under claude_dir after
         one call (T-2241 acceptance[0])."""
@@ -48,6 +50,7 @@ class TestSyncSkills:
         )
         assert (claude_dir / "skills" / "bar" / "content.txt").read_text() == (
             "skill bar"
+        # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
         )
 
     def test_updates_existing_entry_in_place(self, tmp_path: Path) -> None:
@@ -59,6 +62,7 @@ class TestSyncSkills:
         assert (claude_dir / "agents" / "foo" / "content.txt").read_text() == "v1"
 
         _make_entry(repo, "agents", "foo", content="v2")
+        # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
         sync_skills(repo, claude_dir)
         assert (claude_dir / "agents" / "foo" / "content.txt").read_text() == "v2"
 
@@ -84,6 +88,7 @@ class TestSyncSkills:
         shutil.rmtree(repo / "agents" / "temp-agent")  # repo side now empty
 
         reports = sync_skills(repo, claude_dir)
+# frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
 
         assert reports["agents"].removed == ("temp-agent",)
         assert not (claude_dir / "agents" / "temp-agent").exists()

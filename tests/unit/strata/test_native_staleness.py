@@ -75,6 +75,7 @@ class TestStaleNatives:
     """`stale_natives`/`stale_native_warning`: source-tree-vs-built-artifact
     mtime comparison, T-0248."""
 
+    # frob:tests src/frob/strata/_native_staleness.py::stale_natives  # noqa: E501
     def test_reports_native_grammar_ahead_of_native(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -109,6 +110,7 @@ class TestStaleNatives:
         assert warning is not None
         assert name in warning
         assert "make core" in warning
+# frob:tests src/frob/strata/_native_staleness.py::stale_natives  # noqa: E501
 
     def test_fresh_native_reports_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -234,6 +236,7 @@ class TestStaleNatives:
         assert stale_native_warning(tmp_path) is None
 
     # frob:ticket T-2805
+    # frob:tests src/frob/strata/_native_staleness.py::record_native_build_attempt
     def test_reproducible_rebuild_clears_the_content_digest_latch(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -393,6 +396,8 @@ class TestSeedWorktreeNativeSourceMtimes:
     """T-4431: `seed_worktree_native_source_mtimes` -- a `git worktree add`
     checkout stamps every file's mtime at checkout time, which otherwise
     makes a disposable land worktree's native source dirs read as "just
+    # frob:tests src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
+    # frob:tests src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
     edited" relative to the SAME artifact `stale_natives` resolves via
     `find_spec` regardless of which root it is called with."""
 

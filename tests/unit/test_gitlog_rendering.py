@@ -69,6 +69,7 @@ def test_groups_non_breaking_only_own_type() -> None:
 
 
 # frob:tests tests/unit/test_gitlog_rendering.py::test_as_json_round_trips_groups
+# frob:tests src/frob/gitlog/__init__.py::GitLogResult.as_json
 def test_as_json_round_trips_groups() -> None:
     """`as_json` is valid JSON carrying both `commits` and a `groups` key."""
     result = GitLogResult(

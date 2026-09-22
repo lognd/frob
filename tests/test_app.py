@@ -60,6 +60,7 @@ class TestRunCoverageWait:
         assert coverage_lock_path(tmp_path) == tmp_path / ".frob" / "coverage.lock"
 
     # frob:ticket T-0803
+    # frob:tests src/frob/testing/_coverage_wait.py::run_coverage_wait
     def test_no_stamp_runs_command_and_reports_ran(self, tmp_path, monkeypatch):
         # frob:tests \
         # tests/test_app.py::TestRunCoverageWait.test_no_stamp_runs_command_and_reports\

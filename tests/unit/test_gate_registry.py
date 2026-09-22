@@ -42,6 +42,7 @@ class TestRegisterGate:
         assert reg.severity is Severity.WARN
         assert reg.reads == ("src/frob/widget.py",)
 
+    # frob:tests src/frob/gates/_registry.py::RegistryError  # noqa: E501
     def test_duplicate_job_name_is_refused(self) -> None:
         """Registering the same job name twice is `DuplicateJob`, not a
         silent overwrite of the first detector's declaration."""

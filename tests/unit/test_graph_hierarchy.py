@@ -10,6 +10,7 @@ from frob.graph._hierarchy import children_by_parent_id, descendant_ids
 class TestChildrenByParentId:
     """`children_by_parent_id` -- adjacency-map construction."""
 
+    # frob:tests src/frob/graph/_hierarchy.py::children_by_parent_id  # noqa: E501
     def test_builds_adjacency_from_parent_pairs(self) -> None:
         """Each `(id, parent)` pair with a non-None parent contributes
         one entry to the parent's child list."""

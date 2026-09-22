@@ -26,6 +26,8 @@ class TestInv007:
     """`frob:invariant ... no_import="..."` (import-forbidding)."""
 
     # frob:tests tests/unit/test_design_invariants.py::TestInv007.test_forbidden_import_fires  # noqa: E501
+    # frob:tests src/frob/gates/_design_invariants.py::inv007_violations  # noqa: E501
+    # frob:tests src/frob/arch/_normalized.py  # noqa: E501
     def test_forbidden_import_fires(self, tmp_path: Path) -> None:
         mod = tmp_path / "pure.py"
         mod.write_text("import tree_sitter\n")
@@ -101,6 +103,7 @@ class TestInv007:
 
 class TestInv008:
     """`frob:invariant ... establishes="..."` (establish-property)."""
+# frob:tests src/frob/gates/_design_invariants.py::inv008_violations  # noqa: E501
 
     # frob:tests tests/unit/test_design_invariants.py::TestInv008.test_missing_property_test_fires  # noqa: E501
     def test_missing_property_test_fires(self, tmp_path: Path) -> None:

@@ -11,6 +11,7 @@ from frob.fleet import FleetError, load_manifest
 
 # invariant spec: [INV-046](invariants/INV-046.md)
 class TestLoadManifest:
+    # frob:tests src/frob/fleet/__init__.py::load_manifest
     def test_load_manifest_ok(self, tmp_path: Path) -> None:
         # T-3914: "/abs/b" is absolute on POSIX but NOT on win32
         # (Path.is_absolute() requires a drive there), so a POSIX-only
@@ -60,6 +61,7 @@ class TestLoadManifest:
         resolved = result.danger_ok.repos[0].path
         assert resolved == (manifest_dir / "../typani")
         assert elsewhere not in resolved.parents
+# frob:tests src/frob/fleet/__init__.py::load_manifest  # noqa: E501
 
     def test_load_manifest_missing(self, tmp_path: Path) -> None:
         result = load_manifest(tmp_path / "does-not-exist.toml")

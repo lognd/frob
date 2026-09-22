@@ -59,6 +59,7 @@ def _commit(root: Path, message: str = "commit") -> None:
 class TestFieldNames:
     """PII010: field-name/type detection over Python data structures."""
 
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate
     def test_password_field_fires(self) -> None:
         # frob:tests \
         # src/frob/gates/_pii_structural/_python_fields.py::_scan_python_fields
@@ -89,6 +90,7 @@ class TestFieldNames:
         assert any(v.rule == "PII010" for v in violations)
 
     # frob:ticket T-0971
+    # frob:tests src/frob/gates/_pii_structural/_signatures.py::_camel_to_snake  # noqa: E501
     # frob:ticket T-1110
     def test_camelcase_password_hash_field_fires(self) -> None:
         # frob:tests src/frob/gates/_pii_structural/_signatures.py::_field_name_hit
@@ -123,6 +125,7 @@ class TestFieldNames:
         violations = _scan_python_fields(tree, "example.py")
         assert any(v.rule == "PII010" for v in violations)
 
+    # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_STRUCTURE_BASE_NAMES  # noqa: E501
     # frob:ticket T-0971
     def test_orm_declarative_base_field_fires(self) -> None:
         """T-0971 (gates-quality audit finding 14): a SQLAlchemy 2.0
@@ -187,6 +190,7 @@ class TestFieldNames:
 
 class TestEnvAccess:
     """SEC110: os.environ/os.getenv access-site detection."""
+# frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
 
     def test_os_getenv_fires(self) -> None:
         # frob:tests \
@@ -766,6 +770,7 @@ class TestDeclaredSurfaceJoin:
 
 
 class TestSelfMatchExclusion:
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
     """T-0201 lesson: the registry file must not detect itself."""
 
     def test_own_file_not_scanned(self, tmp_path: Path) -> None:

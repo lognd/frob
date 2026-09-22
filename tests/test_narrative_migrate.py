@@ -42,6 +42,7 @@ class TestSplitTicketId:
 class TestBlockAt:
     """`block_at` finds the block's extent from just its first line."""
 
+    # frob:tests src/frob/narrative/_migrate.py::block_at
     def test_finds_multiline_block(self) -> None:
         """The whole contiguous comment run is captured."""
         extent = block_at(_SOCKETD_LIKE_FILE, 3)
@@ -142,6 +143,7 @@ class TestMigrateBlockSplit:
         assert "See T-2678 for the history behind this." in migration.new_file_text
         assert "# see" not in migration.new_file_text
 
+    # frob:tests src/frob/narrative/_migrate.py::MigrateError
     def test_no_ticket_id_refuses(self) -> None:
         """A block that names no ticket cannot be routed anywhere."""
         text = "# just a comment\n# more comment\n"
@@ -214,6 +216,7 @@ class TestNarrativeCli:
     """`frob narrative move` argparse wiring and a `--dry-run` smoke test
     (TEST001 coverage for `add_narrative_parser`/`run_narrative_command`)."""
 
+    # frob:tests src/frob/narrative/_cli.py::add_narrative_parser
     def test_add_narrative_parser_registers_move(self) -> None:
         """`frob narrative move FILE LINE` parses into the expected
         Namespace shape."""

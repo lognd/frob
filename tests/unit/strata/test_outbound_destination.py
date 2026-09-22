@@ -34,6 +34,7 @@ def _node(node_id: str, trust: str, attrs: tuple[str, ...] = ()) -> Node:
 class TestOutboundDestinationConstraint:
     # frob:tests src/frob/strata/_outbound_destination.py::check_outbound_destination \
     # kind="unit"
+    # frob:tests src/frob/strata/_outbound_destination.py::OutboundDestinationViolation  # noqa: E501
     def test_hardcoded_literal_host_fires(self):
         backend = _node(
             "backend",

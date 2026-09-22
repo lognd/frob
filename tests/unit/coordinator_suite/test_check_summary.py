@@ -14,6 +14,7 @@ from tests.unit.conftest import (
 class TestLoadReport:
     """`check_summary.load_report`."""
 
+    # frob:tests scripts/check_summary.py::load_report
     def test_reads_path(self, tmp_path: Path) -> None:
         """A path argument is read and parsed as JSON."""
         report = _report(results=[])

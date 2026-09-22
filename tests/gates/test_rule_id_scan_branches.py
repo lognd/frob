@@ -45,6 +45,7 @@ class TestScanEmittedRuleIdsBranches:
         assert "ZZZTEST010" not in found
         assert "ZZZTEST011" in found
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids  # noqa: E501
     def test_missing_scanned_base_directory_is_skipped_not_an_error(
         self, tmp_path: Path
     ) -> None:
@@ -407,6 +408,7 @@ class TestGateRuleRegistryGate:
         found = next(v for v in matches if v.symref == "ZZZTEST030")
         assert found.severity == Severity.ERROR
         assert "not registered in _KNOWN_GATE_RULES" in found.message
+# frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
 
     def test_missing_src_dir_is_unresolved_not_silent_zero(
         self, tmp_path: Path
@@ -451,6 +453,7 @@ class TestGateRuleRegistryDownstreamRepoExemption:
     repo -- `_KNOWN_GATE_RULES` is frob's OWN gate-rule registry, and a
     consumer's own unrelated PREFIX+digits lint catalog (`COLOR001`,
     `SPACE001`) is not, and never was, measured against it. Scoped to
+    # frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
     frob's own checkout via `is_frob_own_repo` (T-2706 precedent)."""
 
     def test_downstream_repo_with_own_rule_catalog_is_silent(

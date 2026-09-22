@@ -80,6 +80,7 @@ class TestCloseMutationEvidenceBaseRef:
     """T-1438: `_close_mutation_evidence_for_ticket` must diff/repro
     against the merge-base with `base_ref`, not `current_branch(root)`."""
 
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_close_mutation_evidence_for_ticket  # noqa: E501
     def test_uses_merge_base_not_own_branch_tip(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

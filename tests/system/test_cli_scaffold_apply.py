@@ -21,6 +21,7 @@ class TestScaffoldApplyCli:
     """End-to-end CLI coverage for `frob scaffold apply` (T-0736)."""
 
     # frob:ticket T-0736
+    # frob:tests src/frob/app/scaffold_runner.py::run  # noqa: E501
     def test_apply_reports_changes(self, tmp_path: Path) -> None:
         # frob:tests tests/system/test_cli_scaffold_apply.py::TestScaffoldApplyCli.test_apply_reports_changes  # noqa: E501
         """A fresh git repo with a `frob.toml` gets the Makefile core-shim,

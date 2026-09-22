@@ -116,6 +116,7 @@ class TestSetParent:
     edge rather than silently accepting it (the whole point over a hand
     edit of `tickets/T-####/ticket.md`)."""
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_reparents_leaf_to_epic(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_reparents_leaf_to_epic  # noqa: E501
         # Positive control: a legitimate epic -> ticket edge succeeds.
@@ -150,6 +151,7 @@ class TestSetParent:
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         assert loaded.danger_ok[child_id].parent == epic_id
+# frob:tests src/frob/tickets/_setters.py::set_parent
 
     def test_self_parent_refuses(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_self_parent_refuses  # noqa: E501
@@ -158,6 +160,7 @@ class TestSetParent:
 
         result = set_parent(tmp_path, "T-0001", "T-0001", reason="test")
         assert result.is_err
+        # frob:tests src/frob/tickets/_setters.py::set_parent
         assert result.danger_err is TicketError.ParentSelfReference
 
     def test_nonexistent_parent_refuses(self, tmp_path: Path) -> None:
@@ -166,6 +169,7 @@ class TestSetParent:
         assert write_ticket(tmp_path, ticket).is_ok
 
         result = set_parent(tmp_path, "T-0001", "T-9999", reason="test")
+        # frob:tests src/frob/tickets/_setters.py::set_parent  # noqa: E501
         assert result.is_err
         assert result.danger_err is TicketError.ParentNotFound
 

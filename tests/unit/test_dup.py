@@ -346,6 +346,7 @@ class TestDupResultFormat:
         data = json.loads(result.as_json())
         assert len(data["groups"]) == len(result.groups)
 
+    # frob:tests src/frob/dup/_legacy.py::DupResult.as_text
     def test_as_text_clean_project(self):
         result = find_duplicates(FIXTURES / "simple_python" / "src")
         text = result.as_text()

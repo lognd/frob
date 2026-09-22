@@ -14,6 +14,7 @@ from frob.gates._ratchet import load_ratchet_lock
 
 # frob:ticket T-0569
 class TestPoolSnapshotCli:
+    # frob:tests src/frob/app/pool_runner.py::run
     def test_snapshot_baselines_keys(self, tmp_path: Path) -> None:
         # frob:tests tests/test_pool_runner.py::TestPoolSnapshotCli.test_snapshot_baselines_keys  # noqa: E501
         cfg = AppConfig(

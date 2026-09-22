@@ -14,6 +14,7 @@ class TestSharedState:
     # frob:tests \
     # tests/unit/strata/test_shared_state.py::TestSharedState.test_mutable_node_shared_\
     # by_two_services_fires
+    # frob:tests src/frob/strata/_shared_state.py::check_shared_state  # noqa: E501
     def test_mutable_node_shared_by_two_services_fires(self):
         model = KernelModel(
             nodes=(

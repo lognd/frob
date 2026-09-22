@@ -25,6 +25,7 @@ class TestPerf017:
     """PERF017: an if/else where only one returning branch writes to the
     cache -- the H2 audit shape (unmeasurable outcome never memoized)."""
 
+    # frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations  # noqa: E501
     def test_success_only_cache_write_is_flagged(self, tmp_path: Path) -> None:
         src = (
             "def recheck(root, pairs):\n"
@@ -38,6 +39,7 @@ class TestPerf017:
         parsed = parse_file(_write(tmp_path, "mod.py", src)).danger_ok
         violations = cache_effect_violations([parsed])
         assert any(v.rule == "PERF017" for v in violations)
+# frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations  # noqa: E501
 
     def test_both_branches_writing_cache_is_not_flagged(self, tmp_path: Path) -> None:
         src = (

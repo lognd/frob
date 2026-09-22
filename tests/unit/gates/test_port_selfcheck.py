@@ -40,6 +40,7 @@ class TestPort001:
     stays silent on allowlisted/self-excluded files, and treats an
     unresolvable project name as UNRESOLVED rather than a clean pass."""
 
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
     def test_hardcoded_path_prefix_is_flagged(self, tmp_path: Path) -> None:
         """PORT001-PATH: a `.startswith("src/frob/")`-shaped literal is
         caught -- the exact `_env_var_docs.py`/`_root_asset_dirs.py` bug
@@ -84,6 +85,7 @@ class TestPort001:
         assert len(hits) == 1
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert hits[0].severity.value == "warn"
+# frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
 
     def test_allowlisted_self_match_file_is_silent(self, tmp_path: Path) -> None:
         """The identical PORT001-PATH shape, at
@@ -107,6 +109,7 @@ class TestPort001:
 
         assert [
             v for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
+        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
         ] == []
 
     def test_non_detector_package_code_is_now_scanned_t3275(
@@ -299,6 +302,7 @@ class TestPort001:
 
         hits = [v for v in violations if v.rule == "PORT001-PATH"]
         assert len(hits) == 1
+        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
         assert "renamed-pkg" in hits[0].message
 
     def test_unresolved_project_name_is_not_a_clean_pass(self, tmp_path: Path) -> None:
@@ -318,6 +322,7 @@ class TestPort001:
         violations = port_selfcheck_gate(tmp_path)
 
         hits = [v for v in violations if v.rule == "PORT001"]
+        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
         assert len(hits) == 1
         assert hits[0].severity.value == "unresolved"
 

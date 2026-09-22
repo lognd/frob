@@ -21,6 +21,7 @@ class TestCheckCrossFileReferences:
     # frob:tests \
     # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_no_errors_\
     # when_all_resolve
+    # frob:tests src/frob/strata/_multifile.py::check_cross_file_references
     def test_no_errors_when_all_resolve(self) -> None:
         """A flow whose src/dst nodes live in a DIFFERENT file is not an
         error -- the whole point of the cross-file join (T-1196)."""

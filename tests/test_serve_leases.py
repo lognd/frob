@@ -32,6 +32,7 @@ def root(tmp_path: Path) -> Path:
 
 
 class TestResourceLeaseManager:
+    # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"  # noqa: E501
     def test_second_acquire_blocks_until_first_releases(self) -> None:
         # frob:tests \
         # tests/test_serve_leases.py::TestResourceLeaseManager.test_second_acquire_bloc\
@@ -64,6 +65,7 @@ class TestResourceLeaseManager:
         elapsed = time.monotonic() - start
         assert got is False
         assert elapsed < 2.0
+# frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"  # noqa: E501
 
     def test_release_holder_frees_every_resource_that_holder_held(self) -> None:
         # frob:tests \

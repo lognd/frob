@@ -26,6 +26,7 @@ class TestMissingTxnBoundary:
     # frob:tests \
     # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_multi_store_write_op_w\
     # ithout_boundary_fires
+    # frob:tests src/frob/strata/_txn.py::check_txn_boundary_obligations  # noqa: E501
     def test_multi_store_write_op_without_boundary_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

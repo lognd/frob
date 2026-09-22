@@ -506,6 +506,7 @@ class TestGroupGaps:
 
     # frob:tests \
     # tests/unit/strata/test_audit.py::TestGroupGaps.test_group_gaps_by_view kind="unit"
+    # frob:tests src/frob/strata/_audit.py::group_gaps_by_view
     def test_group_gaps_by_view(self):
         model = _vulnerable_model()
         result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)

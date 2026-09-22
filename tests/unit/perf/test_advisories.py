@@ -25,6 +25,7 @@ def _loop_section(qualname: str = "pkg.mod.hot_loop", section_id: str = "loop-1"
 
 
 class TestExternalCallAdvisories:
+    # frob:tests src/frob/perf/_advisories.py::external_call_advisories  # noqa: E501
     def test_dominant_external_edge_fires(self) -> None:
         loop = _loop_section()
         index = {"pkg/mod.py": [loop]}
@@ -61,6 +62,7 @@ class TestExternalCallAdvisories:
         assert external_call_advisories(stream, index) == []
 
 
+# frob:tests src/frob/perf/_advisories.py::nested_loop_fanin_advisories  # noqa: E501
 class TestNestedLoopFaninAdvisories:
     def test_hot_loop_with_multiple_callers_fires(self) -> None:
         inner = _loop_section(qualname="pkg.mod.inner", section_id="loop-inner")

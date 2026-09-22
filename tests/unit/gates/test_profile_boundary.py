@@ -70,6 +70,7 @@ def _write_allowed_layer(root: Path) -> None:
 
 class TestProfileBoundaryGate:
     # frob:ticket T-2362
+    # frob:tests src/frob/gates/_profile_boundary.py::profile_boundary_gate  # noqa: E501
     def test_negative_control_settings_layer_only_is_silent(
         self, tmp_path: Path
     ) -> None:
@@ -97,6 +98,7 @@ def _land_core(root, worktree):
         violations = profile_boundary_gate(tmp_path)
         assert violations == ()
 
+    # frob:tests src/frob/gates/_profile_boundary.py::profile_boundary_gate  # noqa: E501
     # frob:ticket T-2362
     def test_positive_control_reintroduced_branch_is_flagged(
         self, tmp_path: Path

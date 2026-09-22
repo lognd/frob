@@ -42,6 +42,7 @@ fun main() {
 class TestParseKotlin:
     """`parse_kotlin` produces a usable tree-sitter tree for `.kt`/`.kts` source."""
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::parse_kotlin  # noqa: E501
     def test_kt_fixture_parses_without_error(self) -> None:
         """A trivial `.kt` fixture parses with no `ERROR`/`MISSING` nodes."""
         tree = parse_kotlin(_KT_SOURCE)
@@ -93,6 +94,7 @@ class TestRawKotlinTree:
 
         assert "line_comment" not in labels(node)
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::COMMENT_TYPES  # noqa: E501
     def test_comment_types_cover_kotlin_line_and_block_comments(self) -> None:
         """`COMMENT_TYPES` names both of kotlin's comment node types."""
         assert COMMENT_TYPES == frozenset({"line_comment", "multiline_comment"})
@@ -126,6 +128,7 @@ fun main() {
 class TestWalkKotlin:
     """`_walk_kotlin` (T-0723) -- the `RawSymbol` walker `frob.lang._extract`'s
     `_WALKERS` dispatch table needs so a real `.kt` file flows into the
+    # frob:tests src/frob/lang/_walk_kotlin.py::_walk_kotlin  # noqa: E501
     symbol graph without a `KeyError`."""
 
     def test_walks_top_level_function(self) -> None:
@@ -133,6 +136,7 @@ class TestWalkKotlin:
         tree = parse_kotlin(_WALK_SOURCE)
         symbols = _walk_kotlin(tree.root_node)
         main = next(s for s in symbols if s.qualname == "main")
+        # frob:tests src/frob/lang/_walk_kotlin.py::_walk_kotlin  # noqa: E501
         assert main.kind == SymbolKind.FUNCTION
         assert main.public is True
 

@@ -164,6 +164,7 @@ class TestForbidRulesGateLitmus:
 
     # frob:tests \
     # tests/gates_suite/test_forbid_rules.py::TestForbidRulesGateLitmus.test_litmus_planted_violation_fires  # noqa: E501
+    # frob:tests src/frob/gates/_forbid_rules_gate.py::_forbid_rules_gate  # noqa: E501
     def test_litmus_planted_violation_fires(self, tmp_path: Path):
         """`worker`'s `eval(` call is forbidden TWICE over -- once by the
         litmus module's own explicit `NoDynamicEval` policy and once by

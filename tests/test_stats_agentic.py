@@ -149,6 +149,7 @@ def test_tool_tokens_sums_output_tokens_per_tool(tmp_path: Path):
     assert by_tool["Read"].total_tokens == 10
 
 
+# frob:tests src/frob/stats/_agentic.py::ToolCallShape  # noqa: E501
 def test_tool_call_histogram_counts_completed_calls_by_shape(tmp_path: Path):
     # frob:tests src/frob/stats/_agentic.py::agentic_report
     _write(
@@ -328,6 +329,7 @@ class TestDispatchCostReport:
         assert d.tool_call_count == 0
         assert d.wall_clock_s == 300.0
         assert d.cold_start is True
+# frob:tests src/frob/stats/_agentic_dispatch.py::DispatchRecord kind="unit"  # noqa: E501
 
     def test_tool_events_join_by_window_and_sum_tokens(self, tmp_path: Path):
         # frob:ticket T-3059

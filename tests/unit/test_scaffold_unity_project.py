@@ -34,6 +34,7 @@ class TestRenderUnityProject:
     plus one design/*.strata file per detected .asmdef."""
 
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject.test_writes_frob_toml_with_unity_excludes  # noqa: E501
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
     def test_writes_frob_toml_with_unity_excludes(self, unity_project: Path) -> None:
         result = render_unity_project(unity_project)
         assert result.is_ok, result.err
@@ -46,6 +47,7 @@ class TestRenderUnityProject:
         for glob in UNITY_EXCLUDE_GLOBS:
             assert glob in excludes
 
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject.test_one_strata_file_per_asmdef  # noqa: E501
     def test_one_strata_file_per_asmdef(self, unity_project: Path) -> None:
         result = render_unity_project(unity_project)
@@ -58,6 +60,7 @@ class TestRenderUnityProject:
         # own acceptance criterion 3) -- five files total, one per node.
         assert len(strata_files) == 5
         assert "unity_default_assembly.strata" in strata_files
+# frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
 
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject.test_returned_paths_all_exist  # noqa: E501
     def test_returned_paths_all_exist(self, unity_project: Path) -> None:
@@ -69,6 +72,7 @@ class TestRenderUnityProject:
 
 class TestOutputExistsRefusal:
     """Acceptance criterion 2: a second run without --force refuses rather
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
     than silently overwriting."""
 
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestOutputExistsRefusal.test_second_run_without_force_is_output_exists  # noqa: E501
@@ -79,6 +83,7 @@ class TestOutputExistsRefusal:
         assert first.is_ok, first.err
 
         second = render_unity_project(unity_project)
+        # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
         assert second.is_err
         assert second.danger_err is ScaffoldError.OutputExists
 

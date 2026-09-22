@@ -202,6 +202,7 @@ class TestPerfRunnerProfileWiring:
     `--tests` path (a raw `-- <argv>` profile target may not be pytest at
     all)."""
 
+    # frob:tests src/frob/app/perf_runner.py::_profile  # noqa: E501
     def test_must_fire_applies_and_warns_for_tests_path(self, tmp_path: Path) -> None:
         """`--tests` triggers both calls before `profile_command`."""
         calls: list[str] = []

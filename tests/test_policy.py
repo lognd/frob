@@ -149,6 +149,7 @@ class TestRules:
         assert result.is_ok
         assert result.danger_ok == ()
 
+    # frob:tests src/frob/policy/__init__.py::_compiled_glob
     def test_glob_double_star_matches_file_directly_under_prefix(
         self, tmp_path: Path
     ) -> None:
@@ -319,6 +320,7 @@ class TestDangerousInnerHtmlJsonStringify:
 class TestPol000:
     """T-3986: policy.pattern matching zero nodes is a config error."""
 
+    # frob:tests src/frob/policy/__init__.py::_file_pattern_matches
     # frob:ticket T-3986
     def test_pol000_fires_on_zero_match_pattern(self, tmp_path: Path) -> None:
         """Positive control: a compiling query for a node type that never

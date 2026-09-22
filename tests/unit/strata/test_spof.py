@@ -16,6 +16,7 @@ class TestSpof:
     # frob:tests \
     # tests/unit/strata/test_spof.py::TestSpof.test_singleton_node_with_critical_inboun\
     # d_fires
+    # frob:tests src/frob/strata/_spof.py::check_spof  # noqa: E501
     def test_singleton_node_with_critical_inbound_fires(self):
         model = KernelModel(
             nodes=(

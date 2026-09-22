@@ -189,6 +189,7 @@ class TestD02ScopeBinding:
         # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_allows_when_covers_scope_true  # noqa: E501
         _assert_transition_to_done_allows(tmp_path, covers_scope=True)
 
+    # frob:tests src/frob/tickets/_scope_coverage.py::evidence_covers_scope
     def test_evidence_covers_scope_true_for_bound_test(self) -> None:
         # frob:tests \
         # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_bound_test  # noqa: E501

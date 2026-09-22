@@ -32,6 +32,7 @@ from frob.vet._capability_registry import (
 class TestMatrixExhaustiveness:
     # frob:tests src/frob/vet/_capability_registry/_matrix.py::_unexcused_empty_cells \
     # kind="unit"
+    # frob:tests src/frob/vet/_capability_registry/_matrix.py::_new_adapter_matrix_excuses  # noqa: E501
     def test_no_unexcused_empty_cells(self) -> None:
         """T-0158's core exhaustiveness claim: every (kind, language) cell is
         either patterned or excused. Any unexcused empty cell fails loudly

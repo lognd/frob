@@ -712,6 +712,7 @@ class TestFixEngineTierA:
         assert applied == []
 
     # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    # frob:tests src/frob/gates/_fix_engine.py::MergeTargetKnownIds
     def test_tick006_id_on_merge_target_but_not_worktree_is_silent(
         self, tmp_path: Path
     ) -> None:
@@ -1423,6 +1424,7 @@ class TestFixEngineTierA:
             encoding="utf-8",
         )
 
+    # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys111_capability_ratchet_sync kind="unit"  # noqa: E501
     # frob:ticket T-2001
     def test_sys111_bumps_growth_this_lands_diff_caused(self, tmp_path: Path) -> None:
         # frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_bumps_growth_this_lands_diff_caused  # noqa: E501
@@ -2399,6 +2401,7 @@ class TestFixEngineScopeLease:
         root.mkdir()
         _git_init(root)
         return root
+# frob:tests src/frob/gates/_fix_engine_scope.py::SkippedFix
 
     def test_out_of_scope_fix_is_reverted_and_reported(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
@@ -2772,6 +2775,7 @@ class TestFixEngineTierB:
             encoding="utf-8",
         )
         return path
+# frob:tests src/frob/gates/_fix_engine_tier_b.py::fix_tierbdemo001_marker_rewrite
 
     # -- acceptance [0]: a clean Tier-B fix commits ------------------------
 

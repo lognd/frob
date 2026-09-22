@@ -30,6 +30,7 @@ class TestPredicates:
     # frob:tests \
     # tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_external_depend\
     # ency
+    # frob:tests src/frob/strata/_circuit_breaker.py::is_external_dependency
     def test_is_external_dependency(self):
         assert is_external_dependency(("external",))
         assert not is_external_dependency(("critical",))

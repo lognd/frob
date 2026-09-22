@@ -132,6 +132,7 @@ def _commit(root: Path, *files: tuple[str, str]) -> str:
 class TestTick014:
     """`empty_code_diff_violations(_UNUSED_ROOT, queue)` -- TICK014."""
 
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
     def test_bug_warns(self) -> None:
         """MUST-FIRE: a done BUG-kind ticket whose Changed block lists
         only a `tickets/` path fires TICK014."""
@@ -148,6 +149,7 @@ class TestTick014:
         assert len(violations) == 1
         assert violations[0].rule == "TICK014"
         assert "T-9001" in violations[0].message
+# frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
 
     def test_feature_warns(self) -> None:
         """MUST-FIRE: the symmetric FEATURE-kind case, and the exact
@@ -162,6 +164,7 @@ class TestTick014:
         queue = TicketQueue(tickets={t.id: t})
         violations = empty_code_diff_violations(_UNUSED_ROOT, queue)
         assert len(violations) == 1
+        # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
         assert violations[0].rule == "TICK014"
 
     def test_docs_kind_quiet(self) -> None:
@@ -172,6 +175,7 @@ class TestTick014:
             kind=TicketKind.DOCS,
             body=_changed_block(" tickets/T-9003/ticket.md | 5 +++"),
         )
+        # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
         queue = TicketQueue(tickets={t.id: t})
         assert empty_code_diff_violations(_UNUSED_ROOT, queue) == ()
 
@@ -183,6 +187,7 @@ class TestTick014:
             kind=TicketKind.BUG,
             tier=TicketTier.EPIC,
             body=_changed_block(" tickets/T-9004/ticket.md | 3 +"),
+        # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations  # noqa: E501
         )
         queue = TicketQueue(tickets={t.id: t})
         assert empty_code_diff_violations(_UNUSED_ROOT, queue) == ()
@@ -196,6 +201,7 @@ class TestTick014:
             ticket_id="T-9005",
             kind=TicketKind.BUG,
             no_scope_declared=True,
+            # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations  # noqa: E501
             body=_changed_block(" tickets/T-9005/ticket.md | 8 ++++"),
         )
         queue = TicketQueue(tickets={t.id: t})

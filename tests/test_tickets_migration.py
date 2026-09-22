@@ -256,6 +256,7 @@ class TestMigrateV1ToV2:
         assert second.is_ok
         assert second.danger_ok == 0
 
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_v1_to_v2  # noqa: E501
     def test_golden_round_trip_semantic_equality(self, tmp_path: Path) -> None:
         """GIVEN the fixture monofile ledger (T-1259 acceptance[3])
         WHEN migrated to v2 THEN the same id set and equal per-ticket
@@ -383,6 +384,7 @@ class TestMigrateCliFillGapsFlag:
     cited evidence, method bodies now assert removal. Still-live
     engine-level coverage for `migrate_missing_v2` is
     `TestMigrateMissingV2` below."""
+# frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
 
     def test_fill_gaps_flag_calls_migrate_missing_v2(
         self, tmp_path: Path, caplog
@@ -719,6 +721,7 @@ class TestMigrateMissingV2:
     `migrate_v1_to_v2` leaves open once a repo is already v2-mode
     (already-v2 no-ops the whole migrator, so legacy monofile-only
     tickets from before full cutover never get a v2 file at all)."""
+# frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2  # noqa: E501
 
     def test_migrates_only_the_monofile_only_tickets(self, tmp_path: Path) -> None:
         """GIVEN a repo that is ALREADY v2-mode (one ticket already has a
@@ -792,6 +795,7 @@ class TestMigrateMissingV2:
 
         second = migrate_missing_v2(tmp_path)
         assert second.is_ok
+        # frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
         assert second.danger_ok == 0
 
     def test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated(

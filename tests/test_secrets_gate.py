@@ -294,6 +294,7 @@ class TestFakeMarking:
         violations = secrets_gate(repo)
         assert any(v.rule == "SEC001" for v in violations)
 
+    # frob:tests src/frob/gates/_secrets.py::secrets_gate
     def test_fake_marker_same_line(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)

@@ -55,6 +55,7 @@ class TestIsSourceStaleVsMain:
     I/O -- directly testable against synthetic content."""
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_unmodified_source_behind_main_is_stale  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
     def test_unmodified_source_behind_main_is_stale(self, hook) -> None:  # noqa: ANN001
         """MUST-FIRE shape: the worktree never touched the file since
         branching (source == merge-base), and main moved it on -- stale."""
@@ -63,6 +64,7 @@ class TestIsSourceStaleVsMain:
             is True
         )
 
+    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_worktree_own_edit_is_never_stale_even_if_main_also_moved  # noqa: E501
     def test_worktree_own_edit_is_never_stale_even_if_main_also_moved(
         self, hook
@@ -76,6 +78,7 @@ class TestIsSourceStaleVsMain:
             )
             is False
         )
+# frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_source_matches_main_is_not_stale  # noqa: E501
     def test_source_matches_main_is_not_stale(self, hook) -> None:  # noqa: ANN001

@@ -704,6 +704,8 @@ class TestToolResultBuilderExclusion:
 
 
 class TestPatternRecommender:
+    # frob:tests src/frob/arch/_patterns.py::iter_type_switch_chains  # noqa: E501
+    # frob:tests src/frob/arch/_patterns.py::_PatternRuleSpec  # noqa: E501
     def test_isinstance_chain_recommends_strategy(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
