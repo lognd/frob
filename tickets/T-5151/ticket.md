@@ -2,7 +2,7 @@
 id: T-5151
 title: 'frob ticket attach --remove PATH: first-class attachment removal with ledger
   record cleanup'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-20'
@@ -27,6 +27,8 @@ scope:
 - src/frob/app/config.py
 - tests/unit/test_draft_finalize_attachments.py
 - tests/test_tickets.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -78,6 +80,18 @@ scope_changes:
     paths)
   actor: logan
   at: '2026-09-21'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: declare remove_attachment''s fs.write (file unlink) capability
+    on tickets_ledger and bump the via-count ratchet'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SELFAUDIT001: declare remove_attachment''s fs.write (file unlink) capability
+    on tickets_ledger and bump the via-count ratchet'
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -91,11 +105,22 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/test_tickets.py::TestRemoveAttachment::test_removes_file_and_ledger_record
+- tests/test_tickets.py::TestRemoveAttachment::test_matches_by_basename
+- tests/test_tickets.py::TestRemoveAttachment::test_remove_all
+- tests/test_tickets.py::TestRemoveAttachment::test_no_matching_path_is_err
+- tests/test_tickets.py::TestRemoveAttachment::test_refuses_when_cited_in_done_report
 designated_repro_test: null
 acceptance:
 - text: given a ticket with one attachment, when frob ticket attach ID --remove PATH
     runs, then the file is gone, the record is gone, and the ledger commit is made
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestRemoveAttachment::test_removes_file_and_ledger_record
+  - tests/test_tickets.py::TestRemoveAttachment::test_matches_by_basename
+  - tests/test_tickets.py::TestRemoveAttachment::test_remove_all
+  - tests/test_tickets.py::TestRemoveAttachment::test_no_matching_path_is_err
+  - tests/test_tickets.py::TestRemoveAttachment::test_refuses_when_cited_in_done_report
 threat: null
 component: tickets
 anchor: false
