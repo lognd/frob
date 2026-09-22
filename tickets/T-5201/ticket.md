@@ -18,6 +18,7 @@ scope:
 - src/frob/app/explore_runner.py
 - tests/unit/test_explore_runner_parse_artifact_cache.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
   glob: design/frob.strata
   reason: 'SELFAUDIT001: declare cli node''s env.read/env.write via explore_runner.py
     for the new PARSE_ARTIFACT_CACHE_ENV stamp'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet ceiling bump for cli env.read/env.write after declaring explore_runner.py
   actor: logan
   at: '2026-09-22'
 evidence:
