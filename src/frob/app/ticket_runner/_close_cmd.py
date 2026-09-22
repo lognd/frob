@@ -704,11 +704,12 @@ def _version_covers(declared: str, needed: str) -> bool:
 
 
 # frob:ticket T-1648
+# frob:ticket T-5199
 # frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_refuses_when_disclosure_language_has_no_filed_ticket  # noqa: E501
 # frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_allows_when_filed_ticket_is_open  # noqa: E501
 # frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_refuses_when_filed_ticket_is_already_closed  # noqa: E501
 # frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_clean_narrative_is_unaffected  # noqa: E501
-def _undisclosed_remainder_reason(root: Path, ticket) -> str | None:  # noqa: ANN001
+def _undisclosed_remainder_reason(root: Path, ticket, queue_result=None) -> str | None:  # noqa: ANN001
     """T-1648: `None` if `ticket`'s Done report carries no disclosure-
     shaped language (`disclosure_shaped_language`), OR if it does but a
     `Filed:` line (`filed_followup_tickets`) names at least one real,
@@ -729,7 +730,13 @@ def _undisclosed_remainder_reason(root: Path, ticket) -> str | None:  # noqa: AN
     ticket does not itself describe the disclosed remainder. The goal
     (per the ticket's own note) is to make the author pause and record
     SOMETHING checkable, not to punish honest disclosure with ceremony
-    heavy enough that agents stop disclosing."""
+    heavy enough that agents stop disclosing.
+
+    T-5199: `queue_result` lets a caller that already loaded the queue
+    this same invocation (e.g. `_close`'s single upfront load, batched
+    alongside the `blocked_by` check) pass it in instead of this
+    function spawning its own redundant `load_queue` -- `None` (every
+    other/older caller) preserves the original self-loading behavior."""
     from frob.gates import _OPEN_STATES
     from frob.tickets import load_queue
     from frob.tickets._reporting import (
@@ -748,7 +755,8 @@ def _undisclosed_remainder_reason(root: Path, ticket) -> str | None:  # noqa: AN
             "but no 'Filed:' line names a follow-up ticket"
         )
 
-    queue_result = load_queue(root)
+    if queue_result is None:
+        queue_result = load_queue(root)
     if queue_result.is_err:
         _log.warning(
             "ticket close: %s could not load queue to verify Filed: "
@@ -1391,6 +1399,7 @@ def _apply_no_behavior_change_directive(root: Path, cfg: AppConfig) -> None:
     )
 
 
+# frob:ticket T-5199
 def _close(root: Path, cfg: AppConfig) -> None:
     """Transition a ticket to done; if `--evidence` ids or `--evidence-cmd`
     were given, validate and append them first (`_apply_evidence` /
@@ -1449,8 +1458,19 @@ def _close(root: Path, cfg: AppConfig) -> None:
     # loaded before this call's own --evidence/--evidence-cmd applied.
     fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
 
+    # T-5199: one queue load shared by the remainder-disclosure check and
+    # the blocked_by check below -- nothing mutates the ledger between
+    # `fresh_ticket` above and `transition` further down, so a second
+    # independent `load_queue` here was pure redundant I/O (M4/M5 perf
+    # audit, T-5135).
+    from frob.tickets import load_queue
+
+    close_time_queue_result = load_queue(root)
+
     # frob:ticket T-1648
-    remainder_reason = _undisclosed_remainder_reason(root, fresh_ticket)
+    remainder_reason = _undisclosed_remainder_reason(
+        root, fresh_ticket, close_time_queue_result
+    )
     if remainder_reason is not None:
         _log.error(
             "close failed: %s -- %s -- file a follow-up (`frob ticket new "
@@ -1466,9 +1486,7 @@ def _close(root: Path, cfg: AppConfig) -> None:
 
     # frob:ticket T-3087
     if fresh_ticket.blocked_by:
-        from frob.tickets import load_queue
-
-        blockers_queue = load_queue(root)
+        blockers_queue = close_time_queue_result
         if blockers_queue.is_err:
             _log.warning(
                 "close: %s could not load queue to verify blocked_by %s "

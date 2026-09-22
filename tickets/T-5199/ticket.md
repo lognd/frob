@@ -1,7 +1,7 @@
 ---
 id: T-5199
 title: 'ticket_runner _close_cmd/_lifecycle: batch repeated load_queue calls (M4/M5)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-21'

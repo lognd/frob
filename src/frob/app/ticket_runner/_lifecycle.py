@@ -569,8 +569,12 @@ def _default_cluster_worktree(root: Path, cluster_id: str) -> Path:
 
 
 # frob:ticket T-1243
+# frob:ticket T-5199
 def _refuse_on_cluster_scope_conflict(
-    root: Path, cluster_id: str, members: tuple
+    root: Path,
+    cluster_id: str,
+    members: tuple,
+    queue_result=None,  # noqa: ANN001
 ) -> None:
     """`sys.exit(1)` naming the conflicting ticket/glob if the union scope of
     `members` (T-1243) overlaps an ALREADY in-progress ticket's active
@@ -578,7 +582,14 @@ def _refuse_on_cluster_scope_conflict(
     lone-ticket mission, already holding overlapping files) -- preserves
     the disjoint-scope dispatch guarantee `frob.tickets.leased_by` already
     gives single-ticket `start`/`doable` at the cluster level too. A clean
-    return means the whole union scope is free to lease."""
+    return means the whole union scope is free to lease.
+
+    T-5199: `_work_cluster` already loads the queue itself (to compute
+    `members` via `cluster_descendants`) immediately before calling this,
+    with no ledger mutation in between -- `queue_result` lets it pass
+    that same load in instead of this function spawning a second,
+    redundant `load_queue` (M4/M5 perf audit, T-5135). `None` (any other
+    caller) preserves the original self-loading behavior."""
     from frob.tickets import load_queue
     from frob.tickets._brief import cluster_union_scope
     from frob.tickets._doable import _all_leases
@@ -589,7 +600,8 @@ def _refuse_on_cluster_scope_conflict(
     if not union_scope:
         return
 
-    queue_result = load_queue(root)
+    if queue_result is None:
+        queue_result = load_queue(root)
     if queue_result.is_err:
         return
     queue = queue_result.danger_ok
@@ -652,6 +664,7 @@ def _start_cluster_members(
 
 # frob:ticket T-1243
 # frob:ticket T-1790
+# frob:ticket T-5199
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_work_cluster_refuses_from_a_nested_worktree  # noqa: E501
 def _work_cluster(root: Path, cfg: AppConfig) -> None:
     """`frob ticket work --cluster <epic-or-story-id> [--worktree PATH]`
@@ -704,7 +717,7 @@ def _work_cluster(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
-    _refuse_on_cluster_scope_conflict(root, cluster_id, members)
+    _refuse_on_cluster_scope_conflict(root, cluster_id, members, queue_result)
 
     # frob:ticket T-1790
     if _root_is_itself_a_nested_worktree(root.resolve()):
