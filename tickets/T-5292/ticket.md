@@ -58,5 +58,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5292
+branch: t-5292
 ---
 gh run 35717833933 ubuntu Test job; re-verified on dev tip 3acf8c6b30: tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean fails -- ~35 real tickets carry unknown ledger field(s) ['branch','worktree'], gate treats as TICK008 violation on the live repo ledger itself.
