@@ -1,5 +1,5 @@
 ---
-id: T-draft-534e8344
+id: T-5285
 title: CLI shim announce_shim logs at INFO, leaking a stray line onto every shimmed
   command's stdout (breaks --json)
 state: queued
