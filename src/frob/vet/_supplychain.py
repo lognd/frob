@@ -41,7 +41,7 @@ import yaml
 from packaging.requirements import InvalidRequirement, Requirement
 
 from frob.excludes import iter_files
-from frob.gates._models import Severity, Violation
+from frob.findings import Severity, Violation
 from frob.logging import get_logger
 from frob.vet._source import _read_text_or_empty
 
@@ -185,8 +185,7 @@ def _cargo_toml_unpinned_violations(project_root: Path) -> list[Violation]:
 # frob:enforces SC-ATTACK-UNPINNED-DEPENDENCIES
 # frob:enforces CHK-GATE-VET007
 # frob:tests \
-# tests/vet_suite/test_supply_chain.py::TestSupplyChainUnpinnedDependencies.test_pyproj\
-# ect_caret_range_flagged
+# tests/vet_suite/test_supply_chain.py::TestSupplyChainUnpinnedDependencies.test_pyproject_caret_range_flagged  # noqa: E501
 def _unpinned_dependency_violations(project_root: Path) -> list[Violation]:
     """VET007: a manifest (pyproject.toml/package.json/Cargo.toml) dependency
     spec with no exact pin -- a purely structural property of the manifest
@@ -260,8 +259,7 @@ def _is_escaping_data_files_dest(dest: str) -> bool:
 # frob:enforces SC-DETECTION-PYTHON-INSTALL-ARTIFACTS
 # frob:enforces CHK-GATE-VET008
 # frob:tests \
-# tests/vet_suite/test_supply_chain.py::TestSupplyChainInstallArtifacts.test_setup_py_a\
-# bsolute_data_files_flagged
+# tests/vet_suite/test_supply_chain.py::TestSupplyChainInstallArtifacts.test_setup_py_absolute_data_files_flagged  # noqa: E501
 def _python_install_artifact_violations(project_root: Path) -> list[Violation]:
     """VET008: setup.py/setup.cfg `data_files` writing to an absolute path or
     escaping the package via `../` traversal -- an installed artifact landing
@@ -353,8 +351,7 @@ def _is_full_commit_sha(ref: str) -> bool:
 # frob:enforces SC-DETECTION-UNPINNED-CI-ACTION
 # frob:enforces CHK-GATE-VET009
 # frob:tests \
-# tests/vet_suite/test_supply_chain.py::TestSupplyChainCiActionPin.test_workflow_branch\
-# _ref_flagged
+# tests/vet_suite/test_supply_chain.py::TestSupplyChainCiActionPin.test_workflow_branch_ref_flagged  # noqa: E501
 def _unpinned_ci_action_violations(project_root: Path) -> list[Violation]:
     """VET009: a GitHub Actions `uses: owner/action@ref` where `ref` is a
     mutable branch/tag rather than a full 40-hex-char commit SHA -- a
@@ -423,8 +420,7 @@ def _has_nearby_build_recipe(path: Path, project_root: Path) -> bool:
 # frob:enforces SC-DETECTION-OPAQUE-BINARY-ARTIFACT
 # frob:enforces CHK-GATE-VET010
 # frob:tests \
-# tests/vet_suite/test_supply_chain.py::TestSupplyChainOpaqueBinaryArtifact.test_tracke\
-# d_so_without_recipe_flagged
+# tests/vet_suite/test_supply_chain.py::TestSupplyChainOpaqueBinaryArtifact.test_tracked_so_without_recipe_flagged  # noqa: E501
 def _opaque_binary_artifact_violations(project_root: Path) -> list[Violation]:
     """VET010: a tracked binary blob (.whl/.so/.node/.wasm and similar)
     committed directly into source control with no accompanying build
@@ -453,8 +449,7 @@ def _opaque_binary_artifact_violations(project_root: Path) -> list[Violation]:
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:tests \
-# tests/vet_suite/test_supply_chain.py::TestSupplyChainUnpinnedDependencies.test_pyproj\
-# ect_caret_range_flagged
+# tests/vet_suite/test_supply_chain.py::TestSupplyChainUnpinnedDependencies.test_pyproject_caret_range_flagged  # noqa: E501
 def supply_chain_tree_violations(project_root: Path) -> list[Violation]:
     """VET007-VET010: the four project-tree-wide, once-per-scan supply-chain
     structural checks folded into `scan_tree` (docs/modules/vet.md

@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from frob.gates._models import Severity, Violation
+from frob.findings import Severity, Violation
 from frob.vet._cache import _latest_verdict
 from frob.vet._models import Dependency, PackageVerdict, VetConfig, capability_diff
 from frob.vet._registry import _fetch_publish_date
@@ -104,8 +104,7 @@ def _vet001_violation(
 # coincidental short-function shape, unrelated rule domains"
 # frob:invariant INV-025
 # frob:tests \
-# tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble.test_high_entropy_string\
-# _flagged
+# tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble.test_high_entropy_string_flagged  # noqa: E501
 # frob:enforces SC-DETECTION-OBFUSCATED-SOURCE
 # frob:enforces SC-DETECTION-ENTROPY-BLOB
 # frob:enforces SC-DETECTION-TROJAN-SOURCE

@@ -2,7 +2,7 @@
 id: T-5215
 title: frob.app.telemetry.redact_command now transitively loads frob.gates (T-1318
   boundary regression)
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-09-21'
@@ -84,6 +84,11 @@ body_changes:
   at: '2026-09-21'
   old_length: 1406
   new_length: 3183
+evidence:
+- tests/unit/security/test_redact.py::TestRedactCommandImportGraph::test_calling_redact_command_never_loads_frob_gates
+- tests/unit/security/test_redact.py::TestRedactModuleImportGraph::test_importing_redact_module_never_loads_frob_gates
+- tests/unit/security/test_redact.py::TestPolicyModuleImportGraph::test_importing_frob_does_not_load_frob_gates
+- tests/unit/security/test_redact.py::TestPolicyModuleImportGraph::test_importing_frob_policy_does_not_load_frob_gates
 designated_repro_test: null
 threat: null
 component: null

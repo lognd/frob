@@ -18,7 +18,7 @@ from typani.result import Result
 
 from frob._daemon_timeout import _run_bounded
 from frob.excludes import iter_files
-from frob.gates._models import Severity, Violation
+from frob.findings import Severity, Violation
 from frob.logging import get_logger
 from frob.vet._allow import _load_vet_config
 from frob.vet._cache import _store_verdict

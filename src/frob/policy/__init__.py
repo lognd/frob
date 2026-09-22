@@ -31,7 +31,12 @@ from tree_sitter_language_pack import get_language, get_parser
 from typani import Err, Ok
 from typani.result import Result
 
-from frob.gates._models import Severity, Violation, WaiverRef
+# T-5215: from frob.findings (the leaf module frob.gates._models itself
+# re-exports these from, T-1201), not frob.gates._models directly --
+# importing a frob.gates submodule always executes the whole heavy
+# frob.gates.__init__ first, which frob.app.telemetry's T-1318 redact
+# boundary requires never happen anywhere on frob's own import path.
+from frob.findings import Severity, Violation, WaiverRef
 from frob.gitio import Diff
 from frob.graph import GraphSnapshot
 from frob.lang import extract_imports as _lang_extract_imports

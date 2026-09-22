@@ -105,3 +105,41 @@ class TestGatesSecretsStillWorksViaTheExtractedModule:
             # Severity(pattern.severity) at its own Violation call site;
             # this proves every stored value actually round-trips.
             assert Severity(pattern.severity) in (Severity.ERROR, Severity.WARN)
+
+
+class TestPolicyModuleImportGraph:
+    """T-5215: `import frob.policy` -- reached from `frob`'s own top-level
+    `__init__.py` (via `frob.doctor` -> `frob.app.run_runner` ->
+    `frob.policy`) on every single `import frob`, long before any
+    caller-chosen submodule (`frob.app.telemetry` included) gets a
+    chance to avoid it -- must never pull in `frob.gates` either.
+    `frob.policy` used to import `Severity`/`Violation`/`WaiverRef` from
+    `frob.gates._models` (a submodule of the heavy `frob.gates` package,
+    so importing it always executes `frob/gates/__init__.py`'s entire
+    eager stage roster first, ordinary Python package-import semantics)
+    -- now imports the same three names from `frob.findings` instead
+    (the leaf module `frob.gates._models` itself already re-exports them
+    from, T-1201's own split), which imports no `frob.*` module at all.
+
+    Fixing `frob.policy` alone was not sufficient to make plain
+    `import frob` gates-free: `frob.vet._ecosystem`/`_scan`/
+    `_scan_violations`/`_supplychain` (reached from `frob`'s own init via
+    `frob.doctor`) had the identical `frob.gates._models` anti-pattern
+    for the same two names, and `frob.testing._coverage_wait` imported
+    `frob.gates._coverage.load_stamp` at module level (reached from
+    `frob.testing.__init__`, also on `frob`'s own init path) -- all
+    fixed alongside (frob.findings re-export for the four `frob.vet`
+    sites; a deferred, function-local import for `load_stamp`, which has
+    no `frob.gates`-independent leaf-module home to move to)."""
+
+    def test_importing_frob_does_not_load_frob_gates(self) -> None:
+        # frob:tests tests/unit/security/test_redact.py::TestPolicyModuleImportGraph.test_importing_frob_does_not_load_frob_gates  # noqa: E501
+        code = "import sys\nimport frob\nprint('frob.gates' in sys.modules)\n"
+        out = _run(code)
+        assert out == "False", out
+
+    def test_importing_frob_policy_does_not_load_frob_gates(self) -> None:
+        # frob:tests tests/unit/security/test_redact.py::TestPolicyModuleImportGraph.test_importing_frob_policy_does_not_load_frob_gates  # noqa: E501
+        code = "import sys\nimport frob.policy\nprint('frob.gates' in sys.modules)\n"
+        out = _run(code)
+        assert out == "False", out

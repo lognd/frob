@@ -15,7 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.excludes import iter_files
-from frob.gates._models import Severity, Violation
+from frob.findings import Severity, Violation
 from frob.vet._models import Dependency
 from frob.vet._source import _read_text_or_empty
 

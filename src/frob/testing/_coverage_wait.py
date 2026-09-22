@@ -57,10 +57,17 @@ from typani.error_set import ErrorSet
 # frob.gates.__init__ imports from frob.testing (public re-export of
 # CollectedTests et al.); importing the *package* here would form a
 # circular import that survives merely by accident of import order
-# (T-0634). Import `load_stamp` from its actual home module instead --
-# frob.gates._coverage does not import frob.testing -- so frob.testing
-# can be imported standalone with no ordering dependency on frob.gates.
-from frob.gates._coverage import load_stamp
+# (T-0634). `load_stamp` lives in frob.gates._coverage, which does not
+# itself import frob.testing -- so no ORDERING cycle exists -- but
+# T-1318/T-5215 add a second reason to defer this past T-0634's own
+# module-vs-package distinction: `frob.gates._coverage` is still a
+# submodule of the heavy `frob.gates` package, so even this single-
+# function import forces `frob.gates.__init__`'s entire eager stage
+# roster to load (ordinary Python package-import semantics) the moment
+# ANY caller imports frob.testing -- including frob.app.telemetry's
+# redact_command call path, which T-1318 requires to NEVER load
+# frob.gates. Deferred into `_is_stamp_fresh` (this module's one real
+# caller) instead of a module-level import.
 from frob.gitio import git_common_dir
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
@@ -378,6 +385,8 @@ def _is_stamp_fresh(root: Path, snapshot: GraphSnapshot) -> bool:
     stamp, or any current source file's hash missing/changed since the
     stamp, is NOT fresh.
     """
+    from frob.gates._coverage import load_stamp
+
     stamp = load_stamp(root)
     if stamp is None:
         return False
