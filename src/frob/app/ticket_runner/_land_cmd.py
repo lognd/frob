@@ -3784,6 +3784,7 @@ def _sync_gate_rules_for_land(root: Path, pre_land_tip: str):  # noqa: ANN201
 
 # frob:ticket T-0338
 # frob:ticket T-1007
+# frob:ticket T-5034
 def _required_release_bump(root: Path, final_id: str):  # noqa: ANN201
     """The REL001-required version string for `root`'s current public API
     against its tracked release manifest AS RECORDED AT ROOT'S OWN GIT HEAD
@@ -3800,9 +3801,27 @@ def _required_release_bump(root: Path, final_id: str):  # noqa: ANN201
         _log.debug("land: no release manifest at %s HEAD, skipping REL001 bump", root)
         return Ok(None)
 
-    from frob.app import ticket_runner as _ticket_runner
+    # T-5034: NOT `_ticket_runner._graph_snapshot(root)` -- that helper's
+    # cache-or-build fallback treats a `load_graph(cache)` HIT as
+    # trustworthy as-is, with no staleness check against `root`'s current
+    # tree. `land()` calls this callback AFTER the squash-apply already
+    # staged the just-squashed public API onto `root`'s working tree, but
+    # `root`'s `.frob/cache.db` can already exist and be a HIT from an
+    # EARLIER stage of this SAME land pipeline (e.g. a covers-scope/gate
+    # check that also called `_graph_snapshot` on this same squash
+    # worktree BEFORE the squash-apply wrote the new file(s)) -- a real,
+    # reproduced incident: `load_graph` returned `Ok` with a stale, empty
+    # snapshot, so `diff_class` saw zero symbols and computed
+    # `BumpClass.NONE` even though the squashed tree added a genuine new
+    # public symbol. `build_graph` is called directly here instead: it
+    # incrementally reconciles the cache against `root`'s CURRENT file
+    # state (mtime/hash-based staleness, `_prune_stale_cache`) rather than
+    # trusting whatever the cache already says, so the snapshot this bump
+    # computation reads is always current as of THIS call, regardless of
+    # what any earlier land-pipeline stage already cached there.
+    from frob.graph import build_graph as _build_graph
 
-    snapshot = _ticket_runner._graph_snapshot(root)
+    snapshot = _build_graph(root, root / _ticket_runner._CACHE_REL)
     if snapshot.is_err:
         _log.error(
             "land: %s graph unavailable (%s), cannot compute REL001 bump",
