@@ -76,6 +76,7 @@ scope:
 - docs/commands/worktree.md
 - docs/index.md
 - docs/modules/app.md
+- tests/unit/test_app_config_from_external_t1276.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -394,6 +395,12 @@ scope_changes:
   glob: docs/modules/app.md
   reason: frob:doc home for _command_pages.py's 4 new public symbols (frob.docs library
     section)
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: tests/unit/test_app_config_from_external_t1276.py
+  reason: T-5132 regression fix (ticket_unsized_ack/ticket_points allowlist gap) landed
+    here per coordinator directive, needs its own test coverage
   actor: logan
   at: '2026-09-22'
 triage_changes:
