@@ -1,7 +1,7 @@
 ---
 id: T-5278
 title: Automatic per-session token mining for tickets (T-5132 amendment follow-up)
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -35,3 +35,6 @@ anchor_reason: null
 land_commit: null
 ---
 found while working T-5132: the owner's amendment asked for automatic token-spend recording (session id captured on the lease at start, transcript jsonl summed at close/land) alongside the manual frob ticket tokens path that DID ship this ticket. Left out of T-5132's scope for time -- only the manual setter shipped.
+
+## Drop reason
+- 2026-09-22: filed twice; T-5279 is the promoted copy (absorbed by T-5279)
