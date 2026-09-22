@@ -1,5 +1,5 @@
 ---
-id: T-draft-f94467fc
+id: T-5314
 title: 'Post-land sweep residue 2026-09-22_1754: COV002:src/frob/docs/_command_pages.py
   COV002:tests/test_mutate_journal.py COV002:tests/ticket_land_suite/test_ledger_splice.py
   COV002:tests'
