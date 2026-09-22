@@ -2,7 +2,7 @@
 id: T-4696
 title: 'Nine ticket field-setters become one: frob ticket set field value (priority
   kind component label tier milestone sprint accept body)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -28,6 +28,7 @@ scope:
 - docs/modules/vet.md
 - src/frob/tickets/_leases.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +75,13 @@ scope_changes:
   reason: 'SELFAUDIT001: _resolve_set_reason''s new --reason-file read_text call is
     a real fs.read site on _lifecycle.py the cli node hadn''t declared yet (fs.write
     already was, from earlier tickets) -- declaring it'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SYS111: the fs.read declaration this ticket added for _lifecycle.py pushed
+    the cli node''s via-list past its committed ratchet ceiling; bumping accepted_count
+    in the same diff, as SELFAUDIT001''s own remedy text instructs'
   actor: logan
   at: '2026-09-22'
 triage_changes:
@@ -253,6 +261,3 @@ FILES (declared scope):
   src/frob/_cli_parsers/_ticket/__init__.py, _metadata.py
   src/frob/app/ticket_runner/__init__.py, _lifecycle.py
   tests/unit/test_ticket_set.py (new)
-
-## Reopen log
-- 2026-09-22: closed-but-unlanded: a refused drain wrote state=done with land_commit null and no code on dev (T-5256 note)
