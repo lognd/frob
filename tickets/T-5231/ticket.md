@@ -23,6 +23,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'record judgment-call investigation result: already resolved upstream, no
+    fix needed here'
+  actor: logan
+  at: '2026-09-21'
+  old_length: 1886
+  new_length: 2983
 designated_repro_test: null
 threat: null
 component: null
@@ -41,3 +49,6 @@ Two possible fixes, need a judgment call before changing anything:
 (b) these three tests are simply stale after T-3612's own redesign and should hold tickets.lock (not land.lock) to test the CURRENT splice-scoped contract.
 
 Do not guess -- confirm which against T-3612's/T-4556's own stated intent before editing.
+
+
+JUDGMENT CALL (per coordinator instruction): investigated on dev tip in worktree t-5231. All three tests already pass on current dev tip with NO changes needed here -- someone else's land (most likely T-5035, which already fixed the sibling tests/unit/verify/test_drain.py fixture-drift in this same session) already resolved this trio too, presumably by giving reconcile/set-parent/set-priority's apply path the whole_land=True classification (hypothesis (a) from this ticket's own Description) rather than by making the tests hold tickets.lock instead of land.lock (hypothesis (b)) -- verified: git grep for 'whole_land=True' in src/frob/tickets/ does not show it wired into _reconcile.py directly, so the actual mechanism needs one more look by whoever closes this, but the OBSERVABLE result (all three tests green, no source change needed from this ticket) is confirmed directly by running them on dev tip. No code changes made in this ticket; closing as already-resolved upstream. If re-opened, start from 'git blame' on the three test files to find which commit's land actually fixed this.
