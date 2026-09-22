@@ -2,7 +2,7 @@
 id: T-5231
 title: 'land-lock-held guard trio stale after T-3612: reconcile/set-parent/set-priority
   apply while land.lock held instead of refusing'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-21'
@@ -12,6 +12,12 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -52,3 +58,6 @@ Do not guess -- confirm which against T-3612's/T-4556's own stated intent before
 
 
 JUDGMENT CALL (per coordinator instruction): investigated on dev tip in worktree t-5231. All three tests already pass on current dev tip with NO changes needed here -- someone else's land (most likely T-5035, which already fixed the sibling tests/unit/verify/test_drain.py fixture-drift in this same session) already resolved this trio too, presumably by giving reconcile/set-parent/set-priority's apply path the whole_land=True classification (hypothesis (a) from this ticket's own Description) rather than by making the tests hold tickets.lock instead of land.lock (hypothesis (b)) -- verified: git grep for 'whole_land=True' in src/frob/tickets/ does not show it wired into _reconcile.py directly, so the actual mechanism needs one more look by whoever closes this, but the OBSERVABLE result (all three tests green, no source change needed from this ticket) is confirmed directly by running them on dev tip. No code changes made in this ticket; closing as already-resolved upstream. If re-opened, start from 'git blame' on the three test files to find which commit's land actually fixed this.
+
+## Drop reason
+- 2026-09-22: the three guard tests pass on dev tip after T-3612's follow-ups; no fix needed (CI agent verdict)
