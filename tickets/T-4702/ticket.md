@@ -44,6 +44,8 @@ scope:
 - src/frob/docs/_command_pages.py
 - src/frob/app/docs_runner.py
 - src/frob/_cli_parsers/_core.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -204,6 +206,20 @@ scope_changes:
     tree, wired so it cannot drift again silently -- a new generator module plus a
     small docs_runner.py flag to invoke it, mirroring the existing --sync-commands
     precedent for docs/modules/cli.md''s table'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/app/config.py
+  reason: the new --sync-command-pages flag needs its bool field declared on AppConfig
+    and added to from_external's field-copy allowlist (the T-4690 gap found before
+    -- doctor_whereis silently no-op'd without it)
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: the new --sync-command-pages flag needs its bool field declared on AppConfig
+    and added to from_external's field-copy allowlist (the T-4690 gap found before
+    -- doctor_whereis silently no-op'd without it)
   actor: logan
   at: '2026-09-22'
 triage_changes:
