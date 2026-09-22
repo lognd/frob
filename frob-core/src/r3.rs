@@ -108,7 +108,8 @@ pub fn r3_canonical_hash(py: Python<'_>, tokens: Vec<String>) -> String {
 }
 
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-// frob:tests frob-core/src/lib.rs::tests.canonical_hash_is_deterministic_and_shape_sensitive kind="unit"
+// frob:tests frob-core/src/lib.rs::tests.canonical_hash_is_deterministic_and_shape_sensitive \
+// kind="unit"
 pub(crate) fn r3_canonical_hash_impl(tokens: Vec<String>) -> String {
     let canonical = r3_canonicalize(&tokens);
     let mut acc: u64 = 0xcbf29ce484222325; // FNV offset basis, arbitrary seed

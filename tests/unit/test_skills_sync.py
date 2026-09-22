@@ -93,6 +93,7 @@ class TestSyncSkills:
         assert reports["agents"].removed == ("temp-agent",)
         assert not (claude_dir / "agents" / "temp-agent").exists()
 
+    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
     def test_missing_repo_directories_are_a_no_op(self, tmp_path: Path) -> None:
         """A repo with neither agents/ nor skills/ still creates both
         target directories (matching the old recipe's unconditional

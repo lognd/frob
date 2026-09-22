@@ -174,8 +174,7 @@ class TestResolveStdoutLevelOverride:
     is not silently overridden for a plain invocation."""
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_no_flag_or\
-    # _env_var_is_none
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_no_flag_or_env_var_is_none  # noqa: E501
     def test_no_flag_or_env_var_is_none(self, monkeypatch):
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
         monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
@@ -183,8 +182,7 @@ class TestResolveStdoutLevelOverride:
         assert _resolve_stdout_level_override() is None
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_dash_v_in_\
-    # argv_is_debug
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_dash_v_in_argv_is_debug  # noqa: E501
     def test_dash_v_in_argv_is_debug(self, monkeypatch):
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
         monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
@@ -192,8 +190,7 @@ class TestResolveStdoutLevelOverride:
         assert _resolve_stdout_level_override() == logging.DEBUG
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_dash_dash_\
-    # verbose_in_argv_is_debug
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_dash_dash_verbose_in_argv_is_debug  # noqa: E501
     def test_dash_dash_verbose_in_argv_is_debug(self, monkeypatch):
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
         monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
@@ -201,8 +198,7 @@ class TestResolveStdoutLevelOverride:
         assert _resolve_stdout_level_override() == logging.DEBUG
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_frob_verbo\
-    # se_env_var_is_debug
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_frob_verbose_env_var_is_debug  # noqa: E501
     def test_frob_verbose_env_var_is_debug(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
         monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
@@ -210,8 +206,7 @@ class TestResolveStdoutLevelOverride:
         assert _resolve_stdout_level_override() == logging.DEBUG
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_frob_log_l\
-    # evel_env_var_is_parsed
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_frob_log_level_env_var_is_parsed  # noqa: E501
     def test_frob_log_level_env_var_is_parsed(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
@@ -219,8 +214,7 @@ class TestResolveStdoutLevelOverride:
         assert _resolve_stdout_level_override() == logging.INFO
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_unrecogniz\
-    # ed_frob_log_level_is_none_not_a_crash
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride.test_unrecognized_frob_log_level_is_none_not_a_crash  # noqa: E501
     def test_unrecognized_frob_log_level_is_none_not_a_crash(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
@@ -287,22 +281,19 @@ class TestIsVetHookMode:
     token through some other flag, neither of which is hook mode."""
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_both_tokens_present_is_\
-    # true
+    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_both_tokens_present_is_true  # noqa: E501
     def test_both_tokens_present_is_true(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["frob", "vet", ".", "--hook", "git status"])
         assert _is_vet_hook_mode() is True
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_vet_without_hook_is_fal\
-    # se
+    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_vet_without_hook_is_false  # noqa: E501
     def test_vet_without_hook_is_false(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["frob", "vet", "."])
         assert _is_vet_hook_mode() is False
 
     # frob:tests \
-    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_hook_without_vet_is_fal\
-    # se
+    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_hook_without_vet_is_false  # noqa: E501
     def test_hook_without_vet_is_false(self, monkeypatch):
         monkeypatch.setattr(sys, "argv", ["frob", "check", "--hook"])
         assert _is_vet_hook_mode() is False

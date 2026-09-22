@@ -363,6 +363,7 @@ class TestVerbStrategy:
     actually fires."""
 
     # frob:ticket T-2603
+    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::LEDGER_VERB_STRATEGY
     def test_all_classified(self) -> None:
         from frob.app.ticket_runner import _ticket_dispatch_table
 

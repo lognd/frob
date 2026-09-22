@@ -798,6 +798,7 @@ class TestMigrateMissingV2:
         # frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
         assert second.danger_ok == 0
 
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
     def test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated(
         self, tmp_path: Path
     ) -> None:

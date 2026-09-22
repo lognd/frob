@@ -63,6 +63,7 @@ class TestDetermineCiStatus:
         assert result.status == "red"
         assert "failure" in result.detail
 
+    # frob:tests scripts/verify_release_ci_status.py::determine_ci_status kind="unit"  # noqa: E501
     def test_undetermined_on_api_error(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus.test_undetermined_on_api_error  # noqa: E501
         result = verify_release_ci_status.determine_ci_status(
@@ -178,6 +179,7 @@ class TestRunGh:
 
 # frob:tests scripts/verify_release_ci_status.py::CiStatusResult.model_post_init kind="unit"  # noqa: E501
 class TestCiStatusResultInvariant:
+    # frob:tests scripts/verify_release_ci_status.py::CiStatusResult.model_post_init kind="unit"  # noqa: E501
     def test_valid_status_literal_constructs(self) -> None:
         # frob:tests tests/unit/test_verify_release_ci_status.py::TestCiStatusResultInvariant.test_valid_status_literal_constructs  # noqa: E501
         result = verify_release_ci_status.CiStatusResult(status="green", detail="ok")

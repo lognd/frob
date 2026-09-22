@@ -67,8 +67,7 @@ class TestSummarize:
         assert "PROVED -- zero unwaived gaps" in summary
 
     # frob:tests \
-    # tests/unit/strata/test_native_test.py::TestSummarize.test_gaps_present_lists_them\
-    # _instead_of_proved
+    # tests/unit/strata/test_native_test.py::TestSummarize.test_gaps_present_lists_them_instead_of_proved  # noqa: E501
     def test_gaps_present_lists_them_instead_of_proved(self) -> None:
         """A non-empty gap list takes the `if gap_lines:` branch, not the
         else -- and never prints the PROVED sentinel."""
@@ -86,8 +85,7 @@ class TestSummarize:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_native_test.py::TestSummarize.test_format_selfconform_one_\
-    # line_per_violation
+    # tests/unit/strata/test_native_test.py::TestSummarize.test_format_selfconform_one_line_per_violation  # noqa: E501
     # frob:tests src/frob/strata/_selfconform_models.py::SelfConformViolation  # noqa: E501
     def test_format_selfconform_one_line_per_violation(self) -> None:
         """`_format_selfconform` renders one `GAP family=sys` line per
@@ -99,8 +97,7 @@ class TestSummarize:
         assert lines == ["GAP family=sys rule=SYS100 node=frob.app detail=bad"]
 
     # frob:tests \
-    # tests/unit/strata/test_native_test.py::TestSummarize.test_format_gaps_empty_is_em\
-    # pty_list
+    # tests/unit/strata/test_native_test.py::TestSummarize.test_format_gaps_empty_is_empty_list  # noqa: E501
     def test_format_gaps_empty_is_empty_list(self) -> None:
         """No gaps on the report -- `_format_gaps` returns an empty list,
         not None or a sentinel."""
@@ -117,8 +114,7 @@ class TestRunNativeSysAuditErrorBranches:
     (`ids.errors`) the same way."""
 
     # frob:tests \
-    # tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_ex\
-    # haustiveness_error_propagates
+    # tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_exhaustiveness_error_propagates  # noqa: E501
     def test_exhaustiveness_error_propagates(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -138,8 +134,7 @@ class TestRunNativeSysAuditErrorBranches:
         assert result.danger_err == StrataError.UnknownReference
 
     # frob:tests \
-    # tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_se\
-    # lfconform_error_propagates
+    # tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_selfconform_error_propagates  # noqa: E501
     def test_selfconform_error_propagates(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -161,8 +156,7 @@ class TestRunNativeSysAuditErrorBranches:
         assert result.danger_err == StrataError.MalformedLattice
 
     # frob:tests \
-    # tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_bo\
-    # th_reports_clean_is_proved
+    # tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_both_reports_clean_is_proved  # noqa: E501
     def test_both_reports_clean_is_proved(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

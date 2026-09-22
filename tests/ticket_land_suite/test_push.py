@@ -31,8 +31,7 @@ class TestLandPushCliWiring:
 
     def test_flag_parses_to_true(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_push.py::TestLandPushCliWiring.test_flag_parses_\
-        # to_true
+        # tests/ticket_land_suite/test_push.py::TestLandPushCliWiring.test_flag_parses_to_true  # noqa: E501
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -164,8 +163,7 @@ class TestPushAfterLand:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_dry_run_never_pu\
-        # shes
+        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_dry_run_never_pushes  # noqa: E501
         from frob.app import ticket_runner
 
         def _fail_if_called(*a: Any, **k: Any) -> Any:
@@ -197,8 +195,7 @@ class TestPushAfterLand:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_push_failure_exi\
-        # ts_nonzero
+        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_push_failure_exits_nonzero  # noqa: E501
         from frob.app import ticket_runner
 
         def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
@@ -217,8 +214,7 @@ class TestPushAfterLand:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_exec_disabled_ex\
-        # its_nonzero
+        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_exec_disabled_exits_nonzero  # noqa: E501
         from frob.app import ticket_runner
         from frob.process._guard import ProcessGuardError
 

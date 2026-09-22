@@ -1018,8 +1018,7 @@ class TestMutationEvidencePrecheck:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck.tes\
-        # t_no_findings_is_ok
+        # tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck.test_no_findings_is_ok  # noqa: E501
         ticket = self._ticket(TicketKind.SECURITY)
         import frob.gates as _gates_mod
 

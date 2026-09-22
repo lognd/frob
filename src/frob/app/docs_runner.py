@@ -101,7 +101,6 @@ def _run_extract(cfg: AppConfig, path: Path) -> None:
 
 
 # frob:ticket T-1011
-# frob:tests tests/unit/test_app_runners_batch5.py::TestDocsRunner.test_sync_commands_writes  # noqa: E501
 def _run_sync_commands(cfg: AppConfig) -> None:
     """Handle `frob docs --sync-commands` (T-1011): regenerate
     `docs/modules/cli.md`'s generated command-table block from the live
@@ -123,12 +122,39 @@ def _run_sync_commands(cfg: AppConfig) -> None:
     _log.info("docs sync-commands: docs/modules/cli.md's generated block synced")
 
 
+# frob:ticket T-4702
+# frob:tests tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages.test_writes_a_stub_for_a_missing_live_verb  # noqa: E501
+def _run_sync_command_pages(cfg: AppConfig) -> None:
+    """Handle `frob docs --sync-command-pages` (T-4702): write a generated
+    stub `docs/commands/<verb>.md` for every live top-level verb that has
+    none yet, via `frob.docs._command_pages.sync_missing_command_pages`
+    -- never overwrites an existing (hand-written or previously
+    generated) page. This is the "cannot drift again silently" mechanism
+    T-4702's own acceptance criteria require: re-run after adding a verb
+    and the coverage gap closes itself."""
+    from frob._cli_parsers._root import _build_parser
+    from frob.docs._command_pages import sync_missing_command_pages
+
+    root = (cfg.docs_path or Path(".")).resolve()
+    written = sync_missing_command_pages(_build_parser(), root / "docs" / "commands")
+    if not written:
+        _log.info("docs sync-command-pages: every live verb already has a page")
+        return
+    _log.info(
+        "docs sync-command-pages: wrote %d stub page(s): %s",
+        len(written),
+        ", ".join(written),
+    )
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
-# frob:tests tests/unit/test_app_runners_batch5.py::TestDocsRunner.test_search_json_mode
 def run(cfg: AppConfig) -> None:
     if cfg.docs_sync_commands:
         _run_sync_commands(cfg)
+        return
+    if cfg.docs_sync_command_pages:
+        _run_sync_command_pages(cfg)
         return
 
     path = cfg.docs_path

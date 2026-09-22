@@ -70,8 +70,7 @@ def _two_real_worktrees(tmp_path: Path) -> tuple[Path, Path]:
 class TestTreeDigest:
     def test_identical_hashes_produce_identical_digest(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestTreeDigest.test_identical_hashes_prod\
-        # uce_identical_digest
+        # tests/test_coverage_wait_shared.py::TestTreeDigest.test_identical_hashes_produce_identical_digest  # noqa: E501
         root1 = _make_repo(tmp_path, "repo1")
         root2 = _make_repo(tmp_path, "repo2")
         cache1 = root1 / ".frob" / "cache.db"
@@ -82,8 +81,7 @@ class TestTreeDigest:
 
     def test_differing_hashes_produce_differing_digest(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestTreeDigest.test_differing_hashes_prod\
-        # uce_differing_digest
+        # tests/test_coverage_wait_shared.py::TestTreeDigest.test_differing_hashes_produce_differing_digest  # noqa: E501
         root1 = _make_repo(tmp_path, "repo1")
         root2 = _make_repo(tmp_path, "repo2")
         (root2 / "src" / "pkg" / "mod.py").write_text(
@@ -99,15 +97,13 @@ class TestTreeDigest:
 class TestSharedStateDir:
     def test_two_worktrees_of_same_clone_share_one_dir(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_two_worktrees_of_\
-        # same_clone_share_one_dir
+        # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_two_worktrees_of_same_clone_share_one_dir  # noqa: E501
         wt1, wt2 = _two_real_worktrees(tmp_path)
         assert shared_state_dir(wt1) == shared_state_dir(wt2)
 
     def test_no_git_falls_back_to_worktree_local(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_no_git_falls_back\
-        # _to_worktree_local
+        # tests/test_coverage_wait_shared.py::TestSharedStateDir.test_no_git_falls_back_to_worktree_local  # noqa: E501
         bare = tmp_path / "not_a_repo"
         bare.mkdir()
         assert shared_state_dir(bare) == bare / ".frob" / "frob-coverage-shared"
@@ -120,8 +116,7 @@ class TestCrossWorktreeSingleFlight:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight.test_identi\
-        # cal_digest_worktrees_share_one_run
+        # tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight.test_identical_digest_worktrees_share_one_run  # noqa: E501
         wt1, wt2 = _two_real_worktrees(tmp_path)
 
         run_count = 0
@@ -183,8 +178,7 @@ class TestCrossWorktreeSingleFlight:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight.test_differ\
-        # ing_digest_worktrees_each_run_independently
+        # tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight.test_differing_digest_worktrees_each_run_independently  # noqa: E501
         wt1, wt2 = _two_real_worktrees(tmp_path)
         # Make wt2's tracked content genuinely differ so its digest diverges
         # from wt1's.
@@ -299,8 +293,7 @@ class TestWorktreeLock:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_w\
-        # hen_daemon_up
+        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up  # noqa: E501
         import frob.testing._coverage_wait as _cw
 
         # T-1379 made the daemon path opt-IN (FROB_DAEMON=1) rather than
@@ -352,8 +345,7 @@ class TestWorktreeLock:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_\
-        # lock_when_no_daemon
+        # tests/test_coverage_wait_shared.py::TestWorktreeLock.test_falls_back_to_file_lock_when_no_daemon  # noqa: E501
         import frob.testing._coverage_wait as _cw
 
         root = _make_repo(tmp_path, "proj")
@@ -403,8 +395,7 @@ class TestCoverageLockPlatformBackends:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_no_\
-        # lock_primitive_refuses_loudly
+        # tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
         import frob.process._lock as _lock_mod
         import frob.testing._coverage_wait as _cw
 
@@ -429,8 +420,7 @@ class TestCoverageLockPlatformBackends:
         seeded, acquire, release) the real backend only ever runs for
         real on Windows."""
         # frob:tests \
-        # tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_win\
-        # dows_backend_round_trips
+        # tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_windows_backend_round_trips  # noqa: E501
         import fcntl as _real_fcntl
 
         import frob.process._lock as _lock_mod

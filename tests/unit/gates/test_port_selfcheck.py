@@ -112,6 +112,7 @@ class TestPort001:
         # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
         ] == []
 
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
     def test_non_detector_package_code_is_now_scanned_t3275(
         self, tmp_path: Path
     ) -> None:
@@ -326,6 +327,7 @@ class TestPort001:
         assert len(hits) == 1
         assert hits[0].severity.value == "unresolved"
 
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
     def test_unparseable_file_is_parse001_not_silent(self, tmp_path: Path) -> None:
         """A file this gate cannot `ast.parse` fires PARSE001 instead of
         silently dropping out of the scan -- matching LEXCHECK001/

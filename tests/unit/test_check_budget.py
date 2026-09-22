@@ -264,6 +264,7 @@ class TestRunBudgetedCheck:
         assert "BUDGET001" not in caplog.text
         assert not (tmp_path / ".frob" / "check-budget-state.json").exists()
 
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
     def test_persists_resume_state_for_deferred_groups(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog, capsys
     ) -> None:
@@ -362,6 +363,7 @@ class TestRunBudgetedCheck:
         cfg = AppConfig(check_path=tmp_path, check_budget=1000)
         check_run(cfg)
         assert calls == ["g2"]
+# frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
 
     def test_clears_resume_state_once_every_group_has_run(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -146,8 +146,7 @@ def test_restore_stale_journals_after_simulated_crash(tmp_path):
 
 def test_restore_and_list_skip_a_journal_owned_by_a_live_pid(tmp_path):
     # frob:tests \
-    # tests/test_mutate_journal.py::test_restore_and_list_skip_a_journal_owned_by_a_liv\
-    # e_pid
+    # tests/test_mutate_journal.py::test_restore_and_list_skip_a_journal_owned_by_a_live_pid  # noqa: E501
     # A journal whose writer is STILL RUNNING is an in-progress mutation
     # run, not a crash -- restoring it would corrupt that live run. Using
     # this test's own (definitely alive) pid stands in for that case.
@@ -171,8 +170,7 @@ def test_restore_and_list_skip_a_journal_owned_by_a_live_pid(tmp_path):
 )
 def test_recycled_pid_with_mismatched_starttime_is_treated_stale(tmp_path):
     # frob:tests \
-    # tests/test_mutate_journal.py::test_recycled_pid_with_mismatched_starttime_is_trea\
-    # ted_stale
+    # tests/test_mutate_journal.py::test_recycled_pid_with_mismatched_starttime_is_treated_stale  # noqa: E501
     # T-0857 reviewer finding: a bare "is the PID alive" probe cannot tell
     # a crashed writer whose PID got recycled apart from a genuinely live
     # writer. Simulating recycling: a LIVE pid (this test process, so
@@ -205,8 +203,7 @@ def test_recycled_pid_with_mismatched_starttime_is_treated_stale(tmp_path):
 
 def test_write_journal_cleans_up_temp_file_on_replace_failure(tmp_path, monkeypatch):
     # frob:tests \
-    # tests/test_mutate_journal.py::test_write_journal_cleans_up_temp_file_on_replace_f\
-    # ailure
+    # tests/test_mutate_journal.py::test_write_journal_cleans_up_temp_file_on_replace_failure  # noqa: E501
     # T-0857 reviewer nit: an IO error between the temp-file write and the
     # atomic rename must not leave a stray `.tmpNNN` file behind. The
     # underlying `os.replace` failure itself still propagates (write_journal
@@ -231,8 +228,7 @@ def test_write_journal_cleans_up_temp_file_on_replace_failure(tmp_path, monkeypa
 def test_run_mutations_restores_stale_journal_from_prior_crash(tmp_path):
     # frob:tests src/frob/mutate/__init__.py::run_mutations
     # frob:tests \
-    # tests/test_mutate_journal.py::test_run_mutations_restores_stale_journal_from_prio\
-    # r_crash
+    # tests/test_mutate_journal.py::test_run_mutations_restores_stale_journal_from_prior_crash  # noqa: E501
     # The real incident this ticket fixes, minus the actual SIGKILL: a
     # "crashed" prior run left a journal and a mutated target on disk;
     # the NEXT run_mutations call must restore it before anything else,
@@ -333,8 +329,7 @@ def test_pytest_session_start_restores_leftover_journal(tmp_path, monkeypatch):
 def test_pytest_session_start_skips_restore_on_xdist_worker(tmp_path, monkeypatch):
     # frob:ticket T-0885
     # frob:tests \
-    # tests/test_mutate_journal.py::test_pytest_session_start_skips_restore_on_xdist_wo\
-    # rker
+    # tests/test_mutate_journal.py::test_pytest_session_start_skips_restore_on_xdist_worker  # noqa: E501
     # Restoring from every xdist WORKER process (not just the controller)
     # would be redundant at best and a `write_journal`-style race at
     # worst -- the hook must no-op there and leave the journal untouched
@@ -367,8 +362,7 @@ def test_run_mutations_journal_collision_aborts_with_journal_collision_error(
 ):
     # frob:tests src/frob/mutate/__init__.py::run_mutations
     # frob:tests \
-    # tests/test_mutate_journal.py::test_run_mutations_journal_collision_aborts_with_jo\
-    # urnal_collision_error
+    # tests/test_mutate_journal.py::test_run_mutations_journal_collision_aborts_with_journal_collision_error  # noqa: E501
     original = "def add(a, b):\n    return a + b\n"
     target = tmp_path / "m.py"
     target.write_text(original, encoding="utf-8")
@@ -390,8 +384,7 @@ def test_run_mutations_journal_collision_aborts_with_journal_collision_error(
 
 def test_record_journal_progress_tracks_last_written_content(tmp_path):
     # frob:tests \
-    # tests/test_mutate_journal.py::test_record_journal_progress_tracks_last_written_co\
-    # ntent
+    # tests/test_mutate_journal.py::test_record_journal_progress_tracks_last_written_content  # noqa: E501
     # T-1327: `record_journal_progress` updates the journal's own
     # "last known on-disk content" hash, without touching the recorded
     # original bytes used for the eventual restore.
@@ -418,8 +411,7 @@ def test_record_journal_progress_tracks_last_written_content(tmp_path):
 
 def test_record_journal_progress_is_a_noop_with_no_journal(tmp_path):
     # frob:tests \
-    # tests/test_mutate_journal.py::test_record_journal_progress_is_a_noop_with_no_jour\
-    # nal kind="unit"
+    # tests/test_mutate_journal.py::test_record_journal_progress_is_a_noop_with_no_journal kind="unit"  # noqa: E501
     # T-0857: no journal was ever written for `target` (a mutation run that
     # never got to write_journal, or one that already removed it) -- the
     # entry-is-None branch must return silently, never raise or fabricate
@@ -486,8 +478,7 @@ def test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content(
     tmp_path,
 ):
     # frob:tests \
-    # tests/test_mutate_journal.py::test_restore_refuses_when_stale_journal_no_longer_m\
-    # atches_on_disk_content
+    # tests/test_mutate_journal.py::test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content  # noqa: E501
     # frob:tests src/frob/mutate/_journal.py::restore_stale_journals
     # The T-1203 incident, reproduced directly: an earlier, unrelated
     # mutation run crashed and left a stale journal for this file plus its
@@ -528,8 +519,7 @@ def test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content(
 
 def test_restore_refuses_and_drops_a_legacy_journal_missing_current_sha256(tmp_path):
     # frob:tests \
-    # tests/test_mutate_journal.py::test_restore_refuses_and_drops_a_legacy_journal_mis\
-    # sing_current_sha256
+    # tests/test_mutate_journal.py::test_restore_refuses_and_drops_a_legacy_journal_missing_current_sha256  # noqa: E501
     # A pre-T-1327 journal on disk (no `current_sha256` field at all) is
     # just as unverifiable as a genuine mismatch -- fail closed the same
     # way rather than trust it.

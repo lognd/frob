@@ -461,8 +461,7 @@ class TestSubjectCount:
 
     def test_populated_zero_is_distinct_from_none(self) -> None:
         # frob:tests \
-        # tests/unit/test_process.py::TestSubjectCount.test_populated_zero_is_distinct_\
-        # from_none
+        # tests/unit/test_process.py::TestSubjectCount.test_populated_zero_is_distinct_from_none  # noqa: E501
         from frob.process.parsers.common import ToolResult
 
         unmigrated = ToolResult(tool="gate:COV")
@@ -479,10 +478,10 @@ class TestEnforcingZeroSubjectDiagnostic:
     design constraint the ticket body requires (a rule the repo has
     legitimately never had cause to exercise must not become noise)."""
 
+    # frob:tests src/frob/process/parsers/common.py::enforcing_zero_subject_diagnostic
     def test_none_when_not_enforcing(self) -> None:
         # frob:tests \
-        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when\
-        # _not_enforcing
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_not_enforcing  # noqa: E501
         from frob.process.parsers.common import enforcing_zero_subject_diagnostic
 
         assert (
@@ -494,8 +493,7 @@ class TestEnforcingZeroSubjectDiagnostic:
 
     def test_none_when_subject_count_is_none(self) -> None:
         # frob:tests \
-        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when\
-        # _subject_count_is_none
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_subject_count_is_none  # noqa: E501
         from frob.process.parsers.common import enforcing_zero_subject_diagnostic
 
         assert (
@@ -507,8 +505,7 @@ class TestEnforcingZeroSubjectDiagnostic:
 
     def test_none_when_subject_count_is_positive(self) -> None:
         # frob:tests \
-        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when\
-        # _subject_count_is_positive
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_none_when_subject_count_is_positive  # noqa: E501
         from frob.process.parsers.common import enforcing_zero_subject_diagnostic
 
         assert (
@@ -520,8 +517,7 @@ class TestEnforcingZeroSubjectDiagnostic:
 
     def test_fires_when_enforcing_and_zero(self) -> None:
         # frob:tests \
-        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_fires_whe\
-        # n_enforcing_and_zero
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_fires_when_enforcing_and_zero  # noqa: E501
         from frob.process.parsers.common import enforcing_zero_subject_diagnostic
 
         d = enforcing_zero_subject_diagnostic(
@@ -534,8 +530,7 @@ class TestEnforcingZeroSubjectDiagnostic:
 
     def test_windows_path_mismatch_repro(self) -> None:
         # frob:tests \
-        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_windows_p\
-        # ath_mismatch_repro
+        # tests/unit/test_process.py::TestEnforcingZeroSubjectDiagnostic.test_windows_path_mismatch_repro  # noqa: E501
         # T-3985 acceptance[2]: a repro of the T-3941 shape -- an
         # enforcing gate whose ToolResult carries subject_count == 0
         # must trip this check, the way a failing positive control was

@@ -210,8 +210,7 @@ def test_commit_entry_from_block_with_refs_and_body() -> None:
 
 
 # frob:tests \
-# tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_non_conventional_is\
-# _unknown_type
+# tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_non_conventional_is_unknown_type  # noqa: E501
 def test_commit_entry_from_block_non_conventional_is_unknown_type() -> None:
     """A subject that doesn't match the conventional-commit pattern still
     produces a `CommitEntry`, typed `"unknown"`."""

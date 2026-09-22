@@ -393,6 +393,7 @@ class TestChangelogFragments:
         # frob:tests src/frob/release/_fragments.py::assemble_changelog_from_fragments  # noqa: E501
         assert (tmp_path / "CHANGELOG.md").read_text() == "# Changelog\n"
 
+    # frob:tests src/frob/release/_fragments.py::assemble_changelog_from_fragments  # noqa: E501
     def test_assemble_writes_every_fragment_as_a_bullet(self, tmp_path):
         # frob:tests \
         # tests/test_release.py::TestChangelogFragments.test_assemble_writes_every_fragment_as_a_bullet  # noqa: E501
@@ -812,6 +813,7 @@ class TestPublish:
     # frob:tests src/frob/release/_publish.py::PublishPlan
     -- never a real git push or a real PyPI publish (T-2242's own
     non-negotiable safety constraint)."""
+# frob:tests src/frob/release/_publish.py::PublishPlan
 
     def test_dry_run_does_not_mutate_anything(self, tmp_path, monkeypatch):
         # frob:tests \

@@ -26,8 +26,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingOrderingStrategy:
     # frob:tests \
-    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_clock_\
-    # dependent_flow_without_ordering_strategy_fires
+    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_clock_dependent_flow_without_ordering_strategy_fires  # noqa: E501
     # frob:tests src/frob/strata/_clock_ordering.py::check_clock_ordering_obligations  # noqa: E501
     def test_clock_dependent_flow_without_ordering_strategy_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -54,8 +53,7 @@ class TestMissingOrderingStrategy:
         assert {v.sub_target for v in missing} == {"f1"}
 
     # frob:tests \
-    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_discha\
-    # rged_and_non_clock_dependent_flows_clean
+    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_discharged_and_non_clock_dependent_flows_clean  # noqa: E501
     def test_discharged_and_non_clock_dependent_flows_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -82,8 +80,7 @@ class TestMissingOrderingStrategy:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_waiver\
-    # _discharges_finding
+    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_waiver_discharges_finding  # noqa: E501
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -123,8 +120,7 @@ class TestMissingOrderingStrategy:
 
 class TestUnprovenOrderingStrategy:
     # frob:tests \
-    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_decla\
-    # red_with_no_code_evidence_fires
+    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def sync():\n    return push()\n")
         model = KernelModel(
@@ -155,8 +151,7 @@ class TestUnprovenOrderingStrategy:
         assert {v.sub_target for v in violations} == {"f1"}
 
     # frob:tests \
-    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_decla\
-    # red_with_real_code_evidence_discharges
+    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -192,8 +187,7 @@ class TestUnprovenOrderingStrategy:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_decla\
-    # red_with_no_bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -222,8 +216,7 @@ class TestUnprovenOrderingStrategy:
 
 class TestWallClockOnly:
     # frob:tests \
-    # tests/unit/strata/test_clock_ordering.py::TestWallClockOnly.test_bare_wall_clock_\
-    # read_fires_rel372
+    # tests/unit/strata/test_clock_ordering.py::TestWallClockOnly.test_bare_wall_clock_read_fires_rel372  # noqa: E501
     def test_bare_wall_clock_read_fires_rel372(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -264,8 +257,7 @@ class TestWallClockOnly:
 class TestBindCodeErrorPropagation:
     def test_ambiguous_code_binding_error_propagates(self, tmp_path, monkeypatch):
         # frob:tests \
-        # tests/unit/strata/test_clock_ordering.py::TestBindCodeErrorPropagation.test_a\
-        # mbiguous_code_binding_error_propagates
+        # tests/unit/strata/test_clock_ordering.py::TestBindCodeErrorPropagation.test_ambiguous_code_binding_error_propagates  # noqa: E501
         """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
         of `check_clock_ordering_obligations`, never be swallowed (deny by
         default, matching every other REL3xx entrypoint's discipline)."""

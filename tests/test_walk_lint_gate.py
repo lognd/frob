@@ -289,6 +289,7 @@ class TestPlatform001:
         tree = ast.parse(self._LOUD_REFUSAL_SRC)
         assert _scan_platform_guards(tree) == ()
 
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
     def test_no_platform_probe_is_quiet(self) -> None:
         """A module with no restricted-module try/except-ImportError probe
         at all has nothing for PLATFORM001 to anchor on, regardless of
@@ -462,6 +463,7 @@ class TestPlatform001StringGuard:
         tree = ast.parse(self._LOGGED_STRING_GUARD_SRC)
         assert _scan_platform_string_guards(tree) == ()
 
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
     # frob:ticket T-2944
     def test_real_platform_branch_is_quiet(self) -> None:
         """A real cross-platform fallback branch (both arms do genuine
@@ -521,6 +523,7 @@ class TestPlatform001BareImport:
         sites = _scan_bare_restricted_imports(tree)
         assert len(sites) == 1
         assert sites[0].names == ("fcntl",)
+# frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
 
     # frob:ticket T-2944
     def test_guarded_import_is_quiet(self) -> None:

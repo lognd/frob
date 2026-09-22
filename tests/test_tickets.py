@@ -3804,6 +3804,7 @@ class TestHollowDoneReportGuard:
         assert result.is_ok
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_real_evidence_never_flagged_as_hollow  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report  # noqa: E501
     def test_real_evidence_never_flagged_as_hollow(self, tmp_path: Path) -> None:
         from frob.tickets._evidence import _done_transition_structural_guard
 
@@ -3874,6 +3875,7 @@ class TestStaleClaimsGuard:
         "- gates: unmeasured\n"
     )
 
+    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason  # noqa: E501
     # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_zero_claims_with_real_evidence_refused  # noqa: E501
     def test_zero_claims_with_real_evidence_refused(self, tmp_path: Path) -> None:
         """The dominant measured shape (T-3244: 47 evidence ids, claims=0)

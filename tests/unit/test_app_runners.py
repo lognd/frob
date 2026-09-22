@@ -91,6 +91,7 @@ class TestExploreRunner:
         # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
         assert any("hello" in r.message for r in caplog.records)
 
+    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
     def test_xref_subcommand_missing_symbol_exits_1(self, caplog):
         """`explore_command="xref"` with no symbol still errors like the
         standalone `frob xref`."""
@@ -143,6 +144,7 @@ class TestGitlogRunner:
         # frob:tests src/frob/app/gitlog_runner.py::run
         assert out.strip() != ""
 
+    # frob:tests src/frob/app/gitlog_runner.py::run
     # frob:ticket T-0563
     def test_json_mode_prints_json(self, tmp_path, caplog, monkeypatch):
         """JSON mode logs the JSON rendering of the commit log (T-0563:
@@ -208,8 +210,10 @@ class TestXrefRunner:
         # frob:tests src/frob/app/xref_runner.py::run
         with caplog.at_level("INFO"):
             xref_run(cfg)
+        # frob:tests src/frob/app/xref_runner.py::run
         assert caplog.records
 
+    # frob:tests src/frob/app/xref_runner.py::run
     def test_found_symbol_json_mode(self, tmp_path, caplog):
         """A found symbol in JSON mode logs its JSON rendering."""
         _make_py_project(tmp_path)
@@ -336,6 +340,7 @@ class TestExportsRunner:
             exports_run(cfg)
         assert any("consumer.py" in r.message for r in caplog.records)
 
+    # frob:tests src/frob/app/exports_runner.py::_run_consumers  # noqa: E501
     # frob:ticket T-0876
     def test_consumers_mode_json_output(self, tmp_path, caplog):
         """`--consumers SYMBOL --json` logs the JSON ConsumersResult."""
@@ -416,9 +421,11 @@ class TestOutlineRunner:
         _make_py_project(tmp_path)
         cfg = AppConfig(outline_file=tmp_path / "pkg" / "mod.py", outline_json=False)
         with caplog.at_level("INFO"):
+            # frob:tests src/frob/app/outline_runner.py::run  # noqa: E501
             outline_run(cfg)
         assert caplog.records
 
+    # frob:tests src/frob/app/outline_runner.py::run  # noqa: E501
     def test_file_target_json_mode(self, tmp_path, caplog):
         """A file target in JSON mode logs the JSON rendering."""
         _make_py_project(tmp_path)
@@ -478,9 +485,11 @@ class TestMutateRunner:
             mutate_file=tmp_path / "f.py", mutate_path=tmp_path, mutate_argv=[]
         )
         with pytest.raises(SystemExit):
+            # frob:tests src/frob/app/mutate_runner.py::run  # noqa: E501
             mutate_run(cfg)
         assert captured["argv"] == ("uv", "run", "pytest", "-q")
 
+    # frob:tests src/frob/app/mutate_runner.py::run  # noqa: E501
     def test_success_no_survivors_text_mode(self, tmp_path, monkeypatch, capsys):
         """A clean mutation run (no survivors) prints a score and does not exit."""
         from typani import Ok
@@ -596,6 +605,7 @@ class TestQualityRunner:
         quality_run(cfg)
         assert called["cfg"] is cfg
 
+    # frob:tests src/frob/app/quality_runner.py::run  # noqa: E501
     # frob:waive DUP001 reason="deliberately mirrors TestExploreRunner's own \
     # map/outline end-to-end delegation tests (same real-fixture-plus-caplog shape, \
     # T-1238 precedent) -- one member of this verb group needs a real end-to-end check \
@@ -791,9 +801,11 @@ class TestOpsRunner:
             ["git", "commit", "-q", "-m", "feat: add f"], cwd=tmp_path, check=True
         )
         cfg = AppConfig(ops_command="stats", stats_path=tmp_path, stats_json=False)
+        # frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
         ops_run(cfg)
         out = capsys.readouterr().out
         assert out.strip() != ""
+# frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
 
     def test_unknown_subcommand_exits_1(self, caplog):
         """No `ops_command` at all (bare `frob ops`) errors cleanly instead

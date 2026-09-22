@@ -39,6 +39,7 @@ class TestEnumFieldValidation:
         cfg = AppConfig()
         assert cfg.ticket_state is None
 
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"  # noqa: E501
     def test_invalid_ticket_kind_lists_valid_values(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_kind_lists_valid_values  # noqa: E501
         with pytest.raises(ValidationError) as exc_info:

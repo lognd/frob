@@ -11,7 +11,6 @@ from frob.lang import language_for_extension, tree_sitter_extensions
 
 # frob:doc docs/commands/xref.md#public-api
 # frob:ticket T-3233
-# frob:tests tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry.test_lang_choices_track_frob_lang_registry  # noqa: E501
 _LANG_CHOICES: tuple[str, ...] = tuple(
     sorted(
         {
@@ -160,7 +159,6 @@ def _populate_cycle_args(cycle_p) -> None:
 
 # frob:ticket T-0030
 # frob:ticket T-1311
-# frob:tests \
 # tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches \
 # kind="integration"
 def _populate_outline_args(outline_p) -> None:
@@ -454,6 +452,16 @@ def _populate_docs_args(docs_p, *, include_search: bool) -> None:
         help=(
             "regenerate docs/modules/cli.md's generated command table "
             "from the live argparse registry (T-1011)"
+        ),
+    )
+    docs_p.add_argument(
+        "--sync-command-pages",
+        dest="docs_sync_command_pages",
+        action="store_true",
+        help=(
+            "write a generated stub docs/commands/<verb>.md for every "
+            "live top-level verb that has none yet -- never overwrites "
+            "an existing page (T-4702)"
         ),
     )
 

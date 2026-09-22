@@ -449,6 +449,7 @@ class TestNormalizeIdentities:
     # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
     body -- observed verbatim in T-2297 as a blank ``"-   "`` line."""
 
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
     def test_drops_genuinely_empty_identity_pair(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

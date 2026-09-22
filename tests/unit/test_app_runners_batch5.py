@@ -486,6 +486,7 @@ class TestDocsRunner:
             docs_run(cfg)
         assert any("guide.md" in r.message for r in caplog.records)
 
+    # frob:tests src/frob/app/docs_runner.py::run
     def test_search_json_mode(self, tmp_path, caplog):
         """`--search --json` logs a JSON array of matches."""
         docs_dir = tmp_path / "docs"
@@ -577,6 +578,7 @@ class TestReleaseRunner:
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
             release_run(cfg)
         assert exc.value.code == 1
+# frob:tests src/frob/app/release_runner.py::run  # noqa: E501
 
     def test_stamp_success_writes_manifest(self, tmp_path, capsys):
         """A successful `stamp` writes `.frob-release.json` and prints its path."""

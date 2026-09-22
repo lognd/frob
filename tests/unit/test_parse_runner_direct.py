@@ -54,6 +54,7 @@ class TestParseRunnerRun:
             run(cfg)
         assert "cannot read" in caplog.text
 
+    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
     def test_reads_from_file_and_logs_text(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

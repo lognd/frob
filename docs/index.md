@@ -240,6 +240,35 @@ their owning module design docs above (`docs/modules/graph.md`, `docs/modules/ti
 `docs/modules/testing.md`) rather than as separate per-command pages, since their
 usage is inseparable from the data model they operate on.
 
+Generated stub pages (T-4702, `frob docs --sync-command-pages`) for verbs
+that had no `docs/commands/` page at all -- minimal (help text + usage
+block), not yet enriched with worked examples:
+
+| Doc | Command |
+|---|---|
+| `docs/commands/ack.md` | `frob ack` |
+| `docs/commands/agent.md` | `frob agent` |
+| `docs/commands/claude.md` | `frob claude` |
+| `docs/commands/clean.md` | `frob clean` |
+| `docs/commands/coverage.md` | `frob coverage` |
+| `docs/commands/doctor.md` | `frob doctor` |
+| `docs/commands/explore.md` | `frob explore` |
+| `docs/commands/fleet.md` | `frob fleet` |
+| `docs/commands/graph.md` | `frob graph` |
+| `docs/commands/mutate.md` | `frob mutate` |
+| `docs/commands/natives.md` | `frob natives` |
+| `docs/commands/perf.md` | `frob perf` |
+| `docs/commands/pool.md` | `frob pool` |
+| `docs/commands/process.md` | `frob process` |
+| `docs/commands/profile.md` | `frob profile` |
+| `docs/commands/registry.md` | `frob registry` |
+| `docs/commands/serve.md` | `frob serve` |
+| `docs/commands/status.md` | `frob status` |
+| `docs/commands/test.md` | `frob test` |
+| `docs/commands/verify.md` | `frob verify` |
+| `docs/commands/vet.md` | `frob vet` |
+| `docs/commands/worktree.md` | `frob worktree` |
+
 ## Design docs (active epics)
 
 Design-first epics landed 2026-07-29; each doc is the canonical design its

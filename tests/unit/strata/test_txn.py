@@ -24,8 +24,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingTxnBoundary:
     # frob:tests \
-    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_multi_store_write_op_w\
-    # ithout_boundary_fires
+    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_multi_store_write_op_without_boundary_fires  # noqa: E501
     # frob:tests src/frob/strata/_txn.py::check_txn_boundary_obligations  # noqa: E501
     def test_multi_store_write_op_without_boundary_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -49,8 +48,7 @@ class TestMissingTxnBoundary:
         assert {v.node for v in missing} == {"svc_a"}
 
     # frob:tests \
-    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_single_store_write_op_\
-    # clean
+    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_single_store_write_op_clean  # noqa: E501
     def test_single_store_write_op_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -68,8 +66,7 @@ class TestMissingTxnBoundary:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_transaction_attr_disch\
-    # arges
+    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_transaction_attr_discharges  # noqa: E501
     def test_transaction_attr_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -113,8 +110,7 @@ class TestMissingTxnBoundary:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_empty_store_ids_emits_\
-    # nothing
+    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_empty_store_ids_emits_nothing  # noqa: E501
     def test_empty_store_ids_emits_nothing(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -132,8 +128,7 @@ class TestMissingTxnBoundary:
         assert result.danger_ok.violations == ()
 
     # frob:tests \
-    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_waiver_discharges_find\
-    # ing
+    # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_waiver_discharges_finding  # noqa: E501
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -168,8 +163,7 @@ class TestMissingTxnBoundary:
 
 class TestUnprovenTxnBoundary:
     # frob:tests \
-    # tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary.test_declared_with_no_code\
-    # _evidence_fires
+    # tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def handle():\n    return ok()\n")
         model = KernelModel(
@@ -199,8 +193,7 @@ class TestUnprovenTxnBoundary:
         assert {v.node for v in violations} == {"svc_a"}
 
     # frob:tests \
-    # tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary.test_declared_with_real_co\
-    # de_evidence_discharges
+    # tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -233,8 +226,7 @@ class TestUnprovenTxnBoundary:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary.test_declared_with_no_boun\
-    # d_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

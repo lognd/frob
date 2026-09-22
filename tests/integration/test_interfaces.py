@@ -54,6 +54,7 @@ def project(tmp_path: Path) -> Path:
 
 
 class TestInterfaces:
+    # frob:tests src/frob/_cli_parsers/_core.py::_populate_outline_args
     def test_main_cli_dispatches(self, project: Path) -> None:
         # frob:tests src/frob/__main__.py kind="integration"
         result = _frob(["outline", "src/pkg/alpha.py"], cwd=project)

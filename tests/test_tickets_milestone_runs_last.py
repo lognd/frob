@@ -83,6 +83,7 @@ class TestRunsLastMilestoneScoping:
         # frob:tests src/frob/tickets/_doable.py::_other_open_tickets  # noqa: E501
         assert last.id in {t.id for t in result}
 
+    # frob:tests src/frob/tickets/_doable.py::_other_open_tickets  # noqa: E501
     def test_milestoned_runs_last_blocked_by_same_milestone_open_work(
         self,
     ) -> None:

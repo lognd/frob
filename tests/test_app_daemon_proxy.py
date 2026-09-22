@@ -200,8 +200,7 @@ def _shutdown(root: Path, thread: threading.Thread) -> None:
 class TestEnsureDaemon:
     def test_spawns_when_nothing_recorded(self, root: Path, monkeypatch) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_spawns_when_nothing_rec\
-        # orded
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_spawns_when_nothing_recorded  # noqa: E501
         # No daemon is up, so the frob_version RPC finds nothing to answer
         # and ensure_daemon must spawn one.
         monkeypatch.setattr(
@@ -216,8 +215,7 @@ class TestEnsureDaemon:
 
     def test_noop_when_version_matches(self, root: Path, monkeypatch) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_match\
-        # es
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_noop_when_version_matches  # noqa: E501
         monkeypatch.setattr(
             _daemon_proxy,
             "probe_daemon",
@@ -262,8 +260,7 @@ class TestEnsureDaemon:
     )
     def test_version_handshake_end_to_end(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_version_handshake_end_t\
-        # o_end
+        # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_version_handshake_end_to_end  # noqa: E501
         # A real running daemon (not mocked): frob_version RPC must report
         # this client's own version, so ensure_daemon must not spawn a
         # second, redundant daemon.
@@ -302,8 +299,7 @@ class TestSourceHeadSha:
 
     def test_none_when_no_git_ancestor(self, monkeypatch, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_none_when_no_git_ances\
-        # tor
+        # tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_none_when_no_git_ancestor  # noqa: E501
         # A module living under a directory tree with no `.git` anywhere
         # above it (T-2884's fail-safe: unresolvable is `None`, never a
         # guessed match).
@@ -451,8 +447,7 @@ class TestDifferentialParity:
     )
     def test_perf_hot_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_perf_hot_json_dae\
-        # mon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_perf_hot_json_daemon_matches_in_process  # noqa: E501
         pytest.importorskip("frob_core")
         project = _bare_project(tmp_path)
 
@@ -476,8 +471,7 @@ class TestDifferentialParity:
     )
     def test_graph_affects_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_jso\
-        # n_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_json_daemon_matches_in_process  # noqa: E501
         pytest.importorskip("frob_core")
         project = _bare_project(
             tmp_path, {"helper.py": "def helper():\n    return 1\n"}
@@ -505,8 +499,7 @@ class TestDifferentialParity:
     # separately-collected test, not a further merge"
     def test_graph_query_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_\
-        # daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_daemon_matches_in_process  # noqa: E501
         pytest.importorskip("frob_core")
         project = _bare_project(
             tmp_path, {"helper.py": "def helper():\n    return 1\n"}
@@ -533,8 +526,7 @@ class TestDifferentialParity:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_js\
-        # on_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process  # noqa: E501
         pytest.importorskip("frob_core")
         project = _bare_project(tmp_path)
 
@@ -555,8 +547,7 @@ class TestDifferentialParity:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_check_delta_gates\
-        # _only_json_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_check_delta_gates_only_json_daemon_matches_in_process  # noqa: E501
         # T-1147: the one narrow `frob check --only gates --delta --json`
         # shape `_try_check_delta_via_daemon` proxies -- everything else
         # (a mixed --only, no --delta, a non-python/polyglot project) must
@@ -602,8 +593,7 @@ class TestDifferentialParity:
     )
     def test_touched_tests_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_jso\
-        # n_daemon_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_json_daemon_matches_in_process  # noqa: E501
         pytest.importorskip("frob_core")
         project = _committed_project(tmp_path, gitignore_frob=True)
 
@@ -625,8 +615,7 @@ class TestDifferentialParity:
     )
     def test_exports_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daem\
-        # on_matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daemon_matches_in_process  # noqa: E501
         pytest.importorskip("frob_core")
         project = tmp_path
         (project / ".frob").mkdir()
@@ -658,8 +647,7 @@ class TestDifferentialParity:
     )
     def test_stats_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon\
-        # _matches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon_matches_in_process  # noqa: E501
         pytest.importorskip("frob_core")
         project = _committed_project(tmp_path)
 
@@ -679,8 +667,7 @@ class TestDifferentialParity:
     )
     def test_map_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_map_json_daemon_m\
-        # atches_in_process
+        # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_map_json_daemon_matches_in_process  # noqa: E501
         pytest.importorskip("frob_core")
         project = _committed_project(
             tmp_path, {"pkg/mod.py": "def f() -> None:\n    pass\n"}
@@ -791,6 +778,7 @@ class TestProbeDaemon:
         # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
         assert version is None
 
+    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
     def test_silent_listener_is_wedged(self, tmp_path):
         """A process IS listening but never answers. Spawning a rival here
         is the harmful case: the singleton lock refuses it, so every later
@@ -864,6 +852,7 @@ class TestProbeDaemon:
 # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
 
     # frob:ticket T-3508
+    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
     # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_win32_refuses_before_touching_af_unix  # noqa: E501
     def test_win32_refuses_before_touching_af_unix(self, tmp_path, monkeypatch):
         """T-2961's win32 guard in `probe_daemon` (and its own defense-in-
@@ -971,8 +960,7 @@ class TestProbeDaemonVersion:
 
     def test_matching_version_different_source_sha_is_skew(self, tmp_path):
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_matching_version_\
-        # different_source_sha_is_skew
+        # tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_matching_version_different_source_sha_is_skew  # noqa: E501
         """T-2884's positive control: a source-only change (no version
         bump) must still be detected as skew, not read as Live."""
         from frob.app._daemon_proxy import (
@@ -996,8 +984,7 @@ class TestProbeDaemonVersion:
 
     def test_missing_source_sha_is_skew_not_live(self, tmp_path):
         # frob:tests \
-        # tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_missing_source_sh\
-        # a_is_skew_not_live
+        # tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_missing_source_sha_is_skew_not_live  # noqa: E501
         """T-2884's fail-safe direction: an indeterminate source identity
         (a pre-T-2884 daemon that never sends `source_sha` at all, or one
         that resolved it as `None`) must restart, not be trusted as a

@@ -183,6 +183,7 @@ class TestTicketLeasePin:
         # frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin
         assert result.is_ok
 
+    # frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin
     def test_lease_absent_for_this_worktree_refuses(self, repo: Path) -> None:
         """The lease mechanism IS engaged in this repo (a different
         ticket's lease exists, so the leases directory is present) but
@@ -549,11 +550,14 @@ class TestLeaseTtl:
         record = self._record(recorded.isoformat())
         assert lease_age_seconds(record, now=now) == 7200.0
 # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
+# frob:tests src/frob/tickets/_leases.py::lease_age_seconds kind="unit"  # noqa: E501
 
     def test_age_seconds_none_for_unparseable_timestamp(self) -> None:
         record = self._record("not-a-timestamp")
+        # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
         assert lease_age_seconds(record) is None
 
+    # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
     def test_expired_past_ttl(self) -> None:
         now = datetime(2026, 7, 23, 12, 0, 0, tzinfo=UTC)
         recorded = now - timedelta(seconds=100)

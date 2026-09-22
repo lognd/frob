@@ -106,6 +106,7 @@ class TestEvidenceTestIds:
 # frob:ticket T-0855
 # frob:tests src/frob/tickets/_mutation_evidence.py::_touched_python_files kind="unit"  # noqa: E501
 class TestTouchedPythonFiles:
+    # frob:tests src/frob/tickets/_mutation_evidence.py::_touched_python_files kind="unit"  # noqa: E501
     def test_filters_to_scope_and_python(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_filters_to_scope_and_python  # noqa: E501
         repo = tmp_path / "repo"
@@ -218,6 +219,7 @@ def _repo_with_add_change(tmp_path: Path) -> Path:
 # frob:ticket T-1741
 # frob:tests src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence  # noqa: E501
 class TestCheckTicketMutationEvidence:
+    # frob:tests src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence  # noqa: E501
     # frob:ticket T-1741
     def test_confirmatory_test_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501

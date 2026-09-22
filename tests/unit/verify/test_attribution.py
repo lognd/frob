@@ -228,6 +228,7 @@ class TestAttributeBatch:
         # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
         assert attribution.ticket_id is None
 
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
     def test_zero_reaching_commits_is_unattributed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_zero_reaching_commits_is_unattributed  # noqa: E501
         snapshot = GraphSnapshot(

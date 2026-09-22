@@ -189,6 +189,7 @@ class TestPythonCoverageTargets:
         # frob:tests src/frob/testing/_incremental_coverage.py::python_coverage_targets kind="unit"  # noqa: E501
         assert any("test_widget" in t for t in targets)
 
+    # frob:tests src/frob/testing/_incremental_coverage.py::python_coverage_targets kind="unit"  # noqa: E501
     def test_nothing_touched_returns_empty(self, tmp_path: Path) -> None:
         """T-0484: an unchanged tree (no diff against `base`) selects nothing
         -- callers treat this as "no incremental re-measurement needed," not
@@ -761,6 +762,7 @@ class TestNativeCoverageRefresh:
         assert len(stamp_calls) == 1
 
     # frob:ticket T-1516
+    # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
     def test_incremental_run_uses_touched_set_targets(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -961,6 +963,7 @@ class TestSubprocessCoverageRc:
 
     # frob:ticket T-1235
     # frob:ticket T-2527
+    # frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc  # noqa: E501
     def test_rc_uses_absolute_source_and_data_file(self, tmp_path: Path) -> None:
         """`source`/`data_file` are absolute paths under `root`, not the
         relative `pyproject.toml` values -- a subprocess spawned with a

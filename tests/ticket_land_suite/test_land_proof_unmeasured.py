@@ -48,6 +48,7 @@ class TestEnforceClaimsReverifyVerdict:
         # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
         assert not (tmp_path / "force-overrides.jsonl").exists()
 
+    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
     def test_infra_unmeasured_refuses_without_force(self, tmp_path: Path) -> None:
         result = _enforce_claims_reverify_verdict(
             tmp_path, "T-0001", _ClaimsReverifyOutcome.INFRA_UNMEASURED

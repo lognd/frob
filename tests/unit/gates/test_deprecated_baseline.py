@@ -287,6 +287,7 @@ class TestTighten:
         # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
         assert entry.file_counts() == {"src/b.py": 1}
 
+    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
     def test_never_absorbs_a_new_reference(self, tmp_path: Path) -> None:
         """T-0639: a new referencing file observed now but absent from the
         baseline is NOT silently absorbed -- tighten only ever shrinks an

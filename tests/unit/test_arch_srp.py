@@ -521,6 +521,7 @@ class TestArchGateSrpWiring:
         (tmp_path / "mod.py").write_text(_LCOM4_COHESIVE_SOURCE)
         assert not [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
 
+    # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
     def test_god_module_fires_arch102(self, tmp_path: Path) -> None:
         from frob.gates._arch import arch_gate
 
@@ -533,6 +534,7 @@ class TestArchGateSrpWiring:
 
         (tmp_path / "mod.py").write_text(_MIXED_CONCERN_SOURCE)
         assert [v for v in arch_gate(tmp_path) if v.rule == "ARCH103"]
+# frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
 
     def test_arch101_respects_explicit_frob_toml_override(self, tmp_path: Path) -> None:
         """A `frob.toml` `[arch] lcom4_min_methods = 100` override (well

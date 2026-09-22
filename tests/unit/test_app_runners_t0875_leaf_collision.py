@@ -86,8 +86,7 @@ class TestRegistryRunnerRun:
         self, tmp_path, caplog
     ):
         # frob:tests \
-        # tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun.te\
-        # st_sync_gate_rules_logs_the_full_generated_rule_id_set
+        # tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun.test_sync_gate_rules_logs_the_full_generated_rule_id_set  # noqa: E501
         """T-2454 acceptance[2]: `--sync-gate-rules` logs the FULL live
         registered rule-id set (hand literal unioned with a fresh
         `generated_gate_rule_ids` scan) as the one-place, generated

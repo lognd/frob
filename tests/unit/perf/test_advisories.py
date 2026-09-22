@@ -64,6 +64,7 @@ class TestExternalCallAdvisories:
 
 # frob:tests src/frob/perf/_advisories.py::nested_loop_fanin_advisories  # noqa: E501
 class TestNestedLoopFaninAdvisories:
+    # frob:tests src/frob/perf/_advisories.py::nested_loop_fanin_advisories  # noqa: E501
     def test_hot_loop_with_multiple_callers_fires(self) -> None:
         inner = _loop_section(qualname="pkg.mod.inner", section_id="loop-inner")
         caller_a = _loop_section(qualname="pkg.mod.caller_a", section_id="loop-a")

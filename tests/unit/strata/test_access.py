@@ -23,8 +23,7 @@ from frob.strata._ast import Module, ResourceDecl
 
 class TestNodeAccessDeclarations:
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_reads_access_at\
-    # trs
+    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_reads_access_attrs  # noqa: E501
     # frob:tests src/frob/strata/_access.py::node_access_declarations  # noqa: E501
     def test_reads_access_attrs(self):
         """`access=<resource>:<mode>` attrs read back as typed `NodeAccess`
@@ -40,8 +39,7 @@ class TestNodeAccessDeclarations:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_non_access_attr\
-    # _amid_access_attrs_is_skipped
+    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_non_access_attr_amid_access_attrs_is_skipped  # noqa: E501
     def test_non_access_attr_amid_access_attrs_is_skipped(self):
         """A non-`access=`-prefixed attr sitting alongside real `access=`
         attrs must be skipped (the `continue` branch), not mistaken for a
@@ -56,8 +54,7 @@ class TestNodeAccessDeclarations:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_no_access_attrs\
-    # _is_empty
+    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_no_access_attrs_is_empty  # noqa: E501
     def test_no_access_attrs_is_empty(self):
         """A node with no `access` clause at all reads back an empty
         tuple, not `None` -- mirrors `_pii.py::node_pii_tags`'s
@@ -66,8 +63,7 @@ class TestNodeAccessDeclarations:
         assert node_access_declarations(node) == ()
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_unrecognized_mo\
-    # de_fails_closed
+    # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_unrecognized_mode_fails_closed  # noqa: E501
     def test_unrecognized_mode_fails_closed(self):
         """A hand-built `access=` attr with a mode outside the closed
         vocabulary raises `ValueError` -- fail-closed, not silently
@@ -107,8 +103,7 @@ class TestModeConflict:
         assert mode_conflict(AccessMode.ALPHA, AccessMode.ALPHA) is True
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestModeConflict.test_write_conflicts_with_anyt\
-    # hing
+    # tests/unit/strata/test_access.py::TestModeConflict.test_write_conflicts_with_anything  # noqa: E501
     def test_write_conflicts_with_anything(self):
         """`write+anything CONFLICT`, including read, alpha, itself, and
         the `append`/`exclusive` write-like modes (documented judgment
@@ -117,8 +112,7 @@ class TestModeConflict:
             assert mode_conflict(AccessMode.WRITE, other) is True
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestModeConflict.test_exclusive_conflicts_with_\
-    # everything_including_itself
+    # tests/unit/strata/test_access.py::TestModeConflict.test_exclusive_conflicts_with_everything_including_itself  # noqa: E501
     def test_exclusive_conflicts_with_everything_including_itself(self):
         """`exclusive` is stricter than plain `write`: it must not coexist
         with ANY other accessor at all, including another `exclusive`."""
@@ -126,8 +120,7 @@ class TestModeConflict:
             assert mode_conflict(AccessMode.EXCLUSIVE, other) is True
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestModeConflict.test_append_conflicts_with_any\
-    # thing
+    # tests/unit/strata/test_access.py::TestModeConflict.test_append_conflicts_with_anything  # noqa: E501
     def test_append_conflicts_with_anything(self):
         """`append` is folded in as write-like -- it still mutates the
         resource, so `write+anything` applies to it too."""
@@ -137,8 +130,7 @@ class TestModeConflict:
 
 class TestResourceContentionViolations:
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_two_write\
-    # rs_no_arbiter_fires
+    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_two_writers_no_arbiter_fires  # noqa: E501
     def test_two_writers_no_arbiter_fires(self):
         """Two nodes with write-mode access to the same resource and no
         declared arbiter -- SYS204 fires (T-0700 acceptance criterion)."""
@@ -154,8 +146,7 @@ class TestResourceContentionViolations:
         assert {report.violations[0].node, report.violations[0].peer} == {"a", "b"}
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_arbitrate\
-    # d_by_discharges
+    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_arbitrated_by_discharges  # noqa: E501
     def test_arbitrated_by_discharges(self):
         """The same two write-mode accessors with a declared
         `arbitrated_by` arbiter discharge cleanly (T-0700 acceptance
@@ -174,8 +165,7 @@ class TestResourceContentionViolations:
         assert report.violations == ()
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_lock_disc\
-    # harges
+    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_lock_discharges  # noqa: E501
     def test_lock_discharges(self):
         """A declared `lock` (lease name, no node arbiter) discharges the
         same way `arbitrated_by` does."""
@@ -193,8 +183,7 @@ class TestResourceContentionViolations:
         assert report.violations == ()
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_read_only\
-    # _modes_discharge_without_arbiter
+    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_read_only_modes_discharge_without_arbiter  # noqa: E501
     def test_read_only_modes_discharge_without_arbiter(self):
         """Two read-mode accessors of the same resource, no arbiter --
         clean (T-0700 acceptance criterion: read-only modes discharge)."""
@@ -209,8 +198,7 @@ class TestResourceContentionViolations:
         assert report.violations == ()
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_bare_reso\
-    # urce_declaration_with_no_arbiter_still_fires
+    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_bare_resource_declaration_with_no_arbiter_still_fires  # noqa: E501
     def test_bare_resource_declaration_with_no_arbiter_still_fires(self):
         """A `resource` block that names the resource but declares
         neither `arbitrated_by` nor `lock` does NOT discharge -- a bare
@@ -226,8 +214,7 @@ class TestResourceContentionViolations:
         assert [v.rule for v in report.violations] == [SYS_UNARBITRATED_MODE_CONFLICT]
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_single_ac\
-    # cessor_never_fires
+    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_single_accessor_never_fires  # noqa: E501
     def test_single_accessor_never_fires(self):
         """A resource with exactly one declared accessor has no peer to
         conflict with -- SYS204 is single-instance-silent by construction
@@ -240,8 +227,7 @@ class TestResourceContentionViolations:
         assert report.violations == ()
 
     # frob:tests \
-    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_unrelated\
-    # _resources_do_not_cross_conflict
+    # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_unrelated_resources_do_not_cross_conflict  # noqa: E501
     def test_unrelated_resources_do_not_cross_conflict(self):
         """Two nodes writing DIFFERENT resources never conflict -- the
         proof is per-resource, not global."""

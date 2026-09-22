@@ -161,15 +161,13 @@ class TestHomeClaudeMissing:
         assert claude_runner.home_claude_missing(_repo_and_home) is True
 
     # frob:tests \
-    # tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_false_when_home_clau\
-    # de_present
+    # tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_false_when_home_claude_present  # noqa: E501
     def test_false_when_home_claude_present(self, _repo_and_home: Path) -> None:
         (Path.home() / ".claude").mkdir(parents=True, exist_ok=True)
         assert claude_runner.home_claude_missing(_repo_and_home) is False
 
     # frob:tests \
-    # tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_none_for_repo_with_n\
-    # o_managed_config
+    # tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_none_for_repo_with_no_managed_config  # noqa: E501
     def test_none_for_repo_with_no_managed_config(self, tmp_path: Path) -> None:
         bare = tmp_path / "bare3"
         bare.mkdir()
@@ -178,8 +176,7 @@ class TestHomeClaudeMissing:
 
 class TestDriftWarning:
     # frob:tests \
-    # tests/unit/test_claude_runner.py::TestDriftWarning.test_warns_when_managed_file_d\
-    # iffers
+    # tests/unit/test_claude_runner.py::TestDriftWarning.test_warns_when_managed_file_differs  # noqa: E501
     def test_warns_when_managed_file_differs(self, _repo_and_home: Path) -> None:
         """No `~/.claude/hooks/widget.py` at all yet -- this MUST report
         drift before any sync runs (the required pre-fix failing state)."""

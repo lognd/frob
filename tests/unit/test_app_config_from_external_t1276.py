@@ -27,8 +27,7 @@ class TestFromExternal:
     # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"  # noqa: E501
     def test_missing_file_falls_back_to_defaults(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_miss\
-        # ing_file_falls_back_to_defaults
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_missing_file_falls_back_to_defaults  # noqa: E501
         args = argparse.Namespace()
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.subcommand is None
@@ -36,8 +35,7 @@ class TestFromExternal:
 
     def test_reads_and_merges_tool_frob_table(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_read\
-        # s_and_merges_tool_frob_table
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_reads_and_merges_tool_frob_table  # noqa: E501
         cfg_file = tmp_path / "pyproject.toml"
         cfg_file.write_text('[tool.frob]\ncheck_type = "lint"\n')
         args = argparse.Namespace()
@@ -46,16 +44,14 @@ class TestFromExternal:
 
     def test_subcommand_is_resolved_to_the_enum(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_subc\
-        # ommand_is_resolved_to_the_enum
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_subcommand_is_resolved_to_the_enum  # noqa: E501
         args = argparse.Namespace(subcommand="doctor")
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.subcommand is Subcommand.doctor
 
     def test_no_color_flag_is_copied_when_present(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_no_c\
-        # olor_flag_is_copied_when_present
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_no_color_flag_is_copied_when_present  # noqa: E501
         args = argparse.Namespace(no_color=True)
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.no_color is True
@@ -64,8 +60,7 @@ class TestFromExternal:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_stri\
-        # ng_field_from_the_first_copy_loop_is_carried
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_string_field_from_the_first_copy_loop_is_carried  # noqa: E501
         args = argparse.Namespace(check_type="policy", check_ticket="T-0001")
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.check_type == "policy"
@@ -75,8 +70,7 @@ class TestFromExternal:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool\
-        # _flag_from_the_second_copy_loop_defaults_false
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool_flag_from_the_second_copy_loop_defaults_false  # noqa: E501
         args = argparse.Namespace()
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.fmt_check is False
@@ -85,11 +79,31 @@ class TestFromExternal:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool\
-        # _flag_from_the_second_copy_loop_is_set_true
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool_flag_from_the_second_copy_loop_is_set_true  # noqa: E501
         args = argparse.Namespace(fmt_check=True)
         cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
         assert cfg.fmt_check is True
+
+    def test_unsized_ack_reason_reaches_cfg(self, tmp_path: Path) -> None:
+        """T-4702 (T-5132 regression fix): `--unsized-ack REASON` was
+        silently dropped -- `ticket_unsized_ack` was missing from
+        `_STRING_FIELDS`, so `cfg.ticket_unsized_ack` was always `None`
+        regardless of what the CLI flag carried."""
+        # frob:tests \
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_unsized_ack_reason_reaches_cfg  # noqa: E501
+        args = argparse.Namespace(ticket_unsized_ack="filed as T-9999, sized later")
+        cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
+        assert cfg.ticket_unsized_ack == "filed as T-9999, sized later"
+
+    def test_ticket_points_int_field_reaches_cfg(self, tmp_path: Path) -> None:
+        """T-4702 (T-5132 regression fix): `ticket_points` was missing
+        from `_INT_FIELDS` alongside `ticket_unsized_ack`, so `frob ticket
+        points` values were dropped the same way before this fix."""
+        # frob:tests \
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_ticket_points_int_field_reaches_cfg  # noqa: E501
+        args = argparse.Namespace(ticket_points=3)
+        cfg = AppConfig.from_external(args, tmp_path / "nonexistent.toml")
+        assert cfg.ticket_points == 3
 
 
 class TestFromArgs:
@@ -97,8 +111,7 @@ class TestFromArgs:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_config_from_external_t1276.py::TestFromArgs.test_delegate\
-        # s_to_from_external_with_pyproject_default
+        # tests/unit/test_app_config_from_external_t1276.py::TestFromArgs.test_delegates_to_from_external_with_pyproject_default  # noqa: E501
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[tool.frob]\ncheck_type = "lint"\n')
         args = argparse.Namespace(subcommand="check")

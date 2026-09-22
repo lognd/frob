@@ -112,8 +112,7 @@ class TestScanCandidateRuleIdLiterals:
 
     def test_finds_bare_positional_argument(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.te\
-        # st_finds_bare_positional_argument
+        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_bare_positional_argument  # noqa: E501
         # The exact SYS109 shape: a rule-id-shaped string passed as a bare
         # positional argument, no `rule=`/`code=` keyword at all -- the
         # shape `scan_emitted_rule_ids` structurally cannot detect.
@@ -130,8 +129,7 @@ class TestScanCandidateRuleIdLiterals:
 
     def test_finds_typed_const_assignment(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.te\
-        # st_finds_typed_const_assignment
+        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_typed_const_assignment  # noqa: E501
         # The exact CVEFP001 shape: a type-annotated pydantic field
         # default, `rule: str = "..."` -- `_LITERAL_PATTERN` does not
         # tolerate the `: str` annotation between the keyword and `=`.
@@ -147,8 +145,7 @@ class TestScanCandidateRuleIdLiterals:
 
     def test_finds_code_kwarg_outside_scanned_bases(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.te\
-        # st_finds_code_kwarg_outside_scanned_bases
+        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_finds_code_kwarg_outside_scanned_bases  # noqa: E501
         # The BUDGET001/CHECK001/DEPLOY00x/DERIVED001 shape: a `code=`
         # kwarg (sibling to `rule=`) in a package outside `SCANNED_BASES`
         # entirely (here `src/frob/app`, matching the real BUDGET001/
@@ -166,8 +163,7 @@ class TestScanCandidateRuleIdLiterals:
 
     def test_inline_comment_example_not_picked_up(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.te\
-        # st_inline_comment_example_not_picked_up
+        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_inline_comment_example_not_picked_up  # noqa: E501
         # The real false-positive this scan's own dev process hit: an
         # inline trailing comment's prose example (`# e.g. "F401"`) is
         # code-line-adjacent, not a whole-line comment, so it must be
@@ -186,8 +182,7 @@ class TestScanCandidateRuleIdLiterals:
 
     def test_whole_line_comment_not_picked_up(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.te\
-        # st_whole_line_comment_not_picked_up
+        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_whole_line_comment_not_picked_up  # noqa: E501
         gates_dir = tmp_path / "src" / "frob" / "gates"
         gates_dir.mkdir(parents=True)
         (gates_dir / "_synthetic.py").write_text(
@@ -202,8 +197,7 @@ class TestScanCandidateRuleIdLiterals:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.te\
-        # st_reports_correct_line_number_deep_into_a_multi_line_file
+        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.test_reports_correct_line_number_deep_into_a_multi_line_file  # noqa: E501
         # T-3477 (PERF014): scan_candidate_rule_id_literals now does ONE
         # finditer() call over the whole comment-stripped file text and
         # recovers each match's line number via bisect over precomputed
@@ -239,8 +233,7 @@ class TestFindUnregisteredRuleIds:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_e\
-        # mpty_when_every_candidate_is_known_or_retired
+        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_empty_when_every_candidate_is_known_or_retired  # noqa: E501
         gates_dir = tmp_path / "src" / "frob" / "gates"
         gates_dir.mkdir(parents=True)
         (gates_dir / "_synthetic.py").write_text(
@@ -256,8 +249,7 @@ class TestFindUnregisteredRuleIds:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_r\
-        # eports_a_candidate_missing_from_both_known_and_retired
+        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_reports_a_candidate_missing_from_both_known_and_retired  # noqa: E501
         # Also proves the "non-gates package" acceptance shape: the
         # synthetic rule lives under src/frob/perf, well outside
         # SCANNED_BASES ("src/frob/gates", "src/frob/strata"), and is
@@ -276,8 +268,7 @@ class TestFindUnregisteredRuleIds:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_r\
-        # etired_id_is_excluded_even_when_shape_matches
+        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_retired_id_is_excluded_even_when_shape_matches  # noqa: E501
         # Mirrors the real TIERBDEMO001 case: a candidate that IS a
         # construction site, deliberately excluded via `retired=` rather
         # than absent from `known` by accident.
@@ -293,8 +284,7 @@ class TestFindUnregisteredRuleIds:
 
     def test_real_repo_registry_is_complete(self) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_r\
-        # eal_repo_registry_is_complete
+        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete  # noqa: E501
         # T-1937's own drift-lock: every rule-id-shaped literal anywhere
         # under this repo's real src/ tree (not just SCANNED_BASES) must
         # be a member of `known_gate_rule_ids()` or `RETIRED_RULE_IDS`.
@@ -318,8 +308,7 @@ class TestFindUnregisteredRuleIds:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_n\
-        # ew_standard_shape_rule_recognized_without_hand_registration
+        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_new_standard_shape_rule_recognized_without_hand_registration  # noqa: E501
         # T-2454's own acceptance[0]/[1]: a ticket adding a brand-new gate
         # module using the ORDINARY `rule="..."` construction shape needs
         # NO hand edit to `_KNOWN_GATE_RULES` at all -- `known=frozenset()`
@@ -343,8 +332,7 @@ class TestFindUnregisteredRuleIds:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_d\
-        # isclosed_gap_shape_still_requires_hand_registration
+        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_disclosed_gap_shape_still_requires_hand_registration  # noqa: E501
         # T-2454's own must-still-refuse control: a rule id constructed
         # via a BARE POSITIONAL argument (the disclosed residual gap
         # `generated_gate_rule_ids` deliberately does not cover, T-1937's
@@ -381,8 +369,7 @@ class TestGateRuleRegistryGate:
 
     def test_clean_repo_is_silent(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_clea\
-        # n_repo_is_silent
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_clean_repo_is_silent  # noqa: E501
         # A src/ tree with zero rule-id-shaped candidates at all is
         # silent -- no findings, not even UNRESOLVED (a real scan ran
         # and genuinely found nothing to report).
@@ -393,8 +380,7 @@ class TestGateRuleRegistryGate:
 
     def test_unregistered_id_reported_as_error(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_unre\
-        # gistered_id_reported_as_error
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_unregistered_id_reported_as_error  # noqa: E501
         _write_frob_pyproject(tmp_path)
         gates_dir = tmp_path / "src" / "frob" / "gates"
         gates_dir.mkdir(parents=True)
@@ -414,8 +400,7 @@ class TestGateRuleRegistryGate:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_miss\
-        # ing_src_dir_is_unresolved_not_silent_zero
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_missing_src_dir_is_unresolved_not_silent_zero  # noqa: E501
         # T-2391 fail-loudly positive control: a repo with NO src/ at
         # all (a layout this scan cannot cover, T-2384) must report
         # UNRESOLVED, never an empty (falsely-clean) result.
@@ -430,8 +415,7 @@ class TestGateRuleRegistryGate:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_scan\
-        # _crash_is_unresolved_not_silently_swallowed
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_scan_crash_is_unresolved_not_silently_swallowed  # noqa: E501
         _write_frob_pyproject(tmp_path)
         (tmp_path / "src").mkdir()
 
@@ -456,12 +440,12 @@ class TestGateRuleRegistryDownstreamRepoExemption:
     # frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
     frob's own checkout via `is_frob_own_repo` (T-2706 precedent)."""
 
+    # frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
     def test_downstream_repo_with_own_rule_catalog_is_silent(
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepo\
-        # Exemption.test_downstream_repo_with_own_rule_catalog_is_silent
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_downstream_repo_with_own_rule_catalog_is_silent  # noqa: E501
         # No pyproject.toml at all (the common case for a bare scan
         # target) -- still not frob's own repo, still silent, even
         # though the file below is shaped exactly like the
@@ -477,8 +461,7 @@ class TestGateRuleRegistryDownstreamRepoExemption:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepo\
-        # Exemption.test_downstream_repo_declaring_a_different_project_name_is_silent
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_downstream_repo_declaring_a_different_project_name_is_silent  # noqa: E501
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
         gates_dir = tmp_path / "src" / "mypkg" / "lint"
         gates_dir.mkdir(parents=True)
@@ -488,8 +471,7 @@ class TestGateRuleRegistryDownstreamRepoExemption:
 
     def test_frobs_own_repo_still_scanned(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepo\
-        # Exemption.test_frobs_own_repo_still_scanned
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_frobs_own_repo_still_scanned  # noqa: E501
         # Positive control: the SAME unregistered-id shape as
         # test_unregistered_id_reported_as_error still fires once the
         # tree is stamped as frob's own -- the fix narrows WHERE this

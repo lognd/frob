@@ -27,7 +27,8 @@ def _rule_ids(violations) -> list[str]:
 class TestCplace001:
     """`src/**/*.py` frob:waive reason-length cap."""
 
-    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
+    # frob:tests \
+    # src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
     def test_must_fire_long_waive_reason(self) -> None:
         """A `frob:waive` directive whose folded reason spans more than
         `CPLACE001_WAIVE_REASON_LIMIT_LINES` physical lines fires."""
@@ -44,8 +45,7 @@ class TestCplace001:
 
     def test_symref_binds_to_the_enclosing_function(self) -> None:
         # frob:tests \
-        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_binds_to_the\
-        # _enclosing_function
+        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_binds_to_the_enclosing_function  # noqa: E501
         """T-3391 (LEXCHECK001): a `frob:waive` directive inside a function
         body gets that function's dotted qualname as its `symref`, not the
         file-wide `None` fallback -- lets `_match_waiver` require an exact
@@ -65,8 +65,7 @@ class TestCplace001:
     # frob:ticket T-3539
     def test_symref_stays_posix_joined_on_a_windows_shaped_path(self) -> None:
         # frob:tests \
-        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_stays_posix_\
-        # joined_on_a_windows_shaped_path
+        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_stays_posix_joined_on_a_windows_shaped_path  # noqa: E501
         """T-3539: `PureWindowsPath` (not a monkeypatched `os.sep` -- its
         `__str__` is ALWAYS backslash-joined, on every host platform,
         making this a genuine cross-platform repro rather than a Windows-
@@ -93,8 +92,7 @@ class TestCplace001:
 
     def test_symref_is_none_at_module_level(self) -> None:
         # frob:tests \
-        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_is_none_at_m\
-        # odule_level
+        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_is_none_at_module_level  # noqa: E501
         """The module-level case (no enclosing function/class) keeps
         `symref=None`, matching `Violation.symref`'s documented contract
         for a file/module-scoped finding."""

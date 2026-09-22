@@ -1,5 +1,26 @@
 # CLI regrouping: verb-group taxonomy (T-1238)
 
+REVERTED (T-4690/T-4687, 2026-09-2x): the three groups this doc's own
+"Method"/"Candidate taxonomy" sections below justify and mark
+IMPLEMENTED -- `frob quality`, `frob design`, `frob ops` -- are DELETED
+(deprecation shims, sunset 2026-12-01), not kept as permanent aliases.
+MEASURED reason (T-4690's own ticket body): each group verb ADDED four
+top-level names (the group itself plus zero net reduction in the flat
+surface, since this doc's own "Migration / alias policy" section below
+required every member's standalone top-level form to ALSO stay a
+permanent alias) and REMOVED zero -- `_mirror_subparser` (T-4520)
+literally wrote the same `ArgumentParser` object into two `choices`
+dicts, proving the duplication in code, not just in this doc's own
+taxonomy exercise. `frob explore` (this section's own T-1238 slice) is
+the ONE exception and the surviving verb group: T-4690's coordinator
+amendment (2026-09-19) kept it as the single "read-only analysis" verb
+and T-4695 later added `gitlog`/`stats`/`graph-query`/`graph-why`/
+`graph-affects`/`debt`/`deprecated` onto it, the same way this doc's own
+"Migration / alias policy" section describes -- just with a sunset
+clock on the OLD spelling instead of a permanent alias. The sections
+below are preserved as the historical record of why the groups were
+built; they are not a description of the live CLI surface.
+
 User directive 2026-07-29: `frob`'s top-level surface is intimidating (36
 entries as of this writing -- `docs/modules/cli.md`'s generated table).
 Group related commands under a small number of intent-named verb groups

@@ -220,7 +220,9 @@ pub fn exact_regions(
 }
 
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-// frob:tests frob-core/src/lib.rs::tests.exact_regions_finds_shared_block_inside_different_functions kind="unit"
+// frob:tests \
+// frob-core/src/lib.rs::tests.exact_regions_finds_shared_block_inside_different_functions \
+// kind="unit"
 pub fn exact_regions_impl(
     documents: Vec<Vec<String>>,
     min_len: usize,

@@ -349,6 +349,7 @@ class AppConfig(BaseModel):
     docs_search: str | None = None
     docs_json: bool = False
     docs_sync_commands: bool = False  # T-1011
+    docs_sync_command_pages: bool = False  # T-4702
 
     # exports
     exports_path: Path | None = None

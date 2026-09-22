@@ -207,6 +207,7 @@ class TestTick014:
         queue = TicketQueue(tickets={t.id: t})
         assert empty_code_diff_violations(_UNUSED_ROOT, queue) == ()
 
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations  # noqa: E501
     def test_real_diff_quiet(self) -> None:
         """MUST-STAY-QUIET: a done BUG ticket whose Changed block touches
         a real source file alongside the ticket file -- the normal,

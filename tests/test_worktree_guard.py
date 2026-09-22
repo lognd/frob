@@ -199,6 +199,7 @@ class TestAgentEnvExports:
         # frob:tests src/frob/tickets/_worktree_guard.py::agent_env_exports
         assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV not in result.danger_ok
 
+    # frob:tests src/frob/tickets/_worktree_guard.py::agent_env_exports
     def test_fleet_context_bounds_xdist_workers(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_worktree_guard.py::TestAgentEnvExports.test_fleet_context_bounds_xdist_workers  # noqa: E501
@@ -573,6 +574,7 @@ class TestAgentRunnerEnv:
         # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
         assert f"export FROB_WORKTREE={shlex.quote(str(tmp_path.resolve()))}" in out
 
+    # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
     def test_env_non_repo_path_exits_nonzero(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -616,6 +618,7 @@ class TestAgentEnvStdoutPurity:
     # frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
     logging handlers -- and assert on every stdout line, not merely that
     the exports are present among other noise."""
+# frob:tests src/frob/app/agent_runner.py::run  # noqa: E501
 
     def test_bare_eval_succeeds_with_no_filtering(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_bare_eval_succeeds_with_no_filtering  # noqa: E501

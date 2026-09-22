@@ -1899,8 +1899,7 @@ class TestCommitsTouchingPath:
 
     def test_names_the_real_commit_that_touched_the_file(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath.test_names\
-        # _the_real_commit_that_touched_the_file
+        # tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath.test_names_the_real_commit_that_touched_the_file  # noqa: E501
         # frob:ticket T-1799
         from frob.tickets._land_git_ops import _commits_touching_path
 
@@ -1915,8 +1914,7 @@ class TestCommitsTouchingPath:
 
     def test_empty_when_the_path_was_never_touched(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath.test_empty\
-        # _when_the_path_was_never_touched
+        # tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath.test_empty_when_the_path_was_never_touched  # noqa: E501
         # frob:ticket T-1799
         from frob.tickets._land_git_ops import _commits_touching_path
 

@@ -86,6 +86,7 @@ class TestVersionCouplingGate:
         # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
         assert any("frob-core" in v.message for v in violations)
 
+    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
     def test_loose_pin_fires(self, tmp_path: Path) -> None:
         """A `>=` pin on the native extra (instead of exact `==`) fires --
         a loose pin on an ABI-coupled native extension is rejected

@@ -78,8 +78,7 @@ class TestProfileBoundarySubjectCount:
     # frob:tests src/frob/gates/_profile_boundary.py::profile_boundary_subject_count
     def test_counts_every_usage_examined(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundaryS\
-        # ubjectCount.test_counts_every_usage_examined
+        # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCount.test_counts_every_usage_examined  # noqa: E501
         """The allowed layer's own two definitions/references plus one
         allowed-outside usage should all count as examined subjects, not
         just the ones flagged as violations (there are none here)."""
@@ -109,8 +108,7 @@ def _land_core(root, worktree):
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundaryS\
-        # ubjectCount.test_zero_reproduces_t3941_windows_shape
+        # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCount.test_zero_reproduces_t3941_windows_shape  # noqa: E501
         """T-3985 acceptance[2]: reproduce T-3941's own root cause
         directly -- `_symbol_usages` (backed by `frob.xref.xref`)
         returning nothing, the way it silently did on Windows -- and show

@@ -60,8 +60,7 @@ class TestFindDuplicates:
         assert "format_report" not in all_symbols
 
     # frob:tests \
-    # tests/unit/test_dup.py::TestFindDuplicates.test_with_target_alpha_rename_matches_\
-    # at_renamed_rung
+    # tests/unit/test_dup.py::TestFindDuplicates.test_with_target_alpha_rename_matches_at_renamed_rung  # noqa: E501
     # frob:ticket T-0486
     def test_with_target_alpha_rename_matches_at_renamed_rung(self, tmp_path):
         """T-0486 regression: two clones differing only in a `with ... as
@@ -137,8 +136,7 @@ class TestTestsDirectoryFloor:
     lines, layered on top of the repo-wide `min_lines=6` default."""
 
     # frob:tests \
-    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_short_fixture_style_duplicat\
-    # e_under_tests_is_no_longer_a_group
+    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group  # noqa: E501
     def test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group(
         self, tmp_path
     ):
@@ -176,8 +174,7 @@ class TestTestsDirectoryFloor:
         )
 
     # frob:tests \
-    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_genuine_helper_duplicate_at_\
-    # 20_lines_still_fires
+    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_genuine_helper_duplicate_at_20_lines_still_fires  # noqa: E501
     def test_genuine_helper_duplicate_at_20_lines_still_fires(self, tmp_path):
         """POSITIVE CONTROL (required before T-2970's narrowing could land):
         a genuine, non-trivial 20+-line assertion-sequence helper -- real
@@ -226,8 +223,7 @@ class TestTestsDirectoryFloor:
         assert {"assert_ticket_is_clean", "assert_ticket_is_clean_copy"} <= symbols
 
     # frob:tests \
-    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_fragment_file_is_forward_sla\
-    # sh_separated_in_nested_directory
+    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_fragment_file_is_forward_slash_separated_in_nested_directory  # noqa: E501
     def test_fragment_file_is_forward_slash_separated_in_nested_directory(
         self, tmp_path
     ):
@@ -284,8 +280,7 @@ class TestTestsDirectoryFloor:
                 )
 
     # frob:tests \
-    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_walk_does_not_exclude_a_file\
-    # _that_matches_no_configured_exclude_glob
+    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_walk_does_not_exclude_a_file_that_matches_no_configured_exclude_glob  # noqa: E501
     def test_walk_does_not_exclude_a_file_that_matches_no_configured_exclude_glob(
         self, tmp_path
     ):

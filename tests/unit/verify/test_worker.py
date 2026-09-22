@@ -738,6 +738,7 @@ class TestReconcileStaleInFlightMarker:
         # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
         assert not marker.exists()
 
+    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
     def test_stale_marker_with_no_matching_watermark_is_reported_unverified(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

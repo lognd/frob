@@ -129,6 +129,7 @@ class TestTodo001BareComment:
         # frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
         assert v.line == 12
 
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
     def test_frob_prefixed_line_is_not_bare(self) -> None:
         """A `frob:todo T-1234` line is a tracked directive, not a bare
         deferral marker -- never flagged by TODO001 even though it

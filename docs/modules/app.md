@@ -833,6 +833,43 @@ search(query: str, docs_dir: Path) -> list[DocMatch]
     # Searches docs/*.md under `docs_dir` for `query`, ranked by match.
 ```
 
+### frob.docs._command_pages (T-4702)
+
+`frob docs --sync-command-pages` (`src/frob/docs/_command_pages.py`) keeps
+`docs/commands/` from drifting silently against the live argparse tree: it
+writes a minimal, mechanical stub page (title, one-line help summary,
+`--help`-rendered usage block) for any top-level verb that has none yet,
+and never touches a page that already exists -- enriching a generated stub
+with worked examples stays a human, curated step. `live_top_level_verbs`
+excludes verbs suppressed from `--help` (T-4690-style deprecation sunset);
+`all_registered_verbs` includes them too, for callers that need to tell a
+still-sunsetting deprecated spelling apart from a name argparse has never
+registered at all (`docs/commands/*.md` coverage, see
+`tests/unit/test_docs_commands_coverage.py`).
+
+<!-- frob:describes src/frob/docs/_command_pages.py::live_top_level_verbs -->
+<!-- frob:describes src/frob/docs/_command_pages.py::all_registered_verbs -->
+<!-- frob:describes src/frob/docs/_command_pages.py::generate_command_page -->
+<!-- frob:describes src/frob/docs/_command_pages.py::sync_missing_command_pages -->
+
+```python
+# frob/docs/_command_pages.py
+live_top_level_verbs(parser: ArgumentParser) -> dict[str, tuple[ArgumentParser, str]]
+    # Every top-level verb NOT suppressed from `frob --help`, mapped to its
+    # own (sub_parser, help_text) pair.
+
+all_registered_verbs(parser: ArgumentParser) -> frozenset[str]
+    # Every top-level name argparse knows about, live and
+    # deprecated-but-still-dispatchable alike.
+
+generate_command_page(verb: str, sub_parser: ArgumentParser, help_text: str) -> str
+    # Renders one minimal docs/commands/<verb>.md page's full text.
+
+sync_missing_command_pages(parser: ArgumentParser, docs_dir: Path = ...) -> tuple[str, ...]
+    # Writes a stub page for every live verb with none yet; never
+    # overwrites an existing file; returns the verbs it wrote.
+```
+
 ## Shared exclude-glob logic
 
 `src/frob/excludes.py` is the one place that reads `[graph] exclude` from

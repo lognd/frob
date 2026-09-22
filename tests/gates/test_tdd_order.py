@@ -249,6 +249,7 @@ def _tests_edge(artifact_symref: str, test_symref: str) -> Edge:
 # frob:ticket T-3009
 class TestTddOrderViolations:
     # frob:ticket T-3009
+    # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations  # noqa: E501
     def test_fires_on_a_planted_implementation_first_pair(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _commit_file(tmp_path, "m.py", "def widget():\n    pass\n", "impl first")
@@ -430,6 +431,7 @@ class TestPerfShape:
         (log_argv,) = log_calls
         assert f"{base}..HEAD" in log_argv
 
+    # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
     # frob:ticket T-3618
     def test_shared_file_is_walked_and_read_exactly_once_across_edges(
         self, tmp_path: Path, monkeypatch

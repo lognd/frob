@@ -2124,6 +2124,7 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::public_entry": ("src/a.py::_helper",)}
 
     # frob:ticket T-0809
+    # frob:tests src/frob/graph/callgraph.py::capability_gap_disclosure  # noqa: E501
     def test_build_call_graph_marks_unresolved_private_looking_callee(
         self, tmp_path: Path
     ) -> None:
@@ -2222,6 +2223,7 @@ class TestCallGraph:
         assert call_graph.calls == {}
 
     # frob:ticket T-0813
+    # frob:tests src/frob/graph/callgraph.py::_unresolved_exempt_names  # noqa: E501
     def test_build_call_graph_exempts_super_dunder_call_from_unresolved(
         self, tmp_path: Path
     ) -> None:

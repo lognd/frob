@@ -14,8 +14,7 @@ def _rate(value: float = 1.0) -> Quantity:
 
 class TestSpof:
     # frob:tests \
-    # tests/unit/strata/test_spof.py::TestSpof.test_singleton_node_with_critical_inboun\
-    # d_fires
+    # tests/unit/strata/test_spof.py::TestSpof.test_singleton_node_with_critical_inbound_fires  # noqa: E501
     # frob:tests src/frob/strata/_spof.py::check_spof  # noqa: E501
     def test_singleton_node_with_critical_inbound_fires(self):
         model = KernelModel(
@@ -90,8 +89,7 @@ class TestSpof:
         assert not [v for v in report.violations if v.rule == REL_SPOF]
 
     # frob:tests \
-    # tests/unit/strata/test_spof.py::TestSpof.test_waiver_on_one_node_keeps_sibling_no\
-    # de_finding
+    # tests/unit/strata/test_spof.py::TestSpof.test_waiver_on_one_node_keeps_sibling_node_finding  # noqa: E501
     def test_waiver_on_one_node_keeps_sibling_node_finding(self):
         model = KernelModel(
             nodes=(

@@ -354,6 +354,7 @@ class TestOverBroadExcept:
     # frob:tests src/frob/arch/_fallibility.py::check_over_broad_except  # noqa: E501
     (docs/modules/arch.md#fallibility-checks)."""
 
+    # frob:tests src/frob/arch/_fallibility.py::check_over_broad_except  # noqa: E501
     def test_bare_except_flagged(self) -> None:
         from frob.arch._fallibility import check_over_broad_except
         from frob.arch._normalized import (

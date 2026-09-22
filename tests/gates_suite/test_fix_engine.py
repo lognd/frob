@@ -2779,6 +2779,7 @@ class TestFixEngineTierB:
 
     # -- acceptance [0]: a clean Tier-B fix commits ------------------------
 
+    # frob:tests src/frob/gates/_fix_engine_tier_b.py::fix_tierbdemo001_marker_rewrite
     def test_clean_fix_commits_and_is_reported_fixed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine_tier_b.py::apply_tier_b_fixes \
         # kind="unit"

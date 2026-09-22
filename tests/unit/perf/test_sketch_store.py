@@ -292,6 +292,7 @@ class TestSketchStoreConfig:
     """`load_sketch_config`'s `[perf.sketch]` frob.toml parsing."""
 
     # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config  # noqa: E501
+    # frob:tests src/frob/tomlio.py::read_toml_lenient  # noqa: E501
     def test_missing_frob_toml_returns_defaults(self, tmp_path: Path) -> None:
         config = load_sketch_config(tmp_path)
         assert config == SketchStoreConfig()

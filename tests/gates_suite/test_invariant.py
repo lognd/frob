@@ -1231,6 +1231,7 @@ class TestRace001Violations:
     defect one layer up (the shape was never even test-obligated)."""
 
     # frob:tests tests/gates_suite/test_invariant.py::TestRace001Violations.test_fires_on_unlocked_read_then_write_same_key  # noqa: E501
+    # frob:tests src/frob/gates/_inv.py::race001_violations  # noqa: E501
     def test_fires_on_unlocked_read_then_write_same_key(self, tmp_path: Path) -> None:
         from frob.gates._inv import race001_violations
 

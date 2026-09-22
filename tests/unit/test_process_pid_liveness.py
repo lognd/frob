@@ -88,6 +88,7 @@ class TestPidAlivePosix:
         # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
         assert _pid_liveness.pid_alive(999999) is False
 
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
     def test_permission_error_is_conservatively_alive(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -126,6 +127,7 @@ class TestPidAliveWindowsBackend:
     # frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
     that would raise if `OpenProcess` were ever called with kill rights
     instead of `PROCESS_QUERY_LIMITED_INFORMATION`."""
+# frob:tests src/frob/process/_pid_liveness.py::pid_alive  # noqa: E501
 
     def test_alive_pid_reports_true(self, monkeypatch: pytest.MonkeyPatch) -> None:
         fake = _FakeKernel32(alive_pids={4242})

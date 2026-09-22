@@ -105,6 +105,7 @@ class TestTyAbsentToolIsUnmeasured:
         assert r.error_count == 0
         assert not r.passed
 
+    # frob:tests src/frob/process/parsers/ty.py::parse_ty  # noqa: E501
     def test_unrelated_nonzero_exit_with_no_matches_still_empty(self) -> None:
         # Pre-existing T-4309 fallthrough shape must be unchanged.
         r = parse_ty("some unrecognized ty output\n", exit_code=1)

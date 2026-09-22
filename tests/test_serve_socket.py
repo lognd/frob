@@ -122,6 +122,7 @@ class TestSocketPath:
 
 # frob:tests src/frob/serve/_socketd.py::acquire_singleton_lock kind="unit"  # noqa: E501
 class TestAcquireSingletonLock:
+    # frob:tests src/frob/serve/_socketd.py::acquire_singleton_lock kind="unit"  # noqa: E501
     def test_first_caller_wins(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestAcquireSingletonLock.test_first_caller_wins
@@ -131,8 +132,7 @@ class TestAcquireSingletonLock:
 
     def test_second_caller_loses_while_first_holds(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_second_caller_loses\
-        # _while_first_holds
+        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_second_caller_loses_while_first_holds  # noqa: E501
         first = acquire_singleton_lock(root)
         assert first.is_ok
         second = acquire_singleton_lock(root)
@@ -142,8 +142,7 @@ class TestAcquireSingletonLock:
 
     def test_lock_released_on_close_allows_next_caller(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_lock_released_on_cl\
-        # ose_allows_next_caller
+        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_lock_released_on_close_allows_next_caller  # noqa: E501
         first = acquire_singleton_lock(root)
         assert first.is_ok
         first.danger_ok.close()
@@ -153,8 +152,7 @@ class TestAcquireSingletonLock:
 
     def test_n_racing_callers_exactly_one_wins(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_n_racing_callers_ex\
-        # actly_one_wins
+        # tests/test_serve_socket.py::TestAcquireSingletonLock.test_n_racing_callers_exactly_one_wins  # noqa: E501
         outcomes: list[bool] = []
         lock_guard = threading.Lock()
         barrier = threading.Barrier(8)
@@ -192,8 +190,7 @@ class TestAcquireSingletonLockPlatformBackends:
         self, root: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends.test_no_\
-        # lock_primitive_refuses_loudly
+        # tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
         import frob.process._lock as _lock_mod
 
         monkeypatch.setattr(_lock_mod, "fcntl", None)
@@ -217,8 +214,7 @@ class TestAcquireSingletonLockPlatformBackends:
         non-blocking, contention, release) the real backend only ever
         runs for real on Windows."""
         # frob:tests \
-        # tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends.test_win\
-        # dows_backend_round_trips
+        # tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends.test_windows_backend_round_trips  # noqa: E501
         import fcntl as _real_fcntl
 
         import frob.process._lock as _lock_mod
@@ -288,8 +284,7 @@ class TestDispatchRequest:
     )
     def test_frob_version_reports_daemon_version(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_version_reports_dae\
-        # mon_version
+        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_version_reports_daemon_version  # noqa: E501
         # T-1105: `frob_version` is handled specially by `_RequestHandler`
         # (like `subscribe`), not routed through `dispatch_request`'s
         # `_TOOL_DISPATCH` table -- exercise it over a real running daemon.
@@ -322,8 +317,7 @@ class TestDispatchRequest:
     )
     def test_frob_shutdown_stops_the_server(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_shutdown_stops_the_\
-        # server
+        # tests/test_serve_socket.py::TestDispatchRequest.test_frob_shutdown_stops_the_server  # noqa: E501
         cfg = SocketDaemonConfig(root=root, idle_timeout_s=5.0)
         results: list = []
         thread = threading.Thread(
@@ -360,8 +354,7 @@ class TestRunSocketDaemon:
     )
     def test_serves_one_request_then_idle_exits(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_\
-        # idle_exits
+        # tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits  # noqa: E501
         cfg = SocketDaemonConfig(root=root, idle_timeout_s=0.3)
         results: list = []
 
@@ -434,8 +427,7 @@ class TestRunSocketDaemon:
     )
     def test_stale_socket_file_is_replaced(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_rep\
-        # laced
+        # tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_replaced  # noqa: E501
         stale = socket_path(root)
         stale.parent.mkdir(parents=True, exist_ok=True)
         stale.write_text("not a real socket")
@@ -480,8 +472,7 @@ class TestReapMultiprocessingChildren:
 
     def test_terminates_and_joins_active_children(self) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_terminates_a\
-        # nd_joins_active_children
+        # tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_terminates_and_joins_active_children  # noqa: E501
         proc = multiprocessing.Process(target=_sleep_forever, daemon=False)
         proc.start()
         try:
@@ -497,8 +488,7 @@ class TestReapMultiprocessingChildren:
 
     def test_escalates_to_kill_if_terminate_does_not_stick(self, monkeypatch) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_escalates_to\
-        # _kill_if_terminate_does_not_stick
+        # tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_escalates_to_kill_if_terminate_does_not_stick  # noqa: E501
         monkeypatch.setattr(_socketd, "_CHILD_REAP_GRACE_S", 0.2)
         proc = multiprocessing.Process(target=_ignore_sigterm_and_sleep, daemon=False)
         proc.start()
@@ -518,8 +508,7 @@ class TestReapMultiprocessingChildren:
 
     def test_no_active_children_is_a_no_op(self) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_no_active_ch\
-        # ildren_is_a_no_op
+        # tests/test_serve_socket.py::TestReapMultiprocessingChildren.test_no_active_children_is_a_no_op  # noqa: E501
         assert multiprocessing.active_children() == []
         _reap_multiprocessing_children()  # must not raise
 
@@ -542,8 +531,7 @@ class TestShutdownReapsChildren:
     )
     def test_frob_shutdown_exits_and_reaps_within_budget(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_socket.py::TestShutdownReapsChildren.test_frob_shutdown_exit\
-        # s_and_reaps_within_budget
+        # tests/test_serve_socket.py::TestShutdownReapsChildren.test_frob_shutdown_exits_and_reaps_within_budget  # noqa: E501
         # T-1635: the *production* budget this exercises is
         # `_CHILD_REAP_GRACE_S` (1.0s, the SIGTERM grace before escalating
         # to kill()) -- comfortably sub-second on an unloaded machine. The

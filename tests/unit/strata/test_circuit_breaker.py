@@ -28,16 +28,14 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestPredicates:
     # frob:tests \
-    # tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_external_depend\
-    # ency
+    # tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_external_dependency  # noqa: E501
     # frob:tests src/frob/strata/_circuit_breaker.py::is_external_dependency
     def test_is_external_dependency(self):
         assert is_external_dependency(("external",))
         assert not is_external_dependency(("critical",))
 
     # frob:tests \
-    # tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_critical_depend\
-    # ency
+    # tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_critical_dependency  # noqa: E501
     def test_is_critical_dependency(self):
         assert is_critical_dependency(("critical",))
         assert not is_critical_dependency(("external",))
@@ -45,8 +43,7 @@ class TestPredicates:
 
 class TestMissingCircuitBreaker:
     # frob:tests \
-    # tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_externa\
-    # l_node_without_circuit_breaker_fires
+    # tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_external_node_without_circuit_breaker_fires  # noqa: E501
     def test_external_node_without_circuit_breaker_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="payments", trust="untrusted", attrs=("external",)),),
@@ -61,8 +58,7 @@ class TestMissingCircuitBreaker:
         assert {v.node for v in missing} == {"payments"}
 
     # frob:tests \
-    # tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_dischar\
-    # ged_and_non_external_nodes_clean
+    # tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_discharged_and_non_external_nodes_clean  # noqa: E501
     def test_discharged_and_non_external_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -83,8 +79,7 @@ class TestMissingCircuitBreaker:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_waiver_\
-    # on_one_node_keeps_sibling_node_finding
+    # tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_waiver_on_one_node_keeps_sibling_node_finding  # noqa: E501
     def test_waiver_on_one_node_keeps_sibling_node_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -117,8 +112,7 @@ class TestMissingCircuitBreaker:
 
 class TestUnprovenCircuitBreaker:
     # frob:tests \
-    # tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker.test_declar\
-    # ed_with_no_code_evidence_fires
+    # tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/pay/_client.py", "def call():\n    return remote()\n")
         model = KernelModel(
@@ -140,8 +134,7 @@ class TestUnprovenCircuitBreaker:
         assert {v.node for v in violations} == {"payments"}
 
     # frob:tests \
-    # tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker.test_declar\
-    # ed_with_real_code_evidence_discharges
+    # tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -166,8 +159,7 @@ class TestUnprovenCircuitBreaker:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker.test_declar\
-    # ed_with_no_bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -192,8 +184,7 @@ class TestUnprovenCircuitBreaker:
 class TestBindCodeErrorPropagation:
     def test_ambiguous_code_binding_error_propagates(self, tmp_path: Path, monkeypatch):
         # frob:tests \
-        # tests/unit/strata/test_circuit_breaker.py::TestBindCodeErrorPropagation.test_\
-        # ambiguous_code_binding_error_propagates
+        # tests/unit/strata/test_circuit_breaker.py::TestBindCodeErrorPropagation.test_ambiguous_code_binding_error_propagates  # noqa: E501
         """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
         of `check_circuit_breaker_obligations`, never be swallowed (deny by default, matching
         every other REL-family entrypoint's discipline)."""

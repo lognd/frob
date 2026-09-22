@@ -39,8 +39,7 @@ class TestEventBus:
 
     def test_publish_before_any_subscriber_is_a_noop(self) -> None:
         # frob:tests \
-        # tests/test_serve_events.py::TestEventBus.test_publish_before_any_subscriber_i\
-        # s_a_noop
+        # tests/test_serve_events.py::TestEventBus.test_publish_before_any_subscriber_is_a_noop  # noqa: E501
         bus = _EventBus()
         bus.publish("graph-changed")  # must not raise
         sid, q = bus.subscribe()
@@ -49,8 +48,7 @@ class TestEventBus:
 
     def test_unsubscribe_wakes_blocked_consumer(self) -> None:
         # frob:tests \
-        # tests/test_serve_events.py::TestEventBus.test_unsubscribe_wakes_blocked_consu\
-        # mer
+        # tests/test_serve_events.py::TestEventBus.test_unsubscribe_wakes_blocked_consumer  # noqa: E501
         bus = _EventBus()
         sid, q = bus.subscribe()
 
@@ -88,6 +86,7 @@ def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
 
 # frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"  # noqa: E501
 class TestSubscribeAndWait:
+    # frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -101,8 +100,7 @@ class TestSubscribeAndWait:
     )
     def test_receives_graph_changed_after_edit(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_\
-        # after_edit
+        # tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_after_edit  # noqa: E501
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         thread = _start_daemon(tmp_path, idle_timeout_s=10.0)
@@ -135,8 +133,7 @@ class TestSubscribeAndWait:
     )
     def test_times_out_with_no_matching_event(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_serve_events.py::TestSubscribeAndWait.test_times_out_with_no_match\
-        # ing_event
+        # tests/test_serve_events.py::TestSubscribeAndWait.test_times_out_with_no_matching_event  # noqa: E501
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         thread = _start_daemon(tmp_path, idle_timeout_s=10.0)
@@ -172,8 +169,7 @@ class TestSubscribeAndWait:
     )
     def test_receives_coverage_fresh_on_stamp_write(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh\
-        # _on_stamp_write
+        # tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh_on_stamp_write  # noqa: E501
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         thread = _start_daemon(tmp_path, idle_timeout_s=10.0)

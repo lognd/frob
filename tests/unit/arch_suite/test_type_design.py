@@ -66,6 +66,7 @@ class TestLayeringViolations:
     # frob:tests src/frob/arch/_layering.py::check_layering_edges  # noqa: E501
     (docs/modules/arch.md#dip-layering-contract)."""
 
+    # frob:tests src/frob/arch/_layering.py::check_layering_edges  # noqa: E501
     def test_disallowed_cross_layer_edge_flagged(self, tmp_path: Path) -> None:
         from frob.arch._layering import LayeringConfig, check_layering_violations
 
@@ -213,6 +214,7 @@ class TestIllegalStatesRepresentable:
     # frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable  # noqa: E501
     """`check_illegal_states_representable`
     (docs/modules/arch.md#type-driven-design-checks)."""
+# frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable  # noqa: E501
 
     def test_bool_field_cross_field_guard_flagged(self) -> None:
         from frob.arch._normalized import (
@@ -287,8 +289,10 @@ class TestIllegalStatesRepresentable:
 # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession  # noqa: E501
 class TestPrimitiveObsession:
     """`check_primitive_obsession`
+    # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession  # noqa: E501
     (docs/modules/arch.md#type-driven-design-checks)."""
 
+    # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession  # noqa: E501
     def test_three_plus_raw_params_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedFunction,

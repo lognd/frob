@@ -157,7 +157,8 @@ class TestDeferredSweepRun:
 
     # frob:ticket T-2929
     # frob:ticket T-4335
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep
     def test_stale_baseline_refuses_to_file_and_records_debt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

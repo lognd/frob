@@ -106,11 +106,9 @@ class TestEffectGraphSummaryUnknownDegradation:
 # frob:doc \
 # docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919
 # frob:tests \
-# tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_spl\
-# at_argument_nested_in_a_literal_yields_an_unknown_member
+# tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_splat_argument_nested_in_a_literal_yields_an_unknown_member  # noqa: E501
 # frob:tests \
-# tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_pla\
-# in_named_parameter_forward_is_not_treated_as_a_splat
+# tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown.test_plain_named_parameter_forward_is_not_treated_as_a_splat  # noqa: E501
 # frob:ticket T-1018
 class TestSplatArgumentDegradesToUnknown:
     """T-1018: a direct-effect call whose argument list contains a
@@ -168,17 +166,13 @@ class TestSplatArgumentDegradesToUnknown:
 
 
 # frob:doc \
-# docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-09\
-# 22
+# docs/modules/perf.md#shared-interprocedural-effect-summary-substrate-effectgraph-t-0922  # noqa: E501
 # frob:tests \
-# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_lru_cache_\
-# decorated_symbol_is_memoized
+# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_lru_cache_decorated_symbol_is_memoized  # noqa: E501
 # frob:tests \
-# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_undecorate\
-# d_symbol_is_not_memoized
+# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_undecorated_symbol_is_not_memoized  # noqa: E501
 # frob:tests \
-# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_bare_cache\
-# _named_parameter_is_not_mistaken_for_a_decorator
+# tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection.test_bare_cache_named_parameter_is_not_mistaken_for_a_decorator  # noqa: E501
 # frob:ticket T-1053
 class TestMemoizedCalleeDetection:
     """T-1053 lru_cache-blindness fix: `EffectGraph.is_memoized`/

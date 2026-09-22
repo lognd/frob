@@ -598,6 +598,7 @@ class TestProtocolLanguageExcuseDischarge:
         # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge  # noqa: E501
         assert not result.discharged
 
+    # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge  # noqa: E501
     def test_typescript_using_discharges(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_using_discharges  # noqa: E501

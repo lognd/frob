@@ -26,8 +26,7 @@ def _facts_for(model: KernelModel):
 
 class TestUtilization:
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestUtilization.test_over_capacity_demand_f\
-    # ires_with_arithmetic
+    # tests/unit/strata/test_starvation.py::TestUtilization.test_over_capacity_demand_fires_with_arithmetic  # noqa: E501
     # frob:tests src/frob/strata/_starvation.py::check_starvation_obligations  # noqa: E501
     def test_over_capacity_demand_fires_with_arithmetic(self):
         """T-0703 acceptance criterion: 500k declared users flowing to a
@@ -55,8 +54,7 @@ class TestUtilization:
         assert "utilization=" in violation.detail
 
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestUtilization.test_declared_capacity_with\
-    # in_bounds_is_clean
+    # tests/unit/strata/test_starvation.py::TestUtilization.test_declared_capacity_within_bounds_is_clean  # noqa: E501
     def test_declared_capacity_within_bounds_is_clean(self):
         """A declared capacity comfortably above demand does not fire."""
         model = KernelModel(
@@ -79,8 +77,7 @@ class TestUtilization:
         assert report.violations == ()
 
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestUtilization.test_undeclared_demand_fail\
-    # s_closed
+    # tests/unit/strata/test_starvation.py::TestUtilization.test_undeclared_demand_fails_closed  # noqa: E501
     def test_undeclared_demand_fails_closed(self):
         """T-0703 acceptance criterion: the same exclusive-mode db with
         NO upstream `users`/`rate` declaration fires REL381
@@ -105,8 +102,7 @@ class TestUtilization:
         assert report.violations[0].node == "db"
 
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestUtilization.test_arbitrated_by_node_is_\
-    # the_serialization_point
+    # tests/unit/strata/test_starvation.py::TestUtilization.test_arbitrated_by_node_is_the_serialization_point  # noqa: E501
     def test_arbitrated_by_node_is_the_serialization_point(self):
         """A resource's declared `arbitrated_by` node is itself the
         serialization point, even though it declares no `access` clause
@@ -131,8 +127,7 @@ class TestUtilization:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestUtilization.test_read_only_accessor_is_\
-    # not_a_serialization_point
+    # tests/unit/strata/test_starvation.py::TestUtilization.test_read_only_accessor_is_not_a_serialization_point  # noqa: E501
     def test_read_only_accessor_is_not_a_serialization_point(self):
         """A plain `read`-mode accessor with no arbiter/write-like
         peer is not a serialization point at all -- no REL380/REL381."""
@@ -151,8 +146,7 @@ class TestUtilization:
 
 class TestWriterStarvation:
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestWriterStarvation.test_read_heavy_writer\
-    # _with_no_alpha_fires_advisory
+    # tests/unit/strata/test_starvation.py::TestWriterStarvation.test_read_heavy_writer_with_no_alpha_fires_advisory  # noqa: E501
     def test_read_heavy_writer_with_no_alpha_fires_advisory(self):
         """T-0703 acceptance criterion: a read-preferring lock with no
         alpha/fairness on a read-heavy resource fires REL382, even with
@@ -173,8 +167,7 @@ class TestWriterStarvation:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestWriterStarvation.test_alpha_accessor_di\
-    # scharges
+    # tests/unit/strata/test_starvation.py::TestWriterStarvation.test_alpha_accessor_discharges  # noqa: E501
     def test_alpha_accessor_discharges(self):
         """The same read-heavy resource with an `alpha` accessor
         declared does NOT fire REL382 -- the fairness/upgrade discipline
@@ -193,8 +186,7 @@ class TestWriterStarvation:
 
 class TestUnboundedWait:
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestUnboundedWait.test_contended_write_acce\
-    # ss_with_no_timeout_fires
+    # tests/unit/strata/test_starvation.py::TestUnboundedWait.test_contended_write_access_with_no_timeout_fires  # noqa: E501
     def test_contended_write_access_with_no_timeout_fires(self):
         """A write-mode accessor of a resource with a second accessor
         (contended) and no `timeout` attr fires REL383."""
@@ -213,8 +205,7 @@ class TestUnboundedWait:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestUnboundedWait.test_declared_timeout_dis\
-    # charges
+    # tests/unit/strata/test_starvation.py::TestUnboundedWait.test_declared_timeout_discharges  # noqa: E501
     def test_declared_timeout_discharges(self):
         """The same contended write accessor declaring `timeout` on
         itself does not fire REL383."""
@@ -234,8 +225,7 @@ class TestUnboundedWait:
         assert not any(v.rule == REL_UNBOUNDED_WAIT for v in report.violations)
 
     # frob:tests \
-    # tests/unit/strata/test_starvation.py::TestUnboundedWait.test_lone_accessor_is_not\
-    # _contended
+    # tests/unit/strata/test_starvation.py::TestUnboundedWait.test_lone_accessor_is_not_contended  # noqa: E501
     def test_lone_accessor_is_not_contended(self):
         """A single accessor of a resource has no peer, so it is not
         contended -- REL383 does not fire."""

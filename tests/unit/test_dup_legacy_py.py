@@ -150,8 +150,7 @@ def test_collect_locals_py_with_tuple_target(tmp_path: Path) -> None:
 
 
 # frob:tests \
-# tests/unit/test_dup_legacy_py.py::test_collect_locals_py_method_includes_typed_defaul\
-# t_param
+# tests/unit/test_dup_legacy_py.py::test_collect_locals_py_method_includes_typed_default_param  # noqa: E501
 def test_collect_locals_py_method_includes_typed_default_param(tmp_path: Path) -> None:
     """Typed and typed-default parameters (`a: int`, `b: int = 2`) are
     still recognized as local bindings via their `name` field."""
@@ -161,8 +160,7 @@ def test_collect_locals_py_method_includes_typed_default_param(tmp_path: Path) -
 
 
 # frob:tests \
-# tests/unit/test_dup_legacy_py.py::test_collect_locals_py_empty_for_body_with_no_bindi\
-# ngs
+# tests/unit/test_dup_legacy_py.py::test_collect_locals_py_empty_for_body_with_no_bindings  # noqa: E501
 def test_collect_locals_py_empty_for_body_with_no_bindings(tmp_path: Path) -> None:
     """A function whose body only defines a nested function has no locals
     of its own (the nested def is not itself an assignment binding)."""
@@ -171,8 +169,7 @@ def test_collect_locals_py_empty_for_body_with_no_bindings(tmp_path: Path) -> No
 
 
 # frob:tests \
-# tests/unit/test_dup_legacy_py.py::test_serialize_py_body_renames_locals_and_normalize\
-# s_literals
+# tests/unit/test_dup_legacy_py.py::test_serialize_py_body_renames_locals_and_normalizes_literals  # noqa: E501
 def test_serialize_py_body_renames_locals_and_normalizes_literals(
     tmp_path: Path,
 ) -> None:

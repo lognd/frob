@@ -19,8 +19,7 @@ def _test_module(text: str):
 
 class TestCheckCrossFileReferences:
     # frob:tests \
-    # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_no_errors_\
-    # when_all_resolve
+    # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_no_errors_when_all_resolve  # noqa: E501
     # frob:tests src/frob/strata/_multifile.py::check_cross_file_references
     def test_no_errors_when_all_resolve(self) -> None:
         """A flow whose src/dst nodes live in a DIFFERENT file is not an
@@ -34,8 +33,7 @@ class TestCheckCrossFileReferences:
         assert errors == ()
 
     # frob:tests \
-    # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_missing_no\
-    # de_named_per_file
+    # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_missing_node_named_per_file  # noqa: E501
     def test_missing_node_named_per_file(self) -> None:
         """An unresolvable flow src/dst is reported against the file that
         declared the flow, naming the missing id (T-1196 acceptance 1)."""
@@ -47,8 +45,7 @@ class TestCheckCrossFileReferences:
         assert any("nowhere" in e.message for e in errors)
 
     # frob:tests \
-    # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_boundary_u\
-    # nknown_flow_named
+    # tests/unit/strata/test_multifile.py::TestCheckCrossFileReferences.test_boundary_unknown_flow_named  # noqa: E501
     def test_boundary_unknown_flow_named(self) -> None:
         """A boundary naming an unknown flow id is reported the same way."""
         a = _test_module(
@@ -62,8 +59,7 @@ class TestCheckCrossFileReferences:
 
 class TestMergeModules:
     # frob:tests \
-    # tests/unit/strata/test_multifile.py::TestMergeModules.test_concatenates_declarati\
-    # ons
+    # tests/unit/strata/test_multifile.py::TestMergeModules.test_concatenates_declarations  # noqa: E501
     def test_concatenates_declarations(self) -> None:
         """Every declaration from every file lands in the merged `Module`."""
         a = _test_module("module a\nnode client : foreign { clearance Public; }\n")
@@ -74,8 +70,7 @@ class TestMergeModules:
 
 class TestElaborateMerged:
     # frob:tests \
-    # tests/unit/strata/test_multifile.py::TestElaborateMerged.test_resolves_cross_file\
-    # _flow
+    # tests/unit/strata/test_multifile.py::TestElaborateMerged.test_resolves_cross_file_flow  # noqa: E501
     def test_resolves_cross_file_flow(self) -> None:
         """`elaborate_merged` produces one `KernelModel` where a cross-file
         flow reference resolves (T-1196 acceptance 0)."""
@@ -89,8 +84,7 @@ class TestElaborateMerged:
         assert {f.id for f in result.danger_ok.flows} == {"f_login"}
 
     # frob:tests \
-    # tests/unit/strata/test_multifile.py::TestElaborateMerged.test_fails_closed_on_mis\
-    # sing_id
+    # tests/unit/strata/test_multifile.py::TestElaborateMerged.test_fails_closed_on_missing_id  # noqa: E501
     def test_fails_closed_on_missing_id(self) -> None:
         """A reference to an id declared nowhere fails closed, never a
         partial model (T-1196 acceptance 1)."""

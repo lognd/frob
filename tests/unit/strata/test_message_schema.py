@@ -24,8 +24,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingSchemaVersion:
     # frob:tests \
-    # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_event_nod\
-    # e_without_schema_version_fires
+    # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_event_node_without_schema_version_fires  # noqa: E501
     def test_event_node_without_schema_version_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="order_placed", trust="trusted", attrs=("event",)),),
@@ -40,8 +39,7 @@ class TestMissingSchemaVersion:
         assert {v.node for v in missing} == {"order_placed"}
 
     # frob:tests \
-    # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_queue_nod\
-    # e_without_schema_version_fires
+    # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_queue_node_without_schema_version_fires  # noqa: E501
     # frob:tests src/frob/strata/_message_schema.py::check_message_schema_obligations  # noqa: E501
     def test_queue_node_without_schema_version_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -57,8 +55,7 @@ class TestMissingSchemaVersion:
         assert {v.node for v in missing} == {"ingest_queue"}
 
     # frob:tests \
-    # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_discharge\
-    # d_and_non_event_queue_nodes_clean
+    # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_discharged_and_non_event_queue_nodes_clean  # noqa: E501
     def test_discharged_and_non_event_queue_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -79,8 +76,7 @@ class TestMissingSchemaVersion:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_waiver_di\
-    # scharges_finding
+    # tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_waiver_discharges_finding  # noqa: E501
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -110,8 +106,7 @@ class TestMissingSchemaVersion:
 
 class TestUnprovenSchemaVersion:
     # frob:tests \
-    # tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion.test_declared\
-    # _with_no_code_evidence_fires
+    # tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def publish():\n    return emit()\n")
         model = KernelModel(
@@ -133,8 +128,7 @@ class TestUnprovenSchemaVersion:
         assert {v.node for v in violations} == {"order_placed"}
 
     # frob:tests \
-    # tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion.test_declared\
-    # _with_real_code_evidence_discharges
+    # tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -159,8 +153,7 @@ class TestUnprovenSchemaVersion:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion.test_declared\
-    # _with_no_bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

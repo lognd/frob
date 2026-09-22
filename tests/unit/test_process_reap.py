@@ -265,6 +265,7 @@ class TestReapOrphanedForkservers:
         assert reaped == [4242]
         assert killed == [(4242, signal.SIGTERM)]
 
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
     def test_leaves_young_orphaned_forkservers_alone(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -443,6 +444,7 @@ class TestForkserverRootIsLiveCheck:
     # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
     `ppid == 1` test."""
 
+    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
     def test_direct_child_of_live_check_is_not_orphaned(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck.test_direct_child_of_live_check_is_not_orphaned  # noqa: E501
         _write_live_check_entry(tmp_path, 999, cmdline=_MODULE_INVOKED_CHECK_CMDLINE)
@@ -619,8 +621,10 @@ class TestArmParentDeathSignal:
         finally:
             os.close(read_fd)
             os.waitpid(pid, 0)
+        # frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
         assert outcome == b"1"
 
+    # frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
     def test_self_kills_on_missed_reparent_race(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -729,8 +733,10 @@ class TestArmParentDeathSignal:
 # frob:ticket T-2849
 class TestArmForkserverHelperPdeathsigIfRequested:
     """`_arm_forkserver_helper_pdeathsig_if_requested` -- the module-import
+    # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
     -time hook `frob.gates._FORKSERVER_PRELOAD` triggers inside the
     forkserver helper; must be a no-op unless the env marker is set."""
+# frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
 
     def test_noop_without_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_noop_without_env_var  # noqa: E501

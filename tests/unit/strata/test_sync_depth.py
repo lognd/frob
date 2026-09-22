@@ -41,8 +41,7 @@ class TestSyncDepth:
         assert {v.node for v in violations} == {f"n{SYNC_CHAIN_MAX_DEPTH}"}
 
     # frob:tests \
-    # tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_async_hop_breaks_the_cha\
-    # in
+    # tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_async_hop_breaks_the_chain  # noqa: E501
     def test_async_hop_breaks_the_chain(self):
         nodes, flows = _chain(SYNC_CHAIN_MAX_DEPTH)
         # Mark the final hop async: the chain no longer reaches the bound
@@ -59,8 +58,7 @@ class TestSyncDepth:
         assert not [v for v in report.violations if v.rule == REL_SYNC_CHAIN_TOO_DEEP]
 
     # frob:tests \
-    # tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_deep_chain_ok_exemption_\
-    # discharges
+    # tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_deep_chain_ok_exemption_discharges  # noqa: E501
     def test_deep_chain_ok_exemption_discharges(self):
         nodes, flows = _chain(SYNC_CHAIN_MAX_DEPTH)
         exempt = tuple(
@@ -74,8 +72,7 @@ class TestSyncDepth:
         assert not [v for v in report.violations if v.rule == REL_SYNC_CHAIN_TOO_DEEP]
 
     # frob:tests \
-    # tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_sync_cycle_is_unbounded_\
-    # and_fires
+    # tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_sync_cycle_is_unbounded_and_fires  # noqa: E501
     def test_sync_cycle_is_unbounded_and_fires(self):
         model = KernelModel(
             nodes=(

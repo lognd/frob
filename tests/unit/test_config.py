@@ -103,6 +103,7 @@ def test_missing_section_defaults(tmp_path: Path) -> None:
     assert cfg["max_file_lines"] == 800
 
 
+# frob:tests src/frob/repo_meta.py::load_arch_config  # noqa: E501
 def test_partial_override(tmp_path: Path) -> None:
     """Keys omitted from a present [arch] table keep their calibrated default."""
     (tmp_path / "frob.toml").write_text("[arch]\nmax_file_lines = 1200\n")

@@ -26,8 +26,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingSaga:
     # frob:tests \
-    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_multi_service_wri\
-    # te_op_without_saga_fires
+    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_multi_service_write_op_without_saga_fires  # noqa: E501
     # frob:tests src/frob/strata/_distributed_txn.py::check_distributed_txn_obligations  # noqa: E501
     def test_multi_service_write_op_without_saga_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -47,8 +46,7 @@ class TestMissingSaga:
         assert {v.node for v in missing} == {"checkout"}
 
     # frob:tests \
-    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_transaction_attr_\
-    # alone_does_not_discharge
+    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_transaction_attr_alone_does_not_discharge  # noqa: E501
     def test_transaction_attr_alone_does_not_discharge(self, tmp_path: Path):
         # Unlike REL300, a bare `transaction` attr does NOT discharge
         # REL350 -- only `saga` does (module docstring).
@@ -69,8 +67,7 @@ class TestMissingSaga:
         assert {v.node for v in missing} == {"checkout"}
 
     # frob:tests \
-    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_single_write_and_\
-    # discharged_clean
+    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_single_write_and_discharged_clean  # noqa: E501
     def test_single_write_and_discharged_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -93,8 +90,7 @@ class TestMissingSaga:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_waiver_discharges\
-    # _finding
+    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_waiver_discharges_finding  # noqa: E501
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -127,8 +123,7 @@ class TestMissingSaga:
 
 class TestUnprovenSaga:
     # frob:tests \
-    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_no\
-    # _code_evidence_fires
+    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def checkout():\n    return commit()\n")
         model = KernelModel(
@@ -154,8 +149,7 @@ class TestUnprovenSaga:
         assert {v.node for v in violations} == {"checkout"}
 
     # frob:tests \
-    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_re\
-    # al_code_evidence_discharges
+    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -188,8 +182,7 @@ class TestUnprovenSaga:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_no\
-    # _bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

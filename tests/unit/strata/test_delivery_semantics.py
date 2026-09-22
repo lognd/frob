@@ -26,8 +26,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingDeliverySemantics:
     # frob:tests \
-    # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_q\
-    # ueue_node_without_delivery_semantics_fires
+    # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_queue_node_without_delivery_semantics_fires  # noqa: E501
     # frob:tests src/frob/strata/_delivery_semantics.py::check_delivery_semantics_obligations  # noqa: E501
     def test_queue_node_without_delivery_semantics_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -43,8 +42,7 @@ class TestMissingDeliverySemantics:
         assert {v.node for v in missing} == {"ingest_queue"}
 
     # frob:tests \
-    # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_i\
-    # nvalid_delivery_value_fires
+    # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_invalid_delivery_value_fires  # noqa: E501
     def test_invalid_delivery_value_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -65,8 +63,7 @@ class TestMissingDeliverySemantics:
         assert {v.node for v in missing} == {"ingest_queue"}
 
     # frob:tests \
-    # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_d\
-    # ischarged_and_non_queue_nodes_clean
+    # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_discharged_and_non_queue_nodes_clean  # noqa: E501
     def test_discharged_and_non_queue_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -87,8 +84,7 @@ class TestMissingDeliverySemantics:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_w\
-    # aiver_discharges_finding
+    # tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics.test_waiver_discharges_finding  # noqa: E501
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -118,8 +114,7 @@ class TestMissingDeliverySemantics:
 
 class TestUnprovenDeliverySemantics:
     # frob:tests \
-    # tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics.test_\
-    # declared_with_no_code_evidence_fires
+    # tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def consume():\n    return handle()\n")
         model = KernelModel(
@@ -141,8 +136,7 @@ class TestUnprovenDeliverySemantics:
         assert {v.node for v in violations} == {"ingest_queue"}
 
     # frob:tests \
-    # tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics.test_\
-    # declared_with_real_code_evidence_discharges
+    # tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -169,8 +163,7 @@ class TestUnprovenDeliverySemantics:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics.test_\
-    # declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -195,8 +188,7 @@ class TestUnprovenDeliverySemantics:
 class TestBindCodeErrorPropagation:
     def test_ambiguous_code_binding_error_propagates(self, tmp_path: Path, monkeypatch):
         # frob:tests \
-        # tests/unit/strata/test_delivery_semantics.py::TestBindCodeErrorPropagation.te\
-        # st_ambiguous_code_binding_error_propagates
+        # tests/unit/strata/test_delivery_semantics.py::TestBindCodeErrorPropagation.test_ambiguous_code_binding_error_propagates  # noqa: E501
         """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
         of `check_delivery_semantics_obligations`, never be swallowed (deny by default, matching
         every other REL-family entrypoint's discipline)."""

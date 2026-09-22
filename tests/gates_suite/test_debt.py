@@ -44,8 +44,7 @@ class TestDebtGate:
         """T-0412: a frob:debt bound to a closed ticket is DEBT002 -- a debt
         must point at real, OPEN, owed work."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt002_closed_ticket_is_re\
-        # ported
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt002_closed_ticket_is_reported  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001"\n'
@@ -63,8 +62,7 @@ class TestDebtGate:
 
     def test_debt002_open_ticket_is_silent(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt002_open_ticket_is_sile\
-        # nt
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt002_open_ticket_is_silent  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001"\n'
@@ -81,8 +79,7 @@ class TestDebtGate:
 
     def test_debt003_expired_by_date_is_reported(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_expired_by_date_is_\
-        # reported
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_expired_by_date_is_reported  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
@@ -101,8 +98,7 @@ class TestDebtGate:
 
     def test_debt003_not_yet_expired_is_silent(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_not_yet_expired_is_\
-        # silent
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_not_yet_expired_is_silent  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
@@ -119,8 +115,7 @@ class TestDebtGate:
 
     def test_debt003_expired_by_version_is_reported(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_expired_by_version_\
-        # is_reported
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt003_expired_by_version_is_reported  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
@@ -141,8 +136,7 @@ class TestDebtGate:
         """T-0412: frob:debt requires BOTH reason= and ticket= -- missing
         either is DEBT001, mirroring WAIVE001's shape for frob:waive."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt001_malformed_directive\
-        # _is_reported
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_debt001_malformed_directive_is_reported  # noqa: E501
         source = 'def helper(x):\n    # frob:debt TEST005 reason="coverage gap"\n    return x\n'
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
@@ -157,8 +151,7 @@ class TestDebtGate:
 
     def test_clean_debt_produces_no_violations(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_clean_debt_produces_no_viol\
-        # ations
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_clean_debt_produces_no_violations  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
@@ -196,8 +189,7 @@ class TestDebtGate:
         """T-0412's central requirement: a release must never ship with ANY
         open frob:debt, expired or not."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_release_gate_fails_while_de\
-        # bt_is_open
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_release_gate_fails_while_debt_is_open  # noqa: E501
         from frob.gates import release_gate
         from frob.release import stamp
 
@@ -377,8 +369,7 @@ class TestDebtGate:
         THIS root (no linked worktree required -- e.g. a single-checkout
         repo with an in-progress ticket) is also land-owned via the lease."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_land_owned_via_ticke\
-        # t_lease
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
         from frob.gates import release_gate
         from frob.release import stamp
         from frob.tickets._leases import _LeaseRecord, leases_dir
@@ -430,8 +421,7 @@ class TestDebtGate:
         """T-0807: `_rel001_is_linked_worktree` is `True` for a linked
         worktree and `False` for the main checkout it was created from."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_linked_worktree_dete\
-        # cted
+        # tests/gates_suite/test_debt.py::TestDebtGate.test_rel001_linked_worktree_detected  # noqa: E501
         from frob.gates import _rel001_is_linked_worktree
 
         main_root = tmp_path / "main"
@@ -483,10 +473,12 @@ class TestReleaseOpenMilestoneViolations:
             evidence=(),
             attachments=(),
             body="## Description\nx\n\n## Done report\ndone\n",
-            # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations
+            # frob:tests \
+            # src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations
             milestone=milestone,
         )
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::_release_open_milestone_violations
     def test_open_ticket_in_cut_milestone_refuses(self, tmp_path: Path) -> None:
         """Positive control: an OPEN ticket declares the exact milestone
         being cut -- REL001 must fire, naming the ticket."""
@@ -577,6 +569,7 @@ class TestDeprecatedGate:
     own sunset. Malformed directive (DEPR001), non-open ticket (DEPR002),
     still-in-window warning (DEPR003), past-sunset error (DEPR004)."""
 
+    # frob:tests src/frob/gates/_debt_deprecated.py::deprecated_gate  # noqa: E501
     def test_depr001_malformed_directive_is_reported(self, tmp_path: Path) -> None:
         """T-0576: frob:deprecated requires BOTH sunset= and ticket= --
         missing either is DEPR001, mirroring DEBT001's shape."""
@@ -612,8 +605,7 @@ class TestDeprecatedGate:
         the ticket closed but the directive (presumably the symbol) is
         still here."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr002_closed_ticket\
-        # _is_reported
+        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr002_closed_ticket_is_reported  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
@@ -632,8 +624,7 @@ class TestDeprecatedGate:
         """T-0576: an open, not-yet-sunset frob:deprecated is a WARNING --
         visible, but does not fail `frob check`."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr003_in_window_war\
-        # ns
+        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr003_in_window_warns  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
@@ -652,8 +643,7 @@ class TestDeprecatedGate:
         """T-0576: an open frob:deprecated past its sunset date escalates
         from a warning to DEPR004, an ERROR."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr004_past_sunset_e\
-        # rrors
+        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr004_past_sunset_errors  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2026-01-01" ticket="T-0001"\n'
@@ -685,8 +675,7 @@ class TestDeprecatedGate:
 
     def test_lists_every_deprecated_entry(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_lists_every_deprecate\
-        # d_entry
+        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_lists_every_deprecated_entry  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
@@ -725,8 +714,7 @@ class TestDeprecatedGate:
         omits a currently-observed reference fires DEPR005, naming the new
         call site."""
         # frob:tests \
-        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr005_new_caller_er\
-        # rors
+        # tests/gates_suite/test_debt.py::TestDeprecatedGate.test_depr005_new_caller_errors  # noqa: E501
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'

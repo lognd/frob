@@ -149,6 +149,7 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].symref == "piper.py::run_and_wait"
 
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
     def test_pipe_wait_deadlock_does_not_fire_with_communicate(self, tmp_path):
         """The same `Popen(..., stdout=PIPE)` shape, but drained via
         `.communicate()` instead of a bare `.wait()`, must not fire."""
@@ -374,6 +375,7 @@ class TestAsyncEventLoopHazards:
         assert len(hits) == 1
         assert hits[0].symref == "dropped.py::trigger"
 
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
     def test_unawaited_coroutine_does_not_fire_when_awaited_or_stored(self, tmp_path):
         """The same call, but awaited in one function and stored (never
         called bare) in another, must not fire either time."""
@@ -570,8 +572,10 @@ class TestLockOrderingHazards:
         hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
         assert len(hits) == 1
         assert "lock_a" in hits[0].message
+        # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
         assert "lock_b" in hits[0].message
 
+    # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
     def test_consistent_global_order_does_not_fire(self, tmp_path):
         """Every function acquires `lock_a` before `lock_b`, never the
         reverse -- a consistent global order must stay silent."""
@@ -696,8 +700,10 @@ class TestSharedStateRaceHazards:
             "        ex.submit(worker)\n"
         )
         result = analyze_project(src_dir)
+        # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
         hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
         assert hits == []
+# frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
 
     def test_write_reachable_via_callee_of_dispatched_function_fires(self, tmp_path):
         """The dispatched function itself does nothing but call a helper
@@ -793,8 +799,10 @@ class TestConcurrencyModelMismatch:
         ]
         assert len(hits) == 1
         assert "crunch" in hits[0].message
+        # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch  # noqa: E501
         assert hits[0].severity == "suggestion"
 
+    # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch  # noqa: E501
     def test_io_bound_socket_read_in_threadpool_does_not_fire(self, tmp_path):
         """A socket-read function dispatched to a ThreadPoolExecutor is the
         CORRECT model (IO-bound work belongs in a thread pool) -- must stay

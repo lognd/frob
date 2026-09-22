@@ -21,8 +21,7 @@ class TestIsInteractiveStdin:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_non_tty_stdin_is_\
-        # never_interactive
+        # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_non_tty_stdin_is_never_interactive  # noqa: E501
         """`sys.stdin.isatty() == False` short-circuits to `False` on every
         platform -- the win32-only `GetConsoleMode` follow-up check never
         even needs to run when this primitive already says no."""
@@ -33,8 +32,7 @@ class TestIsInteractiveStdin:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_posix_tty_stdin_i\
-        # s_interactive
+        # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_posix_tty_stdin_is_interactive  # noqa: E501
         """Off win32, `sys.stdin.isatty() == True` is the whole answer --
         no `GetConsoleMode` follow-up is attempted (there is nothing to
         call it on)."""
@@ -47,8 +45,7 @@ class TestIsInteractiveStdin:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_win32_tty_isatty_\
-        # but_no_console_is_not_interactive
+        # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_win32_tty_isatty_but_no_console_is_not_interactive  # noqa: E501
         """The exact regression this module fixes (T-4255, measured on
         real Windows via `winrun`): `isatty() == True` (Windows CRT's
         NUL-is-a-character-device quirk) but `GetConsoleMode` says there
@@ -64,8 +61,7 @@ class TestIsInteractiveStdin:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_win32_tty_isatty_\
-        # and_real_console_is_interactive
+        # tests/unit/test_process_tty.py::TestIsInteractiveStdin.test_win32_tty_isatty_and_real_console_is_interactive  # noqa: E501
         """A genuine win32 console (both `isatty()` and `GetConsoleMode`
         agree) is interactive."""
         monkeypatch.setattr(sys, "platform", "win32")
@@ -81,8 +77,7 @@ class TestWin32StdinHasConsole:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_process_tty.py::TestWin32StdinHasConsole.test_never_raises_wh\
-        # en_ctypes_windll_is_unavailable
+        # tests/unit/test_process_tty.py::TestWin32StdinHasConsole.test_never_raises_when_ctypes_windll_is_unavailable  # noqa: E501
         """Off win32 (or any environment where `ctypes.windll` doesn't
         exist), `_win32_stdin_has_console` degrades to `False` -- the
         fail-safe direction for a TTY-gated fast-fail -- rather than

@@ -34,8 +34,7 @@ class TestClassifyTestThenImplPaths:
     # frob:tests src/frob/tickets/_land_splice.py::classify_test_then_impl_paths
     def test_mixed_paths_split_into_two_groups(self) -> None:
         # frob:tests \
-        # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.\
-        # test_mixed_paths_split_into_two_groups
+        # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_mixed_paths_split_into_two_groups  # noqa: E501
         result = classify_test_then_impl_paths(
             [
                 "src/frob/widget.py",
@@ -54,8 +53,7 @@ class TestClassifyTestThenImplPaths:
 
     def test_no_test_paths_returns_none(self) -> None:
         # frob:tests \
-        # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.\
-        # test_no_test_paths_returns_none
+        # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_no_test_paths_returns_none  # noqa: E501
         result = classify_test_then_impl_paths(
             ["src/frob/widget.py", "docs/modules/widget.md"]
         )
@@ -63,8 +61,7 @@ class TestClassifyTestThenImplPaths:
 
     def test_no_impl_paths_returns_none(self) -> None:
         # frob:tests \
-        # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.\
-        # test_no_impl_paths_returns_none
+        # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_no_impl_paths_returns_none  # noqa: E501
         result = classify_test_then_impl_paths(["tests/test_widget.py"])
         assert result is None
 
@@ -76,8 +73,7 @@ class TestClassifyTestThenImplPaths:
         _is_test_path` -- covers it) still classifies as TEST, matching
         that shared convention exactly."""
         # frob:tests \
-        # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.\
-        # test_underscore_test_suffix_file_outside_tests_dir_still_classified
+        # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_underscore_test_suffix_file_outside_tests_dir_still_classified  # noqa: E501
         result = classify_test_then_impl_paths(
             ["scripts/widget_test.py", "src/frob/widget.py"]
         )
@@ -125,8 +121,7 @@ class TestComposeTestThenImplCommits:
         ONLY the test file, commit 2 (parented on commit 1) additionally
         contains the impl file, and the working tree is never touched."""
         # frob:tests \
-        # tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits\
-        # .test_two_commits_chain_correctly
+        # tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits.test_two_commits_chain_correctly  # noqa: E501
         a_path = scratch_repo / "a.txt"
         before_mtime = a_path.stat().st_mtime_ns
 
@@ -185,8 +180,7 @@ class TestComposeTestThenImplCommits:
         produced -- splitting the commit boundary never changes the
         published CONTENT, only its history shape."""
         # frob:tests \
-        # tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits\
-        # .test_final_tree_matches_full_squash
+        # tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits.test_final_tree_matches_full_squash  # noqa: E501
         from frob.tickets._land_compose import compose_tree_out_of_tree
 
         base = _run(["git", "rev-parse", "main"], scratch_repo).stdout.strip()

@@ -24,8 +24,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingOwner:
     # frob:tests \
-    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_multi_writer_store_without_\
-    # owner_fires
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_multi_writer_store_without_owner_fires  # noqa: E501
     # frob:tests src/frob/strata/_ssot.py::check_ssot_obligations  # noqa: E501
     def test_multi_writer_store_without_owner_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -83,8 +82,7 @@ class TestMissingOwner:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_reconciliation_attr_dischar\
-    # ges
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_reconciliation_attr_discharges  # noqa: E501
     def test_reconciliation_attr_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -104,8 +102,7 @@ class TestMissingOwner:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_empty_store_ids_emits_nothi\
-    # ng
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_empty_store_ids_emits_nothing  # noqa: E501
     def test_empty_store_ids_emits_nothing(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -156,8 +153,7 @@ class TestMissingOwner:
 
 class TestUnprovenOwner:
     # frob:tests \
-    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_no_code_evid\
-    # ence_fires
+    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def handle():\n    return ok()\n")
         model = KernelModel(
@@ -183,8 +179,7 @@ class TestUnprovenOwner:
         assert {v.node for v in violations} == {"orders_db"}
 
     # frob:tests \
-    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_real_code_ev\
-    # idence_discharges
+    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -213,8 +208,7 @@ class TestUnprovenOwner:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_no_bound_cod\
-    # e_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

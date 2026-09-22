@@ -379,6 +379,7 @@ class TestLazyLogHandlers:
     teardown leaves a stale handle that raises on the next emit and
     pollutes an unrelated test's captured stderr (T-1385)."""
 
+    # frob:tests src/frob/logging/handler.py::_LazyStdoutHandler.stream
     @pytest.mark.parametrize(
         ("handler_cls", "attr"),
         [(_LazyStderrHandler, "stderr"), (_LazyStdoutHandler, "stdout")],
@@ -487,6 +488,7 @@ class TestVerboseFlag:
     # frob:tests src/frob/__main__.py::_apply_verbose_env_override  # noqa: E501
     that bypass the main argparse tree entirely."""
 
+    # frob:tests src/frob/__main__.py::_apply_verbose_env_override  # noqa: E501
     def test_dash_v_sets_debug_env_var(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_v_sets_debug_env_var  # noqa: E501
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
@@ -573,6 +575,7 @@ class TestGroupedHelpFormatter:
             assert f"\n    {name} " in groups_section, (
                 f"{name!r} expected between the two headings"
             )
+# frob:tests src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter  # noqa: E501
 
     def test_non_group_verb_listed_after_also_available_directly(self) -> None:
         """A representative non-group top-level command (`scaffold`) is

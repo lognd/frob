@@ -262,7 +262,8 @@ class TestPersistCommitStepFailure:
     thing missing when the ticket's own DirtyMain recurrence could not be
     diagnosed because no land-invocation output survived it."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
     def test_writes_proc_result_diagnostics(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure.test_writes_proc_result_diagnostics  # noqa: E501
         from typani.result import Ok

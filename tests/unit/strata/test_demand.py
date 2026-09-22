@@ -21,8 +21,7 @@ def _facts_for(source: str):
 
 class TestAggregateDemand:
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_two_entry_nodes_sum_at\
-    # _fan_in
+    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_two_entry_nodes_sum_at_fan_in  # noqa: E501
     # frob:tests src/frob/strata/_facts.py::FactBase.aggregate_demand  # noqa: E501
     def test_two_entry_nodes_sum_at_fan_in(self):
         """T-0702 acceptance criterion: two entry nodes declaring users
@@ -40,8 +39,7 @@ class TestAggregateDemand:
         assert result == AggregateDemand(declared=True, value=500000.0, witness=("db",))
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_no_demand_declared_is_\
-    # undeclared_not_zero
+    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_no_demand_declared_is_undeclared_not_zero  # noqa: E501
     def test_no_demand_declared_is_undeclared_not_zero(self):
         """T-0702 acceptance criterion: with no `users`/`rate` declared
         anywhere, a node reports UNDECLARED, not a silent zero."""
@@ -57,8 +55,7 @@ class TestAggregateDemand:
         assert result.value == 0.0
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_demand_declared_elsewh\
-    # ere_not_reaching_node_is_undeclared
+    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_demand_declared_elsewhere_not_reaching_node_is_undeclared  # noqa: E501
     def test_demand_declared_elsewhere_not_reaching_node_is_undeclared(self):
         """A node with declared demand that does NOT flow toward the
         target still leaves the target UNDECLARED, not zero -- the
@@ -75,8 +72,7 @@ class TestAggregateDemand:
         assert result.declared is False
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_rate_and_users_compose\
-    # _additively
+    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_rate_and_users_compose_additively  # noqa: E501
     def test_rate_and_users_compose_additively(self):
         """A node declaring BOTH `users` and `rate` composes them
         additively, not exclusively (module docstring)."""
@@ -93,8 +89,7 @@ class TestAggregateDemand:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_self_declaring_node_re\
-    # ports_its_own_demand
+    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_self_declaring_node_reports_its_own_demand  # noqa: E501
     def test_self_declaring_node_reports_its_own_demand(self):
         """A node that itself declares demand reports it directly, with no
         inbound flow needed at all."""
@@ -105,8 +100,7 @@ class TestAggregateDemand:
         )
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_fanout_multiplies_prop\
-    # agated_demand
+    # tests/unit/strata/test_demand.py::TestAggregateDemand.test_fanout_multiplies_propagated_demand  # noqa: E501
     def test_fanout_multiplies_propagated_demand(self):
         """Demand propagation still respects `fanout` the same way
         `propagated_demand` does -- T-0702 builds on the existing
@@ -127,8 +121,7 @@ class TestAggregateDemand:
 
 class TestNodeUsersRateFields:
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestNodeUsersRateFields.test_node_defaults_to_n\
-    # one
+    # tests/unit/strata/test_demand.py::TestNodeUsersRateFields.test_node_defaults_to_none  # noqa: E501
     def test_node_defaults_to_none(self):
         """A plain `Node` (no `users`/`rate` declared) keeps both `None`
         -- backward compatible with every pre-T-0702 `Node(...)` call
@@ -138,8 +131,7 @@ class TestNodeUsersRateFields:
         assert node.rate is None
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestNodeUsersRateFields.test_node_accepts_expli\
-    # cit_users_and_rate
+    # tests/unit/strata/test_demand.py::TestNodeUsersRateFields.test_node_accepts_explicit_users_and_rate  # noqa: E501
     def test_node_accepts_explicit_users_and_rate(self):
         """`Node.users`/`Node.rate` round-trip a direct construction (the
         `_elaborate.py`/`_infra.py` wiring's target shape)."""
@@ -171,8 +163,7 @@ class TestAggregateDemandGrowth:
     `aggregate_demand`'s own UNMISSABLE design note."""
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_growth_scales_se\
-    # ed_before_fan_in
+    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_growth_scales_seed_before_fan_in  # noqa: E501
     def test_growth_scales_seed_before_fan_in(self):
         """One year at 100%/year growth doubles a 1000-user seed."""
         facts = _facts_for(
@@ -188,8 +179,7 @@ class TestAggregateDemandGrowth:
         assert grown.value == 2000.0
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_elapsed_seconds_\
-    # none_reproduces_ungrown_value
+    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_elapsed_seconds_none_reproduces_ungrown_value  # noqa: E501
     def test_elapsed_seconds_none_reproduces_ungrown_value(self):
         """`elapsed_seconds=None` (the default) is byte-for-byte the
         pre-T-2016 behavior, even when a node declares `growth`."""
@@ -203,8 +193,7 @@ class TestAggregateDemandGrowth:
         assert facts.aggregate_demand("db").value == 1000.0
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_each_node_grows_\
-    # by_its_own_independent_rate
+    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_each_node_grows_by_its_own_independent_rate  # noqa: E501
     def test_each_node_grows_by_its_own_independent_rate(self):
         """T-2016's core acceptance criterion: two demand-declaring nodes
         growing at different rates must scale INDEPENDENTLY before
@@ -223,8 +212,7 @@ class TestAggregateDemandGrowth:
         assert grown.value == 3000.0
 
     # frob:tests \
-    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_rate_growth_appl\
-    # ies_independently_of_users_growth
+    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_rate_growth_applies_independently_of_users_growth  # noqa: E501
     def test_rate_growth_applies_independently_of_users_growth(self):
         """`users_growth` and `rate_growth` on the SAME node scale their
         own component only, composing additively after growth like the

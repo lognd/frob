@@ -488,6 +488,7 @@ class TestComplianceGate:
 
     # frob:ticket T-0788
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     def test_compliance005_real_repo_registry_passes(self) -> None:
         """The honest "real repo scan" smoke test (T-0813/T-0820
         precedent): runs `compliance_gate` over this repo's OWN live
@@ -574,6 +575,7 @@ class TestComplianceGate:
         assert not any(v.rule == "COMPLIANCE006" for v in violations)
 
     # frob:ticket T-0894
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate  # noqa: E501
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance006_fires_on_deleted_registry_after_adoption  # noqa: E501
     def test_compliance006_fires_on_deleted_registry_after_adoption(
         self, tmp_path: Path
@@ -618,6 +620,7 @@ class TestExhaustiveHandlingGate:
     boundary that leaks a named type not declared via `# frob:raises
     <Type>` fires EXHAUST002."""
 
+    # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate  # noqa: E501
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_fires_exhaust002  # noqa: E501
     def test_partial_catch_of_named_type_fires_exhaust002(self, tmp_path: Path) -> None:
@@ -816,9 +819,11 @@ class TestExhaustiveHandlingGate:
         assert found
         assert any(v.symref == "mod.py::boundary" for v in found)
         assert not _by_rule(violations, "EXHAUST003")
+# frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001  # noqa: E501
+    # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
     def test_catch_all_of_unknown_does_not_fire_exhaust001(
         self, tmp_path: Path
     ) -> None:
@@ -861,7 +866,8 @@ class TestExhaustiveHandlingGate:
                 "# frob:raises TypeError\n"
                 "def boundary():\n"
                 "    try:\n"
-                # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
+                # frob:tests \
+                # src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
                 "        risky()\n"
                 "    except ValueError:\n"
                 "        pass\n"
@@ -982,9 +988,11 @@ class TestFfiBoundaryGate:
         )
         violations = ffi_boundary_gate(tmp_path, tmp_path)
         assert not _by_rule(violations, "FFI001")
+# frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
 
     # frob:tests \
     # frob:tests src/frob/arch/_ffi.py::scan_ctypes_boundary_calls  # noqa: E501
+    # frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
     # tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
     def test_ctypes_call_without_declaration_fires_ffi002(self, tmp_path: Path) -> None:
         """A call through a ctypes.CDLL-loaded handle with no callee-raises

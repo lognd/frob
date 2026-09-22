@@ -21,8 +21,7 @@ from frob.strata._obligation_proof import (
 
 class TestOwnerIndex:
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestOwnerIndex.test_inverts_file_to_n\
-    # ode_map
+    # tests/unit/strata/test_obligation_proof.py::TestOwnerIndex.test_inverts_file_to_node_map  # noqa: E501
     # frob:tests src/frob/strata/_obligation_proof.py::owner_index  # noqa: E501
     def test_inverts_file_to_node_map(self):
         owner = {"src/a.py": "node_a", "src/b.py": "node_a", "src/c.py": "node_b"}
@@ -32,14 +31,12 @@ class TestOwnerIndex:
 
 class TestNodeHasBoundCode:
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode.test_true_when_f\
-    # iles_present
+    # tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode.test_true_when_files_present  # noqa: E501
     def test_true_when_files_present(self):
         assert node_has_bound_code("n1", {"n1": ["src/a.py"]})
 
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode.test_false_when_\
-    # absent
+    # tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode.test_false_when_absent  # noqa: E501
     def test_false_when_absent(self):
         assert not node_has_bound_code("n1", {})
 
@@ -50,24 +47,21 @@ class TestNodeHasBoundCode:
 # fmt sweep touching this class's directive comments"  # noqa: E501
 class TestFilesEvidenceToken:
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_matches_a\
-    # _real_token
+    # tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_matches_a_real_token  # noqa: E501
     def test_matches_a_real_token(self, tmp_path: Path):
         (tmp_path / "a.py").write_text("call(backoff=1)\n", encoding="utf-8")
         pattern = re.compile(r"backoff\s*=")
         assert files_evidence_token(["a.py"], tmp_path, pattern)
 
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_no_match_\
-    # returns_false
+    # tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_no_match_returns_false  # noqa: E501
     def test_no_match_returns_false(self, tmp_path: Path):
         (tmp_path / "a.py").write_text("call()\n", encoding="utf-8")
         pattern = re.compile(r"backoff\s*=")
         assert not files_evidence_token(["a.py"], tmp_path, pattern)
 
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_unreadabl\
-    # e_file_skipped_not_treated_as_proof
+    # tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_unreadable_file_skipped_not_treated_as_proof  # noqa: E501
     def test_unreadable_file_skipped_not_treated_as_proof(self, tmp_path: Path):
         pattern = re.compile(r"backoff\s*=")
         assert not files_evidence_token(["missing.py"], tmp_path, pattern)
@@ -75,8 +69,7 @@ class TestFilesEvidenceToken:
 
 class TestBoundEndpoints:
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints.test_both_endpoint\
-    # s_bound_src_first
+    # tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints.test_both_endpoints_bound_src_first  # noqa: E501
     def test_both_endpoints_bound_src_first(self):
         owner_by_node = {"src": ["a.py"], "dst": ["b.py"]}
         assert bound_endpoints("src", "dst", owner_by_node) == ["src", "dst"]
@@ -88,14 +81,12 @@ class TestBoundEndpoints:
         assert bound_endpoints("src", "dst", owner_by_node) == ["dst"]
 
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints.test_self_loop_ded\
-    # uped
+    # tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints.test_self_loop_deduped  # noqa: E501
     def test_self_loop_deduped(self):
         owner_by_node = {"n": ["a.py"]}
         assert bound_endpoints("n", "n", owner_by_node) == ["n"]
 
     # frob:tests \
-    # tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints.test_neither_bound\
-    # _empty
+    # tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints.test_neither_bound_empty  # noqa: E501
     def test_neither_bound_empty(self):
         assert bound_endpoints("src", "dst", {}) == []

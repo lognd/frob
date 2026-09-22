@@ -214,6 +214,7 @@ entries:
         # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
         assert violations == ()
 
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
     def test_fully_dispositioned_fixture_passes(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -545,6 +546,7 @@ class TestDuplicateId:
     # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
     """REG007 (T-0407) -- the same id defined by two or more entries is a
     real collision, distinct from an intentional `duplicate_of:` link."""
+# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
 
     def test_duplicate_id_across_files_fails(self, tmp_path: Path) -> None:
         _write_manifest(
@@ -673,6 +675,7 @@ entries:
         # T-2369: REG008 promoted WARN -> ERROR once the corpus's
         # undeclared-enforcement count reached true zero.
         assert reg008.severity == Severity.ERROR
+# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
 
     # frob:ticket T-0428
     def test_handled_by_with_frob_enforces_edge_is_silent(self, tmp_path: Path) -> None:
@@ -771,9 +774,11 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG009" in rules
         reg009 = next(v for v in violations if v.rule == "REG009")
+        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
         assert reg009.severity == Severity.WARN
 
     # frob:ticket T-0428
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
     def test_matching_enforces_edge_no_reg009(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,

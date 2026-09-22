@@ -236,6 +236,7 @@ class TestQuotedRanges:
         needle = body.index("frob:waive")
         assert any(start <= needle < end for start, end in ranges)
 
+    # frob:tests src/frob/gates/_mutation_evidence.py::_quoted_char_ranges
     def test_inline_span_quoted(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_inline_span_quoted  # noqa: E501
         from frob.gates._mutation_evidence import _quoted_char_ranges
@@ -389,8 +390,7 @@ class TestBug002MalformedWaiver:
 
     def test_unquoted_reason_value_is_reported_not_silently_dropped(self) -> None:
         # frob:tests \
-        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_unquote\
-        # d_reason_value_is_reported_not_silently_dropped
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_unquoted_reason_value_is_reported_not_silently_dropped  # noqa: E501
         """T-2857 mode 2's own measured incident: an agent wrote `reason=`
         with a bare, unquoted value. `_bug002_waiver_reason` correctly
         returns `None` (unchanged, pre-fix behavior), but pre-fix there
@@ -403,8 +403,7 @@ class TestBug002MalformedWaiver:
 
     def test_unterminated_reason_value_is_reported(self) -> None:
         # frob:tests \
-        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_untermi\
-        # nated_reason_value_is_reported
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_unterminated_reason_value_is_reported  # noqa: E501
         body = '## Description\nfrob:waive BUG002 reason="never closed\n'
         ticket = _bug_ticket(body=body)
         assert _bug002_waiver_reason(ticket) is None
@@ -412,8 +411,7 @@ class TestBug002MalformedWaiver:
 
     def test_well_formed_waiver_is_not_reported_as_malformed(self) -> None:
         # frob:tests \
-        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_well_fo\
-        # rmed_waiver_is_not_reported_as_malformed
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_well_formed_waiver_is_not_reported_as_malformed  # noqa: E501
         """Positive control: a genuinely well-formed waiver must never be
         flagged malformed -- there are hundreds of live BUG002 waivers in
         this repo, and a false positive here would spuriously warn on
@@ -425,15 +423,13 @@ class TestBug002MalformedWaiver:
 
     def test_no_directive_at_all_is_not_reported(self) -> None:
         # frob:tests \
-        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_no_dire\
-        # ctive_at_all_is_not_reported
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_no_directive_at_all_is_not_reported  # noqa: E501
         ticket = _bug_ticket(body="## Description\nnothing relevant here\n")
         assert _bug002_malformed_waiver(ticket) is None
 
     def test_bare_directive_with_no_reason_attempt_is_not_reported(self) -> None:
         # frob:tests \
-        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_bare_di\
-        # rective_with_no_reason_attempt_is_not_reported
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_bare_directive_with_no_reason_attempt_is_not_reported  # noqa: E501
         """A bare `frob:waive BUG002` with no `reason=` anywhere near it
         is left alone (unchanged, pre-existing behavior) rather than
         flagged malformed -- a measured false positive during this fix's
@@ -451,8 +447,7 @@ class TestBug002MalformedWaiver:
 
     def test_directive_inside_code_span_is_not_reported(self) -> None:
         # frob:tests \
-        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_directi\
-        # ve_inside_code_span_is_not_reported
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_directive_inside_code_span_is_not_reported  # noqa: E501
         """T-2218's discussed-not-declared exclusion applies here too: a
         malformed EXAMPLE quoted inside backticks must not be flagged."""
         body = (
@@ -797,6 +792,7 @@ class TestBugReproViolations:
         mocked.assert_not_called()
         assert violations == ()
 
+    # frob:tests src/frob/gates/_bug_repro.py::bug_repro_violations kind="integration"  # noqa: E501
     def test_passed_at_parent_is_error_violation(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_passed_at_parent_is_error_violation  # noqa: E501
         ticket = _bug_ticket()
@@ -1001,6 +997,7 @@ class TestMustStillPassControls:
     # frob:tests src/frob/gates/_bug_repro.py::_must_still_pass_controls  # noqa: E501
     pass NODE-ID` directives from a ticket's body."""
 
+    # frob:tests src/frob/gates/_bug_repro.py::_must_still_pass_controls  # noqa: E501
     def test_single_directive_extracted(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_single_directive_extracted  # noqa: E501
         body = (
@@ -1242,6 +1239,7 @@ class TestEnvAbsent:
     # frob:tests src/frob/gates/_bug_repro.py::_env_absent_vars  # noqa: E501
     """`_env_absent_vars` (T-3104): extracting `frob:env-absent
     VAR1,VAR2,...` directives from a ticket's body."""
+# frob:tests src/frob/gates/_bug_repro.py::_env_absent_vars  # noqa: E501
 
     def test_single_directive_extracted(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_single_directive_extracted  # noqa: E501

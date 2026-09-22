@@ -150,6 +150,7 @@ class TestNegexist001Gate:
         # frob:tests src/frob/gates/_negexist.py::negexist001_gate  # noqa: E501
         assert negexist001_gate(_test_snapshot(edges), queue) == ()
 
+    # frob:tests src/frob/gates/_negexist.py::negexist001_gate  # noqa: E501
     def test_claim_bound_to_closed_ticket_is_stale(self) -> None:
         """An UNTIL edge naming an already-closed ticket is stale --
         NEGEXIST001 still fires even though the claim is technically

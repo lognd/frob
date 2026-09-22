@@ -27,8 +27,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingInterfaceClassification:
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test\
-    # _kernel_interface_node_without_classification_fires
+    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test_kernel_interface_node_without_classification_fires  # noqa: E501
     # frob:tests src/frob/strata/_process_bounds.py::check_process_bounds_obligations  # noqa: E501
     def test_kernel_interface_node_without_classification_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -50,8 +49,7 @@ class TestMissingInterfaceClassification:
         assert {v.node for v in missing} == {"open_procfs_entry"}
 
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test\
-    # _discharged_and_non_kernel_interface_nodes_clean
+    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test_discharged_and_non_kernel_interface_nodes_clean  # noqa: E501
     def test_discharged_and_non_kernel_interface_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -72,8 +70,7 @@ class TestMissingInterfaceClassification:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test\
-    # _waiver_discharges_finding
+    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test_waiver_discharges_finding  # noqa: E501
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -107,8 +104,7 @@ class TestMissingInterfaceClassification:
 
 class TestUnprovenInterfaceClassification:
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.tes\
-    # t_declared_with_no_code_evidence_fires
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -138,8 +134,7 @@ class TestUnprovenInterfaceClassification:
         assert {v.node for v in violations} == {"open_procfs_entry"}
 
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.tes\
-    # t_declared_with_real_code_evidence_discharges
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -170,8 +165,7 @@ class TestUnprovenInterfaceClassification:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.tes\
-    # t_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -195,8 +189,7 @@ class TestUnprovenInterfaceClassification:
 
 class TestMissingProcessBounds:
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_deployed_\
-    # process_node_without_bounds_fires
+    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_deployed_process_node_without_bounds_fires  # noqa: E501
     def test_deployed_process_node_without_bounds_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -217,8 +210,7 @@ class TestMissingProcessBounds:
         assert {v.node for v in missing} == {"worker_service"}
 
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_discharge\
-    # d_and_non_deployed_process_nodes_clean
+    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_discharged_and_non_deployed_process_nodes_clean  # noqa: E501
     def test_discharged_and_non_deployed_process_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -239,8 +231,7 @@ class TestMissingProcessBounds:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_waiver_di\
-    # scharges_finding
+    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_waiver_discharges_finding  # noqa: E501
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -270,8 +261,7 @@ class TestMissingProcessBounds:
 
 class TestUnprovenProcessBounds:
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared\
-    # _with_no_code_evidence_fires
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -297,8 +287,7 @@ class TestUnprovenProcessBounds:
         assert {v.node for v in violations} == {"worker_service"}
 
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared\
-    # _with_real_code_evidence_discharges
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -325,8 +314,7 @@ class TestUnprovenProcessBounds:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared\
-    # _with_no_bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

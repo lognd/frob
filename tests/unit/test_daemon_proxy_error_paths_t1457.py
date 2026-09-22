@@ -62,8 +62,7 @@ class TestAskVersionOverSocket:
                 "ever reaching the mocked socket on win32"
             )
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.t\
-        # est_connect_timeout_is_wedged
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_connect_timeout_is_wedged  # noqa: E501
         fake_sock = MagicMock()
         fake_sock.connect.side_effect = TimeoutError("timed out")
         fake_sock.__enter__.return_value = fake_sock
@@ -80,8 +79,7 @@ class TestAskVersionOverSocket:
                 "ever reaching the mocked socket on win32"
             )
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.t\
-        # est_connect_oserror_is_wedged
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_connect_oserror_is_wedged  # noqa: E501
         fake_sock = MagicMock()
         fake_sock.connect.side_effect = OSError("permission denied")
         fake_sock.__enter__.return_value = fake_sock
@@ -98,8 +96,7 @@ class TestAskVersionOverSocket:
                 "ever reaching the mocked socket on win32"
             )
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.t\
-        # est_hangup_before_newline_is_wedged
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_hangup_before_newline_is_wedged  # noqa: E501
         # Accepted the connection, then hung up (recv returns b"") without
         # ever sending a newline-terminated reply.
         fake_sock = MagicMock()
@@ -118,8 +115,7 @@ class TestAskVersionOverSocket:
                 "ever reaching the mocked socket on win32"
             )
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.t\
-        # est_outer_timeout_during_send_or_recv_is_wedged
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_outer_timeout_during_send_or_recv_is_wedged  # noqa: E501
         fake_sock = MagicMock()
         fake_sock.sendall.side_effect = TimeoutError("send timed out")
         fake_sock.__enter__.return_value = fake_sock
@@ -135,8 +131,7 @@ class TestClassifyVersionReply:
     # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
     def test_malformed_json_is_wedged(self) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.t\
-        # est_malformed_json_is_wedged
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_malformed_json_is_wedged  # noqa: E501
         liveness, version = _classify_version_reply(b"not json at all\n")
         assert liveness is DaemonLiveness.Wedged
         assert version is None
@@ -144,8 +139,7 @@ class TestClassifyVersionReply:
 
     def test_non_dict_result_is_wedged(self) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.t\
-        # est_non_dict_result_is_wedged
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_dict_result_is_wedged  # noqa: E501
         # payload.get("result", {}).get("version") -- "result" is a bare
         # string, so the chained .get raises AttributeError.
         liveness, version = _classify_version_reply(b'{"result": "oops"}\n')
@@ -154,16 +148,14 @@ class TestClassifyVersionReply:
 
     def test_non_str_version_is_wedged(self) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.t\
-        # est_non_str_version_is_wedged
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_str_version_is_wedged  # noqa: E501
         liveness, version = _classify_version_reply(b'{"result": {"version": 123}}\n')
         assert liveness is DaemonLiveness.Wedged
         assert version is None
 
     def test_bad_utf8_is_wedged(self) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.t\
-        # est_bad_utf8_is_wedged
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_bad_utf8_is_wedged  # noqa: E501
         liveness, version = _classify_version_reply(b"\xff\xfe\n")
         assert liveness is DaemonLiveness.Wedged
         assert version is None
@@ -174,8 +166,7 @@ class TestClearOrphanedSocket:
 
     def test_unlink_oserror_is_swallowed(self, root: Path, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClearOrphanedSocket.te\
-        # st_unlink_oserror_is_swallowed
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClearOrphanedSocket.test_unlink_oserror_is_swallowed  # noqa: E501
         import logging
 
         with caplog.at_level(logging.INFO, logger="frob.app._daemon_proxy"):
@@ -195,8 +186,7 @@ class TestClientVersion:
 
     def test_unexpected_exception_falls_back_to_unknown(self, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClientVersion.test_une\
-        # xpected_exception_falls_back_to_unknown
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClientVersion.test_unexpected_exception_falls_back_to_unknown  # noqa: E501
         import logging
 
         with caplog.at_level(logging.DEBUG, logger="frob.app._daemon_proxy"):
@@ -210,8 +200,7 @@ class TestSpawnDaemon:
 
     def test_popen_oserror_is_swallowed(self, root: Path, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestSpawnDaemon.test_popen\
-        # _oserror_is_swallowed
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestSpawnDaemon.test_popen_oserror_is_swallowed  # noqa: E501
         import logging
 
         with caplog.at_level(logging.INFO, logger="frob.app._daemon_proxy"):
@@ -228,8 +217,7 @@ class TestShutdownStaleDaemon:
 
     def test_rpc_failure_is_logged_and_returns(self, root: Path, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon.te\
-        # st_rpc_failure_is_logged_and_returns
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon.test_rpc_failure_is_logged_and_returns  # noqa: E501
         import logging
 
         from typani import Err
@@ -247,8 +235,7 @@ class TestShutdownStaleDaemon:
         self, root: Path, caplog
     ) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon.te\
-        # st_successful_shutdown_waits_for_lock_release
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon.test_successful_shutdown_waits_for_lock_release  # noqa: E501
         import logging
 
         from typani import Ok
@@ -283,8 +270,7 @@ class TestTryDaemonLeaseErrorPaths:
     @pytest.fixture(autouse=True)
     def _opt_in(self, monkeypatch):
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPat\
-        # hs._opt_in kind="integration"
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths._opt_in kind="integration"  # noqa: E501
         # T-1636: an autouse pytest fixture is reached via pytest's own
         # fixture-injection machinery for every test in this class, never a literal
         # call token a static call-graph can see -- the same blind spot
@@ -304,8 +290,7 @@ class TestTryDaemonLeaseErrorPaths:
                 "reaching the mocked _LeaseConnection on win32"
             )
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPat\
-        # hs.test_call_oserror_closes_connection_and_returns_unreachable
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths.test_call_oserror_closes_connection_and_returns_unreachable  # noqa: E501
         fake_conn = MagicMock()
         fake_conn.call.side_effect = OSError("broken pipe")
         with (
@@ -325,8 +310,7 @@ class TestTryDaemonLeaseErrorPaths:
                 "reaching the mocked _LeaseConnection on win32"
             )
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPat\
-        # hs.test_remote_error_response_closes_connection
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths.test_remote_error_response_closes_connection  # noqa: E501
         fake_conn = MagicMock()
         fake_conn.call.return_value = {"error": {"message": "no such resource"}}
         with (
@@ -345,8 +329,7 @@ class TestReleaseDaemonLease:
 
     def test_call_oserror_is_swallowed_and_connection_still_closed(self) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestReleaseDaemonLease.tes\
-        # t_call_oserror_is_swallowed_and_connection_still_closed
+        # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestReleaseDaemonLease.test_call_oserror_is_swallowed_and_connection_still_closed  # noqa: E501
         fake_conn = MagicMock()
         fake_conn.call.side_effect = OSError("connection reset")
         release_daemon_lease(fake_conn, "some-resource")  # must not raise

@@ -119,6 +119,7 @@ class TestLexcheck001:
         violations = lexical_selfcheck_gate(tmp_path)
         assert [v for v in violations if v.rule == "LEXCHECK001"] == []
 
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
     def test_non_gate_code_never_scanned(self, tmp_path: Path) -> None:
         """A lexical decider OUTSIDE `src/frob/gates/` (this gate's own
         declared scope, T-2344) is never scanned -- this check is about

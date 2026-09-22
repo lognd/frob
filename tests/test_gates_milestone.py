@@ -171,6 +171,7 @@ class TestMile003:
         # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
         assert milestone_gate(tmp_path, queue) == ()
 
+    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
     def test_silent_on_configured_default(self, tmp_path: Path) -> None:
         """The M2 redesign's whole point: a configured default silences
         MILE003 with ZERO ticket-file writes."""
@@ -230,6 +231,7 @@ class TestMile001:
         assert len(violations) == 1
         assert "T-1" in violations[0].message
         assert "T-2" in violations[0].message
+# frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
 
     def test_blocked_by_earlier_milestone_does_not_fire(self, tmp_path: Path) -> None:
         """Negative control: T-1 (milestone 2.0.0) blocked_by T-2
@@ -299,8 +301,10 @@ class TestMile001:
 # frob:ticket T-2580
 class TestMile002:
     """MILE002 (T-2580 M5): the same deadlock as MILE001, reached via the
+    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone
     parent/descendant hierarchy instead of `blocked_by`."""
 
+    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone
     def test_descendant_in_later_milestone_fires(self, tmp_path: Path) -> None:
         """Positive control: an epic in milestone 1.0.0 with a child in
         milestone 2.0.0 -- the epic cannot close over the open child

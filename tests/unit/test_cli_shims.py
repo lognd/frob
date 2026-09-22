@@ -41,6 +41,7 @@ class TestAnnounceShim:
     # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
     the top of its `run()` (the fmt_runner precedent, generalized)."""
 
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
     def test_before_sunset_prints_notice_and_returns(self, capsys) -> None:
         """Before the sunset date: a stderr notice naming the survivor,
         and the call returns normally (exit 0) so the old spelling keeps

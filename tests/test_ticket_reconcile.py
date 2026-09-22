@@ -647,6 +647,7 @@ class TestReconcileUnlandedBranchWork:
     # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
     `apply`)."""
 
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
     def test_reports_the_confirmed_leak_shape(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_the_confirmed_leak_shape  # noqa: E501
@@ -678,6 +679,8 @@ class TestReconcileUnlandedBranchWork:
         result = reconcile(repo)
         assert result.is_ok
         assert result.danger_ok.unlanded_branch_work == ()
+# frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
+# frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"  # noqa: E501
 
     def test_populates_the_doable_summary_cache(self, repo: Path) -> None:
         """T-3522: reconcile now calls `_save_unlanded_summary_cache` with

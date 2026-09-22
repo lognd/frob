@@ -155,8 +155,7 @@ class TestShrinkNeverWidensOrBinds:
     criteria."""
 
     # frob:tests \
-    # tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds.test_capability_es\
-    # calation_stays_an_error_and_shrink_does_not_widen
+    # tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds.test_capability_escalation_stays_an_error_and_shrink_does_not_widen  # noqa: E501
     def test_capability_escalation_stays_an_error_and_shrink_does_not_widen(
         self, tmp_path: Path
     ):
@@ -190,8 +189,7 @@ class TestShrinkNeverWidensOrBinds:
         assert design_path.read_text(encoding="utf-8") == before
 
     # frob:tests \
-    # tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds.test_unbound_capab\
-    # ility_file_stays_an_error_and_shrink_does_not_bind_it
+    # tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds.test_unbound_capability_file_stays_an_error_and_shrink_does_not_bind_it  # noqa: E501
     def test_unbound_capability_file_stays_an_error_and_shrink_does_not_bind_it(
         self, tmp_path: Path
     ):

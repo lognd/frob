@@ -291,6 +291,7 @@ class TestBriefCli:
 # frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
 class TestClusterDescendants:
     # frob:ticket T-1243
+    # frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
     def test_dependency_order_respects_intra_cluster_blocked_by(
         self, tmp_path: Path
     ) -> None:

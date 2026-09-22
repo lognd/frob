@@ -92,6 +92,7 @@ class TestSysGate:
         assert _by_rule(sys_gate(tmp_path, snapshot), "SYS002") == []
 
     # frob:ticket T-2407
+    # frob:tests src/frob/gates/_sys.py::sys_gate
     def test_sys003_import(self, tmp_path: Path, monkeypatch) -> None:
         """T-0080: SYS003 surfaces `check_import_conformance`'s tier-2
         violations through `sys_gate`. The surface grammar does not lex
@@ -163,6 +164,7 @@ class TestSysGate:
         # frob:tests src/frob/gates/_sys.py::_sys004  # noqa: E501
         assert len(_by_rule(violations, "SYS004")) == 1
 
+    # frob:tests src/frob/gates/_sys.py::_sys004  # noqa: E501
     def test_sys004_names_stale_native_as_likely_remedy(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -451,6 +453,7 @@ class TestSelfAuditGate:
     `frob.strata.check_self_conformance`, which `tests/unit/strata/
     test_selfconform.py` already covers at the pure-function level."""
 
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violations
     # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
     # invariant spec: [INV-041](invariants/INV-041.md)
     def test_selfaudit001_folds_selfconform_violation(self, tmp_path: Path) -> None:
@@ -1689,6 +1692,7 @@ class TestRenderLintGate:
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestRenderLintGate.test_claude_hooks_dir_exempt
     # frob:ticket T-2719
+    # frob:tests src/frob/gates/_render_lint.py::render_lint_gate  # noqa: E501
     def test_claude_hooks_dir_exempt(self, tmp_path: Path) -> None:
         """A bare `print(...)` under `.claude/hooks/` does NOT fire
         RENDER001 (T-2719): hook scripts run standalone with no `frob.*`

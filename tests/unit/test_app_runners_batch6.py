@@ -1386,6 +1386,7 @@ class TestSkipUnchangedLanguage:
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(["git", "commit", "-q", "-m", msg], cwd=tmp_path, check=True)
 
+    # frob:tests src/frob/app/check_runner.py::_run_all_detected  # noqa: E501
     def test_unchanged_python_reports_skipped_not_silent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:

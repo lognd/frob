@@ -79,8 +79,9 @@
       "reason": "branch-own via addition auto-accept (T-4437)"
     },
     "core::fs.write": {
-      "accepted_count": 31,
-      "reason": "branch-own via addition auto-accept (T-4437)"
+      "accepted_count": 32,
+      "reason": "branch-own via addition auto-accept (T-4437); +1 for src/frob/docs/_command_pages.py (T-4702: frob docs --sync-command-pages writes docs/commands/<verb>.md stub pages)",
+      "ticket": "T-4702"
     },
     "core::process-control": {
       "accepted_count": 1,
@@ -252,7 +253,7 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 570,
+      "accepted_count": 571,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {

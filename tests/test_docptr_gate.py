@@ -88,6 +88,7 @@ class TestDoc006FilePath:
         # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_unrecognized_prose_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(
@@ -129,6 +130,7 @@ class TestDoc006DocAnchor:
         found = _by_rule(violations, "docs/guide.md")
         assert found
         assert any("nonexistent-anchor" in v.message for v in found)
+# frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     def test_real_anchor_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -169,8 +171,10 @@ class TestDoc006Cli:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         found = _by_rule(violations, "docs/guide.md")
         assert found
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert any("--nonexistent-flag" in v.message for v in found)
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_real_command_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
@@ -337,8 +341,10 @@ class TestDoc006Config:
     INSIDE a backtick span is deliberately inert (see
     `_CONFIG_REF_PROSE_RE`'s own comment: it collides with unrelated code
     syntax that happens to share the bracket shape, e.g. a C++ lambda
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     capture `` `[x]` ``). These fixtures write the pointer as plain prose
     accordingly; a dedicated code-span-inertness test lives just below."""
+# frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     def test_bogus_section_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -444,10 +450,13 @@ class TestDoc006Config:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
         _write(tmp_path, "docs/guide.md", "Rows already covered are [IN-REPO].\n")
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_declared_but_unset_section_not_flagged(self, tmp_path: Path) -> None:
         """T-1016: `[vet.allow]` is a real section `frob.vet._allow` reads
         from `frob.toml` -- but this SYNTHETIC test repo's own `frob.toml`
@@ -561,10 +570,13 @@ class TestDoc006Symbol:
         _write(tmp_path, "src/pkg/__init__.py", "")
         _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
         _write(tmp_path, "docs/guide.md", "See `pkg.mod.real` for it.\n")
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_module_dunder_init_and_all_pass(self, tmp_path: Path) -> None:
         """`pkg.mod.__init__`/`pkg.mod.__all__` name the module ITSELF (a
         doc's own convention), not a stale top-level symbol -- round-2
@@ -696,6 +708,7 @@ class TestDoc006FileSymbol:
         # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
         _write(tmp_path, "docs/guide.md", "See `src/pkg/mod.py::nonexistent` here.\n")
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         found = _by_rule(violations, "docs/guide.md")
@@ -703,11 +716,14 @@ class TestDoc006FileSymbol:
         assert any("nonexistent" in v.message for v in found)
 
     def test_py_real_symbol_passes(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _init_repo(tmp_path)
         _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
         _write(tmp_path, "docs/guide.md", "See `src/pkg/mod.py::real` here.\n")
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert not _by_rule(violations, "docs/guide.md")
 
     def test_py_private_twin_noted_in_message(self, tmp_path: Path) -> None:
@@ -754,6 +770,7 @@ class TestDoc006FileSymbol:
         _write(
             # frob:tests src/frob/gates/_docptr.py::doc006_gate
             tmp_path,
+            # frob:tests src/frob/gates/_docptr.py::doc006_gate
             "crate/src/lib.rs",
             "impl Visitor for Walker {\n    fn parse_node(&mut self) {}\n}\n",
         )
@@ -762,12 +779,15 @@ class TestDoc006FileSymbol:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_missing_file_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "docs/guide.md", "See `src/pkg/gone.py::real` here.\n")
         _add_all(tmp_path)
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         found = _by_rule(violations, "docs/guide.md")
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert found
         assert any("gone.py" in v.message for v in found)
 
@@ -792,12 +812,15 @@ class TestDoc006BareIdentifier:
     within the doc's OWN anchored module scope (a `frob:doc <this doc>#...`
     edge somewhere in the tree) -- never fires on an unanchored doc."""
 
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def _anchored_repo(self, tmp_path: Path, module_body: str, doc_body: str) -> None:
         _init_repo(tmp_path)
         _write(
             tmp_path,
+            # frob:tests src/frob/gates/_docptr.py::doc006_gate
             "src/pkg/mod.py",
             f"# frob:doc docs/guide.md#anchor\n{module_body}",
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         )
         _write(tmp_path, "docs/guide.md", f"# Anchor\n\n{doc_body}")
         _add_all(tmp_path)

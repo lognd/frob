@@ -88,6 +88,7 @@ class TestOutputExistsRefusal:
         assert second.danger_err is ScaffoldError.OutputExists
 
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestOutputExistsRefusal.test_refusal_leaves_no_partial_scaffold  # noqa: E501
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
     def test_refusal_leaves_no_partial_scaffold(self, unity_project: Path) -> None:
         # A pre-existing frob.toml alone (no design/ yet) must still
         # refuse -- the OutputExists check runs before ANY file is

@@ -142,6 +142,7 @@ class TestSetPriority:
         # frob:tests src/frob/tickets/_setters.py::set_priority
         assert reloaded.danger_ok.tickets[ticket_id].priority == Priority.CRITICAL
 
+    # frob:tests src/frob/tickets/_setters.py::set_priority
     def test_reason_missing_refuses(self, tmp_path: Path) -> None:
         """T-2353: a blank/whitespace-only `reason` is refused with
         `TriageReasonMissing` -- the positive control for the fix's own

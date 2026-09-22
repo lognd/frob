@@ -36,8 +36,7 @@ class TestMissingSlo:
         assert {v.node for v in missing} == {"checkout_svc"}
 
     # frob:tests \
-    # tests/unit/strata/test_slo.py::TestMissingSlo.test_only_slo_or_only_error_budget_\
-    # still_fires
+    # tests/unit/strata/test_slo.py::TestMissingSlo.test_only_slo_or_only_error_budget_still_fires  # noqa: E501
     def test_only_slo_or_only_error_budget_still_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -53,8 +52,7 @@ class TestMissingSlo:
         assert missing == {"half_a", "half_b"}
 
     # frob:tests \
-    # tests/unit/strata/test_slo.py::TestMissingSlo.test_discharged_and_non_service_nod\
-    # es_clean
+    # tests/unit/strata/test_slo.py::TestMissingSlo.test_discharged_and_non_service_nodes_clean  # noqa: E501
     def test_discharged_and_non_service_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -99,8 +97,7 @@ class TestMissingSlo:
 
 class TestUnprovenSlo:
     # frob:tests \
-    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_no_code_evidenc\
-    # e_fires
+    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def handle():\n    return ok()\n")
         model = KernelModel(
@@ -120,8 +117,7 @@ class TestUnprovenSlo:
         assert {v.node for v in violations} == {"checkout_svc"}
 
     # frob:tests \
-    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_real_code_evide\
-    # nce_discharges
+    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -144,8 +140,7 @@ class TestUnprovenSlo:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_no_bound_code_i\
-    # s_uncheckable_not_a_violation
+    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

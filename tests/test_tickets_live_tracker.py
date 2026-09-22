@@ -381,6 +381,7 @@ class TestLiveTrackerCitations:
         citations = live_tracker_citations(tmp_path, "T-0605", base_ref="main")
         assert len(citations) == 1
 
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
     def test_citation_outside_own_scope_still_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_citation_outside_own_scope_still_flagged  # noqa: E501
         # T-0854 rework: kept under its original name for evidence

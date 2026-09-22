@@ -678,6 +678,7 @@ class TestSpliceLedgerRicherStatePreference:
         assert "## Done report" not in parsed[tid].body
 
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_neither_side_reporting_still_falls_back_to_state_rank  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer kind="property"  # noqa: E501
     def test_neither_side_reporting_still_falls_back_to_state_rank(
         self, tmp_path: Path
     ) -> None:
@@ -933,6 +934,7 @@ class TestLedgerV2LandMergeStory:
     disjoint `tickets/T-####/` directories merge with zero custom
     resolution (AC2), and a genuine same-ticket-file conflict surfaces as
     an ordinary git conflict, never a silent splice (AC3)."""
+# frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope  # noqa: E501
 
     def test_disjoint_v2_tickets_land_with_no_custom_merge(self, v2_repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::land kind="unit"
@@ -1141,11 +1143,11 @@ class TestUnionZoneMerge:
     hotspots (`[gates.severity]`, `_KNOWN_GATE_RULES`, `docs/audits/*.md`
     remediation logs) -- concurrent distinct appends compose with zero
     manual resolution; a true same-key contradiction still refuses."""
+# frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks  # noqa: E501
 
     def test_keyed_lines_union_composes(self) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_\
-        # lines_union_composes
+        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_lines_union_composes  # noqa: E501
         ours = '# comment for A\nRULEA = "error"\n'
         theirs = '# comment for B\nRULEB = "warn"\n'
         merged = _land_merge_zones_mod._union_keyed_chunks(
@@ -1157,8 +1159,7 @@ class TestUnionZoneMerge:
 
     def test_keyed_lines_union_refuses(self) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_\
-        # lines_union_refuses
+        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
         ours = 'RULEA = "error"\n'
         theirs = 'RULEA = "warn"\n'
         merged = _land_merge_zones_mod._union_keyed_chunks(
@@ -1168,8 +1169,7 @@ class TestUnionZoneMerge:
 
     def test_resolve_stages(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_resolv\
-        # e_stages
+        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_resolve_stages  # noqa: E501
         target = repo / "frob.toml"
         target.write_text(
             "[gates.severity]\n"
@@ -1222,8 +1222,7 @@ class TestRenameAwareWaiveDeletionAttribution:
         what `git diff --no-color -U0` reports as the file the `-` line
         belongs to)."""
         # frob:tests \
-        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAt\
-        # tribution.test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
+        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution.test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path  # noqa: E501
         (repo / "src" / "old.py").write_text(
             '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
             "def g():\n    pass\n"
@@ -1259,9 +1258,7 @@ class TestRenameAwareWaiveDeletionAttribution:
         perform to dodge the guard) on top of proving which path is
         checked."""
         # frob:tests \
-        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAt\
-        # tribution.test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_re\
-        # fuses
+        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution.test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses  # noqa: E501
         (repo / "src" / "old.py").write_text(
             '# frob:waive PERF001 reason="genuinely needed, not this ticket"\n'
             "def g():\n    pass\n"
@@ -1293,9 +1290,7 @@ class TestRenameAwareWaiveDeletionAttribution:
         test above: `git mv` + edit left dirty (not yet committed) must
         still be attributed correctly when the OLD path is in scope."""
         # frob:tests \
-        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAt\
-        # tribution.test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_p\
-        # ath
+        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution.test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path  # noqa: E501
         (repo / "src" / "old.py").write_text(
             '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
             "def g():\n    pass\n"

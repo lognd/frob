@@ -12,8 +12,7 @@ from frob.strata._shared_state import REL_SHARED_MUTABLE_STATE, check_shared_sta
 
 class TestSharedState:
     # frob:tests \
-    # tests/unit/strata/test_shared_state.py::TestSharedState.test_mutable_node_shared_\
-    # by_two_services_fires
+    # tests/unit/strata/test_shared_state.py::TestSharedState.test_mutable_node_shared_by_two_services_fires  # noqa: E501
     # frob:tests src/frob/strata/_shared_state.py::check_shared_state  # noqa: E501
     def test_mutable_node_shared_by_two_services_fires(self):
         model = KernelModel(
@@ -34,8 +33,7 @@ class TestSharedState:
         assert {v.node for v in violations} == {"shared_db"}
 
     # frob:tests \
-    # tests/unit/strata/test_shared_state.py::TestSharedState.test_read_only_accessor_s\
-    # till_fires
+    # tests/unit/strata/test_shared_state.py::TestSharedState.test_read_only_accessor_still_fires  # noqa: E501
     def test_read_only_accessor_still_fires(self):
         # svc_b only READS shared_db (a flow FROM shared_db) while svc_a
         # writes it -- still 2 distinct accessors of mutable state
@@ -71,8 +69,7 @@ class TestSharedState:
         assert not [v for v in report.violations if v.rule == REL_SHARED_MUTABLE_STATE]
 
     # frob:tests \
-    # tests/unit/strata/test_shared_state.py::TestSharedState.test_immutable_node_touch\
-    # ed_by_many_is_clean
+    # tests/unit/strata/test_shared_state.py::TestSharedState.test_immutable_node_touched_by_many_is_clean  # noqa: E501
     def test_immutable_node_touched_by_many_is_clean(self):
         # broadcast_topic is never written INTO (no flow lands on it) --
         # not "mutable" by this module's definition, so 2 distinct
@@ -92,8 +89,7 @@ class TestSharedState:
         assert not [v for v in report.violations if v.rule == REL_SHARED_MUTABLE_STATE]
 
     # frob:tests \
-    # tests/unit/strata/test_shared_state.py::TestSharedState.test_shared_state_ok_exem\
-    # ption_discharges
+    # tests/unit/strata/test_shared_state.py::TestSharedState.test_shared_state_ok_exemption_discharges  # noqa: E501
     def test_shared_state_ok_exemption_discharges(self):
         model = KernelModel(
             nodes=(
@@ -110,8 +106,7 @@ class TestSharedState:
         assert not [v for v in report.violations if v.rule == REL_SHARED_MUTABLE_STATE]
 
     # frob:tests \
-    # tests/unit/strata/test_shared_state.py::TestSharedState.test_owner_attr_alone_doe\
-    # s_not_discharge
+    # tests/unit/strata/test_shared_state.py::TestSharedState.test_owner_attr_alone_does_not_discharge  # noqa: E501
     def test_owner_attr_alone_does_not_discharge(self):
         # REL29x's `owner` attr does NOT discharge REL360 (module
         # docstring: reconciling conflicts is a different question from
@@ -134,8 +129,7 @@ class TestSharedState:
         assert {v.node for v in violations} == {"shared_db"}
 
     # frob:tests \
-    # tests/unit/strata/test_shared_state.py::TestSharedState.test_waiver_discharges_fi\
-    # nding
+    # tests/unit/strata/test_shared_state.py::TestSharedState.test_waiver_discharges_finding  # noqa: E501
     def test_waiver_discharges_finding(self):
         model = KernelModel(
             nodes=(

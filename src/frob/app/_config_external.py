@@ -234,6 +234,11 @@ _STRING_FIELDS = (
     # positional, broken from the moment that ticket landed.
     "ticket_anchor_reason",
     "sys_threats_boundary",
+    # T-5132 regression: allowlist gap dropped these silently --
+    # ticket_unsized_ack's REASON never reached cfg.
+    # frob:ticket T-4702
+    "ticket_unsized_ack",
+    "ticket_points_value",
 )
 
 _PATH_FIELDS = (
@@ -352,10 +357,16 @@ _INT_FIELDS = (
     # it needs one of the very flags the user passed.
     "ticket_accept_amend_index",
     "ticket_accept_remove_index",
+    # T-5132 regression: allowlist gap dropped these silently --
+    # ticket_unsized_ack's REASON never reached cfg.
+    # frob:ticket T-4702
+    "ticket_points",
+    "ticket_tokens_in",
+    "ticket_tokens_out",
+    "ticket_tokens_cache_read",
 )
 
 # frob:ticket T-1927
-# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_population_flag_survives_real_argv_parsing  # noqa: E501
 _FLOAT_FIELDS = (
     "vet_timeout",
     "perf_interval_s",
@@ -411,9 +422,6 @@ _LIST_FIELDS = (
 )
 
 # frob:ticket T-2387
-# frob:tests tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig.test_from_external_carries_all_three_ruff_flags_from_parsed_argv  # noqa: E501
-# frob:tests tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig.test_absent_ruff_flags_default_false  # noqa: E501
-# frob:tests tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags.test_current_tree_has_zero_dropped_flags  # noqa: E501
 _BOOL_FLAGS = (
     # frob:ticket T-5219
     "clean_sweep_worktrees",
@@ -443,6 +451,7 @@ _BOOL_FLAGS = (
     "docs_json",
     "docs_overview",
     "docs_sync_commands",
+    "docs_sync_command_pages",
     "exports_all",
     "exports_json",
     "exports_write",
@@ -881,7 +890,6 @@ def _all_parser_dests(parser: argparse.ArgumentParser) -> frozenset[str]:
 
 # frob:doc docs/modules/app.md#config
 # frob:ticket T-2004
-# frob:tests tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags.test_current_tree_has_zero_dropped_flags  # noqa: E501
 def find_dropped_cli_flags(
     parser: argparse.ArgumentParser,
     config_cls: type[Any],

@@ -101,6 +101,7 @@ class TestFindDroppedCliFlags:
         assert found == frozenset()
 
     # frob:tests src/frob/app/_config_external.py::find_dropped_cli_flags kind="unit"
+    # frob:tests src/frob/app/_config_external.py::_BOOL_FLAGS  # noqa: E501
     def test_current_tree_has_zero_dropped_flags(self):
         """T-2004 acceptance criterion 3, measured (not assumed): the
         REAL `frob` parser against the REAL `AppConfig` reports zero

@@ -1557,6 +1557,7 @@ class TestTicketAttachBackfillDrafts:
     # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch  # noqa: E501
     plumbing (flag routing, dry-run-by-default, --apply writes+commits)."""
 
+    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch  # noqa: E501
     def test_backfill_drafts_dry_run_does_not_write(
         self, tmp_path: Path, caplog
     ) -> None:

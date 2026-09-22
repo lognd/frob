@@ -35,8 +35,7 @@ def _boundary(flow_id: str) -> Boundary:
 
 class TestMissingObservability:
     # frob:tests \
-    # tests/unit/strata/test_observability.py::TestMissingObservability.test_boundary_f\
-    # low_without_observability_fires
+    # tests/unit/strata/test_observability.py::TestMissingObservability.test_boundary_flow_without_observability_fires  # noqa: E501
     # frob:tests src/frob/strata/_observability.py::check_observability_obligations  # noqa: E501
     def test_boundary_flow_without_observability_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -58,8 +57,7 @@ class TestMissingObservability:
         assert missing[0].node == "edge"
 
     # frob:tests \
-    # tests/unit/strata/test_observability.py::TestMissingObservability.test_discharged\
-    # _and_non_boundary_flows_clean
+    # tests/unit/strata/test_observability.py::TestMissingObservability.test_discharged_and_non_boundary_flows_clean  # noqa: E501
     def test_discharged_and_non_boundary_flows_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -81,8 +79,7 @@ class TestMissingObservability:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_observability.py::TestMissingObservability.test_waiver_on_\
-    # one_flow_keeps_sibling_flow_finding
+    # tests/unit/strata/test_observability.py::TestMissingObservability.test_waiver_on_one_flow_keeps_sibling_flow_finding  # noqa: E501
     def test_waiver_on_one_flow_keeps_sibling_flow_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -121,8 +118,7 @@ class TestMissingObservability:
 
 class TestUnprovenObservability:
     # frob:tests \
-    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_\
-    # with_no_code_evidence_fires
+    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def call():\n    return remote()\n")
         model = KernelModel(
@@ -143,8 +139,7 @@ class TestUnprovenObservability:
         assert {v.sub_target for v in violations} == {"f1"}
 
     # frob:tests \
-    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_\
-    # with_real_code_evidence_discharges
+    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -169,8 +164,7 @@ class TestUnprovenObservability:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_\
-    # with_no_bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -193,8 +187,7 @@ class TestUnprovenObservability:
 
 class TestMissingCorrelation:
     # frob:tests \
-    # tests/unit/strata/test_observability.py::TestMissingCorrelation.test_second_hop_w\
-    # ithout_correlation_fires
+    # tests/unit/strata/test_observability.py::TestMissingCorrelation.test_second_hop_without_correlation_fires  # noqa: E501
     def test_second_hop_without_correlation_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -216,8 +209,7 @@ class TestMissingCorrelation:
         assert violations[0].node == "api"
 
     # frob:tests \
-    # tests/unit/strata/test_observability.py::TestMissingCorrelation.test_first_hop_an\
-    # d_discharged_hop_clean
+    # tests/unit/strata/test_observability.py::TestMissingCorrelation.test_first_hop_and_discharged_hop_clean  # noqa: E501
     def test_first_hop_and_discharged_hop_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

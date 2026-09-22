@@ -870,6 +870,7 @@ class TestWorktreeRemoveCli:
         # frob:tests src/frob/app/worktree_runner.py::run  # noqa: E501
         assert exc_info.value.code == 1
 
+    # frob:tests src/frob/app/worktree_runner.py::run  # noqa: E501
     def test_remove_cli_exits_1_when_kept(self, sweep_repo: Path, capsys) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_when_kept  # noqa: E501
         import os as _os
@@ -4692,6 +4693,7 @@ class TestRecordReleaseRenameLeaseErrorBranches:
         # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
         assert not _lease_path(resolved.danger_ok, "T-0001").exists()
 
+    # frob:tests src/frob/tickets/_leases.py::release_lease kind="unit"  # noqa: E501
     # frob:ticket T-1650
     def test_release_lease_degrades_on_unlink_failure(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_release_lease_degrades_on_unlink_failure  # noqa: E501

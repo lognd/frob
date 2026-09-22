@@ -140,6 +140,7 @@ class TestWalkKotlin:
         assert main.kind == SymbolKind.FUNCTION
         assert main.public is True
 
+    # frob:tests src/frob/lang/_walk_kotlin.py::_walk_kotlin  # noqa: E501
     def test_walks_class_and_method(self) -> None:
         """A class and its method both appear, the method dotted under the class."""
         tree = parse_kotlin(_WALK_SOURCE)

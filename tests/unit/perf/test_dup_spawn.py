@@ -113,6 +113,7 @@ class TestPerf012DuplicateSpawn:
         violations = duplicate_spawn_violations([parsed])
         assert not any(v.rule == "PERF012" for v in violations)
 
+    # frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations  # noqa: E501
     def test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -254,14 +255,11 @@ class TestPerf012DuplicateSpawn:
 # frob:doc \
 # docs/modules/perf.md#duplicate-identical-subprocess-spawn-detector-perf012-t-0919
 # frob:tests \
-# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_before_after_stat\
-# e_check_with_mutation_between_is_not_flagged
+# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_before_after_state_check_with_mutation_between_is_not_flagged  # noqa: E501
 # frob:tests \
-# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_adjacent_true_pos\
-# itive_still_fires_after_interleaving_fix
+# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_adjacent_true_positive_still_fires_after_interleaving_fix  # noqa: E501
 # frob:tests \
-# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_splat_forwarding_\
-# wrapper_called_with_different_args_is_not_flagged
+# tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018.test_splat_forwarding_wrapper_called_with_different_args_is_not_flagged  # noqa: E501
 # frob:ticket T-1018
 class TestPerf012CalibrationT1018:
     """T-1018: the two false-positive classes discovered while calibrating

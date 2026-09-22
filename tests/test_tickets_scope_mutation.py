@@ -60,8 +60,7 @@ class TestScopeLeaseConflict:
     # frob:tests src/frob/tickets/_scope.py::scope_lease_conflict  # noqa: E501
     def test_no_collision_is_none(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_no_collisio\
-        # n_is_none
+        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_no_collision_is_none  # noqa: E501
         from frob.tickets._scope import scope_lease_conflict
 
         holder = _make_ticket(
@@ -76,8 +75,7 @@ class TestScopeLeaseConflict:
 
     def test_first_colliding_entry_wins(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_first_colli\
-        # ding_entry_wins
+        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_first_colliding_entry_wins  # noqa: E501
         from frob.tickets._scope import scope_lease_conflict
 
         holder = _make_ticket(
@@ -100,8 +98,7 @@ class TestScopeLeaseConflict:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_frob_manage\
-        # d_side_effect_path_never_conflicts
+        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_frob_managed_side_effect_path_never_conflicts  # noqa: E501
         """MUST-FIRE (T-3296): a SECOND in-progress ticket must be able to
         declare `frob-coverage.lock.json` in its own scope while a FIRST
         in-progress ticket already holds it -- the exact F-029/F-039/F-042
@@ -129,8 +126,7 @@ class TestScopeLeaseConflict:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_non_exempt_\
-        # path_still_conflicts_alongside_exempt_one
+        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_non_exempt_path_still_conflicts_alongside_exempt_one  # noqa: E501
         """MUST-STAY-QUIET (T-3296): the exemption is narrow -- a genuine,
         non-exempt collision in the SAME `--add` call still refuses,
         naming the real holder. Proves the exempt-path skip does not widen
@@ -155,10 +151,10 @@ class TestScopeLeaseConflict:
 
 # frob:tests src/frob/tickets/_scope.py::mutate_scope  # noqa: E501
 class TestMutateScope:
+    # frob:tests src/frob/tickets/_scope.py::mutate_scope  # noqa: E501
     def test_add_free_path_granted(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_gran\
-        # ted
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_granted  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         result = mutate_scope(
             tmp_path,
@@ -256,8 +252,7 @@ class TestMutateScope:
 
     def test_remove_not_declared_rejected(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_not_declare\
-        # d_rejected
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_not_declared_rejected  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         result = mutate_scope(
             tmp_path, ticket.id, remove=("src/frob/nope/**",), reason="x"
@@ -289,16 +284,14 @@ class TestMutateScope:
 
     def test_empty_change_rejected(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_empty_change_rejec\
-        # ted
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_empty_change_rejected  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         result = mutate_scope(tmp_path, ticket.id, reason="nothing to do")
         assert result.is_err and result.danger_err == TicketError.ScopeChangeEmpty
 
     def test_missing_reason_rejected(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_missing_reason_rej\
-        # ected
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_missing_reason_rejected  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         result = mutate_scope(
             tmp_path, ticket.id, add=("src/frob/__main__.py",), reason="   "
@@ -309,8 +302,7 @@ class TestMutateScope:
 
     def test_audit_trail_is_append_only(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_audit_trail_is_app\
-        # end_only
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_audit_trail_is_append_only  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         first = mutate_scope(
             tmp_path, ticket.id, add=("docs/modules/tickets.md",), reason="doc edge"
@@ -601,8 +593,7 @@ class TestScopeCli:
 
     def test_cli_requires_add_or_remove(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_add_or_r\
-        # emove
+        # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_add_or_remove  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         cfg = AppConfig(
             ticket_command="scope",
@@ -626,8 +617,7 @@ class TestScopeCliRepeatedReasonRefused:
     `ticket_scope_reason` string."""
 
     # frob:tests \
-    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_two_\
-    # reasons_with_two_adds_is_refused_not_silently_collapsed
+    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_two_reasons_with_two_adds_is_refused_not_silently_collapsed  # noqa: E501
     def test_two_reasons_with_two_adds_is_refused_not_silently_collapsed(
         self,
     ) -> None:
@@ -659,8 +649,7 @@ class TestScopeCliRepeatedReasonRefused:
         assert exc_info.value.code == 2
 
     # frob:tests \
-    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_two_\
-    # reason_files_is_also_refused
+    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_two_reason_files_is_also_refused  # noqa: E501
     def test_two_reason_files_is_also_refused(self, tmp_path: Path) -> None:
         """The same silent-collapse risk applies identically to
         `--reason-file` (same `_RefuseRepeatedOption` action, T-3404)."""
@@ -690,8 +679,7 @@ class TestScopeCliRepeatedReasonRefused:
         assert exc_info.value.code == 2
 
     # frob:tests \
-    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_sing\
-    # le_add_single_reason_is_unchanged
+    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_single_add_single_reason_is_unchanged  # noqa: E501
     def test_single_add_single_reason_is_unchanged(self) -> None:
         """MUST-STAY-QUIET: the ordinary, overwhelmingly common shape --
         one `--reason` shared by however many `--add`/`--remove` globs
@@ -728,8 +716,7 @@ class TestSetScopeBreadthAck:
 
     def test_ack_sets_both_fields(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_bo\
-        # th_fields
+        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/**",))
         result = set_scope_breadth_ack(
             tmp_path, ticket.id, "epic umbrella, broad by design"
@@ -743,8 +730,7 @@ class TestSetScopeBreadthAck:
 
     def test_ack_requires_non_blank_reason(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_require\
-        # s_non_blank_reason
+        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_requires_non_blank_reason  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/**",))
         result = set_scope_breadth_ack(tmp_path, ticket.id, "   ")
         assert result.is_err
@@ -752,8 +738,7 @@ class TestSetScopeBreadthAck:
 
     def test_cli_scope_ack_sets_flag(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_cli_scope_a\
-        # ck_sets_flag
+        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_cli_scope_ack_sets_flag  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/**",))
         cfg = AppConfig(
             ticket_command="scope-ack",
@@ -767,8 +752,7 @@ class TestSetScopeBreadthAck:
 
     def test_cli_scope_ack_requires_reason(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_cli_scope_a\
-        # ck_requires_reason
+        # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_cli_scope_ack_requires_reason  # noqa: E501
         ticket = _make_ticket(tmp_path, scope=("src/frob/**",))
         cfg = AppConfig(
             ticket_command="scope-ack",
@@ -789,8 +773,7 @@ class TestScopeClaimReasonAndGrantOnUse:
 
     def test_declared_path_is_declared(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_\
-        # declared_path_is_declared
+        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_declared_path_is_declared  # noqa: E501
         from frob.tickets._land import _scope_claim_reason
 
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
@@ -798,8 +781,7 @@ class TestScopeClaimReasonAndGrantOnUse:
 
     def test_implicit_cli_wiring_path_is_flagged(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_\
-        # implicit_cli_wiring_path_is_flagged
+        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_implicit_cli_wiring_path_is_flagged  # noqa: E501
         from frob.tickets._land import _scope_claim_reason
 
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
@@ -810,8 +792,7 @@ class TestScopeClaimReasonAndGrantOnUse:
 
     def test_unused_implicit_grant_not_explicitly_used(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_\
-        # unused_implicit_grant_not_explicitly_used
+        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_unused_implicit_grant_not_explicitly_used  # noqa: E501
         from frob.tickets._land import _explicitly_used_wiring_path
 
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
@@ -819,8 +800,7 @@ class TestScopeClaimReasonAndGrantOnUse:
 
     def test_explicit_add_counts_as_used(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_\
-        # explicit_add_counts_as_used
+        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_explicit_add_counts_as_used  # noqa: E501
         from frob.tickets import mutate_scope
         from frob.tickets._land import _explicitly_used_wiring_path
 

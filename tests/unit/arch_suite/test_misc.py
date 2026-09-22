@@ -137,6 +137,7 @@ class TestProtocolSummaryEngine:
         assert summary.transitions == {"conn:closed->open"}
         assert not summary.poisoned
 
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
     def test_unresolved_callee_poisons_the_summary(self):
         """A call to `UNRESOLVED_CALLEE` poisons the caller's summary --
         NO-FAIL-SILENT: the caller's own declarations are still populated,

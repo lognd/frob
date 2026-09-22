@@ -25,8 +25,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingFallback:
     # frob:tests \
-    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_critical_node_withou\
-    # t_fallback_fires
+    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_critical_node_without_fallback_fires  # noqa: E501
     # frob:tests src/frob/strata/_fallback.py::check_fallback_obligations  # noqa: E501
     def test_critical_node_without_fallback_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -40,8 +39,7 @@ class TestMissingFallback:
         assert {v.node for v in missing} == {"payments"}
 
     # frob:tests \
-    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_discharged_and_non_c\
-    # ritical_nodes_clean
+    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_discharged_and_non_critical_nodes_clean  # noqa: E501
     def test_discharged_and_non_critical_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -60,8 +58,7 @@ class TestMissingFallback:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_waiver_on_one_node_k\
-    # eeps_sibling_node_finding
+    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_waiver_on_one_node_keeps_sibling_node_finding  # noqa: E501
     def test_waiver_on_one_node_keeps_sibling_node_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -90,8 +87,7 @@ class TestMissingFallback:
 
 class TestUnprovenFallback:
     # frob:tests \
-    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_no_co\
-    # de_evidence_fires
+    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_no_code_evidence_fires  # noqa: E501
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/pay/_client.py", "def call():\n    return remote()\n")
         model = KernelModel(
@@ -111,8 +107,7 @@ class TestUnprovenFallback:
         assert {v.node for v in violations} == {"payments"}
 
     # frob:tests \
-    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_real_\
-    # code_evidence_discharges
+    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -136,8 +131,7 @@ class TestUnprovenFallback:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_no_bo\
-    # und_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -156,8 +150,7 @@ class TestUnprovenFallback:
 class TestBindCodeErrorPropagation:
     def test_ambiguous_code_binding_error_propagates(self, tmp_path: Path, monkeypatch):
         # frob:tests \
-        # tests/unit/strata/test_fallback.py::TestBindCodeErrorPropagation.test_ambiguo\
-        # us_code_binding_error_propagates
+        # tests/unit/strata/test_fallback.py::TestBindCodeErrorPropagation.test_ambiguous_code_binding_error_propagates  # noqa: E501
         """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
         of `check_fallback_obligations`, never be swallowed (deny by default, matching
         every other REL-family entrypoint's discipline)."""

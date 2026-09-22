@@ -74,6 +74,7 @@ class TestAckRunnerRun:
         # frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
         assert "is informational" in caplog.text
 
+    # frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
     def test_unresolvable_ref_exits_with_error(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

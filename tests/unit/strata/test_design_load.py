@@ -115,8 +115,7 @@ class TestLoadIds:
     )
     def test_unreadable_file_reported_as_parse_failed(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/strata/test_design_load.py::TestLoadIds.test_unreadable_file_repor\
-        # ted_as_parse_failed
+        # tests/unit/strata/test_design_load.py::TestLoadIds.test_unreadable_file_reported_as_parse_failed  # noqa: E501
         """An `OSError` while reading a `.strata` file (permission denied,
         the read half of the try/except in `_read_and_elaborate`) must be
         caught and reported as a `DesignLoadError`, never raised out of
@@ -135,8 +134,7 @@ class TestLoadIds:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/strata/test_design_load.py::TestLoadIds.test_elaborate_failure_rep\
-        # orted_with_store_ids_and_resources_intact
+        # tests/unit/strata/test_design_load.py::TestLoadIds.test_elaborate_failure_reported_with_store_ids_and_resources_intact  # noqa: E501
         """A file that PARSES cleanly but FAILS elaboration (a secret
         missing its `revoke` clause) must still surface as a
         `DesignLoadError`, distinct from a parse failure -- exercising the

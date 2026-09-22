@@ -95,6 +95,7 @@ class TestEffectiveMilestone:
         queue = TicketQueue(tickets={epic.id: epic, story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == ("2.0.0", MilestoneSource.INHERITED)
 
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
     def test_nearest_ancestor_wins_over_farther_one(self) -> None:
         """Both the story AND the epic declare a milestone -- the NEARER
         one (the story) wins, per T-2577's "nearest ancestor" rule."""

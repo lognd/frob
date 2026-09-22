@@ -35,8 +35,7 @@ class TestResourceLeaseManager:
     # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"  # noqa: E501
     def test_second_acquire_blocks_until_first_releases(self) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestResourceLeaseManager.test_second_acquire_bloc\
-        # ks_until_first_releases
+        # tests/test_serve_leases.py::TestResourceLeaseManager.test_second_acquire_blocks_until_first_releases  # noqa: E501
         mgr = ResourceLeaseManager()
         assert mgr.acquire("coverage", "a", timeout_s=1.0) is True
 
@@ -56,8 +55,7 @@ class TestResourceLeaseManager:
 
     def test_acquire_times_out_if_never_freed(self) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestResourceLeaseManager.test_acquire_times_out_i\
-        # f_never_freed
+        # tests/test_serve_leases.py::TestResourceLeaseManager.test_acquire_times_out_if_never_freed  # noqa: E501
         mgr = ResourceLeaseManager()
         assert mgr.acquire("coverage", "a", timeout_s=1.0) is True
         start = time.monotonic()
@@ -69,8 +67,7 @@ class TestResourceLeaseManager:
 
     def test_release_holder_frees_every_resource_that_holder_held(self) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestResourceLeaseManager.test_release_holder_free\
-        # s_every_resource_that_holder_held
+        # tests/test_serve_leases.py::TestResourceLeaseManager.test_release_holder_frees_every_resource_that_holder_held  # noqa: E501
         mgr = ResourceLeaseManager()
         assert mgr.acquire("coverage", "a", timeout_s=1.0) is True
         assert mgr.acquire("collection", "a", timeout_s=1.0) is True
@@ -82,8 +79,7 @@ class TestResourceLeaseManager:
 
     def test_distinct_resources_do_not_contend(self) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestResourceLeaseManager.test_distinct_resources_\
-        # do_not_contend
+        # tests/test_serve_leases.py::TestResourceLeaseManager.test_distinct_resources_do_not_contend  # noqa: E501
         mgr = ResourceLeaseManager()
         assert mgr.acquire("coverage", "a", timeout_s=1.0) is True
         # A different resource name is a completely separate slot pool --
@@ -92,8 +88,7 @@ class TestResourceLeaseManager:
 
     def test_reentrant_acquire_by_same_holder_does_not_deadlock(self) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestResourceLeaseManager.test_reentrant_acquire_b\
-        # y_same_holder_does_not_deadlock
+        # tests/test_serve_leases.py::TestResourceLeaseManager.test_reentrant_acquire_by_same_holder_does_not_deadlock  # noqa: E501
         mgr = ResourceLeaseManager()
         assert mgr.acquire("coverage", "a", timeout_s=1.0) is True
         assert mgr.acquire("coverage", "a", timeout_s=1.0) is True
@@ -104,8 +99,7 @@ class TestResourceLeaseManager:
 
     def test_release_of_unheld_resource_is_a_noop(self) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestResourceLeaseManager.test_release_of_unheld_r\
-        # esource_is_a_noop
+        # tests/test_serve_leases.py::TestResourceLeaseManager.test_release_of_unheld_resource_is_a_noop  # noqa: E501
         mgr = ResourceLeaseManager()
         assert mgr.release("coverage", "nobody") is False
 
@@ -181,8 +175,7 @@ class TestLeaseRpc:
     )
     def test_second_client_blocks_until_first_releases(self, root: Path) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestLeaseRpc.test_second_client_blocks_until_firs\
-        # t_releases
+        # tests/test_serve_leases.py::TestLeaseRpc.test_second_client_blocks_until_first_releases  # noqa: E501
         thread = _start_daemon(root)
         try:
             first = _RawClient(root)
@@ -234,8 +227,7 @@ class TestLeaseRpc:
         self, root: Path
     ) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestLeaseRpc.test_explicit_release_frees_the_slot\
-        # _for_the_next_waiter
+        # tests/test_serve_leases.py::TestLeaseRpc.test_explicit_release_frees_the_slot_for_the_next_waiter  # noqa: E501
         thread = _start_daemon(root)
         try:
             client = _RawClient(root)
@@ -274,8 +266,7 @@ class TestConnectionCrashReleasesLease:
         self, root: Path
     ) -> None:
         # frob:tests \
-        # tests/test_serve_leases.py::TestConnectionCrashReleasesLease.test_closing_con\
-        # nection_without_explicit_release_frees_the_lease
+        # tests/test_serve_leases.py::TestConnectionCrashReleasesLease.test_closing_connection_without_explicit_release_frees_the_lease  # noqa: E501
         thread = _start_daemon(root)
         try:
             first = _RawClient(root)

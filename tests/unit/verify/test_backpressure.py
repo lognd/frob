@@ -187,6 +187,7 @@ class TestCurrentStatus:
     """`current_status` reads the durable queue and decides whether
     either ceiling axis is tripped."""
 
+    # frob:tests src/frob/verify/_backpressure.py::current_status  # noqa: E501
     def test_empty_queue_is_never_tripped(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_empty_queue_is_never_tripped  # noqa: E501
         ceilings = BackpressureCeilings(max_depth=0, max_age_s=0.0)

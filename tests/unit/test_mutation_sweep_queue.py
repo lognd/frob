@@ -108,6 +108,7 @@ class TestRunPendingSweep:
         # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
         assert result.danger_ok == 0
 
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
     def test_clean_finding_marks_swept_no_ticket_filed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

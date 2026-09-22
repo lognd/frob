@@ -82,6 +82,7 @@ class TestIsAdditiveDiffText:
     # frob:tests src/frob/tickets/_registry_files.py::is_additive_diff_text  # noqa: E501
     pure, no-subprocess unified-diff scan."""
 
+    # frob:tests src/frob/tickets/_registry_files.py::is_additive_diff_text  # noqa: E501
     def test_pure_append_is_additive(self) -> None:
         """A diff with only `+` hunk lines (never a bare `-`) is
         additive-only."""

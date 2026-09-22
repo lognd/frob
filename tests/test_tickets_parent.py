@@ -173,6 +173,7 @@ class TestSetParent:
         assert result.is_err
         assert result.danger_err is TicketError.ParentNotFound
 
+    # frob:tests src/frob/tickets/_setters.py::set_parent  # noqa: E501
     def test_direct_cycle_refuses(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_direct_cycle_refuses  # noqa: E501
         # A parent B (B tier epic, A tier ticket); re-pointing B's parent

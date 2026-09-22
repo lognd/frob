@@ -845,6 +845,7 @@ class TestSharedIdCounter:
         self._git("commit", "-q", "-m", "seed", cwd=root)
 
     # frob:tests tests/unit/test_process_lock.py::TestSharedIdCounter.test_two_checkouts_with_divergent_views_never_collide  # noqa: E501
+    # frob:tests src/frob/tickets/_new_renumber.py::_next_ticket_id_shared  # noqa: E501
     def test_two_checkouts_with_divergent_views_never_collide(
         self, tmp_path: Path
     ) -> None:

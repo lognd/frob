@@ -843,6 +843,7 @@ class TestCSharp:
         assert prop.public is True
 
     # frob:ticket T-1600
+    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp  # noqa: E501
     def test_const_field_is_extracted_plain_field_is_not(self) -> None:
         # frob:tests src/frob/lang/_walk_csharp.py::_cs_const_field_symbol
         pf = parse_file(_FIXTURES / "sample.cs").danger_ok
@@ -1012,6 +1013,7 @@ class TestJava:
         assert method.kind == SymbolKind.METHOD
         assert method.public is True
 
+    # frob:tests src/frob/lang/_walk_java.py::_walk_java
     # frob:ticket T-1601
     def test_package_private_method_is_not_public(self) -> None:
         # frob:tests src/frob/lang/_walk_java.py::_java_public
@@ -1045,6 +1047,7 @@ class TestJava:
         pf = parse_file(_FIXTURES / "sample.java").danger_ok
         names = {s.qualname for s in pf.symbols}
         assert "Widget.hidden" not in names
+# frob:tests src/frob/lang/_walk_java.py::_walk_java
 
     # frob:ticket T-1601
     def test_enum_is_a_class_symbol(self) -> None:
@@ -1152,6 +1155,7 @@ class TestCuda:
         assert both.kind == SymbolKind.FUNCTION
         assert both.public is True
 
+    # frob:tests src/frob/lang/_walk_cuda.py::_walk_cuda
     # frob:ticket T-1602
     def test_static_global_kernel_is_still_public(self) -> None:
         # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
@@ -1211,10 +1215,12 @@ class TestZig:
         # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
         fn = _symbol(pf, "add")
         assert fn.kind == SymbolKind.FUNCTION
+        # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
         assert fn.public is True
         assert fn.doc_text == "Adds two numbers."
 
     # frob:ticket T-1603
+    # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
     def test_function_without_pub_is_not_public(self) -> None:
         # frob:tests src/frob/lang/_walk_zig.py::_zig_visit
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
@@ -1242,10 +1248,12 @@ class TestZig:
     def test_enum_is_a_type_symbol(self) -> None:
         # frob:tests src/frob/lang/_walk_zig.py::_zig_container_symbol
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
         color = _symbol(pf, "Color")
         assert color.kind == SymbolKind.TYPE
         assert color.public is True
 
+    # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
     # frob:ticket T-1603
     def test_top_level_const_is_a_const_symbol(self) -> None:
         # frob:tests src/frob/lang/_walk_zig.py::_zig_const_symbol

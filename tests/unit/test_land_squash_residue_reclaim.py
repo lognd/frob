@@ -181,6 +181,7 @@ class TestReclaimOrphanedSquashResidue:
 
     # frob:ticket T-2286
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_dirty_without_a_marker_is_never_reclaimed kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
     def test_dirty_without_a_marker_is_never_reclaimed(self, tmp_path: Path) -> None:
         """T-2286's own acceptance test: `root` dirty AND `land.lock` free
         is NOT, by itself, proof of orphaned squash residue -- a stray
@@ -216,6 +217,7 @@ class TestLandCallsReclaimAtStartup:
     liveness probe always fail, since `land()` itself would already hold
     it)."""
 
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_land_calls_reclaim_before_acquiring_its_own_lock  # noqa: E501
     def test_land_calls_reclaim_before_acquiring_its_own_lock(
         self, tmp_path: Path

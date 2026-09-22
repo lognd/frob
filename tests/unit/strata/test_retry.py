@@ -27,8 +27,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 class TestMissingBackoff:
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_retry_flow_without_backo\
-    # ff_fires
+    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_retry_flow_without_backoff_fires  # noqa: E501
     # frob:tests src/frob/strata/_retry.py::check_retry_obligations  # noqa: E501
     def test_retry_flow_without_backoff_fires(self, tmp_path: Path):
         model = KernelModel(
@@ -47,8 +46,7 @@ class TestMissingBackoff:
         assert missing[0].node == "caller"
 
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_discharged_and_non_retry\
-    # _flows_clean
+    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_discharged_and_non_retry_flows_clean  # noqa: E501
     def test_discharged_and_non_retry_flows_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -72,8 +70,7 @@ class TestMissingBackoff:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_waiver_on_one_flow_keeps\
-    # _sibling_flow_finding
+    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_waiver_on_one_flow_keeps_sibling_flow_finding  # noqa: E501
     def test_waiver_on_one_flow_keeps_sibling_flow_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -107,8 +104,7 @@ class TestMissingBackoff:
 
 class TestNonIdempotentRetry:
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_retry_into_unguarded\
-    # _dst_fires
+    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_retry_into_unguarded_dst_fires  # noqa: E501
     def test_retry_into_unguarded_dst_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -133,8 +129,7 @@ class TestNonIdempotentRetry:
         assert violations[0].node == "caller"
 
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotent_dst_disch\
-    # arges
+    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotent_dst_discharges  # noqa: E501
     def test_idempotent_dst_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -157,8 +152,7 @@ class TestNonIdempotentRetry:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotency_key_dst_\
-    # discharges
+    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotency_key_dst_discharges  # noqa: E501
     def test_idempotency_key_dst_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -183,8 +177,7 @@ class TestNonIdempotentRetry:
 
 class TestUnprovenBackoff:
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_n\
-    # o_code_evidence_fires
+    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_no_code_evidence_fires  # noqa: E501
     def test_declared_backoff_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def call():\n    return remote()\n")
         model = KernelModel(
@@ -210,8 +203,7 @@ class TestUnprovenBackoff:
         assert violations[0].node == "caller"
 
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_r\
-    # eal_code_evidence_discharges
+    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_real_code_evidence_discharges  # noqa: E501
     def test_declared_backoff_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -239,8 +231,7 @@ class TestUnprovenBackoff:
         ]
 
     # frob:tests \
-    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_n\
-    # o_bound_code_is_uncheckable_not_a_violation
+    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_no_bound_code_is_uncheckable_not_a_violation  # noqa: E501
     def test_declared_backoff_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -268,8 +259,7 @@ class TestUnprovenBackoff:
 class TestBindCodeErrorPropagation:
     def test_ambiguous_code_binding_error_propagates(self, tmp_path: Path, monkeypatch):
         # frob:tests \
-        # tests/unit/strata/test_retry.py::TestBindCodeErrorPropagation.test_ambiguous_\
-        # code_binding_error_propagates
+        # tests/unit/strata/test_retry.py::TestBindCodeErrorPropagation.test_ambiguous_code_binding_error_propagates  # noqa: E501
         """`bind_code`'s `AmbiguousCodeBinding` must propagate unchanged out
         of `check_retry_obligations`, never be swallowed (deny by default, matching
         every other REL-family entrypoint's discipline)."""

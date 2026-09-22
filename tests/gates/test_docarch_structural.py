@@ -65,6 +65,7 @@ class TestScanCommentLength:
         # frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length  # noqa: E501
         assert violations == ()
 
+    # frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length  # noqa: E501
     def test_directive_run_is_exempt(self) -> None:
         """MUST-STAY-QUIET: a 20-line `frob:` directive block (a
         `# frob:tests \\` marker line alternating with its wrapped-path

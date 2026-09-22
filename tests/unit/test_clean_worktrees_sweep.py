@@ -88,6 +88,7 @@ class TestSweepDisposableWorktrees:
         # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
         assert "wt" not in listing
 
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
     def test_live_stamped_worktree_is_kept(
         self, tmp_path: Path, git_repo: Path
     ) -> None:

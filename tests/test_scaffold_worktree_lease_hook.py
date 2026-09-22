@@ -269,6 +269,7 @@ class TestInstallWorktreeLeaseHook:
         assert "land-owned" in (commit.stdout + commit.stderr)
 
     # frob:ticket T-0731
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_land_owned_file_commit_refused_uv_lock(self, tmp_path: Path) -> None:
         # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_uv_lock  # noqa: E501
@@ -331,6 +332,7 @@ class TestInstallWorktreeLeaseHook:
         assert commit.returncode != 0
         assert "version bump is land-owned" in (commit.stdout + commit.stderr)
 
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
     # frob:ticket T-0731
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_pyproject_edit_without_version_change_allowed(
@@ -363,6 +365,7 @@ class TestInstallWorktreeLeaseHook:
             check=False,
         )
         assert commit.returncode == 0, commit.stdout + commit.stderr
+# frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook  # noqa: E501
 
     # frob:ticket T-0731
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")

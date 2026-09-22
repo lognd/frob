@@ -63,8 +63,7 @@ class TestWatchTick:
 
     def test_watch_tick_never_disagrees_with_pull_signal(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_serve_watch.py::TestWatchTick.test_watch_tick_never_disagrees_with\
-        # _pull_signal
+        # tests/test_serve_watch.py::TestWatchTick.test_watch_tick_never_disagrees_with_pull_signal  # noqa: E501
         # Differential harness (T-1094 acceptance [1]): across a
         # randomized sequence of edits, watch_tick's own "changed" verdict
         # must always agree with directly comparing two independent
@@ -97,8 +96,7 @@ class TestWatchTick:
 class TestWatchThread:
     def test_change_fires_on_change_callback(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_serve_watch.py::TestWatchThread.test_change_fires_on_change_callba\
-        # ck
+        # tests/test_serve_watch.py::TestWatchThread.test_change_fires_on_change_callback  # noqa: E501
         # T-1635: `poll_interval_s=0.05` means production only needs a
         # couple of ticks to notice the edit, but under `pytest-xdist -n
         # auto` this thread competes for CPU with a dozen sibling workers'

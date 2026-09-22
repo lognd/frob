@@ -50,6 +50,7 @@ class TestWriteIntent:
 
 # frob:tests src/frob/tickets/_journal.py::_clear_intent  # noqa: E501
 class TestClearIntent:
+    # frob:tests src/frob/tickets/_journal.py::_clear_intent  # noqa: E501
     def test_clear_removes_the_file(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_removes_the_file  # noqa: E501
         _write_intent(tmp_path, "T-0003", tmp_path)
@@ -63,7 +64,9 @@ class TestClearIntent:
 
 # frob:tests src/frob/tickets/_journal.py::_read_all_intents  # noqa: E501
 
+# frob:tests src/frob/tickets/_journal.py::_read_all_intents  # noqa: E501
 class TestReadAllIntents:
+    # frob:tests src/frob/tickets/_journal.py::_read_all_intents  # noqa: E501
     def test_reads_every_recorded_intent(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_reads_every_recorded_intent  # noqa: E501
         _write_intent(tmp_path, "T-0010", tmp_path)

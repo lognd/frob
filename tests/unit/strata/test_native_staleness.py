@@ -396,11 +396,17 @@ class TestSeedWorktreeNativeSourceMtimes:
     """T-4431: `seed_worktree_native_source_mtimes` -- a `git worktree add`
     checkout stamps every file's mtime at checkout time, which otherwise
     makes a disposable land worktree's native source dirs read as "just
-    # frob:tests src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
-    # frob:tests src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
+    # frob:tests \
+    # src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
+    # frob:tests \
+    # src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
     edited" relative to the SAME artifact `stale_natives` resolves via
     `find_spec` regardless of which root it is called with."""
 
+    # frob:tests \
+    # src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
+    # frob:tests \
+    # src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
     def test_identical_source_is_backdated_and_reads_fresh(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

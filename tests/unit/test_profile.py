@@ -47,6 +47,7 @@ class TestEffectiveProfile:
     # frob:tests src/frob/tickets/_profile.py::effective_profile  # noqa: E501
     `configured_profile`."""
 
+    # frob:tests src/frob/tickets/_profile.py::effective_profile  # noqa: E501
     def test_standard_is_unaffected_by_ratchet(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_standard_is_unaffected_by_ratchet  # noqa: E501
         result = effective_profile(tmp_path)
@@ -133,6 +134,7 @@ class TestRatchetOverride:
     # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled  # noqa: E501
     decision to keep `rapid` in a repo the size ratchet would upgrade."""
 
+    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled  # noqa: E501
     def test_absent_frob_toml_is_not_overridden(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_frob_toml_is_not_overridden  # noqa: E501
         assert ratchet_override_enabled(tmp_path) is False
