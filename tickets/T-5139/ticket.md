@@ -17,10 +17,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/doctor.py
-- src/frob/check/*.py
 - src/frob/vet/_osv.py
 - src/frob/vet/_scan.py
-- src/frob/gates/__init__.py
 - docs/modules/check.md
 - docs/modules/vet.md
 scope_breadth_ack: true
@@ -28,6 +26,27 @@ scope_breadth_ack_reason: one registry consumed by every adapter plus the check 
   land summary that renders it
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/check/*.py
+  reason: 'T-5139 collided with two live leases at start time: src/frob/gates/__init__.py
+    held by T-5135, src/frob/check/__init__.py held by T-4692 (in-progress). Narrowing
+    to the tool registry + Result-typed adapters + doctor integration (src/frob/doctor.py,
+    src/frob/vet/_osv.py, src/frob/vet/_scan.py, docs) this ticket CAN land now; the
+    frob check/frob ticket land UNMEASURED summary wiring is filed as a follow-up
+    once T-4692/T-5135 close'
+  actor: logan
+  at: '2026-09-21'
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: 'T-5139 collided with two live leases at start time: src/frob/gates/__init__.py
+    held by T-5135, src/frob/check/__init__.py held by T-4692 (in-progress). Narrowing
+    to the tool registry + Result-typed adapters + doctor integration (src/frob/doctor.py,
+    src/frob/vet/_osv.py, src/frob/vet/_scan.py, docs) this ticket CAN land now; the
+    frob check/frob ticket land UNMEASURED summary wiring is filed as a follow-up
+    once T-4692/T-5135 close'
+  actor: logan
+  at: '2026-09-21'
 triage_changes:
 - field: milestone
   old_value: null
