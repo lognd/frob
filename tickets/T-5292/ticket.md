@@ -1,5 +1,5 @@
 ---
-id: T-draft-7dc8ebc7
+id: T-5292
 title: TICK008 flags real ledger branch/worktree fields it itself wrote
 state: queued
 kind: bug
