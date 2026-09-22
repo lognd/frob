@@ -2,7 +2,7 @@
 id: T-4696
 title: 'Nine ticket field-setters become one: frob ticket set field value (priority
   kind component label tier milestone sprint accept body)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -22,10 +22,19 @@ scope:
 - src/frob/app/ticket_runner/__init__.py
 - src/frob/app/ticket_runner/_lifecycle.py
 - tests/unit/test_ticket_set.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: frob ticket set needs its two new string fields (ticket_set_field, ticket_set_value)
+    added to the from_external field-copy allowlist, the same T-4690 gap found (doctor_whereis
+    silently no-op'd without this)
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -124,6 +133,8 @@ labels:
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4696
+branch: t-4696
 ---
 POINTS: 2. Parent story T-4687. blocked_by T-4690 (needs the shim helper).
 File-disjoint from T-4692 and T-4695 (those touch _cli_parsers/*.py and
