@@ -2,7 +2,7 @@
 id: T-5151
 title: 'frob ticket attach --remove PATH: first-class attachment removal with ledger
   record cleanup'
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-09-20'
@@ -130,3 +130,6 @@ worktree: /home/logan/projects/frob/.claude/worktrees/t-5151
 branch: t-5151
 ---
 Measured 2026-09-20: no verb removes an attachment; the owner asked for research attachments to be removed and the only path was a script over the attachments: frontmatter block plus git rm, i.e. a hand-edit of the ledger the ticket-ledger-gotchas lesson forbids. Add --remove PATH (and --remove-all) that deletes the file, drops the Attachment record, and auto-commits like attach does; refuse when the path is referenced by a done-report.
+
+## Reopen log
+- 2026-09-22: closed-but-unlanded: a refused drain wrote state=done with land_commit null and no code on dev (T-5256 class)
