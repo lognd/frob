@@ -1,5 +1,5 @@
 ---
-id: T-draft-ced04135
+id: T-5274
 title: Wire DSTACK001 into gates dispatch, TIER_A_HANDLERS, and frob.toml threshold
 state: queued
 kind: bug
