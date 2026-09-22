@@ -44,18 +44,23 @@ def run(cfg: AppConfig) -> None:
     corrupted the JSON), so the scan now runs under
     `_guard_json_stdout_writes()` when `--json` is set, matching `frob
     check`'s T-2486 precedent."""
+    from frob._cli_parsers._shims import announce_shim
     from frob.gates._fmt_directives import FmtChange, FmtReport, format_paths
 
-    # T-2492 precedent applied here too: the deprecation notice must go to
-    # STDERR unconditionally, never stdout -- with `--json` set, stdout is
-    # the JSON payload itself, and a leading human-readable line would
-    # corrupt it exactly like the bug `_guard_json_stdout_writes()` below
-    # was built to catch.
-    Renderer.for_stream(
-        sys.stderr, color_flag=cfg.color, no_color_flag=cfg.no_color
-    ).write.warn(
-        "frob fmt is DEPRECATED (T-3906, sunset 2026-12-01) -- use "
-        "`frob format --directives` instead"
+    # T-4690: routed through the ONE shared deprecation-shim mechanism
+    # (`frob._cli_parsers._shims.announce_shim`) instead of this module's
+    # own hand-rolled stderr warning -- "finish it" per T-4690's own text:
+    # this is the precedent the shared shim generalizes, so it must not
+    # keep a second, divergent implementation of the same sunset check.
+    # T-2492 precedent preserved: the notice goes to STDERR unconditionally
+    # (never stdout, which is the `--json` payload channel).
+    announce_shim(
+        old_name="fmt",
+        new_name="format --directives",
+        sunset="2026-12-01",
+        ticket="T-3911",
+        color=cfg.color,
+        no_color=cfg.no_color,
     )
 
     # T-2492: pre-existing bug, fixed incidentally because `ty` (correctly)

@@ -41,17 +41,16 @@ from frob._cli_parsers._reporting import (
 
 
 # frob:ticket T-1568
+# frob:ticket T-4690
 def _add_design_parser(sub) -> None:
-    """Register the `frob design` subcommand group and its five
-    subcommands (`sys`, `registry`, `docs`, `graph`, `exports`), each
-    reusing the same `AppConfig` dests as its standalone top-level
-    counterpart so `design_runner.run` can delegate straight into the
-    existing runner logic."""
-    design_p = sub.add_parser(
-        "design",
-        help="design-knowledge surfaces: sys/registry/docs/graph/exports "
-        "grouped under one verb (T-1568)",
-    )
+    """Register the DEPRECATED `frob design` subcommand group (T-4690,
+    sunset 2026-12-01: use each member's own standalone verb directly,
+    e.g. `frob sys`) -- suppressed from `frob --help`'s usage line;
+    `App.__call__`'s shim keeps the whole group working through the
+    sunset window. Its five subcommands (`sys`, `registry`, `docs`,
+    `graph`, `exports`) are unchanged -- only the group entry point
+    itself is deprecated."""
+    design_p = sub.add_parser("design", help=argparse.SUPPRESS)
     design_sub = design_p.add_subparsers(dest="design_command")
 
     sys_p = design_sub.add_parser(

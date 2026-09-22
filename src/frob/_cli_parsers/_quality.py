@@ -39,17 +39,19 @@ from frob._cli_parsers._misc import (
 
 # frob:ticket T-1567
 # frob:ticket T-4953
+# frob:ticket T-4690
 def _add_quality_parser(sub) -> None:
-    """Register the `frob quality` subcommand group and its eight
-    subcommands (`check`, `test`, `dup`, `arch`, `bind`, `cycle`, `mutate`,
-    `perf`), each reusing the same `AppConfig` dests as its standalone
-    top-level counterpart so `quality_runner.run` can delegate straight
-    into the existing runner logic."""
-    quality_p = sub.add_parser(
-        "quality",
-        help="correctness/hygiene gates: check/test/dup/arch/bind/cycle/"
-        "mutate/perf grouped under one verb (T-1567)",
-    )
+    """Register the DEPRECATED `frob quality` subcommand group (T-4690,
+    sunset 2026-12-01: use each member's own standalone verb directly,
+    e.g. `frob check`) -- `help=argparse.SUPPRESS` hides it from `frob
+    --help`'s usage line; `App.__call__`'s shim keeps the whole group
+    working through the sunset window. Its eight subcommands (`check`,
+    `test`, `dup`, `arch`, `bind`, `cycle`, `mutate`, `perf`) are
+    unchanged -- only the group entry point itself is deprecated, each
+    member's own flat top-level verb is not."""
+    import argparse
+
+    quality_p = sub.add_parser("quality", help=argparse.SUPPRESS)
     quality_sub = quality_p.add_subparsers(dest="quality_command")
 
     check_p = quality_sub.add_parser(

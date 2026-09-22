@@ -1,7 +1,10 @@
 # frob xref
 
-Also available as `frob explore xref` (T-1238) -- identical behavior, same
-underlying runner.
+DEPRECATED (T-4690, sunset 2026-12-01): use `frob explore xref` instead --
+`frob xref` keeps working, with a stderr notice, through the sunset window
+(same underlying runner, and the one mirror with a live consumer -- 16
+recorded kind=cli invocations, so this shim must actually work end to
+end), then exits non-zero.
 
 Find where a symbol is defined and every file that references it.
 

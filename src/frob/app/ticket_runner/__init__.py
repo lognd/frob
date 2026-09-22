@@ -576,9 +576,9 @@ _LAND_WHOLE_LAND_VERBS = frozenset({"renumber", "promote", "archive", "migrate"}
 # frob:tests \
 # tests/test_ticket_leases.py::TestDispatchLandGuard.test_refused_verb_never_writes_the_ticket_file_at_all  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_renumber_refused_while_only_land_lock_held  # noqa: E501
+# tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification.test_renumber_refused_while_only_land_lock_held  # noqa: E501
 # frob:tests \
-# tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification::test_splice_only_verb_allowed_while_only_land_lock_held  # noqa: E501
+# tests/unit/test_land_in_progress_window.py::TestWholeLandVerbClassification.test_splice_only_verb_allowed_while_only_land_lock_held  # noqa: E501
 def _refuse_if_land_in_progress_for_dispatch(
     root: Path, command: str | None, *, wait_timeout_s: float | None = None
 ) -> None:

@@ -401,7 +401,7 @@ def check_pii_undeclared_flow(model: KernelModel) -> tuple[PiiViolation, ...]:
     return tuple(violations)
 
 
-# frob:doc docs/strata/provenance-trust-identity.md#pii005-derived_from-contradiction
+# frob:doc docs/strata/provenance-trust-identity.md#derived_fromtaghelper
 # frob:enforces CHK-GATE-PII005
 # frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestPii005DerivedFromContradiction.test_conflicting_helpers_on_same_tag_fires_pii005  # noqa: E501

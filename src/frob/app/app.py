@@ -268,6 +268,71 @@ def _resolve_runner(subcommand: Subcommand) -> Callable[[AppConfig], None] | Non
     return getattr(_import_runner_module(name), "run")
 
 
+# frob:ticket T-4690
+_DEPRECATED_SPELLINGS: dict[tuple[Subcommand, str | None], tuple[str, str]] = {
+    (Subcommand.quality, None): (
+        "quality",
+        "the standalone verb directly (e.g. `frob check`)",
+    ),
+    (Subcommand.design, None): (
+        "design",
+        "the standalone verb directly (e.g. `frob sys`)",
+    ),
+    (Subcommand.ops, None): (
+        "ops",
+        "the standalone verb directly (e.g. `frob release`)",
+    ),
+    (Subcommand.outline, None): ("outline", "explore outline"),
+    (Subcommand.map, None): ("map", "explore map"),
+    (Subcommand.xref, None): ("xref", "explore xref"),
+    (Subcommand.verify, "status"): ("verify status", "status"),
+    (Subcommand.fleet, "status"): ("fleet status", "status"),
+}
+"""T-4690's single deprecation-shim dispatch table: every deleted/renamed
+spelling this story's `App.__call__` interception point covers, keyed by
+`(subcommand, subverb)` (`subverb=None` matches the whole group, e.g.
+`quality` regardless of `quality_command`) and mapping to `(old_name,
+new_name)` for `frob._cli_parsers._shims.announce_shim`. `fmt` and
+`whereis` are NOT here: each already calls `announce_shim` directly from
+its own runner/dispatch (`fmt_runner.run`, `__main__._dispatch_whereis`)
+since neither has a same-named surviving sibling this dict-keyed
+interception could confuse with a non-deprecated invocation the way
+`outline`/`map`/`xref` (mirrored under `explore`) or `verify status`/
+`fleet status` (mirrored under top-level `status`) would be."""
+
+
+# frob:ticket T-4690
+def _announce_deprecated_spelling(
+    subcommand: Subcommand | None, subverb: str | None, cfg: AppConfig
+) -> None:
+    """Print T-4690's shared deprecation notice (`announce_shim`) exactly
+    once, before dispatch, for any `(subcommand, subverb)` pair
+    `_DEPRECATED_SPELLINGS` names -- the single point of interception for
+    every deleted verb-GROUP spelling and every deleted flat MIRROR
+    spelling this story removes, so the runner underneath (shared with
+    the surviving spelling, e.g. `outline_runner.run` serves both `frob
+    outline` and `frob explore outline`) never has to know which name it
+    was invoked through."""
+    if subcommand is None:
+        return
+    entry = _DEPRECATED_SPELLINGS.get((subcommand, subverb))
+    if entry is None:
+        entry = _DEPRECATED_SPELLINGS.get((subcommand, None))
+    if entry is None:
+        return
+    old_name, new_name = entry
+    from frob._cli_parsers._shims import announce_shim
+
+    announce_shim(
+        old_name=old_name,
+        new_name=new_name,
+        sunset="2026-12-01",
+        ticket="T-4690",
+        color=cfg.color,
+        no_color=cfg.no_color,
+    )
+
+
 # frob:doc docs/modules/app.md#entry-point
 # frob:ticket T-1697
 # frob:ticket T-1808
@@ -305,9 +370,9 @@ class App:
         if handler is None:
             _log.error(
                 "usage: frob "
-                "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
+                "<scaffold|cycle|explore|parse|dup|arch|bind|"
                 "exports|check|gitlog|graph|ack|debt|deprecated|pool|ticket|test|vet|"
-                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet|fmt|"
+                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet|"
                 "format|verify|claude>"
                 " ..."
             )
@@ -329,6 +394,7 @@ class App:
         # `None`, and `None` is recorded verbatim rather than guessed at.
         subverb = getattr(self._cfg, f"{verb}_command", None) if verb else None
         _log.debug("dispatch: verb=%r subverb=%r", verb, subverb)
+        _announce_deprecated_spelling(subcommand, subverb, self._cfg)
         timed_call(
             root,
             subcommand=verb,

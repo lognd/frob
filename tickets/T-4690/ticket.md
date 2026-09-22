@@ -2,7 +2,7 @@
 id: T-4690
 title: 'Delete every CLI alias and duplicate name: the four group verbs, fmt, docs/docs-search,
   three spellings of status, whereis'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'

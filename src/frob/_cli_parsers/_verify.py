@@ -1,8 +1,16 @@
 """Register `frob verify status|now|explain|dispose|drain-async`
 (T-1697/T-2310): the CLI surface over the T-1686 unverified-window
-package (`frob.verify`)."""
+package (`frob.verify`).
+
+T-4690: `verify status` is a DEPRECATED spelling of the top-level `frob
+status` verb (one concept, three prior spellings -- see `fleet status`'s
+own T-4690 note) -- suppressed from `frob verify --help`'s subcommand
+list; `App.__call__`'s shim keeps it working through the sunset window
+(2026-12-01)."""
 
 from __future__ import annotations
+
+import argparse
 
 
 # frob:ticket T-1697
@@ -19,11 +27,7 @@ def _add_verify_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
     )
     verify_sub = verify_p.add_subparsers(dest="verify_command")
 
-    status_p = verify_sub.add_parser(
-        "status",
-        help="watermark age, queue depth/age, quarantine state -- exits "
-        "non-zero while quarantine is raised",
-    )
+    status_p = verify_sub.add_parser("status", help=argparse.SUPPRESS)
     status_p.add_argument("--path", dest="verify_path", metavar="DIR")
     status_p.add_argument("--json", dest="verify_json", action="store_true")
 

@@ -61,14 +61,14 @@ _log = get_logger(__name__)
 #: node `carries` an `identifier.*` PII tag with no matching
 #: `derived_from:<tag>=<helper>` attr naming the sole legitimate
 #: producer -- the F-273 finding this epic traces to.
-# frob:doc docs/strata/provenance-trust-identity.md#sys116-undeclared-provenance
+# frob:doc docs/strata/provenance-trust-identity.md#sys10x-consumer
 SYS_UNDECLARED_PROVENANCE = "SYS116"
 
 #: `frob sys audit` rule id for SYS117 (T-3961) trust_identity without a
 #: matching `carries` tag: a `trust_identity:<tag>` attr naming a tag the
 #: node does not itself `carries` -- a provenance statement about data
 #: the node's own model says it does not hold.
-# frob:doc docs/strata/provenance-trust-identity.md#sys117
+# frob:doc docs/strata/provenance-trust-identity.md#sys10x-consumer
 SYS_TRUST_IDENTITY_WITHOUT_CARRIES = "SYS117"
 
 _IDENTIFIER_CATEGORY_PREFIX = "identifier."
@@ -85,7 +85,7 @@ def _identifier_tags(node: Node) -> tuple[str, ...]:
     )
 
 
-# frob:doc docs/strata/provenance-trust-identity.md#sys116-undeclared-provenance
+# frob:doc docs/strata/provenance-trust-identity.md#sys10x-consumer
 # frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_undeclared_helper_fires_sys116  # noqa: E501
 # frob:tests \
@@ -125,7 +125,7 @@ def check_undeclared_provenance(model: KernelModel) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
-# frob:doc docs/strata/provenance-trust-identity.md#sys117
+# frob:doc docs/strata/provenance-trust-identity.md#sys10x-consumer
 # frob:tests \
 #   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_without_carries_fires_sys117  # noqa: E501
 # frob:tests \

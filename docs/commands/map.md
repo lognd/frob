@@ -1,7 +1,8 @@
 # frob map
 
-Also available as `frob explore map` (T-1238) -- identical behavior, same
-underlying runner.
+DEPRECATED (T-4690, sunset 2026-12-01): use `frob explore map` instead --
+`frob map` keeps working, with a stderr notice, through the sunset window
+(same underlying runner), then exits non-zero.
 
 Emit a whole-project structural map: every file, its line count, and its
 top-level symbols. Fits an entire medium-sized codebase in ~200 tokens.

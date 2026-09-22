@@ -1,6 +1,7 @@
 # frob scaffold
 
-Also available as `frob ops scaffold` (T-1569) -- same flags, same code.
+`frob ops scaffold` (T-1569) also reaches this same code, but `ops` itself
+is DEPRECATED (T-4690, sunset 2026-12-01) -- use `frob scaffold` directly.
 
 Scaffold new projects from registered templates. Every type targets
 ABSOLUTELY MINIMAL boilerplate: nothing in the rendered template itself

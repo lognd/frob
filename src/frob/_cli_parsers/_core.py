@@ -11,7 +11,7 @@ from frob.lang import language_for_extension, tree_sitter_extensions
 
 # frob:doc docs/commands/xref.md#public-api
 # frob:ticket T-3233
-# frob:tests tests/unit/test_cli_lang_choices_drift.py::test_lang_choices_track_frob_lang_registry  # noqa: E501
+# frob:tests tests/unit/test_cli_lang_choices_drift.py::TestLangChoicesDeriveFromFrobLangRegistry.test_lang_choices_track_frob_lang_registry  # noqa: E501
 _LANG_CHOICES: tuple[str, ...] = tuple(
     sorted(
         {
@@ -143,16 +143,11 @@ def _populate_cycle_args(cycle_p) -> None:
 # frob:tests \
 # tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches \
 # kind="integration"
-def _add_outline_parser(sub) -> None:
-    """Register the `frob outline` subcommand and its arguments."""
-    # -- outline -------------------------------------------------------------
-    outline_p = sub.add_parser(
-        "outline",
-        help=(
-            "show structural skeleton of a file (classes, functions, line "
-            "numbers) -- also available as `frob explore outline` (T-1238)"
-        ),
-    )
+def _populate_outline_args(outline_p) -> None:
+    """Add `frob outline`'s arguments onto `outline_p` -- shared by the
+    deprecated flat parser below and `frob explore outline`'s group leaf
+    (`_explore._add_explore_parser`, T-4690) so neither duplicates the
+    flag list."""
     outline_p.add_argument("outline_file", metavar="file")
     outline_p.add_argument("--json", dest="outline_json", action="store_true")
     outline_p.add_argument(
@@ -160,17 +155,22 @@ def _add_outline_parser(sub) -> None:
     )
 
 
+def _add_outline_parser(sub) -> None:
+    """Register the DEPRECATED `frob outline` subcommand (T-4690, sunset
+    2026-12-01: use `frob explore outline`) -- `help=argparse.SUPPRESS`
+    hides it from `frob --help`'s usage line; the shim (`App.__call__`)
+    keeps it working through the sunset window."""
+    import argparse
+
+    outline_p = sub.add_parser("outline", help=argparse.SUPPRESS)
+    _populate_outline_args(outline_p)
+
+
 # frob:ticket T-0030
-def _add_map_parser(sub) -> None:
-    """Register the `frob map` subcommand and its arguments."""
-    # -- map -----------------------------------------------------------------
-    map_p = sub.add_parser(
-        "map",
-        help=(
-            "show whole-project structural map (symbols + line counts) -- "
-            "also available as `frob explore map` (T-1238)"
-        ),
-    )
+def _populate_map_args(map_p) -> None:
+    """Add `frob map`'s arguments onto `map_p` -- shared by the deprecated
+    flat parser below and `frob explore map`'s group leaf (T-4690) so
+    neither duplicates the flag list."""
     map_p.add_argument("map_path", metavar="path", nargs="?", default=".")
     map_p.add_argument("--json", dest="map_json", action="store_true")
     map_p.add_argument("--depth", dest="map_depth", type=int, metavar="N")
@@ -179,17 +179,24 @@ def _add_map_parser(sub) -> None:
     )
 
 
+def _add_map_parser(sub) -> None:
+    """Register the DEPRECATED `frob map` subcommand (T-4690, sunset
+    2026-12-01: use `frob explore map`) -- suppressed from usage, kept
+    working through the sunset window by the `App.__call__` shim."""
+    import argparse
+
+    map_p = sub.add_parser("map", help=argparse.SUPPRESS)
+    _populate_map_args(map_p)
+
+
 # frob:ticket T-0030
-def _add_xref_parser(sub) -> None:
-    """Register the `frob xref` subcommand and its arguments."""
-    # -- xref ----------------------------------------------------------------
-    xref_p = sub.add_parser(
-        "xref",
-        help=(
-            "find where a symbol is defined and every file that uses it -- "
-            "also available as `frob explore xref` (T-1238)"
-        ),
-    )
+def _populate_xref_args(xref_p) -> None:
+    """Add `frob xref`'s arguments onto `xref_p` -- shared by the
+    deprecated flat parser below and `frob explore xref`'s group leaf
+    (T-4690) so neither duplicates the flag list. `xref` has 16 recorded
+    kind=cli invocations (T-4690's own measurement) -- the one mirror
+    with a live consumer, so its shim must actually work end to end, not
+    merely exist."""
     xref_p.add_argument("xref_symbol", metavar="symbol")
     xref_p.add_argument("xref_path", metavar="path", nargs="?", default=".")
     xref_p.add_argument("--lang", dest="xref_lang", choices=_LANG_CHOICES)
@@ -200,6 +207,18 @@ def _add_xref_parser(sub) -> None:
         action="store_true",
         help="hide same-file usages (show only cross-file references)",
     )
+
+
+def _add_xref_parser(sub) -> None:
+    """Register the DEPRECATED `frob xref` subcommand (T-4690, sunset
+    2026-12-01: use `frob explore xref`) -- suppressed from usage; the
+    `App.__call__` shim keeps it fully functional (not just present)
+    through the sunset window, since this is the one mirror with a live
+    consumer (16 recorded kind=cli invocations)."""
+    import argparse
+
+    xref_p = sub.add_parser("xref", help=argparse.SUPPRESS)
+    _populate_xref_args(xref_p)
 
 
 # frob:ticket T-0030
@@ -352,13 +371,18 @@ def _populate_arch_args(arch_p) -> None:
 
 
 # frob:ticket T-0030
+# frob:ticket T-4690
 def _add_docs_parser(sub) -> None:
-    """Register the `frob docs` subcommand and its arguments."""
-    # -- docs ----------------------------------------------------------------
-    docs_p = sub.add_parser(
-        "docs",
-        help="extract docstrings or search docs/ for a file/symbol",
-    )
+    """Register the `frob docs` subcommand and its arguments. T-4690: its
+    docstring-extraction mode SURVIVES under this one name (not a shim --
+    `frob docs` keeps working forever, unlike `outline`/`map`/`xref`
+    above) -- only `design docs`'s duplicate entry point is deleted, and
+    `docs`'s own `--search` mode is superseded by `frob explore
+    docs-search` (the search surface's one surviving spelling). Suppressed
+    from `frob --help`'s usage line per T-4690's acceptance criteria."""
+    import argparse
+
+    docs_p = sub.add_parser("docs", help=argparse.SUPPRESS)
     _populate_docs_args(docs_p, include_search=True)
 
 
@@ -584,12 +608,13 @@ def _add_whereis_parser(sub) -> None:
     """Register the `frob whereis` subcommand for `--help` discovery only
     -- actual dispatch bypasses this parser entirely (see `_dispatch`
     below and `_dispatch_whereis`'s own docstring), mirroring `bind`/
-    `agent`/`worktree`'s own precedent (T-4299)."""
-    whereis_p = sub.add_parser(
-        "whereis",
-        help="print the interpreter/site-packages path of the frob "
-        "ACTUALLY RUNNING this invocation (T-4299)",
-    )
+    `agent`/`worktree`'s own precedent (T-4299). T-4690: DEPRECATED
+    (folded into `frob doctor --whereis`) -- `help=argparse.SUPPRESS`
+    hides it from `frob --help`'s usage line while the shim keeps it
+    parseable through the sunset window."""
+    import argparse
+
+    whereis_p = sub.add_parser("whereis", help=argparse.SUPPRESS)
     # T-4303: no frob:waive WIRE001 needed here any more -- _add_whereis_
     # parser is in WIRE001's own _WIRE001_APPCONFIG_BYPASS_PARSER_FUNCS
     # exemption set (src/frob/gates/_wire.py), so this --help-only dest

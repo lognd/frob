@@ -505,6 +505,7 @@ _BOOL_FLAGS = (
     "stats_json",
     "doctor_json",
     "doctor_usage",  # frob:ticket T-1360
+    "doctor_whereis",  # frob:ticket T-4690
     "mutate_json",
     "perf_tests",
     "perf_json",

@@ -68,11 +68,13 @@ from frob._cli_parsers import (
     _add_xref_parser,
 )
 
-# T-4520: imported directly from their owning submodules rather than the
+# T-4520: imported directly from their owning submodule rather than the
 # `frob._cli_parsers` package re-export (`__init__.py`) -- that file is
 # owned by a concurrent ticket's scope for the duration of this one, and
-# these two flat twins (`docs-search`/`process`) are new with T-4520.
-from frob._cli_parsers._explore import _add_docs_search_parser
+# this flat twin (`process`) is new with T-4520. T-4690: its sibling
+# `_add_docs_search_parser` import is gone -- the flat `docs-search`
+# mirror it built was deleted outright (never dispatchable, see
+# `_explore.py`'s own T-4690 note), so nothing here imports it any more.
 from frob._cli_parsers._ops import _add_process_parser
 from frob.logging import get_logger
 from frob.narrative._cli import add_narrative_parser
@@ -256,14 +258,14 @@ def _frob_version() -> str:
 
 
 # frob:ticket T-1571
-# The small set of intent-named verb groups (explore/quality/design/ops,
-# T-1238/T-1567/T-1568/T-1569) plus the pre-existing "already atomic, no
-# regrouping needed" verbs docs/design/cli-regrouping.md names alongside
-# them (ticket/vet/serve) -- presented FIRST in `frob --help`'s top-level
-# listing, ahead of every other still-supported flat command.
-_VERB_GROUP_NAMES = frozenset(
-    {"explore", "quality", "design", "ops", "ticket", "vet", "serve"}
-)
+# frob:ticket T-4690
+# The small set of intent-named verb groups presented FIRST in `frob
+# --help`'s top-level listing, ahead of every other still-supported flat
+# command. T-4690: `quality`/`design`/`ops` (T-1567/T-1568/T-1569) are
+# gone from this set -- they are DEPRECATED (suppressed from `--help`
+# entirely, not merely reordered), leaving `explore` (T-1238) as the one
+# surviving verb group, per the amended acceptance criteria.
+_VERB_GROUP_NAMES = frozenset({"explore", "ticket", "vet", "serve"})
 
 
 # frob:ticket T-1571
@@ -318,6 +320,33 @@ class _GroupedHelpFormatter(argparse.HelpFormatter):
         if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
             return self._format_grouped_subparsers(action)
         return super()._format_action(action)
+
+    # frob:ticket T-4690
+    def _metavar_formatter(self, action: argparse.Action, default_metavar: str):  # noqa: ANN201
+        """T-4690: the ROOT subparsers action's `{a,b,c,...}` usage-line
+        metavar (rendered by `_format_usage`, separate from the
+        `_format_action`/`_format_grouped_subparsers` listing below it)
+        defaults to EVERY registered choice regardless of `help=SUPPRESS`
+        -- argparse's own `choices` dict has no concept of suppression.
+        Every deleted/deprecated verb this story hides from `frob --help`
+        (`quality`, `design`, `ops`, `outline`, `map`, `xref`, `fmt`,
+        `docs`, `whereis`) is registered with `help=argparse.SUPPRESS`
+        precisely so this filter -- keyed off the same pseudo-action
+        `help` attribute `_format_grouped_subparsers` already reads via
+        `_get_subactions()` -- drops it from the usage line too, not just
+        the detailed listing."""
+        if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+            visible = {
+                a.dest
+                for a in action._choices_actions  # noqa: SLF001
+                if a.help != argparse.SUPPRESS
+            }
+            if visible:
+                return lambda tuple_size, _v=visible: (
+                    ("{%s}" % ",".join(name for name in action.choices if name in _v),)
+                    * tuple_size
+                )
+        return super()._metavar_formatter(action, default_metavar)
 
     # frob:ticket T-1571
     # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- called by this \
@@ -438,15 +467,15 @@ def _add_analysis_subparsers(sub) -> None:
     """
     _add_scaffold_parser(sub)
     _add_cycle_parser(sub)
-    # T-4520: `_add_explore_parser` mirrors these four's already-built
-    # `ArgumentParser` objects (`_explore._mirror_subparser`) rather than
-    # redeclaring their flags, so they must be registered onto `sub`
-    # BEFORE it runs -- moved up from below `_add_ops_parser` for exactly
-    # that reason; do not reorder them back below the group calls.
+    # T-4690: `outline`/`map`/`xref` are now independent, deprecated,
+    # suppressed-from-help flat parsers (each calls the same
+    # `_populate_*_args` helper `_add_explore_parser`'s own leaves call) --
+    # no more runtime object-sharing (`_mirror_subparser`, deleted), so
+    # this ordering no longer matters, but the deprecated flat forms stay
+    # registered for the sunset window.
     _add_outline_parser(sub)
     _add_map_parser(sub)
     _add_xref_parser(sub)
-    _add_docs_search_parser(sub)
     _add_explore_parser(sub)
     _add_quality_parser(sub)
     _add_design_parser(sub)

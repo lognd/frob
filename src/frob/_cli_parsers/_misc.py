@@ -418,6 +418,17 @@ def _populate_doctor_args(doctor_p) -> None:
         action="store_true",
         help="report top time sinks and footguns from the local telemetry corpus",
     )
+    # frob:ticket T-4690
+    doctor_p.add_argument(
+        "--whereis",
+        dest="doctor_whereis",
+        action="store_true",
+        help=(
+            "report the interpreter/site-packages path of the frob package "
+            "actually executing this invocation (T-4299, folded from the "
+            "standalone `frob whereis`)"
+        ),
+    )
 
 
 # frob:ticket T-0457
@@ -489,12 +500,8 @@ def _add_fmt_parser(sub) -> None:
     subcommand through the sunset window so every existing invocation
     (CI, scripts, remedy strings naming `frob fmt <path>`) keeps working
     unchanged; `frob.app.fmt_runner.run` prints the deprecation notice."""
-    # -- fmt (deprecated alias, T-3906) -------------------------------------
-    fmt_p = sub.add_parser(
-        "fmt",
-        help="DEPRECATED alias for frob format --directives (T-3906, "
-        "sunset 2026-12-01)",
-    )
+    # -- fmt (deprecated alias, T-3906; suppressed from usage, T-4690) -----
+    fmt_p = sub.add_parser("fmt", help=argparse.SUPPRESS)
     fmt_p.add_argument(
         "fmt_paths", metavar="path", nargs="*", default=["."]
     )  # T-3312: list, not one path

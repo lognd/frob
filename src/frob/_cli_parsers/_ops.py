@@ -41,22 +41,20 @@ from frob._cli_parsers._reporting import (
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
 # does not trace this cross-package private import -- same class of gap as this repo's \
 # other cross-package DEAD001 waivers (T-1024 precedent)"
+# frob:ticket T-4690
 def _add_ops_parser(sub) -> None:
-    """Register the `frob ops` subcommand group and its ten subcommands
-    (`release`, `natives`, `doctor`, `clean`, `fleet`, `deploy`,
-    `scaffold`, `gitlog`, `stats`, `process`), each reusing the same
-    `AppConfig` dests as its standalone top-level counterpart (where one
-    exists) so `ops_runner.run` can delegate straight into the existing
-    runner logic. `process` (T-3106) is the one member with no standalone
-    top-level command -- `frob ops process reap` is its only form."""
-    ops_p = sub.add_parser(
-        "ops",
-        # T-2385: kept short and word-break-safe -- the grouped-subparser
-        # header fix narrows this column, and the old wording broke
-        # "clean" mid-word ("c\nlean") at that width.
-        help="release/fleet/infra plumbing: release, natives, doctor, "
-        "clean, fleet, deploy, scaffold, gitlog, stats (T-1569)",
-    )
+    """Register the DEPRECATED `frob ops` subcommand group (T-4690, sunset
+    2026-12-01: use each member's own standalone verb directly, e.g.
+    `frob release`) -- suppressed from `frob --help`'s usage line;
+    `App.__call__`'s shim keeps the whole group working through the
+    sunset window. Its ten subcommands (`release`, `natives`, `doctor`,
+    `clean`, `fleet`, `deploy`, `scaffold`, `gitlog`, `stats`, `process`)
+    are unchanged -- only the group entry point itself is deprecated.
+    `process` (T-3106) is the one member with no standalone top-level
+    command -- `frob ops process reap` is its only form, and stays
+    reachable only through this deprecated group during the sunset
+    window (no independent flat `process` verb exists to redirect to)."""
+    ops_p = sub.add_parser("ops", help=argparse.SUPPRESS)
     ops_sub = ops_p.add_subparsers(dest="ops_command")
 
     release_p = ops_sub.add_parser(

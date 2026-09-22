@@ -384,8 +384,7 @@ class TestStabilityGate:
     def test_capture_error_skips_gate(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_app.py::TestStabilityGate.test_capture_error_skips_gate \
-        #  # noqa: E501
+        # frob:tests tests/test_app.py::TestStabilityGate.test_capture_error_skips_gate
         from frob.testing import FlakeError
 
         monkeypatch.setattr(

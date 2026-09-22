@@ -1214,6 +1214,12 @@ class AppConfig(BaseModel):
     # doctor
     doctor_json: bool = False
     doctor_usage: bool = False  # frob:ticket T-1360
+    # frob:ticket T-4690
+    doctor_whereis: bool = False
+    """`frob doctor --whereis`: report the interpreter/site-packages path of
+    the frob package actually executing this invocation -- folds the
+    standalone `frob whereis` (T-4299) into `doctor` per T-4690 (a whereis
+    question IS a doctor question)."""
 
     # clean (T-0457: tiered, artifact-only workspace cleanup)
     clean_path: Path | None = None

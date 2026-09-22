@@ -39,6 +39,10 @@ def run(cfg: AppConfig) -> None:
     renders the local telemetry corpus's top time sinks and footgun
     totals -- a separate, non-exiting report, mutually exclusive with the
     native-extension check in practice (usage is checked first)."""
+    if cfg.doctor_whereis:
+        print_whereis(cfg)
+        return
+
     if cfg.doctor_usage:
         _run_usage(cfg)
         return
@@ -259,3 +263,51 @@ def _run_usage(cfg: AppConfig) -> None:
             f"{sink.total_duration_ms / 1000.0:.1f}s over {sink.calls} call(s), "
             f"{sink.failures} failure(s)",
         )
+
+
+# frob:ticket T-4690
+# frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
+# frob:tests tests/unit/test_cli_shims.py::TestPrintWhereis.test_plain_output_names_the_live_executable  # noqa: E501
+# frob:tests tests/unit/test_cli_shims.py::TestPrintWhereis.test_json_output_is_parseable  # noqa: E501
+def print_whereis(cfg: AppConfig) -> None:
+    """`frob doctor --whereis` (folded from the standalone `frob whereis`,
+    T-4299/T-4690): print the interpreter/site-packages path of the frob
+    package ACTUALLY EXECUTING this invocation -- the LIVE process's own
+    `sys.executable`/package `__file__`, never a `shutil.which`-style PATH
+    lookup or a hardcoded install-layout assumption, since this repo
+    already warns elsewhere that an invoked binary's source identity can
+    silently diverge from a given checkout. Shared by `frob doctor
+    --whereis` and the deprecated `frob whereis` shim
+    (`frob.__main__._dispatch_whereis`) so the reporting logic exists in
+    exactly one place."""
+    import json
+    import site
+    from pathlib import Path
+
+    import frob as _frob_pkg
+
+    package_dir = str(Path(_frob_pkg.__file__).resolve().parent)
+    try:
+        site_packages = site.getsitepackages()
+    except AttributeError:
+        # T-4299: some venvs (built without site.ENABLE_USER_SITE support)
+        # lack getsitepackages entirely -- fall back to the package
+        # directory's own parent, which IS the site-packages dir for a
+        # normally-installed package, so this never reports nothing.
+        site_packages = [str(Path(package_dir).parent)]
+
+    payload = {
+        "executable": sys.executable,
+        "frob_package": package_dir,
+        "site_packages": site_packages,
+    }
+    renderer = Renderer.for_stream(
+        sys.stdout, color_flag=cfg.color, no_color_flag=cfg.no_color
+    )
+    if cfg.doctor_json:
+        renderer.line(json.dumps(payload, indent=2))
+        return
+    renderer.line(f"executable: {payload['executable']}")
+    renderer.line(f"frob package: {payload['frob_package']}")
+    for path in payload["site_packages"]:
+        renderer.line(f"site-packages: {path}")

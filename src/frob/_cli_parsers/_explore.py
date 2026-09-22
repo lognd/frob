@@ -1,86 +1,81 @@
 # frob:ticket T-1238
+# frob:ticket T-4690
 """CLI parser builder for the `frob explore` verb group (T-1238): regroups
 the navigation porcelain (`map`/`outline`/`xref`/`docs-search`) under one
-intent-named subcommand instead of four top-level entries, per the
-`docs/design/cli-regrouping.md` taxonomy. The four members' standalone
-top-level forms keep working unchanged (see `outline_runner`/`map_runner`/
-`xref_runner`/`docs_runner`'s own T-1238 notes) -- this is a second
-entry point onto the same argument dests, not a replacement.
+intent-named subcommand, per `docs/design/cli-regrouping.md`.
 
-T-4520: `map`/`outline`/`xref` are declared as inline `add_argument` calls
-by their flat twins (`_add_map_parser`/`_add_outline_parser`/
-`_add_xref_parser`, `_core.py`) rather than a `_populate_*` helper this
-module could import and call a second time -- `_core.py` is out of this
-ticket's scope to split one out of. Instead of hand-redeclaring the same
-flags here (the exact divergence risk this ticket exists to close),
-`_mirror_subparser` reuses the flat parser objects `_root._build_parser`
-has already built by the time it calls `_add_explore_parser` (see
-`_root._add_analysis_subparsers`'s ordering comment): the group leaf IS
-the flat parser, so a flag added to the flat twin is visible through the
-group with no edit here, ever. `docs-search` (previously the one member
-with no flat twin) now has one (`_add_docs_search_parser`, this module)
-and is mirrored the same way, making the mapping total."""
+T-4690 (CLI-surface reduction, coordinator amendment 2026-09-19): `explore`
+is the SURVIVING verb -- its four standalone top-level mirrors (`map`,
+`outline`, `xref`, `docs-search`) are the ones being deleted (deprecation
+shims, sunset 2026-12-01), not `explore` itself. Previously `_add_explore_
+parser` reused the flat parsers' already-built `ArgumentParser` objects
+via `_mirror_subparser` (T-4520) so a flag added to a flat twin was
+visible through the group automatically. Now that the flat twins are
+themselves deprecated (suppressed from `--help`, on a sunset clock), that
+object-sharing would also suppress `explore`'s own leaves and route them
+through the flat-verb deprecation shim -- exactly backwards, since
+`explore` is the survivor. Each leaf now calls the SAME `_populate_*_args`
+helper the flat (deprecated) parser calls (`_core._populate_outline_args`/
+`_populate_map_args`/`_populate_xref_args`, this module's own
+`_populate_docs_search_args`), so the flag list is still declared exactly
+once -- just no longer via runtime object reuse. `_mirror_subparser`
+itself has no callers left and is deleted (T-4690's own instruction: once
+it has no callers, delete it)."""
 
 from __future__ import annotations
 
 
-# frob:ticket T-4520
-def _mirror_subparser(dest_sub, flat_sub, name: str) -> None:
-    """Register `flat_sub`'s already-built `name` leaf onto `dest_sub` by
-    reusing the identical `ArgumentParser` instance instead of building a
-    second one (T-4520) -- argparse's own `_SubParsersAction.add_parser`
-    only ever constructs a NEW parser, so true reuse means writing
-    directly into its `choices`/`_choices_actions` bookkeeping, the same
-    private surface `_root._collect_option_strings` already reads (T-0578)
-    -- `flat_sub` must already have `name` registered (`_root.py`'s
-    `_build_parser` ordering guarantees this for every caller here)."""
-    parser = flat_sub.choices[name]
-    dest_sub.choices[name] = parser
-    for act in flat_sub._choices_actions:  # noqa: SLF001
-        if act.dest == name:
-            dest_sub._choices_actions.append(type(act)(name, (), act.help))  # noqa: SLF001
-            break
-
-
 # frob:ticket T-1238
+# frob:ticket T-4690
 def _add_explore_parser(sub) -> None:
     """Register the `frob explore` subcommand group and its four
-    subcommands (`map`, `outline`, `xref`, `docs-search`), each mirroring
-    (T-4520, `_mirror_subparser`) its standalone top-level counterpart's
-    already-built `ArgumentParser` instance -- identical flags and
-    dispatch dest by construction, not by manual copying."""
+    subcommands (`map`, `outline`, `xref`, `docs-search`) -- `explore` is
+    the surviving spelling (T-4690 coordinator amendment); each leaf
+    populates its arguments via the same `_populate_*_args` helper its
+    now-deprecated flat twin uses, so the flag list is declared once."""
+    from frob._cli_parsers._core import (
+        _populate_map_args,
+        _populate_outline_args,
+        _populate_xref_args,
+    )
+
     explore_p = sub.add_parser(
         "explore",
         help="navigation: map/outline/xref/docs-search grouped under one verb (T-1238)",
     )
     explore_sub = explore_p.add_subparsers(dest="explore_command")
 
-    for name in ("map", "outline", "xref", "docs-search"):
-        _mirror_subparser(explore_sub, sub, name)
-
-
-# frob:ticket T-4520
-def _add_docs_search_parser(sub) -> None:
-    """Register the flat top-level `frob docs-search` verb (T-4520): the
-    standalone twin of `frob explore docs-search` -- it used to be the
-    one `explore` member with no flat form, which made the group-to-flat
-    mapping non-total. Shares `_populate_docs_search_args` with the group
-    leaf (`_add_explore_parser`, via `_mirror_subparser`) so the flag
-    list is declared exactly once."""
-    search_p = sub.add_parser(
-        "docs-search",
-        help="full-text search through docs/ -- also available as "
-        "`frob explore docs-search` (T-1238)",
+    outline_p = explore_sub.add_parser(
+        "outline",
+        help="show structural skeleton of a file (classes, functions, line numbers)",
     )
-    _populate_docs_search_args(search_p)
+    _populate_outline_args(outline_p)
+
+    map_p = explore_sub.add_parser(
+        "map", help="show whole-project structural map (symbols + line counts)"
+    )
+    _populate_map_args(map_p)
+
+    xref_p = explore_sub.add_parser(
+        "xref", help="find where a symbol is defined and every file that uses it"
+    )
+    _populate_xref_args(xref_p)
+
+    docs_search_p = explore_sub.add_parser(
+        "docs-search", help="full-text search through docs/"
+    )
+    _populate_docs_search_args(docs_search_p)
 
 
 # frob:ticket T-4520
 def _populate_docs_search_args(search_p) -> None:
-    """Add `docs-search`'s arguments onto `search_p` (T-4520) -- shared by
-    the flat `frob docs-search` verb and (indirectly, via
-    `_mirror_subparser`'s object reuse) the `frob explore docs-search`
-    group leaf, so neither duplicates the flag list."""
+    """Add `docs-search`'s arguments onto `search_p` (T-4520) -- the
+    `frob explore docs-search` group leaf's own argument list. T-4690:
+    the standalone flat `frob docs-search` verb this helper used to also
+    serve is deleted outright (it predated a working `Subcommand` entry
+    and was never dispatchable -- `'docs-search' is not a valid
+    Subcommand`, confirmed by execution -- so it carried no shim-worthy
+    behavior to preserve)."""
     search_p.add_argument("docs_path", metavar="path")
     search_p.add_argument("docs_search", metavar="query")
     search_p.add_argument("--json", dest="docs_json", action="store_true")

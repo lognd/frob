@@ -2175,7 +2175,6 @@ def _done_report_touched_files(
 # frob:ticket T-4550
 # frob:tests \
 # tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes
-# frob:tests tests/unit/test_done_report_check_scope.py::TestDoneReportModes kind="unit"
 def _done_report_base(cfg: AppConfig) -> str | None:
     """T-4105: `cfg.ticket_base_ref`'s effective override -- `None` (use
     frob.toml's own `check_base` fallback) unless the caller passed a

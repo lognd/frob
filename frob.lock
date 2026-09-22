@@ -3338,6 +3338,384 @@
       "old_digest": "00aa6cf16cb81532ce28ed2b30eed6cc759c0639c8ce97a5e422d4c72920594d",
       "reason": "T-5075: added an optional leases= parameter and updated the docstring to describe it; verified every existing caller and dependent test still passes (105/105 in the lease/doable/scope suites) with the new parameter defaulting to the unchanged prior behavior",
       "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "3831e83168f819e178887fece1aaf78bb9c833af9eb4f4ad3aa3583464304b00",
+      "old_digest": "8b4839e124f77beed2ab03eb17366061cd1c715f584ce248c72d365ddcd492ec",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "old_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "24cb900380633bd2c307122dd731cbb092026936e34e06648000fa67cb636a98",
+      "old_digest": "333b00cdb0d7d85123855f01fba107d5965c42c9fa70c31780f0190cd6421adf",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "4c9fa508243e0eda8bbe5565ba9bca1695cf9031afc3d128f4f9918f41abcd77",
+      "old_digest": "fea7a554107f1707fa8294c30f87e7039ae5b58b941ed52ddbf6e1e789df7f42",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_docptr.py::doc006_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "34982d65c649e8682213661fe1cdc674f96061865b2a33e0654f21b981cd89c4",
+      "old_digest": "34982d65c649e8682213661fe1cdc674f96061865b2a33e0654f21b981cd89c4",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_docptr.py::doc006_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "1c96f97c0caa6e9712205ff1edbdb7a8ec205f48d274c2f55b88b6751cf3e000",
+      "old_digest": "47762c8662bef85abfcea875e8216ba370d035b75ae6f903b0fa3541f3445219",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "221f821b8f3711c4ea87747f4c8ce1f89f5e01810747643b0505614a7fbda310",
+      "old_digest": "221f821b8f3711c4ea87747f4c8ce1f89f5e01810747643b0505614a7fbda310",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "68892d861441df59f2bba4e9ef1b465f29415d5d5e7576800e86f31b0d9f79b8",
+      "old_digest": "db442e886b429d7d3270beb4b265eb8dec5f7c579319c193777cd1cd26568c88",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_prework.py::sweep_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "12bc698c3213be547431e72db5bb7a9aea09d3ae4de55241b839a53bb6a4eb10",
+      "old_digest": "12bc698c3213be547431e72db5bb7a9aea09d3ae4de55241b839a53bb6a4eb10",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_prework.py::sweep_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "199deaf605479d9cdad563d4f83c2dddecaeb34f758740cd8a9fbe9ee5653818",
+      "old_digest": "129a33421ef8e34b10e4611320b944e7a93c547f86aa88511c534b6f7fe02e26",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "433c09d1837dbfca77ec46941bedeec70bcf46c74cf104f26c1ee0e295218171",
+      "old_digest": "433c09d1837dbfca77ec46941bedeec70bcf46c74cf104f26c1ee0e295218171",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "61d6b801063a9e3cd8812e01b6d469d097dc910a24dd9cf59a793c89e73ae0ea",
+      "old_digest": "42d79990ffa0263f58ecbc7361499e4fd101d79cbd4f0037724149db1239477f",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "old_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "625a548e70d34c40edae5bc5ec2abd11082441bb47deee2af734708b1fc401d5",
+      "old_digest": "26a786fa730ab49686f72236023e7710c3f26b2626b18776675cadfd829995e2",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
+      "old_digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "545898bc263697b56337e328244941bd540ad07c9ca8e0f001fbb20d3d59b857",
+      "old_digest": null,
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/invariants.py::load_invariants"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "ba5d3a9ebb4f842073e82fb11fb6cfbb39e0dd92308e1516b44bff919f7e48b6",
+      "old_digest": "665ae6d12c7b7b89371895196db67b373e31ff71306f5af194f4bc8d7e80bc6f",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/invariants.py::load_invariants"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "6587c6683ceed9f35f563955046185088932007c5c82708327312e855b7303cc",
+      "old_digest": "0f073093e1e701d96690a9bd0abd9b2ac20a5650a9257c862314a275850d2cc4",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "7c2d42a8152b276f231354ab8903f5fa08cb67a62cdaa926dc5ee6f4b36ba5b7",
+      "old_digest": "7c2d42a8152b276f231354ab8903f5fa08cb67a62cdaa926dc5ee6f4b36ba5b7",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "b48175e87c5695ed669ab825ebc40d9fd21a47ac8f51661aaff9d09023960ac1",
+      "old_digest": "382d20066b23c51c785db02b6baaa5ffa950faa232900124d78ddac910868390",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "e914403bf56083a2c810e01e9dd2e6505b88889273a86ac9105258e1ec289053",
+      "old_digest": "d7d0746681d4742c2c8b552aa42938bea617b3a017baaff1c5bc46379da70e41",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "3831e83168f819e178887fece1aaf78bb9c833af9eb4f4ad3aa3583464304b00",
+      "old_digest": "3831e83168f819e178887fece1aaf78bb9c833af9eb4f4ad3aa3583464304b00",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "old_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "24cb900380633bd2c307122dd731cbb092026936e34e06648000fa67cb636a98",
+      "old_digest": "24cb900380633bd2c307122dd731cbb092026936e34e06648000fa67cb636a98",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "4c9fa508243e0eda8bbe5565ba9bca1695cf9031afc3d128f4f9918f41abcd77",
+      "old_digest": "4c9fa508243e0eda8bbe5565ba9bca1695cf9031afc3d128f4f9918f41abcd77",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_docptr.py::doc006_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "34982d65c649e8682213661fe1cdc674f96061865b2a33e0654f21b981cd89c4",
+      "old_digest": "34982d65c649e8682213661fe1cdc674f96061865b2a33e0654f21b981cd89c4",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_docptr.py::doc006_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "1c96f97c0caa6e9712205ff1edbdb7a8ec205f48d274c2f55b88b6751cf3e000",
+      "old_digest": "1c96f97c0caa6e9712205ff1edbdb7a8ec205f48d274c2f55b88b6751cf3e000",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "221f821b8f3711c4ea87747f4c8ce1f89f5e01810747643b0505614a7fbda310",
+      "old_digest": "221f821b8f3711c4ea87747f4c8ce1f89f5e01810747643b0505614a7fbda310",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "68892d861441df59f2bba4e9ef1b465f29415d5d5e7576800e86f31b0d9f79b8",
+      "old_digest": "68892d861441df59f2bba4e9ef1b465f29415d5d5e7576800e86f31b0d9f79b8",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_prework.py::sweep_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "12bc698c3213be547431e72db5bb7a9aea09d3ae4de55241b839a53bb6a4eb10",
+      "old_digest": "12bc698c3213be547431e72db5bb7a9aea09d3ae4de55241b839a53bb6a4eb10",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/gates/_prework.py::sweep_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "199deaf605479d9cdad563d4f83c2dddecaeb34f758740cd8a9fbe9ee5653818",
+      "old_digest": "199deaf605479d9cdad563d4f83c2dddecaeb34f758740cd8a9fbe9ee5653818",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "433c09d1837dbfca77ec46941bedeec70bcf46c74cf104f26c1ee0e295218171",
+      "old_digest": "433c09d1837dbfca77ec46941bedeec70bcf46c74cf104f26c1ee0e295218171",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "61d6b801063a9e3cd8812e01b6d469d097dc910a24dd9cf59a793c89e73ae0ea",
+      "old_digest": "61d6b801063a9e3cd8812e01b6d469d097dc910a24dd9cf59a793c89e73ae0ea",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "old_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "625a548e70d34c40edae5bc5ec2abd11082441bb47deee2af734708b1fc401d5",
+      "old_digest": "625a548e70d34c40edae5bc5ec2abd11082441bb47deee2af734708b1fc401d5",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
+      "old_digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "6587c6683ceed9f35f563955046185088932007c5c82708327312e855b7303cc",
+      "old_digest": "6587c6683ceed9f35f563955046185088932007c5c82708327312e855b7303cc",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "7c2d42a8152b276f231354ab8903f5fa08cb67a62cdaa926dc5ee6f4b36ba5b7",
+      "old_digest": "7c2d42a8152b276f231354ab8903f5fa08cb67a62cdaa926dc5ee6f4b36ba5b7",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "body",
+      "new_digest": "b48175e87c5695ed669ab825ebc40d9fd21a47ac8f51661aaff9d09023960ac1",
+      "old_digest": "b48175e87c5695ed669ab825ebc40d9fd21a47ac8f51661aaff9d09023960ac1",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-21",
+      "facet": "sig",
+      "new_digest": "e914403bf56083a2c810e01e9dd2e6505b88889273a86ac9105258e1ec289053",
+      "old_digest": "e914403bf56083a2c810e01e9dd2e6505b88889273a86ac9105258e1ec289053",
+      "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
     }
   ],
   "entries": [
@@ -3397,7 +3775,7 @@
       "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.parse_known_args"
     },
     {
-      "digest": "8b4839e124f77beed2ab03eb17366061cd1c715f584ce248c72d365ddcd492ec",
+      "digest": "3831e83168f819e178887fece1aaf78bb9c833af9eb4f4ad3aa3583464304b00",
       "facet": "body",
       "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
     },
@@ -3597,7 +3975,7 @@
       "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
     },
     {
-      "digest": "333b00cdb0d7d85123855f01fba107d5965c42c9fa70c31780f0190cd6421adf",
+      "digest": "24cb900380633bd2c307122dd731cbb092026936e34e06648000fa67cb636a98",
       "facet": "body",
       "ref": "src/frob/doctor.py::run_diagnosis"
     },
@@ -3722,7 +4100,7 @@
       "ref": "src/frob/gates/_doclink_docanchor.py::doclink_gate"
     },
     {
-      "digest": "fea7a554107f1707fa8294c30f87e7039ae5b58b941ed52ddbf6e1e789df7f42",
+      "digest": "4c9fa508243e0eda8bbe5565ba9bca1695cf9031afc3d128f4f9918f41abcd77",
       "facet": "body",
       "ref": "src/frob/gates/_docptr.py::doc006_gate"
     },
@@ -3782,7 +4160,7 @@
       "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
     },
     {
-      "digest": "47762c8662bef85abfcea875e8216ba370d035b75ae6f903b0fa3541f3445219",
+      "digest": "1c96f97c0caa6e9712205ff1edbdb7a8ec205f48d274c2f55b88b6751cf3e000",
       "facet": "body",
       "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
     },
@@ -3887,7 +4265,7 @@
       "ref": "src/frob/gates/_prework.py::record_prework"
     },
     {
-      "digest": "db442e886b429d7d3270beb4b265eb8dec5f7c579319c193777cd1cd26568c88",
+      "digest": "68892d861441df59f2bba4e9ef1b465f29415d5d5e7576800e86f31b0d9f79b8",
       "facet": "body",
       "ref": "src/frob/gates/_prework.py::sweep_ticket"
     },
@@ -3937,7 +4315,12 @@
       "ref": "src/frob/gates/_wire.py::wire_gate"
     },
     {
-      "digest": "665ae6d12c7b7b89371895196db67b373e31ff71306f5af194f4bc8d7e80bc6f",
+      "digest": "545898bc263697b56337e328244941bd540ad07c9ca8e0f001fbb20d3d59b857",
+      "facet": "body",
+      "ref": "src/frob/gates/invariants.py::load_invariants"
+    },
+    {
+      "digest": "ba5d3a9ebb4f842073e82fb11fb6cfbb39e0dd92308e1516b44bff919f7e48b6",
       "facet": "sig",
       "ref": "src/frob/gates/invariants.py::load_invariants"
     },
@@ -4572,7 +4955,7 @@
       "ref": "src/frob/tickets/__init__.py::transition"
     },
     {
-      "digest": "0f073093e1e701d96690a9bd0abd9b2ac20a5650a9257c862314a275850d2cc4",
+      "digest": "6587c6683ceed9f35f563955046185088932007c5c82708327312e855b7303cc",
       "facet": "body",
       "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
     },
@@ -4582,12 +4965,12 @@
       "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
     },
     {
-      "digest": "382d20066b23c51c785db02b6baaa5ffa950faa232900124d78ddac910868390",
+      "digest": "b48175e87c5695ed669ab825ebc40d9fd21a47ac8f51661aaff9d09023960ac1",
       "facet": "body",
       "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
     },
     {
-      "digest": "d7d0746681d4742c2c8b552aa42938bea617b3a017baaff1c5bc46379da70e41",
+      "digest": "e914403bf56083a2c810e01e9dd2e6505b88889273a86ac9105258e1ec289053",
       "facet": "sig",
       "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
     },
@@ -4637,7 +5020,7 @@
       "ref": "src/frob/tickets/_land_squash.py::_check_squash_conflicted_v2"
     },
     {
-      "digest": "129a33421ef8e34b10e4611320b944e7a93c547f86aa88511c534b6f7fe02e26",
+      "digest": "199deaf605479d9cdad563d4f83c2dddecaeb34f758740cd8a9fbe9ee5653818",
       "facet": "body",
       "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
     },
@@ -4827,7 +5210,7 @@
       "ref": "src/frob/verify/_quarantine.py::QuarantineError"
     },
     {
-      "digest": "42d79990ffa0263f58ecbc7361499e4fd101d79cbd4f0037724149db1239477f",
+      "digest": "61d6b801063a9e3cd8812e01b6d469d097dc910a24dd9cf59a793c89e73ae0ea",
       "facet": "body",
       "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
     },
@@ -4837,7 +5220,7 @@
       "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
     },
     {
-      "digest": "26a786fa730ab49686f72236023e7710c3f26b2626b18776675cadfd829995e2",
+      "digest": "625a548e70d34c40edae5bc5ec2abd11082441bb47deee2af734708b1fc401d5",
       "facet": "body",
       "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
     },

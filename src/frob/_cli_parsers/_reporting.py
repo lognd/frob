@@ -348,9 +348,13 @@ def _populate_fleet_actions(fleet_sub) -> None:
     """Add `frob fleet`'s `status`/`route` actions onto `fleet_sub` --
     shared by the standalone top-level parser and `frob ops fleet`
     (T-1569) so neither duplicates the flag list."""
-    status_p = fleet_sub.add_parser(
-        "status", help="reddest-first status/gate rollup over every manifest repo"
-    )
+    # T-4690: DEPRECATED spelling of the top-level `frob status` verb (one
+    # concept, three prior spellings) -- suppressed from `frob fleet
+    # --help`'s subcommand list; `App.__call__`'s shim keeps it working
+    # through the sunset window (2026-12-01).
+    import argparse
+
+    status_p = fleet_sub.add_parser("status", help=argparse.SUPPRESS)
     status_p.add_argument(
         "--manifest", dest="fleet_manifest", metavar="PATH", default=None
     )

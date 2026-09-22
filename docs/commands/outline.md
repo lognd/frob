@@ -1,7 +1,8 @@
 # frob outline
 
-Also available as `frob explore outline` (T-1238) -- identical behavior,
-same underlying runner.
+DEPRECATED (T-4690, sunset 2026-12-01): use `frob explore outline` instead
+-- `frob outline` keeps working, with a stderr notice, through the sunset
+window (same underlying runner), then exits non-zero.
 
 Emit a compact structural skeleton of a source file or directory: classes,
 functions, signatures, line numbers, and first-sentence docstrings. No bodies.

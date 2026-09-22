@@ -115,7 +115,9 @@ from `--all`/`--deep`, calls `clean(..., dry_run=not cfg.clean_yes)`, and
 renders the report through `frob.render.Renderer` (or a bare JSON dump for
 `--json`).
 
-## `frob clean --sweep-disposable-worktrees` (T-4437) <!-- frob:waive DOC006 reason="the flag is added to frob clean by this same land (src/frob/_cli_parsers/_misc.py); the pre-land docptr sweep resolves options from the running parser, not the staged tree" -->
+## `frob clean --sweep-disposable-worktrees` (T-4437)
+
+<!-- frob:waive DOC006 reason="the flag is added to frob clean by this same land (src/frob/_cli_parsers/_misc.py); the pre-land docptr sweep resolves options from the running parser, not the staged tree" -->
 
 A DISTINCT sweep from the tiered artifact cleanup above: BUG002-repro
 (`frob.gates._bug_repro`) and land-squash (`frob.tickets._land_compose`)

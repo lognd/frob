@@ -234,50 +234,26 @@ def _dispatch_build(argv: list[str]) -> None:
 
 
 # frob:ticket T-4299
+# frob:deprecated 0.1.0 sunset="2026-12-01" ticket="T-4690" reason="whereis folded \
+# into `frob doctor --whereis` (T-4690: a whereis question IS a doctor question) -- \
+# kept as this working shim through the sunset window"
 def _dispatch_whereis(argv: list[str]) -> None:
-    """`frob whereis` (T-4299) -- print the interpreter/site-packages path
-    of the frob package ACTUALLY EXECUTING this invocation, dispatched
-    directly (mirroring `bind`/`agent`/`worktree` above) rather than
-    resolved from anything else: this repo already warns elsewhere (the
-    CLI-surface-skew warning `frob --version` alone cannot detect, per
-    the frob-usage reference) that an invoked binary's source identity
-    can silently diverge from a given checkout, so a consumer asking
-    "where is the frob I am actually running" needs the LIVE process's
-    own `sys.executable`/package `__file__`, never a `shutil.which`-style
-    PATH lookup or a hardcoded install-layout assumption -- the exact
-    fragile shim T-4150's report describes a consumer resorting to,
-    complete with a warning in their own code because they knew it was
-    unsound. Turns that into a supported one-liner."""
-    import json
-    import site
-    import sys
+    """`frob whereis` (DEPRECATED T-4690, sunset 2026-12-01: use `frob
+    doctor --whereis`) -- dispatched directly (mirroring `bind`/`agent`/
+    `worktree` above), same as before T-4690 folded the reporting logic
+    itself into `frob.app.doctor_runner.print_whereis` (the single
+    implementation both this shim and `frob doctor --whereis` now share)."""
+    from frob._cli_parsers._shims import announce_shim
+    from frob.app.config import AppConfig
+    from frob.app.doctor_runner import print_whereis
 
-    import frob as _frob_pkg
-    from frob.render import Renderer
-
-    package_dir = str(Path(_frob_pkg.__file__).resolve().parent)
-    try:
-        site_packages = site.getsitepackages()
-    except AttributeError:
-        # T-4299: some venvs (built without site.ENABLE_USER_SITE support)
-        # lack getsitepackages entirely -- fall back to the package
-        # directory's own parent, which IS the site-packages dir for a
-        # normally-installed package, so this never reports nothing.
-        site_packages = [str(Path(package_dir).parent)]
-
-    payload = {
-        "executable": sys.executable,
-        "frob_package": package_dir,
-        "site_packages": site_packages,
-    }
-    renderer = Renderer.for_stream(sys.stdout)
-    if "--json" in argv:
-        renderer.line(json.dumps(payload, indent=2))
-        return
-    renderer.line(f"executable: {payload['executable']}")
-    renderer.line(f"frob package: {payload['frob_package']}")
-    for path in payload["site_packages"]:
-        renderer.line(f"site-packages: {path}")
+    announce_shim(
+        old_name="whereis",
+        new_name="doctor --whereis",
+        sunset="2026-12-01",
+        ticket="T-4690",
+    )
+    print_whereis(AppConfig(doctor_json="--json" in argv))
 
 
 # frob:ticket T-2241

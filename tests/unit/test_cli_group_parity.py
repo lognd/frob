@@ -94,7 +94,15 @@ def _assert_identical_twins(
 class TestExploreGroupParity:
     """`frob explore`'s four members (T-1238) against their flat twins."""
 
-    @pytest.mark.parametrize("name", ["map", "outline", "xref", "docs-search"])
+    # frob:ticket T-4690
+    # T-4690: `map`/`outline`/`xref` keep a DEPRECATED flat twin (sunset
+    # 2026-12-01, `App.__call__`'s shim) -- still parity-checked here.
+    # `docs-search` does not: its flat mirror was deleted outright (it
+    # predated a working `Subcommand` entry and was never dispatchable,
+    # confirmed by execution: `'docs-search' is not a valid Subcommand`),
+    # so there is nothing left to compare it against -- see
+    # `test_docs_search_has_no_flat_twin` below, this test's replacement.
+    @pytest.mark.parametrize("name", ["map", "outline", "xref"])
     def test_every_explore_leaf_matches_its_flat_twin(self, name: str) -> None:
         """Each `frob explore <name>` leaf must be option-for-option and
         subcommand-for-subcommand identical to standalone `frob <name>`."""
@@ -103,12 +111,17 @@ class TestExploreGroupParity:
         flat_leaf = _leaf(parser, name)
         _assert_identical_twins(group_leaf, flat_leaf)
 
-    def test_docs_search_has_a_flat_twin(self) -> None:
-        """T-4520: `docs-search` used to be the one `explore` member with
-        no standalone top-level form -- `frob docs-search` must now
-        exist so the group-to-flat mapping is total."""
+    # frob:ticket T-4690
+    def test_docs_search_has_no_flat_twin(self) -> None:
+        """T-4690: the flat `frob docs-search` mirror T-4520 added is
+        deleted outright (not deprecated -- it was never dispatchable in
+        the first place, confirmed by execution before this ticket:
+        `'docs-search' is not a valid Subcommand`) -- `frob explore
+        docs-search` is the one surviving spelling."""
         parser = _build_parser()
-        _leaf(parser, "docs-search")  # raises AssertionError if missing
+        action = _subparsers_action(parser)
+        assert "docs-search" not in action.choices
+        _leaf(parser, "explore", "docs-search")  # the surviving spelling still works
 
 
 # frob:ticket T-4520
