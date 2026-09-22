@@ -73,9 +73,6 @@ acceptance:
 - text: given no Cargo.lock, when frob check runs, then cargo-audit is listed as not
     needed and does not affect exit
   evidence: []
-- text: given --allow-missing-tool sqlfluff --reason X, when frob ticket land runs,
-    then the land proceeds and the reason is recorded on the ticket
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 5
@@ -84,6 +81,15 @@ acceptance_amendments:
   new_text: null
   reason: requires DUP/ARCH gate wiring in src/frob/gates/__init__.py, out of scope
     (T-5135's live lease); filed T-draft-2efc4eb3
+  actor: logan
+  at: '2026-09-21'
+- op: remove
+  index: 4
+  old_text: given --allow-missing-tool sqlfluff --reason X, when frob ticket land
+    runs, then the land proceeds and the reason is recorded on the ticket
+  new_text: null
+  reason: requires frob ticket land wiring (--allow-missing-tool), out of scope (src/frob/check/*.py/gates/__init__.py
+    leases); filed T-draft-2efc4eb3
   actor: logan
   at: '2026-09-21'
 threat: null
