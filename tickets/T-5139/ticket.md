@@ -63,10 +63,6 @@ triage_changes:
   at: '2026-09-20'
 designated_repro_test: null
 acceptance:
-- text: given Cargo.lock in the repo and cargo-audit absent, when frob check runs,
-    then the run ends with an UNMEASURED block naming cargo-audit, VET005 and the
-    install command, and exits non-zero
-  evidence: []
 - text: given osv reachable but returning unparseable JSON, when frob vet runs, then
     VET005 is reported UNMEASURED with the stderr tail, never clean
   evidence: []
@@ -95,6 +91,16 @@ acceptance_amendments:
     as not needed and does not affect exit
   new_text: null
   reason: requires frob check's exit-code wiring, out of scope (src/frob/check/*.py
+    held by T-4692); filed T-draft-2efc4eb3
+  actor: logan
+  at: '2026-09-21'
+- op: remove
+  index: 1
+  old_text: given Cargo.lock in the repo and cargo-audit absent, when frob check runs,
+    then the run ends with an UNMEASURED block naming cargo-audit, VET005 and the
+    install command, and exits non-zero
+  new_text: null
+  reason: requires frob check's UNMEASURED-block/exit-code wiring, out of scope (src/frob/check/*.py
     held by T-4692); filed T-draft-2efc4eb3
   actor: logan
   at: '2026-09-21'
