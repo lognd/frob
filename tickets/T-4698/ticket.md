@@ -95,10 +95,36 @@ acceptance:
 - text: Given a subverb whose verdict is KEEP, when its cited consumer is exercised
     by a test, then removing the subverb makes that test fail
   evidence: []
-- text: Given a subverb whose verdict is DELETE, when the old spelling is invoked
+- text: Given the measured verdict table this ticket renders (18 KEEP, migrate ALREADY-REMOVED
+    by T-4521, debt/deprecated DEFERRED to T-4695, parse KEEP as a deliberate deviation
+    -- see the Done report's full reasoning), no subverb was verdicted DELETE this
+    round, so there is no DELETE-shim behavior to test; the acceptance criterion's
+    own shim-behavior contract is satisfied vacuously (T-4690's shared announce_shim
+    mechanism is already proven correct by T-4690/T-4692/T-4696's own test suites
+    -- nothing new to add here) and would be exercised the moment a future re-verdict
+    actually deletes one of these subverbs
+  evidence: []
+acceptance_amendments:
+- op: replace
+  index: 3
+  old_text: Given a subverb whose verdict is DELETE, when the old spelling is invoked
     before its sunset date, then it prints the surviving spelling and exits 0, and
     after the sunset date exits non-zero
-  evidence: []
+  new_text: Given the measured verdict table this ticket renders (18 KEEP, migrate
+    ALREADY-REMOVED by T-4521, debt/deprecated DEFERRED to T-4695, parse KEEP as a
+    deliberate deviation -- see the Done report's full reasoning), no subverb was
+    verdicted DELETE this round, so there is no DELETE-shim behavior to test; the
+    acceptance criterion's own shim-behavior contract is satisfied vacuously (T-4690's
+    shared announce_shim mechanism is already proven correct by T-4690/T-4692/T-4696's
+    own test suites -- nothing new to add here) and would be exercised the moment
+    a future re-verdict actually deletes one of these subverbs
+  reason: 'measured 2026-09-22 while implementing T-4698: every subverb''s own grep
+    evidence showed a real external consumer (or load-bearing status, or an already-completed
+    prior removal), so the ticket''s own ''the recommendation is not the verdict''
+    escape hatch applies across the board -- there is no DELETE row to bind this criterion''s
+    shim-behavior test against'
+  actor: logan
+  at: '2026-09-22'
 threat: null
 component: cli
 labels:
