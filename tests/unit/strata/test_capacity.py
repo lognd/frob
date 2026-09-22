@@ -363,8 +363,7 @@ def test_propagated_demand_matches_oracle_on_dags(graph) -> None:
 
 class TestGrowthPeriodSeconds:
     # frob:tests \
-    # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_resolves_known_t\
-    # ime_unit kind="unit"
+    # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_resolves_known_time_unit kind="unit"  # noqa: E501
     # frob:tests src/frob/strata/_models.py::Growth.period_seconds
     def test_resolves_known_time_unit(self) -> None:
         """A recognized time-dimension period unit (e.g. `"w"`) resolves to
@@ -375,8 +374,7 @@ class TestGrowthPeriodSeconds:
         assert result.danger_ok == 7 * 24 * 3600
 
     # frob:tests \
-    # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_unknown_unit_is_\
-    # err kind="unit"
+    # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_unknown_unit_is_err kind="unit"  # noqa: E501
     # frob:tests src/frob/strata/_models.py::Growth.period_seconds
     def test_unknown_unit_is_err(self) -> None:
         """An unrecognized period unit fails closed with

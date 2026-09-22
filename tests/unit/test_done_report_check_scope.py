@@ -47,6 +47,7 @@ class _FakeProc:
 
 
 # frob:tests src/frob/app/ticket_runner/_verify.py::_done_report_check_budget_s \
+# frob:tests src/frob/app/ticket_runner/_verify.py::_done_report_check_budget_s \
 class TestDoneReportCheckBudgetS:
     """Criterion 2: `[tool.frob] done_report_check_budget_s` in
     `pyproject.toml`, default 300."""
@@ -77,6 +78,7 @@ class TestDoneReportCheckBudgetS:
         assert _verify._done_report_check_budget_s(tmp_path) == 300
 
 
+# frob:tests src/frob/app/ticket_runner/_verify.py::_done_report_touched_files \
 # frob:tests src/frob/app/ticket_runner/_verify.py::_done_report_touched_files \
 class TestDoneReportTouchedFiles:
     """Criterion 1: `--files` scoped to the diff-touched set plus direct
@@ -124,6 +126,7 @@ class TestDoneReportTouchedFiles:
         assert captured["touched"] == frozenset({"src/frob/x.py"})
 
 
+# frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
 # frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
 class TestSharedCheckSpawnFnTimeout:
     """Proves `_shared_check_spawn_fn`'s `timeout` parameter defaults to

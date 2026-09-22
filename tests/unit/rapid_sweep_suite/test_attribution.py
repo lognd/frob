@@ -932,7 +932,8 @@ class TestReverifyUnfiledPairsAtFileTime:
         return Ok(_Proc(stdout))
 
     # frob:ticket T-3222
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
     def test_still_live_pair_is_kept(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -958,7 +959,8 @@ class TestReverifyUnfiledPairsAtFileTime:
         assert true_count == 1
 
     # frob:ticket T-3222
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
     def test_vanished_pair_is_dropped_and_recorded_as_debt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -985,7 +987,8 @@ class TestReverifyUnfiledPairsAtFileTime:
         assert record["skipped"] == "sweep-finding-vanished-before-file:RULE1:a.py"
 
     # frob:ticket T-3222
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_reverify_unfiled_pairs_at_file_time
     def test_unmeasurable_files_everything_as_before(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

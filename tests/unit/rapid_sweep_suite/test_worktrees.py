@@ -75,8 +75,7 @@ class TestSweepWorktreesAheadOfMain:
 
     def test_clean_worktree_one_commit_ahead_is_kept(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain\
-        # .test_clean_worktree_one_commit_ahead_is_kept
+        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain.test_clean_worktree_one_commit_ahead_is_kept  # noqa: E501
         repo = tmp_path / "main"
         _git_init(repo)
         wt = _add_agent_worktree(repo, "t-9001", "t-9001")
@@ -101,8 +100,7 @@ class TestSweepWorktreesAheadOfMain:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain\
-        # .test_clean_worktree_zero_ahead_ticket_done_is_removed
+        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain.test_clean_worktree_zero_ahead_ticket_done_is_removed  # noqa: E501
         repo = tmp_path / "main"
         _git_init(repo)
         _commit_file(
@@ -133,8 +131,7 @@ class TestSweepWorktreesAheadOfMain:
         independent ahead-of-main gate -- proving the fix does not rely
         on the signal detector at all."""
         # frob:tests \
-        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain\
-        # .test_clean_worktree_ahead_survives_even_with_done_report
+        # tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepWorktreesAheadOfMain.test_clean_worktree_ahead_survives_even_with_done_report  # noqa: E501
         repo = tmp_path / "main"
         _git_init(repo)
         wt = _add_agent_worktree(repo, "t-9003", "t-9003")

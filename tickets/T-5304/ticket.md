@@ -1,5 +1,5 @@
 ---
-id: T-draft-667e124d
+id: T-5304
 title: New advisory Severity tier that never fails a gate (LAUNCH family)
 state: queued
 kind: feature

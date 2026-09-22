@@ -178,7 +178,8 @@ class TestCloseResolvedSweepTickets:
     next time the sweep can prove it, reusing the rolling-baseline diff
     the sweep already computes for the opposite direction."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_parse_sweep_ticket_identities
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_parse_sweep_ticket_identities
     def test_non_sweep_ticket_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_non_sweep_ticket_returns_none  # noqa: E501
         ticket_id = _seed_ticket(tmp_path)
@@ -189,7 +190,8 @@ class TestCloseResolvedSweepTickets:
         ticket = queue.danger_ok.tickets[ticket_id]
         assert _parse_sweep_ticket_identities(ticket) is None
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_parse_sweep_ticket_identities
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_parse_sweep_ticket_identities
     def test_parses_a_sweep_titled_ticket_identity_set(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets.test_parses_a_sweep_titled_ticket_identity_set  # noqa: E501
         findings = frozenset({("RULE1", "a.py"), ("RULE2", "b.py")})

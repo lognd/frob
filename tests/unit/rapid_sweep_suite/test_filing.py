@@ -835,8 +835,10 @@ class TestFileRegressionTicket:
         )
         assert filed is not None
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_partition_findings_by_attribution
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_partition_findings_by_attribution
     def test_unattributed_is_filed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1071,7 +1073,8 @@ class TestFileRegressionTicket:
         )
 
     # frob:ticket T-3051
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_dispose_to_existing_duplicate_or_none
     def test_unrelated_duplicate_finding_in_a_different_file_still_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

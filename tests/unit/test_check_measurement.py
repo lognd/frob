@@ -42,8 +42,7 @@ class TestUnmeasuredResults:
     # frob:tests src/frob/check/__init__.py::CheckResult.unmeasured_results
     def test_empty_when_every_result_measured(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_e\
-        # very_result_measured
+        # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_every_result_measured  # noqa: E501
         result = CheckResult(
             path=".", results=[_measured("gate:COV"), _measured("ruff-check")]
         )
@@ -52,8 +51,7 @@ class TestUnmeasuredResults:
     # frob:tests src/frob/check/__init__.py::CheckResult.unmeasured_results
     def test_lists_every_not_measured_result(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_\
-        # not_measured_result
+        # tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_not_measured_result  # noqa: E501
         not_measured = _not_measured("gate:FLAGCOV", "no commands declared")
         result = CheckResult(path=".", results=[_measured("gate:COV"), not_measured])
         assert result.unmeasured_results == [not_measured]
@@ -66,15 +64,13 @@ class TestAsTextUnmeasuredSection:
 
     def test_section_absent_when_everything_measured(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection.test_sectio\
-        # n_absent_when_everything_measured
+        # tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection.test_section_absent_when_everything_measured  # noqa: E501
         result = CheckResult(path=".", results=[_measured("gate:COV")])
         assert "Unmeasured gates" not in result.as_text()
 
     def test_section_present_and_names_the_gate_and_reason(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection.test_sectio\
-        # n_present_and_names_the_gate_and_reason
+        # tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection.test_section_present_and_names_the_gate_and_reason  # noqa: E501
         result = CheckResult(
             path=".",
             results=[_not_measured("gate:FLAGCOV", "no commands declared")],
@@ -86,8 +82,7 @@ class TestAsTextUnmeasuredSection:
 
     def test_json_exposes_measurement_without_a_dedicated_key(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection.test_json_e\
-        # xposes_measurement_without_a_dedicated_key
+        # tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection.test_json_exposes_measurement_without_a_dedicated_key  # noqa: E501
         # T-2391 acceptance[0]: a --json consumer can find the same
         # information as_text prints, per-result, via ToolResult's own
         # computed fields -- CheckResult.as_json needed no reshape.
@@ -111,16 +106,14 @@ class TestSilentNonzeroExit:
     # frob:tests src/frob/check/__init__.py::CheckResult.unmeasured_results
     def test_listed_in_unmeasured_results(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_listed_in_un\
-        # measured_results
+        # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_listed_in_unmeasured_results  # noqa: E501
         silent = _silent_nonzero_exit("ty", "linux: no issues; darwin: no issues")
         result = CheckResult(path=".", results=[_measured("gate:COV"), silent])
         assert result.unmeasured_results == [silent]
 
     def test_as_text_renders_unres_not_fail(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_as_text_rend\
-        # ers_unres_not_fail
+        # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_as_text_renders_unres_not_fail  # noqa: E501
         result = CheckResult(
             path=".",
             results=[
@@ -133,8 +126,7 @@ class TestSilentNonzeroExit:
 
     def test_as_text_lists_reason_with_exit_code_and_summary(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_as_text_list\
-        # s_reason_with_exit_code_and_summary
+        # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_as_text_lists_reason_with_exit_code_and_summary  # noqa: E501
         result = CheckResult(
             path=".",
             results=[_silent_nonzero_exit("ty", "darwin: no issues")],
@@ -147,8 +139,7 @@ class TestSilentNonzeroExit:
 
     def test_a_real_failure_with_diagnostics_still_renders_fail(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_a_real_failu\
-        # re_with_diagnostics_still_renders_fail
+        # tests/unit/test_check_measurement.py::TestSilentNonzeroExit.test_a_real_failure_with_diagnostics_still_renders_fail  # noqa: E501
         # Guardrail: this predicate must never soften a genuine failure --
         # tool_unavailable_result/tool_disabled_result/ruff-check's
         # malformed-JSON error all attach a real error diagnostic, so

@@ -107,12 +107,67 @@ class TestLandParityDocTestGate:
         never a crash)."""
         assert land_parity_doc_test_gate(repo) == ()
 
+    # frob:tests src/frob/gates/_land_parity.py::land_parity_doc_test_gate  # noqa: E501
+    def test_new_public_symbol_with_only_test_side_tests_edge_is_quiet(
+        self, repo: Path
+    ) -> None:
+        """POSITIVE CONTROL (T-5299): a new public symbol carries a
+        `frob:doc` directive but NO `frob:tests` directive above its own
+        def -- its ONLY test coverage is a `frob:tests` declaration living
+        on the TEST symbol, in the test file, per T-4710's convention
+        (exactly the shape `fix_test010_redundant_test_declaration`
+        leaves behind after deleting a redundant production-side copy,
+        T-5261/T-5289). Before T-5299 this lexical-only check reported
+        `frob:tests` missing regardless; the graph's derived `EdgeKind.
+        TESTS` edge (reoriented so `edge.src` always names the production
+        symbol) must satisfy the `frob:tests` family now."""
+        new_file = repo / "src" / "covered_via_test_side.py"
+        new_file.write_text(
+            "# frob:doc docs/modules/example.md#brand-new-public-function\n"
+            "def brand_new_public_function():\n"
+            "    return 1\n"
+        )
+        (repo / "tests").mkdir(exist_ok=True)
+        (repo / "tests" / "test_covered_via_test_side.py").write_text(
+            "# frob:tests src/covered_via_test_side.py::brand_new_public_function\n"
+            "def test_brand_new_public_function():\n"
+            "    assert True\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        assert land_parity_doc_test_gate(repo) == ()
+
+    # frob:tests src/frob/gates/_land_parity.py::land_parity_doc_test_gate  # noqa: E501
+    def test_new_public_symbol_with_neither_lexical_nor_test_side_edge_fires(
+        self, repo: Path
+    ) -> None:
+        """NEGATIVE CONTROL (T-5299): a new public symbol with a
+        `frob:doc` directive but NO `frob:tests` directive above its own
+        def, and no test file declaring a test-side `frob:tests` edge
+        onto it either -- genuinely has no test coverage at all, and must
+        still be reported for the `frob:tests` family (the T-5299 fix
+        must not become "always quiet")."""
+        new_file = repo / "src" / "truly_uncovered.py"
+        new_file.write_text(
+            "# frob:doc docs/modules/example.md#brand-new-public-function\n"
+            "def brand_new_public_function():\n"
+            "    return 1\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        violations = land_parity_doc_test_gate(repo)
+        assert len(violations) == 1
+        assert violations[0].rule == "LANDPARITY001"
+        assert violations[0].file == "src/truly_uncovered.py"
+        assert "frob:tests" in violations[0].message
+
 
 class TestLandParityLongFunctionGate:
     """LANDPARITY002: `frob check`-visible mirror of T-2214's own
     diff-scoped ARCH001 pre-land assertion (`_assert_diff_does_not_
     worsen_long_functions_pre_land`)."""
-# frob:tests src/frob/gates/_land_parity.py::land_parity_long_function_gate  # noqa: E501
+
+    # frob:tests src/frob/gates/_land_parity.py::land_parity_long_function_gate  # noqa: E501
 
     # frob:tests tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate.test_new_over_threshold_function_fires  # noqa: E501
     def test_new_over_threshold_function_fires(self, repo: Path) -> None:

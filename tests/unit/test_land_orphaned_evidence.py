@@ -140,8 +140,7 @@ class TestOrphanedEvidenceDeletion:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion.test_\
-        # refuses_when_branch_deletes_evidence_bound_test
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion.test_refuses_when_branch_deletes_evidence_bound_test  # noqa: E501
         # This is the FAIL-THEN-PASS proof for T-1946 acceptance 1: before
         # _check_orphaned_evidence_deletion existed, nothing refused this
         # shape -- the branch would land, and the orphan would only
@@ -188,8 +187,7 @@ class TestOrphanedEvidenceDeletion:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion.test_\
-        # deletion_of_unbound_test_lands_cleanly
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion.test_deletion_of_unbound_test_lands_cleanly  # noqa: E501
         # T-1946 acceptance 2: no false refusal when nothing else cites
         # the deleted node.
         wt = repo.parent / "wt"
@@ -216,8 +214,7 @@ class TestOrphanedEvidenceDeletion:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion.test_\
-        # rename_that_repoints_evidence_in_same_diff_is_accepted
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion.test_rename_that_repoints_evidence_in_same_diff_is_accepted  # noqa: E501
         # T-1946 acceptance 3: a rename that ALSO re-points the affected
         # ticket's evidence, in the same diff, must not be refused.
         wt = repo.parent / "wt"
@@ -281,9 +278,7 @@ class TestOrphanedEvidenceDeletionOnArchivedTicket:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArch\
-        # ivedTicket.test_refuses_when_branch_deletes_evidence_bound_test_on_an_archive\
-        # d_ticket
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArchivedTicket.test_refuses_when_branch_deletes_evidence_bound_test_on_an_archived_ticket  # noqa: E501
         # T-2017 (MUST FAIL on the pre-fix code, matching T-1963's real
         # incident exactly): other_id is DONE and ARCHIVED -- moved out
         # of the active ledger into tickets-archive.md -- before the
@@ -330,8 +325,7 @@ class TestOrphanedEvidenceDeletionOnArchivedTicket:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArch\
-        # ivedTicket.test_deletion_unbound_to_any_archived_ticket_still_lands_cleanly
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArchivedTicket.test_deletion_unbound_to_any_archived_ticket_still_lands_cleanly  # noqa: E501
         # Sanity companion (acceptance criterion 4): a real archived
         # ticket exists, but its evidence is untouched by this diff --
         # must not over-refuse.
@@ -386,8 +380,7 @@ class TestOrphanEvidenceCheckOutcome:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.tes\
-        # t_skipped_unmeasured_recorded_and_logged_on_collection_failure
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_skipped_unmeasured_recorded_and_logged_on_collection_failure  # noqa: E501
         # T-2255 acceptance 1 (MUST FAIL on pre-fix code): the exact
         # normal-case shape (a fresh worktree, `collect_python_tests`
         # fails because natives aren't built) must record SKIPPED_
@@ -433,8 +426,7 @@ class TestOrphanEvidenceCheckOutcome:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.tes\
-        # t_ran_recorded_on_healthy_pass
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_ran_recorded_on_healthy_pass  # noqa: E501
         # MUST-STILL-PASS control's own outcome-record companion: a
         # normal, unbound-deletion land (T-1946's own must-still-pass
         # shape) records RAN, not SKIPPED_UNMEASURED.
@@ -470,8 +462,7 @@ class TestOrphanEvidenceCheckOutcome:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.tes\
-        # t_ran_recorded_even_when_check_refuses
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_ran_recorded_even_when_check_refuses  # noqa: E501
         # A refusal is its own unmistakable Err -- RAN still records
         # (the check DID run), no separate marker needed for the refuse
         # case itself.
@@ -520,8 +511,7 @@ class TestOrphanEvidenceCheckOutcome:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.tes\
-        # t_skipped_unmeasured_does_not_block_the_land
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_skipped_unmeasured_does_not_block_the_land  # noqa: E501
         # T-2255 acceptance 4: a worktree that genuinely cannot collect
         # does not become unlandable -- the check still returns Ok(None)
         # on a collection failure, exactly as before T-2255. Only the

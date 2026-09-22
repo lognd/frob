@@ -216,8 +216,7 @@ class TestTick010StaleLeaseReport:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_holder_\
-        # dead_lease_reports_as_error_with_remedy
+        # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_holder_dead_lease_reports_as_error_with_remedy  # noqa: E501
         # T-4319: FORCE the holder-dead condition directly -- a present
         # worktree, a real non-terminal ticket, and a `recorded_at` well
         # past `LEASE_TTL_SECONDS` (so `is_lease_ttl_expired` reads
@@ -257,8 +256,7 @@ class TestTick010StaleLeaseReport:
     # frob:tests src/frob/gates/_tickets_gate.py::_tick010_stale_lease_report
     def test_live_holder_lease_is_silent(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_live_ho\
-        # lder_lease_is_silent
+        # tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport.test_live_holder_lease_is_silent  # noqa: E501
         # T-4319's negative control: the SAME present worktree and real
         # ticket as above, but `recorded_at` is fresh (well within
         # `LEASE_TTL_SECONDS`) -- a slow-but-live agent must never be

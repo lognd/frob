@@ -37,8 +37,7 @@ class TestColorizedLevelFormatter:
     # frob:tests src/frob/app/check_runner.py::_ColorizedLevelFormatter.format kind="unit"  # noqa: E501
     def test_debug_passes_through_unchanged(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.\
-        # test_debug_passes_through_unchanged
+        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_debug_passes_through_unchanged  # noqa: E501
         fmt = _ColorizedLevelFormatter(logging.Formatter("%(message)s"), color=True)
         out = fmt.format(_record(logging.DEBUG, "debug line"))
         assert out == "debug line"
@@ -46,8 +45,7 @@ class TestColorizedLevelFormatter:
     # frob:tests src/frob/app/check_runner.py::_ColorizedLevelFormatter.format kind="unit"  # noqa: E501
     def test_info_passes_through_unchanged(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.\
-        # test_info_passes_through_unchanged
+        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_info_passes_through_unchanged  # noqa: E501
         fmt = _ColorizedLevelFormatter(logging.Formatter("%(message)s"), color=True)
         out = fmt.format(_record(logging.INFO, "info line"))
         assert out == "info line"
@@ -55,8 +53,7 @@ class TestColorizedLevelFormatter:
     # frob:tests src/frob/app/check_runner.py::_ColorizedLevelFormatter.format kind="unit"  # noqa: E501
     def test_warning_is_painted_yellow_when_color_on(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.\
-        # test_warning_is_painted_yellow_when_color_on
+        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_warning_is_painted_yellow_when_color_on  # noqa: E501
         fmt = _ColorizedLevelFormatter(logging.Formatter("%(message)s"), color=True)
         out = fmt.format(_record(logging.WARNING, "warn line"))
         assert out != "warn line"
@@ -66,8 +63,7 @@ class TestColorizedLevelFormatter:
     # frob:tests src/frob/app/check_runner.py::_ColorizedLevelFormatter.format kind="unit"  # noqa: E501
     def test_error_is_painted_red_when_color_on(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.\
-        # test_error_is_painted_red_when_color_on
+        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_error_is_painted_red_when_color_on  # noqa: E501
         fmt = _ColorizedLevelFormatter(logging.Formatter("%(message)s"), color=True)
         out = fmt.format(_record(logging.ERROR, "error line"))
         assert out != "error line"
@@ -77,8 +73,7 @@ class TestColorizedLevelFormatter:
     # frob:tests src/frob/app/check_runner.py::_ColorizedLevelFormatter.format kind="unit"  # noqa: E501
     def test_error_is_unpainted_when_color_off(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.\
-        # test_error_is_unpainted_when_color_off
+        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_error_is_unpainted_when_color_off  # noqa: E501
         fmt = _ColorizedLevelFormatter(logging.Formatter("%(message)s"), color=False)
         out = fmt.format(_record(logging.ERROR, "error line"))
         assert out == "error line"
@@ -86,8 +81,7 @@ class TestColorizedLevelFormatter:
     # frob:tests src/frob/app/check_runner.py::_ColorizedLevelFormatter.format kind="unit"  # noqa: E501
     def test_critical_uses_the_error_branch_too(self) -> None:
         # frob:tests \
-        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.\
-        # test_critical_uses_the_error_branch_too
+        # tests/unit/test_check_runner_formatter_t1276.py::TestColorizedLevelFormatter.test_critical_uses_the_error_branch_too  # noqa: E501
         # CRITICAL is >= logging.ERROR, so it must take the same red-paint
         # branch as ERROR itself (the `>=` comparison, not an `==`).
         fmt = _ColorizedLevelFormatter(logging.Formatter("%(message)s"), color=True)

@@ -81,7 +81,8 @@ def _visible_on_primary(primary: Path, needle: str, ticket_id: str = "T-0001") -
 
 class TestLedgerMirrorReachesMain:
     # frob:ticket T-2563
-    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_ledger_change_to_primary
+    # frob:tests \
+    # src/frob/app/ticket_runner/_ledger_mirror.py::mirror_ledger_change_to_primary
     def test_scope_edit_from_worktree_is_visible_on_primary(
         self, tmp_path: Path
     ) -> None:
@@ -225,7 +226,8 @@ class TestLedgerMirrorReachesMain:
 
 class TestLedgerMirrorCarriesNothingElse:
     # frob:ticket T-2563
-    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_ledger_change_to_primary
+    # frob:tests \
+    # src/frob/app/ticket_runner/_ledger_mirror.py::mirror_ledger_change_to_primary
     def test_worktree_source_changes_do_not_leak_to_primary(
         self, tmp_path: Path
     ) -> None:
@@ -920,7 +922,8 @@ class TestEvidenceRebindMirror:
 
     # frob:ticket T-4267
     # frob:tests src/frob/tickets/_evidence.py::replace_evidence
-    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
+    # frob:tests \
+    # src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
     def test_replace_from_worktree_is_visible_on_primary(self, tmp_path: Path) -> None:
         """The headline positive control: `replace_evidence` run in a
         worktree must reach the primary checkout without a land."""
@@ -951,7 +954,8 @@ class TestEvidenceRebindMirror:
 
     # frob:ticket T-4267
     # frob:tests src/frob/tickets/_evidence.py::remove_evidence
-    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
+    # frob:tests \
+    # src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
     def test_remove_from_worktree_is_visible_on_primary(self, tmp_path: Path) -> None:
         """Same headline control for `remove_evidence`."""
         from frob.tickets._evidence import remove_evidence
@@ -987,7 +991,8 @@ class TestEvidenceRebindMirror:
         assert _visible_on_primary(primary, "- tests/kept.py::test_kept")
 
     # frob:ticket T-4267
-    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
+    # frob:tests \
+    # src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
     def test_prior_scope_mirror_then_replace_does_not_leave_the_old_id_resurrectable(
         self, tmp_path: Path
     ) -> None:
@@ -1046,7 +1051,8 @@ class TestEvidenceRebindMirror:
         assert "- tests/a.py::test_new" in merged_text
 
     # frob:ticket T-4267
-    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
+    # frob:tests \
+    # src/frob/app/ticket_runner/_ledger_mirror.py::mirror_evidence_rebind_to_primary
     def test_running_in_the_primary_checkout_is_a_no_op(self, tmp_path: Path) -> None:
         """Same coordinator-cost-nothing contract as the generic mirror:
         `replace_evidence` run directly in the primary checkout must not
@@ -1126,7 +1132,8 @@ class TestMirrorPreservesEvidence:
         assert write_result.is_ok, write_result.err
 
     # frob:ticket T-3892
-    # frob:tests src/frob/app/ticket_runner/_ledger_mirror.py::_preserve_primary_only_evidence
+    # frob:tests \
+    # src/frob/app/ticket_runner/_ledger_mirror.py::_preserve_primary_only_evidence
     def test_preserve_evidence_helper_unions_primary_only_ids(self) -> None:
         """Unit-level control on the pure helper: an evidence id present
         only on the primary side is unioned into the mirrored text, in

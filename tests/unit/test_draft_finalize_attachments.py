@@ -212,6 +212,7 @@ class TestBackfillStaleDraftAttachmentPaths:
 
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
     # frob:tests src/frob/tickets/_draft_finalize.py::AttachmentBackfillReport  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths  # noqa: E501
     def test_repairs_a_pre_t2199_stale_draft_pointer(self, tmp_path: Path) -> None:
         real_id = "T-2195"
         draft_id = "T-draft-0bd874ac"

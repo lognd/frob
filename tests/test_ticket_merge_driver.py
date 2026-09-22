@@ -628,8 +628,7 @@ class TestMergeDriverContentShapeDispatch:
 
     # frob:ticket T-4201
     # frob:tests \
-    # tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_singl\
-    # e_ticket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence
+    # tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_single_ticket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence  # noqa: E501
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_merge_single_ticket_file
     def test_single_ticket_file_unchanged_mirror_side_does_not_resurrect_stale_evidence(
         self, tmp_path: Path

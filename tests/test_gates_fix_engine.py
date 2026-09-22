@@ -992,7 +992,8 @@ class TestFixTest010RedundantTestDeclaration:
         )
         return [v for v in violations if v.rule == "TEST010"]
 
-    # frob:tests src/frob/gates/_fix_engine_text.py::fix_test010_redundant_test_declaration
+    # frob:tests \
+    # src/frob/gates/_fix_engine_text.py::fix_test010_redundant_test_declaration
     def test_delete_case_fires_test010_and_fix_removes_the_line(
         self, tmp_path: Path
     ) -> None:

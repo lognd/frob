@@ -865,7 +865,8 @@ class TestBudgetSkippedGroupsFromPayload:
     stage_groups` alone cannot see."""
 
     # frob:ticket T-2713
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_skipped_groups_from_payload
+    # frob:tests \
+    # src/frob/app/ticket_runner/_verify.py::_budget_skipped_groups_from_payload
     def test_reads_top_level_skipped_groups(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_reads_top_level_skipped_groups  # noqa: E501
@@ -878,7 +879,8 @@ class TestBudgetSkippedGroupsFromPayload:
         assert skipped == ("gates-fast", "gates-native", "lint", "static")
 
     # frob:ticket T-2713
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_skipped_groups_from_payload
+    # frob:tests \
+    # src/frob/app/ticket_runner/_verify.py::_budget_skipped_groups_from_payload
     def test_empty_when_complete_or_absent(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.test_empty_when_complete_or_absent  # noqa: E501
@@ -906,7 +908,8 @@ class TestBudgetDeferredGroupsFromStdout:
     ran, not just that the sweep is unmeasured."""
 
     # frob:ticket T-2456
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
+    # frob:tests \
+    # src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
     def test_extracts_deferred_groups_from_json_stdout(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_extracts_deferred_groups_from_json_stdout  # noqa: E501
@@ -919,7 +922,8 @@ class TestBudgetDeferredGroupsFromStdout:
         assert deferred == ("static",)
 
     # frob:ticket T-2456
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
+    # frob:tests \
+    # src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
     def test_empty_for_non_json_stdout(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_for_non_json_stdout  # noqa: E501
@@ -928,7 +932,8 @@ class TestBudgetDeferredGroupsFromStdout:
         assert ticket_runner._budget_deferred_groups_from_stdout("not json") == ()
 
     # frob:ticket T-2456
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
+    # frob:tests \
+    # src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout
     def test_empty_when_no_deferral_present(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.test_empty_when_no_deferral_present  # noqa: E501
@@ -967,6 +972,9 @@ class TestBudgetDeferredGroupsFromStdout:
 
 
 # frob:ticket T-3305
+# frob:tests src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn frob:tests \
+# src/frob/app/ticket_runner/_verify.py::_python_for_tree frob:tests \
+# src/frob/app/ticket_runner/_verify.py::_venv_python_has_frob_importable \
 # frob:tests src/frob/app/ticket_runner/_verify.py::_check_gates_summary_fn \
 # frob:tests src/frob/app/ticket_runner/_verify.py::_python_for_tree \
 # frob:tests src/frob/app/ticket_runner/_verify.py::_venv_python_has_frob_importable \
@@ -1101,6 +1109,7 @@ class TestPythonForTree:
 
 
 # frob:ticket T-2076
+# frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
 # frob:tests src/frob/app/ticket_runner/_verify.py::_shared_check_spawn_fn \
 class TestSharedCheckSpawnFn:
     """Asserts `_shared_check_spawn_fn` spawns `frob check --ticket <id>`

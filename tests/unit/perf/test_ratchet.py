@@ -56,6 +56,7 @@ class TestPersistRoundTrip:
     """`save_ratchet_findings`/`load_ratchet_findings` round trip."""
 
     # frob:tests src/frob/perf/_ratchet.py::save_ratchet_findings  # noqa: E501
+    # frob:tests src/frob/perf/_ratchet.py::load_ratchet_findings  # noqa: E501
     def test_save_then_load_round_trips(self, tmp_path: Path) -> None:
         findings = [
             RatchetFinding(

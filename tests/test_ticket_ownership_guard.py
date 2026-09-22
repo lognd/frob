@@ -82,8 +82,7 @@ class TestMainWriteToLeasedTicketIsRefused:
         self, repo: Path, worktree_b: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_ownership_guard.py::TestMainWriteToLeasedTicketIsRefused.te\
-        # st_main_side_write_to_a_worktree_leased_ticket_is_refused
+        # tests/test_ticket_ownership_guard.py::TestMainWriteToLeasedTicketIsRefused.test_main_side_write_to_a_worktree_leased_ticket_is_refused  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         ticket = created.danger_ok
@@ -118,8 +117,7 @@ class TestLeaseHolderCanStillWriteItsOwnTicket:
         self, repo: Path, worktree_b: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicke\
-        # t.test_holder_worktree_write_still_succeeds
+        # tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicket.test_holder_worktree_write_still_succeeds  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         ticket = created.danger_ok
@@ -135,8 +133,7 @@ class TestLeaseHolderCanStillWriteItsOwnTicket:
     # frob:tests src/frob/tickets/_leases.py::enforce_ticket_ownership  # noqa: E501
     def test_unleased_ticket_is_writable_from_main(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicke\
-        # t.test_unleased_ticket_is_writable_from_main
+        # tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicket.test_unleased_ticket_is_writable_from_main  # noqa: E501
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         ticket = created.danger_ok

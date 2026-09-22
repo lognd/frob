@@ -215,7 +215,8 @@ class TestDisposableSquashWorktree:
     three-way squash merge somewhere that is not the shared checkout, and
     reports conflicts as data rather than collapsing them into a failure."""
 
-    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests \
+    # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     # frob:tests src/frob/tickets/_land_compose.py::SquashStage
     def test_clean_squash_reports_no_conflicts(self, scratch_repo: Path) -> None:
         """Given a disjoint feature branch, when it is squashed in a
@@ -231,7 +232,8 @@ class TestDisposableSquashWorktree:
             assert (stage.worktree / "b.txt").read_text() == "feature content\n"
 
     # frob:ticket T-4431
-    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests \
+    # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_native_source_mtimes_are_seeded_against_the_disposable_worktree(
         self, scratch_repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -256,7 +258,8 @@ class TestDisposableSquashWorktree:
             assert seeded_worktree == staged.danger_ok.worktree
 
     # frob:ticket T-4411
-    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests \
+    # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_cache_db_is_seeded_against_the_disposable_worktree(
         self, scratch_repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -314,7 +317,8 @@ class TestDisposableSquashWorktree:
             "load_graph cold-started against a warm-seeded worktree cache"
         )
 
-    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests \
+    # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     # frob:tests src/frob/tickets/_land_compose.py::SquashStage
     def test_conflicting_squash_reports_the_conflicted_paths(
         self, conflicting_repo: Path
@@ -328,7 +332,8 @@ class TestDisposableSquashWorktree:
             assert staged.is_ok, "a conflict must be data, not an Err"
             assert staged.danger_ok.conflicted == ("a.txt",)
 
-    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests \
+    # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_root_worktree_untouched_by_clean_squash(self, scratch_repo: Path) -> None:
         """Given a clean squash, when it runs, then the shared checkout's
         porcelain status and HEAD are byte-identical before and after."""
@@ -344,7 +349,8 @@ class TestDisposableSquashWorktree:
         assert _git_out(scratch_repo, "status", "--porcelain") == before
         assert _git_out(scratch_repo, "rev-parse", "HEAD").strip() == before_head
 
-    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests \
+    # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_root_worktree_untouched_by_conflicted_squash(
         self, conflicting_repo: Path
     ) -> None:

@@ -101,8 +101,7 @@ class TestRestore:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestRestore.test_restores_a_non_terminal_a\
-        # rchived_ticket_to_active
+        # tests/unit/test_ticket_restore.py::TestRestore.test_restores_a_non_terminal_archived_ticket_to_active  # noqa: E501
         """T-0450's own exact incident shape: a `queued` ticket stranded
         under `tickets/archive/` moves back into the active store, its
         state left untouched (restore repairs a LOCATION invariant, not a
@@ -134,8 +133,7 @@ class TestRestore:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestRestore.test_restore_reverses_the_t298\
-        # 6_attachment_path_rewrite
+        # tests/unit/test_ticket_restore.py::TestRestore.test_restore_reverses_the_t2986_attachment_path_rewrite  # noqa: E501
         """A restored ticket's archive-prefixed attachment path
         (`archive/<id>/attachments/...`, the shape `_rewrite_moved_
         attachment_paths` -- T-2986 -- leaves behind on ARCHIVE) must read
@@ -175,8 +173,7 @@ class TestRestore:
     # frob:tests src/frob/tickets/_archive.py::restore
     def test_refuses_when_destination_already_exists(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestRestore.test_refuses_when_destination_\
-        # already_exists
+        # tests/unit/test_ticket_restore.py::TestRestore.test_refuses_when_destination_already_exists  # noqa: E501
         """A duplicate id (archived AND active copies both present) must
         refuse loudly, never silently overwrite or merge either side --
         the same 'refuse loudly' posture this ticket's whole series is
@@ -233,8 +230,7 @@ class TestArchiveRefusesNonTerminal:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestArchiveRefusesNonTerminal.test_refuses\
-        # _a_non_terminal_ticket_reaching_the_move_loop
+        # tests/unit/test_ticket_restore.py::TestArchiveRefusesNonTerminal.test_refuses_a_non_terminal_ticket_reaching_the_move_loop  # noqa: E501
         """Must-FIRE: calling the move loop directly with a queued
         ticket in `to_archive` (bypassing the normal filter, simulating a
         future caller/refactor that weakens it) refuses loudly and moves
@@ -273,8 +269,7 @@ class TestArchiveRefusesNonTerminal:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestArchiveRefusesNonTerminal.test_normal_\
-        # archive_of_done_tickets_still_moves_them
+        # tests/unit/test_ticket_restore.py::TestArchiveRefusesNonTerminal.test_normal_archive_of_done_tickets_still_moves_them  # noqa: E501
         """Must-STAY-quiet: the ordinary path (a genuinely done ticket)
         is completely unaffected by T-2954's new guard -- `archive()`
         still moves it exactly as before."""
@@ -313,8 +308,7 @@ class TestRestoreCli:
     # frob:tests src/frob/app/ticket_runner/_archive.py::_restore
     def test_restore_cli_wiring_delegates_and_commits(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_cli_wiring_del\
-        # egates_and_commits
+        # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_cli_wiring_delegates_and_commits  # noqa: E501
         """The end-to-end CLI path: `_restore` calls `frob.tickets.
         restore` and commits the WHOLE multi-path change (both the
         vacated archive directory and the new active one) in one commit
@@ -342,8 +336,7 @@ class TestRestoreCli:
 
     def test_restore_exits_when_ticket_id_missing(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_exits_when_tic\
-        # ket_id_missing
+        # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_exits_when_ticket_id_missing  # noqa: E501
         """Kills the `ticket_id is None or not ticket_reason` -> `and`
         mutant from the ticket_id side: a reason present but no id must
         still refuse."""
@@ -355,8 +348,7 @@ class TestRestoreCli:
 
     def test_restore_exits_when_reason_missing(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_exits_when_rea\
-        # son_missing
+        # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_exits_when_reason_missing  # noqa: E501
         """Kills the same mutant from the reason side: an id present but
         no --reason must still refuse."""
         from frob.app.config import AppConfig
@@ -368,8 +360,7 @@ class TestRestoreCli:
     # frob:ticket T-4145
     def test_restore_reason_flag_is_required_by_the_real_parser(self) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_reason_flag_is\
-        # _required_by_the_real_parser
+        # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_reason_flag_is_required_by_the_real_parser  # noqa: E501
         """Kills the `--reason ... required=True` -> `required=False`
         mutant directly: the REAL argparse tree (not a re-implementation)
         must refuse `frob ticket restore <id>` with no `--reason`."""

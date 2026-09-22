@@ -320,8 +320,7 @@ class TestRelativizeDiagPath:
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_same_drive_relativizes_normally(self) -> None:
         # frob:tests \
-        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
-        # same_drive_relativizes_normally
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_same_drive_relativizes_normally  # noqa: E501
         import ntpath
 
         from frob.app.ticket_runner._land_cmd import _relativize_diag_path
@@ -335,8 +334,7 @@ class TestRelativizeDiagPath:
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_cross_drive_diag_and_base_do_not_crash(self) -> None:
         # frob:tests \
-        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
-        # cross_drive_diag_and_base_do_not_crash
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_cross_drive_diag_and_base_do_not_crash  # noqa: E501
         # Defense in depth: `ntpath.relpath` RAISES ValueError when its
         # two arguments name different drives. Nothing in the current
         # call sites ever pairs a diag_file with a same-tree-foreign
@@ -362,8 +360,7 @@ class TestRelativizeDiagPath:
         self,
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
-        # live_and_baseline_pass_agree_across_differently_drived_trees
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_live_and_baseline_pass_agree_across_differently_drived_trees  # noqa: E501
         # T-4457's own acceptance shape: a GitHub-hosted Windows runner's
         # checkout (D:\a\frob\frob, the live pass's tree) and its
         # baseline snapshot (spawned under the process temp dir,
@@ -397,8 +394,7 @@ class TestRelativizeDiagPath:
         self,
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
-        # ntpath_absolute_snapshot_rooted_diag_file_matches_live_identity
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_ntpath_absolute_snapshot_rooted_diag_file_matches_live_identity  # noqa: E501
         # T-4461's own acceptance shape, ported from T-4457's sibling test
         # above: a baseline pass's `diag.file` reported as an ABSOLUTE
         # path under the snapshot root, relativized against that SAME
@@ -428,8 +424,7 @@ class TestRelativizeDiagPath:
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_relativize_diag_path
     def test_posix_absolute_tmp_snapshot_path_matches_live_identity(self) -> None:
         # frob:tests \
-        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
-        # posix_absolute_tmp_snapshot_path_matches_live_identity
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_posix_absolute_tmp_snapshot_path_matches_live_identity  # noqa: E501
         # The POSIX-side analogue of the ntpath test above: an absolute
         # `/tmp`-rooted snapshot path relativized against that same
         # snapshot root must agree with a live pass's identity for the
@@ -456,8 +451,7 @@ class TestRelativizeDiagPath:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_\
-        # symlinked_snapshot_diag_file_unresolved_matches_realpath_base
+        # tests/test_ticket_land_lint_diff_attribution.py::TestRelativizeDiagPath.test_symlinked_snapshot_diag_file_unresolved_matches_realpath_base  # noqa: E501
         # The genuine, filesystem-level REPRO of T-4461's bug class on
         # POSIX (no 8.3 short names exist here, but the same shape --
         # `diag_file` and `base` naming the identical file through two

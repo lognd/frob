@@ -1075,7 +1075,8 @@ class TestRunRefactor:
         assert "def greet" in mod_text
 
     # frob:ticket T-1854
-    # frob:tests src/frob/refactor/_transaction.py::_route_evidence_rebinds_through_replace_evidence
+    # frob:tests \
+    # src/frob/refactor/_transaction.py::_route_evidence_rebinds_through_replace_evidence  # noqa: E501
     def test_per_ticket_evidence_rewrite_routes_through_replace_evidence(
         self, tmp_path
     ):
@@ -1149,7 +1150,8 @@ class TestRunRefactor:
         assert "frob refactor rename" in latest.reason
 
     # frob:ticket T-1854
-    # frob:tests src/frob/refactor/_transaction.py::_route_evidence_rebinds_through_replace_evidence
+    # frob:tests \
+    # src/frob/refactor/_transaction.py::_route_evidence_rebinds_through_replace_evidence  # noqa: E501
     def test_evidence_rewrite_not_in_structured_evidence_falls_back_to_raw_op(
         self, tmp_path
     ):
@@ -1494,7 +1496,8 @@ class TestGitOps:
         assert result.danger_ok is False
 # frob:tests src/frob/refactor/_gitops.py::current_sha \
 
-    # frob:tests src/frob/refactor/_gitops.py::current_sha \
+    # frob:tests src/frob/refactor/_gitops.py::current_sha frob:tests \
+    # src/frob/refactor/_gitops.py::current_sha \
     # frob:tests src/frob/refactor/_gitops.py::current_sha \
     def test_current_sha_matches_head(self, tmp_path):
         # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_matches_head
@@ -1553,6 +1556,7 @@ class TestGitOps:
         assert result.is_err
         assert result.danger_err == RefactorError.GitError
 
+    # frob:tests src/frob/refactor/_gitops.py::current_sha \
     # frob:tests src/frob/refactor/_gitops.py::current_sha \
     def test_current_sha_not_a_git_repo(self, tmp_path):
         # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_not_a_git_repo

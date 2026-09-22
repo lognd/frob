@@ -88,10 +88,7 @@ def repo(tmp_path: Path) -> Path:
 
 
 # frob:waive WIRE001 reason="private test-seed helper used only by this module's own \
-# TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_emp\
-# ty -- module-local test-fixture builder, no production caller to wire it to by \
-# design, same waived shape as tests/unit/perf/test_hotpath_smells.py's own precedent" \
-# permanent="true"
+# TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty -- module-local test-fixture builder, no production caller to wire it to by design, same waived shape as tests/unit/perf/test_hotpath_smells.py's own precedent" permanent="true"  # noqa: E501
 def _seed_done_on_main(repo: Path, wt: Path, tid: str) -> None:
     """Simulate T-1618's passenger shape for real: transition `tid` to
     `DONE` in the worktree's OWN ledger (a valid state transition, so the

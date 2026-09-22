@@ -64,11 +64,9 @@ class TestSetNoScopeDeclared:
 
 # frob:ticket T-3081
 # frob:tests \
-# tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket.test_no_scope_de\
-# clared_round_trips_through_new_ticket
+# tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket.test_no_scope_declared_round_trips_through_new_ticket  # noqa: E501
 # frob:tests \
-# tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket.test_runs_last_p\
-# arallel_safe_round_trips_through_new_ticket
+# tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket.test_runs_last_parallel_safe_round_trips_through_new_ticket  # noqa: E501
 class TestTicketSpecFieldsSurviveNewTicket:
     """T-3081: `_ticket_from_spec` (`new_ticket`'s `Ticket(...)` builder)
     must copy EVERY bool+reason escape-hatch pair `TicketSpec` declares,

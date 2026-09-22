@@ -300,7 +300,8 @@ class TestPersistCommitStepFailure:
             "stderr": "hook refused: DirtyMain guard",
         }
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
     def test_writes_spawn_error_diagnostics(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure.test_writes_spawn_error_diagnostics  # noqa: E501
         from typani.result import Err
@@ -321,7 +322,8 @@ class TestPersistCommitStepFailure:
         assert "argv" not in payload
         assert "returncode" not in payload
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
+    # frob:tests \
+    # src/frob/app/ticket_runner/_rapid_sweep.py::_persist_commit_step_failure
     def test_swallows_its_own_write_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

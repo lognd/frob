@@ -23,8 +23,7 @@ class TestTest019DeflatedSymbols:
         TEST019 WARN Violation naming every suspect symref in its message."""
         # frob:ticket T-1877
         # frob:tests \
-        # tests/test_gates_test019.py::TestTest019DeflatedSymbols.test_flags_suspect_sy\
-        # mbol
+        # tests/test_gates_test019.py::TestTest019DeflatedSymbols.test_flags_suspect_symbol  # noqa: E501
         data = CoverageData(
             source_sha="deadbeef",
             suspect_deflated_symbols=("src/frob/pkg/a.py::helper",),
@@ -42,7 +41,6 @@ class TestTest019DeflatedSymbols:
         shape of clean input) emits no TEST019 Violation at all."""
         # frob:ticket T-1877
         # frob:tests \
-        # tests/test_gates_test019.py::TestTest019DeflatedSymbols.test_clean_when_no_su\
-        # spects
+        # tests/test_gates_test019.py::TestTest019DeflatedSymbols.test_clean_when_no_suspects  # noqa: E501
         data = CoverageData(source_sha="deadbeef")
         assert _test019_deflated_symbols(data) == ()

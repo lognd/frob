@@ -190,8 +190,7 @@ class TestTyCheckFilesResolveRoot:
         self, repo: Path, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land_ty_diff_attribution.py::TestTyCheckFilesResolveRoot.te\
-        # st_resolve_root_finds_ty_when_cwd_has_no_pyproject
+        # tests/test_ticket_land_ty_diff_attribution.py::TestTyCheckFilesResolveRoot.test_resolve_root_finds_ty_when_cwd_has_no_pyproject  # noqa: E501
         # A bare-PATH `uv run --project <no-pyproject-dir>` cannot resolve
         # `ty` (T-4257's measured Windows gap, its `ruff` sibling); before
         # T-4275 this call had no `resolve_root` parameter at all, so a
@@ -214,8 +213,7 @@ class TestTyCheckFilesResolveRoot:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land_ty_diff_attribution.py::TestTyCheckFilesResolveRoot.te\
-        # st_spawn_failure_reports_none_not_a_fabricated_clean_result
+        # tests/test_ticket_land_ty_diff_attribution.py::TestTyCheckFilesResolveRoot.test_spawn_failure_reports_none_not_a_fabricated_clean_result  # noqa: E501
         # T-4275: before this fix, feeding empty stdout/stderr to
         # `parse_ty` silently came back as a CLEAN `ToolResult` (its
         # line-scanner finds zero diagnostic lines in zero lines of

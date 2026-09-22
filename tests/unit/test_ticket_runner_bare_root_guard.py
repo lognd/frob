@@ -30,8 +30,7 @@ class TestTicketRunnerBareRootGuard:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGua\
-        # rd.test_ambient_cwd_with_no_frob_toml_or_git_is_refused
+        # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_ambient_cwd_with_no_frob_toml_or_git_is_refused  # noqa: E501
         """MUST-FIRE fixture: a bare (non-repo) directory as the ambient
         cwd is refused, and the refusal names the resolved directory."""
         monkeypatch.delenv("FROB_ROOT", raising=False)
@@ -48,8 +47,7 @@ class TestTicketRunnerBareRootGuard:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGua\
-        # rd.test_ambient_cwd_inside_a_real_frob_repo_still_works
+        # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_ambient_cwd_inside_a_real_frob_repo_still_works  # noqa: E501
         """MUST-STAY-QUIET fixture: the same ambient-cwd path still
         dispatches normally once the resolved root has a `.git` directory
         (a `frob.toml` file would satisfy the guard the same way -- a bare
@@ -67,8 +65,7 @@ class TestTicketRunnerBareRootGuard:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGua\
-        # rd.test_explicit_path_to_a_bare_directory_is_still_trusted
+        # tests/unit/test_ticket_runner_bare_root_guard.py::TestTicketRunnerBareRootGuard.test_explicit_path_to_a_bare_directory_is_still_trusted  # noqa: E501
         """An explicit `--path` (`ticket_path`) to a bare directory is a
         deliberate pin, not ambient drift -- the guard must not apply, or
         every `ticket_path=tmp_path`-based test in the wider suite would

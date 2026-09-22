@@ -1,7 +1,7 @@
 ---
 id: T-5299
 title: LANDPARITY001/T-2114 check ignores test-side frob:tests declarations (T-4710)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -47,12 +47,20 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-22'
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_missing_both_directives_fires
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_with_both_directives_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_no_diff_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_with_only_test_side_tests_edge_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_with_neither_lexical_nor_test_side_edge_fires
+designated_repro_test: tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_with_only_test_side_tests_edge_is_quiet
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5299
+branch: t-5299
 ---
 _new_public_symbols_in_file_missing_doc_or_test_edge (LANDPARITY001/T-2114) only
 scans the lexical comment block immediately above a new public symbol's def/class

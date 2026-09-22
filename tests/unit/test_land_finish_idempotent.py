@@ -108,8 +108,7 @@ class TestTicketTerminalStateOnMain:
 
     def test_done_ticket_uncommitted_on_disk_returns_none(self, repo: Path) -> None:
         # frob:tests \
-        # tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain.test\
-        # _done_ticket_uncommitted_on_disk_returns_none
+        # tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain.test_done_ticket_uncommitted_on_disk_returns_none  # noqa: E501
         """T-2949's actual repro shape: `state: done` sits on DISK
         (uncommitted -- e.g. an aborted land's own pre-commit staging) but
         `main`'s `HEAD` never advanced. Must read as non-terminal, never
@@ -309,8 +308,7 @@ class TestReadTicketStateAtHead:
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_read_ticket_state_at_head
     def test_reads_committed_state_not_dirty_working_tree(self, repo: Path) -> None:
         # frob:tests \
-        # tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_rea\
-        # ds_committed_state_not_dirty_working_tree
+        # tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_reads_committed_state_not_dirty_working_tree  # noqa: E501
         created = new_ticket(repo, _spec("Committed then dirtied"))
         tid = created.danger_ok.id
         _make_closeable(repo, tid)
@@ -325,6 +323,5 @@ class TestReadTicketStateAtHead:
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_read_ticket_state_at_head
     def test_returns_none_when_head_has_no_such_ticket(self, repo: Path) -> None:
         # frob:tests \
-        # tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_ret\
-        # urns_none_when_head_has_no_such_ticket
+        # tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_returns_none_when_head_has_no_such_ticket  # noqa: E501
         assert _read_ticket_state_at_head(repo, "T-9999") is None

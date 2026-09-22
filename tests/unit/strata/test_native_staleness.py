@@ -454,8 +454,10 @@ class TestSeedWorktreeNativeSourceMtimes:
         assert seeded == (name,)
         assert stale_natives(worktree) == ()
 
-    # frob:tests src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
-    # frob:tests src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
+    # frob:tests \
+    # src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
+    # frob:tests \
+    # src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
     def test_diverged_source_is_left_untouched_and_still_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -496,8 +498,10 @@ class TestSeedWorktreeNativeSourceMtimes:
         assert len(stale_natives(worktree)) == 1
 
     # frob:ticket T-4434
-    # frob:tests src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
-    # frob:tests src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
+    # frob:tests \
+    # src/frob/strata/_native_staleness_digest.py::seed_worktree_native_source_mtimes
+    # frob:tests \
+    # src/frob/strata/_native_staleness.py::seed_worktree_native_source_mtimes
     def test_repo_side_untracked_file_does_not_block_seeding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

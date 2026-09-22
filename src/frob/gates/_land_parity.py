@@ -517,9 +517,6 @@ def _land_parity_diff(root: Path) -> tuple[str, frozenset[str]] | None:
 # frob:ticket T-3456
 # frob:doc docs/modules/gates.md#land-parity-landparity001landparity002-t-3456
 # frob:enforces CHK-GATE-LANDPARITY001
-# frob:tests tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate.test_new_public_symbol_missing_both_directives_fires  # noqa: E501
-# frob:tests tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate.test_new_public_symbol_with_both_directives_is_quiet  # noqa: E501
-# frob:tests tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate.test_no_diff_is_quiet  # noqa: E501
 def land_parity_doc_test_gate(root: Path) -> tuple[Violation, ...]:
     """LANDPARITY001 (T-3456): `frob check`-callable wrapper around
     `_new_public_symbols_missing_doc_or_test_edge` (T-2114, moved into
@@ -559,9 +556,6 @@ def land_parity_doc_test_gate(root: Path) -> tuple[Violation, ...]:
 # frob:ticket T-3456
 # frob:doc docs/modules/gates.md#land-parity-landparity001landparity002-t-3456
 # frob:enforces CHK-GATE-LANDPARITY002
-# frob:tests tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate.test_new_over_threshold_function_fires  # noqa: E501
-# frob:tests tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate.test_pre_existing_over_threshold_function_merely_touched_is_quiet  # noqa: E501
-# frob:tests tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate.test_no_diff_is_quiet  # noqa: E501
 def land_parity_long_function_gate(root: Path) -> tuple[Violation, ...]:
     """LANDPARITY002 (T-3456): `frob check`-callable wrapper around
     `_new_or_worsened_long_functions_in_diff` (T-2214, moved into this

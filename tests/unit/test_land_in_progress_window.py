@@ -245,7 +245,8 @@ class TestWholeLandVerbClassification:
     than the assertion it makes here -- FAILED_AT_PARENT, not "passed
     but asserted the wrong thing"."""
 
-    # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch
+    # frob:tests \
+    # src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch
     def test_renumber_refused_while_only_land_lock_held(self, tmp_path: Path) -> None:
         """A land's slow phase (`land.lock` held, `tickets.lock` free):
         a whole-land-classified verb (`renumber`, standing in for
@@ -262,7 +263,8 @@ class TestWholeLandVerbClassification:
         assert result.is_err
         assert result.danger_err is LeaseError.LandInProgress
 
-    # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch
+    # frob:tests \
+    # src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch
     def test_splice_only_verb_allowed_while_only_land_lock_held(
         self, tmp_path: Path
     ) -> None:

@@ -32,8 +32,7 @@ class TestReleaseBump:
 
     def test_bump_applied_and_reported(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_bump_applied_an\
-        # d_reported
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_bump_applied_and_reported  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-bump", str(wt)], repo)
         created = new_ticket(wt, _spec("Bump me", scope=("src/bumped.py",)))
@@ -59,8 +58,7 @@ class TestReleaseBump:
 
     def test_no_bump_needed_reports_none(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_no_bump_needed_\
-        # reports_none
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_no_bump_needed_reports_none  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-nobump", str(wt)], repo)
         created = new_ticket(wt, _spec("No bump needed", scope=("src/quiet.py",)))
@@ -82,8 +80,7 @@ class TestReleaseBump:
 
     def test_bump_failure_unwinds_squash(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_bump_failure_un\
-        # winds_squash
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_bump_failure_unwinds_squash  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-badbump", str(wt)], repo)
         created = new_ticket(wt, _spec("Bad bump", scope=("src/badbump.py",)))
@@ -111,8 +108,7 @@ class TestReleaseBump:
 
     def test_no_callback_is_noop(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_no_callback_is_\
-        # noop
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_no_callback_is_noop  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-nocallback", str(wt)], repo)
         created = new_ticket(wt, _spec("No callback", scope=("src/nc.py",)))
@@ -179,8 +175,7 @@ class TestReleaseBump:
     # frob:ticket T-0992
     def test_downgrade_bump_is_refused(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_downgrade_bump_\
-        # is_refused
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_downgrade_bump_is_refused  # noqa: E501
         """T-0992 hard monotonicity refusal: a `bump_version` callback that
         computes a version no greater than main's CURRENT pre-land version
         (the T-0976/T-0989 failure mode -- a stale worktree-carried input
@@ -634,8 +629,7 @@ class TestUvLockSync:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestUvLockSync.test_bump_then_lock_s\
-        # ynced_in_commit
+        # tests/ticket_land_suite/test_release.py::TestUvLockSync.test_bump_then_lock_synced_in_commit  # noqa: E501
         (repo / "pyproject.toml").write_text(
             '[project]\nname = "frob"\nversion = "0.1.0"\n'
         )
@@ -881,8 +875,7 @@ class TestRapidDebtOnlyDriftAutoCommit:
 
     def test_sole_rapid_debt_dirt_is_committed(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.tes\
-        # t_sole_rapid_debt_dirt_is_committed
+        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.test_sole_rapid_debt_dirt_is_committed  # noqa: E501
         from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
 
         (repo / "rapid-debt.jsonl").write_text(
@@ -903,8 +896,7 @@ class TestRapidDebtOnlyDriftAutoCommit:
 
     def test_a_second_dirty_file_blocks_the_auto_commit(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.tes\
-        # t_a_second_dirty_file_blocks_the_auto_commit
+        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.test_a_second_dirty_file_blocks_the_auto_commit  # noqa: E501
         from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
 
         (repo / "rapid-debt.jsonl").write_text(
@@ -919,8 +911,7 @@ class TestRapidDebtOnlyDriftAutoCommit:
 
     def test_no_dirt_at_all_is_a_noop(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.tes\
-        # t_no_dirt_at_all_is_a_noop
+        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.test_no_dirt_at_all_is_a_noop  # noqa: E501
         from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
 
         assert _commit_rapid_debt_only_drift(repo) is False
@@ -1072,8 +1063,7 @@ class TestDevVersionBump:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_two_lands_in\
-        # _sequence_produce_distinguishable_versions
+        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_two_lands_in_sequence_produce_distinguishable_versions  # noqa: E501
         (repo / "pyproject.toml").write_text(
             '[project]\nname = "x"\nversion = "0.530.0"\n', encoding="utf-8"
         )
@@ -1112,8 +1102,7 @@ class TestDevVersionBump:
     # frob:tests src/frob/tickets/_land_release.py::_apply_dev_version_bump
     def test_toggle_off_leaves_version_untouched(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_toggle_off_l\
-        # eaves_version_untouched
+        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_toggle_off_leaves_version_untouched  # noqa: E501
         (repo / "pyproject.toml").write_text(
             '[project]\nname = "x"\nversion = "0.530.0"\n\n'
             "[tool.frob]\ndev_version_bump = false\n",
@@ -1134,8 +1123,7 @@ class TestDevVersionBump:
     # frob:tests src/frob/tickets/_land_release.py::_dev_version_major_guard
     def test_major_bump_refuses_without_ack(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_r\
-        # efuses_without_ack
+        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_refuses_without_ack  # noqa: E501
         """T-4184 acceptance [3]: root's pre-land pyproject.toml is already
         at a NEW major series (e.g. a manual release cut just bumped
         1.x.y -> 2.0.0) with the dev-bump toggle still on and no ack
@@ -1162,8 +1150,7 @@ class TestDevVersionBump:
     # frob:tests src/frob/tickets/_land_release.py::_dev_version_major_guard
     def test_major_bump_proceeds_once_acknowledged(self, repo: Path) -> None:
         # frob:tests \
-        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_p\
-        # roceeds_once_acknowledged
+        # tests/ticket_land_suite/test_release.py::TestDevVersionBump.test_major_bump_proceeds_once_acknowledged  # noqa: E501
         """The same crossing succeeds once `[tool.frob]
         dev_version_major_ack` names the new major explicitly -- a
         configuration VALUE, not a prose intention, per the ticket's own

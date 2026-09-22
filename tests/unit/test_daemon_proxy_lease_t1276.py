@@ -147,8 +147,7 @@ class TestDaemonLease:
         self, root: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_round_trip_\
-        # acquire_call_release_close
+        # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_round_trip_acquire_call_release_close  # noqa: E501
         thread = _start_daemon(root)
         try:
             acquired = try_daemon_lease(root, "t1276-resource", capacity=1)
@@ -176,8 +175,7 @@ class TestDaemonLease:
     # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease kind="unit"  # noqa: E501
     def test_disabled_env_bypasses_lease(self, root: Path, monkeypatch) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_disabled_en\
-        # v_bypasses_lease
+        # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_disabled_env_bypasses_lease  # noqa: E501
         monkeypatch.setenv("FROB_NO_DAEMON", "1")
         result = try_daemon_lease(root, "t1276-resource")
         assert result.is_err
@@ -194,8 +192,7 @@ class TestDaemonLease:
                 "reaching the AF_UNIX connect on win32"
             )
         # frob:tests \
-        # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_no_daemon_f\
-        # alls_back_unreachable
+        # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_no_daemon_falls_back_unreachable  # noqa: E501
         # Nothing is listening and spawning is disabled (nonexistent
         # interpreter path, same trick `test_no_daemon_no_socket_falls_back`
         # in tests/test_app_daemon_proxy.py uses) -- `_LeaseConnection.
@@ -215,8 +212,7 @@ class TestEnsureDaemonLivenessBranches:
     # frob:tests src/frob/app/_daemon_proxy.py::ensure_daemon kind="unit"  # noqa: E501
     def test_wedged_does_not_spawn_a_rival(self, root: Path, monkeypatch) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_lease_t1276.py.TestEnsureDaemonLivenessBranches.\
-        # test_wedged_does_not_spawn_a_rival
+        # tests/unit/test_daemon_proxy_lease_t1276.py.TestEnsureDaemonLivenessBranches.test_wedged_does_not_spawn_a_rival  # noqa: E501
         monkeypatch.setattr(
             _daemon_proxy,
             "probe_daemon",
@@ -234,8 +230,7 @@ class TestEnsureDaemonLivenessBranches:
     # frob:tests src/frob/app/_daemon_proxy.py::ensure_daemon kind="unit"  # noqa: E501
     def test_orphaned_clears_socket_then_spawns(self, root: Path, monkeypatch) -> None:
         # frob:tests \
-        # tests/unit/test_daemon_proxy_lease_t1276.py.TestEnsureDaemonLivenessBranches.\
-        # test_orphaned_clears_socket_then_spawns
+        # tests/unit/test_daemon_proxy_lease_t1276.py.TestEnsureDaemonLivenessBranches.test_orphaned_clears_socket_then_spawns  # noqa: E501
         monkeypatch.setattr(
             _daemon_proxy,
             "probe_daemon",

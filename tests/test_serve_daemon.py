@@ -74,6 +74,7 @@ def _clean_daemon_status():
 
 class TestPollPostLand:
     # frob:tests src/frob/serve/_daemon.py::_poll_post_land \
+    # frob:tests src/frob/serve/_daemon.py::_poll_post_land \
     def test_head_unchanged_is_noop(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop

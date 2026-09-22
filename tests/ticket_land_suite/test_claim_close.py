@@ -438,6 +438,7 @@ class TestClaimDivergencePostMerge:
     # frob:tests src/frob/tickets/_reporting.py::set_done_report
     # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="integration"  # noqa: E501
     # frob:tests src/frob/tickets/_models.py::render_claims_block kind="integration"  # noqa: E501
+    # frob:tests src/frob/tickets/_land_verify.py::_reverify_done_report_claims_post_merge kind="integration"  # noqa: E501
     def test_two_unmeasured_gate_claims_never_vacuously_match(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match  # noqa: E501
         """T-0832 regression: the T-0830 incident was NOT merely that land
@@ -668,7 +669,8 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
     T-2774 already uses for the land-lock wait)."""
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_insufficient_deadline_skips_regardless_of_profile  # noqa: E501
-    # frob:tests src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
+    # frob:tests \
+    # src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
     def test_insufficient_deadline_skips_regardless_of_profile(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -687,7 +689,8 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
         assert _land_should_skip_inline_claims_reverify(worktree) is True
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_ample_deadline_still_runs_the_spawn  # noqa: E501
-    # frob:tests src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
+    # frob:tests \
+    # src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
     def test_ample_deadline_still_runs_the_spawn(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -704,7 +707,8 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
         assert _land_should_skip_inline_claims_reverify(worktree) is False
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_no_declared_deadline_is_unchanged  # noqa: E501
-    # frob:tests src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
+    # frob:tests \
+    # src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
     def test_no_declared_deadline_is_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -720,7 +724,8 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
         assert _land_should_skip_inline_claims_reverify(worktree) is False
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_unparseable_deadline_is_unchanged  # noqa: E501
-    # frob:tests src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
+    # frob:tests \
+    # src/frob/tickets/_land.py::_land_deadline_cannot_afford_inline_claims_reverify
     def test_unparseable_deadline_is_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

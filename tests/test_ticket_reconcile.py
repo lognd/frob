@@ -685,6 +685,8 @@ class TestReconcileUnlandedBranchWork:
 
     # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
     # frob:tests src/frob/app/ticket_runner/_query.py::_save_unlanded_summary_cache kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"  # noqa: E501
     def test_populates_the_doable_summary_cache(self, repo: Path) -> None:
         """T-3522: reconcile now calls `_save_unlanded_summary_cache` with
         the branches its own scan just found -- the production write side

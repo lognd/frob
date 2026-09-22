@@ -40,8 +40,7 @@ class TestWave:
     # frob:tests src/frob/tickets/_doable.py::wave
     def test_disjoint_scopes_pack_into_separate_groups(self) -> None:
         # frob:tests \
-        # tests/test_tickets_wave.py::TestWave.test_disjoint_scopes_pack_into_separate_\
-        # groups
+        # tests/test_tickets_wave.py::TestWave.test_disjoint_scopes_pack_into_separate_groups  # noqa: E501
         a = _ticket(ticket_id="T-0001", scope=("src/a.py",))
         b = _ticket(ticket_id="T-0002", scope=("src/b.py",))
         result = wave(_queue(a, b), None, agents=2)
@@ -67,8 +66,7 @@ class TestWave:
     # frob:tests src/frob/tickets/_doable.py::wave  # noqa: E501
     def test_unplaceable_ticket_lands_in_remainder_with_reason(self) -> None:
         # frob:tests \
-        # tests/test_tickets_wave.py::TestWave.test_unplaceable_ticket_lands_in_remaind\
-        # er_with_reason
+        # tests/test_tickets_wave.py::TestWave.test_unplaceable_ticket_lands_in_remainder_with_reason  # noqa: E501
         a = _ticket(ticket_id="T-0001", scope=("src/a.py",), created=date(2026, 1, 1))
         b = _ticket(ticket_id="T-0002", scope=("src/b.py",), created=date(2026, 1, 2))
         c = _ticket(
@@ -105,8 +103,7 @@ class TestWave:
     # frob:tests src/frob/tickets/_doable.py::wave
     def test_fewer_groups_than_agents_is_not_an_error(self) -> None:
         # frob:tests \
-        # tests/test_tickets_wave.py::TestWave.test_fewer_groups_than_agents_is_not_an_\
-        # error
+        # tests/test_tickets_wave.py::TestWave.test_fewer_groups_than_agents_is_not_an_error  # noqa: E501
         a = _ticket(ticket_id="T-0001", scope=("src/a.py",))
         result = wave(_queue(a), None, agents=5)
         assert len(result.groups) == 1

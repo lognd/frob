@@ -74,8 +74,7 @@ class TestSiblingWorktreeKnownIds:
     # frob:tests src/frob/gates/_fix_engine.py::_sibling_worktree_known_ids
     def test_reads_an_active_id_from_another_worktree(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.tes\
-        # t_reads_an_active_id_from_another_worktree
+        # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_reads_an_active_id_from_another_worktree  # noqa: E501
         from frob.gates._fix_engine import _sibling_worktree_known_ids
 
         main_repo = _base_repo(tmp_path)
@@ -89,8 +88,7 @@ class TestSiblingWorktreeKnownIds:
     # frob:tests src/frob/gates/_fix_engine.py::_sibling_worktree_known_ids
     def test_excludes_root_itself(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.tes\
-        # t_excludes_root_itself
+        # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_excludes_root_itself  # noqa: E501
         """`root`'s own ids must not double-count as a "sibling" find --
         callers already union `queue.tickets`/archive separately, so a
         self-match here would be redundant, never wrong, but the
@@ -107,8 +105,7 @@ class TestSiblingWorktreeKnownIds:
     # frob:tests src/frob/gates/_fix_engine.py::_sibling_worktree_known_ids
     def test_unreadable_worktree_is_skipped_not_fatal(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.tes\
-        # t_unreadable_worktree_is_skipped_not_fatal
+        # tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_unreadable_worktree_is_skipped_not_fatal  # noqa: E501
         """A worktree entry `git worktree list` still names but whose
         directory is gone (a raw `rm -rf`, never `git worktree remove`)
         must not raise or abort the whole scan -- best-effort, matching
@@ -139,8 +136,7 @@ class TestFixTick006ResolvesSiblingWorktreeCitations:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/test_gates_tick006_sibling_worktree.py::TestFixTick006ResolvesSiblingWo\
-        # rktreeCitations.test_citation_to_sibling_worktree_active_id_does_not_refile
+        # tests/test_gates_tick006_sibling_worktree.py::TestFixTick006ResolvesSiblingWorktreeCitations.test_citation_to_sibling_worktree_active_id_does_not_refile  # noqa: E501
         """Must-stay-quiet: the T-3106/T-3107 shape -- a Done report
         cites an id that exists ONLY as a non-terminal ticket in a
         sibling, not-yet-landed worktree. Must not file a duplicate."""
@@ -182,8 +178,7 @@ class TestFixTick006ResolvesSiblingWorktreeCitations:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_gates_tick006_sibling_worktree.py::TestFixTick006ResolvesSiblingWo\
-        # rktreeCitations.test_genuinely_nonexistent_id_still_refiles
+        # tests/test_gates_tick006_sibling_worktree.py::TestFixTick006ResolvesSiblingWorktreeCitations.test_genuinely_nonexistent_id_still_refiles  # noqa: E501
         """Must-fire: an id that exists NOWHERE -- not this worktree, not
         any sibling worktree -- is still detected and refiled. Do not
         solve T-3108 by never firing.

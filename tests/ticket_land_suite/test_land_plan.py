@@ -81,8 +81,7 @@ class TestLandPlan:
 
     # frob:ticket T-1269
     # frob:tests \
-    # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_dry_run_unwinds_the_\
-    # merge
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_dry_run_unwinds_the_merge  # noqa: E501
     # frob:tests src/frob/tickets/_land.py::land_plan
     def test_dry_run_unwinds_the_merge(self, repo: Path, tmp_path: Path) -> None:
         from frob.tickets._land import land_plan
@@ -103,8 +102,7 @@ class TestLandPlan:
 
     # frob:ticket T-1269
     # frob:tests \
-    # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merge_conflict_abort\
-    # s_and_refuses
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merge_conflict_aborts_and_refuses  # noqa: E501
     # frob:tests src/frob/tickets/_land.py::land_plan
     def test_merge_conflict_aborts_and_refuses(
         self, repo: Path, tmp_path: Path
@@ -741,8 +739,7 @@ class TestLandPlanUnwindAfterMergeFailureSurfaces:
 
     # frob:ticket T-3848
     # frob:tests \
-    # tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindAfterMergeFailureSur\
-    # faces.test_double_failure_logs_both_and_still_reports_the_merge_error
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindAfterMergeFailureSurfaces.test_double_failure_logs_both_and_still_reports_the_merge_error  # noqa: E501
     def test_double_failure_logs_both_and_still_reports_the_merge_error(
         self,
         repo: Path,
@@ -808,8 +805,7 @@ class TestLandPlanUnwindAfterMergeFailureSurfaces:
 
     # frob:ticket T-3848
     # frob:tests \
-    # tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindAfterMergeFailureSur\
-    # faces.test_successful_unwind_reports_only_the_merge_error
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindAfterMergeFailureSurfaces.test_successful_unwind_reports_only_the_merge_error  # noqa: E501
     def test_successful_unwind_reports_only_the_merge_error(
         self,
         repo: Path,

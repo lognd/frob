@@ -162,8 +162,7 @@ def test_ticket_list_json_never_has_ansi_even_with_force_color(
     tmp_path, monkeypatch, caplog
 ):
     # frob:tests \
-    # tests/unit/test_app_style.py::test_ticket_list_json_never_has_ansi_even_with_forc\
-    # e_color kind="unit"
+    # tests/unit/test_app_style.py::test_ticket_list_json_never_has_ansi_even_with_force_color kind="unit"  # noqa: E501
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setenv("FORCE_COLOR", "1")
     _seed_ticket(tmp_path)
@@ -327,8 +326,7 @@ def test_vet_print_table_plain_has_no_ansi(monkeypatch, capsys):
 
 def test_vet_print_table_force_color_has_ansi_same_content(monkeypatch, capsys):
     # frob:tests \
-    # tests/unit/test_app_style.py::test_vet_print_table_force_color_has_ansi_same_cont\
-    # ent kind="unit"
+    # tests/unit/test_app_style.py::test_vet_print_table_force_color_has_ansi_same_content kind="unit"  # noqa: E501
     from frob.app.vet_runner import _print_table
 
     monkeypatch.delenv("NO_COLOR", raising=False)
@@ -350,8 +348,7 @@ def test_vet_print_table_force_color_has_ansi_same_content(monkeypatch, capsys):
 # frob:ticket T-2084
 def test_dropped_state_is_visually_distinct_from_queued_and_blocked():
     # frob:tests \
-    # tests/unit/test_app_style.py::test_dropped_state_is_visually_distinct_from_queued\
-    # _and_blocked kind="unit"
+    # tests/unit/test_app_style.py::test_dropped_state_is_visually_distinct_from_queued_and_blocked kind="unit"  # noqa: E501
     from frob.app._style import STATE_STYLE, style_state
 
     # `dropped` is TERMINAL (no undrop verb; `frob ticket requeue` refuses),

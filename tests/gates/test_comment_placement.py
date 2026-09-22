@@ -106,7 +106,8 @@ class TestCplace001:
         violations = scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text)
         assert violations[0].symref is None
 
-    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
+    # frob:tests \
+    # src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
     def test_must_stay_quiet_ordinary_one_line_waive(self) -> None:
         """An ordinary compliant one-line `frob:waive ... reason="..."`
         must never fire -- T-3218's own must-stay-quiet requirement,
@@ -115,7 +116,8 @@ class TestCplace001:
         text = '# frob:waive SOME001 reason="narrow, load-bearing reason"\nx = 1\n'
         assert scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
 
-    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
+    # frob:tests \
+    # src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
     def test_must_stay_quiet_frob_ticket_directive_any_length(self) -> None:
         """`frob:ticket`/`frob:tests`/`frob:doc` stay exempt at any
         length -- pure binding syntax, not narrative, per T-2987's own
@@ -131,7 +133,8 @@ class TestCplace001:
         )
         assert scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
 
-    # frob:tests src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
+    # frob:tests \
+    # src/frob/gates/_comment_placement.py::scan_cplace001_waive_reason_length
     def test_does_not_fire_on_prose_mentioning_frobwaive_by_name(self) -> None:
         """Regression: a long ordinary comment block that merely MENTIONS
         `frob:waive` by name in prose (not a directive-start line) must

@@ -26,8 +26,7 @@ def test_depr003_survives_repo_severity_overrides(tmp_path: Path) -> None:
     companion test below, proving THIS repo's `frob.toml` does not set
     it, is the actual regression guard against this recurring."""
     # frob:tests \
-    # tests/gates_suite/test_depr003_severity_override.py::test_depr003_survives_repo_s\
-    # everity_overrides
+    # tests/gates_suite/test_depr003_severity_override.py::test_depr003_survives_repo_severity_overrides  # noqa: E501
     source = (
         "def helper(x):\n"
         '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
@@ -56,8 +55,7 @@ def test_override_never_escalates_unresolved_severity(tmp_path: Path) -> None:
     measurement-gap verdict (T-4138's collector-failure case, T-4386's
     platform-skip case) into a false build failure the moment it fires."""
     # frob:tests \
-    # tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalate\
-    # s_unresolved_severity
+    # tests/gates_suite/test_depr003_severity_override.py::test_override_never_escalates_unresolved_severity  # noqa: E501
     _write_fixture(tmp_path, "frob.toml", '[gates.severity]\nTEST002 = "error"\n')
     v = Violation(
         rule="TEST002",
@@ -78,8 +76,7 @@ def test_depr003_not_forced_to_error_in_this_repo() -> None:
     was added, with no code change and no expiry involved. DEPR004
     (past-sunset escalation) is unaffected and stays error."""
     # frob:tests \
-    # tests/gates_suite/test_depr003_severity_override.py::test_depr003_not_forced_to_e\
-    # rror_in_this_repo
+    # tests/gates_suite/test_depr003_severity_override.py::test_depr003_not_forced_to_error_in_this_repo  # noqa: E501
     repo_root = Path(__file__).resolve().parents[2]
     overrides = _severity_overrides(repo_root)
     assert overrides.get("DEPR003") != Severity.ERROR

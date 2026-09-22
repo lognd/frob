@@ -943,6 +943,7 @@ class TestLedgerV2LandMergeStory:
 
     # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2  # noqa: E501
     # frob:tests src/frob/tickets/_land.py::_merge_main_into_worktree_v2
+    # frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope  # noqa: E501
     def test_disjoint_v2_tickets_land_with_no_custom_merge(self, v2_repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::land kind="unit"
         wt = v2_repo.parent / "wt-v2-a"
@@ -1070,7 +1071,8 @@ class TestSquashSpliceLedgerChurn:
     # the real-world concurrent-writer case again, and the test passes.
     # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
     # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger  # noqa: E501
-    # frob:tests src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
+    # frob:tests \
+    # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_concurrent_write_between_squash_and_splice_survives_land(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

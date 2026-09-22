@@ -110,8 +110,7 @@ class TestStaleLeaseReasons:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test\
-        # _dead_holder_flagged_with_reason
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_dead_holder_flagged_with_reason  # noqa: E501
         # T-0001 is a real ticket in `repo`'s own ledger (per the `repo`
         # fixture) -- the holder-dead check requires the ticket id to
         # still exist in the ledger, only its lease's `recorded_at` to be
@@ -129,8 +128,7 @@ class TestStaleLeaseReasons:
     # frob:tests src/frob/app/ticket_runner/_query.py::_stale_lease_reasons  # noqa: E501
     def test_live_holder_not_flagged(self, repo: Path, second_worktree: Path) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test\
-        # _live_holder_not_flagged
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_live_holder_not_flagged  # noqa: E501
         # A lease recorded just now, for a worktree that genuinely exists
         # and a ticket genuinely in the ledger, must NOT be reported --
         # this is the assertion that stops the staleness surfacing from
@@ -150,8 +148,7 @@ class TestStaleLeaseReasons:
 
     def test_no_root_returns_empty(self) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test\
-        # _no_root_returns_empty
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_no_root_returns_empty  # noqa: E501
         assert _stale_lease_reasons(None) == {}
 
 
@@ -164,15 +161,13 @@ class TestRenderUnlandedBranchWorkSummary:
 
     def test_no_root_is_a_noop(self, capsys) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
-        # rkSummary.test_no_root_is_a_noop
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_no_root_is_a_noop  # noqa: E501
         _render_unlanded_branch_work_summary(None)
         assert capsys.readouterr().out == ""
 
     def test_no_unlanded_work_prints_nothing(self, repo: Path, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
-        # rkSummary.test_no_unlanded_work_prints_nothing
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_no_unlanded_work_prints_nothing  # noqa: E501
         # T-2629: a cache populated with zero branches renders silently,
         # same posture as before -- this is the "cache says nothing to
         # report" case, distinct from "no cache at all" below.
@@ -182,8 +177,7 @@ class TestRenderUnlandedBranchWorkSummary:
 
     def test_unlanded_branch_is_summarized(self, repo: Path, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
-        # rkSummary.test_unlanded_branch_is_summarized
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_unlanded_branch_is_summarized  # noqa: E501
         # T-2629: render is now a pure cache reader -- populate the cache
         # directly rather than relying on render itself to scan (it no
         # longer does).
@@ -202,8 +196,7 @@ class TestRenderUnlandedBranchWorkSummary:
         self, repo: Path, caplog, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
-        # rkSummary.test_render_never_scans_branches_inline
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_render_never_scans_branches_inline  # noqa: E501
         # T-2629: `frob ticket doable` did not complete -- a cache miss
         # fell through to a synchronous `_unlanded_branch_work` scan of
         # every branch in the repo (938 branches, 35 worktrees on the
@@ -234,8 +227,7 @@ class TestRenderUnlandedBranchWorkSummary:
         self, repo: Path, caplog, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
-        # rkSummary.test_second_call_within_ttl_reuses_the_cache_not_a_fresh_scan
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_second_call_within_ttl_reuses_the_cache_not_a_fresh_scan  # noqa: E501
         # T-2127/T-2629: a cache hit is served twice without ever calling
         # the underlying scan, confirmed here by making a real scan
         # explode both times.
@@ -258,8 +250,7 @@ class TestRenderUnlandedBranchWorkSummary:
     # frob:ticket T-2127
     def test_expired_cache_is_ignored(self, repo: Path) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
-        # rkSummary.test_expired_cache_is_ignored
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_expired_cache_is_ignored  # noqa: E501
         import time
 
         _save_unlanded_summary_cache(repo, ("stale-branch",))
@@ -280,8 +271,7 @@ class TestRenderUnlandedBranchWorkSummary:
     # frob:tests src/frob/app/ticket_runner/_query.py::_save_unlanded_summary_cache kind="unit"  # noqa: E501
     def test_fresh_cache_round_trips(self, repo: Path) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
-        # rkSummary.test_fresh_cache_round_trips
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_fresh_cache_round_trips  # noqa: E501
         _save_unlanded_summary_cache(repo, ("a", "b"))
         cached = _load_unlanded_summary_cache(repo)
         assert cached is not None

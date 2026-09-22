@@ -174,7 +174,8 @@ class TestDetectDuplicateTicketIdCollisions:
         assert found == frozenset({"T-4000"})
 
     # frob:tests tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_the_landing_tickets_own_id  # noqa: E501
-    # frob:tests src/frob/tickets/_land_git_ops.py::detect_duplicate_ticket_id_collisions
+    # frob:tests \
+    # src/frob/tickets/_land_git_ops.py::detect_duplicate_ticket_id_collisions
     def test_ignores_the_landing_tickets_own_id(self, tmp_path: Path) -> None:
         root = tmp_path / "root"
         worktree = tmp_path / "worktree"
@@ -196,7 +197,8 @@ class TestDetectDuplicateTicketIdCollisions:
         assert found == frozenset()
 
     # frob:tests tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_identical_content_on_both_sides  # noqa: E501
-    # frob:tests src/frob/tickets/_land_git_ops.py::detect_duplicate_ticket_id_collisions
+    # frob:tests \
+    # src/frob/tickets/_land_git_ops.py::detect_duplicate_ticket_id_collisions
     def test_ignores_identical_content_on_both_sides(self, tmp_path: Path) -> None:
         root = tmp_path / "root"
         worktree = tmp_path / "worktree"
@@ -209,7 +211,8 @@ class TestDetectDuplicateTicketIdCollisions:
         assert found == frozenset()
 
     # frob:tests tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.test_ignores_an_id_that_already_existed_at_the_merge_base  # noqa: E501
-    # frob:tests src/frob/tickets/_land_git_ops.py::detect_duplicate_ticket_id_collisions
+    # frob:tests \
+    # src/frob/tickets/_land_git_ops.py::detect_duplicate_ticket_id_collisions
     def test_ignores_an_id_that_already_existed_at_the_merge_base(
         self, tmp_path: Path
     ) -> None:

@@ -70,8 +70,7 @@ class TestAddEvidenceAutoPopulatesEvidenceOnlyScope:
     # frob:ticket T-3141
     def test_new_evidence_widens_evidence_scope_not_scope(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesE\
-        # videnceOnlyScope.test_new_evidence_widens_evidence_scope_not_scope
+        # tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesEvidenceOnlyScope.test_new_evidence_widens_evidence_scope_not_scope  # noqa: E501
         # T-3141: name kept (T-1944's own recorded evidence cites it) --
         # the BODY now asserts the corrected behavior: `add_evidence`
         # no longer auto-widens `evidence_scope` at all.
@@ -89,8 +88,7 @@ class TestAddEvidenceAutoPopulatesEvidenceOnlyScope:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesE\
-        # videnceOnlyScope.test_evidence_already_covered_by_scope_widens_nothing
+        # tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesEvidenceOnlyScope.test_evidence_already_covered_by_scope_widens_nothing  # noqa: E501
         ticket_id = _make_ticket(tmp_path, scope=("tests/test_existing.py",))
 
         result = add_evidence(tmp_path, ticket_id, ["tests/test_existing.py::test_ok"])
@@ -115,8 +113,7 @@ class TestEvidenceOnlyScopeNeverLeases:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceOnlyScopeNeverLea\
-        # ses.test_evidence_scope_path_does_not_block_another_tickets_add
+        # tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceOnlyScopeNeverLeases.test_evidence_scope_path_does_not_block_another_tickets_add  # noqa: E501
         holder_id = _make_ticket(
             tmp_path,
             scope=("tests/test_ticket_land.py",),
@@ -159,8 +156,7 @@ class TestEvidenceCoversScopeWithEvidenceOnlyScope:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceCoversScopeWithEv\
-        # idenceOnlyScope.test_evidence_covers_scope_true_via_evidence_scope_alone
+        # tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceCoversScopeWithEvidenceOnlyScope.test_evidence_covers_scope_true_via_evidence_scope_alone  # noqa: E501
         from frob.gates import evidence_covers_scope
         from frob.graph import GraphSnapshot
 
@@ -203,8 +199,7 @@ class TestDemoteToEvidenceOnly:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test\
-        # _demote_releases_the_lease_and_keeps_evidence_covered
+        # tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test_demote_releases_the_lease_and_keeps_evidence_covered  # noqa: E501
         from frob.gates import evidence_covers_scope
         from frob.graph import GraphSnapshot
 
@@ -262,8 +257,7 @@ class TestDemoteToEvidenceOnly:
     # frob:tests src/frob/tickets/_scope.py::demote_to_evidence_only
     def test_demote_refuses_an_undeclared_glob(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test\
-        # _demote_refuses_an_undeclared_glob
+        # tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test_demote_refuses_an_undeclared_glob  # noqa: E501
         ticket_id = _make_ticket(
             tmp_path, scope=("src/fix.py",), state=TicketState.IN_PROGRESS
         )
@@ -282,8 +276,7 @@ class TestScopeRemoveOrphansEvidenceUnweakened:
     # frob:ticket T-1944
     def test_remove_without_demotion_still_refuses(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_tickets_evidence_only_scope.py::TestScopeRemoveOrphansEvidenc\
-        # eUnweakened.test_remove_without_demotion_still_refuses
+        # tests/unit/test_tickets_evidence_only_scope.py::TestScopeRemoveOrphansEvidenceUnweakened.test_remove_without_demotion_still_refuses  # noqa: E501
         ticket_id = _make_ticket(
             tmp_path,
             scope=("tests/test_ticket_land.py",),
