@@ -44,6 +44,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+- field: points
+  old_value: '3'
+  new_value: '3'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-22'
 body_changes:
 - mode: append
   reason: 'owner decision: docstring half split to T-4807; record the narrowed scope
