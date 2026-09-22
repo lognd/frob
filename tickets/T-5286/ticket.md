@@ -1,5 +1,5 @@
 ---
-id: T-draft-b2c4fa41
+id: T-5286
 title: T-5034's fresh-graph fix broke test_unreadable_graph_fails's mockability
 state: queued
 kind: bug
