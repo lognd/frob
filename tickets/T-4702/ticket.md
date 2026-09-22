@@ -2,7 +2,7 @@
 id: T-4702
 title: Regenerate docs/commands from the final CLI surface (18 files for 51 verbs
   today) and report the drift in the owner-owned ~/.claude/refs/frob.md
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -41,6 +41,9 @@ scope:
 - docs/commands/sync-skills.md
 - docs/commands/sys.md
 - docs/commands/xref.md
+- src/frob/docs/_command_pages.py
+- src/frob/app/docs_runner.py
+- src/frob/_cli_parsers/_core.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -179,6 +182,30 @@ scope_changes:
     everything else now, ticket.md once T-5132 releases it
   actor: logan
   at: '2026-09-22'
+- op: add
+  glob: src/frob/docs/_command_pages.py
+  reason: 'the ticket''s own preference: generate docs/commands from the argparse
+    tree, wired so it cannot drift again silently -- a new generator module plus a
+    small docs_runner.py flag to invoke it, mirroring the existing --sync-commands
+    precedent for docs/modules/cli.md''s table'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/app/docs_runner.py
+  reason: 'the ticket''s own preference: generate docs/commands from the argparse
+    tree, wired so it cannot drift again silently -- a new generator module plus a
+    small docs_runner.py flag to invoke it, mirroring the existing --sync-commands
+    precedent for docs/modules/cli.md''s table'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_core.py
+  reason: 'the ticket''s own preference: generate docs/commands from the argparse
+    tree, wired so it cannot drift again silently -- a new generator module plus a
+    small docs_runner.py flag to invoke it, mirroring the existing --sync-commands
+    precedent for docs/modules/cli.md''s table'
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -221,6 +248,8 @@ labels:
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4702
+branch: t-4702
 ---
 POINTS: 2. Parent story T-4687. blocked_by T-4690, T-4692, T-4695, T-4696,
 T-4698 -- it documents the FINAL surface, so it cannot start until the surface
