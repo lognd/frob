@@ -1,7 +1,7 @@
 ---
 id: T-5108
 title: narrative move deletes directive lines inside the moved comment run
-state: planned
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -23,10 +23,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/narrative/_cli.py
+- tests/test_narrative_migrate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_narrative_migrate.py
+  reason: positive control and regression test for the directive-preservation fix
+    must live in the existing CLI test file
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -46,6 +54,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5108
+branch: t-5108
 ---
 Measured 2026-09-19 by the narrative cluster agent working T-4719, T-4723 and T-4715: the narrative move verb's default mode (without keep-file) deletes the entire contiguous comment run it is pointed at, including directive lines that sit inside that run next to the prose. Lost in three separate runs and restored by hand before commit: frob:doc anchors, a frob:waive PII012, and a frob:invariant INV-042 block.
 
