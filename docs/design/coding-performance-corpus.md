@@ -50,7 +50,7 @@ fact via `cProfile` + `.pstats`.
 | C4 | O(n^2) nested-loop equality join | Two nested loops whose bodies compare elements pairwise for equality is a naive join; indexing one side turns it O(n+m) | outer `for`, nested inner loop, `==` comparison involving the outer loop's bound variable | CLRS ch. 11 hash-table lookups as the join-index technique; classic "hash join vs. nested-loop join" from relational query planning (Selinger et al., "Access Path Selection in a Relational Database Management System", SIGMOD 1979) applied at the code level. https://dl.acm.org/doi/10.1145/582095.582099 | STATIC | **Implemented: PERF003** |
 | C5 | O(n^2) string concatenation in a loop | Repeated `s = s + x` (or `+=`) on an immutable string reallocates and copies the whole accumulated string each iteration -- O(n) per append, O(n^2) total | `+=`/`+` reassignment onto a string-typed accumulator inside a loop, instead of `"".join(list)`/`StringBuilder`/`io.StringIO` | Documented directly in CPython's own performance notes and repeatedly analyzed in Guo & Engler-style empirical bug studies of quadratic-blowup patterns; canonical treatment: Bentley, *Programming Pearls* Column 2 on the cost of naive accumulation vs. batched construction. https://www.cs.princeton.edu/~rs/talks/AlgsMasses.pdf (CPython note: `str` is immutable per the language reference, https://docs.python.org/3/reference/datamodel.html) | STATIC | Gap -- no PERF rule; proposed PERF005 |
 | C6 | Quadratic list-front insertion | `list.insert(0, x)` / `list.pop(0)` on a Python list (array-backed) is O(n) per call because every element shifts; doing it in a loop is O(n^2). `collections.deque` is O(1) at both ends | `.insert(0,` / `.pop(0)` call inside or building up a loop | CPython docs, "TimeComplexity" wiki (official, array-backed list cost table) https://wiki.python.org/moin/TimeComplexity ; CLRS ch. 10 (arrays vs. linked structures, amortized cost of `list.append`, ch. 17 amortized analysis). | STATIC | Gap -- proposed PERF006 |
-| C7 | N+1 query pattern | Issuing one query per row of an outer result set (instead of a join/batched `IN (...)`/prefetch) turns O(1) round trips into O(n); each round trip carries fixed network+parse+plan latency independent of row cost | ORM call (`.get()`/`.filter()`/single-row fetch) syntactically inside a loop over a prior query result | Named and canonicalized by the Rails/ActiveRecord and Django ORM communities; formal treatment of the underlying cost model (network round-trip amortization) traces to Gray & Reuter, *Transaction Processing: Concepts and Techniques* (1992), ch. 2 on client/server round-trip cost. Practical reference: Django docs "Database access optimization" https://docs.djangoproject.com/en/stable/topics/db/optimization/#understanding-query-cost | STATIC (needs cross-file/ORM-call resolution) | Gap -- advisory today, candidate PERF007 pending call-graph join (same `GraphSnapshot` hook `perf_rules` reserves) |
+| C7 | N+1 query pattern | Issuing one query per row of an outer result set (instead of a join/batched `IN (...)`/prefetch) turns O(1) round trips into O(n); each round trip carries fixed network+parse+plan latency independent of row cost | ORM call (`.get()`/`.filter()`/single-row fetch) syntactically inside a loop over a prior query result | Named and canonicalized by the Rails/ActiveRecord and Django ORM communities; formal treatment of the underlying cost model (network round-trip amortization) traces to Gray & Reuter, *Transaction Processing: Concepts and Techniques* (1992), ch. 2 on client/server round-trip cost. Practical reference: Django docs "Database access optimization" https://docs.djangoproject.com/en/stable/topics/db/optimization/#understanding-query-cost | STATIC (needs cross-file/ORM-call resolution) | Implemented T-5136: PERF015 (advisory, any loop-variant effect-reaching call whose argument text names a likely iteration source) and PERF016 (WARN, the git-spawn-specific subset) -- `frob.perf._loop_variant`, the negation of PERF008's loop-invariant check |
 | C8 | Data-structure selection: hash vs. tree vs. array | Each structure has a distinct cost profile (hash: O(1) avg lookup/insert, no order; tree/BST: O(log n) all ops, ordered; array: O(1) index, O(n) search/insert-middle); picking the wrong one for the dominant access pattern silently caps throughput | none reliable at the syntax level -- depends on usage pattern across the symbol's lifetime, not local shape | CLRS ch. 10-13 (elementary data structures, hash tables, binary search trees, red-black trees) as the canonical cost-model reference; Sedgewick & Wayne ch. 3-4. https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/ | ADVISORY | No rule; design-review checklist item |
 | C9 | Amortized cost of the wrong abstraction | A structure that is O(1) amortized (dynamic array `append`, hash-table resize) can look like a per-call cost spike under naive per-call profiling; conversely a structure claimed O(1) worst-case may hide O(n) amortized-only guarantees under adversarial input (hash-flooding) | none syntactic | CLRS ch. 17 (Amortized Analysis: aggregate, accounting, potential methods) -- the formal treatment this entire category rests on. https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/ | ADVISORY | No rule; feeds PERF thresholds when set (aggregate cost, not per-call) |
 | C10 | Absence of memoization/caching | A pure, repeatedly-called function over the same inputs recomputes instead of reusing a stored result; the smell is the CALL SITE shape (same function, same/overlapping arguments, called >1x in a loop or recursion without a cache), not a missing keyword | recursive function without a cache table matching a known exponential-recurrence shape (e.g. naive Fibonacci-style double recursion); repeated call to the same pure function with loop-invariant arguments | CLRS ch. 15 (Dynamic Programming as memoized recursion is the formal generalization); Bentley, *Programming Pearls* Column 9 ("Code Tuning") memoization case study. https://www.cs.princeton.edu/~rs/talks/AlgsMasses.pdf | STATIC (narrow: exponential double-recursion shape is detectable; general "should this be cached" is not) | Gap -- candidate PERF008, narrow shape only |
@@ -150,7 +150,7 @@ id=C3  category=conceptual checkability=static_implemented maps_to=PERF004
 id=C4  category=conceptual checkability=static_implemented maps_to=PERF003
 id=C5  category=conceptual checkability=static_gap maps_to=PERF005_proposed
 id=C6  category=conceptual checkability=static_gap maps_to=PERF006_proposed
-id=C7  category=conceptual checkability=static_gap maps_to=PERF007_proposed
+id=C7  category=conceptual checkability=static_implemented maps_to=PERF015,PERF016
 id=C8  category=conceptual checkability=advisory maps_to=none
 id=C9  category=conceptual checkability=advisory maps_to=none
 id=C10 category=conceptual checkability=static_gap maps_to=PERF008_proposed
@@ -180,3 +180,27 @@ id=L19 category=low_level checkability=advisory maps_to=none
 id=L20 category=low_level checkability=advisory maps_to=none
 TOTAL=34
 ```
+
+## PERF015-016 T-5136
+
+PERF015/PERF016 (`frob.perf._loop_variant`) close C7's gap: a loop-body
+call site reaching a process-spawn/directory-walk effect whose arguments
+reference the loop's own bound variable -- the exact negation of PERF008's
+loop-INVARIANT check, which is silent on this shape by construction.
+PERF016 is the unconditional, spawn-only, WARN-tier subset (git-spawn
+shapes like the T-5135 audit's H2-H5/M7 findings); PERF015 is the
+broader advisory rule, gated by a textual threshold on the variant
+argument naming a likely iteration source (ticket/file/path/commit/sha/
+branch).
+
+## PERF017-018 T-5136
+
+PERF017/PERF018 (`frob.perf._cache_effects`) close two more T-5135
+blind spots that no per-loop/per-call rule can see: PERF017 fires when a
+function's `if`/`else` both branches return but only one branch calls a
+cache-write-shaped helper (an effect's negative/unmeasurable outcome
+never memoized, so it is re-derived at full cost every call -- the H2
+audit shape). PERF018 fires when a value hoisted above a loop
+(`x = read_all_leases(...)`, etc., against a short list of known heavy
+callees) is recomputed by a call inside the loop body that does not
+thread the hoisted value through -- the H4 audit shape.

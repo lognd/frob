@@ -489,6 +489,14 @@ _KNOWN_GATE_RULES = frozenset(
         "PERF012",
         "PERF013",
         "PERF014",
+        # T-5136: PERF015/016 (frob.perf._loop_variant, the loop-VARIANT
+        # negation of PERF008) and PERF017/018 (frob.perf._cache_effects,
+        # success-only cache writes / discarded hoisted values) -- the
+        # T-5135 audit's own missing-lint-rule findings.
+        "PERF015",
+        "PERF016",
+        "PERF017",
+        "PERF018",
         # T-2362: PROFILE001 (frob.gates._profile_boundary), the
         # profile-collapse epic's own closing structural gate -- no
         # land-pipeline module may reference ProfileName/

@@ -46,10 +46,12 @@ from frob.lang import node_text as _node_text
 from frob.lang import raw_tree as _raw_tree
 from frob.lang._models import ParsedFile, RawSymbol, SymbolKind
 from frob.logging import get_logger
+from frob.perf._cache_effects import cache_effect_violations
 from frob.perf._dup_spawn import duplicate_spawn_violations
 from frob.perf._effect_summaries import EffectGraph as _EffectGraph
 from frob.perf._hotpath_smells import hotpath_smell_violations
 from frob.perf._loop_effects import loop_invariant_effect_violations
+from frob.perf._loop_variant import loop_variant_effect_violations
 from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
 
@@ -1014,6 +1016,10 @@ def perf_rules(
     )
     violations.extend(duplicate_spawn_violations(files, graph=shared_effect_graph))
     violations.extend(hotpath_smell_violations(files))
+    # T-5136: PERF015/016 share PERF008's own EffectGraph (same T-0919
+    # precedent); PERF017/018 are purely textual/AST, no shared graph.
+    violations.extend(loop_variant_effect_violations(files, graph=shared_effect_graph))
+    violations.extend(cache_effect_violations(files))
     _log.info(
         "perf_rules: scanned %d file(s), %d violation(s)", len(files), len(violations)
     )

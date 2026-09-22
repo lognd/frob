@@ -55,6 +55,7 @@ from frob.perf._advisories import (
     heavy_tail_advisories,
     nested_loop_fanin_advisories,
 )
+from frob.perf._cache_effects import cache_effect_violations
 from frob.perf._collectors import (
     CollectorError,
     build_class_to_file,
@@ -84,6 +85,7 @@ from frob.perf._hotgraph import (
 )
 from frob.perf._hotpath_smells import hotpath_smell_violations
 from frob.perf._loop_effects import loop_invariant_effect_violations
+from frob.perf._loop_variant import loop_variant_effect_violations
 from frob.perf._models import HeatEntry, HeatReport, PerfError, ProfileArtifact
 from frob.perf._profile import load_artifact, profile_command
 from frob.perf._ratchet import (
@@ -148,6 +150,7 @@ __all__ = [
     "build_class_to_file",
     "build_index_for_files",
     "build_section_index",
+    "cache_effect_violations",
     "check_ratchet",
     "detect_collector_format",
     "duplicate_spawn_violations",
@@ -164,6 +167,7 @@ __all__ = [
     "load_ratchet_findings",
     "load_sketch_config",
     "loop_invariant_effect_violations",
+    "loop_variant_effect_violations",
     "nested_loop_fanin_advisories",
     "new_run_sketch",
     "parse_collector_format",
