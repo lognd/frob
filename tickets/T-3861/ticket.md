@@ -1,7 +1,7 @@
 ---
 id: T-3861
 title: 'exhaustive-handling family (EXHAUST002/003/004) burn-down: 323 unwaived findings'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-05'

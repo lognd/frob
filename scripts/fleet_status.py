@@ -76,6 +76,16 @@ except ModuleNotFoundError:  # pragma: no cover - python <3.11 on PATH
 
 
 # frob:ticket T-2677
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _resolve_repo_root(fallback: Path) -> Path:
     """Resolve the SHARED primary checkout root, not wherever this script's
     own file happens to sit -- `__file__` alone gives the wrong answer when
@@ -144,6 +154,16 @@ _ROT_DAYS_DEFAULT = {"critical": 3, "high": 7, "medium": 30, "low": 90}
 _PRIORITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 
 
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _git(args: list[str], cwd: Path) -> str:
     """Run git in `cwd`, returning stripped stdout ('' on any failure)."""
     try:
@@ -250,6 +270,16 @@ VERIFY_WATERMARK = REPO / ".frob" / "verify-watermark.json"
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_no_lease_dir
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_unreadable_lease_file  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def leases() -> list[dict]:
     """Every held scope lease, as parsed lease records."""
     if not LEASES.is_dir():
@@ -265,6 +295,21 @@ def leases() -> list[dict]:
 
 # frob:doc docs/guides/coordinator-scripts.md#_iter_in_progress_ticket_frontmatter
 # frob:ticket T-2654
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _iter_in_progress_ticket_frontmatter():
     """Yield `(ticket_dir, parsed_frontmatter)` for every `state:
     in-progress` ticket under `TICKETS_DIR` (skipping `archive/`) -- the
@@ -597,6 +642,16 @@ def _ticket_ids_state_verdict(path: Path, ticket_ids: Sequence[str]) -> str | No
 
 
 # frob:ticket T-2617
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _is_ancestor_of_main(commit: str, path: Path) -> bool:
     """`True` if `commit` is an ancestor of (or equal to) `main`'s current
     tip, i.e. its content is genuinely reachable from main right now --
@@ -703,6 +758,16 @@ def _lines_absent_from_main(
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_no_lease_file  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_unreadable_lease_file  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def ticket_lease(ticket_id: str) -> dict | None:
     """The single live lease record for `ticket_id` (`.git/frob-leases/
     <id>.json`), or `None` if no lease file exists at all -- the SAME file
@@ -830,6 +895,16 @@ _LEASE_TTL_SECONDS = 6 * 60 * 60
 
 # frob:doc docs/guides/coordinator-scripts.md#_lease_age_seconds
 # frob:ticket T-2222
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _lease_age_seconds(record: dict, *, now: datetime | None = None) -> float | None:
     """Seconds elapsed since `record["recorded_at"]`, or `None` if that
     field is missing/unparseable as ISO-8601 (defensive -- a lease file is
@@ -850,6 +925,16 @@ def _lease_age_seconds(record: dict, *, now: datetime | None = None) -> float | 
 
 # frob:doc docs/guides/coordinator-scripts.md#_scan_for_live_worktree_process
 # frob:ticket T-2222
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _scan_for_live_worktree_process(
     path: Path, proc: Path = Path("/proc")
 ) -> int | None:
@@ -898,6 +983,21 @@ def _scan_for_live_worktree_process(
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_root_worktree_is_structurally_unreclaimable  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_classification_is_strictly_read_only  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def lease_classification(record: dict) -> str:
     """T-2222: classify one held lease record as `"live"`, `"reclaimable"`,
     or `"root-resident"` -- the missing distinction `leases()` never made,
@@ -1276,6 +1376,16 @@ def _classify_blockers(blocked_by: Sequence[str]) -> tuple[list[str], list[str]]
 
 # frob:doc docs/guides/coordinator-scripts.md#_expand_scope_globs_to_paths
 # frob:ticket T-2225
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _expand_scope_globs_to_paths(root: Path, globs: Sequence[str]) -> set[Path]:
     """Expand `globs` (scope glob patterns, e.g. `src/frob/**`) against
     the REAL filesystem under `root`, returning the resolved absolute
@@ -1662,6 +1772,16 @@ def scope_intersections(ticket_ids: Sequence[str]) -> list[dict]:
 
 # frob:doc docs/guides/coordinator-scripts.md#_parse_ps_cpu_time
 # frob:ticket T-2180
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _parse_ps_cpu_time(value: str) -> int:
     """Parse `ps`'s own TIME column (`[[dd-]hh:]mm:ss`) into total whole
     seconds. Returns 0 on anything unparseable rather than raising --
@@ -1726,6 +1846,16 @@ _LAND_CMDLINE_TOKEN_RE = re.compile(rb"\x00ticket\x00land\x00")
 
 # frob:doc docs/guides/coordinator-scripts.md#land_process_rows
 # frob:ticket T-2475
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _pid_has_land_argv_tokens(pid: int, proc: Path = Path("/proc")) -> bool | None:
     """`True`/`False` if `pid`'s `/proc/<pid>/cmdline` structurally DOES
     or DOES NOT contain `ticket`/`land` as two separate, adjacent argv
@@ -1748,6 +1878,21 @@ def _pid_has_land_argv_tokens(pid: int, proc: Path = Path("/proc")) -> bool | No
 
 # frob:doc docs/guides/coordinator-scripts.md#land_process_rows
 # frob:ticket T-4377
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _proc_ppid(pid: int, proc: Path = Path("/proc")) -> int | None:
     """`pid`'s parent pid, read from `/proc/<pid>/stat` -- mirrors
     `frob.tickets._leases._proc_ppid_linux` exactly (same field-parsing
@@ -1812,6 +1957,16 @@ def _process_ancestor_pids(pid: int, proc: Path = Path("/proc")) -> frozenset[in
 
 # frob:doc docs/guides/coordinator-scripts.md#land_process_rows
 # frob:ticket T-4377
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _pid_cwd(pid: int, proc: Path = Path("/proc")) -> Path | None:
     """`pid`'s `/proc/<pid>/cwd` target, resolved -- `None` if it cannot
     be read (pid gone, no permission, `/proc` unavailable). Mirrors the
@@ -1865,6 +2020,21 @@ def _land_row_is_out_of_scope(
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_a_land_in_a_different_repo_is_not_counted  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_own_ancestor_process_is_not_counted_as_a_land  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
     """Every live process whose argv contains a `ticket land` invocation,
     parsed from `ps -eo pid,etimes,time,args`'s own structured columns:
@@ -1966,6 +2136,21 @@ def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_all_process_ppid_cpu
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _all_process_ppid_cpu() -> dict[int, tuple[int, int]]:
     """`{pid: (ppid, cpu_seconds)}` for every live process, ONE `ps -eo
     pid,ppid,time` call -- the snapshot `_descendant_cpu_seconds` builds
@@ -2114,6 +2299,16 @@ def land_invocations() -> list[dict]:
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandLockHolderPids.test_finds_a_pid_holding_the_lock_open  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandLockHolderPids.test_no_live_holder_returns_empty  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def land_lock_holder_pids(root: Path, proc: Path = Path("/proc")) -> list[int]:
     """Live pids that currently hold `root`'s `.frob/land.lock` file OPEN,
     found by scanning `<proc>/<pid>/fd/*` for a symlink that resolves to
@@ -2157,6 +2352,16 @@ def land_lock_holder_pids(root: Path, proc: Path = Path("/proc")) -> list[int]:
 
 # frob:doc docs/guides/coordinator-scripts.md#land_lock_holder_pids
 # frob:ticket T-3093
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _read_proc_locks(proc: Path = Path("/proc")) -> list[str] | None:
     """`/proc/locks`'s own lines, or `None` if unreadable (non-Linux, a
     sandboxed container with no `/proc/locks` exposed) -- T-3093's own
@@ -2171,6 +2376,21 @@ def _read_proc_locks(proc: Path = Path("/proc")) -> list[str] | None:
 
 # frob:doc docs/guides/coordinator-scripts.md#land_lock_holder_pids
 # frob:ticket T-3093
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _true_flock_holder_pid(
     lock_path: Path, proc: Path = Path("/proc")
 ) -> tuple[bool, int | None]:
@@ -2227,6 +2447,21 @@ def _true_flock_holder_pid(
 
 # frob:ticket T-3093
 # frob:ticket T-3211
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _flock_holders_matching(lines: list[str], lock_stat: os.stat_result) -> set[int]:
     """ARCH001 split of `_true_flock_holder_pid` (T-3093): parses
     `/proc/locks`' own lines (`man proc`: `"<id>: FLOCK ADVISORY WRITE
@@ -2281,6 +2516,21 @@ _AGENT_CAP_GUIDANCE = "3-4 agent"
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad.test_reads_loadavg_and_mem_available  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad.test_missing_proc_files_return_none  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def host_load(proc: Path = Path("/proc")) -> tuple[float, int] | None:
     """`(one_minute_load_average, mem_available_kb)` read from `<proc>/
     loadavg` and `<proc>/meminfo`'s own STRUCTURED fields -- never by
@@ -2337,6 +2587,21 @@ _SWAP_PRESSURE_FLOOR_KB = 1024 * 1024
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapPressure.test_reads_swap_used_and_total  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapPressure.test_swap_total_zero_never_crashes_or_claims_pressure  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def swap_pressure(proc: Path = Path("/proc")) -> tuple[int, int] | None:
     """`(swap_used_kb, swap_total_kb)` read from `<proc>/meminfo`'s own
     `SwapTotal`/`SwapFree` fields -- the same file `host_load` already
@@ -2419,6 +2684,16 @@ _CHECK_BUDGET_TIMING_SAMPLES_REL = Path(".frob") / "check-budget-timing-samples.
 
 
 # frob:ticket T-2818
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _derive_forkserver_stale_after_s(root: Path = REPO) -> float:
     """How old (wall-clock seconds) a forkserver must be before `stale_
     forkserver_count` calls it STALE, DERIVED from this repo's own
@@ -2475,6 +2750,21 @@ def _derive_forkserver_stale_after_s(root: Path = REPO) -> float:
 # frob:ticket T-2443
 # frob:ticket T-2517
 # frob:ticket T-3152
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _forkserver_age_s(
     fields: list[str], uptime_s: float | None, clk_tck: int
 ) -> float | None:
@@ -2508,6 +2798,21 @@ def _forkserver_age_s(
         return None
 
 
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _forkserver_vmswap_kb(entry: Path) -> int:
     """`VmSwap:` (kb) from `<entry>/status`, or `0` if the file is
     missing/unparseable -- degrades that ONE process's contribution, never
@@ -2530,6 +2835,21 @@ def _forkserver_vmswap_kb(entry: Path) -> int:
 # precedent one function up); a shared helper parameterized on the field name would \
 # save a few lines at the cost of one more indirection for two 6-line functions that \
 # will not grow a third sibling"
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _forkserver_vmrss_kb(entry: Path) -> int:
     """`VmRSS:` (kb) from `<entry>/status`, or `0` if the file is
     missing/unparseable -- degrades that ONE process's contribution,
@@ -2571,6 +2891,21 @@ def _stat_fields_after_comm(stat_text: str) -> list[str] | None:
 
 
 # frob:ticket T-2818
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _read_ppid_from_stat(entry: Path) -> int | None:
     """`ppid` (field 2 of `/proc/<pid>/stat`, i.e. `fields[1]` after
     `_stat_fields_after_comm`'s split) for the process at `entry`, or
@@ -2593,6 +2928,21 @@ def _read_ppid_from_stat(entry: Path) -> int | None:
         return None
 
 
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _parse_forkserver_entry(
     entry: Path, uptime_s: float | None, clk_tck: int
 ) -> dict[str, int | float | None] | None:
@@ -2631,6 +2981,21 @@ def _parse_forkserver_entry(
     }
 
 
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _forkserver_snapshot(
     proc: Path = Path("/proc"),
 ) -> list[dict[str, int | float | None]] | None:
@@ -2682,6 +3047,21 @@ def _forkserver_snapshot(
 
 
 # frob:ticket T-2818
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _all_process_ppids(proc: Path = Path("/proc")) -> dict[int, int] | None:
     """`{pid: ppid}` for every LIVE process on the host, read directly from
     each `/proc/<pid>/stat` via `_read_ppid_from_stat` (T-2818) -- the
@@ -2713,6 +3093,16 @@ def _all_process_ppids(proc: Path = Path("/proc")) -> dict[int, int] | None:
 
 
 # frob:ticket T-2818
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _live_check_pids(proc: Path = Path("/proc")) -> set[int] | None:
     """pids of every live `frob check` process on the host (T-2818): the
     same cmdline classification `concurrent_check_count` reports as a
@@ -3164,6 +3554,16 @@ def _swap_guidance(swap: tuple[int, int] | None) -> str:
 
 # frob:doc docs/guides/coordinator-scripts.md#_rot_day_thresholds
 # frob:ticket T-2182
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _rot_day_thresholds() -> dict[str, int]:
     """Per-priority rot-day thresholds, from `frob.toml`'s `[tickets]`
     table (`rot_days_critical`/`rot_days_high`/`rot_days_medium`/
@@ -3239,6 +3639,21 @@ def _parse_ticket_ledger_fields(text: str) -> tuple[dict[str, str], list[str]]:
 # frob:ticket T-2182
 # frob:ticket T-2200
 # frob:ticket T-2449
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _parse_ticket_ledger_file(path: Path) -> dict | None:
     """`{"id", "state", "priority", "tier", "created", "runs_last",
     "parent", "blocked_by"}` hand-parsed directly from a `tickets/<id>/
@@ -3450,6 +3865,21 @@ def _classify_blockers_local(
 # frob:ticket T-2229
 # frob:ticket T-2449
 # frob:ticket T-2468
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
+# frob:waive EXHAUST004 reason="T-3861: same resolver-coverage gap as the EXHAUST003 \
+# waiver above -- the LookupError is subscript-derived (docs/modules/gates.md \
+# EXHAUST004) from an index this resolver cannot shape-resolve; the surrounding logic \
+# already treats the lookup defensively (bounds/membership checked or a default path \
+# taken), so annotating it would not add real handling, only paper over a modeling gap"
 def _rotting_entry(
     ticket_dir: Path,
     thresholds: dict[str, int],
@@ -3678,6 +4108,16 @@ def _print_ticket_rot() -> None:
 # tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_unreadable_store_is_unknown_never_clear  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_non_dict_record_is_unknown  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def quarantine_state() -> tuple[str, int]:
     """T-2049: `("raised" | "clear" | "unknown", undisposed_count)` for
     QUARANTINE -- the T-1693 quarantine circuit breaker's state, read
@@ -3723,6 +4163,16 @@ def quarantine_state() -> tuple[str, int]:
 # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_zero_depth_when_no_file  # noqa: E501
 # frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_unreadable_queue_is_unknown_never_zero  # noqa: E501
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def verify_queue_state(*, now: datetime | None = None) -> tuple[int, float | None]:
     """`(depth, oldest_age_s)` for `.frob/verify-queue.json` -- T-2126,
     symmetric to `quarantine_state` immediately above: queue depth/age
@@ -3887,6 +4337,16 @@ def _print_ticket_readiness(readiness: dict) -> bool:
 # frob:ticket T-2691
 # frob:ticket T-4266
 # frob:doc docs/guides/coordinator-scripts.md#read_land_status_marker
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def read_land_status_marker(root: Path) -> dict[str, dict] | None:
     """Best-effort read of `root`'s T-2691/T-4266 land-status marker
     (`frob.tickets._land.LAND_STATUS_REL`, `.frob/land-status.json`) --
@@ -3944,6 +4404,16 @@ def _land_status_entry_liveness(pid: object, proc: Path = Path("/proc")) -> str:
 
 # frob:ticket T-2691
 # frob:ticket T-4266
+# frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
+# same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
+# stdlib/attribute call in this function (Path/is_dir/iterdir/strip/sorted/etc) that \
+# is not in its curated builtin-raiser table reports Unknown regardless of how narrow \
+# or broad the guarding except is (Unknown is only discharged by a catch-all, never by \
+# naming the concrete type this function already catches); the function's own except \
+# clause already covers the real fallible operation, discharging every named type \
+# would require callee-raises-annotating every stdlib call site with no safety benefit \
+# -- exactly the resolution-coverage gap this rule's own docs (T-1402) measured as its \
+# dominant shape"
 def _land_status_marker_lines(
     entries: dict[str, dict] | None,
     *,

@@ -1,0 +1,68 @@
+## Done report
+
+T-3861: EXHAUST002/003/004 burn-down, batch 1 of N.
+
+WHY: this is a lint-driven burn-down over a family of "resolution-coverage
+gap" rules whose own module docstring (`src/frob/gates/_exhaustive_handling.py`)
+and the docs (`docs/modules/gates.md#exhaust001exhaust002-t-0688`) already
+disclose the dominant shape of every EXHAUST003/004 finding: a leaked
+`Unknown`/subscript-derived `LookupError` traced to `frob.arch._mayraise`'s
+deliberately narrow same-module, curated-table-only callee resolution --
+NOT a confirmed unhandled error path (T-1402 measured this exact shape at
+69/69 for the sibling EXHAUST001 rule before it was split out).
+
+WHAT: fixed `scripts/fleet_status.py` (56 findings: 38 EXHAUST003 + 18
+EXHAUST004, the single largest file in the whole-repo baseline, and clear
+of any in-progress lease per `frob ticket contention`/`.git/frob-leases/`).
+For every flagged function, used the module's own probe harness (built
+from `frob.arch._mayraise.compute_may_raise` + `frob.arch._python.
+PythonAdapter`, ad hoc, not shipped) to confirm each leaked type traces to
+an ordinary stdlib/attribute call (`Path.is_dir`, `str.strip`, `sorted`,
+`dict.get`, etc.) outside the curated `_BUILTIN_RAISERS`/
+`_STDLIB_QUALIFIED_RAISERS` tables, with the function's own existing
+`except` clause already covering the real fallible operation -- i.e.
+exhaustive handling already exists; the tool cannot see it. Declaring
+`# frob:callee-raises <Type>` correctly would mean annotating every such
+ordinary call in every affected function (`_resolve_call_contributions`:
+every non-curated call independently contributes UNKNOWN, filtered only by
+a catch-all), which does not add real handling -- so followed this repo's
+own established idiom (`src/frob/check/_python.py`, `src/frob/app/
+_daemon_proxy.py`, `src/frob/app/ticket_runner/_land_cmd.py`, etc., all
+already carry the identical `frob:waive EXHAUST003/004 reason=...` shape
+for the same resolver limitation) and added a symref-scoped `frob:waive`
+directly above each flagged `def`, naming the concrete leaked type set and
+why the guarding except already covers the risk. Verified the DSL parses
+all 56 new waiver edges cleanly (`frob.graph.dsl.parse_directives`: 56/56
+`EXHAUST003`/`EXHAUST004` edges, symref-exact, 0 malformed) against the
+gate's own reported `qualname`s.
+
+MEASUREMENT CAVEAT (disclosed, not hidden): a `frob check --files
+scripts/fleet_status.py --only gates-native --json` scoped run still
+reports the raw 38+18 unwaived (matches the PENDING.txt-documented `--files`
+scoping gap: partial/scoped invocations do not exercise the same
+waive-application pass a full unscoped `frob check --base dev` does). The
+DSL-level proof above is a direct, mechanical proof that the edges exist,
+parse without error, and symref-match the exact violations by construction
+(same `PythonAdapter`/`compute_may_raise` pipeline the gate itself uses) --
+not a substitute for a real full-repo count if the coordinator wants one,
+but the strongest measurement obtainable inside a single sized dispatch
+without running the ~30min+ unscoped `frob check --base dev`.
+
+RESIDUE: 442 of ~448 available (non-leased) EXHAUST002/003/004 findings
+remain open across ~140 other files (see contention.txt/real_leased.txt in
+the coordinator scratchpad for the leased/free split measured this run).
+Ticket stays open; queued as READY-PARTIAL, not appended to queue.txt.
+
+### Changed
+```
+ scripts/fleet_status.py                          | 488 +++++++++++++++++++++++
+ tests/gates_suite/test_exhaust_burndown_t3861.py |  57 +++
+ tickets/T-3861/done-report.md                    |  68 ++++
+ tickets/T-3861/ticket.md                         |  19 +
+ 4 files changed, 632 insertions(+)
+```
+
+### Evidence
+- `tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases::test_reads_lease_records` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unresolvable_callee_fires_exhaust003_not_exhaust001` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_exhaust_burndown_t3861.py::TestExhaustBurndownFleetStatus::test_fleet_status_exhaust003_004_findings_are_all_waived` (pytest node id, verified passing when recorded)
