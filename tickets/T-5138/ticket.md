@@ -63,8 +63,8 @@ acceptance_amendments:
     it reports the lag
   new_text: null
   reason: out of T-5138's declared scope (src/frob/vet/*.py, frob.toml, docs/modules/vet.md,
-    src/frob/strata/_cve_fingerprint.py -- doctor.py is not in it); filed T-5204
-    to implement frob doctor's lint-tool version-lag reporting
+    src/frob/strata/_cve_fingerprint.py -- doctor.py is not in it); filed T-5204 to
+    implement frob doctor's lint-tool version-lag reporting
   actor: logan
   at: '2026-09-21'
 threat: tampering
