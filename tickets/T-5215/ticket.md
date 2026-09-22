@@ -2,7 +2,7 @@
 id: T-5215
 title: frob.app.telemetry.redact_command now transitively loads frob.gates (T-1318
   boundary regression)
-state: in-progress
+state: queued
 kind: security
 origin: human
 created: '2026-09-21'
@@ -44,6 +44,12 @@ body_changes:
   at: '2026-09-21'
   old_length: 1406
   new_length: 3183
+lease_force_releases:
+- reason: 'coordinator: no live work in that worktree (T-5215 diagnosed only; T-4599
+    landed)'
+  staleness_reason: null
+  actor: /home/logan/projects/frob
+  at: '2026-09-22'
 designated_repro_test: null
 threat: null
 component: null
