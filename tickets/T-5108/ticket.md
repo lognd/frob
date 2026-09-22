@@ -24,6 +24,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/narrative/_cli.py
 - tests/test_narrative_migrate.py
+- docs/commands/narrative.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
   glob: tests/test_narrative_migrate.py
   reason: positive control and regression test for the directive-preservation fix
     must live in the existing CLI test file
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/narrative.md
+  reason: document the new default directive-preservation behavior this fix adds to
+    frob narrative move
   actor: logan
   at: '2026-09-22'
 triage_changes:
