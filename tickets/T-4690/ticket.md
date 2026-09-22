@@ -43,6 +43,18 @@ scope:
 - docs/commands/scaffold.md
 - docs/commands/exports.md
 - changelog.d/T-4690.md
+- tests/test_app.py
+- src/frob/gates/_sys_provenance.py
+- src/frob/strata/_pii.py
+- src/frob/worktrees/_disposable_sweep.py
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/doctor.py
+- src/frob/gates/_docptr.py
+- src/frob/gates/_fix_engine_scope.py
+- src/frob/gates/_prework.py
+- src/frob/tickets/_land_squash.py
+- src/frob/verify/_quarantine.py
+- src/frob/app/ticket_runner/_verify.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -123,6 +135,102 @@ scope_changes:
   reason: DOC004/DOC006 require docs/commands/*.md pages naming a removed/deprecated
     verb updated in the same ticket; changelog.d/T-4690.md is the land's changelog
     fragment for the deprecations this ticket introduces
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: tests/test_app.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/gates/_sys_provenance.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/strata/_pii.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/worktrees/_disposable_sweep.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/doctor.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/gates/_docptr.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/gates/_fix_engine_scope.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/gates/_prework.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/tickets/_land_squash.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/verify/_quarantine.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
+  actor: logan
+  at: '2026-09-21'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'land''s unscoped pre-commit-merge-preview sweep refused T-4690 on repo-wide
+    drift/DOC/DSL findings accumulated on dev since this worktree branched (none of
+    these functions are T-4690''s own edits) -- coordinator directive: fix each finding
+    at its root regardless of prior declared scope since the sweep itself is unscoped'
   actor: logan
   at: '2026-09-21'
 triage_changes:
