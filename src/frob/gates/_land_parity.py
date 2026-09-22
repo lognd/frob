@@ -182,9 +182,67 @@ _DOC_TEST_EDGE_FAMILIES: tuple[tuple[str, str, str], ...] = (
 )
 
 
+# frob:ticket T-5299
+def _land_parity_graph_snapshot(worktree: Path):  # noqa: ANN201 -- GraphSnapshot | None, deferred-import type
+    """The graph snapshot `_symbol_has_test_side_edge` reads for T-5299's
+    fix: `load_graph`'s cached-cheap path first, `build_graph` only on a
+    cache miss -- the SAME load-then-build pattern `frob.tickets._land.
+    _tdd_order_scoped_edges` already uses to consult `GraphSnapshot.edges`
+    on the land critical path without re-paying the ~208s uncached
+    full-repo cost T-1684 took off it (a `frob ticket land`/pre-land-fix
+    run has almost always already built and cached this exact snapshot
+    moments earlier). `None` on any build failure -- callers degrade to
+    "no test-side edge found" (the pre-T-5299 behavior), never a crash."""
+    from frob.graph import build_graph, load_graph
+
+    cache = worktree / ".frob" / "cache.db"
+    loaded = load_graph(cache)
+    if loaded.is_ok:
+        return loaded.danger_ok
+    built = build_graph(worktree, cache)
+    if built.is_err:
+        _log.warning(
+            "land_parity: graph unavailable for T-5299's test-side-edge "
+            "check (%s) -- falling back to lexical-only frob:tests detection",
+            built.danger_err,
+        )
+        return None
+    return built.danger_ok
+
+
+# frob:ticket T-5299
+def _symbol_has_test_side_edge(snapshot, rel_path: str, name: str) -> bool:  # noqa: ANN001 -- GraphSnapshot | None
+    """`True` when the graph already derives an `EdgeKind.TESTS` edge FROM
+    `{rel_path}::{name}` (the production symbol) -- T-4710's convention: a
+    `frob:tests` directive can live on the TEST symbol instead of the
+    production one, and the graph reorients it (`dsl._reorient_test_edge`)
+    so `edge.src` always names the production symbol regardless of which
+    file the comment physically sits in. Before T-5299 this check
+    (`_new_public_symbols_in_file_missing_doc_or_test_edge`) only scanned
+    the lexical comment block directly above the def/class, so a symbol
+    with ONLY a test-side declaration -- exactly what `fix_test010_
+    redundant_test_declaration` (T-5261/T-5289) now correctly leaves
+    behind after deleting the redundant production-side copy -- read as
+    having NO test edge at all and refused the land. `False` (never
+    treated as covered) when `snapshot` is `None` (graph unavailable) --
+    same fail-open-to-the-OLD-behavior posture every other helper in this
+    module uses."""
+    if snapshot is None:
+        return False
+    from frob.graph._models import EdgeKind
+
+    symbol_id = f"{rel_path}::{name}"
+    return any(
+        edge.kind is EdgeKind.TESTS and edge.src == symbol_id for edge in snapshot.edges
+    )
+
+
 # frob:ticket T-2322
 def _new_public_symbols_in_file_missing_doc_or_test_edge(
-    worktree: Path, merge_base: str, rel_path: str
+    worktree: Path,
+    merge_base: str,
+    rel_path: str,
+    snapshot=None,  # noqa: ANN001 -- GraphSnapshot | None
 ) -> list[tuple[str, str, int, list[str]]]:
     """Per-file body of `_new_public_symbols_missing_doc_or_test_edge`
     (T-2322 ARCH001 split, zero behavior change): every (file, name,
@@ -193,7 +251,12 @@ def _new_public_symbols_in_file_missing_doc_or_test_edge(
     `merge_base`, diffs the public top-level def names, and checks each
     NEW one's preceding comment block for the doc/test-edge directive
     pair. Returns `[]` (never an error) for a file that no longer exists,
-    fails to read, or introduces no new public symbols."""
+    fails to read, or introduces no new public symbols.
+
+    T-5299: a symbol still missing the lexical `frob:tests` directive is
+    given one more chance before being reported -- `_symbol_has_test_
+    side_edge` against `snapshot` (T-4710's test-side-declaration
+    convention, see that function's own docstring)."""
     from frob.tickets._land import _genuine_comment_lines
 
     full = worktree / rel_path
@@ -223,6 +286,10 @@ def _new_public_symbols_in_file_missing_doc_or_test_edge(
             for label, directive, waive_rule in _DOC_TEST_EDGE_FAMILIES
             if directive not in block_text
             and f"frob:waive {waive_rule}" not in block_text
+            and not (
+                directive == "frob:tests"
+                and _symbol_has_test_side_edge(snapshot, rel_path, name)
+            )
         ]
         if missing:
             findings.append((rel_path, name, lineno, missing))
@@ -238,14 +305,21 @@ def _new_public_symbols_missing_doc_or_test_edge(
     regardless of how git chose to break the hunks up) and whose
     immediately-preceding comment block (`_frob_directive_block`) is
     missing one or more of `_DOC_TEST_EDGE_FAMILIES`'s directive/waive
-    pair -- `missing_families` names each missing family's `label`, in
-    `_DOC_TEST_EDGE_FAMILIES` order.
+    pair AND (for the `frob:tests` family) has no graph-derived test-side
+    edge either (T-5299, `_symbol_has_test_side_edge`) -- `missing_
+    families` names each missing family's `label`, in `_DOC_TEST_EDGE_
+    FAMILIES` order.
 
     This is the diff-derived, bounded check T-2114 asks for: two small
     `ast.parse` calls per touched `.py` file (current worktree content,
     and the SAME file's content at `merge_base` via `git show`), never a
-    full-repo `GraphSnapshot`/`coverage_gate` build -- the ~208s cost
+    full-repo `GraphSnapshot`/`coverage_gate` BUILD -- the ~208s cost
     T-1684 deliberately took off the land critical path stays off it.
+    T-5299's `frob:tests`-only graph consultation is the one exception,
+    and even that stays cheap: `_land_parity_graph_snapshot` prefers the
+    already-cached snapshot (`load_graph`) a `frob ticket land`/pre-land-
+    fix run has almost always just built, falling back to a real
+    `build_graph` only on a genuine cache miss.
 
     T-2201: the candidate block's lines are further filtered to only
     those `frob.tickets._land._genuine_comment_lines` places inside a
@@ -256,6 +330,7 @@ def _new_public_symbols_missing_doc_or_test_edge(
     the passenger-ticket check; this reuses the same machinery rather
     than inventing a second answer to "is this line a genuine
     directive?")."""
+    snapshot = _land_parity_graph_snapshot(worktree)
     findings: list[tuple[str, str, int, list[str]]] = []
     for rel_path in sorted(touched_paths):
         if not rel_path.endswith(".py"):
@@ -264,7 +339,7 @@ def _new_public_symbols_missing_doc_or_test_edge(
             continue
         findings.extend(
             _new_public_symbols_in_file_missing_doc_or_test_edge(
-                worktree, merge_base, rel_path
+                worktree, merge_base, rel_path, snapshot
             )
         )
     return findings
