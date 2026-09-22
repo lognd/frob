@@ -121,6 +121,13 @@ body_changes:
   at: '2026-09-20'
   old_length: 6330
   new_length: 8280
+- mode: set
+  reason: reword a file::symbol pointer to _mirror_subparser, which T-4690 deletes
+    (DOC006 refused T-4690's land)
+  actor: logan
+  at: '2026-09-22'
+  old_length: 8260
+  new_length: 8295
 designated_repro_test: null
 acceptance:
 - text: Given frob --help after all seven leaves land, when the top-level verb count
@@ -157,8 +164,8 @@ WHY THE SURFACE GREW: four "grouping" tickets (T-1238 explore, T-1567 quality,
 T-1568 design, T-1569 ops) each added an intent-named GROUP verb while keeping
 every member's standalone top-level form "working unchanged". They added four
 names and removed zero. frob explore xref (planned) and `frob xref` are the same
-ArgumentParser object (`_cli_parsers/_explore.py::_mirror_subparser` writes the
-flat parser straight into the group's `choices`). That is the duplication this
+ArgumentParser object (the former mirror-subparser helper in _cli_parsers/_explore.py, deleted by
+T-4690, wrote the flat parser straight into the group's choices). That is the duplication this
 story deletes.
 
 SHAPE OF THE TARGET SURFACE (about a dozen verbs):
