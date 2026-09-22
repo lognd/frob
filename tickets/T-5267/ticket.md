@@ -25,6 +25,8 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/vet/_scan.py
 - src/frob/gates/_waive.py
+- frob.toml
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +36,16 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: TOOL001-003 rule ids must be registered in _KNOWN_GATE_RULES so the new
     gate is waivable/known
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: frob.toml
+  reason: TOOL001-003 need severities registered like every other rule family
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/modules/gates.md
+  reason: new gate rule family needs docs per new-gate-rule-acceptance-policy
   actor: logan
   at: '2026-09-22'
 triage_changes:
