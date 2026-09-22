@@ -2,7 +2,7 @@
 id: T-4702
 title: Regenerate docs/commands from the final CLI surface (18 files for 51 verbs
   today) and report the drift in the owner-owned ~/.claude/refs/frob.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-19'
@@ -77,6 +77,8 @@ scope:
 - docs/index.md
 - docs/modules/app.md
 - tests/unit/test_app_config_from_external_t1276.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -403,6 +405,16 @@ scope_changes:
     here per coordinator directive, needs its own test coverage
   actor: logan
   at: '2026-09-22'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: declare core node''s fs.write capability for src/frob/docs/_command_pages.py::sync_missing_command_pages'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SELFAUDIT001: declare core node''s fs.write capability for src/frob/docs/_command_pages.py::sync_missing_command_pages'
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -431,6 +443,11 @@ evidence:
 - tests/unit/test_docs_commands_coverage.py::TestAssertionFiresInBothDirections::test_planted_doc_with_no_verb_is_caught
 - tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages::test_generate_command_page_renders_help_text_and_usage
 - tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages::test_sync_writes_only_missing_pages_and_never_overwrites
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_unsized_ack_reason_reaches_cfg
+- tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_ticket_points_int_field_reaches_cfg
+- cmd:bash -c "set -x; grep -q \"~/.claude/refs/frob.md:7-10\" tickets/T-4702/done-report.md
+  && grep -q \"Replacement:\" tickets/T-4702/done-report.md && ! git diff --name-only
+  dev...HEAD -- \"**/refs/frob.md\" | grep -q . && echo OK-acceptance3" exit=0 sha256=a74fa0920442
 designated_repro_test: null
 acceptance:
 - text: Given the live argparse tree, when the coverage test runs, then every top-level
@@ -440,6 +457,8 @@ acceptance:
   - tests/unit/test_docs_commands_coverage.py::TestLiveSurfaceMatchesDocsCommands::test_every_doc_page_names_a_registered_verb
   - tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages::test_generate_command_page_renders_help_text_and_usage
   - tests/unit/test_docs_commands_coverage.py::TestSyncMissingCommandPages::test_sync_writes_only_missing_pages_and_never_overwrites
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_unsized_ack_reason_reaches_cfg
+  - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_ticket_points_int_field_reaches_cfg
 - text: Given a planted verb with no doc and a planted doc with no verb, when the
     coverage test runs, then it fails on each -- the assertion is proven to fire in
     both directions
@@ -449,7 +468,10 @@ acceptance:
 - text: Given ~/.claude/refs/frob.md, when this ticket closes, then the Done report
     lists each stale spelling with file:line and replacement text and the file itself
     is unmodified
-  evidence: []
+  evidence:
+  - cmd:bash -c "set -x; grep -q \"~/.claude/refs/frob.md:7-10\" tickets/T-4702/done-report.md
+    && grep -q \"Replacement:\" tickets/T-4702/done-report.md && ! git diff --name-only
+    dev...HEAD -- \"**/refs/frob.md\" | grep -q . && echo OK-acceptance3" exit=0 sha256=a74fa0920442
 threat: null
 component: docs
 labels:
