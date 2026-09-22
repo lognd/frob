@@ -2,7 +2,7 @@
 id: T-4113
 title: 'H3-3: an outbound flow''s destination must be constrained to its declared
   node, and every foreign flow needs a rate'
-state: in-progress
+state: queued
 kind: security
 origin: human
 created: '2026-09-06'
