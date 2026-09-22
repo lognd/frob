@@ -9,7 +9,7 @@ created: '2026-09-22'
 priority: high
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 points: 3
@@ -78,6 +78,19 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-22'
+evidence:
+- tests/test_tickets_points.py::TestStartUnsizedRefusal::test_unsized_queued_ticket_refuses
+- tests/test_tickets_points.py::TestStartUnsizedRefusal::test_unsized_queued_ticket_starts_cleanly_when_not_required
+- tests/test_tickets_points.py::TestStartUnsizedRefusal::test_sized_ticket_starts_cleanly
+- tests/test_tickets_points.py::TestStartUnsizedRefusal::test_unsized_ack_bypasses_refusal
+- tests/test_tickets_points.py::TestStartUnsizedRefusal::test_full_start_cli_refuses_on_unsized_ticket
+- tests/test_tickets_points.py::TestStartUnsizedRefusal::test_full_start_cli_starts_cleanly_when_not_required
 designated_repro_test: null
 threat: null
 component: null
