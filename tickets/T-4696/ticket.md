@@ -6,7 +6,7 @@ state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
-priority: high
+priority: medium
 blocked_by:
 - T-4690
 parent: T-4687
@@ -65,6 +65,12 @@ triage_changes:
   old_value: high
   new_value: high
   reason: smoke test T-4696 set verb round-trip
+  actor: logan
+  at: '2026-09-22'
+- field: priority
+  old_value: high
+  new_value: medium
+  reason: revert smoke test
   actor: logan
   at: '2026-09-22'
 body_changes:
