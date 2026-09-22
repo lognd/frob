@@ -2,7 +2,7 @@
 id: T-4714
 title: 'Strip no-longer-needed noqa from directive lines: Tier-A fix plus lint, without
   re-tripping T-1987''s ARCH001 line-count regression'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -54,6 +54,19 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+evidence:
+- tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaText::test_strips_a_noqa_that_no_longer_fits_the_line
+- tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaText::test_load_bearing_noqa_is_left_untouched
+- tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaText::test_bare_noqa_with_no_code_is_also_stripped_when_it_now_fits
+- tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaText::test_idempotent_second_pass_is_a_no_op
+- tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaText::test_never_changes_physical_line_count_reconstructing_t1970_shape
+- tests/test_gates_fmt_directives.py::TestNoqaStripViolations::test_flags_a_directive_whose_noqa_no_longer_fits_the_reason
+- tests/test_gates_fmt_directives.py::TestNoqaStripViolations::test_load_bearing_noqa_is_not_flagged
+- tests/test_gates_fmt_directives.py::TestNoqaStripViolations::test_clean_file_with_no_noqa_at_all_is_not_flagged
+- tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaPaths::test_check_mode_reports_without_writing
+- tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaPaths::test_second_run_reports_zero_changes
+- tests/test_gates_fmt_directives.py::TestFixFmt002NoqaStrip::test_strips_and_is_idempotent
+- tests/test_gates_fmt_directives.py::TestFixFmt002NoqaStrip::test_only_paths_scoping_leaves_an_unlisted_file_untouched
 designated_repro_test: null
 threat: null
 component: null

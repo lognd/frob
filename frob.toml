@@ -868,6 +868,11 @@ WIRE003 = "error"
 # under T-3843's active lease (a different series is fixing its single
 # live finding right now) and out of this ticket's scope.
 SYS101 = "warn"
+# T-4714: FMT002 (a frob: directive line's noqa suffix no longer needed
+# under T-4712's narrowed wrapper) ships at warn, same new-gate-at-WARN
+# posture DOC006/SYS101 above already document -- the Tier-A fix
+# (fix_fmt002_noqa_strip) is the burn-down path, not a hand-audit.
+FMT002 = "warn"
 # frob-zone-end gates.severity T-1002
 
 # T-2390 epic child (T-2432): known_keys declares this table's

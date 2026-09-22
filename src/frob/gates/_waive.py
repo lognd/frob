@@ -725,6 +725,11 @@ _KNOWN_GATE_RULES = frozenset(
         # src/frob/check/ and this rule-catalog were outside that ticket's
         # declared scope.
         "FMT001",
+        # T-4714: a `frob:` directive line's `# noqa`/`# noqa: CODE`
+        # suffix (frob.gates._fmt_directives.noqa_strip_violations) that
+        # no longer needs it -- removing it still fits the resolved line
+        # length; the Tier-A fix (fix_fmt002_noqa_strip) strips it.
+        "FMT002",
         "PII010",
         "SEC110",
         # T-0665: fail-closed runtime-resolved capability-indirection

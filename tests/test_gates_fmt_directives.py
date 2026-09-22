@@ -1270,3 +1270,176 @@ class TestCanonicalizeTextIdempotentTwice:
         assert [c.path for c in first.changes] == ["a.py"]
         second = format_paths(tmp_path, check_only=False, limit=40)
         assert second.changes == ()
+
+
+class TestStripNeedlessNoqaText:
+    """T-4714: `strip_needless_noqa_text` -- the FMT002 write half."""
+
+    def test_strips_a_noqa_that_no_longer_fits_the_line(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaText.test_strips_a_noqa_that_no_longer_fits_the_line  # noqa: E501
+        # POSITIVE CONTROL: the noqa's target is short enough that,
+        # stripped, the line easily fits under the limit.
+        from frob.gates._fmt_directives import strip_needless_noqa_text
+
+        target = "x" * 40
+        text = f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        out = strip_needless_noqa_text(text, path="a.py", limit=88)
+        assert "noqa" not in out
+        assert target in out
+
+    def test_load_bearing_noqa_is_left_untouched(self) -> None:
+        # CONTROL: a genuinely unbreakable long target keeps its noqa --
+        # the fix must not simply delete every noqa suffix it sees.
+        from frob.gates._fmt_directives import strip_needless_noqa_text
+
+        target = "y" * 120
+        text = f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        out = strip_needless_noqa_text(text, path="a.py", limit=88)
+        assert out == text
+
+    def test_bare_noqa_with_no_code_is_also_stripped_when_it_now_fits(self) -> None:
+        from frob.gates._fmt_directives import strip_needless_noqa_text
+
+        target = "x" * 10
+        text = f"def f():\n    # frob:tests {target}  # noqa\n    pass\n"
+        out = strip_needless_noqa_text(text, path="a.py", limit=88)
+        assert "noqa" not in out
+
+    def test_idempotent_second_pass_is_a_no_op(self) -> None:
+        from frob.gates._fmt_directives import strip_needless_noqa_text
+
+        target = "x" * 40
+        text = f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        once = strip_needless_noqa_text(text, path="a.py", limit=88)
+        twice = strip_needless_noqa_text(once, path="a.py", limit=88)
+        assert once == twice
+
+    def test_never_changes_physical_line_count_reconstructing_t1970_shape(self) -> None:
+        # Reconstruct T-1970's own shape: a noqa-suppressed physical line
+        # inside a function -- assert the enclosing function's physical
+        # line count does not grow (the exact regression T-1987 reverted
+        # T-1605's self-retiring behavior over).
+        from frob.gates._fmt_directives import strip_needless_noqa_text
+
+        target = "x" * 40
+        text = (
+            "def enclosing() -> None:\n"
+            f"    # frob:tests {target}  # noqa: E501\n"
+            "    pass\n"
+        )
+        out = strip_needless_noqa_text(text, path="a.py", limit=88)
+        assert len(out.splitlines()) == len(text.splitlines())
+
+
+class TestNoqaStripViolations:
+    """T-4714: `noqa_strip_violations` -- the FMT002 lint half."""
+
+    def test_flags_a_directive_whose_noqa_no_longer_fits_the_reason(
+        self, tmp_path
+    ) -> None:
+        target = "x" * 40
+        (tmp_path / "a.py").write_text(
+            f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        )
+        from frob.gates._fmt_directives import noqa_strip_violations
+
+        violations = noqa_strip_violations(tmp_path, limit=88)
+        assert len(violations) == 1
+        assert violations[0].rule == "FMT002"
+        assert violations[0].line == 2
+
+    def test_load_bearing_noqa_is_not_flagged(self, tmp_path) -> None:
+        target = "y" * 120
+        (tmp_path / "a.py").write_text(
+            f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        )
+        from frob.gates._fmt_directives import noqa_strip_violations
+
+        assert noqa_strip_violations(tmp_path, limit=88) == ()
+
+    def test_clean_file_with_no_noqa_at_all_is_not_flagged(self, tmp_path) -> None:
+        (tmp_path / "a.py").write_text(
+            "def f():\n    # frob:tests a.py::A.m\n    pass\n"
+        )
+        from frob.gates._fmt_directives import noqa_strip_violations
+
+        assert noqa_strip_violations(tmp_path, limit=88) == ()
+
+
+class TestStripNeedlessNoqaPaths:
+    """T-4714: `strip_needless_noqa_paths` -- the FMT002 file-walk driver,
+    mirroring `format_paths`'s own contract (check-mode reports without
+    writing, write-mode rewrites, idempotent on a second run)."""
+
+    def test_check_mode_reports_without_writing(self, tmp_path) -> None:  # noqa: ANN001
+        from frob.gates._fmt_directives import strip_needless_noqa_paths
+
+        target = "x" * 40
+        original = f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        (tmp_path / "a.py").write_text(original)
+        report = strip_needless_noqa_paths(tmp_path, check_only=True, limit=88)
+        assert [c.path for c in report.changes] == ["a.py"]
+        assert (tmp_path / "a.py").read_text() == original
+
+    def test_second_run_reports_zero_changes(self, tmp_path) -> None:  # noqa: ANN001
+        from frob.gates._fmt_directives import strip_needless_noqa_paths
+
+        target = "x" * 40
+        (tmp_path / "a.py").write_text(
+            f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        )
+        first = strip_needless_noqa_paths(tmp_path, check_only=False, limit=88)
+        assert [c.path for c in first.changes] == ["a.py"]
+        second = strip_needless_noqa_paths(tmp_path, check_only=False, limit=88)
+        assert second.changes == ()
+
+
+class TestFixFmt002NoqaStrip:
+    """T-4714: `fix_fmt002_noqa_strip` -- the Tier-A handler, round-tripped
+    through the real parser to prove the strip never changes the edge
+    set, and through a second run to prove idempotence."""
+
+    def test_strips_and_is_idempotent(self, tmp_path) -> None:  # noqa: ANN001
+        from frob.gates._fix_engine_text import fix_fmt002_noqa_strip
+        from frob.graph.dsl import parse_directives
+        from frob.lang import parse_file
+
+        target = "x" * 40
+        path = tmp_path / "a.py"
+        path.write_text(
+            f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        )
+        parsed = parse_file(path).danger_ok
+        parsed = parsed.model_copy(update={"path": "a.py"})
+        before_edges, before_malformed = parse_directives(parsed)
+        assert not before_malformed
+
+        applied = fix_fmt002_noqa_strip(tmp_path)
+        assert len(applied) == 1
+        assert applied[0].rule == "FMT002"
+        assert "noqa" not in path.read_text()
+
+        parsed2 = parse_file(path).danger_ok
+        parsed2 = parsed2.model_copy(update={"path": "a.py"})
+        after_edges, after_malformed = parse_directives(parsed2)
+        assert not after_malformed
+        assert {(e.src, e.kind, e.target) for e in before_edges} == {
+            (e.src, e.kind, e.target) for e in after_edges
+        }
+
+        second = fix_fmt002_noqa_strip(tmp_path)
+        assert second == []
+
+    def test_only_paths_scoping_leaves_an_unlisted_file_untouched(
+        self, tmp_path
+    ) -> None:
+        from frob.gates._fix_engine_text import fix_fmt002_noqa_strip
+
+        target = "x" * 40
+        path = tmp_path / "a.py"
+        original = f"def f():\n    # frob:tests {target}  # noqa: E501\n    pass\n"
+        path.write_text(original)
+        applied = fix_fmt002_noqa_strip(tmp_path, only_paths=frozenset({"other.py"}))
+        assert applied == []
+        assert path.read_text() == original

@@ -39,6 +39,7 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel
 
+from frob.gates._models import Severity, Violation
 from frob.graph import fold_comment_runs
 from frob.logging import get_logger
 from frob.yamlio import fast_yaml_loader
@@ -755,6 +756,220 @@ def _rewrite_lines_via_runs(
             out.append(lines[i])
             i += 1
     return out
+
+
+# ---------------------------------------------------------------------------
+# FMT002 (T-4714): strip a `# noqa`/`# noqa: CODE` suffix (`_NOQA_SUFFIX_RE`)
+# from a directive line that no longer needs it. T-1987's own docstring
+# above (`_rewrite_directive_run`) explains why noqa used to be an
+# UNCONDITIONAL "leave this run alone" marker: rewrapping one noqa-
+# suppressed physical line into several changed the enclosing function's
+# PHYSICAL LINE COUNT and tripped ARCH001 (T-1970, T-1968). This strip
+# answers that regression rather than re-tripping it by construction: it
+# NEVER wraps or unwraps a run into a different physical-line COUNT --
+# only a run that is ALREADY exactly one physical line, and would STILL be
+# exactly one physical line with the noqa suffix removed (it now fits
+# under the resolved limit on its own), is rewritten -- in place, same
+# line, same count. A run that genuinely still needs its noqa (a single
+# token wider than the limit) is left byte-identical, same as before.
+# ---------------------------------------------------------------------------
+
+RULE_FMT002 = "FMT002"
+
+
+def _noqa_strip_candidate(
+    logical_text: str, *, marker: str, indent: str, limit: int
+) -> str | None:
+    """The stripped single-line text if `logical_text`'s trailing noqa
+    suffix is no longer needed -- removing it leaves a line that still
+    fits `limit` on its own -- or `None` when the suffix is absent, the
+    run is otherwise empty once stripped, or the suffix is still
+    load-bearing (the line stays over `limit` even without it)."""
+    match = _NOQA_SUFFIX_RE.search(logical_text)
+    if match is None:
+        return None
+    stripped = logical_text[: match.start()].rstrip()
+    if not stripped:
+        return None
+    prefix_len = len(indent) + len(marker) + 1
+    if prefix_len + len(stripped) > limit:
+        return None
+    return stripped
+
+
+def _noqa_strip_runs(
+    indents: dict[int, str], runs: list, *, marker: str, limit: int
+) -> list[tuple[int, str]]:
+    """`(i, stripped_text)` for every SINGLE-physical-line (`count == 1`)
+    directive run in `runs` whose noqa suffix `_noqa_strip_candidate`
+    says is no longer needed. `count != 1` runs are skipped outright: a
+    noqa suffix only ever appears on a run that was already one physical
+    line when the suffix was added (T-0985's own escape-hatch contract --
+    a wrap never happens on a noqa'd run in the first place), so this is
+    a defensive skip, not the common case."""
+    out: list[tuple[int, str]] = []
+    for logical_text, i, _src, count in runs:
+        if count != 1 or not logical_text.strip().startswith("frob:"):
+            continue
+        stripped = _noqa_strip_candidate(
+            logical_text, marker=marker, indent=indents.get(i, ""), limit=limit
+        )
+        if stripped is not None:
+            out.append((i, stripped))
+    return out
+
+
+# frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaText.test_strips_a_noqa_that_no_longer_fits_the_line  # noqa: E501
+def strip_needless_noqa_text(text: str, *, path: str, limit: int | None) -> str:
+    """FMT002's own text transform (T-4714): strip a no-longer-needed
+    trailing noqa suffix from each single-physical-line `frob:` directive
+    run in `text`, leaving every other run/line -- including a run that
+    still needs its noqa -- byte-for-byte untouched. A narrow SIBLING of
+    `canonicalize_text`, not a replacement for it: this function never
+    wraps or unwraps a run into a different physical-line count, only
+    ever rewrites one already-single-line run into another single line.
+    Idempotent by construction: a line with no noqa suffix, or one whose
+    noqa is still load-bearing, is never a candidate a second pass would
+    find either."""
+    marker = marker_for(path)
+    if marker is None:
+        return text
+    effective_limit = _EFFECTIVELY_UNLIMITED if limit is None else limit
+    had_trailing_newline = text.endswith("\n")
+    lines = text.split("\n")
+    if had_trailing_newline:
+        lines = lines[:-1]
+    indents, entries = _fmt_marker_entries_with_indents(lines, marker)
+    runs = fold_comment_runs(entries)
+    out = list(lines)
+    for i, stripped in _noqa_strip_runs(
+        indents, runs, marker=marker, limit=effective_limit
+    ):
+        run_had_cr = lines[i].endswith("\r")
+        out[i] = f"{indents[i]}{marker} {stripped}" + ("\r" if run_had_cr else "")
+    result = "\n".join(out)
+    if had_trailing_newline:
+        result += "\n"
+    return result
+
+
+# frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestNoqaStripViolations.test_flags_a_directive_whose_noqa_no_longer_fits_the_reason  # noqa: E501
+def noqa_strip_findings_for_text(
+    text: str, *, path: str, limit: int | None
+) -> list[tuple[int, str]]:
+    """`(1-indexed line, reason)` for every FMT002 candidate in `text` --
+    the read-only half `noqa_strip_violations` reports from, sharing
+    `_noqa_strip_runs`' detection with `strip_needless_noqa_text`'s write
+    half so the two can never disagree about what counts as a finding."""
+    marker = marker_for(path)
+    if marker is None:
+        return []
+    effective_limit = _EFFECTIVELY_UNLIMITED if limit is None else limit
+    lines = text.split("\n")
+    indents, entries = _fmt_marker_entries_with_indents(lines, marker)
+    runs = fold_comment_runs(entries)
+    return [
+        (
+            i + 1,
+            f"frob: directive line no longer needs its noqa suffix -- "
+            f"removing it still fits the {limit if limit is not None else 'unlimited'} "
+            f"column limit; run the FMT002 Tier-A fix (or `frob fmt --fix`) to "
+            f"strip it",
+        )
+        for i, _stripped in _noqa_strip_runs(
+            indents, runs, marker=marker, limit=effective_limit
+        )
+    ]
+
+
+# frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestNoqaStripViolations.test_flags_a_directive_whose_noqa_no_longer_fits_the_reason  # noqa: E501
+def noqa_strip_violations(
+    root: Path, *, limit: int | None = None, include_test_corpora: bool = False
+) -> tuple[Violation, ...]:
+    """FMT002: every `frob:` directive line under `root` carrying a
+    `# noqa`/`# noqa: CODE` suffix that no longer needs it. Mirrors
+    `format_paths`' own walk (`frob.excludes.iter_files`, the
+    `_is_test_corpus_path` skip, `limit=None` resolving each file's own
+    width via `resolve_line_length`) but reports findings instead of
+    rewriting -- the lint half `fix_fmt002_noqa_strip`
+    (`frob.gates._fix_engine_text`) applies via `strip_needless_noqa_paths`
+    instead."""
+    from frob.excludes import iter_files
+
+    explicit_single_file = root.is_file()
+    paths = (root,) if explicit_single_file else iter_files(root)
+    out: list[Violation] = []
+    for path in paths:
+        rel = _relpath_for_change(path, root)
+        if not (include_test_corpora or explicit_single_file) and _is_test_corpus_path(
+            rel
+        ):
+            continue
+        text = _read_source_for_format(path)
+        if text is None:
+            continue
+        resolved_limit = limit if limit is not None else resolve_line_length(path, root)
+        for lineno, reason in noqa_strip_findings_for_text(
+            text, path=str(path), limit=resolved_limit
+        ):
+            out.append(
+                Violation(
+                    rule=RULE_FMT002,
+                    severity=Severity.WARN,
+                    file=rel,
+                    line=lineno,
+                    message=f"FMT002: {rel}:{lineno} {reason}",
+                )
+            )
+    return tuple(out)
+
+
+# frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestStripNeedlessNoqaPaths.test_second_run_reports_zero_changes  # noqa: E501
+def strip_needless_noqa_paths(
+    root: Path,
+    *,
+    check_only: bool,
+    limit: int | None = None,
+    include_test_corpora: bool = False,
+) -> FmtReport:
+    """FMT002's own write driver (T-4714): mirrors `format_paths` exactly
+    (same walk, same test-corpus skip, same per-file width resolution,
+    same CRLF-preserving read/write), calling `strip_needless_noqa_text`
+    in place of `canonicalize_text` -- the Tier-A fix
+    (`fix_fmt002_noqa_strip`) calls this in write mode the same way
+    `fix_fmt001_directive_wrap` calls `format_paths`."""
+    from frob.excludes import iter_files
+
+    explicit_single_file = root.is_file()
+    paths = (root,) if explicit_single_file else iter_files(root)
+    changes: list[FmtChange] = []
+    for path in paths:
+        rel = _relpath_for_change(path, root)
+        if not (include_test_corpora or explicit_single_file) and _is_test_corpus_path(
+            rel
+        ):
+            continue
+        original = _read_source_for_format(path)
+        if original is None:
+            continue
+        resolved_limit = limit if limit is not None else resolve_line_length(path, root)
+        rewritten = strip_needless_noqa_text(
+            original, path=str(path), limit=resolved_limit
+        )
+        if rewritten == original:
+            continue
+        changes.append(FmtChange(path=rel))
+        if not check_only:
+            _write_formatted(path, rewritten)
+    return FmtReport(changes=tuple(changes))
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441

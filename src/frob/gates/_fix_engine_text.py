@@ -885,3 +885,74 @@ def fix_dstack001_merge(
             if fix is not None:
                 applied.append(fix)
     return applied
+
+
+# ---------------------------------------------------------------------------
+# FMT002 (T-4714): strip a no-longer-needed `# noqa`/`# noqa: CODE` suffix
+# from a directive line -- the Tier-A fix for `frob.gates._fmt_directives.
+# noqa_strip_violations`.
+# ---------------------------------------------------------------------------
+
+
+def _fmt002_scoped_fixes(root: Path, only_paths: frozenset[str]) -> list[FixApplied]:
+    """`fix_fmt002_noqa_strip`'s `only_paths` branch -- same shape as
+    `_fmt001_scoped_fixes`: format each named path individually rather
+    than walking the whole tree, silently skipping a path that no longer
+    exists or is a directory."""
+    from frob.gates._fmt_directives import strip_needless_noqa_paths
+
+    applied: list[FixApplied] = []
+    for rel in sorted(only_paths):
+        path = root / rel
+        if not path.is_file():
+            continue
+        report = strip_needless_noqa_paths(path, check_only=False)
+        applied.extend(
+            FixApplied(
+                rule="FMT002",
+                file=rel,
+                line=0,
+                detail=f"{rel}: no-longer-needed frob: directive noqa suffix(es) stripped",  # noqa: E501
+            )
+            for _change in report.changes
+        )
+    return applied
+
+
+# frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
+# frob:ticket T-4714
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestFixFmt002NoqaStrip.test_strips_and_is_idempotent  # noqa: E501
+def fix_fmt002_noqa_strip(
+    root: Path,
+    *,
+    only_paths: frozenset[str] | None = None,
+) -> list[FixApplied]:
+    """Tier-A fix (T-4714): FMT002 already names its own remedy -- strip
+    the trailing noqa suffix a directive line no longer needs. Calls
+    `frob.gates._fmt_directives.strip_needless_noqa_paths` in write mode
+    over the whole `root` (idempotent by construction, the same "calling
+    it in write mode IS the fix" shape `fix_fmt001_directive_wrap`
+    already established for FMT001), or -- when `only_paths` is given --
+    scopes the rewrite to exactly that path set (`_fmt002_scoped_fixes`),
+    the same land-scope-discipline precedent (T-1391) `fix_fmt001_
+    directive_wrap`'s own `only_paths` sets: a whole-tree rewrite from a
+    ticket-scoped invocation is an out-of-scope WRITE land's own guards
+    reject. T-1911: takes no `GraphSnapshot` -- `strip_needless_noqa_
+    paths` needs no graph state, so `TIER_A_HANDLERS`' own uniform 4-arg
+    dispatch shape is absorbed by its lambda wrapper, not by this
+    function."""
+    from frob.gates._fmt_directives import strip_needless_noqa_paths
+
+    if only_paths is not None:
+        return _fmt002_scoped_fixes(root, only_paths)
+    report = strip_needless_noqa_paths(root, check_only=False)
+    return [
+        FixApplied(
+            rule="FMT002",
+            file=change.path,
+            line=0,
+            detail=f"{change.path}: no-longer-needed frob: directive noqa suffix(es) stripped",  # noqa: E501
+        )
+        for change in report.changes
+    ]
