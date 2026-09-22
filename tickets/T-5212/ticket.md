@@ -25,5 +25,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5212
+branch: t-5212
 ---
 found while working T-4560: build_call_graph gained an opt-in include_public_callees flag and frob.graph.affects gained public_caller_dependent_files, but _land_cmd.py's _rapid_caller_dependents (out of T-4560's declared/implicit scope) still only calls the private-only caller_dependent_files. Wire it to also call public_caller_dependent_files (or replace the call) so the rapid land's --files dependents scope actually picks up callers of a changed PUBLIC symbol end to end.
