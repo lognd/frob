@@ -33,9 +33,6 @@ def _parse_sunset(sunset: str) -> _dt.date:
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:tests tests/unit/test_cli_shims.py::TestIsPastSunset.test_before_sunset_is_false  # noqa: E501
-# frob:tests tests/unit/test_cli_shims.py::TestIsPastSunset.test_on_sunset_is_false  # noqa: E501
-# frob:tests tests/unit/test_cli_shims.py::TestIsPastSunset.test_after_sunset_is_true  # noqa: E501
 def is_past_sunset(sunset: str, *, today: _dt.date | None = None) -> bool:
     """`True` once `today` (default: the real current date) is strictly
     after `sunset` -- the single source of truth every shim runner and
@@ -45,9 +42,7 @@ def is_past_sunset(sunset: str, *, today: _dt.date | None = None) -> bool:
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:tests tests/unit/test_cli_shims.py::TestAnnounceShim.test_before_sunset_prints_notice_and_returns  # noqa: E501
-# frob:tests tests/unit/test_cli_shims.py::TestAnnounceShim.test_after_sunset_exits_nonzero  # noqa: E501
-# frob:tests tests/unit/test_cli_shims.py::TestAnnounceShim.test_never_writes_to_stdout  # noqa: E501
+# frob:ticket T-5285
 def announce_shim(
     *,
     old_name: str,
@@ -66,7 +61,18 @@ def announce_shim(
     verb in T-4690 (`explore`, `quality`, `design`, `ops`, `fmt`, `docs`,
     `whereis`, `verify status`, `fleet status`) calls this exactly once."""
     past_sunset = is_past_sunset(sunset, today=today)
-    _log.info(
+    # T-5285: INFO-level logs route to STDOUT by default (frob.logging.
+    # config.toml's `[handlers.stdout] level = "INFO"`, T-2979) -- an
+    # _log.info here unconditionally prepended this notice onto every
+    # shimmed command's stdout, including every `--json` invocation of a
+    # shimmed command, breaking json.loads() on otherwise-valid output
+    # (measured directly: tests/system/test_cli_arch.py::test_json_is_valid
+    # and ~150 sibling --json tests across the shimmed aliases). The
+    # human-readable notice is already correctly delivered via the
+    # `renderer` (stderr) call right below; DEBUG keeps this diagnostic
+    # line available via FROB_LOG_LEVEL without ever reaching stdout by
+    # default.
+    _log.debug(
         "cli shim: %s -> %s (ticket=%s sunset=%s past_sunset=%s)",
         old_name,
         new_name,

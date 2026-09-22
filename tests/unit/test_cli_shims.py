@@ -24,7 +24,8 @@ class TestIsPastSunset:
     def test_before_sunset_is_false(self) -> None:
         """A date strictly before the sunset has not yet passed it."""
         assert not is_past_sunset("2026-12-01", today=dt.date(2026, 11, 30))
-# frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset  # noqa: E501
+
+    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset  # noqa: E501
 
     def test_on_sunset_is_false(self) -> None:
         """The sunset date itself is still within the working window
@@ -91,6 +92,32 @@ class TestAnnounceShim:
         )
         captured = capsys.readouterr()
         assert captured.out == ""
+
+    # frob:ticket T-5285
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
+    def test_notice_is_logged_at_debug_not_info(self, caplog) -> None:  # noqa: ANN001
+        """T-5285 regression: `_log.info` here used to leak this exact
+        message onto stdout in every real subprocess CLI invocation
+        (frob's default logging config routes INFO to the stdout
+        handler, T-2979) -- `test_never_writes_to_stdout` above cannot
+        catch a level regression back to INFO by itself: the stdout
+        handler caches its stream reference before `capsys` swaps
+        `sys.stdout`, so an in-process `capsys` check stays green either
+        way. Asserting the emitted record's own level directly is what
+        actually kills a DEBUG->INFO mutation of this line."""
+        import logging
+
+        with caplog.at_level(logging.DEBUG, logger="frob._cli_parsers._shims"):
+            announce_shim(
+                old_name="whereis",
+                new_name="doctor --whereis",
+                sunset="2026-12-01",
+                ticket="T-4690",
+                today=dt.date(2026, 9, 19),
+            )
+        matching = [r for r in caplog.records if "cli shim:" in r.getMessage()]
+        assert len(matching) == 1
+        assert matching[0].levelno == logging.DEBUG
 
 
 # frob:ticket T-4690
