@@ -31,6 +31,7 @@ scope:
 - src/frob/tickets/_models.py
 - src/frob/_cli_parsers/_ticket/_new.py
 - src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/app/ticket_runner/_new.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: sprint verb, setter validation, docs; plus a one-shot ledger
   migration run from the root
@@ -63,6 +64,11 @@ scope_changes:
   reason: validate_sprint/sprint_shape_warning live in _models.py; TicketSpec.sprint
     validation at filing time lives in _new_renumber.py's gauntlet; --semver-sprint-ack
     CLI wiring for new/sprint-assign lives in _cli_parsers/_ticket
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: --semver-sprint-ack CLI flag threading through new_ticket() call site
   actor: logan
   at: '2026-09-22'
 triage_changes:
