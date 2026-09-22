@@ -27,6 +27,7 @@ scope:
 - src/frob/strata/_assume_template.py
 - docs/modules/vet.md
 - src/frob/tickets/_leases.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +67,13 @@ scope_changes:
   reason: land's unscoped pre-commit-merge-preview sweep flagged the same Class::method
     DRIFT002 bug the other T-4690-family lands already fixed elsewhere; T-5121 (the
     ticket that previously held this file's lease) is now done, so this file is free
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: _resolve_set_reason''s new --reason-file read_text call is
+    a real fs.read site on _lifecycle.py the cli node hadn''t declared yet (fs.write
+    already was, from earlier tickets) -- declaring it'
   actor: logan
   at: '2026-09-22'
 triage_changes:
