@@ -2,14 +2,14 @@
 id: T-5285
 title: CLI shim announce_shim logs at INFO, leaking a stray line onto every shimmed
   command's stdout (breaks --json)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-22'
 priority: critical
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 points: 2
@@ -33,12 +33,28 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
-designated_repro_test: null
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-22'
+evidence:
+- tests/unit/test_cli_shims.py::TestAnnounceShim::test_never_writes_to_stdout
+- tests/system/test_cli_arch.py::test_json_is_valid
+- tests/system/test_cli_map.py::test_json_is_valid
+- tests/system/test_cli_outline.py::test_json_is_valid
+- tests/system/test_cli_dup.py::test_json_is_valid
+- tests/system/test_cli_xref.py::test_json_is_valid
+- tests/unit/test_cli_shims.py::TestAnnounceShim::test_notice_is_logged_at_debug_not_info
+designated_repro_test: tests/unit/test_cli_shims.py::TestAnnounceShim::test_notice_is_logged_at_debug_not_info
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5285
+branch: t-5285
 ---
 CI run 35717833933 on dev tip 197238c35e: ~150 of the ~170 total ubuntu test failures share ONE root cause. src/frob/_cli_parsers/_shims.py::announce_shim (T-4690's one deprecation-shim mechanism, called by every deleted/renamed top-level CLI verb: arch, dup, map, outline, xref, gitlog, and more) logs its notice via `_log.info(...)`. frob's default logging config (src/frob/logging/config.toml, T-2979) routes INFO-level records to the STDOUT handler -- so every shimmed command's stdout is now prefixed with a literal "cli shim: arch -> check --only arch (ticket=T-4690 sunset=2026-12-01 past_sunset=False)" line before its real output, breaking json.loads() on every `--json` invocation of a shimmed command (confirmed directly: tests/system/test_cli_arch.py::test_json_is_valid's captured stdout starts with that exact line, then the real JSON). This explains the mass failure across tests/system/test_cli_arch.py, test_cli_dup.py, test_cli_map.py, test_cli_outline.py, test_cli_xref.py, test_cli_gitlog.py, test_cli_scale.py, test_system.py, and more -- all invoke a shimmed alias with --json.
 
