@@ -8,7 +8,7 @@ created: '2026-09-22'
 priority: medium
 parent: null
 tier: ticket
-sprint: null
+sprint: v0.534.0
 runs_last: false
 milestone: null
 points: 3
@@ -39,6 +39,12 @@ triage_changes:
   old_value: null
   new_value: '3'
   reason: ticket sizing
+  actor: logan
+  at: '2026-09-22'
+- field: sprint
+  old_value: null
+  new_value: v0.534.0
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-22'
 designated_repro_test: null
