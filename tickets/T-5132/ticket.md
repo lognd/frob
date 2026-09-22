@@ -12,6 +12,12 @@ tier: story
 sprint: v0.534.0
 runs_last: false
 milestone: 1.0.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -24,6 +30,7 @@ scope:
 - docs/commands/ticket.md
 - docs/modules/tickets-data-storage.md
 - src/frob/app/ticket_runner/_lifecycle.py
+- src/frob/tickets/_new_renumber.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: one model field threaded through new, setter, flow, sprint
   show and docs; each file is a one-hunk change
@@ -34,6 +41,12 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_lifecycle.py
   reason: start-time unsized refusal enforcement point lives in _lifecycle.py alongside
     _refuse_empty_scope_on_start
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: TicketSpec.points validation (validate_points, mirroring validate_milestone)
+    lives in _validate_new_ticket_spec here
   actor: logan
   at: '2026-09-22'
 triage_changes:
