@@ -1,5 +1,5 @@
 ---
-id: T-draft-5463408e
+id: T-5311
 title: 'WEBSEC123-125: resource-exhaustion input-bounds'
 state: queued
 kind: feature

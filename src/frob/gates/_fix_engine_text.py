@@ -456,9 +456,7 @@ def _line_suppressions_for_fix(
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-# frob:tests \
 # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression kind="unit"  # noqa: E501
-# frob:tests \
 # tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression.test_idempotent_second_fix_pass_is_a_no_op kind="unit"  # noqa: E501
 def fix_suppress001_paired_suppression(
     root: Path, snapshot: GraphSnapshot
@@ -613,8 +611,6 @@ def _e501_lines_for_file(root: Path, rel_file: str) -> set[int] | None:
 
 
 # frob:doc docs/modules/gates.md#fix_e501_merge_introduced-auto-fix-t-1547
-# frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_merge_introduced_targeted_format_applies  # noqa: E501
-# frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge_shape_is_a_no_op  # noqa: E501
 # frob:ticket T-1547
 # frob:ticket T-1911
 # frob:enforces CHK-GATE-E501
@@ -822,7 +818,6 @@ def _dstack001_apply_one(root: Path, file: str, src: str, edges) -> FixApplied |
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:ticket T-4713
-# frob:tests \
 # tests/test_gates_directive_stack.py::TestDstack001MergeFix.test_interleaved_doc_tests_doc_collapses_to_one_doc_then_one_tests  # noqa: E501
 def fix_dstack001_merge(
     root: Path,
@@ -922,7 +917,6 @@ def _fmt002_scoped_fixes(root: Path, only_paths: frozenset[str]) -> list[FixAppl
 
 # frob:doc docs/modules/gates.md#fmt002-noqa-strip-t-4714
 # frob:ticket T-4714
-# frob:tests \
 # tests/test_gates_fmt_directives.py::TestFixFmt002NoqaStrip.test_strips_and_is_idempotent  # noqa: E501
 def fix_fmt002_noqa_strip(
     root: Path,
@@ -1294,7 +1288,6 @@ def _apply_redundant_decl_edits(
 # docs/modules/gates.md#test010-redundant-test-declaration-tier-a-fix-t-4710-t-5261
 # frob:ticket T-5261
 # frob:ticket T-5289
-# frob:tests \
 # tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration.test_delete_case_fires_test010_and_fix_removes_the_line  # noqa: E501
 def fix_test010_redundant_test_declaration(
     root: Path, snapshot: GraphSnapshot

@@ -3,7 +3,7 @@ id: T-5289
 title: 'TEST010 Tier-A fix deletes the wrong source lines: per-file line numbers come
   from the pre-fix snapshot, so every land''s pre-land pass corrupts files (lands
   refused by ty)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -42,7 +42,13 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-22'
-designated_repro_test: null
+evidence:
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_delete_case_fires_test010_and_fix_removes_the_line
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_move_case_fires_test010_and_fix_relocates_the_line
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_dangling_target_refuses_rather_than_guessing
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_multiple_findings_in_one_file_survive_batched_apply
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_stale_line_index_never_corrupts_unrelated_lines
+designated_repro_test: tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_multiple_findings_in_one_file_survive_batched_apply
 threat: null
 component: null
 anchor: false
@@ -52,6 +58,3 @@ worktree: /home/logan/projects/frob/.claude/worktrees/t-5289
 branch: t-5289
 ---
 Landed with T-5261 (e1ee0f1704). fix_test010_redundant_test_declaration iterates snapshot.malformed and calls _delete_redundant_test_declaration(root, md.file, md.line) per entry; after the first deletion in a file every later md.line is stale, so it deletes unrelated lines (observed in .claude/worktrees/t-5267 after a refused land: 'def _run_ruff(', '*,' and docstring lines removed from src/frob/check/_python.py, leaving invalid syntax). Every land since ~05:00 on 2026-09-22 runs this pass unscoped, corrupts the worktree tree, and is refused by ty with 1600-3300 'NEW errors' (T-5133, T-5267). Fix: group entries by file, delete from the highest line downward (or re-parse after each write), never apply a stale line index; add a positive-control test with two redundant declarations in one file above real code and assert the code survives byte-for-byte. Also: the pass must be scoped to the landing ticket's touched files (T-5106 note), and a Tier-A handler must refuse to write a file that no longer parses.
-
-## Failure log
-- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5289), requeued by frob check

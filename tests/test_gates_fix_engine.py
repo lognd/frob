@@ -340,7 +340,8 @@ class TestFixE501MergeIntroduced:
     over exactly the `.py` files a land-time merge touched, applied ONLY
     when a resulting E501 finding is actually resolved by the format
     pass."""
-# frob:tests src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced  # noqa: E501
+
+    # frob:tests src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced  # noqa: E501
 
     def test_e501_merge_introduced_targeted_format_applies(
         self, tmp_path: Path
@@ -1103,3 +1104,137 @@ class TestFixTest010RedundantTestDeclaration:
         assert not [a for a in applied if a.rule == "TEST010"]
         assert (root / "src" / "foo.py").read_text() == before_prod
         assert (root / "tests" / "test_foo.py").read_text() == before_test
+
+    def test_multiple_findings_in_one_file_survive_batched_apply(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-5289
+        # POSITIVE CONTROL for T-5289: three redundant production-side
+        # `frob:tests` declarations (two DELETE, one MOVE) in the SAME
+        # file, interleaved with real code -- a `def`, a keyword-only
+        # marker line (`*,`), and a docstring. Before T-5289 the second
+        # and third `_delete_redundant_test_declaration(root, md.file,
+        # md.line)` calls used the PRE-FIX snapshot's line numbers against
+        # an already-shrunk file and deleted unrelated real-code lines.
+        # This asserts every non-directive line survives BYTE-FOR-BYTE and
+        # the rewritten file still parses.
+        from frob.gates._fix_engine import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        helper_block = (
+            "    def helper(\n"
+            "        self,\n"
+            "        *,\n"
+            "        flag: bool = False,\n"
+            "    ) -> None:\n"
+            '        """Keyword-only helper, real code that must survive\n'
+            '        untouched by the TEST010 batched apply."""\n'
+            "        pass\n"
+        )
+        (root / "src" / "foo.py").write_text(
+            "class Foo:\n"
+            "    # frob:tests tests/test_foo.py::TestFoo.test_a\n"
+            "    def a(self) -> None:\n"
+            "        pass\n"
+            "\n"
+            f"{helper_block}"
+            "\n"
+            "    # frob:tests tests/test_foo.py::TestFoo.test_b\n"
+            "    def b(self) -> None:\n"
+            "        pass\n"
+            "\n"
+            "    # frob:tests tests/test_foo.py::TestFoo.test_c\n"
+            "    def c(self) -> None:\n"
+            "        pass\n"
+        )
+        (root / "tests").mkdir(parents=True)
+        (root / "tests" / "test_foo.py").write_text(
+            "class TestFoo:\n"
+            "    def test_a(self) -> None:\n"
+            "        pass\n"
+            "\n"
+            "    def test_b(self) -> None:\n"
+            "        pass\n"
+            "\n"
+            "    def test_c(self) -> None:\n"
+            "        pass\n"
+        )
+        snapshot = self._snap(root)
+        before = self._test010_violations(snapshot)
+        assert sum("redundant (T-4710)" in v.message for v in before) == 3
+
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        test010_applied = [a for a in applied if a.rule == "TEST010"]
+        assert len(test010_applied) == 3
+
+        prod_after = (root / "src" / "foo.py").read_text()
+        test_after = (root / "tests" / "test_foo.py").read_text()
+
+        # The interleaved real code -- def, keyword-only marker, docstring
+        # -- survives byte-for-byte.
+        assert helper_block in prod_after
+
+        # Both files still parse as Python: a stale-index deletion that
+        # clipped a real-code line would break this.
+        import ast
+
+        ast.parse(prod_after)
+        ast.parse(test_after)
+
+        # a/b were DELETEd, c was MOVEd -- no production-side frob:tests
+        # left, and the moved directive landed on test_c.
+        assert "frob:tests" not in prod_after
+        assert "frob:tests src/foo.py::Foo.c" in test_after
+
+        after_snapshot = self._snap(root)
+        after = self._test010_violations(after_snapshot)
+        assert not any("redundant (T-4710)" in v.message for v in after)
+
+    def test_stale_line_index_never_corrupts_unrelated_lines(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-5289
+        # REGRESSION for T-5289: calling the handler's own planning
+        # functions directly with the ORIGINAL (pre-fix) line numbers of
+        # TWO findings in one file -- the exact shape that, before T-5289,
+        # corrupted `src/frob/check/_python.py` in `.claude/worktrees/
+        # t-5267` (a refused land, ty reporting 1600-3300 new errors).
+        # Before the fix this failed: the second call's `md.line` (3, the
+        # ORIGINAL position of the second directive) was applied to a file
+        # already shrunk by the first deletion, deleting the real `pass`
+        # statement of `a` instead of the second directive.
+        from frob.gates._fix_engine_text import (
+            _apply_redundant_decl_edits,
+            _delete_redundant_test_declaration,
+        )
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "foo.py").write_text(
+            "# frob:tests tests/test_foo.py::TestFoo.test_a\n"
+            "def a():\n"
+            "    pass\n"
+            "\n"
+            "# frob:tests tests/test_foo.py::TestFoo.test_b\n"
+            "def b():\n"
+            "    pass\n"
+        )
+
+        # Both findings computed against the SAME original snapshot, as
+        # `fix_test010_redundant_test_declaration` does -- line 1 then
+        # line 5, both 1-indexed ORIGINAL positions.
+        edit_one = _delete_redundant_test_declaration(root, "src/foo.py", 1)
+        edit_two = _delete_redundant_test_declaration(root, "src/foo.py", 5)
+        assert edit_one is not None
+        assert edit_two is not None
+
+        applied = _apply_redundant_decl_edits(root, "src/foo.py", [edit_one, edit_two])
+        assert len(applied) == 2
+
+        rewritten = (root / "src" / "foo.py").read_text()
+        assert rewritten == ("def a():\n    pass\n\ndef b():\n    pass\n")
+        import ast
+
+        ast.parse(rewritten)
