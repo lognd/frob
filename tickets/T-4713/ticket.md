@@ -2,7 +2,7 @@
 id: T-4713
 title: Directive stack lint (N+ consecutive, default 4) plus a Tier-A fix that merges
   same-kind directives into multi-target headers
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -41,6 +41,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4713
+branch: t-4713
 ---
 Leaf 4 of T-4703. 3 points. Stack lint plus the Tier-A merge fix. Blocked by leaf 1 (reverse-copy
 removal) because merging stacks that leaf 1 is about to delete measures the wrong thing.
