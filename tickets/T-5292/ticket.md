@@ -21,11 +21,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/gates_suite/test_tick.py
-- src/frob/gates
+- src/frob/gates/_tickets_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates
+  reason: narrow off gates/__init__.py to avoid T-5267 lease collision; TICK008 lives
+    in _tickets_gate.py
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: narrow off gates/__init__.py to avoid T-5267 lease collision; TICK008 lives
+    in _tickets_gate.py
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: points
   old_value: null
