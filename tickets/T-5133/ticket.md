@@ -2,7 +2,7 @@
 id: T-5133
 title: 'Sprint is a time box, milestone is the version: migrate v0.NNN.0 sprint labels
   into milestone, normalize the v prefix, re-slice the queue into weekly sprints'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-20'
@@ -12,6 +12,13 @@ tier: story
 sprint: v0.534.0
 runs_last: false
 milestone: 1.0.0
+points: null
+unsized_ack: true
+unsized_ack_reason: sizing verb CLI still broken pending T-5280/T-4702 land; ack recorded
+  via library call
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -20,11 +27,44 @@ scope:
 - src/frob/app/ticket_runner/_mutate.py
 - docs/commands/ticket.md
 - docs/modules/tickets-data-storage.md
+- src/frob/tickets/_new_renumber.py
+- src/frob/tickets/_models.py
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: sprint verb, setter validation, docs; plus a one-shot ledger
   migration run from the root
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: validate_sprint/sprint_shape_warning live in _models.py; TicketSpec.sprint
+    validation at filing time lives in _new_renumber.py's gauntlet; --semver-sprint-ack
+    CLI wiring for new/sprint-assign lives in _cli_parsers/_ticket
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: validate_sprint/sprint_shape_warning live in _models.py; TicketSpec.sprint
+    validation at filing time lives in _new_renumber.py's gauntlet; --semver-sprint-ack
+    CLI wiring for new/sprint-assign lives in _cli_parsers/_ticket
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: validate_sprint/sprint_shape_warning live in _models.py; TicketSpec.sprint
+    validation at filing time lives in _new_renumber.py's gauntlet; --semver-sprint-ack
+    CLI wiring for new/sprint-assign lives in _cli_parsers/_ticket
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: validate_sprint/sprint_shape_warning live in _models.py; TicketSpec.sprint
+    validation at filing time lives in _new_renumber.py's gauntlet; --semver-sprint-ack
+    CLI wiring for new/sprint-assign lives in _cli_parsers/_ticket
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: milestone
   old_value: null
@@ -59,6 +99,8 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5133
+branch: t-5133
 ---
 Owner directive 2026-09-20: sprint has been carrying the version (v0.533.0 .. v0.553.0 on 592 of 691 open tickets) while milestone is null on 398 and mixed-format on the rest (1.0.0 vs v0.541.0, 82 values still carry the v prefix validate_milestone now strips). The two fields have collapsed into one. Decision: milestone = the semver a ticket ships with (totally ordered, what ships together); sprint = a time box (when we work), smaller than one release so several milestones can close inside one sprint and a milestone can span sprints. Steps: (1) one-shot migration from the root: for every ticket whose sprint matches v?\d+\.\d+\.\d+, set milestone to that value (v stripped) when milestone is null, else keep the existing milestone and warn on conflict; then clear sprint; also normalize every existing v-prefixed milestone to bare semver; (2) validate_sprint refuses a semver-shaped label going forward (one override flag --semver-sprint-ack) so the collapse cannot recur; (3) re-slice open tickets into weekly sprints labelled YYYY-Www by milestone order and priority, sized against measured velocity (~20 lands/day over the last 7 days, ~29 over 21 days) and, once the sizing story lands, by points; (4) frob ticket sprint show and flow print both axes: per-sprint and per-milestone rollups; (5) update the one-minor-version-per-sprint directive in docs to one-or-more-milestones-per-sprint. Sizing story: see the ticket filed alongside this one.
 
