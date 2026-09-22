@@ -3,7 +3,7 @@ id: T-4698
 title: 'Ticket subverb tail: verdict per subverb (attach anchor flow plan board epic
   wave runs-last migrate archive reverify waive-audit review admin debt deprecated
   scope-ack worktree contention) -- keep with a cited consumer or delete with a shim'
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -223,3 +223,6 @@ _core.py is contended with T-4690/T-4692/T-4695. Render the parse VERDICT here
 tickets still holds _core.py, or take the scope with `frob ticket scope T-4698
 --add src/frob/app/parse_runner.py --reason ...` once _core.py is free. Say
 which route was taken in the Done report.
+
+## Reopen log
+- 2026-09-22: closed-but-unlanded: a refused drain wrote state=done with land_commit null and no code on dev (T-5256 note)
