@@ -2,7 +2,7 @@
 id: T-4518
 title: 'Unity project model: detection, walk-ignores, asmdef as strata nodes, scaffold,
   doctor'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-16'
@@ -41,12 +41,23 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject::test_writes_frob_toml_with_unity_excludes
+- tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject::test_one_strata_file_per_asmdef
+- tests/test_excludes.py::TestUnityExcludeGlobs::test_unity_project_adds_globs
+- tests/test_excludes.py::TestUnityExcludeGlobs::test_non_unity_project_adds_nothing
+- tests/unit/test_lang_project_detect.py::test_detects_unity_project
+- tests/unit/test_doctor.py::TestUnityEditorStatus::test_present_via_env_reports_version
+- tests/unit/test_scaffold_unity_project.py::TestOutputExistsRefusal::test_second_run_without_force_is_output_exists
+- tests/unit/test_scaffold_unity_project.py::TestNotAUnityProject::test_plain_directory_is_not_a_unity_project
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4518
+branch: t-4518
 ---
 Story: recognize and scaffold Unity projects. Parent for the four leaves below.
 
