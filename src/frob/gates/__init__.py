@@ -56,6 +56,7 @@ from typani import Err, Ok
 from typani.option import Nothing, Option, Some
 from typani.result import Result
 
+from frob.doctor import RelevantToolFailureKind, relevant_tool_findings
 from frob.excludes import is_test_file
 from frob.gates._arch import arch_gate
 from frob.gates._arch_schema import arch_schema_gate
@@ -7638,6 +7639,152 @@ def _build_jobs(
     return selected_thread, selected_process, skipped
 
 
+# frob:ticket T-5267
+def _tool_registry_allow_missing(root: Path) -> frozenset[str]:
+    """`[tool_registry].allow_missing` from `root/frob.toml` (T-5267): the
+    declarative override for a relevant-and-missing/failed tool naming
+    the T-5139 registry's own `RelevantToolEntry.name` -- a project-owned
+    ack, not a per-invocation CLI flag (this ticket's own scope did not
+    carry a live lease on `src/frob/_cli_parsers/_check.py`/
+    `src/frob/app/ticket_runner/_land_cmd.py`, the argv-parsing home a
+    `--allow-missing-tool NAME --reason` flag would need; filed as
+    follow-up residue in this ticket's Done report). A missing/unparsable
+    `frob.toml`, or a `[tool_registry]` table with no `allow_missing` key,
+    both mean "nothing acked" -- never an error, since most projects have
+    neither the table nor the tool it would ack."""
+    toml_path = Path(root) / "frob.toml"
+    try:
+        raw = toml_path.read_bytes()
+    except OSError:
+        return frozenset()
+    try:
+        data = tomllib.loads(raw.decode("utf-8"))
+    except (tomllib.TOMLDecodeError, UnicodeDecodeError):
+        return frozenset()
+    table = data.get("tool_registry", {})
+    if not isinstance(table, dict):
+        return frozenset()
+    names = table.get("allow_missing", [])
+    if not isinstance(names, list):
+        return frozenset()
+    return frozenset(n for n in names if isinstance(n, str))
+
+
+# frob:doc docs/modules/gates.md#tool-registry-tool001-003-t-5139t-5267
+# frob:ticket T-5267
+def tool_registry_gate(root: Path) -> tuple[Violation, ...]:
+    """TOOL001 (missing)/TOOL002 (reached-but-failed) -- `frob.doctor.
+    relevant_tool_findings(root)` joined against every `rules_it_serves`
+    rule id: a relevant-and-missing/failed tool makes each rule it serves
+    UNMEASURED, rendered `Severity.ERROR` (not `UNRESOLVED` -- T-5139's
+    own design explicitly wants this to fail the run by default, the one
+    deliberate deviation from the T-1664 "UNRESOLVED never fails alone"
+    contract, since a silently-UNMEASURED gate-serving rule is exactly
+    the under-reporting shape T-1664 exists to prevent elsewhere) so it
+    is both loud in the summary AND non-zero-exit unless acked via
+    `_tool_registry_allow_missing`/`frob:waive TOOL001`/`frob:waive
+    TOOL002`, the two existing override channels this ticket's scope
+    could reach (see `_tool_registry_allow_missing`'s docstring for the
+    CLI-flag follow-up this narrowed to)."""
+    root = Path(root)
+    allow = _tool_registry_allow_missing(root)
+    violations: list[Violation] = []
+    for finding in relevant_tool_findings(root):
+        if finding.entry.name in allow:
+            continue
+        is_missing = finding.kind == RelevantToolFailureKind.MISSING
+        rule = "TOOL001" if is_missing else "TOOL002"
+        served = ", ".join(finding.entry.rules_it_serves)
+        violations.append(
+            Violation(
+                rule=rule,
+                severity=Severity.ERROR,
+                file="frob.toml",
+                line=0,
+                message=(
+                    f"UNMEASURED: {finding.entry.name} ({finding.kind.value}: "
+                    f"{finding.detail}) -- rule(s) left unmeasured: {served}; "
+                    f"install with `{finding.entry.install_remedy}`, or ack via "
+                    f"[tool_registry].allow_missing in frob.toml or "
+                    f'`frob:waive {rule} reason="..."`'
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:ticket T-5267
+def _tool_registry_tracked_python_files(root: Path) -> tuple[str, ...]:
+    """`git ls-files -- '*.py'` under `root`, root-relative POSIX paths,
+    `()` on any git failure -- same shape as `frob.gates._bare_toolchain.
+    _tracked_python_files`, kept as its own helper here (rather than a
+    shared import) so `bare_shutil_which_gate` stays a single-file,
+    mockable unit like every other gate in this module."""
+    ls = run_argv(("git", "-C", str(root), "ls-files", "--", "*.py"))
+    if ls.is_err or ls.danger_ok.returncode != 0:
+        _log.warning("bare_shutil_which_gate: git ls-files failed for %s", root)
+        return ()
+    lines = ls.danger_ok.stdout.splitlines()
+    return tuple(line.strip() for line in lines if line.strip())
+
+
+# frob:doc docs/modules/gates.md#tool-registry-tool001-003-t-5139t-5267
+# frob:ticket T-5267
+def bare_shutil_which_gate(root: Path) -> tuple[Violation, ...]:
+    """TOOL003 (DUP/ARCH-shaped regrowth guard, same posture as
+    `bare_toolchain_gate`/BARETOOL001): a bare `shutil.which(...)` call
+    outside `frob.doctor` (the T-5139 registry's own home, the one
+    permitted caller) bypasses the `_RELEVANT_TOOLS` registry entirely --
+    the tool it probes is never joined against `rules_it_serves`, so a
+    caller-local presence check can silently pass with no gate ever going
+    UNMEASURED when that tool is absent. WARN-tier at first turn-on, the
+    same T-0688/T-0973 promotion posture every other structural gate in
+    this module uses."""
+    root = Path(root)
+    violations: list[Violation] = []
+    for rel_path in _tool_registry_tracked_python_files(root):
+        if rel_path in {"src/frob/doctor.py"}:
+            continue
+        abs_path = root / rel_path
+        try:
+            source = abs_path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        try:
+            tree = ast.parse(source, filename=rel_path)
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            is_shutil_which = (
+                isinstance(func, ast.Attribute)
+                and func.attr == "which"
+                and isinstance(func.value, ast.Name)
+                and func.value.id == "shutil"
+            )
+            if not is_shutil_which:
+                continue
+            violations.append(
+                Violation(
+                    rule="TOOL003",
+                    severity=Severity.WARN,
+                    file=rel_path,
+                    line=node.lineno,
+                    message=(
+                        f"TOOL003: {rel_path}:{node.lineno} bare shutil.which(...) "
+                        f"call outside frob.doctor's _RELEVANT_TOOLS registry -- "
+                        f"add the tool to frob.doctor._RELEVANT_TOOLS instead so "
+                        f"a missing/failed tool joins TOOL001/TOOL002 and the "
+                        f"rules it serves go loudly UNMEASURED rather than "
+                        f"silently degrading here"
+                    ),
+                )
+            )
+    return tuple(violations)
+
+
 # frob:ticket T-1049
 # frob:ticket T-1340
 # frob:ticket T-3962
@@ -7653,6 +7800,14 @@ def _build_thread_jobs(
 
     return {
         "drift": lambda: drift_gate(st.snapshot, st.lock),
+        # T-5139/T-5267: TOOL001/TOOL002 (a relevant-and-missing/failed
+        # tool's served rules go loudly UNMEASURED) and TOOL003 (a bare
+        # shutil.which(...) call outside the frob.doctor registry) --
+        # both are cheap tracked-file/registry reads, same thread-pool
+        # posture as drift/coverage above, not the CPU-bound
+        # process-pool tier.
+        "tool_registry": lambda: tool_registry_gate(st.root),
+        "bare_shutil_which": lambda: bare_shutil_which_gate(st.root),
         "coverage": lambda: coverage_gate(
             st.repo_root,
             st.snapshot,

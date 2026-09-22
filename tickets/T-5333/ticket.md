@@ -1,5 +1,5 @@
 ---
-id: T-draft-a7b46c03
+id: T-5333
 title: squawk migration-safety adapter
 state: queued
 kind: feature

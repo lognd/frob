@@ -67,6 +67,15 @@ enforce = true
 # known advisory; VET012 fires when advisory data could not be obtained at
 # all (no cache and no network, or cache older than advisory_max_age_days)
 # rather than a silent clean pass. frob itself vets its own lockfile.
+# T-5267: `allow_missing` acks a T-5139 `_RELEVANT_TOOLS` entry (by its
+# `name`) as OK to be missing/failed here -- TOOL001/TOOL002 stop firing
+# for that name, same as a `frob:waive TOOL001 reason=...` but
+# project-wide and declarative. Empty here: frob's own checkout ships no
+# ack, so cargo-audit (the only entry today, served rule VET005) still
+# fails loudly if it goes missing on this repo's own runners.
+[tool_registry]
+allow_missing = []
+
 [vet]
 advisories = true
 advisory_max_age_days = 7
@@ -873,6 +882,14 @@ SYS101 = "warn"
 # posture DOC006/SYS101 above already document -- the Tier-A fix
 # (fix_fmt002_noqa_strip) is the burn-down path, not a hand-audit.
 FMT002 = "warn"
+# T-5267: TOOL003 (a bare shutil.which(...) call outside frob.doctor's
+# _RELEVANT_TOOLS registry) is WARN at first turn-on, same
+# T-0688/T-0973 promotion posture BARETOOL001/OPAQUE001 already
+# document above -- TOOL001/TOOL002 are not listed here: they are
+# ERROR by construction (frob.gates.tool_registry_gate), a deliberate
+# T-5139 design deviation from the ordinary severity-table default, not
+# an omission.
+TOOL003 = "warn"
 # frob-zone-end gates.severity T-1002
 
 # T-2390 epic child (T-2432): known_keys declares this table's

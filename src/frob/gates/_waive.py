@@ -1432,6 +1432,16 @@ _KNOWN_GATE_RULES = frozenset(
         # T-3986: an enforcing policy.pattern whose query matched zero
         # nodes across its whole declared glob set (frob.policy).
         "POL000",
+        # T-5139/T-5267: a relevant-and-missing (TOOL001) or
+        # reached-but-failed (TOOL002) gate-serving tool
+        # (frob.doctor.relevant_tool_findings) leaves the rule(s) it
+        # serves UNMEASURED; TOOL003 flags a bare shutil.which(...) call
+        # outside the frob.doctor._RELEVANT_TOOLS registry that bypasses
+        # this whole join (frob.gates.tool_registry_gate/
+        # bare_shutil_which_gate).
+        "TOOL001",
+        "TOOL002",
+        "TOOL003",
     }
 )
 # frob-zone-end known-gate-rules T-1002
