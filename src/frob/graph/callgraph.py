@@ -524,6 +524,7 @@ def build_call_graph(
     *,
     mark_unresolved: bool = False,
     verify_imports: bool = False,
+    include_public_callees: bool = False,
 ) -> CallGraph:
     """Build the intra-file + intra-package call graph over `paths`.
 
@@ -641,7 +642,33 @@ def build_call_graph(
     ticket's scope (`src/frob/gates/**`, `src/frob/dup/**` are not in
     `scope`); a future caller that wants poisoning-aware resolution (e.g.
     a real `compute_protocol_summaries` integration) opts in explicitly.
+
+    T-4560: `include_public_callees` (default `False`) is a second,
+    independent opt-in that ADDS public-callee edges on top of this
+    function's existing private-only set -- it never narrows or replaces
+    it (the shared-graph-wrong-for-second-consumer lesson: `frob.dup`/
+    `frob.gates`' shared callers of this SAME `CallGraph.calls` shape
+    must keep seeing exactly the private-only edges they already assume,
+    see `CallGraph`'s own docstring for why `closure` depends on that).
+    Requires `verify_imports=True` (raises `ValueError` otherwise): a
+    public callee is, by definition, reachable from anywhere, so without
+    real import-binding verification `include_public_callees` would
+    reintroduce the exact repo-wide bare-short-name hazard T-2188 closed
+    for private callees (two files each defining a same-named PUBLIC
+    function would fabricate a caller edge between them). The intended
+    consumer is `frob.graph.affects.caller_dependent_files` (T-4560): the
+    rapid land's scoped-files dependents walk needs the callers of a
+    changed PUBLIC symbol too, not only its private callers, but must
+    resolve those callers through real import bindings (`from A import f`
+    / `A.f` after `import A`), never a bare repo-wide name match.
     """
+    if include_public_callees and not verify_imports:
+        raise ValueError(
+            "build_call_graph: include_public_callees=True requires "
+            "verify_imports=True -- a public callee is reachable from "
+            "anywhere, so without import-binding verification this would "
+            "reintroduce the T-2188 bare-short-name collision hazard"
+        )
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
     imports_by_path = (
@@ -668,6 +695,7 @@ def build_call_graph(
             if mark_unresolved
             else None
         ),
+        include_public_callees=include_public_callees,
     )
     degraded = _call_graph_degraded_languages(paths, verify_imports=verify_imports)
     if degraded:
@@ -1084,6 +1112,7 @@ def _resolve_edges(
     named_reexports_by_path: Mapping[str, Mapping[str, str]] | None = None,
     mark_unresolved: bool = False,
     exempt_extractor=None,  # noqa: ANN001
+    include_public_callees: bool = False,
 ) -> dict[str, tuple[str, ...]]:
     """Caller symref -> resolved private-callee symrefs, per `build_call_graph`'s
     resolution rule (never a public symbol, never self); split out of
@@ -1170,6 +1199,7 @@ def _resolve_edges(
         imports_by_path,
         named_reexports_by_path=named_reexports_by_path or {},
         mark_unresolved=mark_unresolved,
+        include_public_callees=include_public_callees,
     )
 
 
@@ -1186,6 +1216,7 @@ def _resolve_edges_python(
     *,
     named_reexports_by_path: Mapping[str, Mapping[str, str]] | None = None,
     mark_unresolved: bool = False,
+    include_public_callees: bool = False,
 ) -> dict[str, tuple[str, ...]]:
     """Pure-Python fallback for `_resolve_edges`'s matching loop -- the
     same double loop over parallel per-caller name/exempt lists against
@@ -1237,6 +1268,7 @@ def _resolve_edges_python(
             importable,
             mark_unresolved,
             named_reexports_by_path=reexports,
+            include_public_callees=include_public_callees,
         )
         if callees:
             calls[caller_symref] = tuple(callees)
@@ -1254,6 +1286,7 @@ def _one_caller_edges(
     mark_unresolved: bool,
     *,
     named_reexports_by_path: Mapping[str, Mapping[str, str]] | None = None,
+    include_public_callees: bool = False,
 ) -> list[str]:
     """One caller's resolved-callee list -- `_resolve_edges_python`'s
     inner per-caller loop, split out to keep that function under
@@ -1262,7 +1295,17 @@ def _one_caller_edges(
     or (T-2219) sit in the per-NAME re-export closure `_reexport_
     reachable` computes from `importable` -- see that function's own
     docstring for why this is name-scoped rather than a blind
-    file-level BFS."""
+    file-level BFS.
+
+    T-4560: `include_public_callees` (default `False`, `build_call_
+    graph`'s own opt-in, see its docstring) additionally appends a
+    PUBLIC candidate's symref -- still subject to the exact same
+    `candidates` import-verified filter above, never a bare short-name
+    match. A public candidate never counts toward `mark_unresolved`'s
+    private-looking-name bookkeeping below -- that flag's whole meaning
+    ("a name that looks like our own private convention but resolved to
+    nothing") is specific to the private-callee question this parameter
+    does not change."""
     callees: list[str] = []
     saw_unresolved = False
     reexports = named_reexports_by_path or {}
@@ -1282,6 +1325,8 @@ def _one_caller_edges(
             if is_private:
                 callees.append(symref)
                 matched_private = True
+            elif include_public_callees:
+                callees.append(symref)
         if (
             mark_unresolved
             and not matched_private

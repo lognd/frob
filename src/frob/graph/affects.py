@@ -17,7 +17,8 @@ doc/test edges.
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
@@ -215,6 +216,54 @@ def caller_dependent_files(
     return frozenset(added), truncated
 
 
+# frob:doc docs/modules/graph.md#caller-dependents-t-4553
+# frob:ticket T-4560
+# frob:tests \
+# tests/unit/test_check_scoped_files.py::TestPublicCallerDependentFiles.test_public_callee_caller_is_found_through_import_binding  # noqa: E501
+# frob:tests \
+# tests/unit/test_check_scoped_files.py::TestPublicCallerDependentFiles.test_same_named_private_helpers_in_different_modules_stay_unlinked  # noqa: E501
+def public_caller_dependent_files(
+    root: Path,
+    all_paths: Sequence[str],
+    changed_symrefs: Iterable[str],
+    already_covered: frozenset[str],
+    *,
+    max_added: int = 200,
+) -> tuple[frozenset[str], bool]:
+    """`caller_dependent_files`'s public-symbol-aware sibling (T-4560):
+    `build_call_graph`'s existing private-only `CallGraph.calls` (the
+    shared graph `frob.dup`/`frob.gates` also consume, see that
+    function's own docstring for why it is never narrowed for one
+    consumer) misses every caller of a changed PUBLIC symbol -- disclosed
+    by the T-4553 implementer, since `caller_dependent_files` alone
+    cannot see an edge that was never recorded. This builds a SEPARATE,
+    opt-in `CallGraph` via `build_call_graph(root, all_paths, verify_
+    imports=True, include_public_callees=True)` (import-binding-verified,
+    never a bare repo-wide short-name match -- the T-2188 hazard
+    `include_public_callees` itself guards against) and reuses `caller_
+    dependent_files`'s own resolution loop over it unchanged.
+
+    Deliberately a SECOND graph, not a mutation of a caller-supplied one:
+    the existing `caller_dependent_files(graph, ...)` contract keeps
+    working against a private-only graph exactly as before for any
+    other consumer that has not opted in.
+
+    Parameters mirror `frob.graph.callgraph.build_call_graph`'s own
+    (`root`, `all_paths`) plus `caller_dependent_files`'s own
+    (`changed_symrefs`, `already_covered`, `max_added`) -- the intended
+    caller is `frob.app.ticket_runner._land_cmd._rapid_caller_
+    dependents`, which builds its `all_paths`/`changed`/`already` inputs
+    identically for both this and the private-only call today."""
+    from frob.graph.callgraph import build_call_graph
+
+    public_graph = build_call_graph(
+        root, all_paths, verify_imports=True, include_public_callees=True
+    )
+    return caller_dependent_files(
+        public_graph, changed_symrefs, already_covered, max_added=max_added
+    )
+
+
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
 class ScopeClosureGap(BaseModel):
     """One file a ticket's declared `scope` probably needs but does not
@@ -386,6 +435,7 @@ __all__ = [
     "ScopeClosureGap",
     "affects",
     "caller_dependent_files",
+    "public_caller_dependent_files",
     "scope_doc_code_gaps",
     "scope_test_gaps",
 ]

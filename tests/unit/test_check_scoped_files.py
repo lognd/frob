@@ -512,6 +512,67 @@ class TestCallerDependentFiles:
         assert truncated is True
 
 
+class TestPublicCallerDependentFiles:
+    """`frob.graph.affects.public_caller_dependent_files` (T-4560):
+    import-binding-aware caller resolution for a changed PUBLIC symbol --
+    `build_call_graph`'s existing private-only graph never records an
+    edge to a public callee at all, so `caller_dependent_files` alone
+    cannot see it regardless of how the graph was built."""
+
+    def test_public_callee_caller_is_found_through_import_binding(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/affects.py::public_caller_dependent_files \
+        # kind="unit"
+        from frob.graph.affects import public_caller_dependent_files
+
+        (tmp_path / "a.py").write_text("def f():\n    return 1\n")
+        (tmp_path / "b.py").write_text(
+            "from a import f\n\n\ndef use_b():\n    return f()\n"
+        )
+        (tmp_path / "c.py").write_text("import a\n\n\ndef use_c():\n    return a.f()\n")
+        (tmp_path / "unrelated.py").write_text("def other():\n    return 2\n")
+
+        added, truncated = public_caller_dependent_files(
+            tmp_path,
+            ["a.py", "b.py", "c.py", "unrelated.py"],
+            frozenset({"a.py::f"}),
+            frozenset({"a.py"}),
+        )
+        assert "b.py" in added, f"b.py (from-import caller) not found in: {added}"
+        assert "unrelated.py" not in added
+        assert truncated is False
+
+    def test_same_named_private_helpers_in_different_modules_stay_unlinked(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/affects.py::public_caller_dependent_files \
+        # kind="unit"
+        # T-0841 safety, restated for the public-callee path (acceptance
+        # criterion 2): two unrelated modules each defining a same-named
+        # PRIVATE helper must never fabricate a cross-module edge just
+        # because `include_public_callees=True` widened what counts as a
+        # candidate -- the import-verified `candidates` filter every
+        # resolution step already applies is what this asserts.
+        from frob.graph.affects import public_caller_dependent_files
+
+        (tmp_path / "mod1.py").write_text(
+            "def _helper():\n    return 1\n\n\ndef pub():\n    return _helper()\n"
+        )
+        (tmp_path / "mod2.py").write_text(
+            "def _helper():\n    return 2\n\n\ndef other():\n    return _helper()\n"
+        )
+
+        added, truncated = public_caller_dependent_files(
+            tmp_path,
+            ["mod1.py", "mod2.py"],
+            frozenset({"mod1.py::_helper"}),
+            frozenset({"mod1.py"}),
+        )
+        assert "mod2.py" not in added
+        assert truncated is False
+
+
 class TestRapidCheckScopeFilesCallerDependents:
     """`_rapid_check_scope_files` end to end (T-4553): the one-hop caller
     sweep (`_rapid_caller_dependents`) is what actually finds a plain,

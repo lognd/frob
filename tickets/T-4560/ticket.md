@@ -2,7 +2,7 @@
 id: T-4560
 title: 'callgraph resolves callers only for PRIVATE callees (T-0841 rule): the rapid
   --files dependents miss every caller of a changed PUBLIC symbol'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-09-17'
@@ -35,20 +35,27 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+evidence:
+- tests/unit/test_check_scoped_files.py::TestPublicCallerDependentFiles::test_public_callee_caller_is_found_through_import_binding
+- tests/unit/test_check_scoped_files.py::TestPublicCallerDependentFiles::test_same_named_private_helpers_in_different_modules_stay_unlinked
 designated_repro_test: null
 acceptance:
 - text: GIVEN a public function changed in module A and imported by modules B and
     C WHEN the rapid land computes caller dependents THEN B and C are included, resolved
     through their import bindings (from A import f / import A; A.f), never by bare
     short name repo-wide
-  evidence: []
+  evidence:
+  - tests/unit/test_check_scoped_files.py::TestPublicCallerDependentFiles::test_public_callee_caller_is_found_through_import_binding
 - text: GIVEN two modules each defining a same-named private helper WHEN callers are
     resolved THEN no cross-module false edge is produced (the T-0841 safety stays)
-  evidence: []
+  evidence:
+  - tests/unit/test_check_scoped_files.py::TestPublicCallerDependentFiles::test_same_named_private_helpers_in_different_modules_stay_unlinked
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4560
+branch: t-4560
 ---
 Disclosed by the T-4553 implementer 2026-09-17: build_call_graph resolves callees by bare short name and, for safety (T-0841, the shared-graph-wrong-for-second-consumer lesson), only links PRIVATE callees; so caller_dependent_files finds callers of changed private symbols only, and the scoped land check still omits every caller of a changed public API. Add import-binding-aware resolution for public symbols (the alias table frob.vet._capability_python already builds per file) so dependents are found without the repo-wide short-name hazard.
