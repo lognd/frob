@@ -1,5 +1,5 @@
 ---
-id: T-draft-8627671e
+id: T-5387
 title: 'Post-land sweep residue 2026-09-23_0636: COV001:src/frob/lang/_walk_css.py
   COV002:tests/unit/test_check_gates_summary.py DOCENUM001:docs/guides/extending/comment-dsl-directives.md
   D'
