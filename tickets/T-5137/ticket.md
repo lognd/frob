@@ -34,6 +34,8 @@ scope:
 - docs/modules/tickets-lifecycle.md
 - tests/unit/test_token_usage.py
 - tests/test_hook_dispatch_telemetry.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: true
 scope_breadth_ack_reason: one new module plus the three touch points that call it
   (start, close/land, stats) and the hook that records session identity
@@ -50,6 +52,18 @@ scope_changes:
   glob: tests/test_hook_dispatch_telemetry.py
   reason: T-5137 adds transcript_path capture to the SessionStart hook; needs a positive-control
     test in its existing test file
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: declare _token_usage.py''s fs.read/fs.write capabilities
+    on tickets_ledger and bump the via-count ratchet'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SELFAUDIT001: declare _token_usage.py''s fs.read/fs.write capabilities
+    on tickets_ledger and bump the via-count ratchet'
   actor: logan
   at: '2026-09-22'
 triage_changes:
