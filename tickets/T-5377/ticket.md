@@ -1,5 +1,5 @@
 ---
-id: T-draft-4ee81a5e
+id: T-5377
 title: 'REG008 burn-down: 24 check-coverage.yaml dispositions lack a real frob:enforces
   CHK-GATE edge'
 state: queued
