@@ -2,7 +2,7 @@
 id: T-5382
 title: 'frob-exports: frob.doctor.lint_tool_version_lag/LintToolLagError/LintToolVersionLag
   missing from package export policy'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -39,7 +39,7 @@ scope_changes:
 - op: add
   glob: src/frob/lang/__init__.py
   reason: T-5300 landed, lease freed; fixing the unrelated walk_scss export gap the
-    same monolithic test also checks (filed as T-5391)
+    same monolithic test also checks (filed as T-draft-94b73833)
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -49,6 +49,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 designated_repro_test: null
 threat: null
 component: null
