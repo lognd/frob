@@ -99,13 +99,16 @@ def _repo_root() -> Path:
 #: passing at authorship time
 #: (`pytest <these node ids> -q` -> `91 passed`).
 _LIVENESS_FIXTURES: dict[str, str] = {
+    "CLAIM001": "tests/gates_suite/test_claim_lint.py::test_claim001_fires_on_unbound_never_claim",  # noqa: E501
     "PII001": "tests/unit/strata/test_pii.py::TestPiiCatalog::test_unknown_category_is_pii001",  # noqa: E501
     "PII002": "tests/unit/strata/test_litmus_pii.py::TestPiiVulnLitmus::test_vuln_pii002_names_the_crossing_flow",  # noqa: E501
+    "PII005": "tests/test_pii_provenance_trust_identity.py::TestPii005DerivedFromContradiction::test_conflicting_helpers_on_same_tag_fires_pii005",  # noqa: E501
     "PII003": "tests/unit/strata/test_litmus_pii.py::TestPiiVulnLitmus::test_vuln_pii003_names_the_store",  # noqa: E501
     "PII004": "tests/unit/strata/test_litmus_pii.py::TestPiiVulnLitmus::test_vuln_pii004_names_the_underlabeled_flow",  # noqa: E501
     "PII010": "tests/test_pii_structural_gate.py::TestFieldNames::test_password_field_fires",  # noqa: E501
     "PII011": "tests/test_pii_structural_gate.py::TestEmailShapeValues::test_email_literal_fires",  # noqa: E501
     "PII012": "tests/test_pii_structural_gate.py::TestKeywordSweep::test_identifier_keyword_fires_at_suggestion_severity",  # noqa: E501
+    "PII013": "tests/test_pii_structural_gate.py::TestClientStorageNoPii::test_fires_on_local_storage_write",  # noqa: E501
     "REL001": "tests/test_release.py::test_release_gate_flags_missing_bump",
     "REL002": "tests/test_release.py::TestReleaseGateCoherence::test_clean_repo_has_no_rel002",  # noqa: E501
     "REL200": "tests/unit/strata/test_reliability.py::TestMissingTimeout::test_flow_without_timeout_fires",  # noqa: E501
@@ -131,6 +134,7 @@ _LIVENESS_FIXTURES: dict[str, str] = {
     "REL291": "tests/unit/strata/test_ssot.py::TestUnprovenOwner::test_declared_with_no_code_evidence_fires",  # noqa: E501
     "REL300": "tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_multi_store_write_op_without_boundary_fires",  # noqa: E501
     "REL301": "tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary::test_declared_with_no_code_evidence_fires",  # noqa: E501
+    "REL303": "tests/unit/strata/test_inbound_rate.py::TestMissingInboundRate::test_unauthenticated_write_with_retention_but_no_rate_fires",  # noqa: E501
     "REL310": "tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost::test_interactive_node_without_bounded_cost_fires",  # noqa: E501
     "REL311": "tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_no_code_evidence_fires",  # noqa: E501
     "REL320": "tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion::test_event_node_without_schema_version_fires",  # noqa: E501
@@ -175,6 +179,10 @@ _LIVENESS_FIXTURES: dict[str, str] = {
     "SYS111": "tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused",  # noqa: E501
     "SYS112": "tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_sys112_ambient_reason_violation",  # noqa: E501
     "SYS113": "tests/unit/strata/test_selfconform_core_rules.py::TestZeroMatchCodeGlob::test_must_fire_when_code_glob_matches_nothing",  # noqa: E501
+    "SYS114": "tests/unit/strata/test_outbound_destination.py::TestOutboundDestinationConstraint::test_hardcoded_literal_host_fires",  # noqa: E501
+    "SYS115": "tests/unit/strata/test_outbound_destination.py::TestOutboundRateLint::test_missing_rate_with_sibling_rate_fires",  # noqa: E501
+    "SYS116": "tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance::test_undeclared_helper_fires_sys116",  # noqa: E501
+    "SYS117": "tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries::test_trust_identity_without_carries_fires_sys117",  # noqa: E501
     "SYS200": "tests/unit/strata/test_contention.py::TestDuplicatePort::test_two_nodes_same_port_fires",  # noqa: E501
     "SYS201": "tests/unit/strata/test_contention.py::TestOverlappingPath::test_owns_subtree_overlap_fires_write_capable",  # noqa: E501
     "SYS202": "tests/unit/strata/test_contention.py::TestSharedPipe::test_same_pipe_name_fires",  # noqa: E501
