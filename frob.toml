@@ -184,6 +184,12 @@ gates = ["src/frob/gates"]
 # gate-rule leaves this epic adds (T-5301's reserved rule ids) all import
 # from `gates` -- same "shared leaf" role `lang` already plays, imports
 # nothing else in this table.
+# T-5307: `webapp` also now imports `lang` -- `frob.webapp._websec_sinks`
+# reads JS/TS/JSX/Vue source via `frob.lang.raw_tree` (T-5300's own
+# escape hatch for a raw tree-sitter walk, the same shape `frob.dup`
+# already uses) to find WEBSEC101-106's DOM/template XSS sinks. `webapp`
+# stays a leaf otherwise: it may depend on `lang` (the shared parsing
+# utility layer every gate-rule leaf reads), never the reverse.
 webapp = ["src/frob/webapp"]
 sql = ["src/frob/sql"]
 
@@ -194,7 +200,7 @@ ledger = []
 leases = ["ledger"]
 land = ["leases", "ledger"]
 gates = ["lang", "webapp", "sql"]
-webapp = []
+webapp = ["lang"]
 sql = []
 
 # T-2390 epic child (T-2437): known_keys declares this table's own

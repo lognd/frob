@@ -2,6 +2,17 @@
 turns `frob.vet._taint.taint_findings` into repo-wide `Violation`s over
 every git-tracked `.py` file, the same tracked-file-scan shape
 `frob.gates._secrets`/`_opaque` already use.
+
+T-5307 extends this SAME gate call site with a second, framework-scoped
+source/sink family -- `frob.webapp._websec_sinks.websec_sink_findings`
+(WEBSEC101-106, the DOM/template XSS sink corpus T-5141 names) -- rather
+than standing up a parallel gate registration: both families are taint
+passes with the same "source reaches a dangerous sink with no
+validator/sanitizer hop" shape, and `websec_sink_findings` already
+short-circuits to nothing for a repo `frob.webapp._detect.
+detect_frameworks` reports no web framework in, so folding it into
+`taint_gate` costs a no-framework repo nothing beyond one cheap detect
+call. See docs/modules/webapp-websec-injection.md.
 """
 
 from __future__ import annotations
@@ -12,6 +23,7 @@ from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.vet._taint import taint_findings
+from frob.webapp._websec_sinks import websec_sink_findings
 
 _log = get_logger(__name__)
 
@@ -36,7 +48,9 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:doc docs/modules/webapp-websec-injection.md#public-api
 # frob:ticket T-0781
+# frob:ticket T-5307
 # frob:enforces CHK-GATE-SEC005
 # frob:enforces CWE-88
 def taint_gate(root: Path) -> tuple[Violation, ...]:
@@ -46,7 +60,11 @@ def taint_gate(root: Path) -> tuple[Violation, ...]:
     position with no validator hop or `--` terminator). WARN-tier at
     first turn-on -- same T-0688/T-0973 promotion posture `opaque_gate`
     already follows: a brand-new structural rule needs a real fix-or-
-    waive pass over its first measured hit set before ERROR is safe."""
+    waive pass over its first measured hit set before ERROR is safe.
+
+    T-5307: also folds in `frob.webapp._websec_sinks.websec_sink_findings`
+    (WEBSEC101-106) -- see this module's own docstring for why that lives
+    here instead of a second gate registration. Same WARN-tier posture."""
     root = Path(root)
     violations: list[Violation] = []
     scanned = 0
@@ -82,9 +100,23 @@ def taint_gate(root: Path) -> tuple[Violation, ...]:
                 )
             )
 
+    websec_findings = websec_sink_findings(root)
+    for finding in websec_findings:
+        violations.append(
+            Violation(
+                rule=finding.rule,
+                severity=Severity.WARN,
+                file=finding.file,
+                line=finding.line,
+                message=finding.message,
+            )
+        )
+
     _log.info(
-        "taint_gate: scanned %d tracked .py file(s), %d violation(s)",
+        "taint_gate: scanned %d tracked .py file(s), %d SEC005 violation(s), "
+        "%d WEBSEC10x violation(s)",
         scanned,
-        len(violations),
+        len(violations) - len(websec_findings),
+        len(websec_findings),
     )
     return tuple(violations)

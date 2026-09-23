@@ -1,7 +1,7 @@
 ---
 id: T-5307
 title: 'WEBSEC injection substrate: sink/source registry (extends SEC005 taint gate)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
