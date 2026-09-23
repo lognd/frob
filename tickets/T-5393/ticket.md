@@ -26,6 +26,7 @@ scope:
 - src/frob/check/_python.py
 - docs/modules/gates.md
 - tests/unit/test_land_format_gate.py
+- tests/unit/test_ruff_reformat_parser.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +50,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_land_format_gate.py
   reason: regression test for land-format rewrite path receiving real paths
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_ruff_reformat_parser.py
+  reason: new positive-control test for shared ruff reformat line parser
   actor: logan
   at: '2026-09-23'
 triage_changes:
