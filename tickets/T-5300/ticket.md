@@ -1,7 +1,7 @@
 ---
 id: T-5300
 title: Wire html/js/jsx/vue grammars into frob.lang
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -280,6 +280,20 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_lang_html_js_jsx_vue.py::TestHtml::test_html_is_a_supported_language
+- tests/test_lang_html_js_jsx_vue.py::TestHtml::test_parse_html_sample
+- tests/test_lang_html_js_jsx_vue.py::TestHtml::test_positive_control_raw_tree_is_non_empty
+- tests/test_lang_html_js_jsx_vue.py::TestHtml::test_top_level_element_is_a_class_symbol
+- tests/test_lang_html_js_jsx_vue.py::TestJsx::test_jsx_is_a_supported_extension
+- tests/test_lang_html_js_jsx_vue.py::TestJsx::test_parse_jsx_sample
+- tests/test_lang_html_js_jsx_vue.py::TestJsx::test_positive_control_raw_tree_is_non_empty
+- tests/test_lang_html_js_jsx_vue.py::TestJsx::test_exported_function_is_a_public_function_symbol
+- tests/test_lang_html_js_jsx_vue.py::TestVue::test_vue_is_a_supported_language
+- tests/test_lang_html_js_jsx_vue.py::TestVue::test_parse_vue_sample
+- tests/test_lang_html_js_jsx_vue.py::TestVue::test_positive_control_raw_tree_is_non_empty
+- tests/test_lang_html_js_jsx_vue.py::TestVue::test_template_block_is_a_class_symbol
+- tests/test_lang_html_js_jsx_vue.py::TestVue::test_sfc_shell_has_exactly_three_blocks
 designated_repro_test: null
 threat: null
 component: null

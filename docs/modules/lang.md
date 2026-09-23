@@ -37,6 +37,9 @@ Dispatch is by file extension:
 | `.c`, `.h` | c | c |
 | `.cpp`, `.hpp`, `.cc`, `.hh`, `.cxx` | cpp | cpp |
 | `.kt`, `.kts` | kotlin | kotlin |
+| `.html` | html | html |
+| `.js`, `.jsx` | javascript | javascript |
+| `.vue` | vue | vue |
 | `.strata` | (strata-core, no tree-sitter grammar) | strata |
 
 A file with tree-sitter recoverable syntax errors still yields the symbols
@@ -111,6 +114,9 @@ the whole declaration and `body_tokens` is always `()`.
 | cuda | a C++ DIALECT (not a distinct walker, `_walk_cuda.py`'s own docstring) layering one override on `_walk_c.py`'s existing static-based rule: a `__global__` kernel is always public (the ticket's own "kernel entry point is the analog of a public symbol" framing) regardless of `static`; a `__device__`-only function (no `__host__` alongside it) is always private, since it can never be called from outside the file the way frob's public/private axis means; every other case (plain host function, `__host__` alone, `__host__ __device__`) defers unchanged to C++'s own rule (T-1602) |
 | zig | `pub` is the explicit, opt-in visibility marker -- ABSENT means private (the same "enumerate the public set" shape rust's `pub` takes, the opposite of kotlin's default-public rule); this is the ticket's own named decision (T-1603) |
 | css / scss | always `public=True` -- CSS has no visibility keyword at all; every selector and custom property is visible to anything that loads the stylesheet (T-5303) |
+| html | always `public=True` -- HTML has no visibility keyword either, same rationale as css/scss (T-5300) |
+| javascript / jsx | wrapped in an `export_statement` (`export`/`export default`) for functions/classes/consts; class members have no JS `accessibility_modifier` keyword (unlike TypeScript's), so every method is always public (T-5300) |
+| vue | always `public=True` -- the SFC shell's `<template>`/`<script>`/`<style>` blocks have no visibility concept (T-5300) |
 
 ## Comment extraction and binding
 
@@ -138,7 +144,9 @@ Each language has its own recursive-descent walker (`_walk_python.py`,
 `_walk_typescript.py`, `_walk_rust.py`, `_walk_c.py`'s `_walk_c_family`
 shared by c/cpp, `_walk_kotlin.py`, `_walk_bash.py`, `_walk_csharp.py`,
 `_walk_java.py`, `_walk_cuda.py` (a thin C++-dialect wrapper), `_walk_zig.py`,
-`_walk_css.py` (shared css/scss walker), `_walk_strata.py`) built on the shared
+`_walk_css.py` (shared css/scss walker), `_walk_html.py`, `_walk_javascript.py`
+(shared javascript/jsx walker), `_walk_vue.py` (SFC-shell only), `_walk_strata.py`)
+built on the shared
 `_common.py` primitives (`_leaf_tokens`, `_leading_doc_comment`,
 `_strip_comment_delims`, `_span_of`).
 Notable per-language handling:
@@ -312,6 +320,34 @@ Notable per-language handling:
   wiring for css/scss is a disclosed `KNOWN_GAP` tracked by a follow-up
   ticket filed while working T-5303 -- see the Language Support Contract
   section below.
+- **html / javascript / jsx / vue** (T-5300, WEBSEC web-app-lint substrate
+  leaf, the T-5140 epic's shared substrate every story blocks on): three
+  thin walkers, mirroring `_walk_css.py`'s shape -- none attempt full
+  symbol-tree fidelity, since most rules in this epic query raw nodes via
+  `raw_tree`/`symbol_tree`, not `frob.graph` symbol qualnames; the walkers'
+  real job is making `parse_file` not return `UnsupportedLanguage` for
+  these four extensions. `_walk_html.py` walks only top-level `element`
+  nodes (`SymbolKind.CLASS`, qualname is the tag name plus `#id` when
+  present) -- nested descendants are not walked as separate symbols.
+  `_walk_javascript.py` mirrors `_walk_typescript.py`'s shape unchanged
+  (functions, classes + their methods, top-level consts, all honoring
+  `export [default]`) minus TypeScript-only node kinds (no
+  `interface_declaration`/`type_alias_declaration`/`enum_declaration`, no
+  `accessibility_modifier` -- every JS method is always public); `.jsx`
+  reuses the same "javascript" grammar/walker unchanged, the same way
+  `.tsx` reuses "tsx"/`_walk_typescript`. `_walk_vue.py` walks ONLY the
+  SFC shell's three top-level block kinds (`template_element`,
+  `script_element`, `style_element`, each `SymbolKind.CLASS`) and does NOT
+  descend into a block's own inner language (HTML/JS/CSS) -- WEBSEC's
+  `v-html` sink detector queries the raw `template_element` subtree
+  directly, not this walker's symbol shape. Jinja/Django/ERB/Blade
+  templates have no usable tree-sitter grammar in
+  `tree-sitter-language-pack` and stay out of `frob.lang` entirely --
+  sinks inside those templates are regex/line-scan rules in the stories
+  that need them, not this leaf. `capability`/`dup`/`docblock`
+  facet-registry wiring for html/javascript/vue is a disclosed
+  `KNOWN_GAP` tracked by a follow-up ticket filed while working T-5300 --
+  see the Language Support Contract section below.
 
 ## Data models
 

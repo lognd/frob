@@ -186,6 +186,19 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     # tree these entries make reachable, not this walker's symbol shape.
     ".css": ("css", "css"),
     ".scss": ("scss", "scss"),
+    # frob:ticket T-5300
+    # tree-sitter-language-pack bundles "html"/"javascript"/"vue" grammars
+    # under those names -- see `frob.lang._walk_html`, `._walk_javascript`,
+    # `._walk_vue` for their thin walkers. `.jsx` reuses the "javascript"
+    # grammar/walker unchanged, the same way `.tsx` reuses "tsx"/
+    # `_walk_typescript` above. WEBSEC/A11Y/SEO lint rules in the T-5140
+    # web-app epic (T-5141-2's innerHTML/dangerouslySetInnerHTML/v-html
+    # sinks among them) query the raw tree these entries make reachable,
+    # not these walkers' symbol shape.
+    ".html": ("html", "html"),
+    ".js": ("javascript", "javascript"),
+    ".jsx": ("javascript", "javascript"),
+    ".vue": ("vue", "vue"),
 }
 
 # `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below

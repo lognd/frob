@@ -31,11 +31,16 @@ from frob.lang._walk_css import (
 from frob.lang._walk_css import walk_css as _walk_css
 from frob.lang._walk_css import walk_scss as _walk_scss
 from frob.lang._walk_cuda import _walk_cuda
+from frob.lang._walk_html import COMMENT_TYPES as _HTML_COMMENT_TYPES
+from frob.lang._walk_html import _walk_html
 from frob.lang._walk_java import _walk_java
+from frob.lang._walk_javascript import _walk_javascript
 from frob.lang._walk_kotlin import _walk_kotlin
 from frob.lang._walk_python import _walk_python, _walk_python_docstring_comments
 from frob.lang._walk_rust import _walk_rust
 from frob.lang._walk_typescript import _walk_typescript
+from frob.lang._walk_vue import COMMENT_TYPES as _VUE_COMMENT_TYPES
+from frob.lang._walk_vue import _walk_vue
 from frob.lang._walk_zig import _walk_zig
 from frob.logging import get_logger
 
@@ -82,6 +87,19 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
     # language-pack naming artifact) on top of CSS's block form -- see
     # `frob.lang._walk_css` module docstring.
     "scss": _SCSS_COMMENT_TYPES,
+    # frob:ticket T-5300
+    # See `frob.lang._walk_html` module docstring: HTML's one comment node
+    # type (`<!-- ... -->`, no other comment syntax).
+    "html": _HTML_COMMENT_TYPES,
+    # frob:ticket T-5300
+    # JavaScript's one comment node type -- identical shape to TypeScript's
+    # entry above (JSX reuses this same "javascript" label).
+    "javascript": frozenset({"comment"}),
+    # frob:ticket T-5300
+    # See `frob.lang._walk_vue` module docstring: the SFC shell itself has
+    # no comment node type -- comments live inside each block's own inner
+    # language, which this SFC-shell-only walker does not descend into.
+    "vue": _VUE_COMMENT_TYPES,
 }
 
 
@@ -115,6 +133,9 @@ _WALKERS = {
     "zig": _walk_zig,
     "css": _walk_css,
     "scss": _walk_scss,
+    "html": _walk_html,
+    "javascript": _walk_javascript,
+    "vue": _walk_vue,
 }
 
 # frob:ticket T-0342

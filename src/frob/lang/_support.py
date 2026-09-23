@@ -453,6 +453,12 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # `_PENDING_FACET_WIRING_TICKETS` mapping, follow-up filed while
     # working T-5303.
     "T-5386": True,
+    # T-5300's own filed finding, identical shape: html/javascript/vue get
+    # real frob.lang grammars/walkers (`_walk_html.py`/`_walk_javascript.py`/
+    # `_walk_vue.py`) but are not yet wired into the capability/dup/docblock
+    # FACETS -- same shared `_PENDING_FACET_WIRING_TICKETS` mapping,
+    # follow-up filed while working T-5300.
+    "T-draft-c0e05ddc": True,
 }
 
 
@@ -499,6 +505,13 @@ _PENDING_FACET_WIRING_TICKETS: dict[str, str] = {
     # while working T-5303 (see KNOWN_GAP_TRACKING_TICKETS above).
     "css": "T-5386",
     "scss": "T-5386",
+    # T-5300: html/javascript/vue are real `frob.lang` grammars
+    # (_walk_html.py/_walk_javascript.py/_walk_vue.py) with no
+    # capability/dup/docblock FACETS wiring yet -- follow-up filed while
+    # working T-5300 (see KNOWN_GAP_TRACKING_TICKETS above).
+    "html": "T-draft-c0e05ddc",
+    "javascript": "T-draft-c0e05ddc",
+    "vue": "T-draft-c0e05ddc",
 }
 
 
