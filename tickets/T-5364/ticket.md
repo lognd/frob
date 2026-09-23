@@ -43,6 +43,12 @@ scope_changes:
     repo convention
   actor: logan
   at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_webapp_seo_substrate.py
+  reason: unit coverage for the new _seo_substrate module lives under tests/unit per
+    repo convention
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
