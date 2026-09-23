@@ -27,6 +27,7 @@ scope:
 - tests/fixtures/webapp/websec1xx/bounds/**
 - docs/modules/webapp-websec-bounds.md
 - tests/unit/test_websec_bounds.py
+- src/frob/gates/_taint_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +58,18 @@ scope_changes:
 - op: add
   glob: tests/unit/test_websec_bounds.py
   reason: unit test file for websec_bounds_findings + taint_gate extension
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/gates/_taint_gate.py
+  reason: fold websec_bounds_findings into the existing taint_gate call site, same
+    posture T-5307 used, no new gate registration
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/gates/_taint_gate.py
+  reason: fold websec_bounds_findings into the existing taint_gate call site, same
+    posture T-5307 used, no new gate registration
   actor: logan
   at: '2026-09-23'
 triage_changes:
