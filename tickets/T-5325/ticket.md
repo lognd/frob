@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_websec_headers.py
 - tests/fixtures/webapp/websec3xx/**
 - docs/modules/webapp-websec-headers.md
+- tests/unit/test_webapp_websec_headers.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,12 @@ scope_changes:
   glob: docs/modules/webapp-websec-headers.md
   reason: T-5325 owns its own module doc per WEBSEC fan-out convention, docs/modules/webapp.md
     is shared across 7 concurrent leases
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_webapp_websec_headers.py
+  reason: unit coverage for the new lint_response_headers engine, positive+negative
+    controls per family
   actor: logan
   at: '2026-09-23'
 triage_changes:
