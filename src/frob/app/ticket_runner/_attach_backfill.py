@@ -47,18 +47,56 @@ _log = get_logger("frob.app.ticket_runner")
 
 # frob:ticket T-2254
 def _attach_dispatch(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket attach` entry point (T-2254): routes to the draft-
-    attachment backfill (`_run_backfill_drafts`) when `--backfill-drafts`
-    is given, otherwise dispatches unchanged to `frob.app.ticket_runner.
-    _lifecycle._attach`'s single-ticket attach-a-file behavior -- the
-    ORIGINAL `attach` verb, byte-for-byte, for every caller that does not
-    pass the new flag."""
+    """`frob ticket attach` entry point (T-2254, T-5151): routes to the
+    draft-attachment backfill (`_run_backfill_drafts`) when
+    `--backfill-drafts` is given, to `_run_remove_attachment` when
+    `--remove`/`--remove-all` is given, otherwise dispatches unchanged to
+    `frob.app.ticket_runner._lifecycle._attach`'s single-ticket
+    attach-a-file behavior -- the ORIGINAL `attach` verb, byte-for-byte,
+    for every caller that passes none of the new flags."""
     if cfg.ticket_attach_backfill_drafts:
         _run_backfill_drafts(root, cfg)
+        return
+    if cfg.ticket_attach_remove_path is not None or cfg.ticket_attach_remove_all:
+        _run_remove_attachment(root, cfg)
         return
     from frob.app.ticket_runner._lifecycle import _attach
 
     _attach(root, cfg)
+
+
+# frob:ticket T-5151
+# tests/test_tickets.py::TestRemoveAttachment.test_removes_file_and_ledger_record
+def _run_remove_attachment(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket attach <id> --remove PATH` / `--remove-all` (T-5151):
+    dispatch to `frob.tickets._reporting_attachments.remove_attachment`
+    and report what was deleted. Ledger persistence is a single-ticket-id
+    write, same as `_attach` above, so the generic per-dispatch
+    auto-commit (`_auto_commit_ledger_after_dispatch`, this package's
+    `__init__.py`) covers the commit -- this function does not commit by
+    hand, mirroring `_attach`'s own precedent exactly."""
+    from frob.tickets._reporting_attachments import remove_attachment
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket attach --remove requires <id>")
+        sys.exit(1)
+
+    result = remove_attachment(
+        root,
+        cfg.ticket_id,
+        cfg.ticket_attach_remove_path,
+        remove_all=cfg.ticket_attach_remove_all,
+    )
+    if result.is_err:
+        _log.error("attach --remove failed: %s", result.danger_err)
+        sys.exit(1)
+    removed = result.danger_ok
+    _log.info(
+        "removed %d attachment(s) from %s: %s",
+        len(removed),
+        cfg.ticket_id,
+        [a.path for a in removed],
+    )
 
 
 def _run_backfill_drafts(root: Path, cfg: AppConfig) -> None:

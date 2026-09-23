@@ -311,9 +311,9 @@
       "ticket": "T-2986"
     },
     "tickets_ledger::fs.write": {
-      "accepted_count": 23,
-      "reason": "T-3629: the ARCH102 split of _land_squash.py added the new _land_splice.py to the fs.write via-list (23rd site) -- design/frob.strata's own declared list grew by 1 as a direct, expected consequence of the split, re-measured locally against this checkout's own HEAD.",
-      "ticket": "T-3629"
+      "accepted_count": 24,
+      "reason": "T-5151: remove_attachment (via _delete_attachment_files) unlinks the attachment file(s) it removes -- a real, measured fs.write site added to _reporting_attachments.py's via-list (24th site), which previously only carried fs.read for attach()'s own reads.",
+      "ticket": "T-5151"
     },
     "verify::exec": {
       "accepted_count": 2,

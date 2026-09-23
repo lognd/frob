@@ -127,6 +127,24 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         help="with --backfill-drafts, write the repairs found (default: "
         "dry-run report only, same shape as `frob ticket reconcile`)",
     )
+    # frob:ticket T-5151
+    ticket_attach_p.add_argument(
+        "--remove",
+        dest="ticket_attach_remove_path",
+        default=None,
+        metavar="PATH",
+        help="remove one attachment matching PATH (ledger-relative path or "
+        "bare filename): deletes the file, drops the ledger record, and "
+        "auto-commits like a plain attach does (T-5151); refused when PATH "
+        "is quoted inside the ticket's done-report",
+    )
+    ticket_attach_p.add_argument(
+        "--remove-all",
+        dest="ticket_attach_remove_all",
+        action="store_true",
+        help="remove every attachment on <id> (T-5151); same done-report "
+        "citation refusal as --remove, applied per-attachment",
+    )
 
     ticket_block_p = ticket_sub.add_parser("block", help="record a blocker")
     ticket_block_p.add_argument("ticket_id", metavar="id")

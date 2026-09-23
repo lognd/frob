@@ -675,6 +675,15 @@ class AppConfig(BaseModel):
     #: with `--backfill-drafts`, actually write the repairs found
     #: (default: dry-run report only, same shape as `ticket reconcile`).
     ticket_attach_backfill_apply: bool = False
+    # frob:ticket T-5151
+    #: `frob ticket attach <id> --remove PATH`: the attachment to delete
+    #: (matched by stored path or bare filename); `None` means no
+    #: `--remove` was given.
+    ticket_attach_remove_path: str | None = None
+    # frob:ticket T-5151
+    #: `frob ticket attach <id> --remove-all`: delete every attachment on
+    #: the ticket instead of one named by `--remove`.
+    ticket_attach_remove_all: bool = False
     ticket_json: bool = False
     # frob:ticket T-2467
     waive_audit_subcommand: str | None = None

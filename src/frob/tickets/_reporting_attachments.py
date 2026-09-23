@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -26,6 +27,7 @@ from frob.tickets._store import (
     _store_mode,
     atomic_write,
     attachments_dir,
+    read_done_report,
     slugify,
     tickets_dir,
     v2_attachments_dir,
@@ -36,7 +38,28 @@ from frob.tickets.clipboard import ClipboardError, clipboard_image
 
 _log = get_logger(__name__)
 
-AttachError = TicketError | ClipboardError
+
+# frob:ticket T-5151
+# frob:doc docs/modules/tickets.md#public-api
+# tests/test_tickets.py::TestRemoveAttachment.test_refuses_when_cited_in_done_report
+class AttachRemoveError(ErrorSet):
+    """Fallible outcomes specific to `remove_attachment` (T-5151) -- kept
+    as its own `ErrorSet`, sibling to `TicketError`/`ClipboardError`
+    (`clipboard.py`'s own precedent) rather than a new `TicketError`
+    member, because `src/frob/tickets/_models.py` is outside this
+    ticket's declared scope (leased by T-5133 for the whole worktree's
+    lifetime) and every other error family in this package already lives
+    beside the module that raises it."""
+
+    NoMatchingAttachment = "no attachment on this ticket matches the given path"
+    AttachmentInDoneReport = (
+        "attachment path is quoted in the ticket's done-report -- removing it "
+        "would silently invalidate cited evidence; use a different path or "
+        "amend the done-report first"
+    )
+
+
+AttachError = TicketError | ClipboardError | AttachRemoveError
 
 _MAX_WARN_BYTES = 1024 * 1024
 
@@ -137,3 +160,131 @@ def _record_attachment(
         "tickets: attached %s to %s (sha256=%s)", dest_path.name, ticket.id, sha256
     )
     return Ok(attachment)
+
+
+def _resolve_remove_targets(
+    ticket: Ticket, ticket_id: str, path: str | None, *, remove_all: bool
+) -> Result[list[Attachment], AttachRemoveError]:
+    """Pick which `Attachment` record(s) `remove_attachment` should act on:
+    every attachment when `remove_all`, else every attachment whose
+    `.path` matches `path` exactly or by basename (T-5151)."""
+    if remove_all:
+        return Ok(list(ticket.attachments))
+    if not path:
+        _log.error("tickets: remove_attachment %s: no path given", ticket_id)
+        return Err(AttachRemoveError.NoMatchingAttachment)
+    targets = [
+        a for a in ticket.attachments if a.path == path or Path(a.path).name == path
+    ]
+    if not targets:
+        _log.error(
+            "tickets: remove_attachment %s: no attachment matches %r",
+            ticket_id,
+            path,
+        )
+        return Err(AttachRemoveError.NoMatchingAttachment)
+    return Ok(targets)
+
+
+def _refuse_if_cited_in_done_report(
+    root: Path, ticket: Ticket, ticket_id: str, targets: list[Attachment]
+) -> Result[None, AttachRemoveError]:
+    """Refuse `remove_attachment` when any of `targets` is quoted in the
+    ticket's done-report text (T-5151). `read_done_report` is v2-mode
+    only (the split `done-report.md` file); legacy-mode tickets still
+    carry their done-report prose inside `ticket.body` under a `## Done
+    report` heading, so both are checked -- the refusal must not silently
+    stop firing just because a ticket predates the v2 store split."""
+    report_text = (read_done_report(root, ticket_id) or "") + ticket.body
+    if not report_text:
+        return Ok(None)
+    cited = [a for a in targets if a.path in report_text]
+    if not cited:
+        return Ok(None)
+    _log.error(
+        "tickets: remove_attachment %s: refusing -- cited in done-report: %s",
+        ticket_id,
+        [a.path for a in cited],
+    )
+    return Err(AttachRemoveError.AttachmentInDoneReport)
+
+
+def _delete_attachment_files(
+    root: Path, targets: list[Attachment]
+) -> Result[None, TicketError]:
+    """Unlink every attachment file in `targets` from disk (T-5151);
+    missing files are tolerated (`missing_ok=True`) since a prior
+    partial failure or manual cleanup must not block the ledger-record
+    removal that follows."""
+    for attachment in targets:
+        abs_path = tickets_dir(root) / attachment.path
+        try:
+            abs_path.unlink(missing_ok=True)
+        except OSError as exc:
+            _log.error("tickets: failed to delete attachment %s: %s", abs_path, exc)
+            return Err(TicketError.WriteFailed)
+    return Ok(None)
+
+
+# frob:ticket T-5151
+# frob:doc docs/modules/tickets.md#public-api
+# tests/test_tickets.py::TestRemoveAttachment.test_removes_file_and_ledger_record
+def remove_attachment(
+    root: Path, ticket_id: str, path: str | None, *, remove_all: bool = False
+) -> Result[tuple[Attachment, ...], AttachError]:
+    """`frob ticket attach <id> --remove PATH` / `--remove-all` (T-5151):
+    delete the attachment file(s) from disk, drop the matching
+    `Attachment` record(s) from the ticket, and persist -- the removal
+    counterpart to `attach()`'s write path, same worktree-lease and
+    ledger-write discipline (single-ticket-id auto-commit dispatch, T-1615,
+    handles the commit generically same as `attach` itself never commits
+    by hand).
+
+    `path` matches an `Attachment.path` either exactly (the stored
+    `T-####/attachments/NN-x.ext`-shaped value) or by basename, so a
+    caller can pass either the ledger-relative path or just the file's own
+    name. Refuses with `AttachRemoveError.AttachmentInDoneReport` when a
+    targeted attachment's path is quoted inside the ticket's done-report
+    text -- deleting evidence a closed ticket's report already cites would
+    silently invalidate that report (measured 2026-09-20 request)."""
+    from frob.tickets import _load_one
+
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+
+    targets_result = _resolve_remove_targets(
+        ticket, ticket_id, path, remove_all=remove_all
+    )
+    if targets_result.is_err:
+        return Err(targets_result.danger_err)
+    targets = targets_result.danger_ok
+    if not targets:
+        _log.info("tickets: remove_attachment %s: nothing to remove", ticket_id)
+        return Ok(())
+
+    cited_check = _refuse_if_cited_in_done_report(root, ticket, ticket_id, targets)
+    if cited_check.is_err:
+        return Err(cited_check.danger_err)
+
+    deleted = _delete_attachment_files(root, targets)
+    if deleted.is_err:
+        return Err(deleted.danger_err)
+
+    remaining = tuple(a for a in ticket.attachments if a not in targets)
+    updated = ticket.model_copy(update={"attachments": remaining})
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+
+    _log.info(
+        "tickets: removed %d attachment(s) from %s: %s",
+        len(targets),
+        ticket_id,
+        [a.path for a in targets],
+    )
+    return Ok(tuple(targets))

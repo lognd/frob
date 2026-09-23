@@ -1785,6 +1785,106 @@ class TestAttach:
         assert result.danger_err is TicketError.NotFound
 
 
+class TestRemoveAttachment:
+    """T-5151: `remove_attachment` -- the delete counterpart to `attach`."""
+
+    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_run_remove_attachment
+    def test_removes_file_and_ledger_record(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_reporting_attachments.py::remove_attachment
+        _write(tmp_path, _ticket())
+        src = tmp_path / "mockup.png"
+        src.write_bytes(b"data")
+        attached = attach(
+            tmp_path, "T-0001", AttachmentSource(path=src), "mockup"
+        ).danger_ok
+        dest = tmp_path / "tickets" / attached.path
+        assert dest.exists()
+
+        from frob.tickets._reporting_attachments import remove_attachment
+
+        result = remove_attachment(tmp_path, "T-0001", attached.path)
+        assert result.is_ok
+        assert result.danger_ok == (attached,)
+        assert not dest.exists()
+
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].attachments == ()
+
+    # frob:tests src/frob/tickets/_reporting_attachments.py::remove_attachment
+    def test_matches_by_basename(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket())
+        src = tmp_path / "mockup.png"
+        src.write_bytes(b"data")
+        attached = attach(
+            tmp_path, "T-0001", AttachmentSource(path=src), "mockup"
+        ).danger_ok
+
+        from frob.tickets._reporting_attachments import remove_attachment
+
+        basename = attached.path.split("/")[-1]
+        result = remove_attachment(tmp_path, "T-0001", basename)
+        assert result.is_ok
+        assert result.danger_ok == (attached,)
+
+    # frob:tests src/frob/tickets/_reporting_attachments.py::remove_attachment
+    def test_remove_all(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket())
+        src1 = tmp_path / "a.png"
+        src1.write_bytes(b"one")
+        src2 = tmp_path / "b.png"
+        src2.write_bytes(b"two")
+        first = attach(tmp_path, "T-0001", AttachmentSource(path=src1), "a").danger_ok
+        second = attach(tmp_path, "T-0001", AttachmentSource(path=src2), "b").danger_ok
+
+        from frob.tickets._reporting_attachments import remove_attachment
+
+        result = remove_attachment(tmp_path, "T-0001", None, remove_all=True)
+        assert result.is_ok
+        assert set(result.danger_ok) == {first, second}
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].attachments == ()
+
+    # frob:tests src/frob/tickets/_reporting_attachments.py::AttachRemoveError
+    def test_no_matching_path_is_err(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket())
+
+        from frob.tickets._reporting_attachments import (
+            AttachRemoveError,
+            remove_attachment,
+        )
+
+        result = remove_attachment(tmp_path, "T-0001", "nope.png")
+        assert result.is_err
+        assert result.danger_err is AttachRemoveError.NoMatchingAttachment
+
+    # frob:tests src/frob/tickets/_reporting_attachments.py::AttachRemoveError
+    def test_refuses_when_cited_in_done_report(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_reporting_attachments.py::remove_attachment
+        src = tmp_path / "mockup.png"
+        src.write_bytes(b"data")
+        _write(tmp_path, _ticket())
+        attached = attach(
+            tmp_path, "T-0001", AttachmentSource(path=src), "mockup"
+        ).danger_ok
+
+        # Legacy-mode done-report prose lives in the ticket body; cite the
+        # attachment's own stored path there.
+        ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
+        cited_body = ticket.body + f"\n## Done report\nSee {attached.path}\n"
+        _write(tmp_path, ticket.model_copy(update={"body": cited_body}))
+
+        from frob.tickets._reporting_attachments import (
+            AttachRemoveError,
+            remove_attachment,
+        )
+
+        result = remove_attachment(tmp_path, "T-0001", attached.path)
+        assert result.is_err
+        assert result.danger_err is AttachRemoveError.AttachmentInDoneReport
+        # refusal must not have deleted the file
+        assert (tmp_path / "tickets" / attached.path).exists()
+
+
 class TestEvidence:
     def test_resolvable_ids_appended(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_evidence.py::add_evidence
@@ -2929,7 +3029,8 @@ class TestUnknownFieldForwardCompat:
         extras = ticket.__pydantic_extra__
         assert extras is not None
         assert extras["reviews_v2"] == [{"reviewer": "bob", "stance": "strong-approve"}]
-# frob:tests src/frob/tickets/_models.py::Ticket._warn_unknown_extras  # noqa: E501
+
+    # frob:tests src/frob/tickets/_models.py::Ticket._warn_unknown_extras  # noqa: E501
 
     def test_unknown_field_logs_warning_named(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
