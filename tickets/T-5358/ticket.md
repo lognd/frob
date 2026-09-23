@@ -37,6 +37,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+lease_force_releases:
+- reason: 'quiet window: T-4758''s repo-wide sweep needs the only lease; T-5358 keeps
+    working in its worktree and lands after the sweep'
+  staleness_reason: null
+  actor: /home/logan/projects/frob
+  at: '2026-09-23'
 designated_repro_test: null
 threat: null
 component: null
