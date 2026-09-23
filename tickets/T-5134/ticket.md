@@ -49,6 +49,8 @@ scope:
 - docs/guides/extending/scenario-kinds.md
 - docs/guides/extending/ticket-kinds-states.md
 - docs/guides/frob-toml.md
+- tests/unit/coordinator_suite/test_strip_help_citations.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'owner directive 2026-09-20: a repo-wide text migration;
   each file is a mechanical citation strip'
@@ -235,6 +237,18 @@ scope_changes:
     by scripts/count_ticket_citations.py --scope docs
   actor: logan
   at: '2026-09-22'
+- op: add
+  glob: tests/unit/coordinator_suite/test_strip_help_citations.py
+  reason: positive-control/coverage test for scripts/strip_help_citations.py, the
+    other tool T-5134 ships
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: frob:doc anchors required for the 6 new public symbols in scripts/count_ticket_citations.py
+    and scripts/strip_help_citations.py
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: milestone
   old_value: null
@@ -248,17 +262,27 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindHelpCitations::test_positive_control_plants_a_citation_the_detector_must_report
+- tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations::test_prose_citation_is_reported
+- tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations::test_directive_grammar_example_is_exempt
 designated_repro_test: null
 acceptance:
 - text: given the full CLI, when every 'frob ... --help' output is captured, then
     no output contains a T-#### token
-  evidence: []
+  evidence:
+  - tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindHelpCitations::test_positive_control_plants_a_citation_the_detector_must_report
+  - tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations::test_prose_citation_is_reported
 - text: given docs/ excluding docs/audits and the tickets tree, when scanned, then
     no prose line contains a T-#### token
-  evidence: []
+  evidence:
+  - tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations::test_prose_citation_is_reported
+  - tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations::test_directive_grammar_example_is_exempt
 - text: given a new help= string containing T-1234, when frob check runs, then the
     DOC lint fires with the file and line
-  evidence: []
+  evidence:
+  - tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindHelpCitations::test_positive_control_plants_a_citation_the_detector_must_report
+  - tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations::test_prose_citation_is_reported
 threat: null
 component: cli
 anchor: false
