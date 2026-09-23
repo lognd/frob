@@ -23,10 +23,8 @@ tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/__init__.py
 - docs/design/registry/check-coverage.yaml
 - tests/gates_suite/test_sys.py
-- tests/test_check_coverage_registry.py
 - src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -82,6 +80,18 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_waive.py
   reason: _KNOWN_GATE_RULES actually lives in _waive.py, not __init__.py
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: actual fix only touches _waive.py and check-coverage.yaml's total; test_check_coverage_registry.py
+    needed no edits
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: tests/test_check_coverage_registry.py
+  reason: actual fix only touches _waive.py and check-coverage.yaml's total; test_check_coverage_registry.py
+    needed no edits
   actor: logan
   at: '2026-09-22'
 triage_changes:
