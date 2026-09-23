@@ -1,7 +1,7 @@
 ---
 id: T-5298
 title: Wire html/js/jsx/vue grammars into frob.lang
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -68,3 +68,6 @@ sample.vue each with one identifiable top-level construct -- assert
 frob.lang.parse_file returns Ok and raw_tree is non-empty.
 
 Doc: docs/modules/lang.md's extension table.
+
+## Drop reason
+- 2026-09-22: duplicate of T-5300 (same leaf, filed twice by a crashed earlier run) (absorbed by T-5300)
