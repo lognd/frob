@@ -28,6 +28,7 @@ scope:
 - tests/fixtures/lang/sample.scss
 - src/frob/lang/_extract.py
 - tests/test_lang_css.py
+- src/frob/lang/_support.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,13 @@ scope_changes:
   glob: tests/test_lang_css.py
   reason: positive-control unit tests for the CSS/SCSS walker, in a dedicated file
     to avoid colliding with T-5300 editing tests/test_lang.py concurrently
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: register the disclosed capability/dup/docblock FACETS KNOWN_GAP for css/scss,
+    the same one-line registry entry zig/T-3513 made, so LANG003 does not flag the
+    new languages as an unsound gap
   actor: logan
   at: '2026-09-23'
 triage_changes:
