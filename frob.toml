@@ -409,6 +409,17 @@ reason = "ticket attachment referenced only via tickets-archive.md's own YAML at
 path = "tickets/attachments/T-1433/03-untitled.txt"
 reason = "ticket attachment referenced only via tickets-archive.md's own YAML attachments: path: field (T-1433), a syntactic position REF001's auto-scan does not treat as a reference"
 
+# frob:ticket T-5358
+# frob:doc docs/modules/gates.md#tick015-t-5121t-5358
+[gates]
+# TICK015 (T-5358): opt-in for the requeue side effect (IN_PROGRESS ->
+# QUEUED) -- default false, report-only, after TICK015's unconditional
+# requeue undid queue-based lands all night (T-5293/T-5267 incident).
+tick015_requeue = false
+# TICK015 (T-5358): a ticket's own cross-worktree lease younger than this
+# many hours is never treated as dead, regardless of process liveness.
+tick015_min_lease_age_hours = 6
+
 # frob:ticket T-4693
 # frob:doc docs/modules/gates.md#docarch002
 [gates.docs]

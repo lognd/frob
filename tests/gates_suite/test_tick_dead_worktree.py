@@ -1,7 +1,9 @@
-"""tests/gates_suite/test_tick_dead_worktree.py -- TICK015 (T-5121)
+"""tests/gates_suite/test_tick_dead_worktree.py -- TICK015 (T-5121/T-5358)
 coverage: an IN_PROGRESS ticket whose recorded `worktree`/`branch`
-(T-5120's ledger-durable stamp) is judged dead must be requeued and
-reported; a ticket with a live holder must be left untouched.
+(T-5120's ledger-durable stamp) is judged dead must be reported, and
+(only when `[gates] tick015_requeue = true`, past a live land-queue entry
+and a young-lease guard) requeued; a ticket with a live holder, a live
+land-queue entry, or a too-young lease must be left untouched.
 
 Real git fixture repo throughout (matching `tests/unit/tickets/
 test_start_transition_ledger.py`'s own style) -- `transition(...,
@@ -12,10 +14,12 @@ registered), which is also exactly the shape TICK015 exists to judge.
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
 import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -30,6 +34,8 @@ from frob.tickets import (
     transition,
 )
 from frob.tickets._archive import load_queue
+from frob.tickets._land_queue import enqueue
+from frob.tickets._leases import _lease_path, leases_dir
 from frob.tickets._store import atomic_write, ledger_path
 
 
@@ -101,19 +107,48 @@ def _start_in_progress(repo: Path, worktree_name: str, title: str) -> tuple[str,
     return tid, sibling
 
 
+def _backdate_lease(repo: Path, ticket_id: str, *, hours: float) -> None:
+    """Rewrite `ticket_id`'s own lease file's `recorded_at` to `hours` in
+    the past (T-5358 test helper) -- direct JSON edit is deliberate here:
+    `record_lease` always stamps "now", and TICK015's young-lease guard
+    (`_tick015_protected_by_young_lease`) needs a controllable age, not a
+    controllable clock."""
+    leases_root = leases_dir(repo)
+    assert leases_root.is_ok
+    path = _lease_path(leases_root.danger_ok, ticket_id)
+    record = json.loads(path.read_text())
+    record["recorded_at"] = (datetime.now(UTC) - timedelta(hours=hours)).isoformat()
+    path.write_text(json.dumps(record))
+
+
+def _write_frob_toml(repo: Path, *, tick015_requeue: bool) -> None:
+    """Commit a minimal `frob.toml` enabling/disabling TICK015's requeue
+    side effect (T-5358) -- `_tick015_gates_table` reads `[gates]
+    tick015_requeue` from exactly this file."""
+    (repo / "frob.toml").write_text(
+        f"[gates]\ntick015_requeue = {'true' if tick015_requeue else 'false'}\n"
+    )
+    _commit_all(repo, "frob.toml")
+
+
 class TestTick015DeadWorktreeRequeue:
-    """TICK015 (T-5121): an IN_PROGRESS ticket's recorded worktree/branch
-    judged dead (path gone, branch gone, or no live process holds it) is
-    requeued and reported; a live holder is untouched."""
+    """TICK015 (T-5121/T-5358): an IN_PROGRESS ticket's recorded worktree/
+    branch judged dead (path gone, branch gone, or no live process holds
+    it) is reported, and -- only past the land-queue/young-lease guards,
+    and only when opted in -- requeued; a live holder, a live queue
+    entry, or a too-young lease is left untouched."""
 
     # frob:tests \
     # tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue.test_deleted_worktree_fires_and_requeues  # noqa: E501
     def test_deleted_worktree_fires_and_requeues(self, repo: Path) -> None:
-        """Must-fire control: the worktree directory is deleted (and
-        pruned from git's own worktree list) out from under an
-        IN_PROGRESS ticket -- the measured T-5121 incident shape (38 of
-        54 in-progress tickets abandoned with the ledger never told)."""
+        """Must-fire control (T-5358's positive control #3): no land-
+        queue entry, a lease old enough to clear the default 6h minimum,
+        and `tick015_requeue` opted in -- the worktree directory is
+        deleted (and pruned from git's own worktree list) out from under
+        an IN_PROGRESS ticket, and TICK015 both reports AND requeues it."""
         tid, sibling = _start_in_progress(repo, "t-dead", "Dead worktree fixture")
+        _backdate_lease(repo, tid, hours=7)
+        _write_frob_toml(repo, tick015_requeue=True)
 
         shutil.rmtree(sibling)
         _run(["git", "worktree", "prune"], repo)
@@ -129,6 +164,83 @@ class TestTick015DeadWorktreeRequeue:
         reloaded = load_queue(repo)
         assert reloaded.is_ok
         assert reloaded.danger_ok.tickets[tid].state == TicketState.QUEUED
+
+    # frob:tests \
+    # tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue.test_requeue_disabled_reports_only  # noqa: E501
+    def test_requeue_disabled_reports_only(self, repo: Path) -> None:
+        """T-5358's positive control #4: same shape as the must-fire
+        control above (old-enough lease, no queue entry), but
+        `tick015_requeue` is left at its default (`false`) -- TICK015
+        must still report the ERROR (naming the manual `frob ticket fail`
+        remedy) but must NOT mutate the ledger."""
+        tid, sibling = _start_in_progress(repo, "t-report-only", "Report only fixture")
+        _backdate_lease(repo, tid, hours=7)
+        _write_frob_toml(repo, tick015_requeue=False)
+
+        shutil.rmtree(sibling)
+        _run(["git", "worktree", "prune"], repo)
+
+        queue = load_queue(repo)
+        assert queue.is_ok
+        violations = tickets_gate(repo, queue.danger_ok)
+        tick015 = [v for v in violations if v.rule == "TICK015"]
+        assert len(tick015) == 1
+        assert tick015[0].severity == Severity.ERROR
+        assert tid in tick015[0].message
+        assert "frob ticket fail" in tick015[0].message
+
+        reloaded = load_queue(repo)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok.tickets[tid].state == TicketState.IN_PROGRESS
+
+    # frob:tests \
+    # tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue.test_live_queue_entry_is_not_requeued  # noqa: E501
+    def test_live_queue_entry_is_not_requeued(self, repo: Path) -> None:
+        """T-5358's positive control #1 (the T-5293/T-5267 incident
+        shape): the ticket has a live `queued` entry in `.frob/land-
+        queue.json` -- a normal, healthy state for a finished ticket
+        waiting on the drainer -- even though its worktree is dead and
+        `tick015_requeue` is enabled, TICK015 must neither report nor
+        requeue it."""
+        tid, sibling = _start_in_progress(repo, "t-queued", "Queued land fixture")
+        _backdate_lease(repo, tid, hours=7)
+        _write_frob_toml(repo, tick015_requeue=True)
+        assert enqueue(repo, tid, sibling, "t-queued").is_ok
+
+        shutil.rmtree(sibling)
+        _run(["git", "worktree", "prune"], repo)
+
+        queue = load_queue(repo)
+        assert queue.is_ok
+        violations = tickets_gate(repo, queue.danger_ok)
+        assert not any(v.rule == "TICK015" for v in violations)
+
+        reloaded = load_queue(repo)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok.tickets[tid].state == TicketState.IN_PROGRESS
+
+    # frob:tests \
+    # tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue.test_young_lease_is_not_requeued  # noqa: E501
+    def test_young_lease_is_not_requeued(self, repo: Path) -> None:
+        """T-5358's positive control #2: no land-queue entry, but the
+        ticket's lease was recorded moments ago (well under the default
+        6h minimum) -- even with `tick015_requeue` enabled, TICK015 must
+        neither report nor requeue it (more likely mid-dispatch than
+        abandoned)."""
+        tid, sibling = _start_in_progress(repo, "t-young", "Young lease fixture")
+        _write_frob_toml(repo, tick015_requeue=True)
+
+        shutil.rmtree(sibling)
+        _run(["git", "worktree", "prune"], repo)
+
+        queue = load_queue(repo)
+        assert queue.is_ok
+        violations = tickets_gate(repo, queue.danger_ok)
+        assert not any(v.rule == "TICK015" for v in violations)
+
+        reloaded = load_queue(repo)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok.tickets[tid].state == TicketState.IN_PROGRESS
 
     # frob:tests \
     # tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue.test_live_holder_is_untouched  # noqa: E501

@@ -1738,16 +1738,166 @@ def _tick015_dead_worktree_reason(
     return None
 
 
+# T-5358's default: how many hours old a ticket's own cross-worktree
+# lease (`frob.tickets._leases.lease_record_for_ticket`) must be before
+# TICK015 is willing to treat a dead-process reading as meaningful --
+# below this age a still-warm lease with no queue entry yet is far more
+# likely mid-dispatch (the worktree process has not been spawned/probed
+# yet) than genuinely abandoned.
+_TICK015_MIN_LEASE_AGE_HOURS_DEFAULT = 6
+
+
+# frob:ticket T-5358
+def _tick015_gates_table(root: Path) -> dict[str, object]:
+    """This project's own `frob.toml` `[gates]` table (T-5358's
+    `tick015_requeue`/`tick015_min_lease_age_hours` keys live directly in
+    it, matching the brief's flat-key shape rather than a `[gates.tick015]`
+    subtable), or `{}` if absent/unreadable -- fail-open, the same posture
+    every other `frob.toml`-reading helper in this module already takes."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return {}
+    try:
+        with toml_path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning(
+            "TICK015: %s unreadable/malformed (%s), using defaults", toml_path, exc
+        )
+        return {}
+    except Exception as exc:
+        # Fail-open over a genuinely unresolvable manifest-load surprise
+        # too, not just the two named cases (EXHAUST001, T-1371).
+        _log.warning(
+            "TICK015: %s unreadable/malformed (%s), using defaults", toml_path, exc
+        )
+        return {}
+    table = data.get("gates")
+    return table if isinstance(table, dict) else {}
+
+
+# frob:ticket T-5358
+def _tick015_requeue_enabled(root: Path) -> bool:
+    """`[gates] tick015_requeue` from `frob.toml` -- `False` (report-only)
+    unless explicitly opted in, per T-5358: TICK015's own mutation (IN_
+    PROGRESS -> QUEUED) was undoing lands all night because "no live
+    process" is true of EVERY ticket merely waiting in the queue-based
+    fleet's land queue, not just an abandoned one, so the side effect that
+    used to be unconditional is now opt-in."""
+    value = _tick015_gates_table(root).get("tick015_requeue")
+    return value is True
+
+
+# frob:ticket T-5358
+def _tick015_min_lease_age_hours(root: Path) -> float:
+    """`[gates] tick015_min_lease_age_hours` from `frob.toml` (T-5358),
+    defaulting to `_TICK015_MIN_LEASE_AGE_HOURS_DEFAULT` -- a non-numeric,
+    non-positive, or `bool` value (a `bool` is an `int` subclass in Python)
+    also falls back to the default rather than erroring."""
+    value = _tick015_gates_table(root).get("tick015_min_lease_age_hours")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return _TICK015_MIN_LEASE_AGE_HOURS_DEFAULT
+    if value <= 0:
+        return _TICK015_MIN_LEASE_AGE_HOURS_DEFAULT
+    return float(value)
+
+
+# frob:ticket T-5358
+def _tick015_protected_by_queue(root: Path, ticket_id: str) -> bool:
+    """`True` iff `ticket_id` currently has a `queued` or `landing` entry
+    in `.frob/land-queue.json` (T-5358) -- read exclusively through
+    `frob.tickets._land_queue.queue_status`, never by hand-parsing the
+    file (T-5358's whole point: the queue-based fleet's own bookkeeping is
+    the source of truth for "is this ticket actually still being worked",
+    not a `/proc` liveness probe that is negative for every ticket sitting
+    in the queue waiting for the drainer). Fails open to `False` (not
+    protected) on any queue-read error -- a corrupt/missing queue file is
+    a SEPARATE problem TICK015 should not silently paper over by refusing
+    to report a genuinely dead worktree."""
+    from frob.tickets._land_queue import queue_status
+
+    result = queue_status(root)
+    if result.is_err:
+        return False
+    return any(
+        entry.ticket_id == ticket_id and entry.status in ("queued", "landing")
+        for entry in result.danger_ok
+    )
+
+
+# frob:ticket T-5358
+def _tick015_lease_recorded_at_snapshot(root: Path) -> dict[str, str]:
+    """`{ticket_id: recorded_at}` for every currently-readable
+    `.git/frob-leases/*.json` file (T-5358), a plain RAW glob-and-parse --
+    deliberately the same shape `_tick010_stale_lease_report` already uses
+    for its own worktree-existence WARN pass, never `lease_record_for_
+    ticket`/`read_all_leases`. `_tickets_gate_inner` must call this BEFORE
+    any rule that touches `read_all_leases` (T-0714's dispatch-order
+    comment: `_tick007_undispatched_stale`'s `doable()` call
+    opportunistically UNLINKS a lease file the instant it confirms the
+    worktree is gone) -- calling it any later would read `None` for the
+    very dead-worktree tickets `_tick015_protected_by_young_lease` most
+    needs an age for. A file that fails to parse is silently skipped, same
+    posture as `_tick010_stale_lease_report`'s own `except (OSError,
+    ValueError): continue`."""
+    import json
+
+    from frob.tickets._leases import leases_dir
+
+    resolved = leases_dir(root)
+    if resolved.is_err:
+        return {}
+    leases_root = resolved.danger_ok
+    if not leases_root.is_dir():
+        return {}
+    snapshot: dict[str, str] = {}
+    for path in sorted(leases_root.glob("*.json")):
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        ticket_id = raw.get("ticket_id")
+        recorded_at = raw.get("recorded_at")
+        if isinstance(ticket_id, str) and isinstance(recorded_at, str):
+            snapshot[ticket_id] = recorded_at
+    return snapshot
+
+
+# frob:ticket T-5358
+def _tick015_protected_by_young_lease(
+    root: Path, ticket_id: str, lease_snapshot: dict[str, str]
+) -> bool:
+    """`True` iff `ticket_id`'s own cross-worktree lease, per `lease_
+    snapshot` (`_tick015_lease_recorded_at_snapshot`'s pre-prune read),
+    is younger than `_tick015_min_lease_age_hours` (T-5358) -- a ticket
+    with no entry in `lease_snapshot` at all, or an unparseable
+    `recorded_at`, is NOT protected by this check (nothing to judge
+    young; TICK015's existing "no recorded worktree at all" skip already
+    covers the genuinely-unknowable case one level up)."""
+    recorded_at = lease_snapshot.get(ticket_id)
+    if recorded_at is None:
+        return False
+    try:
+        recorded = datetime.fromisoformat(recorded_at)
+    except ValueError:
+        return False
+    if recorded.tzinfo is None:
+        recorded = recorded.replace(tzinfo=timezone.utc)
+    age_seconds = (datetime.now(timezone.utc) - recorded).total_seconds()
+    return age_seconds < _tick015_min_lease_age_hours(root) * 3600.0
+
+
 # frob:ticket T-5121
+# frob:ticket T-5358
 # frob:enforces CHK-GATE-TICK015
 def _tick015_requeue_dead_worktree(
-    root: Path, queue: TicketQueue
+    root: Path, queue: TicketQueue, lease_snapshot: dict[str, str]
 ) -> tuple[Violation, ...]:
-    """TICK015 (T-5121): ERROR per IN_PROGRESS ticket whose recorded
-    `worktree`/`branch` (T-5120's ledger-durable stamp, `Ticket`'s
-    `extra="allow"` fields) is judged dead by `_tick015_dead_worktree_
-    reason` -- measured 2026-09-20 (scratchpad/STRANDED.md): 38 of 54
-    in-progress tickets were abandoned by dead agents while their
+    """TICK015 (T-5121/T-5358): ERROR per IN_PROGRESS ticket whose
+    recorded `worktree`/`branch` (T-5120's ledger-durable stamp,
+    `Ticket`'s `extra="allow"` fields) is judged dead by `_tick015_dead_
+    worktree_reason` -- measured 2026-09-20 (scratchpad/STRANDED.md): 38
+    of 54 in-progress tickets were abandoned by dead agents while their
     worktree directories survived, and `orphaned_leases`
     (`frob.tickets._leases`) never caught this because lease liveness is
     a SEPARATE side channel from the ticket's own recorded state.
@@ -1758,22 +1908,41 @@ def _tick015_requeue_dead_worktree(
     guess is the same fail-closed posture `_branch_ahead_of_main_count`
     already takes for its own unresolvable case.
 
+    T-5358: the queue-based fleet's OWN "no live process" reading is true
+    of EVERY ticket merely waiting in `.frob/land-queue.json` for the
+    drainer, not just an abandoned one (T-5293/T-5267's incident:
+    finished, queued-to-land work got requeued and re-attempted, or
+    landed while the ledger stayed stuck QUEUED). Two independent guards
+    now run before this rule treats "dead" as meaningful, and BOTH fully
+    suppress the ticket (no violation, no mutation) when they trip:
+    `_tick015_protected_by_queue` (a live `queued`/`landing` land-queue
+    entry) and `_tick015_protected_by_young_lease` (the ticket's own
+    cross-worktree lease, read from `lease_snapshot` -- a pre-prune
+    snapshot `_tickets_gate_inner` must capture via `_tick015_lease_
+    recorded_at_snapshot` BEFORE any rule that triggers `read_all_
+    leases`'s opportunistic unlink -- is younger than `_tick015_min_
+    lease_age_hours`).
+
     Unlike TICK010's `_tick010_holder_dead_pass` (read-only, surfaces a
-    remedy command), this rule actually performs the fix: it requeues
-    the ticket (IN_PROGRESS -> QUEUED, releasing whatever lease it still
-    holds) and appends a failure-log entry naming the dead worktree,
-    through the same `record_failure` + `transition` + `commit_ticket_
-    ledger_change` composition `frob ticket fail`'s own `_fail` already
-    uses (T-1131/T-1130) -- a dead worktree is exactly the "the ticket
-    needs a fresh attempt" case `fail` already exists to record, so this
-    rule reuses that primitive rather than inventing a second requeue
-    path. Best-effort: if the requeue itself fails (e.g. `root` is not
-    a git work tree, or the ledger is unwritable), the ERROR still
-    reports the dead worktree -- the write is a bonus, not the
-    condition being tested for."""
+    remedy command), this rule performs the fix itself -- but ONLY when
+    `_tick015_requeue_enabled` (T-5358: `[gates] tick015_requeue`,
+    default `False`) opts in; otherwise the ERROR reports the dead
+    worktree and names the manual remedy (`frob ticket fail <id>`)
+    without mutating anything. When it does requeue: IN_PROGRESS ->
+    QUEUED, releasing whatever lease it still holds, plus a failure-log
+    entry naming the dead worktree, through the same `record_failure` +
+    `transition` + `commit_ticket_ledger_change` composition `frob
+    ticket fail`'s own `_fail` already uses (T-1131/T-1130) -- a dead
+    worktree is exactly the "the ticket needs a fresh attempt" case
+    `fail` already exists to record, so this rule reuses that primitive
+    rather than inventing a second requeue path. Best-effort: if the
+    requeue itself fails (e.g. `root` is not a git work tree, or the
+    ledger is unwritable), the ERROR still reports the dead worktree --
+    the write is a bonus, not the condition being tested for."""
     from frob.tickets import FailureEntry, record_failure, transition
     from frob.tickets._leases import commit_ticket_ledger_change
 
+    requeue_enabled = _tick015_requeue_enabled(root)
     violations: list[Violation] = []
     for t in sorted(queue.tickets.values(), key=lambda t: t.id):
         if t.state is not TicketState.IN_PROGRESS:
@@ -1784,6 +1953,41 @@ def _tick015_requeue_dead_worktree(
         branch = getattr(t, "branch", None)
         reason = _tick015_dead_worktree_reason(root, worktree, branch)
         if reason is None:
+            continue
+        if _tick015_protected_by_queue(root, t.id):
+            _log.info(
+                "TICK015: %s: dead worktree (%s) but a live land-queue "
+                "entry protects it -- not reported, not requeued",
+                t.id,
+                reason,
+            )
+            continue
+        if _tick015_protected_by_young_lease(root, t.id, lease_snapshot):
+            _log.info(
+                "TICK015: %s: dead worktree (%s) but its lease is younger "
+                "than the configured minimum age -- not reported, not "
+                "requeued",
+                t.id,
+                reason,
+            )
+            continue
+        if not requeue_enabled:
+            violations.append(
+                Violation(
+                    rule="TICK015",
+                    severity=Severity.ERROR,
+                    file="tickets.md",
+                    line=0,
+                    message=(
+                        f"TICK015: {t.id} is in-progress but its recorded "
+                        f"worktree is dead ({reason}) -- NOT requeued "
+                        f"(tick015_requeue is disabled); run `frob ticket "
+                        f"fail {t.id}` to requeue it manually, or set "
+                        f"[gates] tick015_requeue = true in frob.toml to "
+                        f"have this gate do it automatically"
+                    ),
+                )
+            )
             continue
         violations.append(
             Violation(
@@ -2007,8 +2211,11 @@ def _tickets_gate_inner(root: Path, queue: TicketQueue) -> tuple[Violation, ...]
     # below, via `doable`/`has_live_lease`) -- that call opportunistically
     # UNLINKS a lease file the moment it confirms the worktree is gone, so
     # a report computed after it would find the very files it should be
-    # reporting already removed out from under it.
+    # reporting already removed out from under it. T-5358: TICK015's own
+    # young-lease guard needs the SAME pre-prune ordering, so its snapshot
+    # is captured here too, alongside TICK010's own raw read.
     stale_leases = _tick010_stale_lease_report(root)
+    tick015_lease_snapshot = _tick015_lease_recorded_at_snapshot(root)
     active = _tickets_load_all(root)
     archived = _tickets_load_archive(root)
     return (
@@ -2024,7 +2231,7 @@ def _tickets_gate_inner(root: Path, queue: TicketQueue) -> tuple[Violation, ...]
         + _tick009_scope_breadth_nudges(root, queue)
         + _tick012_lease_scope_drift(root, queue)
         + _tick013_empty_scope_without_declaration(queue)
-        + _tick015_requeue_dead_worktree(root, queue)
+        + _tick015_requeue_dead_worktree(root, queue, tick015_lease_snapshot)
         + stale_leases
         + _ledgerv1001_violations(root)
         # T-3092/T-3899: TICK014 (frob.gates._empty_diff_close) -- a

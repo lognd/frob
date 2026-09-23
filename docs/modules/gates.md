@@ -59,7 +59,7 @@ declaration).
 | TICK012 | tickets | (warn, T-2561) an IN_PROGRESS ticket's live cross-worktree lease (`.git/frob-leases/<id>.json`) records a scope path that no longer `scope_matches` its CURRENT declared scope -- the lease was recorded once at start/scope-mutation time and never re-synced when the declared scope narrowed by some other path, so it silently misleads every OTHER `read_all_leases` consumer (a `doable` collision check, an `--add` conflict refusal). Silent for a ticket with no live lease, or any non-in-progress state. Re-record via a scope-mutating `frob ticket scope` call |
 | TICK013 | tickets | (error, T-2557) an IN_PROGRESS/PLANNED ticket's declared scope is EMPTY and it has not declared `no_scope_declared` -- the symmetric, strictly more dangerous case TICK009 (over-broad) does not cover, since an undeclared empty scope holds a write lease that tests nothing against it. Silent for a ticket with `no_scope_declared=True` (the T-2394 opt-out for a legitimately scope-free epic/decision-record ticket), any non-empty scope, any QUEUED ticket, or any terminal state; see "TICK013 (T-2557)" below |
 | TICK014 | tickets | (warn, T-3092) a DONE feature/bug-kind ticket closed with a diff that touches nothing outside ticket-ledger bookkeeping (`tickets/`/`tickets.md`/`tickets-archive.md`) -- a Done-report claim of work done with no code/test/doc file actually changed (`frob.gates._empty_diff_close`) |
-| TICK015 | tickets | (error, T-5121) an IN_PROGRESS ticket's recorded `worktree`/`branch` (T-5120's ledger-durable stamp) is judged dead -- worktree path gone, branch gone, or no live process holds the worktree (`frob.tickets._leases.scan_for_live_worktree_process`) -- and is requeued to `queued` with a failure-log entry naming the dead worktree. Silent for a ticket with no recorded worktree at all (started before T-5120) or a live holder |
+| TICK015 | tickets | (error, T-5121/T-5358) an IN_PROGRESS ticket's recorded `worktree`/`branch` (T-5120's ledger-durable stamp) is judged dead -- worktree path gone, branch gone, or no live process holds the worktree (`frob.tickets._leases.scan_for_live_worktree_process`) -- and is reported. Silent for a ticket with no recorded worktree at all (started before T-5120), a live holder, a ticket with a live `queued`/`landing` `.frob/land-queue.json` entry, or a lease younger than `[gates] tick015_min_lease_age_hours` (default 6). Report-only by default (names the `frob ticket fail <id>` remedy); the requeue-to-`queued` side effect (with a failure-log entry naming the dead worktree) only runs when `[gates] tick015_requeue = true` |
 | COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
 | FMT001 | fmt | (warn) a diff-touched `frob:` directive comment line exceeds that file's own configured line length -- see "FMT001 (T-0851)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a missing record (opt-in: a `decisions/` dir must exist) |
@@ -2382,6 +2382,44 @@ start` already refuses this exact state at write time, which is why the
 state looks impossible and was previously unmonitored -- but `frob
 ticket scope --remove` can empty a scope AFTER a clean start, and that
 is how T-2377 reached it.
+
+### TICK015 (T-5121/T-5358)
+
+TICK015 (`frob.gates._tickets_gate._tick015_requeue_dead_worktree`)
+reports an IN_PROGRESS ticket whose recorded `worktree`/`branch`
+(T-5120's ledger-durable stamp) is judged dead by `_tick015_dead_
+worktree_reason` -- worktree path gone, branch gone, or no live process
+holds the worktree (`frob.tickets._leases.scan_for_live_worktree_
+process`).
+
+**T-5358 incident.** In this repo's queue-based fleet
+(`ticket_land_default=queue`), a ticket whose work is finished waits in
+`.frob/land-queue.json` with no live process cwd'd into its worktree --
+exactly what TICK015's dead-worktree check is looking for. TICK015's
+original unconditional requeue (IN_PROGRESS -> QUEUED) therefore fired
+on every queued land, not just genuinely abandoned work, undoing lands
+overnight and clobbering ledger state (T-5293, T-5267).
+
+**Guards, both fully suppressing the ticket (no report, no mutation)
+when tripped:**
+
+- `_tick015_protected_by_queue` -- a live `queued`/`landing` entry for
+  the ticket in `.frob/land-queue.json`, read exclusively through
+  `frob.tickets._land_queue.queue_status`/`read_intent_record` (never a
+  hand-parse of the file).
+- `_tick015_protected_by_young_lease` -- the ticket's own cross-worktree
+  lease (`frob.tickets._leases.lease_record_for_ticket`) is younger than
+  `[gates] tick015_min_lease_age_hours` (default 6).
+
+**Opt-in mutation.** Past those guards, TICK015 always reports the ERROR,
+but only performs the requeue (plus a failure-log entry naming the dead
+worktree, via the same `record_failure`/`transition`/`commit_ticket_
+ledger_change` composition `frob ticket fail` uses) when `[gates]
+tick015_requeue = true` in `frob.toml`; the default (`false`) is
+report-only and names the manual remedy, `frob ticket fail <id>`.
+
+Silent (as before T-5358) for a ticket with no recorded worktree at all
+(started before T-5120) or a live holder.
 
 ### COMPLIANCE005 (T-0788)
 
