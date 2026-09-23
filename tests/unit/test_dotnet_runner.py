@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import stat
+import sys
 from pathlib import Path
 
 import pytest
@@ -97,8 +98,28 @@ def _write_fake_dotnet(bin_dir: Path, fixture_name: str, exit_code: int = 0) -> 
     """A fake `dotnet` on `bin_dir` that copies the named static TRX
     fixture to whatever `--logger trx;LogFileName=<path>` names, then
     exits `exit_code` -- never a real `dotnet`/Unity binary (T-4508's own
-    instruction)."""
+    instruction). On Windows, a POSIX `#!/bin/sh` script is not
+    executable (no shebang interpreter, and PATHEXT requires .exe/.bat/
+    .cmd) -- write a `dotnet.cmd` batch equivalent there instead (T-5384)."""
     fixture_path = _FIXTURES_DIR / fixture_name
+    if sys.platform == "win32":
+        script = bin_dir / "dotnet.cmd"
+        script.write_text(
+            "@echo off\r\n"
+            "set OUT=\r\n"
+            ":parse\r\n"
+            'if "%~1"=="" goto after\r\n'
+            'echo %~1 | findstr /b "trx;LogFileName=" >nul && '
+            "set OUT=%~1\r\n"
+            "shift\r\n"
+            "goto parse\r\n"
+            ":after\r\n"
+            'if not "%OUT%"=="" copy /y '
+            f'"{fixture_path}" "%OUT:trx;LogFileName=%"\r\n'
+            f"exit /b {exit_code}\r\n",
+            encoding="utf-8",
+        )
+        return
     script = bin_dir / "dotnet"
     script.write_text(
         "#!/bin/sh\n"
@@ -120,7 +141,15 @@ def _write_fake_dotnet(bin_dir: Path, fixture_name: str, exit_code: int = 0) -> 
 # by design" permanent="true"
 def _write_crashing_dotnet(bin_dir: Path) -> None:
     """A fake `dotnet` that crashes without ever writing a results file
-    (T-4508's third acceptance criterion, applied here to dotnet too)."""
+    (T-4508's third acceptance criterion, applied here to dotnet too). See
+    `_write_fake_dotnet` for why Windows needs its own `.cmd` (T-5384)."""
+    if sys.platform == "win32":
+        script = bin_dir / "dotnet.cmd"
+        script.write_text(
+            "@echo off\r\necho fatal error 1>&2\r\nexit /b 1\r\n",
+            encoding="utf-8",
+        )
+        return
     script = bin_dir / "dotnet"
     script.write_text("#!/bin/sh\necho 'fatal error' >&2\nexit 1\n", encoding="utf-8")
     script.chmod(script.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)

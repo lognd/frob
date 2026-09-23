@@ -7,6 +7,7 @@ executable placed on `PATH` (never a real Unity binary)."""
 from __future__ import annotations
 
 import stat
+import sys
 from pathlib import Path
 
 import pytest
@@ -96,8 +97,32 @@ class TestResolveUnityEditor:
 def _write_fake_unity(bin_dir: Path, fixture_name: str, exit_code: int = 0) -> Path:
     """A fake Unity Editor executable that copies the named static NUnit3
     fixture to whatever `-testResults <path>` names, then exits
-    `exit_code` -- never a real Unity binary (T-4508's own instruction)."""
+    `exit_code` -- never a real Unity binary (T-4508's own instruction).
+    The caller passes the RETURNED path straight through as argv[0]
+    (`UNITY_PATH`), bypassing `run_argv`'s win32 PATHEXT resolution
+    entirely -- so on Windows this must itself be a `.cmd`, a POSIX
+    `#!/bin/sh` script is not executable there at all (T-5384)."""
     fixture_path = _FIXTURES_DIR / fixture_name
+    if sys.platform == "win32":
+        script = bin_dir / "Unity.cmd"
+        script.write_text(
+            "@echo off\r\n"
+            "set OUT=\r\n"
+            ":parse\r\n"
+            'if "%~1"=="" goto after\r\n'
+            'if "%~1"=="-testResults" (\r\n'
+            "  shift\r\n"
+            "  set OUT=%~1\r\n"
+            ") else (\r\n"
+            "  shift\r\n"
+            ")\r\n"
+            "goto parse\r\n"
+            ":after\r\n"
+            f'if not "%OUT%"=="" copy /y "{fixture_path}" "%OUT%"\r\n'
+            f"exit /b {exit_code}\r\n",
+            encoding="utf-8",
+        )
+        return script
     script = bin_dir / "Unity"
     script.write_text(
         "#!/bin/sh\n"
@@ -119,7 +144,15 @@ def _write_fake_unity(bin_dir: Path, fixture_name: str, exit_code: int = 0) -> P
 # it to by design" permanent="true"
 def _write_crashing_unity(bin_dir: Path) -> Path:
     """A fake Unity Editor that crashes without ever writing a results
-    file -- T-4508's third acceptance criterion."""
+    file -- T-4508's third acceptance criterion. See `_write_fake_unity`
+    for why Windows needs its own `.cmd` (T-5384)."""
+    if sys.platform == "win32":
+        script = bin_dir / "Unity.cmd"
+        script.write_text(
+            "@echo off\r\necho license failure 1>&2\r\nexit /b 1\r\n",
+            encoding="utf-8",
+        )
+        return script
     script = bin_dir / "Unity"
     script.write_text(
         "#!/bin/sh\necho 'license failure' >&2\nexit 1\n", encoding="utf-8"
