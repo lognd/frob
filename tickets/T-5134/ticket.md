@@ -22,12 +22,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/*.py
-- docs/**/*.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'owner directive 2026-09-20: a repo-wide text migration;
   each file is a mechanical citation strip'
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/**/*.md
+  reason: a repo-wide docs glob leases every docs ticket's files; docs citations are
+    added by file once measured
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: milestone
   old_value: null
