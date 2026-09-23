@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_comply_substrate.py
 - tests/fixtures/webapp/comply1xx/**
 - docs/modules/webapp-comply.md
+- tests/unit/test_webapp_comply_substrate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,11 @@ scope_changes:
   glob: docs/modules/webapp-comply.md
   reason: 'COMPLY substrate module doc, per fan-out brief: one doc per family to avoid
     7-way collision on webapp.md'
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_webapp_comply_substrate.py
+  reason: unit test file for the new substrate, standard test-file scope grant
   actor: logan
   at: '2026-09-23'
 triage_changes:
