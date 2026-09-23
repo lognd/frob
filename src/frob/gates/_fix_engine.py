@@ -371,54 +371,95 @@ def fix_doc002_unique_slug(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
 # ---------------------------------------------------------------------------
 
 
+#: T-5347: `frob.tickets.Ticket` type alias only used for this module's own
+#: archive-cache typing below -- avoids a top-level `frob.tickets` import
+#: (this module already imports `Ticket`/`TicketQueue` from `frob.tickets`
+#: at the top of the file; this alias documents the archive-cache shape
+#: without a second, redundant import statement).
+_Docarch002ArchiveCache = dict[str, "Ticket"]
+
+
+# frob:ticket T-5347
+def _docarch002_load_archive_once(root: Path) -> _Docarch002ArchiveCache:
+    """T-5347: the FULL ticket-archive YAML, parsed exactly ONCE per
+    `fix_docarch002_narrative_move` call and handed down to every finding
+    in that run -- the fix for the measured incident (faulthandler
+    traceback, T-5347's own body): the pre-T-5347 shape called `frob.
+    tickets._store.load_archive` fresh from `_docarch002_existing_body`
+    on EVERY finding, so a repo-wide pre-land pass with thousands of
+    DOCARCH002 findings reparsed the entire archive thousands of times
+    and never reached its first phase stamp (18-52 minutes at 100% CPU,
+    T-5267/T-5291). One load, shared for the whole call, turns every
+    finding's own archived-ticket lookup into an O(1) dict read. Degrades
+    to `{}` (never raises) on a load failure -- exactly the pre-T-5347
+    per-call fallback `_docarch002_existing_body` already had via
+    `archived.is_ok`, just computed once instead of per finding."""
+    from frob.tickets._store import load_archive
+
+    archived = load_archive(root)
+    return archived.danger_ok if archived.is_ok else {}
+
+
+# frob:ticket T-5347
 def _docarch002_existing_body(
-    root: Path, queue: TicketQueue, ticket_id: str
+    queue: TicketQueue, archive: _Docarch002ArchiveCache, ticket_id: str
 ) -> str | None:
     """The CURRENT body text of `ticket_id`, read from whichever store
     actually holds it -- `queue` (this pass's own in-memory active
-    ledger, avoiding a second active-store read) first, then the
-    on-disk archive (T-2994's ARCHIVED-TICKET WRITE HAZARD: most cited
-    tickets are done and archived, and `migrate_block`'s idempotency
-    check needs the REAL current body wherever it lives, not just the
-    active one). `None` when `ticket_id` resolves nowhere -- the caller
-    treats that as "nothing to migrate into," never a guess."""
-    from frob.tickets._store import load_archive
-
+    ledger) first, then `archive` (T-5347: the CALLER's already-loaded-
+    once archive cache, `_docarch002_load_archive_once` -- never a fresh
+    `load_archive` call here any more, see that function's own docstring
+    for the incident this replaces). `None` when `ticket_id` resolves
+    nowhere -- the caller treats that as "nothing to migrate into,"
+    never a guess."""
     active = queue.tickets.get(ticket_id)
     if active is not None:
         return active.body
-    archived = load_archive(root)
-    if archived.is_ok and ticket_id in archived.danger_ok:
-        return archived.danger_ok[ticket_id].body
-    return None
+    archived_ticket = archive.get(ticket_id)
+    return archived_ticket.body if archived_ticket is not None else None
 
 
+# frob:ticket T-5347
 def _docarch002_migrate_one(
     root: Path,
     queue: TicketQueue,
+    archive: _Docarch002ArchiveCache,
     rel_path: str,
     current_text: str,
     line: int,
+    *,
+    plan_only: bool,
 ):  # noqa: ANN201
     """One DOCARCH002 citation-shape finding's own share of `fix_
     docarch002_narrative_move`'s per-file loop: resolves the comment
-    block at `line` in `current_text`, moves it via `frob.narrative.
-    _migrate.migrate_block`, and -- ONLY if that succeeds -- writes the
-    ticket-body half via `frob.tickets.set_body` (T-2678's proven
-    archived-ticket-safe front door, the same one `frob narrative move`'s
-    own CLI already reuses). The ledger write happens BEFORE this
-    function reports success and BEFORE the caller ever updates its own
-    in-memory file text, so a `set_body` failure leaves the file's
-    `current_text` completely untouched -- the narrative stays exactly
-    where it already was (T-2994 constraint 1: MOVE, NEVER DELETE) rather
-    than a half-applied state where the file lost it but no ticket ever
-    gained it.
+    block at `line` in `current_text` and computes the move via `frob.
+    narrative._migrate.migrate_block` (a pure function, no I/O).
+
+    T-5347: `plan_only` (`True` for every call from `frob ticket land`'s
+    pre-land Tier-A pass, `merge_target_ids is not None` at this
+    handler's own entry point -- see `fix_docarch002_narrative_move`)
+    computes the SAME move but skips the ticket-body write (`frob.
+    tickets.set_body`) and returns `None` (nothing to apply) rather than
+    the `(new_text, FixApplied)` pair -- "plan the moves; only the
+    explicit `frob narrative move`/`frob check --fix` path may write
+    bodies" (T-5347's own body). A pre-land pass must never mutate a
+    ticket the LANDING ticket never asked it to touch, as a side effect
+    of unrelated repo-wide bookkeeping. `plan_only=False` (a bare `frob
+    check --fix`, or `frob narrative move`'s own equivalent path) keeps
+    T-4694's original write-then-return behavior unchanged.
+
+    Non-plan-only writes: the ledger write happens BEFORE this function
+    reports success and BEFORE the caller ever updates its own in-memory
+    file text, so a `set_body` failure leaves the file's `current_text`
+    completely untouched -- the narrative stays exactly where it already
+    was (T-2994 constraint 1: MOVE, NEVER DELETE) rather than a half-
+    applied state where the file lost it but no ticket ever gained it.
 
     Returns `None` when there is nothing to do this call (no comment
-    block at `line`, no `T-####` citation on its lead line, or the block
-    was already migrated -- `MigrateError.AlreadyMigrated`, T-2994
-    constraint 4) -- a silent skip, never a guess or a partial write.
-    Otherwise returns `(new_text, FixApplied)`."""
+    block at `line`, no `T-####` citation on its lead line, the block was
+    already migrated -- `MigrateError.AlreadyMigrated`, T-2994 constraint
+    4 -- or `plan_only` is set) -- a silent skip, never a guess or a
+    partial write. Otherwise returns `(new_text, FixApplied)`."""
     from frob.narrative._migrate import (
         MigrateError,
         block_at,
@@ -426,7 +467,6 @@ def _docarch002_migrate_one(
         moved_text_for_ticket,
         split_ticket_id,
     )
-    from frob.tickets._setters import set_body
 
     extent = block_at(current_text, line)
     if extent is None:
@@ -437,7 +477,7 @@ def _docarch002_migrate_one(
     cited_ticket_id = split_ticket_id(lead_line)
     if cited_ticket_id is None:
         return None
-    existing_body = _docarch002_existing_body(root, queue, cited_ticket_id)
+    existing_body = _docarch002_existing_body(queue, archive, cited_ticket_id)
     if existing_body is None:
         _log.warning(
             "fix_docarch002_narrative_move: %s:%d cites %s, which resolves "
@@ -464,6 +504,20 @@ def _docarch002_migrate_one(
             )
         return None
     migration = result.danger_ok
+    if plan_only:
+        _log.info(
+            "fix_docarch002_narrative_move: %s:%d would move %d line(s) "
+            "into %s -- NOT applying (land pre-land pass, T-5347: only "
+            "an explicit frob narrative move/frob check --fix may write "
+            "ticket bodies)",
+            rel_path,
+            start,
+            migration.moved_line_count,
+            migration.ticket_id,
+        )
+        return None
+    from frob.tickets._setters import set_body
+
     moved_lines = tuple(lines[start - 1 : end])
     ticket_body_text = moved_text_for_ticket(
         rel_path=rel_path,
@@ -502,17 +556,27 @@ def _docarch002_migrate_one(
     return migration.new_file_text, fix
 
 
+# frob:ticket T-5347
 def _docarch002_fix_one_file(
-    root: Path, queue: TicketQueue, rel: str, original_text: str
+    root: Path,
+    queue: TicketQueue,
+    archive: _Docarch002ArchiveCache,
+    rel: str,
+    original_text: str,
+    *,
+    plan_only: bool,
 ) -> list[FixApplied]:
-    """One tracked `.py` file's own share of `fix_docarch002_narrative_
-    move`'s sweep -- split out to keep that function under ARCH001's
-    threshold. Plans every DOCARCH002 check-2 finding in `original_text`
-    against ITS OWN original line numbers, applies them in one DESCENDING
-    pass (`_docarch002_migrate_one`, highest `line` first, so an earlier
-    -- lower-in-file -- edit never invalidates a later finding's already-
+    """One file's own share of `fix_docarch002_narrative_move`'s sweep --
+    split out to keep that function under ARCH001's threshold. Plans
+    every DOCARCH002 check-2 finding in `original_text` against ITS OWN
+    original line numbers, applies them in one DESCENDING pass
+    (`_docarch002_migrate_one`, highest `line` first, so an earlier --
+    lower-in-file -- edit never invalidates a later finding's already-
     resolved line number), and writes the result via `_write_text_if_
-    parses` exactly once, only if at least one finding actually moved."""
+    parses` exactly once, only if at least one finding actually moved.
+    `plan_only` (T-5347) is threaded straight to `_docarch002_migrate_
+    one`; when set, no finding in this file ever returns a mutation, so
+    `file_fixes` stays empty and this function writes nothing."""
     from frob.gates._docarch_structural import scan_citation_shape
 
     violations = scan_citation_shape(Path(rel), original_text)
@@ -520,14 +584,15 @@ def _docarch002_fix_one_file(
         return []
     current_text = original_text
     file_fixes: list[FixApplied] = []
-    # frob:waive PERF004 reason="violations is THIS file's own findings list (a \
-    # different, non-hoistable set of Violations for every call, one call per tracked \
-    # file in the caller's loop) -- there is no loop-invariant sort to hoist out, the \
-    # same varies-per-iteration false-positive class T-2321/T-2303/T-5242 already \
-    # established for a per-iteration .resolve()/sort call"
     for violation in sorted(violations, key=lambda v: v.line, reverse=True):
         outcome = _docarch002_migrate_one(
-            root, queue, rel, current_text, violation.line
+            root,
+            queue,
+            archive,
+            rel,
+            current_text,
+            violation.line,
+            plan_only=plan_only,
         )
         if outcome is None:
             continue
@@ -543,27 +608,62 @@ def _docarch002_fix_one_file(
 
 # frob:doc docs/commands/narrative.md#docarch002-check-2s-tier-a-auto-fix-t-4694
 # frob:ticket T-4694
+# frob:ticket T-5347
 def fix_docarch002_narrative_move(
-    root: Path, snapshot: GraphSnapshot, queue: TicketQueue
+    root: Path,
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    ticket_id: str | None = None,
+    merge_target_ids: MergeTargetKnownIds | None = None,
+    only_paths: frozenset[str] | None = None,
 ) -> list[FixApplied]:
     """Tier-A fix: run `frob narrative move`'s own engine
     (`_docarch002_fix_one_file`/`_docarch002_migrate_one`) over every
     DOCARCH002 check-2 finding (`frob.gates._docarch_structural.scan_
-    citation_shape`) across every tracked `.py` file. See docs/commands/
-    narrative.md#docarch002-check-2s-tier-a-auto-fix-t-4694 for the
-    whole-block-move limitation, the ledger-before-file write order, and
-    the archived-ticket/idempotency guarantees this handler makes."""
+    citation_shape`) across every tracked `.py` file (or, when
+    `only_paths` is given, exactly that file set -- the same `only_paths`
+    convention `fix_fmt001_directive_wrap`/`fix_fmt002_noqa_strip`
+    already establish, T-5347: scope the scan to the files the caller
+    actually cares about rather than always walking the whole tree). See
+    docs/commands/narrative.md#docarch002-check-2s-tier-a-auto-fix-t-4694
+    for the whole-block-move limitation, the ledger-before-file write
+    order, and the archived-ticket/idempotency guarantees this handler
+    makes.
+
+    T-5347 (the incident this ticket fixes, see `_docarch002_load_
+    archive_once`'s own docstring for the measured faulthandler
+    traceback): `merge_target_ids`, when given (T-2400's own convention
+    -- only non-`None` from `frob ticket land`'s pre-land Tier-A pass),
+    puts every finding this call processes into PLAN-ONLY mode
+    (`_docarch002_migrate_one`'s `plan_only=True`): the archive is still
+    loaded once and every finding is still resolved (so a land's own log
+    still shows what WOULD move), but no ticket body is ever appended and
+    no source file is ever rewritten -- "plan the moves; only the
+    explicit `frob narrative move`/`frob check --fix` path may write
+    bodies." A bare `frob check --fix` (`merge_target_ids=None`) keeps
+    T-4694's original write behavior unchanged."""
     from frob.gates._tracked_files import tracked_files
 
+    archive = _docarch002_load_archive_once(root)
+    plan_only = merge_target_ids is not None
+    candidates = (
+        sorted(only_paths)
+        if only_paths is not None
+        else tracked_files(root, caller="fix_docarch002_narrative_move")
+    )
     applied: list[FixApplied] = []
-    for rel in tracked_files(root, caller="fix_docarch002_narrative_move"):
+    for rel in candidates:
         if not rel.endswith(".py"):
             continue
         try:
             original_text = (root / rel).read_text(encoding="utf-8")
         except OSError:
             continue
-        applied.extend(_docarch002_fix_one_file(root, queue, rel, original_text))
+        applied.extend(
+            _docarch002_fix_one_file(
+                root, queue, archive, rel, original_text, plan_only=plan_only
+            )
+        )
     return applied
 
 
@@ -1483,9 +1583,23 @@ TIER_A_HANDLERS: dict[
         )
     ),
     # frob:ticket T-4694
-    # DOCARCH002's Tier-A handler is unregistered until it stops reloading
-    # the archive per finding and writing the ledger from the pre-land pass
-    # (coordinator hotfix 2026-09-22).
+    # frob:ticket T-5347
+    # T-5347: re-registered after the archive-reload-per-finding /
+    # ledger-write-from-pre-land incident (coordinator hotfix 2026-09-22,
+    # e1b14b8248/77c40b3f42) -- the archive is now loaded once per call
+    # (`_docarch002_load_archive_once`) and `merge_target_ids is not None`
+    # (T-2400's own land-pre-land signal) puts every finding into
+    # plan-only mode, never writing a ticket body from this dispatch
+    # path. `only_paths` is accepted but not yet threaded from this
+    # dict's own uniform 5-arg call shape -- `frob ticket land`'s own
+    # pre-land wiring of a scoped-files argument here is a separate,
+    # future ticket; T-5347's own fix (memoized archive + no pre-land
+    # ledger writes) already removes the wedge regardless.
+    "DOCARCH002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_docarch002_narrative_move(
+            root, snapshot, queue, ticket_id, merge_target_ids
+        )
+    ),
     "TICK002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
         fix_tick002_renumber(root, queue)
     ),

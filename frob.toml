@@ -61,16 +61,6 @@ known_keys = "frob.gates._dup_graph_schema:DUP_KNOWN_KEYS"
 [dup]
 enforce = true
 
-# T-5274: DSTACK001's stack-length threshold ("N+ consecutive `frob:`
-# directive lines above one symbol is a finding") -- `frob.gates.
-# _dstack_threshold` reads this key, falling back to `DEFAULT_STACK_
-# THRESHOLD` (4, `frob.gates._directive_stack`'s own documented default)
-# when this key/table/file is absent or malformed. Set explicitly here
-# at the shipped default so the knob is discoverable without reading
-# source.
-[gates]
-dstack_threshold = 4
-
 
 # T-5138: live OSV.dev advisory data, on by default (docs/modules/vet.md
 # "Declaration and gates") -- VET005 fires when a locked dependency has a

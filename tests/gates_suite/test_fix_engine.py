@@ -2371,6 +2371,7 @@ class TestFixEngineTierABatch2:
             "DOCENUM001",  # T-1974
             "SYS111",  # T-2001
             "TEST010",  # T-4710/T-5261
+            "DOCARCH002",  # T-4694/T-5347
             "DSTACK001",  # T-5274
         }
 

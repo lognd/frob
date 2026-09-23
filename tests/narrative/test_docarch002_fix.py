@@ -234,3 +234,120 @@ class TestFixDocarch002NarrativeMove:
         assert load_queue(tmp_path).danger_ok.tickets["T-1234"].body == (
             "## Description\nsomething\n"
         )
+
+
+class TestDocarch002PreLandPlanOnly:
+    """T-5347: the pre-land Tier-A pass (`merge_target_ids` given, T-2400's
+    own land signal) must load the ticket archive at most ONCE per run and
+    must never write a ticket body -- the measured incident (a repo-wide
+    pre-land pass reparsing the whole archive YAML per finding, plus
+    writing ledger bodies as a side effect of landing an unrelated
+    ticket) that wedged lands for 18-52 minutes."""
+
+    def _fixture_repo(self, tmp_path: Path) -> None:
+        """10 files, 5 DOCARCH002 citation-shape findings each (50
+        total), every citation pointing at an ARCHIVED ticket -- forces
+        `_docarch002_existing_body` to actually consult the archive
+        cache for every single finding, so a per-finding reload (the
+        T-5347 bug) would have shown up as 50 `load_archive` calls. Each
+        finding's comment run is separated from its neighbor by a blank
+        line -- `scan_citation_shape` treats a contiguous comment run as
+        ONE finding, so without a break, 5 back-to-back citation blocks
+        in the same file would scan as a single (bigger) finding rather
+        than 5 distinct ones."""
+        _git_init(tmp_path)
+        for file_idx in range(10):
+            ticket_id = f"T-91{file_idx:02d}"
+            _write_archived_ticket(tmp_path, ticket_id)
+            lines: list[str] = []
+            for finding_idx in range(5):
+                if finding_idx:
+                    lines.append("")
+                lines.append(f"# {ticket_id}: narrative block {finding_idx}")
+                lines.append(f"# prose line a {finding_idx}")
+                lines.append(f"# prose line b {finding_idx}")
+            lines.append("")
+            lines.append("def f():")
+            lines.append("    pass")
+            _write(tmp_path, f"file_{file_idx}.py", "\n".join(lines) + "\n")
+        _add_all(tmp_path)
+
+    # frob:tests \
+    # tests/narrative/test_docarch002_fix.py::TestDocarch002PreLandPlanOnly.test_archive_loaded_once_and_zero_ledger_writes_in_pre_land_mode  # noqa: E501
+    def test_archive_loaded_once_and_zero_ledger_writes_in_pre_land_mode(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """GIVEN a fixture with 50 DOCARCH002 findings across 10 files
+        all citing archived tickets, WHEN `apply_tier_a_fixes` runs with
+        `merge_target_ids` given (pre-land mode), THEN the archive is
+        loaded exactly once and zero ticket bodies/files are written."""
+        import frob.tickets._store as _store_mod
+        from frob.gates._fix_engine import MergeTargetKnownIds, apply_tier_a_fixes
+        from frob.graph import build_graph
+
+        self._fixture_repo(tmp_path)
+
+        call_count = {"n": 0}
+        real_load_archive = _store_mod.load_archive
+
+        def counting_load_archive(root):  # noqa: ANN001, ANN202
+            call_count["n"] += 1
+            return real_load_archive(root)
+
+        monkeypatch.setattr(_store_mod, "load_archive", counting_load_archive)
+
+        snapshot = build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
+        queue = load_queue(tmp_path).danger_ok
+        before_bodies = {
+            f"T-91{i:02d}": (
+                tmp_path / "tickets" / "archive" / f"T-91{i:02d}" / "ticket.md"
+            ).read_text()
+            for i in range(10)
+        }
+        before_files = {
+            f"file_{i}.py": (tmp_path / f"file_{i}.py").read_text() for i in range(10)
+        }
+
+        from frob.gates._fix_engine import TIER_A_HANDLERS
+
+        other_rules = tuple(r for r in TIER_A_HANDLERS if r != "DOCARCH002")
+        applied = apply_tier_a_fixes(
+            tmp_path,
+            snapshot,
+            queue,
+            exclude=other_rules,
+            ticket_id="T-9999",
+            merge_target_ids=MergeTargetKnownIds(),
+        )
+
+        assert call_count["n"] == 1
+        assert [fix for fix in applied if fix.rule == "DOCARCH002"] == []
+        for i in range(10):
+            ticket_id = f"T-91{i:02d}"
+            after_body = (
+                tmp_path / "tickets" / "archive" / ticket_id / "ticket.md"
+            ).read_text()
+            assert after_body == before_bodies[ticket_id]
+            assert (tmp_path / f"file_{i}.py").read_text() == before_files[
+                f"file_{i}.py"
+            ]
+
+    # frob:tests \
+    # tests/narrative/test_docarch002_fix.py::TestDocarch002PreLandPlanOnly.test_bare_check_fix_mode_still_writes  # noqa: E501
+    def test_bare_check_fix_mode_still_writes(self, tmp_path: Path) -> None:
+        """GIVEN the same 50-finding fixture, WHEN `fix_docarch002_
+        narrative_move` runs with NO `merge_target_ids` (a bare `frob
+        check --fix`), THEN it still performs real moves -- T-5347's
+        plan-only gating is land-pre-land-specific, not a regression on
+        T-4694's original behavior."""
+        from frob.gates._fix_engine import fix_docarch002_narrative_move
+
+        self._fixture_repo(tmp_path)
+        queue = load_queue(tmp_path).danger_ok
+
+        applied = fix_docarch002_narrative_move(tmp_path, _snap(tmp_path), queue)
+
+        assert len(applied) == 50
+        new_text = (tmp_path / "file_0.py").read_text()
+        assert "prose line a 0" not in new_text
+        assert "# see T-9100 for the history behind this" in new_text
