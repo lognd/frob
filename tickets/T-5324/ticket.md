@@ -1,7 +1,7 @@
 ---
 id: T-5324
 title: Accessibility-statement page + axe-core/pa11y tool-registry entries
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -28,10 +28,17 @@ scope:
 - src/frob/doctor.py
 - docs/modules/gates.md
 - docs/guides/install.md
+- tests/unit/test_webapp_a11y_statement.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_webapp_a11y_statement.py
+  reason: test file covering new a11y_findings symbol
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
@@ -111,5 +118,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5324
+branch: t-5324
 ---
 Content-lint for the accessibility-statement page (W3C WAI required contents: commitment, standard applied WCAG 2.2 AA, contact, known limitations, measures, technical prerequisites, tested environments), same shape as T-5145-2's privacy-policy lint. Add _RELEVANT_TOOLS entries for axe-core/pa11y in src/frob/doctor.py (T-5139/T-3276 pattern, same as the existing cargo-audit entry): relevant_when = an HTML/JSX file exists AND a dynamic-only A11Y criterion (color-only meaning) is in scope; absence is a failing UNMEASURED RelevantToolFinding, never silently skipped.
