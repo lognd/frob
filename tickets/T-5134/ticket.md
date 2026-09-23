@@ -25,6 +25,30 @@ scope:
 - tests/unit/coordinator_suite/test_count_ticket_citations.py
 - scripts/count_ticket_citations.py
 - scripts/strip_help_citations.py
+- docs/commands/ack.md
+- docs/commands/clean.md
+- docs/commands/doctor.md
+- docs/commands/gitlog.md
+- docs/commands/graph.md
+- docs/commands/map.md
+- docs/commands/mutate.md
+- docs/commands/perf.md
+- docs/commands/release.md
+- docs/commands/serve.md
+- docs/commands/status.md
+- docs/commands/test.md
+- docs/commands/vet.md
+- docs/design/cwe-1000-registry.md
+- docs/guides/command-reference.md
+- docs/guides/editors.md
+- docs/guides/extending/cve-fingerprints.md
+- docs/guides/extending/design-lint-rules.md
+- docs/guides/extending/failure-injection-acceptance-criteria.md
+- docs/guides/extending/pii-categories.md
+- docs/guides/extending/prover-claim-kinds.md
+- docs/guides/extending/scenario-kinds.md
+- docs/guides/extending/ticket-kinds-states.md
+- docs/guides/frob-toml.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'owner directive 2026-09-20: a repo-wide text migration;
   each file is a mechanical citation strip'
@@ -65,6 +89,150 @@ scope_changes:
   glob: scripts/strip_help_citations.py
   reason: 'new measurement/removal tooling this ticket requires (frob ticket body:
     write a script under scripts/)'
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/ack.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/clean.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/doctor.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/gitlog.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/graph.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/map.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/mutate.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/perf.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/release.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/serve.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/status.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/test.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/commands/vet.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/design/cwe-1000-registry.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/command-reference.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/editors.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/extending/cve-fingerprints.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/extending/design-lint-rules.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/extending/failure-injection-acceptance-criteria.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/extending/pii-categories.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/extending/prover-claim-kinds.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/extending/scenario-kinds.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/extending/ticket-kinds-states.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/guides/frob-toml.md
+  reason: docs prose T-#### citation removal, small single-citation files measured
+    by scripts/count_ticket_citations.py --scope docs
   actor: logan
   at: '2026-09-22'
 triage_changes:
