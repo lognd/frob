@@ -1,7 +1,7 @@
 ---
 id: T-5360
 title: 'COMPLY substrate: required-page and site-signal detector'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -62,6 +62,22 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_plain_is_empty
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_positive_control[signal_email-email_collection]
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_positive_control[signal_ai-ai_on_user_data]
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_positive_control[signal_subscriptions-subscriptions]
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_positive_control[signal_data_sale-data_sale_or_share]
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_positive_control[signal_sms-sms]
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_positive_control[signal_session_replay-session_replay_or_pixel]
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_positive_control[signal_health-health_data]
+- tests/unit/test_webapp_comply_substrate.py::test_detect_signals_missing_root_is_empty
+- tests/unit/test_webapp_comply_substrate.py::test_detect_required_pages_nextjs_present
+- tests/unit/test_webapp_comply_substrate.py::test_detect_required_pages_nextjs_missing
+- tests/unit/test_webapp_comply_substrate.py::test_detect_required_pages_flask_present
+- tests/unit/test_webapp_comply_substrate.py::test_detect_required_pages_flask_missing
+- tests/unit/test_webapp_comply_substrate.py::test_detect_required_pages_no_frameworks_is_empty_ok
+- tests/unit/test_webapp_comply_substrate.py::test_detect_required_pages_missing_root_is_err
 designated_repro_test: null
 threat: null
 component: null

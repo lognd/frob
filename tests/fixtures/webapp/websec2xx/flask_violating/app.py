@@ -1,4 +1,5 @@
 """Violating Flask app-factory fixture (T-5349): insecure cookies, no CSRF protection."""
+
 from flask import Flask
 
 

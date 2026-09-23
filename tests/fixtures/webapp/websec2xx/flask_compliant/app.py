@@ -1,4 +1,5 @@
 """Compliant Flask app-factory fixture (T-5349): secure cookies, CSRFProtect wired."""
+
 from flask import Flask
 from flask_wtf import CSRFProtect
 

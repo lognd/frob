@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Django manage.py fixture -- marks this tree as a Django project (T-5349)."""
+
 import os
 import sys
 
