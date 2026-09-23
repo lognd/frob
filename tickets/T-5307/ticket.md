@@ -27,6 +27,7 @@ scope:
 - src/frob/webapp/_websec_sinks.py
 - tests/fixtures/webapp/websec1xx/**
 - docs/modules/webapp-websec-injection.md
+- tests/unit/test_websec_sinks.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,11 @@ scope_changes:
 - op: add
   glob: docs/modules/webapp-websec-injection.md
   reason: new module doc for WEBSEC101-106, cited via frob:doc
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_websec_sinks.py
+  reason: new unit test file for WEBSEC101-106 positive/negative fixtures
   actor: logan
   at: '2026-09-23'
 triage_changes:
