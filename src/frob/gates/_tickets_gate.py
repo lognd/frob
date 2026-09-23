@@ -1938,12 +1938,34 @@ def _tick015_requeue_dead_worktree(
     rather than inventing a second requeue path. Best-effort: if the
     requeue itself fails (e.g. `root` is not a git work tree, or the
     ledger is unwritable), the ERROR still reports the dead worktree --
-    the write is a bonus, not the condition being tested for."""
-    from frob.tickets import FailureEntry, record_failure, transition
-    from frob.tickets._leases import commit_ticket_ledger_change
-
+    the write is a bonus, not the condition being tested for. Split
+    across `_tick015_candidates` (the filter-and-guard pass),
+    `_tick015_report_or_requeue` (per-candidate violation + optional
+    mutation), and `_tick015_requeue_one` (the mutation itself) --
+    T-5358 land refusal (ARCH001, long-AND-complex) once this rule grew
+    the two new guards; no behavior changed by the split."""
     requeue_enabled = _tick015_requeue_enabled(root)
     violations: list[Violation] = []
+    for t, reason in _tick015_candidates(root, queue, lease_snapshot):
+        violations.append(
+            _tick015_report_or_requeue(root, t, reason, requeue_enabled=requeue_enabled)
+        )
+    return tuple(violations)
+
+
+# frob:ticket T-5358
+def _tick015_candidates(
+    root: Path, queue: TicketQueue, lease_snapshot: dict[str, str]
+) -> list[tuple[Ticket, str]]:
+    """`(ticket, reason)` for every IN_PROGRESS ticket in `queue` whose
+    recorded worktree is judged dead (`_tick015_dead_worktree_reason`)
+    AND survives both T-5358 guards (`_tick015_protected_by_queue`,
+    `_tick015_protected_by_young_lease`) -- the filter half of
+    `_tick015_requeue_dead_worktree`, split out (ARCH001, T-5358) so the
+    report/mutate half stays a separate, shorter function. A protected
+    ticket is logged once at INFO and excluded entirely -- no violation,
+    no mutation -- matching the parent rule's own documented posture."""
+    candidates: list[tuple[Ticket, str]] = []
     for t in sorted(queue.tickets.values(), key=lambda t: t.id):
         if t.state is not TicketState.IN_PROGRESS:
             continue
@@ -1971,72 +1993,102 @@ def _tick015_requeue_dead_worktree(
                 reason,
             )
             continue
-        if not requeue_enabled:
-            violations.append(
-                Violation(
-                    rule="TICK015",
-                    severity=Severity.ERROR,
-                    file="tickets.md",
-                    line=0,
-                    message=(
-                        f"TICK015: {t.id} is in-progress but its recorded "
-                        f"worktree is dead ({reason}) -- NOT requeued "
-                        f"(tick015_requeue is disabled); run `frob ticket "
-                        f"fail {t.id}` to requeue it manually, or set "
-                        f"[gates] tick015_requeue = true in frob.toml to "
-                        f"have this gate do it automatically"
-                    ),
-                )
-            )
-            continue
-        violations.append(
-            Violation(
-                rule="TICK015",
-                severity=Severity.ERROR,
-                file="tickets.md",
-                line=0,
-                message=(
-                    f"TICK015: {t.id} is in-progress but its recorded "
-                    f"worktree is dead ({reason}) -- requeued to queued "
-                    f"and a failure-log entry was recorded naming the "
-                    f"dead worktree"
-                ),
-            )
+        candidates.append((t, reason))
+    return candidates
+
+
+# frob:ticket T-5358
+def _tick015_report_or_requeue(
+    root: Path, t: Ticket, reason: str, *, requeue_enabled: bool
+) -> Violation:
+    """One TICK015 `Violation` for `t` (already past both `_tick015_
+    candidates` guards) -- report-only (naming the manual `frob ticket
+    fail <id>` remedy) unless `requeue_enabled`, in which case
+    `_tick015_requeue_one` performs the mutation first and this returns
+    the "requeued" wording instead. Split out of `_tick015_requeue_dead_
+    worktree` (ARCH001, T-5358); no behavior change."""
+    if not requeue_enabled:
+        return Violation(
+            rule="TICK015",
+            severity=Severity.ERROR,
+            file="tickets.md",
+            line=0,
+            message=(
+                f"TICK015: {t.id} is in-progress but its recorded "
+                f"worktree is dead ({reason}) -- NOT requeued "
+                f"(tick015_requeue is disabled); run `frob ticket "
+                f"fail {t.id}` to requeue it manually, or set "
+                f"[gates] tick015_requeue = true in frob.toml to "
+                f"have this gate do it automatically"
+            ),
         )
-        attempt = t.body.count("attempt ") + 1
-        entry = FailureEntry(
-            date=_utc_today(),
-            attempt=attempt,
-            summary=f"TICK015: dead worktree ({reason}), requeued by frob check",
+    _tick015_requeue_one(root, t, reason)
+    return Violation(
+        rule="TICK015",
+        severity=Severity.ERROR,
+        file="tickets.md",
+        line=0,
+        message=(
+            f"TICK015: {t.id} is in-progress but its recorded "
+            f"worktree is dead ({reason}) -- requeued to queued "
+            f"and a failure-log entry was recorded naming the "
+            f"dead worktree"
+        ),
+    )
+
+
+# frob:ticket T-5358
+def _tick015_requeue_one(root: Path, t: Ticket, reason: str) -> None:
+    """Performs the actual TICK015 fix for one ticket: IN_PROGRESS ->
+    QUEUED, releasing whatever lease it still holds, plus a failure-log
+    entry naming the dead worktree, through the same `record_failure` +
+    `transition` + `commit_ticket_ledger_change` composition `frob
+    ticket fail`'s own `_fail` already uses (T-1131/T-1130) -- a dead
+    worktree is exactly the "the ticket needs a fresh attempt" case
+    `fail` already exists to record, so this reuses that primitive
+    rather than inventing a second requeue path. Best-effort: every
+    failure is logged and swallowed (the caller's ERROR `Violation` is
+    already built independently of this succeeding) rather than raised,
+    since the requeue is a bonus, not the condition
+    `_tick015_report_or_requeue` is testing for. Split out of
+    `_tick015_requeue_dead_worktree` (ARCH001, T-5358); no behavior
+    change."""
+    from frob.tickets import FailureEntry, record_failure, transition
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    attempt = t.body.count("attempt ") + 1
+    entry = FailureEntry(
+        date=_utc_today(),
+        attempt=attempt,
+        summary=f"TICK015: dead worktree ({reason}), requeued by frob check",
+    )
+    recorded = record_failure(root, t.id, entry)
+    if recorded.is_err:
+        _log.error(
+            "TICK015: %s: could not record failure log (%s) -- requeue skipped",
+            t.id,
+            recorded.danger_err,
         )
-        recorded = record_failure(root, t.id, entry)
-        if recorded.is_err:
-            _log.error(
-                "TICK015: %s: could not record failure log (%s) -- requeue skipped",
-                t.id,
-                recorded.danger_err,
-            )
-            continue
-        requeued = transition(root, t.id, TicketState.QUEUED)
-        if requeued.is_err:
-            _log.error(
-                "TICK015: %s: failure log recorded but requeue failed "
-                "(%s) -- lease NOT released, needs manual attention",
-                t.id,
-                requeued.danger_err,
-            )
-            continue
-        committed = commit_ticket_ledger_change(
-            root, t.id, f"TICK015: requeue {t.id} (dead worktree)"
+        return
+    requeued = transition(root, t.id, TicketState.QUEUED)
+    if requeued.is_err:
+        _log.error(
+            "TICK015: %s: failure log recorded but requeue failed "
+            "(%s) -- lease NOT released, needs manual attention",
+            t.id,
+            requeued.danger_err,
         )
-        if committed.is_err:
-            _log.error(
-                "TICK015: %s: requeue committed to the ledger object but "
-                "the commit itself failed (%s)",
-                t.id,
-                committed.danger_err,
-            )
-    return tuple(violations)
+        return
+    committed = commit_ticket_ledger_change(
+        root, t.id, f"TICK015: requeue {t.id} (dead worktree)"
+    )
+    if committed.is_err:
+        _log.error(
+            "TICK015: %s: requeue committed to the ledger object but "
+            "the commit itself failed (%s)",
+            t.id,
+            committed.danger_err,
+        )
 
 
 # frob:ticket T-1259
