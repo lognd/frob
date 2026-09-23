@@ -1,7 +1,7 @@
 ---
 id: T-5293
 title: test_release.py changelog-fragment-ownership check fails on dev tip
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -17,6 +17,7 @@ unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -61,3 +62,6 @@ gh run 35717833933; re-verified on dev tip 3acf8c6b30: tests/test_release.py::Te
 
 ## Failure log
 - 2026-09-23 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5293), requeued by frob check
+
+## Drop reason
+- 2026-09-23: landed by content: changelog.d/T-4759.md is gone on dev via a sibling's --allow-cross-ticket land; its own land record was reset by TICK015 (T-5358) and re-landing an empty diff refuses
