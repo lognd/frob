@@ -1,5 +1,5 @@
 ---
-id: T-draft-e70289fc
+id: T-5378
 title: 'test_dispatch_table_verbs_are_all_accounted_for: points/set/tokens verbs unclassified'
 state: queued
 kind: bug
