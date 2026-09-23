@@ -59,6 +59,12 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-22'
+- field: milestone
+  old_value: 0.535.0
+  new_value: 0.535.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-22'
 designated_repro_test: null
 threat: null
 component: null
