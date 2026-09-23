@@ -29,6 +29,7 @@ scope:
 - docs/modules/gates.md
 - docs/guides/install.md
 - tests/unit/test_webapp_a11y_statement.py
+- tests/fixtures/webapp/a11y1xx/statement/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_webapp_a11y_statement.py
   reason: test file covering new a11y_findings symbol
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/webapp/a11y1xx/statement/**
+  reason: positive/negative fixtures for accessibility-statement content-lint
   actor: logan
   at: '2026-09-23'
 triage_changes:
