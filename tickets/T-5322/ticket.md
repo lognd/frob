@@ -1,7 +1,7 @@
 ---
 id: T-5322
 title: 'A11Y129-135: redundant entry, accessible authentication, contrast'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -26,6 +26,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_a11y_forms_contrast.py
 - tests/fixtures/webapp/a11y1xx/forms_contrast/**
+- docs/modules/webapp-a11y-forms-contrast.md
+- tests/unit/test_webapp_a11y_forms_contrast.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +43,26 @@ scope_changes:
   glob: tests/fixtures/webapp/a11y1xx/forms_contrast/**
   reason: narrow shared fixture glob to a per-leaf subdirectory so the four accessibility
     leaves can hold concurrent leases
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/webapp-a11y-forms-contrast.md
+  reason: doc file for this leaf + unit test file per shared brief item 7
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_webapp_a11y_forms_contrast.py
+  reason: doc file for this leaf + unit test file per shared brief item 7
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/webapp-a11y-forms-contrast.md
+  reason: doc file for this leaf + unit test file per shared brief item 7
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_webapp_a11y_forms_contrast.py
+  reason: doc file for this leaf + unit test file per shared brief item 7
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -122,5 +144,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5322
+branch: t-5322
 ---
 Redundant entry across multi-step forms (SC 3.3.7, no autofill/prefill binding), accessible authentication (SC 3.3.8, CAPTCHA step with no alternative), contrast ratio (SC 1.4.3, WCAG relative-luminance formula over literal hex/rgb pairs in CSS -- needs CSS grammar, WEBSUB-1b). Ship the contrast-ratio computation as a reusable pure function -- T-5147 (SEO/WEBPERF) needs the same math. Fixture per rule id.
