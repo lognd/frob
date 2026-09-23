@@ -1,7 +1,7 @@
 ---
 id: T-5308
 title: 'WEBSEC117-122: header/URL/log injection and WebSocket origin check'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -25,6 +25,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_websec_headers_log.py
 - tests/fixtures/webapp/websec1xx/headers_log/**
+- docs/modules/webapp-websec-headers-log.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,11 @@ scope_changes:
   glob: tests/fixtures/webapp/websec1xx/headers_log/**
   reason: narrow shared fixture glob to a per-leaf subdirectory so the four injection
     leaves can hold concurrent leases
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/webapp-websec-headers-log.md
+  reason: own doc file for the T-5308 leaf
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -73,5 +79,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5308
+branch: t-5308
 ---
 URL-building injection (missing urlencode/scheme allowlist), CRLF/header injection (response.setHeader from unvalidated input), log injection (f-string/concat of request data into a logger with no CR/LF-stripping encoder), HTML injection in transactional email, Content-Disposition/filename encoding (RFC 6266), field over-exposure (jsonify(model.__dict__) style whole-object serialization), backend following redirects from untrusted URLs (SSRF-adjacent), and WebSocket origin-check + WSS-only enforcement (ASVS V4.4.1/V4.4.2) -- this leaf is the canonical owner of the WebSocket-origin rule; T-5143-5 (config/headers story) cross-references this leaf's rule id rather than reimplementing it. Fixture per rule id.
