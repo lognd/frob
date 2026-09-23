@@ -1,7 +1,7 @@
 ---
 id: T-5309
 title: 'WEBSEC109-116: code-injection and deserialization sinks'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -25,6 +25,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_websec_deser.py
 - tests/fixtures/webapp/websec1xx/deser/**
+- docs/modules/webapp-websec-deser.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,11 @@ scope_changes:
   glob: tests/fixtures/webapp/websec1xx/deser/**
   reason: narrow shared fixture glob to a per-leaf subdirectory so the four injection
     leaves can hold concurrent leases
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/webapp-websec-deser.md
+  reason: family doc, per shared brief
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -67,5 +73,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5309
+branch: t-5309
 ---
 SSTI (render_template_string/Template(userInput)), eval/exec/new Function, yaml.load without SafeLoader, pickle.load(s) on untrusted data, subprocess shell=True/os.system with interpolated input, LDAP filter string concatenation, NoSQL/Mongo operator-key injection (unsanitized $where/$gt/$ne from request JSON), LaTeX --shell-escape. Python AST (SEC005 substrate reuse) for most; LaTeX is a build-step regex scan of the compile invocation. Fixture per rule id.
