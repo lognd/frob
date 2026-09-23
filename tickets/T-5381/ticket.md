@@ -2,7 +2,7 @@
 id: T-5381
 title: 'extending-guide anchor T-4118 fragment stale: frob.tickets._models.py cites
   a slug the guide no longer has'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -35,11 +35,15 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5381
+branch: t-5381
 ---
 CI run 35819358270 (all 3 platforms); re-verified failing on dev tip 39b89ed091: tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1 fails -- src/frob/tickets/_models.py's DOC002 anchor cites fragment '#failure-injection-acceptance-criteria-name-every-field-t-4118' but docs/guides/extending/failure-injection-acceptance-criteria.md's current H1 slug is 'failure-injection-acceptance-criteria-name-every-field' (no trailing -t-4118). Either the guide's heading was renamed/retitled and the anchor needs updating, or the anchor's trailing ticket-id suffix is now stale. Not covered by any open ticket found.
