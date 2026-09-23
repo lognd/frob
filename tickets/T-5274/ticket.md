@@ -1,7 +1,7 @@
 ---
 id: T-5274
 title: Wire DSTACK001 into gates dispatch, TIER_A_HANDLERS, and frob.toml threshold
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -23,10 +23,17 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_fix_engine.py
 - frob.toml
+- tests/gates_suite/test_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates_suite/test_fix_engine.py
+  reason: closed-set TIER_A_HANDLERS coverage test must list DSTACK001 (brief-mandated)
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -46,5 +53,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5274
+branch: t-5274
 ---
 found while working T-4713: frob.gates._directive_stack.stack_lint_violations (DSTACK001) and frob.gates._fix_engine_text.fix_dstack001_merge exist and are tested, but are not yet called from anywhere -- run_gates in gates/__init__.py never collects stack_lint_violations into the violation set, and TIER_A_HANDLERS in _fix_engine.py never registers fix_dstack001_merge. Both files were outside T-4713's declared scope. Also: the stack threshold (default 4) is a Python-level parameter only -- frob.toml wiring was blocked by a lease collision with the concurrently in-progress T-4663 (scope 'frob.toml'); this ticket should add a [tool.frob] (or similar) config key and thread it through.
