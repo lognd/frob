@@ -1476,8 +1476,9 @@ TIER_A_HANDLERS: dict[
         )
     ),
     # frob:ticket T-4694
-    # DOCARCH002's Tier-A handler is unregistered until it stops reloading the archive per
-    # finding and writing the ledger from the pre-land pass (coordinator hotfix 2026-09-22).
+    # DOCARCH002's Tier-A handler is unregistered until it stops reloading
+    # the archive per finding and writing the ledger from the pre-land pass
+    # (coordinator hotfix 2026-09-22).
     "TICK002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
         fix_tick002_renumber(root, queue)
     ),
