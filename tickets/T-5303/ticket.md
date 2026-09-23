@@ -27,6 +27,7 @@ scope:
 - tests/fixtures/lang/sample.css
 - tests/fixtures/lang/sample.scss
 - src/frob/lang/_extract.py
+- tests/test_lang_css.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +52,12 @@ scope_changes:
   glob: src/frob/lang/_extract.py
   reason: CSS/SCSS walkers must be wired into the shared _WALKERS/COMMENT_TYPES dispatch
     tables alongside _EXTENSION_TABLE
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/test_lang_css.py
+  reason: positive-control unit tests for the CSS/SCSS walker, in a dedicated file
+    to avoid colliding with T-5300 editing tests/test_lang.py concurrently
   actor: logan
   at: '2026-09-23'
 triage_changes:
