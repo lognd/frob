@@ -123,6 +123,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_webapp_websec_headers.py::test_nginx_full_all_present
+- tests/unit/test_webapp_websec_headers.py::test_nginx_missing_csp_reports_missing
+- tests/unit/test_webapp_websec_headers.py::test_caddy_full_all_present
+- tests/unit/test_webapp_websec_headers.py::test_caddy_missing_hsts_reports_missing
+- tests/unit/test_webapp_websec_headers.py::test_django_full_all_present
+- tests/unit/test_webapp_websec_headers.py::test_django_missing_xfo_reports_missing
+- tests/unit/test_webapp_websec_headers.py::test_express_helmet_reports_default_headers_present
+- tests/unit/test_webapp_websec_headers.py::test_no_evidence_is_advisory_not_error
+- tests/unit/test_webapp_websec_headers.py::test_root_not_a_directory_is_err
 designated_repro_test: null
 threat: null
 component: null
