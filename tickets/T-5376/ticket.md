@@ -1,5 +1,5 @@
 ---
-id: T-draft-3ca039d6
+id: T-5376
 title: 'ARCH001 self-check fails: fleet_status._ticket_readiness_lines redundant with
   test-side declaration (T-4710)'
 state: queued
