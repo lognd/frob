@@ -53,6 +53,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-23'
+body_changes:
+- mode: append
+  reason: quiet-window scheduling decision
+  actor: logan
+  at: '2026-09-23'
+  old_length: 3170
+  new_length: 3434
 designated_repro_test: null
 threat: null
 component: null
@@ -113,3 +120,6 @@ investigate, not a result to accept.
 ## Unblock log
 - 2026-09-23: unblocked by T-4742 -- quiet-window sweep runs now over the landed families (T-4710 TEST010, T-4713 DSTACK001, T-4714 FMT002, T-4712 FMT001); T-4742's family gets its own sweep when it lands
 - 2026-09-23: unblocked by T-4743 -- quiet-window sweep runs now over the landed families (T-4710 TEST010, T-4713 DSTACK001, T-4714 FMT002, T-4712 FMT001); T-4743's family gets its own sweep when it lands
+
+
+Coordinator 2026-09-23: unblocked from T-4742/T-4743 (unlanded); this sweep applies the four landed handler families only; separator-canonicalization and evidence --bind counts are reported as not-applicable and a follow-up sweep is owed when T-4742/T-4743 land.
