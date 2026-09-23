@@ -1,5 +1,5 @@
 ---
-id: T-draft-540ec060
+id: T-5381
 title: 'extending-guide anchor T-4118 fragment stale: frob.tickets._models.py cites
   a slug the guide no longer has'
 state: queued
