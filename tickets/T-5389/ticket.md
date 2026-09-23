@@ -20,10 +20,19 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: forwarding tuple missing ticket_attach_remove_path/ticket_attach_remove_all
+    dests (FLAGCOV001)
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
