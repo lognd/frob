@@ -1,7 +1,7 @@
 ---
 id: T-5303
 title: Wire CSS/SCSS grammar into frob.lang (contrast/target-size/hidden-text substrate)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -26,6 +26,7 @@ scope:
 - docs/modules/lang.md
 - tests/fixtures/lang/sample.css
 - tests/fixtures/lang/sample.scss
+- src/frob/lang/_extract.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,12 @@ scope_changes:
 - op: add
   glob: tests/fixtures/lang/sample.scss
   reason: narrow to the two new fixtures this ticket adds
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/lang/_extract.py
+  reason: CSS/SCSS walkers must be wired into the shared _WALKERS/COMMENT_TYPES dispatch
+    tables alongside _EXTENSION_TABLE
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -311,5 +318,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5303
+branch: t-5303
 ---
 NEW leaf (owner-added): A11Y (T-5146-3, T-5146-4) and SEO (T-5147-3) need a real CSS/SCSS grammar for contrast-ratio computation, outline:none detection, target-size box computation, and hidden-text (color==background/font-size:0/opacity:0) detection -- confirm tree-sitter-language-pack's css grammar covers SCSS syntax or pin a dedicated tree-sitter-scss grammar if not. Wire .css/.scss into _EXTENSION_TABLE the same way WEBSUB-1 wires html/js/jsx/vue; write a thin _walk_css.py walker. Positive-control fixture: tests/fixtures/lang/sample.{css,scss}. T-5146-3, T-5146-4, and T-5147-3 block on this leaf.
