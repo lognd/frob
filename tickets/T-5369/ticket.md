@@ -1,5 +1,5 @@
 ---
-id: T-draft-84ee8e51
+id: T-5369
 title: Lighthouse tool-registry entry for dynamic-only Core Web Vitals measurement
 state: queued
 kind: feature
