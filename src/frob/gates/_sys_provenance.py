@@ -89,6 +89,7 @@ def _identifier_tags(node: Node) -> tuple[str, ...]:
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_undeclared_helper_fires_sys116  # noqa: E501
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_declared_helper_does_not_fire_sys116  # noqa: E501
 #   tests/test_pii_provenance_trust_identity.py::TestSys116UndeclaredProvenance.test_non_identifier_category_is_out_of_sys116_scope  # noqa: E501
+# frob:enforces CHK-GATE-SYS116
 def check_undeclared_provenance(model: KernelModel) -> tuple[Violation, ...]:
     """SYS116: every `identifier.*` `carries` tag on a node has exactly
     one `derived_from:<tag>=<helper>` attr naming its sole legitimate
@@ -125,6 +126,7 @@ def check_undeclared_provenance(model: KernelModel) -> tuple[Violation, ...]:
 # frob:doc docs/strata/provenance-trust-identity.md#sys10x-consumer
 #   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_without_carries_fires_sys117  # noqa: E501
 #   tests/test_pii_provenance_trust_identity.py::TestSys117TrustIdentityWithoutCarries.test_trust_identity_with_matching_carries_does_not_fire  # noqa: E501
+# frob:enforces CHK-GATE-SYS117
 def check_trust_identity_without_carries(model: KernelModel) -> tuple[Violation, ...]:
     """SYS117: every `trust_identity:<tag>` attr on a node names a tag the
     SAME node also declares via `carries` -- a node cannot be authorized

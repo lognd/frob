@@ -229,6 +229,7 @@ def _reachable_methods(cls: _ClassInfo, starts: Iterable[str]) -> frozenset[str]
     return frozenset(seen)
 
 
+# frob:enforces CHK-GATE-GUARD001
 def _class_violations(
     cls: _ClassInfo, pairs: Sequence[GuardClosurePair]
 ) -> list[Violation]:

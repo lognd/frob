@@ -142,6 +142,7 @@ def _node_real_public_surface(
 
 
 # see T-1870 for the history behind this
+# frob:enforces CHK-GATE-SYS108
 def _duplicate_interface_violations(model: KernelModel) -> list[SelfConformViolation]:
     """SYS108 (T-1624): a node whose `interface=` attrs (module attrs
     preserve every declared entry verbatim, `_node_attr_values`) name the

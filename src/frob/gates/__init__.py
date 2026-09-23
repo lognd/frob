@@ -7716,6 +7716,8 @@ def _tool_registry_allow_missing(root: Path) -> frozenset[str]:
 
 # frob:doc docs/modules/gates.md#tool-registry-tool001-003-t-5139t-5267
 # frob:ticket T-5267
+# frob:enforces CHK-GATE-TOOL001
+# frob:enforces CHK-GATE-TOOL002
 def tool_registry_gate(root: Path) -> tuple[Violation, ...]:
     """TOOL001 (missing)/TOOL002 (reached-but-failed) -- `frob.doctor.
     relevant_tool_findings(root)` joined against every `rules_it_serves`
@@ -7774,6 +7776,7 @@ def _tool_registry_tracked_python_files(root: Path) -> tuple[str, ...]:
 
 # frob:doc docs/modules/gates.md#tool-registry-tool001-003-t-5139t-5267
 # frob:ticket T-5267
+# frob:enforces CHK-GATE-TOOL003
 def bare_shutil_which_gate(root: Path) -> tuple[Violation, ...]:
     """TOOL003 (DUP/ARCH-shaped regrowth guard, same posture as
     `bare_toolchain_gate`/BARETOOL001): a bare `shutil.which(...)` call

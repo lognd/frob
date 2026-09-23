@@ -271,6 +271,7 @@ def ratchet_enabled_rules(root: Path) -> frozenset[str]:
 # frob:ticket T-4240
 # frob:doc docs/modules/gates.md#base001-a-baseline-overrun-blocks-land-reported-by-name-t-4240  # noqa: E501
 # frob:todo T-draft-daef879a wire into gate pipeline once T-4540/T-4214 release their leases  # noqa: E501
+# frob:enforces CHK-GATE-BASE001
 def baseline_overrun_violations(
     root: Path, current_counts: dict[str, int]
 ) -> list[Violation]:

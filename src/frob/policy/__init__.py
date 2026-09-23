@@ -383,6 +383,7 @@ def _file_pattern_matches(
 
 
 # frob:ticket T-3986
+# frob:enforces CHK-GATE-POL000
 def _pol000_zero_match_violation(rule: PolicyRule) -> Violation:
     """POL000: `rule`'s query matched zero nodes across its whole declared
     glob set -- a config error (malformed query, wrong `language`, or an

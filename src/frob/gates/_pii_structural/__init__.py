@@ -236,6 +236,7 @@ def _load_no_pii_files(root: Path) -> frozenset[str]:
 
 
 # frob:ticket T-4073
+# frob:enforces CHK-GATE-PII013
 def _pii013_violation(rel_path: str, lineno: int) -> Violation:
     """PII013 (T-4073, H-1): a client-storage write on a node that
     declares `attr no_pii;` -- a contradiction with no taint analysis to

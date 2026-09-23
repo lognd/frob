@@ -106,6 +106,8 @@ def _known_names(root: Path) -> frozenset[str]:
     return frozenset(_wrapper_entry_names(root))
 
 
+# frob:enforces CHK-GATE-WRAP001
+# frob:enforces CHK-GATE-WRAP002
 def _drift_for_file(
     targets: dict[str, str], known: frozenset[str], *, file: str, is_makebat: bool
 ) -> list[Violation]:
@@ -154,6 +156,7 @@ def _drift_for_file(
 
 # frob:doc docs/commands/scaffold.md#the-wrapper-drift-gate-wrap001wrap002wrap003-t-4760
 # frob:ticket T-4760
+# frob:enforces CHK-GATE-WRAP003
 def wrapper_drift_gate(root: Path) -> tuple[Violation, ...]:
     """WRAP001/WRAP002/WRAP003 over `root`'s `Makefile`/`make.bat` managed
     wrapper-target blocks (T-4760). Returns no violations when neither

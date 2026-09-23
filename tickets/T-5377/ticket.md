@@ -2,7 +2,7 @@
 id: T-5377
 title: 'REG008 burn-down: 24 check-coverage.yaml dispositions lack a real frob:enforces
   CHK-GATE edge'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -147,6 +147,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 designated_repro_test: null
 threat: null
 component: null

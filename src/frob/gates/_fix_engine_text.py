@@ -757,6 +757,7 @@ def _dstack001_merged_lines(edges, *, indent: str, marker: str):  # noqa: ANN001
     return lines
 
 
+# frob:enforces CHK-GATE-DSTACK001
 def _dstack001_apply_one(root: Path, file: str, src: str, edges) -> FixApplied | None:  # noqa: ANN001
     """One flagged stack's merge, or `None` when it is not safe to apply
     (see `_dstack001_mergeable_edges`) or its origin lines are not a
@@ -890,6 +891,7 @@ def fix_dstack001_merge(
 # ---------------------------------------------------------------------------
 
 
+# frob:enforces CHK-GATE-FMT002
 def _fmt002_scoped_fixes(root: Path, only_paths: frozenset[str]) -> list[FixApplied]:
     """`fix_fmt002_noqa_strip`'s `only_paths` branch -- same shape as
     `_fmt001_scoped_fixes`: format each named path individually rather

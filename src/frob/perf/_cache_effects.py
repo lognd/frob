@@ -63,6 +63,7 @@ _ASSIGN_RE = re.compile(
 )
 
 
+# frob:enforces CHK-GATE-PERF017
 def _perf017_in_function(path: str, func_node) -> list[Violation]:
     """One function's PERF017 hits -- an `if`/`else` where exactly one
     branch reaches a cache-write-shaped call and both branches return."""
@@ -107,6 +108,7 @@ def _perf017_in_function(path: str, func_node) -> list[Violation]:
     return hits
 
 
+# frob:enforces CHK-GATE-PERF018
 def _perf018_in_function(path: str, func_node) -> list[Violation]:
     """One function's PERF018 hits -- a hoisted `x = heavy(...)` above a
     loop whose body calls `heavy(...)` again without `x` in its args."""

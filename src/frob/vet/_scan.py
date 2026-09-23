@@ -589,6 +589,7 @@ def _lifecycle_violations(
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-5138
 # frob:ticket T-5139
+# frob:enforces CHK-GATE-VET012
 def _osv_violations(
     deps: tuple[Dependency, ...],
     lockfile: Path,

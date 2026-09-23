@@ -1426,6 +1426,7 @@ def _entrypoint_coverage_hits(
 
 
 # frob:ticket T-4230
+# frob:enforces CHK-GATE-COV010
 def _entrypoint_violation_for_module(
     root: Path, rel_path: str, hits_by_class_line: dict[str, dict[int, tuple[int, int]]]
 ) -> Violation | None:

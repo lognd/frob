@@ -33,6 +33,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:enforces CHK-GATE-SYS900
 def _sys900_unmeasured(ref: str, reason: str) -> Violation:
     """SYS900, `Severity.UNRESOLVED` -- an explicit worktree/branch SYS
     audit (`sys_gate_for_branch`) could not be run for `ref` at all (no

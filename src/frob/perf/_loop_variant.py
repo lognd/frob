@@ -88,6 +88,8 @@ def _variant_names_used(
     return used & variant_names
 
 
+# frob:enforces CHK-GATE-PERF015
+# frob:enforces CHK-GATE-PERF016
 def _call_site_violations(
     path: str, call_node, loop, source: str | bytes, graph: _EffectGraph
 ) -> list[Violation]:

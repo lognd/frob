@@ -101,6 +101,7 @@ def _claim001_waivers_by_symref(edges: tuple[Edge, ...]) -> dict[str, WaiverRef]
 
 
 # frob:ticket T-4116
+# frob:enforces CHK-GATE-CLAIM001
 def _claim_violation(
     rel: str,
     parsed_path: str,

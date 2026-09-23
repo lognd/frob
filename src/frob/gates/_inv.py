@@ -1086,6 +1086,7 @@ def _race002_binding_tests_are_concurrent(
 
 
 # frob:ticket T-3953
+# frob:enforces CHK-GATE-RACE002
 def _race002_test_obligation_violation(
     root: Path,
     snapshot: GraphSnapshot,
