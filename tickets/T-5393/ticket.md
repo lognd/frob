@@ -2,7 +2,7 @@
 id: T-5393
 title: 'ruff ''Would reformat: path'' colon form breaks _land_format and check/_python
   parsers (bogus filenames)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -71,6 +71,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_ruff_reformat_parser.py::test_colon_form_returns_real_path
+- tests/unit/test_ruff_reformat_parser.py::test_colonless_form_returns_real_path
+- tests/unit/test_ruff_reformat_parser.py::test_multiple_lines_both_shapes_sorted
+- tests/unit/test_ruff_reformat_parser.py::test_non_matching_line_contributes_nothing
+- tests/unit/test_ruff_reformat_parser.py::test_empty_input_returns_empty_tuple
+- tests/unit/test_land_format_gate.py::test_diff_touched_unformatted_file_fires
+- tests/unit/test_land_format_gate.py::test_diff_touched_unformatted_file_fires_colon_form
+- tests/unit/test_land_format_gate.py::test_already_formatted_touched_file_is_quiet
+- tests/unit/test_land_format_gate.py::test_no_diff_is_quiet
 designated_repro_test: null
 threat: null
 component: null

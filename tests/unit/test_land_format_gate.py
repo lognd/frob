@@ -108,6 +108,35 @@ def test_already_formatted_touched_file_is_quiet(repo: Path, monkeypatch) -> Non
 
 
 # frob:tests src/frob/gates/_land_format.py::land_format_gate
+def test_diff_touched_unformatted_file_fires_colon_form(
+    repo: Path, monkeypatch
+) -> None:
+    """T-5393 regression: ruff 0.15.16's `Would reformat: <path>` (colon)
+    line grammar must resolve to the SAME real, existing path the
+    colon-less grammar does -- `land_format_gate`'s rewrite path (`_land_
+    cmd.py`'s pre-land absorb) reads `Violation.file` off this gate's own
+    output, so a leftover `Would reformat: <path>` string used as a
+    filename (the bug this ticket fixes) would hand the rewrite step a
+    path that does not exist on disk."""
+    from typani import Ok
+
+    import frob.gates._land_format as land_format_mod
+
+    (repo / "src" / "feature.py").write_text("x=1\n")
+
+    def _fake_run(cmd, **kw):  # noqa: ANN001
+        return Ok(_FakeProc("Would reformat: src/feature.py\n", 1))
+
+    monkeypatch.setattr(land_format_mod, "guarded_subprocess_run", _fake_run)
+    violations = land_format_gate(repo)
+    rules = {v.rule for v in violations}
+    assert "LANDFMT001" in rules
+    fired = [v for v in violations if "LANDFMT001" in {v.rule}]
+    assert all((repo / v.file).is_file() for v in fired)
+    assert any(v.file == "src/feature.py" for v in violations)
+
+
+# frob:tests src/frob/gates/_land_format.py::land_format_gate
 def test_no_diff_is_quiet(repo: Path) -> None:
     """No working-tree diff against `main` at all -- `()`, matching
     `land_parity_doc_test_gate`'s/`land_parity_long_function_gate`'s own

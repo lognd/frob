@@ -66,6 +66,7 @@ from frob.gitio import working_diff
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
 from frob.process._project_tool import project_tool_argv
+from frob.process.parsers.ruff import parse_ruff_would_reformat_paths
 
 _log = get_logger(__name__)
 
@@ -138,13 +139,7 @@ def _ruff_format_would_rewrite(
     if not proc.returncode:
         return ()
     msg = (proc.stdout + proc.stderr).strip()
-    return tuple(
-        sorted(
-            ln.replace("Would reformat ", "").strip()
-            for ln in msg.splitlines()
-            if "Would reformat" in ln
-        )
-    )
+    return parse_ruff_would_reformat_paths(msg)
 
 
 # frob:ticket T-4298

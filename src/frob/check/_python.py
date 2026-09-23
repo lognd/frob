@@ -38,6 +38,7 @@ from frob.process.parsers.common import (
     tool_disabled_result,
     tool_unavailable_result,
 )
+from frob.process.parsers.ruff import parse_ruff_would_reformat_paths
 
 if TYPE_CHECKING:
     from frob.gates import Violation
@@ -205,26 +206,28 @@ def _ruff_format_result(
             tool="ruff-format", exit_code=0, summary="all files formatted"
         )
     msg = (proc.stdout + proc.stderr).strip()
-    reformat = [ln for ln in msg.splitlines() if "Would reformat" in ln]
-    n = len(reformat)
+    reformat_paths = parse_ruff_would_reformat_paths(msg)
+    n = len(reformat_paths)
     return ToolResult(
         tool="ruff-format",
         exit_code=proc.returncode,
-        diagnostics=_reformat_diagnostics(reformat),
+        diagnostics=_reformat_diagnostics(reformat_paths),
         summary=f"{n} file{'s' if n != 1 else ''} would be reformatted",
     )
 
 
-def _reformat_diagnostics(reformat_lines: list[str]) -> list[Diagnostic]:
-    """One warning `Diagnostic` per `ruff format --check` "Would reformat"
-    line."""
+def _reformat_diagnostics(reformat_paths: tuple[str, ...]) -> list[Diagnostic]:
+    """One warning `Diagnostic` per real path `ruff format --check`'s
+    "Would reformat" output named (T-5393: `parse_ruff_would_reformat_
+    paths` is the shared parser -- see its docstring for the colon-form
+    grammar this now tolerates)."""
     return [
         Diagnostic(
-            file=ln.replace("Would reformat ", "").strip(),
+            file=path,
             severity="warning",
             message="needs formatting",
         )
-        for ln in reformat_lines
+        for path in reformat_paths
     ]
 
 

@@ -21,6 +21,40 @@ from frob.process.parsers.common import (
 
 _TEXT_LINE = re.compile(r"^(.*?):(\d+):(\d+):\s+([A-Z]\d+)\s+(.*)$")
 
+# frob:ticket T-5393
+# T-5393: ruff 0.15.16 changed `ruff format --check`'s "would reformat"
+# line grammar to add a trailing colon after the verb (`Would reformat:
+# <path>`); older ruff prints `Would reformat <path>` (no colon). Two
+# call sites (`frob.gates._land_format`, `frob.check._python`) each had
+# their own copy of this strip that only handled the colon-less form, so
+# on the newer grammar the un-stripped colon stayed part of the "path"
+# and every downstream filesystem lookup ("No such file or directory")
+# and waiver/scope path-identity match silently voided. Anchored on
+# `^Would reformat:? (.+)$` (colon optional) so both ruff versions parse
+# to the same real path.
+_WOULD_REFORMAT_LINE = re.compile(r"^Would reformat:?\s+(.+)$")
+
+
+# frob:doc docs/modules/process.md#public-api
+def parse_ruff_would_reformat_paths(stdout_and_stderr: str) -> tuple[str, ...]:
+    """Extract real file paths from `ruff format --check`'s "Would
+    reformat" lines (T-5393), tolerating both the colon (ruff >=0.15.16)
+    and colon-less (older ruff) forms of the line -- the single shared
+    parser `frob.gates._land_format` and `frob.check._python` both call,
+    replacing each module's own partial (colon-blind) strip. Returns
+    paths sorted for determinism; a line that does not match the "Would
+    reformat" grammar contributes nothing."""
+    return tuple(
+        sorted(
+            m.group(1).strip()
+            for m in (
+                _WOULD_REFORMAT_LINE.match(line.strip())
+                for line in stdout_and_stderr.splitlines()
+            )
+            if m is not None
+        )
+    )
+
 
 # frob:ticket T-0045
 # frob:ticket T-2373

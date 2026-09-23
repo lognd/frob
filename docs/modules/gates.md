@@ -1211,6 +1211,22 @@ unmeasurable diff, a failed `ruff` spawn, a nonzero `ruff format` exit),
 so a land that cannot be safely auto-fixed is still refused rather than
 merged unformatted.
 
+**Shared "Would reformat" line parser (T-5393):** ruff 0.15.16 changed
+`ruff format --check`'s "would reformat" line grammar to add a trailing
+colon (`Would reformat: <path>`); older ruff prints `Would reformat
+<path>` (no colon). `_land_format.py`'s `_ruff_format_would_rewrite` and
+`frob.check._python`'s `_run_ruff_format`/`_reformat_diagnostics` each
+carried their own copy of this strip, and both stripped only the
+colon-less prefix -- on the newer grammar the leftover `Would reformat:
+<path>` string was used verbatim as a filename, both for the LANDFMT001
+`Violation.file` this doc describes and for `_ruff_format_pre_land_
+step`'s rewrite target, and for `frob check`'s own `Diagnostic.file`
+(voiding waiver/scope path-shape matching on it too). Both call sites
+now share one parser, `frob.process.parsers.ruff.parse_ruff_would_
+reformat_paths` (`^Would reformat:? (.+)$`, colon optional), so a
+LANDFMT001 `Violation.file`/rewrite target/`Diagnostic.file` is always a
+real, existing path regardless of the ruff version on `PATH`.
+
 The auto-apply/refuse tradeoff was weighed rather than assumed:
 formatters are chosen because they are deterministic and reviewable, so
 refusing a land purely over `ruff format` drift is friction a rewrite
