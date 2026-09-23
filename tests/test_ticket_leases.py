@@ -4980,6 +4980,19 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
             "ticket_scope_reason": "T-3035 dispatch-table coverage",
         },
         "milestone": {"ticket_id": "T-0001", "ticket_milestone_value": "0.1.0"},
+        # T-5132: `points <id> <value>` forwards to `set_points`.
+        "points": {"ticket_id": "T-0001", "ticket_points_value": "3"},
+        # T-5132: `tokens <id> --tokens-in N` forwards to `set_tokens`.
+        "tokens": {"ticket_id": "T-0001", "ticket_tokens_in": 100},
+        # T-4696: `set <id> <field> <value>` folds priority/kind/
+        # component/tier/milestone/sprint into one subverb -- milestone
+        # needs no --reason (same as the standalone `milestone` verb
+        # above), so it is the simplest field to exercise here.
+        "set": {
+            "ticket_id": "T-0001",
+            "ticket_set_field": "milestone",
+            "ticket_set_value": "0.2.0",
+        },
         # T-3162: `reopen` requires state=done first, per-test.
         "reopen": {
             "ticket_id": "T-0001",
