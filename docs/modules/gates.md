@@ -3505,8 +3505,8 @@ genuinely different validation shapes live under one rule:
 - `[gates.severity]` (`frob.gates._waive._severity_overrides`) is
   structurally different: its KEYS are themselves gate rule ids (e.g.
   `COV001 = "error"`). The existing reader already degrades a malformed
-  VALUE gracefully (a non-"warn"/"error" value logs a warning and is
-  ignored) -- what it does NOT catch is a malformed KEY: a misspelled
+  VALUE gracefully (a non-"warn"/"error"/"advisory" value logs a warning
+  and is ignored) -- what it does NOT catch is a malformed KEY: a misspelled
   rule id silently sits in the overrides dict forever, matching against
   nothing. This half validates every KEY against the canonical live
   rule-id registry (`frob.gates._waive._KNOWN_GATE_RULES`) directly --
@@ -7272,6 +7272,48 @@ all-UNRESOLVED shape. This is a RENDERING-only change -- `exit_code`,
 `total_errors`, and every counting rule above are unchanged; UNRESOLVED
 still never fails `frob check` by itself, mixed UNRESOLVED-and-real-
 finding gates still render their ordinary `pass`/`FAIL` icon.
+
+## Advisory (T-5304)
+
+<!-- frob:describes src/frob/findings.py::Severity -->
+<!-- frob:describes src/frob/check/_python.py::_advisory_count -->
+<!-- frob:describes src/frob/check/_python.py::_diag_severity -->
+<!-- frob:describes src/frob/gates/_waive.py::_severity_overrides -->
+
+`Severity.ADVISORY` is a FOURTH, distinct outcome, added for the LAUNCH
+checklist gate family: an owner-decreed tier that is a REAL `Severity`
+member (`frob.findings.Severity`), not a never-fail flag bolted onto
+`WARN`. The distinction matters for the same reason `UNRESOLVED` is its
+own term rather than folded into `WARN` above -- an ADVISORY finding
+must never be misread as either "an ordinary warn-class finding that
+happens to be silenced" or "nothing was found at all".
+
+Contract (identical shape to `UNRESOLVED`'s counting/rendering rules):
+- ADVISORY findings are ALWAYS reported: the renderer (`_violation_
+  diags`/`_diag_severity`, which maps an ADVISORY `Violation` to a
+  `Diagnostic` `note` severity, distinct from `error`/`warning`/`info`),
+  the JSON output, and the `frob check` summary line (`_gates_family_
+  result`/`_gates_summary`, via `frob.check._python._advisory_count`,
+  kept as its own countable term next to error/warning/unresolved/
+  waived -- never folded into `n_warn`) all show them.
+- ADVISORY findings NEVER fail a gate: `frob check`'s exit code is
+  gated on `n_err` alone (`_gate_summary_result`/`_gates_family_
+  result`), exactly like `WARN` and `UNRESOLVED` -- an all-ADVISORY
+  result exits 0.
+- ADVISORY findings NEVER raise the verify quarantine and NEVER count
+  toward the ratchet (`frob.gates._ratchet` only ever emits `Severity.
+  ERROR` violations; the quarantine/land-blocking paths gate on a red
+  batch or a nonzero `frob check` exit, neither of which an
+  all-ADVISORY result can trigger).
+- `[gates.severity]` accepts the string `"advisory"` as a valid per-
+  rule override value (`frob.gates._waive._severity_overrides`,
+  `_SEVERITY_OVERRIDE_VALUES`) alongside `"warn"`/`"error"` -- a project
+  can downgrade any registered rule id to the LAUNCH-style permanently-
+  visible-never-blocking tier the same way it downgrades to `warn`
+  today. `_apply_severity_overrides` still never touches an UNRESOLVED
+  or `severity_pinned` violation (T-4386/T-4447's guardrails, unchanged
+  by this addition) -- ADVISORY is just one more override target for an
+  ordinary, un-pinned finding.
 
 ## Tool registry (TOOL001-003, T-5139/T-5267)
 

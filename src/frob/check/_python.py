@@ -1070,17 +1070,21 @@ def _run_arch(root: Path) -> ToolResult:
 
 
 def _diag_severity(v) -> Severity:  # noqa: ANN001
-    """A `Violation`'s rendered `Diagnostic.severity` string (T-1664):
-    `error`/`warning` map straight across; `unresolved` maps to `info`
-    (`frob.process.parsers.common.Severity` has no `unresolved` value of
-    its own) -- distinct from both, so an UNRESOLVED finding is never
-    silently folded into a real WARN-class finding at the diagnostic
-    level, only at the coarser error/warning rendering a generic
-    Diagnostic consumer already expects."""
+    """A `Violation`'s rendered `Diagnostic.severity` string (T-1664,
+    extended by T-5304): `error`/`warning` map straight across;
+    `unresolved` maps to `info`; `advisory` maps to `note`
+    (`frob.process.parsers.common.Severity` has no `unresolved`/
+    `advisory` value of its own) -- each distinct from the others, so
+    neither an UNRESOLVED nor an ADVISORY finding is ever silently
+    folded into a real WARN-class finding at the diagnostic level, only
+    at the coarser error/warning rendering a generic Diagnostic consumer
+    already expects."""
     if v.severity.value == "error":
         return "error"
     if v.severity.value == "unresolved":
         return "info"
+    if v.severity.value == "advisory":
+        return "note"
     return "warning"
 
 
@@ -1135,6 +1139,18 @@ def _unresolved_count(violations) -> int:  # noqa: ANN001
     "0 errors, N warnings" reads as an ordinary clean-ish run, not as
     "part of this repo could not be analysed"."""
     return sum(1 for v in violations if v.severity.value == "unresolved")
+
+
+# frob:ticket T-5304
+# tests/unit/test_check_gates_summary.py::TestSeverityAdvisory::test_advisory_only_report_exits_zero  # noqa: E501
+def _advisory_count(violations) -> int:  # noqa: ANN001
+    """Count of ADVISORY-severity gate violations (T-5304): the LAUNCH
+    checklist tier that is always reported (its own countable term,
+    never folded into `n_warn`) but never contributes to `frob check`'s
+    exit code, never raises the verify quarantine, and never counts
+    toward gate failure or the ratchet -- see `frob.findings.Severity`
+    for the full contract."""
+    return sum(1 for v in violations if v.severity.value == "advisory")
 
 
 # frob:ticket T-1346
@@ -1494,7 +1510,8 @@ def _gates_family_result(
     diags = [*_violation_diags(violations), *_waived_diags(waived)]
     n_err = _error_count(violations)
     n_unresolved = _unresolved_count(violations)
-    n_warn = len(violations) - n_err - n_unresolved
+    n_advisory = _advisory_count(violations)
+    n_warn = len(violations) - n_err - n_unresolved - n_advisory
     subject_count, enforcing = _family_subject_count(family, root)
     subject_finding = enforcing_zero_subject_diagnostic(
         f"gate:{family}", subject_count, enforcing=enforcing
@@ -1502,16 +1519,18 @@ def _gates_family_result(
     if subject_finding is not None:
         diags.append(subject_finding)
         n_err += 1
-    # T-0228 (extended by T-1664): never collapse distinct outcome kinds
-    # into one ambiguous count -- error/warning/unresolved/waived each
-    # get their own term, always, whether zero or not; a family that
-    # never goes UNRESOLVED still SAYS "0 unresolved" rather than
-    # omitting the term (an omitted term reads as "not applicable",
-    # which is a different, false claim from "checked, zero found").
+    # T-0228 (extended by T-1664, T-5304): never collapse distinct outcome
+    # kinds into one ambiguous count -- error/warning/unresolved/advisory/
+    # waived each get their own term, always, whether zero or not; a
+    # family that never goes UNRESOLVED/ADVISORY still SAYS "0 unresolved"/
+    # "0 advisory" rather than omitting the term (an omitted term reads as
+    # "not applicable", which is a different, false claim from "checked,
+    # zero found").
     summary = (
         f"{n_err} error{'s' if n_err != 1 else ''}, "
         f"{n_warn} warning{'s' if n_warn != 1 else ''}, "
         f"{n_unresolved} unresolved, "
+        f"{n_advisory} advisory, "
         f"{len(waived)} waived"
     )
     return ToolResult(
@@ -1735,19 +1754,23 @@ def _gates_summary(violations, report, *, n_err: int, delta: bool) -> str:  # no
     run, prefixed with the new-vs-total count when `delta` filtering
     applied."""
     n_unresolved = _unresolved_count(violations)
-    n_warn = len(violations) - n_err - n_unresolved
-    # T-0228 (extended by T-1664): never collapse errors and warnings into
-    # one bare "violation(s)" count -- that reads as alarming (or as a
-    # failure) even on a passing gate run where every finding is
-    # warn-class. Always split, and always report the waived AND
-    # unresolved counts as their own terms -- an UNRESOLVED finding
-    # (a check that could not determine an answer) folded into "warning"
-    # is indistinguishable from a real, completed finding, exactly the
-    # silent-degradation shape T-1664 exists to close.
+    n_advisory = _advisory_count(violations)
+    n_warn = len(violations) - n_err - n_unresolved - n_advisory
+    # T-0228 (extended by T-1664, T-5304): never collapse errors and
+    # warnings into one bare "violation(s)" count -- that reads as
+    # alarming (or as a failure) even on a passing gate run where every
+    # finding is warn-class. Always split, and always report the waived,
+    # unresolved AND advisory counts as their own terms -- an UNRESOLVED
+    # finding (a check that could not determine an answer) or an
+    # ADVISORY finding (the LAUNCH tier that never fails a gate) folded
+    # into "warning" is indistinguishable from a real, completed,
+    # exit-code-affecting finding, exactly the silent-degradation shape
+    # T-1664/T-5304 exist to close.
     parts = [
         f"{n_err} error{'s' if n_err != 1 else ''}",
         f"{n_warn} warning{'s' if n_warn != 1 else ''}",
         f"{n_unresolved} unresolved",
+        f"{n_advisory} advisory",
         f"{len(report.waived)} waived",
     ]
     summary = ", ".join(parts)

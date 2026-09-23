@@ -3000,13 +3000,27 @@ def _apply_waivers(
 # frob:uses-contract src/frob/graph/__init__.py::build_graph
 # frob:uses-contract src/frob/graph/lock.py::drift
 # frob:uses-contract src/frob/tickets/_archive.py::load_queue
+#: T-5304: `[gates.severity]`'s valid string values, mapped straight onto
+#: `Severity` members -- `"advisory"` joins `"warn"`/`"error"` as a real
+#: per-rule override choice (the owner-decreed LAUNCH tier that never
+#: fails a gate), not a separate flag bolted onto `"warn"`.
+_SEVERITY_OVERRIDE_VALUES: dict[str, Severity] = {
+    "warn": Severity.WARN,
+    "error": Severity.ERROR,
+    "advisory": Severity.ADVISORY,
+}
+
+
 def _severity_overrides(root: Path | str) -> dict[str, Severity]:
-    """The `[gates.severity]` table from frob.toml: rule id -> warn|error.
+    """The `[gates.severity]` table from frob.toml: rule id -> warn|error|advisory.
 
     This is how a legacy codebase adopts gates without a big-bang: noisy
     rules go to "warn" (visible, not blocking) and are flipped back to
-    "error" as annotation coverage grows. Values other than warn/error are
-    ignored with a warning -- never a crash on config typos.
+    "error" as annotation coverage grows. T-5304: "advisory" is a third,
+    permanent choice (never a floor, always visible) for the LAUNCH
+    checklist family -- distinct from a rule merely being warn-severity
+    today. Values other than warn/error/advisory are ignored with a
+    warning -- never a crash on config typos.
     """
     toml_path = Path(root) / "frob.toml"
     if not toml_path.exists():
@@ -3020,11 +3034,13 @@ def _severity_overrides(root: Path | str) -> dict[str, Severity]:
     raw = data.get("gates", {}).get("severity", {})
     overrides: dict[str, Severity] = {}
     for rule, value in raw.items():
-        if value in ("warn", "error"):
-            overrides[rule] = Severity.WARN if value == "warn" else Severity.ERROR
+        if value in _SEVERITY_OVERRIDE_VALUES:
+            overrides[rule] = _SEVERITY_OVERRIDE_VALUES[value]
         else:
             _log.warning(
-                "severity overrides: %s=%r is not warn|error; ignored", rule, value
+                "severity overrides: %s=%r is not warn|error|advisory; ignored",
+                rule,
+                value,
             )
     if overrides:
         _log.info("severity overrides active: %s", overrides)

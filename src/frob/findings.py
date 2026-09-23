@@ -4,12 +4,15 @@ from pydantic import BaseModel, ConfigDict
 
 
 # frob:doc docs/modules/gates.md#unresolved-t-1664
+# frob:doc docs/modules/gates.md#advisory-t-5304
 # frob:ticket T-1664
 # frob:ticket T-3086
+# frob:ticket T-5304
 #   tests/unit/test_check_gates_summary.py::TestSeverityUnresolved.test_unresolved_is_a_distinct_severity_value  # noqa: E501
+#   tests/unit/test_check_gates_summary.py::TestSeverityAdvisory  # noqa: E501
 class Severity(StrEnum):
-    """A violation's exit-code weight: `error` fails `frob check`, `warn`
-    and `unresolved` do not.
+    """A violation's exit-code weight: `error` fails `frob check`, `warn`,
+    `unresolved` and `advisory` do not.
 
     T-1664: `UNRESOLVED` is a THIRD, distinct outcome -- not a severity
     tier between warn and error, but a different KIND of claim. `ERROR`/
@@ -28,11 +31,24 @@ class Severity(StrEnum):
     as a default/fallback for an ordinary empty result -- see
     `docs/modules/gates.md#unresolved-t-1664` for the counting/rendering
     contract this doc anchor covers (never counted as an error, never
-    silently dropped)."""
+    silently dropped).
+
+    T-5304: `ADVISORY` is a FOURTH, distinct outcome -- the owner-decreed
+    tier for the LAUNCH checklist family that must be reported (visible in
+    the renderer, the JSON, and the `frob check` summary line's own count)
+    but must NEVER contribute to exit status, NEVER raise the verify
+    quarantine, and NEVER count toward gate failure or the ratchet -- a
+    deliberate, permanent "informational, not a floor" claim, not a
+    never-fail flag bolted onto `WARN` (an `ADVISORY` finding is never a
+    completed WARN-class finding that happens to be silenced; it is its
+    own kind of claim, same posture as `UNRESOLVED` getting its own term
+    instead of being folded into an adjacent bucket). `[gates.severity]`
+    accepts the string `"advisory"` as a valid per-rule override value."""
 
     ERROR = "error"
     WARN = "warn"
     UNRESOLVED = "unresolved"
+    ADVISORY = "advisory"
 
 
 # frob:doc docs/modules/gates.md#data-models

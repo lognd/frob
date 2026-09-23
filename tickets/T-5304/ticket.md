@@ -1,7 +1,7 @@
 ---
 id: T-5304
 title: New advisory Severity tier that never fails a gate (LAUNCH family)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -82,6 +82,27 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_check_gates_summary.py::TestSeverityAdvisory::test_advisory_is_a_distinct_severity_value
+- tests/unit/test_check_gates_summary.py::TestSeverityAdvisory::test_advisory_count_counts_only_advisory_violations
+- tests/unit/test_check_gates_summary.py::TestSeverityAdvisory::test_advisory_maps_to_note_not_warning
+- tests/unit/test_check_gates_summary.py::TestSeverityAdvisory::test_advisory_only_family_result_exits_zero_and_is_not_quarantined
+- tests/unit/test_check_gates_summary.py::TestSeverityAdvisory::test_errors_still_fail_the_family_regardless_of_advisory
+- tests/unit/test_check_gates_summary.py::TestSeverityAdvisory::test_advisory_count_shown_as_its_own_term_not_folded_into_warn
+- tests/unit/test_check_gates_summary.py::TestGatesSummaryAdvisory::test_advisory_only_summary_line_prints_the_advisory_count_and_exits_zero
+- tests/unit/test_check_gates_summary.py::TestSeverityOverridesAdvisory::test_advisory_string_accepted_as_a_per_rule_override_value
+- tests/unit/test_check_gates_summary.py::TestSeverityOverridesAdvisory::test_apply_severity_overrides_re_severities_to_advisory
+- tests/unit/test_check_gates_summary.py::TestSeverityUnresolved::test_unresolved_is_a_distinct_severity_value
+- tests/unit/test_check_gates_summary.py::TestUnresolvedCount::test_counts_only_unresolved_violations
+- tests/unit/test_check_gates_summary.py::TestUnresolvedCount::test_zero_when_no_unresolved_present
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_error_maps_to_error
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_warn_maps_to_warning
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_unresolved_maps_to_info_not_warning
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_findings_never_fail_the_family
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_count_shown_as_its_own_term_not_folded_into_warn
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_errors_still_fail_the_family_regardless_of_unresolved
+- tests/unit/test_check_gates_summary.py::TestGatesSummaryUnresolved::test_summary_line_names_unresolved_as_its_own_term
+- tests/unit/test_check_gates_summary.py::TestGatesSummaryUnresolved::test_zero_unresolved_still_names_the_term
 designated_repro_test: null
 threat: null
 component: null
