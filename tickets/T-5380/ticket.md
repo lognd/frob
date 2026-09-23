@@ -1,5 +1,5 @@
 ---
-id: T-draft-3672d42e
+id: T-5380
 title: claude/agent/natives --help no longer cites T-4522/T-4546 flattening note
 state: queued
 kind: bug
