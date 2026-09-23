@@ -264,7 +264,7 @@
       "reason": "testsuite glob growth"
     },
     "testsuite::fs.write": {
-      "accepted_count": 583,
+      "accepted_count": 584,
       "reason": "testsuite glob growth"
     },
     "testsuite::html_render": {

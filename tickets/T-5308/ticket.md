@@ -1,7 +1,7 @@
 ---
 id: T-5308
 title: 'WEBSEC117-122: header/URL/log injection and WebSocket origin check'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -27,6 +27,7 @@ scope:
 - tests/fixtures/webapp/websec1xx/headers_log/**
 - docs/modules/webapp-websec-headers-log.md
 - tests/unit/test_websec_headers_log.py
+- src/frob/gates/_taint_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,11 @@ scope_changes:
   reason: unit test binding frob:tests
   actor: logan
   at: '2026-09-23'
+- op: add
+  glob: src/frob/gates/_taint_gate.py
+  reason: wire WEBSEC117-122 plus sibling discovery
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
@@ -79,6 +85,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_websec_headers_log.py::test_websec_headers_log_findings_fixture
+- tests/unit/test_websec_headers_log.py::test_websec_headers_log_findings_no_framework_short_circuits
+- tests/unit/test_websec_headers_log.py::test_websec_findings_hook_emits_gate_violation
+- tests/unit/test_websec_headers_log.py::test_websec_findings_hook_empty_frameworks_short_circuits
+- tests/unit/test_websec_headers_log.py::TestTaintGateDiscovery::test_taint_gate_emits_websec117_violation
+- tests/unit/test_websec_headers_log.py::TestTaintGateDiscovery::test_discovery_finds_a_planted_fake_module
 designated_repro_test: null
 threat: null
 component: null
