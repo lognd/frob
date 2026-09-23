@@ -8,6 +8,7 @@ created: '2026-09-23'
 priority: high
 blocked_by:
 - T-5364
+- T-5301
 parent: T-5147
 tier: ticket
 sprint: null
