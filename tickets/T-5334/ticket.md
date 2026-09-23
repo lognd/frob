@@ -1,7 +1,7 @@
 ---
 id: T-5334
 title: 'SQL substrate: literal extraction from host languages + sqlfluff relevance'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -26,10 +26,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/sql/_extract.py
 - tests/fixtures/sql/**
+- frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: frob.toml
+  reason: 'sql/_extract.py imports frob.lang.raw_tree/child_by_field/node_text, so
+    sql needs its own [arch.layering.allow] entry for lang (T-5302 precedent: webapp=[''lang''])'
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
@@ -49,5 +57,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5334
+branch: t-5334
 ---
 tree-sitter AST walk (Python for cursor.execute/.raw()/SQLAlchemy text(); TS for Prisma queryRaw/sqlx macros) extracting string literals and f-string/template skeletons passed to known SQL-executing call sites, feeding sqlfluff's parser; any non-literal string composition reaching a sink is itself a WEBSEC-class injection finding -- this leaf calls into 5141-1's sink registry rather than re-detecting, EXCEPT psycopg.sql composition (a safe API, explicitly excluded per the corpus). OWNER DIRECTIVE: this leaf's relevance predicate (a .sql file OR an SQL-executing call site exists in the repo) is what makes sqlfluff REQUIRED-for-the-family in 5148-2's tool-registry entry -- define the predicate here as a reusable function so 5148-2 imports it rather than re-detecting. Fixture: one extraction case per host-language/ORM call shape.
