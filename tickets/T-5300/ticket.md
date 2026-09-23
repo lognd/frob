@@ -31,6 +31,7 @@ scope:
 - tests/fixtures/lang/sample.vue
 - src/frob/lang/_extract.py
 - src/frob/lang/_support.py
+- tests/test_lang_html_js_jsx_vue.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +67,18 @@ scope_changes:
   glob: src/frob/lang/_support.py
   reason: wiring new grammars into _WALKERS/COMMENT_TYPES (_extract.py) and language
     capability registry (_support.py) mirrors T-5303 CSS/SCSS precedent
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/test_lang_html_js_jsx_vue.py
+  reason: dedicated test file for the html/js/jsx/vue positive-control fixtures, mirrors
+    T-5303 test_lang_css.py precedent
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/test_lang_html_js_jsx_vue.py
+  reason: dedicated test file for the html/js/jsx/vue positive-control fixtures, mirrors
+    T-5303 test_lang_css.py precedent
   actor: logan
   at: '2026-09-23'
 triage_changes:
