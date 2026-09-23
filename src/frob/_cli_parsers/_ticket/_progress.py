@@ -260,6 +260,17 @@ def _add_ticket_reconcile_parser(ticket_sub):
         help="with --apply, also `git worktree remove` orphan worktrees "
         "(a strictly more destructive action, gated separately)",
     )
+    # frob:ticket T-5305
+    ticket_reconcile_p.add_argument(
+        "--strip-stale-fields",
+        dest="ticket_reconcile_strip_stale_fields",
+        action="store_true",
+        help="report (with --apply, remove) pydantic-extra ledger fields "
+        "(e.g. branch/worktree from an older writer) the current Ticket "
+        "model no longer declares -- a separate anomaly class from the "
+        "worktree/lease healing above, never combined with --apply in "
+        "the same invocation as --remove-orphans",
+    )
     # frob:ticket T-1936
     ticket_reconcile_p.add_argument(
         "--no-commit",

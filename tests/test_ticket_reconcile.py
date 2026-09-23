@@ -30,12 +30,14 @@ import pytest
 
 from frob.tickets import (
     Origin,
+    Ticket,
     TicketKind,
     TicketSpec,
     TicketState,
     load_all,
     new_ticket,
     reconcile,
+    strip_stale_fields,
     transition,
 )
 from frob.tickets._journal import _read_all_intents, _write_intent
@@ -784,3 +786,98 @@ class TestReconcileUnlandedBranchWork:
         # The budget fired before the scan reached this branch's finding
         # -- proving the cutoff is real, not merely present and unused.
         assert result.danger_ok.unlanded_branch_work == ()
+
+
+# frob:ticket T-5305
+class TestReconcileStripStaleFields:
+    """`frob.tickets.strip_stale_fields` (T-5305): removes pydantic-extra
+    ledger fields (`extra="allow"` on `Ticket`, T-0838) an older writer
+    left behind and the current model no longer declares."""
+
+    def _inject_stale_fields(self, root: Path, ticket_id: str) -> None:
+        """Write `ticket_id`'s ledger record with two undeclared extra
+        fields (`branch`/`worktree`) directly -- models an older `frob`
+        version whose `Ticket` model once declared those as real fields."""
+        loaded = load_all(root)
+        assert loaded.is_ok
+        ticket = loaded.danger_ok[ticket_id]
+        dumped = ticket.model_dump(mode="python")
+        dumped["branch"] = "t-stale"
+        dumped["worktree"] = "/tmp/stale-worktree"
+        stale = Ticket.model_validate(dumped)
+        assert stale.__pydantic_extra__ == {
+            "branch": "t-stale",
+            "worktree": "/tmp/stale-worktree",
+        }
+        assert write_ticket(root, stale, strict_no_content_loss=False).is_ok
+
+    # frob:tests tests/test_ticket_reconcile.py::TestReconcileStripStaleFields.test_dry_run_reports_but_does_not_strip  # noqa: E501
+    def test_dry_run_reports_but_does_not_strip(self, repo: Path) -> None:
+        created = new_ticket(repo, _spec("Stale fields", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+        self._inject_stale_fields(repo, tid)
+
+        result = strip_stale_fields(repo, apply=False)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.stale_ticket_ids == (tid,)
+        assert report.stripped_fields_by_ticket[tid] == ("branch", "worktree")
+        assert report.applied is False
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok[tid].__pydantic_extra__
+
+    # frob:tests src/frob/tickets/_reconcile.py::strip_stale_fields kind="unit"
+    # frob:tests src/frob/tickets/_reconcile.py::StripStaleFieldsReport  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_reconcile_strip_stale_fields_cmd  # noqa: E501
+    def test_apply_strips_stale_fields(self, repo: Path) -> None:
+        created = new_ticket(repo, _spec("Stale fields 2", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+        self._inject_stale_fields(repo, tid)
+
+        result = strip_stale_fields(repo, apply=True)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.stale_ticket_ids == (tid,)
+        assert report.applied is True
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert not loaded.danger_ok[tid].__pydantic_extra__
+        # Declared fields survive the round-trip untouched.
+        assert loaded.danger_ok[tid].title == "Stale fields 2"
+
+    # frob:tests tests/test_ticket_reconcile.py::TestReconcileStripStaleFields.test_second_run_is_a_no_op  # noqa: E501
+    def test_second_run_is_a_no_op(self, repo: Path) -> None:
+        """T-5305 acceptance: a second `apply` run after the fields are
+        already stripped finds nothing left to strip -- idempotent."""
+        created = new_ticket(repo, _spec("Stale fields 3", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+        self._inject_stale_fields(repo, tid)
+
+        first = strip_stale_fields(repo, apply=True)
+        assert first.is_ok
+        assert first.danger_ok.stale_ticket_ids == (tid,)
+
+        second = strip_stale_fields(repo, apply=True)
+        assert second.is_ok
+        assert second.danger_ok.stale_ticket_ids == ()
+
+    # frob:tests tests/test_ticket_reconcile.py::TestReconcileStripStaleFields.test_clean_ticket_is_untouched  # noqa: E501
+    def test_clean_ticket_is_untouched(self, repo: Path) -> None:
+        """A ticket with no extra fields is not reported at all."""
+        created = new_ticket(repo, _spec("Clean", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        result = strip_stale_fields(repo, apply=True)
+        assert result.is_ok
+        assert tid not in result.danger_ok.stale_ticket_ids

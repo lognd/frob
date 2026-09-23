@@ -160,7 +160,12 @@ from frob.tickets._new_renumber import (
     renumber,
     renumber_one,
 )
-from frob.tickets._reconcile import ReconcileReport, reconcile
+from frob.tickets._reconcile import (
+    ReconcileReport,
+    StripStaleFieldsReport,
+    reconcile,
+    strip_stale_fields,
+)
 from frob.tickets._reporting import (
     AttachError,
     attach,
@@ -753,6 +758,8 @@ __all__ = [
     "reopen_ticket",
     "restore",
     "reconcile",
+    "strip_stale_fields",
+    "StripStaleFieldsReport",
     "ReconcileReport",
     "parse_claims_from_done_report",
     "recover_done_report_why",

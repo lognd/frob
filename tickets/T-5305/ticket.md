@@ -3,7 +3,7 @@ id: T-5305
 title: 'frob ticket reconcile --strip-stale-fields: remove pydantic-extra fields (branch/worktree
   from an older writer) from live ledger records so TICK008 stops flagging the real
   ledger'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -90,6 +90,11 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_dry_run_reports_but_does_not_strip
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_apply_strips_stale_fields
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_second_run_is_a_no_op
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_clean_ticket_is_untouched
 designated_repro_test: null
 threat: null
 component: null

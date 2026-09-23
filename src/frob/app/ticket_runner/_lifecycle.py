@@ -1046,6 +1046,32 @@ def _log_reconcile_intents_and_unlanded_work(report: "ReconcileReport") -> None:
 
 # frob:ticket T-0476
 # frob:ticket T-1936
+# frob:ticket T-5305
+def _reconcile_strip_stale_fields_cmd(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket reconcile --strip-stale-fields [--apply]`: report (and,
+    with `--apply`, heal) T-0838's stale-extra-ledger-field anomaly --
+    split out of `_reconcile_cmd` (ARCH001, T-5305) since the two anomaly
+    classes share nothing but the `reconcile` subcommand name."""
+    from frob.tickets import strip_stale_fields
+
+    strip_result = strip_stale_fields(root, apply=cfg.ticket_reconcile_apply)
+    if strip_result.is_err:
+        _log.error("ticket reconcile failed: %s", strip_result.danger_err)
+        sys.exit(1)
+    strip_report = strip_result.danger_ok
+    if strip_report.stale_ticket_ids:
+        verb = "stripped" if strip_report.applied else "would strip"
+        for ticket_id in strip_report.stale_ticket_ids:
+            _log.info(
+                "reconcile: %s stale field(s) %s from %s",
+                verb,
+                list(strip_report.stripped_fields_by_ticket[ticket_id]),
+                ticket_id,
+            )
+    else:
+        _log.info("reconcile: no stale ledger fields found")
+
+
 def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
     """`frob ticket reconcile [--apply] [--remove-orphans] [--no-commit]`:
     report (and, with `--apply`, heal) T-0476's two ticket<->worktree
@@ -1072,6 +1098,10 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
     anything, so this commit call is a guaranteed no-op then."""
     from frob.tickets import reconcile
     from frob.tickets._leases import commit_full_ledger_change
+
+    if cfg.ticket_reconcile_strip_stale_fields:
+        _reconcile_strip_stale_fields_cmd(root, cfg)
+        return
 
     result = reconcile(
         root,

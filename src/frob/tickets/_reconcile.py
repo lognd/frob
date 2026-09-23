@@ -454,3 +454,87 @@ def reconcile(
             removed_orphans=apply and remove_orphans,
         )
     )
+
+
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476
+# frob:ticket T-5305
+class StripStaleFieldsReport(BaseModel):
+    """`strip_stale_fields`'s result (T-5305): which ticket ids carried a
+    pydantic-extra field the CURRENT `Ticket` model does not declare
+    (`branch`/`worktree`, written by an older writer -- T-0838's own
+    `_warn_unknown_extras` names the exact anomaly this heals), and which
+    of those were actually stripped (`applied`)."""
+
+    model_config = {}
+
+    stale_ticket_ids: tuple[str, ...]
+    stripped_fields_by_ticket: dict[str, tuple[str, ...]]
+    applied: bool
+
+
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476
+# frob:ticket T-5305
+def strip_stale_fields(
+    root: Path, *, apply: bool = False
+) -> Result[StripStaleFieldsReport, TicketError]:
+    """Detect (and, if `apply`, heal) T-0838's stale-extra-field anomaly:
+    a live ledger record carrying a pydantic-extra field (`extra="allow"`
+    on `Ticket`) the current model does not declare -- typically `branch`/
+    `worktree`, written by an older `frob` version whose `Ticket` model
+    once had those as real fields. `_warn_unknown_extras` logs a WARNING
+    for every such ticket on every load; this is the accountable, one-shot
+    way to clear it, rather than hand-editing `tickets/*.md` (forbidden --
+    see this repo's own ledger-gotchas lesson) or living with the warning
+    forever.
+
+    `apply=False` (the default) is a pure dry-run: every stale ticket id
+    and its stale field names are still detected and returned, nothing is
+    written -- same "report first, mutate only when asked" posture the
+    rest of `reconcile` uses. Idempotent: a ticket with no
+    `__pydantic_extra__` is not touched, so a second run after `apply`
+    finds nothing left to strip.
+
+    Deliberately narrower than the surrounding `reconcile`'s worktree/lease
+    healing: this only ever drops fields, never touches `state`/`scope`/
+    any declared field, and refuses the same way `reconcile --apply` does
+    if a land is in progress (`_refuse_apply_if_land_in_progress`), since
+    it writes to the same ledger those lands read."""
+    guard = _refuse_apply_if_land_in_progress(root, apply=apply, wait_timeout_s=None)
+    if guard.is_err:
+        return Err(guard.danger_err)
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    tickets = loaded.danger_ok
+
+    stale_ids: list[str] = []
+    stripped_by_id: dict[str, tuple[str, ...]] = {}
+    for ticket_id, ticket in sorted(tickets.items()):
+        extras = ticket.__pydantic_extra__
+        if not extras:
+            continue
+        stale_ids.append(ticket_id)
+        stripped_by_id[ticket_id] = tuple(sorted(extras))
+        if not apply:
+            continue
+        from frob.tickets._models import Ticket
+        from frob.tickets._store import write_ticket
+
+        declared_only = {
+            key: value
+            for key, value in ticket.model_dump(mode="python").items()
+            if key in Ticket.model_fields
+        }
+        cleaned = Ticket.model_validate(declared_only)
+        write_result = write_ticket(root, cleaned)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+
+    return Ok(
+        StripStaleFieldsReport(
+            stale_ticket_ids=tuple(stale_ids),
+            stripped_fields_by_ticket=stripped_by_id,
+            applied=apply,
+        )
+    )

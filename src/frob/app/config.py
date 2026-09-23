@@ -1096,6 +1096,9 @@ class AppConfig(BaseModel):
     # `frob ticket reconcile [--apply] [--remove-orphans]`.
     ticket_reconcile_apply: bool = False
     ticket_reconcile_remove_orphans: bool = False
+    # frob:ticket T-5305
+    # `frob ticket reconcile --strip-stale-fields [--apply]`.
+    ticket_reconcile_strip_stale_fields: bool = False
     # frob:ticket T-0458
     # `frob ticket done-report <id> (--why TEXT | --why-file PATH)` --
     # TEXT of "-" (or --why-file omitted with neither given) reads stdin,

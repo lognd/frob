@@ -582,6 +582,7 @@ _BOOL_FLAGS = (
     "ticket_steal",
     "ticket_reconcile_apply",
     "ticket_reconcile_remove_orphans",
+    "ticket_reconcile_strip_stale_fields",
     # frob:ticket T-2254
     "ticket_attach_backfill_drafts",
     "ticket_attach_backfill_apply",
