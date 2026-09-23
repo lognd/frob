@@ -60,8 +60,8 @@ class TestSweepDisposableWorktrees:
     """`sweep_disposable_worktrees`'s liveness classification and removal
     (T-4437 acceptance criteria 1-3)."""
 
-    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
-    # frob:tests src/frob/worktrees/_disposable_sweep.py::DisposableWorktreeEntry  # noqa: E501
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::DisposableWorktreeEntry
     def test_dead_stamped_worktree_is_removed(
         self, tmp_path: Path, git_repo: Path
     ) -> None:
@@ -85,10 +85,10 @@ class TestSweepDisposableWorktrees:
             capture_output=True,
             text=True,
         ).stdout
-        # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
+        # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees
         assert "wt" not in listing
 
-    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees
     def test_live_stamped_worktree_is_kept(
         self, tmp_path: Path, git_repo: Path
     ) -> None:
@@ -105,7 +105,7 @@ class TestSweepDisposableWorktrees:
         assert len(report.kept) == 1
         assert scratch.exists()
 
-    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees
     def test_unstamped_worktree_is_removed(
         self, tmp_path: Path, git_repo: Path
     ) -> None:
@@ -120,8 +120,8 @@ class TestSweepDisposableWorktrees:
         assert len(report.removed) == 1
         assert not scratch.exists()
 
-    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees  # noqa: E501
-    # frob:tests src/frob/worktrees/_disposable_sweep.py::DisposableSweepReport  # noqa: E501
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::sweep_disposable_worktrees
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::DisposableSweepReport
     def test_dry_run_reports_without_removing(
         self, tmp_path: Path, git_repo: Path
     ) -> None:
@@ -143,7 +143,7 @@ class TestSweepDisposableWorktrees:
 class TestStampOwnerPid:
     """`stamp_owner_pid` (T-4437 acceptance criterion 2)."""
 
-    # frob:tests src/frob/worktrees/_disposable_sweep.py::stamp_owner_pid  # noqa: E501
+    # frob:tests src/frob/worktrees/_disposable_sweep.py::stamp_owner_pid
     def test_writes_current_pid(self, tmp_path: Path) -> None:
         """The stamp file contains this process's own pid, readable back
         as the int `os.getpid()` returned."""
@@ -155,7 +155,7 @@ class TestStampOwnerPid:
 class TestCleanSweepDisposableWorktreesFlag:
     """`frob clean --sweep-disposable-worktrees`'s CLI dispatch (T-4437)."""
 
-    # frob:tests src/frob/app/clean_runner.py::_print_disposable_sweep_report  # noqa: E501
+    # frob:tests src/frob/app/clean_runner.py::_print_disposable_sweep_report
     def test_flag_dispatches_to_sweep(
         self, tmp_path: Path, git_repo: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:

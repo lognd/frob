@@ -171,7 +171,7 @@ class TestPlatform002:
         assert [v for v in violations if v.rule == "PARSE001"]
         assert not [v for v in violations if v.rule == "PLATFORM002"]
 
-    # frob:tests src/frob/gates/_win32_kill_signal.py::win32_kill_signal_gate  # noqa: E501
+    # frob:tests src/frob/gates/_win32_kill_signal.py::win32_kill_signal_gate
     def test_frob_itself_is_clean(self) -> None:
         """Positive control against this repo's own real tree (T-3686
         already delegated the one production pid-liveness call site to

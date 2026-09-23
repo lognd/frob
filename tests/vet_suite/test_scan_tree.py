@@ -259,7 +259,7 @@ class TestScanTreeMultipleLockfiles:
 
 
 class TestScanTreeTimeout:
-    # frob:tests src/frob/vet/_scan.py::_bounded_process_dependency  # noqa: E501
+    # frob:tests src/frob/vet/_scan.py::_bounded_process_dependency
     # frob:tests src/frob/vet/_scan.py::_run_with_timeout kind="unit"
     def test_slow_package_returns_within_timeout_not_task_duration(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -304,8 +304,8 @@ class TestScanTreeTimeout:
         assert "timeout" in verdict.signals
 
     # frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
-    # frob:tests src/frob/vet/_scan.py::_bounded_process_dependency  # noqa: E501
-    # frob:tests src/frob/_daemon_timeout.py::_run_bounded  # noqa: E501
+    # frob:tests src/frob/vet/_scan.py::_bounded_process_dependency
+    # frob:tests src/frob/_daemon_timeout.py::_run_bounded
     def test_timed_out_worker_is_daemon_not_registered(self, tmp_path: Path) -> None:
         """T-3708 regression: an abandoned-on-timeout `_process_dependency`
         worker must not be able to block interpreter shutdown.

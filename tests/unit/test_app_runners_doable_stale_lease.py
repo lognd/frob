@@ -105,7 +105,7 @@ def _write_lease(
 
 
 class TestStaleLeaseReasons:
-    # frob:tests src/frob/app/ticket_runner/_query.py::_stale_lease_reasons  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_stale_lease_reasons
     def test_dead_holder_flagged_with_reason(
         self, repo: Path, second_worktree: Path
     ) -> None:
@@ -125,7 +125,7 @@ class TestStaleLeaseReasons:
 
         assert reasons == {"T-0001": "holder-dead"}
 
-    # frob:tests src/frob/app/ticket_runner/_query.py::_stale_lease_reasons  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_stale_lease_reasons
     def test_live_holder_not_flagged(self, repo: Path, second_worktree: Path) -> None:
         # frob:tests \
         # tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_live_holder_not_flagged  # noqa: E501

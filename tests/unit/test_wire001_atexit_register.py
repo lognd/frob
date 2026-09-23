@@ -60,8 +60,7 @@ class TestWire001AtexitRegister:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister.test_fu\
-        # nction_registered_via_atexit_is_not_flagged
+        # tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister.test_function_registered_via_atexit_is_not_flagged  # noqa: E501
         """(MUST FAIL FIRST on pre-T-2931 main): a brand-new private
         function whose only reference anywhere is
         `atexit.register(_remove_scratch_file, path)` must NOT fire
@@ -99,8 +98,7 @@ class TestWire001AtexitRegister:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister.test_fu\
-        # nction_with_no_caller_anywhere_still_flagged_positive_control
+        # tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister.test_function_with_no_caller_anywhere_still_flagged_positive_control  # noqa: E501
         """Positive control (must-still-pass): a genuinely unwired
         private function -- no `atexit.register` (or any other)
         reference anywhere outside its own tests -- still fires WIRE001.
@@ -129,8 +127,7 @@ class TestWire001AtexitRegister:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister.test_cl\
-        # ass_registered_via_atexit_still_flagged_anchor_control
+        # tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister.test_class_registered_via_atexit_still_flagged_anchor_control  # noqa: E501
         """Anti-abuse control (matching T-1831/T-2778's own anchors): a
         CLASS registered via `atexit.register` must NOT be rescued by
         this fix -- the new dotted-wrapper alternative is gated to

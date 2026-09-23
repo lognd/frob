@@ -137,8 +137,7 @@ class TestLinkedGroupsResolveAndAreNavigable:
     ticket's cross-file dedup pass exists to establish."""
 
     # frob:tests \
-    # tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavig\
-    # able.test_every_group_id_exists
+    # tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavigable.test_every_group_id_exists  # noqa: E501
     def test_every_group_id_exists(self):
         entries = _load_all_entries()
         for group in LINKED_GROUPS:
@@ -147,8 +146,7 @@ class TestLinkedGroupsResolveAndAreNavigable:
 
     # frob:ticket T-0972
     # frob:tests \
-    # tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavig\
-    # able.test_every_member_cross_refs_every_other_member
+    # tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavigable.test_every_member_cross_refs_every_other_member  # noqa: E501
     def test_every_member_cross_refs_every_other_member(self):
         entries = _load_all_entries()
         for group in LINKED_GROUPS:
@@ -170,8 +168,7 @@ class TestRejectedPairsStayUnlinked:
     them for."""
 
     # frob:tests \
-    # tests/unit/strata/test_registry_cross_refs.py::TestRejectedPairsStayUnlinked.test\
-    # _rejected_pairs_not_cross_linked
+    # tests/unit/strata/test_registry_cross_refs.py::TestRejectedPairsStayUnlinked.test_rejected_pairs_not_cross_linked  # noqa: E501
     def test_rejected_pairs_not_cross_linked(self):
         entries = _load_all_entries()
         for left, right in REJECTED_PAIRS:
@@ -194,8 +191,7 @@ class TestReconciliationSplitSectionFullyLinked:
     independently of gate internals."""
 
     # frob:tests \
-    # tests/unit/strata/test_registry_cross_refs.py::TestReconciliationSplitSectionFull\
-    # yLinked.test_finding_b_ids_all_linked
+    # tests/unit/strata/test_registry_cross_refs.py::TestReconciliationSplitSectionFullyLinked.test_finding_b_ids_all_linked  # noqa: E501
     def test_finding_b_ids_all_linked(self):
         text = (REGISTRY_DIR / "RECONCILIATION.md").read_text(encoding="utf-8")
         start = text.find("### (b) SPLIT entries")

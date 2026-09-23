@@ -16,13 +16,13 @@ from frob.tickets._profile import (
 class TestConfiguredProfile:
     """`configured_profile` reads the raw `[profile]` value, no ratchet."""
 
-    # frob:tests src/frob/tickets/_profile.py::configured_profile  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::configured_profile
     def test_absent_frob_toml_is_standard(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_absent_frob_toml_is_standard  # noqa: E501
         result = configured_profile(tmp_path)
         assert result.is_ok
         assert result.danger_ok is ProfileName.STANDARD
-# frob:tests src/frob/tickets/_profile.py::configured_profile  # noqa: E501
+# frob:tests src/frob/tickets/_profile.py::configured_profile
 
     def test_explicit_rapid_parses(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_explicit_rapid_parses  # noqa: E501
@@ -33,7 +33,7 @@ class TestConfiguredProfile:
         assert result.is_ok
         assert result.danger_ok is ProfileName.RAPID
 
-    # frob:tests src/frob/tickets/_profile.py::configured_profile  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::configured_profile
     def test_unknown_value_errors(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_unknown_value_errors  # noqa: E501
         (tmp_path / "frob.toml").write_text(
@@ -45,10 +45,10 @@ class TestConfiguredProfile:
 
 class TestEffectiveProfile:
     """`effective_profile` applies the one-way auto-ratchet on top of
-    # frob:tests src/frob/tickets/_profile.py::effective_profile  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::effective_profile
     `configured_profile`."""
 
-    # frob:tests src/frob/tickets/_profile.py::effective_profile  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::effective_profile
     def test_standard_is_unaffected_by_ratchet(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_standard_is_unaffected_by_ratchet  # noqa: E501
         result = effective_profile(tmp_path)
@@ -56,7 +56,7 @@ class TestEffectiveProfile:
         assert result.danger_ok is ProfileName.STANDARD
         assert not (tmp_path / ".frob" / "profile-ratchet.json").exists()
 
-    # frob:tests src/frob/tickets/_profile.py::effective_profile  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::effective_profile
     def test_rapid_below_threshold_stays_rapid(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_rapid_below_threshold_stays_rapid  # noqa: E501
         (tmp_path / "frob.toml").write_text(
@@ -67,7 +67,7 @@ class TestEffectiveProfile:
         assert result.danger_ok is ProfileName.RAPID
         assert not (tmp_path / ".frob" / "profile-ratchet.json").exists()
 
-    # frob:tests src/frob/tickets/_profile.py::effective_profile  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::effective_profile
     def test_rapid_above_threshold_ratchets_to_standard(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -84,7 +84,7 @@ class TestEffectiveProfile:
         assert result.danger_ok is ProfileName.STANDARD
         assert (tmp_path / ".frob" / "profile-ratchet.json").exists()
 
-    # frob:tests src/frob/tickets/_profile.py::effective_profile  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::effective_profile
     def test_persisted_ratchet_wins_even_if_thresholds_no_longer_trip(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -107,7 +107,7 @@ class TestEffectiveProfile:
 class TestDowngrade:
     """`downgrade_profile_ratchet` is the only way to clear a ratchet."""
 
-    # frob:tests src/frob/tickets/_profile.py::downgrade_profile_ratchet  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::downgrade_profile_ratchet
     def test_downgrade_clears_persisted_ratchet(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -126,7 +126,7 @@ class TestDowngrade:
         assert result.danger_ok is True
         assert not (tmp_path / ".frob" / "profile-ratchet.json").exists()
 
-    # frob:tests src/frob/tickets/_profile.py::downgrade_profile_ratchet  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::downgrade_profile_ratchet
     def test_downgrade_is_noop_when_nothing_ratcheted(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestDowngrade.test_downgrade_is_noop_when_nothing_ratcheted  # noqa: E501
         result = downgrade_profile_ratchet(tmp_path, reason="no-op check")
@@ -137,15 +137,15 @@ class TestDowngrade:
 # frob:ticket T-1684
 class TestRatchetOverride:
     """`ratchet_override_enabled` (T-1681): the explicit, tracked owner
-    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled
     decision to keep `rapid` in a repo the size ratchet would upgrade."""
 
-    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled
     def test_absent_frob_toml_is_not_overridden(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_frob_toml_is_not_overridden  # noqa: E501
         assert ratchet_override_enabled(tmp_path) is False
 
-    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled
     def test_absent_key_is_not_overridden(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_key_is_not_overridden  # noqa: E501
         (tmp_path / "frob.toml").write_text(
@@ -153,7 +153,7 @@ class TestRatchetOverride:
         )
         assert ratchet_override_enabled(tmp_path) is False
 
-    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled
     def test_explicit_true_overrides(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_explicit_true_overrides  # noqa: E501
         (tmp_path / "frob.toml").write_text(
@@ -161,7 +161,7 @@ class TestRatchetOverride:
         )
         assert ratchet_override_enabled(tmp_path) is True
 
-    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled  # noqa: E501
+    # frob:tests src/frob/tickets/_profile.py::ratchet_override_enabled
     def test_malformed_toml_fails_strict_not_relaxed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_malformed_toml_fails_strict_not_relaxed  # noqa: E501
         # A broken config can only ever make the ceremony STRICTER.

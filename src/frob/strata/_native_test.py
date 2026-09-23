@@ -96,14 +96,11 @@ def _summarize(report: AuditReport, selfconform: SelfConformReport) -> str:
 # frob:tests tests/test_testing.py::TestNativeStrataAudit.test_no_models_is_neutral_pass
 # frob:tests tests/test_testing.py::TestNativeStrataAudit.test_bad_design_file_fails
 # frob:tests \
-# tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_exhaus\
-# tiveness_error_propagates
+# tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_exhaustiveness_error_propagates  # noqa: E501
 # frob:tests \
-# tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_selfco\
-# nform_error_propagates
+# tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_selfconform_error_propagates  # noqa: E501
 # frob:tests \
-# tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_both_r\
-# eports_clean_is_proved
+# tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches.test_both_reports_clean_is_proved  # noqa: E501
 def run_native_sys_audit(
     root: Path, design_dir: str = DEFAULT_DESIGN_DIR
 ) -> Result[NativeAuditOutcome, StrataError]:

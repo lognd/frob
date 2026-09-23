@@ -557,7 +557,7 @@ class TestSpliceLedgerRicherStatePreference:
     `_splice_only_ticket`."""
 
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_report_side_still_wins_when_it_also_outranks_the_reportless_side  # noqa: E501
-    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer
     def test_report_side_still_wins_when_it_also_outranks_the_reportless_side(
         self, tmp_path: Path
     ) -> None:
@@ -599,7 +599,7 @@ class TestSpliceLedgerRicherStatePreference:
         assert parsed[tid].state == TicketState.IN_PROGRESS
         assert "## Done report" in parsed[tid].body
 
-    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side  # noqa: E501
     def test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side(  # noqa: E501
         self, tmp_path: Path
@@ -641,7 +641,7 @@ class TestSpliceLedgerRicherStatePreference:
         parsed = _parse_ledger(spliced.danger_ok).danger_ok
         assert parsed[tid].state == TicketState.IN_PROGRESS
         assert "## Done report" not in parsed[tid].body
-# frob:tests src/frob/tickets/_land_ledger_merge.py::_newer  # noqa: E501
+# frob:tests src/frob/tickets/_land_ledger_merge.py::_newer
 
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on  # noqa: E501
     def test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on(
@@ -678,11 +678,11 @@ class TestSpliceLedgerRicherStatePreference:
 
         parsed = _parse_ledger(spliced.danger_ok).danger_ok
         assert parsed[tid].state == TicketState.IN_PROGRESS
-        # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer kind="property"  # noqa: E501
+        # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer kind="property"
         assert "## Done report" not in parsed[tid].body
 
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_neither_side_reporting_still_falls_back_to_state_rank  # noqa: E501
-    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer kind="property"  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer kind="property"
     def test_neither_side_reporting_still_falls_back_to_state_rank(
         self, tmp_path: Path
     ) -> None:
@@ -934,16 +934,16 @@ class TestLedgerBothSidesAppend:
 
 
 class TestLedgerV2LandMergeStory:
-    # frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope
     """T-1258: ledger v2's native-git merge story for `frob ticket land` --
     disjoint `tickets/T-####/` directories merge with zero custom
     resolution (AC2), and a genuine same-ticket-file conflict surfaces as
     an ordinary git conflict, never a silent splice (AC3)."""
-# frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope  # noqa: E501
+# frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope
 
-    # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2
     # frob:tests src/frob/tickets/_land.py::_merge_main_into_worktree_v2
-    # frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope
     def test_disjoint_v2_tickets_land_with_no_custom_merge(self, v2_repo: Path) -> None:
         # frob:tests src/frob/tickets/_land.py::land kind="unit"
         wt = v2_repo.parent / "wt-v2-a"
@@ -976,7 +976,7 @@ class TestLedgerV2LandMergeStory:
         assert (v2_repo / "src" / "widget.py").exists()
         assert not (v2_repo / "tickets.md").exists()
 
-    # frob:tests src/frob/tickets/_land_squash.py::_check_squash_conflicted_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_check_squash_conflicted_v2
     def test_same_ticket_conflict_surfaces_loudly_no_splice(
         self, v2_repo: Path
     ) -> None:
@@ -1069,8 +1069,8 @@ class TestSquashSpliceLedgerChurn:
     # or thread-local state -- verified standalone against T-3163's fixed
     # production code before landing this) makes the simulation honest to
     # the real-world concurrent-writer case again, and the test passes.
-    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
-    # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply
+    # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger
     # frob:tests \
     # src/frob/tickets/_land_compose.py::compose_squash_in_disposable_worktree
     def test_concurrent_write_between_squash_and_splice_survives_land(
@@ -1151,12 +1151,12 @@ class TestSquashSpliceLedgerChurn:
 
 # frob:ticket T-1002
 class TestUnionZoneMerge:
-    # frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks  # noqa: E501
+    # frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks
     """T-1002: append-only union-merge for the three chronic conflict
     hotspots (`[gates.severity]`, `_KNOWN_GATE_RULES`, `docs/audits/*.md`
     remediation logs) -- concurrent distinct appends compose with zero
     manual resolution; a true same-key contradiction still refuses."""
-# frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks  # noqa: E501
+# frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks
 
     def test_keyed_lines_union_composes(self) -> None:
         # frob:tests \
@@ -1170,7 +1170,7 @@ class TestUnionZoneMerge:
         assert 'RULEA = "error"' in merged
         assert 'RULEB = "warn"' in merged
 
-    # frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks  # noqa: E501
+    # frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks
     def test_keyed_lines_union_refuses(self) -> None:
         # frob:tests \
         # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
@@ -1181,7 +1181,7 @@ class TestUnionZoneMerge:
         )
         assert merged is None
 
-    # frob:tests src/frob/tickets/_land_merge_zones.py::_resolve_union_zone_conflicts  # noqa: E501
+    # frob:tests src/frob/tickets/_land_merge_zones.py::_resolve_union_zone_conflicts
     def test_resolve_stages(self, repo: Path) -> None:
         # frob:tests \
         # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_resolve_stages  # noqa: E501

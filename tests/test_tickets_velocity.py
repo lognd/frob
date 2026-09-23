@@ -439,7 +439,7 @@ class TestTicketFlow:
     # frob:ticket T-1100
     # frob:ticket T-1151
     # frob:ticket T-2834
-    # frob:tests src/frob/tickets/_models.py::TicketFlowRow.net kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::TicketFlowRow.net kind="unit"
     def test_filed_and_landed_counted_per_day(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_flow.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
@@ -504,7 +504,7 @@ class TestTicketFlow:
     # frob:ticket T-1100
     # frob:ticket T-1151
     # frob:ticket T-2834
-    # frob:tests src/frob/tickets/_models.py::TicketFlowReport.eta_days kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::TicketFlowReport.eta_days kind="unit"
     def test_eta_none_when_queue_not_shrinking(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_flow.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
@@ -523,7 +523,7 @@ class TestTicketFlow:
     # frob:ticket T-1100
     # frob:ticket T-1151
     # frob:ticket T-2834
-    # frob:tests src/frob/tickets/_models.py::TicketFlowReport.eta_days kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::TicketFlowReport.eta_days kind="unit"
     def test_eta_computed_when_queue_shrinking(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_flow.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
@@ -618,7 +618,7 @@ class TestTicketFlow:
 
     # frob:ticket T-1142
     # frob:ticket T-4623
-    # frob:tests src/frob/tickets/_flow.py::ticket_flow  # noqa: E501
+    # frob:tests src/frob/tickets/_flow.py::ticket_flow
     def test_archived_ticket_still_counts_toward_landed(self, tmp_path: Path) -> None:
         """Asserts a ticket moved from tickets.md into
         tickets-archive.md by `frob ticket archive` still counts toward
@@ -668,7 +668,7 @@ class TestTicketFlow:
         assert landed_days.get(the_day, 0) == 1
 
     # frob:ticket T-1142
-    # frob:tests src/frob/tickets/_flow.py::ticket_flow  # noqa: E501
+    # frob:tests src/frob/tickets/_flow.py::ticket_flow
     def test_archived_ticket_still_counts_toward_filed(self, tmp_path: Path) -> None:
         """The same undercount applies to `filed` -- an archived ticket's
         `created` date must still contribute, even though `queue` (the

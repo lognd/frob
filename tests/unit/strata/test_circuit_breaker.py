@@ -45,7 +45,7 @@ class TestPredicates:
 class TestMissingCircuitBreaker:
     # frob:tests \
     # tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_external_node_without_circuit_breaker_fires  # noqa: E501
-    # frob:tests src/frob/strata/_circuit_breaker.py::check_circuit_breaker_obligations  # noqa: E501
+    # frob:tests src/frob/strata/_circuit_breaker.py::check_circuit_breaker_obligations
     def test_external_node_without_circuit_breaker_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="payments", trust="untrusted", attrs=("external",)),),

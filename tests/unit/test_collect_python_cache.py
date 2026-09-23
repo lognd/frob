@@ -29,8 +29,7 @@ class TestPlatformSkippedCacheWriteFormat:
     even when the tuple is empty -- T-4449's write-side half of the fix."""
 
     # frob:tests \
-    # tests/unit/test_collect_python_cache.py::TestPlatformSkippedCacheWriteFormat.test\
-    # _empty_platform_skipped_still_written
+    # tests/unit/test_collect_python_cache.py::TestPlatformSkippedCacheWriteFormat.test_empty_platform_skipped_still_written  # noqa: E501
     def test_empty_platform_skipped_still_written(self, tmp_path: Path) -> None:
         """A collection that finds NOTHING platform-skipped must still
         persist `extra.platform_skipped == []`, not omit `extra`
@@ -48,8 +47,7 @@ class TestPlatformSkippedCacheWriteFormat:
         assert extra["platform_skipped"] == []
 
     # frob:tests \
-    # tests/unit/test_collect_python_cache.py::TestPlatformSkippedCacheWriteFormat.test\
-    # _nonempty_platform_skipped_round_trips
+    # tests/unit/test_collect_python_cache.py::TestPlatformSkippedCacheWriteFormat.test_nonempty_platform_skipped_round_trips  # noqa: E501
     def test_nonempty_platform_skipped_round_trips(self, tmp_path: Path) -> None:
         """A real `(file, reason)` pair written through `_store_cache`
         reads back byte-for-byte through `_load_cache_extra`."""
@@ -74,8 +72,7 @@ class TestOldFormatCacheEntryIsAMiss:
     observable, not silently equal to an empty list."""
 
     # frob:tests \
-    # tests/unit/test_collect_python_cache.py::TestOldFormatCacheEntryIsAMiss.test_old_\
-    # format_entry_has_no_platform_skipped_key
+    # tests/unit/test_collect_python_cache.py::TestOldFormatCacheEntryIsAMiss.test_old_format_entry_has_no_platform_skipped_key  # noqa: E501
     def test_old_format_entry_has_no_platform_skipped_key(self, tmp_path: Path) -> None:
         """A hand-written cache doc shaped exactly like the runner-measured
         one (`key` + `node_ids` only, no `extra` at all) loads with

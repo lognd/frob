@@ -73,7 +73,7 @@ class TestGlobsIntersect:
     def test_identical_globs_overlap(self) -> None:
         assert _globs_intersect("src/frob/gates/**", "src/frob/gates/**") is True
 
-    # frob:tests src/frob/tickets/_models.py::_globs_intersect  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_disjoint_wildcard_basenames_same_directory(self) -> None:
         # T-3180 MUST-STAY-QUIET: a wildcard-bearing add glob against a
         # held wildcard glob in the SAME directory, disjoint basenames --
@@ -93,7 +93,7 @@ class TestGlobsIntersect:
             is False
         )
 
-    # frob:tests src/frob/tickets/_models.py::_globs_intersect  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_disjoint_literal_under_shared_doublestar(self) -> None:
         # T-3180: the literal (no wildcard) case must also stay quiet --
         # this one already passed before the fix; guard against regression.
@@ -105,14 +105,14 @@ class TestGlobsIntersect:
             is False
         )
 
-    # frob:tests src/frob/tickets/_models.py::_globs_intersect  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_disjoint_wildcard_basenames_under_shared_doublestar(self) -> None:
         # T-3180 MUST-STAY-QUIET: disjoint basenames under a shared `**`
         # prefix -- two independent wildcard globs whose final-segment
         # literal prefixes cannot both match the same file.
         assert _globs_intersect("tests/**/test_a*.py", "tests/**/test_b*.py") is False
 
-    # frob:tests src/frob/tickets/_models.py::_globs_intersect  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::_globs_intersect
     def test_doublestar_prefix_overlaps_nested_literal(self) -> None:
         # T-3180 MUST-FIRE: `tests/**/a*.py` genuinely overlaps a concrete
         # nested literal path it can match.
@@ -153,7 +153,7 @@ class TestScopeOverlap:
 
 # frob:ticket T-2771
 class TestLeasedBy:
-    # frob:tests src/frob/tickets/_doable.py::leased_by  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::leased_by
     def test_precise_in_progress_does_not_hide_disjoint(self) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_hide_disjoint  # noqa: E501
@@ -393,7 +393,7 @@ class TestOverBroadLiteralGlobs:
     package-prefix entries from the project's own package name, instead
     of a hardcoded `src/frob/**`."""
 
-    # frob:tests src/frob/tickets/_models.py::over_broad_literal_globs  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::over_broad_literal_globs
     # frob:tests src/frob/lang/_nodes.py::declared_source_prefixes
     def test_derives_package_prefix_for_a_differently_named_project(
         self, tmp_path: Path
@@ -415,7 +415,7 @@ class TestOverBroadLiteralGlobs:
         assert warnings
         assert "chronically over-broad" in warnings[0]
 
-    # frob:tests src/frob/tickets/_models.py::over_broad_literal_globs  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::over_broad_literal_globs
     def test_this_repos_own_src_frob_globs_are_unchanged(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_src_frob_globs_are_unchanged  # noqa: E501

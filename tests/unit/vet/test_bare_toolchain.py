@@ -14,7 +14,7 @@ from frob.vet._bare_toolchain import bare_toolchain_findings
 class TestBareToolchainFindings:
     """`bare_toolchain_findings` -- the AST finder."""
 
-    # frob:tests src/frob/vet/_bare_toolchain.py::BareToolchainFinding  # noqa: E501
+    # frob:tests src/frob/vet/_bare_toolchain.py::BareToolchainFinding
     def test_flags_bare_argv_literal(self, tmp_path: Path) -> None:
         """A `cmd = ["ty", "check", ...]` literal, spawned lines later
         (T-4125's own measured `_land_cmd.py` shape), is flagged."""
@@ -35,7 +35,7 @@ class TestBareToolchainFindings:
         findings = bare_toolchain_findings(f)
         assert [fi.tool for fi in findings] == ["ruff"]
 
-    # frob:tests src/frob/vet/_bare_toolchain.py::bare_toolchain_findings  # noqa: E501
+    # frob:tests src/frob/vet/_bare_toolchain.py::bare_toolchain_findings
     def test_clean_on_project_tool_argv_spelling(self, tmp_path: Path) -> None:
         """The correct `['uv', 'run', '--project', ..., 'ty', ...]`
         shape (first element `'uv'`, not a bare tool name) is not
@@ -79,7 +79,7 @@ class TestBareToolchainFindings:
 class TestBareToolchainGate:
     """`bare_toolchain_gate` -- the tracked-file-scan wiring."""
 
-    # frob:tests src/frob/gates/_bare_toolchain.py::bare_toolchain_gate  # noqa: E501
+    # frob:tests src/frob/gates/_bare_toolchain.py::bare_toolchain_gate
     def test_flags_bare_argv_literal(self, tmp_path: Path) -> None:
         """A tracked file with a bare-name argv literal reports one
         WARN-severity BARETOOL001 violation naming the file and line."""
@@ -93,7 +93,7 @@ class TestBareToolchainGate:
         assert violations[0].file == "mod.py"
         assert violations[0].line == 1
 
-    # frob:tests src/frob/gates/_bare_toolchain.py::bare_toolchain_gate  # noqa: E501
+    # frob:tests src/frob/gates/_bare_toolchain.py::bare_toolchain_gate
     def test_clean_on_project_tool_argv_spelling(self, tmp_path: Path) -> None:
         """A tracked file using the correct `project_tool_argv` spelling
         (`'uv'` first) reports zero violations."""

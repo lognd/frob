@@ -87,7 +87,7 @@ class TestTicketArchiveForceCLI:
     # reason: live-lease liveness check races the CLI's own archive attempt
     # under CI load; observed pass-sometimes-fail-sometimes across runs
     # while the underlying refusal logic itself is otherwise verified.
-    # frob:tests src/frob/tickets/_leases.py::_live_leases_pruning_stale kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_live_leases_pruning_stale kind="unit"
     @pytest.mark.flaky(reruns=2, reruns_delay=1)
     def test_refuses_without_force_when_a_live_lease_exists(
         self, tmp_path: Path, caplog
@@ -110,7 +110,7 @@ class TestTicketArchiveForceCLI:
         assert active.tickets["T-0001"].state == TicketState.DONE
 
     # frob:tests src/frob/app/ticket_runner/_archive.py::_require_reason_for_archive_force kind="unit"  # noqa: E501
-    # frob:tests src/frob/tickets/_leases.py::_live_leases_pruning_stale kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_live_leases_pruning_stale kind="unit"
     def test_force_overrides_the_live_lease_refusal(
         self, tmp_path: Path, caplog
     ) -> None:

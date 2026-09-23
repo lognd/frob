@@ -341,7 +341,7 @@ class TestFixE501MergeIntroduced:
     when a resulting E501 finding is actually resolved by the format
     pass."""
 
-    # frob:tests src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced  # noqa: E501
+    # frob:tests src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced
 
     def test_e501_merge_introduced_targeted_format_applies(
         self, tmp_path: Path
@@ -394,7 +394,7 @@ class TestFixE501MergeIntroduced:
         rewritten = (root / "pkg" / "mod.py").read_text(encoding="utf-8")
         assert all(len(line) <= 88 for line in rewritten.splitlines())
 
-    # frob:tests src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced  # noqa: E501
+    # frob:tests src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced
     def test_e501_no_merge_shape_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge_shape_is_a_no_op kind="unit"  # noqa: E501

@@ -75,7 +75,7 @@ class TestComputeFindingsMovement:
         assert result.healed is None
 
     # frob:tests tests/test_status.py::TestComputeFindingsMovement.test_must_show_healed_and_introduced kind="unit"  # noqa: E501
-    # frob:tests src/frob/app/status_runner.py::compute_findings_movement kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/status_runner.py::compute_findings_movement kind="unit"
     def test_must_show_healed_and_introduced(self) -> None:
         """T-2911 must-show control: a baseline with two known findings, a
         current run with one of them fixed and one new one introduced --
@@ -146,7 +146,7 @@ class TestFindingsMovementModel:
     behavior already covered above."""
 
     # frob:tests tests/test_status.py::TestFindingsMovementModel.test_defaults_are_unmeasured_shaped kind="unit"  # noqa: E501
-    # frob:tests src/frob/app/status_runner.py::FindingsMovement kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/status_runner.py::FindingsMovement kind="unit"
     def test_defaults_are_unmeasured_shaped(self) -> None:
         movement = FindingsMovement(measured=False, note="x")
         assert movement.healed is None
@@ -163,8 +163,8 @@ class TestBuildStatusReportIntegration:
     coverage above."""
 
     # frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_no_baseline_reports_unmeasured_findings kind="unit"  # noqa: E501
-    # frob:tests src/frob/app/status_runner.py::build_status_report kind="unit"  # noqa: E501
-    # frob:tests src/frob/app/status_runner.py::StatusReport kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/status_runner.py::build_status_report kind="unit"
+    # frob:tests src/frob/app/status_runner.py::StatusReport kind="unit"
     def test_no_baseline_reports_unmeasured_findings(self, tmp_path: Path) -> None:
         """A fresh directory with no `.frob/baseline` at all: `findings.
         measured` is `False`, and the assembly never raises trying to read
@@ -179,7 +179,7 @@ class TestBuildStatusReportIntegration:
         assert report.tickets_open is None
 
     # frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_baseline_locks_section_is_always_populated kind="unit"  # noqa: E501
-    # frob:tests src/frob/app/status_runner.py::_baseline_locks_section kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/status_runner.py::_baseline_locks_section kind="unit"
     def test_baseline_locks_section_is_always_populated(self, tmp_path: Path) -> None:
         """T-2999: the baseline-locks section has no opt-out flag (unlike
         ticket flow) -- it is always present on `build_status_report`'s
@@ -311,7 +311,7 @@ class TestRunEndToEnd:
     rendering mode -- covers the one public symbol not otherwise exercised
     by the pure-function/integration tests above."""
 
-    # frob:tests src/frob/app/status_runner.py::run kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/status_runner.py::run kind="unit"
     # frob:tests tests/test_status.py::TestRunEndToEnd.test_run_prints_human_text_by_default kind="unit"  # noqa: E501
     def test_run_prints_human_text_by_default(self, tmp_path: Path, capsys) -> None:
         """`run(cfg)` with no `--json` prints the human-readable sections,
@@ -334,7 +334,7 @@ class TestRunEndToEnd:
         assert "== ticket movement ==" in out
 
     # frob:tests tests/test_status.py::TestRunEndToEnd.test_run_prints_json_when_requested kind="unit"  # noqa: E501
-    # frob:tests src/frob/app/status_runner.py::run kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/status_runner.py::run kind="unit"
     def test_run_prints_json_when_requested(self, tmp_path: Path, capsys) -> None:
         """`run(cfg)` with `status_json=True` prints a single JSON document
         matching `StatusReport`'s own schema."""
@@ -386,7 +386,7 @@ class TestAddStatusParser:
     single `from ._status import` in `_cli_parsers/__init__.py`)."""
 
     # frob:tests tests/test_status.py::TestAddStatusParser.test_registers_status_subcommand_with_expected_flags kind="unit"  # noqa: E501
-    # frob:tests src/frob/_cli_parsers/_status.py::_add_status_parser kind="unit"  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_status.py::_add_status_parser kind="unit"
     def test_registers_status_subcommand_with_expected_flags(self) -> None:
         """`frob status --path DIR --json --only GATE --tickets
         --no-tickets` parses into the exact `status_*` dest names
@@ -420,7 +420,7 @@ class TestAddStatusParser:
         assert args.status_no_tickets is True
 
     # frob:tests tests/test_status.py::TestAddStatusParser.test_bare_status_has_no_op_defaults kind="unit"  # noqa: E501
-    # frob:tests src/frob/_cli_parsers/_status.py::_add_status_parser kind="unit"  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_status.py::_add_status_parser kind="unit"
     def test_bare_status_has_no_op_defaults(self) -> None:
         """A bare `frob status` with no flags parses with every optional
         dest at its non-invasive default -- T-2950: `status_tickets`

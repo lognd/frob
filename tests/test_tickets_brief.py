@@ -98,7 +98,7 @@ def _write(root: Path, ticket: Ticket, slug: str = "sample-ticket") -> Path:
 # frob:ticket T-0568
 class TestParsePlaybookSections:
     # frob:ticket T-0568
-    # frob:tests src/frob/tickets/_brief.py::_parse_playbook_sections  # noqa: E501
+    # frob:tests src/frob/tickets/_brief.py::_parse_playbook_sections
     def test_parses_numbered_headings_only(self) -> None:
         # frob:tests tests/test_tickets_brief.py::TestParsePlaybookSections.test_parses_numbered_headings_only  # noqa: E501
         sections = _parse_playbook_sections(_PLAYBOOK_SAMPLE)
@@ -135,7 +135,7 @@ class TestLoadPlaybookSections:
 # frob:ticket T-0568
 class TestInferVerifyCommands:
     # frob:ticket T-0568
-    # frob:tests src/frob/tickets/_brief.py::_infer_verify_commands  # noqa: E501
+    # frob:tests src/frob/tickets/_brief.py::_infer_verify_commands
     def test_scope_naming_tests_dir_is_used_directly(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestInferVerifyCommands.test_scope_naming_tests_dir_is_used_directly  # noqa: E501
         ticket = _ticket(scope=("tests/test_foo.py",))
@@ -295,10 +295,10 @@ class TestBriefCli:
 
 
 # frob:ticket T-1243
-# frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
+# frob:tests src/frob/tickets/_brief.py::cluster_descendants
 class TestClusterDescendants:
     # frob:ticket T-1243
-    # frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
+    # frob:tests src/frob/tickets/_brief.py::cluster_descendants
     def test_dependency_order_respects_intra_cluster_blocked_by(
         self, tmp_path: Path
     ) -> None:
@@ -321,7 +321,7 @@ class TestClusterDescendants:
         assert [t.id for t in members] == ["T-0003", "T-0002"]
 
     # frob:ticket T-1243
-    # frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
+    # frob:tests src/frob/tickets/_brief.py::cluster_descendants
     def test_excludes_leaf_blocked_from_outside_the_cluster(
         self, tmp_path: Path
     ) -> None:
@@ -339,7 +339,7 @@ class TestClusterDescendants:
         assert members == ()
 
     # frob:ticket T-1243
-    # frob:tests src/frob/tickets/_brief.py::cluster_descendants  # noqa: E501
+    # frob:tests src/frob/tickets/_brief.py::cluster_descendants
     def test_unknown_cluster_returns_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_unknown_cluster_returns_empty  # noqa: E501
         from frob.tickets import load_queue
@@ -352,7 +352,7 @@ class TestClusterDescendants:
 # frob:ticket T-1243
 class TestClusterUnionScope:
     # frob:ticket T-1243
-    # frob:tests src/frob/tickets/_brief.py::cluster_union_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_brief.py::cluster_union_scope
     def test_deduplicates_and_preserves_first_seen_order(self) -> None:
         # frob:tests tests/test_tickets_brief.py::TestClusterUnionScope.test_deduplicates_and_preserves_first_seen_order  # noqa: E501
         members = (
@@ -366,7 +366,7 @@ class TestClusterUnionScope:
 class TestClusterBrief:
     # frob:ticket T-1243
     # frob:tests src/frob/tickets/_reporting.py::brief_cluster
-    # frob:tests src/frob/tickets/_brief.py::compose_cluster_brief  # noqa: E501
+    # frob:tests src/frob/tickets/_brief.py::compose_cluster_brief
     def test_composes_one_briefing_for_the_whole_cluster(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
         _write(

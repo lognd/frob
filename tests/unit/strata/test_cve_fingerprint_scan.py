@@ -40,7 +40,7 @@ class TestScanTextForFingerprints:
     """`scan_text_for_fingerprints` (`frob.strata._cve_fingerprint`)."""
 
     # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints.test_smelly_text_fires  # noqa: E501
-    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints  # noqa: E501
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints
     def test_smelly_text_fires(self):
         hits = scan_text_for_fingerprints(_SMELLY_PYTHON, "python", _FINGERPRINTS)
         assert len(hits) == 1
@@ -50,7 +50,7 @@ class TestScanTextForFingerprints:
         assert hits[0].needle == "shell=True"
 
     # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints.test_clean_text_does_not_fire  # noqa: E501
-    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints  # noqa: E501
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints
     def test_clean_text_does_not_fire(self):
         hits = scan_text_for_fingerprints(_CLEAN_PYTHON, "python", _FINGERPRINTS)
         assert hits == ()
@@ -103,7 +103,7 @@ class TestGate:
 
     # frob:tests \
     # tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_smelly_file_fires
-    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate  # noqa: E501
+    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate
     def test_smelly_file_fires(self, tmp_path: Path):
         repo = _init_git_repo(tmp_path)
         (repo / "smelly.py").write_text(_SMELLY_PYTHON, encoding="utf-8")
@@ -116,7 +116,7 @@ class TestGate:
         assert violations[0].line == 1
         assert "FP-EXEC-SHELL-001" in violations[0].message
 
-    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate  # noqa: E501
+    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate
     # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_clean_file_does_not_fire  # noqa: E501
     def test_clean_file_does_not_fire(self, tmp_path: Path):
         repo = _init_git_repo(tmp_path)
@@ -125,7 +125,7 @@ class TestGate:
 
         violations = cve_fingerprint_scan_gate(repo)
         assert violations == ()
-# frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate  # noqa: E501
+# frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate
 
     # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_self_excluded_files_not_scanned  # noqa: E501
     def test_self_excluded_files_not_scanned(self, tmp_path: Path):
@@ -156,7 +156,7 @@ class TestGate:
 
     # frob:ticket T-0897
     # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_undecodable_file_fires_parse001  # noqa: E501
-    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate  # noqa: E501
+    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate
     def test_undecodable_file_fires_parse001(self, tmp_path: Path):
         """A `.py` file with bytes that are not valid UTF-8 fires PARSE001
         instead of being silently dropped from the scan with zero
@@ -173,7 +173,7 @@ class TestGate:
 
     # frob:ticket T-0897
     # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_undecodable_file_under_graph_exclude_is_silent  # noqa: E501
-    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate  # noqa: E501
+    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate
     def test_undecodable_file_under_graph_exclude_is_silent(self, tmp_path: Path):
         """An undecodable file under a `[graph].exclude` glob (frob.toml)
         does NOT fire PARSE001 -- that directory is already carved out of

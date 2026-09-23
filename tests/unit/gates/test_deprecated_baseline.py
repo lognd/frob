@@ -134,7 +134,7 @@ class TestFileReferenceCounts:
     """`file_reference_counts`: projects a `file:line` reference set down
     to per-file counts, dropping line numbers (T-1052)."""
 
-    # frob:tests src/frob/gates/_deprecated_baseline.py::file_reference_counts  # noqa: E501
+    # frob:tests src/frob/gates/_deprecated_baseline.py::file_reference_counts
     def test_buckets_by_file(self) -> None:
         """T-1052: two references in the same file bucket to one count of
         2; a lone reference in another file buckets to 1 -- line numbers
@@ -177,14 +177,14 @@ class TestDeprecatedBaselineLock:
 class TestLoadSave:
     """`load_deprecated_baseline`/`save_deprecated_baseline`."""
 
-    # frob:tests src/frob/gates/_deprecated_baseline.py::load_deprecated_baseline  # noqa: E501
+    # frob:tests src/frob/gates/_deprecated_baseline.py::load_deprecated_baseline
     def test_missing_file_is_empty(self, tmp_path: Path) -> None:
         """T-0639: no committed lock file yet is a valid, empty baseline."""
         # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestLoadSave.test_missing_file_is_empty  # noqa: E501
         lock = load_deprecated_baseline(tmp_path)
         assert lock.entries == ()
 
-    # frob:tests src/frob/gates/_deprecated_baseline.py::save_deprecated_baseline  # noqa: E501
+    # frob:tests src/frob/gates/_deprecated_baseline.py::save_deprecated_baseline
     def test_save_then_load_round_trips(self, tmp_path: Path) -> None:
         """T-0639: a saved lock loads back byte-identical in content, sorted
         deterministically."""
@@ -216,7 +216,7 @@ class TestTighten:
     """`tighten_deprecated_baseline`: seed-once, shrink-only, drop-if-gone
     -- now on the per-file-count key shape (T-1052)."""
 
-    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
+    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline
     def test_first_seen_symbol_is_seeded_whole(self, tmp_path: Path) -> None:
         """T-0639: a symbol never baselined before is accepted whole, not
         flagged -- legacy callers at declaration time are not "new"."""
@@ -248,7 +248,7 @@ class TestTighten:
         entry = tightened.for_symbol("src/a.py::helper")
         assert entry is not None
         assert entry.references == ("src/b.py#1",)
-# frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
+# frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline
 
     def test_shrinkage_drops_stale_references(self, tmp_path: Path) -> None:
         """T-0639: a referencing file present in the baseline but no longer
@@ -290,10 +290,10 @@ class TestTighten:
         tightened = tighten_deprecated_baseline(tmp_path, current)
         entry = tightened.for_symbol("src/a.py::helper")
         assert entry is not None
-        # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
+        # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline
         assert entry.file_counts() == {"src/b.py": 1}
 
-    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
+    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline
     def test_never_absorbs_a_new_reference(self, tmp_path: Path) -> None:
         """T-0639: a new referencing file observed now but absent from the
         baseline is NOT silently absorbed -- tighten only ever shrinks an
@@ -339,7 +339,7 @@ class TestTighten:
         assert entry is not None
         assert entry.file_counts() == {"src/b.py": 1}
 
-    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline  # noqa: E501
+    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline
     def test_symbol_no_longer_deprecated_is_dropped(self, tmp_path: Path) -> None:
         """Asserts a baselined symbol absent from `current` (directive
         removed, or symbol deleted) drops out of the baseline entirely.
@@ -376,7 +376,7 @@ class TestDepr005ViolationsGrowth:
             "    return x\n"
         )
 
-    # frob:tests src/frob/gates/_debt_deprecated.py::_depr005_violations kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_debt_deprecated.py::_depr005_violations kind="unit"
     def test_same_count_as_baseline_does_not_fire(self, tmp_path: Path) -> None:
         """T-1052: a file whose CURRENT count equals its baselined count
         does not fire -- proves the comparison is a strict `>`, not `>=`
@@ -400,7 +400,7 @@ class TestDepr005ViolationsGrowth:
         violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
         assert not any(v.rule == "DEPR005" for v in violations)
 
-    # frob:tests src/frob/gates/_debt_deprecated.py::_depr005_violations kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_debt_deprecated.py::_depr005_violations kind="unit"
     def test_growth_beyond_baseline_fires_at_the_right_file_and_line(
         self, tmp_path: Path
     ) -> None:

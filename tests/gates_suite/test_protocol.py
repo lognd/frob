@@ -514,7 +514,7 @@ class TestProtocolLanguageExcuseDischarge:
     (Rust/C++/TypeScript/GC, disclosed T-0839 follow-up; see
     docs/modules/gates.md#proto002-proto003-t-0746)."""
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge
     def test_rust_drop_impl_discharges(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_discharges  # noqa: E501
@@ -524,7 +524,7 @@ class TestProtocolLanguageExcuseDischarge:
         result = rust_drop_discharge(source, "Net")
         assert result.discharged
         assert result.mechanism == "rust-drop"
-# frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge  # noqa: E501
+# frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge
 
     def test_rust_mem_forget_revokes_the_drop_discharge(self) -> None:
         # frob:tests \
@@ -540,7 +540,7 @@ class TestProtocolLanguageExcuseDischarge:
         assert not result.discharged
         assert "forget" in result.reason
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge
     def test_rust_manually_drop_revokes_the_discharge(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_manually_drop_revokes_the_discharge  # noqa: E501
@@ -555,7 +555,7 @@ class TestProtocolLanguageExcuseDischarge:
         assert not result.discharged
         assert "ManuallyDrop" in result.reason
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge
     def test_rust_no_drop_impl_is_not_discharged(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_no_drop_impl_is_not_discharged  # noqa: E501
@@ -564,7 +564,7 @@ class TestProtocolLanguageExcuseDischarge:
         result = rust_drop_discharge("struct Net;\n", "Net")
         assert not result.discharged
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::cpp_raii_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::cpp_raii_discharge
     def test_cpp_raii_destructor_discharges(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_cpp_raii_destructor_discharges  # noqa: E501
@@ -575,7 +575,7 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.discharged
         assert result.mechanism == "cpp-raii"
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::cpp_raii_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::cpp_raii_discharge
     def test_cpp_no_destructor_is_not_discharged(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_cpp_no_destructor_is_not_discharged  # noqa: E501
@@ -584,7 +584,7 @@ class TestProtocolLanguageExcuseDischarge:
         result = cpp_raii_discharge("class Net {\n};\n", "Net")
         assert not result.discharged
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::python_with_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::python_with_discharge
     def test_python_with_block_discharges(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_python_with_block_discharges  # noqa: E501
@@ -594,17 +594,17 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.discharged
         assert result.mechanism == "python-with"
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::python_with_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::python_with_discharge
     def test_python_no_with_block_is_not_discharged(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_python_no_with_block_is_not_discharged  # noqa: E501
         from frob.arch._protocol_excuse import python_with_discharge
 
         result = python_with_discharge("Net().connect()\n", "Net")
-        # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge  # noqa: E501
+        # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge
         assert not result.discharged
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge
     def test_typescript_using_discharges(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_using_discharges  # noqa: E501
@@ -614,7 +614,7 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.discharged
         assert result.mechanism == "typescript-using"
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge
     def test_typescript_try_finally_discharges(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_try_finally_discharges  # noqa: E501
@@ -625,7 +625,7 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.discharged
         assert result.mechanism == "typescript-try-finally"
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::typescript_using_discharge
     def test_typescript_bare_call_is_not_discharged(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_bare_call_is_not_discharged  # noqa: E501
@@ -634,7 +634,7 @@ class TestProtocolLanguageExcuseDischarge:
         result = typescript_using_discharge("net.connect();\n", "net")
         assert not result.discharged
 
-    # frob:tests src/frob/arch/_protocol_excuse.py::gc_finalizer_discharge  # noqa: E501
+    # frob:tests src/frob/arch/_protocol_excuse.py::gc_finalizer_discharge
     def test_gc_finalizer_never_discharges(self) -> None:
         # frob:tests \
         # tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_gc_finalizer_never_discharges  # noqa: E501

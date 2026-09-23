@@ -24,7 +24,7 @@ from frob.strata._ast import Module, ResourceDecl
 class TestNodeAccessDeclarations:
     # frob:tests \
     # tests/unit/strata/test_access.py::TestNodeAccessDeclarations.test_reads_access_attrs  # noqa: E501
-    # frob:tests src/frob/strata/_access.py::node_access_declarations  # noqa: E501
+    # frob:tests src/frob/strata/_access.py::node_access_declarations
     def test_reads_access_attrs(self):
         """`access=<resource>:<mode>` attrs read back as typed `NodeAccess`
         pairs, in declaration order."""
@@ -132,7 +132,7 @@ class TestModeConflict:
 class TestResourceContentionViolations:
     # frob:tests \
     # tests/unit/strata/test_access.py::TestResourceContentionViolations.test_two_writers_no_arbiter_fires  # noqa: E501
-    # frob:tests src/frob/strata/_access.py::resource_contention_violations  # noqa: E501
+    # frob:tests src/frob/strata/_access.py::resource_contention_violations
     def test_two_writers_no_arbiter_fires(self):
         """Two nodes with write-mode access to the same resource and no
         declared arbiter -- SYS204 fires (T-0700 acceptance criterion)."""

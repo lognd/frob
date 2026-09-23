@@ -19,7 +19,7 @@ from frob.gates._guard_closure import (
 from tests.conftest import _by_rule, _git_init, _write
 
 
-# frob:tests src/frob/gates/_guard_closure.py::guard_closure_gate  # noqa: E501
+# frob:tests src/frob/gates/_guard_closure.py::guard_closure_gate
 def test_guard001_fires_when_no_writer_reachable(tmp_path: Path) -> None:
     """Must-fire case (a): a route-reachable method reads the lockout,
     and NOTHING in the class calls the write primitive at all -- the
@@ -43,7 +43,7 @@ def test_guard001_fires_when_no_writer_reachable(tmp_path: Path) -> None:
     assert violations[0].symref == "pkg/login.py::LoginRoute"
 
 
-# frob:tests src/frob/gates/_guard_closure.py::guard_closure_gate  # noqa: E501
+# frob:tests src/frob/gates/_guard_closure.py::guard_closure_gate
 def test_guard001_quiet_when_writer_reachable_from_same_class_route(
     tmp_path: Path,
 ) -> None:
@@ -73,7 +73,7 @@ def test_guard001_quiet_when_writer_reachable_from_same_class_route(
     assert violations == []
 
 
-# frob:tests src/frob/gates/_guard_closure.py::guard_closure_gate  # noqa: E501
+# frob:tests src/frob/gates/_guard_closure.py::guard_closure_gate
 def test_guard001_fires_when_writer_reachable_only_from_a_different_class(
     tmp_path: Path,
 ) -> None:
@@ -132,7 +132,7 @@ def test_guard001_quiet_when_read_only_reachable_from_class_with_no_route(
     assert violations == []
 
 
-# frob:tests src/frob/gates/_guard_closure.py::load_guard_closure_pairs  # noqa: E501
+# frob:tests src/frob/gates/_guard_closure.py::load_guard_closure_pairs
 def test_load_guard_closure_pairs_defaults_when_unconfigured(tmp_path: Path) -> None:
     """No `frob.toml` at all falls back to the one pair this ticket's own
     motivating report named."""
@@ -144,8 +144,8 @@ def test_load_guard_closure_pairs_defaults_when_unconfigured(tmp_path: Path) -> 
     assert "route" in markers
 
 
-# frob:tests src/frob/gates/_guard_closure.py::GuardClosurePair  # noqa: E501
-# frob:tests src/frob/gates/_guard_closure.py::load_guard_closure_pairs  # noqa: E501
+# frob:tests src/frob/gates/_guard_closure.py::GuardClosurePair
+# frob:tests src/frob/gates/_guard_closure.py::load_guard_closure_pairs
 def test_load_guard_closure_pairs_reads_frob_toml(tmp_path: Path) -> None:
     """A configured `[[guard_closure.pairs]]`/`route_decorator_markers`
     fully replaces the defaults, proving this check is naming-convention-
@@ -169,7 +169,7 @@ def test_load_guard_closure_pairs_reads_frob_toml(tmp_path: Path) -> None:
     assert markers == frozenset({"endpoint"})
 
 
-# frob:tests src/frob/gates/_guard_closure.py::GuardClosurePair  # noqa: E501
+# frob:tests src/frob/gates/_guard_closure.py::GuardClosurePair
 def test_guard001_honors_configured_pair_and_route_marker(tmp_path: Path) -> None:
     """End-to-end: a project-specific pair/marker pair (not frob's
     defaults) still drives GUARD001 correctly, proving the closure logic

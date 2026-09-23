@@ -85,7 +85,7 @@ class TestReproMergeBaseRoot:
     """`_repro_merge_base_root`: prefers `FROB_WORKTREE` over `root`."""
 
     # frob:ticket T-2509
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_repro_merge_base_root  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_repro_merge_base_root
     def test_prefers_frob_worktree_env_when_set(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

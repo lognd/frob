@@ -42,7 +42,7 @@ def _ticket(**overrides: object) -> Ticket:
 # frob:ticket T-2480
 class TestBugReproOutcomeAtRefPublic:
     # frob:ticket T-2480
-    # frob:tests src/frob/gates/_bug_repro.py::bug_repro_outcome_at_ref  # noqa: E501
+    # frob:tests src/frob/gates/_bug_repro.py::bug_repro_outcome_at_ref
     def test_wraps_the_private_classifier(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_wraps_the_private_classifier  # noqa: E501
         with patch(
@@ -83,7 +83,7 @@ class TestBugReproOutcomeAtRefPublic:
 
 
 class TestDesignatedReproTestPublic:
-    # frob:tests src/frob/gates/_bug_repro.py::designated_repro_test  # noqa: E501
+    # frob:tests src/frob/gates/_bug_repro.py::designated_repro_test
     def test_wraps_the_private_resolver(self) -> None:
         # frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestDesignatedReproTestPublic.test_wraps_the_private_resolver  # noqa: E501
         ticket = _ticket(designated_repro_test="tests/test_y.py::test_other")

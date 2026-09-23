@@ -25,7 +25,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestMissingOwner:
     # frob:tests \
     # tests/unit/strata/test_ssot.py::TestMissingOwner.test_multi_writer_store_without_owner_fires  # noqa: E501
-    # frob:tests src/frob/strata/_ssot.py::check_ssot_obligations  # noqa: E501
+    # frob:tests src/frob/strata/_ssot.py::check_ssot_obligations
     def test_multi_writer_store_without_owner_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

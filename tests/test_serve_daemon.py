@@ -138,7 +138,7 @@ class TestPollVerifyWorker:
         # debounce/floor decision lives inside tick() itself, not here.
         assert len(tick_calls) == 2
 
-    # frob:tests src/frob/serve/_daemon.py::_poll_verify_worker kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_daemon.py::_poll_verify_worker kind="unit"
     def test_tick_result_is_returned_when_a_run_happens(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned_when_a_run_happens  # noqa: E501
@@ -270,7 +270,7 @@ class TestPollRebaseBot:
         assert warnings == ()
 
     # frob:ticket T-0782
-    # frob:tests src/frob/serve/_daemon.py::_poll_rebase_bot kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_daemon.py::_poll_rebase_bot kind="unit"
     def test_ttl_expired_lease_skipped_and_logged_once(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -382,7 +382,7 @@ class TestPollRebaseBotLeaseInjectionGuard:
 
 
 class TestRunDaemonCycle:
-    # frob:tests src/frob/serve/_daemon.py::_run_daemon_cycle kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_daemon.py::_run_daemon_cycle kind="unit"
     def test_runs_both_jobs_and_returns_status(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status  # noqa: E501

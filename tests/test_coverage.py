@@ -84,7 +84,7 @@ class TestResolveCovTarget:
     coverage` in a repo whose package is NOT `frob` measures that repo's
     own package."""
 
-    # frob:tests src/frob/testing/_coverage_refresh.py::_resolve_cov_target kind="unit"  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::_resolve_cov_target kind="unit"
     def test_non_frob_repo_resolves_its_own_package(self, tmp_path: Path) -> None:
         """A repo whose `pyproject.toml [project].name` is `lograder`
         (src-layout, `src/lograder/`) resolves to `src/lograder`, not
@@ -122,7 +122,7 @@ class TestResolveCovTarget:
 
         assert _refresh_mod._resolve_cov_target(tmp_path) == "widgets"
 
-    # frob:tests src/frob/testing/_coverage_refresh.py::_resolve_cov_target kind="unit"  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::_resolve_cov_target kind="unit"
     def test_unresolvable_name_falls_back_to_default(self, tmp_path: Path) -> None:
         """No `pyproject.toml` at all: falls back to `_DEFAULT_COV_
         TARGET` ("src/frob") rather than raising -- a best-effort
@@ -427,12 +427,12 @@ class TestCoverageFileCache:
     `coverage.xml` or pytest run involved."""
 
     # frob:ticket T-1517
-    # frob:tests src/frob/testing/_coverage_cache.py::load_file_cache  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_cache.py::load_file_cache
     def test_load_missing_returns_empty(self, tmp_path: Path) -> None:
         """No cache file on disk is a cold start, not an error."""
         assert load_file_cache(tmp_path) == {}
 
-    # frob:tests src/frob/testing/_coverage_cache.py::fill_from_cache  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_cache.py::fill_from_cache
     # frob:ticket T-1517
     def test_fill_from_cache_backfills_unchanged_file(self, tmp_path: Path) -> None:
         """A file absent from this run's `module_line` but present in the
@@ -449,7 +449,7 @@ class TestCoverageFileCache:
         assert merged.module_line["src/foo.py"] == 87.5
 
     # frob:ticket T-1517
-    # frob:tests src/frob/testing/_coverage_cache.py::fill_from_cache  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_cache.py::fill_from_cache
     def test_fill_from_cache_ignores_stale_hash(self, tmp_path: Path) -> None:
         """A file whose current content hash no longer matches the cached
         one is left unbackfilled -- a real miss, not something a stale
@@ -464,7 +464,7 @@ class TestCoverageFileCache:
         assert "src/foo.py" not in merged.module_line
 
     # frob:ticket T-1517
-    # frob:tests src/frob/testing/_coverage_cache.py::fill_from_cache  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_cache.py::fill_from_cache
     def test_fill_from_cache_never_overwrites_fresh_data(self, tmp_path: Path) -> None:
         """A file this run DID measure keeps its fresh value even when the
         cache disagrees -- fresh data always wins."""
@@ -478,7 +478,7 @@ class TestCoverageFileCache:
         assert merged.module_line["src/foo.py"] == 50.0
 
     # frob:ticket T-1517
-    # frob:tests src/frob/testing/_coverage_cache.py::update_file_cache  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_cache.py::update_file_cache
     def test_update_file_cache_persists_measured_files(self, tmp_path: Path) -> None:
         """`update_file_cache` writes every measured file's `(content_hash,
         line_pct)` and `load_file_cache` reads it back."""
@@ -489,7 +489,7 @@ class TestCoverageFileCache:
         assert cache["src/foo.py"]["line_pct"] == 42.0
 
     # frob:ticket T-1517
-    # frob:tests src/frob/testing/_coverage_cache.py::update_file_cache  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_cache.py::update_file_cache
     def test_update_file_cache_roundtrips_through_fill_from_cache(
         self, tmp_path: Path
     ) -> None:
@@ -741,11 +741,11 @@ class TestNativeCoverageRefresh:
             return Ok(Unit()) if ok else Err("boom")
 
         monkeypatch.setattr(coverage_mod, "stamp_coverage", _fake_stamp)
-        # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
+        # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh
         return calls
 
     # frob:ticket T-1516
-    # frob:tests src/frob/testing/_coverage_refresh.py::_pytest_argv  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::_pytest_argv
     def test_full_run_when_no_stamp_exists(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -764,13 +764,13 @@ class TestNativeCoverageRefresh:
         assert result.is_ok
         assert "pytest" in calls[0]
         assert "--cov-append" not in calls[0]
-        # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
+        # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh
         assert calls[1] == ["coverage", "xml", "-i"]
         assert len(stamp_calls) == 1
 
     # frob:ticket T-1516
-    # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
-    # frob:tests src/frob/testing/_coverage_refresh.py::_pytest_argv  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh
+    # frob:tests src/frob/testing/_coverage_refresh.py::_pytest_argv
     def test_incremental_run_uses_touched_set_targets(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -797,7 +797,7 @@ class TestNativeCoverageRefresh:
         assert "tests/test_foo.py::test_widget" in calls[0]
 
     # frob:ticket T-1516
-    # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh
     def test_nothing_touched_only_restamps(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -827,7 +827,7 @@ class TestNativeCoverageRefresh:
         assert len(stamp_calls) == 1
 
     # frob:ticket T-1516
-    # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::native_coverage_refresh
     def test_red_suite_keeps_coverage_data(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -969,11 +969,11 @@ class TestSubprocessCoverageRc:
     TestSubprocessRcIsAbsoluteAndConcurrencyAware` class made, now proven
     directly against `_write_coverage_subprocess_rc`/
     `_pytest_subprocess_env` instead of a retired Makefile recipe."""
-# frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc  # noqa: E501
+# frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc
 
     # frob:ticket T-1235
     # frob:ticket T-2527
-    # frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc
     def test_rc_uses_absolute_source_and_data_file(self, tmp_path: Path) -> None:
         """`source`/`data_file` are absolute paths under `root`, not the
         relative `pyproject.toml` values -- a subprocess spawned with a
@@ -991,7 +991,7 @@ class TestSubprocessCoverageRc:
 
     # frob:ticket T-1235
     # frob:ticket T-2527
-    # frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc
     def test_rc_declares_multiprocessing_and_sigterm(self, tmp_path: Path) -> None:
         """`concurrency = multiprocessing, thread` so a
         `ProcessPoolExecutor` gate worker's execution is recorded (the
@@ -1038,7 +1038,7 @@ class TestSubprocessCoverageRc:
 
     # frob:ticket T-1235
     # frob:ticket T-2527
-    # frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc
     def test_rc_remaps_paths_back_to_source(self, tmp_path: Path) -> None:
         """`[paths] source` remaps the relative `src/frob`/`*/src/frob`
         keys back onto the same canonical path at combine time, so this
@@ -1728,7 +1728,7 @@ class TestNeutralizedAddoptsPytest11Entrypoint:
     `pytest_load_initial_conftests`) actually fires for a plain CLI
     invocation, not just when this module's own code calls itself."""
 
-    # frob:tests src/frob/testing/_coverage_refresh.py::pytest_load_initial_conftests  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_refresh.py::pytest_load_initial_conftests
     def test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override(
         self, tmp_path: Path
     ) -> None:
@@ -1833,7 +1833,7 @@ class TestRunCoverageWaitNativeDefault:
     acceptance[4] describes, with zero call-site changes required."""
 
     # frob:ticket T-1516
-    # frob:tests src/frob/testing/_coverage_wait.py::run_coverage_wait  # noqa: E501
+    # frob:tests src/frob/testing/_coverage_wait.py::run_coverage_wait
     def test_default_command_none_calls_native_refresh(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

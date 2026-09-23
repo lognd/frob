@@ -29,8 +29,8 @@ class TestTypeDispatchSmell:
     (`frob.arch._patterns.iter_type_switch_chains`) and is ALSO reported as
     an OCP violation, not just a pattern recommendation."""
 
-    # frob:tests src/frob/arch/_ocp.py::_check_type_dispatch_smell  # noqa: E501
-    # frob:tests src/frob/arch/_patterns.py::iter_type_switch_chains  # noqa: E501
+    # frob:tests src/frob/arch/_ocp.py::_check_type_dispatch_smell
+    # frob:tests src/frob/arch/_patterns.py::iter_type_switch_chains
     def test_isinstance_chain_flags_ocp_violation(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()
@@ -91,7 +91,7 @@ class TestNonExhaustiveEnumMatch:
     """OCP: a `match`/`case` over a locally-known enum missing a member and
     carrying no wildcard/default arm."""
 
-    # frob:tests src/frob/arch/_ocp.py::_check_non_exhaustive_enum_match  # noqa: E501
+    # frob:tests src/frob/arch/_ocp.py::_check_non_exhaustive_enum_match
     def test_missing_member_flagged(self, tmp_path: Path) -> None:
         src_dir = tmp_path / "src"
         src_dir.mkdir()

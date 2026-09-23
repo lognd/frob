@@ -26,7 +26,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestMissingFallback:
     # frob:tests \
     # tests/unit/strata/test_fallback.py::TestMissingFallback.test_critical_node_without_fallback_fires  # noqa: E501
-    # frob:tests src/frob/strata/_fallback.py::check_fallback_obligations  # noqa: E501
+    # frob:tests src/frob/strata/_fallback.py::check_fallback_obligations
     def test_critical_node_without_fallback_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="payments", trust="untrusted", attrs=("critical",)),),

@@ -99,11 +99,11 @@ def test_missing_section_defaults(tmp_path: Path) -> None:
     (tmp_path / "frob.toml").write_text('[graph]\nexclude = ["vendor/**"]\n')
     cfg = load_arch_config(tmp_path)
     assert cfg["max_function_lines"] == 60
-    # frob:tests src/frob/repo_meta.py::load_arch_config  # noqa: E501
+    # frob:tests src/frob/repo_meta.py::load_arch_config
     assert cfg["max_file_lines"] == 800
 
 
-# frob:tests src/frob/repo_meta.py::load_arch_config  # noqa: E501
+# frob:tests src/frob/repo_meta.py::load_arch_config
 def test_partial_override(tmp_path: Path) -> None:
     """Keys omitted from a present [arch] table keep their calibrated default."""
     (tmp_path / "frob.toml").write_text("[arch]\nmax_file_lines = 1200\n")
@@ -128,7 +128,7 @@ def _write_frob_pyproject(root: Path, version: str) -> None:
     )
 
 
-# frob:tests src/frob/repo_meta.py::stale_install_warning  # noqa: E501
+# frob:tests src/frob/repo_meta.py::stale_install_warning
 def test_stale_install_warning_flags_version_mismatch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -154,7 +154,7 @@ def test_stale_install_warning_flags_version_mismatch(
     assert "0.27.0" in warning
 
 
-# frob:tests src/frob/repo_meta.py::stale_install_warning  # noqa: E501
+# frob:tests src/frob/repo_meta.py::stale_install_warning
 def test_stale_install_warning_none_for_editable_checkout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -175,7 +175,7 @@ def test_stale_install_warning_none_for_editable_checkout(
     assert stale_install_warning(tmp_path) is None
 
 
-# frob:tests src/frob/repo_meta.py::stale_install_warning  # noqa: E501
+# frob:tests src/frob/repo_meta.py::stale_install_warning
 def test_stale_install_warning_none_when_versions_match(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -196,8 +196,8 @@ def test_stale_install_warning_none_when_versions_match(
 
 
 # frob:ticket T-1218
-# frob:tests src/frob/repo_meta.py::stale_binary_warning  # noqa: E501
-# frob:tests src/frob/repo_meta.py::declared_min_frob_version  # noqa: E501
+# frob:tests src/frob/repo_meta.py::stale_binary_warning
+# frob:tests src/frob/repo_meta.py::declared_min_frob_version
 def test_stale_binary_warning_flags_version_below_floor(tmp_path: Path) -> None:
     """T-1218: the invoked frob's own version reading below a repo's
     declared frob.toml min_frob_version floor gets a loud warning naming
@@ -212,7 +212,7 @@ def test_stale_binary_warning_flags_version_below_floor(tmp_path: Path) -> None:
 
 
 # frob:ticket T-1218
-# frob:tests src/frob/repo_meta.py::stale_binary_warning  # noqa: E501
+# frob:tests src/frob/repo_meta.py::stale_binary_warning
 def test_stale_binary_warning_none_when_no_floor_declared(tmp_path: Path) -> None:
     """No warning when frob.toml declares no min_frob_version at all (the
     overwhelming majority of repos today) -- absence of a floor is not a
@@ -223,7 +223,7 @@ def test_stale_binary_warning_none_when_no_floor_declared(tmp_path: Path) -> Non
 
 
 # frob:ticket T-1218
-# frob:tests src/frob/repo_meta.py::stale_binary_warning  # noqa: E501
+# frob:tests src/frob/repo_meta.py::stale_binary_warning
 def test_stale_binary_warning_none_when_version_meets_floor(tmp_path: Path) -> None:
     """No warning when the invoked version meets or exceeds the declared
     floor -- ordering, not equality, and the floor itself passes."""

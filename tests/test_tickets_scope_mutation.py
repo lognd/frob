@@ -57,7 +57,7 @@ class TestScopeLeaseConflict:
     predicate `mutate_scope`'s `--add` validation and `frob ticket start`'s
     own grant-time refusal both call."""
 
-    # frob:tests src/frob/tickets/_scope.py::scope_lease_conflict  # noqa: E501
+    # frob:tests src/frob/tickets/_scope.py::scope_lease_conflict
     def test_no_collision_is_none(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_no_collision_is_none  # noqa: E501
@@ -73,7 +73,7 @@ class TestScopeLeaseConflict:
         assert conflict is None
         assert holder.state is TicketState.IN_PROGRESS
 
-    # frob:tests src/frob/tickets/_scope.py::scope_lease_conflict  # noqa: E501
+    # frob:tests src/frob/tickets/_scope.py::scope_lease_conflict
     def test_first_colliding_entry_wins(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_first_colliding_entry_wins  # noqa: E501
@@ -150,9 +150,9 @@ class TestScopeLeaseConflict:
         assert holder_glob == "src/frob/gates/**"
 
 
-# frob:tests src/frob/tickets/_scope.py::mutate_scope  # noqa: E501
+# frob:tests src/frob/tickets/_scope.py::mutate_scope
 class TestMutateScope:
-    # frob:tests src/frob/tickets/_scope.py::mutate_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_scope.py::mutate_scope
     def test_add_free_path_granted(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_granted  # noqa: E501
@@ -173,7 +173,7 @@ class TestMutateScope:
         assert entry.reason == "new subcommand registration"
         assert entry.at == date.today()
 
-    # frob:tests src/frob/tickets/_scope.py::mutate_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_scope.py::mutate_scope
     def test_add_leased_path_rejected_names_holder(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_leased_path_rejected_names_holder  # noqa: E501
         holder = _make_ticket(
@@ -230,7 +230,7 @@ class TestMutateScope:
         )
         assert result.is_err and result.danger_err == TicketError.ScopeLeaseConflict
 
-    # frob:tests src/frob/tickets/_scope.py::mutate_scope  # noqa: E501
+    # frob:tests src/frob/tickets/_scope.py::mutate_scope
     def test_remove_frees_path_for_other_doable(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_frees_path_for_other_doable  # noqa: E501
         from frob.tickets import doable
@@ -334,7 +334,7 @@ class TestNewFileCarveOut:
     """
 
     # frob:ticket T-0422
-    # frob:tests src/frob/tickets/_scope.py::_scope_add_conflicts  # noqa: E501
+    # frob:tests src/frob/tickets/_scope.py::_scope_add_conflicts
     def test_new_file_under_broad_lease_is_exempt(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_under_broad_lease_is_exempt  # noqa: E501
         # The exact T-0561 repro shape: a broad tests/** epic in progress,
@@ -353,7 +353,7 @@ class TestNewFileCarveOut:
         assert "tests/unit/test_app_runners_batch6.py" in result.danger_ok.scope
         assert holder.state is TicketState.IN_PROGRESS
 
-    # frob:tests src/frob/tickets/_scope.py::_scope_add_conflicts  # noqa: E501
+    # frob:tests src/frob/tickets/_scope.py::_scope_add_conflicts
     # frob:ticket T-0422
     def test_existing_file_under_broad_lease_still_conflicts(
         self, tmp_path: Path
@@ -403,7 +403,7 @@ class TestNewFileCarveOut:
         assert holder.state is TicketState.IN_PROGRESS
 
     # frob:ticket T-0422
-    # frob:tests src/frob/tickets/_scope.py::_scope_add_conflicts  # noqa: E501
+    # frob:tests src/frob/tickets/_scope.py::_scope_add_conflicts
     def test_new_file_exact_match_of_holder_scope_still_conflicts(
         self, tmp_path: Path
     ) -> None:
@@ -428,7 +428,7 @@ class TestNewFileCarveOut:
 
 
 class TestGlobIsSubset:
-    # frob:tests src/frob/tickets/_models.py::_glob_is_subset  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::_glob_is_subset
     def test_concrete_path_under_double_star_is_subset(self) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_concrete_path_under_double_star_is_subset  # noqa: E501
         assert _glob_is_subset("src/frob/strata/_host.py", "src/frob/strata/**")
@@ -437,7 +437,7 @@ class TestGlobIsSubset:
         # frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_concrete_path_outside_broad_glob_is_not_subset  # noqa: E501
         assert not _glob_is_subset("src/frob/gates/foo.py", "src/frob/strata/**")
 
-    # frob:tests src/frob/tickets/_models.py::_glob_is_subset  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::_glob_is_subset
     def test_wildcard_bearing_narrow_is_never_subset(self) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_wildcard_bearing_narrow_is_never_subset  # noqa: E501
         # Conservative by design: a narrow glob that still carries a
@@ -447,7 +447,7 @@ class TestGlobIsSubset:
 
 
 class TestScopeCli:
-    # frob:tests src/frob/app/ticket_runner/_mutate.py::_apply_demote_to_evidence_only  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_apply_demote_to_evidence_only
     def test_cli_add_free_path(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_free_path
@@ -463,7 +463,7 @@ class TestScopeCli:
         queue = load_queue(tmp_path).danger_ok
         assert "src/frob/__main__.py" in queue.tickets[ticket.id].scope
 
-    # frob:tests src/frob/app/ticket_runner/_mutate.py::_apply_demote_to_evidence_only  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_mutate.py::_apply_demote_to_evidence_only
     def test_cli_add_leased_path_exits_nonzero(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_leased_path_exits_nonzero  # noqa: E501
         _make_ticket(

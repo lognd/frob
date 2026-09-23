@@ -97,7 +97,7 @@ class TestScanForLiveWorktreeProcess:
     """The shared `/proc` primitive both T-1715 and T-1739 call."""
 
     # frob:ticket T-3763
-    # frob:tests src/frob/tickets/_leases.py::scan_for_live_worktree_process  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::scan_for_live_worktree_process
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="reads /proc/<pid>/cwd directly; Linux-only primitive",
@@ -121,7 +121,7 @@ class TestScanForLiveWorktreeProcess:
             holder.kill()
             holder.wait(timeout=5)
 
-    # frob:tests src/frob/tickets/_leases.py::scan_for_live_worktree_process  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::scan_for_live_worktree_process
     def test_none_when_no_process_matches(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess.test_none_when_no_process_matches  # noqa: E501
         wt = _add_worktree(repo, "wt1")
@@ -129,7 +129,7 @@ class TestScanForLiveWorktreeProcess:
 
 
 class TestLiveLeaseForWorktree:
-    # frob:tests src/frob/tickets/_leases.py::_live_lease_for_worktree  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_live_lease_for_worktree
     def test_finds_a_live_lease_pinned_to_the_worktree(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestLiveLeaseForWorktree.test_finds_a_live_lease_pinned_to_the_worktree  # noqa: E501
         wt = _add_worktree(repo, "wt1")
@@ -164,7 +164,7 @@ class TestRefuseIfWorktreeInUse:
     """The combined T-1715/T-1739 refusal function."""
 
     # frob:ticket T-3763
-    # frob:tests src/frob/tickets/_leases.py::refuse_if_worktree_in_use  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::refuse_if_worktree_in_use
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",
@@ -191,7 +191,7 @@ class TestRefuseIfWorktreeInUse:
             holder.kill()
             holder.wait(timeout=5)
 
-    # frob:tests src/frob/tickets/_leases.py::refuse_if_worktree_in_use  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::refuse_if_worktree_in_use
     def test_refuses_on_a_live_lease(
         self,
         repo: Path,
@@ -216,7 +216,7 @@ class TestRefuseIfWorktreeInUse:
         assert result.danger_err == WorktreeInUseError.LiveLease
         assert "T-0900" in caplog.text
 
-    # frob:tests src/frob/tickets/_leases.py::refuse_if_worktree_in_use  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::refuse_if_worktree_in_use
     def test_allows_when_neither_signal_fires(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse.test_allows_when_neither_signal_fires  # noqa: E501
         wt = _add_worktree(repo, "wt1")
@@ -227,7 +227,7 @@ class TestFinishWorktree:
     """`_finish_worktree`'s own liveness-refusal wiring."""
 
     # frob:ticket T-3763
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",
@@ -253,7 +253,7 @@ class TestFinishWorktree:
             holder.kill()
             holder.wait(timeout=5)
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree
     def test_removes_a_worktree_with_no_live_process(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_removes_a_worktree_with_no_live_process  # noqa: E501
         wt = _add_worktree(repo, "wt1")
@@ -261,7 +261,7 @@ class TestFinishWorktree:
         assert not wt.exists()
 
     # frob:ticket T-3763
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",
@@ -291,7 +291,7 @@ class TestFinishWorktree:
             holder.wait(timeout=5)
 
     # frob:ticket T-3763
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",
@@ -321,7 +321,7 @@ class TestFinishWorktree:
             holder.kill()
             holder.wait(timeout=5)
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_worktree
     def test_finish_worktree_force_is_a_no_op_reason_wise_when_worktree_is_free(
         self, repo: Path
     ) -> None:

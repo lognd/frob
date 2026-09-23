@@ -45,7 +45,7 @@ class TestFindHelpCitations:
     """
 
     # frob:tests tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindHelpCitations.test_positive_control_plants_a_citation_the_detector_must_report  # noqa: E501
-    # frob:tests scripts/count_ticket_citations.py::find_help_citations  # noqa: E501
+    # frob:tests scripts/count_ticket_citations.py::find_help_citations
     def test_positive_control_plants_a_citation_the_detector_must_report(
         self, tmp_path: Path
     ) -> None:
@@ -76,7 +76,7 @@ class TestFindHelpCitations:
         assert "T-1234" in tokens
 
     # frob:tests tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindHelpCitations.test_docstring_and_comment_citations_are_not_counted  # noqa: E501
-    # frob:tests scripts/count_ticket_citations.py::find_help_citations  # noqa: E501
+    # frob:tests scripts/count_ticket_citations.py::find_help_citations
     def test_docstring_and_comment_citations_are_not_counted(
         self, tmp_path: Path
     ) -> None:
@@ -109,7 +109,7 @@ class TestFindDocsCitations:
     """
 
     # frob:tests tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations.test_prose_citation_is_reported  # noqa: E501
-    # frob:tests scripts/count_ticket_citations.py::find_docs_citations  # noqa: E501
+    # frob:tests scripts/count_ticket_citations.py::find_docs_citations
     def test_prose_citation_is_reported(self, tmp_path: Path) -> None:
         """A plain prose mention of a real-shaped ticket id is a finding."""
         docs_dir = tmp_path / "docs"
@@ -125,7 +125,7 @@ class TestFindDocsCitations:
         assert "T-1234" in tokens
 
     # frob:tests tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations.test_directive_grammar_example_is_exempt  # noqa: E501
-    # frob:tests scripts/count_ticket_citations.py::find_docs_citations  # noqa: E501
+    # frob:tests scripts/count_ticket_citations.py::find_docs_citations
     def test_directive_grammar_example_is_exempt(self, tmp_path: Path) -> None:
         """A line documenting the `frob:` directive grammar itself (an
         HTML-comment example naming a real-shaped ticket id as syntax,
@@ -149,7 +149,7 @@ class TestMain:
     """
 
     # frob:tests tests/unit/coordinator_suite/test_count_ticket_citations.py::TestMain.test_help_scope_prints_the_count  # noqa: E501
-    # frob:tests scripts/count_ticket_citations.py::main  # noqa: E501
+    # frob:tests scripts/count_ticket_citations.py::main
     def test_help_scope_prints_the_count(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:

@@ -65,7 +65,7 @@ class TestToolIdentity:
 class TestResolveProjectTool:
     """`resolve_project_tool` -- resolved path + version, both Ok/Err."""
 
-    # frob:tests src/frob/process/_project_tool.py::resolve_project_tool  # noqa: E501
+    # frob:tests src/frob/process/_project_tool.py::resolve_project_tool
     def test_ok_resolves_path_and_version(self, tmp_path: Path) -> None:
         """Two successful spawns yield `Ok(ToolIdentity(...))` built from
         their stdout."""
@@ -85,7 +85,7 @@ class TestResolveProjectTool:
         assert identity.path == "/proj/.venv/bin/ty"
         assert identity.version == "ty 0.0.46"
 
-    # frob:tests src/frob/process/_project_tool.py::ProjectToolError  # noqa: E501
+    # frob:tests src/frob/process/_project_tool.py::ProjectToolError
     def test_which_spawn_failure_is_err(self, tmp_path: Path) -> None:
         """A failed `which`-probe spawn is `Err(ResolveFailed)`, never a
         raised exception."""

@@ -93,8 +93,8 @@ class TestBodyAmend:
         assert blank.is_err
         assert blank.danger_err is TicketError.BodyReasonMissing
 
-    # frob:tests src/frob/tickets/_setters.py::set_body  # noqa: E501
-    # frob:tests src/frob/tickets/_models.py::BodyChangeEntry  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_body
+    # frob:tests src/frob/tickets/_models.py::BodyChangeEntry
     def test_append_records_body_change_entry(self, tmp_path: Path) -> None:
         """A successful `append` appends exactly one `BodyChangeEntry` to
         `ticket.body_changes` recording mode/reason -- the audit trail

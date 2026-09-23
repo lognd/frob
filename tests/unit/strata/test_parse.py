@@ -293,7 +293,7 @@ class TestStrataCoreImportError:
 
     # frob:ticket T-2707
     # frob:tests tests/unit/strata/test_parse.py::TestStrataCoreImportError.test_none_when_import_succeeded  # noqa: E501
-    # frob:tests src/frob/strata/_parse.py::strata_core_import_error  # noqa: E501
+    # frob:tests src/frob/strata/_parse.py::strata_core_import_error
     def test_none_when_import_succeeded(self) -> None:
         """POSITIVE CONTROL (genuinely-present direction): a real
         successful import (the normal state in this dev venv, natives
@@ -303,7 +303,7 @@ class TestStrataCoreImportError:
 
     # frob:ticket T-2707
     # frob:tests tests/unit/strata/test_parse.py::TestStrataCoreImportError.test_names_the_real_exception_not_the_generic_guess  # noqa: E501
-    # frob:tests src/frob/strata/_parse.py::strata_core_import_error  # noqa: E501
+    # frob:tests src/frob/strata/_parse.py::strata_core_import_error
     def test_names_the_real_exception_not_the_generic_guess(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

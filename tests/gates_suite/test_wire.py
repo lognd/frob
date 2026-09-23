@@ -1550,7 +1550,7 @@ class TestWireGate:
         assert violations == []
 
     # frob:ticket T-3115
-    # frob:tests src/frob/gates/_wire.py::_wire003_hidden_verb_tokens kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_wire.py::_wire003_hidden_verb_tokens kind="unit"
     def test_wire003_direct_dispatch_verb_refactor_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -1592,7 +1592,7 @@ class TestWireGate:
     # (git_init/_write/commit/assert) every other WIRE003 test in this class already \
     # uses; extracting a shared helper would only hide which assertion belongs to \
     # which scenario"
-    # frob:tests src/frob/gates/_wire.py::_wire003_hidden_verb_tokens kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_wire.py::_wire003_hidden_verb_tokens kind="unit"
     def test_wire003_still_flags_a_verb_shaped_like_the_hidden_set(
         self, tmp_path: Path
     ) -> None:

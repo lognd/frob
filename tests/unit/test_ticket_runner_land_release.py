@@ -57,7 +57,7 @@ class TestChangelogNoteForTicket:
     changed" line instead of always falling back to the (problem-stated)
     ticket title."""
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_changelog_note_for_ticket  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_changelog_note_for_ticket
     def test_prefers_recovered_why_narrative(self) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket.test_prefers_recovered_why_narrative  # noqa: E501
         note = ticket_runner._changelog_note_for_ticket(_FakeTicketWithNarrative())
@@ -66,7 +66,7 @@ class TestChangelogNoteForTicket:
             "planted cycle in top-level layout is actually caught."
         )
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_changelog_note_for_ticket  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_changelog_note_for_ticket
     def test_falls_back_to_title_with_no_narrative(self) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket.test_falls_back_to_title_with_no_narrative  # noqa: E501
         note = ticket_runner._changelog_note_for_ticket(_FakeTicket())
@@ -503,7 +503,7 @@ class TestVerifyOneBucketPassingSpawnFailureIsUnmeasured:
     from a genuine failure rather than collapsing both into one "not
     passing" bit. See T-2569 for the design rationale."""
 
-    # frob:tests src/frob/app/ticket_runner/_verify.py::VerifyStatus  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::VerifyStatus
     def test_spawn_failed_is_unmeasured_not_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

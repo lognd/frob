@@ -143,7 +143,7 @@ class TestRunCoalescedVerification:
         assert watermark.danger_ok.commit_sha == "c0"
 
     # frob:ticket T-2324
-    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings
     def test_new_findings_that_cannot_be_filed_still_do_not_advance(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -227,8 +227,8 @@ class TestRunCoalescedVerification:
         assert watermark.danger_ok is None
 
     # frob:ticket T-3464
-    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings  # noqa: E501
-    # frob:tests src/frob/verify/_worker.py::_vanished_pairs_appended_since  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings
+    # frob:tests src/frob/verify/_worker.py::_vanished_pairs_appended_since
     def test_all_vanished_findings_advance_the_watermark(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -279,8 +279,8 @@ class TestRunCoalescedVerification:
         assert watermark.danger_ok.commit_sha == "c0"
 
     # frob:ticket T-3464
-    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings  # noqa: E501
-    # frob:tests src/frob/verify/_worker.py::_vanished_pairs_appended_since  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_outcome_for_unfiled_new_findings
+    # frob:tests src/frob/verify/_worker.py::_vanished_pairs_appended_since
     def test_partially_vanished_findings_still_pin_the_watermark(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -373,11 +373,11 @@ class TestUnleasedRootEnv:
     naming a dispatched agent's leased worktree, distinct from `root`."""
 
     # frob:ticket T-3379
-    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"
     def test_filing_call_sees_no_worktree_lease_env(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
         # MUST-FIRE: T-3379's own measured incident -- a WorktreeLeaseViolation
         # on `_file_regression_ticket` mid-land, because the ambient
         # FROB_WORKTREE/FROB_AGENT this process inherited named a
@@ -412,11 +412,11 @@ class TestUnleasedRootEnv:
         assert seen_agent == [None]
 
     # frob:ticket T-3379
-    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"
     def test_ambient_lease_env_is_restored_after_filing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
         # MUST-STAY-QUIET: the strip is scoped to the filing call only --
         # this process's own ambient lease must come back afterward, never
         # leak stripped for the rest of the process's life.
@@ -445,11 +445,11 @@ class TestUnleasedRootEnv:
         assert _worker_mod.os.environ.get("FROB_AGENT") == "1"
 
     # frob:ticket T-3379
-    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_worktree_guard.py::unleased_root_env kind="unit"
     def test_no_ambient_lease_stays_unset_after_filing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
         # MUST-STAY-QUIET: the single-developer control -- no ambient
         # lease env to begin with must not somehow leave one SET
         # afterward.
@@ -666,7 +666,7 @@ class TestBackpressure:
         assert calls == []
         assert any("available memory" in rec.message for rec in caplog.records)
 
-    # frob:tests src/frob/verify/_worker.py::_worker_backpressure_reason  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_worker_backpressure_reason
     def test_unmeasurable_memory_never_blocks_a_run(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_unmeasurable_memory_never_blocks_a_run  # noqa: E501
         _enqueue_n(tmp_path, 1)
@@ -697,7 +697,7 @@ class TestEnsureReducedPriority:
     process, best-effort on both axes."""
 
     # frob:ticket T-3764
-    # frob:tests src/frob/verify/_worker.py::_ensure_reduced_priority  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_ensure_reduced_priority
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="os.nice does not exist on Windows; Linux/POSIX-only primitive",
@@ -715,7 +715,7 @@ class TestEnsureReducedPriority:
         assert nice_calls == [10]  # only the FIRST call actually ran os.nice
 
     # frob:ticket T-3764
-    # frob:tests src/frob/verify/_worker.py::_ensure_reduced_priority  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_ensure_reduced_priority
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="os.nice does not exist on Windows; Linux/POSIX-only primitive",
@@ -740,17 +740,17 @@ class TestReconcileStaleInFlightMarker:
     -- mirrors `TestPostLandVerifyPendingMarker`'s shape for the T-1523
     marker this reuses the pattern from: write/read/clear round-trips,
     then the "does a leftover marker get reconciled correctly" case."""
-# frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
+# frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker
 
     def test_no_marker_is_a_silent_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_no_marker_is_a_silent_noop  # noqa: E501
         marker = _worker_mod._in_flight_marker_path(tmp_path)
         assert not marker.exists()
         _worker_mod._reconcile_stale_in_flight_marker(tmp_path)
-        # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
+        # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker
         assert not marker.exists()
 
-    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker
     def test_stale_marker_with_no_matching_watermark_is_reported_unverified(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -772,7 +772,7 @@ class TestReconcileStaleInFlightMarker:
         assert watermark.is_ok
         assert watermark.danger_ok is None
 
-    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker
     def test_stale_marker_matching_current_watermark_is_reported_recovered(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -797,7 +797,7 @@ class TestReconcileStaleInFlightMarker:
         assert watermark.danger_ok is not None
         assert watermark.danger_ok.commit_sha == "c0"
 
-    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker  # noqa: E501
+    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker
     def test_unreadable_marker_is_reported_unverified_and_cleared(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

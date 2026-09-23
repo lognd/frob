@@ -28,12 +28,12 @@ class TestAttributeNewFindings:
     never a false 'everything unattributed') whenever the queue or the
     graph is unavailable."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_attribute_new_findings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_attribute_new_findings
     def test_empty_queue_returns_empty_mapping(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
         assert _attribute_new_findings(tmp_path, [("RULE1", "a.py")]) == {}
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_attribute_new_findings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_attribute_new_findings
     def test_attributed_and_unattributed_round_trip(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -852,7 +852,7 @@ class TestRegressionCountLine:
     identity-vs-finding-count caveat line."""
 
     # frob:ticket T-2077
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_regression_count_line  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_regression_count_line
     def test_true_count_known(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine.test_true_count_known  # noqa: E501
         line = _regression_count_line([("RULE1", "a.py"), ("RULE2", "b.py")], 5)
@@ -860,7 +860,7 @@ class TestRegressionCountLine:
         assert "5 actual finding" in line
 
     # frob:ticket T-2077
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_regression_count_line  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_regression_count_line
     def test_true_count_unmeasurable(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine.test_true_count_unmeasurable  # noqa: E501
         line = _regression_count_line([("RULE1", "a.py")], None)
@@ -875,7 +875,7 @@ class TestBuildRegressionBody:
     each appended only when their own inputs are non-empty."""
 
     # frob:ticket T-2077
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_build_regression_body  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_build_regression_body
     def test_no_attribution_lines_no_multi_land(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestBuildRegressionBody.test_no_attribution_lines_no_multi_land  # noqa: E501
         body = _build_regression_body(
@@ -893,7 +893,7 @@ class TestBuildRegressionBody:
         assert "Attribution (T-1690" not in body
 
     # frob:ticket T-2077
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_build_regression_body  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_build_regression_body
     def test_multi_land_and_attribution_lines_both_appended(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_attribution.py::TestBuildRegressionBody.test_multi_land_and_attribution_lines_both_appended  # noqa: E501
         body = _build_regression_body(

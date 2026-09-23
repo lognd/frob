@@ -27,7 +27,7 @@ class TestNormalizeFindingPath:
     the SAME stored/matched identity (T-3065's own field evidence)."""
 
     def test_absolute_and_relative_resolve_identical(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"
         absolute = str(tmp_path / "src" / "x.py")
         relative = "src/x.py"
         assert _normalize_finding_path(tmp_path, absolute) == _normalize_finding_path(
@@ -36,14 +36,14 @@ class TestNormalizeFindingPath:
         assert _normalize_finding_path(tmp_path, relative) == "src/x.py"
 
     def test_empty_file_passes_through(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"
         # An identity-less finding's `file == ""` must stay exactly `""`
         # -- `_is_unidentifiable` depends on that literal shape, not a
         # resolved cwd-relative string.
         assert _normalize_finding_path(tmp_path, "") == ""
 
     def test_unresolvable_path_falls_back_verbatim(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"
         # A path outside `root` entirely cannot be made root-relative --
         # normalization must return it unchanged rather than raise or
         # silently produce a different string.
@@ -557,7 +557,7 @@ class TestRaiseQuarantine:
 # frob:ticket T-2744
 class TestClearQuarantine:
     # frob:ticket T-1693
-    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"  # noqa: E501
+    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"
     def test_refuses_when_not_raised(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_quarantine.py::clear_quarantine kind="unit"
         result = clear_quarantine(
@@ -567,7 +567,7 @@ class TestClearQuarantine:
         assert result.danger_err is QuarantineError.NotQuarantined
 
     # frob:ticket T-2744
-    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_filed_ticket_unresolvable  # noqa: E501
+    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_filed_ticket_unresolvable
     def test_refuses_when_filed_ticket_does_not_resolve(self, tmp_path: Path) -> None:
         """T-2744: the T-2736 incident, reproduced directly at
         `clear_quarantine`'s own boundary -- a `"filed"` disposition
@@ -593,7 +593,7 @@ class TestClearQuarantine:
         assert is_quarantined(tmp_path).danger_ok is True
 
     # frob:ticket T-1693
-    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"  # noqa: E501
+    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"
     def test_refuses_when_a_finding_is_undisposed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_quarantine.py::clear_quarantine kind="unit"
         assert raise_quarantine(
@@ -610,7 +610,7 @@ class TestClearQuarantine:
         assert is_quarantined(tmp_path).danger_ok is True
 
     # frob:ticket T-1693
-    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"  # noqa: E501
+    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"
     def test_clears_when_every_finding_disposed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_quarantine.py::clear_quarantine kind="unit"
         a = QuarantinedFinding(rule_id="TEST001", file="src/a.py", line=1)
@@ -677,7 +677,7 @@ class TestClearQuarantine:
         )
 
     # frob:ticket T-1693
-    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"  # noqa: E501
+    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"
     def test_green_verification_alone_never_clears(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_quarantine.py::clear_quarantine kind="unit"
         # The single most important property: `is_quarantined` staying
@@ -700,7 +700,7 @@ class TestClearQuarantine:
 # frob:ticket T-2207
 class TestIdentityLessFindingRecovery:
     # frob:ticket T-2207
-    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"  # noqa: E501
+    # frob:tests src/frob/verify/_quarantine.py::_refuse_if_undisposed kind="unit"
     def test_cli_addressing_can_never_key_an_identity_less_finding(
         self, tmp_path: Path
     ) -> None:

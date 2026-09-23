@@ -60,8 +60,7 @@ class TestWire001CallbackKeywordArgument:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeyw\
-        # ordArgument.test_function_passed_as_keyword_argument_value_is_not_flagged
+        # tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeywordArgument.test_function_passed_as_keyword_argument_value_is_not_flagged  # noqa: E501
         """(MUST FAIL FIRST on pre-T-2778 main): a brand-new private
         function passed only as a keyword-argument value (never
         `_print_tick(`) to a same-module caller must NOT fire WIRE001 --
@@ -94,9 +93,7 @@ class TestWire001CallbackKeywordArgument:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeyw\
-        # ordArgument.test_function_with_no_caller_anywhere_still_flagged_positive_cont\
-        # rol
+        # tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeywordArgument.test_function_with_no_caller_anywhere_still_flagged_positive_control  # noqa: E501
         """Positive control (must-still-pass): a genuinely unwired
         private function -- no keyword-argument-value (or any other)
         reference anywhere outside its own tests -- still fires WIRE001.
@@ -125,9 +122,7 @@ class TestWire001CallbackKeywordArgument:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeyw\
-        # ordArgument.test_class_passed_as_keyword_argument_value_still_flagged_anchor_\
-        # control
+        # tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeywordArgument.test_class_passed_as_keyword_argument_value_still_flagged_anchor_control  # noqa: E501
         """Anti-abuse control the T-1831 anchor requires: a CLASS passed
         as a keyword-argument value (`formatter_class=_GroupedHelpFormatter`'s
         own shape) must NOT be rescued by this fix -- the new keyword-

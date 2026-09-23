@@ -47,7 +47,7 @@ class TestBuildStatus:
         assert status.drains_refused_since_watermark == 0
         assert status.last_drain_refused_at is None
 
-    # frob:tests src/frob/app/verify_runner.py::_drain_refusal_fields kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/verify_runner.py::_drain_refusal_fields kind="unit"
     def test_reports_drains_refused_since_watermark(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
         # T-2406 criterion 4: a drain refusal must be observable via

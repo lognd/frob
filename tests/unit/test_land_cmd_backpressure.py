@@ -29,7 +29,7 @@ class TestApplyBackpressure:
     queue is under ceiling, and blocks (via `frob.verify.
     block_until_watermark_advances`) when it is not."""
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure
     def test_dry_run_skips_the_check(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -49,7 +49,7 @@ class TestApplyBackpressure:
         # the dry-run guard returns before the deferred import runs.
         assert calls == []
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure
     def test_not_tripped_is_a_noop(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -73,7 +73,7 @@ class TestApplyBackpressure:
         # error, not that the call is skipped.
         assert calls == ["T-9000"]
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure
     def test_tripped_blocks_then_proceeds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -96,7 +96,7 @@ class TestApplyBackpressure:
         assert calls[0][2] == "T-9000"
         assert calls[0][1].max_depth == 0
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure
     def test_block_timeout_logs_and_proceeds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

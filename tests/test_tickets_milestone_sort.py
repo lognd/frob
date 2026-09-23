@@ -68,13 +68,13 @@ class TestEffectiveMilestone:
     """`effective_milestone(queue, ticket)` -- own-or-inherited value, and
     whether it was declared or inherited."""
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
     def test_own_milestone_is_declared(self) -> None:
         """A ticket with its own `milestone` set never looks at `parent`."""
         t = _ticket(ticket_id="T-1", milestone="1.0.0")
         queue = TicketQueue(tickets={t.id: t})
         assert effective_milestone(queue, t) == ("1.0.0", MilestoneSource.DECLARED)
-# frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+# frob:tests src/frob/tickets/_doable.py::effective_milestone
 
     def test_inherits_from_parent_story(self) -> None:
         """No own milestone, but the immediate parent (a story) has one:
@@ -82,7 +82,7 @@ class TestEffectiveMilestone:
         story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY, milestone="1.1.0")
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
-        # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+        # frob:tests src/frob/tickets/_doable.py::effective_milestone
         assert effective_milestone(queue, leaf) == ("1.1.0", MilestoneSource.INHERITED)
 
     def test_inherits_from_grandparent_epic(self) -> None:
@@ -91,11 +91,11 @@ class TestEffectiveMilestone:
         epic = _ticket(ticket_id="T-EPIC", tier=TicketTier.EPIC, milestone="2.0.0")
         story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY, parent=epic.id)
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
-        # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+        # frob:tests src/frob/tickets/_doable.py::effective_milestone
         queue = TicketQueue(tickets={epic.id: epic, story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == ("2.0.0", MilestoneSource.INHERITED)
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
     def test_nearest_ancestor_wins_over_farther_one(self) -> None:
         """Both the story AND the epic declare a milestone -- the NEARER
         one (the story) wins, per T-2577's "nearest ancestor" rule."""
@@ -110,7 +110,7 @@ class TestEffectiveMilestone:
         queue = TicketQueue(tickets={epic.id: epic, story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == ("3.1.0", MilestoneSource.INHERITED)
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
     def test_no_milestone_anywhere_in_chain_is_none(self) -> None:
         """No milestone on the ticket or any ancestor: `(None, False)`, not
         an error -- the common pre-M2-backfill case."""
@@ -119,7 +119,7 @@ class TestEffectiveMilestone:
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == (None, None)
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
     def test_cycle_does_not_infinite_loop(self) -> None:
         """A malformed cyclic `parent` chain terminates instead of hanging
         (`parent` is deliberately unvalidated against cycles at the model
@@ -133,7 +133,7 @@ class TestEffectiveMilestone:
 class TestDoableSortKey:
     """`_doable_sort_key(t, queue)` -- milestone-primary ordering."""
 
-    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key  # noqa: E501
+    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key
     def test_earlier_milestone_outranks_critical_later_milestone(self) -> None:
         """A LOW-priority v1.0 ticket must sort before a CRITICAL v1.1
         ticket while 1.0 is still shipping -- the exact scenario T-2577's
@@ -160,7 +160,7 @@ class TestDoableSortKey:
         assert "T-3002" in ids, "later-milestone ticket must not be hidden"
         assert ids == ["T-3001", "T-3002"]
 
-    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key  # noqa: E501
+    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key
     def test_unmilestoned_sorts_after_every_declared_milestone(self) -> None:
         """An unmilestoned ticket sorts AFTER a declared-milestone one,
         deterministically -- not arbitrarily -- regardless of priority."""
@@ -176,7 +176,7 @@ class TestDoableSortKey:
         result = doable(queue, root=None, ignore_lease=True)
         assert [t.id for t in result] == ["T-4002", "T-4001"]
 
-    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key  # noqa: E501
+    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key
     def test_semver_numeric_not_lexical_ordering(self) -> None:
         """ "1.10.0" must outrank "1.9.0" -- a lexical compare gets this
         backwards ("1.10.0" < "1.9.0" as strings)."""

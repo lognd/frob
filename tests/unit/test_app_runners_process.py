@@ -23,7 +23,7 @@ class TestProcessReapParser:
     process_command`/`process_reap_json` -- the T-2004 "tested is not
     reached" class of gap this repo has been bitten by before."""
 
-    # frob:tests src/frob/_cli_parsers/_ops.py::_add_ops_parser  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_ops.py::_add_ops_parser
     def test_process_reap_parses_and_dispatches(self) -> None:
         """Bare `frob ops process reap` parses with `process_command ==
         'reap'` and `process_reap_json` defaulting False."""
@@ -55,7 +55,7 @@ class TestOpsRunnerProcessDelegation:
     """`ops_runner.run` must delegate `ops_command == "process"` into
     `process_runner.run`."""
 
-    # frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/ops_runner.py::run
     def test_process_subcommand_delegates_to_process_runner(self) -> None:
         """`ops_command="process"` calls `process_runner.run`, not any
         other branch."""
@@ -71,7 +71,7 @@ class TestProcessRunnerReap:
     """`process_runner.run`'s `reap` branch: reports what `reap_orphaned_
     forkservers` actually did, in both text and `--json` modes, and
     refuses cleanly on an unknown subcommand."""
-# frob:tests src/frob/app/process_runner.py::run  # noqa: E501
+# frob:tests src/frob/app/process_runner.py::run
 
     def test_reap_reports_reaped_pids(self, capsys: pytest.CaptureFixture) -> None:
         """A non-empty reap result is reported by pid, human-readable
@@ -84,10 +84,10 @@ class TestProcessRunnerReap:
         out = capsys.readouterr().out
         assert "1234" in out
         assert "5678" in out
-        # frob:tests src/frob/app/process_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/process_runner.py::run
         assert "SIGTERM" in out
 
-    # frob:tests src/frob/app/process_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/process_runner.py::run
     def test_reap_reports_nothing_reaped(self, capsys: pytest.CaptureFixture) -> None:
         """MUST-STAY-QUIET shape: an empty reap result (e.g. every
         forkserver found is parented to a live `frob check`, at any
@@ -102,7 +102,7 @@ class TestProcessRunnerReap:
         out = capsys.readouterr().out
         assert "nothing to reap" in out
 
-    # frob:tests src/frob/app/process_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/process_runner.py::run
     def test_reap_json_mode_emits_json(self, capsys: pytest.CaptureFixture) -> None:
         """`--json` emits a machine-readable payload instead of prose."""
         cfg = AppConfig(
@@ -116,7 +116,7 @@ class TestProcessRunnerReap:
         out = capsys.readouterr().out
         assert '"reaped_pids": [42]' in out
 
-    # frob:tests src/frob/app/process_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/process_runner.py::run
     def test_unknown_process_subcommand_exits_1(self) -> None:
         """An unrecognized `process_command` exits 1 rather than
         silently no-oping."""

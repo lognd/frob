@@ -85,7 +85,7 @@ class TestProducerStatusVerdicts:
         assert status.code_commits_since == 3
 
     # frob:tests src/frob/gates/_lock_producer.py::producer_status kind="unit"
-    # frob:tests src/frob/gates/_lock_producer.py::LockPin kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_lock_producer.py::LockPin kind="unit"
     def test_must_stay_quiet_when_pinned(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -116,7 +116,7 @@ class TestProducerStatusVerdicts:
         assert status.pin.reason == "frozen on purpose"
 
     # frob:tests src/frob/gates/_lock_producer.py::producer_status kind="unit"
-    # frob:tests src/frob/gates/_lock_producer.py::TrackedLock kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_lock_producer.py::TrackedLock kind="unit"
     def test_fresh_when_unpinned_and_below_threshold(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -151,7 +151,7 @@ class TestAgainstThisRepo:
     without crashing."""
 
     # frob:tests src/frob/gates/_lock_producer.py::all_producer_statuses kind="unit"
-    # frob:tests src/frob/gates/_lock_producer.py::LockProducerStatus kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_lock_producer.py::LockProducerStatus kind="unit"
     def test_runs_clean_against_this_repo(self) -> None:
         root = Path(__file__).resolve().parents[3]
         statuses = all_producer_statuses(root)

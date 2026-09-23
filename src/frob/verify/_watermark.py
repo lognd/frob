@@ -83,8 +83,7 @@ from frob.tickets._land_queue import file_lock, write_json_records
 _log = get_logger(__name__)
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 #: Bumped whenever `VerifyQueueEntry`/`Watermark`'s own field shape
 #: changes -- persisted alongside each record (T-1687's own "versioned,
 #: forward-compatible on read" constraint) so a future reader can tell an
@@ -99,8 +98,7 @@ _WATERMARK_LOCK_REL = Path(".frob") / "verify-watermark.lock"
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 class WatermarkError(ErrorSet):
     """Fallible outcomes of this module's queue/watermark operations."""
 
@@ -111,8 +109,7 @@ class WatermarkError(ErrorSet):
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 class VerifyQueueEntry(BaseModel):
     """One `.frob/verify-queue.json` record: a land's own intent to be
     verified -- the commit it produced, the ticket responsible, and the
@@ -141,8 +138,7 @@ class VerifyQueueEntry(BaseModel):
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 class Watermark(BaseModel):
     """`.frob/verify-watermark.json`'s single current record: "main is
     verified through commit X, as of time T, by run R, against baseline
@@ -214,8 +210,7 @@ def _save_queue(root: Path, entries: tuple[VerifyQueueEntry, ...]) -> None:
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 # tests/unit/verify/test_watermark.py::TestQueueStatus.test_empty_queue_is_empty_tuple
 # tests/unit/verify/test_watermark.py::TestQueueStatus.test_corrupt_queue_errors
 def queue_status(root: Path) -> Result[tuple[VerifyQueueEntry, ...], WatermarkError]:
@@ -227,8 +222,7 @@ def queue_status(root: Path) -> Result[tuple[VerifyQueueEntry, ...], WatermarkEr
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 # frob:ticket T-1736
 def record_intent(
     root: Path,
@@ -285,8 +279,7 @@ def record_intent(
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 # tests/unit/verify/test_watermark.py::TestLoadWatermark.test_missing_file_is_none
 def load_watermark(root: Path) -> Result[Watermark | None, WatermarkError]:
     """`root`'s current watermark, or `None` if none has ever been set OR
@@ -322,8 +315,7 @@ def load_watermark(root: Path) -> Result[Watermark | None, WatermarkError]:
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 def advance_watermark(
     root: Path,
     *,
@@ -361,8 +353,7 @@ def advance_watermark(
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 # tests/unit/verify/test_watermark.py::TestCompactQueue.test_no_watermark_yet_is_a_noop
 def compact_queue(root: Path) -> Result[int, WatermarkError]:
     """Drop every queue entry at-or-before the current watermark's
@@ -414,8 +405,7 @@ def compact_queue(root: Path) -> Result[int, WatermarkError]:
 
 
 # frob:doc \
-# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
-# t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 # frob:ticket T-2290
 def commits_since_watermark(root: Path, watermark_commit: str) -> int | None:
     """The real number of `git` commits between `watermark_commit` and

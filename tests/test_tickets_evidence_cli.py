@@ -790,7 +790,7 @@ class TestReplaceEvidenceCli:
     layer (`_evidence`/`_apply_replace_evidence`) wiring `replace_evidence`
     through the same collect/pass oracle `--evidence` ids use."""
 
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_resolve_evidence_replace_reason  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_resolve_evidence_replace_reason
     def test_cli_replaces_and_commits(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

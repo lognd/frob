@@ -98,8 +98,8 @@ class TestArchiveRaceWithConcurrentNew:
     # thread scheduling under CI load is nondeterministic even with a
     # barrier gate, seen flaking earlier while the underlying T-0633 fix
     # itself is not in question.
-    # frob:tests src/frob/tickets/_archive.py::archive  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::load_all  # noqa: E501
+    # frob:tests src/frob/tickets/_archive.py::archive
+    # frob:tests src/frob/tickets/_store.py::load_all
     @pytest.mark.flaky(reruns=2, reruns_delay=1)
     def test_concurrent_new_ticket_survives_a_racing_archive(
         self, tmp_path: Path
@@ -165,7 +165,7 @@ class TestRenumberOneRaceWithConcurrentNew:
     either -- this is the mechanism a draft-finalizing land races against a
     sibling worktree's own ledger write."""
 
-    # frob:tests src/frob/tickets/_new_renumber.py::renumber_one  # noqa: E501
+    # frob:tests src/frob/tickets/_new_renumber.py::renumber_one
     def test_concurrent_new_ticket_survives_a_racing_renumber_one(
         self, tmp_path: Path
     ) -> None:
@@ -225,7 +225,7 @@ class TestLedgerLockSpansWholesaleOperations:
     final write) fully releases, proving the lock genuinely covers more
     than one atomic write."""
 
-    # frob:tests src/frob/tickets/_new_renumber.py::renumber  # noqa: E501
+    # frob:tests src/frob/tickets/_new_renumber.py::renumber
     def test_concurrent_ledger_lock_acquisition_serializes(
         self, tmp_path: Path
     ) -> None:
@@ -270,7 +270,7 @@ class TestFinalizeDraftAllocationRace:
     `ledger_lock` span, so a concurrent finalizer always recomputes against
     the fresh post-write ledger rather than a stale pre-write snapshot."""
 
-    # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft
     def test_two_concurrent_finalize_draft_calls_get_distinct_ids(
         self, tmp_path: Path
     ) -> None:
@@ -357,8 +357,8 @@ class TestPromoteVsLandFinalizeAllocationRace:
     (measured twice in one land this session, T-2060 -- ids T-2041 and
     T-2045 each claimed out from under it)."""
 
-    # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft_for_land  # noqa: E501
-    # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft  # noqa: E501
+    # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft_for_land
+    # frob:tests src/frob/tickets/_draft_finalize.py::finalize_draft
     def test_promote_and_land_finalize_never_allocate_the_same_id(
         self, tmp_path_factory: pytest.TempPathFactory
     ) -> None:
@@ -486,8 +486,8 @@ class TestRenumberVsNewTicketAllocationRace:
     id from a snapshot taken before the renumber's rename lands is enough
     on its own."""
 
-    # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2  # noqa: E501
-    # frob:tests src/frob/tickets/_new_renumber.py::renumber_one  # noqa: E501
+    # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2
+    # frob:tests src/frob/tickets/_new_renumber.py::renumber_one
     def test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id(
         self, tmp_path: Path
     ) -> None:

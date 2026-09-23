@@ -15,7 +15,7 @@ def _rate(value: float = 1.0) -> Quantity:
 class TestSpof:
     # frob:tests \
     # tests/unit/strata/test_spof.py::TestSpof.test_singleton_node_with_critical_inbound_fires  # noqa: E501
-    # frob:tests src/frob/strata/_spof.py::check_spof  # noqa: E501
+    # frob:tests src/frob/strata/_spof.py::check_spof
     def test_singleton_node_with_critical_inbound_fires(self):
         model = KernelModel(
             nodes=(

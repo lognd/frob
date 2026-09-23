@@ -22,7 +22,7 @@ class TestTaintFindings:
     """`frob.vet._taint.taint_findings` over small synthetic fixtures --
     the T-0781 acceptance criterion, both the firing and the clean side."""
 
-    # frob:tests src/frob/vet/_taint.py::taint_findings  # noqa: E501
+    # frob:tests src/frob/vet/_taint.py::taint_findings
     def test_unvalidated_state_read_reaching_argv_fires(self, tmp_path: Path) -> None:
         """A `.frob/`-sourced value in a subprocess argv list, no
         validator/`--` in between, is a finding naming source and sink."""
@@ -43,7 +43,7 @@ class TestTaintFindings:
         assert findings[0].var_name == "ref"
         assert findings[0].sink_call == "run"
 
-    # frob:tests src/frob/vet/_taint.py::taint_findings  # noqa: E501
+    # frob:tests src/frob/vet/_taint.py::taint_findings
     def test_validated_value_does_not_fire(self, tmp_path: Path) -> None:
         """The same flow through a `validate_ref(...)` hop clears taint --
         no finding."""
@@ -119,13 +119,13 @@ class TestTaintGate:
     """`frob.gates._taint_gate.taint_gate` -- the tracked-file-scan gate
     wrapper around `taint_findings`."""
 
-    # frob:tests src/frob/gates/_taint_gate.py::taint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_taint_gate.py::taint_gate
     def test_taint_gate_no_findings_on_empty_tracked_set(self, tmp_path: Path) -> None:
         """An empty (non-git) directory yields zero violations, not a
         crash -- `git ls-files` failing is handled, not fatal."""
         assert taint_gate(tmp_path) == ()
 
-    # frob:tests src/frob/gates/_taint_gate.py::taint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_taint_gate.py::taint_gate
     def test_taint_gate_emits_warn_severity_violation(self, tmp_path: Path) -> None:
         """A real git repo with one unsafe file produces exactly one
         `SEC005` `Violation` at `Severity.WARN`."""

@@ -22,7 +22,7 @@ from frob.strata._obligation_proof import (
 class TestOwnerIndex:
     # frob:tests \
     # tests/unit/strata/test_obligation_proof.py::TestOwnerIndex.test_inverts_file_to_node_map  # noqa: E501
-    # frob:tests src/frob/strata/_obligation_proof.py::owner_index  # noqa: E501
+    # frob:tests src/frob/strata/_obligation_proof.py::owner_index
     def test_inverts_file_to_node_map(self):
         owner = {"src/a.py": "node_a", "src/b.py": "node_a", "src/c.py": "node_b"}
         by_node = owner_index(owner)
@@ -32,7 +32,7 @@ class TestOwnerIndex:
 class TestNodeHasBoundCode:
     # frob:tests \
     # tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode.test_true_when_files_present  # noqa: E501
-    # frob:tests src/frob/strata/_obligation_proof.py::node_has_bound_code  # noqa: E501
+    # frob:tests src/frob/strata/_obligation_proof.py::node_has_bound_code
     def test_true_when_files_present(self):
         assert node_has_bound_code("n1", {"n1": ["src/a.py"]})
 
@@ -49,7 +49,7 @@ class TestNodeHasBoundCode:
 class TestFilesEvidenceToken:
     # frob:tests \
     # tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken.test_matches_a_real_token  # noqa: E501
-    # frob:tests src/frob/strata/_obligation_proof.py::files_evidence_token  # noqa: E501
+    # frob:tests src/frob/strata/_obligation_proof.py::files_evidence_token
     def test_matches_a_real_token(self, tmp_path: Path):
         (tmp_path / "a.py").write_text("call(backoff=1)\n", encoding="utf-8")
         pattern = re.compile(r"backoff\s*=")
@@ -72,7 +72,7 @@ class TestFilesEvidenceToken:
 class TestBoundEndpoints:
     # frob:tests \
     # tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints.test_both_endpoints_bound_src_first  # noqa: E501
-    # frob:tests src/frob/strata/_obligation_proof.py::bound_endpoints  # noqa: E501
+    # frob:tests src/frob/strata/_obligation_proof.py::bound_endpoints
     def test_both_endpoints_bound_src_first(self):
         owner_by_node = {"src": ["a.py"], "dst": ["b.py"]}
         assert bound_endpoints("src", "dst", owner_by_node) == ["src", "dst"]

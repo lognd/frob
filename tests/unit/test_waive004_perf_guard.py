@@ -40,8 +40,7 @@ class TestWaive004PerfExaminedSitesGuard:
     the candidate's own file was parsed by the perf family this run."""
 
     # frob:tests \
-    # tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard.test_e\
-    # xamined_perf_site_is_deleted
+    # tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard.test_examined_perf_site_is_deleted  # noqa: E501
     def test_examined_perf_site_is_deleted(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -81,8 +80,7 @@ class TestWaive004PerfExaminedSitesGuard:
         assert "frob:waive PERF001" not in rewritten
 
     # frob:tests \
-    # tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard.test_u\
-    # nexamined_perf_site_refuses
+    # tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard.test_unexamined_perf_site_refuses  # noqa: E501
     def test_unexamined_perf_site_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -124,8 +122,7 @@ class TestWaive004PerfExaminedSitesGuard:
         assert applied == []
 
     # frob:tests \
-    # tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard.test_p\
-    # erf009_is_excluded_from_the_guard
+    # tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard.test_perf009_is_excluded_from_the_guard  # noqa: E501
     def test_perf009_is_excluded_from_the_guard(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

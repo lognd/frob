@@ -41,7 +41,7 @@ class TestSweepLockPlatformBackend:
     silent, POSIX-only no-op that never actually serialized concurrent
     sweep-queue mutations on any platform without `fcntl`."""
 
-    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::SweepQueueLockUnavailable  # noqa: E501
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::SweepQueueLockUnavailable
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -58,7 +58,7 @@ class TestSweepLockPlatformBackend:
 class TestEnqueuePendingSweep:
     """`enqueue_pending_sweep` appends a `pending` entry and persists it."""
 
-    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::enqueue_pending_sweep  # noqa: E501
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::enqueue_pending_sweep
     def test_enqueue_persists_entry(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep.test_enqueue_persists_entry  # noqa: E501
         ticket_id = _make_ticket(tmp_path, kind=TicketKind.FEATURE)
@@ -75,7 +75,7 @@ class TestEnqueuePendingSweep:
 class TestPendingSweepCount:
     """`pending_sweep_count` counts only `pending` entries."""
 
-    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::pending_sweep_count  # noqa: E501
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::pending_sweep_count
     def test_counts_only_pending_entries(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -101,16 +101,16 @@ class TestPendingSweepCount:
 
 class TestRunPendingSweep:
     """`run_pending_sweep` processes every pending entry."""
-# frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
+# frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep
 
     def test_empty_queue_is_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_empty_queue_is_noop  # noqa: E501
         result = run_pending_sweep(tmp_path)
         assert result.is_ok
-        # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
+        # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep
         assert result.danger_ok == 0
 
-    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep
     def test_clean_finding_marks_swept_no_ticket_filed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -133,7 +133,7 @@ class TestRunPendingSweep:
         assert result.danger_ok == 1
         assert pending_sweep_count(tmp_path).danger_ok == 0
 
-    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep
     def test_bug_kind_confirmatory_finding_files_ticket(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -178,7 +178,7 @@ class TestRunPendingSweep:
         ]
         assert len(filed) == 1
 
-    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep  # noqa: E501
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep
     def test_non_bug_confirmatory_finding_only_warns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

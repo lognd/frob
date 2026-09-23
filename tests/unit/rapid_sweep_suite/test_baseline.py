@@ -37,12 +37,12 @@ class TestRollingBaseline:
     """The rolling baseline is what lets a deferred sweep cost ONE check
     instead of the two `standard` pays."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_baseline  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_baseline
     def test_absent_baseline_reads_as_none_not_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_absent_baseline_reads_as_none_not_empty  # noqa: E501
         assert _read_baseline(tmp_path) is None
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_baseline  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_baseline
     def test_corrupt_baseline_reads_as_none_not_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_corrupt_baseline_reads_as_none_not_empty  # noqa: E501
         path = tmp_path / ".frob" / "rapid-sweep-baseline.json"
@@ -63,12 +63,12 @@ class TestRollingBaseline:
         )
         assert stored["commit"] == "deadbeef" * 5
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_baseline_commit  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_baseline_commit
     def test_read_baseline_commit_absent_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_read_baseline_commit_absent_is_none  # noqa: E501
         assert _read_baseline_commit(tmp_path) is None
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_baseline_commit  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_read_baseline_commit
     def test_read_baseline_commit_round_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline.test_read_baseline_commit_round_trips  # noqa: E501
         _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "abc123")
@@ -80,7 +80,7 @@ class TestLandIdsBetween:
     lands (and which) actually landed in a commit range, instead of
     assuming it was always exactly the one that spawned this sweep."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between
     def test_single_land_in_range(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_single_land_in_range  # noqa: E501
         _init_git_repo(tmp_path)
@@ -89,7 +89,7 @@ class TestLandIdsBetween:
         end = _git_commit(tmp_path, "chore(rapid): record T-1001's deferred sweep")
         assert _land_ids_between(tmp_path, start, end) == ["T-1001"]
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between
     def test_multiple_lands_in_range_oldest_first(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_multiple_lands_in_range_oldest_first  # noqa: E501
         _init_git_repo(tmp_path)
@@ -104,7 +104,7 @@ class TestLandIdsBetween:
         # --reverse).
         assert _land_ids_between(tmp_path, start, end) == ["T-1977", "T-1995"]
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between
     def test_non_land_commits_are_ignored(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_non_land_commits_are_ignored  # noqa: E501
         _init_git_repo(tmp_path)
@@ -114,7 +114,7 @@ class TestLandIdsBetween:
         end = _git_commit(tmp_path, "chore: unrelated housekeeping")
         assert _land_ids_between(tmp_path, start, end) == ["T-2001"]
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_land_ids_between
     def test_non_repo_returns_empty_list(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween.test_non_repo_returns_empty_list  # noqa: E501
         # tmp_path is not a git repo -- degrade to [] rather than raise,
@@ -124,7 +124,7 @@ class TestLandIdsBetween:
 
 
 class TestResolveActualHead:
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_resolve_actual_head  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_resolve_actual_head
     def test_non_repo_falls_back_to_the_given_commit(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestResolveActualHead.test_non_repo_falls_back_to_the_given_commit  # noqa: E501
         assert _resolve_actual_head(tmp_path, "fallback-sha") == "fallback-sha"
@@ -146,7 +146,7 @@ class TestFilesDeletedBetween:
     deleted it -- these test the ground-truth git-diff detection that
     fix relies on."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_files_deleted_between  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_files_deleted_between
     def test_deleted_file_is_reported(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween.test_deleted_file_is_reported  # noqa: E501
         _init_git_repo(tmp_path)
@@ -162,7 +162,7 @@ class TestFilesDeletedBetween:
             {"tickets.md"}
         )
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_files_deleted_between  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_files_deleted_between
     def test_modified_only_file_is_not_reported(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween.test_modified_only_file_is_not_reported  # noqa: E501
         _init_git_repo(tmp_path)
@@ -176,7 +176,7 @@ class TestFilesDeletedBetween:
         until = _git_commit(tmp_path, "chore: modify a.py")
         assert _files_deleted_between(tmp_path, since, until) == frozenset()
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_files_deleted_between  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_files_deleted_between
     def test_non_repo_or_missing_since_returns_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween.test_non_repo_or_missing_since_returns_empty  # noqa: E501
         assert _files_deleted_between(tmp_path, None, "abc123") == frozenset()
@@ -209,13 +209,13 @@ class TestFilterPhantomDeletedFindings:
 
 
 class TestBaselineWriteSurvived:
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_write_survived  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_write_survived
     def test_matching_commit_survived(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineWriteSurvived.test_matching_commit_survived  # noqa: E501
         _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "abc123")
         assert _baseline_write_survived(tmp_path, "abc123") is True
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_write_survived  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_write_survived
     def test_mismatched_commit_did_not_survive(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineWriteSurvived.test_mismatched_commit_did_not_survive  # noqa: E501
         _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "abc123")
@@ -289,8 +289,8 @@ class TestBaselineLock:
     """T-2595: the lock guards only the tiny read-decide-write, never the
     multi-minute check that produces a sweep's findings."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_lock  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::BaselineLockUnavailable  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_lock
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::BaselineLockUnavailable
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -311,7 +311,7 @@ class TestBaselineLock:
             with _baseline_lock(tmp_path):
                 pass
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_lock  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_lock
     def test_windows_backend_serializes_two_concurrent_holders(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -369,7 +369,7 @@ class TestBaselineLock:
             entered = True
         assert entered is True
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_lock  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_lock
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="exercises POSIX fcntl.flock locking, which does not exist "
@@ -406,7 +406,7 @@ class TestIsAncestor:
     --is-ancestor`, matching `_land_cmd._is_ancestor_with_retry`'s own
     posture of trusting git as the source of truth for commit ordering."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_is_ancestor  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_is_ancestor
     def test_true_when_older_is_ancestor(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor.test_true_when_older_is_ancestor  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _is_ancestor
@@ -424,7 +424,7 @@ class TestIsAncestor:
         commit = _git_commit(tmp_path, "c1")
         assert _is_ancestor(tmp_path, commit, commit) is True
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_is_ancestor  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_is_ancestor
     def test_false_when_not_an_ancestor(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor.test_false_when_not_an_ancestor  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _is_ancestor
@@ -435,7 +435,7 @@ class TestIsAncestor:
         # `newer` is NOT an ancestor of `older` -- the reverse direction.
         assert _is_ancestor(tmp_path, newer, older) is False
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_is_ancestor  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_is_ancestor
     def test_none_on_git_failure(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor.test_none_on_git_failure  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _is_ancestor
@@ -450,7 +450,7 @@ class TestWriteBaselineCas:
     computed from a STALE (older) view of the tree discard a baseline a
     concurrent sweep already wrote from a FRESHER one."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_baseline_cas  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_baseline_cas
     def test_writes_when_no_prior_baseline(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas.test_writes_when_no_prior_baseline  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _write_baseline_cas
@@ -459,7 +459,7 @@ class TestWriteBaselineCas:
         assert _write_baseline_cas(tmp_path, findings, "deadbeef" * 5) is True
         assert _read_baseline(tmp_path) == findings
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_baseline_cas  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_baseline_cas
     def test_writes_when_prior_is_an_ancestor(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas.test_writes_when_prior_is_an_ancestor  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _write_baseline_cas
@@ -473,7 +473,7 @@ class TestWriteBaselineCas:
         assert _read_baseline(tmp_path) == fresh
         assert _read_baseline_commit(tmp_path) == commit2
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_baseline_cas  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_baseline_cas
     def test_skips_when_prior_is_not_an_ancestor(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas.test_skips_when_prior_is_not_an_ancestor  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _write_baseline_cas
@@ -495,7 +495,7 @@ class TestWriteBaselineCas:
         assert _read_baseline(tmp_path) == fresh_a
         assert _read_baseline_commit(tmp_path) == commit2
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_baseline_cas  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_baseline_cas
     def test_writes_when_ancestry_is_unresolvable(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas.test_writes_when_ancestry_is_unresolvable  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _write_baseline_cas
@@ -568,13 +568,13 @@ class TestTreeStateKey:
     full-content hash."""
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_tree_state_key  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_tree_state_key
     def test_non_repo_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_non_repo_is_none  # noqa: E501
         assert _tree_state_key(tmp_path) is None
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_tree_state_key  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_tree_state_key
     def test_real_repo_returns_a_key(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_real_repo_returns_a_key  # noqa: E501
         _init_git_repo(tmp_path)
@@ -585,7 +585,7 @@ class TestTreeStateKey:
         assert _tree_state_key(tmp_path) == key
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_tree_state_key  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_tree_state_key
     def test_dirty_tree_changes_the_key(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_dirty_tree_changes_the_key  # noqa: E501
         _init_git_repo(tmp_path)
@@ -605,7 +605,7 @@ class TestIdentityScopedStateKey:
     identity set, so a cache HIT survives an unrelated land."""
 
     # frob:ticket T-2165
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key
     def test_unchanged_files_same_key_across_a_head_move(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey.test_unchanged_files_same_key_across_a_head_move  # noqa: E501
         """The core fix: two calls against a tree whose HEAD moved (an
@@ -635,7 +635,7 @@ class TestIdentityScopedStateKey:
         assert after_key == before_key
 
     # frob:ticket T-2165
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key
     def test_editing_a_named_file_changes_the_key(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey.test_editing_a_named_file_changes_the_key  # noqa: E501
         """Soundness control: editing a file that IS named in `pairs`
@@ -657,7 +657,7 @@ class TestIdentityScopedStateKey:
         assert after_key != before_key
 
     # frob:ticket T-2165
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key
     def test_editing_an_unrelated_file_does_not_change_the_key(
         self, tmp_path: Path
     ) -> None:
@@ -678,7 +678,7 @@ class TestIdentityScopedStateKey:
         assert after_key == before_key
 
     # frob:ticket T-2165
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key
     def test_uncommitted_edit_to_a_named_file_changes_the_key(
         self, tmp_path: Path
     ) -> None:
@@ -702,7 +702,7 @@ class TestIdentityScopedStateKey:
         assert after_key != before_key
 
     # frob:ticket T-2165
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key
     def test_missing_file_has_a_stable_sentinel_digest(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey.test_missing_file_has_a_stable_sentinel_digest  # noqa: E501
         """A file named in `pairs` that does not exist on disk must not
@@ -721,13 +721,13 @@ class TestRevalidationCache:
     bound on top."""
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel
     def test_absent_cache_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_absent_cache_is_none  # noqa: E501
         assert _read_revalidation_cache(tmp_path, "key", frozenset()) is None
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel
     def test_corrupt_cache_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_corrupt_cache_is_none  # noqa: E501
         path = tmp_path / ".frob" / "doable-revalidation-cache.json"
@@ -736,8 +736,8 @@ class TestRevalidationCache:
         assert _read_revalidation_cache(tmp_path, "key", frozenset()) is None
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_revalidation_cache  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_write_revalidation_cache
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel
     def test_write_then_read_round_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_write_then_read_round_trips  # noqa: E501
         pairs = frozenset({("COV003", "a.py")})
@@ -751,7 +751,7 @@ class TestRevalidationCache:
         assert age_s >= 0.0
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel
     def test_mismatched_tree_key_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_mismatched_tree_key_is_none  # noqa: E501
         pairs = frozenset({("COV003", "a.py")})
@@ -759,7 +759,7 @@ class TestRevalidationCache:
         assert _read_revalidation_cache(tmp_path, "key-b", pairs) is None
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel
     def test_mismatched_pairs_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_mismatched_pairs_is_none  # noqa: E501
         written = frozenset({("COV003", "a.py")})
@@ -768,7 +768,7 @@ class TestRevalidationCache:
         assert _read_revalidation_cache(tmp_path, "key", queried) is None
 
     # frob:ticket T-2089
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_UnmeasurableCacheSentinel
     def test_expired_ttl_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_expired_ttl_is_none  # noqa: E501
         pairs = frozenset({("COV003", "a.py")})

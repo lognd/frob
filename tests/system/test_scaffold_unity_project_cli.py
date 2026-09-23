@@ -30,9 +30,9 @@ class TestScaffoldUnityProjectCli:
 
     # frob:ticket T-4578
     # frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_success  # noqa: E501
-    # frob:tests src/frob/app/scaffold_runner.py::_run_unity_project  # noqa: E501
-    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project  # noqa: E501
-    # frob:tests src/frob/app/scaffold_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/scaffold_runner.py::_run_unity_project
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project
+    # frob:tests src/frob/app/scaffold_runner.py::run
     def test_success(self, tmp_path: Path) -> None:
         """A real Unity project directory gets `frob.toml` plus one
         `design/*.strata` per asmdef, reported on stdout."""
@@ -51,7 +51,7 @@ class TestScaffoldUnityProjectCli:
 
     # frob:ticket T-4578
     # frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_output_exists_refusal  # noqa: E501
-    # frob:tests src/frob/app/scaffold_runner.py::_run_unity_project  # noqa: E501
+    # frob:tests src/frob/app/scaffold_runner.py::_run_unity_project
     def test_output_exists_refusal(self, tmp_path: Path) -> None:
         """A second run without `--force` refuses cleanly (OutputExists)
         with a non-zero exit and no traceback; `--force` overwrites."""
@@ -85,7 +85,7 @@ class TestScaffoldUnityProjectCli:
 
     # frob:ticket T-4578
     # frob:tests tests/system/test_scaffold_unity_project_cli.py::TestScaffoldUnityProjectCli.test_not_a_unity_project  # noqa: E501
-    # frob:tests src/frob/app/scaffold_runner.py::_run_unity_project  # noqa: E501
+    # frob:tests src/frob/app/scaffold_runner.py::_run_unity_project
     def test_not_a_unity_project(self, tmp_path: Path) -> None:
         """A plain, non-Unity directory (no `Assets/`/`Packages/`) gets a
         clear, specific error and no bogus config written."""

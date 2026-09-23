@@ -435,7 +435,7 @@ class TestRealLedgerIntegrity:
             return []
         return re.findall(r"^id: (T-[\w-]+)$", path.read_text(), re.MULTILINE)
 
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick001_duplicate_ids  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick001_duplicate_ids
     def test_no_duplicate_ids_within_or_across_ledgers(self) -> None:
         from collections import Counter
 
@@ -802,7 +802,7 @@ class TestRenumberOneV2:
         assert result.danger_err == TicketError.NotFound
 
     # frob:ticket T-1255
-    # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_renumber_v2.py::renumber_one_v2
     def test_locks_acquired_in_sorted_id_order_no_deadlock(
         self, tmp_path: Path
     ) -> None:

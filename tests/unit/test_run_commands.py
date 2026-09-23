@@ -32,7 +32,7 @@ class TestLoadCommands:
         assert result.is_ok
         assert result.danger_ok.entries == {}
 
-    # frob:tests src/frob/app/run_runner.py::load_commands  # noqa: E501
+    # frob:tests src/frob/app/run_runner.py::load_commands
     # frob:tests src/frob/policy/_models.py::CommandsConfig
     def test_three_step_sequence_composes(self, tmp_path):
         """`check = ["fmt", "lint", "test"]` composes three declared entries
@@ -58,7 +58,7 @@ class TestLoadCommands:
             ("ruff", "check", "."),
             ("pytest", "-q"),
         )
-# frob:tests src/frob/policy/_models.py::CommandEntry  # noqa: E501
+# frob:tests src/frob/policy/_models.py::CommandEntry
 
     def test_single_command_entry_is_one_literal_argv(self, tmp_path):
         """A flat string array that does NOT match declared entry names is
@@ -76,7 +76,7 @@ class TestLoadCommands:
         assert resolved.danger_ok == (("ruff", "format", "."),)
 
     # frob:tests src/frob/policy/_models.py::CommandsError
-    # frob:tests src/frob/app/run_runner.py::load_commands  # noqa: E501
+    # frob:tests src/frob/app/run_runner.py::load_commands
     def test_self_reference_refused_with_path(self, tmp_path):
         """An entry referencing itself directly is refused at load time."""
         root = _write_frob_toml(
@@ -108,7 +108,7 @@ class TestLoadCommands:
 class TestRun:
     """Execution semantics: ordering, mid-sequence failure, dry-run."""
 
-    # frob:tests src/frob/app/run_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/run_runner.py::run
     def test_middle_step_failure_names_index(self, tmp_path, monkeypatch):
         """A three-step entry runs in order; when the MIDDLE step exits
         non-zero, execution stops there and the failure names that step's
@@ -128,7 +128,7 @@ class TestRun:
         # step2 never ran: execution stopped at the failing middle step.
         assert calls == [("step0",), ("step1",)]
 
-    # frob:tests src/frob/app/run_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/run_runner.py::run
     def test_dry_run_prints_without_spawning(self, monkeypatch):
         """`--dry-run` resolves and prints the sequence without spawning
         any subprocess (asserted via a subprocess spy, not exit code)."""

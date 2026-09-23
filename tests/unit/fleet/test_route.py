@@ -43,7 +43,7 @@ class TestRouteTicket:
         assert result.danger_ok.startswith("T-")
         assert (repo_dir / "tickets.md").exists()
 
-    # frob:tests src/frob/fleet/__init__.py::route_ticket  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::route_ticket
     def test_route_ticket_unknown_repo(self, tmp_path: Path) -> None:
         manifest = FleetManifest(repos=())
         spec = TicketSpec(
@@ -64,7 +64,7 @@ class TestRouteTicket:
         assert result.is_err
         assert result.danger_err is FleetError.RepoPathMissing
 
-    # frob:tests src/frob/fleet/__init__.py::route_ticket  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::route_ticket
     def test_route_ticket_not_frob_enabled(self, tmp_path: Path) -> None:
         """MINOR fix (T-0573 review finding): a directory with no
         tickets.md and no legacy tickets/ dir is not a frob-enabled repo

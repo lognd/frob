@@ -82,7 +82,7 @@ class TestPerfCollect:
     """`frob perf collect --file ...` (T-0765): end-to-end CLI wiring for
     the T-0748 collector adapters."""
 
-    # frob:tests src/frob/app/perf_runner.py::_read_perf_file_text  # noqa: E501
+    # frob:tests src/frob/app/perf_runner.py::_read_perf_file_text
     def test_collect_resolves_a_real_python_hot_frame(self, tmp_path):
         """A hand-built `perf script` fixture naming a real function in
         this repo resolves through `resolve_stream` to a `python`-labeled
@@ -119,7 +119,7 @@ class TestPerfCollect:
         assert "python" in out
         assert "decile" in out
 
-    # frob:tests src/frob/app/perf_runner.py::_parse_perf_text_or_exit  # noqa: E501
+    # frob:tests src/frob/app/perf_runner.py::_parse_perf_text_or_exit
     def test_collect_json_output_is_valid_json(self, tmp_path):
         """`frob perf collect --json` emits a machine-readable payload with
         `rows`/`unattributed_weight`/`sample_count`."""
@@ -145,7 +145,7 @@ class TestPerfCollect:
         assert result.returncode != 0
         assert "Traceback" not in out
 
-    # frob:tests src/frob/app/perf_runner.py::_resolve_perf_format  # noqa: E501
+    # frob:tests src/frob/app/perf_runner.py::_resolve_perf_format
     def test_collect_autodetects_cpuprofile_format(self, tmp_path):
         """`--format` omitted still resolves a `.cpuprofile` correctly via
         `detect_collector_format`'s extension check."""

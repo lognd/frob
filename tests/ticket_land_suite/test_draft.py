@@ -168,7 +168,7 @@ class TestStandaloneSiblingDraftSurvivesLand:
     land splice and lands with a real, finalized id."""
 
     # frob:tests src/frob/tickets/_land_ledger_merge.py::_carry_forward_new_worktree_tickets  # noqa: E501
-    # frob:tests src/frob/tickets/_land_finalize.py::_finalize_sibling_drafts  # noqa: E501
+    # frob:tests src/frob/tickets/_land_finalize.py::_finalize_sibling_drafts
     def test_sibling_draft_ticket_finalized_and_lands_alongside(
         self, repo: Path
     ) -> None:

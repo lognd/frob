@@ -68,12 +68,12 @@ version = "{frob_version}"
 class TestVersionCouplingGate:
     """`version_coupling_gate`'s clean and skewed shapes."""
 
-    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
+    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
     def test_matched_versions_clean(self, tmp_path: Path) -> None:
         """All three versions matching, exact `==` pins: zero violations."""
         root = _write_repo(tmp_path)
         assert version_coupling_gate(root) == ()
-# frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
+# frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
 
     def test_skewed_core_version_fires(self, tmp_path: Path) -> None:
         """`frob-core/pyproject.toml`'s own version disagreeing with
@@ -83,10 +83,10 @@ class TestVersionCouplingGate:
         violations = version_coupling_gate(root)
         assert violations
         assert all(v.rule == "VERSION001" for v in violations)
-        # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
+        # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
         assert any("frob-core" in v.message for v in violations)
 
-    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate  # noqa: E501
+    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
     def test_loose_pin_fires(self, tmp_path: Path) -> None:
         """A `>=` pin on the native extra (instead of exact `==`) fires --
         a loose pin on an ABI-coupled native extension is rejected

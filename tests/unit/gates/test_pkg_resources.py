@@ -39,7 +39,7 @@ class TestPkg001DeclaredLongDescription:
     """PKG001: a relative image source in the declared long-description
     file is an ERROR -- the MUST-FIRE fixture from T-4219's own body."""
 
-    # frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate  # noqa: E501
+    # frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate
     def test_relative_markdown_image_in_declared_readme_fires_error(
         self, tmp_path: Path
     ) -> None:
@@ -117,7 +117,7 @@ class TestPkg001DeclaredLongDescription:
 class TestPkg002NonDeclaredMarkdown:
     """PKG002: the same finding in a non-declared markdown file is a
     WARNING, never an error -- the MUST-STAY-QUIET severity fixture."""
-# frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate  # noqa: E501
+# frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate
 
     def test_relative_image_in_other_markdown_warns_not_errors(
         self, tmp_path: Path
@@ -153,7 +153,7 @@ class TestPkg003NoDeclaredLongDescription:
     explicitly (UNRESOLVED), never a crash and never a silent pass --
     the THIRD fixture from T-4219's own body."""
 
-    # frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate  # noqa: E501
+    # frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate
     def test_no_readme_key_reports_unresolved_not_a_crash_or_silent_pass(
         self, tmp_path: Path
     ) -> None:

@@ -25,7 +25,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestMissingTxnBoundary:
     # frob:tests \
     # tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_multi_store_write_op_without_boundary_fires  # noqa: E501
-    # frob:tests src/frob/strata/_txn.py::check_txn_boundary_obligations  # noqa: E501
+    # frob:tests src/frob/strata/_txn.py::check_txn_boundary_obligations
     def test_multi_store_write_op_without_boundary_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

@@ -38,7 +38,7 @@ _CHECK_JSON_PAYLOAD = (
 
 # frob:ticket T-0803
 class TestCollectStatus:
-    # frob:tests src/frob/fleet/__init__.py::collect_status  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::collect_status
     # frob:tests src/frob/fleet/__init__.py::_gate_summary_probe
     # frob:tests src/frob/fleet/__init__.py::_git_branch_and_dirty
     def test_collect_status_ok(self, tmp_path: Path, monkeypatch) -> None:
@@ -67,7 +67,7 @@ class TestCollectStatus:
         assert status.doable_count == 3
         assert status.error is None
 
-    # frob:tests src/frob/fleet/__init__.py::collect_status  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::collect_status
     def test_collect_status_probes_sibling_pinned_frob_not_bare_path_frob(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -106,7 +106,7 @@ class TestCollectStatus:
             "--json",
         ]
 
-    # frob:tests src/frob/fleet/__init__.py::collect_status  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::collect_status
     def test_collect_status_missing_path(self, tmp_path: Path) -> None:
         status = collect_status(RepoEntry(name="ghost", path=tmp_path / "nope"))
         assert status.error is not None
@@ -270,7 +270,7 @@ class TestCollectStatus:
 
 
 class TestRollup:
-    # frob:tests src/frob/fleet/__init__.py::rollup  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::rollup
     def test_rollup_orders_reddest_first(self, monkeypatch) -> None:
         clean = RepoStatus(name="clean", path=Path("."), gates=GateSummary())
         one_warn = RepoStatus(

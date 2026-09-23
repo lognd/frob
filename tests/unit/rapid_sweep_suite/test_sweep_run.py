@@ -27,7 +27,7 @@ class TestPersistBaseline:
     baseline persistence. See T-4335 for the design rationale."""
 
     # frob:ticket T-4335
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_baseline  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_persist_baseline
     def test_writes_and_logs_survival_warning_on_loss(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -649,7 +649,7 @@ class TestDetachedSweepEnvPublicSeam:
 class TestDetachedSweepEnv:
     """T-2030: `_detached_sweep_env`'s own unit-level contract."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_detached_sweep_env  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_detached_sweep_env
     def test_pins_frob_root_to_the_correct_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -660,7 +660,7 @@ class TestDetachedSweepEnv:
         env = _detached_sweep_env(tmp_path)
         assert env["FROB_ROOT"] == str(tmp_path)
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_detached_sweep_env  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_detached_sweep_env
     def test_strips_worktree_lease_env(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

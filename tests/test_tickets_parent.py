@@ -169,11 +169,11 @@ class TestSetParent:
         assert write_ticket(tmp_path, ticket).is_ok
 
         result = set_parent(tmp_path, "T-0001", "T-9999", reason="test")
-        # frob:tests src/frob/tickets/_setters.py::set_parent  # noqa: E501
+        # frob:tests src/frob/tickets/_setters.py::set_parent
         assert result.is_err
         assert result.danger_err is TicketError.ParentNotFound
 
-    # frob:tests src/frob/tickets/_setters.py::set_parent  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_direct_cycle_refuses(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_direct_cycle_refuses  # noqa: E501
         # A parent B (B tier epic, A tier ticket); re-pointing B's parent
@@ -257,7 +257,7 @@ class TestSetParent:
         assert result.is_err
         assert result.danger_err is TicketError.ParentTicketReasonMissing
 
-    # frob:tests src/frob/tickets/_setters.py::set_parent  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_moving_an_existing_parent_drops_the_old_edge(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_moving_an_existing_parent_drops_the_old_edge  # noqa: E501
         old_epic = _ticket(ticket_id="T-0001", tier=TicketTier.EPIC)
@@ -275,7 +275,7 @@ class TestSetParent:
         assert loaded.is_ok
         assert loaded.danger_ok["T-0003"].parent == "T-0002"
 
-    # frob:tests src/frob/tickets/_setters.py::set_parent  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_parent
     def test_archived_ticket_routes_to_archive_path(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_archived_ticket_routes_to_archive_path  # noqa: E501
         # Mirrors T-2678's set_body fix: re-parenting an ARCHIVED ticket
@@ -532,7 +532,7 @@ class TestSetParentCliClearFlag:
 
     @staticmethod
     def _parser() -> argparse.ArgumentParser:
-        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag._parser  # noqa: E501
+        # frob:tests tests/test_tickets_parent.py::TestSetParentCliClearFlag._parser
         from frob._cli_parsers._ticket._metadata import (
             _add_ticket_set_parent_parser,
         )

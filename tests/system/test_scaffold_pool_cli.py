@@ -46,7 +46,7 @@ class TestScaffoldPoolCli:
 
     # frob:ticket T-0877
     # frob:tests tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli.test_warm_lease_status_roundtrip  # noqa: E501
-    # frob:tests src/frob/app/scaffold_runner.py::_run_pool  # noqa: E501
+    # frob:tests src/frob/app/scaffold_runner.py::_run_pool
     def test_warm_lease_status_roundtrip(self, tmp_path: Path) -> None:
         """`pool warm 2` fills two ready slots; `pool status` lists them;
         `pool lease` hands out one (removing it from status) and prints a

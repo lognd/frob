@@ -98,8 +98,7 @@ def test_perf002_best_effort_typescript_only():
 
 
 # frob:tests \
-# tests/test_perf_rules_internals.py::test_typescript_end_to_end_best_effort_via_perf_r\
-# ules
+# tests/test_perf_rules_internals.py::test_typescript_end_to_end_best_effort_via_perf_rules  # noqa: E501
 def test_typescript_end_to_end_best_effort_via_perf_rules(tmp_path):
     """End-to-end sanity: a real TypeScript function's own enclosing braces
     push every statement-level loop to bracket depth 1, so the best-effort
@@ -158,8 +157,7 @@ def test_source_lines_missing_file_returns_empty(tmp_path):
 
 
 # frob:tests \
-# tests/test_perf_rules_internals.py::test_perf_rules_falls_back_to_span_start_when_sou\
-# rce_vanishes
+# tests/test_perf_rules_internals.py::test_perf_rules_falls_back_to_span_start_when_source_vanishes  # noqa: E501
 def test_perf_rules_falls_back_to_span_start_when_source_vanishes(tmp_path):
     """When the source file is deleted between parse and rule evaluation,
     every line-anchoring helper falls back to the enclosing symbol's
@@ -187,8 +185,7 @@ def test_perf_rules_falls_back_to_span_start_when_source_vanishes(tmp_path):
 
 
 # frob:tests \
-# tests/test_perf_rules_internals.py::test_header_colon_index_returns_none_when_untermi\
-# nated
+# tests/test_perf_rules_internals.py::test_header_colon_index_returns_none_when_unterminated  # noqa: E501
 def test_header_colon_index_returns_none_when_unterminated():
     """A malformed/truncated loop header with no closing `:` at depth 0
     reports `None` rather than raising or wrapping around."""
@@ -239,8 +236,7 @@ def test_operand_names_call_and_subscript_unwind():
 
 
 # frob:tests \
-# tests/test_perf_rules_internals.py::test_bracket_identifiers_runs_off_the_end_without\
-# _closing
+# tests/test_perf_rules_internals.py::test_bracket_identifiers_runs_off_the_end_without_closing  # noqa: E501
 def test_bracket_identifiers_runs_off_the_end_without_closing():
     """An unclosed bracket pair stops at the end of the token stream instead
     of indexing past it."""
@@ -249,8 +245,7 @@ def test_bracket_identifiers_runs_off_the_end_without_closing():
 
 
 # frob:tests \
-# tests/test_perf_rules_internals.py::test_container_kinds_ignores_non_identifier_assig\
-# nment_target
+# tests/test_perf_rules_internals.py::test_container_kinds_ignores_non_identifier_assignment_target  # noqa: E501
 def test_container_kinds_ignores_non_identifier_assignment_target():
     """A non-identifier "name" slot (can't happen from real source, but the
     scan is purely lexical) is skipped rather than recorded."""

@@ -41,7 +41,7 @@ class TestDeriveLanguageRegistry:
 
     # frob:ticket T-0405
     # frob:ticket T-0406
-    # frob:tests src/frob/lang/_support.py::derive_language_registry  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::derive_language_registry
     def test_covers_every_supported_language(self) -> None:
         registry = derive_language_registry()
         assert set(registry) == set(supported_languages())
@@ -132,8 +132,8 @@ class TestConformanceViolations:
 
     # frob:ticket T-0405
     # frob:ticket T-0406
-    # frob:tests src/frob/lang/_support.py::conformance_violations  # noqa: E501
-    # frob:tests src/frob/lang/_support.py::LanguageSupport.missing_facets  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::conformance_violations
+    # frob:tests src/frob/lang/_support.py::LanguageSupport.missing_facets
     def test_missing_facet_fails(self) -> None:
         """A fixture language registered with a missing facet (the
         resolver-omission incident class) FAILS conformance, naming the
@@ -150,7 +150,7 @@ class TestConformanceViolations:
 
     # frob:ticket T-0405
     # frob:ticket T-0406
-    # frob:tests src/frob/lang/_support.py::conformance_violations  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::conformance_violations
     def test_fully_registered_language_passes(self) -> None:
         """A fixture language with every facet implemented passes cleanly."""
         registry = {
@@ -162,8 +162,8 @@ class TestConformanceViolations:
 
     # frob:ticket T-0405
     # frob:ticket T-0406
-    # frob:tests src/frob/lang/_support.py::_unreasoned_names  # noqa: E501
-    # frob:tests src/frob/lang/_support.py::LanguageSupport.unreasoned_facets  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::_unreasoned_names
+    # frob:tests src/frob/lang/_support.py::LanguageSupport.unreasoned_facets
     def test_unreasoned_known_gap_fails(self) -> None:
         """A KNOWN_GAP/NOT_APPLICABLE cell with a blank detail is exactly
         as unaccountable as a missing cell."""
@@ -210,8 +210,8 @@ class TestDeriveCapabilityRegistry:
     language, the capability-axis analogue of `TestDeriveLanguageRegistry`."""
 
     # frob:ticket T-2365
-    # frob:tests src/frob/lang/_support.py::derive_capability_registry  # noqa: E501
-    # frob:tests src/frob/lang/_support.py::AdapterCapabilitySupport  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::derive_capability_registry
+    # frob:tests src/frob/lang/_support.py::AdapterCapabilitySupport
     def test_covers_every_supported_language(self) -> None:
         registry = derive_capability_registry()
         assert set(registry) == set(supported_languages())
@@ -338,7 +338,7 @@ class TestCapabilityConformanceViolations:
     # src/frob/lang/_support.py) -- proving the two axes' fail-closed behavior stays \
     # in parity is the point, not incidental copy-paste"
     # frob:ticket T-2365
-    # frob:tests src/frob/lang/_support.py::capability_conformance_violations  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::capability_conformance_violations
     # frob:tests src/frob/lang/_support.py::AdapterCapabilitySupport.missing_capabilities  # noqa: E501
     def test_missing_capability_fails(self) -> None:
         incomplete = dict(_full_capability_status())
@@ -354,9 +354,9 @@ class TestCapabilityConformanceViolations:
         assert "call_graph" in violations[0]
 
     # frob:ticket T-2365
-    # frob:tests src/frob/lang/_support.py::CapabilityRequirement  # noqa: E501
-    # frob:tests src/frob/lang/_support.py::capability_conformance_violations  # noqa: E501
-    # frob:tests src/frob/lang/_support.py::CapabilityStatus  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::CapabilityRequirement
+    # frob:tests src/frob/lang/_support.py::capability_conformance_violations
+    # frob:tests src/frob/lang/_support.py::CapabilityStatus
     def test_fully_registered_language_passes(self) -> None:
         registry = {
             "fixture-lang": AdapterCapabilitySupport(
@@ -366,7 +366,7 @@ class TestCapabilityConformanceViolations:
         assert capability_conformance_violations(registry) == ()
 
     # frob:ticket T-2365
-    # frob:tests src/frob/lang/_support.py::_unreasoned_names  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::_unreasoned_names
     # frob:tests src/frob/lang/_support.py::AdapterCapabilitySupport.unreasoned_capabilities  # noqa: E501
     def test_unreasoned_known_gap_fails(self) -> None:
         """T-2365's own stated core risk: a conformance suite that passes
@@ -399,9 +399,9 @@ class TestPackageAudit:
     registry) plus `unfaceted_packages` (the detection cross-check)."""
 
     # frob:ticket T-2996
-    # frob:tests src/frob/lang/_support.py::LANGUAGE_SENSITIVE_PACKAGES  # noqa: E501
-    # frob:tests src/frob/lang/_support.py::PackageAudit  # noqa: E501
-    # frob:tests src/frob/lang/_support.py::PackageLanguageAxis  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::LANGUAGE_SENSITIVE_PACKAGES
+    # frob:tests src/frob/lang/_support.py::PackageAudit
+    # frob:tests src/frob/lang/_support.py::PackageLanguageAxis
     def test_every_measured_package_is_registered(self) -> None:
         """Every package T-2996's survey found branching on language
         identity -- plus `frob.refactor`, the invisible zero-literal
@@ -435,7 +435,7 @@ class TestPackageAudit:
             assert audit.detail.strip(), f"{name} has a blank audit detail"
 
     # frob:ticket T-2996
-    # frob:tests src/frob/lang/_support.py::unfaceted_packages  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::unfaceted_packages
     def test_must_fire_unregistered_language_branching(self, tmp_path) -> None:  # noqa: ANN001
         """Must-fire fixture: a package with real language branching and
         NO registry entry is flagged."""
@@ -455,7 +455,7 @@ class TestPackageAudit:
         assert "frob.frob_widget" in hits
 
     # frob:ticket T-2996
-    # frob:tests src/frob/lang/_support.py::unfaceted_packages  # noqa: E501
+    # frob:tests src/frob/lang/_support.py::unfaceted_packages
     def test_must_stay_quiet_agnostic_package(self, tmp_path) -> None:  # noqa: ANN001
         """Must-stay-quiet fixture: a genuinely language-agnostic package
         (no language-name string literal in its AST at all) produces no
@@ -511,7 +511,7 @@ class TestPackageAudit:
 
 
 # frob:ticket T-2996
-# frob:tests src/frob/lang/_support.py::_REFACTOR_ADAPTER_LANGUAGES  # noqa: E501
+# frob:tests src/frob/lang/_support.py::_REFACTOR_ADAPTER_LANGUAGES
 def test_refactor_adapter_languages_matches_live_registry() -> None:
     """`_REFACTOR_ADAPTER_LANGUAGES` (the hand-mirrored set `_refactor_
     status` uses to avoid a frob.lang<->frob.refactor import cycle) must

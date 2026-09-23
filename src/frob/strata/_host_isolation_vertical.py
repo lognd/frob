@@ -199,8 +199,7 @@ def _vertical_user_violations(
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
 # frob:doc docs/strata/host.md#windows-wiring-t-0606
 # frob:doc \
-# docs/strata/host.md#multi-ace-deny-overrides-allow-join-and-the-write_dac-indirection\
-# -corner-t-0792t-0825
+# docs/strata/host.md#multi-ace-deny-overrides-allow-join-and-the-write_dac-indirection-corner-t-0792t-0825  # noqa: E501
 # frob:invariant INV-033
 # tests/unit/strata/test_host_isolation.py::TestVerticalIsolation.test_skips_with_no_us\
 # ers kind="unit"

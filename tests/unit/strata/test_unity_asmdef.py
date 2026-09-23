@@ -33,8 +33,8 @@ def _discovered():
 class TestDiscoverAsmdefs:
     """`discover_asmdefs` walks Assets/+Packages/ for every `*.asmdef`."""
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::discover_asmdefs  # noqa: E501
-    # frob:tests src/frob/strata/_unity_asmdef.py::AsmdefInfo  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::discover_asmdefs
+    # frob:tests src/frob/strata/_unity_asmdef.py::AsmdefInfo
     def test_finds_all_four_asmdefs(self):
         """The fixture's four asmdefs are all discovered, by name."""
         infos = _discovered()
@@ -59,7 +59,7 @@ class TestDiscoverAsmdefs:
         by_name = {info.name: info for info in infos}
         assert by_name["Game.Runtime"].guid == "11111111111111111111111111111111"
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::UnityAsmdefError  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::UnityAsmdefError
     def test_not_a_unity_project_errs(self, tmp_path):
         """A directory with none of Unity's own markers is Err, not []."""
         result = discover_asmdefs(tmp_path)
@@ -69,7 +69,7 @@ class TestDiscoverAsmdefs:
 
 class TestBuildComponentNodes:
     """`build_component_nodes` maps discovered asmdefs to strata nodes."""
-# frob:tests src/frob/strata/_unity_asmdef.py::build_component_nodes  # noqa: E501
+# frob:tests src/frob/strata/_unity_asmdef.py::build_component_nodes
 
     def test_two_asmdefs_two_distinct_nodes(self):
         """Acceptance 1: each discovered asmdef becomes its own node id."""
@@ -85,28 +85,28 @@ class TestBuildComponentNodes:
         by_id = {node.node_id: node for node in model.nodes}
         assert "unity_game_runtimeutils" in by_id["unity_game_runtime"].depends
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::build_component_nodes  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::build_component_nodes
     def test_reference_by_guid_resolves_to_edge(self):
         """A `GUID:<hex>` reference resolves via the referenced asmdef's own `.meta`."""
         model = build_component_nodes(_discovered(), FIXTURE_ROOT)
         by_id = {node.node_id: node for node in model.nodes}
         assert "unity_game_runtime" in by_id["unity_game_editor"].depends
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::UnresolvedReference  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::UnresolvedReference
     def test_unresolvable_reference_recorded_not_dropped(self):
         """A `references` entry naming no discovered asmdef is recorded, not silently dropped."""
         model = build_component_nodes(_discovered(), FIXTURE_ROOT)
         unresolved_raw = {u.raw_reference for u in model.unresolved_references}
         assert "Game.MissingAssembly" in unresolved_raw
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::UnityAssemblyModel  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::UnityAssemblyModel
     def test_default_assembly_node_always_present(self):
         """Acceptance 3: a `.cs` file outside every asmdef lands in the default node."""
         model = build_component_nodes(_discovered(), FIXTURE_ROOT)
         node_ids = {node.node_id for node in model.nodes}
         assert UNITY_DEFAULT_ASSEMBLY_NODE in node_ids
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::UnityComponentNode  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::UnityComponentNode
     def test_editor_flag_carried_onto_node(self):
         """An Editor-only asmdef's node carries `is_editor_only=True`."""
         model = build_component_nodes(_discovered(), FIXTURE_ROOT)
@@ -117,7 +117,7 @@ class TestBuildComponentNodes:
 class TestRenderUnityFragment:
     """`render_unity_fragment` is a pure, deterministic text renderer."""
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::render_unity_fragment  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::render_unity_fragment
     def test_render_is_deterministic(self):
         """Two renders of the same model produce byte-identical text."""
         model = build_component_nodes(_discovered(), FIXTURE_ROOT)
@@ -131,7 +131,7 @@ class TestRenderUnityFragment:
             assert f"node {node.node_id} : trusted {{" in text
         assert "flow f_unity_game_runtime_unity_game_runtimeutils" in text
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::render_unity_fragment  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::render_unity_fragment
     def test_editor_node_gets_editor_attr(self):
         """The Editor-only node's block carries `attr editor;`."""
         model = build_component_nodes(_discovered(), FIXTURE_ROOT)
@@ -144,7 +144,7 @@ class TestRenderUnityFragment:
 class TestWriteUnityFragment:
     """`write_unity_fragment` is the module's one I/O boundary."""
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::write_unity_fragment  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::write_unity_fragment
     def test_writes_fragment_file(self, tmp_path):
         """A real write produces a readable file whose text round-trips through render."""
         output_path = tmp_path / "unity-assemblies.strata"
@@ -153,7 +153,7 @@ class TestWriteUnityFragment:
         written_text = output_path.read_text(encoding="utf-8")
         assert written_text == render_unity_fragment(result.danger_ok)
 
-    # frob:tests src/frob/strata/_unity_asmdef.py::write_unity_fragment  # noqa: E501
+    # frob:tests src/frob/strata/_unity_asmdef.py::write_unity_fragment
     def test_write_is_idempotent(self, tmp_path):
         """Re-running the writer against an unchanged project is byte-identical."""
         output_path = tmp_path / "unity-assemblies.strata"

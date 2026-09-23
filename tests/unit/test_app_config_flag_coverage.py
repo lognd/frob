@@ -101,7 +101,7 @@ class TestFindDroppedCliFlags:
         assert found == frozenset()
 
     # frob:tests src/frob/app/_config_external.py::find_dropped_cli_flags kind="unit"
-    # frob:tests src/frob/app/_config_external.py::_BOOL_FLAGS  # noqa: E501
+    # frob:tests src/frob/app/_config_external.py::_BOOL_FLAGS
     def test_current_tree_has_zero_dropped_flags(self):
         """T-2004 acceptance criterion 3, measured (not assumed): the
         REAL `frob` parser against the REAL `AppConfig` reports zero
@@ -140,7 +140,7 @@ class TestT2320RuffFlagsReachAppConfig:
     (parses + has coverage on the function it configures, but the config
     layer never carries it there) cannot regress silently again."""
 
-    # frob:tests src/frob/app/_config_external.py::_BOOL_FLAGS  # noqa: E501
+    # frob:tests src/frob/app/_config_external.py::_BOOL_FLAGS
     def test_from_external_carries_all_three_ruff_flags_from_parsed_argv(
         self,
     ) -> None:

@@ -77,7 +77,7 @@ class TestMainWriteToLeasedTicketIsRefused:
     """The repro: a ticket leased to `worktree_b` must not be writable from
     `repo` (the shared main checkout)."""
 
-    # frob:tests src/frob/tickets/_leases.py::enforce_ticket_ownership  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::enforce_ticket_ownership
     def test_main_side_write_to_a_worktree_leased_ticket_is_refused(
         self, repo: Path, worktree_b: Path
     ) -> None:
@@ -112,7 +112,7 @@ class TestLeaseHolderCanStillWriteItsOwnTicket:
     working exactly as before -- this guard must never block ordinary
     single-worktree work (the T-1882 over-broad-refusal lesson)."""
 
-    # frob:tests src/frob/tickets/_leases.py::enforce_ticket_ownership  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::enforce_ticket_ownership
     def test_holder_worktree_write_still_succeeds(
         self, repo: Path, worktree_b: Path
     ) -> None:
@@ -130,7 +130,7 @@ class TestLeaseHolderCanStillWriteItsOwnTicket:
         result = write_ticket(worktree_b, mutated)
         assert result.is_ok, result.err
 
-    # frob:tests src/frob/tickets/_leases.py::enforce_ticket_ownership  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::enforce_ticket_ownership
     def test_unleased_ticket_is_writable_from_main(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicket.test_unleased_ticket_is_writable_from_main  # noqa: E501

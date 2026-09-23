@@ -85,7 +85,7 @@ class TestDoc006TicketBodyCliPointerSkip:
     no DOC006 finding, while a real unresolved CLI pointer in an ordinary
     doc still fires."""
 
-    # frob:tests src/frob/gates/_docptr.py::_is_ticket_body_doc  # noqa: E501
+    # frob:tests src/frob/gates/_docptr.py::_is_ticket_body_doc
     def test_open_ticket_planned_cli_pointer_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -109,7 +109,7 @@ class TestDoc006TicketBodyCliPointerSkip:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-7001/ticket.md")
 
-    # frob:tests src/frob/gates/_docptr.py::_is_ticket_body_doc  # noqa: E501
+    # frob:tests src/frob/gates/_docptr.py::_is_ticket_body_doc
     def test_real_doc_cli_pointer_still_flagged(self, tmp_path: Path) -> None:
         """(c) A real `docs/*.md` unresolved CLI pointer -- NOT a ticket
         body -- still fires; the ticket-body skip must not leak into the

@@ -248,7 +248,7 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 233,
+      "accepted_count": 234,
       "reason": "testsuite glob growth"
     },
     "testsuite::fs.write": {

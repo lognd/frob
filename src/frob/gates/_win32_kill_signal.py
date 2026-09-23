@@ -221,8 +221,7 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
 
 # frob:ticket T-3696
 # frob:doc \
-# docs/modules/gates.md#platform002-oskillpid-0-outside-the-sanctioned-liveness-probe-t\
-# -3696
+# docs/modules/gates.md#platform002-oskillpid-0-outside-the-sanctioned-liveness-probe-t-3696  # noqa: E501
 def win32_kill_signal_gate(root: Path) -> tuple[Violation, ...]:
     """PLATFORM002: every git-tracked `.py` file under `src/frob/**` that
     calls `os.kill(<pid>, 0)` (dotted or bare-imported), unless the file

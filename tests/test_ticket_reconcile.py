@@ -168,7 +168,7 @@ class TestReconcileStaleHold:
         assert loaded.is_ok
         assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
 
-    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
     def test_apply_requeues_stale_hold_and_releases_lease(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease  # noqa: E501
@@ -229,7 +229,7 @@ class TestReconcileApplyLandInProgressGuard:
     """Asserts `reconcile(apply=True)` refuses before writing anything
     while `.frob/land.lock` is held, and still succeeds normally when no
     lock is held."""
-# frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+# frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
 
     def test_apply_refuses_and_writes_nothing_while_land_lock_held(
         self, repo: Path, caplog
@@ -275,7 +275,7 @@ class TestReconcileApplyLandInProgressGuard:
             status_after = _run(["git", "status", "--porcelain"], repo).stdout
             assert status_after == status_before
 
-    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
     def test_apply_still_requeues_when_no_land_in_progress(self, repo: Path) -> None:
         """Positive control: with no land lock held, `apply=True` still
         performs the ordinary requeue -- the new guard must not weaken the
@@ -505,7 +505,7 @@ class TestReconcileOrphanWorktree:
         assert wt.exists()
 
         _run(["git", "worktree", "remove", "--force", str(wt)], repo)
-# frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+# frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
 
     def test_apply_and_remove_orphans_actually_removes_it(self, repo: Path) -> None:
         # frob:tests \
@@ -645,10 +645,10 @@ def _gitignore_frob_dir(repo: Path) -> None:
 class TestReconcileUnlandedBranchWork:
     """T-1934: reconcile's THIRD anomaly class -- finished-on-a-branch,
     not-terminal-on-main ticket work, report-only (never healed by
-    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
     `apply`)."""
 
-    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
     def test_reports_the_confirmed_leak_shape(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_the_confirmed_leak_shape  # noqa: E501
@@ -681,9 +681,9 @@ class TestReconcileUnlandedBranchWork:
         assert result.is_ok
         assert result.danger_ok.unlanded_branch_work == ()
 # frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
-# frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"  # noqa: E501
+# frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"
 
-    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
     # frob:tests src/frob/app/ticket_runner/_query.py::_save_unlanded_summary_cache kind="unit"  # noqa: E501
     # frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
     # frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"  # noqa: E501
@@ -709,7 +709,7 @@ class TestReconcileUnlandedBranchWork:
         assert cached is not None
         assert cached.branches == ("runner-wiring",)
 
-    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
     def test_populates_the_cache_even_on_a_dry_run(self, repo: Path) -> None:
         """The cache write is a best-effort performance memoization, not
         ticket state -- it refreshes on `apply=False` dry-runs too, unlike
@@ -756,7 +756,7 @@ class TestReconcileUnlandedBranchWork:
         assert ".frob" not in status
 
     # frob:ticket T-3731
-    # frob:tests src/frob/tickets/_unlanded.py::_unlanded_branch_work kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_unlanded.py::_unlanded_branch_work kind="unit"
     def test_reconcile_does_not_hang_with_many_branches(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

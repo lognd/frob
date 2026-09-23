@@ -91,7 +91,7 @@ class TestLateralIsolation:
     # frob:tests \
     # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     # frob:tests src/frob/strata/_host_isolation_shared.py::HostIsolationViolation
-    # frob:tests src/frob/strata/_host.py::manifests_by_node  # noqa: E501
+    # frob:tests src/frob/strata/_host.py::manifests_by_node
     def test_skips_below_two_users(self):
         node = Node(id="solo", trust="trusted", attrs=("runs_as=svc-a", "unit"))
         model = KernelModel(nodes=(node,))

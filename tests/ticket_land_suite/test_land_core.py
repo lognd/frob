@@ -250,7 +250,7 @@ class TestRecordLandCommit:
 
     # frob:ticket T-2220
     # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_land_commit_is_derivable_with_no_follow_up_commit  # noqa: E501
-    # frob:tests src/frob/tickets/_land_squash.py::_finish_real_land_report  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_finish_real_land_report
     def test_land_commit_is_derivable_with_no_follow_up_commit(
         self, repo: Path
     ) -> None:
@@ -291,7 +291,7 @@ class TestRecordLandCommit:
 
     # frob:ticket T-2274
     # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
-    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit
     def test_record_land_commit_never_absorbs_a_bystanders_dirty_file(
         self, v2_repo: Path
     ) -> None:
@@ -345,7 +345,7 @@ class TestRecordLandCommit:
 
     # frob:ticket T-2220
     # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
-    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_record_land_commit
     def test_plan_land_finalized_ticket_is_resolvable_by_ticket_id(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -908,7 +908,7 @@ class TestPreworkSweepRefresh:
     failure (or a reviewer's `frob check --ticket` run in the interim)
     never sees a sweep stale for a reason outside the ticket's own control."""
 
-    # frob:tests src/frob/gates/_prework.py::sweep_ticket kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_prework.py::sweep_ticket kind="unit"
     def test_land_refreshes_stale_sweep_after_unrelated_main_change(
         self, repo: Path
     ) -> None:
@@ -1733,7 +1733,7 @@ class TestMergeMainIntoWorktreeRicherState:
     worktree's Done-reported copy WHEN the worktree's copy also outranks
     it -- the original T-0682 field incident."""
 
-    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer  # noqa: E501
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer
     def test_landing_tickets_in_progress_report_survives_the_merge_stage(
         self, repo: Path
     ) -> None:

@@ -44,7 +44,7 @@ def _write_ticket(root: Path, ticket_id: str, state, body: str) -> None:  # noqa
 
 
 class TestRemainderDisclosureGuard:
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_undisclosed_remainder_reason  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_undisclosed_remainder_reason
     def test_clean_narrative_is_unaffected(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_clean_narrative_is_unaffected  # noqa: E501
         from frob.tickets import TicketState
@@ -59,7 +59,7 @@ class TestRemainderDisclosureGuard:
         ticket = _load(tmp_path, "T-0900")
         assert _undisclosed_remainder_reason(tmp_path, ticket) is None
 
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_undisclosed_remainder_reason  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_undisclosed_remainder_reason
     def test_refuses_when_disclosure_language_has_no_filed_ticket(
         self, tmp_path: Path
     ) -> None:
@@ -79,7 +79,7 @@ class TestRemainderDisclosureGuard:
         assert reason is not None
         assert "not attempted" in reason
 
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_undisclosed_remainder_reason  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_undisclosed_remainder_reason
     def test_allows_when_filed_ticket_is_open(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_allows_when_filed_ticket_is_open  # noqa: E501
         from frob.tickets import TicketState
@@ -96,7 +96,7 @@ class TestRemainderDisclosureGuard:
         ticket = _load(tmp_path, "T-0900")
         assert _undisclosed_remainder_reason(tmp_path, ticket) is None
 
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_undisclosed_remainder_reason  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_undisclosed_remainder_reason
     def test_refuses_when_filed_ticket_is_already_closed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_refuses_when_filed_ticket_is_already_closed  # noqa: E501
         from frob.tickets import TicketState

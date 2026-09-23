@@ -148,9 +148,9 @@ class TestV2DoneReport:
         d.mkdir(parents=True)
         (d / "ticket.md").write_text(_serialize_ticket(_ticket(ticket_id)))
 
-    # frob:tests src/frob/tickets/_store.py::read_done_report  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::write_done_report  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::v2_done_report_path  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::read_done_report
+    # frob:tests src/frob/tickets/_store.py::write_done_report
+    # frob:tests src/frob/tickets/_store.py::v2_done_report_path
     def test_write_then_read_back_byte_for_byte(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
         self._v2_ticket(tmp_path)
@@ -180,7 +180,7 @@ class TestV2DoneReport:
 
 # frob:ticket T-1254
 class TestV2Attachments:
-    # frob:tests src/frob/tickets/_store.py::v2_attachments_dir  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::v2_attachments_dir
     def test_attachment_written_under_ticket_dir(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestV2Attachments.test_attachment_written_under_ticket_dir  # noqa: E501
         d = tmp_path / "tickets" / "T-0001"
@@ -330,8 +330,8 @@ class TestWriteTicket:
     refuse to persist rather than corrupt the shared ledger."""
 
     # frob:ticket T-1536
-    # frob:tests src/frob/tickets/_store.py::_post_splice_integrity_check  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::write_ticket  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::_post_splice_integrity_check
+    # frob:tests src/frob/tickets/_store.py::write_ticket
     def test_marker_lookalike_body_line_refuses_write(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
         sibling = _ticket("T-0002")
@@ -524,7 +524,7 @@ class TestV2WriteTicket:
         assert loaded.danger_ok.keys() == {"T-0001", "T-0099"}
         assert loaded.danger_ok["T-0001"].title == ticket.title
 
-    # frob:tests src/frob/tickets/_store.py::v2_ticket_dir  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::v2_ticket_dir
     def test_ticket_dir_named_by_id_not_slug(self, tmp_path: Path) -> None:
         """Design section 1: the directory name IS the id, never a
         slugified title -- a retitle must never rename the path."""
@@ -1027,7 +1027,7 @@ class TestYamlLoader:
         assert _yaml_loader() is yaml.CSafeLoader
 
     # frob:tests src/frob/yamlio.py::fast_yaml_loader
-    # frob:tests src/frob/tickets/_store.py::_yaml_loader  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::_yaml_loader
     def test_falls_back_to_safeloader_without_libyaml(self, monkeypatch) -> None:
         import yaml
 
@@ -1065,7 +1065,7 @@ class TestYamlLoader:
         assert _coverage_tracer_active() is False
 
     # frob:tests src/frob/yamlio.py::fast_yaml_loader
-    # frob:tests src/frob/tickets/_store.py::_yaml_loader  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::_yaml_loader
     def test_falls_back_to_safeloader_under_active_coverage_tracer(
         self, monkeypatch
     ) -> None:
@@ -1092,7 +1092,7 @@ class TestLoadArchiveCache:
     # frob:tests src/frob/tickets/_store.py::load_archive kind="unit"
     """Direct tests of `load_archive`'s content-hash-keyed parsed cache."""
 
-    # frob:tests src/frob/tickets/_store.py::_read_archive_cache  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::_read_archive_cache
     def test_skips_reparse_when_content_hash_unchanged(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -1115,7 +1115,7 @@ class TestLoadArchiveCache:
         assert second.danger_ok.keys() == {"T-0003"}
         assert calls["n"] == 0, "cache hit must not reparse the ledger text"
 
-    # frob:tests src/frob/tickets/_store.py::_read_archive_cache  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::_read_archive_cache
     def test_reparses_when_archive_content_changes(self, tmp_path: Path) -> None:
         write_archive(tmp_path, {"T-0004": _ticket(ticket_id="T-0004", title="One")})
         first = load_archive(tmp_path)
@@ -1236,7 +1236,7 @@ class TestLockPath:
         # tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir
         assert _lock_path(tmp_path) == tmp_path / ".frob" / "tickets.lock"
 
-    # frob:tests src/frob/tickets/_store.py::TICKETS_LEDGER_LOCK_REL  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::TICKETS_LEDGER_LOCK_REL
     def test_public_lock_rel_matches_private_lock_path(self, tmp_path: Path) -> None:
         # frob:ticket T-4555
         # frob:tests \
@@ -1311,7 +1311,7 @@ class TestLedgerLockPlatformBackends:
     own (which no longer exist as module attributes) -- `ledger_lock`
     itself still raises its own `TicketLockUnavailable`, unchanged."""
 
-    # frob:tests src/frob/tickets/_store.py::TicketLockUnavailable  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::TicketLockUnavailable
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1381,7 +1381,7 @@ class TestReplaceDoneReportSection:
         assert "foo" in result
         assert result.index("## Description") < result.index("## Done report")
 
-    # frob:tests src/frob/tickets/_models.py::replace_done_report_section  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::replace_done_report_section
     def test_replaces_existing_section(self) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestReplaceDoneReportSection.test_replaces_existing_section  # noqa: E501
         body = (
@@ -1431,7 +1431,7 @@ class TestSanitizeNarrativeForLedger:
     fix for the 2026-08-05 T-1315/T-1318/T-1350 duplicate-anchor incident."""
 
     # frob:ticket T-1536
-    # frob:tests src/frob/tickets/_store.py::sanitize_narrative_for_ledger  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::sanitize_narrative_for_ledger
     def test_defuses_marker_lookalike_line(self) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger.test_defuses_marker_lookalike_line  # noqa: E501
         why = "Incident repro:\n<!-- ticket:T-1315 -->\nsome narrative text\n"
@@ -1845,7 +1845,7 @@ def _ticket_state(
 
 # frob:ticket T-0409
 class TestClosedTicketIds:
-    # frob:tests src/frob/tickets/__init__.py::closed_ticket_ids  # noqa: E501
+    # frob:tests src/frob/tickets/__init__.py::closed_ticket_ids
     def test_returns_done_and_dropped_only(self) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
         queue = TicketQueue(

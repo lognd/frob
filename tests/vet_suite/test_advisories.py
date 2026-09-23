@@ -114,7 +114,7 @@ class TestOsvAdapter:
         assert result.is_ok
         assert result.danger_ok[dep][0].advisory_id == "GHSA-cached"
 
-    # frob:tests src/frob/vet/_osv.py::OsvQueryError  # noqa: E501
+    # frob:tests src/frob/vet/_osv.py::OsvQueryError
     def test_query_advisories_no_cache_no_network_is_unavailable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -133,7 +133,7 @@ class TestOsvAdapter:
         assert result.is_err
         assert result.danger_err == _osv.OsvQueryFailure(_osv.OsvQueryError.Unavailable)
 
-    # frob:tests src/frob/vet/_osv.py::OsvQueryFailure  # noqa: E501
+    # frob:tests src/frob/vet/_osv.py::OsvQueryFailure
     def test_query_advisories_unparseable_response_is_distinct_from_unavailable(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

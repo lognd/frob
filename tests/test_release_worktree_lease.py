@@ -28,7 +28,7 @@ def _init_repo(root: Path) -> None:
 
 
 class TestStampWorktreeLease:
-    # frob:tests src/frob/release/__init__.py::_bump_shortfall  # noqa: E501
+    # frob:tests src/frob/release/__init__.py::_bump_shortfall
     def test_mismatched_lease_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -41,7 +41,7 @@ class TestStampWorktreeLease:
         assert result.danger_err == ReleaseError.WorktreeLeaseViolation
         assert not (tmp_path / ".frob-release.json").exists()
 
-    # frob:tests src/frob/release/__init__.py::_bump_shortfall  # noqa: E501
+    # frob:tests src/frob/release/__init__.py::_bump_shortfall
     def test_no_lease_succeeds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -774,7 +774,7 @@ class TestCapabilityRatchet:
     section, not just the happy path."""
 
     # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
-    # frob:tests src/frob/strata/_effects.py::capability_via_site_counts  # noqa: E501
+    # frob:tests src/frob/strata/_effects.py::capability_via_site_counts
     def test_growth_without_lock_entry_fails(self, tmp_path: Path) -> None:
         """The core enforcement shape: a scoped via-list with NO lock
         entry at all (accepted_count defaults to 0) fires on any

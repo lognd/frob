@@ -240,10 +240,10 @@ class TestFrobExportsPolicyResidue:
                     missing.append(f"{mod.module}.{sym}")
         return missing
 
-    # frob:tests src/frob/testing/__init__.py kind="unit"  # noqa: E501
-    # frob:tests src/frob/lang/__init__.py kind="unit"  # noqa: E501
+    # frob:tests src/frob/testing/__init__.py kind="unit"
+    # frob:tests src/frob/lang/__init__.py kind="unit"
     # frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
-    # frob:tests src/frob/__init__.py kind="unit"  # noqa: E501
+    # frob:tests src/frob/__init__.py kind="unit"
     def test_all_nine_packages_report_zero_missing_symbols(self):
         repo_root = Path(__file__).resolve().parents[2]
         offenders: dict[str, list[str]] = {}

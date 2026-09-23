@@ -109,7 +109,7 @@ class TestDiscoverTargets:
         assert discover_targets(f) == (f,)
 
     # frob:ticket T-4697
-    # frob:tests src/frob/narrative/_bulk.py::discover_targets  # noqa: E501
+    # frob:tests src/frob/narrative/_bulk.py::discover_targets
     def test_directory_returns_scanned_suffixes_recursively(
         self, tmp_path: Path
     ) -> None:
@@ -127,9 +127,9 @@ class TestPlanBulk:
     """`plan_bulk` -- the dry-run listing (no writes)."""
 
     # frob:ticket T-4697
-    # frob:tests src/frob/narrative/_bulk.py::BulkItem  # noqa: E501
-    # frob:tests src/frob/narrative/_bulk.py::plan_bulk  # noqa: E501
-    # frob:tests src/frob/narrative/_bulk.py::BulkPlan  # noqa: E501
+    # frob:tests src/frob/narrative/_bulk.py::BulkItem
+    # frob:tests src/frob/narrative/_bulk.py::plan_bulk
+    # frob:tests src/frob/narrative/_bulk.py::BulkPlan
     def test_plan_lists_every_block_with_its_ticket(self, tmp_path: Path) -> None:
         """The plan enumerates each block found, its resolved ticket id
         (or `None`), and writes nothing."""
@@ -235,7 +235,7 @@ class TestApplyBulk:
         assert load_all(tmp_path).is_ok
 
     # frob:ticket T-4697
-    # frob:tests src/frob/narrative/_bulk.py::apply_bulk  # noqa: E501
+    # frob:tests src/frob/narrative/_bulk.py::apply_bulk
     def test_second_apply_is_idempotent_noop(self, tmp_path: Path) -> None:
         """Running `--apply` a second time changes nothing in any file or
         ticket body (T-2994 constraint 4)."""

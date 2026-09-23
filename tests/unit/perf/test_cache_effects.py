@@ -25,7 +25,7 @@ class TestPerf017:
     """PERF017: an if/else where only one returning branch writes to the
     cache -- the H2 audit shape (unmeasurable outcome never memoized)."""
 
-    # frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations  # noqa: E501
+    # frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations
     def test_success_only_cache_write_is_flagged(self, tmp_path: Path) -> None:
         src = (
             "def recheck(root, pairs):\n"
@@ -39,7 +39,7 @@ class TestPerf017:
         parsed = parse_file(_write(tmp_path, "mod.py", src)).danger_ok
         violations = cache_effect_violations([parsed])
         assert any(v.rule == "PERF017" for v in violations)
-# frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations  # noqa: E501
+# frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations
 
     def test_both_branches_writing_cache_is_not_flagged(self, tmp_path: Path) -> None:
         src = (
@@ -62,7 +62,7 @@ class TestPerf018:
     callee inside the loop -- the H4 audit shape (`read_all_leases`
     hoisted, then re-scanned one frame below the loop)."""
 
-    # frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations  # noqa: E501
+    # frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations
     def test_hoisted_value_recomputed_in_loop_is_flagged(self, tmp_path: Path) -> None:
         src = (
             "def find_leaked(root, others):\n"
@@ -75,7 +75,7 @@ class TestPerf018:
         violations = cache_effect_violations([parsed])
         assert any(v.rule == "PERF018" for v in violations)
 
-    # frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations  # noqa: E501
+    # frob:tests src/frob/perf/_cache_effects.py::cache_effect_violations
     def test_hoisted_value_threaded_through_is_not_flagged(
         self, tmp_path: Path
     ) -> None:

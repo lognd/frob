@@ -296,7 +296,7 @@ def test_csharp_finds_property_definition(csharp_nested_file):
 
 
 def test_csharp_finds_const_field_definition(csharp_nested_file):
-    # frob:tests tests/unit/test_xref.py::test_csharp_finds_const_field_definition  # noqa: E501
+    # frob:tests tests/unit/test_xref.py::test_csharp_finds_const_field_definition
     # frob:ticket T-4519
     # T-4519: `MaxTotal` is a `const`-modified field, also SymbolKind.CONST.
     result = xref("MaxTotal", csharp_nested_file, lang="csharp")
@@ -305,7 +305,7 @@ def test_csharp_finds_const_field_definition(csharp_nested_file):
 
 
 def test_csharp_finds_nested_type_definition(csharp_nested_file):
-    # frob:tests tests/unit/test_xref.py::test_csharp_finds_nested_type_definition  # noqa: E501
+    # frob:tests tests/unit/test_xref.py::test_csharp_finds_nested_type_definition
     # frob:ticket T-4519
     # T-4519: `Inner` is a class nested inside `Container` (qualname
     # `Frob.Sample.Nested.Container.Inner`) -- `_parsed_definition`

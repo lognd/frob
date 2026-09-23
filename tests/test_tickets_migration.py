@@ -175,7 +175,7 @@ class TestMigrateV1ToV2:
     """`migrate_v1_to_v2`'s own behavior: mode detection, per-shape writes,
     reversibility (monofiles untouched), and the golden round-trip."""
 
-    # frob:tests src/frob/tickets/_store_migrate.py::_migrate_one_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_store_migrate.py::_migrate_one_v2
     def test_migrates_one_active_ticket_with_done_report(self, tmp_path: Path) -> None:
         """The Done report splits out into its own done-report.md; the
         remaining ticket.md carries the frontmatter+description only."""
@@ -235,7 +235,7 @@ class TestMigrateV1ToV2:
         assert (v2_archive_dir(tmp_path, "T-0000") / "ticket.md").is_file()
         assert not (v2_ticket_dir(tmp_path, "T-0000") / "ticket.md").is_file()
 
-    # frob:tests src/frob/tickets/_store_migrate.py::migrate_v1_to_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_v1_to_v2
     def test_draft_id_ticket_migrates_like_any_other(self, tmp_path: Path) -> None:
         """A T-draft-* id is just another directory name -- no special
         casing (design section 1.1)."""
@@ -246,7 +246,7 @@ class TestMigrateV1ToV2:
 
         assert (v2_ticket_dir(tmp_path, "T-draft-abc12345") / "ticket.md").is_file()
 
-    # frob:tests src/frob/tickets/_store_migrate.py::migrate_v1_to_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_v1_to_v2
     def test_idempotent_no_v1_state_is_a_no_op(self, tmp_path: Path) -> None:
         """Once a repo is already v2-mode, migrate is a safe Ok(0) no-op --
         it never re-reads a monofile ledger that is no longer authoritative."""
@@ -259,7 +259,7 @@ class TestMigrateV1ToV2:
         assert second.is_ok
         assert second.danger_ok == 0
 
-    # frob:tests src/frob/tickets/_store_migrate.py::migrate_v1_to_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_v1_to_v2
     def test_golden_round_trip_semantic_equality(self, tmp_path: Path) -> None:
         """GIVEN the fixture monofile ledger (T-1259 acceptance[3])
         WHEN migrated to v2 THEN the same id set and equal per-ticket
@@ -499,7 +499,7 @@ class TestLedgerV1DeprecationGate:
     """LEDGERV1001 (ledger v2 design section 7, deliverable 3): the
     escalation-after-expiry warning naming `frob ticket migrate --to v2`."""
 
-    # frob:tests src/frob/gates/_tickets_gate.py::_ledgerv1001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_ledgerv1001_violations
     def test_monofile_mode_warns_before_sunset(self, tmp_path: Path) -> None:
         """A real monofile-mode repo, today's date still inside the
         recorded window, gets exactly one WARN."""
@@ -516,7 +516,7 @@ class TestLedgerV1DeprecationGate:
         assert violations[0].severity == Severity.WARN
         assert "frob ticket migrate --to v2" in violations[0].message
 
-    # frob:tests src/frob/gates/_tickets_gate.py::_ledgerv1001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_ledgerv1001_violations
     def test_monofile_mode_errors_past_sunset(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -530,7 +530,7 @@ class TestLedgerV1DeprecationGate:
         assert len(violations) == 1
         assert violations[0].severity == Severity.ERROR
 
-    # frob:tests src/frob/gates/_tickets_gate.py::_ledgerv1001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_ledgerv1001_violations
     def test_v2_mode_repo_is_silent(self, tmp_path: Path) -> None:
         """A repo already migrated to v2, with the monofiles ALSO deleted
         (the T-2356 cutover's second commit), never fires LEDGERV1001 --
@@ -551,7 +551,7 @@ class TestLedgerV1DeprecationGate:
         archive_path(tmp_path).unlink()
         assert _ledgerv1001_violations(tmp_path) == ()
 
-    # frob:tests src/frob/gates/_tickets_gate.py::_ledgerv1001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_ledgerv1001_violations
     def test_v2_mode_repo_with_a_lingering_monofile_errors(
         self, tmp_path: Path
     ) -> None:
@@ -733,7 +733,7 @@ class TestMigrateMissingV2:
     `migrate_v1_to_v2` leaves open once a repo is already v2-mode
     (already-v2 no-ops the whole migrator, so legacy monofile-only
     tickets from before full cutover never get a v2 file at all)."""
-# frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2  # noqa: E501
+# frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
 
     def test_migrates_only_the_monofile_only_tickets(self, tmp_path: Path) -> None:
         """GIVEN a repo that is ALREADY v2-mode (one ticket already has a
@@ -764,7 +764,7 @@ class TestMigrateMissingV2:
         assert (v2_ticket_dir(tmp_path, "T-draft-abc12345") / "ticket.md").is_file()
         assert (v2_archive_dir(tmp_path, "T-0000") / "ticket.md").is_file()
 
-    # frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
     def test_never_overwrites_an_already_migrated_ticket(self, tmp_path: Path) -> None:
         """T-2355's non-negotiable positive control: a ticket whose v2
         state has already DIVERGED from its stale `tickets.md` row (the

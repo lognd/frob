@@ -20,19 +20,19 @@ class TestIsPastSunset:
     date comparison -- both the runtime shim and this test call it rather
     than duplicating the comparison as a literal."""
 
-    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset
     def test_before_sunset_is_false(self) -> None:
         """A date strictly before the sunset has not yet passed it."""
         assert not is_past_sunset("2026-12-01", today=dt.date(2026, 11, 30))
 
-    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset
 
     def test_on_sunset_is_false(self) -> None:
         """The sunset date itself is still within the working window
         (the boundary is exclusive: `today > sunset`, not `>=`)."""
         assert not is_past_sunset("2026-12-01", today=dt.date(2026, 12, 1))
 
-    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_shims.py::is_past_sunset
     def test_after_sunset_is_true(self) -> None:
         """A date strictly after the sunset has passed it."""
         assert is_past_sunset("2026-12-01", today=dt.date(2026, 12, 2))
@@ -40,10 +40,10 @@ class TestIsPastSunset:
 
 class TestAnnounceShim:
     """`announce_shim` is what every deleted verb's runner calls once, at
-    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim
     the top of its `run()` (the fmt_runner precedent, generalized)."""
 
-    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim
     def test_before_sunset_prints_notice_and_returns(self, capsys) -> None:
         """Before the sunset date: a stderr notice naming the survivor,
         and the call returns normally (exit 0) so the old spelling keeps
@@ -60,7 +60,7 @@ class TestAnnounceShim:
         assert "explore" in captured.err
         assert captured.out == ""
 
-    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim
     def test_after_sunset_exits_nonzero(self, capsys) -> None:
         """Past the sunset date: `SystemExit` with a non-zero code, and
         the stderr notice explains what replaced the removed spelling."""
@@ -77,7 +77,7 @@ class TestAnnounceShim:
         assert "removed" in captured.err
         assert "format --directives" in captured.err
 
-    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim
     def test_never_writes_to_stdout(self, capsys) -> None:
         """The notice must never touch stdout -- a `--json`-producing
         runner's stdout is the JSON payload itself (the T-2492 precedent
@@ -94,7 +94,7 @@ class TestAnnounceShim:
         assert captured.out == ""
 
     # frob:ticket T-5285
-    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_shims.py::announce_shim
     def test_notice_is_logged_at_debug_not_info(self, caplog) -> None:  # noqa: ANN001
         """T-5285 regression: `_log.info` here used to leak this exact
         message onto stdout in every real subprocess CLI invocation
@@ -207,7 +207,7 @@ class TestPrintWhereis:
     standalone `frob whereis`, T-4299): shared by `frob doctor --whereis`
     and the deprecated `frob whereis` shim."""
 
-    # frob:tests src/frob/app/doctor_runner.py::print_whereis  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::print_whereis
     def test_plain_output_names_the_live_executable(self, capsys) -> None:
         """The plain-text path prints the actually-running interpreter's
         own `sys.executable`, never a PATH lookup."""
@@ -221,7 +221,7 @@ class TestPrintWhereis:
         assert sys.executable in captured.out
         assert "frob package" in captured.out
 
-    # frob:tests src/frob/app/doctor_runner.py::print_whereis  # noqa: E501
+    # frob:tests src/frob/app/doctor_runner.py::print_whereis
     def test_json_output_is_parseable(self, capsys) -> None:
         """`--json`/`doctor_json=True` emits a parseable JSON payload with
         the same three keys the plain path's lines name."""

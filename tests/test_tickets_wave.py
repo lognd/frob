@@ -63,7 +63,7 @@ class TestWave:
         assert not result.remainder
         assert {t.id for t in result.groups[0].tickets} == {"T-0001", "T-0002"}
 
-    # frob:tests src/frob/tickets/_doable.py::wave  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::wave
     def test_unplaceable_ticket_lands_in_remainder_with_reason(self) -> None:
         # frob:tests \
         # tests/test_tickets_wave.py::TestWave.test_unplaceable_ticket_lands_in_remainder_with_reason  # noqa: E501

@@ -17,11 +17,9 @@ import pytest
 
 # frob:ticket T-2614
 # frob:tests \
-# tests/unit/test_t2450_scope_repair.py::TestT2450ScopeRepair.test_no_scope_entry_conta\
-# ins_a_semicolon
+# tests/unit/test_t2450_scope_repair.py::TestT2450ScopeRepair.test_no_scope_entry_contains_a_semicolon  # noqa: E501
 # frob:tests \
-# tests/unit/test_t2450_scope_repair.py::TestT2450ScopeRepair.test_every_scope_entry_is\
-# _independently_matchable
+# tests/unit/test_t2450_scope_repair.py::TestT2450ScopeRepair.test_every_scope_entry_is_independently_matchable  # noqa: E501
 class TestT2450ScopeRepair:
     """T-2614's own repro: T-2450's declared scope must be two proper
     glob entries, not one semicolon-joined string."""

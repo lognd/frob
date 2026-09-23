@@ -40,7 +40,7 @@ class TestSysThreats:
     optionally scoped to one boundary's protected zone via T-1925's
     node-to-boundary join."""
 
-    # frob:tests src/frob/app/sys_runner.py::_print_threats_report  # noqa: E501
+    # frob:tests src/frob/app/sys_runner.py::_print_threats_report
     def test_no_boundary_prints_every_violation(self, tmp_path: Path, caplog) -> None:
         repo = _init_design_repo(tmp_path, _BOUNDARY_MODEL)
         cfg = AppConfig(sys_command="threats", sys_path=repo)
@@ -50,7 +50,7 @@ class TestSysThreats:
         assert "node=api" in caplog.text
         assert "node=other" in caplog.text
 
-    # frob:tests src/frob/app/sys_runner.py::_run_threats  # noqa: E501
+    # frob:tests src/frob/app/sys_runner.py::_run_threats
     def test_boundary_scopes_to_its_own_zone_only(self, tmp_path: Path, caplog) -> None:
         repo = _init_design_repo(tmp_path, _BOUNDARY_MODEL)
         cfg = AppConfig(sys_command="threats", sys_path=repo, sys_threats_boundary="b1")

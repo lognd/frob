@@ -45,7 +45,7 @@ class TestParseUnityBatchmodeXml:
         }
 
     # frob:tests tests/unit/test_unity_batchmode.py::TestParseUnityBatchmodeXml.test_malformed_xml_is_err_not_empty  # noqa: E501
-    # frob:tests src/frob/testing/_unity_batchmode.py::UnityBatchmodeError  # noqa: E501
+    # frob:tests src/frob/testing/_unity_batchmode.py::UnityBatchmodeError
     def test_malformed_xml_is_err_not_empty(self) -> None:
         # frob:tests src/frob/testing/_unity_batchmode.py::parse_unity_batchmode_xml
         text = (_FIXTURES_DIR / "malformed_results.xml").read_text(encoding="utf-8")
@@ -147,7 +147,7 @@ class TestRunUnityBatchmode:
         assert result.danger_ok == {_NODE_A: True, _NODE_B: False}
 
     # frob:tests tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode.test_editor_not_found_is_err  # noqa: E501
-    # frob:tests src/frob/testing/_unity_batchmode.py::UnityBatchmodeError  # noqa: E501
+    # frob:tests src/frob/testing/_unity_batchmode.py::UnityBatchmodeError
     def test_editor_not_found_is_err(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

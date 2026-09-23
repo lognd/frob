@@ -55,7 +55,7 @@ class TestIsSourceStaleVsMain:
     I/O -- directly testable against synthetic content."""
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_unmodified_source_behind_main_is_stale  # noqa: E501
-    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main
     def test_unmodified_source_behind_main_is_stale(self, hook) -> None:  # noqa: ANN001
         """MUST-FIRE shape: the worktree never touched the file since
         branching (source == merge-base), and main moved it on -- stale."""
@@ -64,7 +64,7 @@ class TestIsSourceStaleVsMain:
             is True
         )
 
-    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_worktree_own_edit_is_never_stale_even_if_main_also_moved  # noqa: E501
     def test_worktree_own_edit_is_never_stale_even_if_main_also_moved(
         self, hook
@@ -78,7 +78,7 @@ class TestIsSourceStaleVsMain:
             )
             is False
         )
-# frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
+# frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_source_matches_main_is_not_stale  # noqa: E501
     def test_source_matches_main_is_not_stale(self, hook) -> None:  # noqa: ANN001
@@ -91,7 +91,7 @@ class TestIsSourceStaleVsMain:
         )
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_unknown_git_readings_fail_open  # noqa: E501
-    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main
     def test_unknown_git_readings_fail_open(self, hook) -> None:  # noqa: ANN001
         """A `None` main/merge-base reading (git failure) must never be
         read as stale -- fail open, matching this module's other best-
@@ -101,7 +101,7 @@ class TestIsSourceStaleVsMain:
         assert hook._is_source_stale_vs_main("x", None, None) is False
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_crlf_working_tree_copy_is_not_mistaken_for_an_edit  # noqa: E501
-    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main
     def test_crlf_working_tree_copy_is_not_mistaken_for_an_edit(self, hook) -> None:  # noqa: ANN001
         """T-4057: on Windows, `source_text` (read from the working tree)
         can carry CRLF line endings from `core.autocrlf` while `git show`
@@ -117,7 +117,7 @@ class TestIsSourceStaleVsMain:
         )
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_crlf_working_tree_own_edit_still_reads_as_an_edit  # noqa: E501
-    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main
     def test_crlf_working_tree_own_edit_still_reads_as_an_edit(self, hook) -> None:  # noqa: ANN001
         """T-4057: the CRLF normalization must not blunt the MUST-STAY-
         QUIET case -- a genuine worktree edit (content actually differs,
@@ -195,7 +195,7 @@ class TestStaleManagedSourcesAndWriteRefusal:
         return repo
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal.test_stale_file_skipped_forward_file_synced  # noqa: E501
-    # frob:tests .claude/hooks/sync-claude-config.py::stale_managed_sources  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::stale_managed_sources
     def test_stale_file_skipped_forward_file_synced(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -227,7 +227,7 @@ class TestStaleManagedSourcesAndWriteRefusal:
         assert "worktree's own edit" in dest.read_text(encoding="utf-8")
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal.test_allow_stale_overrides_the_refusal  # noqa: E501
-    # frob:tests .claude/hooks/sync-claude-config.py::stale_managed_sources  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::stale_managed_sources
     def test_allow_stale_overrides_the_refusal(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -269,7 +269,7 @@ class TestHomeClaudeMissingNotApplicable:
     read as every managed file having "drifted"."""
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_home_claude_missing_true_when_root_absent  # noqa: E501
-    # frob:tests .claude/hooks/sync-claude-config.py::home_claude_missing  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::home_claude_missing
     def test_home_claude_missing_true_when_root_absent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -280,7 +280,7 @@ class TestHomeClaudeMissingNotApplicable:
         assert module.home_claude_missing() is True
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_home_claude_missing_false_when_root_present  # noqa: E501
-    # frob:tests .claude/hooks/sync-claude-config.py::home_claude_missing  # noqa: E501
+    # frob:tests .claude/hooks/sync-claude-config.py::home_claude_missing
     def test_home_claude_missing_false_when_root_present(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -35,7 +35,7 @@ class TestLexcheck001:
     """`lexical_selfcheck_gate`: flags a NEW single-function lexical
     decider, stays silent on allowlisted and non-decision code."""
 
-    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
     def test_new_lexical_decider_is_flagged(self, tmp_path: Path) -> None:
         """A function that both `re.search`-decides and constructs a
         symref-less `Violation` -- the exact REF001-pre-fix shape -- is
@@ -63,7 +63,7 @@ class TestLexcheck001:
         assert len(hits) == 1
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert "_bad_gate" in hits[0].message
-# frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+# frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
 
     def test_allowlisted_function_is_silent(self, tmp_path: Path) -> None:
         """The identical decider shape, at an `_ALLOWLIST`-listed (module,
@@ -91,7 +91,7 @@ class TestLexcheck001:
             "_stale_fake_marker_violations",
         ) in mod._ALLOWLIST
         violations = lexical_selfcheck_gate(tmp_path)
-        # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+        # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
         assert [v for v in violations if v.rule == "LEXCHECK001"] == []
 
     def test_semantic_function_with_incidental_regex_is_silent(
@@ -115,11 +115,11 @@ class TestLexcheck001:
         )
         _commit(tmp_path)
 
-        # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+        # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
         violations = lexical_selfcheck_gate(tmp_path)
         assert [v for v in violations if v.rule == "LEXCHECK001"] == []
 
-    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
     def test_non_gate_code_never_scanned(self, tmp_path: Path) -> None:
         """A lexical decider OUTSIDE `src/frob/gates/` (this gate's own
         declared scope, T-2344) is never scanned -- this check is about
@@ -162,7 +162,7 @@ class TestLexcheck001:
     #: reaching for a blind `== []`.
     _KNOWN_SUPPLYCHAIN_LEXCHECK001_BACKLOG: frozenset[tuple[str, str]] = frozenset()
 
-    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
     def test_supplychain_lexcheck001_backlog_is_empty_t2469(self) -> None:
         """This repo's OWN `DETECTOR_PACKAGE_ROOTS` scan (T-2466: widened
         past `src/frob/gates/**` alone to include `vet/`/`strata/`/
@@ -187,7 +187,7 @@ class TestLexcheck001:
         hit_keys = {(hit.file, hit.message.split(" ")[2]) for hit in hits}
         assert hit_keys == self._KNOWN_SUPPLYCHAIN_LEXCHECK001_BACKLOG
 
-    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
     def test_vet_needle_matcher_shape_is_flagged(self, tmp_path: Path) -> None:
         """Proves `lexical_selfcheck_gate` flags a detector under
         `src/frob/vet/` that decides via `bytes.find` needle matching and
@@ -221,7 +221,7 @@ class TestLexcheck001:
         assert hits[0].file == "src/frob/vet/_offender_capability.py"
         assert "_matched_capabilities" in hits[0].message
 
-    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
     def test_elementtree_find_is_not_a_trigger(self, tmp_path: Path) -> None:
         """The `.find(` trigger excludes an ElementTree-shaped call (this
         repo's own `_el`/`_element` naming convention, `_coverage.py`'s
@@ -248,7 +248,7 @@ class TestLexcheck001:
         violations = lexical_selfcheck_gate(tmp_path)
         assert [v for v in violations if v.rule == "LEXCHECK001"] == []
 
-    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
     def test_scans_scope_is_disclosed_in_log(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

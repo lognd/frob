@@ -31,7 +31,7 @@ from frob.gates._waive import known_gate_rule_ids
 
 
 class TestScanEmittedRuleIdsBranches:
-    # frob:tests src/frob/gates/_rule_id_scan.py::_scan_file_for_rule_literals  # noqa: E501
+    # frob:tests src/frob/gates/_rule_id_scan.py::_scan_file_for_rule_literals
     def test_commented_out_rule_literal_is_skipped(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_commented_out_rule_literal_is_skipped  # noqa: E501
         gates_dir = tmp_path / "src" / "frob" / "gates"
@@ -46,7 +46,7 @@ class TestScanEmittedRuleIdsBranches:
         assert "ZZZTEST010" not in found
         assert "ZZZTEST011" in found
 
-    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids  # noqa: E501
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids
     def test_missing_scanned_base_directory_is_skipped_not_an_error(
         self, tmp_path: Path
     ) -> None:
@@ -57,7 +57,7 @@ class TestScanEmittedRuleIdsBranches:
         found = scan_emitted_rule_ids(tmp_path)
         assert found == {}
 
-    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids  # noqa: E501
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids
     def test_unresolved_const_ref_is_left_out(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_unresolved_const_ref_is_left_out  # noqa: E501
         gates_dir = tmp_path / "src" / "frob" / "gates"
@@ -73,7 +73,7 @@ class TestScanEmittedRuleIdsBranches:
 
         assert found == {}
 
-    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids  # noqa: E501
+    # frob:tests src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids
     def test_const_ref_resolves_against_assignment_in_another_file(
         self, tmp_path: Path
     ) -> None:
@@ -91,7 +91,7 @@ class TestScanEmittedRuleIdsBranches:
 
 
 class TestGeneratedGateRuleIdsRetiredOverride:
-    # frob:tests src/frob/gates/_rule_id_scan.py::generated_gate_rule_ids  # noqa: E501
+    # frob:tests src/frob/gates/_rule_id_scan.py::generated_gate_rule_ids
     def test_default_retired_set_is_module_constant(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride.test_default_retired_set_is_module_constant  # noqa: E501
         gates_dir = tmp_path / "src" / "frob" / "gates"

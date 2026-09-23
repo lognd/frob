@@ -23,24 +23,21 @@ class TestClassificationCsv:
     table T-1418 produced."""
 
     # frob:tests \
-    # tests/unit/test_docs_test005_classification_t1418.py::TestClassificationCsv.test_\
-    # has_exactly_306_rows
+    # tests/unit/test_docs_test005_classification_t1418.py::TestClassificationCsv.test_has_exactly_306_rows  # noqa: E501
     def test_has_exactly_306_rows(self) -> None:
         with _CSV.open(newline="") as fh:
             rows = list(csv.DictReader(fh, delimiter="|"))
         assert len(rows) == 306
 
     # frob:tests \
-    # tests/unit/test_docs_test005_classification_t1418.py::TestClassificationCsv.test_\
-    # every_row_has_a_named_covering_test
+    # tests/unit/test_docs_test005_classification_t1418.py::TestClassificationCsv.test_every_row_has_a_named_covering_test  # noqa: E501
     def test_every_row_has_a_named_covering_test(self) -> None:
         with _CSV.open(newline="") as fh:
             rows = list(csv.DictReader(fh, delimiter="|"))
         assert all(row["covering_tests"].strip() for row in rows)
 
     # frob:tests \
-    # tests/unit/test_docs_test005_classification_t1418.py::TestClassificationCsv.test_\
-    # classification_totals_match_the_audit_doc
+    # tests/unit/test_docs_test005_classification_t1418.py::TestClassificationCsv.test_classification_totals_match_the_audit_doc  # noqa: E501
     def test_classification_totals_match_the_audit_doc(self) -> None:
         with _CSV.open(newline="") as fh:
             rows = list(csv.DictReader(fh, delimiter="|"))

@@ -15,7 +15,7 @@ from frob.gates._claim_lint import claim_lint_gate
 from tests.conftest import _by_rule, _git_init, _write
 
 
-# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate  # noqa: E501
+# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate
 def test_claim001_fires_on_unbound_never_claim(tmp_path: Path) -> None:
     """Must-fire: a function's docstring says "this never raises" with no
     `frob:invariant` directive anywhere in its span."""
@@ -35,7 +35,7 @@ def test_claim001_fires_on_unbound_never_claim(tmp_path: Path) -> None:
     assert len(violations) == 1
     assert violations[0].symref == "pkg/mod.py::parse"
 
-# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate  # noqa: E501
+# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate
 
 def test_claim001_quiet_when_invariant_directive_present(tmp_path: Path) -> None:
     """Must-stay-quiet: the SAME docstring text, but WITH a
@@ -57,7 +57,7 @@ def test_claim001_quiet_when_invariant_directive_present(tmp_path: Path) -> None
     assert violations == []
 
 
-# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate  # noqa: E501
+# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate
 def test_claim001_quiet_on_ordinary_prose_regardless_of_invariant_coverage(
     tmp_path: Path,
 ) -> None:
@@ -76,7 +76,7 @@ def test_claim001_quiet_on_ordinary_prose_regardless_of_invariant_coverage(
     assert violations == []
 
 
-# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate  # noqa: E501
+# frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate
 def test_claim001_honors_frob_waive_escape_hatch(tmp_path: Path) -> None:
     """A `frob:waive CLAIM001 reason="..."` bound to the same symbol
     suppresses the finding -- the standard escape hatch for a claim

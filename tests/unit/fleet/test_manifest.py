@@ -37,7 +37,7 @@ class TestLoadManifest:
         assert manifest.repos[1].path == Path(abs_repo)
 
     # frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_relative_path_resolves_against_manifest_dir_not_cwd  # noqa: E501
-    # frob:tests src/frob/fleet/__init__.py::_rebase_relative_paths  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::_rebase_relative_paths
     def test_relative_path_resolves_against_manifest_dir_not_cwd(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -62,14 +62,14 @@ class TestLoadManifest:
         resolved = result.danger_ok.repos[0].path
         assert resolved == (manifest_dir / "../typani")
         assert elsewhere not in resolved.parents
-# frob:tests src/frob/fleet/__init__.py::load_manifest  # noqa: E501
+# frob:tests src/frob/fleet/__init__.py::load_manifest
 
     def test_load_manifest_missing(self, tmp_path: Path) -> None:
         result = load_manifest(tmp_path / "does-not-exist.toml")
         assert result.is_err
         assert result.danger_err is FleetError.ManifestNotFound
 
-    # frob:tests src/frob/fleet/__init__.py::load_manifest  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::load_manifest
     def test_load_manifest_malformed(self, tmp_path: Path) -> None:
         manifest_path = tmp_path / "fleet.toml"
         manifest_path.write_text("not valid toml [[[")
@@ -78,7 +78,7 @@ class TestLoadManifest:
         assert result.danger_err is FleetError.ManifestMalformed
 
     # frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_load_manifest_schema_invalid  # noqa: E501
-    # frob:tests src/frob/fleet/__init__.py::load_manifest  # noqa: E501
+    # frob:tests src/frob/fleet/__init__.py::load_manifest
     def test_load_manifest_schema_invalid(self, tmp_path: Path) -> None:
         """Valid TOML that does not fit `RepoEntry`'s schema (missing the
         required `path` field) must still return `Err(ManifestMalformed)`

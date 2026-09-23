@@ -71,8 +71,7 @@ class TestReadbackGuardForcesLoudFailure:
     precede the write -- forced here at both seams that can violate it."""
 
     # frob:tests \
-    # tests/unit/test_ticket_new_readback_guard_t4339.py::TestReadbackGuardForcesLoudFa\
-    # ilure.test_land_in_progress_rollback_prints_no_success_line
+    # tests/unit/test_ticket_new_readback_guard_t4339.py::TestReadbackGuardForcesLoudFailure.test_land_in_progress_rollback_prints_no_success_line  # noqa: E501
     def test_land_in_progress_rollback_prints_no_success_line(
         self, tmp_path: Path, caplog, monkeypatch
     ) -> None:
@@ -101,8 +100,7 @@ class TestReadbackGuardForcesLoudFailure:
         )
 
     # frob:tests \
-    # tests/unit/test_ticket_new_readback_guard_t4339.py::TestReadbackGuardForcesLoudFa\
-    # ilure.test_readback_miss_after_reported_success_prints_no_success_line
+    # tests/unit/test_ticket_new_readback_guard_t4339.py::TestReadbackGuardForcesLoudFailure.test_readback_miss_after_reported_success_prints_no_success_line  # noqa: E501
     def test_readback_miss_after_reported_success_prints_no_success_line(
         self, tmp_path: Path, caplog, monkeypatch
     ) -> None:
@@ -148,8 +146,7 @@ class TestNormalPathStillCommitsAndReportsSuccess:
     back from the store (this is what the guard checks, not a mock)."""
 
     # frob:tests \
-    # tests/unit/test_ticket_new_readback_guard_t4339.py::TestNormalPathStillCommitsAnd\
-    # ReportsSuccess.test_ordinary_filing_prints_success_and_reads_back
+    # tests/unit/test_ticket_new_readback_guard_t4339.py::TestNormalPathStillCommitsAndReportsSuccess.test_ordinary_filing_prints_success_and_reads_back  # noqa: E501
     def test_ordinary_filing_prints_success_and_reads_back(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -175,8 +172,7 @@ class TestNormalPathStillCommitsAndReportsSuccess:
         )
 
     # frob:tests \
-    # tests/unit/test_ticket_new_readback_guard_t4339.py::TestNormalPathStillCommitsAnd\
-    # ReportsSuccess.test_json_path_still_reports_success_and_reads_back
+    # tests/unit/test_ticket_new_readback_guard_t4339.py::TestNormalPathStillCommitsAndReportsSuccess.test_json_path_still_reports_success_and_reads_back  # noqa: E501
     def test_json_path_still_reports_success_and_reads_back(
         self, tmp_path: Path, caplog
     ) -> None:

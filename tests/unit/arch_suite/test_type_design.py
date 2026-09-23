@@ -14,7 +14,7 @@ pytestmark = pytest.mark.skipif(not HAS_ARCH, reason="frob.arch not available")
 class TestLayeringConfig:
     """`LayeringConfig.layer_for` (docs/modules/arch.md#dip-layering-contract)."""
 
-    # frob:tests src/frob/arch/_layering.py::LayeringConfig.layer_for  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::LayeringConfig.layer_for
     def test_layer_for_longest_prefix_match(self) -> None:
         from frob.arch._layering import LayeringConfig
 
@@ -28,7 +28,7 @@ class TestLayeringConfig:
         assert config.layer_for("src/app/admin/views.py") == "app_admin"
         assert config.layer_for("src/app/main.py") == "app"
 
-    # frob:tests src/frob/arch/_layering.py::LayeringConfig.layer_for  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::LayeringConfig.layer_for
     def test_layer_for_unmatched_path_is_none(self) -> None:
         from frob.arch._layering import LayeringConfig
 
@@ -38,14 +38,14 @@ class TestLayeringConfig:
 
 class TestLoadLayeringConfig:
     """`load_layering_config` (docs/modules/arch.md#dip-layering-contract)."""
-# frob:tests src/frob/arch/_layering.py::load_layering_config  # noqa: E501
+# frob:tests src/frob/arch/_layering.py::load_layering_config
 
     def test_missing_frob_toml_returns_none(self, tmp_path: Path) -> None:
         from frob.arch._layering import load_layering_config
 
         assert load_layering_config(tmp_path) is None
 
-    # frob:tests src/frob/arch/_layering.py::load_layering_config  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::load_layering_config
     def test_parses_declared_layers_and_allow_table(self, tmp_path: Path) -> None:
         from frob.arch._layering import load_layering_config
 
@@ -65,10 +65,10 @@ class TestLoadLayeringConfig:
 
 class TestLayeringViolations:
     """`check_layering_violations`
-    # frob:tests src/frob/arch/_layering.py::check_layering_edges  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::check_layering_edges
     (docs/modules/arch.md#dip-layering-contract)."""
 
-    # frob:tests src/frob/arch/_layering.py::check_layering_edges  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::check_layering_edges
     def test_disallowed_cross_layer_edge_flagged(self, tmp_path: Path) -> None:
         from frob.arch._layering import LayeringConfig, check_layering_violations
 
@@ -88,7 +88,7 @@ class TestLayeringViolations:
         assert len(violations) == 1
         assert violations[0].category == "dip-layering-violation"
 
-    # frob:tests src/frob/arch/_layering.py::check_layering_edges  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::check_layering_edges
     def test_allowed_cross_layer_edge_not_flagged(self, tmp_path: Path) -> None:
         from frob.arch._layering import LayeringConfig, check_layering_violations
 
@@ -106,7 +106,7 @@ class TestLayeringViolations:
         out = check_layering_violations(tmp_path, config)
         assert [s for s in out if s.category == "dip-layering-violation"] == []
 
-    # frob:tests src/frob/arch/_layering.py::check_layering_edges  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::check_layering_edges
     def test_dynamic_import_in_layered_file_flagged(self, tmp_path: Path) -> None:
         from frob.arch._layering import LayeringConfig, check_layering_violations
 
@@ -128,7 +128,7 @@ class TestNoDiConstructionSmell:
     """`check_no_di_construction`
     (docs/modules/arch.md#no-di-construction-smell)."""
 
-    # frob:tests src/frob/arch/_layering.py::check_no_di_construction  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::check_no_di_construction
     def test_inline_construction_outside_init_flagged(self) -> None:
         from frob.arch._layering import check_no_di_construction
         from frob.arch._normalized import (
@@ -160,7 +160,7 @@ class TestNoDiConstructionSmell:
         assert out[0].category == "no-di-construction"
         assert out[0].symref == "pkg/mod.py::Worker.run"
 
-    # frob:tests src/frob/arch/_layering.py::check_no_di_construction  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::check_no_di_construction
     def test_construction_inside_init_not_flagged(self) -> None:
         from frob.arch._layering import check_no_di_construction
         from frob.arch._normalized import (
@@ -190,7 +190,7 @@ class TestNoDiConstructionSmell:
         out = check_no_di_construction(module)
         assert out == []
 
-    # frob:tests src/frob/arch/_layering.py::check_no_di_construction  # noqa: E501
+    # frob:tests src/frob/arch/_layering.py::check_no_di_construction
     def test_construction_inside_factory_function_not_flagged(self) -> None:
         from frob.arch._layering import check_no_di_construction
         from frob.arch._normalized import (
@@ -218,10 +218,10 @@ class TestNoDiConstructionSmell:
 
 
 class TestIllegalStatesRepresentable:
-    # frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable
     """`check_illegal_states_representable`
     (docs/modules/arch.md#type-driven-design-checks)."""
-# frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable  # noqa: E501
+# frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable
 
     def test_bool_field_cross_field_guard_flagged(self) -> None:
         from frob.arch._normalized import (
@@ -262,7 +262,7 @@ class TestIllegalStatesRepresentable:
         assert out[0].category == "illegal-states-representable"
         assert out[0].symref == "pkg/mod.py::Payment.__init__"
 
-    # frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable
     def test_bool_field_alone_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -294,13 +294,13 @@ class TestIllegalStatesRepresentable:
         assert out == []
 
 
-# frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession  # noqa: E501
+# frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession
 class TestPrimitiveObsession:
     """`check_primitive_obsession`
-    # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession
     (docs/modules/arch.md#type-driven-design-checks)."""
 
-    # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession
     def test_three_plus_raw_params_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedFunction,
@@ -327,7 +327,7 @@ class TestPrimitiveObsession:
         assert out[0].category == "primitive-obsession"
         assert out[0].metric == 3
 
-    # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_primitive_obsession
     def test_two_raw_params_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedFunction,
@@ -356,7 +356,7 @@ class TestParseDontValidate:
     """`check_parse_dont_validate`
     (docs/modules/arch.md#type-driven-design-checks)."""
 
-    # frob:tests src/frob/arch/_typedesign.py::check_parse_dont_validate  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_parse_dont_validate
     def test_validates_then_returns_same_type_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -384,7 +384,7 @@ class TestParseDontValidate:
         assert out[0].category == "parse-dont-validate"
         assert out[0].symref == "validate_email"
 
-    # frob:tests src/frob/arch/_typedesign.py::check_parse_dont_validate  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_parse_dont_validate
     def test_validates_then_returns_refined_type_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -415,7 +415,7 @@ class TestBooleanFlagParam:
     """`check_boolean_flag_param`
     (docs/modules/arch.md#type-driven-design-checks)."""
 
-    # frob:tests src/frob/arch/_typedesign.py::check_boolean_flag_param  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_boolean_flag_param
     def test_public_function_branching_on_bool_param_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -440,7 +440,7 @@ class TestBooleanFlagParam:
         assert out[0].category == "boolean-flag-param"
         assert out[0].metric == 1
 
-    # frob:tests src/frob/arch/_typedesign.py::check_boolean_flag_param  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::check_boolean_flag_param
     def test_private_function_not_flagged(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,
@@ -468,7 +468,7 @@ class TestRunTypeDesignChecks:
     """`run_typedesign_checks` combines every ARCH1xx type-driven-design
     check (docs/modules/arch.md#type-driven-design-checks)."""
 
-    # frob:tests src/frob/arch/_typedesign.py::run_typedesign_checks  # noqa: E501
+    # frob:tests src/frob/arch/_typedesign.py::run_typedesign_checks
     def test_combines_all_four_checks(self) -> None:
         from frob.arch._normalized import (
             NormalizedBranch,

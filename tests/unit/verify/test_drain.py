@@ -41,7 +41,7 @@ class TestRunDrainAsync:
     """`run_drain_async`: the detached `drain-async` child's own body --
     T-2310's constraints 3 (idle-fleet-only) and 4 (bounded, resumable)."""
 
-    # frob:tests src/frob/verify/_drain.py::DrainError  # noqa: E501
+    # frob:tests src/frob/verify/_drain.py::DrainError
     def test_declines_while_a_land_is_in_progress(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -69,9 +69,9 @@ class TestRunDrainAsync:
         assert result.danger_err is DrainError.LandInProgress
         assert calls == []
 
-    # frob:tests src/frob/verify/_drain.py::record_drain_refusal kind="unit"  # noqa: E501
-    # frob:tests src/frob/verify/_drain.py::load_drain_refusal kind="unit"  # noqa: E501
-    # frob:tests src/frob/verify/_drain.py::DrainRefusalRecord kind="unit"  # noqa: E501
+    # frob:tests src/frob/verify/_drain.py::record_drain_refusal kind="unit"
+    # frob:tests src/frob/verify/_drain.py::load_drain_refusal kind="unit"
+    # frob:tests src/frob/verify/_drain.py::DrainRefusalRecord kind="unit"
     def test_a_genuinely_different_land_is_recorded_not_discarded(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -192,7 +192,7 @@ class TestSpawnDeferredDrain:
         assert len(calls) == 1
         assert "drain-async" in calls[0]
 
-    # frob:tests src/frob/verify/_drain.py::DrainError  # noqa: E501
+    # frob:tests src/frob/verify/_drain.py::DrainError
     def test_exec_disabled_refuses_without_spawning(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -253,7 +253,7 @@ class TestDrainAdvancesWatermarkEndToEnd:
         assert watermark.danger_ok is not None
         assert watermark.danger_ok.commit_sha == "c1"
 
-    # frob:tests src/frob/verify/_drain.py::clear_drain_refusal kind="unit"  # noqa: E501
+    # frob:tests src/frob/verify/_drain.py::clear_drain_refusal kind="unit"
     def test_a_round_that_runs_clears_a_prior_refusal_record(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

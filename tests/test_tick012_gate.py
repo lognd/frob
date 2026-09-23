@@ -91,7 +91,7 @@ class TestTick012LeaseScopeDrift:
         return tmp_path
 
     # frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_stale_superset_path_fires  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick012_lease_scope_drift  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick012_lease_scope_drift
     def test_stale_superset_path_fires(self, tmp_path: Path) -> None:
         """Must-fire control: the lease still names `src/b.py`, but the
         ticket's declared scope has narrowed to only `src/a.py`."""
@@ -109,7 +109,7 @@ class TestTick012LeaseScopeDrift:
         assert "src/b.py" in tick012[0].message
 
     # frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_lease_matching_current_scope_is_silent  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick012_lease_scope_drift  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick012_lease_scope_drift
     def test_lease_matching_current_scope_is_silent(self, tmp_path: Path) -> None:
         """Must-not-fire control: the lease's recorded scope is an exact
         match for the ticket's current declared scope -- no drift."""
@@ -123,7 +123,7 @@ class TestTick012LeaseScopeDrift:
         assert not any(v.rule == "TICK012" for v in violations)
 
     # frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_queued_ticket_with_no_lease_is_silent  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick012_lease_scope_drift  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick012_lease_scope_drift
     def test_queued_ticket_with_no_lease_is_silent(self, tmp_path: Path) -> None:
         """A QUEUED ticket (no live lease, nothing in-progress to drift)
         never fires TICK012, even with a broad declared scope."""
@@ -135,7 +135,7 @@ class TestTick012LeaseScopeDrift:
         assert not any(v.rule == "TICK012" for v in violations)
 
     # frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_dir_scope_still_covers_its_own_lease_paths  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick012_lease_scope_drift  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick012_lease_scope_drift
     def test_dir_scope_still_covers_its_own_lease_paths(self, tmp_path: Path) -> None:
         """A lease path still genuinely covered by the ticket's current
         directory-shaped declared scope (`scope_matches`'s glob

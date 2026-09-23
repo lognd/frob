@@ -39,7 +39,7 @@ class TestFixEngineTierA:
     def test_pre_fix_dirty_snapshot_captures_uncommitted_content(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::_snapshot_dirty_files  # noqa: E501
+        # frob:tests src/frob/gates/_fix_engine.py::_snapshot_dirty_files
         from frob.gates._fix_engine import _snapshot_dirty_files
 
         root = tmp_path / "repo"
@@ -73,7 +73,7 @@ class TestFixEngineTierA:
 
     # -- acceptance [0]: DOC007 dotted-form rewrite ------------------------
 
-    # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"
     def test_doc007_dotted_form_rewrite_applies_and_reverifies_clean(
         self, tmp_path: Path
     ) -> None:
@@ -2704,7 +2704,7 @@ class TestFixEngineScopeLease:
     def test_uncommitted_in_scope_edit_survives_a_disqualified_tier_a_revert(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine_scope.py::_revert_fix_file  # noqa: E501
+        # frob:tests src/frob/gates/_fix_engine_scope.py::_revert_fix_file
         # T-2351: reproduces the T-2194/T-2329/T-2323 incident end to end.
         # A ticket has a REAL, UNCOMMITTED, in-scope edit to a file
         # (matching T-2194's own uncommitted design/frob.strata capability
@@ -2778,7 +2778,7 @@ class TestFixEngineScopeLease:
     def test_committed_edit_is_unaffected_by_a_disqualified_tier_a_revert(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine_scope.py::_revert_fix_file  # noqa: E501
+        # frob:tests src/frob/gates/_fix_engine_scope.py::_revert_fix_file
         # T-2351: the T-2323 discriminating comparison, as a regression
         # test -- an edit the ticket already `git commit`ed to its own
         # branch was ALWAYS safe (the old `git checkout --` restores to

@@ -25,7 +25,7 @@ _REGISTRY_DIR = _REPO_ROOT / "docs" / "design" / "registry"
 class TestCheckCoverageRegistryFile:
     """`check-coverage.yaml` loads and is a real `RegistryFile` instance."""
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_is_in_registry_files(self) -> None:
         assert "check-coverage.yaml" in REGISTRY_FILES
 
@@ -91,7 +91,7 @@ class TestExhaustivenessGateOverRealCheckCoverage:
     for `check-coverage.yaml` specifically -- the reflexive registry is
     itself fully dispositioned, not just loadable."""
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_no_check_coverage_violations(self) -> None:
         # A bare empty queue would make every `deferred:T-XXXX`
         # disposition in check-coverage.yaml classify as REG003 (ticket

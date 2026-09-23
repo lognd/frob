@@ -2980,7 +2980,7 @@ class TestCoverageLoad:
         assert load_stamp(tmp_path) is None
 
     # frob:ticket T-1180
-    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated
     def test_stamp_coverage_refuses_below_deflation_floor(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage
         # T-1180: extends TEST011's WARN-only deflation heuristic into a
@@ -3017,7 +3017,7 @@ class TestCoverageLoad:
         assert not (tmp_path / "frob-coverage.lock.json").exists()
 
     # frob:ticket T-1180
-    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated
     def test_stamp_coverage_deflation_floor_skipped_below_min_known_modules(
         self, tmp_path: Path
     ) -> None:
@@ -3038,7 +3038,7 @@ class TestCoverageLoad:
         assert (tmp_path / ".frob" / "coverage-stamp").exists()
 
     # frob:ticket T-1435
-    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated
     def test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop(
         self, tmp_path: Path
     ) -> None:
@@ -3095,7 +3095,7 @@ class TestCoverageLoad:
         assert len(json.loads(lock_text)["module_line"]) == 24
 
     # frob:ticket T-1435
-    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::_filtered_coverage_or_deflated
     def test_stamp_coverage_provenance_check_skipped_without_committed_lock(
         self, tmp_path: Path
     ) -> None:
@@ -3169,7 +3169,7 @@ class TestCoverageLoad:
         assert not (tmp_path / "frob-coverage.lock.json").exists()
 
     # frob:ticket T-1236
-    # frob:tests src/frob/gates/_coverage.py::_canary_deflation  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::_canary_deflation
     def test_stamp_coverage_canary_check_skipped_when_module_unknown(
         self, tmp_path: Path
     ) -> None:
@@ -3891,7 +3891,7 @@ class TestEntrypointCoverage:
         (tmp_path / "coverage.xml").write_text(xml)
 
     # frob:tests tests/gates_suite/test_coverage.py::TestEntrypointCoverage.test_uncovered_guard_fires_cov010  # noqa: E501
-    # frob:tests src/frob/gates/_coverage.py::entrypoint_coverage_violations  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::entrypoint_coverage_violations
     def test_uncovered_guard_fires_cov010(self, tmp_path: Path) -> None:
         from frob.gates._coverage import entrypoint_coverage_violations
 
@@ -3977,7 +3977,7 @@ class TestTestmock001:
     already-shipped instance this rule exists to catch."""
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_fires_when_the_only_binding_test_mocks_every_collaborator  # noqa: E501
-    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations
     def test_fires_when_the_only_binding_test_mocks_every_collaborator(
         self, tmp_path: Path
     ) -> None:
@@ -4014,7 +4014,7 @@ class TestTestmock001:
         assert "helper" in fires[0].message
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_satisfied_by_a_companion_test_leaving_one_collaborator_real  # noqa: E501
-    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations
     def test_satisfied_by_a_companion_test_leaving_one_collaborator_real(
         self, tmp_path: Path
     ) -> None:
@@ -4052,7 +4052,7 @@ class TestTestmock001:
         assert [v for v in violations if v.rule == "TESTMOCK001"] == []
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_t3933_shaped_dynamic_dispatch_table_scenario_fires  # noqa: E501
-    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations
     def test_t3933_shaped_dynamic_dispatch_table_scenario_fires(
         self, tmp_path: Path
     ) -> None:
@@ -4089,7 +4089,7 @@ class TestTestmock001:
         assert "COLLECTORS" in fires[0].message
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_the_symbol_has_no_collaborators  # noqa: E501
-    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations
     def test_silent_when_the_symbol_has_no_collaborators(self, tmp_path: Path) -> None:
         from frob.gates._coverage import testmock001_violations
 
@@ -4114,7 +4114,7 @@ class TestTestmock001:
         assert [v for v in violations if v.rule == "TESTMOCK001"] == []
 
     # frob:tests tests/gates_suite/test_coverage.py::TestTestmock001.test_silent_when_no_test_resolves_at_all  # noqa: E501
-    # frob:tests src/frob/gates/_coverage.py::testmock001_violations  # noqa: E501
+    # frob:tests src/frob/gates/_coverage.py::testmock001_violations
     def test_silent_when_no_test_resolves_at_all(self, tmp_path: Path) -> None:
         """A `frob:tests` target naming a test function that does not
         actually exist resolves to nothing -- TESTMOCK001 reports an

@@ -223,7 +223,7 @@ class TestKindHistory:
     made before any work started stays silent, matching pre-T-1616
     behavior exactly."""
 
-    # frob:tests src/frob/tickets/_setters.py::set_kind  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_kind
     def test_change_before_any_work_not_recorded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_before_any_work_not_recorded  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
@@ -231,7 +231,7 @@ class TestKindHistory:
         assert result.is_ok
         assert result.danger_ok.kind_history == ()
 
-    # frob:tests src/frob/tickets/_setters.py::set_kind  # noqa: E501
+    # frob:tests src/frob/tickets/_setters.py::set_kind
     def test_change_after_evidence_recorded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded  # noqa: E501
         from frob.tickets._evidence import add_evidence

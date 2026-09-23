@@ -38,7 +38,7 @@ class TestCoverageRunner:
         assert calls == [tmp_path]
 
     # frob:ticket T-1572
-    # frob:tests src/frob/app/coverage_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/coverage_runner.py::run
     def test_base_threads_through_to_run_coverage_wait(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

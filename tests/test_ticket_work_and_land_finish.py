@@ -397,7 +397,7 @@ class TestAbsorbPreLandFixes:
     machinery); `_assert_design_loads_pre_land`'s own load-guard behavior
     is exercised separately below (TestAssertDesignLoadsPreLand)."""
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes
     def test_fmt_half_canonicalizes_a_non_canonical_directive(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_fmt_half_canonicalizes_a_non_canonical_directive  # noqa: E501
@@ -421,8 +421,8 @@ class TestAbsorbPreLandFixes:
             assert len(line) <= 88
 
     # frob:ticket T-1404
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths
     def test_out_of_scope_file_with_noncanonical_directive_is_left_untouched(
         self, repo: Path
     ) -> None:
@@ -452,8 +452,8 @@ class TestAbsorbPreLandFixes:
         assert out_of_scope.read_text() == original
 
     # frob:ticket T-1404
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths
     def test_in_scope_file_with_noncanonical_directive_is_still_fixed(
         self, repo: Path
     ) -> None:
@@ -2005,7 +2005,7 @@ class TestPostLandUnscopedSweep:
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_post_land_unscoped_error_sweep  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_apply_tier_a_and_commit  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_apply_tier_a_and_commit
     def test_new_error_fixed_by_tier_a_lands_with_a_followup_commit(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2041,7 +2041,7 @@ class TestPostLandUnscopedSweep:
     # frob:tests \
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_post_land_unscoped_error_sweep  # noqa: E501
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_revert_land  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_revert_land
     def test_new_error_absent_before_land_refuses_and_reverts(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2067,7 +2067,7 @@ class TestPostLandUnscopedSweep:
     # frob:ticket T-1513
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_fix_commit_stages_only_touched_paths_not_git_add_dash_a  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_apply_tier_a_and_commit  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_sweep_apply_tier_a_and_commit
     def test_fix_commit_stages_only_touched_paths_not_git_add_dash_a(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2363,7 +2363,7 @@ class TestLandProofAndFinish:
     # pre-commit sweep no longer finds a genuine, unresolvable REF001 on
     # the freshly-spliced tickets-archive.md this test's land produces --
     # the xfail(strict=True) T-3442 put here while blocked is removed.
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land
     def test_cli_land_invoked_with_root_equal_to_worktree_still_verifies(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -2459,7 +2459,7 @@ class TestLandProofAndFinish:
         assert _print_land_proof(repo, report) is True
 
     # frob:ticket T-1884
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok
     def test_proof_verifies_an_anchor_ticket_left_queued_on_main(
         self, repo: Path
     ) -> None:
@@ -2491,7 +2491,7 @@ class TestLandProofAndFinish:
         assert _print_land_proof(repo, fake_report) is True
 
     # frob:ticket T-1884
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok
     def test_proof_still_refuses_a_non_anchor_ticket_left_queued(
         self, repo: Path
     ) -> None:
@@ -2513,7 +2513,7 @@ class TestLandProofAndFinish:
         assert _print_land_proof(repo, fake_report) is False
 
     # frob:ticket T-2129
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_proof_state_ok
     def test_proof_verifies_a_queued_ticket_with_a_recorded_failure_log(
         self, repo: Path
     ) -> None:
@@ -2646,7 +2646,7 @@ class TestLandProofAndFinish:
 
     # frob:ticket T-1910
     # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_unverified_land_exits_nonzero_even_without_finish  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_finish_land_after_success
     def test_unverified_land_exits_nonzero_even_without_finish(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -2718,7 +2718,7 @@ class TestLandProofAncestorRetry:
     the retry fixes the still-unreproduced T-1895 race; see this ticket's
     own Done report for that disclosure."""
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_is_ancestor_with_retry  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_is_ancestor_with_retry
     def test_retries_until_ancestor_check_settles_true(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2749,7 +2749,7 @@ class TestLandProofAncestorRetry:
         assert calls["n"] == 3
         assert sleeps == [0.1, 0.2]
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_is_ancestor_with_retry  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_is_ancestor_with_retry
     def test_gives_up_after_exhausting_retries_on_a_genuine_non_ancestor(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2813,7 +2813,7 @@ class TestLandParityFindings:
     # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function  # noqa: E501
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::land_parity_findings kind="unit"  # noqa: E501
-    # frob:tests src/frob/app/check_runner.py::_run_land_parity kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_land_parity kind="unit"
     def test_parity_with_the_land_sweeps_own_exemption_function(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2859,7 +2859,7 @@ class TestBranchDriftGuard:
     repro rather than a spontaneous one."""
 
     # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_branch_drift_before_final_commit_refuses_by_construction  # noqa: E501
-    # frob:tests src/frob/tickets/_land_squash.py::_assert_still_on_expected_branch  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_assert_still_on_expected_branch
     def test_branch_drift_before_final_commit_refuses_by_construction(
         self, repo: Path
     ) -> None:
@@ -2944,7 +2944,7 @@ class TestBranchDriftGuard:
         assert main_tip_after == main_tip_before
 
     # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_no_drift_is_a_noop  # noqa: E501
-    # frob:tests src/frob/tickets/_land_squash.py::_assert_still_on_expected_branch  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_assert_still_on_expected_branch
     def test_no_drift_is_a_noop(self, repo: Path) -> None:
         # Sanity/baseline: an ordinary land (no branch movement) must not
         # be refused by the new guard.

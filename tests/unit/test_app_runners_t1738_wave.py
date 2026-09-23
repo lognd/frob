@@ -37,7 +37,7 @@ def _new(tmp_path: Path, *, scope: list[str] | None = None) -> None:
 class TestWaveCommand:
     """`frob ticket wave --agents N [--json]` (T-1738)."""
 
-    # frob:tests src/frob/app/ticket_runner/_query.py::_wave  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_wave
     def test_json_render_shape(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_json_render_shape  # noqa: E501
         _new(tmp_path, scope=["src/a.py"])
@@ -67,7 +67,7 @@ class TestWaveCommand:
         assert len(payload["groups"]) == 2
         assert payload["remainder"] == []
 
-    # frob:tests src/frob/app/ticket_runner/_query.py::_wave  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_wave
     def test_plain_render_lists_groups_and_remainder(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -89,7 +89,7 @@ class TestWaveCommand:
         assert any("Remainder" in m for m in messages)
         assert any("T-0003" in m for m in messages)
 
-    # frob:tests src/frob/app/ticket_runner/_query.py::_wave  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_query.py::_wave
     def test_missing_agents_flag_is_a_clean_error(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_missing_agents_flag_is_a_clean_error  # noqa: E501
         import pytest

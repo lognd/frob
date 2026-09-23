@@ -47,8 +47,7 @@ def _pair_refs(report):
 class TestHelperInliningLitmus:
     def test_split_helpers_detected_with_inlining(self, snapshot):
         # frob:tests \
-        # tests/test_dup_inline.py::TestHelperInliningLitmus.test_split_helpers_detecte\
-        # d_with_inlining
+        # tests/test_dup_inline.py::TestHelperInliningLitmus.test_split_helpers_detected_with_inlining  # noqa: E501
         result = find_clones(
             snapshot, DupConfig(min_tokens=12, threshold=0.7, inline_calls=True)
         )
@@ -66,8 +65,7 @@ class TestHelperInliningLitmus:
 
     def test_split_helpers_missed_without_inlining(self, snapshot):
         # frob:tests \
-        # tests/test_dup_inline.py::TestHelperInliningLitmus.test_split_helpers_missed_\
-        # without_inlining
+        # tests/test_dup_inline.py::TestHelperInliningLitmus.test_split_helpers_missed_without_inlining  # noqa: E501
         result = find_clones(
             snapshot, DupConfig(min_tokens=12, threshold=0.7, inline_calls=False)
         )
@@ -97,8 +95,7 @@ class TestSharedHelperNotDuplication:
 
     def test_shared_helper_not_flagged_at_default_threshold(self, snapshot):
         # frob:tests \
-        # tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_n\
-        # ot_flagged_at_default_threshold
+        # tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_not_flagged_at_default_threshold  # noqa: E501
         result = find_clones(snapshot, DupConfig(inline_calls=True))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)
@@ -115,8 +112,7 @@ class TestSharedHelperNotDuplication:
 
     def test_shared_helper_not_flagged_at_threshold_0_7(self, snapshot):
         # frob:tests \
-        # tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_n\
-        # ot_flagged_at_threshold_0_7
+        # tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_not_flagged_at_threshold_0_7  # noqa: E501
         result = find_clones(snapshot, DupConfig(threshold=0.7, inline_calls=True))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)
@@ -144,8 +140,7 @@ class TestHelperPop:
 
     def test_helper_pass_excludes_public_symbols(self, snapshot):
         # frob:tests \
-        # tests/test_dup_inline.py::TestHelperPop.test_helper_pass_excludes_public_symb\
-        # ols
+        # tests/test_dup_inline.py::TestHelperPop.test_helper_pass_excludes_public_symbols  # noqa: E501
         result = find_helper_clones(snapshot, DupConfig(threshold=0.7))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)
@@ -198,8 +193,7 @@ class TestCallGraphBounds:
     # invariant spec: [INV-014](invariants/INV-014.md)
     def test_public_callee_never_becomes_an_edge(self):
         # frob:tests \
-        # tests/test_dup_inline.py::TestCallGraphBounds.test_public_callee_never_become\
-        # s_an_edge
+        # tests/test_dup_inline.py::TestCallGraphBounds.test_public_callee_never_becomes_an_edge  # noqa: E501
         graph = build_call_graph(FIXTURE_ROOT, ["src/mod_b.py"])
         callees = graph.calls.get("src/mod_b.py::public_entry", ())
         assert "src/mod_b.py::normalize" not in callees

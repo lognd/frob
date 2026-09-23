@@ -256,7 +256,7 @@ class TestClaimDivergencePostMerge:
 
     # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity  # noqa: E501
     # frob:tests src/frob/tickets/_reporting.py::set_done_report
-    # frob:tests src/frob/tickets/_models.py::DoneReportClaims kind="integration"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::DoneReportClaims kind="integration"
     def test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity(
         self, repo: Path
     ) -> None:
@@ -436,7 +436,7 @@ class TestClaimDivergencePostMerge:
 
     # frob:tests src/frob/tickets/_reporting.py::set_done_report
     # frob:tests src/frob/tickets/_models.py::parse_claims_from_done_report kind="integration"  # noqa: E501
-    # frob:tests src/frob/tickets/_models.py::render_claims_block kind="integration"  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::render_claims_block kind="integration"
     # frob:tests src/frob/tickets/_land_verify.py::_reverify_done_report_claims_post_merge kind="integration"  # noqa: E501
     def test_two_unmeasured_gate_claims_never_vacuously_match(self, repo: Path) -> None:
         # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match  # noqa: E501
@@ -1700,7 +1700,7 @@ class TestReverifyEvidenceForClose:
         assert "could not be measured" not in caplog.text
 
     # frob:ticket T-2569
-    # frob:tests src/frob/app/ticket_runner/_verify.py::VerifyOutcome  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::VerifyOutcome
     def test_unmeasured_returns_false_with_distinct_message(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:

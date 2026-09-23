@@ -49,7 +49,7 @@ class TestMayMutationAuditRealRepo:
     # frob:tests \
     # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every_may_is_load_bearing  # noqa: E501
     # frob:tests src/frob/strata/_mutation_audit.py::MutationFinding.load_bearing
-    # frob:tests src/frob/strata/_mutation_audit.py::run_may_mutation_audit kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_mutation_audit.py::run_may_mutation_audit kind="unit"
     # frob:tests \
     # src/frob/strata/_mutation_audit.py::MutationAuditReport.all_load_bearing
     def test_every_may_is_load_bearing(self) -> None:

@@ -88,7 +88,7 @@ class TestAutoSyncWorktreeOntoMain:
         _run(["git", "worktree", "add", "-b", "series-a", str(wt)], repo)
         return repo, wt
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
     def test_merges_the_worktree_onto_the_new_main_tip(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_merges_the_worktree_onto_the_new_main_tip  # noqa: E501
         repo, wt = self._seed(tmp_path)
@@ -117,7 +117,7 @@ class TestAutoSyncWorktreeOntoMain:
         assert _rev_parse(wt) != pre_sync_own_tip  # a merge commit was made
 
     # frob:ticket T-4599
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
     def test_logs_a_phase_marker_before_starting_the_merge(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -200,7 +200,7 @@ class TestAutoSyncWorktreeOntoMain:
         assert not (wt / ".git" / "rebase-apply").exists()
         assert not (wt / ".git" / "MERGE_HEAD").exists()
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
     def test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land(
         self, tmp_path: Path
     ) -> None:
@@ -226,7 +226,7 @@ class TestAutoSyncWorktreeOntoMain:
         assert not (wt / ".git" / "MERGE_HEAD").exists()
         assert _rev_parse(wt) == pre_attempt_tip
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main
     def test_dirty_worktree_is_skipped_rather_than_merged_into(
         self, tmp_path: Path
     ) -> None:

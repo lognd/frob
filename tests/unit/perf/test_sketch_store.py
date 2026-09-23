@@ -62,7 +62,7 @@ def _bimodal_sample(n: int, seed: int = 0) -> list[float]:
 class TestQuantileSketchAlgebra:
     """Pure sketch algebra -- no sqlite, no filesystem."""
 
-    # frob:tests src/frob/stats/_sketch.py::sketch_size_bytes  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::sketch_size_bytes
     def test_bimodal_quantiles_within_relative_error_and_under_1kb(self) -> None:
         """T-0711's acceptance criterion, verbatim: bimodal latencies (1ms
         and 100ms modes) sketched at alpha=2 percent read back p10/p50/p90
@@ -88,7 +88,7 @@ class TestQuantileSketchAlgebra:
 
         assert sketch_size_bytes(sketch) < 1024
 
-    # frob:tests src/frob/stats/_sketch.py::merge_sketches  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::merge_sketches
     def test_merge_is_associative(self) -> None:
         """`merge(merge(a, b), c) == merge(a, merge(b, c))` -- the core
         mergeability property a decayed cross-run store depends on
@@ -104,7 +104,7 @@ class TestQuantileSketchAlgebra:
         assert left.buckets == right.buckets
         assert left.zero_count == pytest.approx(right.zero_count)
 
-    # frob:tests src/frob/stats/_sketch.py::merge_sketches  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::merge_sketches
     def test_merge_is_commutative(self) -> None:
         """`merge(a, b) == merge(b, a)` -- plain per-bucket addition, order
         never matters."""
@@ -112,7 +112,7 @@ class TestQuantileSketchAlgebra:
         b = _sketch_from_values(_bimodal_sample(30, seed=2))
         assert merge_sketches(a, b).buckets == merge_sketches(b, a).buckets
 
-    # frob:tests src/frob/stats/_sketch.py::merge_sketches  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::merge_sketches
     def test_merge_rejects_mismatched_alpha(self) -> None:
         """Merging sketches built at different relative-error targets
         would silently blend incompatible bucket boundaries -- refused,
@@ -122,8 +122,8 @@ class TestQuantileSketchAlgebra:
         with pytest.raises(ValueError, match="alpha"):
             merge_sketches(a, b)
 
-    # frob:tests src/frob/stats/_sketch.py::total_weight  # noqa: E501
-    # frob:tests src/frob/stats/_sketch.py::decay_sketch  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::total_weight
+    # frob:tests src/frob/stats/_sketch.py::decay_sketch
     def test_decay_shrinks_weight_toward_zero(self) -> None:
         """Repeated decay strictly shrinks total weight, converging to
         zero -- an unwritten-to section's stored prior fades out rather
@@ -137,7 +137,7 @@ class TestQuantileSketchAlgebra:
             weight = new_weight
         assert weight < 1e-6
 
-    # frob:tests src/frob/stats/_sketch.py::decay_sketch  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::decay_sketch
     def test_decay_rejects_out_of_range_factor(self) -> None:
         sketch = new_sketch()
         with pytest.raises(ValueError):
@@ -145,14 +145,14 @@ class TestQuantileSketchAlgebra:
         with pytest.raises(ValueError):
             decay_sketch(sketch, -0.1)
 
-    # frob:tests src/frob/stats/_sketch.py::add_value  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::add_value
     def test_zero_values_land_in_zero_count_not_a_bucket(self) -> None:
         sketch = add_value(new_sketch(), 0.0, weight=3.0)
         assert sketch.zero_count == 3.0
         assert sketch.buckets == {}
         assert quantile(sketch, 0.5) == 0.0
 
-    # frob:tests src/frob/stats/_sketch.py::add_value  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::add_value
     def test_negative_value_is_dropped_not_raised(self) -> None:
         """NO-FAIL-SILENT-but-not-a-crash: this sketch models non-negative
         latencies; a negative input is logged and dropped rather than
@@ -161,7 +161,7 @@ class TestQuantileSketchAlgebra:
         result = add_value(sketch, -5.0)
         assert result == sketch
 
-    # frob:tests src/frob/stats/_sketch.py::new_sketch  # noqa: E501
+    # frob:tests src/frob/stats/_sketch.py::new_sketch
     def test_quantile_on_empty_sketch_is_zero(self) -> None:
         assert quantile(new_sketch(), 0.5) == 0.0
 
@@ -189,12 +189,12 @@ class TestSketchStore:
             end_line=5,
         )
 
-    # frob:tests src/frob/perf/_sketch_store.py::get_sketch  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::get_sketch
     def test_get_on_never_seen_key_is_none(self, tmp_path: Path) -> None:
         assert get_sketch(tmp_path, "no-such-key") is None
 
-    # frob:tests src/frob/perf/_sketch_store.py::put_sketch  # noqa: E501
-    # frob:tests src/frob/perf/_sketch_store.py::get_sketch  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::put_sketch
+    # frob:tests src/frob/perf/_sketch_store.py::get_sketch
     def test_put_then_get_round_trips(self, tmp_path: Path) -> None:
         key = stable_section_key(self._section())
         run_sketch = _sketch_from_values([1.0, 1.0, 100.0])
@@ -206,8 +206,8 @@ class TestSketchStore:
         assert stored is not None
         assert stored.buckets == result.danger_ok.buckets
 
-    # frob:tests src/frob/perf/_sketch_store.py::store_size_bytes  # noqa: E501
-    # frob:tests src/frob/perf/_sketch_store.py::put_sketch  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::store_size_bytes
+    # frob:tests src/frob/perf/_sketch_store.py::put_sketch
     def test_decayed_merge_converges_toward_recent_run_distribution(
         self, tmp_path: Path
     ) -> None:
@@ -235,8 +235,8 @@ class TestSketchStore:
         )
         assert store_size_bytes(tmp_path) <= config.store_cap_bytes
 
-    # frob:tests src/frob/perf/_sketch_store.py::store_size_bytes  # noqa: E501
-    # frob:tests src/frob/perf/_sketch_store.py::put_sketch  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::store_size_bytes
+    # frob:tests src/frob/perf/_sketch_store.py::put_sketch
     def test_store_cap_evicts_coldest_section_first(self, tmp_path: Path) -> None:
         """A store cap smaller than the total of many sections' sketches
         evicts the LEAST-RECENTLY-USED section first, keeping the store
@@ -280,7 +280,7 @@ class TestSketchStore:
         with_digest = stable_section_key(section, symbol_digest="deadbeef")
         assert without_digest != with_digest
 
-    # frob:tests src/frob/perf/_sketch_store.py::put_sketch  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::put_sketch
     def test_first_write_has_no_prior_to_decay(self, tmp_path: Path) -> None:
         """A never-seen key's first `put_sketch` stores `run_sketch`
         UNCHANGED (no prior exists to merge/decay against)."""
@@ -290,7 +290,7 @@ class TestSketchStore:
         result = put_sketch(tmp_path, key, "loop", run_sketch, config)
         assert result.danger_ok.buckets == run_sketch.buckets
 
-    # frob:tests src/frob/perf/_sketch_store.py::new_run_sketch  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::new_run_sketch
     def test_new_run_sketch_is_an_empty_sketch_at_alpha(self) -> None:
         """`new_run_sketch` is the thin `frob.perf`-local wrapper over
         `frob.stats._sketch.new_sketch` -- an empty sketch at the given
@@ -301,17 +301,17 @@ class TestSketchStore:
         assert sketch.buckets == {}
         assert sketch.zero_count == 0.0
 
-# frob:tests src/frob/tomlio.py::read_toml_lenient  # noqa: E501
+# frob:tests src/frob/tomlio.py::read_toml_lenient
 
 class TestSketchStoreConfig:
     """`load_sketch_config`'s `[perf.sketch]` frob.toml parsing."""
 
-    # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config  # noqa: E501
-    # frob:tests src/frob/tomlio.py::read_toml_lenient  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config
+    # frob:tests src/frob/tomlio.py::read_toml_lenient
     def test_missing_frob_toml_returns_defaults(self, tmp_path: Path) -> None:
         config = load_sketch_config(tmp_path)
         assert config == SketchStoreConfig()
-# frob:tests src/frob/perf/_sketch_store.py::load_sketch_config  # noqa: E501
+# frob:tests src/frob/perf/_sketch_store.py::load_sketch_config
 
     def test_parses_perf_sketch_table(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text(
@@ -322,13 +322,13 @@ class TestSketchStoreConfig:
         assert config.half_life_runs == 10.0
         assert config.store_cap_bytes == 50000
 
-    # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config
     def test_malformed_toml_falls_back_to_defaults(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text("not valid toml [[[")
         config = load_sketch_config(tmp_path)
         assert config == SketchStoreConfig()
 
-    # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config
     def test_wrong_typed_perf_sketch_falls_back_to_defaults(
         self, tmp_path: Path
     ) -> None:

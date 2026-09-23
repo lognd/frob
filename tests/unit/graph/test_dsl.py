@@ -924,7 +924,7 @@ class TestQuotedPositionalTarget:
     spaces (a vitest describe/it title, F-047) can be written as one
     value."""
 
-    # frob:tests src/frob/graph/dsl.py::_parse_target  # noqa: E501
+    # frob:tests src/frob/graph/dsl.py::_parse_target
     def test_quoted_target_with_spaces_parses_as_one_value(
         self, tmp_path: Path
     ) -> None:
@@ -955,7 +955,7 @@ class TestQuotedPositionalTarget:
         assert len(edges) == 1
         assert edges[0].target == "src/x.test.ts a title with spaces"
 
-    # frob:tests src/frob/graph/dsl.py::_parse_target  # noqa: E501
+    # frob:tests src/frob/graph/dsl.py::_parse_target
     def test_unquoted_target_with_space_is_still_an_error(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_line
         # MUST-FIRE (T-3893): no silent truncation of an unquoted value
@@ -970,8 +970,8 @@ class TestQuotedPositionalTarget:
         assert not edges
         assert len(malformed) == 1
 
-    # frob:tests src/frob/graph/dsl.py::_parse_target  # noqa: E501
-    # frob:tests src/frob/graph/dsl.py::_parse_attrs  # noqa: E501
+    # frob:tests src/frob/graph/dsl.py::_parse_target
+    # frob:tests src/frob/graph/dsl.py::_parse_attrs
     def test_nested_quote_in_quoted_target_is_a_named_refusal(
         self, tmp_path: Path
     ) -> None:
@@ -991,7 +991,7 @@ class TestQuotedPositionalTarget:
         assert len(malformed) == 1
         assert "nested quote" in malformed[0].reason
 
-    # frob:tests src/frob/graph/dsl.py::_parse_target  # noqa: E501
+    # frob:tests src/frob/graph/dsl.py::_parse_target
     def test_unterminated_quoted_target_is_a_named_refusal(
         self, tmp_path: Path
     ) -> None:
@@ -1234,7 +1234,7 @@ class TestTestSideDeclarationReorientation:
     consumer (TDD001's backwards check chief among them) sees one
     orientation regardless of which side declared it."""
 
-    # frob:tests src/frob/graph/dsl.py::looks_like_test_path  # noqa: E501
+    # frob:tests src/frob/graph/dsl.py::looks_like_test_path
     def test_test_side_declaration_is_reoriented_to_canonical_shape(
         self, tmp_path: Path, monkeypatch
     ) -> None:

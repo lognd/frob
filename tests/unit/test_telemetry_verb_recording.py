@@ -45,7 +45,7 @@ def _last_event(root: Path) -> dict:
 
 
 # frob:tests tests/unit/test_telemetry_verb_recording.py::test_record_cli_event_carries_verb_and_subverb  # noqa: E501
-# frob:tests src/frob/app/telemetry/__init__.py::record_cli_event  # noqa: E501
+# frob:tests src/frob/app/telemetry/__init__.py::record_cli_event
 def test_record_cli_event_carries_verb_and_subverb(tmp_path: Path) -> None:
     """`record_cli_event`'s new `subverb` kwarg lands in the written record
     as both `verb` (mirroring `subcommand`, unchanged for back-compat) and

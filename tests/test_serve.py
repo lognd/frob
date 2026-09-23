@@ -153,8 +153,7 @@ class TestBuildServer:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
-        # tests/test_serve.py::TestBuildServer.test_run_stdio_installs_stackdump_handle\
-        # r_before_serving
+        # tests/test_serve.py::TestBuildServer.test_run_stdio_installs_stackdump_handler_before_serving  # noqa: E501
         """T-1823: `run_stdio` -- the actual `frob serve` process entry
         point -- installs the T-1433/T-1466 SIGUSR1 stack-dump handler
         before blocking on `server.run`, so a wedged daemon process can

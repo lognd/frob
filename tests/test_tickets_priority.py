@@ -83,7 +83,7 @@ class TestPriorityRank:
 class TestDoablePriorityOrdering:
     """`doable` orders by priority first, then age, per T-0411."""
 
-    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key  # noqa: E501
+    # frob:tests src/frob/tickets/__init__.py::_doable_sort_key
     def test_high_priority_surfaces_before_older_low_priority(self) -> None:
         """A newer HIGH ticket must precede an older LOW ticket -- the exact
         T-0177-rot scenario T-0411's Description describes."""

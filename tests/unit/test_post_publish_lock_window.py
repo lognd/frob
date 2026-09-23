@@ -41,7 +41,7 @@ class TestSnapshotWorktree:
     NOT `root`, so its own `derived_state_lock` acquisition cannot be the
     thing a land's lock acquire on `root` waits on."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_snapshot_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_snapshot_worktree
     def test_yields_a_detached_checkout_of_the_commit(self, tmp_path: Path) -> None:
         """The yielded path is a real, separate checkout of `commit_sha`
         -- not `root` itself, and it contains the committed content."""
@@ -64,7 +64,7 @@ class TestSnapshotWorktree:
                 tmp_path / ".frob" / "derived.lock"
             ).resolve()
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_snapshot_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_snapshot_worktree
     def test_removes_the_worktree_on_exit(self, tmp_path: Path) -> None:
         """After the context manager exits, the snapshot directory is
         gone and git no longer lists it as a registered worktree."""
@@ -86,7 +86,7 @@ class TestSnapshotWorktree:
         ).stdout
         assert str(captured) not in listing
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_snapshot_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_snapshot_worktree
     def test_yields_none_when_the_commit_does_not_resolve(self, tmp_path: Path) -> None:
         """A `commit_sha` git cannot resolve is a clean `None`, not a
         raised exception -- the caller degrades to its own unmeasurable-
@@ -142,7 +142,7 @@ run_deferred_post_land_sweep(Path({str(root)!r}), {ticket_id!r}, {commit_sha!r})
     return subprocess.Popen([sys.executable, "-c", script])
 
 
-# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_run_full_check_in_snapshot  # noqa: E501
+# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_run_full_check_in_snapshot
 def test_post_publish_never_holds_derived_lock_across_a_check(
     tmp_path: Path,
 ) -> None:
@@ -193,7 +193,7 @@ def test_post_publish_never_holds_derived_lock_across_a_check(
             proc.wait(timeout=10.0)
 
 
-# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_run_full_check_in_snapshot  # noqa: E501
+# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_run_full_check_in_snapshot
 def test_next_land_not_blocked_by_previous_sweep(tmp_path: Path) -> None:
     """POSITIVE CONTROL (T-4660 acceptance criterion 3): once one
     deferred sweep has started (and is still "running" its full check),

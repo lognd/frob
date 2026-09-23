@@ -521,7 +521,7 @@ class TestLedgerDigestMapV2:
         assert ledger_digest_map(tmp_path) == {}
         assert archive_digest_map(tmp_path) == {}
 
-    # frob:tests src/frob/tickets/_store.py::ledger_digest_map  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::ledger_digest_map
     def test_map_keys_are_ticket_ids_values_match_ledger_digest(
         self, tmp_path: Path
     ) -> None:
@@ -534,7 +534,7 @@ class TestLedgerDigestMapV2:
 
         assert digest_map["T-0723"] == ledger_digest(v2_ticket_path(tmp_path, "T-0723"))
 
-    # frob:tests src/frob/tickets/_store.py::archive_digest_map  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::archive_digest_map
     def test_archive_map_keys_are_ticket_ids(self, tmp_path: Path) -> None:
         """`archive_digest_map`'s analogous contract, over
         `tickets/archive/T-####/ticket.md`."""

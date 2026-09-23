@@ -834,7 +834,7 @@ def path_ever_tracked(repo_root: Path, rel_path: str) -> bool:
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg011-out-of-scope-caught_by-t-0680  # noqa: E501
 # frob:doc docs/design/registry/RECONCILIATION.md#reg008reg009-t-0428
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 # frob:ticket T-0343
 # frob:ticket T-0407
 # REG001-007 fire at Severity.ERROR: every registry entry must carry an

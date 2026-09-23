@@ -57,7 +57,7 @@ class TestScopeOverlapWarnings:
     overlapping resolved path(s)."""
 
     # frob:ticket T-2257
-    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings
     def test_overlapping_scope_names_the_other_ticket_and_path(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -141,7 +141,7 @@ class TestScopeOverlapWarnings:
             )
 
     # frob:ticket T-2257
-    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings
     def test_glob_vs_file_overlap_is_detected(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -177,7 +177,7 @@ class TestScopeOverlapWarnings:
         assert "src/frob/gates/_x.py" in messages
 
     # frob:ticket T-2257
-    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings
     def test_non_overlapping_scope_is_silent(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -212,7 +212,7 @@ class TestScopeOverlapWarnings:
         assert len(list((tmp_path / "tickets").iterdir())) == 2
 
     # frob:ticket T-2257
-    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_overlap_warnings
     def test_terminal_state_tickets_are_excluded(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

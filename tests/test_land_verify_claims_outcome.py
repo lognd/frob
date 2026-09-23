@@ -76,7 +76,7 @@ class TestClaimsReverifyOutcomeDistinguishesSkipFromPass:
     `.is_err` (as `_land.py`'s own call site does today) must not be able
     to mistake one for the other."""
 
-    # frob:tests src/frob/tickets/_land_verify.py::_skipped_unmeasured_top_level  # noqa: E501
+    # frob:tests src/frob/tickets/_land_verify.py::_skipped_unmeasured_top_level
     def test_unmeasured_passing_ids_and_check_gates_is_surfaced_as_skipped(
         self, tmp_path: Path
     ) -> None:

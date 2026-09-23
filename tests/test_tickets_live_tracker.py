@@ -84,7 +84,7 @@ class TestLiveTrackerCitations:
         _commit_all(tmp_path, "init")
         assert live_tracker_citations(tmp_path, "T-0605") == ()
 
-    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
     def test_finds_registry_deferred_disposition(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_registry_deferred_disposition  # noqa: E501
         _init_repo(tmp_path)
@@ -204,7 +204,7 @@ class TestLiveTrackerCitations:
         assert "notes.py" in citations[0]
 
     # frob:ticket T-4325
-    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
     def test_changelog_fragment_quoting_whole_directive_not_a_citation(
         self, tmp_path: Path
     ) -> None:
@@ -264,7 +264,7 @@ class TestLiveTrackerCitations:
         )
         _commit_all(tmp_path, "add registry")
         assert live_tracker_citations(tmp_path, "T-0605") == ()
-# frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
+# frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
 
     def test_finds_comment_waiver_ticket_attribute(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_ticket_attribute  # noqa: E501
@@ -279,7 +279,7 @@ class TestLiveTrackerCitations:
         assert "mod.py" in citations[0]
 
     # frob:ticket T-1559
-    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
     def test_finds_comment_waiver_follow_up_attribute(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_follow_up_attribute  # noqa: E501
         """T-1559: a `frob:waive WIRE001 ... follow_up="T-1490"` directive
@@ -353,7 +353,7 @@ class TestLiveTrackerCitations:
             encoding="utf-8",
         )
         _commit_all(tmp_path, "add waiver")
-        # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
+        # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
         assert live_tracker_citations(tmp_path, "T-0605") == ()
 
     def test_own_scope_citation_excluded(self, tmp_path: Path) -> None:
@@ -379,11 +379,11 @@ class TestLiveTrackerCitations:
         # No further edit to mod.py -- the citation is untouched relative
         # to "main" (the only commit so far) -- must be REFUSED, not
         # excluded.
-        # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
+        # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
         citations = live_tracker_citations(tmp_path, "T-0605", base_ref="main")
         assert len(citations) == 1
 
-    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
     def test_citation_outside_own_scope_still_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_citation_outside_own_scope_still_flagged  # noqa: E501
         # T-0854 rework: kept under its original name for evidence
@@ -442,7 +442,7 @@ class TestLiveTrackerCitations:
         )
         assert len(citations) == 1
 
-    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations  # noqa: E501
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
     def test_draft_id_always_clear(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_draft_id_always_clear  # noqa: E501
         _init_repo(tmp_path)

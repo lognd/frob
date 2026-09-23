@@ -94,8 +94,8 @@ class TestSquashApplyStageTarget:
     checkout -- root's HEAD, index and working tree untouched, the landing
     commit sitting on the disposable stage instead."""
 
-    # frob:tests src/frob/tickets/_land_squash.py::_seal_squash_apply  # noqa: E501
-    # frob:tests src/frob/tickets/_land_squash.py::_land_squash_apply  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_seal_squash_apply
+    # frob:tests src/frob/tickets/_land_squash.py::_land_squash_apply
     def test_default_stage_runs_the_whole_transaction_in_root(
         self, v2_main: Path
     ) -> None:
@@ -123,7 +123,7 @@ class TestSquashApplyStageTarget:
         assert new_tip != pre_land_tip
         assert _run(["git", "status", "--porcelain"], v2_main).stdout.strip() == ""
 
-    # frob:tests src/frob/tickets/_land_squash.py::_land_squash_apply  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_land_squash_apply
     def test_explicit_stage_leaves_root_completely_untouched(
         self, v2_main: Path, tmp_path: Path
     ) -> None:

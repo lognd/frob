@@ -25,7 +25,7 @@ class TestModuleDependencyCycles:
     """`check_module_dependency_cycles`
     (docs/modules/arch.md#module-dependency-cycles)."""
 
-    # frob:tests src/frob/arch/_smells.py::check_module_dependency_cycles  # noqa: E501
+    # frob:tests src/frob/arch/_smells.py::check_module_dependency_cycles
     def test_two_file_import_cycle_flagged(self, tmp_path) -> None:  # noqa: ANN001
         from frob.arch._smells import check_module_dependency_cycles
 
@@ -37,7 +37,7 @@ class TestModuleDependencyCycles:
         assert "a.py" in out[0].message
         assert "b.py" in out[0].message
 
-    # frob:tests src/frob/arch/_smells.py::check_module_dependency_cycles  # noqa: E501
+    # frob:tests src/frob/arch/_smells.py::check_module_dependency_cycles
     def test_acyclic_imports_not_flagged(self, tmp_path) -> None:  # noqa: ANN001
         from frob.arch._smells import check_module_dependency_cycles
 
@@ -52,7 +52,7 @@ class TestProtocolSummaryEngine:
     over a fixture `CallGraph`, no repo-wide scan (docs/modules/graph.md
     #protocol-summary-engine)."""
 
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_leaf_function_summary_is_its_own_declarations(self):
         """A leaf with no callees summarizes to exactly its own
         `frob:transition`/`frob:requires` declarations."""
@@ -67,7 +67,7 @@ class TestProtocolSummaryEngine:
         assert not summary.poisoned
         assert result.not_analyzed == ()
         assert result.timeouts == ()
-# frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+# frob:tests src/frob/graph/summary.py::compute_protocol_summaries
 
     def test_caller_summary_includes_callee_transitions(self):
         """`caller` calls `helper`; `caller`'s summary must include
@@ -78,7 +78,7 @@ class TestProtocolSummaryEngine:
         result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::caller"])
         assert result.summaries["f.py::caller"].transitions == {"conn:closed->open"}
         assert result.summaries["f.py::helper"].transitions == {"conn:closed->open"}
-        # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+        # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
         assert not result.summaries["f.py::caller"].poisoned
 
     def test_requires_and_transitions_join_across_two_hops(self):
@@ -98,7 +98,7 @@ class TestProtocolSummaryEngine:
         result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::top"])
         top = result.summaries["f.py::top"]
         assert top.requires == {"lock:held"}
-        # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+        # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
         assert top.transitions == {"lock:unheld->held", "conn:closed->open"}
         assert not top.poisoned
 
@@ -121,7 +121,7 @@ class TestProtocolSummaryEngine:
         expected = {"conn:closed->open", "conn:open->closed"}
         assert result.summaries["f.py::a"].transitions == expected
         assert result.summaries["f.py::b"].transitions == expected
-        # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+        # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
         assert not result.summaries["f.py::a"].poisoned
         assert not result.summaries["f.py::b"].poisoned
         assert result.timeouts == ()
@@ -133,13 +133,13 @@ class TestProtocolSummaryEngine:
         declaration (nothing new to join from calling itself)."""
         graph = CallGraph(calls={"f.py::recur": ("f.py::recur",)})
         edges = [_transition("f.py::recur", "conn", "closed", "open")]
-        # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+        # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
         result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::recur"])
         summary = result.summaries["f.py::recur"]
         assert summary.transitions == {"conn:closed->open"}
         assert not summary.poisoned
 
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_unresolved_callee_poisons_the_summary(self):
         """A call to `UNRESOLVED_CALLEE` poisons the caller's summary --
         NO-FAIL-SILENT: the caller's own declarations are still populated,
@@ -153,7 +153,7 @@ class TestProtocolSummaryEngine:
         assert "unresolved" in summary.poison_reason
         assert summary.transitions == {"conn:closed->open"}
 
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_poisoning_propagates_transitively_through_a_clean_caller(self):
         """`top -> mid -> poisoned_leaf`: `mid` calls an unresolved callee,
         so `mid` is poisoned; `top` calls only `mid` (itself clean) but
@@ -172,7 +172,7 @@ class TestProtocolSummaryEngine:
         assert result.summaries["f.py::top"].poisoned
         assert result.summaries["f.py::top"].poison_reason is not None
 
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_unreachable_function_is_reported_not_analyzed_never_silent(self):
         """A function with its own declarations that no entrypoint ever
         calls must show up in `not_analyzed`, and must NOT get a
@@ -185,7 +185,7 @@ class TestProtocolSummaryEngine:
         assert "f.py::orphan" not in result.summaries
         assert "f.py::entry" in result.summaries
 
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned(self):
         """A three-member mutually-recursive cluster needs more than one
         join round to fully propagate; capping `max_iterations=1` must
@@ -212,7 +212,7 @@ class TestProtocolSummaryEngine:
             assert summary.poison_reason is not None
             assert "did not converge" in summary.poison_reason
 
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_diamond_shaped_calls_join_without_duplication_or_loss(self):
         """`top` calls both `left` and `right`, which both call `shared` --
         a diamond. `top`'s summary must include every distinct transition
@@ -239,8 +239,8 @@ class TestProtocolSummaryEngine:
         assert not result.summaries["f.py::top"].poisoned
 
     # frob:ticket T-0809
-    # frob:tests src/frob/graph/summary.py::FunctionSummary  # noqa: E501
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::FunctionSummary
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_leaf_resource_declarations_populate_acquired_released_escaped(self):
         """A leaf declaring `frob:acquire`/`frob:release`/`frob:escapes`
         summarizes to exactly those resource-name sets, T-0809's
@@ -260,7 +260,7 @@ class TestProtocolSummaryEngine:
         assert not summary.poisoned
 
     # frob:ticket T-0809
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_resource_sets_join_transitively_through_a_caller(self):
         """`caller` calls `helper`, which acquires a resource -- `caller`'s
         summary must include it, matching `requires`/`transitions`'
@@ -272,7 +272,7 @@ class TestProtocolSummaryEngine:
         assert result.summaries["f.py::helper"].acquired == {"fd"}
 
     # frob:ticket T-0809
-    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries  # noqa: E501
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
     def test_resource_sets_join_across_a_recursive_cluster(self):
         """A mutually-recursive pair each declaring a distinct resource
         acquire must converge with BOTH resources in both summaries,
@@ -400,8 +400,8 @@ class TestCppMayThrow:
     cpp-noexcept-throws at ArchSeverity "error"."""
 
     # frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
-    # frob:tests src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations  # noqa: E501
-    # frob:tests src/frob/arch/_cpp_mayraise.py::_scan_cpp_functions  # noqa: E501
+    # frob:tests src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations
+    # frob:tests src/frob/arch/_cpp_mayraise.py::_scan_cpp_functions
     def test_noexcept_calling_throwing_function_fires_error(self, tmp_path):
         """noexcept `caller` calls same-file `risky` (which throws) with
         no try/catch of its own -- an error finding names the call site."""
@@ -424,7 +424,7 @@ class TestCppMayThrow:
         assert any(s.severity == "error" for s in hits)
 
     # frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_with_catch_all_does_not_fire  # noqa: E501
-    # frob:tests src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations  # noqa: E501
+    # frob:tests src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations
     def test_noexcept_with_catch_all_does_not_fire(self, tmp_path):
         """Same shape as above, but `caller` wraps the risky call in a
         try/catch (...) -- the hard boundary is discharged, no finding."""
@@ -448,7 +448,7 @@ class TestCppMayThrow:
         assert hits == []
 
     # frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_non_noexcept_function_never_fires  # noqa: E501
-    # frob:tests src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations  # noqa: E501
+    # frob:tests src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations
     def test_non_noexcept_function_never_fires(self, tmp_path):
         """A function that may throw but is NOT noexcept is normal
         propagation, not a hard-boundary violation -- never flagged."""
@@ -469,7 +469,7 @@ class TestCppMayThrow:
         assert hits == []
 
     # frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_calling_vector_at_fires_curated_thrower  # noqa: E501
-    # frob:tests src/frob/arch/_cpp_mayraise.py::_scan_cpp_functions  # noqa: E501
+    # frob:tests src/frob/arch/_cpp_mayraise.py::_scan_cpp_functions
     def test_noexcept_calling_vector_at_fires_curated_thrower(self, tmp_path):
         """A noexcept function calling `.at(...)` (curated STL thrower,
         out_of_range) with no catch fires, naming out_of_range."""

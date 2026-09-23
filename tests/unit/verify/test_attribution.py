@@ -53,7 +53,7 @@ class TestAttributeBatch:
     commit whose touched symbols REACH it, never a lexical file match or
     a newest-commit tiebreak."""
 
-    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch
     def test_caller_break_attributes_to_the_caller_commit(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_caller_break_attributes_to_the_caller_commit  # noqa: E501
         # Commit A touches `caller`, which calls `callee` -- commit B
@@ -86,7 +86,7 @@ class TestAttributeBatch:
         assert attribution.ticket_id == "T-0001"
         assert attribution.reachability_path == ("a.py::caller",)
 
-    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch
     def test_direct_touch_attributes_at_depth_zero(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_direct_touch_attributes_at_depth_zero  # noqa: E501
         snapshot = GraphSnapshot(
@@ -198,7 +198,7 @@ class TestAttributeBatch:
         (attribution,) = result.danger_ok
         assert attribution.status == "unattributed"
         assert attribution.candidate_commits == ()
-# frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
+# frob:tests src/frob/verify/_attribution.py::attribute_batch
 
     def test_two_reaching_commits_is_unattributed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_two_reaching_commits_is_unattributed  # noqa: E501
@@ -226,10 +226,10 @@ class TestAttributeBatch:
         assert attribution.status == "unattributed"
         assert set(attribution.candidate_commits) == {"commitA", "commitB"}
         assert attribution.commit_sha is None
-        # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
+        # frob:tests src/frob/verify/_attribution.py::attribute_batch
         assert attribution.ticket_id is None
 
-    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch
     def test_zero_reaching_commits_is_unattributed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_zero_reaching_commits_is_unattributed  # noqa: E501
         snapshot = GraphSnapshot(
@@ -250,7 +250,7 @@ class TestAttributeBatch:
         assert attribution.status == "unattributed"
         assert attribution.candidate_commits == ()
 
-    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch
     def test_missing_line_falls_back_to_whole_file_candidates(
         self, tmp_path: Path
     ) -> None:
@@ -280,7 +280,7 @@ class TestAttributeBatch:
         assert attribution.commit_sha == "commitA"
         assert attribution.symbol is None  # no line -> no single-symbol resolution
 
-    # frob:tests src/frob/verify/_attribution.py::attribute_batch  # noqa: E501
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch
     def test_graph_unavailable_is_an_error_for_the_whole_batch(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -310,7 +310,7 @@ class TestBuildAdHocBatch:
     def test_covers_a_commit_the_persisted_queue_never_saw(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"
         # The exact shape T-2018 measured: NOTHING is in the persisted
         # verify queue (a fresh repo, or one whose watermark already
         # advanced past this commit) -- attribution must still work off
@@ -337,7 +337,7 @@ class TestBuildAdHocBatch:
     def test_end_to_end_attributes_through_attribute_batch(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"
         # T-2018's own worked example, end to end: an ad-hoc batch (no
         # persisted queue involved at all) feeds attribute_batch exactly
         # like a real persisted batch would, and a finding attributes to
@@ -370,7 +370,7 @@ class TestBuildAdHocBatch:
     def test_commit_touching_no_resolvable_symbol_is_omitted(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"
         repo = tmp_path / "repo"
         _init_repo(repo)
         (repo / "other.py").write_text("x = 1\n")
@@ -389,7 +389,7 @@ class TestBuildAdHocBatch:
         assert batch == ()
 
     def test_since_bounds_the_candidate_range(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"
         repo = tmp_path / "repo"
         _init_repo(repo)
         (repo / "a.py").write_text("def fn():\n    pass\n")
@@ -409,7 +409,7 @@ class TestBuildAdHocBatch:
     def test_ambiguous_two_commits_reach_the_same_symbol_is_unattributed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"
         # T-2018 acceptance criterion 4: ad-hoc attribution must preserve
         # T-1690's own "never guess" rule -- two candidate commits that
         # BOTH touch the finding's symbol report UNATTRIBUTED with both
@@ -444,7 +444,7 @@ class TestBuildAdHocBatch:
     def test_unreadable_git_history_degrades_to_empty_batch(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"  # noqa: E501
+        # frob:tests src/frob/verify/_attribution.py::build_ad_hoc_batch kind="unit"
         # Not a git repo at all -- `recent_commits` fails; must degrade to
         # an empty batch (logged), never raise.
         snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
@@ -458,7 +458,7 @@ class TestLoadAttributionContext:
     explain`) build the graph snapshot + call graph pair ONCE and thread
     it into both `build_ad_hoc_batch` and `attribute_batch`."""
 
-    # frob:tests src/frob/verify/_attribution.py::load_attribution_context  # noqa: E501
+    # frob:tests src/frob/verify/_attribution.py::load_attribution_context
     def test_returns_a_usable_snapshot_and_call_graph(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

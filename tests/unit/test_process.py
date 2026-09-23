@@ -368,7 +368,7 @@ class TestToolResultMeasurement:
     MEASURED/NOT_MEASURED distinction a `--json` consumer can now read
     directly, instead of re-deriving `frob.check._is_unresolved_only_gate`'s
     predicate by hand."""
-# frob:tests src/frob/process/parsers/common.py::ToolResult.measurement  # noqa: E501
+# frob:tests src/frob/process/parsers/common.py::ToolResult.measurement
 
     def test_measured_when_zero_diagnostics(self) -> None:
         # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_zero_diagnostics  # noqa: E501
@@ -378,7 +378,7 @@ class TestToolResultMeasurement:
         assert r.measurement == "measured"
         assert r.measurement_reason == ""
 
-    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement  # noqa: E501
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement
     def test_measured_when_a_real_error_is_present(self) -> None:
         # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_a_real_error_is_present  # noqa: E501
         from frob.process.parsers.common import Diagnostic, ToolResult
@@ -389,8 +389,8 @@ class TestToolResultMeasurement:
         )
         assert r.measurement == "measured"
 
-    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement_reason  # noqa: E501
-    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement  # noqa: E501
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement_reason
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement
     def test_not_measured_when_every_diagnostic_is_unresolved_info(self) -> None:
         # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
         from frob.process.parsers.common import Diagnostic, ToolResult
@@ -404,7 +404,7 @@ class TestToolResultMeasurement:
         assert r.measurement == "not_measured"
         assert "no commands declared" in r.measurement_reason
 
-    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement  # noqa: E501
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement
     def test_measured_when_unresolved_mixes_with_a_real_warning(self) -> None:
         # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_unresolved_mixes_with_a_real_warning  # noqa: E501
         from frob.process.parsers.common import Diagnostic, ToolResult

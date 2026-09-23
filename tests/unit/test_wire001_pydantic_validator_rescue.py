@@ -53,8 +53,7 @@ class TestWire001PydanticValidatorRescue:
     # frob:ticket T-2325
     def test_fresh_model_validator_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticVali\
-        # datorRescue.test_fresh_model_validator_is_not_flagged
+        # tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue.test_fresh_model_validator_is_not_flagged  # noqa: E501
         """(MUST FAIL FIRST on pre-T-2325 main): a brand-new pydantic
         `@model_validator(mode="after")` method with no caller outside
         its own tests must NOT fire WIRE001 -- pydantic's own dispatch
@@ -89,8 +88,7 @@ class TestWire001PydanticValidatorRescue:
     # frob:ticket T-2325
     def test_fresh_field_validator_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticVali\
-        # datorRescue.test_fresh_field_validator_is_not_flagged
+        # tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue.test_fresh_field_validator_is_not_flagged  # noqa: E501
         """Same rescue for the other pydantic validator decorator shape,
         `@field_validator`."""
         _write(
@@ -125,8 +123,7 @@ class TestWire001PydanticValidatorRescue:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticVali\
-        # datorRescue.test_ordinary_new_function_still_flagged_positive_control
+        # tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue.test_ordinary_new_function_still_flagged_positive_control  # noqa: E501
         """Positive control (must-still-pass): an ordinary new function
         with no pydantic decorator and no caller outside its own test
         still fires WIRE001 -- the fix narrows the rescue to the

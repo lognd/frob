@@ -70,7 +70,7 @@ class TestExploreRunner:
     """`frob explore <map|outline|xref|docs-search>`: T-1238's verb-group
     front door delegates straight into the standalone runners."""
 
-    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/explore_runner.py::run
     def test_map_subcommand_delegates_to_map_runner(self, tmp_path, caplog):
         """`explore_command="map"` produces the same output as `frob map`."""
         _make_py_project(tmp_path)
@@ -78,7 +78,7 @@ class TestExploreRunner:
         with caplog.at_level("INFO"):
             explore_run(cfg)
         assert any("{" in r.message for r in caplog.records)
-# frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
+# frob:tests src/frob/app/explore_runner.py::run
 
     def test_outline_subcommand_delegates_to_outline_runner(self, tmp_path, caplog):
         """`explore_command="outline"` produces the same output as `frob
@@ -88,10 +88,10 @@ class TestExploreRunner:
         cfg = AppConfig(explore_command="outline", outline_file=target)
         with caplog.at_level("INFO"):
             explore_run(cfg)
-        # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/explore_runner.py::run
         assert any("hello" in r.message for r in caplog.records)
 
-    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/explore_runner.py::run
     def test_xref_subcommand_missing_symbol_exits_1(self, caplog):
         """`explore_command="xref"` with no symbol still errors like the
         standalone `frob xref`."""
@@ -100,7 +100,7 @@ class TestExploreRunner:
             explore_run(cfg)
         assert exc.value.code == 1
 
-    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/explore_runner.py::run
     def test_docs_search_subcommand_missing_path_exits_1(self, caplog):
         """`explore_command="docs-search"` with no path errors cleanly."""
         cfg = AppConfig(explore_command="docs-search", docs_path=None)
@@ -108,7 +108,7 @@ class TestExploreRunner:
             explore_run(cfg)
         assert exc.value.code == 1
 
-    # frob:tests src/frob/app/explore_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/explore_runner.py::run
     def test_unknown_subcommand_exits_1(self, caplog):
         """No `explore_command` at all (bare `frob explore`) errors cleanly
         instead of silently no-op'ing."""
@@ -312,9 +312,9 @@ class TestExportsRunner:
             exports_run(cfg)
         assert caplog.records
 
-    # frob:tests src/frob/exports/__init__.py::ExportsResult.as_json  # noqa: E501
-    # frob:tests src/frob/app/exports_runner.py::run  # noqa: E501
-    # frob:tests src/frob/app/exports_runner.py::_try_exports_via_daemon kind="unit"  # noqa: E501
+    # frob:tests src/frob/exports/__init__.py::ExportsResult.as_json
+    # frob:tests src/frob/app/exports_runner.py::run
+    # frob:tests src/frob/app/exports_runner.py::_try_exports_via_daemon kind="unit"
     def test_json_mode_logs_result(self, tmp_path, caplog):
         """JSON mode logs the JSON rendering of package exports."""
         _make_py_project(tmp_path)
@@ -331,7 +331,7 @@ class TestExportsRunner:
             exports_run(cfg)
         init_path = tmp_path / "pkg" / "__init__.py"
         assert init_path.exists()
-        # frob:tests src/frob/app/exports_runner.py::_run_consumers  # noqa: E501
+        # frob:tests src/frob/app/exports_runner.py::_run_consumers
         assert init_path.read_text().strip() != ""
 
     # frob:ticket T-0876
@@ -341,11 +341,11 @@ class TestExportsRunner:
         (tmp_path / "consumer.py").write_text("from producer import widget\n")
         cfg = AppConfig(exports_path=tmp_path, exports_consumers="widget")
         with caplog.at_level("INFO"):
-            # frob:tests src/frob/app/exports_runner.py::_run_consumers  # noqa: E501
+            # frob:tests src/frob/app/exports_runner.py::_run_consumers
             exports_run(cfg)
         assert any("consumer.py" in r.message for r in caplog.records)
 
-    # frob:tests src/frob/app/exports_runner.py::_run_consumers  # noqa: E501
+    # frob:tests src/frob/app/exports_runner.py::_run_consumers
     # frob:ticket T-0876
     def test_consumers_mode_json_output(self, tmp_path, caplog):
         """`--consumers SYMBOL --json` logs the JSON ConsumersResult."""
@@ -359,7 +359,7 @@ class TestExportsRunner:
         assert any('"symbol"' in r.message for r in caplog.records)
 
     # frob:ticket T-0876
-    # frob:tests src/frob/app/exports_runner.py::_run_consumers  # noqa: E501
+    # frob:tests src/frob/app/exports_runner.py::_run_consumers
     def test_consumers_mode_err_result_exits_1(self, tmp_path, caplog):
         """`--consumers` over a directory with no source files exits 1."""
         empty = tmp_path / "empty"
@@ -422,16 +422,16 @@ class TestOutlineRunner:
         assert caplog.records
 
     def test_file_target_text_mode(self, tmp_path, caplog):
-        # frob:tests src/frob/app/outline_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/outline_runner.py::run
         """A file target logs the text rendering of its outline."""
         _make_py_project(tmp_path)
         cfg = AppConfig(outline_file=tmp_path / "pkg" / "mod.py", outline_json=False)
         with caplog.at_level("INFO"):
-            # frob:tests src/frob/app/outline_runner.py::run  # noqa: E501
+            # frob:tests src/frob/app/outline_runner.py::run
             outline_run(cfg)
         assert caplog.records
 
-    # frob:tests src/frob/app/outline_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/outline_runner.py::run
     def test_file_target_json_mode(self, tmp_path, caplog):
         """A file target in JSON mode logs the JSON rendering."""
         _make_py_project(tmp_path)
@@ -486,16 +486,16 @@ class TestMutateRunner:
         import frob.mutate as mutate_mod
 
         monkeypatch.setattr(mutate_mod, "run_mutations", fake_run_mutations)
-        # frob:tests src/frob/app/mutate_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/mutate_runner.py::run
         cfg = AppConfig(
             mutate_file=tmp_path / "f.py", mutate_path=tmp_path, mutate_argv=[]
         )
         with pytest.raises(SystemExit):
-            # frob:tests src/frob/app/mutate_runner.py::run  # noqa: E501
+            # frob:tests src/frob/app/mutate_runner.py::run
             mutate_run(cfg)
         assert captured["argv"] == ("uv", "run", "pytest", "-q")
 
-    # frob:tests src/frob/app/mutate_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/mutate_runner.py::run
     def test_success_no_survivors_text_mode(self, tmp_path, monkeypatch, capsys):
         """A clean mutation run (no survivors) prints a score and does not exit."""
         from typani import Ok
@@ -581,7 +581,7 @@ class TestQualityRunner:
         elif quality_command == "test":
             import frob.app.test_runner as mod
         elif quality_command == "dup":
-            # frob:tests src/frob/app/quality_runner.py::run  # noqa: E501
+            # frob:tests src/frob/app/quality_runner.py::run
             import frob.app.dup_runner as mod
         elif quality_command == "cycle":
             import frob.app.cycle_runner as mod
@@ -605,13 +605,13 @@ class TestQualityRunner:
         called = {}
         monkeypatch.setattr(
             target_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
-        # frob:tests src/frob/app/quality_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/quality_runner.py::run
         )
         cfg = AppConfig(quality_command=quality_command)
         quality_run(cfg)
         assert called["cfg"] is cfg
 
-    # frob:tests src/frob/app/quality_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/quality_runner.py::run
     # frob:waive DUP001 reason="deliberately mirrors TestExploreRunner's own \
     # map/outline end-to-end delegation tests (same real-fixture-plus-caplog shape, \
     # T-1238 precedent) -- one member of this verb group needs a real end-to-end check \
@@ -627,7 +627,7 @@ class TestQualityRunner:
             quality_run(cfg)
         assert any("{" in r.message for r in caplog.records)
 
-    # frob:tests src/frob/app/quality_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/quality_runner.py::run
     def test_mutate_subcommand_missing_file_exits_nonzero(self):
         """`quality_command="mutate"` with no `mutate_file` errors like the
         standalone `frob mutate`."""
@@ -668,7 +668,7 @@ class TestDesignRunner:
         else:  # pragma: no cover -- unreachable: design_command is parametrized above
             raise AssertionError(design_command)
         return mod
-# frob:tests src/frob/app/design_runner.py::run  # noqa: E501
+# frob:tests src/frob/app/design_runner.py::run
 
     @pytest.mark.parametrize("design_command", ["sys", "registry", "docs", "graph"])
     def test_subcommand_delegates_to_matching_runner(self, monkeypatch, design_command):
@@ -744,7 +744,7 @@ class TestOpsRunner:
             import frob.app.clean_runner as mod
         elif ops_command == "fleet":
             import frob.app.fleet_runner as mod
-        # frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/ops_runner.py::run
         elif ops_command == "deploy":
             import frob.app.deploy_runner as mod
         elif ops_command == "scaffold":
@@ -801,7 +801,7 @@ class TestOpsRunner:
             ["git", "config", "user.email", "a@b.c"],
             cwd=tmp_path,
             check=True,
-        # frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/ops_runner.py::run
         )
         subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
         (tmp_path / "f.txt").write_text("x")
@@ -810,11 +810,11 @@ class TestOpsRunner:
             ["git", "commit", "-q", "-m", "feat: add f"], cwd=tmp_path, check=True
         )
         cfg = AppConfig(ops_command="stats", stats_path=tmp_path, stats_json=False)
-        # frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/ops_runner.py::run
         ops_run(cfg)
         out = capsys.readouterr().out
         assert out.strip() != ""
-# frob:tests src/frob/app/ops_runner.py::run  # noqa: E501
+# frob:tests src/frob/app/ops_runner.py::run
 
     def test_unknown_subcommand_exits_1(self, caplog):
         """No `ops_command` at all (bare `frob ops`) errors cleanly instead

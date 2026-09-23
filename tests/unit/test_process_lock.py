@@ -174,8 +174,8 @@ class TestPortableFlock:
     `frob.testing._coverage_wait`). See T-3506 for the design
     rationale."""
 
-    # frob:tests src/frob/process/_lock.py::portable_flock_acquire  # noqa: E501
-    # frob:tests src/frob/process/_lock.py::portable_flock_release  # noqa: E501
+    # frob:tests src/frob/process/_lock.py::portable_flock_acquire
+    # frob:tests src/frob/process/_lock.py::portable_flock_release
     def test_posix_blocking_acquire_release_round_trips(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
         import frob.process._lock as _lock_mod
@@ -194,7 +194,7 @@ class TestPortableFlock:
         finally:
             os.close(fd)
 
-    # frob:tests src/frob/process/_lock.py::portable_flock_acquire  # noqa: E501
+    # frob:tests src/frob/process/_lock.py::portable_flock_acquire
     def test_posix_nonblocking_contended_returns_false(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_nonblocking_contended_returns_false  # noqa: E501
         import frob.process._lock as _lock_mod
@@ -223,9 +223,9 @@ class TestPortableFlock:
             os.close(holder_fd)
             os.close(contender_fd)
 
-    # frob:tests src/frob/process/_lock.py::PortableLockUnavailable  # noqa: E501
-    # frob:tests src/frob/process/_lock.py::portable_flock_acquire  # noqa: E501
-    # frob:tests src/frob/process/_lock.py::lock_backend_available  # noqa: E501
+    # frob:tests src/frob/process/_lock.py::PortableLockUnavailable
+    # frob:tests src/frob/process/_lock.py::portable_flock_acquire
+    # frob:tests src/frob/process/_lock.py::lock_backend_available
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="the fake msvcrt backend below is real fcntl.flock under "
@@ -274,7 +274,7 @@ class TestPortableFlock:
         finally:
             os.close(fd)
         assert calls == ["lock", "unlock"]
-# frob:tests src/frob/process/_lock_msvcrt.py::_msvcrt_acquire_blocking  # noqa: E501
+# frob:tests src/frob/process/_lock_msvcrt.py::_msvcrt_acquire_blocking
 
     # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_blocking_reentry_raises_instead_of_hanging_forever  # noqa: E501
     def test_windows_blocking_reentry_raises_instead_of_hanging_forever(
@@ -326,7 +326,7 @@ class TestDerivedStateLockPlatformBackends:
     loud refusal when neither `fcntl` nor `msvcrt` exists -- the same
     PLATFORM001-shaped fix T-2918 applied to `_baseline_lock`."""
 
-    # frob:tests src/frob/process/_derived_lock.py::DerivedStateLockUnavailable  # noqa: E501
+    # frob:tests src/frob/process/_derived_lock.py::DerivedStateLockUnavailable
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -699,7 +699,7 @@ class TestTicketLock:
         assert path_a.name == "T-0001.lock"
 
     # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_two_different_ticket_ids_do_not_block_each_other  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::ticket_lock  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::ticket_lock
     def test_two_different_ticket_ids_do_not_block_each_other(
         self, tmp_path: Path
     ) -> None:
@@ -740,7 +740,7 @@ class TestTicketLock:
         )
 
     # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_same_id_from_two_threads_serializes  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::ticket_lock  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::ticket_lock
     def test_same_id_from_two_threads_serializes(self, tmp_path: Path) -> None:
         """Two threads racing for `ticket_lock` on the SAME ticket id never
         overlap -- a real cross-thread mutual-exclusion check."""
@@ -768,7 +768,7 @@ class TestTicketLock:
         assert max_active == 1
 
     # frob:tests tests/unit/test_process_lock.py::TestTicketLock.test_reentrant_same_id_in_same_thread_does_not_deadlock  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::ticket_lock  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::ticket_lock
     def test_reentrant_same_id_in_same_thread_does_not_deadlock(
         self, tmp_path: Path
     ) -> None:
@@ -797,7 +797,7 @@ class TestAllocatorLock:
         assert _allocator_lock_path(tmp_path).exists()
 
     # frob:tests tests/unit/test_process_lock.py::TestAllocatorLock.test_two_concurrent_allocations_get_distinct_ids  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::allocator_lock  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::allocator_lock
     def test_two_concurrent_allocations_get_distinct_ids(self, tmp_path: Path) -> None:
         """GIVEN two callers both call the id allocator concurrently WHEN
         both request a next id THEN they receive distinct ids (interleaving
@@ -861,12 +861,12 @@ class TestSharedIdCounter:
         self._git("config", "user.email", "test@example.com", cwd=root)
         self._git("config", "user.name", "Test", cwd=root)
         (root / "seed.txt").write_text("seed\n")
-        # frob:tests src/frob/tickets/_new_renumber.py::_next_ticket_id_shared  # noqa: E501
+        # frob:tests src/frob/tickets/_new_renumber.py::_next_ticket_id_shared
         self._git("add", "-A", cwd=root)
         self._git("commit", "-q", "-m", "seed", cwd=root)
 
     # frob:tests tests/unit/test_process_lock.py::TestSharedIdCounter.test_two_checkouts_with_divergent_views_never_collide  # noqa: E501
-    # frob:tests src/frob/tickets/_new_renumber.py::_next_ticket_id_shared  # noqa: E501
+    # frob:tests src/frob/tickets/_new_renumber.py::_next_ticket_id_shared
     def test_two_checkouts_with_divergent_views_never_collide(
         self, tmp_path: Path
     ) -> None:

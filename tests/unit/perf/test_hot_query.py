@@ -27,11 +27,11 @@ def _sketch(value: float):
 
 
 class TestListSketches:
-    # frob:tests src/frob/perf/_sketch_store.py::list_sketches  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::list_sketches
     def test_empty_store_is_empty(self, tmp_path: Path) -> None:
         assert list_sketches(tmp_path) == []
 
-    # frob:tests src/frob/perf/_sketch_store.py::list_sketches  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::list_sketches
     def test_lists_every_stored_row_with_its_label(self, tmp_path: Path) -> None:
         config = SketchStoreConfig()
         put_sketch(tmp_path, "k1", "loop", _sketch(5.0), config, label="pkg.mod.a")
@@ -44,7 +44,7 @@ class TestListSketches:
         assert by_key["k1"].kind == "loop"
         assert by_key["k2"].label == "pkg.mod.b"
 
-    # frob:tests src/frob/perf/_sketch_store.py::list_sketches  # noqa: E501
+    # frob:tests src/frob/perf/_sketch_store.py::list_sketches
     def test_pre_label_store_still_reads_via_column_migration(
         self, tmp_path: Path
     ) -> None:

@@ -89,8 +89,7 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 # frob:ticket T-1259
 # frob:ticket T-2695
 # frob:doc \
-# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
-# tion-7
+# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Migration to v2 \
 # (T-1259) section individually frob:describes this symbol by its own qualified path \
 # -- a deliberate per-symbol anchor, not a duplicate"
@@ -124,8 +123,7 @@ def _split_done_report(body: str) -> tuple[str, str | None]:
 # frob:ticket T-1259
 # frob:ticket T-2695
 # frob:doc \
-# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
-# tion-7
+# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
 # frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Migration to v2 \
 # (T-1259) section individually frob:describes this symbol by its own qualified path \
 # -- a deliberate per-symbol anchor, not a duplicate"
@@ -167,8 +165,7 @@ def _migrate_one_v2(
 # frob:ticket T-1259
 # frob:ticket T-2695
 # frob:doc \
-# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
-# tion-7
+# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
 def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
     """One-shot, reversible migrator (ledger v2 design section 7,

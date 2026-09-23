@@ -42,7 +42,7 @@ class TestStripCitationText:
     """
 
     # frob:tests tests/unit/coordinator_suite/test_strip_help_citations.py::TestStripCitationText.test_bare_parenthetical_citation_is_removed  # noqa: E501
-    # frob:tests scripts/strip_help_citations.py::strip_citation_text  # noqa: E501
+    # frob:tests scripts/strip_help_citations.py::strip_citation_text
     def test_bare_parenthetical_citation_is_removed(self) -> None:
         """A citation that is its own whole parenthetical aside
         disappears along with the now-empty parens.
@@ -52,7 +52,7 @@ class TestStripCitationText:
         assert "T-1234" not in out
 
     # frob:tests tests/unit/coordinator_suite/test_strip_help_citations.py::TestStripCitationText.test_possessive_citation_keeps_the_sentence_grammatical  # noqa: E501
-    # frob:tests scripts/strip_help_citations.py::strip_citation_text  # noqa: E501
+    # frob:tests scripts/strip_help_citations.py::strip_citation_text
     def test_possessive_citation_keeps_the_sentence_grammatical(self) -> None:
         """`T-1615's uniform auto-commit` must become `uniform
         auto-commit`, never the broken `'s uniform auto-commit`.
@@ -63,7 +63,7 @@ class TestStripCitationText:
         assert out == '"skip uniform auto-commit"'
 
     # frob:tests tests/unit/coordinator_suite/test_strip_help_citations.py::TestStripCitationText.test_no_citation_is_a_no_op  # noqa: E501
-    # frob:tests scripts/strip_help_citations.py::strip_citation_text  # noqa: E501
+    # frob:tests scripts/strip_help_citations.py::strip_citation_text
     def test_no_citation_is_a_no_op(self) -> None:
         """A string with no `T-####` token is returned unchanged."""
         text = '"do widget things"'
@@ -76,7 +76,7 @@ class TestRewriteFile:
     """
 
     # frob:tests tests/unit/coordinator_suite/test_strip_help_citations.py::TestRewriteFile.test_help_citation_removed_docstring_untouched  # noqa: E501
-    # frob:tests scripts/strip_help_citations.py::rewrite_file  # noqa: E501
+    # frob:tests scripts/strip_help_citations.py::rewrite_file
     def test_help_citation_removed_docstring_untouched(self, tmp_path: Path) -> None:
         """A citation in a `help=` string is stripped; the SAME citation
         in a docstring two lines away survives -- that is T-4691's scope,
@@ -104,7 +104,7 @@ class TestRewriteFile:
         assert "Docstring cites T-9999 -- must NOT be touched." in new_text
 
     # frob:tests tests/unit/coordinator_suite/test_strip_help_citations.py::TestRewriteFile.test_file_with_no_citations_returns_none  # noqa: E501
-    # frob:tests scripts/strip_help_citations.py::rewrite_file  # noqa: E501
+    # frob:tests scripts/strip_help_citations.py::rewrite_file
     def test_file_with_no_citations_returns_none(self, tmp_path: Path) -> None:
         """A file with no help-string citation is left alone (`None`
         signals "nothing to rewrite" to `main`'s changed-file count).
@@ -125,7 +125,7 @@ class TestMain:
     """
 
     # frob:tests tests/unit/coordinator_suite/test_strip_help_citations.py::TestMain.test_apply_rewrites_the_file_on_disk  # noqa: E501
-    # frob:tests scripts/strip_help_citations.py::main  # noqa: E501
+    # frob:tests scripts/strip_help_citations.py::main
     def test_apply_rewrites_the_file_on_disk(self, tmp_path: Path) -> None:
         """`--apply` actually writes the stripped text back to disk."""
         parsers_dir = tmp_path / "src" / "frob" / "_cli_parsers"
@@ -147,7 +147,7 @@ class TestMain:
         assert "T-1234" not in target.read_text(encoding="utf-8")
 
     # frob:tests tests/unit/coordinator_suite/test_strip_help_citations.py::TestMain.test_without_apply_leaves_the_file_untouched  # noqa: E501
-    # frob:tests scripts/strip_help_citations.py::main  # noqa: E501
+    # frob:tests scripts/strip_help_citations.py::main
     def test_without_apply_leaves_the_file_untouched(self, tmp_path: Path) -> None:
         """Without `--apply`, `main` only previews a diff -- the file on
         disk is unchanged.

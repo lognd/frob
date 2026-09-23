@@ -41,8 +41,8 @@ def _snapshot(root: Path, symrefs: tuple[str, ...]) -> GraphSnapshot:
 class TestClassifyEvidenceReach:
     """`frob.graph.reach.classify_evidence_reach`."""
 
-    # frob:tests src/frob/graph/reach.py::EvidenceReach  # noqa: E501
-    # frob:tests src/frob/graph/reach.py::ReachResult  # noqa: E501
+    # frob:tests src/frob/graph/reach.py::EvidenceReach
+    # frob:tests src/frob/graph/reach.py::ReachResult
     def test_reaches_via_call_graph_closure(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/reach.py::classify_evidence_reach
         (tmp_path / "pkg").mkdir()

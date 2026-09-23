@@ -40,7 +40,7 @@ class TestNewJsonOutput:
     channel `frob ticket show --json` already uses."""
 
     # frob:tests tests/unit/test_ticket_new_json.py::TestNewJsonOutput.test_json_flag_prints_parseable_json_with_id  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_new.py::_emit_new_ticket_json  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_emit_new_ticket_json
     def test_json_flag_prints_parseable_json_with_id(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -62,7 +62,7 @@ class TestNewJsonOutput:
         assert not any(m.startswith("created ") for m in info_records)
 
     # frob:tests tests/unit/test_ticket_new_json.py::TestNewJsonOutput.test_without_json_flag_output_is_unchanged  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_new.py::_emit_new_ticket_json  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_emit_new_ticket_json
     def test_without_json_flag_output_is_unchanged(
         self, tmp_path: Path, caplog
     ) -> None:

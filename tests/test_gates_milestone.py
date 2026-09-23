@@ -87,8 +87,8 @@ class TestEffectiveMilestoneDefault:
     """`effective_milestone(queue, ticket, root)` -- the T-2576 M2 terminal
     default fallback layered on top of M3's declared/inherited walk."""
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
-    # frob:tests src/frob/tickets/_doable.py::MilestoneSource  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
+    # frob:tests src/frob/tickets/_doable.py::MilestoneSource
     def test_no_declared_or_inherited_falls_back_to_configured_default(
         self, tmp_path: Path
     ) -> None:
@@ -103,8 +103,8 @@ class TestEffectiveMilestoneDefault:
             MilestoneSource.DEFAULTED,
         )
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
-    # frob:tests src/frob/tickets/_doable.py::MilestoneSource  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
+    # frob:tests src/frob/tickets/_doable.py::MilestoneSource
     def test_declared_value_is_not_overridden_by_default(self, tmp_path: Path) -> None:
         """A ticket with its own milestone set keeps it verbatim even when
         the repo default differs -- the default must never win over a
@@ -117,7 +117,7 @@ class TestEffectiveMilestoneDefault:
             MilestoneSource.DECLARED,
         )
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
     def test_inherited_value_is_not_overridden_by_default(self, tmp_path: Path) -> None:
         """A ticket inheriting from an ancestor keeps INHERITED, unchanged
         from M3, even when the repo configures a (different) default --
@@ -131,7 +131,7 @@ class TestEffectiveMilestoneDefault:
             MilestoneSource.INHERITED,
         )
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
     def test_no_default_configured_stays_unresolved(self, tmp_path: Path) -> None:
         """No declared/inherited value AND no configured default: `(None,
         None)`, never a silently-assumed value -- this is what keeps
@@ -141,7 +141,7 @@ class TestEffectiveMilestoneDefault:
         queue = TicketQueue(tickets={t.id: t})
         assert effective_milestone(queue, t, tmp_path) == (None, None)
 
-    # frob:tests src/frob/tickets/_doable.py::effective_milestone  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
     def test_no_root_skips_default_lookup(self) -> None:
         """`root=None` (every pre-T-2576 caller) preserves M3's exact
         two-state behavior verbatim -- the default is opt-in per call
@@ -155,8 +155,8 @@ class TestMile003:
     """`milestone_gate(root, queue)` -- MILE003, an OPEN ticket whose
     effective milestone cannot be resolved."""
 
-    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
-    # frob:tests src/frob/gates/_milestone.py::milestone_gate  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
+    # frob:tests src/frob/gates/_milestone.py::milestone_gate
     def test_fires_on_open_ticket_with_no_resolvable_milestone(
         self, tmp_path: Path
     ) -> None:
@@ -168,19 +168,19 @@ class TestMile003:
         violations = milestone_gate(tmp_path, queue)
         assert [v.rule for v in violations] == ["MILE003"]
         assert "T-1" in violations[0].message
-# frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
+# frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
 
-    # frob:tests src/frob/gates/_milestone.py::milestone_gate  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::milestone_gate
     def test_silent_once_stamped(self, tmp_path: Path) -> None:
         """Positive control (this ticket's own original body): stamping
         the ticket's own milestone silences MILE003."""
         _write_frob_toml(tmp_path, default_milestone=None)
         t = _ticket(ticket_id="T-1", milestone="1.0.0")
         queue = TicketQueue(tickets={t.id: t})
-        # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
+        # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
         assert milestone_gate(tmp_path, queue) == ()
 
-    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
     def test_silent_on_configured_default(self, tmp_path: Path) -> None:
         """The M2 redesign's whole point: a configured default silences
         MILE003 with ZERO ticket-file writes."""
@@ -189,7 +189,7 @@ class TestMile003:
         queue = TicketQueue(tickets={t.id: t})
         assert milestone_gate(tmp_path, queue) == ()
 
-    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
     def test_silent_on_inherited_value(self, tmp_path: Path) -> None:
         """An inheriting leaf is silent even with no repo default
         configured -- M3's own resolution already satisfies MILE003."""
@@ -199,7 +199,7 @@ class TestMile003:
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
         assert milestone_gate(tmp_path, queue) == ()
 
-    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
     def test_terminal_ticket_never_fires(self, tmp_path: Path) -> None:
         """A DONE/DROPPED ticket with no milestone never fires -- it does
         not sequence again, matching the abandoned backfill's own
@@ -210,7 +210,7 @@ class TestMile003:
         queue = TicketQueue(tickets={done.id: done, dropped.id: dropped})
         assert milestone_gate(tmp_path, queue) == ()
 
-    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
     def test_no_default_configured_still_fires(self, tmp_path: Path) -> None:
         """Explicit required case (redesign body, last positive control):
         with NO `default_milestone` configured at all (no `frob.toml`
@@ -227,7 +227,7 @@ class TestMile003:
 # frob:ticket T-2580
 class TestMile001:
     """MILE001 (T-2580 M5): a `blocked_by` edge pointing INTO a later
-    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
     effective milestone is a provable release deadlock -- the blocked
     ticket's own (earlier) milestone can never ship first."""
 
@@ -239,11 +239,11 @@ class TestMile001:
         t = _ticket(ticket_id="T-1", milestone="1.0.0", blocked_by=("T-2",))
         queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
-        # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
+        # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
         assert len(violations) == 1
         assert "T-1" in violations[0].message
         assert "T-2" in violations[0].message
-# frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
+# frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
 
     def test_blocked_by_earlier_milestone_does_not_fire(self, tmp_path: Path) -> None:
         """Negative control: T-1 (milestone 2.0.0) blocked_by T-2
@@ -255,7 +255,7 @@ class TestMile001:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
     def test_blocked_by_same_milestone_does_not_fire(self, tmp_path: Path) -> None:
         """Negative control: same milestone on both sides -- ordinary
         in-milestone sequencing, not a deadlock."""
@@ -265,7 +265,7 @@ class TestMile001:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
     def test_terminal_blocker_does_not_fire(self, tmp_path: Path) -> None:
         """A DONE blocker in a later milestone is not a live deadlock --
         the dependency is already satisfied."""
@@ -275,7 +275,7 @@ class TestMile001:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
     def test_terminal_ticket_never_fires(self, tmp_path: Path) -> None:
         """A DONE/DROPPED ticket does not sequence again -- its own stale
         blocked_by edge must not fire even if the milestones would
@@ -291,7 +291,7 @@ class TestMile001:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
     def test_unresolved_milestone_does_not_fire(self, tmp_path: Path) -> None:
         """Neither side has a resolvable milestone -- MILE003's concern,
         not MILE001's; must not fire (and must not crash on `None`)."""
@@ -338,7 +338,7 @@ class TestMile002:
         assert "T-EPIC" in violations[0].message
         assert "T-CHILD" in violations[0].message
 
-    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone
     def test_descendant_in_earlier_or_same_milestone_does_not_fire(
         self, tmp_path: Path
     ) -> None:
@@ -361,7 +361,7 @@ class TestMile002:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone
     def test_terminal_descendant_does_not_fire(self, tmp_path: Path) -> None:
         """A DONE descendant in a later milestone is not a live deadlock
         -- `_done_transition_guard` only blocks on OPEN descendants."""
@@ -376,7 +376,7 @@ class TestMile002:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone
     def test_terminal_ancestor_never_fires(self, tmp_path: Path) -> None:
         """A DONE/DROPPED ancestor already closed (or was dropped) --
         stale hierarchy, must not fire."""
@@ -395,7 +395,7 @@ class TestMile002:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile002_descendant_later_milestone
     def test_grandchild_descendant_fires(self, tmp_path: Path) -> None:
         """The hierarchy walk is any-depth, not just direct children --
         a grandchild in a later milestone must still fire against the
@@ -447,7 +447,7 @@ class TestMile004:
     Every fixture declares its own `milestone` directly (DECLARED
     source) so MILE003 never also fires and confuses these assertions."""
 
-    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last
     def test_two_unordered_runs_last_in_one_milestone_fires(
         self, tmp_path: Path
     ) -> None:
@@ -461,7 +461,7 @@ class TestMile004:
         assert "T-1" in violations[0].message
         assert "T-2" in violations[0].message
 
-    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last
     def test_blocked_by_edge_resolves_the_pair(self, tmp_path: Path) -> None:
         """The identical pair, but T-2 now `blocked_by` T-1 -- a real
         ordering edge must silence MILE004 for this pair."""
@@ -473,7 +473,7 @@ class TestMile004:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last
     def test_declared_parallel_safe_resolves_the_pair(self, tmp_path: Path) -> None:
         """The identical pair, both declared `runs_last_parallel_safe` --
         an explicit two-sided decision must silence MILE004."""
@@ -508,7 +508,7 @@ class TestMile004:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
         assert len(violations) == 1
 
-    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last
     def test_single_runs_last_ticket_never_fires(self, tmp_path: Path) -> None:
         """A lone runs_last ticket in a milestone has no sibling to pair
         with -- MILE004 must never fire."""
@@ -518,7 +518,7 @@ class TestMile004:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last
     def test_different_milestones_never_pair(self, tmp_path: Path) -> None:
         """Two runs_last tickets in DIFFERENT milestones never pair --
         MILE004 is scoped per-milestone, same as `_other_open_tickets`
@@ -529,7 +529,7 @@ class TestMile004:
         violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
         assert violations == []
 
-    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last  # noqa: E501
+    # frob:tests src/frob/gates/_milestone.py::_mile004_unordered_runs_last
     def test_terminal_sibling_excluded(self, tmp_path: Path) -> None:
         """A DONE runs_last sibling is excluded from pairing -- it no
         longer needs ordering against anything."""

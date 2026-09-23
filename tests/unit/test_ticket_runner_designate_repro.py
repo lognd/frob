@@ -112,7 +112,7 @@ class TestValidateDesignateReproAtParent:
         assert exc.value.code == 1
         ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         assert ticket.designated_repro_test is None
-# frob:tests src/frob/app/ticket_runner/_verify.py::_validate_designate_repro_at_parent  # noqa: E501
+# frob:tests src/frob/app/ticket_runner/_verify.py::_validate_designate_repro_at_parent
 
     def test_refuses_no_verdict(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -311,7 +311,7 @@ class TestEvidenceCheckRepro:
         assert "T-0001 TIMEOUT:" in message
         assert "--repro-timeout-s" in message
 
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro
     def test_reports_failed_at_parent_exit0(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -339,7 +339,7 @@ class TestEvidenceCheckRepro:
         ticket = load_queue(tmp_path).danger_ok.tickets[ticket_id]
         assert ticket.designated_repro_test is None
 
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro
     def test_reports_passed_at_parent_exit1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -427,7 +427,7 @@ class TestEvidenceCheckRepro:
         assert "squash" in caplog.text.lower()
 
     # frob:ticket T-2480
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_evidence_check_repro
     def test_no_node_id_resolves_designated_test(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

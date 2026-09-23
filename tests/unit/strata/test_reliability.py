@@ -42,7 +42,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestMissingTimeout:
     # frob:tests \
     # tests/unit/strata/test_reliability.py::TestMissingTimeout.test_flow_without_timeout_fires  # noqa: E501
-    # frob:tests src/frob/strata/_reliability.py::check_reliability_timeouts  # noqa: E501
+    # frob:tests src/frob/strata/_reliability.py::check_reliability_timeouts
     def test_flow_without_timeout_fires(self, tmp_path: Path):
         _module, model = _load("reliability_timeout_missing_vuln.strata")
         result = check_reliability_timeouts(model, tmp_path)
@@ -247,7 +247,7 @@ class TestUnprovenTimeout:
 class TestMissingHealth:
     # frob:tests \
     # tests/unit/strata/test_reliability.py::TestMissingHealth.test_daemon_without_health_fires  # noqa: E501
-    # frob:tests src/frob/strata/_reliability.py::check_reliability_health  # noqa: E501
+    # frob:tests src/frob/strata/_reliability.py::check_reliability_health
     def test_daemon_without_health_fires(self, tmp_path: Path):
         _module, model = _load("reliability_health_missing_vuln.strata")
         result = check_reliability_health(model, tmp_path)

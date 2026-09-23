@@ -43,12 +43,7 @@ def _all_pytest_steps() -> list[dict]:
 # frob:ticket T-4274
 # frob:waive WIRE001 reason="genuinely wired -- called by \
 # test_macos_step_backgrounds_the_interpreter_directly_not_uv_run below and by \
-# TestUbuntuTestStepIsTimedWithStackDump._ubuntu_test_step/TestMacosTestStepSignalsTheR\
-# ealInterpreter._macos_test_step, both themselves called by every test method in \
-# their class; a pure workflow-YAML-inspection test helper has no production caller to \
-# reach it through by construction, the same shape this file's own pre-existing \
-# _load_ci_workflow/_ubuntu_test_step helpers are in, per T-1592's \
-# permanent-test-helper precedent" permanent="true"
+# TestUbuntuTestStepIsTimedWithStackDump._ubuntu_test_step/TestMacosTestStepSignalsTheRealInterpreter._macos_test_step, both themselves called by every test method in their class; a pure workflow-YAML-inspection test helper has no production caller to reach it through by construction, the same shape this file's own pre-existing _load_ci_workflow/_ubuntu_test_step helpers are in, per T-1592's permanent-test-helper precedent" permanent="true"  # noqa: E501
 def _pytest_test_step(name_prefix: str) -> dict:
     """The single pytest-invoking `build` job step whose `name` starts
     with `name_prefix` -- shared by `TestUbuntuTestStepIsTimedWithStack

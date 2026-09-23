@@ -365,7 +365,7 @@ class TestLandStatus:
         assert entries[str(real_pid)]["ticket_id"] == "T-2000"
 
     # frob:ticket T-5084
-    # frob:tests src/frob/tickets/_land.py::_live_land_status_entries  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_live_land_status_entries
     def test_live_entries_drops_confirmed_dead_pids(self, tmp_path: Path) -> None:
         """T-5084's measured incident: a `phase="running"` entry for a
         pid confirmed dead must NOT appear in `_live_land_status_entries`
@@ -397,7 +397,7 @@ class TestLandStatus:
         assert str(dead_pid) not in live
 
     # frob:ticket T-5084
-    # frob:tests src/frob/tickets/_land.py::_live_land_status_entries  # noqa: E501
+    # frob:tests src/frob/tickets/_land.py::_live_land_status_entries
     def test_live_entries_keeps_ambiguous_and_alive_pids(self, tmp_path: Path) -> None:
         """A pid this process's OWN process just wrote (genuinely alive)
         stays in `_live_land_status_entries`; a pid whose liveness this

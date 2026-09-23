@@ -756,7 +756,7 @@ class TestNativeStalenessResult:
 class TestRunGatesDelta:
     """T-0095: --delta filters to violations new since .frob/baseline."""
 
-    # frob:tests src/frob/check/_python.py::_gates_success_result  # noqa: E501
+    # frob:tests src/frob/check/_python.py::_gates_success_result
     def test_no_baseline_falls_back_to_full_set_with_warning(
         self, tmp_path: Path
     ) -> None:
@@ -934,7 +934,7 @@ class TestSummarySeverityHonesty:
     bare, alarming 'violation(s)' count -- every summary line splits into
     errors/warnings (and waived, for gates)."""
 
-    # frob:tests src/frob/check/_python.py::_gates_success_result  # noqa: E501
+    # frob:tests src/frob/check/_python.py::_gates_success_result
     def test_warn_only_gate_summary_splits_errors_and_warnings(
         self, tmp_path: Path, monkeypatch
     ) -> None:

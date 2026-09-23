@@ -306,8 +306,7 @@ def _corpus_repo(tmp_path: Path) -> Path:
 class TestRefactorCorpus:
     def test_split_moves_symbols_across_every_call_site_shape(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor_corpus.py::TestRefactorCorpus.test_split_moves_symbols_ac\
-        # ross_every_call_site_shape
+        # tests/test_refactor_corpus.py::TestRefactorCorpus.test_split_moves_symbols_across_every_call_site_shape  # noqa: E501
         root = _corpus_repo(tmp_path)
 
         result = run_split(

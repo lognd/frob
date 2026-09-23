@@ -23,7 +23,7 @@ _SAMPLE_PY = (
 
 
 class TestWatchTick:
-    # frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"
     def test_no_change_leaves_state_cached(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_serve_watch.py::TestWatchTick.test_no_change_leaves_state_cached
@@ -37,7 +37,7 @@ class TestWatchTick:
         second_key, second_changed = watch_tick(tmp_path, first_key)
         assert second_changed is False
         assert second_key == first_key
-# frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"  # noqa: E501
+# frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"
 
     def test_change_invalidates_and_prewarms(self, tmp_path: Path) -> None:
         # frob:tests \
@@ -61,7 +61,7 @@ class TestWatchTick:
         assert cached_after is not None
         assert cached_after.dirty_key == new_key
 
-    # frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"
     def test_watch_tick_never_disagrees_with_pull_signal(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_serve_watch.py::TestWatchTick.test_watch_tick_never_disagrees_with_pull_signal  # noqa: E501
@@ -95,7 +95,7 @@ class TestWatchTick:
 
 
 class TestWatchThread:
-    # frob:tests src/frob/serve/_watch.py::WatchThread kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_watch.py::WatchThread kind="unit"
     def test_change_fires_on_change_callback(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_serve_watch.py::TestWatchThread.test_change_fires_on_change_callback  # noqa: E501
@@ -127,7 +127,7 @@ class TestWatchThread:
         finally:
             watcher.stop()
 
-    # frob:tests src/frob/serve/_watch.py::WatchThread kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_watch.py::WatchThread kind="unit"
     def test_stop_joins_promptly(self, tmp_path: Path) -> None:
         # frob:tests tests/test_serve_watch.py::TestWatchThread.test_stop_joins_promptly
         # T-1635: `WatchThread.stop()` itself only waits up to its own

@@ -27,7 +27,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestMissingBoundedIntake:
     # frob:tests \
     # tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_queue_node_without_bounded_intake_fires  # noqa: E501
-    # frob:tests src/frob/strata/_backpressure.py::check_backpressure_obligations  # noqa: E501
+    # frob:tests src/frob/strata/_backpressure.py::check_backpressure_obligations
     def test_queue_node_without_bounded_intake_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="ingest_queue", trust="trusted", attrs=("queue",)),),

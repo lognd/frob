@@ -75,7 +75,7 @@ class TestStaleNatives:
     """`stale_natives`/`stale_native_warning`: source-tree-vs-built-artifact
     mtime comparison, T-0248."""
 
-    # frob:tests src/frob/strata/_native_staleness.py::stale_natives  # noqa: E501
+    # frob:tests src/frob/strata/_native_staleness.py::stale_natives
     def test_reports_native_grammar_ahead_of_native(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -110,7 +110,7 @@ class TestStaleNatives:
         assert warning is not None
         assert name in warning
         assert "make core" in warning
-# frob:tests src/frob/strata/_native_staleness.py::stale_natives  # noqa: E501
+# frob:tests src/frob/strata/_native_staleness.py::stale_natives
 
     def test_fresh_native_reports_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -355,7 +355,7 @@ class TestStaleNatives:
         assert len(stale) == 1
         assert stale[0].reason == "content-digest"
 
-    # frob:tests src/frob/strata/_native_staleness.py::stale_natives  # noqa: E501
+    # frob:tests src/frob/strata/_native_staleness.py::stale_natives
     def test_unbuilt_native_is_not_reported_as_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -374,7 +374,7 @@ class TestStaleNatives:
         assert stale_natives(tmp_path) == ()
         assert stale_native_warning(tmp_path) is None
 
-    # frob:tests src/frob/strata/_native_staleness.py::stale_natives  # noqa: E501
+    # frob:tests src/frob/strata/_native_staleness.py::stale_natives
     def test_no_matching_source_dir_is_not_reported(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -555,7 +555,7 @@ class TestSeedWorktreeNativeSourceMtimes:
 class TestCheckNativeStalenessOrExit:
     """`check_native_staleness_or_exit`: the `make check` entry point."""
 
-    # frob:tests src/frob/strata/_native_staleness.py::check_native_staleness_or_exit  # noqa: E501
+    # frob:tests src/frob/strata/_native_staleness.py::check_native_staleness_or_exit
     def test_exits_nonzero_and_prints_when_stale(
         self,
         tmp_path: Path,
@@ -573,7 +573,7 @@ class TestCheckNativeStalenessOrExit:
         assert exc_info.value.code == 1
         assert "STALE NATIVE" in capsys.readouterr().err
 
-    # frob:tests src/frob/strata/_native_staleness.py::check_native_staleness_or_exit  # noqa: E501
+    # frob:tests src/frob/strata/_native_staleness.py::check_native_staleness_or_exit
     def test_returns_none_when_not_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

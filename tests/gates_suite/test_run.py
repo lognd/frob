@@ -1326,7 +1326,7 @@ class TestNewGateRuleDynamicResolution:
         self._git(root, "config", "user.name", "Test")
 
     # frob:tests tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution.test_resolves_when_literal_lives_in_a_different_file  # noqa: E501
-    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids
     def test_resolves_when_literal_lives_in_a_different_file(
         self, tmp_path: Path
     ) -> None:
@@ -1368,7 +1368,7 @@ class TestNewGateRuleDynamicResolution:
         assert found == ("NEWRULE001",)
 
     # frob:tests tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution.test_raises_when_literal_missing_from_every_candidate  # noqa: E501
-    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids  # noqa: E501
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids
     def test_raises_when_literal_missing_from_every_candidate(
         self, tmp_path: Path
     ) -> None:

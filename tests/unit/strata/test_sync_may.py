@@ -20,7 +20,7 @@ class TestNodeBodySpan:
     instead of keeping its own byte-identical copy)."""
 
     # frob:ticket T-1895
-    # frob:tests src/frob/strata/_sync_may.py::node_body_span kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_sync_may.py::node_body_span kind="unit"
     def test_flat_body_returns_closing_brace_line(self):
         """A node body with no nested `{`/`}` closes at the first bare
         `}` line after the header."""
@@ -31,7 +31,7 @@ class TestNodeBodySpan:
         ]
         assert node_body_span(lines, 0) == 2
 
-    # frob:tests src/frob/strata/_sync_may.py::node_body_span kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_sync_may.py::node_body_span kind="unit"
     # frob:ticket T-1895
     def test_nested_braces_do_not_close_early(self):
         """A nested sub-block's own braces (e.g. `on crash { ... }`) must
@@ -47,7 +47,7 @@ class TestNodeBodySpan:
         assert node_body_span(lines, 0) == 5
 
     # frob:ticket T-1895
-    # frob:tests src/frob/strata/_sync_may.py::node_body_span kind="unit"  # noqa: E501
+    # frob:tests src/frob/strata/_sync_may.py::node_body_span kind="unit"
     def test_malformed_input_returns_last_line_best_effort(self):
         """No matching close brace at all: falls back to the last line
         index rather than raising."""

@@ -101,7 +101,7 @@ def test_parses_editor_version(tmp_path: Path):
     assert result.danger_ok.editor_version == "2022.3.5f1"
 
 
-# frob:tests src/frob/lang/_project_detect.py::_parse_editor_version  # noqa: E501
+# frob:tests src/frob/lang/_project_detect.py::_parse_editor_version
 def test_missing_editor_version_line_is_malformed(tmp_path: Path):
     """A ProjectVersion.txt with only unrelated keys is malformed, not a
     silent empty-string version."""

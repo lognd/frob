@@ -61,8 +61,7 @@ class TestWire001FixtureParameterAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParame\
-        # terAccess.test_fixture_consumed_by_a_test_in_the_same_file_is_not_flagged
+        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess.test_fixture_consumed_by_a_test_in_the_same_file_is_not_flagged  # noqa: E501
         """(MUST FAIL FIRST on pre-T-2753 main): a brand-new non-autouse
         `@pytest.fixture` named as a parameter by a `test_*` function in
         the SAME file must NOT fire WIRE001 -- the exact
@@ -92,8 +91,7 @@ class TestWire001FixtureParameterAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParame\
-        # terAccess.test_fixture_consumed_by_a_test_in_a_different_file_is_not_flagged
+        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess.test_fixture_consumed_by_a_test_in_a_different_file_is_not_flagged  # noqa: E501
         """Cross-file: a fixture imported into a SIBLING test module and
         named there as a parameter -- T-2492's own cross-module fixture-
         import precedent (`test_app_runners_json_guard_t2492.py` imports
@@ -130,8 +128,7 @@ class TestWire001FixtureParameterAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParame\
-        # terAccess.test_fixture_consumed_only_by_another_fixture_is_not_flagged
+        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess.test_fixture_consumed_only_by_another_fixture_is_not_flagged  # noqa: E501
         """A fixture requested by ANOTHER fixture's own parameter list
         (not a `test_*` function directly) is also dependency-injection
         consumption, not a call -- must be rescued the same way."""
@@ -162,9 +159,7 @@ class TestWire001FixtureParameterAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParame\
-        # terAccess.test_fixture_with_no_consumer_anywhere_still_flagged_positive_contr\
-        # ol
+        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess.test_fixture_with_no_consumer_anywhere_still_flagged_positive_control  # noqa: E501
         """Positive control (must-still-pass): a genuinely unrequested
         non-autouse fixture -- no function anywhere names it as a
         parameter -- still fires WIRE001. The fix rescues a real
@@ -193,8 +188,7 @@ class TestWire001FixtureParameterAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParame\
-        # terAccess.test_ordinary_new_function_still_flagged_positive_control
+        # tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess.test_ordinary_new_function_still_flagged_positive_control  # noqa: E501
         """Second positive control: an ordinary (non-fixture) new function
         with no caller outside its own tests still fires WIRE001 -- the
         fixture-parameter rescue is gated on `_is_pytest_fixture`, so a

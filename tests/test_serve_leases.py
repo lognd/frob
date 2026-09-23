@@ -32,7 +32,7 @@ def root(tmp_path: Path) -> Path:
 
 
 class TestResourceLeaseManager:
-    # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"
     def test_second_acquire_blocks_until_first_releases(self) -> None:
         # frob:tests \
         # tests/test_serve_leases.py::TestResourceLeaseManager.test_second_acquire_blocks_until_first_releases  # noqa: E501
@@ -63,7 +63,7 @@ class TestResourceLeaseManager:
         elapsed = time.monotonic() - start
         assert got is False
         assert elapsed < 2.0
-# frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"  # noqa: E501
+# frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"
 
     def test_release_holder_frees_every_resource_that_holder_held(self) -> None:
         # frob:tests \
@@ -77,7 +77,7 @@ class TestResourceLeaseManager:
         assert mgr.acquire("coverage", "b", timeout_s=1.0) is True
         assert mgr.acquire("collection", "b", timeout_s=1.0) is True
 
-    # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"
     def test_distinct_resources_do_not_contend(self) -> None:
         # frob:tests \
         # tests/test_serve_leases.py::TestResourceLeaseManager.test_distinct_resources_do_not_contend  # noqa: E501

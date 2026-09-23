@@ -429,14 +429,14 @@ class TestNormalizeIdentityFile:
     """T-2038 (DRIFT002 fix): `_normalize_identity_file`'s own `frob:tests`
     directives were added ahead of these tests -- filling the gap."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file
     def test_absolute_under_root_becomes_relative(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile.test_absolute_under_root_becomes_relative  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _normalize_identity_file
 
         file = str(tmp_path / "a" / "b.py")
         assert _normalize_identity_file(tmp_path, file) == "a/b.py"
-# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file  # noqa: E501
+# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file
 
     def test_already_relative_is_unchanged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile.test_already_relative_is_unchanged  # noqa: E501
@@ -444,7 +444,7 @@ class TestNormalizeIdentityFile:
 
         assert _normalize_identity_file(tmp_path, "a/b.py") == "a/b.py"
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file
     def test_absolute_outside_root_falls_back_unchanged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile.test_absolute_outside_root_falls_back_unchanged  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _normalize_identity_file
@@ -458,10 +458,10 @@ class TestNormalizeIdentities:
     """T-2313: `_normalize_identities` must drop a genuinely
     identity-less (rule, file) pair (both fields empty) rather than
     silently carrying it through into a baseline diff or a filed ticket
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities
     body -- observed verbatim in T-2297 as a blank ``"-   "`` line."""
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities
     def test_drops_genuinely_empty_identity_pair(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -478,7 +478,7 @@ class TestNormalizeIdentities:
         assert "T-2313" in caplog.text
         assert "1 genuinely identity-less" in caplog.text
 
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities
     def test_leaves_well_formed_pairs_untouched(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_well_formed_pairs_untouched  # noqa: E501
         from frob.app.ticket_runner._rapid_sweep import _normalize_identities
@@ -501,7 +501,7 @@ class TestNormalizeIdentities:
         assert next(iter(result))[0] == "E501"
 
     # frob:ticket T-4607
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities
     def test_drops_git_metadata_path_such_as_a_lease_file(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -529,7 +529,7 @@ class TestNormalizeIdentities:
         assert "T-4607" in caplog.text
 
     # frob:ticket T-4607
-    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities
     def test_leaves_a_real_tickets_dir_finding_alone(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities.test_leaves_a_real_tickets_dir_finding_alone  # noqa: E501
         # Negative control: a real TICK010 against a genuine `tickets/`

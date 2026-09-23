@@ -31,14 +31,14 @@ class TestEnforceClaimsReverifyVerdict:
     genuine `INFRA_UNMEASURED` measurement failure refuses, unless
     `force=True` records a real, non-blank reason."""
 
-    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
+    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict
     def test_passed_is_ok(self, tmp_path: Path) -> None:
         result = _enforce_claims_reverify_verdict(
             tmp_path, "T-0001", _ClaimsReverifyOutcome.PASSED
         )
         assert result.is_ok
         assert not (tmp_path / "force-overrides.jsonl").exists()
-# frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
+# frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict
 
     def test_deliberate_skip_is_ok_not_gated(self, tmp_path: Path) -> None:
         result = _enforce_claims_reverify_verdict(
@@ -48,7 +48,7 @@ class TestEnforceClaimsReverifyVerdict:
         # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
         assert not (tmp_path / "force-overrides.jsonl").exists()
 
-    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
+    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict
     def test_infra_unmeasured_refuses_without_force(self, tmp_path: Path) -> None:
         result = _enforce_claims_reverify_verdict(
             tmp_path, "T-0001", _ClaimsReverifyOutcome.INFRA_UNMEASURED
@@ -56,7 +56,7 @@ class TestEnforceClaimsReverifyVerdict:
         assert result.is_err
         assert result.danger_err is LandError.ClaimsReverifyUnmeasured
 
-    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
+    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict
     def test_unmeasured_with_force_and_reason_records_override_and_proceeds(
         self, tmp_path: Path
     ) -> None:
@@ -76,7 +76,7 @@ class TestEnforceClaimsReverifyVerdict:
         assert row["target"] == "T-0002"
         assert "independently confirmed" in row["reason"]
 
-    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
+    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict
     def test_unmeasured_with_force_but_no_reason_still_refuses(
         self, tmp_path: Path
     ) -> None:
@@ -91,7 +91,7 @@ class TestEnforceClaimsReverifyVerdict:
         assert result.danger_err is LandError.ClaimsReverifyUnmeasured
         assert not (tmp_path / "force-overrides.jsonl").exists()
 
-    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict  # noqa: E501
+    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict
     def test_unmeasured_with_force_reason_file(self, tmp_path: Path) -> None:
         reason_file = tmp_path / "reason.txt"
         reason_file.write_text(

@@ -102,7 +102,7 @@ def _simulate_orphaned_squash_stage(root: Path, *, ticket_id: str = "T-9999") ->
 # frob:ticket T-2286
 class TestReclaimOrphanedSquashResidue:
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_reclaims_when_no_live_land_holds_the_lock kind="unit"  # noqa: E501
-    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
     def test_reclaims_when_no_live_land_holds_the_lock(self, tmp_path: Path) -> None:
         """Proves `reclaim_orphaned_squash_residue` leaves `git status
         --porcelain` in the shared root clean, given a land killed
@@ -163,7 +163,7 @@ class TestReclaimOrphanedSquashResidue:
         finally:
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
-# frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
+# frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
 
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_clean_root_is_a_no_op kind="unit"  # noqa: E501
     def test_clean_root_is_a_no_op(self, tmp_path: Path) -> None:
@@ -213,11 +213,11 @@ class TestLandCallsReclaimAtStartup:
     its own tests above. `land()` must call it once, at the very top of
     its own body, BEFORE `_land_lock` is acquired (calling it from inside
     the lock would make its own non-blocking flock-on-the-same-file
-    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
     liveness probe always fail, since `land()` itself would already hold
     it)."""
 
-    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_land_calls_reclaim_before_acquiring_its_own_lock  # noqa: E501
     def test_land_calls_reclaim_before_acquiring_its_own_lock(
         self, tmp_path: Path
@@ -249,7 +249,7 @@ class TestLandCallsReclaimAtStartup:
         )
 
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal  # noqa: E501
-    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
     def test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal(  # noqa: E501
         self, tmp_path: Path
     ) -> None:

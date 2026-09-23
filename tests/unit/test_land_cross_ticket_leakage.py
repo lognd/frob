@@ -495,7 +495,7 @@ class TestCrossTicketLeakage:
         assert (repo / "src" / "fix.py").exists()
 
     # frob:ticket T-1999
-    # frob:tests src/frob/tickets/_leases.py::is_effectively_in_progress kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::is_effectively_in_progress kind="unit"
     def test_live_lease_refuses_even_when_roots_ledger_still_reads_planned(
         self, repo: Path
     ) -> None:

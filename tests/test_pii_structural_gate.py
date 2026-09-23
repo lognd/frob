@@ -90,7 +90,7 @@ class TestFieldNames:
         assert any(v.rule == "PII010" for v in violations)
 
     # frob:ticket T-0971
-    # frob:tests src/frob/gates/_pii_structural/_signatures.py::_camel_to_snake  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/_signatures.py::_camel_to_snake
     # frob:ticket T-1110
     def test_camelcase_password_hash_field_fires(self) -> None:
         # frob:tests src/frob/gates/_pii_structural/_signatures.py::_field_name_hit
@@ -125,7 +125,7 @@ class TestFieldNames:
         violations = _scan_python_fields(tree, "example.py")
         assert any(v.rule == "PII010" for v in violations)
 
-    # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_STRUCTURE_BASE_NAMES  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_STRUCTURE_BASE_NAMES
     # frob:ticket T-0971
     def test_orm_declarative_base_field_fires(self) -> None:
         """T-0971 (gates-quality audit finding 14): a SQLAlchemy 2.0
@@ -190,7 +190,7 @@ class TestFieldNames:
 
 class TestEnvAccess:
     """SEC110: os.environ/os.getenv access-site detection."""
-# frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
+# frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate
 
     def test_os_getenv_fires(self) -> None:
         # frob:tests \
@@ -382,7 +382,7 @@ class TestReservedTestDomainEmails:
     file it appears in -- the dominant PII011 false-positive shape found
     in this gate's 336-finding warn-pool audit (57 of 66 findings)."""
 
-    # frob:tests src/frob/gates/_pii_structural/_emails.py::_scan_python_email_values  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/_emails.py::_scan_python_email_values
     def test_example_com_does_not_fire(self) -> None:
         src = "contact = " + repr("user" + "@" + "example.com") + "\n"
         tree = ast.parse(src)
@@ -534,7 +534,7 @@ class TestKeywordSweep:
         real incident this ticket exists for (a design-rationale comment
         reading "a bare suppression token in source", inside a function
         body, naming no in-scope identifier). It must not fire."""
-        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords  # noqa: E501
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords
         src = "def handler():\n    # a bare suppression token in source\n    pass\n"
         tree = ast.parse(src)
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
@@ -770,7 +770,7 @@ class TestDeclaredSurfaceJoin:
 
 
 class TestSelfMatchExclusion:
-    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate  # noqa: E501
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate
     """T-0201 lesson: the registry file must not detect itself."""
 
     def test_own_file_not_scanned(self, tmp_path: Path) -> None:
@@ -999,7 +999,7 @@ class TestSymrefPathPrefix:
 
     # frob:ticket T-2712
     def test_pii010_symref_carries_path_prefix(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_pii010_violation  # noqa: E501
+        # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_pii010_violation
         src = "from dataclasses import dataclass\n\n@dataclass\nclass User:\n    password: str\n"
         tree = ast.parse(src)
         violations = _scan_python_fields(tree, "pkg/models.py")
@@ -1056,7 +1056,7 @@ class TestDirectiveCommentContinuationExcluded:
 
     # frob:ticket T-2712
     def test_wrapped_directive_reason_does_not_self_trigger(self) -> None:
-        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords  # noqa: E501
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords
         src = (
             "class C:\n"
             '    # frob:waive PII012 reason="not a mailing/contact \\\n'
@@ -1078,7 +1078,7 @@ class TestDirectiveCommentContinuationExcluded:
         reference form still fires -- this fix narrows what counts as a
         directive continuation, it does not broaden comment suppression
         generally."""
-        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords  # noqa: E501
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords
         src = (
             "def f():\n"
             "    # `self.password` is loaded here\n"

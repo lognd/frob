@@ -582,7 +582,7 @@ def test_hand_edit_ledger_stays_quiet_on_an_unrelated_file(tmp_path: Path):
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2908
-# frob:tests .claude/hooks/frob-suggest.py::_RULES  # noqa: E501
+# frob:tests .claude/hooks/frob-suggest.py::_RULES
 def test_recursive_grep_still_fires_unscoped_at_repo_root(tmp_path: Path):
     """`grep -rn ... .` (no real scoping) must still be blocked."""
     home = tmp_path / "home"
@@ -597,7 +597,7 @@ def test_recursive_grep_still_fires_unscoped_at_repo_root(tmp_path: Path):
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2908
 # frob:ticket T-4625
-# frob:tests .claude/hooks/frob-suggest.py::_RULES  # noqa: E501
+# frob:tests .claude/hooks/frob-suggest.py::_RULES
 def test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path):
     """`grep -rn 'foo' src/frob/strata` (scoped to a real subdirectory,
     unable to walk .venv/, .git/, or a sibling worktree) must stay
@@ -611,7 +611,7 @@ def test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 # frob:ticket T-2932
-# frob:tests .claude/hooks/frob-suggest.py::_RULES  # noqa: E501
+# frob:tests .claude/hooks/frob-suggest.py::_RULES
 def test_recursive_grep_stays_quiet_when_scoped_with_a_trailing_redirect(
     tmp_path: Path,
 ):
@@ -631,7 +631,7 @@ def test_recursive_grep_stays_quiet_when_scoped_with_a_trailing_redirect(
 
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
-# frob:tests .claude/hooks/frob-suggest.py::_RULES  # noqa: E501
+# frob:tests .claude/hooks/frob-suggest.py::_RULES
 # frob:ticket T-2932
 def test_recursive_grep_still_fires_unscoped_with_a_trailing_redirect(
     tmp_path: Path,
@@ -1142,7 +1142,7 @@ class TestAckSegmentation:
 
     # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
     # frob:ticket T-3851
-    # frob:tests .claude/hooks/_shellscan.py::segment_spans kind="integration"  # noqa: E501
+    # frob:tests .claude/hooks/_shellscan.py::segment_spans kind="integration"
     def test_ack_leading_its_own_segment_after_cd_disarms(self, tmp_path: Path):
         """MUST-STAY-QUIET: the reporter's measured case -- the ack leads
         its OWN segment after a `cd ... &&`, not the whole line. Must

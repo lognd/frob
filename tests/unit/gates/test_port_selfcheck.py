@@ -40,7 +40,7 @@ class TestPort001:
     stays silent on allowlisted/self-excluded files, and treats an
     unresolvable project name as UNRESOLVED rather than a clean pass."""
 
-    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
     def test_hardcoded_path_prefix_is_flagged(self, tmp_path: Path) -> None:
         """PORT001-PATH: a `.startswith("src/frob/")`-shaped literal is
         caught -- the exact `_env_var_docs.py`/`_root_asset_dirs.py` bug
@@ -85,7 +85,7 @@ class TestPort001:
         assert len(hits) == 1
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert hits[0].severity.value == "warn"
-# frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+# frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
 
     def test_allowlisted_self_match_file_is_silent(self, tmp_path: Path) -> None:
         """The identical PORT001-PATH shape, at
@@ -109,10 +109,10 @@ class TestPort001:
 
         assert [
             v for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
-        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
         ] == []
 
-    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
     def test_non_detector_package_code_is_now_scanned_t3275(
         self, tmp_path: Path
     ) -> None:
@@ -148,7 +148,7 @@ class TestPort001:
         }
         assert "src/frob/testing/_offender.py" in hits
 
-    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
     def test_legitimate_self_reference_stays_quiet_t3275(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET (T-3275): a bare equality check naming this
         repo's own package (`project.get("name") != "frob"`-shaped, the
@@ -178,7 +178,7 @@ class TestPort001:
             v for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
         ] == []
 
-    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
     def test_strata_and_vet_are_scanned_since_t2405(self, tmp_path: Path) -> None:
         """T-2405: PORT001 widened past `src/frob/gates/**` to the full
         `DETECTOR_PACKAGE_ROOTS` set -- a hardcoded-identity literal in
@@ -212,7 +212,7 @@ class TestPort001:
         assert "src/frob/strata/_offender.py" in path_hits
         assert "src/frob/vet/_offender.py" in ident_hits
 
-    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
     def test_bare_default_value_is_flagged_t3435(self, tmp_path: Path) -> None:
         """MUST-FIRE (T-3435): a bare `_X = "src/frob"` module-level
         assignment -- the `_DEFAULT_COV_TARGET = "src/frob"` shape
@@ -242,7 +242,7 @@ class TestPort001:
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert hits[0].severity.value == "warn"
 
-    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
     def test_bare_pkg_name_assignment_stays_quiet_t3435(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET (T-3435): a bare `_PKG = "frob"` assignment
         (the package NAME alone, not a `"src/<pkg>"` path-shaped value)
@@ -307,7 +307,7 @@ class TestPort001:
 
         hits = [v for v in violations if v.rule == "PORT001-PATH"]
         assert len(hits) == 1
-        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
         assert "renamed-pkg" in hits[0].message
 
     def test_unresolved_project_name_is_not_a_clean_pass(self, tmp_path: Path) -> None:
@@ -327,11 +327,11 @@ class TestPort001:
         violations = port_selfcheck_gate(tmp_path)
 
         hits = [v for v in violations if v.rule == "PORT001"]
-        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
         assert len(hits) == 1
         assert hits[0].severity.value == "unresolved"
 
-    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate  # noqa: E501
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
     def test_unparseable_file_is_parse001_not_silent(self, tmp_path: Path) -> None:
         """A file this gate cannot `ast.parse` fires PARSE001 instead of
         silently dropping out of the scan -- matching LEXCHECK001/

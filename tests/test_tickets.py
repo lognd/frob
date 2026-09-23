@@ -2049,7 +2049,7 @@ class TestArchive:
         assert second.danger_ok == 0
 
     # frob:ticket T-1437
-    # frob:tests src/frob/tickets/_archive.py::_write_archived_and_active  # noqa: E501
+    # frob:tests src/frob/tickets/_archive.py::_write_archived_and_active
     def test_id_present_in_both_active_and_archive_collapses_not_refuses(
         self, tmp_path: Path
     ) -> None:
@@ -2304,7 +2304,7 @@ class TestArchiveRefusesDuringInFlightWork:
             record.model_dump_json(indent=2) + "\n", encoding="utf-8"
         )
 
-    # frob:tests src/frob/tickets/_archive.py::archive  # noqa: E501
+    # frob:tests src/frob/tickets/_archive.py::archive
     def test_archive_refuses_when_a_live_lease_exists(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_refuses_when_a_live_lease_exists  # noqa: E501
         root = self._repo(tmp_path)
@@ -2321,7 +2321,7 @@ class TestArchiveRefusesDuringInFlightWork:
         active = load_active(root).danger_ok
         assert "T-0001" in active.tickets
 
-    # frob:tests src/frob/tickets/_archive.py::archive  # noqa: E501
+    # frob:tests src/frob/tickets/_archive.py::archive
     def test_archive_force_overrides_the_live_lease_refusal(
         self, tmp_path: Path
     ) -> None:
@@ -2334,7 +2334,7 @@ class TestArchiveRefusesDuringInFlightWork:
         assert result.is_ok
         assert result.danger_ok == 1
 
-    # frob:tests src/frob/tickets/_archive.py::archive  # noqa: E501
+    # frob:tests src/frob/tickets/_archive.py::archive
     def test_archive_ignores_a_stale_lease_from_a_removed_worktree(
         self, tmp_path: Path
     ) -> None:
@@ -2353,7 +2353,7 @@ class TestArchiveRefusesDuringInFlightWork:
         assert result.is_ok
         assert result.danger_ok == 1
 
-    # frob:tests src/frob/tickets/_archive.py::archive  # noqa: E501
+    # frob:tests src/frob/tickets/_archive.py::archive
     def test_archive_ignores_a_live_lease_for_a_ticket_it_would_not_touch(
         self, tmp_path: Path
     ) -> None:
@@ -2684,7 +2684,7 @@ class TestScopeMatching:
         assert scope_matches("design/f.py", ("design/",))
         assert not scope_matches("other/f.py", ("design/",))
 
-    # frob:tests src/frob/tickets/_models.py::_scope_globs  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::_scope_globs
     def test_bare_dir_entry_no_trailing_slash_globs_recursively(self) -> None:
         # frob:tests src/frob/tickets/_models.py::scope_matches
         assert scope_matches("docs/modules/gates.md", ("docs/modules",))
@@ -2942,7 +2942,7 @@ class TestEmptyCollectionOmission:
         data = {"a": 1, "b": [], "c": (), "d": [1, 2], "e": None}
         assert _omit_empty_collections(data) == {"a": 1, "d": [1, 2], "e": None}
 
-    # frob:tests src/frob/tickets/_models.py::Ticket._omit_empty_collections_on_dump  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::Ticket._omit_empty_collections_on_dump
     def test_reviews_empty_never_serialized(self) -> None:
         # frob:tests src/frob/tickets/_models.py::Ticket
         ticket = _ticket()
@@ -3030,7 +3030,7 @@ class TestUnknownFieldForwardCompat:
         assert extras is not None
         assert extras["reviews_v2"] == [{"reviewer": "bob", "stance": "strong-approve"}]
 
-    # frob:tests src/frob/tickets/_models.py::Ticket._warn_unknown_extras  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::Ticket._warn_unknown_extras
 
     def test_unknown_field_logs_warning_named(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
@@ -3519,9 +3519,9 @@ class TestV2StateTransitions:
         assert v2_state_transitions(root, "T-9999") == ()
 
     # frob:ticket T-4627
-    # frob:tests src/frob/tickets/_store.py::v2_state_transitions  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::_v2_path_lineage  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::_v2_rename_source  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::v2_state_transitions
+    # frob:tests src/frob/tickets/_store.py::_v2_path_lineage
+    # frob:tests src/frob/tickets/_store.py::_v2_rename_source
     def test_byte_similar_sibling_ticket_does_not_drop_transitions(
         self, tmp_path: Path
     ) -> None:
@@ -3842,7 +3842,7 @@ class TestHollowDoneReportGuard:
         "### Evidence\n(no evidence recorded)\n"
     )
 
-    # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_rapid_hollow_report_refused  # noqa: E501
     # frob:ticket T-3336
     def test_rapid_hollow_report_refused(self, tmp_path: Path) -> None:
@@ -3869,7 +3869,7 @@ class TestHollowDoneReportGuard:
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_docs_kind_rapid_hollow_report_exempt  # noqa: E501
     # frob:ticket T-3336
-    # frob:tests src/frob/tickets/_done_report.py::_hollow_done_report_exempt  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_hollow_done_report_exempt
     def test_docs_kind_rapid_hollow_report_exempt(self, tmp_path: Path) -> None:
         # T-3336: `land`'s own NotCloseable gate requires non-empty
         # evidence UNCONDITIONALLY too -- even for a docs-kind ticket,
@@ -3898,7 +3898,7 @@ class TestHollowDoneReportGuard:
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_no_behaviour_change_narrative_exempt  # noqa: E501
     # frob:ticket T-3336
-    # frob:tests src/frob/tickets/_done_report.py::_hollow_done_report_exempt  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_hollow_done_report_exempt
     def test_no_behaviour_change_narrative_exempt(self, tmp_path: Path) -> None:
         # T-3336: per this ticket's own stated decision (a no-behaviour-
         # change close still requires real, resolvable pytest evidence --
@@ -3922,11 +3922,11 @@ class TestHollowDoneReportGuard:
             rapid=True,
             debt_sink=lambda tid, what: None,
         )
-        # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report  # noqa: E501
+        # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report
         assert result.is_ok
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_real_evidence_never_flagged_as_hollow  # noqa: E501
-    # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report
     def test_real_evidence_never_flagged_as_hollow(self, tmp_path: Path) -> None:
         from frob.tickets._evidence import _done_transition_structural_guard
 
@@ -3948,7 +3948,7 @@ class TestHollowDoneReportGuard:
         assert result.is_ok
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_narrative_mentioning_the_markers_is_never_flagged  # noqa: E501
-    # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_is_hollow_done_report
     def test_narrative_mentioning_the_markers_is_never_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -3994,11 +3994,11 @@ class TestStaleClaimsGuard:
         "passing when recorded)\n\n"
         "### Captured claims\n"
         "- tests: {test_count} passed (from {evidence_count} evidence id(s))\n"
-        # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason  # noqa: E501
+        # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason
         "- gates: unmeasured\n"
     )
 
-    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason
     # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_zero_claims_with_real_evidence_refused  # noqa: E501
     def test_zero_claims_with_real_evidence_refused(self, tmp_path: Path) -> None:
         """The dominant measured shape (T-3244: 47 evidence ids, claims=0)
@@ -4020,7 +4020,7 @@ class TestStaleClaimsGuard:
         assert result.danger_err == TicketError.StaleClaimsInDoneReport
 
     # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_wrong_nonzero_claims_refused  # noqa: E501
-    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason
     def test_wrong_nonzero_claims_refused(self, tmp_path: Path) -> None:
         """The partial-mismatch shape (T-3230: evidence=6, claims=3) -- a
         non-zero but WRONG claims count is refused too, not just the
@@ -4043,7 +4043,7 @@ class TestStaleClaimsGuard:
         assert result.danger_err == TicketError.StaleClaimsInDoneReport
 
     # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_matching_claims_not_flagged  # noqa: E501
-    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason
     def test_matching_claims_not_flagged(self, tmp_path: Path) -> None:
         """Must-stay-quiet: a claims line whose evidence count matches the
         ticket's own evidence is never refused."""
@@ -4062,7 +4062,7 @@ class TestStaleClaimsGuard:
         assert result.is_ok
 
     # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_no_claims_section_not_flagged  # noqa: E501
-    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason  # noqa: E501
+    # frob:tests src/frob/tickets/_done_report.py::_stale_claims_reason
     def test_no_claims_section_not_flagged(self, tmp_path: Path) -> None:
         """A Done report with no `### Captured claims` section at all (an
         older report, or a caller that opted claims capture out) is never
@@ -4093,7 +4093,7 @@ class TestEvidenceNullNormalization:
     `acceptance` criterion -- must normalize to the empty tuple at the
     loader boundary, never crash or fail to load."""
 
-    # frob:tests src/frob/tickets/_models.py::Ticket._normalize_evidence_field  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::Ticket._normalize_evidence_field
     def test_ticket_level_evidence_null_normalizes_to_empty(self) -> None:
         # frob:tests src/frob/tickets/_models.py::Ticket
         ticket = Ticket(
@@ -4117,7 +4117,7 @@ class TestEvidenceNullNormalization:
         )
         assert criterion.evidence == ()
 
-    # frob:tests src/frob/tickets/_models.py::_coerce_acceptance  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::_coerce_acceptance
     def test_hand_edited_ledger_with_null_acceptance_evidence_loads(
         self, tmp_path: Path
     ) -> None:
@@ -4145,7 +4145,7 @@ class TestEvidenceNullNormalization:
         ticket = result.danger_ok.tickets["T-0001"]
         assert ticket.acceptance[0].evidence == ()
 
-    # frob:tests src/frob/tickets/_models.py::Ticket._normalize_evidence_field  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::Ticket._normalize_evidence_field
     def test_scope_add_succeeds_on_ticket_with_null_acceptance_evidence(
         self, tmp_path: Path
     ) -> None:
@@ -4174,7 +4174,7 @@ class TestEvidenceNullNormalization:
         assert result.is_ok
         assert "b.py" in result.danger_ok.scope
 
-    # frob:tests src/frob/tickets/_models.py::Ticket._normalize_evidence_field  # noqa: E501
+    # frob:tests src/frob/tickets/_models.py::Ticket._normalize_evidence_field
     def test_scope_remove_succeeds_on_ticket_with_null_acceptance_evidence(
         self, tmp_path: Path
     ) -> None:

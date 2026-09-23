@@ -83,8 +83,8 @@ class TestArchiveV2:
         return path
 
     # frob:ticket T-1256
-    # frob:tests src/frob/tickets/_store.py::git_mv_dir  # noqa: E501
-    # frob:tests src/frob/tickets/_store.py::v2_archive_dir  # noqa: E501
+    # frob:tests src/frob/tickets/_store.py::git_mv_dir
+    # frob:tests src/frob/tickets/_store.py::v2_archive_dir
     def test_archive_moves_directory_via_git_mv_no_content_rewrite(
         self, tmp_path: Path
     ) -> None:
@@ -278,7 +278,7 @@ class TestArchiveV2:
         )
 
     # frob:ticket T-1256
-    # frob:tests src/frob/tickets/_archive.py::archive_v2  # noqa: E501
+    # frob:tests src/frob/tickets/_archive.py::archive_v2
     def test_archived_v2_ticket_still_resolves_as_blocker(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_archive.py::load_queue kind="unit"
         from frob.tickets import archive, load_queue
@@ -381,7 +381,7 @@ class TestArchiveSpliceDiscipline:
     predates a later archive sweep on main never causes `land` to lose
     main's newly-archived blocks."""
 
-    # frob:tests src/frob/tickets/_land_git_ops.py::_parse_archive_side  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::_parse_archive_side
     def test_splice_and_stage_archive_merges_by_id_never_overwrites(
         self, tmp_path: Path
     ) -> None:
@@ -416,7 +416,7 @@ class TestArchiveSpliceDiscipline:
         assert "Authoritative side" in merged
         assert "Other side" in merged
 
-    # frob:tests src/frob/tickets/_land_git_ops.py::_parse_archive_side  # noqa: E501
+    # frob:tests src/frob/tickets/_land_git_ops.py::_parse_archive_side
     def test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

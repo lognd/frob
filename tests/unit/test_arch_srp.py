@@ -41,7 +41,7 @@ def _method(name: str, field_names: list[str]) -> NormalizedFunction:
 class TestLcom4:
     """ARCH101."""
 
-    # frob:tests src/frob/arch/_srp.py::check_lcom4  # noqa: E501
+    # frob:tests src/frob/arch/_srp.py::check_lcom4
     def test_disjoint_field_groups_trigger_lcom4(self) -> None:
         cls = NormalizedClass(
             name="BigService",
@@ -74,7 +74,7 @@ class TestLcom4:
         assert s.metric == 2
         assert "BigService" in s.message
 
-    # frob:tests src/frob/arch/_srp.py::check_lcom4  # noqa: E501
+    # frob:tests src/frob/arch/_srp.py::check_lcom4
     def test_shared_fields_do_not_trigger_lcom4(self) -> None:
         cls = NormalizedClass(
             name="CohesiveService",
@@ -126,7 +126,7 @@ def _free_function(name: str, calls: list[str] | None = None) -> NormalizedFunct
 
 class TestGodModule:
     """ARCH102."""
-# frob:tests src/frob/arch/_srp.py::check_god_module  # noqa: E501
+# frob:tests src/frob/arch/_srp.py::check_god_module
 
     def test_unrelated_export_clusters_trigger_god_module(self) -> None:
         functions = (
@@ -145,7 +145,7 @@ class TestGodModule:
         assert s.severity == "warning"
         assert s.metric is not None and s.metric >= 3
 
-    # frob:tests src/frob/arch/_srp.py::check_god_module  # noqa: E501
+    # frob:tests src/frob/arch/_srp.py::check_god_module
     def test_related_exports_do_not_trigger_god_module(self) -> None:
         # Same naming prefix ("user_") across all exports -> one cluster,
         # regardless of count.
@@ -225,7 +225,7 @@ class TestGodModule:
 class TestMixedConcernFunction:
     """ARCH103."""
 
-    # frob:tests src/frob/arch/_srp.py::check_mixed_concern_function  # noqa: E501
+    # frob:tests src/frob/arch/_srp.py::check_mixed_concern_function
     def test_io_compute_and_formatting_together_trigger(self) -> None:
         from frob.arch._normalized import NormalizedBranch, NormalizedCall
 
@@ -251,7 +251,7 @@ class TestMixedConcernFunction:
         assert s.severity == "suggestion"
         assert s.symref == "report.py::build_report"
 
-    # frob:tests src/frob/arch/_srp.py::check_mixed_concern_function  # noqa: E501
+    # frob:tests src/frob/arch/_srp.py::check_mixed_concern_function
     def test_single_concern_does_not_trigger(self) -> None:
         from frob.arch._normalized import NormalizedBranch, NormalizedCall
 
@@ -277,7 +277,7 @@ class TestRunSrpChecks:
         module = NormalizedModule(path="empty.py", language="python")
         assert run_srp_checks(module) == []
 
-    # frob:tests src/frob/arch/_srp.py::run_srp_checks  # noqa: E501
+    # frob:tests src/frob/arch/_srp.py::run_srp_checks
     def test_combines_all_three_checks(self) -> None:
         from frob.arch._normalized import NormalizedBranch, NormalizedCall
 
@@ -462,7 +462,7 @@ class TestAnalyzeProjectWiring:
     family (`frob.arch._run_srp_checks_python`) over real parsed python
     files, not just hand-built `NormalizedModule`s."""
 
-    # frob:tests src/frob/arch/__init__.py::_run_srp_checks_python  # noqa: E501
+    # frob:tests src/frob/arch/__init__.py::_run_srp_checks_python
     def test_two_cluster_class_fires_arch101(self, tmp_path: Path) -> None:
         """`analyze_project` over a real file containing
         `_LCOM4_TWO_CLUSTER_SOURCE` reports `low-cohesion-class` --
@@ -517,17 +517,17 @@ class TestArchGateSrpWiring:
         (tmp_path / "mod.py").write_text(_LCOM4_TWO_CLUSTER_SOURCE)
         violations = [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
         assert len(violations) == 1
-        # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
+        # frob:tests src/frob/gates/_arch.py::arch_gate
         assert violations[0].symref == "mod.py::BigService"
 
     def test_cohesive_class_does_not_fire_arch101(self, tmp_path: Path) -> None:
         from frob.gates._arch import arch_gate
 
-        # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
+        # frob:tests src/frob/gates/_arch.py::arch_gate
         (tmp_path / "mod.py").write_text(_LCOM4_COHESIVE_SOURCE)
         assert not [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
 
-    # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
+    # frob:tests src/frob/gates/_arch.py::arch_gate
     def test_god_module_fires_arch102(self, tmp_path: Path) -> None:
         from frob.gates._arch import arch_gate
 
@@ -540,7 +540,7 @@ class TestArchGateSrpWiring:
 
         (tmp_path / "mod.py").write_text(_MIXED_CONCERN_SOURCE)
         assert [v for v in arch_gate(tmp_path) if v.rule == "ARCH103"]
-# frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
+# frob:tests src/frob/gates/_arch.py::arch_gate
 
     def test_arch101_respects_explicit_frob_toml_override(self, tmp_path: Path) -> None:
         """A `frob.toml` `[arch] lcom4_min_methods = 100` override (well
@@ -561,7 +561,7 @@ class TestArchConfigThresholds:
     calibrated module constants when unset -- mirrors `TestArchGateThresholds`
     (`tests/test_gates.py`) for the original five T-0373 knobs."""
 
-    # frob:tests src/frob/repo_meta.py::load_arch_config  # noqa: E501
+    # frob:tests src/frob/repo_meta.py::load_arch_config
     def test_reads_srp_overrides(self, tmp_path: Path) -> None:
         from frob.app.config import load_arch_config
 
@@ -580,7 +580,7 @@ class TestArchConfigThresholds:
         assert cfg["god_module_min_clusters"] == 2
         assert cfg["mixed_concern_min_decision_points"] == 1
 
-    # frob:tests src/frob/repo_meta.py::load_arch_config  # noqa: E501
+    # frob:tests src/frob/repo_meta.py::load_arch_config
     def test_srp_defaults_without_frob_toml(self, tmp_path: Path) -> None:
         from frob.app.config import (
             ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS,

@@ -91,7 +91,7 @@ class TestArchivedIdsForMergeDriver:
     `MERGE_HEAD` test) and the disk-read fallback for when there is no
     live merge in progress at all (this class)."""
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_archived_ids_for_merge_driver  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_archived_ids_for_merge_driver
     def test_not_mid_merge_falls_back_to_disk_based_archived_ids(
         self, tmp_path: Path
     ) -> None:
@@ -414,7 +414,7 @@ class TestMergeDriverViaRealGit:
 
     # frob:ticket T-1437
     # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit.test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_archived_ids_for_merge_driver  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_archived_ids_for_merge_driver
     def test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk(
         self, repo: Path
     ) -> None:

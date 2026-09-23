@@ -27,7 +27,7 @@ def _write(root: Path, rel: str, source: str) -> None:
 class TestMissingSaga:
     # frob:tests \
     # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_multi_service_write_op_without_saga_fires  # noqa: E501
-    # frob:tests src/frob/strata/_distributed_txn.py::check_distributed_txn_obligations  # noqa: E501
+    # frob:tests src/frob/strata/_distributed_txn.py::check_distributed_txn_obligations
     def test_multi_service_write_op_without_saga_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

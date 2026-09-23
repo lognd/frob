@@ -20,7 +20,7 @@ from tests.unit.verify.conftest import make_queue_entry, make_symbol
 class TestSelectBatchTests:
     """The pure union-touched-set selection algorithm."""
 
-    # frob:tests src/frob/verify/_selection.py::select_batch_tests  # noqa: E501
+    # frob:tests src/frob/verify/_selection.py::select_batch_tests
     def test_union_of_two_entries_selects_once(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_union_of_two_entries_selects_once  # noqa: E501
         snapshot = GraphSnapshot(
@@ -54,7 +54,7 @@ class TestSelectBatchTests:
         selected_ids = {i for ids in result.report.selected.values() for i in ids}
         assert "tests/test_a.py::test_foo" in selected_ids
         assert "tests/test_b.py::test_bar" in selected_ids
-# frob:tests src/frob/verify/_selection.py::select_batch_tests  # noqa: E501
+# frob:tests src/frob/verify/_selection.py::select_batch_tests
 
     def test_empty_batch_selects_nothing(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_empty_batch_selects_nothing  # noqa: E501
@@ -64,7 +64,7 @@ class TestSelectBatchTests:
         assert result.touched_symbol_count == 0
         assert all(len(ids) == 0 for ids in result.report.selected.values())
 
-    # frob:tests src/frob/verify/_selection.py::select_batch_tests  # noqa: E501
+    # frob:tests src/frob/verify/_selection.py::select_batch_tests
     def test_unresolvable_symbol_is_skipped_not_fatal(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_unresolvable_symbol_is_skipped_not_fatal  # noqa: E501
         snapshot = GraphSnapshot(
@@ -95,8 +95,8 @@ class TestSelectBatchTests:
 class TestRunBatchSelectedTests:
     """The end-to-end entry point: graph load -> selection -> run_selected."""
 
-    # frob:tests src/frob/verify/_selection.py::run_batch_selected_tests  # noqa: E501
-    # frob:tests src/frob/app/graph_runner.py::_run_select_batch_tests  # noqa: E501
+    # frob:tests src/frob/verify/_selection.py::run_batch_selected_tests
+    # frob:tests src/frob/app/graph_runner.py::_run_select_batch_tests
     def test_graph_unavailable_is_an_error(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -114,7 +114,7 @@ class TestRunBatchSelectedTests:
         assert result.is_err
         assert result.danger_err == BatchSelectionError.GraphUnavailable
 
-    # frob:tests src/frob/verify/_selection.py::run_batch_selected_tests  # noqa: E501
+    # frob:tests src/frob/verify/_selection.py::run_batch_selected_tests
     def test_selects_and_runs_once(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -173,8 +173,7 @@ def _is_already_cached(root: Path, name: str, cached_by: tuple[str, ...]) -> boo
 
 
 # frob:doc \
-# docs/modules/perf.md#cross-stage-redundant-recomputation-perf007-t-0413----the-perf-m\
-# eta-gap
+# docs/modules/perf.md#cross-stage-redundant-recomputation-perf007-t-0413----the-perf-meta-gap  # noqa: E501
 # tests/test_perf.py::TestPerf007RedundantComputation.test_two_stages_calling_the_same_\
 # uncached_parse_is_flagged
 # tests/test_perf.py::TestPerf007RedundantComputation.test_single_shared_call_site_is_n\

@@ -292,8 +292,7 @@ class TestEmitHardExitLines:
         )
 
     # frob:tests \
-    # tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines.test_never_rai\
-    # ses_when_capman_absent
+    # tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines.test_never_raises_when_capman_absent  # noqa: E501
     def test_never_raises_when_capman_absent(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -309,8 +308,7 @@ class TestEmitHardExitLines:
         assert "a line" in capsys.readouterr().out
 
     # frob:tests \
-    # tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines.test_a_suspend\
-    # _exception_never_blocks_the_write
+    # tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines.test_a_suspend_exception_never_blocks_the_write  # noqa: E501
     def test_a_suspend_exception_never_blocks_the_write(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:

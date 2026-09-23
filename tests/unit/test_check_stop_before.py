@@ -27,16 +27,14 @@ class TestCheckStopBefore:
     equals the given point, checked fresh at each call."""
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_false_when_env_uns\
-    # et
+    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_false_when_env_unset  # noqa: E501
     def test_false_when_env_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(check_mod.FROB_CHECK_STOP_BEFORE_ENV, raising=False)
         for point in check_mod._CHECK_STOP_POINTS:
             assert check_mod._check_stop_before(point) is False
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_true_only_for_the_\
-    # matching_point
+    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_true_only_for_the_matching_point  # noqa: E501
     def test_true_only_for_the_matching_point(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -56,8 +54,7 @@ class TestCheckStopBefore:
         }
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_unrecognized_value\
-    # _matches_nothing
+    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_unrecognized_value_matches_nothing  # noqa: E501
     def test_unrecognized_value_matches_nothing(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -66,8 +63,7 @@ class TestCheckStopBefore:
             assert check_mod._check_stop_before(point) is False
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_all_seven_points_a\
-    # re_distinct_and_ordered
+    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_all_seven_points_are_distinct_and_ordered  # noqa: E501
     def test_all_seven_points_are_distinct_and_ordered(self) -> None:
         """Sanity-pins the exact 7-point set/order this ticket family's
         CI diag sub-variants each name via FROB_CHECK_STOP_BEFORE=<point>
@@ -84,8 +80,7 @@ class TestCheckStopBefore:
         )
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_rejects_an_unknown\
-    # _point_argument
+    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_rejects_an_unknown_point_argument  # noqa: E501
     def test_rejects_an_unknown_point_argument(self) -> None:
         with pytest.raises(AssertionError):
             check_mod._check_stop_before("not-a-real-point")
@@ -100,8 +95,7 @@ class TestRunCheckHonorsStopBefore:
     `test_check.py` already proves `run_check` tolerates."""
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_entry_poi\
-    # nt_returns_empty_result_before_any_context_manager
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_entry_point_returns_empty_result_before_any_context_manager  # noqa: E501
     def test_entry_point_returns_empty_result_before_any_context_manager(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -115,8 +109,7 @@ class TestRunCheckHonorsStopBefore:
         assert result.results == []
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_console_s\
-    # cope_point_returns_empty_result_before_admission_budget
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_console_scope_point_returns_empty_result_before_admission_budget  # noqa: E501
     def test_console_scope_point_returns_empty_result_before_admission_budget(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -127,8 +120,7 @@ class TestRunCheckHonorsStopBefore:
         assert result.results == []
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_admission\
-    # _point_returns_empty_result_before_derived_state_lock
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_admission_point_returns_empty_result_before_derived_state_lock  # noqa: E501
     def test_admission_point_returns_empty_result_before_derived_state_lock(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -139,8 +131,7 @@ class TestRunCheckHonorsStopBefore:
         assert result.results == []
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_lock_poin\
-    # t_returns_empty_result_before_any_stage
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_lock_point_returns_empty_result_before_any_stage  # noqa: E501
     def test_lock_point_returns_empty_result_before_any_stage(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -151,8 +142,7 @@ class TestRunCheckHonorsStopBefore:
         assert result.results == []
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_tasks_poi\
-    # nt_returns_empty_result_before_submit
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_tasks_point_returns_empty_result_before_submit  # noqa: E501
     def test_tasks_point_returns_empty_result_before_submit(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -163,8 +153,7 @@ class TestRunCheckHonorsStopBefore:
         assert result.results == []
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_no_stop_r\
-    # equested_runs_normally
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_no_stop_requested_runs_normally  # noqa: E501
     def test_no_stop_requested_runs_normally(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

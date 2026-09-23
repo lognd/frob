@@ -95,8 +95,7 @@ def _spawn_and_kill_holder(root: Path, tmp_path: Path) -> int:
 
 # frob:ticket T-2155
 # frob:tests \
-# tests/unit/test_land_lock_liveness.py::TestLandLockSurvivesSigkilledHolder.test_land_\
-# lock_reclaims_promptly_after_sigkill
+# tests/unit/test_land_lock_liveness.py::TestLandLockSurvivesSigkilledHolder.test_land_lock_reclaims_promptly_after_sigkill  # noqa: E501
 class TestLandLockSurvivesSigkilledHolder:
     """`_land_lock` (the actual `land()` critical section) must not stay
     blocked by a dead holder -- the kernel's own `flock` release, not any
@@ -104,8 +103,7 @@ class TestLandLockSurvivesSigkilledHolder:
 
     def test_land_lock_reclaims_promptly_after_sigkill(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_land_lock_liveness.py::TestLandLockSurvivesSigkilledHolder.te\
-        # st_land_lock_reclaims_promptly_after_sigkill
+        # tests/unit/test_land_lock_liveness.py::TestLandLockSurvivesSigkilledHolder.test_land_lock_reclaims_promptly_after_sigkill  # noqa: E501
         root = tmp_path / "root"
         root.mkdir()
         killed_pid = _spawn_and_kill_holder(root, tmp_path)
@@ -134,8 +132,7 @@ class TestLandLockSurvivesSigkilledHolder:
 
 # frob:ticket T-2155
 # frob:tests \
-# tests/unit/test_land_lock_liveness.py::TestRefuseIfLandInProgressSurvivesSigkilledHol\
-# der.test_refuse_if_land_in_progress_clears_promptly_after_sigkill
+# tests/unit/test_land_lock_liveness.py::TestRefuseIfLandInProgressSurvivesSigkilledHolder.test_refuse_if_land_in_progress_clears_promptly_after_sigkill  # noqa: E501
 class TestRefuseIfLandInProgressSurvivesSigkilledHolder:
     """`refuse_if_land_in_progress` (every OTHER ledger-writing verb's
     choke point) must reach the same `Ok(None)` verdict promptly once the
@@ -145,8 +142,7 @@ class TestRefuseIfLandInProgressSurvivesSigkilledHolder:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_land_lock_liveness.py::TestRefuseIfLandInProgressSurvivesSigk\
-        # illedHolder.test_refuse_if_land_in_progress_clears_promptly_after_sigkill
+        # tests/unit/test_land_lock_liveness.py::TestRefuseIfLandInProgressSurvivesSigkilledHolder.test_refuse_if_land_in_progress_clears_promptly_after_sigkill  # noqa: E501
         root = tmp_path / "root"
         root.mkdir()
         killed_pid = _spawn_and_kill_holder(root, tmp_path)

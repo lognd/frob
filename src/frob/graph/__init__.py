@@ -847,7 +847,7 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
 
 # frob:doc docs/modules/graph.md#public-api
 # frob:doc docs/commands/check.md#run-scoped-memoization
-# frob:doc docs/modules/graph.md#exclusive-lock-scope-narrowed-to-the-commit-tail-t-3478  # noqa: E501
+# frob:doc docs/modules/graph.md#exclusive-lock-scope-narrowed-to-the-commit-tail-t-3478
 # tests/test_graph.py::TestLoadGraph.test_non_utf8_doc_file_is_skipped_not_crashed
 # frob:tests tests/unit/test_graph_build_lock.py
 # frob:waive AFFECT002 reason="T-3478 only narrows build_graph's internal derived_state_write_lock scope (perf, no signature/behavior change observable to callers); src/frob/gates/_waive.py::_severity_overrides is out of this ticket's scope and has nothing to update"  # noqa: E501

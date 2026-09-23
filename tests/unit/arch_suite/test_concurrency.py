@@ -16,7 +16,7 @@ class TestForkPoolHazards:
     pipe-wait-deadlock, self-join-deadlock (docs/modules/arch.md#fork-pool-
     hazards)."""
 
-    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
     def test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool(
         self, tmp_path
     ):
@@ -40,7 +40,7 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].severity == "warning"
         assert hits[0].symref == "combined.py::run_combined"
-# frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+# frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
 
     def test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs(self):
         """Acceptance (T-0767): the restructured gates tree carries ZERO
@@ -85,7 +85,7 @@ class TestForkPoolHazards:
             "self-join-deadlock",
         }
         hits = [s for s in result.suggestions if s.category in hazard_categories]
-        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
         assert hits == []
 
     def test_fork_after_threads_fires_when_fork_follows_thread_start(self, tmp_path):
@@ -105,7 +105,7 @@ class TestForkPoolHazards:
         )
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "fork-after-threads"]
-        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
         assert len(hits) == 1
         assert hits[0].symref == "forker.py::spawn_then_fork"
 
@@ -124,7 +124,7 @@ class TestForkPoolHazards:
             "    t.start()\n"
             "    return pid\n"
         )
-        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "fork-after-threads"]
         assert hits == []
@@ -143,13 +143,13 @@ class TestForkPoolHazards:
             "    proc.wait()\n"
             "    return proc.returncode\n"
         )
-        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "pipe-wait-deadlock"]
         assert len(hits) == 1
         assert hits[0].symref == "piper.py::run_and_wait"
 
-    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
     def test_pipe_wait_deadlock_does_not_fire_with_communicate(self, tmp_path):
         """The same `Popen(..., stdout=PIPE)` shape, but drained via
         `.communicate()` instead of a bare `.wait()`, must not fire."""
@@ -167,7 +167,7 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category == "pipe-wait-deadlock"]
         assert hits == []
 
-    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
     def test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool(
         self, tmp_path
     ):
@@ -188,7 +188,7 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].symref == "selfjoin.py::worker"
 
-    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
     def test_self_join_deadlock_does_not_fire_on_undispatched_join(self, tmp_path):
         """A function that calls `.join()` on a pool it owns, but is never
         itself submitted/started as a task, must not fire -- this is the
@@ -208,7 +208,7 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category == "self-join-deadlock"]
         assert hits == []
 
-    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
     def test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown(
         self, tmp_path
     ):
@@ -239,7 +239,7 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category == "self-join-deadlock"]
         assert hits == []
 
-    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
     def test_self_join_deadlock_fires_on_genuine_thread_self_join(self, tmp_path):
         """T-3571 positive control: a function dispatched via `Thread(target
         =f, args=(t,))` where `t` IS the dispatching `Thread` object itself
@@ -262,7 +262,7 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].symref == "genuine_selfjoin.py::worker"
 
-    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
     def test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor(self):
         """Acceptance (T-3571): `src/frob/serve/_socketd.py` carries ZERO
         `self-join-deadlock` findings after the correlation narrowing --
@@ -284,7 +284,7 @@ class TestAsyncEventLoopHazards:
     child 3 of the T-0693 concurrency-hazard umbrella), and
     sequential-independent-awaits (T-1027, T-0698's own disclosed cut)."""
 
-    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
     def test_blocking_call_in_async_fires_on_time_sleep(self, tmp_path):
         """`time.sleep` reachable inside an `async def` body, with no
         executor dispatch, fires `blocking-call-in-async`."""
@@ -302,7 +302,7 @@ class TestAsyncEventLoopHazards:
         assert len(hits) == 1
         assert hits[0].symref == "blocker.py::poll"
         assert hits[0].severity == "warning"
-# frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+# frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
 
     def test_blocking_call_in_async_does_not_fire_via_to_thread(self, tmp_path):
         """The same `time.sleep` call, but dispatched via
@@ -320,7 +320,7 @@ class TestAsyncEventLoopHazards:
         )
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "blocking-call-in-async"]
-        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
         assert hits == []
 
     def test_nested_event_loop_fires_on_asyncio_run_inside_coroutine(self, tmp_path):
@@ -339,7 +339,7 @@ class TestAsyncEventLoopHazards:
         )
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "nested-event-loop"]
-        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
         assert len(hits) == 1
         assert hits[0].symref == "nested.py::outer"
 
@@ -356,7 +356,7 @@ class TestAsyncEventLoopHazards:
             "def cli():\n"
             "    asyncio.run(main())\n"
         )
-        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "nested-event-loop"]
         assert hits == []
@@ -374,13 +374,13 @@ class TestAsyncEventLoopHazards:
             "def trigger():\n"
             "    fetch()\n"
         )
-        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "unawaited-coroutine"]
         assert len(hits) == 1
         assert hits[0].symref == "dropped.py::trigger"
 
-    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
     def test_unawaited_coroutine_does_not_fire_when_awaited_or_stored(self, tmp_path):
         """The same call, but awaited in one function and stored (never
         called bare) in another, must not fire either time."""
@@ -400,7 +400,7 @@ class TestAsyncEventLoopHazards:
         hits = [s for s in result.suggestions if s.category == "unawaited-coroutine"]
         assert hits == []
 
-    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
     def test_async_zero_awaits_fires_on_no_await_body(self, tmp_path):
         """An `async def` whose body never awaits anything fires
         `async-zero-awaits` at suggestion severity."""
@@ -418,7 +418,7 @@ class TestAsyncEventLoopHazards:
         assert hits[0].symref == "noawait.py::compute"
         assert hits[0].severity == "suggestion"
 
-    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
     def test_async_zero_awaits_does_not_fire_when_awaiting(self, tmp_path):
         """An `async def` that awaits something in its own body must not
         fire `async-zero-awaits`."""
@@ -435,7 +435,7 @@ class TestAsyncEventLoopHazards:
         hits = [s for s in result.suggestions if s.category == "async-zero-awaits"]
         assert hits == []
 
-    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
     def test_sequential_independent_awaits_fires_on_unrelated_calls(self, tmp_path):
         """Three sequential awaits, none reading an earlier one's bound
         name, fire ONE `sequential-independent-awaits` suggestion naming
@@ -466,7 +466,7 @@ class TestAsyncEventLoopHazards:
         assert "fetch_two" in hits[0].message
         assert "fetch_three" in hits[0].message
 
-    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
     def test_sequential_independent_awaits_does_not_fire_when_second_reads_first(
         self, tmp_path
     ):
@@ -491,7 +491,7 @@ class TestAsyncEventLoopHazards:
         ]
         assert hits == []
 
-    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
     def test_sequential_independent_awaits_does_not_fire_on_single_await(
         self, tmp_path
     ):
@@ -508,7 +508,7 @@ class TestAsyncEventLoopHazards:
         )
         result = analyze_project(src_dir)
         hits = [
-            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
+            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards
             s
             for s in result.suggestions
             if s.category == "sequential-independent-awaits"
@@ -537,7 +537,7 @@ class TestLockOrderingHazards:
             "        with lock_b:\n"
             "            pass\n\n\n"
             "def g():\n"
-            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
+            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards
             "    with lock_b:\n"
             "        with lock_a:\n"
             "            pass\n"
@@ -569,7 +569,7 @@ class TestLockOrderingHazards:
             "        pass\n\n\n"
             "def helper_a():\n"
             "    with lock_a:\n"
-            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
+            # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards
             "        pass\n\n\n"
             "def f():\n"
             "    with lock_a:\n"
@@ -582,10 +582,10 @@ class TestLockOrderingHazards:
         hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
         assert len(hits) == 1
         assert "lock_a" in hits[0].message
-        # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
+        # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards
         assert "lock_b" in hits[0].message
 
-    # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards
     def test_consistent_global_order_does_not_fire(self, tmp_path):
         """Every function acquires `lock_a` before `lock_b`, never the
         reverse -- a consistent global order must stay silent."""
@@ -609,7 +609,7 @@ class TestLockOrderingHazards:
         hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
         assert hits == []
 
-    # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards
     def test_reentrant_same_lock_does_not_fire(self, tmp_path):
         """A function acquiring the SAME `RLock` twice (nested `with`) must
         not fire `lock-order-cycle` -- reentrant use of one lock is never
@@ -629,7 +629,7 @@ class TestLockOrderingHazards:
         hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
         assert hits == []
 
-    # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards
     def test_unresolvable_lock_identity_is_advisory(self, tmp_path):
         """A `with` statement over a lock-shaped PARAMETER (no module/class-
         level construction site this resolver can identify) fires
@@ -715,7 +715,7 @@ class TestSharedStateRaceHazards:
         # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
         hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
         assert hits == []
-# frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
+# frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards
 
     def test_write_reachable_via_callee_of_dispatched_function_fires(self, tmp_path):
         """The dispatched function itself does nothing but call a helper
@@ -741,7 +741,7 @@ class TestSharedStateRaceHazards:
         assert "race_via_callee.py::helper" in hits[0].message
         assert "totals" in hits[0].message
 
-    # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards
     def test_write_not_reachable_from_any_dispatch_does_not_fire(self, tmp_path):
         """A module-level list written by a function that is never
         dispatched to a thread/task anywhere in the module -- must stay
@@ -760,7 +760,7 @@ class TestSharedStateRaceHazards:
         hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
         assert hits == []
 
-    # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
+    # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards
     def test_async_create_task_dispatch_fires_same_as_thread_submit(self, tmp_path):
         """A coroutine dispatched via `asyncio.create_task` that writes an
         unguarded module-level dict fires identically to the thread-submit
@@ -816,7 +816,7 @@ class TestConcurrencyModelMismatch:
         # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch  # noqa: E501
         assert hits[0].severity == "suggestion"
 
-    # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch
     def test_io_bound_socket_read_in_threadpool_does_not_fire(self, tmp_path):
         """A socket-read function dispatched to a ThreadPoolExecutor is the
         CORRECT model (IO-bound work belongs in a thread pool) -- must stay
@@ -838,7 +838,7 @@ class TestConcurrencyModelMismatch:
         ]
         assert hits == []
 
-    # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch
     def test_trivial_io_task_in_processpool_fires_ipc_overhead(self, tmp_path):
         """A trivially small IO-bound task dispatched to a
         ProcessPoolExecutor fires `ipc-overhead-in-processpool`."""
@@ -860,7 +860,7 @@ class TestConcurrencyModelMismatch:
         assert len(hits) == 1
         assert "fetch_page" in hits[0].message
 
-    # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch  # noqa: E501
+    # frob:tests src/frob/arch/_concurrency_model.py::_check_concurrency_model_mismatch
     def test_mixed_loop_and_io_function_never_fires_either_advisory(self, tmp_path):
         """A function that both loops AND calls IO is MIXED/UNKNOWN -- never
         confidently classified, so no advisory fires even when dispatched

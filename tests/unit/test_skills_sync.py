@@ -31,8 +31,8 @@ def _make_entry(root: Path, *parts: str, content: str = "x") -> Path:
 class TestSyncSkills:
     """`sync_skills(repo_root, claude_dir)` -- the pure sync function."""
 
-    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
-    # frob:tests src/frob/scaffold/_skills_sync.py::SkillsSyncReport  # noqa: E501
+    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
+    # frob:tests src/frob/scaffold/_skills_sync.py::SkillsSyncReport
     def test_syncs_new_repo_entries(self, tmp_path: Path) -> None:
         """A repo-side agents/skills entry appears under claude_dir after
         one call (T-2241 acceptance[0])."""
@@ -50,7 +50,7 @@ class TestSyncSkills:
         )
         assert (claude_dir / "skills" / "bar" / "content.txt").read_text() == (
             "skill bar"
-        # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+        # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
         )
 
     def test_updates_existing_entry_in_place(self, tmp_path: Path) -> None:
@@ -62,7 +62,7 @@ class TestSyncSkills:
         assert (claude_dir / "agents" / "foo" / "content.txt").read_text() == "v1"
 
         _make_entry(repo, "agents", "foo", content="v2")
-        # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+        # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
         sync_skills(repo, claude_dir)
         assert (claude_dir / "agents" / "foo" / "content.txt").read_text() == "v2"
 
@@ -88,12 +88,12 @@ class TestSyncSkills:
         shutil.rmtree(repo / "agents" / "temp-agent")  # repo side now empty
 
         reports = sync_skills(repo, claude_dir)
-# frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+# frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
 
         assert reports["agents"].removed == ("temp-agent",)
         assert not (claude_dir / "agents" / "temp-agent").exists()
 
-    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
     def test_missing_repo_directories_are_a_no_op(self, tmp_path: Path) -> None:
         """A repo with neither agents/ nor skills/ still creates both
         target directories (matching the old recipe's unconditional
@@ -137,7 +137,7 @@ class TestSyncSkillsProvenance:
     `~/.claude` -- must-now-fire/must-not-delete coverage for the
     epic's acceptance[1]/[2]. Never touches the real `~/.claude`."""
 
-    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
     def test_second_repo_does_not_delete_first_repos_entries(
         self, tmp_path: Path
     ) -> None:
@@ -164,7 +164,7 @@ class TestSyncSkillsProvenance:
         assert (claude_dir / "agents" / "alpha").is_dir()
         assert (claude_dir / "agents" / "beta").is_dir()
 
-    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
     def test_hand_maintained_entry_is_never_deleted_or_overwritten(
         self, tmp_path: Path
     ) -> None:
@@ -202,7 +202,7 @@ class TestSyncSkillsProvenance:
             claude_dir / "agents" / "foo" / "content.txt"
         ).read_text() == "hand-made"
 
-    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
     def test_force_overwrites_collision_and_claims_ownership(
         self, tmp_path: Path
     ) -> None:
@@ -225,7 +225,7 @@ class TestSyncSkillsProvenance:
         assert reports2["agents"].collisions == ()
         assert (claude_dir / "agents" / "foo" / "content.txt").read_text() == "v2"
 
-    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills  # noqa: E501
+    # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
     def test_same_repo_sync_twice_is_a_no_op_second_run(self, tmp_path: Path) -> None:
         """T-2384 acceptance[1]: running the same repo's sync twice in a
         row produces no further change on the second run -- no new
@@ -309,7 +309,7 @@ class TestRun:
     """`run(argv)` -- the CLI entry point `frob.__main__._dispatch` calls
     directly for `frob sync-skills`."""
 
-    # frob:tests src/frob/scaffold/_skills_sync.py::run  # noqa: E501
+    # frob:tests src/frob/scaffold/_skills_sync.py::run
     def test_run_reports_synced_and_removed_counts(
         self, tmp_path: Path, capsys, monkeypatch
     ) -> None:

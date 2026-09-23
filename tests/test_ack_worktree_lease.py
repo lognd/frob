@@ -28,7 +28,7 @@ def _init_repo(root: Path) -> None:
 
 
 class TestAckWorktreeLease:
-    # frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/ack_runner.py::run
     def test_mismatched_lease_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -40,7 +40,7 @@ class TestAckWorktreeLease:
             run(cfg)
         # the guard refuses before ever touching frob.lock
         assert not (tmp_path / "frob.lock").exists()
-# frob:tests src/frob/app/ack_runner.py::run  # noqa: E501
+# frob:tests src/frob/app/ack_runner.py::run
 
     def test_no_lease_reaches_normal_ack_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog

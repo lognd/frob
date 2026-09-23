@@ -26,8 +26,8 @@ _SAMPLE_PY = (
 
 
 class TestEventBus:
-    # frob:tests src/frob/serve/_events.py::_EventBus kind="unit"  # noqa: E501
-    # frob:tests src/frob/serve/_events.py::_EventBus.subscribe kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_events.py::_EventBus kind="unit"
+    # frob:tests src/frob/serve/_events.py::_EventBus.subscribe kind="unit"
     def test_publish_reaches_all_subscribers(self) -> None:
         # frob:tests \
         # tests/test_serve_events.py::TestEventBus.test_publish_reaches_all_subscribers
@@ -47,7 +47,7 @@ class TestEventBus:
         assert q.empty()
         bus.unsubscribe(sid)
 
-    # frob:tests src/frob/serve/_events.py::_EventBus kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_events.py::_EventBus kind="unit"
     def test_unsubscribe_wakes_blocked_consumer(self) -> None:
         # frob:tests \
         # tests/test_serve_events.py::TestEventBus.test_unsubscribe_wakes_blocked_consumer  # noqa: E501
@@ -86,9 +86,9 @@ def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
     raise AssertionError("daemon never became reachable")
 
 
-# frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"  # noqa: E501
+# frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"
 class TestSubscribeAndWait:
-    # frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"
     # frob:tests src/frob/serve/_socketd.py::_RequestHandler._handle_subscribe kind="unit"  # noqa: E501
     @pytest.mark.skipif(
         sys.platform == "win32",
@@ -123,7 +123,7 @@ class TestSubscribeAndWait:
         assert results[0].is_ok
         thread.join(timeout=15)
 
-    # frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -160,9 +160,9 @@ class TestSubscribeAndWait:
         assert result.is_err
         assert result.danger_err == DaemonError.Unreachable
 
-    # frob:tests src/frob/serve/_events.py::CoverageWatcher.start kind="unit"  # noqa: E501
-    # frob:tests src/frob/serve/_events.py::CoverageWatcher kind="unit"  # noqa: E501
-    # frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"  # noqa: E501
+    # frob:tests src/frob/serve/_events.py::CoverageWatcher.start kind="unit"
+    # frob:tests src/frob/serve/_events.py::CoverageWatcher kind="unit"
+    # frob:tests src/frob/serve/_events.py::subscribe_and_wait kind="unit"
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(

@@ -43,17 +43,13 @@ def _fake_violation(rule: str, message: str) -> _FakeViolation:
 
 # frob:ticket T-3495
 # frob:tests \
-# tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing.test_\
-# narrow_filter_ignores_unrelated_violation
+# tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing.test_narrow_filter_ignores_unrelated_violation  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing.test_\
-# broad_filter_fails_on_any_violation
+# tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing.test_broad_filter_fails_on_any_violation  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing.test_\
-# narrow_filter_fires_on_its_own_violation
+# tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing.test_narrow_filter_fires_on_its_own_violation  # noqa: E501
 # frob:tests \
-# tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing.test_\
-# sys003_filter_ignores_other_rules
+# tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing.test_sys003_filter_ignores_other_rules  # noqa: E501
 class TestFrobSelfScanArtifactsSharing:
     """`FrobSelfScanArtifacts.violations` is ONE shared tuple; every
     consumer filters it independently -- these are the exact filter

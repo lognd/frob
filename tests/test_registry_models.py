@@ -36,7 +36,7 @@ class TestParseDisposition:
         d = parse_disposition("out-of-scope(manifest-extraction-artifact)")
         assert d.kind is DispositionKind.OUT_OF_SCOPE
         assert d.target == "manifest-extraction-artifact"
-# frob:tests src/frob/registry/_models.py::parse_disposition  # noqa: E501
+# frob:tests src/frob/registry/_models.py::parse_disposition
 
     def test_undispositioned_pending(self) -> None:
         assert parse_disposition("pending").kind is DispositionKind.UNDISPOSITIONED
@@ -44,7 +44,7 @@ class TestParseDisposition:
     def test_undispositioned_none(self) -> None:
         assert parse_disposition(None).kind is DispositionKind.UNDISPOSITIONED
 
-    # frob:tests src/frob/registry/_models.py::parse_disposition  # noqa: E501
+    # frob:tests src/frob/registry/_models.py::parse_disposition
     def test_undispositioned_bare_addressed(self) -> None:
         assert parse_disposition("addressed").kind is DispositionKind.UNDISPOSITIONED
 
@@ -57,7 +57,7 @@ class TestParseDisposition:
 class TestLoadRegistryDir:
     """`load_registry_dir` -- the single loader every registry consumer shares."""
 
-    # frob:tests src/frob/registry/_models.py::load_registry_dir  # noqa: E501
+    # frob:tests src/frob/registry/_models.py::load_registry_dir
     def test_loads_typed_entries(self, tmp_path: Path) -> None:
         (tmp_path / "patterns.yaml").write_text(
             """\
@@ -88,7 +88,7 @@ entries:
 
         assert loaded == {}
 
-    # frob:tests src/frob/registry/_models.py::load_registry_dir  # noqa: E501
+    # frob:tests src/frob/registry/_models.py::load_registry_dir
     def test_malformed_yaml_is_err(self, tmp_path: Path) -> None:
         (tmp_path / "bad.yaml").write_text(
             "entries: [this is: not: valid", encoding="utf-8"

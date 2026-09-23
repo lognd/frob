@@ -2,7 +2,7 @@
 id: T-4758
 title: Apply the directive-ergonomics fixes repo-wide in one quiet-window land, before/after
   counts as acceptance
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-19'
@@ -66,12 +66,21 @@ body_changes:
   at: '2026-09-23'
   old_length: 3170
   new_length: 3434
+evidence:
+- tests/test_gates_fmt_directives.py::TestFixFmt002NoqaStrip::test_strips_and_is_idempotent
+- tests/test_gates_fmt_directives.py::TestFixFmt002NoqaStrip::test_only_paths_scoping_leaves_an_unlisted_file_untouched
+- tests/test_gates_fmt_directives.py::TestCanonicalizeTextIdempotentTwice::test_second_format_paths_run_reports_zero_changes
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_delete_case_fires_test010_and_fix_removes_the_line
+- tests/test_gates_fix_engine.py::TestFixTest010RedundantTestDeclaration::test_move_case_fires_test010_and_fix_relocates_the_line
+- tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_leaves_an_out_of_scope_file_untouched
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4758
+branch: t-4758
 ---
 Leaf 8 of T-4703. 3 points. Apply every fix repo-wide, in one accounted sweep. Blocked by leaves
 1 through 7. This leaf is where the story's numbers are proven; it writes no new logic.

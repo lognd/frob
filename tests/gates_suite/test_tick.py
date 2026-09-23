@@ -123,7 +123,7 @@ class TestTick006PhantomFiling:
         assert not any(v.rule == "TICK006" for v in violations)
 
     # frob:tests tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_code_spanned_filed_claim_does_not_fire  # noqa: E501
-    # frob:tests src/frob/gates/_markdown_scan.py::strip_code_spans  # noqa: E501
+    # frob:tests src/frob/gates/_markdown_scan.py::strip_code_spans
     def test_code_spanned_filed_claim_does_not_fire(self, tmp_path: Path) -> None:
         """T-1700's own incident, reproduced exactly: a Done report
         EXPLAINS that a code-spanned mention is DOC011's illustrative-
@@ -388,7 +388,7 @@ class TestTick011DisclosedCutWithoutTicket:
         return TicketQueue(tickets={t.id: t for t in tickets})
 
     # frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket
     def test_disclosed_follow_up_with_no_citation_fires(self, tmp_path: Path) -> None:
         """The real T-1085 shape: "deliberately left for a follow-up
         pass" with no `T-####` anywhere nearby -- must fire."""
@@ -583,7 +583,7 @@ class TestTick011DisclosedCutWithoutTicket:
 
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_historical_ticket_outside_active_window_is_silent_by_default  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket
     def test_historical_ticket_outside_active_window_is_silent_by_default(
         self, tmp_path: Path
     ) -> None:
@@ -610,7 +610,7 @@ class TestTick011DisclosedCutWithoutTicket:
         assert not any(v.rule == "TICK011" for v in violations)
 
     # frob:tests \
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket
     # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_recent_ticket_outside_old_window_still_fires_exactly_as_today  # noqa: E501
     def test_recent_ticket_outside_old_window_still_fires_exactly_as_today(
         self, tmp_path: Path
@@ -638,7 +638,7 @@ class TestTick011DisclosedCutWithoutTicket:
 
     # frob:tests \
     # tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_include_history_env_opt_in_restores_the_historical_finding  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick011_disclosed_cuts_without_ticket
     def test_include_history_env_opt_in_restores_the_historical_finding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -786,7 +786,7 @@ class TestTick007UndispatchedStale:
 
     # frob:ticket T-0820
     # frob:tests tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale
     def test_real_repo_scan_runs_end_to_end_without_crashing(self) -> None:
         """The honest "real repo scan" smoke test (T-0813 precedent): runs
         `tickets_gate` over this repo's OWN live `tickets.md`, not a
@@ -897,7 +897,7 @@ class TestTick008UnknownLedgerFields:
         assert not any(v.rule == "TICK008" for v in violations)
 
     # frob:tests tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
-    # frob:tests src/frob/gates/_tickets_gate.py::_tick008_unknown_ledger_fields  # noqa: E501
+    # frob:tests src/frob/gates/_tickets_gate.py::_tick008_unknown_ledger_fields
     def test_real_repo_ledger_is_tick008_clean(self) -> None:
         """The real-repo smoke test the ticket demands: this repo's own
         live `tickets.md`/`tickets-archive.md` must produce ZERO TICK008

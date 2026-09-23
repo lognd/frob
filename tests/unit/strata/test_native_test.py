@@ -55,7 +55,7 @@ class TestSummarize:
 
     # frob:tests \
     # tests/unit/strata/test_native_test.py::TestSummarize.test_no_gaps_reports_proved
-    # frob:tests src/frob/strata/_selfconform_models.py::SelfConformReport  # noqa: E501
+    # frob:tests src/frob/strata/_selfconform_models.py::SelfConformReport
     def test_no_gaps_reports_proved(self) -> None:
         """Zero unwaived gaps on both the exhaustiveness and
         self-conformance reports takes `_summarize`'s ELSE branch."""
@@ -87,7 +87,7 @@ class TestSummarize:
 
     # frob:tests \
     # tests/unit/strata/test_native_test.py::TestSummarize.test_format_selfconform_one_line_per_violation  # noqa: E501
-    # frob:tests src/frob/strata/_selfconform_models.py::SelfConformViolation  # noqa: E501
+    # frob:tests src/frob/strata/_selfconform_models.py::SelfConformViolation
     def test_format_selfconform_one_line_per_violation(self) -> None:
         """`_format_selfconform` renders one `GAP family=sys` line per
         unwaived `SelfConformViolation`, independent of `_format_gaps`."""

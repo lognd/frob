@@ -30,7 +30,7 @@ class TestReapOrSyncWorktree:
     tickets._worktree_sweep.remove_worktree` says it is safe to, else
     fall back to the pre-existing T-1720/T-2173 auto-sync."""
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree
     def test_reaps_a_worktree_with_no_further_live_lease(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -63,7 +63,7 @@ class TestReapOrSyncWorktree:
         assert branch_delete_calls == [(root, "t-0001", "T-0001")]
         assert auto_sync_calls == []
 
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_reap_or_sync_worktree
     def test_falls_back_to_auto_sync_when_still_in_use(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

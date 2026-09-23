@@ -32,7 +32,7 @@ class TestWriteStackDump:
     `dump_all_thread_stacks` and the land watchdog both call."""
 
     # frob:tests tests/unit/test_land_stackdump.py::TestWriteStackDump.test_writes_and_returns_dump_path  # noqa: E501
-    # frob:tests src/frob/testing/_stackdump.py::write_stack_dump  # noqa: E501
+    # frob:tests src/frob/testing/_stackdump.py::write_stack_dump
     def test_writes_and_returns_dump_path(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -63,7 +63,7 @@ class TestInstallStackdumpHandlerForce:
     default every other caller keeps."""
 
     # frob:tests tests/unit/test_land_stackdump.py::TestInstallStackdumpHandlerForce.test_force_installs_regardless_of_env  # noqa: E501
-    # frob:tests src/frob/testing/_stackdump.py::install_stackdump_handler  # noqa: E501
+    # frob:tests src/frob/testing/_stackdump.py::install_stackdump_handler
     def test_force_installs_regardless_of_env(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -227,7 +227,7 @@ class TestSilentPhaseWatchdog:
         _land_cmd._land_last_phase_log_at = None
 
     # frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseWatchdog.test_fires_once_after_threshold_then_waits_for_next_episode  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_watchdog  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_watchdog
     def test_fires_once_after_threshold_then_waits_for_next_episode(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -275,7 +275,7 @@ class TestSilentPhaseWatchdog:
             thread.join(timeout=5)
 
     # frob:tests tests/unit/test_land_stackdump.py::TestSilentPhaseWatchdog.test_never_fires_while_phase_lines_keep_arriving  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_watchdog  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_silent_phase_watchdog
     def test_never_fires_while_phase_lines_keep_arriving(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

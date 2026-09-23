@@ -273,23 +273,23 @@ class TestPlatform001:
         "        raise LockUnavailable('no lock primitive on this platform')\n"
         "    yield\n"
     )
-# frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+# frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
 
     def test_warn_and_continue_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
         tree = ast.parse(self._WARN_AND_CONTINUE_SRC)
         sites = _scan_platform_guards(tree)
         assert len(sites) == 1
-        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
         assert sites[0].names == ("fcntl",)
 
     def test_loud_refusal_is_quiet(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
-        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
         tree = ast.parse(self._LOUD_REFUSAL_SRC)
         assert _scan_platform_guards(tree) == ()
 
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_no_platform_probe_is_quiet(self) -> None:
         """A module with no restricted-module try/except-ImportError probe
         at all has nothing for PLATFORM001 to anchor on, regardless of
@@ -443,7 +443,7 @@ class TestPlatform001StringGuard:
         "        subprocess.run(['echo', 'done'])\n"
         "    else:\n"
         "        subprocess.run(['kill', str(proc.pid)])\n"
-        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
         "        subprocess.run(['echo', 'done'])\n"
     )
 
@@ -451,19 +451,19 @@ class TestPlatform001StringGuard:
     def test_silent_string_guard_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_string_guards
         tree = ast.parse(self._SILENT_STRING_GUARD_SRC)
-        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
         sites = _scan_platform_string_guards(tree)
         assert len(sites) == 1
         assert sites[0].lineno == 4
 
     # frob:ticket T-2944
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_logged_string_guard_is_quiet(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_string_guards
         tree = ast.parse(self._LOGGED_STRING_GUARD_SRC)
         assert _scan_platform_string_guards(tree) == ()
 
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     # frob:ticket T-2944
     def test_real_platform_branch_is_quiet(self) -> None:
         """A real cross-platform fallback branch (both arms do genuine
@@ -508,7 +508,7 @@ class TestPlatform001BareImport:
     #: `src/frob/tickets/_new_renumber.py:31` shape.
     _BARE_IMPORT_SRC = "import fcntl\n\ndef lock(fd):\n    fcntl.flock(fd, 1)\n"
 
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     #: Must-stay-quiet fixture: the standard guarded idiom this repo's
     #: other ~10 platform-optional call sites already use.
     _GUARDED_IMPORT_SRC = (
@@ -516,14 +516,14 @@ class TestPlatform001BareImport:
     )
 
     # frob:ticket T-2944
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_bare_import_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_bare_restricted_imports
         tree = ast.parse(self._BARE_IMPORT_SRC)
         sites = _scan_bare_restricted_imports(tree)
         assert len(sites) == 1
         assert sites[0].names == ("fcntl",)
-# frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+# frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
 
     # frob:ticket T-2944
     def test_guarded_import_is_quiet(self) -> None:
@@ -617,7 +617,7 @@ class TestPlatform001ImportTimeEval:
     )
 
     # frob:ticket T-2951
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_default_arg_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
         tree = ast.parse(self._DEFAULT_ARG_SRC)
@@ -626,7 +626,7 @@ class TestPlatform001ImportTimeEval:
         assert sites[0].names == ("signal.SIGKILL",)
 
     # frob:ticket T-2951
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_module_constant_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
         tree = ast.parse(self._MODULE_CONSTANT_SRC)
@@ -635,7 +635,7 @@ class TestPlatform001ImportTimeEval:
         assert sites[0].names == ("signal.SIGKILL",)
 
     # frob:ticket T-2951
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_class_attribute_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
         tree = ast.parse(self._CLASS_ATTRIBUTE_SRC)
@@ -644,7 +644,7 @@ class TestPlatform001ImportTimeEval:
         assert sites[0].names == ("signal.SIGKILL",)
 
     # frob:ticket T-2951
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_decorator_kwarg_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
         tree = ast.parse(self._DECORATOR_KWARG_SRC)
@@ -653,28 +653,28 @@ class TestPlatform001ImportTimeEval:
         assert sites[0].names == ("signal.SIGKILL",)
 
     # frob:ticket T-2951
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_guarded_default_arg_is_quiet(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
         tree = ast.parse(self._FIXED_DEFAULT_ARG_SRC)
         assert _scan_import_time_platform_evals(tree) == ()
 
     # frob:ticket T-2951
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_ternary_guarded_constant_is_quiet(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
         tree = ast.parse(self._GUARDED_MODULE_CONSTANT_SRC)
         assert _scan_import_time_platform_evals(tree) == ()
 
     # frob:ticket T-2951
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_if_guarded_def_is_quiet(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
         tree = ast.parse(self._IF_GUARDED_DEF_SRC)
         assert _scan_import_time_platform_evals(tree) == ()
 
     # frob:ticket T-2951
-    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate  # noqa: E501
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
     def test_body_reference_is_quiet(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
         tree = ast.parse(self._BODY_REFERENCE_SRC)

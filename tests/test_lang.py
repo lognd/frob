@@ -838,12 +838,12 @@ class TestCSharp:
         # frob:tests src/frob/lang/_walk_csharp.py::_cs_property_symbol
         pf = parse_file(_FIXTURES / "sample.cs").danger_ok
         prop = _symbol(pf, "Frob.Sample.Widget.Count")
-        # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp  # noqa: E501
+        # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
         assert prop.kind == SymbolKind.CONST
         assert prop.public is True
 
     # frob:ticket T-1600
-    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp  # noqa: E501
+    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
     def test_const_field_is_extracted_plain_field_is_not(self) -> None:
         # frob:tests src/frob/lang/_walk_csharp.py::_cs_const_field_symbol
         pf = parse_file(_FIXTURES / "sample.cs").danger_ok
@@ -862,7 +862,7 @@ class TestCSharp:
         assert color.public is True
 
     # frob:ticket T-1600
-    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp  # noqa: E501
+    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
     def test_namespace_is_a_transparent_qualname_container(self) -> None:
         # frob:tests src/frob/lang/_walk_csharp.py::_cs_dispatch
         pf = parse_file(_FIXTURES / "sample.cs").danger_ok
@@ -879,7 +879,7 @@ class TestCSharp:
         assert do.public is True
 
     # frob:ticket T-1600
-    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp  # noqa: E501
+    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
     def test_file_scoped_namespace_is_a_transparent_qualname_container(
         self, tmp_path: Path
     ) -> None:
@@ -1061,7 +1061,7 @@ class TestJava:
         assert color.public is False
 
     # frob:ticket T-1601
-    # frob:tests src/frob/lang/_walk_java.py::_walk_java  # noqa: E501
+    # frob:tests src/frob/lang/_walk_java.py::_walk_java
     def test_inner_class_is_a_transparent_qualname_container(self) -> None:
         # frob:tests src/frob/lang/_walk_java.py::_java_dispatch
         pf = parse_file(_FIXTURES / "sample.java").danger_ok
@@ -1490,8 +1490,8 @@ class TestSizeCapAndTimeout:
     parse) -- see `frob.lang._check_size_cap`/`_run_parse_with_timeout`."""
 
     # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_oversized_file_is_skipped_loudly  # noqa: E501
-    # frob:tests src/frob/lang/__init__.py::_read_source_under_cap  # noqa: E501
-    # frob:tests src/frob/lang/__init__.py::_check_size_cap  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::_read_source_under_cap
+    # frob:tests src/frob/lang/__init__.py::_check_size_cap
     def test_oversized_file_is_skipped_loudly(
         self, caplog: pytest.LogCaptureFixture, tmp_path: Path, monkeypatch
     ) -> None:
@@ -1515,7 +1515,7 @@ class TestSizeCapAndTimeout:
         )
 
     # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_parse_timeout_returns_err_not_hang  # noqa: E501
-    # frob:tests src/frob/lang/__init__.py::_run_parse_with_timeout  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::_run_parse_with_timeout
     def test_parse_timeout_returns_err_not_hang(
         self, caplog: pytest.LogCaptureFixture, tmp_path: Path
     ) -> None:
@@ -1544,8 +1544,8 @@ class TestSizeCapAndTimeout:
         ), messages
 
     # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
-    # frob:tests src/frob/_daemon_timeout.py::_run_bounded  # noqa: E501
-    # frob:tests src/frob/lang/__init__.py::_run_parse_with_timeout  # noqa: E501
+    # frob:tests src/frob/_daemon_timeout.py::_run_bounded
+    # frob:tests src/frob/lang/__init__.py::_run_parse_with_timeout
     def test_timed_out_worker_is_daemon_not_registered(self, tmp_path: Path) -> None:
         """T-3708 regression: an abandoned-on-timeout worker must not be
         able to block interpreter shutdown.
@@ -1671,7 +1671,7 @@ class TestParseCache:
         second = parse_file(path).danger_ok
         assert first == second
 
-    # frob:tests src/frob/lang/__init__.py::partial_parse_files  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::partial_parse_files
     def test_reset_clears_counters(self, tmp_path: Path) -> None:
         # frob:tests src/frob/lang/__init__.py::reset_parse_cache
         path = _write(tmp_path, "d.py", "x = 1\n")

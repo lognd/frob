@@ -63,7 +63,7 @@ class TestSysCapacity:
     """`frob sys capacity [--population N]`: the CAP001 demand-vs-capacity
     printer, optionally projected via T-1927's `project_capacity`."""
 
-    # frob:tests src/frob/app/sys_runner.py::_print_capacity_report  # noqa: E501
+    # frob:tests src/frob/app/sys_runner.py::_print_capacity_report
     def test_no_population_reports_current_violations(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -74,7 +74,7 @@ class TestSysCapacity:
         assert exc.value.code == 1
         assert "node=api" in caplog.text
 
-    # frob:tests src/frob/app/sys_runner.py::_run_capacity  # noqa: E501
+    # frob:tests src/frob/app/sys_runner.py::_run_capacity
     def test_population_scales_and_can_fire(self, tmp_path: Path, caplog) -> None:
         repo = _init_design_repo(tmp_path, _SCALABLE_MODEL)
         cfg = AppConfig(
@@ -106,7 +106,7 @@ class TestSysCapacity:
         assert exc.value.code == 1
         assert "no baseline" in caplog.text
 
-    # frob:tests src/frob/app/sys_runner.py::_print_capacity_report  # noqa: E501
+    # frob:tests src/frob/app/sys_runner.py::_print_capacity_report
     def test_at_date_reports_projected_elapsed(self, tmp_path: Path, caplog) -> None:
         """T-2016: `--since`/`--at` project a growth-declaring node's
         demand before the fan-in sum, same as `test_population_scales_
@@ -123,7 +123,7 @@ class TestSysCapacity:
         assert exc.value.code == 1
         assert "node=api" in caplog.text
 
-    # frob:tests src/frob/app/sys_runner.py::_run_capacity  # noqa: E501
+    # frob:tests src/frob/app/sys_runner.py::_run_capacity
     def test_since_without_at_is_an_error(self, tmp_path: Path, caplog) -> None:
         """T-2016: `--since` given without its required `--at` pair fails
         closed (`StrataError.UnknownReference`), never silently ignored."""
@@ -155,7 +155,7 @@ class TestSysCapacity:
         assert cfg.sys_capacity_since == datetime(2026, 1, 1)
         assert cfg.sys_capacity_at == datetime(2027, 1, 1)
 
-    # frob:tests src/frob/app/_config_external.py::_FLOAT_FIELDS  # noqa: E501
+    # frob:tests src/frob/app/_config_external.py::_FLOAT_FIELDS
     def test_population_flag_survives_real_argv_parsing(self) -> None:
         """Regression guard (T-1927's own live-fire incident): `--population`
         is a `float` CLI flag, and `AppConfig.from_external`'s generic

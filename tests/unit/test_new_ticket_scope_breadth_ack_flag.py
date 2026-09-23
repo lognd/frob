@@ -36,8 +36,7 @@ class TestScopeBreadthAckFlag:
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests \
-        # tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag\
-        # .test_acknowledged_broad_scope_is_silent_and_recorded
+        # tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag.test_acknowledged_broad_scope_is_silent_and_recorded  # noqa: E501
         """(MUST FAIL FIRST on pre-T-2302 main -- the flags do not exist,
         so AppConfig construction itself fails): a broad scope filed WITH
         --scope-breadth-ack and a reason produces no over-broad warning,
@@ -67,8 +66,7 @@ class TestScopeBreadthAckFlag:
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests \
-        # tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag\
-        # .test_unacknowledged_broad_scope_still_warns
+        # tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag.test_unacknowledged_broad_scope_still_warns  # noqa: E501
         """T-2123's original filing-time WARN is unchanged for a filer
         who does not pass the new flag at all -- the default stays
         advisory-only, not silently suppressed by this ticket's change."""
@@ -97,8 +95,7 @@ class TestScopeBreadthAckFlag:
     # frob:ticket T-2302
     def test_ack_without_reason_is_refused(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag\
-        # .test_ack_without_reason_is_refused
+        # tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag.test_ack_without_reason_is_refused  # noqa: E501
         """`--scope-breadth-ack` with no (or a blank) reason is rejected
         by `new_ticket`'s pre-write validation gauntlet
         (`_validate_new_ticket_spec`, `TicketError.

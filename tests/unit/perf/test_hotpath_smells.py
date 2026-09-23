@@ -280,7 +280,7 @@ class TestHotpathSmellsWiredIntoPerfRules:
     all four rules from the live gate while `hotpath_smell_violations`
     itself kept passing its own direct tests."""
 
-    # frob:tests src/frob/perf/_hotpath_smells.py::hotpath_smell_violations kind="unit"  # noqa: E501
+    # frob:tests src/frob/perf/_hotpath_smells.py::hotpath_smell_violations kind="unit"
     def test_perf_rules_includes_perf010_finding(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/perf/test_hotpath_smells.py::TestHotpathSmellsWiredIntoPerfRules.test_perf_rules_includes_perf010_finding  # noqa: E501
         from frob.graph import build_graph

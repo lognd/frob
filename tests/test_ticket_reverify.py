@@ -239,7 +239,7 @@ class TestReverifyCli:
         assert ticket.state == TicketState.DONE
         assert "### Changed" in ticket.body
 
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_reverify  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_reverify
     def test_reruns_verification_and_refreshes_recap_state_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -271,7 +271,7 @@ class TestReverifyCli:
         # Narrative carried through verbatim, not replaced.
         assert "initial narrative" in after.body
 
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_reverify  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_reverify
     def test_surfaces_now_failing_evidence_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

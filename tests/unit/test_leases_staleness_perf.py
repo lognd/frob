@@ -195,7 +195,7 @@ class TestTicketLedgerStalenessShapeArchiveFastPath:
     without YAML-parsing the archive."""
 
     # frob:tests tests/unit/test_leases_staleness_perf.py::TestTicketLedgerStalenessShapeArchiveFastPath.test_archived_ticket_id_is_terminal_without_parsing_the_archive kind="unit"  # noqa: E501
-    # frob:tests src/frob/tickets/_leases.py::_ticket_ledger_staleness_shape kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_leases.py::_ticket_ledger_staleness_shape kind="unit"
     def test_archived_ticket_id_is_terminal_without_parsing_the_archive(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

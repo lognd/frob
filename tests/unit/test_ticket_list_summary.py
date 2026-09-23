@@ -42,8 +42,7 @@ class TestSummaryFooter:
     # frob:ticket T-1528
     def test_counts_per_state(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_list_summary.py::TestSummaryFooter.test_counts_per_sta\
-        # te
+        # tests/unit/test_ticket_list_summary.py::TestSummaryFooter.test_counts_per_state  # noqa: E501
         _test_seed(tmp_path, n=3)
         queue = load_active(tmp_path).danger_ok
         line = _summary_footer(tmp_path, queue)
@@ -62,8 +61,7 @@ class TestSummaryFooter:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_list_summary.py::TestSummaryFooter.test_leased_queued_\
-        # ticket_counts_as_in_progress
+        # tests/unit/test_ticket_list_summary.py::TestSummaryFooter.test_leased_queued_ticket_counts_as_in_progress  # noqa: E501
         """T-1530: the census must match the rows -- a ledger-queued ticket
         with a live worktree lease renders [in-progress@...] in the rows,
         so it counts as in-progress here, not queued."""
@@ -87,8 +85,7 @@ class TestStatsLine:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_list_summary.py::TestStatsLine.test_renders_rates_cycl\
-        # e_and_eta
+        # tests/unit/test_ticket_list_summary.py::TestStatsLine.test_renders_rates_cycle_and_eta  # noqa: E501
         _test_seed(tmp_path)
         queue = load_active(tmp_path).danger_ok
         fake = TicketFlowReport(
@@ -115,8 +112,7 @@ class TestStatsLine:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_list_summary.py::TestStatsLine.test_labels_unshrinking\
-        # _and_missing_cycle
+        # tests/unit/test_ticket_list_summary.py::TestStatsLine.test_labels_unshrinking_and_missing_cycle  # noqa: E501
         _test_seed(tmp_path)
         queue = load_active(tmp_path).danger_ok
         fake = TicketFlowReport(
@@ -138,8 +134,7 @@ class TestListFooterEndToEnd:
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests \
-        # tests/unit/test_ticket_list_summary.py::TestListFooterEndToEnd.test_list_alwa\
-        # ys_prints_summary
+        # tests/unit/test_ticket_list_summary.py::TestListFooterEndToEnd.test_list_always_prints_summary  # noqa: E501
         _test_seed(tmp_path, n=2)
         cfg = AppConfig(ticket_command="list")
         with caplog.at_level("INFO"):

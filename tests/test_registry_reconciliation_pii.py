@@ -41,14 +41,11 @@ def _real_queue() -> TicketQueue:
 
 # frob:ticket T-0387
 # frob:tests \
-# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_is_in_registry_fi\
-# les
+# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_is_in_registry_files  # noqa: E501
 # frob:tests \
-# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_loads_without_err\
-# or
+# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_loads_without_error  # noqa: E501
 # frob:tests \
-# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_no_malformed_entr\
-# ies
+# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_no_malformed_entries  # noqa: E501
 class TestPiiRegistryFile:
     """`pii.yaml` loads and is a real `RegistryFile` instance."""
 
@@ -80,14 +77,11 @@ class TestPiiRegistryFile:
 
 # frob:ticket T-0387
 # frob:tests \
-# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_declared_total_\
-# is_7
+# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_declared_total_is_7  # noqa: E501
 # frob:tests \
-# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_audit_reports_e\
-# xhausted
+# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_audit_reports_exhausted  # noqa: E501
 # frob:tests \
-# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_every_deferred_\
-# entry_targets_an_open_ticket
+# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_every_deferred_entry_targets_an_open_ticket  # noqa: E501
 class TestPiiExhaustiveness:
     """The T-0387 acceptance criterion: catalogued count == enforced +
     excused + deferred, pinned against the file's own declared 7-entry
@@ -152,8 +146,7 @@ class TestPiiExhaustiveness:
 
 # frob:ticket T-0387
 # frob:tests \
-# tests/test_registry_reconciliation_pii.py::TestExhaustivenessGateOverRealPii.test_no_\
-# pii_violations
+# tests/test_registry_reconciliation_pii.py::TestExhaustivenessGateOverRealPii.test_no_pii_violations  # noqa: E501
 class TestExhaustivenessGateOverRealPii:
     """`registry_gate` over the real registry dir raises zero violations
     for `pii.yaml` specifically -- wired into `frob check` (the default

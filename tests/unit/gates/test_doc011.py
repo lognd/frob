@@ -84,7 +84,7 @@ class TestDoc011TicketIdProse:
         assert doc011, "expected at least one DOC011 finding"
         assert all(v.severity == Severity.ERROR for v in doc011)
 
-    # frob:tests src/frob/gates/_markdown_scan.py::strip_code_spans  # noqa: E501
+    # frob:tests src/frob/gates/_markdown_scan.py::strip_code_spans
     def test_id_inside_fenced_code_block_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse.test_id_inside_fenced_code_block_is_not_flagged  # noqa: E501
         root = tmp_path / "repo"

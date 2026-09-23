@@ -25,7 +25,7 @@ from frob.verify._watermark import record_intent
 # frob:ticket T-1693
 class TestQuarantineOverrideCeilings:
     # frob:ticket T-1693
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings
     def test_not_quarantined_is_unchanged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_not_quarantined_is_unchanged  # noqa: E501
         original = BackpressureCeilings(max_depth=5, max_age_s=3600.0)
@@ -33,7 +33,7 @@ class TestQuarantineOverrideCeilings:
         assert result is original
 
     # frob:ticket T-1693
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings
     def test_quarantined_forces_synchronous(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_quarantined_forces_synchronous  # noqa: E501
         assert raise_quarantine(
@@ -47,7 +47,7 @@ class TestQuarantineOverrideCeilings:
         assert result == BackpressureCeilings(max_depth=0, max_age_s=0.0)
 
     # frob:ticket T-1693
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings
     def test_corrupt_store_also_forces_synchronous(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_corrupt_store_also_forces_synchronous  # noqa: E501
         path = tmp_path / ".frob" / "quarantine.json"
@@ -60,7 +60,7 @@ class TestQuarantineOverrideCeilings:
 
     # frob:ticket T-2049
     # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_QUARANTINE_SUMMARY_NAMED_LIMIT  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings
     def test_notice_names_undisposed_count_and_dispose_command(
         self, tmp_path: Path, caplog
     ) -> None:

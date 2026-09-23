@@ -46,7 +46,7 @@ def _rules(*rule_ids: str) -> list[str]:
 class TestDisposition:
     """REG001/REG002/REG003 -- the anti-lie mandate's core three checks."""
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_undispositioned_entry_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -66,7 +66,7 @@ entries:
 
         rules = _rules(*(v.rule for v in violations))
         assert "REG001" in rules
-# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
 
     def test_dangling_handled_by_fails(self, tmp_path: Path) -> None:
         _write_manifest(
@@ -152,7 +152,7 @@ entries:
 
         assert violations == ()
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_deferred_to_closed_ticket_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -212,10 +212,10 @@ entries:
 
         violations = registry_gate(tmp_path, queue, frozenset(), registry_dir)
 
-        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
         assert violations == ()
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_fully_dispositioned_fixture_passes(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -478,7 +478,7 @@ class TestMalformedEntry:
     """REG006 (T-0407) -- a structurally malformed list item is loud, not
     silently dropped from the count."""
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_malformed_entry_fails(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -545,10 +545,10 @@ entries:
 
 
 class TestDuplicateId:
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     """REG007 (T-0407) -- the same id defined by two or more entries is a
     real collision, distinct from an intentional `duplicate_of:` link."""
-# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
 
     def test_duplicate_id_across_files_fails(self, tmp_path: Path) -> None:
         _write_manifest(
@@ -642,7 +642,7 @@ def _snapshot(*edges: Edge) -> GraphSnapshot:
 class TestEnforcesConformance:
     """T-0428: REG008/REG009, the derived-coverage two-SSOT (code
     `frob:enforces` <-> yaml `handled_by`) bidirectional conformance
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     check."""
 
     # frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_handled_by_with_no_frob_enforces_edge_warns  # noqa: E501
@@ -673,11 +673,11 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG008" in rules
         reg008 = next(v for v in violations if v.rule == "REG008")
-        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
         # T-2369: REG008 promoted WARN -> ERROR once the corpus's
         # undeclared-enforcement count reached true zero.
         assert reg008.severity == Severity.ERROR
-# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
 
     # frob:ticket T-0428
     def test_handled_by_with_frob_enforces_edge_is_silent(self, tmp_path: Path) -> None:
@@ -711,7 +711,7 @@ entries:
         assert "REG008" not in rules
 
     # frob:ticket T-0428
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_no_snapshot_skips_reg008_reg009(self, tmp_path: Path) -> None:
         """T-0428: `snapshot=None` (the default) makes no claim about
         code-side enforcement -- REG008/REG009 simply do not run, rather
@@ -773,15 +773,15 @@ entries:
             tmp_path, _queue(), frozenset({"REF001"}), registry_dir, snapshot=snapshot
         )
 
-        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
         rules = _rules(*(v.rule for v in violations))
         assert "REG009" in rules
         reg009 = next(v for v in violations if v.rule == "REG009")
-        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+        # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
         assert reg009.severity == Severity.WARN
 
     # frob:ticket T-0428
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_matching_enforces_edge_no_reg009(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -819,7 +819,7 @@ class TestOutOfScopeCaughtBy:
     verification `strata._threat`/`strata._compliance` already run for
     their own model objects."""
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_reason_naming_no_control_warns(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -841,7 +841,7 @@ entries:
         reg011 = next(v for v in violations if v.rule == "REG011")
         assert reg011.severity == Severity.WARN
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_reason_naming_unresolved_rule_warns(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -863,7 +863,7 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG011" in rules
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_reason_naming_resolved_rule_is_silent(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -886,7 +886,7 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG011" not in rules
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_substantive_reasoned_none_is_silent(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -906,7 +906,7 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG011" not in rules
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_bare_none_is_not_substantive(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,
@@ -952,7 +952,7 @@ class TestPathEverTracked:
     built so registry-backed gates can distinguish never-adopted from
     adopted-then-deleted."""
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked
     def test_never_committed_path_is_false(self, tmp_path: Path) -> None:
         """A path with no commit history at all is False -- the ordinary
         never-adopted case."""
@@ -960,7 +960,7 @@ class TestPathEverTracked:
 
         _git_init(tmp_path)
         assert path_ever_tracked(tmp_path, "docs/design/registry") is False
-# frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked  # noqa: E501
+# frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked
 
     def test_deleted_after_commit_is_true(self, tmp_path: Path) -> None:
         """A path committed once and then deleted from the working tree
@@ -982,7 +982,7 @@ class TestPathEverTracked:
 
         assert path_ever_tracked(tmp_path, "docs/design/registry") is True
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked
     def test_git_failure_is_false(self, tmp_path: Path) -> None:
         """A directory that is not a git repo at all degrades to False
         (the existing "never adopted" posture), not a crash or a false
@@ -998,7 +998,7 @@ class TestDeletedRegistry:
     registry/` dir that never existed from one that was committed and
     then deleted."""
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_never_adopted_registry_dir_is_silent(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         violations = registry_gate(
@@ -1006,7 +1006,7 @@ class TestDeletedRegistry:
         )
         assert not any(v.rule == "REG012" for v in violations)
 
-    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate  # noqa: E501
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     def test_deleted_after_adoption_fires_reg012(self, tmp_path: Path) -> None:
         import subprocess
 

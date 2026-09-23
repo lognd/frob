@@ -10,7 +10,7 @@ from frob.graph._hierarchy import children_by_parent_id, descendant_ids
 class TestChildrenByParentId:
     """`children_by_parent_id` -- adjacency-map construction."""
 
-    # frob:tests src/frob/graph/_hierarchy.py::children_by_parent_id  # noqa: E501
+    # frob:tests src/frob/graph/_hierarchy.py::children_by_parent_id
     def test_builds_adjacency_from_parent_pairs(self) -> None:
         """Each `(id, parent)` pair with a non-None parent contributes
         one entry to the parent's child list."""
@@ -32,7 +32,7 @@ class TestChildrenByParentId:
 class TestDescendantIds:
     """`descendant_ids` -- the any-depth BFS walk itself."""
 
-    # frob:tests src/frob/graph/_hierarchy.py::descendant_ids  # noqa: E501
+    # frob:tests src/frob/graph/_hierarchy.py::descendant_ids
     def test_direct_children_only(self) -> None:
         """A root with only direct children returns exactly those."""
         adjacency = {"root": ["a", "b"]}

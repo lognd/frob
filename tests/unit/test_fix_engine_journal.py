@@ -73,7 +73,7 @@ class TestAbandonedAutofixJournal:
         # THIS test process is itself still alive by construction.
         assert read_abandoned_autofix_manifest(tmp_path) is None
 
-    # frob:tests src/frob/gates/_fix_engine_shared.py::AutofixManifest kind="unit"  # noqa: E501
+    # frob:tests src/frob/gates/_fix_engine_shared.py::AutofixManifest kind="unit"
     def test_dead_pid_manifest_is_abandoned(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine_shared.py::read_abandoned_autofix_manifest kind="unit"  # noqa: E501
         (tmp_path / ".frob").mkdir()

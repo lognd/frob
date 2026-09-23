@@ -60,7 +60,7 @@ class TestSharedDocAnchorGrouping:
 class TestCov009SharedAnchorReview:
     """`cov009_violations` -- the end-to-end diff-driven gate."""
 
-    # frob:tests src/frob/gates/_docblocks_refs.py::cov009_gate  # noqa: E501
+    # frob:tests src/frob/gates/_docblocks_refs.py::cov009_gate
     # frob:tests src/frob/gates/_docblocks_refs.py::cov009_violations
     def test_touching_one_sibling_flags_the_other(self, tmp_path: Path) -> None:
         _write(

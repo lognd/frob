@@ -36,7 +36,7 @@ class TestParseFileArtifactCache:
         assert result.is_ok
         assert result.danger_ok.symbols[0].qualname == "f"
 
-    # frob:tests src/frob/lang/__init__.py::_parse_file_with_artifact_cache  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::_parse_file_with_artifact_cache
     def test_miss_populates_cache(self, tmp_path: Path) -> None:
         """A first call with no matching row parses normally and stores
         its result under `(content_hash, fingerprint)`."""
@@ -60,7 +60,7 @@ class TestParseFileArtifactCache:
         lang_mod._artifact_conn = None
         lang_mod._artifact_conn_path = None
 
-    # frob:tests src/frob/lang/__init__.py::_parse_file_with_artifact_cache  # noqa: E501
+    # frob:tests src/frob/lang/__init__.py::_parse_file_with_artifact_cache
     def test_hit_skips_extract(self, tmp_path: Path) -> None:
         """A second call for the same content hash rebuilds `ParsedFile`
         from the stored payload instead of calling `_parse_file_uncached`

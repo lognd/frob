@@ -210,7 +210,7 @@ class TestSelect:
         assert ALL_SENTINEL in report.selected["python"]
 
     # invariant spec: [INV-023](invariants/INV-023.md)
-    # frob:tests src/frob/testing/_select.py::_edge_test_and_source  # noqa: E501
+    # frob:tests src/frob/testing/_select.py::_edge_test_and_source
     def test_reversed_directive_never_selects_the_source_symbol(
         self, tmp_path: Path
     ) -> None:

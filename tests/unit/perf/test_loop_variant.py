@@ -26,7 +26,7 @@ class TestPerf016:
     """PERF016: git-spawn shape, unconditional -- exactly the T-5135 H3
     audit specimen (`git show base:<path>` once per loop-variant path)."""
 
-    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations  # noqa: E501
+    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations
     def test_git_spawn_with_loop_variable_pathspec_is_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -39,7 +39,7 @@ class TestPerf016:
         parsed = parse_file(_write(tmp_path, "mod.py", src)).danger_ok
         violations = loop_variant_effect_violations([parsed])
         assert any(v.rule == "PERF016" for v in violations)
-# frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations  # noqa: E501
+# frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations
 
     def test_loop_invariant_spawn_is_not_flagged_by_perf016(
         self, tmp_path: Path
@@ -60,7 +60,7 @@ class TestPerf015:
     iteration-source-name threshold so trivial loop-variant calls do not
     flood the report."""
 
-    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations  # noqa: E501
+    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations
     def test_loop_variant_ticket_id_spawn_is_flagged_advisory(
         self, tmp_path: Path
     ) -> None:
@@ -74,7 +74,7 @@ class TestPerf015:
         violations = loop_variant_effect_violations([parsed])
         assert any(v.rule == "PERF015" for v in violations)
 
-    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations  # noqa: E501
+    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations
     def test_loop_variant_call_without_iteration_source_name_is_not_flagged(
         self, tmp_path: Path
     ) -> None:

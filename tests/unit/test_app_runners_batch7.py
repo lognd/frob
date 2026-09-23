@@ -694,7 +694,7 @@ class TestTicketStart:
         assert queue.tickets["T-0001"].state != TicketState.IN_PROGRESS
 
     # frob:ticket T-1866
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_warn_scope_breadth_on_start  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_warn_scope_breadth_on_start
     # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_refuse_over_broad_scope_on_start  # noqa: E501
     def test_start_over_broad_scope_ack_bypasses_refusal(
         self, tmp_path: Path, caplog
@@ -724,7 +724,7 @@ class TestTicketStart:
         assert queue.tickets["T-0001"].state == TicketState.IN_PROGRESS
 
     # frob:ticket T-2446
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_apply_unsized_ack_on_start  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_apply_unsized_ack_on_start
     def test_start_scope_breadth_ack_flag_sets_field_before_refusal(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -757,7 +757,7 @@ class TestTicketStart:
         assert queue.tickets["T-0001"].scope_breadth_ack is True
 
     # frob:ticket T-2446
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_apply_unsized_ack_on_start  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_apply_unsized_ack_on_start
     def test_start_scope_breadth_ack_without_reason_refuses(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -791,7 +791,7 @@ class TestTicketStart:
         assert queue.tickets["T-0001"].scope_breadth_ack is False
 
     # frob:ticket T-1645
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_warn_scope_breadth_on_start  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_warn_scope_breadth_on_start
     def test_start_precise_scope_warns_nothing(self, tmp_path: Path, caplog) -> None:
         # frob:tests \
         # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_precise_scope_warns_nothing  # noqa: E501
@@ -918,7 +918,7 @@ class TestTicketStart:
         queue = load_queue(tmp_path).danger_ok
         assert queue.tickets["T-0002"].state == TicketState.IN_PROGRESS
 
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_run_sweep  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_run_sweep
     def test_start_foreground_runs_sweep_synchronously(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -967,7 +967,7 @@ class TestSpawnBackgroundSweep:
     default `start` no longer blocks on the pre-work sweep -- it launches
     it as a detached subprocess and returns."""
 
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_run_sweep  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_run_sweep
     def test_spawns_detached_sweep_subprocess(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -994,7 +994,7 @@ class TestSpawnBackgroundSweep:
         assert "T-0001" in argv
         assert calls[0]["kwargs"]["start_new_session"] is True
 
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_run_sweep  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_run_sweep
     def test_popen_failure_falls_back_to_synchronous_sweep(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -1031,7 +1031,7 @@ class TestSpawnBackgroundSweep:
         assert "background sweep spawn failed" in caplog.text
         assert "swept T-0001" in caplog.text
 
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_run_sweep  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_run_sweep
     def test_exec_kill_switch_forces_synchronous_sweep(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -1421,7 +1421,7 @@ class TestClipboardAttachOnNew:
         assert "attached clipboard image" in caplog.text
 
     # frob:tests tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew.test_env_var_unset_never_calls_clipboard_has_image_even_on_a_tty  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_new.py::_maybe_attach_clipboard_image  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_maybe_attach_clipboard_image
     def test_env_var_unset_never_calls_clipboard_has_image_even_on_a_tty(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1453,7 +1453,7 @@ class TestClipboardAttachOnNew:
         assert called is False
 
     # frob:tests tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew.test_env_var_set_but_not_a_tty_never_calls_clipboard_has_image  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_new.py::_maybe_attach_clipboard_image  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_maybe_attach_clipboard_image
     def test_env_var_set_but_not_a_tty_never_calls_clipboard_has_image(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1571,10 +1571,10 @@ class TestTicketAttachBackfillDrafts:
     itself (repair correctness, must-still-pass control, unresolved
     reporting) is covered by `tests/unit/test_draft_finalize_attachments.
     py::TestBackfillStaleDraftAttachmentPaths`; these exercise the CLI
-    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch
     plumbing (flag routing, dry-run-by-default, --apply writes+commits)."""
 
-    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch
     def test_backfill_drafts_dry_run_does_not_write(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -1603,7 +1603,7 @@ class TestTicketAttachBackfillDrafts:
     # call) to verify byte-identity post-repair -- the ordinary tmp_path round-trip \
     # shape T-1762's precedent already waives elsewhere in this suite, not a new \
     # capability class"
-    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_attach_backfill.py::_attach_dispatch
     def test_backfill_drafts_apply_writes_and_reports(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -1928,7 +1928,7 @@ def _init_design_repo(tmp_path: Path, model: str) -> Path:
 
 
 class TestSysRunnerDispatch:
-    # frob:tests src/frob/app/sys_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/sys_runner.py::run
     def test_unknown_command_exits_1(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(sys_command="bogus", sys_path=tmp_path)
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:

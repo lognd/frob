@@ -27,7 +27,7 @@ from frob.process.parsers.common import Diagnostic, ToolResult
 class TestSelectBudgetChunks:
     """`_select_budget_chunks`'s pure greedy-packing math."""
 
-    # frob:tests src/frob/app/_check_chunking.py::_select_budget_chunks  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_select_budget_chunks
     def test_greedy_pack_fits_under_budget(self) -> None:
         """Groups are added while the running total (with the next group
         included) still fits the budget; the first group that would push
@@ -40,7 +40,7 @@ class TestSelectBudgetChunks:
         assert selected == ["a", "b"]
         assert deferred == ["c"]
 
-    # frob:tests src/frob/app/_check_chunking.py::_select_budget_chunks  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_select_budget_chunks
     def test_first_stage_always_selected_even_if_over_budget(self) -> None:
         """A budget too small for even the first group's estimate still
         selects that one group -- forward progress beats a zero-work run."""
@@ -100,7 +100,7 @@ class TestDerivePostLandSweepBudget:
     hardcoded `_POST_LAND_SWEEP_BUDGET_S` constant that drifted stale
     against the repo's real measured total (T-2715)."""
 
-    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s
     def test_derives_from_measured_timing_with_headroom(self, tmp_path: Path) -> None:
         """Asserts a budget derived from a recorded total of 492.18s
         across five measured stage groups covers that total, unlike a
@@ -122,7 +122,7 @@ class TestDerivePostLandSweepBudget:
             measured_total * check_chunking_mod._BUDGET_DERIVE_HEADROOM
         )
 
-    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s
     def test_falls_back_to_default_with_no_timing_data(self, tmp_path: Path) -> None:
         """A fresh checkout with no `.frob/check-budget-timing.json` yet
         (or an unreadable one) has no measurement to derive from -- the
@@ -133,7 +133,7 @@ class TestDerivePostLandSweepBudget:
         )
         assert budget == 480
 
-    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_derive_post_land_sweep_budget_s
     def test_floor_protects_against_sparse_timing_data(self, tmp_path: Path) -> None:
         """A tiny recorded total (e.g. only one fast group ever measured)
         must not derive an unrealistically small budget that would starve
@@ -215,7 +215,7 @@ class TestDerivePostLandSweepBudget:
 class TestBudgetTimingSampleWindow:
     """`_record_budget_timing_sample`'s rolling per-group window."""
 
-    # frob:tests src/frob/app/_check_chunking.py::_record_budget_timing_sample  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_record_budget_timing_sample
     def test_appends_and_caps_window(self, tmp_path: Path) -> None:
         """More than `_BUDGET_TIMING_SAMPLE_WINDOW` samples for one group
         keeps only the most recent `_BUDGET_TIMING_SAMPLE_WINDOW`, oldest
@@ -243,7 +243,7 @@ class TestRunBudgetedCheck:
         return CheckResult(
             path=".",
             results=[ToolResult(tool=group, exit_code=0, summary=f"{group} ok")],
-        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
         )
 
     def test_runs_selected_chunks_and_reports_result(
@@ -264,11 +264,11 @@ class TestRunBudgetedCheck:
         with caplog.at_level("INFO"):
             check_run(cfg)
         assert calls == ["g1", "g2"]
-        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
         assert "BUDGET001" not in caplog.text
         assert not (tmp_path / ".frob" / "check-budget-state.json").exists()
 
-    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
     def test_persists_resume_state_for_deferred_groups(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog, capsys
     ) -> None:
@@ -343,7 +343,7 @@ class TestRunBudgetedCheck:
             for r in caplog.records
             if r.message.strip().startswith("{")
         )
-        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
         assert data["results"][0]["tool"] == "g1"
         tool_names = [r["tool"] for r in data["results"]]
         assert "budget" in tool_names
@@ -362,12 +362,12 @@ class TestRunBudgetedCheck:
             return self._fake_result(group)
 
         monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
-        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
         check_chunking_mod._save_budget_remaining(tmp_path, ["g2"])
         cfg = AppConfig(check_path=tmp_path, check_budget=1000)
         check_run(cfg)
         assert calls == ["g2"]
-# frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+# frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
 
     def test_clears_resume_state_once_every_group_has_run(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -424,7 +424,7 @@ class TestRunBudgetedCheck:
         assert "static" in diag.message
 
     # frob:ticket T-2235
-    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
     def test_json_reports_universe_skip_despite_narrow_resume(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -526,7 +526,7 @@ class TestRunBudgetedCheck:
         assert set(data.keys()) == {"path", "results"}
 
     # frob:ticket T-2250
-    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
     def test_only_scoped_budget_runs_exactly_the_named_group(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -568,7 +568,7 @@ class TestRunBudgetedCheck:
         assert tool_names == ["lint"]
 
     # frob:ticket T-2250
-    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
     def test_only_scoped_budget_never_touches_shared_resume_state(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -611,7 +611,7 @@ class TestRunBudgetedCheck:
         assert calls == ["gates-fast", "lint", "static"]
 
     # frob:ticket T-2250
-    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
     def test_only_budget_combo_refuses_a_bare_gate_name(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -691,7 +691,7 @@ class TestBudgetCoverageReport:
     """`_budget_coverage_report`'s pure dict-building logic (T-2235)."""
 
     # frob:ticket T-2235
-    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
     def test_skipped_is_universe_minus_executed(self) -> None:
         """The reported `skipped_groups` reflects `all_groups - executed`,
         not any notion of a local `deferred` list -- this is what makes
@@ -707,7 +707,7 @@ class TestBudgetCoverageReport:
         assert report["complete"] is False
 
     # frob:ticket T-2235
-    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
     def test_empty_skipped_present_not_absent(self) -> None:
         """Executing every group in the universe yields an empty (but
         present) `skipped_groups` list and `complete=True`."""

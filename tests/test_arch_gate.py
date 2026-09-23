@@ -138,7 +138,7 @@ class TestArchGateCppThrow:
 
     # frob:tests \
     # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_cppthrow001_error  # noqa: E501
-    # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
+    # frob:tests src/frob/gates/_arch.py::arch_gate
     def test_noexcept_may_throw_fires_cppthrow001_error(self, tmp_path: Path) -> None:
         """A noexcept function calling a same-file throwing function with
         no catch fires CPPTHROW001 at Severity.ERROR, naming the site."""
@@ -171,7 +171,7 @@ class TestArchGateCppThrow:
 
     # frob:tests \
     # tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_not_fire_cppthrow001  # noqa: E501
-    # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
+    # frob:tests src/frob/gates/_arch.py::arch_gate
     def test_noexcept_with_catch_all_does_not_fire_cppthrow001(
         self, tmp_path: Path
     ) -> None:
@@ -273,7 +273,7 @@ class TestArchGateLargeFile:
     # frob:tests \
     # tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_directory_walk  # noqa: E501
     # frob:ticket T-4623
-    # frob:tests src/frob/gates/_arch.py::arch_gate  # noqa: E501
+    # frob:tests src/frob/gates/_arch.py::arch_gate
     def test_single_file_mode_matches_directory_walk(self, tmp_path: Path) -> None:
         """Asserts `analyze_project` invoked directly on a single
         over-threshold file reports the same large-file finding (category

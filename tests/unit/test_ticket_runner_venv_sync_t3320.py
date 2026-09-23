@@ -37,7 +37,7 @@ class TestSyncVenvForWork:
     """`_sync_venv_for_work` (T-3320)."""
 
     # frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_runs_uv_sync_in_the_worktree  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_sync_venv_for_work  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_sync_venv_for_work
     def test_runs_uv_sync_in_the_worktree(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -64,7 +64,7 @@ class TestSyncVenvForWork:
         assert kwargs["cwd"] == str(tmp_path)
 
     # frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_exec_disabled_degrades_to_a_warning_not_sys_exit  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_sync_venv_for_work  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_sync_venv_for_work
     def test_exec_disabled_degrades_to_a_warning_not_sys_exit(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -82,7 +82,7 @@ class TestSyncVenvForWork:
         _lifecycle._sync_venv_for_work(tmp_path, "T-3320")  # must not raise
 
     # frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_nonzero_exit_degrades_to_a_warning_not_sys_exit  # noqa: E501
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_sync_venv_for_work  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_sync_venv_for_work
     def test_nonzero_exit_degrades_to_a_warning_not_sys_exit(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

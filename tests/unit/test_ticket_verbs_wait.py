@@ -100,20 +100,20 @@ class TestAddWaitArg:
         _add_ticket_wait_arg(parser)
         return parser
 
-    # frob:tests src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_wait_arg  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_wait_arg
     def test_flag_absent_leaves_wait_none(self) -> None:
         """Omitted entirely: `ticket_wait_s` stays `None` -- today's
         unchanged instant-refusal behavior."""
         ns = self._parser().parse_args([])
         assert ns.ticket_wait_s is None
 
-    # frob:tests src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_wait_arg  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_wait_arg
     def test_bare_flag_uses_default_budget(self) -> None:
         """A bare `--wait` (no SECONDS) uses `_TICKET_WAIT_DEFAULT_S`."""
         ns = self._parser().parse_args(["--wait"])
         assert ns.ticket_wait_s == _TICKET_WAIT_DEFAULT_S
 
-    # frob:tests src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_wait_arg  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_wait_arg
     def test_explicit_seconds_is_used_verbatim(self) -> None:
         """`--wait N` sets `ticket_wait_s` to exactly `N`."""
         ns = self._parser().parse_args(["--wait", "12.5"])

@@ -27,7 +27,7 @@ def _facts_for(model: KernelModel):
 class TestUtilization:
     # frob:tests \
     # tests/unit/strata/test_starvation.py::TestUtilization.test_over_capacity_demand_fires_with_arithmetic  # noqa: E501
-    # frob:tests src/frob/strata/_starvation.py::check_starvation_obligations  # noqa: E501
+    # frob:tests src/frob/strata/_starvation.py::check_starvation_obligations
     def test_over_capacity_demand_fires_with_arithmetic(self):
         """T-0703 acceptance criterion: 500k declared users flowing to a
         db with mode=exclusive and no declared capacity (default holding

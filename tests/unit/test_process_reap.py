@@ -51,7 +51,7 @@ class TestReapActiveChildren:
     real-world defect shape T-1378 fixed for the socket daemon, generalized
     here into the shared primitive both callers use."""
 
-    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children  # noqa: E501
+    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children
     def test_terminates_and_joins_active_children(self) -> None:
         proc = multiprocessing.Process(target=_sleep_forever, daemon=False)
         proc.start()
@@ -67,7 +67,7 @@ class TestReapActiveChildren:
                 proc.kill()
                 proc.join(timeout=5)
 
-    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children  # noqa: E501
+    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children
     def test_escalates_to_kill_if_terminate_does_not_stick(self) -> None:
         proc = multiprocessing.Process(target=_ignore_sigterm_and_sleep, daemon=False)
         proc.start()
@@ -86,7 +86,7 @@ class TestReapActiveChildren:
                 proc.kill()
                 proc.join(timeout=5)
 
-    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children  # noqa: E501
+    # frob:tests src/frob/process/_reap.py::reap_active_multiprocessing_children
     def test_no_children_is_a_silent_noop(self) -> None:
         assert multiprocessing.active_children() == []
         assert reap_active_multiprocessing_children() == []
@@ -97,7 +97,7 @@ class TestInstallSigtermReaper:
     whatever handler was already registered. See T-2443 for the design
     rationale."""
 
-    # frob:tests src/frob/process/_reap.py::install_sigterm_reaper  # noqa: E501
+    # frob:tests src/frob/process/_reap.py::install_sigterm_reaper
     def test_installs_handler_once(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(_reap, "_sigterm_reaper_installed", False)
         monkeypatch.setattr(_reap, "_prior_sigterm_handler", None)
@@ -109,7 +109,7 @@ class TestInstallSigtermReaper:
         finally:
             signal.signal(signal.SIGTERM, prior)
 
-    # frob:tests src/frob/process/_reap.py::install_sigterm_reaper  # noqa: E501
+    # frob:tests src/frob/process/_reap.py::install_sigterm_reaper
     def test_second_call_is_a_noop(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(_reap, "_sigterm_reaper_installed", False)
         monkeypatch.setattr(_reap, "_prior_sigterm_handler", None)
@@ -212,7 +212,7 @@ class TestIsOrphanedForkserver:
     """`_is_orphaned_forkserver` must match forkserver cmdline + ppid==1,
     and nothing else."""
 
-    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver
     def test_matches_forkserver_reparented_to_init(self, tmp_path: Path) -> None:
         _write_proc_entry(
             tmp_path,
@@ -221,7 +221,7 @@ class TestIsOrphanedForkserver:
             ppid=1,
         )
         assert _is_orphaned_forkserver(4242, tmp_path) is True
-# frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver  # noqa: E501
+# frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver
 
     def test_forkserver_with_live_parent_is_not_orphaned(self, tmp_path: Path) -> None:
         _write_proc_entry(
@@ -232,12 +232,12 @@ class TestIsOrphanedForkserver:
         )
         assert _is_orphaned_forkserver(4242, tmp_path) is False
 
-    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver
     def test_non_forkserver_process_is_never_matched(self, tmp_path: Path) -> None:
         _write_proc_entry(tmp_path, 4242, cmdline=b"sleep\x0030\x00", ppid=1)
         assert _is_orphaned_forkserver(4242, tmp_path) is False
 
-    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver
     def test_missing_entry_is_false_not_raised(self, tmp_path: Path) -> None:
         assert _is_orphaned_forkserver(999999, tmp_path) is False
 
@@ -246,7 +246,7 @@ class TestReapOrphanedForkservers:
     """`reap_orphaned_forkservers` (T-2443's defensive startup sweep) only
     signals a forkserver that is BOTH reparented to init AND older than the
     age floor -- never a young one, never a non-forkserver process."""
-# frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
+# frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
 
     # frob:ticket T-3760
     @pytest.mark.skipif(
@@ -268,11 +268,11 @@ class TestReapOrphanedForkservers:
             _reap.os, "kill", lambda pid, sig: killed.append((pid, sig))
         )
         reaped = reap_orphaned_forkservers(age_floor_s=300.0, proc=tmp_path)
-        # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
+        # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
         assert reaped == [4242]
         assert killed == [(4242, signal.SIGTERM)]
 
-    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
     def test_leaves_young_orphaned_forkservers_alone(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -291,7 +291,7 @@ class TestReapOrphanedForkservers:
         assert reaped == []
         assert killed == []
 
-    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
     def test_leaves_non_forkserver_processes_alone(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -306,12 +306,12 @@ class TestReapOrphanedForkservers:
         assert reaped == []
         assert killed == []
 
-    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
     def test_missing_proc_returns_empty(self, tmp_path: Path) -> None:
         assert reap_orphaned_forkservers(proc=tmp_path / "does-not-exist") == []
 
     # frob:ticket T-3760
-    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason="reads /proc/<pid>/stat for ppid+starttime; Linux-only primitive",
@@ -346,7 +346,7 @@ class TestReapOrphanedForkservers:
         reaped = reap_orphaned_forkservers(age_floor_s=300.0, proc=tmp_path)
         assert set(reaped) == {5000, 4242}
 
-    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
     def test_forkserver_under_a_live_check_is_never_reaped(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -452,10 +452,10 @@ class TestIsLiveCheckProcess:
 class TestForkserverRootIsLiveCheck:
     """`_forkserver_root_is_live_check` (T-3072): the multi-hop ancestry
     walk `reap_orphaned_forkservers` now uses instead of a one-hop
-    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check
     `ppid == 1` test."""
 
-    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check
     def test_direct_child_of_live_check_is_not_orphaned(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck.test_direct_child_of_live_check_is_not_orphaned  # noqa: E501
         _write_live_check_entry(tmp_path, 999, cmdline=_MODULE_INVOKED_CHECK_CMDLINE)
@@ -464,7 +464,7 @@ class TestForkserverRootIsLiveCheck:
         live = {p for p in ppid_map if _is_live_check_process(p, tmp_path)}
         assert _forkserver_root_is_live_check(4242, ppid_map, live) is True
 
-    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check
     def test_orphaned_forkserver_of_forkserver_is_orphaned(
         self, tmp_path: Path
     ) -> None:
@@ -475,7 +475,7 @@ class TestForkserverRootIsLiveCheck:
         live = {p for p in ppid_map if _is_live_check_process(p, tmp_path)}
         assert _forkserver_root_is_live_check(4242, ppid_map, live) is False
 
-    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::_forkserver_root_is_live_check
     def test_deep_chain_under_a_live_check_is_not_orphaned(
         self, tmp_path: Path
     ) -> None:
@@ -578,7 +578,7 @@ class TestCountRunningChecks:
     argv token pair, excludes the caller's own pid, degrades to `None`
     on an unreadable `/proc`."""
 
-    # frob:tests src/frob/process/_proc_scan.py::count_running_checks  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::count_running_checks
     def test_counts_other_check_processes(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_counts_other_check_processes  # noqa: E501
         _write_proc_entry(
@@ -587,13 +587,13 @@ class TestCountRunningChecks:
         _write_proc_entry(tmp_path, 101, cmdline=b"frob\x00check\x00--json\x00", ppid=1)
         assert count_running_checks(proc=tmp_path, self_pid=1) == 2
 
-    # frob:tests src/frob/process/_proc_scan.py::count_running_checks  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::count_running_checks
     def test_excludes_self(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_excludes_self  # noqa: E501
         _write_proc_entry(tmp_path, 200, cmdline=b"frob\x00check\x00", ppid=1)
         assert count_running_checks(proc=tmp_path, self_pid=200) == 0
 
-    # frob:tests src/frob/process/_proc_scan.py::count_running_checks  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::count_running_checks
     def test_ignores_non_check_processes(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_ignores_non_check_processes  # noqa: E501
         # A different frob subcommand -- must NOT count as a check.
@@ -605,7 +605,7 @@ class TestCountRunningChecks:
         _write_proc_entry(tmp_path, 302, cmdline=b"pytest\x00check\x00", ppid=1)
         assert count_running_checks(proc=tmp_path, self_pid=1) == 0
 
-    # frob:tests src/frob/process/_proc_scan.py::count_running_checks  # noqa: E501
+    # frob:tests src/frob/process/_proc_scan.py::count_running_checks
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_missing_proc_returns_none  # noqa: E501
         assert count_running_checks(proc=tmp_path / "does-not-exist") is None
@@ -613,7 +613,7 @@ class TestCountRunningChecks:
 
 # frob:ticket T-2849
 # frob:ticket T-2880
-# frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
+# frob:tests src/frob/process/_reap.py::arm_parent_death_signal
 class TestArmParentDeathSignal:
     """`arm_parent_death_signal` -- T-2849's root-cause primitive: arms
     `PR_SET_PDEATHSIG` on the calling process so the kernel signals it the
@@ -633,15 +633,15 @@ class TestArmParentDeathSignal:
             os._exit(0)
         os.close(write_fd)
         try:
-            # frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
+            # frob:tests src/frob/process/_reap.py::arm_parent_death_signal
             outcome = os.read(read_fd, 1)
         finally:
             os.close(read_fd)
             os.waitpid(pid, 0)
-        # frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
+        # frob:tests src/frob/process/_reap.py::arm_parent_death_signal
         assert outcome == b"1"
 
-    # frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
+    # frob:tests src/frob/process/_reap.py::arm_parent_death_signal
     def test_self_kills_on_missed_reparent_race(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -671,7 +671,7 @@ class TestArmParentDeathSignal:
         assert result is True
         assert killed == [(os.getpid(), signal.SIGTERM)]
 
-    # frob:tests src/frob/process/_reap.py::arm_parent_death_signal  # noqa: E501
+    # frob:tests src/frob/process/_reap.py::arm_parent_death_signal
     def test_returns_false_off_linux(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_returns_false_off_linux  # noqa: E501
         monkeypatch.setattr(sys, "platform", "darwin")
@@ -746,7 +746,7 @@ class TestArmParentDeathSignal:
         assert result is True
         assert killed == [(os.getpid(), signal.SIGKILL)]
 
-# frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
+# frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested
 
 # frob:ticket T-2849
 class TestArmForkserverHelperPdeathsigIfRequested:
@@ -754,7 +754,7 @@ class TestArmForkserverHelperPdeathsigIfRequested:
     # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
     -time hook `frob.gates._FORKSERVER_PRELOAD` triggers inside the
     forkserver helper; must be a no-op unless the env marker is set."""
-# frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
+# frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested
 
     def test_noop_without_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_noop_without_env_var  # noqa: E501

@@ -59,7 +59,7 @@ class TestUnblock:
     the malformed-`--by` refusal `_block` already carries."""
 
     # frob:ticket T-2681
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock
     def test_unblock_removes_edge(self, tmp_path: Path) -> None:
         """The real-world case (T-2076/T-1599): a genuinely obsolete
         `blocked_by` edge is cleared through the CLI, no store-API
@@ -78,7 +78,7 @@ class TestUnblock:
         assert queue.tickets["T-0001"].blocked_by == ("T-0003",)
 
     # frob:ticket T-2681
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock
     def test_unblock_refuses_when_not_present(self, tmp_path: Path) -> None:
         """MUST-FAIL POSITIVE CONTROL: `--by` naming a ticket that is NOT
         currently in `blocked_by` refuses loudly (SystemExit(1)) rather
@@ -140,7 +140,7 @@ class TestUnblock:
         assert queue.tickets["T-0001"].blocked_by == ("T-0002",)
 
     # frob:ticket T-3113
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock
     def test_unblock_records_reason_in_unblock_log(self, tmp_path: Path) -> None:
         """A successful unblock appends a dated `## Unblock log` line
         naming the removed blocker and the caller's reason -- the record
@@ -161,7 +161,7 @@ class TestUnblock:
         assert "blocked the wrong ticket by mistake" in body
 
     # frob:ticket T-3113
-    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_unblock
     def test_unblock_leaves_other_blockers_intact(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET: removing one of several blockers must not
         touch the others' entries -- `_unblock` filters exactly one

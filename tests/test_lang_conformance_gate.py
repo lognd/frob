@@ -25,14 +25,14 @@ class TestLangConformanceGate:
     """LANG001 over the live, real `frob.lang` language-support registry."""
 
     # frob:ticket T-0405
-    # frob:tests src/frob/gates/_lang_conformance.py::lang_conformance_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lang_conformance.py::lang_conformance_gate
     def test_real_registry_is_clean(self) -> None:
         """The repo's own registered languages are all fully accounted
         for today -- this gate is clean, not just wired-but-untested."""
         assert lang_conformance_gate() == ()
 
     # frob:ticket T-0405
-    # frob:tests src/frob/gates/_lang_conformance.py::lang_conformance_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lang_conformance.py::lang_conformance_gate
     def test_missing_facet_becomes_error_violation(self, monkeypatch) -> None:
         """A stand-in registry with one language missing a facet turns
         into exactly one ERROR-severity LANG001 violation."""
@@ -57,7 +57,7 @@ class TestLangConformanceGate:
 class TestProjectLangConformanceGate:
     """LANG002/LANG003 over a synthetic downstream repo tree (T-0406)."""
 
-    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate
     # frob:ticket T-0406
     def test_unregistered_language_file_fails(self, tmp_path: Path) -> None:
         """A Swift file in a downstream repo -- a language frob has NO
@@ -87,7 +87,7 @@ class TestProjectLangConformanceGate:
         violations = project_lang_conformance_gate(tmp_path)
         lang002 = [v for v in violations if v.rule == "LANG002"]
         assert lang002 == []
-# frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate  # noqa: E501
+# frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate
 
     # frob:ticket T-0406
     def test_all_conformant_project_passes(self, tmp_path: Path) -> None:
@@ -99,7 +99,7 @@ class TestProjectLangConformanceGate:
 
     # frob:ticket T-0406
     # frob:ticket T-0823
-    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate
     def test_present_known_gap_with_open_ticket_warns(self, tmp_path: Path) -> None:
         """A repo containing rust files (arch facet is a KNOWN_GAP naming
         the still-open T-0329, per frob's own shipped `KNOWN_GAP_TRACKING_
@@ -113,7 +113,7 @@ class TestProjectLangConformanceGate:
         assert not any(v.severity is Severity.ERROR for v in lang003)
 
     # frob:ticket T-0823
-    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate
     def test_adopter_repo_with_no_frob_internal_tickets_does_not_error(
         self, tmp_path: Path
     ) -> None:
@@ -134,7 +134,7 @@ class TestProjectLangConformanceGate:
 
     # frob:ticket T-0406
     # frob:ticket T-0823
-    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate
     def test_present_known_gap_with_bad_ticket_ref_errors(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -863,8 +863,8 @@ class TestCapabilityConformanceGate:
 
     # frob:ticket T-3801
     # frob:ticket T-2365
-    # frob:tests src/frob/repo_meta.py::is_frob_own_repo  # noqa: E501
-    # frob:tests src/frob/gates/_lang_conformance.py::capability_conformance_gate  # noqa: E501
+    # frob:tests src/frob/repo_meta.py::is_frob_own_repo
+    # frob:tests src/frob/gates/_lang_conformance.py::capability_conformance_gate
     def test_real_registry_is_behaviorally_clean(self) -> None:
         """The repo's own registered adapters all behave as their
         registry claims today -- this gate is clean, not just wired-but-
@@ -874,7 +874,7 @@ class TestCapabilityConformanceGate:
         assert capability_conformance_gate(repo_root) == ()
 
     # frob:ticket T-2365
-    # frob:tests src/frob/gates/_lang_conformance.py::capability_conformance_gate  # noqa: E501
+    # frob:tests src/frob/gates/_lang_conformance.py::capability_conformance_gate
     def test_wrong_implemented_claim_fails(self, monkeypatch) -> None:
         """MUST-FAIL POSITIVE CONTROL, gate level (T-2365 acceptance
         criterion 3): corrupt python's directive_parse fixture (drop the
@@ -906,7 +906,7 @@ class TestCapabilityConformanceGate:
         )
 
     # frob:ticket T-2706
-    # frob:tests src/frob/repo_meta.py::is_frob_own_repo  # noqa: E501
+    # frob:tests src/frob/repo_meta.py::is_frob_own_repo
     def test_consumer_repo_is_silent_even_with_a_broken_claim(
         self, tmp_path, monkeypatch
     ) -> None:
@@ -937,7 +937,7 @@ class TestCapabilityConformanceGate:
         assert module.capability_conformance_gate(tmp_path) == ()
 
     # frob:ticket T-2706
-    # frob:tests src/frob/repo_meta.py::is_frob_own_repo  # noqa: E501
+    # frob:tests src/frob/repo_meta.py::is_frob_own_repo
     def test_repo_root_with_no_pyproject_is_silent(self, tmp_path) -> None:
         """A repo with no `pyproject.toml` at all (no declared project
         identity) is not frob's own repo either -- silent, not a crash."""

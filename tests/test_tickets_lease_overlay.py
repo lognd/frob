@@ -61,7 +61,7 @@ class TestDisplayState:
     live lease, and only that case."""
 
     # frob:ticket T-0716
-    # frob:tests src/frob/tickets/_doable.py::display_state  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::display_state
     def test_queued_with_live_lease_decorated(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -78,7 +78,7 @@ class TestDisplayState:
         assert display_state(ticket, tmp_path) == "in-progress@agent-xyz"
 
     # frob:ticket T-0716
-    # frob:tests src/frob/tickets/_doable.py::display_state  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::display_state
     def test_queued_with_stale_lease_undecorated(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -93,7 +93,7 @@ class TestDisplayState:
         assert display_state(ticket, tmp_path) == "queued"
 
     # frob:ticket T-0716
-    # frob:tests src/frob/tickets/_doable.py::display_state  # noqa: E501
+    # frob:tests src/frob/tickets/_doable.py::display_state
     def test_ledger_in_progress_undecorated(self, tmp_path: Path, monkeypatch) -> None:
         # frob:tests \
         # tests/test_tickets_lease_overlay.py::TestDisplayState.test_ledger_in_progress_undecorated  # noqa: E501

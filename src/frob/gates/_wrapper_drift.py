@@ -152,7 +152,7 @@ def _drift_for_file(
     return violations
 
 
-# frob:doc docs/commands/scaffold.md#the-wrapper-drift-gate-wrap001wrap002wrap003-t-4760  # noqa: E501
+# frob:doc docs/commands/scaffold.md#the-wrapper-drift-gate-wrap001wrap002wrap003-t-4760
 # frob:ticket T-4760
 def wrapper_drift_gate(root: Path) -> tuple[Violation, ...]:
     """WRAP001/WRAP002/WRAP003 over `root`'s `Makefile`/`make.bat` managed

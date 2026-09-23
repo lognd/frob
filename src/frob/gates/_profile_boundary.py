@@ -106,8 +106,7 @@ def _symbol_usages(root: Path, symbol: str) -> tuple[tuple[str, int], ...]:
 
 # frob:ticket T-3985
 # frob:doc \
-# docs/modules/process.md#subject-count-primitive-a-zero-subject-enforcing-gate-is-a-fi\
-# nding-t-3985
+# docs/modules/process.md#subject-count-primitive-a-zero-subject-enforcing-gate-is-a-finding-t-3985  # noqa: E501
 # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCo\
 # unt.test_counts_every_usage_examined
 # tests/unit/gates/test_profile_boundary_subject_count.py::TestProfileBoundarySubjectCo\

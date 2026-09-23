@@ -54,7 +54,7 @@ class TestAskVersionOverSocket:
     from `ConnectionRefusedError`/`FileNotFoundError` (Orphaned), already
     covered by `tests/test_app_daemon_proxy.py::TestProbeDaemon`."""
 
-    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon
     def test_connect_timeout_is_wedged(self, tmp_path: Path) -> None:
         if sys.platform == "win32":
             pytest.skip(
@@ -72,7 +72,7 @@ class TestAskVersionOverSocket:
             result = _ask_version_over_socket(tmp_path / "sock", 0.1)
         assert result is DaemonLiveness.Wedged
 
-    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon
     def test_connect_oserror_is_wedged(self, tmp_path: Path) -> None:
         if sys.platform == "win32":
             pytest.skip(
@@ -90,7 +90,7 @@ class TestAskVersionOverSocket:
             result = _ask_version_over_socket(tmp_path / "sock", 0.1)
         assert result is DaemonLiveness.Wedged
 
-    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon
     def test_hangup_before_newline_is_wedged(self, tmp_path: Path) -> None:
         if sys.platform == "win32":
             pytest.skip(
@@ -131,14 +131,14 @@ class TestAskVersionOverSocket:
 class TestClassifyVersionReply:
     """`_classify_version_reply`'s malformed/unreadable-reply branches."""
 
-    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply
     def test_malformed_json_is_wedged(self) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_malformed_json_is_wedged  # noqa: E501
         liveness, version = _classify_version_reply(b"not json at all\n")
         assert liveness is DaemonLiveness.Wedged
         assert version is None
-# frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
+# frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply
 
     def test_non_dict_result_is_wedged(self) -> None:
         # frob:tests \
@@ -149,7 +149,7 @@ class TestClassifyVersionReply:
         assert liveness is DaemonLiveness.Wedged
         assert version is None
 
-    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply
     def test_non_str_version_is_wedged(self) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_str_version_is_wedged  # noqa: E501
@@ -157,7 +157,7 @@ class TestClassifyVersionReply:
         assert liveness is DaemonLiveness.Wedged
         assert version is None
 
-    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply
     def test_bad_utf8_is_wedged(self) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_bad_utf8_is_wedged  # noqa: E501
@@ -169,7 +169,7 @@ class TestClassifyVersionReply:
 class TestClearOrphanedSocket:
     """`_clear_orphaned_socket`'s best-effort unlink swallow."""
 
-    # frob:tests src/frob/app/_daemon_proxy.py::_clear_orphaned_socket  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_clear_orphaned_socket
     def test_unlink_oserror_is_swallowed(self, root: Path, caplog) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClearOrphanedSocket.test_unlink_oserror_is_swallowed  # noqa: E501
@@ -190,7 +190,7 @@ class TestClientVersion:
     """`_client_version`'s generic-Exception fallback (distinct from the
     already-tested `PackageNotFoundError` branch)."""
 
-    # frob:tests src/frob/app/_daemon_proxy.py::_client_version  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_client_version
     def test_unexpected_exception_falls_back_to_unknown(self, caplog) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClientVersion.test_unexpected_exception_falls_back_to_unknown  # noqa: E501
@@ -205,7 +205,7 @@ class TestClientVersion:
 class TestSpawnDaemon:
     """`_spawn_daemon`'s best-effort `Popen` OSError swallow."""
 
-    # frob:tests src/frob/app/_daemon_proxy.py::_spawn_daemon  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_spawn_daemon
     def test_popen_oserror_is_swallowed(self, root: Path, caplog) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestSpawnDaemon.test_popen_oserror_is_swallowed  # noqa: E501
@@ -223,7 +223,7 @@ class TestShutdownStaleDaemon:
     """`_shutdown_stale_daemon`'s full RPC-then-wait body -- both the
     `send_request` failure branch and the successful-shutdown wait loop."""
 
-    # frob:tests src/frob/app/_daemon_proxy.py::_shutdown_stale_daemon  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_shutdown_stale_daemon
     def test_rpc_failure_is_logged_and_returns(self, root: Path, caplog) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestShutdownStaleDaemon.test_rpc_failure_is_logged_and_returns  # noqa: E501
@@ -240,7 +240,7 @@ class TestShutdownStaleDaemon:
                 _shutdown_stale_daemon(root)  # must not raise
         assert any("frob_shutdown RPC failed" in rec.message for rec in caplog.records)
 
-    # frob:tests src/frob/app/_daemon_proxy.py::_shutdown_stale_daemon  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::_shutdown_stale_daemon
     def test_successful_shutdown_waits_for_lock_release(
         self, root: Path, caplog
     ) -> None:
@@ -290,7 +290,7 @@ class TestTryDaemonLeaseErrorPaths:
         # kind="integration"/"e2e" trust-at-face-value convention).
         monkeypatch.setenv("FROB_DAEMON", "1")
 
-    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease
     def test_call_oserror_closes_connection_and_returns_unreachable(
         self, root: Path
     ) -> None:
@@ -313,7 +313,7 @@ class TestTryDaemonLeaseErrorPaths:
         assert result.danger_err is ProxyReason.Unreachable
         fake_conn.close.assert_called_once()
 
-    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::try_daemon_lease
     def test_remote_error_response_closes_connection(self, root: Path) -> None:
         if sys.platform == "win32":
             pytest.skip(
@@ -339,7 +339,7 @@ class TestReleaseDaemonLease:
     """`release_daemon_lease`'s best-effort `call` OSError swallow --
     `conn.close()` must still run either way."""
 
-    # frob:tests src/frob/app/_daemon_proxy.py::release_daemon_lease  # noqa: E501
+    # frob:tests src/frob/app/_daemon_proxy.py::release_daemon_lease
     def test_call_oserror_is_swallowed_and_connection_still_closed(self) -> None:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestReleaseDaemonLease.test_call_oserror_is_swallowed_and_connection_still_closed  # noqa: E501

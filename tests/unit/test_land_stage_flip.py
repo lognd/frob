@@ -396,8 +396,8 @@ class TestPublishSquashApply:
     resync, a lost CAS surfaced as the EXISTING `DirtyMain` refusal, and a
     blocked resync that is loudly reported but is NOT a land failure."""
 
-    # frob:tests src/frob/tickets/_land_squash.py::_seal_squash_apply  # noqa: E501
-    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_seal_squash_apply
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply
     def test_clean_publish_advances_root_and_resyncs(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_clean_publish_advances_root_and_resyncs  # noqa: E501
         """The published commit is parented on `pre_land_tip`, `main` names
@@ -424,7 +424,7 @@ class TestPublishSquashApply:
         )
         assert (v2_main / "src" / "staged.py").read_text().startswith("# staged")
 
-    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply
     def test_racing_publish_surfaces_dirtymain(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_racing_publish_surfaces_dirtymain  # noqa: E501
         """MUST FIRE (acceptance 1): when `main` moves after this land
@@ -448,7 +448,7 @@ class TestPublishSquashApply:
         assert (v2_main / "src" / "sibling.py").exists()
         assert not (v2_main / "src" / "staged.py").exists()
 
-    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_squash_apply
     def test_blocked_resync_is_not_a_land_failure(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_blocked_resync_is_not_a_land_failure  # noqa: E501
         """MUST FIRE (acceptance 2): a sibling holding an uncommitted edit

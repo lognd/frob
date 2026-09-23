@@ -60,8 +60,7 @@ class TestWire001PropertyAttributeAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttr\
-        # ibuteAccess.test_property_read_via_attribute_access_is_not_flagged
+        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess.test_property_read_via_attribute_access_is_not_flagged  # noqa: E501
         """(MUST FAIL FIRST on pre-T-2746 main): a brand-new `@property`
         read only via bare attribute access (never `short(`) by a
         SEPARATE caller must NOT fire WIRE001 -- the exact
@@ -96,9 +95,7 @@ class TestWire001PropertyAttributeAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttr\
-        # ibuteAccess.test_property_with_no_caller_anywhere_still_flagged_positive_cont\
-        # rol
+        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess.test_property_with_no_caller_anywhere_still_flagged_positive_control  # noqa: E501
         """Positive control (must-still-pass): a genuinely unwired
         `@property` -- no attribute-access reader anywhere outside its
         own tests -- still fires WIRE001. The fix rescues a real
@@ -130,8 +127,7 @@ class TestWire001PropertyAttributeAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttr\
-        # ibuteAccess.test_ordinary_new_method_still_flagged_positive_control
+        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess.test_ordinary_new_method_still_flagged_positive_control  # noqa: E501
         """Second positive control: an ordinary (non-`@property`) new
         method with no caller outside its own tests still fires WIRE001
         -- `property_access_pattern` is gated on `_is_property`, so a
@@ -159,8 +155,7 @@ class TestWire001PropertyAttributeAccess:
         self, tmp_path: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttr\
-        # ibuteAccess.test_property_read_as_keyword_argument_value_is_not_flagged
+        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess.test_property_read_as_keyword_argument_value_is_not_flagged  # noqa: E501
         """T-2610: the exact real production shape that forced the
         `GateRunReplay.age_s` waiver (`src/frob/gates/_gate_cache.py`) --
         a fresh `@property` read via plain attribute access used AS a

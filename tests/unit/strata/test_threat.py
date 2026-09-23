@@ -503,7 +503,7 @@ class TestDischargeCompleteness:
     # frob:tests src/frob/strata/_threat_discharge.py::check_discharge_completeness \
     # kind="unit"
     # invariant spec: [INV-029](invariants/INV-029.md)
-    # frob:tests src/frob/strata/_threat_discharge.py::_check_discharge_shape_and_rung  # noqa: E501
+    # frob:tests src/frob/strata/_threat_discharge.py::_check_discharge_shape_and_rung
     def test_discharge_claim_below_required_rung_is_a_violation(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")

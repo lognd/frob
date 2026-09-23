@@ -281,7 +281,7 @@ class TestElaborateSecretAndDeploy:
 class TestElaborateValidation:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
     # invariant spec: [INV-034](invariants/INV-034.md)
-    # frob:tests src/frob/strata/_elaborate.py::_validate_no_duplicates  # noqa: E501
+    # frob:tests src/frob/strata/_elaborate.py::_validate_no_duplicates
     def test_duplicate_node_id_fails_closed(self):
         text = """
         module m

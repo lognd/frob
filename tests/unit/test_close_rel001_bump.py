@@ -24,18 +24,18 @@ from frob.app.ticket_runner._close_cmd import (
 class TestDeclaredPyprojectVersion:
     """ "Cannot verify" is `None`, never a version that satisfies."""
 
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version
     def test_absent_pyproject_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_absent_pyproject_is_none  # noqa: E501
         assert _declared_pyproject_version(tmp_path) is None
 
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version
     def test_unparsable_pyproject_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_unparsable_pyproject_is_none  # noqa: E501
         (tmp_path / "pyproject.toml").write_text("[project\n", encoding="utf-8")
         assert _declared_pyproject_version(tmp_path) is None
 
-    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_close_cmd.py::_declared_pyproject_version
     def test_reads_the_declared_version(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_reads_the_declared_version  # noqa: E501
         (tmp_path / "pyproject.toml").write_text(

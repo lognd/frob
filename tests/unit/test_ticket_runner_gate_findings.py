@@ -1541,7 +1541,7 @@ class TestUnmeasuredReasonFromResult:
     deliberate skip instead of collapsing both onto one string."""
 
     # frob:ticket T-4281
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result
     def test_none_result_is_a_refusal(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_none_result_is_a_refusal  # noqa: E501
@@ -1552,7 +1552,7 @@ class TestUnmeasuredReasonFromResult:
         assert "refus" in reason.lower()
 
     # frob:ticket T-4281
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result
     def test_cache_lock_contention_names_the_holder(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_cache_lock_contention_names_the_holder  # noqa: E501
@@ -1575,7 +1575,7 @@ class TestUnmeasuredReasonFromResult:
         assert "held by pid 12345" in reason
 
     # frob:ticket T-4281
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result
     def test_nonzero_exit_without_lock_marker_is_a_generic_crash(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_nonzero_exit_without_lock_marker_is_a_generic_crash  # noqa: E501
@@ -1588,7 +1588,7 @@ class TestUnmeasuredReasonFromResult:
         assert reason == "frob check exited 2 (see stderr for detail)"
 
     # frob:ticket T-4281
-    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_verify.py::_unmeasured_reason_from_result
     def test_clean_exit_is_never_a_reason(self) -> None:
         # frob:tests \
         # tests/unit/test_ticket_runner_gate_findings.py::TestUnmeasuredReasonFromResult.test_clean_exit_is_never_a_reason  # noqa: E501

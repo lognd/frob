@@ -39,7 +39,7 @@ class TestScopePlausibility:
     warning at `frob ticket new` filing time (T-2177)."""
 
     # frob:ticket T-2177
-    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_plausibility_warnings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_plausibility_warnings
     def test_implausible_scope_warns_loudly(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -74,7 +74,7 @@ class TestScopePlausibility:
         )
 
     # frob:ticket T-2177
-    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_plausibility_warnings  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_new.py::_scope_plausibility_warnings
     def test_plausible_scope_files_without_friction(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

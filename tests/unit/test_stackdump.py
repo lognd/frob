@@ -28,7 +28,7 @@ class TestStackdumpHandler:
     any pytest-specific wiring."""
 
     # frob:tests tests/unit/test_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled  # noqa: E501
-    # frob:tests src/frob/testing/_stackdump.py::dump_all_thread_stacks  # noqa: E501
+    # frob:tests src/frob/testing/_stackdump.py::dump_all_thread_stacks
     def test_sigusr1_writes_all_thread_stacks_when_enabled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -54,7 +54,7 @@ class TestStackdumpHandler:
             signal.signal(signal.SIGUSR1, previous)
 
     # frob:tests tests/unit/test_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset  # noqa: E501
-    # frob:tests src/frob/testing/_stackdump.py::install_stackdump_handler  # noqa: E501
+    # frob:tests src/frob/testing/_stackdump.py::install_stackdump_handler
     def test_handler_not_installed_when_env_unset(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

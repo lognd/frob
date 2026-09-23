@@ -292,7 +292,7 @@ class TestPerfRunner:
         perf_run(heat_cfg)
         heat_out = capsys.readouterr()
         assert "unattributed" in (heat_out.out + heat_out.err)
-# frob:tests src/frob/app/perf_runner.py::_run_quiet_if_json kind="unit"  # noqa: E501
+# frob:tests src/frob/app/perf_runner.py::_run_quiet_if_json kind="unit"
 
     def test_heat_json_mode(self, tmp_path: Path, capsys) -> None:
         script = _make_workload_script(tmp_path)
@@ -643,8 +643,8 @@ class TestJsonStdoutStructuralGuard:
         assert "results" in data
 
     # frob:ticket T-2486
-    # frob:tests src/frob/app/_json_guard.py::_StderrRedirectStdout.write kind="unit"  # noqa: E501
-    # frob:tests src/frob/app/_json_guard.py::_StderrRedirectStdout.flush kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/_json_guard.py::_StderrRedirectStdout.write kind="unit"
+    # frob:tests src/frob/app/_json_guard.py::_StderrRedirectStdout.flush kind="unit"
     def test_planted_print_still_reaches_stderr(
         self,
         tmp_path: Path,
@@ -797,7 +797,7 @@ class TestCheckRunner:
         assert exc.value.code == 1
         assert "path does not exist" in caplog.text
 
-    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"
     # frob:ticket T-1419
     def test_stamp_coverage_mode_calls_stamp_and_returns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
@@ -814,7 +814,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert "coverage stamp written" in caplog.text
 
-    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"
     def test_stamp_coverage_failure_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -831,7 +831,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert exc.value.code == 1
 
-    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"
     # frob:ticket T-1419
     def test_stamp_coverage_mode_passes_loaded_snapshot(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -861,7 +861,7 @@ class TestCheckRunner:
         assert received["snapshot"] is sentinel_snapshot
 
     # frob:ticket T-1419
-    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"
     def test_stamp_coverage_lock_source_sha_mismatch_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -896,7 +896,7 @@ class TestCheckRunner:
         assert "did not durably persist" in caplog.text
 
     # frob:ticket T-1419
-    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"
     def test_stamp_coverage_lock_source_sha_match_succeeds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -922,7 +922,7 @@ class TestCheckRunner:
         assert "did not durably persist" not in caplog.text
 
     # frob:ticket T-1419
-    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_stamp_coverage kind="unit"
     def test_stamp_coverage_no_snapshot_skips_durability_check(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -958,7 +958,7 @@ class TestCheckRunner:
         assert "coverage stamp written" in caplog.text
         assert not (tmp_path / "frob-coverage.lock.json").exists()
 
-    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_baseline_chunks  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_baseline_chunks
     def test_stamp_baseline_mode_calls_stamp_and_returns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -977,7 +977,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert "baseline stamp written" in caplog.text
 
-    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_baseline_chunks  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_baseline_chunks
     def test_stamp_baseline_gate_error_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -992,7 +992,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert exc.value.code == 1
 
-    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_stamp_baseline  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_stamp_baseline
     # frob:ticket T-0751
     def test_stamp_baseline_only_chunk_records_without_stamping(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
@@ -1053,7 +1053,7 @@ class TestCheckRunner:
         assert chunks_path.exists()
 
     # frob:ticket T-0751
-    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_stamp_baseline  # noqa: E501
+    # frob:tests src/frob/app/_check_chunking_baseline.py::_run_stamp_baseline
     def test_stamp_baseline_only_chunk_completes_and_stamps(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
@@ -1331,7 +1331,7 @@ class TestCheckRunner:
             check_run(cfg)
         assert "frob.toml unreadable" in caplog.text
 
-    # frob:tests src/frob/app/check_runner.py::_opt_in_deploy_stage_result kind="unit"  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_opt_in_deploy_stage_result kind="unit"
     def test_deploy_stages_appended_when_deploy_dir_present(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -1391,11 +1391,11 @@ class TestSkipUnchangedLanguage:
         """Stage and commit everything under `tmp_path`."""
         import subprocess
 
-        # frob:tests src/frob/app/check_runner.py::_run_all_detected  # noqa: E501
+        # frob:tests src/frob/app/check_runner.py::_run_all_detected
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(["git", "commit", "-q", "-m", msg], cwd=tmp_path, check=True)
 
-    # frob:tests src/frob/app/check_runner.py::_run_all_detected  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_all_detected
     def test_unchanged_python_reports_skipped_not_silent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -1416,7 +1416,7 @@ class TestSkipUnchangedLanguage:
         out = capsys.readouterr().out
         assert "SKIPPED: python (unchanged since base)" in out
 
-    # frob:tests src/frob/app/check_runner.py::_run_all_detected  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_all_detected
     def test_changed_python_still_runs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:
@@ -1438,7 +1438,7 @@ class TestSkipUnchangedLanguage:
         out = capsys.readouterr().out
         assert "SKIPPED: python" not in out
 
-    # frob:tests src/frob/app/check_runner.py::_run_all_detected  # noqa: E501
+    # frob:tests src/frob/app/check_runner.py::_run_all_detected
     def test_absent_language_never_shown(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
     ) -> None:

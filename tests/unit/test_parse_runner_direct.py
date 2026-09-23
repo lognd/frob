@@ -19,7 +19,7 @@ from frob.app.parse_runner import run
 
 
 class TestParseRunnerRun:
-    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/parse_runner.py::run
     def test_missing_tool_exits_with_error(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -29,7 +29,7 @@ class TestParseRunnerRun:
         with pytest.raises(SystemExit):
             run(cfg)
         assert "requires <tool>" in caplog.text
-# frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
+# frob:tests src/frob/app/parse_runner.py::run
 
     def test_unknown_tool_exits_with_error(
         self, caplog: pytest.LogCaptureFixture
@@ -39,7 +39,7 @@ class TestParseRunnerRun:
         cfg = AppConfig(parse_tool="not-a-real-tool")
         with pytest.raises(SystemExit):
             run(cfg)
-        # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
+        # frob:tests src/frob/app/parse_runner.py::run
         assert "unknown tool" in caplog.text
 
     def test_unreadable_file_exits_with_error(
@@ -50,11 +50,11 @@ class TestParseRunnerRun:
         missing = tmp_path / "does-not-exist.txt"
         cfg = AppConfig(parse_tool="ruff", parse_input=missing)
         with pytest.raises(SystemExit):
-            # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
+            # frob:tests src/frob/app/parse_runner.py::run
             run(cfg)
         assert "cannot read" in caplog.text
 
-    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/parse_runner.py::run
     def test_reads_from_file_and_logs_text(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -68,7 +68,7 @@ class TestParseRunnerRun:
         run(cfg)
         assert caplog.text.strip()
 
-    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/parse_runner.py::run
     def test_reads_from_stdin_and_logs_json(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -83,7 +83,7 @@ class TestParseRunnerRun:
         run(cfg)
         assert '"' in caplog.text  # json output, not the plain-text summary
 
-    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/parse_runner.py::run
     def test_passthrough_propagates_failing_exit_code(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_passthrough_propagates_failing_exit_code  # noqa: E501
         src = tmp_path / "ruff_output.txt"
@@ -98,7 +98,7 @@ class TestParseRunnerRun:
             run(cfg)
         assert excinfo.value.code != 0
 
-    # frob:tests src/frob/app/parse_runner.py::run  # noqa: E501
+    # frob:tests src/frob/app/parse_runner.py::run
     def test_no_passthrough_does_not_exit_on_failure(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_no_passthrough_does_not_exit_on_failure  # noqa: E501
         src = tmp_path / "ruff_output.txt"

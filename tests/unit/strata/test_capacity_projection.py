@@ -145,7 +145,7 @@ class TestProjectCapacityGrowth:
     #growth-rate-declarations-t-2016)."""
 
     # frob:tests src/frob/strata/_capacity.py::project_capacity kind="unit"
-    # frob:tests src/frob/strata/_models.py::Growth  # noqa: E501
+    # frob:tests src/frob/strata/_models.py::Growth
     def test_at_projects_growth_and_can_fire(self):
         from datetime import datetime
 
