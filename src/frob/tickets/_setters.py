@@ -64,8 +64,10 @@ from frob.tickets._models import (
     TicketTier,
     TriageChangeEntry,
     replace_done_report_section,
+    sprint_shape_warning,
     validate_milestone,
     validate_points,
+    validate_sprint,
 )
 from frob.tickets._store import (
     _split_done_report,
@@ -1198,12 +1200,24 @@ _SPRINT_ASSIGNMENT_REASON = "sprint set via `frob ticket sprint assign`"
 # tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange.test_reassign\
 # ing_the_same_sprint_still_records_an_entry  # noqa: E501
 def set_sprint(
-    root: Path, ticket_id: str, sprint: str | None
+    root: Path,
+    ticket_id: str,
+    sprint: str | None,
+    *,
+    semver_sprint_ack: bool = False,
 ) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket sprint assign <id> <label>`: set `ticket_id`'s `sprint`
     field (T-0715) -- the same single-writer, ledger-locked pattern
     `set_component` uses. `sprint=None` clears it back to uncommitted/
     backlog.
+
+    T-5133: a non-`None`, semver-shaped `sprint` (e.g. `"0.531.0"`) is
+    refused via `validate_sprint` BEFORE the write -- sprint carrying the
+    VERSION is exactly the collapse T-5133 exists to stop, `milestone` is
+    named as the right home in the refusal text. `semver_sprint_ack=True`
+    bypasses it for the rare deliberate case. A calendar/numbered-shaped
+    label (`YYYY-Www`, `sprint-N`) is not refused, only WARNed via
+    `sprint_shape_warning`.
 
     T-4427: passes a fixed internal `reason` through to `_set_ticket_
     field` so every sprint assignment/clear records a `TriageChangeEntry`
@@ -1216,6 +1230,13 @@ def set_sprint(
     `created`; before this fix, `sprint` was silently unlogged and every
     sprinted ticket fell back to TICK004's fail-safe not-rotting branch
     with no real assignment date ever recorded."""
+    if sprint is not None:
+        sprint_check = validate_sprint(sprint, semver_sprint_ack=semver_sprint_ack)
+        if sprint_check.is_err:
+            return Err(sprint_check.danger_err)
+        shape_warning = sprint_shape_warning(sprint)
+        if shape_warning is not None:
+            _log.warning("ticket sprint assign: %s", shape_warning)
     return _set_ticket_field(
         root,
         ticket_id,

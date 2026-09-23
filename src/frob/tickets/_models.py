@@ -201,6 +201,67 @@ def validate_points(value: int) -> Result[int, TicketError]:
 POINTS_ALLOWED = frozenset({1, 2, 3, 5, 8, 13})
 
 
+# frob:ticket T-5133
+#: A semver-shaped label (optional `v`/`V` prefix, then N.N.N) -- the
+#: exact collapse T-5133 exists to stop: `sprint` carrying the VERSION
+#: instead of `milestone`. Matches `validate_milestone`'s own accepted
+#: shape so the refusal and the migration recognize the identical set of
+#: strings.
+_SEMVER_SPRINT_RE = re.compile(r"^[vV]?\d+\.\d+\.\d+$")
+
+# frob:ticket T-5133
+#: A calendar-week or numbered-sprint label (`YYYY-Www`, `sprint-N`) --
+#: not a version, but still not a GOAL either (the owner's amendment:
+#: "a sprint is a goal you can say in three words"). WARNs, does not
+#: refuse.
+_CALENDAR_SPRINT_RE = re.compile(r"^\d{4}-W\d{1,2}$|^sprint-\d+$")
+
+
+# frob:ticket T-5133
+# frob:doc docs/modules/tickets-data-storage.md#sprint-is-a-time-box-milestone-is-the-version-t-5133  # noqa: E501
+# tests/test_tickets_sprint_migrate.py::TestValidateSprint.test_calendar_shaped_warns_not_refuses  # noqa: E501
+# tests/test_tickets_sprint_migrate.py::TestValidateSprint.test_semver_ack_bypasses_refusal  # noqa: E501
+def validate_sprint(
+    value: str, *, semver_sprint_ack: bool = False
+) -> Result[str, TicketError]:
+    """Refuse a `Ticket.sprint`/`TicketSpec.sprint` value that is
+    semver-shaped (T-5133: sprint carrying the VERSION is exactly the
+    collapse this ticket exists to stop -- `milestone` is the right home,
+    named explicitly in the refusal text) at WRITE time, same "plain
+    function-level guard" shape `validate_milestone`/`validate_points`
+    already established. `semver_sprint_ack=True` (the CLI's `--semver-
+    sprint-ack` override) bypasses the refusal for the rare deliberate
+    case. A calendar-week (`YYYY-Www`) or numbered (`sprint-N`) label is
+    NOT refused (the owner's amendment: those are legitimate values, just
+    not the intended goal-named shape) -- callers that want the
+    suggestion text render it themselves from `sprint_shape_warning`
+    below; this function only decides accept/refuse, it never logs."""
+    if _SEMVER_SPRINT_RE.match(value) and not semver_sprint_ack:
+        return Err(TicketError.SprintIsSemverShaped)
+    return Ok(value)
+
+
+# frob:ticket T-5133
+# frob:doc docs/modules/tickets-data-storage.md#sprint-is-a-time-box-milestone-is-the-version-t-5133  # noqa: E501
+# tests/test_tickets_sprint_migrate.py::TestSprintShapeWarning.test_calendar_shaped_warns  # noqa: E501
+def sprint_shape_warning(value: str) -> str | None:
+    """A one-line WARN string (T-5133 amendment) when `value` is
+    calendar/numbered-shaped (`YYYY-Www`, `sprint-N`) rather than a
+    goal name -- `None` for anything else (including the semver shape,
+    which `validate_sprint` already refuses outright, and an ordinary
+    goal label, which needs no warning at all). Callers (`frob ticket
+    new`/`frob ticket sprint assign`) log this at WARNING when non-
+    `None`; it is never itself a refusal."""
+    if _CALENDAR_SPRINT_RE.match(value):
+        return (
+            f"sprint {value!r} looks like a calendar week or a numbered "
+            "slot, not a goal -- a sprint is a goal you can say in three "
+            "words (e.g. kernel-decoupling); the version belongs in "
+            "--milestone (T-5133)"
+        )
+    return None
+
+
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:doc docs/guides/extending/ticket-kinds-states.md#ticket-kinds-and-states
 class TicketState(StrEnum):
@@ -2601,6 +2662,12 @@ class TicketError(ErrorSet):
     )
     # frob:ticket T-5132
     UnsizedAckReasonMissing = "--unsized-ack requires a non-empty REASON"
+    # frob:ticket T-5133
+    SprintIsSemverShaped = (
+        "sprint looks like a version (e.g. 0.531.0) -- a sprint is a goal you "
+        "can say in three words; the version belongs in --milestone (T-5133); "
+        "override with --semver-sprint-ack if this is genuinely deliberate"
+    )
     WriteFailed = "Atomic ticket write failed"
     # frob:ticket T-3684
     TicketVanishedDuringScan = (

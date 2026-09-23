@@ -277,6 +277,54 @@ Mechanically backfilling existing `EPIC`-titled tickets to `tier: epic`
 is a separate child ticket of T-0715 (T-0936, a one-time ledger
 migration, not a code change) that this verb unblocks.
 
+### Sprint is a time box, milestone is the version (T-5133)
+
+Sprint and milestone had collapsed onto one meaning: `sprint` was carrying
+`v0.NNN.0`-shaped strings on the large majority of open tickets (measured
+2026-09-20: 592 of 691) because there was no other declared home for a
+version. The decision (owner, 2026-09-20, amended same day): `milestone`
+is the semver a ticket ships with (totally ordered, "what ships
+together" -- see Milestones (T-2574 M1) below); `sprint` is a TIME BOX
+("when we work"), and -- per the same-day amendment -- an OVERARCHING
+GOAL you can say in three words (kebab-case, e.g. `kernel-decoupling`,
+`csharp-unity`), never a version and never a calendar week or a numbered
+slot either.
+
+**Going forward (`validate_sprint`, `frob.tickets._models`).** A
+semver-shaped `sprint` value (`^[vV]?\d+\.\d+\.\d+$`, the exact shape
+`validate_milestone` accepts) is REFUSED at write time -- `frob ticket
+new --sprint`/`frob ticket sprint assign` both call `validate_sprint`
+before the ledger write, same "plain function-level guard" shape
+`validate_points`/`validate_milestone` already established. The refusal
+text names `--milestone` as the right home. `--semver-sprint-ack`
+overrides it for the rare genuinely-deliberate case (no ledger field
+records this ack -- unlike `unsized_ack`, sprint validation is a single
+write-time check, never re-evaluated later, so nothing needs to persist
+it). A calendar-week (`YYYY-Www`) or numbered (`sprint-N`) label is NOT
+refused -- `sprint_shape_warning` WARNs instead, suggesting a goal name,
+since those are legitimate values, just not the intended shape.
+
+**Backward (`frob ticket sprint migrate`, <!-- frob:waive DOC006 reason="verb added by this land; pre-land sweep resolves against the running parser (T-5178)" --> `frob.tickets._sprint.
+migrate_sprint_to_milestone`).** A one-shot, idempotent repair over
+every OPEN ticket (done/dropped/archived tickets are never touched):
+for each ticket whose `sprint` is semver-shaped, if `milestone` is
+`None` the stripped value moves onto `milestone`; if `milestone` already
+holds a DIFFERENT value, the conflict is logged and `milestone` is left
+alone (never silently overwritten) -- either way `sprint` is cleared.
+Also normalizes every v-prefixed `milestone` value it encounters to the
+bare form (T-4463's own normalization, applied retroactively). Running
+it again is a no-op: nothing left matches the semver shape a second
+time. Runs under one `ledger_lock` acquisition for the whole pass (not
+one per ticket) and outside the ordinary single-field setter ceremony
+(no `TriageChangeEntry`, no lease check per ticket) -- the same "bulk
+ledger repair" posture `frob ticket admin reconcile` already has.
+
+**Re-slicing into goal-named sprints** (mapping each ticket's sprint
+label from its epic's slug, sized to measured velocity) is the ticket
+body's step (3) and is DATA CONTENT work across ~600 open tickets, not
+mechanical migration -- out of this pass's scope; see T-5133's Done
+report for the filed follow-up.
+
 ### Milestones (T-2574 M1)
 
 `Ticket.milestone` is a REAL semver string (`"1.10.0"`); `None` means

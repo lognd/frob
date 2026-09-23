@@ -69,6 +69,16 @@ points=None start-time refusal. See
 `docs/modules/tickets-data-storage.md#points-t-5132` for the full
 behavioral reference. <!-- frob:waive DOC006 reason="verbs introduced by T-5132; the resolver runs the pre-land parser" -->
 
+## `sprint migrate` (T-5133)
+
+`frob ticket sprint migrate`: <!-- frob:waive DOC006 reason="verb added by this land; pre-land sweep resolves against the running parser (T-5178)" --> one-shot, idempotent repair moving every
+semver-shaped `sprint` label onto `milestone` (normalizing v-prefixed
+milestones along the way) and clearing `sprint`. See
+`docs/modules/tickets-data-storage.md#sprint-is-a-time-box-milestone-is-the-version-t-5133` for
+the full behavioral reference, including the going-forward
+`validate_sprint`/`--semver-sprint-ack` refusal that stops the collapse
+from recurring. <!-- frob:waive DOC006 reason="verb introduced by T-5133; the resolver runs the pre-land parser" -->
+
 ## `runs-last-parallel-safe`
 
 STATUS: NOT YET FOLDED. The plan is `frob ticket runs-last <id>

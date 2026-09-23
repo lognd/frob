@@ -882,4 +882,11 @@ def _add_ticket_sprint_parser(ticket_sub):
     show_p.add_argument("ticket_sprint", metavar="label")
     show_p.add_argument("--json", dest="ticket_json", action="store_true")
 
+    # frob:ticket T-5133
+    sprint_sub.add_parser(
+        "migrate",
+        help="one-shot: move every semver-shaped sprint label onto "
+        "milestone, normalize v-prefixed milestones, clear sprint (T-5133)",
+    )
+
     return sprint_p

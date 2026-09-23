@@ -64,8 +64,10 @@ from frob.tickets._models import (
     TicketKind,
     TicketSpec,
     TicketState,
+    sprint_shape_warning,
     validate_milestone,
     validate_points,
+    validate_sprint,
 )
 from frob.tickets._provisional import mint_draft_id, on_default_branch
 from frob.tickets._store import (
@@ -621,7 +623,11 @@ def _refuse_finding_duplicate(
 # splitting the scope-breadth-ack/milestone/points checks into pydantic validators); a \
 # further structural split is this ticket's own scope boundary, not a T-5132 concern"
 def _validate_new_ticket_spec(
-    root: Path, spec: TicketSpec, collected: frozenset[str] | None
+    root: Path,
+    spec: TicketSpec,
+    collected: frozenset[str] | None,
+    *,
+    semver_sprint_ack: bool = False,
 ) -> Result[tuple[str, ...], TicketError]:
     """`new_ticket`'s pre-write validation gauntlet, split out to keep that
     function under ARCH001's line threshold (T-1813): runs-last warning,
@@ -663,6 +669,15 @@ def _validate_new_ticket_spec(
         milestone_check = validate_milestone(spec.milestone)
         if milestone_check.is_err:
             return Err(milestone_check.danger_err)
+
+    # frob:ticket T-5133
+    if spec.sprint is not None:
+        sprint_check = validate_sprint(spec.sprint, semver_sprint_ack=semver_sprint_ack)
+        if sprint_check.is_err:
+            return Err(sprint_check.danger_err)
+        shape_warning = sprint_shape_warning(spec.sprint)
+        if shape_warning is not None:
+            _log.warning("ticket new: %s", shape_warning)
 
     # frob:ticket T-5132
     # `frob ticket new` WARNs (does not refuse) when --points is omitted
@@ -809,6 +824,7 @@ def new_ticket(
     *,
     no_commit: bool = False,
     warn_if_dirty: bool = True,
+    semver_sprint_ack: bool = False,
 ) -> Result[Ticket, TicketError]:
     """Allocate the next sequential id and upsert the ticket into the store.
 
@@ -899,7 +915,9 @@ def new_ticket(
     `_commit_new_ticket`) to keep this function under ARCH001's line
     threshold -- this body is now just the three-step pipeline.
     """
-    validation = _validate_new_ticket_spec(root, spec, collected)
+    validation = _validate_new_ticket_spec(
+        root, spec, collected, semver_sprint_ack=semver_sprint_ack
+    )
     if validation.is_err:
         return Err(validation.danger_err)
     written = _allocate_and_write_new_ticket(root, spec, validation.danger_ok)

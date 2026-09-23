@@ -1171,15 +1171,39 @@ def _tokens(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0715
+# frob:ticket T-5133
 def _sprint(root: Path, cfg: AppConfig) -> None:
-    """Dispatch `frob ticket sprint assign|show` (T-0715) to its handler."""
+    """Dispatch `frob ticket sprint assign|show|migrate` (T-0715/T-5133)
+    to its handler."""
     if cfg.ticket_sprint_command == "assign":
         _sprint_assign(root, cfg)
     elif cfg.ticket_sprint_command == "show":
         _sprint_show(root, cfg)
+    elif cfg.ticket_sprint_command == "migrate":
+        _sprint_migrate(root, cfg)
     else:
-        _log.error("usage: frob ticket sprint <assign|show> ...")
+        _log.error("usage: frob ticket sprint <assign|show|migrate> ...")
         sys.exit(1)
+
+
+# frob:ticket T-5133
+# frob:doc docs/modules/tickets-data-storage.md#sprint-is-a-time-box-milestone-is-the-version-t-5133  # noqa: E501
+def _sprint_migrate(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket sprint migrate` (T-5133): run the one-shot sprint->
+    milestone migration and log its counts. `cfg` is accepted (unused
+    beyond `root` resolution) for the same uniform `(root, cfg)` handler
+    shape every other dispatch-table entry has."""
+    from frob.tickets._sprint import migrate_sprint_to_milestone
+
+    del cfg
+    report = migrate_sprint_to_milestone(root)
+    _log.info(
+        "sprint migrate: scanned=%d migrated=%d conflicts=%d normalized=%d",
+        report.scanned,
+        report.migrated,
+        report.conflicts,
+        report.normalized,
+    )
 
 
 # frob:ticket T-0715

@@ -799,6 +799,7 @@ class TestDoc006FileSymbol:
         # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert found
         assert any("gone.py" in v.message for v in found)
+# frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_ambiguous_basename_shorthand_not_flagged(self, tmp_path: Path) -> None:
@@ -833,6 +834,7 @@ class TestDoc006BareIdentifier:
         # frob:tests src/frob/gates/_docptr.py::doc006_gate
         )
         _write(tmp_path, "docs/guide.md", f"# Anchor\n\n{doc_body}")
+        # frob:tests src/frob/gates/_docptr.py::doc006_gate
         _add_all(tmp_path)
 
     # frob:tests src/frob/gates/_docptr.py::doc006_gate
