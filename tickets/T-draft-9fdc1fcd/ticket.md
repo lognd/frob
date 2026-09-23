@@ -22,6 +22,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/pgrep-self-match-guard.py
+- .claude/hooks/_shellscan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +30,12 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: .claude/hooks/pgrep-self-match-guard.py
+  reason: hook script, shared shellscan helper, sync manifest, registration, guide
+    section, test
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: .claude/hooks/_shellscan.py
   reason: hook script, shared shellscan helper, sync manifest, registration, guide
     section, test
   actor: logan
