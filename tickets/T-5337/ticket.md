@@ -27,6 +27,7 @@ scope:
 - src/frob/sql/_orm_rules.py
 - tests/fixtures/sql/**
 - design/frob.strata
+- docs/modules/sql.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,12 @@ scope_changes:
   glob: design/frob.strata
   reason: strata fs.read via-list grant for the module this ticket adds (T-5337 brief
     item 13)
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/sql.md
+  reason: public-API doc section for this ticket's new module (frob:doc anchors need
+    a target)
   actor: logan
   at: '2026-09-23'
 triage_changes:
