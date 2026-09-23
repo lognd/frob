@@ -33,6 +33,7 @@ scope:
 - src/frob/stats/_agentic.py
 - docs/modules/tickets-lifecycle.md
 - tests/unit/test_token_usage.py
+- tests/test_hook_dispatch_telemetry.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: one new module plus the three touch points that call it
   (start, close/land, stats) and the hook that records session identity
@@ -43,6 +44,12 @@ scope_changes:
   glob: tests/unit/test_token_usage.py
   reason: T-5137 needs its own evidence test file; not pre-declared in the ticket's
     original scope list
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: tests/test_hook_dispatch_telemetry.py
+  reason: T-5137 adds transcript_path capture to the SessionStart hook; needs a positive-control
+    test in its existing test file
   actor: logan
   at: '2026-09-22'
 triage_changes:
