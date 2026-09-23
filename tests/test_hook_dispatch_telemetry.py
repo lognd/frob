@@ -431,3 +431,32 @@ def test_tool_call_telemetry_outside_git_repo_writes_nothing(tmp_path: Path):
     result = _run_tool_call_hook(payload, cwd=not_a_repo)
     assert result.returncode == 0
     assert _telemetry_records(not_a_repo) == []
+
+
+def test_session_start_records_transcript_path_when_given(tmp_path: Path):
+    # frob:tests .claude/hooks/dispatch-telemetry.py kind="integration"
+    _init_repo(tmp_path)
+    payload = {
+        "hook_event_name": "SessionStart",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "source": "startup",
+        "transcript_path": "/home/user/.claude/projects/x/sess-1.jsonl",
+    }
+    _run_hook(payload, cwd=tmp_path)
+    records = _telemetry_records(tmp_path)
+    assert records[0]["transcript_path"] == "/home/user/.claude/projects/x/sess-1.jsonl"
+
+
+def test_session_start_omits_transcript_path_when_absent(tmp_path: Path):
+    # frob:tests .claude/hooks/dispatch-telemetry.py kind="integration"
+    _init_repo(tmp_path)
+    payload = {
+        "hook_event_name": "SessionStart",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "source": "startup",
+    }
+    _run_hook(payload, cwd=tmp_path)
+    records = _telemetry_records(tmp_path)
+    assert "transcript_path" not in records[0]

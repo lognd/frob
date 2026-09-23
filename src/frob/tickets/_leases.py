@@ -915,6 +915,39 @@ def _commit_start_ledger_write_in_fleet_context(
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:doc docs/modules/tickets-lifecycle.md#lease-lifecycle-acquire-and-release-table-t-4659  # noqa: E501
 # frob:ticket T-4659
+# frob:ticket T-5137
+# tests/unit/test_token_usage.py::TestReleaseLeaseCollectsUsage.test_release_records_usage  # noqa: E501
+def _collect_and_record_usage_best_effort(root: Path, ticket_id: str) -> None:
+    """Collect and persist `ticket_id`'s automatic token usage (T-5137) at
+    lease release, best-effort -- a collection or write failure
+    (unreadable transcript, cursor-cache write failure, ...) is logged
+    and swallowed, never blocking the lease release itself: token
+    accounting is observability, not a gate. Idempotent with `frob.app.
+    ticket_runner._close_cmd`'s own call to the same pair at `frob
+    ticket close` time -- whichever runs first records it, the other is
+    a no-op re-collection past the cached cursor."""
+    from frob.tickets._token_usage import collect_ticket_usage, record_ticket_usage
+
+    collected = collect_ticket_usage(root, ticket_id)
+    if collected.is_err:
+        _log.warning(
+            "tickets: %s token usage collection failed: %s",
+            ticket_id,
+            collected.danger_err,
+        )
+        return
+    usage = collected.danger_ok
+    if usage is None:
+        return
+    recorded = record_ticket_usage(root, ticket_id, usage)
+    if recorded.is_err:
+        _log.warning(
+            "tickets: %s token usage record failed: %s",
+            ticket_id,
+            recorded.danger_err,
+        )
+
+
 def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     """Remove `ticket_id`'s cross-worktree lease file, if any (T-0473) --
     called by `frob.tickets.transition` whenever a ticket LEAVES
@@ -943,7 +976,18 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     to resolve (no shared git common dir at all -- a test fixture with no
     `.git`, or a root that predates `git init`) is also `Ok(None)`: there
     is provably no lease side-channel to have left dangling in that
-    case."""
+    case.
+
+    T-5137: automatic token-usage collection fires HERE, before the
+    lease file is actually removed below -- `release_lease` is the one
+    chokepoint every terminal `IN_PROGRESS` exit (close, land's own
+    finalize-through-close, requeue, drop) already runs through, and
+    `collect_ticket_usage` needs the CURRENT lease's `recorded_at` (the
+    collection window's start) still on disk to read. Best-effort: a
+    collection/write failure is logged and swallowed, matching this
+    function's own never-fail-the-transition posture for the unlink
+    below."""
+    _collect_and_record_usage_best_effort(root, ticket_id)
     resolved = leases_dir(root)
     if resolved.is_err:
         _log.info(
@@ -1705,6 +1749,24 @@ def lease_holder_worktree(root: Path, ticket_id: str) -> str | None:
     for record in leases:
         if record.ticket_id == ticket_id:
             return record.worktree
+    return None
+
+
+# frob:ticket T-5137
+# frob:doc \
+# docs/modules/tickets-lifecycle.md#automatic-per-ticket-token-accounting-t-5137  # noqa: E501
+# tests/unit/test_token_usage.py::TestReleaseLeaseCollectsUsage.test_release_records_usage  # noqa: E501
+def lease_record_for_ticket(root: Path, ticket_id: str) -> _LeaseRecord | None:
+    """`ticket_id`'s CURRENT cross-worktree lease record in full (T-5137),
+    or `None` if none is recorded -- `lease_holder_worktree`'s sibling,
+    returning the whole `_LeaseRecord` (notably `recorded_at`, the lease's
+    acquisition time) instead of just `worktree`. `frob.tickets._token_
+    usage.collect_ticket_usage` uses `recorded_at` as the token-usage
+    collection window's start: a ticket's session boundary begins when it
+    was started, not when collection happens to run."""
+    for record in read_all_leases(root):
+        if record.ticket_id == ticket_id:
+            return record
     return None
 
 

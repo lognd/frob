@@ -2,7 +2,7 @@
 id: T-5137
 title: 'Automatic per-ticket agent token accounting from harness transcripts: zero
   model cost, bounded IO, one shared usage module, None for human work'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-20'
@@ -20,7 +20,6 @@ unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
-usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -85,28 +84,62 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/unit/test_token_usage.py::TestClaudeCodeAdapterDiscoverSessions::test_filters_by_worktree_and_window
+- tests/unit/test_token_usage.py::TestClaudeCodeAdapterDiscoverSessions::test_missing_telemetry_file_is_empty
+- tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_sums_assistant_usage_fields
+- tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_incremental_cursor_only_reads_new_bytes
+- tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_unreadable_transcript_is_incomplete_none_cursor
+- tests/unit/test_token_usage.py::TestCollectTicketUsage::test_no_lease_returns_none
+- tests/unit/test_token_usage.py::TestCollectTicketUsage::test_sums_assistant_usage_fields
+- tests/unit/test_token_usage.py::TestCollectTicketUsage::test_session_without_transcript_path_marks_incomplete
+- tests/unit/test_token_usage.py::TestRecordTicketUsage::test_writes_usage_onto_ticket
+- tests/unit/test_token_usage.py::TestRecordTicketUsage::test_unknown_ticket_is_err
+- tests/unit/test_token_usage.py::TestReleaseLeaseCollectsUsage::test_release_records_usage
+- tests/test_hook_dispatch_telemetry.py::test_session_start_records_transcript_path_when_given
+- tests/test_hook_dispatch_telemetry.py::test_session_start_omits_transcript_path_when_absent
+- tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_budget_exceeded_stops_early_and_reports_incomplete
 designated_repro_test: null
 acceptance:
 - text: given an agent session that started a ticket and landed it, when the land
     finishes, then the ticket carries input/output/cache token totals and the session
     id, with no model call made
-  evidence: []
+  evidence:
+  - tests/unit/test_token_usage.py::TestClaudeCodeAdapterDiscoverSessions::test_filters_by_worktree_and_window
+  - tests/unit/test_token_usage.py::TestClaudeCodeAdapterDiscoverSessions::test_missing_telemetry_file_is_empty
+  - tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_sums_assistant_usage_fields
+  - tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_incremental_cursor_only_reads_new_bytes
+  - tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_unreadable_transcript_is_incomplete_none_cursor
+  - tests/unit/test_token_usage.py::TestCollectTicketUsage::test_no_lease_returns_none
+  - tests/unit/test_token_usage.py::TestCollectTicketUsage::test_sums_assistant_usage_fields
+  - tests/unit/test_token_usage.py::TestCollectTicketUsage::test_session_without_transcript_path_marks_incomplete
+  - tests/unit/test_token_usage.py::TestRecordTicketUsage::test_writes_usage_onto_ticket
+  - tests/unit/test_token_usage.py::TestRecordTicketUsage::test_unknown_ticket_is_err
+  - tests/unit/test_token_usage.py::TestReleaseLeaseCollectsUsage::test_release_records_usage
+  - tests/test_hook_dispatch_telemetry.py::test_session_start_records_transcript_path_when_given
+  - tests/test_hook_dispatch_telemetry.py::test_session_start_omits_transcript_path_when_absent
 - text: given a session killed mid-ticket and a later land from the coordinator, when
     usage is collected, then totals reflect the transcript on disk and complete is
     False with a logged reason
-  evidence: []
+  evidence:
+  - tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_unreadable_transcript_is_incomplete_none_cursor
+  - tests/unit/test_token_usage.py::TestCollectTicketUsage::test_session_without_transcript_path_marks_incomplete
 - text: given a human working a ticket with no recorded session, when the ticket closes,
     then usage is None and no warning claims zero tokens
-  evidence: []
+  evidence:
+  - tests/unit/test_token_usage.py::TestCollectTicketUsage::test_no_lease_returns_none
 - text: given a 100 MB transcript already collected once, when usage is collected
     again, then only bytes past the cursor are read and the pass finishes under 2
     s
-  evidence: []
+  evidence:
+  - tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_incremental_cursor_only_reads_new_bytes
+  - tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_budget_exceeded_stops_early_and_reports_incomplete
 threat: null
 component: tickets
 anchor: false
 anchor_reason: null
 land_commit: null
+usage: null
 worktree: /home/logan/projects/frob/.claude/worktrees/t-5137
 branch: t-5137
 ---

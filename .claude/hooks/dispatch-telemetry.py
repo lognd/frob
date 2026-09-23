@@ -169,6 +169,18 @@ def _handle_session_start(payload: dict) -> None:
     cold_start = _cold_start_from_source(payload.get("source"))
     if cold_start is not None:
         record["cold_start"] = cold_start
+    # T-5137: Claude Code's own SessionStart payload carries
+    # `transcript_path` (this session's JSONL log) -- recorded here,
+    # alongside the `dispatch_id`/`worktree` this hook already wrote,
+    # rather than a second sessions-only file (NO DUPLICATION): `frob.
+    # tickets._token_usage.collect_ticket_usage` reads these same
+    # `kind="dispatch"` `event="start"` lines to find which transcript(s)
+    # to mine for a ticket's automatic token accounting. Omitted (never
+    # written as `None`/`""`) when the payload does not carry one, same
+    # "omit rather than guess" contract `cold_start` above follows.
+    transcript_path = payload.get("transcript_path")
+    if isinstance(transcript_path, str) and transcript_path:
+        record["transcript_path"] = transcript_path
     _append_dispatch_event(root, record)
 
 

@@ -448,8 +448,6 @@ def _process_stdin(raw: str) -> None:
 
 
 # frob:doc docs/guides/agentic-time-profiling.md#tool-call-telemetry-t-2912
-# frob:tests tests/test_hook_dispatch_telemetry.py::test_pre_tool_use_records_attempt_event kind="integration"  # noqa: E501
-# frob:tests tests/test_hook_dispatch_telemetry.py::test_post_tool_use_records_completion_with_token_estimate kind="integration"  # noqa: E501
 def main() -> int:
     """Entry point: hands the stdin JSON payload to `_process_stdin`.
     Always exits 0 -- a telemetry hook must never block or fail a tool

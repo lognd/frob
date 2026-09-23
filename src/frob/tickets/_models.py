@@ -1584,6 +1584,56 @@ class Origin(StrEnum):
     AUDITOR = "auditor"
 
 
+# frob:ticket T-5137
+# frob:doc \
+# docs/modules/tickets-lifecycle.md#automatic-per-ticket-token-accounting-t-5137  # noqa: E501
+# tests/unit/test_token_usage.py::TestRecordTicketUsage.test_writes_usage_onto_ticket
+class TicketUsage(BaseModel):
+    """Automatic per-ticket agent token spend, mined from harness
+    transcript JSONL (T-5137, zero model cost) -- `frob.tickets._token_
+    usage.collect_ticket_usage`'s return shape, and the value stored on
+    `Ticket.usage`.
+
+    `None` (the field's default on `Ticket`) means human-worked or
+    genuinely unmeasured and is valid FOREVER -- this model itself is
+    only ever constructed once real transcript bytes were summed, never
+    to represent a zero the collector merely failed to find (the
+    silent-zero lesson `set_tokens`'s own docstring already names).
+    `complete=False` marks a partial sum (an interrupted session, or a
+    collection pass that hit its wall-clock budget) without discarding
+    what was actually measured."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    input_tokens: int
+    output_tokens: int
+    cache_creation_tokens: int
+    cache_read_tokens: int
+    #: every Claude Code `session_id` this total was summed across
+    #: (T-5137 design section 4: several sessions/agents on one ticket
+    #: sum together and are listed here, not just the last one).
+    sessions: tuple[str, ...]
+    #: every transcript file path a byte was read from, for the same
+    #: multi-session accounting the `sessions` field above records.
+    transcripts_seen: tuple[str, ...]
+    #: ISO-8601 timestamp the collection window opened at -- the
+    #: ticket's lease `recorded_at` (T-5137 design section 2), not this
+    #: collection pass's own wall-clock start.
+    window_start: str
+    #: ISO-8601 timestamp the collection window closed at (collection
+    #: time, or the lease's release time on a requeue/restart).
+    window_end: str
+    #: ISO-8601 timestamp this SPECIFIC collection pass ran at --
+    #: distinct from `window_end`, which is the accounting window's own
+    #: boundary and stays fixed across incremental re-collections.
+    collected_at: str
+    #: `False` when a transcript's last entry predates the lease's
+    #: release (an interrupted/killed session, T-5137 design section 4)
+    #: or a collection pass hit its wall-clock budget mid-transcript --
+    #: `True` means every session in `sessions` ran to a clean Stop.
+    complete: bool
+
+
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 class Attachment(BaseModel):
     """One image/file attached to a ticket, with integrity hash."""
@@ -2043,6 +2093,15 @@ class Ticket(BaseModel):
     # cache-read tokens, recorded separately from `tokens_in` because
     # they dominate long sessions and are billed differently.
     tokens_cache_read: int | None = None
+    # frob:ticket T-5137
+    # automatic per-ticket token accounting mined from harness transcript
+    # JSONL (`frob.tickets._token_usage.collect_ticket_usage`), zero
+    # model cost -- distinct from the `tokens_in`/`tokens_out`/`tokens_
+    # cache_read` trio above, which T-5132 built as a MANUAL `frob
+    # ticket tokens` entry point; this field is the automatic superset
+    # (owner directive 2026-09-20). `None` means human-worked or
+    # genuinely unmeasured, never coerced to a zeroed `TicketUsage`.
+    usage: TicketUsage | None = None
     # frob:ticket T-2579
     # T-2579 (M4b, MILE004): when TWO OR MORE `runs_last` tickets share one
     # effective milestone, ordering between them must be either a real

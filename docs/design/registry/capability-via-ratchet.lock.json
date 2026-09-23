@@ -234,7 +234,7 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 325,
+      "accepted_count": 326,
       "reason": "testsuite glob growth"
     },
     "testsuite::fetch_url": {
@@ -253,7 +253,7 @@
       "ticket": "T-4494"
     },
     "testsuite::fs.write": {
-      "accepted_count": 575,
+      "accepted_count": 576,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {
@@ -306,14 +306,14 @@
       "ticket": "T-1628"
     },
     "tickets_ledger::fs.read": {
-      "accepted_count": 24,
-      "reason": "T-2986: added src/frob/tickets/_archive.py to the fs.read via-list -- _rewrite_moved_attachment_paths reads the just-moved ticket.md directly (a targeted text substitution, not a write_ticket round trip, since write_ticket's v2 path would resolve the ACTIVE directory git_mv_dir just vacated) to fix stale attachments[].path entries after archive moves a ticket directory.",
-      "ticket": "T-2986"
+      "accepted_count": 25,
+      "reason": "T-5137: added src/frob/tickets/_token_usage.py to the fs.read via-list -- ClaudeCodeAdapter.discover_sessions/extract_usage read .frob/telemetry.jsonl and each harness transcript JSONL to sum automatic per-ticket token usage.",
+      "ticket": "T-5137"
     },
     "tickets_ledger::fs.write": {
-      "accepted_count": 24,
-      "reason": "T-5151: remove_attachment (via _delete_attachment_files) unlinks the attachment file(s) it removes -- a real, measured fs.write site added to _reporting_attachments.py's via-list (24th site), which previously only carried fs.read for attach()'s own reads.",
-      "ticket": "T-5151"
+      "accepted_count": 25,
+      "reason": "T-5137/T-5151 union: T-5151 added src/frob/tickets/_reporting_attachments.py (remove_attachment's file unlink, 24th site); T-5137 additionally added src/frob/tickets/_token_usage.py (_save_cache persisting the per-transcript byte-offset cursor to .frob/token-usage-cache.json, 25th site) -- both real, measured, merged here since they landed concurrently.",
+      "ticket": "T-5137"
     },
     "verify::exec": {
       "accepted_count": 2,

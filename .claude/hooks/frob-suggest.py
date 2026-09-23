@@ -147,10 +147,6 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
         "artifact stale, and everything downstream reads it as current.",
         None,
     ),
-    # frob:tests tests/test_hook_frob_suggest.py::test_recursive_grep_stays_quiet_when_scoped_with_a_trailing_redirect  # noqa: E501
-    # frob:tests tests/test_hook_frob_suggest.py::test_recursive_grep_still_fires_unscoped_with_a_trailing_redirect  # noqa: E501
-    # frob:tests tests/test_hook_frob_suggest.py::test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory  # noqa: E501
-    # frob:tests tests/test_hook_frob_suggest.py::test_recursive_grep_still_fires_unscoped_at_repo_root  # noqa: E501
     (
         "recursive-grep",
         re.compile(_POS + r"grep +(?:-\w*[rR]|--recursive)", re.M),

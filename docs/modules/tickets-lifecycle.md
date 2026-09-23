@@ -2242,3 +2242,57 @@ remains open follow-up work once the owner confirms which of the
 candidates, if any, get the `0.530.0` milestone via `frob ticket
 milestone <id> --set 0.530.0` (never a hand-edit of `tickets.md`).
 
+
+## Automatic per-ticket token accounting (T-5137)
+
+`Ticket.usage: TicketUsage | None` (`frob.tickets._models.TicketUsage`)
+records automatic, zero-model-cost token accounting mined from harness
+transcript JSONL -- distinct from the manual `tokens_in`/`tokens_out`/
+`tokens_cache_read` trio T-5132 built for `frob ticket tokens <id>
+--tokens-in N --tokens-out N`. `None` means human-worked or genuinely
+unmeasured and is valid forever; it is never coerced to a zeroed
+`TicketUsage` (the silent-zero lesson).
+
+**Session identity, zero cost.** `.claude/hooks/dispatch-telemetry.py`'s
+`SessionStart` hook already appends one `kind="dispatch"` `event="start"`
+JSON line per session to `.frob/telemetry.jsonl` (`dispatch_id`,
+`worktree`, `cold_start`); T-5137 adds `transcript_path` to that same
+line when Claude Code's own `SessionStart` payload carries one, rather
+than inventing a second sessions-only file. `frob ticket start`/`work`
+records nothing new -- the lease already carries the worktree path and
+start time (`frob.tickets._leases.lease_record_for_ticket`).
+
+**Collection.** `frob.tickets._token_usage.collect_ticket_usage(root,
+ticket_id)` sums `input`/`output`/`cache_creation`/`cache_read` tokens
+across every session whose telemetry `worktree` matches the ticket's
+CURRENT lease and whose start falls inside `[lease.recorded_at, now]`,
+by streaming each session's transcript JSONL (`message.usage.*` over
+`type="assistant"` entries) through the `HarnessAdapter` protocol's
+`ClaudeCodeAdapter` implementation. Each transcript's byte offset and
+running sums are cached in `.frob/token-usage-cache.json`, so a
+re-collection pass only reads bytes past what was already summed --
+capped at 2 wall-clock seconds per call, past which the pass reports
+`complete=False` for what it could not finish. `frob.tickets._token_
+usage.record_ticket_usage(root, ticket_id, usage)` persists the result
+onto `Ticket.usage`.
+
+**Wiring.** Both are called from `frob.tickets._leases.release_lease`
+-- the one chokepoint `frob.tickets.transition` already runs through on
+every terminal exit from `IN_PROGRESS` (close, land's own
+finalize-through-close, requeue, drop), fired best-effort (a collection
+or write failure is logged and swallowed, never blocking the release
+itself) BEFORE the lease file is actually removed, since `collect_
+ticket_usage` needs the lease's own `recorded_at` still on disk.
+
+**Edge cases.** A session with no recorded `transcript_path` (a
+pre-T-5137 hook run, or an unsupported harness) contributes nothing and
+marks `complete=False`. A rotated/deleted/unreadable transcript returns
+`usage=None`, logged, never raised. A ticket with no recorded lease at
+all (never started, or worked entirely by a human) collects `Ok(None)`,
+not an error.
+
+**Extending to a second harness.** Implement `frob.tickets._token_usage.
+HarnessAdapter` (`discover_sessions`/`extract_usage`) and pass it as
+`collect_ticket_usage`'s `adapter=` argument -- `ClaudeCodeAdapter` is
+the only implementation today, confined so a second harness never has
+to touch `collect_ticket_usage` itself.

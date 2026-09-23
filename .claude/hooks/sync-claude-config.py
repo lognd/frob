@@ -175,12 +175,6 @@ def _git_merge_base(ref_a: str, ref_b: str) -> str | None:
 
 
 # frob:ticket T-3408
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_unmodified_source_behind_main_is_stale  # noqa: E501
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_worktree_own_edit_is_never_stale_even_if_main_also_moved  # noqa: E501
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_source_matches_main_is_not_stale  # noqa: E501
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_unknown_git_readings_fail_open  # noqa: E501
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_crlf_working_tree_copy_is_not_mistaken_for_an_edit  # noqa: E501
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_crlf_working_tree_own_edit_still_reads_as_an_edit  # noqa: E501
 def _is_source_stale_vs_main(
     source_text: str, main_text: str | None, merge_base_text: str | None
 ) -> bool:
@@ -223,8 +217,6 @@ def _is_source_stale_vs_main(
 
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
 # frob:ticket T-3408
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal.test_stale_file_skipped_forward_file_synced  # noqa: E501
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal.test_allow_stale_overrides_the_refusal  # noqa: E501
 def stale_managed_sources(
     managed: list[tuple[str, str]] | None = None,
 ) -> list[str]:
@@ -297,9 +289,6 @@ def _hook_basenames_by_event(settings: dict) -> dict[str, set[str]]:
 
 # frob:ticket T-5124
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
-# frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_duplicate_basename_same_event_is_removed  # noqa: E501
-# frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_distinct_basenames_are_kept  # noqa: E501
-# frob:tests tests/test_hook_sync_claude_config.py::TestDedupeHookRegistrations.test_empty_group_after_removal_is_dropped  # noqa: E501
 def dedupe_hook_registrations(
     project_settings: dict, user_settings: dict
 ) -> tuple[dict, list[str]]:
@@ -358,8 +347,6 @@ def dedupe_hook_registrations(
 
 # frob:ticket T-5124
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
-# frob:tests tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations.test_writes_deduped_user_settings  # noqa: E501
-# frob:tests tests/test_hook_sync_claude_config.py::TestSyncDedupeHookRegistrations.test_dry_run_does_not_write  # noqa: E501
 def sync_dedupe_hook_registrations(
     project_settings_path: Path = _PROJECT_SETTINGS,
     user_settings_path: Path = _USER_SETTINGS,
@@ -440,8 +427,6 @@ def _rendered(source_rel: str, dest: Path) -> str | None:
 # `plan()`'s own convention, so `frob.app.claude_runner` can call it
 # without reaching into "private" script internals.
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_home_claude_missing_true_when_root_absent  # noqa: E501
-# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_home_claude_missing_false_when_root_present  # noqa: E501
 def home_claude_missing() -> bool:
     """True if `_HOME_CLAUDE` (`~/.claude` or wherever `Path.home()`
     resolves to on this machine) does not exist at all -- T-3600."""

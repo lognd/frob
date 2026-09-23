@@ -70,7 +70,6 @@ _SEGMENT_BREAK = re.compile(r"&&|\|\||\n|[;|]")
 
 
 # frob:doc docs/guides/claude-hooks.md#_shellscanpy
-# frob:tests tests/test_hook_frob_suggest.py::TestAckSegmentation.test_ack_leading_its_own_segment_after_cd_disarms kind="integration"  # noqa: E501
 def segment_spans(command: str) -> list[tuple[int, int]]:
     """`(start, end)` character spans of `command`'s shell segments, split
     on its own top-level `;`, `&&`, `||`, `|` and newline separators --
@@ -106,7 +105,6 @@ def segment_spans(command: str) -> list[tuple[int, int]]:
 
 
 # frob:doc docs/guides/claude-hooks.md#_shellscanpy
-# frob:tests tests/test_hook_frob_suggest.py::TestAckSegmentation.test_bare_unacked_trigger_is_still_blocked kind="integration"  # noqa: E501
 # frob:waive WIRE001 reason="called by .claude/hooks/frob-suggest.py::_handle_bash in \
 # this same diff (from _shellscan import strip_and_blank_prefixed_segments as \
 # _strip_and_blank, after this package's usual sys.path.insert hack) -- WIRE001's \
