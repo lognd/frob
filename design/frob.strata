@@ -971,7 +971,28 @@ node core : trusted {
     // 131 (_detect_django's manage.py read) -- SELFAUDIT001 flagged these
     // as real, new fs.read sites this node's grant did not yet cover by
     // filename.
-    may "fs.read" via "src/frob/bind/__init__.py", "src/frob/cve/_parser.py", "src/frob/derived_state.py", "src/frob/docs/__init__.py", "src/frob/dup/_cache.py", "src/frob/dup/_template.py", "src/frob/excludes.py", "src/frob/fuzz/_stamp.py", "src/frob/gitio.py", "src/frob/map/__init__.py", "src/frob/outline/__init__.py", "src/frob/perf/_profile.py", "src/frob/perf/_ratchet.py", "src/frob/perf/_redundancy.py", "src/frob/perf/_rules.py", "src/frob/process/_proc_scan.py", "src/frob/process/_reap.py", "src/frob/policy/__init__.py", "src/frob/release/__init__.py", "src/frob/release/_fragments.py", "src/frob/repo_meta.py", "src/frob/scaffold/_managed.py", "src/frob/scaffold/_pool.py", "src/frob/scaffold/_skills_sync.py", "src/frob/stats/_agentic_shared.py", "src/frob/testing/_collect.py", "src/frob/testing/_collect_cpp.py", "src/frob/testing/_collect_python_cache.py", "src/frob/testing/_collect_kotlin.py", "src/frob/testing/_collect_rust.py", "src/frob/testing/_collect_shared.py", "src/frob/testing/_collect_ts.py", "src/frob/testing/_coverage_cache.py", "src/frob/testing/_coverage_refresh.py", "src/frob/testing/_coverage_wait.py", "src/frob/testing/_dotnet_runner.py", "src/frob/testing/_stability.py", "src/frob/xref/__init__.py", "src/frob/testing/_collect_csharp.py", "src/frob/testing/_runners.py", "src/frob/testing/_unity_batchmode.py", "src/frob/worktrees/_disposable_sweep.py", "src/frob/webapp/_detect.py";
+    // frob:ticket T-5349
+    // T-5349 (WEBSEC story-substrate fan-out, T-5302/T-5307/T-5313/T-5325/
+    // T-5349/T-5356/T-5360/T-5364): widened the prior per-file
+    // `src/frob/webapp/_detect.py` entry to the whole-package glob
+    // `src/frob/webapp/*.py` -- every sibling substrate module in this
+    // fan-out (`_websec_sinks.py`, `_websec_session_config.py`,
+    // `_websec_headers.py`, `_websec_authz_substrate.py`,
+    // `_comply_substrate.py`, `_a11y_substrate.py`, `_seo_substrate.py`,
+    // alongside `_detect.py` itself) reads a config/source file under a
+    // repo root the same "config-file-under-root" shape T-5302 already
+    // established, and each was independently refused at land by
+    // SELFAUDIT001 for the exact same missing-from-via-list reason
+    // (T-5302, T-5360). One glob instead of seven more per-file
+    // enumeration entries, same `tests/**`-style glob-in-via precedent
+    // this node's own fs.read/fs.write grants already use above (T-4495)
+    // -- `_via_matches` matches globs generically and the ratchet counts
+    // real observed fs.read sites under the glob, not `len(via)`, so this
+    // is not a widened-beyond-measured grant, only a widened enumeration
+    // shape. `src/frob/sql/**`'s own (currently empty-stub) modules are
+    // NOT covered by this glob; that package gets its own via entry when
+    // T-5334 lands real reads there.
+    may "fs.read" via "src/frob/bind/__init__.py", "src/frob/cve/_parser.py", "src/frob/derived_state.py", "src/frob/docs/__init__.py", "src/frob/dup/_cache.py", "src/frob/dup/_template.py", "src/frob/excludes.py", "src/frob/fuzz/_stamp.py", "src/frob/gitio.py", "src/frob/map/__init__.py", "src/frob/outline/__init__.py", "src/frob/perf/_profile.py", "src/frob/perf/_ratchet.py", "src/frob/perf/_redundancy.py", "src/frob/perf/_rules.py", "src/frob/process/_proc_scan.py", "src/frob/process/_reap.py", "src/frob/policy/__init__.py", "src/frob/release/__init__.py", "src/frob/release/_fragments.py", "src/frob/repo_meta.py", "src/frob/scaffold/_managed.py", "src/frob/scaffold/_pool.py", "src/frob/scaffold/_skills_sync.py", "src/frob/stats/_agentic_shared.py", "src/frob/testing/_collect.py", "src/frob/testing/_collect_cpp.py", "src/frob/testing/_collect_python_cache.py", "src/frob/testing/_collect_kotlin.py", "src/frob/testing/_collect_rust.py", "src/frob/testing/_collect_shared.py", "src/frob/testing/_collect_ts.py", "src/frob/testing/_coverage_cache.py", "src/frob/testing/_coverage_refresh.py", "src/frob/testing/_coverage_wait.py", "src/frob/testing/_dotnet_runner.py", "src/frob/testing/_stability.py", "src/frob/xref/__init__.py", "src/frob/testing/_collect_csharp.py", "src/frob/testing/_runners.py", "src/frob/testing/_unity_batchmode.py", "src/frob/worktrees/_disposable_sweep.py", "src/frob/webapp/*.py";
     // T-3029: `logging/logger.py` itself (not just `quiet.py`) reads
     // `FROB_VERBOSE`/`FROB_LOG_LEVEL` to pick its dictConfig level --
     // a real, new env.read site on the logger module.
