@@ -1,7 +1,7 @@
 ---
 id: T-5350
 title: DSTACK001 fixability tier missing from checked-in _KNOWN_RULE_FIXABILITY literal
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -34,11 +34,15 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5350
+branch: t-5350
 ---
 Found while working T-5190 on dev tip after T-5274 landed: tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan fails -- a fresh generated_fixability() scan reports DSTACK001: 'auto' but the checked-in _KNOWN_RULE_FIXABILITY literal (added by T-5274, wiring DSTACK001 into gates dispatch) doesn't have it. T-5274's own land should have updated this literal in lockstep; out of T-5190's scope (rule-id registration, not fixability tiers).
