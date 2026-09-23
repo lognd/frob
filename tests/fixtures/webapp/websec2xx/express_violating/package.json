@@ -1,0 +1,7 @@
+{
+  "name": "express-violating-fixture",
+  "dependencies": {
+    "express": "^4.18.0",
+    "express-session": "^1.17.0"
+  }
+}
