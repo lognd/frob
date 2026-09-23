@@ -25,6 +25,7 @@ scope:
 - frob.toml
 - docs/modules/gates.md
 - tests/gates_suite/test_coverage.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
 - op: add
   glob: tests/gates_suite/test_coverage.py
   reason: positive-control test for the WAIVE002 reserved-rule-id round-trip
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: keep the closed-set gate_rule_entries registry in lockstep with _KNOWN_GATE_RULES,
+    T-5190 pattern
   actor: logan
   at: '2026-09-23'
 triage_changes:
