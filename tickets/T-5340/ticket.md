@@ -1,5 +1,5 @@
 ---
-id: T-draft-196f1336
+id: T-5340
 title: 'Post-land sweep residue 2026-09-22_2024: COV002:tests/unit/gates/test_tool_registry_gate.py
   WIRE002:src/frob/testing/_dotnet_runner.py WIRE002:src/frob/testing/_unity_batchmode.py '
 state: queued
