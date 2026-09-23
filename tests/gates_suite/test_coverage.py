@@ -2160,6 +2160,30 @@ class TestCoverageGate:
         assert v is not None
         assert "not a recognized gate or policy rule id" in v.message
 
+    def test_waive002_reserved_websec_id_round_trips_clean(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-5301
+        """T-5301 (T-WEBSUB-3) positive control: `frob:waive WEBSEC101
+        reason="..."` must round-trip through WAIVE002's known-rule-id
+        check WITHOUT firing, even though WEBSEC101 has no real check
+        yet -- it is one of the reserved placeholder ids `_KNOWN_GATE_
+        RULES` now carries for the T-5140 web-app-lint epic (same
+        reservation shape PERF015-018 had under T-5136 before those
+        checks existed). A made-up id (e.g. NOTAREALRULE, covered by
+        the sibling test above) must still fail this same check."""
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive WEBSEC101 reason="not shipped yet, T-5301 reservation"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _waive002_violations  # noqa: PLC0415
+
+        violations = _waive002_violations(snap, frozenset())
+        assert _first_rule(violations, "WAIVE002") is None
+
     def test_waive002_honors_loaded_policy_rule_ids(self, tmp_path: Path) -> None:
         source = (
             'def helper(x):\n    # frob:waive POL-custom reason="known false positive"\n'

@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 412
+gate_rule_total: 661
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     fixability: "manual"
@@ -2080,6 +2080,1251 @@ gate_rule_entries:
   - id: "CHK-GATE-TOOL002"
     name: "TOOL002 is a live, enforced gate rule"
     disposition: "handled_by:TOOL002"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC101"
+    name: "WEBSEC101 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC101"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC102"
+    name: "WEBSEC102 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC102"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC103"
+    name: "WEBSEC103 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC103"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC104"
+    name: "WEBSEC104 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC104"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC105"
+    name: "WEBSEC105 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC105"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC106"
+    name: "WEBSEC106 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC106"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC107"
+    name: "WEBSEC107 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC107"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC108"
+    name: "WEBSEC108 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC108"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC109"
+    name: "WEBSEC109 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC109"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC110"
+    name: "WEBSEC110 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC110"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC111"
+    name: "WEBSEC111 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC111"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC112"
+    name: "WEBSEC112 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC112"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC113"
+    name: "WEBSEC113 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC113"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC114"
+    name: "WEBSEC114 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC114"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC115"
+    name: "WEBSEC115 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC115"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC116"
+    name: "WEBSEC116 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC116"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC117"
+    name: "WEBSEC117 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC117"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC118"
+    name: "WEBSEC118 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC118"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC119"
+    name: "WEBSEC119 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC119"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC120"
+    name: "WEBSEC120 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC120"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC121"
+    name: "WEBSEC121 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC121"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC122"
+    name: "WEBSEC122 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC122"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC123"
+    name: "WEBSEC123 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC123"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC124"
+    name: "WEBSEC124 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC124"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC125"
+    name: "WEBSEC125 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC125"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC201"
+    name: "WEBSEC201 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC201"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC202"
+    name: "WEBSEC202 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC202"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC203"
+    name: "WEBSEC203 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC203"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC204"
+    name: "WEBSEC204 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC204"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC205"
+    name: "WEBSEC205 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC205"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC206"
+    name: "WEBSEC206 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC206"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC207"
+    name: "WEBSEC207 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC207"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC208"
+    name: "WEBSEC208 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC208"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC209"
+    name: "WEBSEC209 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC209"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC210"
+    name: "WEBSEC210 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC210"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC211"
+    name: "WEBSEC211 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC211"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC212"
+    name: "WEBSEC212 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC212"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC213"
+    name: "WEBSEC213 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC213"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC214"
+    name: "WEBSEC214 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC214"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC215"
+    name: "WEBSEC215 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC215"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC216"
+    name: "WEBSEC216 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC216"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC217"
+    name: "WEBSEC217 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC217"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC218"
+    name: "WEBSEC218 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC218"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC219"
+    name: "WEBSEC219 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC219"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC220"
+    name: "WEBSEC220 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC220"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC221"
+    name: "WEBSEC221 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC221"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC222"
+    name: "WEBSEC222 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC222"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC223"
+    name: "WEBSEC223 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC223"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC224"
+    name: "WEBSEC224 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC224"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC225"
+    name: "WEBSEC225 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC225"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC226"
+    name: "WEBSEC226 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC226"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC227"
+    name: "WEBSEC227 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC227"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC228"
+    name: "WEBSEC228 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC228"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC229"
+    name: "WEBSEC229 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC229"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC230"
+    name: "WEBSEC230 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC230"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC301"
+    name: "WEBSEC301 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC301"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC302"
+    name: "WEBSEC302 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC302"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC303"
+    name: "WEBSEC303 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC303"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC304"
+    name: "WEBSEC304 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC304"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC305"
+    name: "WEBSEC305 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC305"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC306"
+    name: "WEBSEC306 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC306"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC307"
+    name: "WEBSEC307 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC307"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC308"
+    name: "WEBSEC308 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC308"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC309"
+    name: "WEBSEC309 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC309"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC310"
+    name: "WEBSEC310 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC310"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC311"
+    name: "WEBSEC311 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC311"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC312"
+    name: "WEBSEC312 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC312"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC313"
+    name: "WEBSEC313 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC313"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC314"
+    name: "WEBSEC314 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC314"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC315"
+    name: "WEBSEC315 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC315"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC316"
+    name: "WEBSEC316 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC316"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC317"
+    name: "WEBSEC317 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC317"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC318"
+    name: "WEBSEC318 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC318"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC319"
+    name: "WEBSEC319 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC319"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC320"
+    name: "WEBSEC320 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC320"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC321"
+    name: "WEBSEC321 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC321"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC322"
+    name: "WEBSEC322 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC322"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC323"
+    name: "WEBSEC323 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC323"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC324"
+    name: "WEBSEC324 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC324"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC325"
+    name: "WEBSEC325 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC325"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC326"
+    name: "WEBSEC326 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC326"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC327"
+    name: "WEBSEC327 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC327"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC328"
+    name: "WEBSEC328 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC328"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC329"
+    name: "WEBSEC329 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC329"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC330"
+    name: "WEBSEC330 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC330"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC331"
+    name: "WEBSEC331 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC331"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC332"
+    name: "WEBSEC332 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC332"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC333"
+    name: "WEBSEC333 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC333"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC334"
+    name: "WEBSEC334 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC334"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC401"
+    name: "WEBSEC401 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC401"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC402"
+    name: "WEBSEC402 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC402"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC403"
+    name: "WEBSEC403 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC403"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC404"
+    name: "WEBSEC404 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC404"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC405"
+    name: "WEBSEC405 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC405"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC406"
+    name: "WEBSEC406 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC406"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC407"
+    name: "WEBSEC407 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC407"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC408"
+    name: "WEBSEC408 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC408"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC409"
+    name: "WEBSEC409 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC409"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC410"
+    name: "WEBSEC410 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC410"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC411"
+    name: "WEBSEC411 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC411"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC412"
+    name: "WEBSEC412 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC412"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC413"
+    name: "WEBSEC413 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC413"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC414"
+    name: "WEBSEC414 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC414"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC415"
+    name: "WEBSEC415 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC415"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC416"
+    name: "WEBSEC416 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC416"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC417"
+    name: "WEBSEC417 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC417"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC418"
+    name: "WEBSEC418 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC418"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBSEC419"
+    name: "WEBSEC419 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBSEC419"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY101"
+    name: "COMPLY101 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY101"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY102"
+    name: "COMPLY102 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY102"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY103"
+    name: "COMPLY103 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY103"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY104"
+    name: "COMPLY104 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY104"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY105"
+    name: "COMPLY105 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY105"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY106"
+    name: "COMPLY106 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY106"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY107"
+    name: "COMPLY107 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY107"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY108"
+    name: "COMPLY108 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY108"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY109"
+    name: "COMPLY109 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY109"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY110"
+    name: "COMPLY110 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY110"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY111"
+    name: "COMPLY111 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY111"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY112"
+    name: "COMPLY112 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY112"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY113"
+    name: "COMPLY113 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY113"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY114"
+    name: "COMPLY114 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY114"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY115"
+    name: "COMPLY115 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY115"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY116"
+    name: "COMPLY116 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY116"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY117"
+    name: "COMPLY117 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY117"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY118"
+    name: "COMPLY118 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY118"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY119"
+    name: "COMPLY119 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY119"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY120"
+    name: "COMPLY120 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY120"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY121"
+    name: "COMPLY121 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY121"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY122"
+    name: "COMPLY122 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY122"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY123"
+    name: "COMPLY123 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY123"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY124"
+    name: "COMPLY124 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY124"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY125"
+    name: "COMPLY125 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY125"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY126"
+    name: "COMPLY126 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY126"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-COMPLY127"
+    name: "COMPLY127 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:COMPLY127"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y101"
+    name: "A11Y101 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y101"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y102"
+    name: "A11Y102 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y102"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y103"
+    name: "A11Y103 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y103"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y104"
+    name: "A11Y104 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y104"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y105"
+    name: "A11Y105 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y105"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y106"
+    name: "A11Y106 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y106"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y107"
+    name: "A11Y107 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y107"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y108"
+    name: "A11Y108 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y108"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y109"
+    name: "A11Y109 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y109"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y110"
+    name: "A11Y110 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y110"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y111"
+    name: "A11Y111 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y111"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y112"
+    name: "A11Y112 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y112"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y113"
+    name: "A11Y113 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y113"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y114"
+    name: "A11Y114 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y114"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y115"
+    name: "A11Y115 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y115"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y116"
+    name: "A11Y116 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y116"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y117"
+    name: "A11Y117 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y117"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y118"
+    name: "A11Y118 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y118"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y119"
+    name: "A11Y119 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y119"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y120"
+    name: "A11Y120 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y120"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y121"
+    name: "A11Y121 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y121"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y122"
+    name: "A11Y122 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y122"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y123"
+    name: "A11Y123 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y123"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y124"
+    name: "A11Y124 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y124"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y125"
+    name: "A11Y125 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y125"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y126"
+    name: "A11Y126 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y126"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y127"
+    name: "A11Y127 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y127"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y128"
+    name: "A11Y128 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y128"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y129"
+    name: "A11Y129 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y129"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y130"
+    name: "A11Y130 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y130"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y131"
+    name: "A11Y131 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y131"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y132"
+    name: "A11Y132 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y132"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y133"
+    name: "A11Y133 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y133"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y134"
+    name: "A11Y134 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y134"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-A11Y135"
+    name: "A11Y135 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:A11Y135"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO101"
+    name: "SEO101 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO101"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO102"
+    name: "SEO102 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO102"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO103"
+    name: "SEO103 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO103"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO104"
+    name: "SEO104 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO104"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO105"
+    name: "SEO105 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO105"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO106"
+    name: "SEO106 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO106"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO107"
+    name: "SEO107 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO107"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO108"
+    name: "SEO108 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO108"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO109"
+    name: "SEO109 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO109"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO110"
+    name: "SEO110 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO110"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO111"
+    name: "SEO111 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO111"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO112"
+    name: "SEO112 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO112"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO113"
+    name: "SEO113 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO113"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO114"
+    name: "SEO114 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO114"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO115"
+    name: "SEO115 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO115"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO116"
+    name: "SEO116 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO116"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO117"
+    name: "SEO117 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO117"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO118"
+    name: "SEO118 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO118"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO119"
+    name: "SEO119 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO119"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO120"
+    name: "SEO120 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO120"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO121"
+    name: "SEO121 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO121"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO122"
+    name: "SEO122 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO122"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO123"
+    name: "SEO123 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO123"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO124"
+    name: "SEO124 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO124"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO125"
+    name: "SEO125 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO125"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO126"
+    name: "SEO126 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO126"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SEO127"
+    name: "SEO127 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SEO127"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF101"
+    name: "WEBPERF101 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF101"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF102"
+    name: "WEBPERF102 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF102"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF103"
+    name: "WEBPERF103 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF103"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF104"
+    name: "WEBPERF104 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF104"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF105"
+    name: "WEBPERF105 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF105"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF106"
+    name: "WEBPERF106 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF106"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF107"
+    name: "WEBPERF107 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF107"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF108"
+    name: "WEBPERF108 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF108"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF109"
+    name: "WEBPERF109 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF109"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF110"
+    name: "WEBPERF110 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF110"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF111"
+    name: "WEBPERF111 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF111"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF112"
+    name: "WEBPERF112 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF112"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF113"
+    name: "WEBPERF113 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF113"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF114"
+    name: "WEBPERF114 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF114"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WEBPERF115"
+    name: "WEBPERF115 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:WEBPERF115"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL101"
+    name: "SQL101 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL101"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL102"
+    name: "SQL102 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL102"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL103"
+    name: "SQL103 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL103"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL104"
+    name: "SQL104 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL104"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL105"
+    name: "SQL105 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL105"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL106"
+    name: "SQL106 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL106"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL107"
+    name: "SQL107 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL107"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL108"
+    name: "SQL108 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL108"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL109"
+    name: "SQL109 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL109"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL110"
+    name: "SQL110 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL110"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL111"
+    name: "SQL111 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL111"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL112"
+    name: "SQL112 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL112"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL113"
+    name: "SQL113 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL113"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL114"
+    name: "SQL114 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL114"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL115"
+    name: "SQL115 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL115"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL116"
+    name: "SQL116 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL116"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL117"
+    name: "SQL117 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL117"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL118"
+    name: "SQL118 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL118"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL119"
+    name: "SQL119 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL119"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL120"
+    name: "SQL120 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL120"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL121"
+    name: "SQL121 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL121"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL122"
+    name: "SQL122 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL122"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL123"
+    name: "SQL123 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL123"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL124"
+    name: "SQL124 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL124"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL125"
+    name: "SQL125 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL125"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL126"
+    name: "SQL126 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL126"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL127"
+    name: "SQL127 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL127"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL128"
+    name: "SQL128 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL128"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL129"
+    name: "SQL129 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL129"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SQL130"
+    name: "SQL130 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:SQL130"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-LAUNCH101"
+    name: "LAUNCH101 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:LAUNCH101"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-LAUNCH102"
+    name: "LAUNCH102 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:LAUNCH102"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-LAUNCH103"
+    name: "LAUNCH103 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:LAUNCH103"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-LAUNCH104"
+    name: "LAUNCH104 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:LAUNCH104"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-LAUNCH105"
+    name: "LAUNCH105 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:LAUNCH105"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-LAUNCH106"
+    name: "LAUNCH106 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:LAUNCH106"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-LAUNCH107"
+    name: "LAUNCH107 is a reserved, not-yet-implemented gate rule id (T-5301/T-5140 epic)"
+    disposition: "handled_by:LAUNCH107"
     fixability: "manual"
     cross_refs: []
 concern_family_total: 13

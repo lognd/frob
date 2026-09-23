@@ -1,7 +1,7 @@
 ---
 id: T-5301
 title: Gate rule-id registration and severity wiring for WEBSEC/COMPLY/A11Y/SEO/WEBPERF/SQL
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -175,6 +175,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_loads_without_error
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_reserved_websec_id_round_trips_clean
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_is_frozenset
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 threat: null
 component: null
