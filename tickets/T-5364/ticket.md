@@ -1,7 +1,7 @@
 ---
 id: T-5364
 title: 'SEO/WEBPERF substrate: per-route head metadata extraction'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -62,6 +62,14 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_webapp_seo_substrate.py::test_extract_page_metadata_html_positive_control
+- tests/unit/test_webapp_seo_substrate.py::test_extract_page_metadata_jsx_positive_control
+- tests/unit/test_webapp_seo_substrate.py::test_extract_page_metadata_no_head_html_is_negative_control
+- tests/unit/test_webapp_seo_substrate.py::test_extract_page_metadata_no_head_jsx_is_negative_control
+- tests/unit/test_webapp_seo_substrate.py::test_extract_page_metadata_unsupported_extension_is_negative_control
+- tests/unit/test_webapp_seo_substrate.py::test_build_duplicate_title_index_positive_control
+- tests/unit/test_webapp_seo_substrate.py::test_build_duplicate_title_index_no_duplicates_is_negative_control
 designated_repro_test: null
 threat: null
 component: null

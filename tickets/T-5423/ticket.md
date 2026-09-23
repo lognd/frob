@@ -1,5 +1,5 @@
 ---
-id: T-draft-36f5e957
+id: T-5423
 title: Gate registry derived views are not consumed by the check job runner; @gate
   registration does not run a detector
 state: queued

@@ -3,6 +3,7 @@ skips the owner check (planted finding).
 
 frob:ticket T-5356
 """
+
 from flask import Flask, g
 
 app = Flask(__name__)
