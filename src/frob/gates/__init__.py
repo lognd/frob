@@ -667,17 +667,6 @@ def _evidence_valid_for_ticket(
 # ---------------------------------------------------------------------------
 
 
-def _test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]]:
-    """`{target: [edges]}` for every TESTS edge of `kind`
-    ("unit"/"integration"/"e2e")."""
-    result: dict[str, list[Edge]] = {}
-    for edge in snapshot.edges:
-        if edge.kind != EdgeKind.TESTS or edge.attrs.get("kind", "unit") != kind:
-            continue
-        result.setdefault(edge.target, []).append(edge)
-    return result
-
-
 def _unit_test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]]:
     """`{tested_symref: [edges]}` for every TESTS edge of `kind`, indexed by
     whichever endpoint names the tested symbol.
@@ -810,7 +799,10 @@ def _edge_has_execution_evidence(
     applies in order (macro-file collection, src/target node-id match, or a
     native test symref bound in `snapshot`); split out of `_valid_edges` so
     that function stays a plain filter comprehension (T-0361)."""
-    macro_file = _macro_symbol_file(e.src)
+    # T-0336: the macro stand-in symbol can land on either endpoint
+    # depending on which convention the `frob:tests` directive used
+    # (same as the plain node-id check two lines below), so check both.
+    macro_file = _macro_symbol_file(e.src) or _macro_symbol_file(e.target)
     if macro_file is not None:
         return _macro_file_collected(macro_file, tests.node_ids)
     if _node_id_collected(symref_to_nodeid(e.src), tests.node_ids):
@@ -983,28 +975,57 @@ def _case_count(
     """
     total = 0
     for edge in valid_edges:
-        macro_file = _macro_symbol_file(edge.src)
-        if macro_file is not None:
-            # T-0318: a macro stand-in has no exact/prefix node id of its
-            # own (proptest's expansion names each case after its OWN fn,
-            # never after the macro) -- count every collected case under
-            # the same file instead, `_valid_edges` already proved >=1.
-            file_prefix = f"{macro_file}::"
-            total += sum(
-                1 for node_id in tests.node_ids if node_id.startswith(file_prefix)
-            )
-            continue
-        base = symref_to_nodeid(edge.src)
-        # T-0949: `_case_ids_by_base` memoizes the base->case-ids grouping
-        # once per `tests.node_ids` value instead of this re-scanning the
-        # full node-id set with `startswith()` for every edge.
-        matches = (1 if base in tests.node_ids else 0) + len(
-            _case_ids_by_base(tests.node_ids).get(base, ())
-        )
-        if root is not None and matches > 1 and not _has_assertion_evidence(root, base):
-            matches = 1
-        total += matches if matches else 1
+        total += _case_count_for_edge(edge, tests, root)
     return total
+
+
+def _case_count_for_edge(
+    edge: Edge, tests: CollectedTests, root: Path | None
+) -> int:
+    """`_case_count`'s per-edge body, split out so `_case_count` itself
+    stays under ARCH001's long-AND-complex threshold (T-2214): the
+    macro-stand-in short-circuit, the dual-endpoint (`src`/`target`)
+    case-id lookup, and the T-0549 assertion-evidence cap for one edge,
+    unchanged in behavior from the inline version this replaces."""
+    # Same dual-endpoint shape as the `src`/`target` case-id check below:
+    # the macro stand-in symbol (`_MACRO_SYMBOL_SUFFIX`) can land on
+    # either endpoint depending on which convention the `frob:tests`
+    # directive used, so check both rather than only `edge.src`.
+    macro_file = _macro_symbol_file(edge.src) or _macro_symbol_file(edge.target)
+    if macro_file is not None:
+        # T-0318: a macro stand-in has no exact/prefix node id of its own
+        # (proptest's expansion names each case after its OWN fn, never
+        # after the macro) -- count every collected case under the same
+        # file instead, `_valid_edges` already proved >=1.
+        file_prefix = f"{macro_file}::"
+        return sum(1 for node_id in tests.node_ids if node_id.startswith(file_prefix))
+    # `_edge_has_execution_evidence`'s own dual convention check (T-0336:
+    # `src` names the test in one convention, `target` in the other)
+    # means the edge this function was handed may have already validated
+    # via EITHER endpoint -- checking `edge.src` alone here silently
+    # undercounted every edge of the "directive names the source,
+    # attaches to the test" shape (the common case) down to the `matches
+    # else 1` structural-fallback floor instead of its real per-case
+    # count. Try `src` first, then `target`, same order
+    # `_edge_has_execution_evidence` uses.
+    base = symref_to_nodeid(edge.src)
+    # T-0949: `_case_ids_by_base` memoizes the base->case-ids grouping
+    # once per `tests.node_ids` value instead of this re-scanning the
+    # full node-id set with `startswith()` for every edge.
+    matches = (1 if base in tests.node_ids else 0) + len(
+        _case_ids_by_base(tests.node_ids).get(base, ())
+    )
+    if not matches:
+        target_base = symref_to_nodeid(edge.target)
+        target_matches = (1 if target_base in tests.node_ids else 0) + len(
+            _case_ids_by_base(tests.node_ids).get(target_base, ())
+        )
+        if target_matches:
+            base = target_base
+            matches = target_matches
+    if root is not None and matches > 1 and not _has_assertion_evidence(root, base):
+        matches = 1
+    return matches if matches else 1
 
 
 # frob:ticket T-0018
@@ -4692,7 +4713,12 @@ def _test003(
     an interface owing integration tests -- the honest over-approximation the
     task explicitly allows in place of real import-graph derivation.
     """
-    all_pairs = _flatten_edges(_test_edges(snapshot, "integration"))
+    # T-0336-shaped fix: index by BOTH endpoints (`_unit_test_edges`, not
+    # target-only `_test_edges`) so a directive written above the TEST
+    # (src=source file/symbol, target=test symref) is found the same as
+    # one written above the source -- `_edges_for_package`'s prefix match
+    # is against the SOURCE-side path either way.
+    all_pairs = _flatten_edges(_unit_test_edges(snapshot, "integration"))
     ordered_packages = sorted(_public_packages(snapshot))
     violations = [
         v
@@ -4797,7 +4823,8 @@ def _test009(
     design file as one artifact needing coverage (consistent with T-0164's
     COV002 precedent), not each construct individually.
     """
-    all_pairs = _flatten_edges(_test_edges(snapshot, "e2e"))
+    # T-0336-shaped fix, same as TEST003: index by both endpoints.
+    all_pairs = _flatten_edges(_unit_test_edges(snapshot, "e2e"))
     violations: list[Violation] = []
     for design_file in sorted(_design_files(snapshot)):
         valid = _valid_edges(
@@ -4863,9 +4890,17 @@ def _pair_covered(
     for target, edge in all_pairs:
         if not (target == provider or target.startswith(prefix)):
             continue
-        if not _node_id_collected(symref_to_nodeid(edge.src), tests.node_ids):
+        # T-0336-shaped fix, same as `_case_count`: the collected node id
+        # can land on either endpoint depending on which convention the
+        # directive used -- check both, and derive `test_path` from
+        # whichever endpoint actually matched (the test-side one), not
+        # unconditionally from `edge.src`.
+        if _node_id_collected(symref_to_nodeid(edge.src), tests.node_ids):
+            test_path = edge.src.split("::", 1)[0]
+        elif _node_id_collected(symref_to_nodeid(edge.target), tests.node_ids):
+            test_path = edge.target.split("::", 1)[0]
+        else:
             continue
-        test_path = edge.src.split("::", 1)[0]
         if consumer_leaf in PurePosixPath(test_path).parts or (
             f"test_{consumer_leaf}" in test_path
         ):
@@ -4886,7 +4921,8 @@ def _test007_pairs(
     """
     if not cfg.pair_integration:
         return ()
-    all_pairs = _flatten_edges(_test_edges(snapshot, "integration"))
+    # T-0336-shaped fix, same as TEST003: index by both endpoints.
+    all_pairs = _flatten_edges(_unit_test_edges(snapshot, "integration"))
     ordered_pairs = sorted(_uses_contract_pairs(snapshot))
     violations = [
         v
@@ -4933,7 +4969,8 @@ def _test004(
     systems: tuple[SystemSpec, ...], snapshot: GraphSnapshot, tests: CollectedTests
 ) -> tuple[Violation, ...]:
     """TEST004: a declared `[[system]]` has fewer than its `min_e2e` e2e edges."""
-    e2e_edges = _test_edges(snapshot, "e2e")
+    # T-0336-shaped fix, same as TEST003: index by both endpoints.
+    e2e_edges = _unit_test_edges(snapshot, "e2e")
     violations: list[Violation] = []
     for system in systems:
         valid = _valid_edges(e2e_edges.get(system.id, []), tests, snapshot)

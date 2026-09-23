@@ -1,7 +1,7 @@
 ---
 id: T-5294
 title: TEST002/3/4/7/9 test-gate detectors miscount/misfire on real fixtures
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -50,6 +50,14 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test003_satisfied_by_parametrized_case_with_dot_in_case_id
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test003_satisfied_by_parametrized_test_node_id
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test004_passes_with_enough_e2e
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test002_parametrized_test_counts_each_case
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test003_satisfied_by_proptest_macro_block
+- tests/gates_suite/test_test_gate.py::TestConventionUnitBinding::test_test009_satisfied_by_e2e_edge
+- tests/gates_suite/test_test_gate.py::TestPairLevelIntegration::test_test007_passes_when_boundary_tested
 designated_repro_test: null
 threat: null
 component: null
