@@ -21,10 +21,18 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/lang/_walk_css.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/lang/_walk_css.py
+  reason: DUP002 fix on _walk_css.py; FLAGCOV001 half resolved by T-5389
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
