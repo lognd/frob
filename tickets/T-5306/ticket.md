@@ -24,11 +24,23 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_websec_xss.py
-- tests/fixtures/webapp/websec1xx/**
+- tests/fixtures/webapp/websec1xx/xss/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/websec1xx/**
+  reason: narrow to xss subdir, sibling leaves (T-5308 headers) share websec1xx root
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/webapp/websec1xx/xss/**
+  reason: narrowed fixture subdir so sibling websec1xx leaves (T-5308 etc) can run
+    concurrently
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
