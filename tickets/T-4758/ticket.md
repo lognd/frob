@@ -13,7 +13,6 @@ blocked_by:
 - T-4712
 - T-4713
 - T-4714
-- T-4742
 - T-4743
 parent: T-4703
 tier: ticket
@@ -111,3 +110,6 @@ Its acceptance is exactly the before/after counts -- 30,915 directive lines, 5,6
 lines, 1,712 stacks of 3+ -- together with ZERO gate-finding deltas on every rule other than the
 new rules this story introduces (which go to zero). Any other rule's count moving is a defect to
 investigate, not a result to accept.
+
+## Unblock log
+- 2026-09-23: unblocked by T-4742 -- quiet-window sweep runs now over the landed families (T-4710 TEST010, T-4713 DSTACK001, T-4714 FMT002, T-4712 FMT001); T-4742's family gets its own sweep when it lands
