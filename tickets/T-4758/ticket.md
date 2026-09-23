@@ -15,7 +15,7 @@ blocked_by:
 - T-4714
 parent: T-4703
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: 0.534.0
 points: 5

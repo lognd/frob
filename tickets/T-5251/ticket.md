@@ -11,9 +11,16 @@ blocked_by:
 - T-4738
 parent: T-5106
 tier: ticket
-sprint: v0.535.0
+sprint: null
 runs_last: false
-milestone: null
+milestone: 0.535.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:

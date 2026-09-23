@@ -8,7 +8,7 @@ created: '2026-09-22'
 priority: high
 parent: T-5140
 tier: ticket
-sprint: v0.535.0
+sprint: null
 runs_last: false
 milestone: 0.534.0
 points: 2

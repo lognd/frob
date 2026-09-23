@@ -12,9 +12,16 @@ blocked_by:
 - T-4658
 parent: T-4652
 tier: ticket
-sprint: v0.535.0
+sprint: null
 runs_last: false
-milestone: null
+milestone: 0.535.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -81,10 +88,12 @@ acceptance:
     The PR check refusing a branch-minted id says "run `frob ticket sync --base main`,
     then push". No refusal in this flow may state a problem without stating its remedy.
   evidence: []
-- text: Given <!-- frob:waive DOC006 reason="illustrative future frob ticket sync subcommand this ticket proposes -- does not exist until this ticket lands" -->`frob ticket sync`, when it runs, then it prints a before/after table
-    of every renumbered id and every rewritten citation, and exits with a one-line
-    summary of what changed. A sync that renumbered nothing says so on one line rather
-    than printing an empty table.
+- text: Given <!-- frob:waive DOC006 reason="illustrative future frob ticket sync
+    subcommand this ticket proposes -- does not exist until this ticket lands" -->`frob
+    ticket sync`, when it runs, then it prints a before/after table of every renumbered
+    id and every rewritten citation, and exits with a one-line summary of what changed.
+    A sync that renumbered nothing says so on one line rather than printing an empty
+    table.
   evidence: []
 - text: Given `frob ticket new` on a non-trunk branch, when the ticket is created,
     then the author is told their id is a DRAFT that will be numbered when it reaches

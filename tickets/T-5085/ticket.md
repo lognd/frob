@@ -9,9 +9,16 @@ created: '2026-09-19'
 priority: high
 parent: T-5101
 tier: ticket
-sprint: v0.536.0
+sprint: null
 runs_last: false
-milestone: null
+milestone: 0.536.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -49,8 +56,8 @@ scope_changes:
   at: '2026-09-19'
 - op: remove
   glob: tests/test_hook_frob_suggest.py
-  reason: T-5124 leases this test file and hasn't landed yet; will re-add
-    once it lands
+  reason: T-5124 leases this test file and hasn't landed yet; will re-add once it
+    lands
   actor: logan
   at: '2026-09-19'
 - op: add

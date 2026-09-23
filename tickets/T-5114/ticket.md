@@ -14,9 +14,16 @@ blocked_by:
 - T-5105
 parent: T-5081
 tier: ticket
-sprint: v0.536.0
+sprint: null
 runs_last: false
-milestone: null
+milestone: 0.536.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:

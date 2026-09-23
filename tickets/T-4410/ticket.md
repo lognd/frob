@@ -8,9 +8,16 @@ created: '2026-09-11'
 priority: high
 parent: null
 tier: epic
-sprint: v0.533.0
+sprint: null
 runs_last: false
 milestone: 1.0.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false

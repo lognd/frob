@@ -9,9 +9,16 @@ created: '2026-09-20'
 priority: high
 parent: null
 tier: story
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: 1.0.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -183,12 +190,6 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: null
-points: null
-unsized_ack: false
-unsized_ack_reason: null
-tokens_in: null
-tokens_out: null
-tokens_cache_read: null
 worktree: /home/logan/projects/frob/.claude/worktrees/t-5132
 branch: t-5132
 ---

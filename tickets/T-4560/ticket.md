@@ -9,9 +9,16 @@ created: '2026-09-17'
 priority: high
 parent: T-4410
 tier: ticket
-sprint: v0.533.0
+sprint: null
 runs_last: false
-milestone: v0.532.0
+milestone: 0.532.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:

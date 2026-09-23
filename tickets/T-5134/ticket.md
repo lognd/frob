@@ -9,7 +9,7 @@ created: '2026-09-20'
 priority: high
 parent: T-2994
 tier: story
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: 1.0.0
 points: 5
@@ -18,6 +18,7 @@ unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:

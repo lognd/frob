@@ -11,7 +11,7 @@ blocked_by:
 - T-5132
 parent: null
 tier: story
-sprint: v0.534.0
+sprint: null
 runs_last: false
 milestone: 1.0.0
 points: 8
@@ -20,6 +20,7 @@ unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -139,7 +140,6 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: null
-usage: null
 worktree: /home/logan/projects/frob/.claude/worktrees/t-5137
 branch: t-5137
 ---

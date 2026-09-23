@@ -10,15 +10,16 @@ created: '2026-09-17'
 priority: medium
 parent: T-4513
 tier: ticket
-sprint: v0.534.0
+sprint: null
 runs_last: false
-milestone: v0.533.0
+milestone: 0.533.0
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:

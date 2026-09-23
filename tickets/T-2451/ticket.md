@@ -8,9 +8,16 @@ created: '2026-08-18'
 priority: medium
 parent: null
 tier: ticket
-sprint: v0.544.0
+sprint: null
 runs_last: false
 milestone: 1.0.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:

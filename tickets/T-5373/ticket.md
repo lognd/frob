@@ -12,7 +12,7 @@ parent: T-5145
 tier: ticket
 sprint: null
 runs_last: false
-milestone: v0.534.0
+milestone: 0.534.0
 points: null
 unsized_ack: false
 unsized_ack_reason: null
