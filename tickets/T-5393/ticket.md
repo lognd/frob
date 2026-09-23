@@ -2,7 +2,7 @@
 id: T-5393
 title: 'ruff ''Would reformat: path'' colon form breaks _land_format and check/_python
   parsers (bogus filenames)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -27,6 +27,7 @@ scope:
 - docs/modules/gates.md
 - tests/unit/test_land_format_gate.py
 - tests/unit/test_ruff_reformat_parser.py
+- src/frob/process/parsers/ruff.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +58,12 @@ scope_changes:
   reason: new positive-control test for shared ruff reformat line parser
   actor: logan
   at: '2026-09-23'
+- op: add
+  glob: src/frob/process/parsers/ruff.py
+  reason: add shared Would-reformat line parser (colon and non-colon forms) used by
+    both gates and check
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
@@ -70,5 +77,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5393
+branch: t-5393
 ---
 Newer ruff prints 'Would reformat: <path>' (colon). src/frob/gates/_land_format.py:143 and src/frob/check/_python.py:223 both strip only 'Would reformat ' so the residual string 'Would reformat: <path>' is used as a filename. Observed in /tmp/land-T-5302.log: hundreds of 'error: Failed to format Would reformat: tests/...: No such file or directory' during the pre-land rewrite, after which the land falls back to LANDFMT001 refusal on unrewritten drift; in frob check the Diagnostic.file is wrong so waiver/scope matching is voided (path-shape identity). Fix: one shared parser (extract, no duplicate) that accepts both forms via a regex anchored on the ruff line grammar, positive-control test with both output shapes, and a regression test that the rewrite receives real paths.
