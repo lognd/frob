@@ -8,6 +8,7 @@ created: '2026-09-22'
 priority: high
 blocked_by:
 - T-5313
+- T-5303
 parent: T-5146
 tier: ticket
 sprint: v0.535.0
