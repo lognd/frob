@@ -22,6 +22,14 @@ from frob.lang._models import RawComment, RawSymbol
 from frob.lang._walk_bash import _walk_bash
 from frob.lang._walk_c import _walk_c_family
 from frob.lang._walk_csharp import _walk_csharp
+from frob.lang._walk_css import (
+    CSS_COMMENT_TYPES as _CSS_COMMENT_TYPES,
+)
+from frob.lang._walk_css import (
+    SCSS_COMMENT_TYPES as _SCSS_COMMENT_TYPES,
+)
+from frob.lang._walk_css import walk_css as _walk_css
+from frob.lang._walk_css import walk_scss as _walk_scss
 from frob.lang._walk_cuda import _walk_cuda
 from frob.lang._walk_java import _walk_java
 from frob.lang._walk_kotlin import _walk_kotlin
@@ -65,6 +73,15 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
     # docstring for the doc-comment-vs-ordinary-comment decision (`///`
     # is its own `doc_comment` node type, distinct from `line_comment`).
     "zig": frozenset({"line_comment", "doc_comment"}),
+    # frob:ticket T-5303
+    # See `frob.lang._walk_css` module docstring: CSS's one comment node
+    # type (`/* ... */`, no line-comment syntax at all).
+    "css": _CSS_COMMENT_TYPES,
+    # frob:ticket T-5303
+    # SCSS adds `// ...` line comments (surfaced as `js_comment`, a
+    # language-pack naming artifact) on top of CSS's block form -- see
+    # `frob.lang._walk_css` module docstring.
+    "scss": _SCSS_COMMENT_TYPES,
 }
 
 
@@ -96,6 +113,8 @@ _WALKERS = {
     "java": _walk_java,
     "cuda": _walk_cuda,
     "zig": _walk_zig,
+    "css": _walk_css,
+    "scss": _walk_scss,
 }
 
 # frob:ticket T-0342

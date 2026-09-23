@@ -177,6 +177,15 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     # name -- see `frob.lang._walk_zig` for the positional-walk (no
     # named fields) shape and its pub-visibility/doc-comment decisions.
     ".zig": ("zig", "zig"),
+    # frob:ticket T-5303
+    # tree-sitter-language-pack bundles "css"/"scss" grammars under those
+    # names -- see `frob.lang._walk_css` for the thin rule-set/variable
+    # walker and its publicness (always-public, CSS has no visibility
+    # keyword) decision. A11Y/SEO contrast, target-size, outline, and
+    # hidden-text lint rules (T-5146-3, T-5146-4, T-5147-3) query the raw
+    # tree these entries make reachable, not this walker's symbol shape.
+    ".css": ("css", "css"),
+    ".scss": ("scss", "scss"),
 }
 
 # `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below

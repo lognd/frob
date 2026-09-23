@@ -1,0 +1,13 @@
+/* frob:tests test_lang_css.py::test_parse_css_sample */
+.button, .button--primary {
+  color: #ffffff;
+  background-color: #000000;
+  outline: none;
+}
+
+@media screen and (min-width: 600px) {
+  .nested-rule {
+    font-size: 0;
+    opacity: 0;
+  }
+}

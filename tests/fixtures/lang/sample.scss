@@ -1,0 +1,14 @@
+// frob:tests test_lang_css.py::test_parse_scss_sample
+$brand-color: #336699;
+
+.card {
+  color: $brand-color;
+
+  &:hover {
+    outline: none;
+  }
+
+  .nested-selector {
+    font-size: 0;
+  }
+}

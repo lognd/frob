@@ -110,6 +110,7 @@ the whole declaration and `body_tokens` is always `()`.
 | java | the literal `public` keyword only -- the package-private default (no modifier at all) is NOT public, the trap this language names explicitly; an interface member with no modifier of its own is implicitly public (the language's own rule), overridden only by an explicit `private`/`protected` modifier (T-1601) |
 | cuda | a C++ DIALECT (not a distinct walker, `_walk_cuda.py`'s own docstring) layering one override on `_walk_c.py`'s existing static-based rule: a `__global__` kernel is always public (the ticket's own "kernel entry point is the analog of a public symbol" framing) regardless of `static`; a `__device__`-only function (no `__host__` alongside it) is always private, since it can never be called from outside the file the way frob's public/private axis means; every other case (plain host function, `__host__` alone, `__host__ __device__`) defers unchanged to C++'s own rule (T-1602) |
 | zig | `pub` is the explicit, opt-in visibility marker -- ABSENT means private (the same "enumerate the public set" shape rust's `pub` takes, the opposite of kotlin's default-public rule); this is the ticket's own named decision (T-1603) |
+| css / scss | always `public=True` -- CSS has no visibility keyword at all; every selector and custom property is visible to anything that loads the stylesheet (T-5303) |
 
 ## Comment extraction and binding
 
@@ -137,7 +138,7 @@ Each language has its own recursive-descent walker (`_walk_python.py`,
 `_walk_typescript.py`, `_walk_rust.py`, `_walk_c.py`'s `_walk_c_family`
 shared by c/cpp, `_walk_kotlin.py`, `_walk_bash.py`, `_walk_csharp.py`,
 `_walk_java.py`, `_walk_cuda.py` (a thin C++-dialect wrapper), `_walk_zig.py`,
-`_walk_strata.py`) built on the shared
+`_walk_css.py` (shared css/scss walker), `_walk_strata.py`) built on the shared
 `_common.py` primitives (`_leaf_tokens`, `_leading_doc_comment`,
 `_strip_comment_delims`, `_span_of`).
 Notable per-language handling:
@@ -290,6 +291,26 @@ Notable per-language handling:
   wiring for zig (mirrors T-2906's bash/csharp and T-1601/T-1602's java/
   cuda precedent) is a disclosed `KNOWN_GAP` tracked by a follow-up
   ticket filed while working T-1603 -- see the Language Support Contract
+  section below.
+- **css / scss** (T-5303, WEBSEC/A11Y/SEO substrate leaf): a single thin
+  walker (`_walk_css_family`, shared by both grammars via
+  `walk_css`/`walk_scss`) over `tree-sitter-language-pack`'s "css"/"scss"
+  grammars. Only two top-level node shapes become symbols: a top-level
+  `rule_set` (`SymbolKind.CLASS`, qualname is the rule's own
+  whitespace-collapsed selector text) and a top-level `$`-prefixed SCSS
+  variable `declaration` (`SymbolKind.CONST`, mirrors `_walk_bash.py`'s
+  top-level-assignment-as-CONST convention) -- everything else (nested
+  rules inside `@media`/parent selectors, plain declarations) is left
+  unwalked by design: the A11Y/SEO lint rules this substrate exists for
+  (contrast, target-size, outline:none, hidden-text) query raw tree-sitter
+  nodes via `raw_tree`, not `frob.graph` symbol qualnames, so full
+  selector-tree fidelity is out of scope for this leaf. Plain CSS has one
+  comment node type (`comment`, the `/* */` block form -- CSS itself has
+  no line-comment syntax); SCSS additionally surfaces `// ...` line
+  comments as a `js_comment` node type (a language-pack naming artifact,
+  not a design choice here). `capability`/`dup`/`docblock` facet-registry
+  wiring for css/scss is a disclosed `KNOWN_GAP` tracked by a follow-up
+  ticket filed while working T-5303 -- see the Language Support Contract
   section below.
 
 ## Data models

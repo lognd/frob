@@ -1,7 +1,7 @@
 ---
 id: T-5303
 title: Wire CSS/SCSS grammar into frob.lang (contrast/target-size/hidden-text substrate)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -327,6 +327,18 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_lang_css.py::TestCss::test_css_is_a_supported_language
+- tests/test_lang_css.py::TestCss::test_parse_css_sample
+- tests/test_lang_css.py::TestCss::test_positive_control_raw_tree_is_non_empty
+- tests/test_lang_css.py::TestCss::test_top_level_rule_set_is_a_class_symbol
+- tests/test_lang_css.py::TestCss::test_nested_rule_inside_media_is_not_a_top_level_symbol
+- tests/test_lang_css.py::TestScss::test_scss_is_a_supported_language
+- tests/test_lang_css.py::TestScss::test_parse_scss_sample
+- tests/test_lang_css.py::TestScss::test_positive_control_raw_tree_is_non_empty_nested_selector
+- tests/test_lang_css.py::TestScss::test_dollar_variable_is_a_const_symbol
+- tests/test_lang_css.py::TestScss::test_top_level_rule_set_is_a_class_symbol
+- tests/test_lang_css.py::TestScss::test_line_comment_is_recognized
 designated_repro_test: null
 threat: null
 component: null

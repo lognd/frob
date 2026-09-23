@@ -447,6 +447,12 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # `_PENDING_FACET_WIRING_TICKETS` mapping.
     # see T-3492 for the history behind this
     "T-3513": True,
+    # T-5303's own filed finding, identical shape: css/scss get a real
+    # frob.lang grammar/walker (`_walk_css.py`) but are not yet wired
+    # into the capability/dup/docblock FACETS -- same shared
+    # `_PENDING_FACET_WIRING_TICKETS` mapping, follow-up filed while
+    # working T-5303.
+    "T-5386": True,
 }
 
 
@@ -488,6 +494,11 @@ _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
 # see T-1601 for the history behind this
 _PENDING_FACET_WIRING_TICKETS: dict[str, str] = {
     "zig": "T-3513",
+    # T-5303: css/scss are real `frob.lang` grammars (_walk_css.py) with
+    # no capability/dup/docblock FACETS wiring yet -- follow-up filed
+    # while working T-5303 (see KNOWN_GAP_TRACKING_TICKETS above).
+    "css": "T-5386",
+    "scss": "T-5386",
 }
 
 
