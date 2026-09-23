@@ -28,6 +28,7 @@ scope:
 - tests/fixtures/webapp/websec1xx/**
 - docs/modules/webapp-websec-injection.md
 - tests/unit/test_websec_sinks.py
+- frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_websec_sinks.py
   reason: new unit test file for WEBSEC101-106 positive/negative fixtures
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: frob.toml
+  reason: 'ARCH104: declare webapp->lang layering edge for frob.lang.raw_tree usage
+    in _websec_sinks.py'
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -62,6 +69,21 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc101_positive-WEBSEC101-True]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc101_negative-WEBSEC101-False]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc102_positive-WEBSEC102-True]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc102_negative-WEBSEC102-False]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc103_positive-WEBSEC103-True]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc103_negative-WEBSEC103-False]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc104_positive-WEBSEC104-True]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc104_negative-WEBSEC104-False]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc105_positive-WEBSEC105-True]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc105_negative-WEBSEC105-False]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc106_positive-WEBSEC106-True]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_fixture[webesc106_negative-WEBSEC106-False]
+- tests/unit/test_websec_sinks.py::test_websec_sink_findings_no_framework_short_circuits
+- tests/unit/test_websec_sinks.py::TestTaintGateWebsecExtension::test_taint_gate_emits_websec_violation
 designated_repro_test: null
 threat: null
 component: null
