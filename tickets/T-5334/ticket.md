@@ -28,6 +28,7 @@ scope:
 - tests/fixtures/sql/**
 - frob.toml
 - docs/modules/sql.md
+- tests/unit/sql/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +44,11 @@ scope_changes:
   glob: docs/modules/sql.md
   reason: new public module needs its own docs/modules/*.md, cited from frob:doc directives
     in _extract.py
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/sql/**
+  reason: unit tests for extract_sql_literals/sql_injection_findings/sql_relevance
   actor: logan
   at: '2026-09-23'
 triage_changes:
