@@ -252,7 +252,7 @@
       "reason": "testsuite glob growth"
     },
     "testsuite::fs.write": {
-      "accepted_count": 581,
+      "accepted_count": 582,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {

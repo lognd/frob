@@ -1,7 +1,7 @@
 ---
 id: T-5311
 title: 'WEBSEC123-125: resource-exhaustion input-bounds'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -139,6 +139,15 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_websec_bounds.py::test_websec_bounds_findings_no_framework_short_circuits
+- tests/unit/test_websec_bounds.py::test_websec_bounds_findings_fixture[webesc123_positive-WEBSEC123-True]
+- tests/unit/test_websec_bounds.py::test_websec_bounds_findings_fixture[webesc123_negative-WEBSEC123-False]
+- tests/unit/test_websec_bounds.py::test_websec_bounds_findings_fixture[webesc124_positive-WEBSEC124-True]
+- tests/unit/test_websec_bounds.py::test_websec_bounds_findings_fixture[webesc124_negative-WEBSEC124-False]
+- tests/unit/test_websec_bounds.py::test_websec_bounds_findings_fixture[webesc125_positive-WEBSEC125-True]
+- tests/unit/test_websec_bounds.py::test_websec_bounds_findings_fixture[webesc125_negative-WEBSEC125-False]
+- tests/unit/test_websec_bounds.py::TestTaintGateWebsecBoundsExtension::test_taint_gate_emits_websec_bounds_violation
 designated_repro_test: null
 threat: null
 component: null
