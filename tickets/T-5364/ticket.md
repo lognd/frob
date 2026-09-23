@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_seo_substrate.py
 - tests/fixtures/webapp/seo1xx/**
 - docs/modules/webapp-seo.md
+- tests/unit/test_webapp_seo_substrate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,12 @@ scope_changes:
 - op: add
   glob: docs/modules/webapp-seo.md
   reason: T-5364 owns its own doc page (7-way concurrent webapp.md fan-out, SUBSTRATE-FANOUT.md)
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_webapp_seo_substrate.py
+  reason: unit coverage for the new _seo_substrate module lives under tests/unit per
+    repo convention
   actor: logan
   at: '2026-09-23'
 triage_changes:
