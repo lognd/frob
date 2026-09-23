@@ -1,5 +1,5 @@
 ---
-id: T-draft-a8f11ae1
+id: T-5345
 title: Bulk-remove T-#### prose citations from docs/modules and docs/strata (T-5134
   follow-up)
 state: queued
