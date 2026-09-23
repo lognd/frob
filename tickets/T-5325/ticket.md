@@ -25,10 +25,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_websec_headers.py
 - tests/fixtures/webapp/websec3xx/**
+- docs/modules/webapp-websec-headers.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/webapp-websec-headers.md
+  reason: T-5325 owns its own module doc per WEBSEC fan-out convention, docs/modules/webapp.md
+    is shared across 7 concurrent leases
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
