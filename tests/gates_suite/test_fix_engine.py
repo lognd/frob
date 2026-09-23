@@ -2371,6 +2371,7 @@ class TestFixEngineTierABatch2:
             "DOCENUM001",  # T-1974
             "SYS111",  # T-2001
             "TEST010",  # T-4710/T-5261
+            "DSTACK001",  # T-5274
         }
 
     def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
@@ -2392,6 +2393,76 @@ class TestFixEngineTierABatch2:
         snapshot = self._snap(root)
         applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
         assert any(a.rule == "DOC007" for a in applied)
+
+    def _snap(self, root: Path):
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+
+# frob:ticket T-5274
+class TestDstack001Wiring:
+    """DSTACK001 (T-5274) positive control: the rule's own lint/Tier-A-
+    fix halves already shipped and were already unit-tested (`tests/
+    test_gates_directive_stack.py`) before this ticket, but was not
+    reachable from `run_gates` or `apply_tier_a_fixes` -- T-4713 built
+    the leaf, this ticket wires it into dispatch. So, unlike the
+    synthetic-`Edge`/direct-function-call shape that unit suite uses,
+    this test goes through the REAL entry points (`run_gates`,
+    `apply_tier_a_fixes`) end-to-end: a positive control that only
+    calls the leaf function directly would still pass even if this
+    ticket's wiring were reverted, proving nothing about the wiring
+    itself."""
+
+    def _repo(self, tmp_path: Path) -> Path:
+        root = tmp_path / "repo"
+        root.mkdir()
+        _git_init(root)
+        return root
+
+    # frob:tests src/frob/gates/__init__.py::run_gates kind="unit"
+    # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"
+    def test_dstack001_fires_through_run_gates_and_fix_is_idempotent(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates import GateConfig, apply_tier_a_fixes, run_gates
+
+        root = self._repo(tmp_path)
+        # frob:doc lines (not frob:ticket) -- DSTACK001's Tier-A merge only
+        # collapses a same-kind frob:tests/frob:doc run (`fix_dstack001_
+        # merge`'s own docstring); any other kind is left untouched.
+        _write(
+            root,
+            "src/pkg/m.py",
+            "# frob:doc docs/a.md#a\n"
+            "# frob:doc docs/a.md#b\n"
+            "# frob:doc docs/a.md#c\n"
+            "# frob:doc docs/a.md#d\n"
+            "def f():\n"
+            "    pass\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+
+        cfg = GateConfig(root=str(root), base="main", gates=frozenset())
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert any(v.rule == "DSTACK001" for v in report.violations)
+
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert any(a.rule == "DSTACK001" for a in applied)
+
+        rewritten = (root / "src" / "pkg" / "m.py").read_text(encoding="utf-8")
+        assert "frob:doc" in rewritten
+        assert rewritten.count("# frob:doc") == 1
+
+        # idempotent: a second pass over the already-merged form applies
+        # nothing further for DSTACK001.
+        second_snapshot = self._snap(root)
+        second_applied = apply_tier_a_fixes(
+            root, second_snapshot, TicketQueue(tickets={})
+        )
+        assert not any(a.rule == "DSTACK001" for a in second_applied)
 
     def _snap(self, root: Path):
 

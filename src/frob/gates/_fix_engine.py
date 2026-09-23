@@ -72,6 +72,7 @@ from frob.gates._fix_engine_sync import (
 )
 from frob.gates._fix_engine_text import (
     _write_text_if_parses,
+    fix_dstack001_merge,
     fix_e501_merge_introduced,
     fix_fmt001_directive_wrap,
     fix_suppress001_paired_suppression,
@@ -1430,6 +1431,12 @@ TIER_A_HANDLERS: dict[
     ),
     "FMT001": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
         fix_fmt001_directive_wrap(root)
+    ),
+    # T-5274: DSTACK001's merge fix runs early alongside the other pure
+    # rewrites (no ledger interaction) -- see `fix_dstack001_merge`'s own
+    # docstring for the merge shape.
+    "DSTACK001": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_dstack001_merge(root, snapshot, queue, ticket_id)
     ),
     # T-4710/T-5261: TEST010's own redundant-production-side-frob:tests
     # shape only -- an invalid frob:tests kind= (TEST010's OTHER catch-all

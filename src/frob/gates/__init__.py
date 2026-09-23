@@ -100,6 +100,10 @@ from frob.gates._design_invariants import (
     inv008_violations,
     inv011_violations,
 )
+from frob.gates._directive_stack import (
+    DEFAULT_STACK_THRESHOLD,
+    stack_lint_violations,
+)
 from frob.gates._docblocks import doc004_gate, doc005_gate, doc012_gate
 from frob.gates._docblocks_schema import docblocks_schema_gate
 from frob.gates._docenum import docenum001_gate
@@ -338,6 +342,7 @@ from frob.tickets._store import _FRONTMATTER_RE as _TICKETS_FRONTMATTER_RE
 from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
 from frob.tickets._store import _store_mode as _tickets_store_mode
 from frob.tickets._store import _yaml_loader as _tickets_yaml_loader
+from frob.tomlio import read_toml_lenient
 
 _log = get_logger(__name__)
 
@@ -979,9 +984,7 @@ def _case_count(
     return total
 
 
-def _case_count_for_edge(
-    edge: Edge, tests: CollectedTests, root: Path | None
-) -> int:
+def _case_count_for_edge(edge: Edge, tests: CollectedTests, root: Path | None) -> int:
     """`_case_count`'s per-edge body, split out so `_case_count` itself
     stays under ARCH001's long-AND-complex threshold (T-2214): the
     macro-stand-in short-circuit, the dual-endpoint (`src`/`target`)
@@ -9340,6 +9343,28 @@ def _maybe_autorebuild_natives(root: Path) -> None:
     )
 
 
+# frob:ticket T-5274
+def _dstack_threshold(root: Path) -> int:
+    """DSTACK001's per-repo stack-length threshold: `[gates]
+    dstack_threshold` in `root`'s `frob.toml`, falling back to
+    `DEFAULT_STACK_THRESHOLD` (4) when the file, the `[gates]` table, or
+    the key itself is missing/unreadable/malformed -- same fail-open
+    posture as every other `frob.toml`-sourced gate knob
+    (`read_toml_lenient`, T-0861). A non-int value is likewise treated
+    as absent rather than raised, since a malformed knob should degrade
+    to the documented default, not crash the whole gate run."""
+    data = read_toml_lenient(root / "frob.toml", log_prefix="dstack001")
+    if data is None:
+        return DEFAULT_STACK_THRESHOLD
+    gates_table = data.get("gates")
+    if not isinstance(gates_table, dict):
+        return DEFAULT_STACK_THRESHOLD
+    value = gates_table.get("dstack_threshold")
+    if not isinstance(value, int) or isinstance(value, bool):
+        return DEFAULT_STACK_THRESHOLD
+    return value
+
+
 # frob:doc docs/modules/gates.md#public-api
 # frob:doc docs/modules/gates.md#native001-t-1148
 # frob:doc \
@@ -9579,6 +9604,11 @@ def _assemble_gate_report(
         # same self-check posture as waive011_violations immediately
         # above.
         *docarch001_violations(st.repo_root),
+        # T-5274: DSTACK001 needs only the snapshot's own edges (grouped
+        # by enclosing symbol, see `stack_lint_violations`'s own
+        # docstring), so it runs alongside the other snapshot-only
+        # self-checks rather than after job_violations.
+        *stack_lint_violations(st.snapshot, threshold=_dstack_threshold(st.repo_root)),
         # T-0779: stale-waiver detection needs only the snapshot's own
         # waive edges plus the merged ticket queue -- no assembled
         # violation set dependency, so it runs alongside the other WAIVE00*

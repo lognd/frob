@@ -1,7 +1,7 @@
 ---
 id: T-5274
 title: Wire DSTACK001 into gates dispatch, TIER_A_HANDLERS, and frob.toml threshold
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -47,6 +47,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/gates_suite/test_fix_engine.py::TestDstack001Wiring::test_dstack001_fires_through_run_gates_and_fix_is_idempotent
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
 designated_repro_test: null
 threat: null
 component: null
