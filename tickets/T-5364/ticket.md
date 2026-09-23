@@ -1,7 +1,7 @@
 ---
 id: T-5364
 title: 'SEO/WEBPERF substrate: per-route head metadata extraction'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -25,10 +25,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_seo_substrate.py
 - tests/fixtures/webapp/seo1xx/**
+- docs/modules/webapp-seo.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/webapp-seo.md
+  reason: T-5364 owns its own doc page (7-way concurrent webapp.md fan-out, SUBSTRATE-FANOUT.md)
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
@@ -48,5 +55,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5364
+branch: t-5364
 ---
 Tree-sitter query over HTML/JSX for <head> contents (title, meta tags, link tags, JSON-LD script blocks) normalized into a PageMetadata model per route, reused by every SEO/WEBPERF rule below instead of re-querying the DOM each time. Also builds the route-table-wide duplicate-detection index. Fixture: multi-route fixture app with one duplicate-title pair planted.
