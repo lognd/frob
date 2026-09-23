@@ -5,6 +5,7 @@ Split out of `frob.__main__` (T-1076) purely to keep that module below the
 large-file gate threshold -- no behavior change, same argparse tree.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 from pathlib import Path
@@ -151,7 +152,7 @@ def _add_ack_parser(sub) -> None:
         dest="ack_reason_file",
         metavar="PATH",
         type=Path,
-        help="read --reason verbatim from PATH instead (T-0737 precedent)",
+        help="read --reason verbatim from PATH instead (precedent)",
     )
     ack_p.add_argument(
         "--list",
@@ -217,7 +218,7 @@ def _add_pool_parser(sub) -> None:
     baseline management over `frob.gates._ratchet` (T-0569)."""
     pool_p = sub.add_parser(
         "pool",
-        help="ratchet-pool baseline management (T-0569): warn-rule "
+        help="ratchet-pool baseline management: warn-rule "
         "findings frozen as a tracked baseline, new findings error",
     )
     pool_sub = pool_p.add_subparsers(dest="pool_command")
@@ -261,7 +262,7 @@ def _add_profile_parser(sub) -> None:
     profile_p = sub.add_parser(
         "profile",
         help="development profile (rapid/standard/fortress) status and "
-        "the one-way auto-ratchet's explicit downgrade (T-1575)",
+        "the one-way auto-ratchet's explicit downgrade",
     )
     profile_sub = profile_p.add_subparsers(dest="profile_command")
     _populate_profile_actions(profile_sub)
@@ -281,7 +282,7 @@ def _populate_profile_actions(profile_sub) -> None:
     downgrade_p = profile_sub.add_parser(
         "downgrade",
         help="explicitly clear a persisted rapid->standard auto-ratchet "
-        "(T-1575: the ONLY way back -- never automatic)",
+        "(the ONLY way back -- never automatic)",
     )
     downgrade_p.add_argument("--path", dest="profile_path", metavar="DIR", default=".")
     downgrade_p.add_argument(
@@ -300,9 +301,7 @@ def _populate_profile_actions(profile_sub) -> None:
 # frob:ticket T-0429
 def _add_registry_parser(sub) -> None:
     """Register the `frob registry` subcommand and its `audit`/`add` actions."""
-    registry_p = sub.add_parser(
-        "registry", help="unified design-knowledge registry (T-0407)"
-    )
+    registry_p = sub.add_parser("registry", help="unified design-knowledge registry")
     registry_sub = registry_p.add_subparsers(dest="registry_command")
     _populate_registry_actions(registry_sub)
 
@@ -325,7 +324,7 @@ def _populate_registry_actions(registry_sub) -> None:
         dest="registry_sync_gate_rules",
         action="store_true",
         help="append a CHK-GATE-<rule> entry for every live gate rule "
-        "check-coverage.yaml is missing one for (T-0560)",
+        "check-coverage.yaml is missing one for",
     )
 
     # T-0429: the corpus-emit mechanism -- appends
@@ -334,7 +333,7 @@ def _populate_registry_actions(registry_sub) -> None:
     registry_add_p = registry_sub.add_parser(
         "add",
         help="append a new pending entry to a registry file's universe "
-        "corpus (T-0429 exhaustive-research emit path)",
+        "corpus (exhaustive-research emit path)",
     )
     registry_add_p.add_argument("--file", dest="registry_add_file", required=True)
     registry_add_p.add_argument("--key", dest="registry_add_key", default="entries")
@@ -352,7 +351,7 @@ def _add_fleet_parser(sub) -> None:
     fleet_p = sub.add_parser(
         "fleet",
         help="cross-repo status, gate rollup, and ticket routing over a "
-        "fleet.toml manifest of sibling repos (T-0573)",
+        "fleet.toml manifest of sibling repos",
     )
     fleet_sub = fleet_p.add_subparsers(dest="fleet_command")
     _populate_fleet_actions(fleet_sub)

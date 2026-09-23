@@ -4,6 +4,7 @@ Split out of `_cli_parsers/_ticket.py` (T-1270) -- no behavior change, same
 argparse tree.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 
@@ -39,7 +40,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         help="append a velocity/ETA line (trailing filed/landed/net rates, "
         "median cycle time, naive burn-down ETA) below the summary footer; "
         "mines the full ledger git history like `frob ticket flow` -- slow "
-        "on large histories until T-1330 lands",
+        "on large histories until lands",
     )
 
     ticket_show_p = ticket_sub.add_parser("show", help="show one ticket")
@@ -49,7 +50,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     ticket_doable_p = ticket_sub.add_parser(
         "doable",
         help="list doable tickets (queued/planned, no open blockers, "
-        "scope-lease-safe by default, T-0453)",
+        "scope-lease-safe by default)",
     )
     ticket_doable_p.add_argument("--json", dest="ticket_json", action="store_true")
     ticket_doable_p.add_argument(
@@ -57,13 +58,13 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         dest="ticket_show_blocked",
         action="store_true",
         help="explain each doable candidate hidden by an in-progress "
-        "scope-lease (T-0453), instead of listing the doable set",
+        "scope-lease, instead of listing the doable set",
     )
     ticket_doable_p.add_argument(
         "--ignore-lease",
         dest="ticket_ignore_lease",
         action="store_true",
-        help="skip the T-0453 scope-lease collision filter and return the "
+        help="skip the scope-lease collision filter and return the "
         "raw blocker-only doable list",
     )
     # frob:ticket T-0715
@@ -71,7 +72,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         "--sprint",
         dest="ticket_doable_sprint",
         metavar="LABEL",
-        help="restrict the doable queue to one sprint's commitment (T-0715)",
+        help="restrict the doable queue to one sprint's commitment",
     )
     # frob:ticket T-2577
     ticket_doable_p.add_argument(
@@ -79,7 +80,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         dest="ticket_doable_milestone",
         metavar="VALUE",
         help="restrict the doable queue to one milestone's EFFECTIVE "
-        "value (T-2577 M3) -- own-or-inherited, exact string match "
+        "value (M3) -- own-or-inherited, exact string match "
         "against a real semver value; explicit opt-in, distinct from "
         "the default doable list, which never hides a later milestone",
     )
@@ -88,7 +89,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         "--by-parent",
         dest="ticket_doable_by_parent",
         action="store_true",
-        help="group the doable list by parent ticket (T-0715) -- a "
+        help="group the doable list by parent ticket -- a "
         "story's remaining leaves display together instead of one flat "
         "priority/age-ordered list",
     )
@@ -97,7 +98,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         "--show-anchors",
         dest="ticket_doable_show_anchors",
         action="store_true",
-        help="include anchor=True tickets (T-1856) in the doable list, "
+        help="include anchor=True tickets in the doable list, "
         "annotated [ANCHOR] -- excluded by default so a coordinator "
         "popping the top of `doable` does not keep re-dispatching a "
         "permanent waiver-target ticket that has nothing left to do",
@@ -107,7 +108,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     ticket_wave_p = ticket_sub.add_parser(
         "wave",
         help="partition the doable set into N mutually scope-disjoint "
-        "groups for parallel dispatch (T-1738)",
+        "groups for parallel dispatch",
     )
     ticket_wave_p.add_argument(
         "--agents",
@@ -125,7 +126,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         dest="ticket_ignore_lease",
         action="store_true",
         help="partition the raw blocker-only doable list, skipping the "
-        "T-0453 scope-lease collision filter against IN_PROGRESS tickets",
+        "scope-lease collision filter against IN_PROGRESS tickets",
     )
 
     # frob:ticket T-2395
@@ -133,7 +134,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         "contention",
         help="report real files declared by 2+ currently-open tickets, "
         "ranked by holder count, with owning ticket ids and a suggested "
-        "single-agent batching (T-2395) -- scope is a write lease, so "
+        "single-agent batching -- scope is a write lease, so "
         "this is the number that caps how many agents can dispatch in "
         "parallel right now",
     )
@@ -142,7 +143,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     # frob:ticket T-0454
     ticket_board_p = ticket_sub.add_parser(
         "board",
-        help="priority-ordered board view, grouped into state columns (T-0454)",
+        help="priority-ordered board view, grouped into state columns",
     )
     ticket_board_p.add_argument("--json", dest="ticket_json", action="store_true")
     ticket_board_p.add_argument(
@@ -159,7 +160,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     # frob:ticket T-0454
     ticket_epic_p = ticket_sub.add_parser(
         "epic",
-        help="show an epic's full descendant subtree with a done/total rollup (T-0454)",
+        help="show an epic's full descendant subtree with a done/total rollup",
     )
     ticket_epic_p.add_argument("ticket_id", metavar="id")
     ticket_epic_p.add_argument("--json", dest="ticket_json", action="store_true")
@@ -167,7 +168,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     # frob:ticket T-0568
     ticket_brief_p = ticket_sub.add_parser(
         "brief",
-        help="emit the complete agent mission briefing for a ticket (T-0568): "
+        help="emit the complete agent mission briefing for a ticket: "
         "body+acceptance, scope+leases, playbook hard rules, targeted "
         "verify commands, gate baseline, REL/land rules",
     )
@@ -179,7 +180,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         metavar="EPIC-OR-STORY-ID",
         default=None,
         help="brief every dispatchable descendant of this epic/story as "
-        "ONE mission (T-1243): shared playbook rules once, per-ticket "
+        "ONE mission: shared playbook rules once, per-ticket "
         "body+acceptance+scope, the union scope lease, and the expected "
         "land cadence -- instead of the single-ticket id positional",
     )
@@ -188,7 +189,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     ticket_flow_p = ticket_sub.add_parser(
         "flow",
         help="filed/day vs landed/day vs net table + naive burn-down ETA "
-        "(T-1100, builds on T-0938's git-history velocity mining)",
+        "(builds on git-history velocity mining)",
     )
     ticket_flow_p.add_argument("--json", dest="ticket_json", action="store_true")
 

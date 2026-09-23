@@ -13,6 +13,7 @@ twin (`_add_process_parser`) -- it used to be the one group-only member
 with no standalone form; both builders call the shared
 `_populate_process_actions` so they cannot diverge."""
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 import argparse
@@ -64,7 +65,7 @@ def _add_ops_parser(sub) -> None:
 
     natives_p = ops_sub.add_parser(
         "natives",
-        help="build declared [[native]] crates (T-0864: frob-owned "
+        help="build declared [[native]] crates (frob-owned "
         "maturin develop, shared CARGO_TARGET_DIR)",
     )
     natives_sub = natives_p.add_subparsers(dest="natives_command")
@@ -85,7 +86,7 @@ def _add_ops_parser(sub) -> None:
     fleet_p = ops_sub.add_parser(
         "fleet",
         help="cross-repo status, gate rollup, and ticket routing over a "
-        "fleet.toml manifest of sibling repos (T-0573)",
+        "fleet.toml manifest of sibling repos",
     )
     fleet_sub = fleet_p.add_subparsers(dest="fleet_command")
     _populate_fleet_actions(fleet_sub)
@@ -119,8 +120,7 @@ def _add_ops_parser(sub) -> None:
 
     process_p = ops_sub.add_parser(
         "process",
-        help="process/forkserver maintenance (T-3106): reap orphaned "
-        "forkservers on demand",
+        help="process/forkserver maintenance: reap orphaned forkservers on demand",
     )
     process_sub = process_p.add_subparsers(dest="process_command")
     _populate_process_actions(process_sub)
@@ -136,7 +136,7 @@ def _populate_process_actions(process_sub) -> None:
     reap_p = process_sub.add_parser(
         "reap",
         help="SIGTERM orphaned multiprocessing.forkserver helpers on demand "
-        "(T-3072's ancestry check -- never touches one parented, at any "
+        "(ancestry check -- never touches one parented, at any "
         "depth, to a live `frob check`; a structural no-op on Windows/macOS)",
     )
     reap_p.add_argument(
@@ -160,9 +160,9 @@ def _add_process_parser(sub) -> None:
     redeclaring `reap`'s flags a second time."""
     process_p = sub.add_parser(
         "process",
-        help="process/forkserver maintenance (T-3106): reap orphaned "
+        help="process/forkserver maintenance: reap orphaned "
         "forkservers on demand -- also available as `frob ops process` "
-        "(T-4520)",
+        "",
     )
     process_sub = process_p.add_subparsers(dest="process_command")
     _populate_process_actions(process_sub)

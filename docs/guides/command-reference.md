@@ -1,6 +1,6 @@
 # Command reference: verb groups and the full surface
 
-Moved out of README.md (T-4131) to keep the README scannable; this page
+Moved out of README.md to keep the README scannable; this page
 carries the full detail the README only summarizes.
 
 ## The verb groups

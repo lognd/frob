@@ -5,6 +5,7 @@ Split out of `frob.__main__` (T-1076) purely to keep that module below the
 large-file gate threshold -- no behavior change, same argparse tree.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 import argparse
@@ -53,7 +54,7 @@ def _deprecated_skip_help(stage: str) -> str:
     """One-line help string for a legacy `--skip-<stage>` flag (T-4524):
     starts with `_DEPRECATED_TAG` (matched by `_HideDeprecatedFormatter` to
     drop it from the rendered `--help` block) and names the replacement."""
-    return f"{_DEPRECATED_TAG} (T-4524): use --skip {stage} instead"
+    return f"{_DEPRECATED_TAG}: use --skip {stage} instead"
 
 
 class _HideDeprecatedFormatter(argparse.HelpFormatter):
@@ -286,7 +287,7 @@ def _add_check_skip_unified_arg(check_p) -> None:
             "(build/clang-tidy/clang-format/cargo-check/clippy/fmt/tsc/"
             "eslint/prettier/tests); `--skip ruff` skips both the "
             "ruff-check and ruff-format stages, same as the old bundled "
-            "ruff-skip flag did (T-4524, replaces the 20 per-stage flags)"
+            "ruff-skip flag did (replaces the 20 per-stage flags)"
         ),
     )
 
@@ -330,7 +331,7 @@ def _add_check_selection_args(check_p) -> None:
             "(frob.gates._fix_engine.apply_tier_a_fixes) then re-run the "
             "union of affected gates once in this same invocation, "
             "reporting fixed/rolled-back/fix-its; never writes a waiver, "
-            "never touches frob.toml or ratchet state (T-1137 design, "
+            "never touches frob.toml or ratchet state (design, "
             "docs/design/check-fix-engine.md)"
         ),
     )
@@ -343,10 +344,10 @@ def _add_check_selection_args(check_p) -> None:
             "required alongside a bare `--fix` (no --ticket) to apply "
             "Tier-A fixes repo-wide -- without it, an unscoped `--fix` "
             "REFUSES rather than silently rewriting every file its "
-            "handlers find (T-3326: a killed unscoped --fix once touched "
+            "handlers find (a killed unscoped --fix once touched "
             "~15 unrelated files before an agent noticed and reverted by "
             "hand). `--ticket <id> --fix` never needs this: it is already "
-            "scoped to that ticket's declared files (T-2284) and always "
+            "scoped to that ticket's declared files and always "
             "runs. A no-op when --ticket is also given."
         ),
     )
@@ -359,7 +360,7 @@ def _add_check_selection_args(check_p) -> None:
             "run a genuine `ruff check --fix` + `ruff format` WRITE pass "
             "(src/frob/check/_python.py::run_ruff_autofix) and exit -- "
             "distinct from --fix's narrow Tier-A/B/C deterministic "
-            "fixers, which never run a general ruff autofix (T-2320)"
+            "fixers, which never run a general ruff autofix"
         ),
     )
     check_p.add_argument(
@@ -369,7 +370,7 @@ def _add_check_selection_args(check_p) -> None:
         action="append",
         default=[],
         help=(
-            "run only these stages (repeatable); includes 'gates'. T-3995: "
+            "run only these stages (repeatable); includes 'gates'. "
             "also excludes the three opt-in tail checks that otherwise run "
             "unconditionally on every full check -- deploy-drift, "
             "deploy-conformance, claude-config-drift -- since none of them "
@@ -400,7 +401,7 @@ def _add_check_selection_args(check_p) -> None:
             "of the whole tree -- ruff/ty receive this list directly; "
             "arch/cycle/dup/exports and repo-wide gates (ledger, milestone, "
             "release, cross-ticket leakage, sys/selfaudit) still run "
-            "unscoped (T-4413's REPO_WIDE_STAGES/REPO_WIDE_GATES). Omit "
+            "unscoped (REPO_WIDE_STAGES/REPO_WIDE_GATES). Omit "
             "(default None) for today's unscoped behavior, byte-for-byte."
         ),
     )
@@ -477,7 +478,7 @@ def _add_check_delta_and_verbose_args(check_p) -> None:
         help=(
             "bypass the gate-result cache (.frob/gate-cache.db) and force "
             "every cacheable gate to recompute in full, same as the "
-            "FROB_NO_GATE_CACHE=1 env var (T-1346)"
+            "FROB_NO_GATE_CACHE=1 env var"
         ),
     )
     check_p.add_argument(
@@ -488,7 +489,7 @@ def _add_check_delta_and_verbose_args(check_p) -> None:
         default=0,
         help=(
             "-v restores per-file/per-stage INFO log lines; -vv adds "
-            "per-symbol DEBUG detail (T-0202; default is summary+violations "
+            "per-symbol DEBUG detail (default is summary+violations "
             "only)"
         ),
     )

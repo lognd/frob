@@ -3,6 +3,7 @@ findings burned/introduced since the last stamped baseline, verification
 lag against the watermark, and ticket landing velocity -- so a large
 absolute finding count does not read as "no progress" on its own."""
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 
@@ -34,7 +35,7 @@ def _add_status_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
         "--tickets",
         dest="status_tickets",
         action="store_true",
-        help="include the ticket-flow section (T-2950: OFF by default -- "
+        help="include the ticket-flow section (OFF by default -- "
         "it mines the whole ledger's git history, one git-log subprocess "
         "pair per ticket id including every archived ticket, and measured "
         "over 5 minutes on this repo's own archive; opt in only when you "

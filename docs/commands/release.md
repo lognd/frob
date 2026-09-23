@@ -2,7 +2,7 @@
 
 Mechanical semver from the public-API graph (`docs/modules/release.md` has
 the full design). Four subcommands: `stamp`, `check`, `sync` (all three
-predate this page), and `publish` (T-2242).
+predate this page), and `publish`.
 
 ## frob release publish
 

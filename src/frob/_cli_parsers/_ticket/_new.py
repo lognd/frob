@@ -5,6 +5,7 @@ Split out of `_cli_parsers/_ticket.py` (T-1270), itself split out of
 threshold -- no behavior change, same argparse tree.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 # frob:ticket T-3614
@@ -42,7 +43,7 @@ def _add_ticket_wait_arg(parser) -> None:  # noqa: ANN001
         default=None,
         metavar="SECONDS",
         help="block on a held LandInProgress/tickets.lock window instead "
-        "of refusing instantly (T-3614); bare --wait uses a "
+        "of refusing instantly; bare --wait uses a "
         f"{_TICKET_WAIT_DEFAULT_S:.0f}s default budget, --wait N uses N "
         "seconds, omitted is today's unchanged instant-refusal behavior",
     )
@@ -84,7 +85,7 @@ def _add_ticket_new_identity_args(ticket_new_p) -> None:
         dest="ticket_priority",
         choices=["low", "medium", "high", "critical"],
         help="how important this ticket is, independent of age (default: "
-        "medium, T-0411) -- `frob ticket doable` orders highest priority "
+        "medium) -- `frob ticket doable` orders highest priority "
         "first",
     )
 
@@ -110,7 +111,7 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         dest="ticket_tier",
         choices=["epic", "story", "ticket"],
         help="where this ticket sits in the epic -> story -> ticket "
-        "hierarchy (default: ticket, a plain leaf, T-0715)",
+        "hierarchy (default: ticket, a plain leaf)",
     )
     # frob:ticket T-0715
     ticket_new_p.add_argument(
@@ -118,7 +119,7 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         dest="ticket_sprint",
         metavar="LABEL",
         help="free-form sprint commitment label (e.g. 2026-W30, "
-        "sprint-14, T-0715); omit for uncommitted/backlog",
+        "sprint-14); omit for uncommitted/backlog",
     )
     # frob:ticket T-2574
     ticket_new_p.add_argument(
@@ -126,7 +127,7 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         dest="ticket_milestone",
         metavar="VALUE",
         help="which shippable milestone this ticket belongs to, a real "
-        "semver string (e.g. 1.10.0, T-2574); omit for unmilestoned",
+        "semver string (e.g. 1.10.0); omit for unmilestoned",
     )
     # frob:ticket T-5132
     ticket_new_p.add_argument(
@@ -134,15 +135,15 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         dest="ticket_points",
         type=int,
         metavar="N",
-        help="story-point size, one of the Fibonacci sizes 1 2 3 5 8 13 "
-        "(T-5132); WARNs if omitted -- required before `frob ticket "
+        help="story-point size, one of the Fibonacci sizes 1 2 3 5 8 13"
+        "; WARNs if omitted -- required before `frob ticket "
         "start` unless --unsized-ack is used there",
     )
     # frob:ticket T-0454
     ticket_new_p.add_argument(
         "--component",
         dest="ticket_component",
-        help="which module/area this ticket belongs to (freeform, T-0454)",
+        help="which module/area this ticket belongs to (freeform)",
     )
     ticket_new_p.add_argument(
         "--label",
@@ -150,8 +151,7 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         action="append",
         default=[],
         metavar="TAG",
-        help="freeform organizational tag, orthogonal to --component "
-        "(repeatable, T-0454)",
+        help="freeform organizational tag, orthogonal to --component (repeatable)",
     )
     # frob:ticket T-2760
     ticket_new_p.add_argument(
@@ -161,7 +161,7 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         default=[],
         metavar="RULE:FILE",
         help="a 'RULE:FILE' gate-finding identity this ticket exists to "
-        "resolve (repeatable, T-2760); a second open ticket declaring the "
+        "resolve (repeatable); a second open ticket declaring the "
         "SAME (rule, file) pair is refused at filing time and warned "
         "about at start time, naming this one",
     )
@@ -183,8 +183,8 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "--body-file",
         dest="ticket_body_file",
         metavar="PATH",
-        help="read the ticket body verbatim from PATH instead of the shell "
-        "(T-0737); mutually exclusive with --body",
+        help="read the ticket body verbatim from PATH instead of the shell"
+        "; mutually exclusive with --body",
     )
     # frob:ticket T-0737
     ticket_new_p.add_argument(
@@ -192,7 +192,7 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         dest="ticket_acceptance_file",
         metavar="PATH",
         help="read acceptance criteria from PATH, blank-line-separated "
-        "blocks (T-0737); mutually exclusive with --acceptance",
+        "blocks; mutually exclusive with --acceptance",
     )
     ticket_new_p.add_argument("--json", dest="ticket_json", action="store_true")
     ticket_new_p.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
@@ -209,8 +209,8 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1130's auto-commit of the new ticket's ledger block "
-        "(parity with `start`'s T-1054 auto-commit) -- for a caller that "
+        help="skip auto-commit of the new ticket's ledger block "
+        "(parity with `start`'s auto-commit) -- for a caller that "
         "wants to batch several ledger writes into one commit of its own",
     )
     # frob:ticket T-1995
@@ -218,7 +218,7 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "--ack-related",
         dest="ticket_ack_related",
         action="store_true",
-        help="acknowledge the related-ticket surfacing check (T-1995, "
+        help="acknowledge the related-ticket surfacing check ("
         "checks open/done/archived tickets by title similarity) and "
         "proceed even though a close match was found -- required only "
         "when the check actually surfaces a candidate; a genuinely novel "
@@ -231,10 +231,10 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         dest="ticket_scope_breadth_ack",
         action="store_true",
         help="acknowledge a deliberately broad --scope at FILING time "
-        "(T-2302, the filing-time twin of `frob ticket scope-ack`): sets "
+        "(the filing-time twin of `frob ticket scope-ack`): sets "
         "scope_breadth_ack=True on the new ticket immediately, the same "
         "field `frob ticket scope-ack <id>` sets after the fact, so the "
-        "T-2123 filing-time breadth WARN never fires for a ticket that "
+        "filing-time breadth WARN never fires for a ticket that "
         "already declared its broad scope intentional -- requires "
         "--scope-breadth-ack-reason",
     )
@@ -243,7 +243,7 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "--scope-breadth-ack-reason",
         dest="ticket_scope_breadth_ack_reason",
         metavar="TEXT",
-        help="required justification for --scope-breadth-ack (T-2302), "
+        help="required justification for --scope-breadth-ack, "
         "same non-blank requirement `frob ticket scope-ack --reason` "
         "already enforces",
     )
@@ -253,7 +253,7 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         dest="ticket_runs_last_parallel_safe",
         action="store_true",
         help="declare this ticket safe to run in parallel with another "
-        "runs_last ticket in the same milestone at FILING time (T-2624, "
+        "runs_last ticket in the same milestone at FILING time ("
         "the filing-time twin of `frob ticket runs-last-parallel-safe`): "
         "sets runs_last_parallel_safe=True immediately, so MILE004 never "
         "fires for an unordered pair that already declared itself "
@@ -264,7 +264,7 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "--runs-last-parallel-safe-reason",
         dest="ticket_runs_last_parallel_safe_reason",
         metavar="TEXT",
-        help="required justification for --runs-last-parallel-safe "
-        "(T-2624), same non-blank requirement "
+        help="required justification for --runs-last-parallel-safe"
+        ", same non-blank requirement "
         "`frob ticket runs-last-parallel-safe --reason` already enforces",
     )

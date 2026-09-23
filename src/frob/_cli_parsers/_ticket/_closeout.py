@@ -14,6 +14,7 @@ need them) and are imported by `_closeout_evidence.py` rather than
 duplicated.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 import argparse
@@ -106,7 +107,7 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1615's uniform auto-commit of this ledger change; "
+        help="skip uniform auto-commit of this ledger change; "
         "WARNS that the ledger is left dirty and will DirtyMain-block a "
         "concurrent `frob ticket land`",
     )
@@ -115,8 +116,8 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         "--backfill-drafts",
         dest="ticket_attach_backfill_drafts",
         action="store_true",
-        help="repair attachment path fields a pre-T-2199 draft promotion "
-        "left dangling at a vanished T-draft-<hash> directory (T-2226's "
+        help="repair attachment path fields a pre-draft promotion "
+        "left dangling at a vanished T-draft-<hash> directory ("
         "backfill_stale_draft_attachment_paths); repo-wide, no ticket id "
         "needed. Report-only by default -- pass --apply to actually write",
     )
@@ -154,7 +155,7 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1615's uniform auto-commit of this ledger change; "
+        help="skip uniform auto-commit of this ledger change; "
         "WARNS that the ledger is left dirty and will DirtyMain-block a "
         "concurrent `frob ticket land`",
     )
@@ -164,7 +165,7 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
     ticket_unblock_p = ticket_sub.add_parser(
         "unblock",
         help="remove a blocker (correcting a wrong/obsolete edge), with a "
-        "mandatory dated --reason (T-3113)",
+        "mandatory dated --reason",
     )
     ticket_unblock_p.add_argument("ticket_id", metavar="id")
     ticket_unblock_p.add_argument("--by", dest="ticket_by", required=True)
@@ -174,7 +175,7 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         dest="ticket_reason",
         required=True,
         metavar="TEXT",
-        help="why this edge is being removed (T-3113); recorded as a "
+        help="why this edge is being removed; recorded as a "
         "dated line in the ticket's own '## Unblock log' section, "
         "mirroring `frob ticket reopen`'s --reason precedent",
     )
@@ -183,7 +184,7 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1615's uniform auto-commit of this ledger change; "
+        help="skip uniform auto-commit of this ledger change; "
         "WARNS that the ledger is left dirty and will DirtyMain-block a "
         "concurrent `frob ticket land`",
     )
@@ -230,10 +231,10 @@ def _add_ticket_close_parser(ticket_sub):
         dest="ticket_evidence_cmd",
         action=_RefuseRepeatedEvidenceCmd,
         metavar="COMMAND",
-        help="non-pytest evidence channel (T-0215): run COMMAND, record its "
+        help="non-pytest evidence channel: run COMMAND, record its "
         "exit/digest as evidence before closing -- "
         + _EVIDENCE_CMD_KIND_HELP
-        + " NOT repeatable (T-4108): a single invocation binds one command "
+        + " NOT repeatable: a single invocation binds one command "
         "to every --accepts index given; a second --evidence-cmd is "
         "refused rather than silently discarding the first.",
     )
@@ -245,7 +246,7 @@ def _add_ticket_close_parser(ticket_sub):
         type=int,
         default=[],
         metavar="INDEX",
-        help="T-0572: 1-based ticket.acceptance position (T-3837; see "
+        help="1-based ticket.acceptance position (see "
         "`frob ticket show`'s [N] list) that --evidence/--evidence-cmd's "
         "id(s) also bind to (repeatable); an unbound acceptance criterion "
         "refuses the close",
@@ -256,7 +257,7 @@ def _add_ticket_close_parser(ticket_sub):
         dest="ticket_close_strict",
         action="store_true",
         help="require an approve-verdict `frob ticket review` record "
-        "naming the current commit before closing (T-0571); combined with "
+        "naming the current commit before closing; combined with "
         "`[tickets] require_review_for_close` in frob.toml, which must "
         "also be true for this to actually gate -- off by default",
     )
@@ -266,7 +267,7 @@ def _add_ticket_close_parser(ticket_sub):
         dest="ticket_close_skip_mutation_evidence",
         action="store_true",
         help=(
-            "T-0844 escape hatch (the close-path twin of `frob ticket land "
+            "escape hatch (the close-path twin of `frob ticket land "
             "--skip-mutation-evidence`): do not let a TEST016 confirmatory-"
             "only-evidence finding refuse the close (the check still runs "
             "and logs its findings at WARNING; this only stops it from "
@@ -279,18 +280,18 @@ def _add_ticket_close_parser(ticket_sub):
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1178's auto-commit of the close ledger change "
-        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
+        help="skip auto-commit of the close ledger change "
+        "(parity with `new`/`drop`/`fail`'s auto-commit)",
     )
     # frob:ticket T-2393
     ticket_close_p.add_argument(
         "--no-behavior-change",
         dest="ticket_close_no_behavior_change",
         action="store_true",
-        help="the first-class front door (T-2393) for a doc-only/epic-"
+        help="the first-class front door for a doc-only/epic-"
         "rollup/structural ticket with no runtime defect to reproduce: "
         'writes `frob:no-behavior-change reason="..."` into the ticket\'s '
-        "body (via `frob.tickets.set_body`, T-2392) before BUG002 runs, "
+        "body (via `frob.tickets.set_body`) before BUG002 runs, "
         "the SAME remedy that previously required a hand-edit of "
         "tickets/T-####/ticket.md. Requires --no-behavior-change-reason/"
         "-reason-file; BUG002 itself still runs and still refuses a "
@@ -311,7 +312,7 @@ def _add_ticket_close_parser(ticket_sub):
         dest="ticket_close_no_behavior_change_reason_file",
         metavar="PATH",
         help="read the --no-behavior-change reason verbatim from PATH "
-        "instead of the shell (T-0737); mutually exclusive with "
+        "instead of the shell; mutually exclusive with "
         "--no-behavior-change-reason",
     )
     return ticket_close_p
@@ -349,8 +350,8 @@ def _add_ticket_reverify_parser(ticket_sub):
         dest="ticket_evidence_cmd",
         action=_RefuseRepeatedEvidenceCmd,
         metavar="COMMAND",
-        help="non-pytest evidence channel (T-0215), same semantics as "
-        "`close --evidence-cmd` -- including T-4108's not-repeatable "
+        help="non-pytest evidence channel, same semantics as "
+        "`close --evidence-cmd` -- including not-repeatable "
         "refusal, since this verb's own docstring already commits to "
         "sharing close's evidence flags verbatim",
     )
@@ -362,7 +363,7 @@ def _add_ticket_reverify_parser(ticket_sub):
         type=int,
         default=[],
         metavar="INDEX",
-        help="T-0572: 1-based ticket.acceptance position (T-3837; see "
+        help="1-based ticket.acceptance position (see "
         "`frob ticket show`'s [N] list) --evidence/--evidence-cmd's "
         "id(s) also bind to (repeatable)",
     )
@@ -371,14 +372,14 @@ def _add_ticket_reverify_parser(ticket_sub):
         dest="ticket_close_strict",
         action="store_true",
         help="require an approve-verdict `frob ticket review` record "
-        "naming the current commit (T-0571), same semantics as "
+        "naming the current commit, same semantics as "
         "`close --strict`",
     )
     ticket_reverify_p.add_argument(
         "--skip-mutation-evidence",
         dest="ticket_close_skip_mutation_evidence",
         action="store_true",
-        help="T-0844 escape hatch, same semantics as `close --skip-mutation-evidence`",
+        help="escape hatch, same semantics as `close --skip-mutation-evidence`",
     )
     ticket_reverify_p.add_argument(
         "--base-ref",
@@ -401,7 +402,7 @@ def _add_ticket_review_parser(ticket_sub):
     only in dispatch-chat prose."""
     ticket_review_p = ticket_sub.add_parser(
         "review",
-        help="record a structured adversarial-review verdict (T-0571)",
+        help="record a structured adversarial-review verdict",
     )
     ticket_review_p.add_argument("ticket_id", metavar="id")
     ticket_review_p.add_argument(

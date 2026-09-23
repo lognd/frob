@@ -1,4 +1,4 @@
-# Reading a scaffolded frob.toml (T-4761)
+# Reading a scaffolded frob.toml
 
 Every scaffolded project ships one `frob.toml`, ordered top to bottom the
 same way for every type: `[profile]`, `[testing]` (plus its

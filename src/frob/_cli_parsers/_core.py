@@ -5,6 +5,7 @@ Split out of `frob.__main__` (T-1076) purely to keep that module below the
 large-file gate threshold -- no behavior change, same argparse tree.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 from frob.lang import language_for_extension, tree_sitter_extensions
@@ -52,9 +53,7 @@ def _populate_scaffold_actions(scaffold_sub) -> None:
     # T-0736: idempotently install/update the managed boilerplate blocks
     # (Makefile core-shim, standard .gitignore entries, worktree-lease
     # hooks) in the current repo.
-    scaffold_sub.add_parser(
-        "apply", help="install/update managed boilerplate blocks (T-0736)"
-    )
+    scaffold_sub.add_parser("apply", help="install/update managed boilerplate blocks")
     scaffold_new_p = scaffold_sub.add_parser("new", help="create a new project")
     scaffold_new_p.add_argument(
         "scaffold_type", metavar="type", help="project type (e.g. python-tool)"
@@ -65,7 +64,7 @@ def _populate_scaffold_actions(scaffold_sub) -> None:
         dest="scaffold_output",
         metavar="DIR",
         help="parent directory to scaffold into (default: .); the project "
-        "is always written to DIR/<name>, never loose into DIR (T-3271)",
+        "is always written to DIR/<name>, never loose into DIR",
     )
     scaffold_new_p.add_argument(
         "--force",
@@ -81,7 +80,7 @@ def _populate_scaffold_actions(scaffold_sub) -> None:
     # `new`'s type+name+output contract (WIRE001 waiver on render_unity_
     # project named this ticket as the wiring follow-up).
     scaffold_unity_p = scaffold_sub.add_parser(
-        "unity-project", help="scaffold onto an existing Unity project (T-4503)"
+        "unity-project", help="scaffold onto an existing Unity project"
     )
     scaffold_unity_p.add_argument(
         "scaffold_unity_root",
@@ -99,7 +98,7 @@ def _populate_scaffold_actions(scaffold_sub) -> None:
     # T-0738 `frob.scaffold._pool` API -- replaces the Makefile's
     # inline-python `pool-warm`/`pool-lease`/`pool-status` shims.
     scaffold_pool_p = scaffold_sub.add_parser(
-        "pool", help="worktree warm pool: warm/lease/status (T-0738/T-0877)"
+        "pool", help="worktree warm pool: warm/lease/status"
     )
     scaffold_pool_sub = scaffold_pool_p.add_subparsers(dest="scaffold_pool_command")
     scaffold_pool_warm_p = scaffold_pool_sub.add_parser(
@@ -129,7 +128,7 @@ def _populate_scaffold_actions(scaffold_sub) -> None:
     scaffold_exports_p = scaffold_sub.add_parser(
         "exports",
         help="generate __init__.py from public symbols in a package "
-        "directory (T-4692, folded from the standalone frob exports)",
+        "directory (folded from the standalone frob exports)",
     )
     _populate_exports_args(scaffold_exports_p)
 
@@ -441,7 +440,7 @@ def _populate_docs_args(docs_p, *, include_search: bool) -> None:
             metavar="QUERY",
             help=(
                 "full-text search through docs/ -- also available as "
-                "`frob explore docs-search` (T-1238)"
+                "`frob explore docs-search`"
             ),
         )
     docs_p.add_argument("--json", dest="docs_json", action="store_true")
@@ -451,7 +450,7 @@ def _populate_docs_args(docs_p, *, include_search: bool) -> None:
         action="store_true",
         help=(
             "regenerate docs/modules/cli.md's generated command table "
-            "from the live argparse registry (T-1011)"
+            "from the live argparse registry"
         ),
     )
     docs_p.add_argument(
@@ -461,7 +460,7 @@ def _populate_docs_args(docs_p, *, include_search: bool) -> None:
         help=(
             "write a generated stub docs/commands/<verb>.md for every "
             "live top-level verb that has none yet -- never overwrites "
-            "an existing page (T-4702)"
+            "an existing page"
         ),
     )
 
@@ -514,7 +513,7 @@ def _populate_exports_args(exports_p) -> None:
         metavar="SYMBOL",
         help=(
             "look up who imports SYMBOL under <path> instead of listing "
-            "package exports (frob.exports.exports_consumers, T-0858)"
+            "package exports (frob.exports.exports_consumers)"
         ),
     )
     # frob:ticket T-0876
@@ -571,11 +570,11 @@ def _add_agent_parser(sub) -> None:
     which this help-only tree is never parsed through."""
     agent_p = sub.add_parser(
         "agent",
-        help="print/export the dispatched-agent guard env (T-0574) -- "
-        "'env' is implied: bare `frob agent` runs it (T-4546); the "
+        help="print/export the dispatched-agent guard env -- "
+        "'env' is implied: bare `frob agent` runs it; the "
         "two-word `frob agent env` spelling still works as an alias",
-        description="print/export the dispatched-agent guard env (T-0574). "
-        "'env' is implied (T-4546): bare `frob agent` runs it; the "
+        description="print/export the dispatched-agent guard env. "
+        "'env' is implied: bare `frob agent` runs it; the "
         "two-word `frob agent env` spelling is kept working as a "
         "documented alias for one release.",
     )
@@ -608,7 +607,7 @@ def _add_worktree_parser(sub) -> None:
     `bind`/`agent`'s own precedent."""
     worktree_p = sub.add_parser(
         "worktree",
-        help="manage dispatched-agent git worktrees (T-0836)",
+        help="manage dispatched-agent git worktrees",
     )
     worktree_sub = worktree_p.add_subparsers(dest="worktree_command")
     worktree_sweep_p = worktree_sub.add_parser(

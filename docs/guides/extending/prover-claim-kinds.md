@@ -24,7 +24,7 @@ claim variant and delegates to a `FactBase` closure query
    refutation -- charter law 4: never a vibe, always a witness path or
    number).
 3. Add surface grammar support for the new claim shape in
-   `strata-core/src/parse/grammar_policy.rs` (post-T-1006 split out of the
+ `strata-core/src/parse/grammar_policy.rs` (post-split out of the
    old monolithic parse.rs/mod.rs; parser must accept the new claim's syntax)
    -- see `docs/guides/extending/strata-surface-grammar.md`.
 4. Add fixtures under `tests/unit/strata/` exercising both a refuted and a

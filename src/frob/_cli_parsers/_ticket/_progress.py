@@ -10,6 +10,7 @@ aliases for one release (`_suppress_subparser_alias`), and `merge-driver`
 is hidden outright (a git callback, not a verb a developer types).
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 from pathlib import Path
@@ -49,7 +50,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
 
     ticket_requeue_p = ticket_sub.add_parser(
         "requeue",
-        help="transition in-progress -> queued (releases the T-0453 lease) "
+        help="transition in-progress -> queued (releases the lease) "
         "for a parked or mis-started ticket",
     )
     ticket_requeue_p.add_argument("ticket_id", metavar="id")
@@ -59,14 +60,14 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1178's auto-commit of the requeue ledger change "
-        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
+        help="skip auto-commit of the requeue ledger change "
+        "(parity with `new`/`drop`/`fail`'s auto-commit)",
     )
 
     ticket_start_p = ticket_sub.add_parser(
         "start",
         help="transition to in-progress (auto-plans a queued ticket) and "
-        "BACKGROUND the pre-work sweep (T-0474; --foreground blocks instead)",
+        "BACKGROUND the pre-work sweep (--foreground blocks instead)",
     )
     ticket_start_p.add_argument("ticket_id", metavar="id")
     ticket_start_p.add_argument(
@@ -79,8 +80,8 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "--steal",
         dest="ticket_steal",
         action="store_true",
-        help="override a refusal caused by another worktree's live lease "
-        "(T-0835); invalidates that worktree's lease for close/land",
+        help="override a refusal caused by another worktree's live lease"
+        "; invalidates that worktree's lease for close/land",
     )
     # frob:ticket T-2446
     ticket_start_p.add_argument(
@@ -88,9 +89,9 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         dest="ticket_scope_breadth_ack",
         action="store_true",
         help="acknowledge a deliberately broad declared --scope at START "
-        "time (T-2446, same field/semantics as `frob ticket new "
+        "time (same field/semantics as `frob ticket new "
         "--scope-breadth-ack`/`frob ticket scope-ack <id>`): sets "
-        "scope_breadth_ack=True before the T-1866 over-broad-scope refusal "
+        "scope_breadth_ack=True before the over-broad-scope refusal "
         "runs, so a genuinely broad epic can ack-and-start in one command "
         "instead of a separate `scope-ack` call first -- requires "
         "--scope-breadth-ack-reason",
@@ -100,7 +101,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "--scope-breadth-ack-reason",
         dest="ticket_scope_breadth_ack_reason",
         metavar="TEXT",
-        help="required justification for --scope-breadth-ack (T-2446), "
+        help="required justification for --scope-breadth-ack, "
         "same non-blank requirement `frob ticket scope-ack --reason` and "
         "`frob ticket new --scope-breadth-ack-reason` already enforce",
     )
@@ -109,7 +110,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "--unsized-ack",
         dest="ticket_unsized_ack",
         metavar="REASON",
-        help="override the points=None refusal at start (T-5132): sets "
+        help="override the points=None refusal at start: sets "
         "unsized_ack=True and records REASON, same bool+reason shape "
         "--scope-breadth-ack already established",
     )
@@ -118,7 +119,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "--require-points",
         dest="ticket_points_required",
         action="store_true",
-        help="one-shot opt-in to the points=None start refusal (T-5287) "
+        help="one-shot opt-in to the points=None start refusal "
         "without setting the persistent `[tool.frob] ticket_points_"
         "required = true` pyproject key -- the refusal is OFF by default",
     )
@@ -146,7 +147,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         metavar="EPIC-OR-STORY-ID",
         default=None,
         help="lease every dispatchable descendant of this epic/story into "
-        "ONE worktree instead of the single-ticket id positional (T-1243): "
+        "ONE worktree instead of the single-ticket id positional: "
         "worktree warmup/natives-build pays once for the whole mission, "
         "and every member ticket transitions to in-progress against a "
         "union scope lease, released ticket-by-ticket as each closes",
@@ -161,8 +162,8 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "--steal",
         dest="ticket_steal",
         action="store_true",
-        help="override a refusal caused by another worktree's live lease "
-        "(T-0835); invalidates that worktree's lease for close/land",
+        help="override a refusal caused by another worktree's live lease"
+        "; invalidates that worktree's lease for close/land",
     )
 
     ticket_sweep_p = ticket_sub.add_parser(
@@ -182,7 +183,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         default=None,
         choices=["v2"],
         help="migrate a monofile-mode ledger to per-ticket v2 layout "
-        "(migrate_v1_to_v2, T-1259); omit to keep today's "
+        "(migrate_v1_to_v2); omit to keep today's "
         "collapse-dir-into-monofile behavior",
     )
     ticket_migrate_p.add_argument(
@@ -192,7 +193,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         help="write a per-ticket tickets/T-####/ticket.md for any id that "
         "exists ONLY in the monofile ledger/archive, closing the "
         "partial-migration gap --to v2 leaves open once a repo is "
-        "already v2-mode (migrate_missing_v2, T-2355/T-2728); may be "
+        "already v2-mode (migrate_missing_v2/); may be "
         "combined with --to v2 or used on its own",
     )
     ticket_renumber_p = _add_ticket_renumber_parser(ticket_sub)
@@ -242,7 +243,7 @@ def _add_ticket_reconcile_parser(ticket_sub):
     `admin`)."""
     ticket_reconcile_p = ticket_sub.add_parser(
         "reconcile",
-        help="heal ticket<->worktree binding drift (T-0476): stale "
+        help="heal ticket<->worktree binding drift: stale "
         "in-progress holds with no live lease, and orphan live worktrees "
         "with no lease at all",
     )
@@ -264,8 +265,8 @@ def _add_ticket_reconcile_parser(ticket_sub):
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1936's auto-commit of the ledger rows --apply changed "
-        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit); WARNS "
+        help="skip auto-commit of the ledger rows --apply changed "
+        "(parity with `new`/`drop`/`fail`'s auto-commit); WARNS "
         "that the ledger is left dirty and will DirtyMain-block a "
         "concurrent `frob ticket land`",
     )
@@ -287,7 +288,7 @@ def _add_ticket_admin_parser(ticket_sub):
     reconcile_p])` so the caller can also add `--path` to the leaves."""
     ticket_admin_p = ticket_sub.add_parser(
         "admin",
-        help="disaster-recovery / maintenance ticket verbs (T-4521) -- "
+        help="disaster-recovery / maintenance ticket verbs -- "
         "see `frob ticket admin --help` for the full list",
     )
     admin_sub = ticket_admin_p.add_subparsers(dest="ticket_command")
@@ -312,7 +313,7 @@ def _add_ticket_renumber_parser(ticket_sub):
     ticket_renumber_p = ticket_sub.add_parser(
         "renumber",
         help="rewrite one ticket's id everywhere (with <old> <new>), or "
-        "reassign every id to a contiguous T-0001.. sequence (no args)",
+        "reassign every id to a contiguous.. sequence (no args)",
     )
     ticket_renumber_p.add_argument(
         "ticket_old_id",
@@ -321,7 +322,7 @@ def _add_ticket_renumber_parser(ticket_sub):
         default=None,
         help="ticket id to rewrite; OMITTING BOTH old AND new (not just "
         "one) reassigns EVERY ticket id in the ledger to a contiguous "
-        "T-0001.. sequence instead -- a destructive whole-ledger "
+        ".. sequence instead -- a destructive whole-ledger "
         "operation, not a no-op",
     )
     ticket_renumber_p.add_argument(
@@ -392,7 +393,7 @@ def _add_ticket_land_parser(ticket_sub):
         metavar="NAME",
         default=None,
         help=(
-            "T-3787: land onto branch NAME instead of the historical "
+            "land onto branch NAME instead of the historical "
             "default (root's current checked-out branch). NAME must be an "
             "existing branch that the root checkout is currently on -- "
             "landing publishes onto and resyncs root's own checkout, so "
@@ -408,7 +409,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_land_plan",
         action="store_true",
         help=(
-            "T-1269: land a DESIGN-PHASE worktree (docs + ledger changes, "
+            "land a DESIGN-PHASE worktree (docs + ledger changes, "
             "no closeable worked ticket) instead of a single ticket's own "
             "squash-land -- merges --worktree's branch onto this checkout, "
             "finalizes EVERY incoming draft id in one atomic pass, "
@@ -427,7 +428,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_skip_mutation_evidence",
         action="store_true",
         help=(
-            "T-0755 escape hatch: do not let a TEST016 confirmatory-only-"
+            "escape hatch: do not let a TEST016 confirmatory-only-"
             "evidence finding refuse the land (the check still runs and "
             "logs its findings at WARNING; this only stops it from "
             "blocking). Use for a genuine false positive, not to wave "
@@ -440,7 +441,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_allow_cross_ticket",
         action="store_true",
         help=(
-            "T-1355 escape hatch: do not let a CrossTicketLeakage finding "
+            "escape hatch: do not let a CrossTicketLeakage finding "
             "refuse the land. Use when the joint landing is genuinely "
             "intentional -- a series worktree hosting several tickets on "
             "one branch, or an open epic whose umbrella scope covers its "
@@ -452,7 +453,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_land_push",
         action="store_true",
         help=(
-            "T-0631: after landing succeeds (every land verification -- "
+            "after landing succeeds (every land verification -- "
             "precheck, D-05 re-verification, TICK005 regression sweep, "
             "completeness assertion -- passed and the final commit is "
             "made), push root's current branch to its upstream remote. "
@@ -466,7 +467,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_land_queue",
         action="store_true",
         help=(
-            "T-1444: enqueue <id>'s --worktree branch instead of landing "
+            "enqueue <id>'s --worktree branch instead of landing "
             "it immediately (frob.tickets._land_queue.enqueue) -- prints "
             "the assigned queue position and returns right away; a "
             "separate `frob ticket land --drain` call processes it later, "
@@ -479,7 +480,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_land_drain",
         action="store_true",
         help=(
-            "T-1444: serially process every queued entry in "
+            "serially process every queued entry in "
             ".frob/land-queue.json (frob.tickets._land_queue.drain_next), "
             "one process, one invocation -- not a long-running poll loop; "
             "call this repeatedly (e.g. from a scheduler) to keep draining. "
@@ -494,11 +495,11 @@ def _add_ticket_land_parser(ticket_sub):
         metavar="ID",
         default=None,
         help=(
-            "T-3613: print ID's current per-intent completion record "
+            "print ID's current per-intent completion record "
             "(.frob/land-queue/<id>.json -- queued/landing/landed/failed, "
             "the refusal text verbatim on failure, the commit sha on "
             "success) and exit -- the cheap poll target an agent's shell "
-            "loop should use instead of re-probing .frob/land.lock's "
+            "loop should use instead of re-probing.frob/land.lock's "
             "holder. Needs no --worktree. Mutually exclusive with "
             "--plan/--queue/--drain."
         ),
@@ -509,7 +510,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_land_run_mutation_sweep",
         action="store_true",
         help=(
-            "T-1518: process every pending entry in "
+            "process every pending entry in "
             ".frob/mutation-sweep-queue.json (frob.tickets."
             "_mutation_sweep_queue.run_pending_sweep) -- the batch/nightly "
             "cadence TEST016 mutation-evidence check for every ticket kind "
@@ -527,7 +528,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_land_finish",
         action="store_true",
         help=(
-            "T-1175: after a real (non-dry-run) land verifies clean "
+            "after a real (non-dry-run) land verifies clean "
             "(commit is an ancestor of main and the ticket's state on "
             "main is done/dropped), `git worktree remove` --worktree. "
             "Never removes on a dry run, a failed land, or a failed "
@@ -541,7 +542,7 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_land_retire_on_proof",
         action="store_true",
         help=(
-            "T-1619: same verified-LAND-PROOF gate as --finish (commit "
+            "same verified-LAND-PROOF gate as --finish (commit "
             "is-ancestor-of-main and the ticket's state on main is "
             "done/dropped), but ALSO deletes --worktree's branch after "
             "removing the worktree checkout -- one command instead of "
@@ -557,18 +558,18 @@ def _add_ticket_land_parser(ticket_sub):
         dest="ticket_force",
         action="store_true",
         help=(
-            "T-1715: override --finish/--retire-on-proof's refusal to "
+            "override --finish/--retire-on-proof's refusal to "
             "remove --worktree when a live process is still cwd'd into "
             "it, or an active cross-worktree lease is still pinned to "
             "it -- use only for a worktree you have independently "
             "confirmed is genuinely wedged (the process scan cannot "
             "always prove a pid is dead). Has no effect without "
-            "--finish/--retire-on-proof. T-5122: ALSO overrides land's "
+            "--finish/--retire-on-proof. ALSO overrides land's "
             "own refusal when the post-merge Done-report-claims re-"
             "verification could not be measured (SKIPPED-UNMEASURED/"
             "INFRA-UNMEASURED) -- use only once you have independently "
             "confirmed the unmeasured claim is not hiding a real "
-            "regression. T-1762: requires --reason/--reason-file, "
+            "regression. requires --reason/--reason-file, "
             "recorded in force-overrides.jsonl."
         ),
     )

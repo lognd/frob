@@ -14,6 +14,7 @@ print a removal notice and exit 2; `runs-last-parallel-safe` folded into
 under a new `admin` group with hidden top-level aliases for one release.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 from frob._cli_parsers._reporting import (
@@ -208,7 +209,7 @@ def _add_ticket_parser(sub) -> None:
         default=0,
         help=(
             "restore diagnostic INFO/DEBUG log lines (gitio/tickets loader "
-            "chatter); default shows ticket output and WARNING+ only (T-0768)"
+            "chatter); default shows ticket output and WARNING+ only"
         ),
     )
     ticket_sub = ticket_p.add_subparsers(dest="ticket_command")

@@ -13,7 +13,7 @@ machine: `queued`, `planned`, `in-progress`, `blocked`, `done`,
 `security`, `ux`, `docs`, `invariant`, `incident`), and `Stride` (STRIDE
 threat categories, used only on `kind=security` tickets: `spoofing`,
 `tampering`, `repudiation`, `info-disclosure`, `denial-of-service`,
-`elevation-of-privilege`). `TicketTier` (T-0715) is a separate registry
+`elevation-of-privilege`). `TicketTier` is a separate registry
 governing the epic -> story -> ticket hierarchy: `epic`, `story`,
 `ticket` (default). The remaining four (`Priority`, `Origin`,
 `ScopeChangeOp`, `ReviewVerdict`) are out of this guide's scope. The

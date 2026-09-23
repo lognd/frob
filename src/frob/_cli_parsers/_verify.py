@@ -8,6 +8,7 @@ own T-4690 note) -- suppressed from `frob verify --help`'s subcommand
 list; `App.__call__`'s shim keeps it working through the sunset window
 (2026-12-01)."""
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 import argparse
@@ -21,7 +22,7 @@ def _add_verify_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
     `frob.verify` already maintains (T-1687/T-1692/T-1693/T-2310)."""
     verify_p = sub.add_parser(
         "verify",
-        help="the T-1686 unverified window: depth/age/quarantine status, "
+        help="the unverified window: depth/age/quarantine status, "
         "force a drain, explain an attribution, dispose a quarantined "
         "finding",
     )
@@ -62,7 +63,7 @@ def _add_verify_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
         default=[],
         metavar="RULE:FILE:LINE=TICKET",
         help="dispose one finding by naming the real ticket now tracking "
-        "it (repeatable; LINE may be empty, e.g. rule:file:=T-0001)",
+        "it (repeatable; LINE may be empty, e.g. rule:file:=)",
     )
     dispose_p.add_argument(
         "--dismiss",
@@ -89,8 +90,8 @@ def _add_verify_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
         "--retire-unidentifiable",
         dest="verify_dispose_retire_unidentifiable",
         action="store_true",
-        help="retire every currently-raised finding with an empty identity "
-        "(T-2207) -- the RULE:FILE:LINE addressing --file-ticket/--dismiss "
+        help="retire every currently-raised finding with an empty identity"
+        " -- the RULE:FILE:LINE addressing --file-ticket/--dismiss "
         "use can never key one, so this is the only way to dispose it; "
         "mutually exclusive with --file-ticket/--dismiss, and a "
         "well-formed sibling still blocks the actual clear",

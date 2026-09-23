@@ -22,6 +22,7 @@ once -- just no longer via runtime object reuse. `_mirror_subparser`
 itself has no callers left and is deleted (T-4690's own instruction: once
 it has no callers, delete it)."""
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 
@@ -61,7 +62,7 @@ def _add_explore_parser(sub) -> None:
     explore_p = sub.add_parser(
         "explore",
         help="read-only analysis: navigation, gitlog, stats, graph queries, "
-        "debt/deprecated listings, grouped under one verb (T-1238/T-4695)",
+        "debt/deprecated listings, grouped under one verb",
     )
     explore_sub = explore_p.add_subparsers(dest="explore_command")
 

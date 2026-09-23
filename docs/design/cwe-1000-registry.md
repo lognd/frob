@@ -33,7 +33,7 @@ small set of missing kernel concepts.
   MITRE itself, not by this pass.
 - **Method**: this is a systematic, rule-based pass over MITRE's own
   name/abstraction/relationship fields, not a hand-transcription and not a
-  per-id web search (T-0109 constraint). The ruleset (documented in full
+ per-id web search (constraint). The ruleset (documented in full
   in the companion `classify.py` methodology below) is:
   1. If the id is already a `WeaknessEntry` in `frob`'s live `CWE_CATALOG`
      (`src/frob/strata/_threat.py`) -- **checkable**, citing that entry.

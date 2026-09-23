@@ -15,6 +15,7 @@ large-file gate threshold -- no behavior change, same argparse tree.
 # already-cohesive parser-builder group, with no additional consumer-set boundary to \
 # hang it on."
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 import argparse
@@ -48,7 +49,7 @@ def _populate_test_args(test_p) -> None:
         help=(
             "repo root to resolve, or a subdirectory to scope SELECTION to "
             "directly (e.g. `frob test tests/unit`) -- matches `pytest "
-            "PATH`'s subset semantics (T-2319)"
+            "PATH`'s subset semantics"
         ),
     )
     test_p.add_argument("--all", dest="test_all", action="store_true")
@@ -56,13 +57,13 @@ def _populate_test_args(test_p) -> None:
         "--fuzz",
         dest="test_fuzz",
         action="store_true",
-        help="property-test fuzz-obligated pydantic models and stamp (T-0002)",
+        help="property-test fuzz-obligated pydantic models and stamp",
     )
     test_p.add_argument(
         "--collect",
         dest="test_collect",
         action="store_true",
-        help="drop and rebuild the pytest collection cache, then exit (T-0333)",
+        help="drop and rebuild the pytest collection cache, then exit",
     )
     # frob:ticket T-0322
     test_p.add_argument(
@@ -73,7 +74,7 @@ def _populate_test_args(test_p) -> None:
             "block in the foreground until the coverage stamp is fresh "
             "(single-flight across concurrent callers), then exit -- the "
             "definitive-result alternative to backgrounding `make coverage` "
-            "and stalling on a notification that never arrives (T-0322)"
+            "and stalling on a notification that never arrives"
         ),
     )
     test_p.add_argument("--base", dest="test_base", metavar="REF")
@@ -115,7 +116,7 @@ def _add_vet_parser(sub) -> None:
         dest="vet_cve_mirror",
         metavar="DIR",
         help="local cvelistV5 mirror root to match dependencies against "
-        "(overrides [tool.frob].vet_cve_mirror in pyproject.toml, T-0147)",
+        "(overrides [tool.frob].vet_cve_mirror in pyproject.toml)",
     )
     vet_p.add_argument(
         "--timeout",
@@ -123,7 +124,7 @@ def _add_vet_parser(sub) -> None:
         type=float,
         metavar="SECONDS",
         help="per-package scan timeout in seconds; on expiry that package "
-        "gets a VET-TIMEOUT verdict instead of hanging (T-0208, T-0251)",
+        "gets a VET-TIMEOUT verdict instead of hanging",
     )
     vet_p.add_argument(
         "--jobs",
@@ -132,7 +133,7 @@ def _add_vet_parser(sub) -> None:
         metavar="N",
         help="scan packages concurrently with N workers (default 1); "
         "jobs>1 is best-effort against the shared verdict/registry caches, "
-        "see docs/modules/vet.md (T-0208, T-0251)",
+        "see docs/modules/vet.md",
     )
 
 
@@ -233,7 +234,7 @@ def _add_perf_hot_parser(perf_sub) -> None:
     sketch store, ranked by `--by`."""
     perf_hot_p = perf_sub.add_parser(
         "hot",
-        help="query the hot-graph sketch store (T-0711) for the hottest sections",
+        help="query the hot-graph sketch store for the hottest sections",
     )
     perf_hot_p.add_argument("--path", dest="perf_path", metavar="DIR", default=".")
     perf_hot_p.add_argument("--top", dest="perf_top", type=int, metavar="N")
@@ -299,11 +300,11 @@ def _populate_release_actions(release_sub) -> None:
         dest="release_allow_unbumped",
         action="store_true",
         help=(
-            "T-1381 escape hatch: stamp even though the public API changed "
+            "escape hatch: stamp even though the public API changed "
             "without a matching version bump. Stamping rebaselines the "
             "recorded API at the CURRENT version, so this silences REL001 "
             "while the release never happens -- use only with a reason. "
-            "T-1768: requires --reason/--reason-file whenever it actually "
+            "requires --reason/--reason-file whenever it actually "
             "bypasses a real shortfall, recorded in force-overrides.jsonl."
         ),
     )
@@ -425,7 +426,7 @@ def _populate_doctor_args(doctor_p) -> None:
         action="store_true",
         help=(
             "report the interpreter/site-packages path of the frob package "
-            "actually executing this invocation (T-4299, folded from the "
+            "actually executing this invocation (folded from the "
             "standalone `frob whereis`)"
         ),
     )
@@ -480,7 +481,7 @@ def _populate_clean_args(clean_p) -> None:
         dest="clean_sweep_worktrees",
         action="store_true",
         help="remove leaked BUG002-repro/land-squash `git worktree add` "
-        "scratch dirs whose creator process is dead (T-4437; a distinct "
+        "scratch dirs whose creator process is dead (a distinct "
         "sweep from the tiered artifact cleanup above -- combine with "
         "-y/--yes to execute, default is a dry-run preview)",
     )
@@ -518,7 +519,7 @@ def _add_fmt_parser(sub) -> None:
         action="store_true",
         help=(
             "also rewrite test-input corpus files (tests/**/*.strata) -- "
-            "excluded by default (T-2298), since a fixture file is a test "
+            "excluded by default, since a fixture file is a test "
             "INPUT and a formatter rewriting one can silently change what "
             "a test asserts against"
         ),
@@ -545,8 +546,7 @@ def _add_format_parser(sub) -> None:
     # -- format --------------------------------------------------------
     format_p = sub.add_parser(
         "format",
-        help="ruff (code) + frob: directive formatting, write mode "
-        "by default (T-2251/T-0441/T-3906)",
+        help="ruff (code) + frob: directive formatting, write mode by default",
     )
     format_p.add_argument(
         "format_paths", metavar="path", nargs="*", default=["."]
@@ -588,7 +588,7 @@ def _add_format_parser(sub) -> None:
         action="store_true",
         help=(
             "directives half only: also rewrite test-input corpus files "
-            "(tests/**/*.strata) -- excluded by default (T-2298)"
+            "(tests/**/*.strata) -- excluded by default"
         ),
     )
 
@@ -609,11 +609,11 @@ def _add_claude_parser(sub) -> None:
     # -- claude --------------------------------------------------------
     claude_p = sub.add_parser(
         "claude",
-        help="sync this repo's tracked Claude config to ~/.claude/ (T-1808) "
-        "-- 'sync' is implied: bare `frob claude` runs it (T-4522); the "
+        help="sync this repo's tracked Claude config to ~/.claude/ "
+        "-- 'sync' is implied: bare `frob claude` runs it; the "
         "two-word `frob claude sync` spelling still works as an alias",
         description="sync this repo's tracked Claude config to ~/.claude/ "
-        "(T-1808). 'sync' is implied (T-4522): bare `frob claude` runs it; "
+        ". 'sync' is implied: bare `frob claude` runs it; "
         "the two-word `frob claude sync` spelling is kept working as a "
         "documented alias for one release.",
     )
@@ -635,7 +635,7 @@ def _add_claude_parser(sub) -> None:
     sync_p = claude_sub.add_parser(
         "sync",
         help="materialize managed files to ~/.claude/, or --check for drift "
-        "(also the default action for bare `frob claude`, T-4522)",
+        "(also the default action for bare `frob claude`)",
     )
     sync_p.add_argument(
         "--check",
@@ -660,12 +660,12 @@ def _add_natives_parser(sub) -> None:
     # -- natives -----------------------------------------------------------
     natives_p = sub.add_parser(
         "natives",
-        help="build declared [[native]] crates (T-0864: frob-owned "
+        help="build declared [[native]] crates (frob-owned "
         "maturin develop, shared CARGO_TARGET_DIR) -- 'build' is implied: "
-        "bare `frob natives` runs it (T-4522); the two-word `frob natives "
+        "bare `frob natives` runs it; the two-word `frob natives "
         "build` spelling still works as an alias",
-        description="build declared [[native]] crates (T-0864). 'build' is "
-        "implied (T-4522): bare `frob natives` runs it; the two-word `frob "
+        description="build declared [[native]] crates. 'build' is "
+        "implied: bare `frob natives` runs it; the two-word `frob "
         "natives build` spelling is kept working as a documented alias for "
         "one release.",
     )
@@ -709,8 +709,8 @@ def _add_coverage_parser(sub) -> None:
     # -- coverage ------------------------------------------------------
     coverage_p = sub.add_parser(
         "coverage",
-        help="refresh coverage.xml / the coverage stamp via native_coverage_refresh "
-        "(T-1516/T-1525) -- touched-set incremental by default",
+        help="refresh coverage.xml / the coverage stamp via native_coverage_refresh"
+        " -- touched-set incremental by default",
     )
     coverage_p.add_argument("coverage_path", metavar="path", nargs="?", default=".")
     coverage_p.add_argument(
@@ -728,7 +728,7 @@ def _add_coverage_parser(sub) -> None:
         help="exit non-zero if the suite ran RED (pytest exit != 0 that is "
         "NOT an xdist worker-crash), so `--full --fail-on-degraded` can be "
         "CI's single combined pass/fail + coverage run instead of a second "
-        "full-suite pass (T-3748); has no effect without --full",
+        "full-suite pass; has no effect without --full",
     )
     # frob:ticket T-1572
     coverage_p.add_argument(
@@ -758,8 +758,8 @@ def _add_sync_skills_parser(sub) -> None:
     # -- sync-skills -----------------------------------------------------
     sync_skills_p = sub.add_parser(
         "sync-skills",
-        help="bidirectionally sync agents/ and skills/ into ~/.claude "
-        "(T-2241) -- replaces the old Makefile sync-skills: bash recipe",
+        help="bidirectionally sync agents/ and skills/ into ~/.claude"
+        " -- replaces the old Makefile sync-skills: bash recipe",
     )
     sync_skills_p.add_argument("path", nargs="?", default=".")
     sync_skills_p.add_argument(
@@ -884,7 +884,7 @@ def _add_sys_doc_and_audit_parsers(sys_sub) -> None:
     """Register `frob sys doc` and `frob sys audit`."""
     sys_doc_p = sys_sub.add_parser(
         "doc",
-        help="render the per-family threat-catalog audit matrix (T-0085)",
+        help="render the per-family threat-catalog audit matrix",
     )
     sys_doc_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
     sys_doc_p.add_argument(
@@ -897,7 +897,7 @@ def _add_sys_doc_and_audit_parsers(sys_sub) -> None:
     sys_audit_p = sys_sub.add_parser(
         "audit",
         help="check the full per-family exhaustiveness conjunction; "
-        "nonzero exit + named gaps on any failure (T-0115)",
+        "nonzero exit + named gaps on any failure",
     )
     sys_audit_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
 
@@ -910,7 +910,7 @@ def _add_sys_trace_parser(sys_sub) -> None:
     (target)")."""
     sys_trace_p = sys_sub.add_parser(
         "trace",
-        help="print the influence-closure witness path from one node (T-1480)",
+        help="print the influence-closure witness path from one node",
     )
     sys_trace_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
     sys_trace_p.add_argument("sys_trace_from", metavar="from")
@@ -935,7 +935,7 @@ def _add_sys_threats_parser(sys_sub) -> None:
     sys_threats_p = sys_sub.add_parser(
         "threats",
         help="print THREAT001-005 violations, optionally scoped to one "
-        "boundary's protected zone (T-1925)",
+        "boundary's protected zone",
     )
     sys_threats_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
     sys_threats_p.add_argument(
@@ -960,7 +960,7 @@ def _add_sys_capacity_parser(sys_sub) -> None:
         "capacity",
         help="print CAP001 findings: nodes whose demand exceeds "
         "capacity, optionally projected to a population and/or a date "
-        "(T-1927/T-2016)",
+        "",
     )
     sys_capacity_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
     sys_capacity_p.add_argument(
@@ -976,7 +976,7 @@ def _add_sys_capacity_parser(sys_sub) -> None:
         dest="sys_capacity_since",
         type=datetime.fromisoformat,
         default=None,
-        help="T-2016: ISO-8601 baseline date `growth`-declaring nodes "
+        help="ISO-8601 baseline date `growth`-declaring nodes "
         "project FROM; requires --at. Growth periods (w/mo/y) are "
         "fixed-length, not calendar-aware -- a real February is not "
         "specially handled",
@@ -986,7 +986,7 @@ def _add_sys_capacity_parser(sys_sub) -> None:
         dest="sys_capacity_at",
         type=datetime.fromisoformat,
         default=None,
-        help="T-2016: ISO-8601 target date to project `growth`-declaring "
+        help="ISO-8601 target date to project `growth`-declaring "
         "nodes' demand to; requires --since",
     )
 
@@ -1003,7 +1003,7 @@ def _add_sys_shrink_parser(sys_sub) -> None:
     sys_shrink_p = sys_sub.add_parser(
         "shrink",
         help="drop declared-but-never-observed may capabilities (SYS101) "
-        "-- the only shrink-only auto-tightening direction (T-2920); "
+        "-- the only shrink-only auto-tightening direction; "
         "never widens anything",
     )
     sys_shrink_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
@@ -1026,7 +1026,7 @@ def _add_sys_init_parser(sys_sub) -> None:
     sys_init_p = sys_sub.add_parser(
         "init",
         help="derive a starting node/code/flow skeleton for a repo with "
-        "no existing .strata model (T-2910) -- refuses if one exists; "
+        "no existing.strata model -- refuses if one exists; "
         "never emits a may= capability line (see frob.strata._bootstrap)",
     )
     sys_init_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
@@ -1107,7 +1107,7 @@ def _add_deploy_audit_parser(deploy_sub) -> None:
     deploy_audit_p = deploy_sub.add_parser(
         "audit",
         help="VirtualBox snapshot-diff harness proving artifact-free "
-        "install/uninstall (T-0259, expensive -- NOT run by `frob check`)",
+        "install/uninstall (expensive -- NOT run by `frob check`)",
     )
     deploy_audit_p.add_argument("deploy_path", metavar="path", nargs="?", default=".")
     deploy_audit_p.add_argument(

@@ -25,7 +25,7 @@ claims are proved/refuted/assumed identically to ordinary claims.
 3. Wire the new `_apply_<kind>` into the dispatch that walks a
    `Scenario.rewrites` tuple applying each in order.
 4. Add surface grammar support in `strata-core/src/parse/grammar_policy.rs`
-   (post-T-1006 split out of the old monolithic parse.rs/mod.rs) for the new
+ (post-split out of the old monolithic parse.rs/mod.rs) for the new
    rewrite's `.strata` syntax (see
    `docs/guides/extending/strata-surface-grammar.md`).
 5. Add a litmus-style fixture pair or a direct `test_scenarios.py` case

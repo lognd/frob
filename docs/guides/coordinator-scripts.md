@@ -1903,6 +1903,79 @@ uv run python scripts/wait_for_land_slot.py --max-in-flight 1 && \
     uv run frob ticket land T-#### --worktree <path>
 ```
 
+## `scripts/count_ticket_citations.py`
+
+Owner directive of 2026-09-20 removes ticket-id prose from everything a
+user reads (argparse `--help` output, docs/ prose); this script is the
+single measurement both the removal work and any future re-measurement
+rely on, so "before" and "after" counts in a done-report come from the
+same code path every time.
+
+### `find_help_citations`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#find_help_citations -->
+
+AST-walks `src/frob/_cli_parsers/**/*.py` for a `help=`/`description=`/
+`epilog=` keyword argument (plus the one known help-returning helper)
+and returns `(file, line, token)` for every `T-####` found inside --
+never a docstring or `#` comment, which are a different ticket's scope.
+
+### `find_docs_citations`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#find_docs_citations -->
+
+Returns `(file, line, token)` for every `T-####` in `docs/**/*.md`
+prose, excluding `docs/audits/`, `docs/design/registry/`, and any line
+that is itself a `frob:` directive-grammar example.
+
+### count_ticket_citations-cli
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#count_ticket_citations-cli -->
+
+```
+uv run python scripts/count_ticket_citations.py --scope {help,docs} [--list]
+```
+
+Prints the count on its own final line (`--list` also prints each hit);
+exit code is always 0 -- this is a measurement, not a gate.
+
+## `scripts/strip_help_citations.py`
+
+The AST-precise rewrite that drove the `--scope help` count to zero:
+only rewrites the *exact source span* of a `help=`/`description=`/
+`epilog=` string literal (or the `_deprecated_skip_help`-style helper's
+return literal), leaving every docstring/comment in the same file
+untouched.
+
+### `strip_citation_text`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#strip_citation_text -->
+
+The regex pipeline applied to one help-string source segment: removes
+a possessive citation's clitic along with it (`T-1615's uniform` ->
+`uniform`, never `'s uniform`), a citation's own trailing punctuation,
+a leading-connector citation (`, T-4522`/`and T-4522`), then any bare
+leftover -- collapsing an emptied parenthetical and the whitespace
+artifacts each pass can leave behind.
+
+### `rewrite_file`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#rewrite_file -->
+
+Returns the citation-stripped text of one `_cli_parsers` file (or
+`None` if it has nothing to strip), splicing `strip_citation_text`'s
+output back into the exact AST node span it came from so nothing
+outside a help-string literal ever moves.
+
+### strip_help_citations-cli
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#strip_help_citations-cli -->
+
+```
+uv run python scripts/strip_help_citations.py            # dry run, prints a diff
+uv run python scripts/strip_help_citations.py --apply     # writes the rewrite
+```
+
 ## Design and gate posture
 
 Every `subprocess.run` call in these four scripts (`git`, and `frob check`

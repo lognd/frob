@@ -5,6 +5,7 @@ Split out of `_cli_parsers/_ticket.py` (T-1270) -- no behavior change, same
 argparse tree.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 import argparse
@@ -129,8 +130,8 @@ def _add_triage_reason_flags(parser) -> None:  # noqa: ANN001
         "--reason-file",
         dest="ticket_triage_reason_file",
         metavar="PATH",
-        help="read the reason verbatim from PATH instead of the shell "
-        "(T-0737); mutually exclusive with --reason",
+        help="read the reason verbatim from PATH instead of the shell"
+        "; mutually exclusive with --reason",
     )
 
 
@@ -144,8 +145,8 @@ def _add_no_commit_flag(parser) -> None:  # noqa: ANN001
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1615's uniform auto-commit of this ledger change "
-        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit); WARNS "
+        help="skip uniform auto-commit of this ledger change "
+        "(parity with `new`/`drop`/`fail`'s auto-commit); WARNS "
         "that the ledger is left dirty and will DirtyMain-block a "
         "concurrent `frob ticket land`",
     )
@@ -168,8 +169,8 @@ def _add_ticket_scope_parser(ticket_sub):
     measured on T-3403)."""
     ticket_scope_p = ticket_sub.add_parser(
         "scope",
-        help="formally expand/reduce a ticket's declared scope + tree-lease "
-        "(T-0455) -- fails loudly on an --add that overlaps another "
+        help="formally expand/reduce a ticket's declared scope + tree-lease"
+        " -- fails loudly on an --add that overlaps another "
         "in-progress ticket's lease",
     )
     ticket_scope_p.add_argument("ticket_id", metavar="id")
@@ -196,7 +197,7 @@ def _add_ticket_scope_parser(ticket_sub):
         action="append",
         default=[],
         metavar="GLOB",
-        help="migrate an EXISTING scope GLOB (T-1944's demote_to_evidence_"
+        help="migrate an EXISTING scope GLOB (demote_to_evidence_"
         "only, repeatable) into evidence_scope in ONE atomic write -- the "
         "remedy for a ticket holding a write lease it never uses purely "
         "because a pre-existing test cited as evidence needed `scope "
@@ -212,8 +213,8 @@ def _add_ticket_scope_parser(ticket_sub):
         action="store_true",
         help="declare that this ticket LEGITIMATELY has no file scope (a "
         "tier=epic rollup, a pure decision record) -- the escape hatch "
-        "`frob ticket start` checks before refusing on an empty scope "
-        "(T-2394); requires --reason/--reason-file, same as --add/--remove",
+        "`frob ticket start` checks before refusing on an empty scope"
+        "; requires --reason/--reason-file, same as --add/--remove",
     )
     # frob:ticket T-3404
     ticket_scope_p.add_argument(
@@ -224,7 +225,7 @@ def _add_ticket_scope_parser(ticket_sub):
         help="why this scope change (recorded in the ticket's scope_changes "
         "audit trail); required unless --reason-file is given. Applies to "
         "EVERY --add/--remove/--demote-to-evidence-only glob this "
-        "invocation mutates -- there is no per-glob pairing (T-3404); for "
+        "invocation mutates -- there is no per-glob pairing; for "
         "globs needing distinct reasons, run this command once per glob. "
         "Refused (not silently overwritten) if given more than once.",
     )
@@ -236,10 +237,10 @@ def _add_ticket_scope_parser(ticket_sub):
         action=_RefuseRepeatedOption,
         metavar="PATH",
         help="read the scope-change reason verbatim from PATH instead of "
-        "the shell (T-0737); mutually exclusive with --reason. Same "
+        "the shell; mutually exclusive with --reason. Same "
         "one-shared-reason-per-invocation semantic as --reason, and "
         "likewise refused (not silently overwritten) if given more than "
-        "once (T-3404).",
+        "once.",
     )
     _add_no_commit_flag(ticket_scope_p)  # frob:ticket T-1615
     _add_ticket_wait_arg(ticket_scope_p)  # frob:ticket T-3614
@@ -273,8 +274,8 @@ def _add_ticket_scope_ack_parser(ticket_sub):
         "--reason-file",
         dest="ticket_scope_reason_file",
         metavar="PATH",
-        help="read the ack reason verbatim from PATH instead of the shell "
-        "(T-0737); mutually exclusive with --reason",
+        help="read the ack reason verbatim from PATH instead of the shell"
+        "; mutually exclusive with --reason",
     )
     _add_no_commit_flag(ticket_scope_ack_p)  # frob:ticket T-1615
     return ticket_scope_ack_p
@@ -291,9 +292,9 @@ def _add_ticket_anchor_parser(ticket_sub):
     use elsewhere in this module."""
     ticket_anchor_p = ticket_sub.add_parser(
         "anchor",
-        help="mark/unmark a ticket as a permanent anchor (T-1856) -- an "
+        help="mark/unmark a ticket as a permanent anchor -- an "
         "anchor ticket refuses to land to done/dropped and is excluded "
-        "from `doable`'s default list (T-1867)",
+        "from `doable`'s default list",
     )
     ticket_anchor_p.add_argument("ticket_id", metavar="id")
     anchor_group = ticket_anchor_p.add_mutually_exclusive_group(required=True)
@@ -321,7 +322,7 @@ def _add_ticket_anchor_parser(ticket_sub):
         dest="ticket_anchor_reason_file",
         metavar="PATH",
         help="read the anchor reason verbatim from PATH instead of the "
-        "shell (T-0737 pattern); mutually exclusive with --reason",
+        "shell (pattern); mutually exclusive with --reason",
     )
     return ticket_anchor_p
 
@@ -363,7 +364,7 @@ def _add_ticket_set_parser(ticket_sub):
     ticket_set_p = ticket_sub.add_parser(
         "set",
         help="set a ticket field: priority, kind, component, tier, "
-        "milestone, or sprint (T-4696, folds their standalone spellings)",
+        "milestone, or sprint (folds their standalone spellings)",
     )
     ticket_set_p.add_argument("ticket_id", metavar="id")
     ticket_set_p.add_argument(
@@ -385,7 +386,7 @@ def _add_ticket_priority_parser(ticket_sub):
     used to leave no audit trail at all, the inconsistency this ticket
     fixes."""
     ticket_priority_p = ticket_sub.add_parser(
-        "priority", help="set a ticket's priority (T-0411)"
+        "priority", help="set a ticket's priority"
     )
     ticket_priority_p.add_argument("ticket_id", metavar="id")
     ticket_priority_p.add_argument(
@@ -406,7 +407,7 @@ def _add_ticket_kind_parser(ticket_sub):
     ticket_priority_parser`'s T-0411 precedent. T-2353: `--reason`/
     `--reason-file` are now required, same accountability `priority`
     gained."""
-    ticket_kind_p = ticket_sub.add_parser("kind", help="set a ticket's kind (T-0834)")
+    ticket_kind_p = ticket_sub.add_parser("kind", help="set a ticket's kind")
     ticket_kind_p.add_argument("ticket_id", metavar="id")
     ticket_kind_p.add_argument(
         "ticket_kind_value",
@@ -428,7 +429,7 @@ def _add_ticket_component_parser(ticket_sub):
     back to uncategorized. T-2353: `--reason`/`--reason-file` are now
     required, same accountability `priority` gained."""
     ticket_component_p = ticket_sub.add_parser(
-        "component", help="set a ticket's component/area (T-0454)"
+        "component", help="set a ticket's component/area"
     )
     ticket_component_p.add_argument("ticket_id", metavar="id")
     ticket_component_p.add_argument("ticket_component", metavar="name")
@@ -444,7 +445,7 @@ def _add_ticket_label_parser(ticket_sub):
     as `_add_ticket_scope_parser`'s T-0455 precedent but with no --reason
     (a label carries no lease-conflict audit trail)."""
     ticket_label_p = ticket_sub.add_parser(
-        "label", help="add/remove a ticket's freeform labels (T-0454)"
+        "label", help="add/remove a ticket's freeform labels"
     )
     ticket_label_p.add_argument("ticket_id", metavar="id")
     ticket_label_p.add_argument(
@@ -494,8 +495,7 @@ def _add_ticket_accept_parser(ticket_sub):
     terminal (done/dropped) state."""
     ticket_accept_p = ticket_sub.add_parser(
         "accept",
-        help="append (T-1029), amend, or remove (T-1422) acceptance "
-        "criteria on an existing ticket",
+        help="append, amend, or remove acceptance criteria on an existing ticket",
     )
     ticket_accept_p.add_argument("ticket_id", metavar="id")
     ticket_accept_p.add_argument(
@@ -511,7 +511,7 @@ def _add_ticket_accept_parser(ticket_sub):
         dest="ticket_accept_criterion_file",
         metavar="PATH",
         help="read criteria verbatim from PATH, one per blank-line-separated "
-        "block (T-0737's --acceptance-file convention); mutually exclusive "
+        "block (--acceptance-file convention); mutually exclusive "
         "with --criterion",
     )
     # frob:ticket T-1422
@@ -521,7 +521,7 @@ def _add_ticket_accept_parser(ticket_sub):
         type=int,
         metavar="INDEX",
         help="replace the Nth acceptance criterion's text with --text "
-        "(INDEX is 1-based; see `frob ticket show`, T-1422/T-3908); "
+        "(INDEX is 1-based; see `frob ticket show`/); "
         "requires --text and --reason/--reason-file",
     )
     ticket_accept_p.add_argument(
@@ -536,7 +536,7 @@ def _add_ticket_accept_parser(ticket_sub):
         type=int,
         metavar="INDEX",
         help="drop the Nth acceptance criterion outright (INDEX is "
-        "1-based; see `frob ticket show`, T-1422/T-3908); requires "
+        "1-based; see `frob ticket show`/); requires "
         "--reason/--reason-file",
     )
     ticket_accept_p.add_argument(
@@ -552,7 +552,7 @@ def _add_ticket_accept_parser(ticket_sub):
         dest="ticket_accept_amend_reason_file",
         metavar="PATH",
         help="read the --amend/--remove reason verbatim from PATH instead "
-        "of the shell (T-1422, T-0737 precedent); mutually exclusive with "
+        "of the shell (precedent); mutually exclusive with "
         "--reason",
     )
     _add_no_commit_flag(ticket_accept_p)  # frob:ticket T-1615
@@ -605,9 +605,7 @@ def _add_ticket_tier_parser(ticket_sub):
     `_add_ticket_priority_parser`'s T-0411 precedent. T-2353: `--reason`/
     `--reason-file` are now required, same accountability `priority`
     gained."""
-    ticket_tier_p = ticket_sub.add_parser(
-        "tier", help="set an existing ticket's tier (T-1069)"
-    )
+    ticket_tier_p = ticket_sub.add_parser("tier", help="set an existing ticket's tier")
     ticket_tier_p.add_argument("ticket_id", metavar="id")
     ticket_tier_p.add_argument(
         "ticket_tier_value",
@@ -646,8 +644,8 @@ def _add_ticket_set_parent_parser(ticket_sub):
     this module already uses for `_reason`/`--reason-file`."""
     ticket_set_parent_p = ticket_sub.add_parser(
         "set-parent",
-        help="set an existing ticket's parent edge (T-2770), or clear it "
-        "to root with --clear (T-2965); refuses a nonexistent parent, a "
+        help="set an existing ticket's parent edge, or clear it "
+        "to root with --clear; refuses a nonexistent parent, a "
         "cycle, a tier inversion, or self-parenting",
     )
     ticket_set_parent_p.add_argument("ticket_id", metavar="id")
@@ -687,7 +685,7 @@ def _add_ticket_body_parser(ticket_sub):
     agent-playbook.md section 1d)."""
     ticket_body_p = ticket_sub.add_parser(
         "body",
-        help="amend a ticket's free-text body (T-2392) -- the validated "
+        help="amend a ticket's free-text body -- the validated "
         "front door replacing a hand-edit of tickets/T-####/ticket.md",
     )
     ticket_body_p.add_argument("ticket_id", metavar="id")
@@ -702,7 +700,7 @@ def _add_ticket_body_parser(ticket_sub):
         "--append-file",
         dest="ticket_body_append_file",
         metavar="PATH",
-        help="read the text to append verbatim from PATH (T-0737)",
+        help="read the text to append verbatim from PATH",
     )
     mode_group.add_argument(
         "--set",
@@ -714,7 +712,7 @@ def _add_ticket_body_parser(ticket_sub):
         "--set-file",
         dest="ticket_body_set_file",
         metavar="PATH",
-        help="read the replacement body verbatim from PATH (T-0737)",
+        help="read the replacement body verbatim from PATH",
     )
     ticket_body_p.add_argument(
         "--reason",
@@ -728,7 +726,7 @@ def _add_ticket_body_parser(ticket_sub):
         dest="ticket_body_reason_file",
         metavar="PATH",
         help="read the body-change reason verbatim from PATH instead of "
-        "the shell (T-0737); mutually exclusive with --reason",
+        "the shell; mutually exclusive with --reason",
     )
     _add_no_commit_flag(ticket_body_p)  # frob:ticket T-1615
     _add_ticket_wait_arg(ticket_body_p)  # frob:ticket T-3614
@@ -744,7 +742,7 @@ def _add_ticket_runs_last_parser(ticket_sub):
     ledger has reached a terminal state. Same mutate-in-place shape as
     `_add_ticket_tier_parser`'s T-1069 precedent."""
     ticket_runs_last_p = ticket_sub.add_parser(
-        "runs-last", help="set an existing ticket's runs-last marker (T-1613)"
+        "runs-last", help="set an existing ticket's runs-last marker"
     )
     ticket_runs_last_p.add_argument("ticket_id", metavar="id")
     ticket_runs_last_p.add_argument(
@@ -771,7 +769,7 @@ def _add_ticket_runs_last_parallel_safe_parser(ticket_sub):
     ticket_runs_last_parallel_safe_p = ticket_sub.add_parser(
         "runs-last-parallel-safe",
         help="declare a runs_last ticket safe to run in parallel with "
-        "another runs_last ticket in the same milestone (T-2579's "
+        "another runs_last ticket in the same milestone ("
         "MILE004 escape hatch)",
     )
     ticket_runs_last_parallel_safe_p.add_argument("ticket_id", metavar="id")
@@ -787,7 +785,7 @@ def _add_ticket_runs_last_parallel_safe_parser(ticket_sub):
         dest="ticket_scope_reason_file",
         metavar="PATH",
         help="read the parallel-safe reason verbatim from PATH instead of "
-        "the shell (T-0737); mutually exclusive with --reason",
+        "the shell; mutually exclusive with --reason",
     )
     _add_no_commit_flag(ticket_runs_last_parallel_safe_p)
     return ticket_runs_last_parallel_safe_p
@@ -802,7 +800,7 @@ def _add_ticket_milestone_parser(ticket_sub):
     precedent, except `value` is a free-form string (semver validation
     happens library-side, not via argparse `choices`)."""
     ticket_milestone_p = ticket_sub.add_parser(
-        "milestone", help="set an existing ticket's milestone (T-2574)"
+        "milestone", help="set an existing ticket's milestone"
     )
     ticket_milestone_p.add_argument("ticket_id", metavar="id")
     ticket_milestone_p.add_argument(
@@ -820,7 +818,7 @@ def _add_ticket_points_parser(ticket_sub):
     created ticket on the Fibonacci scale (T-5132), same mutate-in-place
     shape as `_add_ticket_milestone_parser`."""
     ticket_points_p = ticket_sub.add_parser(
-        "points", help="set an existing ticket's story points (T-5132)"
+        "points", help="set an existing ticket's story points"
     )
     ticket_points_p.add_argument("ticket_id", metavar="id")
     ticket_points_p.add_argument(
@@ -838,7 +836,7 @@ def _add_ticket_tokens_parser(ticket_sub):
     [--tokens-cache-read N]` -- manually record measured token spend for
     the session that drove `id` (T-5132 amendment's manual path)."""
     ticket_tokens_p = ticket_sub.add_parser(
-        "tokens", help="record a ticket's measured token spend (T-5132)"
+        "tokens", help="record a ticket's measured token spend"
     )
     ticket_tokens_p.add_argument("ticket_id", metavar="id")
     ticket_tokens_p.add_argument(
@@ -864,7 +862,7 @@ def _add_ticket_sprint_parser(ticket_sub):
     sprint_p = ticket_sub.add_parser(
         "sprint",
         help="sprint commitment: assign a ticket to a sprint label, or "
-        "show a sprint's committed tickets with a state rollup (T-0715)",
+        "show a sprint's committed tickets with a state rollup",
     )
     sprint_sub = sprint_p.add_subparsers(dest="ticket_sprint_command")
 
@@ -886,7 +884,7 @@ def _add_ticket_sprint_parser(ticket_sub):
     sprint_sub.add_parser(
         "migrate",
         help="one-shot: move every semver-shaped sprint label onto "
-        "milestone, normalize v-prefixed milestones, clear sprint (T-5133)",
+        "milestone, normalize v-prefixed milestones, clear sprint",
     )
 
     return sprint_p

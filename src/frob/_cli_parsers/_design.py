@@ -16,6 +16,7 @@ way it did before T-4520 (measured 2026-09-16: 4 of 9 counted
 subverbs) -- see docs/design/cli-regrouping.md's derivation rule and
 tests/unit/test_cli_group_parity.py."""
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 import argparse
@@ -75,7 +76,7 @@ def _add_design_parser(sub) -> None:
     _add_sys_init_parser(sys_sub)
 
     registry_p = design_sub.add_parser(
-        "registry", help="unified design-knowledge registry (T-0407)"
+        "registry", help="unified design-knowledge registry"
     )
     registry_sub = registry_p.add_subparsers(dest="registry_command")
     _populate_registry_actions(registry_sub)

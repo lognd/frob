@@ -1,7 +1,7 @@
 # frob gitlog
 
 <!-- frob:waive DOC006 reason="verb added by this land; pre-land sweep resolves against the running parser (T-5178)" -->
-DEPRECATED (T-4695, sunset 2026-12-01): use `frob explore gitlog` instead
+DEPRECATED (sunset 2026-12-01): use `frob explore gitlog` instead
 -- `frob gitlog` keeps working, with a stderr notice, through the sunset
 window, then exits non-zero.
 

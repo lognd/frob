@@ -4,7 +4,7 @@
 
 ## What / where
 
-`src/frob/strata/_lint.py` (T-0155). Unlike most registries in this
+`src/frob/strata/_lint.py`. Unlike most registries in this
 series, LINT is **not a flat data table** -- there is no single tuple you
 append an entry to. Each rule is a bespoke checker function:
 `check_lint_rate_limit` (LINT001), `check_lint_cache_or_capacity`

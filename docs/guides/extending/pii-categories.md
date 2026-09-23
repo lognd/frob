@@ -4,7 +4,7 @@
 
 ## What / where
 
-`src/frob/strata/_pii.py` (T-0154). `_PII_PREFIX = "pii="` -- the tag
+`src/frob/strata/_pii.py`. `_PII_PREFIX = "pii="` -- the tag
 convention (`pii=<category>.<field>`, e.g. `pii=identifier.email`),
 shared with the `code=`/`skew=` attr-desugar convention in
 `_code_binding.py`. `PII_CATEGORIES: frozenset[str]` is the flat category

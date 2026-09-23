@@ -10,4 +10,4 @@ usage: frob ack [-h] [--facet {sig,body,doc}] [--path DIR] [--reason TEXT]
                 [ref ...]
 ```
 
-*Generated from the live argparse tree (T-4702, `frob docs --sync-command-pages`) -- a stub; enrich with worked examples as this verb's real usage patterns become clear.*
+*Generated from the live argparse tree (`frob docs --sync-command-pages`) -- a stub; enrich with worked examples as this verb's real usage patterns become clear.*

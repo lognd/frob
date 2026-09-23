@@ -11,6 +11,7 @@ for this package's other submodules. `_RefuseRepeatedEvidenceCmd`,
 imported from there rather than duplicated.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 import argparse
@@ -39,8 +40,8 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1130's auto-commit of the fail-log/requeue ledger "
-        "change (parity with `start`'s T-1054 auto-commit)",
+        help="skip auto-commit of the fail-log/requeue ledger "
+        "change (parity with `start`'s auto-commit)",
     )
     _add_ticket_wait_arg(ticket_fail_p)
 
@@ -58,7 +59,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         dest="ticket_base_ref",
         default="main",
         metavar="REF",
-        help="T-1929: base ref --designate-repro/--check-repro's parent-"
+        help="base ref --designate-repro/--check-repro's parent-"
         "commit repro check diffs against (default: main), same semantics "
         "as `close`/`reverify --base-ref`",
     )
@@ -68,10 +69,10 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         dest="ticket_evidence_cmd",
         action=_RefuseRepeatedEvidenceCmd,
         metavar="COMMAND",
-        help="non-pytest evidence channel (T-0215): run COMMAND, record its "
+        help="non-pytest evidence channel: run COMMAND, record its "
         "exit/digest as evidence -- "
         + _EVIDENCE_CMD_KIND_HELP
-        + " NOT repeatable (T-4108): the SAME single-command/accumulating-"
+        + " NOT repeatable: the SAME single-command/accumulating-"
         "--accepts asymmetry F-306 found on `close` exists here identically "
         "-- one invocation binds one command to every --accepts index "
         "given; call this verb once per command instead of repeating "
@@ -96,9 +97,9 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "--reason",
         dest="ticket_evidence_replace_reason",
         metavar="TEXT",
-        help="required with --replace (T-1733): why this evidence id is "
+        help="required with --replace: why this evidence id is "
         "being rebound, recorded in the ticket's evidence_changes audit "
-        "trail -- the same T-0455 `frob ticket scope --reason` "
+        "trail -- the same `frob ticket scope --reason` "
         "precedent applied to evidence, so weakening what proves a "
         "ticket costs at least as much bookkeeping as the honest "
         "--skip-mutation-evidence escape hatch. Not required for a "
@@ -109,7 +110,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         dest="ticket_evidence_replace_reason_file",
         metavar="PATH",
         help="read --replace's reason verbatim from PATH instead of the "
-        "shell (T-0737 precedent); mutually exclusive with --reason",
+        "shell (precedent); mutually exclusive with --reason",
     )
     # frob:ticket T-1561
     ticket_evidence_p.add_argument(
@@ -118,7 +119,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         action="store_true",
         help="with --replace/--remove, target an ARCHIVED ticket instead of "
         "an active one -- a stale binding on an already-archived ticket "
-        "needs this to be reachable at all (T-1561)",
+        "needs this to be reachable at all",
     )
     # frob:ticket T-4000
     ticket_evidence_p.add_argument(
@@ -135,7 +136,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         type=int,
         default=[],
         metavar="INDEX",
-        help="T-0572: 1-based ticket.acceptance position (T-3837; see "
+        help="1-based ticket.acceptance position (see "
         "`frob ticket show`'s [N] list) the node id(s) above also bind "
         "to (repeatable) -- binds evidence to a specific acceptance "
         "criterion instead of only the ticket's flat evidence list",
@@ -145,15 +146,15 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1178's auto-commit of the evidence ledger change "
-        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
+        help="skip auto-commit of the evidence ledger change "
+        "(parity with `new`/`drop`/`fail`'s auto-commit)",
     )
     # frob:ticket T-1670
     ticket_evidence_p.add_argument(
         "--designate-repro",
         dest="ticket_designate_repro",
         metavar="NODE-ID",
-        help="T-1670: mark NODE-ID as the explicit test BUG002 re-runs at "
+        help="mark NODE-ID as the explicit test BUG002 re-runs at "
         "the parent commit, regardless of bind order -- without this, "
         "BUG002 always takes the FIRST pytest-node-id in the ticket's "
         "evidence list, an invisible bind-order dependency that silently "
@@ -168,8 +169,8 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         dest="ticket_designate_repro_reason",
         metavar="TEXT",
         help="required with --designate-repro when it REdesignates an "
-        "already-set repro test to a different bound id (T-1851, "
-        "mirroring T-1733's --replace --reason precedent): why the "
+        "already-set repro test to a different bound id ("
+        "mirroring --replace --reason precedent): why the "
         "designation changed, recorded in the ticket's "
         "designated_repro_changes audit trail. Not required for a "
         "first-time designation or a redundant re-designation of the "
@@ -180,7 +181,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         dest="ticket_designate_repro_reason_file",
         metavar="PATH",
         help="read --designate-repro's reason verbatim from PATH instead "
-        "of the shell (T-0737 precedent); mutually exclusive with "
+        "of the shell (precedent); mutually exclusive with "
         "--designate-repro-reason",
     )
     # frob:ticket T-1929
@@ -188,7 +189,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "--designate-repro-force",
         dest="ticket_designate_repro_force",
         action="store_true",
-        help="T-1929 loud override: let --designate-repro through even "
+        help="loud override: let --designate-repro through even "
         "when NODE-ID does not genuinely FAIL at the ticket's parent "
         "commit (the validate-at-designate check still runs and logs its "
         "verdict at WARNING; this only stops it from refusing the write). "
@@ -204,11 +205,11 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         const="",
         default=None,
         metavar="NODE-ID",
-        help="T-1929: run BUG002's parent-commit repro classification "
+        help="run BUG002's parent-commit repro classification "
         "on demand, without mutating anything -- reports FAILED_AT_PARENT "
         "(genuine repro) / PASSED_AT_PARENT (confirmatory-only) / "
         "NO_VERDICT (could not even collect at the parent) / TIMEOUT "
-        "(T-2480: did not finish within the budget -- distinct from "
+        "(did not finish within the budget -- distinct from "
         "NO_VERDICT, may still genuinely reproduce) / SAME_AS_HEAD "
         "(base_ref resolves to HEAD itself) and exits nonzero unless "
         "FAILED_AT_PARENT. NODE-ID is optional: omitted, resolves the "
@@ -222,7 +223,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         type=float,
         default=None,
         metavar="SECONDS",
-        help="T-2480: override BUG002's default repro-check subprocess "
+        help="override BUG002's default repro-check subprocess "
         "budget (60s) for --check-repro/--designate-repro on THIS "
         "invocation only -- repro tests for design/architecture-level "
         "defects are structurally the slowest (demonstrating the defect "
@@ -274,7 +275,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
 
     ticket_drop_p = ticket_sub.add_parser(
         "drop",
-        help="transition to dropped with a dated --reason (T-0579): "
+        help="transition to dropped with a dated --reason: "
         "absorbed elsewhere, obsolete, or subsumed work",
     )
     ticket_drop_p.add_argument("ticket_id", metavar="id")
@@ -293,16 +294,16 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1130's auto-commit of the drop ledger change (parity "
-        "with `start`'s T-1054 auto-commit)",
+        help="skip auto-commit of the drop ledger change (parity "
+        "with `start`'s auto-commit)",
     )
     _add_ticket_wait_arg(ticket_drop_p)
 
     # frob:ticket T-3087
     ticket_reopen_p = ticket_sub.add_parser(
         "reopen",
-        help="transition a done ticket back to queued with a dated --reason "
-        "(T-3087): the audited escape hatch for a FALSELY-closed ticket",
+        help="transition a done ticket back to queued with a dated --reason"
+        ": the audited escape hatch for a FALSELY-closed ticket",
     )
     ticket_reopen_p.add_argument("ticket_id", metavar="id")
     ticket_reopen_p.add_argument(
@@ -312,7 +313,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1130's auto-commit of the reopen ledger change (parity "
+        help="skip auto-commit of the reopen ledger change (parity "
         "with `drop`/`fail`/`start`'s auto-commit)",
     )
 
@@ -323,9 +324,9 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "--force",
         dest="ticket_force",
         action="store_true",
-        help="T-0810: override the T-0764 refusal when a live cross-"
+        help="override the refusal when a live cross-"
         "worktree lease exists anywhere in the repo -- archive anyway. "
-        "T-1762: requires --reason/--reason-file, recorded in "
+        "requires --reason/--reason-file, recorded in "
         "force-overrides.jsonl",
     )
     # frob:ticket T-1762
@@ -340,7 +341,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1615's auto-commit of the whole-ledger archive "
+        help="skip auto-commit of the whole-ledger archive "
         "change; WARNS that the ledger is left dirty and will "
         "DirtyMain-block a concurrent `frob ticket land`",
     )
@@ -349,7 +350,7 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
     ticket_restore_p = ticket_sub.add_parser(
         "restore",
         help="move a ticket OUT of tickets/archive/ back into the active "
-        "store (T-2954): the repair verb for a ticket stranded archived "
+        "store: the repair verb for a ticket stranded archived "
         "in a non-terminal state (e.g. a hand-edited ledger)",
     )
     ticket_restore_p.add_argument("ticket_id", metavar="id")
@@ -418,8 +419,8 @@ def _add_ticket_done_report_parser(ticket_sub):
         "--no-commit",
         dest="ticket_no_commit",
         action="store_true",
-        help="skip T-1178's auto-commit of the done-report ledger change "
-        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
+        help="skip auto-commit of the done-report ledger change "
+        "(parity with `new`/`drop`/`fail`'s auto-commit)",
     )
     # frob:ticket T-4550
     # T-4550 acceptance criterion 3: skip the capture check's
@@ -440,7 +441,7 @@ def _add_ticket_done_report_parser(ticket_sub):
         action="store_true",
         help="skip the capture check's `frob check --ticket` spawn "
         "entirely -- writes the report with gate-state unmeasured, "
-        "in under 5s (T-4550)",
+        "in under 5s",
     )
     return ticket_done_report_p
 
@@ -456,7 +457,7 @@ def _add_ticket_waive_audit_parser(ticket_sub):
     verdict shape this deliberately does not collapse)."""
     waive_audit_p = ticket_sub.add_parser(
         "waive-audit",
-        help="periodic, watermark-scoped frob:waive honesty audit (T-1614/T-2467)",
+        help="periodic, watermark-scoped frob:waive honesty audit",
     )
     waive_audit_sub = waive_audit_p.add_subparsers(
         dest="waive_audit_subcommand", required=True
@@ -472,14 +473,14 @@ def _add_ticket_waive_audit_parser(ticket_sub):
         "--check-collisions",
         dest="waive_audit_check_collisions",
         action="store_true",
-        help="T-2496: opt-in, report-only. Also runs find_collision_"
-        "suspects (T-2493) -- flags a frob:waive only when an ACTIVE, "
+        help="opt-in, report-only. Also runs find_collision_"
+        "suspects -- flags a frob:waive only when an ACTIVE, "
         "UNSUPPRESSED violation of the SAME rule sits in the SAME file as "
         "the waiver, a direct presence-based counter-example that the "
         "waiver failed to suppress something it names. Never reasons from "
         "absence: a waiver whose site has ZERO current violations "
         "anywhere is INVISIBLE to this check, indistinguishable from a "
-        "genuinely inert waiver using only this signal (T-1579's own "
+        "genuinely inert waiver using only this signal (own "
         "incident is why -- see find_collision_suspects's module-level "
         "docstring for the full history). Runs a real, unscoped "
         "`frob check` gate pass to get the current kept-violation set, so "
@@ -495,17 +496,17 @@ def _add_ticket_waive_audit_parser(ticket_sub):
         "--check-liveness",
         dest="waive_audit_check_liveness",
         action="store_true",
-        help="T-2740: opt-in, report-only. Classifies each scanned waiver "
+        help="opt-in, report-only. Classifies each scanned waiver "
         "as NECESSARY (a current gate run's `waived` set shows it actively "
         "suppressing a violation), INERT (its rule has a registered scan-"
         "membership predicate and the waiver's own file structurally falls "
         "outside that rule's scan set -- provably not evaluated, not an "
         "absence-of-finding inference), or UNVERIFIED (neither could be "
         "established; never guessed). This is the honesty audit's missing "
-        "half: T-1614 judged a waiver's REASON, never whether the rule "
+        "half: judged a waiver's REASON, never whether the rule "
         "evaluating it can even reach the file it sits in -- 11 RENDER001 "
-        "waivers in .claude/hooks/ sat INERT behind exactly that blind "
-        "spot (T-2719/T-2740). REPORT-ONLY: never removes a waiver, never "
+        "waivers in.claude/hooks/ sat INERT behind exactly that blind "
+        "spot. REPORT-ONLY: never removes a waiver, never "
         "gates this command's exit status -- an INERT verdict is also "
         "evidence the RULE's own scan pathspec may be wrong, not only that "
         "the waiver is stale; treat it as a lead for a human/agent to "
@@ -538,7 +539,7 @@ def _add_ticket_waive_audit_parser(ticket_sub):
         "--partial",
         dest="waive_audit_partial",
         action="store_true",
-        help="T-2485: explicit acknowledgement that this batch does NOT "
+        help="explicit acknowledgement that this batch does NOT "
         "cover a bounded catch-up pass's whole backlog -- banks exactly "
         "the reviewed batch (advancing catchup_remaining/catchup_covered "
         "in the watermark) instead of refusing outright. Without this "

@@ -1,4 +1,4 @@
-# Failure-injection acceptance criteria: name every field (T-4118)
+# Failure-injection acceptance criteria: name every field
 
 ## The incident this closes
 

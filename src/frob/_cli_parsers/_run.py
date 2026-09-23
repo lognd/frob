@@ -13,6 +13,7 @@ tracks wiring `_add_run_parser`/`_add_build_parser` into
 `_add_analysis_subparsers` once that lease clears.
 """
 
+# frob:ticket T-5134
 from __future__ import annotations
 
 
@@ -27,7 +28,7 @@ def _add_run_parser(sub) -> None:
     discovery only -- actual dispatch bypasses this parser entirely (see
     `frob.__main__._dispatch` and `frob.app.run_runner`'s module
     docstring)."""
-    run_p = sub.add_parser("run", help="execute one [commands] entry by name (T-4759)")
+    run_p = sub.add_parser("run", help="execute one [commands] entry by name")
     run_p.add_argument("name", help="a [commands] entry name, or a native default")
     run_p.add_argument(
         "--dry-run",
@@ -47,9 +48,7 @@ def _add_build_parser(sub) -> None:
     discovery only -- actual dispatch bypasses this parser entirely (see
     `frob.__main__._dispatch` and `frob.app.run_runner`'s module
     docstring)."""
-    build_p = sub.add_parser(
-        "build", help="delegate to the [commands] 'build' entry (T-4759)"
-    )
+    build_p = sub.add_parser("build", help="delegate to the [commands] 'build' entry")
     build_p.add_argument(
         "--dry-run",
         action="store_true",

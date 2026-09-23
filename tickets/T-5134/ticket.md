@@ -2,7 +2,7 @@
 id: T-5134
 title: 'Remove ticket citations (T-####) from all user-facing help and docs: argparse
   help strings, docs/, refusal and remedy text'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-20'

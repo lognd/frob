@@ -1,6 +1,6 @@
 # frob map
 
-DEPRECATED (T-4690, sunset 2026-12-01): use `frob explore map` instead --
+DEPRECATED (sunset 2026-12-01): use `frob explore map` instead --
 `frob map` keeps working, with a stderr notice, through the sunset window
 (same underlying runner), then exits non-zero.
 

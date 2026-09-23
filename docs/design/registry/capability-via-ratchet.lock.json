@@ -248,12 +248,11 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 232,
-      "reason": "T-4494: adds tests/unit/test_land_stackdump.py to the fs.read via-list -- real git subprocess/tmp_path fixture writes in the new test file. Bumping the ceiling 231 -> 232, 1 new site(s).",
-      "ticket": "T-4494"
+      "accepted_count": 233,
+      "reason": "testsuite glob growth"
     },
     "testsuite::fs.write": {
-      "accepted_count": 576,
+      "accepted_count": 578,
       "reason": "testsuite glob growth"
     },
     "testsuite::install-hook": {
