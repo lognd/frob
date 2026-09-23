@@ -3716,6 +3716,24 @@
       "old_digest": "e914403bf56083a2c810e01e9dd2e6505b88889273a86ac9105258e1ec289053",
       "reason": "re-verified: this land's own unscoped pre-commit sweep flagged digest drift since the last ack (accumulated from other tickets landed on dev since this worktree branched, not from T-4690's own edits); doc/tests edges still accurate, re-stamping",
       "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-22",
+      "facet": "body",
+      "new_digest": "9c1866c7a7033454f7b06b9a98386b199ee32cf7e1422ee412c67af74a22267f",
+      "old_digest": "0fa0525a0f9735337ac49a23ce42a27f3cb925849d6975b5795cd91606fb12aa",
+      "reason": "T-5108: added directive-line preservation via _resolve_keep_lines/_directive_keep_lines; docs/commands/narrative.md updated in the same change, behavior re-verified by the new positive-control and regression tests",
+      "ref": "src/frob/narrative/_cli.py::run_narrative_command"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-22",
+      "facet": "sig",
+      "new_digest": "ea60db054ceb9407b71c1820a4cd1e66f0945d9de2b0c7a174b1fb1632e244d2",
+      "old_digest": "ea60db054ceb9407b71c1820a4cd1e66f0945d9de2b0c7a174b1fb1632e244d2",
+      "reason": "T-5108: added directive-line preservation via _resolve_keep_lines/_directive_keep_lines; docs/commands/narrative.md updated in the same change, behavior re-verified by the new positive-control and regression tests",
+      "ref": "src/frob/narrative/_cli.py::run_narrative_command"
     }
   ],
   "entries": [
@@ -4495,7 +4513,7 @@
       "ref": "src/frob/mutate/__init__.py::run_mutations"
     },
     {
-      "digest": "0fa0525a0f9735337ac49a23ce42a27f3cb925849d6975b5795cd91606fb12aa",
+      "digest": "9c1866c7a7033454f7b06b9a98386b199ee32cf7e1422ee412c67af74a22267f",
       "facet": "body",
       "ref": "src/frob/narrative/_cli.py::run_narrative_command"
     },

@@ -1,7 +1,7 @@
 ---
 id: T-5108
 title: narrative move deletes directive lines inside the moved comment run
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -55,6 +55,10 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/test_narrative_migrate.py::TestDirectiveLinesPreserved::test_directive_keep_lines_finds_lead_and_continuation_lines
+- tests/test_narrative_migrate.py::TestDirectiveLinesPreserved::test_positive_control_keeps_directives_moves_only_prose
+- tests/test_narrative_migrate.py::TestDirectiveLinesPreserved::test_diff_of_moved_file_removes_no_directive_line
 designated_repro_test: null
 threat: null
 component: null

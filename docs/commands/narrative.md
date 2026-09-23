@@ -35,6 +35,20 @@ The moved text is appended to the named ticket's body via
 the same move twice is a no-op rather than a duplicate append. See
 T-2678 for the history behind this.
 
+**Directive lines are always kept (T-5108).** A `# frob:<verb>` line
+inside the moved extent -- `frob:doc`, `frob:ticket`, `frob:tests`,
+`frob:waive`, `frob:invariant`, and any backslash-continued payload
+lines under it -- is NEVER moved into the ticket body, whether or not
+`--keep-file` named it: `run_narrative_command` (`_directive_keep_lines`,
+`src/frob/narrative/_cli.py`) auto-detects every such line in the block
+and treats it as an implicit `--keep-file` entry before calling
+`migrate_block`. These lines are graph-load-bearing edges/waivers/
+invariants, never change-narrative prose, and the default (no
+`--keep-file`) move used to delete them along with the rest of the
+block -- the measured incident this fix exists for: `frob:doc` anchors,
+a `frob:waive PII012`, and a `frob:invariant` block, all lost across
+three separate moves and restored by hand before commit.
+
 ## Bulk mode (T-4697)
 
 The single-block form above is the precise escape hatch; it does not

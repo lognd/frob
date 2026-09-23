@@ -9,7 +9,9 @@ narrative-block migration, nothing else.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 from typani.result import Ok
@@ -28,7 +30,16 @@ _log = get_logger(__name__)
 
 __all__ = ["add_narrative_parser", "run_narrative_command"]
 
+#: A `# frob:<verb>` directive's own lead line -- matches this repo's DSL
+#: lead shape (`frob.gates._docarch_structural._DIRECTIVE_MARKER_RE`'s own
+#: `frob:` alternative, narrowed to just `frob:` per T-5108's own body:
+#: the directive family this ticket measured losing was frob:doc/frob:
+#: waive/frob:invariant, never a bare `noqa`/`type:`/`ruff:`/`mypy:` line).
+# frob:ticket T-5108
+_DIRECTIVE_LEAD_RE = re.compile(r"^\s*#\s*frob:\S+")
 
+
+# frob:ticket T-5108
 # frob:doc docs/commands/narrative.md#usage
 # tests/test_narrative_migrate.py::TestNarrativeCli.test_add_narrative_parser_registers_move  # noqa: E501
 def add_narrative_parser(sub: argparse._SubParsersAction) -> None:
@@ -99,6 +110,48 @@ def _read_keep_lines(keep_file: Path | None) -> tuple[str, ...]:
     if keep_file is None:
         return ()
     return tuple(keep_file.read_text(encoding="utf-8").splitlines())
+
+
+# frob:ticket T-5108
+def _directive_keep_lines(block: Sequence[str]) -> tuple[str, ...]:
+    """T-5108: the lines within `block` that `run_narrative_command` must
+    ALWAYS keep in place, whether or not `--keep-file` was given -- a
+    `# frob:<verb>` directive lead line, plus any immediately-following
+    continuation payload line(s) of a backslash-continued multi-line
+    directive (this repo's own `# frob:tests \\` + wrapped-target
+    convention). These are graph-load-bearing edges/waivers/invariants,
+    never change-narrative prose, and the default (no `--keep-file`)
+    move used to delete them along with the rest of the block -- the
+    measured incident this ticket exists to fix: `frob:doc` anchors, a
+    `frob:waive PII012`, and a `frob:invariant INV-042` block, all lost
+    in three separate moves and restored by hand before commit."""
+    keep: list[str] = []
+    continuing = False
+    for line in block:
+        if _DIRECTIVE_LEAD_RE.match(line):
+            keep.append(line)
+            continuing = line.rstrip().endswith("\\")
+            continue
+        if continuing:
+            keep.append(line)
+            continuing = line.rstrip().endswith("\\")
+            continue
+        continuing = False
+    return tuple(keep)
+
+
+# frob:ticket T-5108
+def _resolve_keep_lines(
+    file_text: str, start: int, end: int, keep_file: Path | None
+) -> tuple[str, ...]:
+    """`run_narrative_command`'s own keep-lines resolution, split out to
+    keep that function under ARCH001's threshold: `--keep-file`'s
+    explicit lines (`_read_keep_lines`), PLUS every directive line T-5108
+    requires be kept regardless (`_directive_keep_lines`, over the
+    extent's own current block), de-duplicated in encounter order."""
+    keep_lines = _read_keep_lines(keep_file)
+    block_lines = file_text.splitlines()[start - 1 : end]
+    return tuple(dict.fromkeys(keep_lines + _directive_keep_lines(block_lines)))
 
 
 def _already_migrated_in_ticket(ticket_id: str, marker_line: str, root: Path) -> bool:
@@ -187,6 +240,7 @@ def _resolve_migration(
     return Ok((migration, ticket_body_text))
 
 
+# frob:ticket T-5108
 # frob:doc docs/commands/narrative.md#usage
 # tests/test_narrative_migrate.py::TestNarrativeCli.test_dry_run_reports_without_writing
 def run_narrative_command(args: argparse.Namespace) -> int:
@@ -213,7 +267,7 @@ def run_narrative_command(args: argparse.Namespace) -> int:
         renderer.line(f"{file_path}:{args.line} is not a comment line or paragraph")
         return 1
     start, end = extent
-    keep_lines = _read_keep_lines(args.keep_file)
+    keep_lines = _resolve_keep_lines(file_text, start, end, args.keep_file)
 
     result = _resolve_migration(
         file_path=file_path,

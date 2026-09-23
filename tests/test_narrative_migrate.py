@@ -302,3 +302,171 @@ class TestNarrativeIntegration:
         assert "T-2961" in result.stdout
         # dry-run must never touch the file
         assert target.read_text(encoding="utf-8") == _SOCKETD_LIKE_FILE
+
+
+class TestDirectiveLinesPreserved:
+    """T-5108: `frob narrative move`'s default (no `--keep-file`) mode
+    must never delete a directive line (`frob:doc`/`frob:waive`/`frob:
+    invariant`/...) that sits inside the moved comment run -- only the
+    prose leaves. Positive control is the ticket's own body: a run with
+    prose plus one `frob:doc`, one `frob:waive`, and one multi-line
+    `frob:invariant` block."""
+
+    # T-5108: built line-by-line (never a bare triple-quoted block) so no
+    # RAW SOURCE line in this file itself starts with '#' -- a prior
+    # version wrote this fixture as a plain '"""...""" ' block, and the
+    # land's own pre-land FMT001 directive-wrap pass (which scans PHYSICAL
+    # file lines for a '# frob:...' continuation shape, blind to whether
+    # that line sits inside a Python string literal) reflowed and
+    # corrupted the embedded backslash-continuation payload before it
+    # ever reached this test. Each element below is its own string
+    # literal on its own source line, indented past column 0, so no
+    # physical line in THIS file matches that scanner's directive-lead
+    # shape.
+    _FIXTURE_LINES = (
+        "x = 1",
+        "",
+        "# T-3001: this daemon's shutdown path was rewritten twice before landing",
+        "# on the current design -- the first attempt raced a signal handler",
+        "# against a background thread join and hung under load.",
+        "# frob:doc docs/modules/daemon.md#shutdown",
+        '# frob:waive PII012 reason="fixture-only, no real PII in this test path"',
+        "# frob:invariant INV-042 \\",
+        "# the shutdown path must never join the background thread from inside \\",
+        "# the signal handler itself",
+        "if True:",
+        "    pass",
+        "",
+    )
+    _FIXTURE = "\n".join(_FIXTURE_LINES)
+
+    def _directive_lines(self) -> tuple[str, ...]:
+        return (
+            "# frob:doc docs/modules/daemon.md#shutdown",
+            '# frob:waive PII012 reason="fixture-only, no real PII in this test path"',
+            "# frob:invariant INV-042 \\",
+            "# the shutdown path must never join the background thread from inside \\",
+            "# the signal handler itself",
+        )
+
+    # frob:tests src/frob/narrative/_cli.py::_directive_keep_lines
+    def test_directive_keep_lines_finds_lead_and_continuation_lines(self) -> None:
+        """`_directive_keep_lines` returns every directive lead line plus
+        its backslash-continuation payload lines, in block order, and
+        nothing else (no prose)."""
+        from frob.narrative._cli import _directive_keep_lines
+
+        block = self._FIXTURE.splitlines()[2:11]
+        assert _directive_keep_lines(block) == self._directive_lines()
+
+    def _write_active_ticket(self, root, ticket_id: str) -> None:
+        """A minimal v2 active ticket, matching `test_bulk.py`'s own
+        `_write_active_ticket` shape."""
+        from datetime import date
+
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+        from frob.tickets._store import _serialize_ticket
+
+        d = root / "tickets" / ticket_id
+        d.mkdir(parents=True)
+        ticket = Ticket(
+            id=ticket_id,
+            title="Sample",
+            state=TicketState.QUEUED,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            blocked_by=(),
+            parent=None,
+            scope=(),
+            evidence=(),
+            attachments=(),
+            body="## Description\nsomething\n",
+        )
+        (d / "ticket.md").write_text(_serialize_ticket(ticket))
+
+    # frob:tests src/frob/narrative/_cli.py::run_narrative_command
+    def test_positive_control_keeps_directives_moves_only_prose(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        """GIVEN a run containing prose plus one `frob:doc`, one `frob:
+        waive`, and one multi-line `frob:invariant`, WHEN `frob narrative
+        move` runs (no `--keep-file`), THEN the file keeps all three
+        directives byte-for-byte and none of the prose, and the ticket
+        body receives only the prose."""
+        import argparse
+
+        from frob.narrative._cli import add_narrative_parser, run_narrative_command
+
+        monkeypatch.chdir(tmp_path)
+        self._write_active_ticket(tmp_path, "T-3001")
+        target = tmp_path / "demo.py"
+        target.write_text(self._FIXTURE, encoding="utf-8")
+
+        parser = argparse.ArgumentParser(prog="frob")
+        sub = parser.add_subparsers(dest="subcommand")
+        add_narrative_parser(sub)
+        args = parser.parse_args(
+            [
+                "narrative",
+                "move",
+                str(target),
+                "3",
+                "--reason",
+                "T-5108 positive control",
+            ]
+        )
+        exit_code = run_narrative_command(args)
+        assert exit_code == 0
+
+        new_text = target.read_text(encoding="utf-8")
+        for directive_line in self._directive_lines():
+            assert directive_line in new_text.splitlines()
+        assert "shutdown path was rewritten twice" not in new_text
+        assert "raced a signal handler" not in new_text
+
+        from frob.tickets import load_queue
+
+        body = load_queue(tmp_path).danger_ok.tickets["T-3001"].body
+        assert "shutdown path was rewritten twice" in body
+        assert "frob:doc docs/modules/daemon.md#shutdown" not in body
+        assert "frob:invariant INV-042" not in body
+
+    # frob:tests src/frob/narrative/_cli.py::run_narrative_command
+    def test_diff_of_moved_file_removes_no_directive_line(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        """Regression coverage for the agent's own detection recipe: the
+        diff of a moved file must contain no REMOVED directive line."""
+        import argparse
+        import difflib
+
+        from frob.narrative._cli import add_narrative_parser, run_narrative_command
+
+        monkeypatch.chdir(tmp_path)
+        self._write_active_ticket(tmp_path, "T-3001")
+        target = tmp_path / "demo.py"
+        before = self._FIXTURE
+        target.write_text(before, encoding="utf-8")
+
+        parser = argparse.ArgumentParser(prog="frob")
+        sub = parser.add_subparsers(dest="subcommand")
+        add_narrative_parser(sub)
+        args = parser.parse_args(
+            ["narrative", "move", str(target), "3", "--reason", "T-5108 regression"]
+        )
+        exit_code = run_narrative_command(args)
+        assert exit_code == 0
+
+        after = target.read_text(encoding="utf-8")
+        diff = difflib.unified_diff(
+            before.splitlines(), after.splitlines(), lineterm=""
+        )
+        removed_directive_lines = [
+            line
+            for line in diff
+            if line.startswith("-")
+            and not line.startswith("---")
+            and line[1:] in self._directive_lines()
+        ]
+        assert removed_directive_lines == []
