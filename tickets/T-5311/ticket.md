@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_websec_bounds.py
 - tests/fixtures/webapp/websec1xx/bounds/**
 - docs/modules/webapp-websec-bounds.md
+- tests/unit/test_websec_bounds.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,16 @@ scope_changes:
 - op: add
   glob: docs/modules/webapp-websec-bounds.md
   reason: own doc file per shared WEBSEC substrate brief
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_websec_bounds.py
+  reason: unit test file for websec_bounds_findings + taint_gate extension
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_websec_bounds.py
+  reason: unit test file for websec_bounds_findings + taint_gate extension
   actor: logan
   at: '2026-09-23'
 triage_changes:
