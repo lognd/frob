@@ -1,7 +1,7 @@
 ---
 id: T-5334
 title: 'SQL substrate: literal extraction from host languages + sqlfluff relevance'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -64,6 +64,19 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/sql/test_extract.py::test_extract_sql_literals_python_cursor_execute
+- tests/unit/sql/test_extract.py::test_extract_sql_literals_python_django_raw
+- tests/unit/sql/test_extract.py::test_extract_sql_literals_python_sqlalchemy_text
+- tests/unit/sql/test_extract.py::test_extract_sql_literals_ts_prisma_query_raw
+- tests/unit/sql/test_extract.py::test_extract_sql_literals_rust_sqlx_query_macro
+- tests/unit/sql/test_extract.py::test_sql_injection_findings_python_fstring_positive
+- tests/unit/sql/test_extract.py::test_sql_injection_findings_python_literal_negative
+- tests/unit/sql/test_extract.py::test_sql_injection_findings_psycopg_composition_excluded
+- tests/unit/sql/test_extract.py::test_sql_injection_findings_ts_prisma_template_positive
+- tests/unit/sql/test_extract.py::test_sql_injection_findings_ts_prisma_literal_negative
+- tests/unit/sql/test_extract.py::test_sql_relevance_true_for_call_site_fixture
+- tests/unit/sql/test_extract.py::test_sql_relevance_false_for_plain_repo
 designated_repro_test: null
 threat: null
 component: null

@@ -200,8 +200,14 @@ ledger = []
 leases = ["ledger"]
 land = ["leases", "ledger"]
 gates = ["lang", "webapp", "sql"]
+# T-5334: `sql` also now imports `lang` -- `frob.sql._extract` reads
+# Python/TS/JS/JSX/Rust source via `frob.lang.raw_tree` (the same escape
+# hatch `frob.webapp._websec_sinks` uses) to find SQL-executing call
+# sites for literal extraction/sqlfluff relevance. `sql` stays a leaf
+# otherwise, same posture as `webapp` above: never `frob.webapp` (SQL
+# call sites appear outside web apps entirely).
 webapp = ["lang"]
-sql = []
+sql = ["lang"]
 
 # T-2390 epic child (T-2437): known_keys declares this table's own
 # known-key set for GRAPHSCHEMA001 (an unknown/misspelled key,
