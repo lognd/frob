@@ -25,6 +25,7 @@ scope:
 - src/frob/lang/_support.py
 - tests/test_lang_conformance_gate.py
 - src/frob/lang/_common.py
+- src/frob/gates/_lang_conformance.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,13 @@ scope_changes:
   reason: 'found while working T-5394: _strip_comment_delims had no <!-- --> branch
     at all, so html''s directive_parse could never work regardless of registry claims
     -- a real bug in the shared comment-stripping primitive, not a registry-overclaim'
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/gates/_lang_conformance.py
+  reason: adding per-language behavioral fixtures for css/scss/html/javascript/vue
+    to the existing _CAPABILITY_FIXTURE_SOURCES/_CAPABILITY_FIXTURE_EXTENSIONS dicts
+    this file already owns
   actor: logan
   at: '2026-09-23'
 triage_changes:
