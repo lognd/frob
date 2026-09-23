@@ -20,6 +20,13 @@ tier: ticket
 sprint: v0.534.0
 runs_last: false
 milestone: null
+points: 5
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -36,6 +43,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: points
+  old_value: null
+  new_value: '5'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-23'
 designated_repro_test: null
 threat: null
 component: null
