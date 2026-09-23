@@ -54,12 +54,12 @@ class TestSetSprintRecordsTriageChange:
         assert created.is_ok
         ticket_id = created.danger_ok.id
 
-        result = set_sprint(tmp_path, ticket_id, "v0.531.0")
+        result = set_sprint(tmp_path, ticket_id, "burn-down")
         assert result.is_ok
         entries = [c for c in result.danger_ok.triage_changes if c.field == "sprint"]
         assert len(entries) == 1
         assert entries[0].old_value is None
-        assert entries[0].new_value == "v0.531.0"
+        assert entries[0].new_value == "burn-down"
         assert entries[0].at == date.today()
 
     # frob:tests \
@@ -79,14 +79,14 @@ class TestSetSprintRecordsTriageChange:
         assert created.is_ok
         ticket_id = created.danger_ok.id
 
-        first = set_sprint(tmp_path, ticket_id, "v0.531.0")
+        first = set_sprint(tmp_path, ticket_id, "burn-down")
         assert first.is_ok
-        second = set_sprint(tmp_path, ticket_id, "v0.531.0")
+        second = set_sprint(tmp_path, ticket_id, "burn-down")
         assert second.is_ok
         entries = [c for c in second.danger_ok.triage_changes if c.field == "sprint"]
         assert len(entries) == 2
-        assert entries[1].old_value == "v0.531.0"
-        assert entries[1].new_value == "v0.531.0"
+        assert entries[1].old_value == "burn-down"
+        assert entries[1].new_value == "burn-down"
 
     def test_reloaded_ticket_carries_the_recorded_entry(self, tmp_path: Path) -> None:
         """Round-trip through a fresh `load_active` read -- the entry is
@@ -97,7 +97,7 @@ class TestSetSprintRecordsTriageChange:
         assert created.is_ok
         ticket_id = created.danger_ok.id
 
-        result = set_sprint(tmp_path, ticket_id, "v0.531.0")
+        result = set_sprint(tmp_path, ticket_id, "burn-down")
         assert result.is_ok
 
         reloaded = load_active(tmp_path)

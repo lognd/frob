@@ -2,7 +2,7 @@
 id: T-5383
 title: test_tickets_triage_dates.py fixtures use a semver-shaped sprint label, refused
   by T-5133's SprintIsSemverShaped
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -34,11 +34,17 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange::test_assigning_a_sprint_records_a_triage_change_entry
+- tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange::test_reassigning_the_same_sprint_still_records_an_entry
+- tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange::test_reloaded_ticket_carries_the_recorded_entry
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5383
+branch: t-5383
 ---
 CI run 35819358270 (ubuntu/macos); re-verified failing on dev tip 39b89ed091: tests/test_tickets_triage_dates.py::TestSetSprintRecordsTriageChange::test_assigning_a_sprint_records_a_triage_change_entry, test_reassigning_the_same_sprint_still_records_an_entry, and test_reloaded_ticket_carries_the_recorded_entry all fail with Err(TicketError.SprintIsSemverShaped) -- each calls set_sprint(tmp_path, ticket_id, 'v0.531.0'), a semver-shaped label, which T-5133 (landed 2026-09-22 evening, BRIEF item 12) now refuses since a sprint must be goal-named and a version belongs in --milestone. Fix: change the fixtures' sprint label to a goal-named string (e.g. 'burn-down') so the tests exercise set_sprint's real contract again.
