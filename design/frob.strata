@@ -132,6 +132,11 @@ node cli : trusted {
         "src/frob/_cli_parsers/**"
         "src/frob/doctor.py";
     may "eval" via "src/frob/doctor.py";
+    // T-5396: src/frob/doctor.py::_fetch_pypi_latest_version/
+    // _fetch_npm_latest_version (lint_tool_version_lag) urlopen the
+    // package index to check tool version lag -- never declared when
+    // that pair landed.
+    may "fetch_url" via "src/frob/doctor.py";
     // T-2587: mirror_promote_to_primary's shutil.rmtree call (removing a
     // stale draft-id ledger directory on the primary checkout) is a new
     // fs.write site in this file -- _copy_ledger_paths's own shutil.copy2/
@@ -287,6 +292,13 @@ node graphlang : trusted {
     clearance Internal;
     code "src/frob/graph/**" "src/frob/lang/**" "src/frob/arch/**";
     may "eval" via "src/frob/arch/_layering.py", "src/frob/lang/_walk_strata.py";
+    // T-5396: false-positive-shaped but real per the scanner's own
+    // literal-substring match -- src/frob/lang/__init__.py/_walk_html.py/
+    // _walk_vue.py's own docstrings/comments MENTION innerHTML/
+    // dangerouslySetInnerHTML/v-html (describing the T-5141-2 WEBSEC/A11Y
+    // lint rules that will query these walkers' raw trees), never
+    // execute an html_render-shaped operation themselves.
+    may "html_render" via "src/frob/lang/__init__.py", "src/frob/lang/_walk_html.py", "src/frob/lang/_walk_vue.py";
     // T-4279: `_probe_mtime_granularity_ns`/`_mtime_granularity_ns` write a
     // throwaway probe file and an on-disk granularity-cache sidecar under
     // `<root>/.frob/` -- genuine new fs.write sites, not false positives.
@@ -921,6 +933,13 @@ node core : trusted {
         "src/frob/webapp/**" "src/frob/sql/**";
     may "env" via "src/frob/logging/color.py", "src/frob/perf/_harness.py", "src/frob/process/_guard.py", "src/frob/process/_lock.py", "src/frob/render/_color.py", "src/frob/testing/_runners.py";
     may "eval" via "src/frob/dup/_pipeline/_probe.py", "src/frob/fuzz/_signatures.py", "src/frob/perf/_harness.py", "src/frob/process/_lock.py";
+    // T-5396: another scanner self-match, same shape as graphlang/
+    // testsuite's own -- src/frob/webapp/_websec_sinks.py's WEBSEC101-
+    // 103 detectors carry innerHTML/outerHTML/document.write/
+    // dangerouslySetInnerHTML/v-html as their OWN literal detection
+    // token data (landed by T-5364, after T-5396's own SELFAUDIT001
+    // scan first ran), never execute a real render.
+    may "html_render" via "src/frob/webapp/_websec_sinks.py";
     may "exec" via "src/frob/gitio.py", "src/frob/process/_guard.py", "src/frob/testing/_coverage_refresh.py";
     attr flag=frob_check_exec_kill_switch;
     // T-4437: adds src/frob/worktrees/** (disposable scratch-worktree sweep)
@@ -1124,10 +1143,10 @@ node mutate : trusted {
 node narrative : trusted {
 
     attr interface=[
-        MigrateError, MigrationResult, _already_migrated_in_ticket, _marker, _read_keep_lines,
-        _resolve_extent, _resolve_migration, _validate_block, _write_migration, add_narrative_parser,
-        block_at, migrate_block, moved_text_for_ticket, paragraph_at, run_narrative_command,
-        split_ticket_id,
+        BulkItem, BulkPlan, MigrateError, MigrationResult, _already_migrated_in_ticket, _marker,
+        _read_keep_lines, _resolve_extent, _resolve_migration, _validate_block, _write_migration,
+        add_narrative_parser, apply_bulk, block_at, discover_targets, find_blocks, migrate_block,
+        moved_text_for_ticket, paragraph_at, plan_bulk, run_narrative_command, split_ticket_id,
     ];
     clearance Internal;
     code "src/frob/narrative/**";
@@ -1872,6 +1891,11 @@ node testsuite : trusted {
     // already follows (see the `may "env"`/`may "exec"` comments above).
     may "net-mutate" via "tests/test_capability_registry.py";
     may "sql" via "tests/test_capability_registry.py";
+    // T-5396: the same literal-substring shape as graphlang's own
+    // html_render grant above -- these three files MENTION innerHTML/
+    // dangerouslySetInnerHTML/v-html in fixture data or capability-
+    // registry test doubles, not a real html-rendering operation.
+    may "html_render" via "tests/test_capability_registry.py", "tests/test_policy.py", "tests/vet_suite/test_capability_scan_embedded.py";
     may "deserialize" via "tests/test_capability_registry.py", "tests/unit/strata/test_cve_fingerprint_scan.py";
     // T-3029: 5 test files with real, new env.write sites added below (same sweep).
     // T-5201: test_explore_runner_parse_artifact_cache.py's os.environ[...]
@@ -2357,6 +2381,10 @@ flow f_t3029_narrative_core : narrative -> core { label Internal; attr local; }
 flow f_t3029_narrative_tickets_ledger : narrative -> tickets_ledger { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_t3029_gates_narrative : gates -> narrative { label Internal; attr local; }
+// T-5396: src/frob/narrative/_bulk.py:37 imports frob.gates._narrative_blocks
+// (the reverse direction from the flow above) -- never declared when
+// _bulk.py's own interface/flow wiring landed.
+flow f_t5396_narrative_gates : narrative -> gates { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_t3029_testsuite_narrative : testsuite -> narrative { label Internal; attr local; }
 // T-3029: four more pre-existing SYS003 findings from the same sweep,
@@ -2569,6 +2597,13 @@ assume "weakness:CWE-78:checker" noflow registry -> checker owner logan review "
 // `mutate`'s own discharge below, same un-fold reasoning.)
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:core" noflow registry -> core owner logan review "2026-10-15"
+// T-5396: `core`'s new `may "html_render"` grant is a scanner self-
+// match -- src/frob/webapp/_websec_sinks.py's WEBSEC101-103 detectors
+// carry innerHTML/outerHTML/document.write/dangerouslySetInnerHTML/
+// v-html as their own literal detection-token data, never execute a
+// real render, so CWE-79 (XSS) never applies here.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-79:core" noflow registry -> core owner logan review "2026-10-15"
 
 // tickets_ledger: T-0166 un-fold moved `src/frob/tickets/clipboard.py`'s
 // `subprocess.run` exec call site (`wl-paste`/platform clipboard probing,
@@ -2776,6 +2811,25 @@ assume "weakness:CWE-78:graphlang" noflow registry -> graphlang owner logan revi
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:stratamod" noflow registry -> stratamod owner logan review "2026-10-15"
 
+// T-5396: `cli`'s new `may "fetch_url"` grant (src/frob/doctor.py's
+// lint_tool_version_lag urlopen against pypi.org/registry.npmjs.org)
+// drags in CWE-918 (SSRF): the fetched URL is a HARDCODED package-index
+// endpoint built from the tool's own declared name, never from
+// `registry` response data or any other untrusted input -- verified by
+// direct read of `_fetch_pypi_latest_version`/`_fetch_npm_latest_version`,
+// no `registry -> cli` data flow exists for this call.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-918:cli" noflow registry -> cli owner logan review "2026-10-15"
+
+// T-5396: `graphlang`'s new `may "html_render"` grant is a scanner
+// self-match, not a real render site -- src/frob/lang/__init__.py/
+// _walk_html.py/_walk_vue.py's own docstrings/comments MENTION
+// innerHTML/dangerouslySetInnerHTML/v-html (describing the T-5141-2
+// WEBSEC/A11Y lint rules these walkers exist to feed), never execute an
+// html-rendering operation, so CWE-79 (XSS) never applies here.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-79:graphlang" noflow registry -> graphlang owner logan review "2026-10-15"
+
 // tickets_ledger: same "provably NoFlow via c_no_registry_ledger, assume
 // anyway for uniformity with the discharge shape THREAT003 requires"
 // precedent the CWE-78 block above already documents for this node;
@@ -2846,3 +2900,12 @@ assume "weakness:CWE-89:testsuite" noflow registry -> testsuite owner logan revi
 assume "weakness:CWE-918:testsuite" noflow registry -> testsuite owner logan review "2026-10-15"
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-502:testsuite" noflow registry -> testsuite owner logan review "2026-10-15"
+// T-5396: `testsuite`'s new `may "html_render"` grant (module docstring
+// above already covers this node's general "scanner self-match on
+// literal fixture/registry-table text" shape) -- tests/test_capability_
+// registry.py/test_policy.py/test_vet_containment_capability_scan_
+// embedded.py MENTION innerHTML/dangerouslySetInnerHTML/v-html as
+// capability-registry test data or WEBSEC-story fixture strings, never
+// execute a real render, so CWE-79 (XSS) never applies here either.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-79:testsuite" noflow registry -> testsuite owner logan review "2026-10-15"

@@ -29,6 +29,10 @@
       "accepted_count": 8,
       "reason": "branch-own via addition auto-accept (T-4759)"
     },
+    "cli::fetch_url": {
+      "accepted_count": 1,
+      "reason": "branch-own via addition auto-accept (T-5396)"
+    },
     "cli::fs.read": {
       "accepted_count": 25,
       "reason": "T-4407: verify_runner.py's LARGE001 split moved the coverage-lock auto-commit and rapid-debt-visibility fs.read call sites into two new sibling modules (_verify_coverage_lock.py, _verify_rapid_debt.py) -- same effects as before the split, two new named via-list sites rather than a behavior change. T-4696: frob ticket set --reason-file adds one new fs.read via-site (_lifecycle.py) -- same accountable-file-read effect the other via-list members already have, not a behavior change.",
@@ -83,6 +87,10 @@
       "reason": "branch-own via addition auto-accept (T-4437); +1 for src/frob/docs/_command_pages.py (T-4702: frob docs --sync-command-pages writes docs/commands/<verb>.md stub pages)",
       "ticket": "T-4702"
     },
+    "core::html_render": {
+      "accepted_count": 1,
+      "reason": "branch-own via addition auto-accept (T-5396)"
+    },
     "core::process-control": {
       "accepted_count": 1,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
@@ -136,6 +144,10 @@
       "accepted_count": 7,
       "reason": "T-4279: adds src/frob/graph/__init__.py to the fs.write via-list -- _probe_mtime_granularity_ns/_mtime_granularity_ns write a throwaway probe file and an on-disk granularity-cache sidecar under <root>/.frob/, bumping the ceiling 6 -> 7, one real new site.",
       "ticket": "T-4279"
+    },
+    "graphlang::html_render": {
+      "accepted_count": 3,
+      "reason": "branch-own via addition auto-accept (T-5396)"
     },
     "graphlang::sql": {
       "accepted_count": 1,
@@ -254,6 +266,10 @@
     "testsuite::fs.write": {
       "accepted_count": 583,
       "reason": "testsuite glob growth"
+    },
+    "testsuite::html_render": {
+      "accepted_count": 3,
+      "reason": "branch-own via addition auto-accept (T-5396)"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
