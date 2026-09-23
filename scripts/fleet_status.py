@@ -195,17 +195,12 @@ _STAT_SHORTCUT_CODES = frozenset({"M", "MM"})
 # frob:doc docs/guides/coordinator-scripts.md#root_dirt
 # frob:ticket T-1863
 # frob:ticket T-2586
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt.test_clean_repo
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt.test_dirty_repo
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt.test_phantom_modif\
 # ied_entry_dropped kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt.test_genuine_modif\
 # ied_entry_kept kind="unit"  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt.test_untracked_ent\
 # ry_never_reverified kind="unit"  # noqa: E501
 def root_dirt() -> list[str]:
@@ -264,11 +259,8 @@ VERIFY_WATERMARK = REPO / ".frob" / "verify-watermark.json"
 
 # frob:doc docs/guides/coordinator-scripts.md#leases
 # frob:ticket T-1863
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_reads_lease_records  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_no_lease_dir
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestLeases.test_unreadable_lease_file  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -342,11 +334,8 @@ def _iter_in_progress_ticket_frontmatter():
 # frob:doc docs/guides/coordinator-scripts.md#in_progress_ticket_scope_leases
 # frob:ticket T-2651
 # frob:ticket T-2654
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_no_worktree_flagged_as_leak  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_live_worktree_named_not_leaked  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_queued_ticket_excluded  # noqa: E501
 # frob:ticket T-4421
 def in_progress_ticket_scope_leases() -> list[dict]:
@@ -378,13 +367,9 @@ def in_progress_ticket_scope_leases() -> list[dict]:
 
 # frob:doc docs/guides/coordinator-scripts.md#blocked_in_progress_leases
 # frob:ticket T-2654
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.test_in_progress_with_open_blocker_flagged  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.test_in_progress_with_no_blockers_not_flagged  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.test_in_progress_with_only_terminal_blockers_not_flagged  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases.test_queued_ticket_with_open_blocker_not_flagged  # noqa: E501
 # frob:ticket T-4421
 def blocked_in_progress_leases() -> list[dict]:
@@ -420,9 +405,7 @@ def blocked_in_progress_leases() -> list[dict]:
 # frob:doc docs/guides/coordinator-scripts.md#_resolve_worktree_for_in_progress_ticket
 # frob:ticket T-2651
 # frob:ticket T-2655
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_no_worktree_flagged_as_leak  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases.test_live_worktree_named_not_leaked  # noqa: E501
 def _resolve_worktree_for_in_progress_ticket(
     ticket_id: str, scope: Sequence[str]
@@ -480,9 +463,7 @@ def _resolve_worktree_for_in_progress_ticket(
 
 # frob:doc docs/guides/coordinator-scripts.md#worktrees
 # frob:ticket T-1863
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktrees.test_reports_idle_age  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktrees.test_no_worktree_dir  # noqa: E501
 def worktrees(idle_seconds: int) -> list[tuple[str, int, bool]]:
     """Return (name, seconds-since-last-commit, looks_idle) per worktree."""
@@ -518,10 +499,8 @@ _TICKET_NAMED_WORKTREE_RE = re.compile(r"^t-(\d+)$")
 # frob:doc docs/guides/coordinator-scripts.md#_worktree_ticket_id
 # frob:ticket T-2599
 # frob:ticket T-2755
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeTicketId.test_ticke\
 # t_named_worktree_resolves  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeTicketId.test_ad_ho\
 # c_named_worktree_resolves_to_none  # noqa: E501
 def _worktree_ticket_id(name: str) -> str | None:
@@ -562,16 +541,12 @@ _DELETION_DOMINANT_RATIO = 3.0
 # frob:doc docs/guides/coordinator-scripts.md#worktree_content_classification
 # frob:ticket T-2599
 # frob:ticket T-2755
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassificati\
 # on.test_stranded_new_content_not_on_main  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassificati\
 # on.test_stale_when_content_fully_landed_despite_many_commits  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassificati\
 # on.test_stale_when_only_behind_main  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassificati\
 # on.test_active_ticket_never_stranded_or_stale  # noqa: E501
 # frob:ticket T-4421
@@ -752,11 +727,8 @@ def _lines_absent_from_main(
 
 # frob:doc docs/guides/coordinator-scripts.md#ticket_lease
 # frob:ticket T-2133
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_reads_a_live_lease  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_no_lease_file  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease.test_unreadable_lease_file  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -855,11 +827,8 @@ def _parse_ticket_frontmatter_text(text: str) -> dict:
 # frob:doc docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
 # frob:ticket T-2133
 # frob:ticket T-2449
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.test_reads_state_and_scope  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.test_missing_ticket_returns_none  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain.test_falls_back_to_archive_when_active_ledger_has_no_such_ticket  # noqa: E501
 # frob:ticket T-4421
 def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
@@ -971,17 +940,11 @@ def _scan_for_live_worktree_process(
 
 # frob:doc docs/guides/coordinator-scripts.md#lease_classification
 # frob:ticket T-2222
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_live_lease_stays_live  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_holder_dead_is_reclaimable  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_ticket_terminal_is_reclaimable  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_path_gone_is_reclaimable  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_root_worktree_is_structurally_unreclaimable  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_classification_is_strictly_read_only  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -1051,7 +1014,6 @@ def lease_classification(record: dict) -> str:
 
 # frob:doc docs/guides/coordinator-scripts.md#live_lease_count
 # frob:ticket T-2222
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification.test_live_lease_stays_live  # noqa: E501
 def live_lease_count(held: Sequence[dict]) -> int:
     """How many of `held` (`leases()`'s own records) classify as `"live"`
@@ -1135,9 +1097,7 @@ def _worktree_matches_ticket_by_dual_correlation(
 
 # frob:doc docs/guides/coordinator-scripts.md#_worktree_started_ticket
 # frob:ticket T-2747
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicket.test_true_when_start_transition_commit_present  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicket.test_false_when_absent  # noqa: E501
 def _worktree_started_ticket(path: Path, ticket_id: str) -> bool:
     """`True` if `path`'s unlanded history (`main..HEAD`) carries the
@@ -1189,11 +1149,8 @@ _START_TRANSITION_SUBJECT_RE = re.compile(
 
 # frob:doc docs/guides/coordinator-scripts.md#_worktree_started_ticket_ids
 # frob:ticket T-2755
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.test_non_conventionally_named_worktree_resolves  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.test_no_start_transition_commits_resolves_empty  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds.test_series_worktree_resolves_every_started_id  # noqa: E501
 def _worktree_started_ticket_ids(path: Path) -> list[str]:
     """Every ticket id `path`'s own unlanded history (`main..HEAD`)
@@ -1241,19 +1198,12 @@ def _worktree_started_ticket_ids(path: Path) -> list[str]:
 # frob:ticket T-2179
 # frob:ticket T-2665
 # frob:ticket T-2747
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_finds_a_branch_with_unlanded_commits  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_empty_when_nothing_touches_it  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_ledger_only_churn_is_not_reported  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_non_conventionally_named_worktree_matches_via_start_transition  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket.test_series_worktree_matches_sibling_ticket_via_start_transition  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit.test_live_worktree_with_lease_file_removed_is_not_leaked  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit.test_no_worktree_and_no_lease_is_still_leaked  # noqa: E501
 # frob:ticket T-4421
 def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> list[str]:
@@ -1326,25 +1276,17 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
 # frob:doc docs/guides/coordinator-scripts.md#ticket_readiness
 # frob:ticket T-2133
 # frob:ticket T-2179
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_dispatchable_when_no_lease_no_commits_no_divergence  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_dispatchable_when_a_live_lease_exists  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_not_dispatchable_when_another_branch_already_has_commits  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness.test_flags_scope_divergence_between_the_live_lease_and_main  # noqa: E501
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_classify_blockers
 # frob:ticket T-2449
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_done_blocker_is_closed  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_archived_done_blocker_is_closed  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_in_progress_blocker_is_open  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockers.test_missing_blocker_is_unresolved_not_open  # noqa: E501
 def _classify_blockers(blocked_by: Sequence[str]) -> tuple[list[str], list[str]]:
     """`(open_ids, unresolved_ids)` -- T-2449's replacement for the old
@@ -1424,13 +1366,9 @@ def _expand_scope_globs_to_paths(root: Path, globs: Sequence[str]) -> set[Path]:
 
 # frob:doc docs/guides/coordinator-scripts.md#_land_ticket_collisions
 # frob:ticket T-2281
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land_in_progress_ticket_with_no_lease_still_collides  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land_ticket_disjoint_scope_is_not_a_collision  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_land_ticket_id_matching_a_live_lease_is_not_double_reported  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_the_ticket_s_own_id_in_land_ticket_ids_is_never_self_collision  # noqa: E501
 def _land_ticket_collisions(
     my_files: set[Path],
@@ -1462,11 +1400,8 @@ def _land_ticket_collisions(
 # frob:doc docs/guides/coordinator-scripts.md#scope_lease_collisions
 # frob:ticket T-2225
 # frob:ticket T-2281
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_glob_scope_collides_with_a_literal_lease_file  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_no_collision_when_files_are_disjoint  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions.test_a_reclaimable_lease_is_never_a_collision  # noqa: E501
 def scope_lease_collisions(
     ticket_id: str,
@@ -1703,11 +1638,8 @@ def _globs_overlap(a: str, b: str) -> bool:
 
 # frob:doc docs/guides/coordinator-scripts.md#scope_intersections
 # frob:ticket T-2180
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_reports_overlapping_pair  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_no_overlap_reports_empty  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestScopeIntersections.test_checks_against_a_held_lease_outside_the_requested_set  # noqa: E501
 def scope_intersections(ticket_ids: Sequence[str]) -> list[dict]:
     """PAIRWISE scope-glob intersection across every id in `ticket_ids`,
@@ -2012,13 +1944,9 @@ def _land_row_is_out_of_scope(
 # growth is documentation density, matching this whole file's established convention \
 # of large, incident-provenance-carrying docstrings on every public function, not a \
 # function that has grown genuinely harder to read"
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_parses_matching_rows_and_skips_others  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_watcher_pgrep_pattern_is_not_counted_as_a_land  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_a_land_in_a_different_repo_is_not_counted  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows.test_own_ancestor_process_is_not_counted_as_a_land  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -2221,11 +2149,8 @@ def _descendant_cpu_seconds(
 # frob:doc docs/guides/coordinator-scripts.md#land_invocations
 # frob:ticket T-2180
 # frob:ticket T-2193
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_collapses_process_fan_out_by_ticket_id  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_must_pass_control_one_land_many_processes_reports_one  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandInvocations.test_rows_with_no_ticket_id_are_dropped_not_reported  # noqa: E501
 def land_invocations() -> list[dict]:
     """Distinct `frob ticket land` INVOCATIONS, keyed on the ticket id
@@ -2295,9 +2220,7 @@ def land_invocations() -> list[dict]:
 
 # frob:doc docs/guides/coordinator-scripts.md#land_lock_holder_pids
 # frob:ticket T-2180
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandLockHolderPids.test_finds_a_pid_holding_the_lock_open  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestLandLockHolderPids.test_no_live_holder_returns_empty  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -2512,9 +2435,7 @@ _AGENT_CAP_GUIDANCE = "3-4 agent"
 
 # frob:doc docs/guides/coordinator-scripts.md#host_load
 # frob:ticket T-2180
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad.test_reads_loadavg_and_mem_available  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad.test_missing_proc_files_return_none  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -2583,9 +2504,7 @@ _SWAP_PRESSURE_FLOOR_KB = 1024 * 1024
 
 # frob:doc docs/guides/coordinator-scripts.md#swap_pressure
 # frob:ticket T-2249
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapPressure.test_reads_swap_used_and_total  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapPressure.test_swap_total_zero_never_crashes_or_claims_pressure  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -3188,19 +3107,12 @@ def _forkserver_root_is_live_check(
 # frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count
 # frob:ticket T-2443
 # frob:ticket T-2818
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_counts_forkserver_reparented_to_init  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_ignores_forkserver_with_live_parent  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_ignores_non_forkserver_processes  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_missing_proc_returns_none  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_two_level_chain_with_dead_root_is_orphaned  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_deep_chain_under_a_live_check_is_not_orphaned  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_zero_forkservers_reports_zero  # noqa: E501
 #: T-3139: mirrors `frob.process._reap.DEFAULT_ORPHAN_AGE_FLOOR_S` exactly
 #: (a second copy: `scripts/fleet_status.py` has a documented "no frob
@@ -3224,15 +3136,10 @@ _ORPHAN_AGE_FLOOR_S = 300.0
 
 # frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count
 # frob:ticket T-3139
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_unmeasurable_age_never_counted  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_young_forkserver_with_no_check_ancestor_is_not_orphaned  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount.test_old_forkserver_with_no_check_ancestor_is_orphaned  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCountAgreesWithReap.test_young_xdist_parented_forkserver_agrees  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCountAgreesWithReap.test_old_no_ancestor_forkserver_agrees  # noqa: E501
 def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
     """How many live `multiprocessing.forkserver` helper processes on this
@@ -3319,15 +3226,10 @@ def _forkserver_entry_is_orphaned(
 
 # frob:doc docs/guides/coordinator-scripts.md#stale_forkserver_count
 # frob:ticket T-2517
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_counts_old_forkserver_when_no_checks_running  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_ignores_young_forkserver  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_never_counts_anything_while_a_check_is_running  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_unknown_concurrent_checks_never_counts_anything  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount.test_missing_proc_returns_none  # noqa: E501
 def stale_forkserver_count(
     proc: Path = Path("/proc"),
@@ -3379,11 +3281,8 @@ def stale_forkserver_count(
 
 # frob:doc docs/guides/coordinator-scripts.md#forkserver_swap_held_kb
 # frob:ticket T-2517
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_sums_vmswap_across_every_forkserver  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_missing_status_file_degrades_that_entry_to_zero_not_a_crash  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb.test_missing_proc_returns_none  # noqa: E501
 def forkserver_swap_held_kb(proc: Path = Path("/proc")) -> int | None:
     """Sum of `VmSwap` (kb) across every live `multiprocessing.forkserver`
@@ -3405,11 +3304,8 @@ def forkserver_swap_held_kb(proc: Path = Path("/proc")) -> int | None:
 
 # frob:doc docs/guides/coordinator-scripts.md#forkserver_rss_held_kb
 # frob:ticket T-3407
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_sums_vmrss_across_every_forkserver  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_missing_status_file_degrades_that_entry_to_zero_not_a_crash  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb.test_missing_proc_returns_none  # noqa: E501
 def forkserver_rss_held_kb(proc: Path = Path("/proc")) -> int | None:
     """Sum of `VmRSS` (kb) across every live `multiprocessing.forkserver`
@@ -3433,9 +3329,7 @@ def forkserver_rss_held_kb(proc: Path = Path("/proc")) -> int | None:
 
 # frob:doc docs/guides/coordinator-scripts.md#forkserver_count
 # frob:ticket T-3407
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount.test_counts_every_live_forkserver  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount.test_missing_proc_returns_none  # noqa: E501
 def forkserver_count(proc: Path = Path("/proc")) -> int | None:
     """How many live `multiprocessing.forkserver` helper processes exist
@@ -3495,11 +3389,8 @@ def _is_live_check_cmdline(raw: bytes) -> bool:
 
 # frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count
 # frob:ticket T-2473
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_counts_check_processes  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_ignores_non_check_processes  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount.test_missing_proc_returns_none  # noqa: E501
 # frob:ticket T-4421
 def concurrent_check_count(proc: Path = Path("/proc")) -> int | None:
@@ -3522,11 +3413,8 @@ def concurrent_check_count(proc: Path = Path("/proc")) -> int | None:
 
 # frob:doc docs/guides/coordinator-scripts.md#_swap_guidance
 # frob:ticket T-2249
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_swap_above_floor_overrides_the_static_guidance  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_swap_below_floor_keeps_the_static_guidance  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance.test_unknown_swap_keeps_the_static_guidance  # noqa: E501
 def _swap_guidance(swap: tuple[int, int] | None) -> str:
     """The concurrency GUIDANCE clause text -- `_AGENT_CAP_GUIDANCE`
@@ -3773,13 +3661,9 @@ def _epics_with_any_children() -> set[str]:
 # frob:doc docs/guides/coordinator-scripts.md#rotting_tickets
 # frob:ticket T-2182
 # frob:ticket T-2229
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_flags_a_ticket_past_its_priority_threshold  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_ignores_tickets_still_under_threshold  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_only_queued_and_planned_states_are_considered  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets.test_distinguishes_epic_and_story_tier_from_ticket_tier  # noqa: E501
 def rotting_tickets() -> list[dict]:
     """Every QUEUED/PLANNED ticket under `TICKETS_DIR` (excluding
@@ -3836,11 +3720,8 @@ def _local_ledger_state(ticket_id: str, tickets_dir: Path = TICKETS_DIR) -> str 
 
 # frob:doc docs/guides/coordinator-scripts.md#_classify_blockers_local
 # frob:ticket T-2449
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_done_archived_blocker_is_closed  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_queued_blocker_is_open  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_worktrees.py::TestClassifyBlockersLocal.test_missing_blocker_is_unresolved  # noqa: E501
 def _classify_blockers_local(
     blocked_by: Sequence[str], tickets_dir: Path = TICKETS_DIR
@@ -3973,17 +3854,11 @@ def _print_rot_bucket(heading: str, tickets: list[dict], detail: str = "") -> No
 # frob:ticket T-2200
 # frob:ticket T-2229
 # frob:ticket T-2475
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_splits_by_tier_under_distinct_action_headings  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_decomposed_epic_prints_under_its_own_heading_not_needs_decomposition  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_epic_all_terminal_children_prints_under_needs_close  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_epic_with_no_children_at_all_still_prints_under_needs_decomposition  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot.test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close  # noqa: E501
 def _print_ticket_rot() -> None:
     """Print the TICKET ROT section: `rotting_tickets`'s own count, split
@@ -4098,15 +3973,10 @@ def _print_ticket_rot() -> None:
 
 # frob:doc docs/guides/coordinator-scripts.md#quarantine
 # frob:ticket T-2049
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_raised_with_undisposed_count  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_clear_when_store_says_cleared  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_reports_clear_when_no_file  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_unreadable_store_is_unknown_never_clear  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState.test_non_dict_record_is_unknown  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -4157,11 +4027,8 @@ def quarantine_state() -> tuple[str, int]:
 
 # frob:doc docs/guides/coordinator-scripts.md#verify_queue_state
 # frob:ticket T-2126
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_reports_depth_and_oldest_age  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_zero_depth_when_no_file  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState.test_unreadable_queue_is_unknown_never_zero  # noqa: E501
 # frob:waive EXHAUST003 reason="T-3861: leaked Unknown traces to this resolver's \
 # same-module, curated-table-only coverage (frob.arch._mayraise) -- every ordinary \
@@ -4235,10 +4102,6 @@ def verify_queue_state(*, now: datetime | None = None) -> tuple[int, float | Non
 
 # frob:doc docs/guides/coordinator-scripts.md#_ticket_readiness_lines
 # frob:ticket T-2172
-# frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketReadiness.test_prints_dispatchable_true  # noqa: E501
-# frob:tests \
-# tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketReadiness.test_prints_lease_scope_divergence_and_sibling_commits  # noqa: E501
 def _ticket_readiness_lines(readiness: dict) -> list[str]:
     """Render one `TICKET <id>` readiness block (lease, main state/scope,
     scope divergence, open blockers, sibling-branch commits, final
@@ -4328,11 +4191,8 @@ def _print_ticket_readiness(readiness: dict) -> bool:
 # frob:doc docs/guides/coordinator-scripts.md#_land_status_lines
 # frob:ticket T-2180
 # frob:ticket T-2222
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_prints_invocations_and_live_lock_holder  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_prints_no_live_holder_as_normal_resting_state_not_stale  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus.test_guidance_line_uses_live_count_not_raw_count  # noqa: E501
 # frob:ticket T-2691
 # frob:ticket T-4266
@@ -4681,11 +4541,8 @@ _FORKSERVER_RSS_WARNING_FLOOR_KB = 2 * 1024 * 1024
 
 # frob:doc docs/guides/coordinator-scripts.md#_forkserver_rss_headline
 # frob:ticket T-3407
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_large_rss_produces_a_visible_warning  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_small_rss_stays_quiet  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline.test_unknown_inputs_degrade_to_unknown_not_zero  # noqa: E501
 def _forkserver_rss_headline(
     forkserver_count: int | None,
@@ -4901,9 +4758,7 @@ def _print_land_status() -> None:
 # frob:ticket T-2180
 # frob:doc docs/guides/coordinator-scripts.md#verify_queue_state
 # frob:ticket T-2126
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue.test_prints_depth_and_age_when_nonempty  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue.test_prints_empty_when_zero_depth  # noqa: E501
 def _print_verify_queue_line() -> None:
     """Print the VERIFY QUEUE line `_print_fleet_report` places right
@@ -4925,11 +4780,8 @@ def _print_verify_queue_line() -> None:
 # frob:ticket T-2182
 # frob:ticket T-2222
 # frob:ticket T-2654
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_prints_all_four_sections  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_leases_section_shows_classification_per_lease  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport.test_leases_section_reports_ledger_leak_missing_from_held  # noqa: E501
 def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     """Print the ROOT/LANDS/QUARANTINE/LEASES/WORKTREES sections `main`
@@ -5164,15 +5016,10 @@ def _print_scope_intersections(tickets: list[str]) -> None:
 # frob:doc docs/guides/coordinator-scripts.md#fleet_status-main
 # frob:ticket T-1863
 # frob:ticket T-2172
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain.test_exit_zero_when_clean  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain.test_exit_one_when_dirty  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test_prints_raised_with_undisposed_count_and_consequence  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test_prints_clear  # noqa: E501
-# frob:tests \
 # tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine.test_prints_unknown_as_unsafe  # noqa: E501
 # frob:ticket T-4421
 def main() -> int:

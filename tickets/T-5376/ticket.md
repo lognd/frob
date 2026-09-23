@@ -2,7 +2,7 @@
 id: T-5376
 title: 'ARCH001 self-check fails: fleet_status._ticket_readiness_lines redundant with
   test-side declaration (T-4710)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -46,6 +46,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/system/test_fleet_status_ticket_readiness_arch001.py::TestFleetStatusTicketReadinessArch001::test_ticket_readiness_is_not_an_arch001_finding
 designated_repro_test: null
 threat: null
 component: null
