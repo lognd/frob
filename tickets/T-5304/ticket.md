@@ -27,6 +27,7 @@ scope:
 - src/frob/gates/_waive.py
 - src/frob/check/_python.py
 - src/frob/gates/_gates_schema.py
+- src/frob/findings.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,12 @@ scope_changes:
   glob: src/frob/gates/_gates_schema.py
   reason: advisory Severity tier touches severity-override parsing, exit-code/summary
     rendering, and schema validation, not just the enum definition
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/findings.py
+  reason: Severity enum's real definition lives in frob.findings; _models.py only
+    re-exports it
   actor: logan
   at: '2026-09-23'
 triage_changes:
