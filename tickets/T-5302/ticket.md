@@ -11,13 +11,14 @@ parent: T-5140
 tier: ticket
 sprint: ''
 runs_last: false
-milestone: 0.535.0
+milestone: 0.534.0
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -194,6 +195,12 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-22'
+- field: milestone
+  old_value: 0.535.0
+  new_value: 0.534.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-23'
 designated_repro_test: null
 threat: null
 component: null
