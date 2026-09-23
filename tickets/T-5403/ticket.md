@@ -1,5 +1,5 @@
 ---
-id: T-draft-c7aa1ed2
+id: T-5403
 title: land --dry-run stops before squash-apply so T-3324 self-conformance and DOC006
   pointer refusals never run; DRY RUN clean is a false READY
 state: queued
