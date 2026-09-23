@@ -2,7 +2,7 @@
 id: T-5267
 title: 'wire frob.doctor tool registry into frob check/frob ticket land: loud UNMEASURED
   block, non-zero exit, --allow-missing-tool'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-09-21'
@@ -18,6 +18,7 @@ unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -82,3 +83,6 @@ T-5139's tool registry (frob.doctor._RELEVANT_TOOLS/relevant_tool_findings, carg
 
 ## Failure log
 - 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5267), requeued by frob check
+
+## Drop reason
+- 2026-09-23: landed by content inside T-5296's --allow-cross-ticket land (tool_registry_gate is on dev); its ledger record was reset by TICK015 (T-5358) and an empty re-land refuses (absorbed by T-5296)
