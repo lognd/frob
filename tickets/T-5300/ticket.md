@@ -1,7 +1,7 @@
 ---
 id: T-5300
 title: Wire html/js/jsx/vue grammars into frob.lang
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -29,6 +29,8 @@ scope:
 - tests/fixtures/lang/sample.html
 - tests/fixtures/lang/sample.jsx
 - tests/fixtures/lang/sample.vue
+- src/frob/lang/_extract.py
+- src/frob/lang/_support.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -52,6 +54,18 @@ scope_changes:
 - op: add
   glob: tests/fixtures/lang/sample.vue
   reason: narrow glob to the three positive-control fixtures this leaf adds
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/lang/_extract.py
+  reason: wiring new grammars into _WALKERS/COMMENT_TYPES (_extract.py) and language
+    capability registry (_support.py) mirrors T-5303 CSS/SCSS precedent
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: wiring new grammars into _WALKERS/COMMENT_TYPES (_extract.py) and language
+    capability registry (_support.py) mirrors T-5303 CSS/SCSS precedent
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -259,6 +273,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5300
+branch: t-5300
 ---
 Wire html/javascript/jsx/vue grammars into frob.lang (T-5140 substrate).
 
