@@ -1,7 +1,7 @@
 ---
 id: T-5293
 title: test_release.py changelog-fragment-ownership check fails on dev tip
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -58,3 +58,6 @@ worktree: /home/logan/projects/frob/.claude/worktrees/t-5293
 branch: t-5293
 ---
 gh run 35717833933; re-verified on dev tip 3acf8c6b30: tests/test_release.py::TestNoStrayFragmentForNonDoneTicket::test_every_changelog_fragment_belongs_to_a_done_ticket fails standalone (not a fleet version-bump race -- reproduced serially, single test, clean checkout).
+
+## Failure log
+- 2026-09-23 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5293), requeued by frob check
