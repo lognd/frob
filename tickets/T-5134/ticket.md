@@ -22,7 +22,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/*.py
-- docs/modules/gates.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'owner directive 2026-09-20: a repo-wide text migration;
   each file is a mechanical citation strip'
@@ -39,6 +38,12 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: ARGHELP001 gate needs a rule-table row and section like every other gate;
     not part of the bulk citation-removal pass
+  actor: logan
+  at: '2026-09-22'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: gate-framework wiring reverted -- staying within declared scope; enforcement
+    lives in scripts/ instead
   actor: logan
   at: '2026-09-22'
 triage_changes:
