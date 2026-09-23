@@ -6,6 +6,8 @@ kind: feature
 origin: human
 created: '2026-09-22'
 priority: high
+blocked_by:
+- T-5313
 parent: T-5146
 tier: ticket
 sprint: v0.535.0
