@@ -1,7 +1,7 @@
 ---
 id: T-5356
 title: 'WEBSEC authz substrate: route/handler ownership-check AST walker'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -109,6 +109,8 @@ evidence:
 - tests/unit/test_webapp_websec_authz_substrate.py::TestRailsController::test_owner_filtered_action_is_clean
 - tests/unit/test_webapp_websec_authz_substrate.py::TestRailsController::test_unfiltered_action_is_flagged
 - tests/unit/test_webapp_websec_authz_substrate.py::TestNonHandlerHelpersAreIgnored::test_plain_helper_is_not_flagged
+- tests/unit/test_webapp_websec_authz_substrate.py::TestRailsController::test_non_controller_file_yields_nothing
+- tests/unit/test_webapp_websec_authz_substrate.py::TestUnsupportedLanguage::test_non_python_language_is_an_error
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/unit/test_webapp_websec_authz_substrate.py::TestRails::test_owner_filtered_action_is_clean
