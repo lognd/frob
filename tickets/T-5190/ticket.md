@@ -2,7 +2,7 @@
 id: T-5190
 title: known-gate-rule-id registry has grown to 17 unregistered ids (CI run 35510697497
   burn-down)
-state: planned
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-21'
@@ -27,6 +27,7 @@ scope:
 - docs/design/registry/check-coverage.yaml
 - tests/gates_suite/test_sys.py
 - tests/test_check_coverage_registry.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -78,6 +79,11 @@ scope_changes:
   reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
   actor: logan
   at: '2026-09-22'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: _KNOWN_GATE_RULES actually lives in _waive.py, not __init__.py
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
@@ -111,6 +117,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5190
+branch: t-5190
 ---
 Found while burning down CI run 35510697497 (dev @ e99570be, ancestor of dev tip 4483b1da29). Re-verified on current dev tip (not stale). tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known and tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules both fail: frob.gates._rule_id_scan.generated_gate_rule_ids() now reports 17 rule ids constructed in src/frob/gates or src/frob/strata that are missing from _KNOWN_GATE_RULES / check-coverage.yaml: BASE001 (_ratchet.py:335), GUARD001 (_guard_closure.py:263), WRAP001/002/003 (_wrapper_drift.py), INV010/011 (_inv.py / _design_invariants.py), SYS114/SYS115 (_outbound_destination.py -- these two are owned by in-progress T-4113, which will register them itself), CONFIGPATH001 (_config_path_defaults.py:196), REL303 (_inbound_rate.py:172), RACE001/002 (_inv.py), PII013 (_pii_structural/__init__.py:248), CLAIM001 (_claim_lint.py:139), ROUTE001 (_route_response_model.py:155), TESTMOCK001 (_coverage.py:1816), COV010 (_coverage.py:1473). This is broader than T-3278 (which only covers 3 stale check-coverage.yaml entries in the OTHER direction -- yaml entries with no live rule) and overlaps docs/design/registry/check-coverage.yaml scope with in-progress T-4113 (SYS114/SYS115). BLOCKED on a lease collision with T-4113 when attempting frob ticket work T-3278 directly; this ticket tracks the now-larger drift for whoever picks it up once T-4113 lands or narrows scope. Do NOT touch SYS114/SYS115 here -- T-4113 owns those.
 
