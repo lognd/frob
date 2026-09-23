@@ -1,5 +1,5 @@
 ---
-id: T-draft-c0e05ddc
+id: T-5390
 title: Wire html/javascript/vue into capability/dup/docblock FACETS
 state: queued
 kind: bug
