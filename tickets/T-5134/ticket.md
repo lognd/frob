@@ -22,6 +22,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/*.py
+- tests/unit/coordinator_suite/test_count_ticket_citations.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'owner directive 2026-09-20: a repo-wide text migration;
   each file is a mechanical citation strip'
@@ -44,6 +45,12 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: gate-framework wiring reverted -- staying within declared scope; enforcement
     lives in scripts/ instead
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: tests/unit/coordinator_suite/test_count_ticket_citations.py
+  reason: positive-control test for scripts/count_ticket_citations.py, this ticket
+    own tool
   actor: logan
   at: '2026-09-22'
 triage_changes:
