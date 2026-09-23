@@ -1,5 +1,5 @@
 ---
-id: T-draft-dcf8065a
+id: T-5355
 title: 'Post-land sweep residue 2026-09-23_0024: ARCH102:src/frob/tickets/_token_usage.py
   ARCH103:scripts/strip_help_citations.py COV001:scripts/count_ticket_citations.py
   COV001:src/frob/ti'
