@@ -30,8 +30,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/**
 - tests/**
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: quiet-window repo-wide apply of landed Tier-A families
 no_scope_declared: false
 no_scope_declared_reason: null
 triage_changes:
