@@ -24,10 +24,32 @@ scope:
 - src/frob/gates/_models.py
 - frob.toml
 - docs/modules/gates.md
+- src/frob/gates/_waive.py
+- src/frob/check/_python.py
+- src/frob/gates/_gates_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: advisory Severity tier touches severity-override parsing, exit-code/summary
+    rendering, and schema validation, not just the enum definition
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: advisory Severity tier touches severity-override parsing, exit-code/summary
+    rendering, and schema validation, not just the enum definition
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/gates/_gates_schema.py
+  reason: advisory Severity tier touches severity-override parsing, exit-code/summary
+    rendering, and schema validation, not just the enum definition
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
