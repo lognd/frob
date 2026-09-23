@@ -239,6 +239,11 @@ _STRING_FIELDS = (
     # frob:ticket T-4702
     "ticket_unsized_ack",
     "ticket_points_value",
+    # T-5389 (FLAGCOV001): T-5151 added `ticket attach --remove PATH` but
+    # never forwarded its dest, so argparse accepted it while AppConfig
+    # silently kept the field default `None`.
+    # frob:ticket T-5389
+    "ticket_attach_remove_path",
 )
 
 _PATH_FIELDS = (
@@ -634,6 +639,11 @@ _BOOL_FLAGS = (
     "ticket_anchor_clear",
     # frob:ticket T-2965
     "ticket_parent_clear",
+    # T-5389 (FLAGCOV001): sibling of `ticket_attach_remove_path` above,
+    # same T-5151 gap -- `--remove-all` was accepted by argparse but never
+    # forwarded to AppConfig.
+    # frob:ticket T-5389
+    "ticket_attach_remove_all",
 )
 
 

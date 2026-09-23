@@ -1,7 +1,7 @@
 ---
 id: T-5389
 title: 'Post-land sweep residue 2026-09-23_0726: FLAGCOV001:frob.toml '
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -40,12 +40,18 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_app_config_flag_coverage.py::TestT5151TicketAttachRemoveFlagsReachAppConfig::test_from_external_carries_remove_path_from_parsed_argv
+- tests/unit/test_app_config_flag_coverage.py::TestT5151TicketAttachRemoveFlagsReachAppConfig::test_from_external_carries_remove_all_from_parsed_argv
+- tests/unit/test_app_config_flag_coverage.py::TestT5151TicketAttachRemoveFlagsReachAppConfig::test_absent_remove_flags_default_none_and_false
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5389
+branch: t-5389
 ---
 Findings raised by a post-land sweep and disposed against this ticket by the coordinator's runner to keep the quarantine clear. Fix each in scope:
 FLAGCOV001:frob.toml

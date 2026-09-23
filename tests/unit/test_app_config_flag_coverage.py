@@ -178,3 +178,56 @@ class TestT2320RuffFlagsReachAppConfig:
         assert cfg.check_skip_ruff_check is False
         assert cfg.check_skip_ruff_format is False
         assert cfg.check_ruff_fix is False
+
+
+# frob:ticket T-5389
+class TestT5151TicketAttachRemoveFlagsReachAppConfig:
+    """T-5389 regression (FLAGCOV001): T-5151's `frob ticket attach
+    --remove PATH` / `--remove-all` parsed correctly but their dests
+    (`ticket_attach_remove_path`, `ticket_attach_remove_all`) were never
+    added to `_STRING_FIELDS`/`_BOOL_FLAGS`, so `AppConfig.from_external`
+    silently kept both fields at their defaults regardless of the CLI
+    flags. Same shape as `TestT2320RuffFlagsReachAppConfig`: goes through
+    the REAL parser and `AppConfig.from_external`."""
+
+    # frob:tests src/frob/app/_config_external.py::_STRING_FIELDS
+    # frob:tests src/frob/app/_config_external.py::_BOOL_FLAGS
+    def test_from_external_carries_remove_path_from_parsed_argv(self) -> None:
+        """`--remove PATH`, parsed via the real CLI parser, reaches
+        `AppConfig.ticket_attach_remove_path`."""
+        from pathlib import Path
+
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            ["ticket", "attach", "T-0001", "--remove", "some/path.txt"]
+        )
+        cfg = AppConfig.from_external(args, Path("frob.toml"))
+        assert cfg.ticket_attach_remove_path == "some/path.txt"
+
+    def test_from_external_carries_remove_all_from_parsed_argv(self) -> None:
+        """`--remove-all`, parsed via the real CLI parser, reaches
+        `AppConfig.ticket_attach_remove_all` as `True`."""
+        from pathlib import Path
+
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        args = parser.parse_args(["ticket", "attach", "T-0001", "--remove-all"])
+        cfg = AppConfig.from_external(args, Path("frob.toml"))
+        assert cfg.ticket_attach_remove_all is True
+
+    def test_absent_remove_flags_default_none_and_false(self) -> None:
+        """Without either flag, both fields stay at their defaults --
+        confirms the previous tests are really observing the flags'
+        effect, not fields that always carry a non-default value."""
+        from pathlib import Path
+
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        args = parser.parse_args(["ticket", "attach", "T-0001"])
+        cfg = AppConfig.from_external(args, Path("frob.toml"))
+        assert cfg.ticket_attach_remove_path is None
+        assert cfg.ticket_attach_remove_all is False
