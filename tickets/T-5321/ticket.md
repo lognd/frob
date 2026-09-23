@@ -1,7 +1,7 @@
 ---
 id: T-5321
 title: 'A11Y116-128: keyboard, focus, target size, motion'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -26,6 +26,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_a11y_interaction.py
 - tests/fixtures/webapp/a11y1xx/interaction/**
+- docs/modules/webapp-a11y-interaction.md
+- tests/unit/test_webapp_a11y_interaction.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +43,18 @@ scope_changes:
   glob: tests/fixtures/webapp/a11y1xx/interaction/**
   reason: narrow shared fixture glob to a per-leaf subdirectory so the four accessibility
     leaves can hold concurrent leases
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/webapp-a11y-interaction.md
+  reason: doc + unit test per shared brief item 7 (scope narrowed to keep sibling
+    leaves concurrent)
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_webapp_a11y_interaction.py
+  reason: doc + unit test per shared brief item 7 (scope narrowed to keep sibling
+    leaves concurrent)
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -122,5 +136,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5321
+branch: t-5321
 ---
 Skip link (SC 2.4.1), focus-visible not suppressed (outline:none without replacement -- needs CSS grammar, WEBSUB-1b), tabindex>0, aria-hidden on a focusable element, target size 24x24/44x44 CSS px (SC 2.5.8 -- needs CSS grammar), prefers-reduced-motion respected when animations exist (CSS grammar), autoplay media without controls, video without captions track. Fixture per rule id.
