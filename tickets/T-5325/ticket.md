@@ -124,7 +124,6 @@ triage_changes:
   actor: logan
   at: '2026-09-23'
 evidence:
-- tests/unit/test_webapp_websec_headers.py::test_caddy_missing_hsts_reports_missing
 - tests/unit/test_webapp_websec_headers.py::test_django_full_all_present
 - tests/unit/test_webapp_websec_headers.py::test_django_missing_xfo_reports_missing
 - tests/unit/test_webapp_websec_headers.py::test_express_helmet_reports_default_headers_present
@@ -144,6 +143,11 @@ evidence_changes:
   actor: logan
   at: '2026-09-23'
 - old_node: tests/unit/test_webapp_websec_headers.py::test_caddy_full_all_present
+  new_node: ''
+  reason: 'T-5325: parametrized, old node id no longer resolves'
+  actor: logan
+  at: '2026-09-23'
+- old_node: tests/unit/test_webapp_websec_headers.py::test_caddy_missing_hsts_reports_missing
   new_node: ''
   reason: 'T-5325: parametrized, old node id no longer resolves'
   actor: logan
