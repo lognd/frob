@@ -1,5 +1,5 @@
 ---
-id: T-draft-c1f57d47
+id: T-5373
 title: 'COMPLY109-116: GDPR/international disclosures'
 state: queued
 kind: feature
