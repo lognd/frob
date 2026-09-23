@@ -1,7 +1,7 @@
 ---
 id: T-5313
 title: 'A11Y substrate: HTML/JSX/Vue accessibility-tree query helpers'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -123,6 +123,18 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_webapp_a11y_substrate.py::test_elements_with_attribute_html_positive_control
+- tests/unit/test_webapp_a11y_substrate.py::test_elements_missing_attribute_html_negative_control
+- tests/unit/test_webapp_a11y_substrate.py::test_elements_with_attribute_jsx_positive_control
+- tests/unit/test_webapp_a11y_substrate.py::test_elements_missing_attribute_jsx_negative_control
+- tests/unit/test_webapp_a11y_substrate.py::test_heading_sequence_vue_positive_control
+- tests/unit/test_webapp_a11y_substrate.py::test_heading_sequence_vue_negative_control_skips_a_level
+- tests/unit/test_webapp_a11y_substrate.py::test_html_lang_positive_control
+- tests/unit/test_webapp_a11y_substrate.py::test_html_lang_negative_control_missing_attribute
+- tests/unit/test_webapp_a11y_substrate.py::test_elements_with_attribute_unsupported_language_errors
+- tests/unit/test_webapp_a11y_substrate.py::test_attribute_queries_unsupported_language_errors[elements_with_attribute-args0]
+- tests/unit/test_webapp_a11y_substrate.py::test_attribute_queries_unsupported_language_errors[elements_missing_attribute-args1]
 designated_repro_test: null
 threat: null
 component: null
