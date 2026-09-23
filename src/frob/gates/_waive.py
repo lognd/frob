@@ -1442,6 +1442,37 @@ _KNOWN_GATE_RULES = frozenset(
         "TOOL001",
         "TOOL002",
         "TOOL003",
+        # T-5190: known-gate-rule-id registry catch-up burn-down (CI run
+        # 35510697497) -- 19 rule ids constructed under src/frob/gates or
+        # src/frob/strata but never registered here, found by
+        # `frob.gates._rule_id_scan.generated_gate_rule_ids()`.
+        # SYS114/SYS115 (src/frob/strata/_outbound_destination.py) ARE
+        # included below so this WARN-only `_KNOWN_GATE_RULES` gate stays
+        # green -- but they are T-4113's own rule ids (still in
+        # progress); T-4113 owns their full check-coverage.yaml registry
+        # documentation entry, not registered here (coordinator decision,
+        # T-5190 done report).
+        "BASE001",
+        "CLAIM001",
+        "CONFIGPATH001",
+        "COV010",
+        "GUARD001",
+        "INV010",
+        "INV011",
+        "PII005",
+        "PII013",
+        "RACE001",
+        "RACE002",
+        "REL303",
+        "ROUTE001",
+        "SYS114",
+        "SYS115",
+        "SYS116",
+        "SYS117",
+        "TESTMOCK001",
+        "WRAP001",
+        "WRAP002",
+        "WRAP003",
     }
 )
 # frob-zone-end known-gate-rules T-1002

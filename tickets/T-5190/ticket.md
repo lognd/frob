@@ -2,7 +2,7 @@
 id: T-5190
 title: known-gate-rule-id registry has grown to 17 unregistered ids (CI run 35510697497
   burn-down)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-21'
@@ -20,6 +20,7 @@ unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -121,6 +122,10 @@ body_changes:
   at: '2026-09-21'
   old_length: 1575
   new_length: 2634
+evidence:
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+- tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
 designated_repro_test: null
 threat: null
 component: null
