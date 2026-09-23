@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_websec_deser.py
 - tests/fixtures/webapp/websec1xx/deser/**
 - docs/modules/webapp-websec-deser.md
+- tests/unit/test_websec_deser.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: docs/modules/webapp-websec-deser.md
   reason: family doc, per shared brief
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_websec_deser.py
+  reason: unit test binding for gate fold
   actor: logan
   at: '2026-09-23'
 triage_changes:
