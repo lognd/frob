@@ -13,7 +13,6 @@ blocked_by:
 - T-4712
 - T-4713
 - T-4714
-- T-4743
 parent: T-4703
 tier: ticket
 sprint: v0.534.0
@@ -113,3 +112,4 @@ investigate, not a result to accept.
 
 ## Unblock log
 - 2026-09-23: unblocked by T-4742 -- quiet-window sweep runs now over the landed families (T-4710 TEST010, T-4713 DSTACK001, T-4714 FMT002, T-4712 FMT001); T-4742's family gets its own sweep when it lands
+- 2026-09-23: unblocked by T-4743 -- quiet-window sweep runs now over the landed families (T-4710 TEST010, T-4713 DSTACK001, T-4714 FMT002, T-4712 FMT001); T-4743's family gets its own sweep when it lands
