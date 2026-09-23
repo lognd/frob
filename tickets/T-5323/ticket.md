@@ -29,6 +29,7 @@ scope:
 - docs/modules/webapp-a11y-structure.md
 - src/frob/gates/__init__.py
 - src/frob/webapp/_a11y_substrate.py
+- docs/modules/webapp-a11y.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -63,6 +64,11 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: src/frob/webapp/_a11y_substrate.py
+  reason: T-5422 residue on the substrate this leaf consumes
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/webapp-a11y.md
   reason: T-5422 residue on the substrate this leaf consumes
   actor: logan
   at: '2026-09-23'
