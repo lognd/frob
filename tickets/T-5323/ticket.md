@@ -28,6 +28,7 @@ scope:
 - src/frob/gates/_a11y_gate.py
 - docs/modules/webapp-a11y-structure.md
 - src/frob/gates/__init__.py
+- src/frob/webapp/_a11y_substrate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/__init__.py
   reason: wire a11y job into the gate dispatch dict per gate-registration.md
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/webapp/_a11y_substrate.py
+  reason: T-5422 residue on the substrate this leaf consumes
   actor: logan
   at: '2026-09-23'
 triage_changes:
