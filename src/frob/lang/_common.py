@@ -309,9 +309,22 @@ def _canonical_tokens(
 # -- each private primitive gets its own named bullet there by design, not a \
 # caller-side public-API summary"
 def _strip_comment_delims(raw: str) -> str:
-    """Strip `//`, `///`, `/* */`, `/** */`, and leading `*` from one comment."""
+    """Strip `//`, `///`, `/* */`, `/** */`, `<!-- -->`, and leading `*`
+    from one comment.
+
+    T-5394: `<!-- ... -->` (html/vue's one comment form) was missing
+    entirely -- html's `_walk_html.py` calls `_leading_doc_comment`/
+    `parse_directives` the same as every other language, but with no
+    delimiter-stripping branch here the raw `<!-- frob:tests ... -->`
+    text (delimiters still attached) never matched `frob.graph.dsl`'s
+    `frob:<verb>` grammar at all, so directive_parse silently found zero
+    edges for every html comment regardless of content."""
     text = raw.strip()
-    if text.startswith("/**"):
+    if text.startswith("<!--"):
+        text = text[4:]
+        if text.endswith("-->"):
+            text = text[:-3]
+    elif text.startswith("/**"):
         text = text[3:]
         if text.endswith("*/"):
             text = text[:-2]

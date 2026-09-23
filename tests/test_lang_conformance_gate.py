@@ -222,15 +222,18 @@ class TestBehavioralCapabilityCheck:
         fixtures are deliberately single-line, see `_CAPABILITY_FIXTURE_
         SOURCES`'s own comment on the C-grammar line-splice quirk this
         test discovered, T-3541 measurement confirmed it also applies to
-        cuda's identical grammar) -- a checker that merely looked for the
-        substring `frob:tests` on the first physical line would pass even
-        if `_fold_continuations` silently truncated the target."""
+        cuda's identical grammar; T-5394 found the SAME "the grammar
+        already merges physical lines into one comment node" reason
+        applies to css/scss/html's block/`<!-- -->` comment forms) --
+        a checker that merely looked for the substring `frob:tests` on
+        the first physical line would pass even if `_fold_continuations`
+        silently truncated the target."""
         import frob.gates._lang_conformance as module
 
         registry = derive_capability_registry()
         checked = False
         for language, support in sorted(registry.items()):
-            if language in {"c", "cpp", "cuda"}:
+            if language in {"c", "cpp", "cuda", "css", "scss", "html"}:
                 continue
             status = support.capabilities.get("directive_parse")
             if status is None or status.state is not FacetState.IMPLEMENTED:

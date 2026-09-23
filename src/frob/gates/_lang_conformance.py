@@ -104,6 +104,11 @@ _CAPABILITY_FIXTURE_EXTENSIONS: dict[str, str] = {
     "java": ".java",
     "cuda": ".cu",
     "zig": ".zig",
+    "css": ".css",
+    "scss": ".scss",
+    "html": ".html",
+    "javascript": ".js",
+    "vue": ".vue",
 }
 
 _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
@@ -276,6 +281,77 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
         f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
         "fn privateFn() void {\n"
         "}\n"
+    ),
+    # T-5394: css/scss/html only claim symbol_walk/doc_extract/
+    # directive_parse IMPLEMENTED (publicness/call_graph are KNOWN_GAP,
+    # T-5386 -- see frob.lang._support's per-language branches), so
+    # these fixtures need no public/private distinction, only >=2
+    # top-level symbols plus a leading doc comment and the fixture's
+    # own frob:tests continuation directive above the second symbol.
+    # T-5394: unlike python/typescript's `//`/`#` line comments (each
+    # physical line its own RawComment, so a trailing `\` genuinely
+    # needs frob.graph.dsl._fold_continuations to merge two), CSS/HTML
+    # block comments (`/* ... */`, `<!-- ... -->`) are ALREADY one
+    # single comment node spanning however many physical lines it
+    # contains -- tree-sitter never splits them, so a backslash
+    # continuation is unnecessary and (empirically, T-2365's own C/C++
+    # precedent for the same "the grammar already merges physical
+    # lines" reason) breaks parsing here. Single-physical-line
+    # directive instead, mirroring the C/C++ fixtures above.
+    "css": (
+        "/* Capability fixture module doc. */\n\n"
+        ".public-rule {\n"
+        "  color: red;\n"
+        "}\n\n"
+        f"/* frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET} */\n"
+        ".second-rule {\n"
+        "  color: blue;\n"
+        "}\n"
+    ),
+    "scss": (
+        "/* Capability fixture module doc. */\n\n"
+        ".public-rule {\n"
+        "  color: red;\n"
+        "}\n\n"
+        f"/* frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET} */\n"
+        "$fixture-var: blue;\n"
+    ),
+    "html": (
+        "<!-- Capability fixture module doc. -->\n\n"
+        '<div id="public">Hello</div>\n\n'
+        f"<!-- frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET} -->\n"
+        '<span id="second">World</span>\n'
+    ),
+    # T-5394: javascript is the one new language whose walker mirrors
+    # typescript's real public/private + call-graph shape (T-5300's own
+    # docstring: `_walk_javascript.py` "mirrors _walk_typescript.py's
+    # shape unchanged... minus TypeScript-only node kinds") -- so its
+    # fixture is the typescript fixture above with TS-only syntax
+    # (type annotations) dropped, publicness/call_graph both IMPLEMENTED.
+    "javascript": (
+        "// Capability fixture module doc.\n\n"
+        'import fs from "fs";\n\n'
+        "export function publicFn() {\n"
+        "  return privateFn();\n"
+        "}\n\n"
+        "// frob:tests \\\n"
+        f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "function privateFn() {\n"
+        "  return 2;\n"
+        "}\n"
+    ),
+    # T-5394: vue only claims symbol_walk IMPLEMENTED (publicness/
+    # doc_extract/directive_parse/call_graph are all KNOWN_GAP, T-5390 --
+    # _walk_vue.py does not descend into a block's own inner language at
+    # all) -- the fixture needs no comment/directive, only >=2 top-level
+    # SFC-shell blocks.
+    "vue": (
+        "<template>\n"
+        "  <div>Hi</div>\n"
+        "</template>\n\n"
+        "<script>\n"
+        "export default {}\n"
+        "</script>\n"
     ),
 }
 

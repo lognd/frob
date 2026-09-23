@@ -2,7 +2,7 @@
 id: T-5394
 title: 'test_lang_conformance_gate BehavioralCapabilityCheck: 30 params fail, css/scss/html/javascript/vue
   registry claims over capabilities the thin walkers do not behaviorally satisfy'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -52,6 +52,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_real_registry_is_behaviorally_clean
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_directive_continuation_folds_correctly_not_just_present
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[html-symbol_walk]
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[javascript-call_graph]
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[scss-directive_parse]
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[vue-symbol_walk]
 designated_repro_test: null
 threat: null
 component: null

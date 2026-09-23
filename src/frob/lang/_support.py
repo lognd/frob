@@ -458,7 +458,7 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # `_walk_vue.py`) but are not yet wired into the capability/dup/docblock
     # FACETS -- same shared `_PENDING_FACET_WIRING_TICKETS` mapping,
     # follow-up filed while working T-5300.
-    "T-draft-c0e05ddc": True,
+    "T-5390": True,
 }
 
 
@@ -509,9 +509,9 @@ _PENDING_FACET_WIRING_TICKETS: dict[str, str] = {
     # (_walk_html.py/_walk_javascript.py/_walk_vue.py) with no
     # capability/dup/docblock FACETS wiring yet -- follow-up filed while
     # working T-5300 (see KNOWN_GAP_TRACKING_TICKETS above).
-    "html": "T-draft-c0e05ddc",
-    "javascript": "T-draft-c0e05ddc",
-    "vue": "T-draft-c0e05ddc",
+    "html": "T-5390",
+    "javascript": "T-5390",
+    "vue": "T-5390",
 }
 
 
@@ -825,13 +825,63 @@ def _capability_publicness_status(language: str) -> CapabilityStatus:
     `clearance` clause (`node`/`store`/`queue`, the only construct kinds
     whose grammar carries one) instead of hardcoding `True` -- a real,
     language-correct rule per T-0841, not merely a required-field-shaped
-    placeholder."""
+    placeholder.
+
+    T-5394: css/scss/html/vue are a DIFFERENT shape from strata's old
+    placeholder -- their walkers (`_walk_css.py`/`_walk_html.py`/
+    `_walk_vue.py`) hardcode `public=True` because the underlying
+    LANGUAGE has no visibility keyword at all (module docstrings: "CSS
+    has no visibility keyword", "HTML has no visibility keyword either"),
+    not because the walker skipped deriving a real rule. The behavioral
+    check (`_check_publicness`) requires observing BOTH `True` and
+    `False` in one fixture's symbols -- structurally impossible for a
+    language with no private concept -- so these four stay KNOWN_GAP
+    (not claimed IMPLEMENTED) until/unless a per-language private-symbol
+    convention is designed for them. javascript is real: `export`/
+    `export default` is a genuine public/private signal
+    (`_walk_javascript.py`'s own docstring), so it stays IMPLEMENTED."""
+    if language in {"css", "scss"}:
+        return _cap_known_gap(
+            CapabilityRequirement.REQUIRED,
+            "CSS/SCSS has no visibility keyword at all -- every selector "
+            "and custom property is visible to anything that loads the "
+            "stylesheet, so _walk_css.py hardcodes public=True; there is "
+            "no per-language private-symbol convention to derive from "
+            "yet, tracked by T-5386",
+        )
+    if language in {"html", "vue"}:
+        return _cap_known_gap(
+            CapabilityRequirement.REQUIRED,
+            f"{language} has no visibility keyword at all -- every "
+            "element/SFC-shell-block is visible to anything that loads "
+            "the page, so the walker hardcodes public=True; there is no "
+            "per-language private-symbol convention to derive from yet, "
+            "tracked by T-5390",
+        )
     return _cap_implemented(CapabilityRequirement.REQUIRED, _PUBLICNESS_NOTE)
 
 
 def _capability_doc_extract_status(language: str) -> CapabilityStatus:
     """Every `supported_languages()` member extracts comments one way or
-    another -- see `_DOC_EXTRACT_NOTE`."""
+    another -- see `_DOC_EXTRACT_NOTE`.
+
+    T-5394: vue is the one exception -- `_walk_vue.py`'s own
+    `COMMENT_TYPES` is an empty `frozenset()` by design (module
+    docstring: the SFC shell's three top-level blocks have no comment
+    node of their own; `<!-- -->`/`//`/`/* */` comments all live inside a
+    block's own inner language, which this walker deliberately does not
+    descend into). css/scss/html DO extract real comments
+    (`_leading_doc_comment` over each language's own comment node
+    type(s)), so they stay IMPLEMENTED."""
+    if language == "vue":
+        return _cap_known_gap(
+            CapabilityRequirement.REQUIRED,
+            "Vue's SFC shell has no comment node of its own at the "
+            "top level this walker parses -- COMMENT_TYPES is "
+            "deliberately empty since comments live inside a block's "
+            "own inner language (HTML/JS/CSS), which _walk_vue.py does "
+            "not descend into, tracked by T-5390",
+        )
     return _cap_implemented(CapabilityRequirement.REQUIRED, _DOC_EXTRACT_NOTE)
 
 
@@ -839,7 +889,20 @@ def _capability_directive_parse_status(language: str) -> CapabilityStatus:
     """Directive parsing (continuations included) rides on `CAPABILITY_
     DOC_EXTRACT`, which every language has -- see `_DIRECTIVE_PARSE_NOTE`.
     REQUIRED: this is frob's own obligation-graph DSL (`frob:doc`/
-    `frob:tests`/`frob:ticket`/...), not optional tooling."""
+    `frob:tests`/`frob:ticket`/...), not optional tooling.
+
+    T-5394: rides on doc_extract (module docstring), so vue's
+    doc_extract KNOWN_GAP (`_capability_doc_extract_status`) applies
+    here identically -- no comment extraction means no directive text
+    can ever be found."""
+    if language == "vue":
+        return _cap_known_gap(
+            CapabilityRequirement.REQUIRED,
+            "rides on doc_extract, which is KNOWN_GAP for vue "
+            "(_walk_vue.py's COMMENT_TYPES is deliberately empty) -- no "
+            "comment text means no frob: directive can ever be found, "
+            "tracked by T-5390",
+        )
     return _cap_implemented(CapabilityRequirement.REQUIRED, _DIRECTIVE_PARSE_NOTE)
 
 
@@ -876,6 +939,32 @@ def _capability_call_graph_status(language: str) -> CapabilityStatus:
             "('foo', not 'foo()'), so frob.graph.callgraph's shared "
             "token-adjacency call detector cannot recognize a call in "
             "bash body_tokens at all -- tracked by T-2901",
+        )
+    # T-5394: css/scss/html/vue's thin walkers (T-5303/T-5300) do not
+    # attempt full symbol-tree fidelity -- css/html have no calling
+    # convention at all (selectors/elements do not "call" each other),
+    # and vue's SFC-shell walker does not descend into its <script>
+    # block's real JS/TS body at all (_walk_vue.py's own docstring), so
+    # there is no call edge to resolve in ANY of the three. javascript
+    # DOES have real function/method calls (mirrors _walk_typescript.py's
+    # shape) and the SAME 'name(' token adjacency frob.graph.callgraph's
+    # detector already recognizes for python/typescript, so it stays
+    # IMPLEMENTED.
+    if language in {"css", "scss"}:
+        return _cap_known_gap(
+            CapabilityRequirement.REQUIRED,
+            "CSS/SCSS selectors and declarations have no calling "
+            "convention at all for frob.graph.callgraph to resolve -- "
+            "_walk_css.py's own thin walk never emits a call-shaped "
+            "token, tracked by T-5386",
+        )
+    if language in {"html", "vue"}:
+        return _cap_known_gap(
+            CapabilityRequirement.REQUIRED,
+            f"{language}'s thin walker does not attempt call resolution "
+            "(html elements do not call each other; vue's SFC-shell "
+            "walker does not descend into its <script> block's real "
+            "JS/TS body at all), tracked by T-5390",
         )
     return _cap_implemented(CapabilityRequirement.REQUIRED, _CALL_GRAPH_NOTE)
 
