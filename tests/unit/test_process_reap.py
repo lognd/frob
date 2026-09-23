@@ -759,7 +759,8 @@ class TestArmForkserverHelperPdeathsigIfRequested:
     -time hook `frob.gates._FORKSERVER_PRELOAD` triggers inside the
     forkserver helper; must be a no-op unless the env marker is set."""
 
-    # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested
+    # frob:tests \
+    # src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested
 
     def test_noop_without_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_noop_without_env_var  # noqa: E501

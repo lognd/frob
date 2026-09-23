@@ -684,7 +684,8 @@ class TestReconcileUnlandedBranchWork:
         assert result.danger_ok.unlanded_branch_work == ()
 
     # frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
-    # frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"
+    # frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored \
+    # kind="unit"
 
     # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
     # frob:tests src/frob/app/ticket_runner/_query.py::_save_unlanded_summary_cache kind="unit"  # noqa: E501

@@ -822,7 +822,8 @@ class TestExhaustiveHandlingGate:
                 "    except ValueError:\n"
                 "        pass\n"
             ),
-            # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
+            # frob:tests \
+            # src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
         )
         violations = exhaustive_handling_gate(tmp_path)
         found = _by_rule(violations, "EXHAUST001")

@@ -16,10 +16,10 @@ see docs/modules/gates.md#docenum001-t-1227), `until` (T-1229 --
 negative-existence claim binding, see
 docs/modules/gates.md#negexist001-gate-t-1229).
 Parsing is language-agnostic:
-<!-- frob:enumerates src/frob/lang/_extract.py::COMMENT_TYPES members="python,typescript,tsx,rust,c,cpp,kotlin,bash,csharp,java,cuda,zig" -->
-`frob.lang`'s twelve tree-sitter comment-node walkers (python, typescript,
-tsx, rust, c, cpp, kotlin, bash, csharp, java, cuda, zig --
-`src/frob/lang/_extract.py`'s `COMMENT_TYPES`) strip comment delimiters
+<!-- frob:enumerates src/frob/lang/_extract.py::COMMENT_TYPES members="python,typescript,tsx,rust,c,cpp,kotlin,bash,csharp,java,cuda,zig,css,scss,html,javascript,vue" -->
+`frob.lang`'s seventeen tree-sitter comment-node walkers (python, typescript,
+tsx, rust, c, cpp, kotlin, bash, csharp, java, cuda, zig, css, scss, html,
+javascript, vue -- `src/frob/lang/_extract.py`'s `COMMENT_TYPES`) strip comment delimiters
 first, so `dsl.py` only ever sees the bare `frob:...` text regardless of
 `#`, `//`, or `/* */` origin. `.strata` files take a separate path (no
 tree-sitter grammar of their own, so no `COMMENT_TYPES` entry): `frob.lang`
