@@ -851,7 +851,7 @@ def _start(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     ticket = _apply_unsized_ack_on_start(root, cfg, ticket)
-    _refuse_unsized_on_start(ticket)
+    _refuse_unsized_on_start(cfg, ticket)
     ticket = _apply_scope_breadth_ack_on_start(root, cfg, ticket)
     _refuse_over_broad_scope_on_start(root, ticket)
     # T-2394: an EMPTY scope is a different failure mode than a too-BROAD
@@ -1158,14 +1158,30 @@ def _apply_unsized_ack_on_start(root: Path, cfg: AppConfig, ticket):  # noqa: AN
 
 
 # frob:ticket T-5132
+# frob:ticket T-5287
 # frob:doc docs/modules/tickets-data-storage.md#points-t-5132
-def _refuse_unsized_on_start(ticket) -> None:  # noqa: ANN001
+def _refuse_unsized_on_start(cfg: AppConfig, ticket) -> None:  # noqa: ANN001
     """T-5132: `sys.exit(1)` if `ticket.points` is `None` and `ticket.
     unsized_ack` is not set -- points required to WORK a ticket is the
     whole point of T-5132 (a `--unsized-ack REASON` override exists, same
     escape-hatch shape `_refuse_empty_scope_on_start`'s `no_scope_
     declared` already established, for the rare case sizing genuinely
-    cannot happen before work starts)."""
+    cannot happen before work starts).
+
+    T-5287: this whole check is OPT-IN, not the previous unconditional
+    default -- T-5132 landed without updating this repo's own pre-
+    existing test suite (~40 tests across 7 files that create-then-start
+    a ticket without points), and consumer repos would hit the identical
+    surprise. `cfg.ticket_points_required` (the `[tool.frob]
+    ticket_points_required = true` pyproject key, default `false`) or
+    the one-shot `--require-points` CLI flag (also folded into that same
+    field by `_config_external._apply_bool_flags`, OR semantics: either
+    source setting it `True` is enough) must be `True` for this function
+    to refuse anything at all; `--unsized-ack` remains the override on
+    top of that. This repo's own `pyproject.toml` sets the key `true`,
+    so a queued ticket here is still refused exactly as before."""
+    if not cfg.ticket_points_required:
+        return
     if ticket.points is not None or ticket.unsized_ack:
         return
     _log.error(

@@ -114,7 +114,10 @@ class TestSetTokens:
 
 class TestStartUnsizedRefusal:
     """`_refuse_unsized_on_start`/`_start`: points required to WORK a
-    ticket is the whole point of T-5132."""
+    ticket is the whole point of T-5132 -- OPT-IN as of T-5287
+    (`cfg.ticket_points_required`/`--require-points`), so every fixture
+    below sets it explicitly rather than relying on a default that no
+    longer refuses anything by itself."""
 
     def test_unsized_queued_ticket_refuses(self, tmp_path: Path) -> None:
         # frob:tests \
@@ -124,12 +127,33 @@ class TestStartUnsizedRefusal:
         assert reloaded.is_ok
         ticket = reloaded.danger_ok.tickets[ticket_id]
         assert ticket.points is None
+        cfg = AppConfig(
+            ticket_command="start",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_points_required=True,
+        )
         try:
-            _refuse_unsized_on_start(ticket)
+            _refuse_unsized_on_start(cfg, ticket)
         except SystemExit as exc:
             assert exc.code != 0
         else:
             raise AssertionError("expected SystemExit for an unsized ticket")
+
+    def test_unsized_queued_ticket_starts_cleanly_when_not_required(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # src/frob/app/ticket_runner/_lifecycle.py::_refuse_unsized_on_start kind="unit"
+        ticket_id = _init_repo(tmp_path)
+        reloaded = load_active(tmp_path)
+        assert reloaded.is_ok
+        ticket = reloaded.danger_ok.tickets[ticket_id]
+        assert ticket.points is None
+        cfg = AppConfig(
+            ticket_command="start", ticket_id=ticket_id, ticket_path=tmp_path
+        )
+        _refuse_unsized_on_start(cfg, ticket)  # must not raise (default False)
 
     def test_sized_ticket_starts_cleanly(self, tmp_path: Path) -> None:
         # frob:tests \
@@ -139,7 +163,13 @@ class TestStartUnsizedRefusal:
         reloaded = load_active(tmp_path)
         assert reloaded.is_ok
         ticket = reloaded.danger_ok.tickets[ticket_id]
-        _refuse_unsized_on_start(ticket)  # must not raise
+        cfg = AppConfig(
+            ticket_command="start",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_points_required=True,
+        )
+        _refuse_unsized_on_start(cfg, ticket)  # must not raise
 
     def test_unsized_ack_bypasses_refusal(self, tmp_path: Path) -> None:
         # frob:tests \
@@ -150,6 +180,7 @@ class TestStartUnsizedRefusal:
             ticket_command="start",
             ticket_id=ticket_id,
             ticket_path=tmp_path,
+            ticket_points_required=True,
             ticket_unsized_ack="spike, size after",
         )
         _start(tmp_path, cfg)  # must not raise
@@ -165,7 +196,10 @@ class TestStartUnsizedRefusal:
         # src/frob/app/ticket_runner/_lifecycle.py::_refuse_unsized_on_start kind="unit"
         ticket_id = _init_repo(tmp_path)
         cfg = AppConfig(
-            ticket_command="start", ticket_id=ticket_id, ticket_path=tmp_path
+            ticket_command="start",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_points_required=True,
         )
         try:
             _start(tmp_path, cfg)
@@ -177,6 +211,27 @@ class TestStartUnsizedRefusal:
         reloaded = load_active(tmp_path)
         assert reloaded.is_ok
         assert reloaded.danger_ok.tickets[ticket_id].state.value != "in-progress"
+
+    def test_full_start_cli_starts_cleanly_when_not_required(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # src/frob/app/ticket_runner/_lifecycle.py::_refuse_unsized_on_start kind="unit"
+        # T-5287: the points=None refusal must be OPT-IN (a repo has to
+        # ask for it, via cfg.ticket_points_required / --require-points)
+        # -- an ordinary AppConfig with no opt-in must start an unsized
+        # ticket cleanly, not refuse. This is the regression T-5287
+        # exists to fix: T-5132 shipped the refusal unconditionally,
+        # breaking ~40 pre-existing tests exactly like this one.
+        ticket_id = _init_repo(tmp_path)
+        cfg = AppConfig(
+            ticket_command="start", ticket_id=ticket_id, ticket_path=tmp_path
+        )
+        _start(tmp_path, cfg)  # must not raise -- default is opt-in, T-5287
+
+        reloaded = load_active(tmp_path)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok.tickets[ticket_id].state.value == "in-progress"
 
 
 class TestTicketPointsPerHour:

@@ -113,6 +113,15 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "unsized_ack=True and records REASON, same bool+reason shape "
         "--scope-breadth-ack already established",
     )
+    # frob:ticket T-5287
+    ticket_start_p.add_argument(
+        "--require-points",
+        dest="ticket_points_required",
+        action="store_true",
+        help="one-shot opt-in to the points=None start refusal (T-5287) "
+        "without setting the persistent `[tool.frob] ticket_points_"
+        "required = true` pyproject key -- the refusal is OFF by default",
+    )
 
     # frob:ticket T-1175
     ticket_work_p = ticket_sub.add_parser(

@@ -423,6 +423,16 @@ _LIST_FIELDS = (
 
 # frob:ticket T-2387
 _BOOL_FLAGS = (
+    # frob:ticket T-5287
+    # `frob ticket start --require-points` -- a one-shot CLI override of
+    # the SAME `ticket_points_required` field the `[tool.frob]` pyproject
+    # key also sets (`_load_file_config` reads that table keyed by field
+    # name directly, so no separate allowlist entry is needed for the
+    # pyproject side -- only the CLI-flag side needs registering here).
+    # OR semantics: `_apply_bool_flags` only ever sets `True`, never
+    # forces `False`, so a pyproject `true` is never overridden back to
+    # `false` by an absent CLI flag.
+    "ticket_points_required",
     # frob:ticket T-5219
     "clean_sweep_worktrees",
     # frob:ticket T-3106

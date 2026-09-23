@@ -2,7 +2,7 @@
 id: T-5287
 title: T-5132 points-required-on-start broke ~40 pre-existing tests across 7 files
   (test fixtures never updated)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -91,7 +91,7 @@ evidence:
 - tests/test_tickets_points.py::TestStartUnsizedRefusal::test_unsized_ack_bypasses_refusal
 - tests/test_tickets_points.py::TestStartUnsizedRefusal::test_full_start_cli_refuses_on_unsized_ticket
 - tests/test_tickets_points.py::TestStartUnsizedRefusal::test_full_start_cli_starts_cleanly_when_not_required
-designated_repro_test: null
+designated_repro_test: tests/test_tickets_points.py::TestStartUnsizedRefusal::test_full_start_cli_starts_cleanly_when_not_required
 threat: null
 component: null
 anchor: false
@@ -143,6 +143,3 @@ shared-helper fix would be far less risky than 7 separate edits -- or
 back to T-5132's own area. Do NOT set points on every individual
 ticket_run call site by hand without first checking for a shared
 helper -- that is the wrong scope if one exists.
-
-## Failure log
-- 2026-09-22 attempt 1: TICK015: dead worktree (no live process holds worktree /home/logan/projects/frob/.claude/worktrees/t-5287), requeued by frob check

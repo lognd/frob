@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frob"
-version = "0.531.1.dev213"
+version = "0.531.1.dev214"
 description = "The enforcement layer for agentic development: obligation graph, ticket queue, and gates."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -386,3 +386,8 @@ ticket_land_branch = "dev"
 # NOTE: the key is the AppConfig field name (ticket_land_default); the
 # docstring's `land_default` spelling is not read (see T-5106).
 ticket_land_default = "queue"
+# T-5287: points required to WORK a ticket is opt-in per repo (T-5132
+# landed it as an unconditional default, breaking ~40 pre-existing tests
+# in THIS repo's own suite plus every consumer repo the same way). This
+# repo opts in -- every ticket that actually enters work stays sized.
+ticket_points_required = true

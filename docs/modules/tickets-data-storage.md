@@ -348,6 +348,27 @@ trips the moment someone actually starts one, and the per-ticket
 `--no-points` flag) is the chosen escape hatch, matching the owner's own
 "no backfill needed" reasoning in T-5132's body.
 
+**The refusal itself is OPT-IN per repo (T-5287).** T-5132 shipped it as
+an unconditional default, which broke ~40 pre-existing tests in this
+repo's own suite (7 files that create-then-start a ticket without
+sizing it first) and would surprise every consumer repo the identical
+way. `cfg.ticket_points_required` (`AppConfig`, default `False`) gates
+`_refuse_unsized_on_start` -- the function returns immediately, no
+refusal at all, unless that field is `True`. Two ways to set it `True`:
+the persistent `[tool.frob] ticket_points_required = true` pyproject
+key (`_load_file_config` reads `[tool.frob]` keyed by `AppConfig` field
+name directly, so the key IS the field name) or the one-shot `frob
+ticket start <id> --require-points` CLI flag (registered in `_config_
+external._BOOL_FLAGS`, OR semantics with the pyproject key via `_apply_
+bool_flags`: either source setting it `True` is enough, an absent CLI
+flag never forces a pyproject `true` back to `false`). `--unsized-ack`
+remains the override on top of whichever source turned the gate on.
+This repo's own `pyproject.toml` sets the key `true`, so a queued
+ticket here is still refused exactly as T-5132 originally shipped --
+only OTHER repos (and this repo's own test fixtures, which construct
+`AppConfig` directly and so never read pyproject.toml at all) see the
+default-off behavior.
+
 `frob ticket sprint show LABEL` (`SprintReport`) reports `total_points`/
 `points_done`/`sized_count` (how many committed tickets actually carry a
 value, so an unsized remainder is disclosed rather than silently folded

@@ -1073,6 +1073,16 @@ class AppConfig(BaseModel):
     # reason on the ticket via `set_unsized_ack`, same bool+reason
     # declaration shape `scope_breadth_ack` already established.
     ticket_unsized_ack: str | None = None
+    # frob:ticket T-5287
+    # `[tool.frob] ticket_points_required = true` (pyproject key, loaded
+    # by field name via `_load_file_config`) or the one-shot `frob
+    # ticket start --require-points` CLI flag -- OPT-IN gate for T-5132's
+    # points=None start refusal (`_refuse_unsized_on_start`). Default
+    # `False`: T-5132 shipped this as an unconditional default and broke
+    # ~40 pre-existing tests in this repo's own suite plus every
+    # consumer repo that creates-then-starts a ticket without sizing it
+    # first. This repo's own `pyproject.toml` sets the key `true`.
+    ticket_points_required: bool = False
     # frob:ticket T-0476
     # `frob ticket reconcile [--apply] [--remove-orphans]`.
     ticket_reconcile_apply: bool = False
