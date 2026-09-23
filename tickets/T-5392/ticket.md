@@ -2,7 +2,7 @@
 id: T-5392
 title: 'Post-land sweep residue 2026-09-23_0821: DUP002:src/frob/lang/_walk_css.py
   FLAGCOV001:frob.toml '
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -40,13 +40,27 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+body_changes:
+- mode: append
+  reason: BUG002 needs explicit no-behavior-change declaration for a waiver-only fix
+  actor: logan
+  at: '2026-09-23'
+  old_length: 201
+  new_length: 312
+evidence:
+- tests/test_lang_css.py::TestCss::test_top_level_rule_set_is_a_class_symbol
+- tests/test_lang_css.py::TestScss::test_top_level_rule_set_is_a_class_symbol
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5392
+branch: t-5392
 ---
 Findings raised by a post-land sweep and disposed against this ticket by the coordinator's runner to keep the quarantine clear. Fix each in scope:
 DUP002:src/frob/lang/_walk_css.py
 FLAGCOV001:frob.toml
+
+frob:no-behavior-change reason="DUP002 waiver comment only -- no runtime behavior change to _css_rule_symbol"
