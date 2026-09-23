@@ -24,11 +24,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_websec_bounds.py
-- tests/fixtures/webapp/websec1xx/**
+- tests/fixtures/webapp/websec1xx/bounds/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/websec1xx/**
+  reason: narrow shared fixture glob to a per-leaf subdirectory so the four injection
+    leaves can hold concurrent leases
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/webapp/websec1xx/bounds/**
+  reason: narrow shared fixture glob to a per-leaf subdirectory so the four injection
+    leaves can hold concurrent leases
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
