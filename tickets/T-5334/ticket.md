@@ -27,6 +27,7 @@ scope:
 - src/frob/sql/_extract.py
 - tests/fixtures/sql/**
 - frob.toml
+- docs/modules/sql.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,12 @@ scope_changes:
   glob: frob.toml
   reason: 'sql/_extract.py imports frob.lang.raw_tree/child_by_field/node_text, so
     sql needs its own [arch.layering.allow] entry for lang (T-5302 precedent: webapp=[''lang''])'
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/sql.md
+  reason: new public module needs its own docs/modules/*.md, cited from frob:doc directives
+    in _extract.py
   actor: logan
   at: '2026-09-23'
 triage_changes:
