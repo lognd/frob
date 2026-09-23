@@ -571,10 +571,10 @@ def _add_agent_parser(sub) -> None:
     agent_p = sub.add_parser(
         "agent",
         help="print/export the dispatched-agent guard env -- "
-        "'env' is implied: bare `frob agent` runs it; the "
+        "'env' is implied: bare `frob agent` runs it (T-4546); the "
         "two-word `frob agent env` spelling still works as an alias",
         description="print/export the dispatched-agent guard env. "
-        "'env' is implied: bare `frob agent` runs it; the "
+        "'env' is implied (T-4546): bare `frob agent` runs it; the "
         "two-word `frob agent env` spelling is kept working as a "
         "documented alias for one release.",
     )

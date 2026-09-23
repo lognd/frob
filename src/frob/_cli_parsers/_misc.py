@@ -610,10 +610,10 @@ def _add_claude_parser(sub) -> None:
     claude_p = sub.add_parser(
         "claude",
         help="sync this repo's tracked Claude config to ~/.claude/ "
-        "-- 'sync' is implied: bare `frob claude` runs it; the "
+        "-- 'sync' is implied: bare `frob claude` runs it (T-4522); the "
         "two-word `frob claude sync` spelling still works as an alias",
         description="sync this repo's tracked Claude config to ~/.claude/ "
-        ". 'sync' is implied: bare `frob claude` runs it; "
+        ". 'sync' is implied (T-4522): bare `frob claude` runs it; "
         "the two-word `frob claude sync` spelling is kept working as a "
         "documented alias for one release.",
     )
@@ -662,10 +662,10 @@ def _add_natives_parser(sub) -> None:
         "natives",
         help="build declared [[native]] crates (frob-owned "
         "maturin develop, shared CARGO_TARGET_DIR) -- 'build' is implied: "
-        "bare `frob natives` runs it; the two-word `frob natives "
+        "bare `frob natives` runs it (T-4522); the two-word `frob natives "
         "build` spelling still works as an alias",
         description="build declared [[native]] crates. 'build' is "
-        "implied: bare `frob natives` runs it; the two-word `frob "
+        "implied (T-4522): bare `frob natives` runs it; the two-word `frob "
         "natives build` spelling is kept working as a documented alias for "
         "one release.",
     )

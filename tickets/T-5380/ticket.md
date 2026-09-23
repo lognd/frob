@@ -1,7 +1,7 @@
 ---
 id: T-5380
 title: claude/agent/natives --help no longer cites T-4522/T-4546 flattening note
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -60,6 +60,10 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_cli_single_child_groups.py::TestClaudeGroupFlattened::test_help_notes_alias
+- tests/unit/test_cli_single_child_groups.py::TestAgentGroupFlattened::test_help_notes_alias
+- tests/unit/test_cli_single_child_groups.py::TestNativesGroupFlattened::test_help_notes_alias
 designated_repro_test: null
 threat: null
 component: null
