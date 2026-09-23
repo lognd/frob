@@ -25,12 +25,35 @@ scope:
 - src/frob/lang/_walk_html.py
 - src/frob/lang/_walk_javascript.py
 - src/frob/lang/_walk_vue.py
-- tests/fixtures/lang/**
 - docs/modules/lang.md
+- tests/fixtures/lang/sample.html
+- tests/fixtures/lang/sample.jsx
+- tests/fixtures/lang/sample.vue
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/lang/**
+  reason: narrow glob to the three positive-control fixtures this leaf adds
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/lang/sample.html
+  reason: narrow glob to the three positive-control fixtures this leaf adds
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/lang/sample.jsx
+  reason: narrow glob to the three positive-control fixtures this leaf adds
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/lang/sample.vue
+  reason: narrow glob to the three positive-control fixtures this leaf adds
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
