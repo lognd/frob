@@ -19,7 +19,7 @@ parent: T-4703
 tier: ticket
 sprint: v0.534.0
 runs_last: false
-milestone: null
+milestone: 0.534.0
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -47,6 +47,12 @@ triage_changes:
   old_value: null
   new_value: '5'
   reason: ticket sizing
+  actor: logan
+  at: '2026-09-23'
+- field: milestone
+  old_value: null
+  new_value: 0.534.0
+  reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-23'
 designated_repro_test: null
