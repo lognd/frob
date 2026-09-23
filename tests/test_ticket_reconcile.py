@@ -229,7 +229,8 @@ class TestReconcileApplyLandInProgressGuard:
     """Asserts `reconcile(apply=True)` refuses before writing anything
     while `.frob/land.lock` is held, and still succeeds normally when no
     lock is held."""
-# frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
+
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
 
     def test_apply_refuses_and_writes_nothing_while_land_lock_held(
         self, repo: Path, caplog
@@ -505,7 +506,8 @@ class TestReconcileOrphanWorktree:
         assert wt.exists()
 
         _run(["git", "worktree", "remove", "--force", str(wt)], repo)
-# frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
+
+    # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
 
     def test_apply_and_remove_orphans_actually_removes_it(self, repo: Path) -> None:
         # frob:tests \
@@ -680,8 +682,9 @@ class TestReconcileUnlandedBranchWork:
         result = reconcile(repo)
         assert result.is_ok
         assert result.danger_ok.unlanded_branch_work == ()
-# frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
-# frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"
+
+    # frob:tests src/frob/tickets/_unlanded_cache.py::_maybe_save_unlanded_summary_cache kind="unit"  # noqa: E501
+    # frob:tests src/frob/tickets/_unlanded_cache.py::_frob_dir_is_gitignored kind="unit"
 
     # frob:tests src/frob/tickets/_reconcile.py::reconcile kind="unit"
     # frob:tests src/frob/app/ticket_runner/_query.py::_save_unlanded_summary_cache kind="unit"  # noqa: E501

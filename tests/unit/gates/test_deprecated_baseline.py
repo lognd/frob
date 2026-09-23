@@ -248,7 +248,8 @@ class TestTighten:
         entry = tightened.for_symbol("src/a.py::helper")
         assert entry is not None
         assert entry.references == ("src/b.py#1",)
-# frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline
+
+    # frob:tests src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline
 
     def test_shrinkage_drops_stale_references(self, tmp_path: Path) -> None:
         """T-0639: a referencing file present in the baseline but no longer

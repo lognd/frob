@@ -1171,7 +1171,8 @@ class TestTimeStableGate:
         assert violations[0].rule == "INV010"
         assert violations[0].severity == Severity.WARN
         assert "INV-042" in violations[0].message
-# frob:tests src/frob/gates/_inv.py::time_stable_gate
+
+    # frob:tests src/frob/gates/_inv.py::time_stable_gate
 
     # frob:tests tests/gates_suite/test_invariant.py::TestTimeStableGate.test_stays_quiet_when_still_passing_at_horizon  # noqa: E501
     def test_stays_quiet_when_still_passing_at_horizon(self, tmp_path: Path) -> None:

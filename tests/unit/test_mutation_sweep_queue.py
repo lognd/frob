@@ -101,7 +101,8 @@ class TestPendingSweepCount:
 
 class TestRunPendingSweep:
     """`run_pending_sweep` processes every pending entry."""
-# frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep
+
+    # frob:tests src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep
 
     def test_empty_queue_is_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_empty_queue_is_noop  # noqa: E501

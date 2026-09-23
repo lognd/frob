@@ -221,7 +221,8 @@ class TestIsOrphanedForkserver:
             ppid=1,
         )
         assert _is_orphaned_forkserver(4242, tmp_path) is True
-# frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver
+
+    # frob:tests src/frob/process/_proc_scan.py::_is_orphaned_forkserver
 
     def test_forkserver_with_live_parent_is_not_orphaned(self, tmp_path: Path) -> None:
         _write_proc_entry(
@@ -246,7 +247,8 @@ class TestReapOrphanedForkservers:
     """`reap_orphaned_forkservers` (T-2443's defensive startup sweep) only
     signals a forkserver that is BOTH reparented to init AND older than the
     age floor -- never a young one, never a non-forkserver process."""
-# frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
+
+    # frob:tests src/frob/process/_proc_scan.py::reap_orphaned_forkservers
 
     # frob:ticket T-3760
     @pytest.mark.skipif(
@@ -746,7 +748,9 @@ class TestArmParentDeathSignal:
         assert result is True
         assert killed == [(os.getpid(), signal.SIGKILL)]
 
+
 # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested
+
 
 # frob:ticket T-2849
 class TestArmForkserverHelperPdeathsigIfRequested:
@@ -754,7 +758,8 @@ class TestArmForkserverHelperPdeathsigIfRequested:
     # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested  # noqa: E501
     -time hook `frob.gates._FORKSERVER_PRELOAD` triggers inside the
     forkserver helper; must be a no-op unless the env marker is set."""
-# frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested
+
+    # frob:tests src/frob/process/_reap.py::_arm_forkserver_helper_pdeathsig_if_requested
 
     def test_noop_without_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_noop_without_env_var  # noqa: E501

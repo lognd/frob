@@ -969,7 +969,8 @@ class TestSubprocessCoverageRc:
     TestSubprocessRcIsAbsoluteAndConcurrencyAware` class made, now proven
     directly against `_write_coverage_subprocess_rc`/
     `_pytest_subprocess_env` instead of a retired Makefile recipe."""
-# frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc
+
+    # frob:tests src/frob/testing/_coverage_refresh.py::_write_coverage_subprocess_rc
 
     # frob:ticket T-1235
     # frob:ticket T-2527

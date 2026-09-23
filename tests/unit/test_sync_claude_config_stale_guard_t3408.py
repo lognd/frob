@@ -78,7 +78,8 @@ class TestIsSourceStaleVsMain:
             )
             is False
         )
-# frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main
+
+    # frob:tests .claude/hooks/sync-claude-config.py::_is_source_stale_vs_main
 
     # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_source_matches_main_is_not_stale  # noqa: E501
     def test_source_matches_main_is_not_stale(self, hook) -> None:  # noqa: ANN001

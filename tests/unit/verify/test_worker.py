@@ -580,7 +580,8 @@ class TestBackpressure:
     """T-1695: the worker must yield rather than run while foreground
     agents hold too many leases, or too little memory is available --
     never starve foreground work, never run silently unmeasured."""
-# frob:tests src/frob/verify/_worker.py::_worker_backpressure_reason
+
+    # frob:tests src/frob/verify/_worker.py::_worker_backpressure_reason
 
     def test_yields_at_lease_ceiling(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
@@ -740,7 +741,8 @@ class TestReconcileStaleInFlightMarker:
     -- mirrors `TestPostLandVerifyPendingMarker`'s shape for the T-1523
     marker this reuses the pattern from: write/read/clear round-trips,
     then the "does a leftover marker get reconciled correctly" case."""
-# frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker
+
+    # frob:tests src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker
 
     def test_no_marker_is_a_silent_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_no_marker_is_a_silent_noop  # noqa: E501

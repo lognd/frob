@@ -225,6 +225,8 @@ class TestResolveStream:
         stream = resolve_stream(index, [SampledStack(frames=())])
         assert stream.section_hits == ()
         assert stream.edge_hits == ()
+
+
 # frob:tests src/frob/perf/_sampler.py::StackSampler
 
 

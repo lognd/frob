@@ -40,7 +40,8 @@ class TestAckWorktreeLease:
             run(cfg)
         # the guard refuses before ever touching frob.lock
         assert not (tmp_path / "frob.lock").exists()
-# frob:tests src/frob/app/ack_runner.py::run
+
+    # frob:tests src/frob/app/ack_runner.py::run
 
     def test_no_lease_reaches_normal_ack_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog

@@ -739,7 +739,8 @@ class TestAmendAcceptance:
         )
         assert result.is_err
         assert result.danger_err == TicketError.AcceptanceAmendTerminalState
-# frob:tests src/frob/tickets/_accept.py::remove_acceptance
+
+    # frob:tests src/frob/tickets/_accept.py::remove_acceptance
 
     def test_remove_drops_criterion_and_records_reason(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAmendAcceptance.test_remove_drops_criterion_and_records_reason  # noqa: E501

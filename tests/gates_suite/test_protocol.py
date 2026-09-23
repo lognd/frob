@@ -524,7 +524,8 @@ class TestProtocolLanguageExcuseDischarge:
         result = rust_drop_discharge(source, "Net")
         assert result.discharged
         assert result.mechanism == "rust-drop"
-# frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge
+
+    # frob:tests src/frob/arch/_protocol_excuse.py::rust_drop_discharge
 
     def test_rust_mem_forget_revokes_the_drop_discharge(self) -> None:
         # frob:tests \

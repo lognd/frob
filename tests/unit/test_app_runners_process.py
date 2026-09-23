@@ -71,7 +71,8 @@ class TestProcessRunnerReap:
     """`process_runner.run`'s `reap` branch: reports what `reap_orphaned_
     forkservers` actually did, in both text and `--json` modes, and
     refuses cleanly on an unknown subcommand."""
-# frob:tests src/frob/app/process_runner.py::run
+
+    # frob:tests src/frob/app/process_runner.py::run
 
     def test_reap_reports_reaped_pids(self, capsys: pytest.CaptureFixture) -> None:
         """A non-empty reap result is reported by pid, human-readable

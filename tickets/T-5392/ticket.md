@@ -2,7 +2,7 @@
 id: T-5392
 title: 'Post-land sweep residue 2026-09-23_0821: DUP002:src/frob/lang/_walk_css.py
   FLAGCOV001:frob.toml '
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'

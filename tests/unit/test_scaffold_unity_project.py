@@ -60,7 +60,8 @@ class TestRenderUnityProject:
         # own acceptance criterion 3) -- five files total, one per node.
         assert len(strata_files) == 5
         assert "unity_default_assembly.strata" in strata_files
-# frob:tests src/frob/scaffold/_unity_project.py::render_unity_project
+
+    # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project
 
     # frob:tests tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject.test_returned_paths_all_exist  # noqa: E501
     def test_returned_paths_all_exist(self, unity_project: Path) -> None:

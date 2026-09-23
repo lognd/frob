@@ -56,7 +56,8 @@ class TestScanCommentLength:
         text += "\ndef f():\n    pass\n"
         violations = scan_comment_length(Path("a.py"), text)
         assert any(v.rule == "DOCARCH002" for v in violations)
-# frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length
+
+    # frob:tests src/frob/gates/_docarch_structural.py::scan_comment_length
 
     def test_short_run_is_quiet(self) -> None:
         """MUST-STAY-QUIET: a 5-line comment run stays under the cap."""

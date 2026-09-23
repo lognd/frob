@@ -40,7 +40,8 @@ class TestForkPoolHazards:
         assert len(hits) == 1
         assert hits[0].severity == "warning"
         assert hits[0].symref == "combined.py::run_combined"
-# frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
+
+    # frob:tests src/frob/arch/_concurrency.py::_check_fork_pool_hazards
 
     def test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs(self):
         """Acceptance (T-0767): the restructured gates tree carries ZERO
@@ -302,7 +303,8 @@ class TestAsyncEventLoopHazards:
         assert len(hits) == 1
         assert hits[0].symref == "blocker.py::poll"
         assert hits[0].severity == "warning"
-# frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
+
+    # frob:tests src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards
 
     def test_blocking_call_in_async_does_not_fire_via_to_thread(self, tmp_path):
         """The same `time.sleep` call, but dispatched via
@@ -715,7 +717,8 @@ class TestSharedStateRaceHazards:
         # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards  # noqa: E501
         hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
         assert hits == []
-# frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards
+
+    # frob:tests src/frob/arch/_shared_state_race.py::_check_shared_state_race_hazards
 
     def test_write_reachable_via_callee_of_dispatched_function_fires(self, tmp_path):
         """The dispatched function itself does nothing but call a helper

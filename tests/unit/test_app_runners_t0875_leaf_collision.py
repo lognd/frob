@@ -69,7 +69,8 @@ class TestCleanRunnerRun:
 
 class TestRegistryRunnerRun:
     """`registry_runner.run` audit wiring when the registry dir is absent."""
-# frob:tests src/frob/app/registry_runner.py::run kind="unit"
+
+    # frob:tests src/frob/app/registry_runner.py::run kind="unit"
 
     def test_missing_registry_dir_logs_and_returns(self, tmp_path, caplog):
         """A nonexistent `--registry-path` logs an info line and returns cleanly."""

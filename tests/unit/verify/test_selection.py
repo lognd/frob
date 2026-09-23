@@ -54,7 +54,8 @@ class TestSelectBatchTests:
         selected_ids = {i for ids in result.report.selected.values() for i in ids}
         assert "tests/test_a.py::test_foo" in selected_ids
         assert "tests/test_b.py::test_bar" in selected_ids
-# frob:tests src/frob/verify/_selection.py::select_batch_tests
+
+    # frob:tests src/frob/verify/_selection.py::select_batch_tests
 
     def test_empty_batch_selects_nothing(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_empty_batch_selects_nothing  # noqa: E501

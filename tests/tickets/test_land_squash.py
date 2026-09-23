@@ -98,9 +98,7 @@ def test_own_ledger_edit_after_merge_still_counted(tmp_path: Path) -> None:
     _run(["git", "checkout", "-q", "feature"], root)
     _run(["git", "merge", "-q", "main", "--no-edit"], root)
 
-    touched = frozenset(
-        {"tickets/T-8888/ticket.md", "tickets/T-9999/ticket.md"}
-    )
+    touched = frozenset({"tickets/T-8888/ticket.md", "tickets/T-9999/ticket.md"})
     narrowed = _exclude_dev_merged_ledger_files(root, "main", touched)
 
     assert narrowed == frozenset({"tickets/T-8888/ticket.md"})

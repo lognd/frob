@@ -67,7 +67,8 @@ class TestProtocolSummaryEngine:
         assert not summary.poisoned
         assert result.not_analyzed == ()
         assert result.timeouts == ()
-# frob:tests src/frob/graph/summary.py::compute_protocol_summaries
+
+    # frob:tests src/frob/graph/summary.py::compute_protocol_summaries
 
     def test_caller_summary_includes_callee_transitions(self):
         """`caller` calls `helper`; `caller`'s summary must include

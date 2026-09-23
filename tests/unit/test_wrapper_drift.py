@@ -111,7 +111,8 @@ class TestWrapperDriftGate:
         makefile.write_text(text)
         violations = wrapper_drift_gate(tmp_path)
         assert any(v.rule == "WRAP001" and "check" in v.message for v in violations)
-# frob:tests src/frob/gates/_wrapper_drift.py::wrapper_drift_gate
+
+    # frob:tests src/frob/gates/_wrapper_drift.py::wrapper_drift_gate
 
     def test_target_for_removed_commands_entry_is_wrap002(self, tmp_path):
         """Acceptance criterion 2: a Makefile target naming an entry that

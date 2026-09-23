@@ -50,7 +50,7 @@ class TestSyncSkills:
         )
         assert (claude_dir / "skills" / "bar" / "content.txt").read_text() == (
             "skill bar"
-        # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
+            # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
         )
 
     def test_updates_existing_entry_in_place(self, tmp_path: Path) -> None:
@@ -88,7 +88,7 @@ class TestSyncSkills:
         shutil.rmtree(repo / "agents" / "temp-agent")  # repo side now empty
 
         reports = sync_skills(repo, claude_dir)
-# frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
+        # frob:tests src/frob/scaffold/_skills_sync.py::sync_skills
 
         assert reports["agents"].removed == ("temp-agent",)
         assert not (claude_dir / "agents" / "temp-agent").exists()

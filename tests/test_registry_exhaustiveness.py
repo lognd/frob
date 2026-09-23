@@ -66,7 +66,8 @@ entries:
 
         rules = _rules(*(v.rule for v in violations))
         assert "REG001" in rules
-# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
+
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
 
     def test_dangling_handled_by_fails(self, tmp_path: Path) -> None:
         _write_manifest(
@@ -548,7 +549,8 @@ class TestDuplicateId:
     # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
     """REG007 (T-0407) -- the same id defined by two or more entries is a
     real collision, distinct from an intentional `duplicate_of:` link."""
-# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
+
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
 
     def test_duplicate_id_across_files_fails(self, tmp_path: Path) -> None:
         _write_manifest(
@@ -677,7 +679,8 @@ entries:
         # T-2369: REG008 promoted WARN -> ERROR once the corpus's
         # undeclared-enforcement count reached true zero.
         assert reg008.severity == Severity.ERROR
-# frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
+
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::registry_gate
 
     # frob:ticket T-0428
     def test_handled_by_with_frob_enforces_edge_is_silent(self, tmp_path: Path) -> None:
@@ -960,7 +963,8 @@ class TestPathEverTracked:
 
         _git_init(tmp_path)
         assert path_ever_tracked(tmp_path, "docs/design/registry") is False
-# frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked
+
+    # frob:tests src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked
 
     def test_deleted_after_commit_is_true(self, tmp_path: Path) -> None:
         """A path committed once and then deleted from the working tree

@@ -191,7 +191,7 @@ class TestClassifyOrder:
         assert (
             classify_order(tmp_path, artifact_commit=impl_sha, test_commit=test_sha)
             is TDDOrder.TEST_FIRST
-        # frob:tests src/frob/gates/_tdd_order.py::classify_order
+            # frob:tests src/frob/gates/_tdd_order.py::classify_order
         )
 
     # frob:ticket T-3009
@@ -253,7 +253,9 @@ def _tests_edge(artifact_symref: str, test_symref: str) -> Edge:
         origin=symref_path(artifact_symref),
     )
 
+
 # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
+
 
 # frob:ticket T-3009
 class TestTddOrderViolations:
@@ -439,7 +441,7 @@ class TestPerfShape:
         monkeypatch.setattr(_tdd_order_mod, "run_argv", _spy)
 
         _tdd_order_mod._revisions_oldest_first(tmp_path, "m.py", since=base)
-# frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
+        # frob:tests src/frob/gates/_tdd_order.py::tdd_order_violations
 
         log_calls = [argv for argv in seen_argv if "log" in argv]
         assert len(log_calls) == 1

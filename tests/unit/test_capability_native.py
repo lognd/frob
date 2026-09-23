@@ -137,7 +137,8 @@ class TestResolvedCandidatesThreading:
     call-site rewrite), and the wrapper-resolution path -- the one place
     a naive content-hash cache would have been unsound, since it reads a
     SIBLING file -- must still fire on a real cross-file case."""
-# frob:tests src/frob/vet/_capability_python.py::_python_binding_capabilities
+
+    # frob:tests src/frob/vet/_capability_python.py::_python_binding_capabilities
 
     def test_binding_capabilities_with_and_without_precomputed_candidates_agree(
         self, tmp_path: Path

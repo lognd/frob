@@ -208,7 +208,8 @@ class TestBackfillStaleDraftAttachmentPaths:
     `attachments[].path` field a pre-T-2199 promotion left dangling at a
     vanished `T-draft-<hash>` directory, without touching a healthy
     record."""
-# frob:tests src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths
+
+    # frob:tests src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths
 
     # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
     # frob:tests src/frob/tickets/_draft_finalize.py::AttachmentBackfillReport

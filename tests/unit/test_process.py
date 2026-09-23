@@ -368,7 +368,8 @@ class TestToolResultMeasurement:
     MEASURED/NOT_MEASURED distinction a `--json` consumer can now read
     directly, instead of re-deriving `frob.check._is_unresolved_only_gate`'s
     predicate by hand."""
-# frob:tests src/frob/process/parsers/common.py::ToolResult.measurement
+
+    # frob:tests src/frob/process/parsers/common.py::ToolResult.measurement
 
     def test_measured_when_zero_diagnostics(self) -> None:
         # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_zero_diagnostics  # noqa: E501
@@ -456,7 +457,8 @@ class TestToolResultMeasurement:
 class TestSubjectCount:
     """`ToolResult.subject_count`: three states, `None` (unmigrated) is
     never conflated with `0` (populated and empty)."""
-# frob:tests src/frob/process/parsers/common.py::ToolResult
+
+    # frob:tests src/frob/process/parsers/common.py::ToolResult
 
     def test_default_is_none(self) -> None:
         # frob:tests tests/unit/test_process.py::TestSubjectCount.test_default_is_none

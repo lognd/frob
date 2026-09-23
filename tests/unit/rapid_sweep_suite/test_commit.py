@@ -116,7 +116,8 @@ class TestCommitRapidDebt:
         head_before = _git(repo, "rev-parse", "HEAD").strip()
         _rapid_sweep._commit_rapid_debt(repo, "T-0003")
         assert _git(repo, "rev-parse", "HEAD").strip() == head_before
-# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt
+
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_commit_rapid_debt
 
     def test_a_non_repo_never_raises(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_a_non_repo_never_raises  # noqa: E501

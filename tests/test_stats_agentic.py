@@ -331,7 +331,8 @@ class TestDispatchCostReport:
         assert d.tool_call_count == 0
         assert d.wall_clock_s == 300.0
         assert d.cold_start is True
-# frob:tests src/frob/stats/_agentic_dispatch.py::DispatchRecord kind="unit"
+
+    # frob:tests src/frob/stats/_agentic_dispatch.py::DispatchRecord kind="unit"
 
     def test_tool_events_join_by_window_and_sum_tokens(self, tmp_path: Path):
         # frob:ticket T-3059

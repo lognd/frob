@@ -63,7 +63,8 @@ class TestResourceLeaseManager:
         elapsed = time.monotonic() - start
         assert got is False
         assert elapsed < 2.0
-# frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"
+
+    # frob:tests src/frob/serve/_leases.py::ResourceLeaseManager kind="unit"
 
     def test_release_holder_frees_every_resource_that_holder_held(self) -> None:
         # frob:tests \

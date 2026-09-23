@@ -190,7 +190,8 @@ class TestFieldNames:
 
 class TestEnvAccess:
     """SEC110: os.environ/os.getenv access-site detection."""
-# frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate
+
+    # frob:tests src/frob/gates/_pii_structural/__init__.py::pii_structural_gate
 
     def test_os_getenv_fires(self) -> None:
         # frob:tests \

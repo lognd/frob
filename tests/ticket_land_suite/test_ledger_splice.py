@@ -641,7 +641,8 @@ class TestSpliceLedgerRicherStatePreference:
         parsed = _parse_ledger(spliced.danger_ok).danger_ok
         assert parsed[tid].state == TicketState.IN_PROGRESS
         assert "## Done report" not in parsed[tid].body
-# frob:tests src/frob/tickets/_land_ledger_merge.py::_newer
+
+    # frob:tests src/frob/tickets/_land_ledger_merge.py::_newer
 
     # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on  # noqa: E501
     def test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on(
@@ -939,7 +940,8 @@ class TestLedgerV2LandMergeStory:
     disjoint `tickets/T-####/` directories merge with zero custom
     resolution (AC2), and a genuine same-ticket-file conflict surfaces as
     an ordinary git conflict, never a silent splice (AC3)."""
-# frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope
+
+    # frob:tests src/frob/tickets/_land_squash.py::_v2_effective_scope
 
     # frob:tests src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2
     # frob:tests src/frob/tickets/_land.py::_merge_main_into_worktree_v2
@@ -1156,7 +1158,8 @@ class TestUnionZoneMerge:
     hotspots (`[gates.severity]`, `_KNOWN_GATE_RULES`, `docs/audits/*.md`
     remediation logs) -- concurrent distinct appends compose with zero
     manual resolution; a true same-key contradiction still refuses."""
-# frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks
+
+    # frob:tests src/frob/tickets/_land_merge_zones.py::_union_keyed_chunks
 
     def test_keyed_lines_union_composes(self) -> None:
         # frob:tests \

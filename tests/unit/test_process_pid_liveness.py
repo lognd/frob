@@ -78,7 +78,8 @@ class TestPidAlivePosix:
     def test_current_process_is_alive(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(_pid_liveness, "_kernel32", None)
         assert _pid_liveness.pid_alive(os.getpid()) is True
-# frob:tests src/frob/process/_pid_liveness.py::pid_alive
+
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive
 
     def test_process_lookup_error_is_dead(
         self, monkeypatch: pytest.MonkeyPatch
@@ -130,7 +131,8 @@ class TestPidAliveWindowsBackend:
     # frob:tests src/frob/process/_pid_liveness.py::pid_alive
     that would raise if `OpenProcess` were ever called with kill rights
     instead of `PROCESS_QUERY_LIMITED_INFORMATION`."""
-# frob:tests src/frob/process/_pid_liveness.py::pid_alive
+
+    # frob:tests src/frob/process/_pid_liveness.py::pid_alive
 
     def test_alive_pid_reports_true(self, monkeypatch: pytest.MonkeyPatch) -> None:
         fake = _FakeKernel32(alive_pids={4242})

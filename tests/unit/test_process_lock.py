@@ -274,7 +274,8 @@ class TestPortableFlock:
         finally:
             os.close(fd)
         assert calls == ["lock", "unlock"]
-# frob:tests src/frob/process/_lock_msvcrt.py::_msvcrt_acquire_blocking
+
+    # frob:tests src/frob/process/_lock_msvcrt.py::_msvcrt_acquire_blocking
 
     # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_blocking_reentry_raises_instead_of_hanging_forever  # noqa: E501
     def test_windows_blocking_reentry_raises_instead_of_hanging_forever(

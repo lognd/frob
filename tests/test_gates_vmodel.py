@@ -47,7 +47,8 @@ class TestVmodelGate:
         design_dir = tmp_path / "design"
         _write(design_dir, "m.strata", "module m\nnode n : trusted { }\n")
         assert vmodel_gate(tmp_path) == ()
-# frob:tests src/frob/gates/_vmodel.py::vmodel_gate
+
+    # frob:tests src/frob/gates/_vmodel.py::vmodel_gate
 
     def test_fires_vmod001_on_construction_error(self, tmp_path: Path) -> None:
         """A vmodel_edge naming a node that was never declared anywhere

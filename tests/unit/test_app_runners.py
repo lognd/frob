@@ -78,7 +78,8 @@ class TestExploreRunner:
         with caplog.at_level("INFO"):
             explore_run(cfg)
         assert any("{" in r.message for r in caplog.records)
-# frob:tests src/frob/app/explore_runner.py::run
+
+    # frob:tests src/frob/app/explore_runner.py::run
 
     def test_outline_subcommand_delegates_to_outline_runner(self, tmp_path, caplog):
         """`explore_command="outline"` produces the same output as `frob
@@ -604,8 +605,10 @@ class TestQualityRunner:
         target_mod = self._delegation_target(quality_command)
         called = {}
         monkeypatch.setattr(
-            target_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
-        # frob:tests src/frob/app/quality_runner.py::run
+            target_mod,
+            "run",
+            lambda cfg: called.setdefault("cfg", cfg),
+            # frob:tests src/frob/app/quality_runner.py::run
         )
         cfg = AppConfig(quality_command=quality_command)
         quality_run(cfg)
@@ -668,7 +671,8 @@ class TestDesignRunner:
         else:  # pragma: no cover -- unreachable: design_command is parametrized above
             raise AssertionError(design_command)
         return mod
-# frob:tests src/frob/app/design_runner.py::run
+
+    # frob:tests src/frob/app/design_runner.py::run
 
     @pytest.mark.parametrize("design_command", ["sys", "registry", "docs", "graph"])
     def test_subcommand_delegates_to_matching_runner(self, monkeypatch, design_command):
@@ -776,8 +780,10 @@ class TestOpsRunner:
         target_mod = self._delegation_target(ops_command)
         called = {}
         monkeypatch.setattr(
-            target_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
-        # frob:tests src/frob/app/ops_runner.py::run
+            target_mod,
+            "run",
+            lambda cfg: called.setdefault("cfg", cfg),
+            # frob:tests src/frob/app/ops_runner.py::run
         )
         cfg = AppConfig(ops_command=ops_command)
         ops_run(cfg)
@@ -801,7 +807,7 @@ class TestOpsRunner:
             ["git", "config", "user.email", "a@b.c"],
             cwd=tmp_path,
             check=True,
-        # frob:tests src/frob/app/ops_runner.py::run
+            # frob:tests src/frob/app/ops_runner.py::run
         )
         subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
         (tmp_path / "f.txt").write_text("x")
@@ -814,7 +820,8 @@ class TestOpsRunner:
         ops_run(cfg)
         out = capsys.readouterr().out
         assert out.strip() != ""
-# frob:tests src/frob/app/ops_runner.py::run
+
+    # frob:tests src/frob/app/ops_runner.py::run
 
     def test_unknown_subcommand_exits_1(self, caplog):
         """No `ops_command` at all (bare `frob ops`) errors cleanly instead

@@ -37,7 +37,8 @@ class TestWatchTick:
         second_key, second_changed = watch_tick(tmp_path, first_key)
         assert second_changed is False
         assert second_key == first_key
-# frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"
+
+    # frob:tests src/frob/serve/_watch.py::watch_tick kind="unit"
 
     def test_change_invalidates_and_prewarms(self, tmp_path: Path) -> None:
         # frob:tests \

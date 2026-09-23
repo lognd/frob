@@ -64,7 +64,9 @@ class TestClearIntent:
         # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_missing_file_is_a_no_op  # noqa: E501
         _clear_intent(tmp_path, "T-does-not-exist")  # must not raise
 
+
 # frob:tests src/frob/tickets/_journal.py::_read_all_intents
+
 
 # frob:tests src/frob/tickets/_journal.py::_read_all_intents
 class TestReadAllIntents:

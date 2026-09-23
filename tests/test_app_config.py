@@ -26,7 +26,8 @@ class TestEnumFieldValidation:
         assert "'open' is not a valid ticket state" in message
         for valid in ("queued", "planned", "in-progress", "blocked", "done", "dropped"):
             assert valid in message
-# frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"
+
+    # frob:tests src/frob/app/config.py::AppConfig._check_ticket_state kind="unit"
 
     def test_valid_ticket_state_passes_through(self) -> None:
         # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_valid_ticket_state_passes_through  # noqa: E501

@@ -198,7 +198,8 @@ class TestAttributeBatch:
         (attribution,) = result.danger_ok
         assert attribution.status == "unattributed"
         assert attribution.candidate_commits == ()
-# frob:tests src/frob/verify/_attribution.py::attribute_batch
+
+    # frob:tests src/frob/verify/_attribution.py::attribute_batch
 
     def test_two_reaching_commits_is_unattributed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_two_reaching_commits_is_unattributed  # noqa: E501

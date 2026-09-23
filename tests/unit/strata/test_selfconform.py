@@ -1041,7 +1041,8 @@ class TestExtendedKindsDriftLock:
             kind for table in _PATTERNS.values() for kind in table
         )
         assert _EXTENDED_KINDS | frozenset(_KIND_MAP.keys()) == all_pattern_kinds
-# frob:tests src/frob/strata/_selfconform_kinds.py::_observed_extended_kinds_by_node
+
+    # frob:tests src/frob/strata/_selfconform_kinds.py::_observed_extended_kinds_by_node
 
     def test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds(
         self, tmp_path: Path

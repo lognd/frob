@@ -42,7 +42,8 @@ class TestLoadIds:
     def test_no_dir_empty(self, tmp_path: Path) -> None:
         ids = load_design_ids(tmp_path)
         assert ids == DesignIds()
-# frob:tests src/frob/strata/_design_load.py::load_design_ids
+
+    # frob:tests src/frob/strata/_design_load.py::load_design_ids
 
     def test_bad_file_reported(self, tmp_path: Path) -> None:
         _write(tmp_path, "design/bad.strata", "this is not valid strata {{{")

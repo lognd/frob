@@ -110,7 +110,8 @@ class TestStaleNatives:
         assert warning is not None
         assert name in warning
         assert "make core" in warning
-# frob:tests src/frob/strata/_native_staleness.py::stale_natives
+
+    # frob:tests src/frob/strata/_native_staleness.py::stale_natives
 
     def test_fresh_native_reports_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

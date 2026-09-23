@@ -53,7 +53,8 @@ class TestRuffEmptyOutputWithoutStderrEvidenceStaysAnError:
     T-4308's original hard-ERROR behavior -- the distinction that must
     survive: "not installed" is unmeasured, but "ran and produced
     nothing parseable, for an unknown reason" is still a real failure."""
-# frob:tests src/frob/process/parsers/ruff.py::parse_ruff_json
+
+    # frob:tests src/frob/process/parsers/ruff.py::parse_ruff_json
 
     def test_no_stderr_argument_is_still_an_error(self) -> None:
         r = parse_ruff_json("", exit_code=2)

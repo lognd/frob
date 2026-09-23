@@ -359,7 +359,8 @@ class TestChangelogFragments:
         fragments = read_changelog_fragments(tmp_path)
         assert fragments.is_ok
         assert fragments.danger_ok == ()
-# frob:tests src/frob/release/_fragments.py::read_changelog_fragments
+
+    # frob:tests src/frob/release/_fragments.py::read_changelog_fragments
 
     def test_read_sorts_numerically_not_lexically(self, tmp_path):
         # frob:tests \
@@ -827,7 +828,8 @@ class TestPublish:
     # frob:tests src/frob/release/_publish.py::PublishPlan
     -- never a real git push or a real PyPI publish (T-2242's own
     non-negotiable safety constraint)."""
-# frob:tests src/frob/release/_publish.py::PublishPlan
+
+    # frob:tests src/frob/release/_publish.py::PublishPlan
 
     # frob:tests src/frob/release/_publish.py::publish
     def test_dry_run_does_not_mutate_anything(self, tmp_path, monkeypatch):

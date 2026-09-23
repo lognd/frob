@@ -47,7 +47,8 @@ class TestCeilingsForProfile:
         ceilings = ceilings_for_profile(ProfileName.FORTRESS, tmp_path)
         assert ceilings.max_depth == 0
         assert ceilings.max_age_s == 0.0
-# frob:tests src/frob/verify/_backpressure.py::ceilings_for_profile
+
+    # frob:tests src/frob/verify/_backpressure.py::ceilings_for_profile
 
     def test_rapid_is_unbounded(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_rapid_is_unbounded  # noqa: E501
@@ -87,8 +88,9 @@ class TestSettingsForProfile:
     remaining `ProfileName` branch T-1696's own re-verification found at
     `_land_cmd.py:4607` (`_apply_backpressure`'s soft-warning gate,
     T-2290) that T-2360's original measurement did not enumerate."""
-# frob:tests src/frob/verify/_backpressure.py::settings_for_profile
-# frob:tests src/frob/verify/_backpressure.py::LandProfileSettings
+
+    # frob:tests src/frob/verify/_backpressure.py::settings_for_profile
+    # frob:tests src/frob/verify/_backpressure.py::LandProfileSettings
 
     # frob:ticket T-2360
     def test_fortress_matches_current_branch_logic(self) -> None:

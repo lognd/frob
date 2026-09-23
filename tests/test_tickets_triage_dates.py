@@ -133,12 +133,8 @@ class TestSetMilestoneRecordsTriageChange:
 
         result = set_milestone(tmp_path, ticket_id, "1.2.0")
         assert result.is_ok
-        entries = [
-            c for c in result.danger_ok.triage_changes if c.field == "milestone"
-        ]
+        entries = [c for c in result.danger_ok.triage_changes if c.field == "milestone"]
         assert len(entries) == 1
         assert entries[0].old_value is None
         assert entries[0].new_value == "1.2.0"
         assert entries[0].at == date.today()
-
-

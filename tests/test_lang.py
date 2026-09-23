@@ -822,7 +822,8 @@ class TestCSharp:
         method = _symbol(pf, "Frob.Sample.Widget.Render")
         assert method.kind == SymbolKind.METHOD
         assert method.public is True
-# frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
+
+    # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
 
     # frob:ticket T-1600
     def test_private_method_is_not_public(self) -> None:
@@ -1050,7 +1051,8 @@ class TestJava:
         pf = parse_file(_FIXTURES / "sample.java").danger_ok
         names = {s.qualname for s in pf.symbols}
         assert "Widget.hidden" not in names
-# frob:tests src/frob/lang/_walk_java.py::_walk_java
+
+    # frob:tests src/frob/lang/_walk_java.py::_walk_java
 
     # frob:ticket T-1601
     def test_enum_is_a_class_symbol(self) -> None:

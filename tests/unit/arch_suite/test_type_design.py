@@ -38,7 +38,8 @@ class TestLayeringConfig:
 
 class TestLoadLayeringConfig:
     """`load_layering_config` (docs/modules/arch.md#dip-layering-contract)."""
-# frob:tests src/frob/arch/_layering.py::load_layering_config
+
+    # frob:tests src/frob/arch/_layering.py::load_layering_config
 
     def test_missing_frob_toml_returns_none(self, tmp_path: Path) -> None:
         from frob.arch._layering import load_layering_config
@@ -221,7 +222,8 @@ class TestIllegalStatesRepresentable:
     # frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable
     """`check_illegal_states_representable`
     (docs/modules/arch.md#type-driven-design-checks)."""
-# frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable
+
+    # frob:tests src/frob/arch/_typedesign.py::check_illegal_states_representable
 
     def test_bool_field_cross_field_guard_flagged(self) -> None:
         from frob.arch._normalized import (

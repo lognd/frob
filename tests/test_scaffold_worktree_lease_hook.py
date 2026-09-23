@@ -63,7 +63,8 @@ class TestInstallWorktreeLeaseHook:
         for path in paths:
             assert path.exists()
             assert os.access(path, os.X_OK)
-# frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook
+
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook
 
     def test_refuses_existing_hook_without_force(self, tmp_path: Path) -> None:
         # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_refuses_existing_hook_without_force  # noqa: E501
@@ -201,7 +202,8 @@ class TestInstallWorktreeLeaseHook:
             check=False,
         )
         assert merged.returncode == 0, merged.stdout + merged.stderr
-# frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook
+
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook
 
     # frob:ticket T-0731
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
@@ -365,7 +367,8 @@ class TestInstallWorktreeLeaseHook:
             check=False,
         )
         assert commit.returncode == 0, commit.stdout + commit.stderr
-# frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook
+
+    # frob:tests src/frob/scaffold/project.py::install_worktree_lease_hook
 
     # frob:ticket T-0731
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")

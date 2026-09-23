@@ -86,9 +86,7 @@ class TestDoc006TicketBodyCliPointerSkip:
     doc still fires."""
 
     # frob:tests src/frob/gates/_docptr.py::_is_ticket_body_doc
-    def test_open_ticket_planned_cli_pointer_not_flagged(
-        self, tmp_path: Path
-    ) -> None:
+    def test_open_ticket_planned_cli_pointer_not_flagged(self, tmp_path: Path) -> None:
         """(a) A fixture ticket body with a backticked NONEXISTENT command
         (`frob sys split`, a planned/rejected surface) produces no DOC006
         finding -- the exact repro shape (T-4659/T-4416/T-4684 land

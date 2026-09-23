@@ -168,7 +168,8 @@ class TestMile003:
         violations = milestone_gate(tmp_path, queue)
         assert [v.rule for v in violations] == ["MILE003"]
         assert "T-1" in violations[0].message
-# frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
+
+    # frob:tests src/frob/gates/_milestone.py::_mile003_unresolved_milestone
 
     # frob:tests src/frob/gates/_milestone.py::milestone_gate
     def test_silent_once_stamped(self, tmp_path: Path) -> None:
@@ -243,7 +244,8 @@ class TestMile001:
         assert len(violations) == 1
         assert "T-1" in violations[0].message
         assert "T-2" in violations[0].message
-# frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
+
+    # frob:tests src/frob/gates/_milestone.py::_mile001_blocked_by_later_milestone
 
     def test_blocked_by_earlier_milestone_does_not_fire(self, tmp_path: Path) -> None:
         """Negative control: T-1 (milestone 2.0.0) blocked_by T-2

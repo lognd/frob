@@ -22,7 +22,8 @@ class TestConfiguredProfile:
         result = configured_profile(tmp_path)
         assert result.is_ok
         assert result.danger_ok is ProfileName.STANDARD
-# frob:tests src/frob/tickets/_profile.py::configured_profile
+
+    # frob:tests src/frob/tickets/_profile.py::configured_profile
 
     def test_explicit_rapid_parses(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_explicit_rapid_parses  # noqa: E501

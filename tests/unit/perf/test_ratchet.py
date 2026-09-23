@@ -37,7 +37,8 @@ class TestCheckRatchet:
         prior = _sketch([10.0] * 20)
         current = _sketch([11.0] * 20)  # ~10% shift, under 50% tolerance
         assert check_ratchet("key", "label", prior, current, tolerance=0.5) is None
-# frob:tests src/frob/perf/_ratchet.py::check_ratchet
+
+    # frob:tests src/frob/perf/_ratchet.py::check_ratchet
 
     def test_regression_beyond_tolerance_fires(self) -> None:
         prior = _sketch([10.0] * 20)

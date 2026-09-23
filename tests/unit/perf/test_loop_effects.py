@@ -123,7 +123,8 @@ class TestPerf008LoopInvariantEffect:
             v.rule == "PERF008"
             for v in perf_rules(snapshot, [gitio_parsed, tickets_parsed])
         )
-# frob:tests src/frob/perf/_loop_effects.py::loop_invariant_effect_violations
+
+    # frob:tests src/frob/perf/_loop_effects.py::loop_invariant_effect_violations
 
     def test_loop_varying_argument_is_not_flagged(self, tmp_path: Path) -> None:
         """The exact same shape, but the call's argument is the loop's own

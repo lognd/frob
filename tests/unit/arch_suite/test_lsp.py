@@ -114,7 +114,8 @@ class TestOverrideRaisesNotImplemented:
 class TestOverrideSignatureVariance:
     """ARCH105: `check_override_signature_variance`
     (docs/modules/arch.md#lsp-checks)."""
-# frob:tests src/frob/arch/_solid.py::check_override_signature_variance
+
+    # frob:tests src/frob/arch/_solid.py::check_override_signature_variance
 
     def test_narrower_required_params_flagged(self) -> None:
         from frob.arch._normalized import (

@@ -73,7 +73,8 @@ class TestVersionCouplingGate:
         """All three versions matching, exact `==` pins: zero violations."""
         root = _write_repo(tmp_path)
         assert version_coupling_gate(root) == ()
-# frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
+
+    # frob:tests src/frob/gates/_version_coupling.py::version_coupling_gate
 
     def test_skewed_core_version_fires(self, tmp_path: Path) -> None:
         """`frob-core/pyproject.toml`'s own version disagreeing with

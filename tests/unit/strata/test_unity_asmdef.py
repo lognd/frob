@@ -69,7 +69,8 @@ class TestDiscoverAsmdefs:
 
 class TestBuildComponentNodes:
     """`build_component_nodes` maps discovered asmdefs to strata nodes."""
-# frob:tests src/frob/strata/_unity_asmdef.py::build_component_nodes
+
+    # frob:tests src/frob/strata/_unity_asmdef.py::build_component_nodes
 
     def test_two_asmdefs_two_distinct_nodes(self):
         """Acceptance 1: each discovered asmdef becomes its own node id."""

@@ -176,7 +176,8 @@ class TestTicketLeasePin:
 
         result = ticket_lease_pin(repo, "T-0787")
         assert result.is_ok
-# frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin kind="unit"
+
+    # frob:tests src/frob/gates/_waive_lease.py::ticket_lease_pin kind="unit"
 
     def test_pinned_lease_for_this_worktree_passes(self, repo: Path) -> None:
         """A lease recorded for exactly this worktree resolves `Ok`."""
@@ -559,8 +560,9 @@ class TestLeaseTtl:
         now = recorded + timedelta(hours=2)
         record = self._record(recorded.isoformat())
         assert lease_age_seconds(record, now=now) == 7200.0
-# frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
-# frob:tests src/frob/tickets/_leases.py::lease_age_seconds kind="unit"
+
+    # frob:tests src/frob/tickets/_leases.py::is_lease_ttl_expired \
+    # frob:tests src/frob/tickets/_leases.py::lease_age_seconds kind="unit"
 
     def test_age_seconds_none_for_unparseable_timestamp(self) -> None:
         record = self._record("not-a-timestamp")

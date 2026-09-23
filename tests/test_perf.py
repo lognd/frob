@@ -1010,7 +1010,8 @@ class TestPerf007RedundantComputation:
     """T-0413 (the PERF META-GAP): the same `frob.toml`-configured expensive
     call invoked from 2+ distinct top-level symbols with no shared cache is
     PERF007; a single call site, or a cached definition, is not."""
-# frob:tests src/frob/perf/_redundancy.py::redundant_computation_violations
+
+    # frob:tests src/frob/perf/_redundancy.py::redundant_computation_violations
 
     def test_two_stages_calling_the_same_uncached_parse_is_flagged(
         self, tmp_path: Path

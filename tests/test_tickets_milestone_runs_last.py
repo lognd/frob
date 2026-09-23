@@ -68,7 +68,8 @@ class TestRunsLastMilestoneScoping:
         queue = TicketQueue(tickets={last.id: last, other.id: other})
         result = doable(queue)
         assert last.id not in {t.id for t in result}
-# frob:tests src/frob/tickets/_doable.py::_other_open_tickets
+
+    # frob:tests src/frob/tickets/_doable.py::_other_open_tickets
 
     def test_unmilestoned_runs_last_becomes_doable_once_all_else_terminal(
         self,

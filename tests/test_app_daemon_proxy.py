@@ -522,7 +522,8 @@ class TestDifferentialParity:
         _assert_daemon_parity(
             project, ["graph", "query", "helper.py::helper", "--json"]
         )
-# frob:tests src/frob/serve/_tools.py::frob_doable_tickets kind="unit"
+
+    # frob:tests src/frob/serve/_tools.py::frob_doable_tickets kind="unit"
 
     # frob:tests src/frob/app/ticket_runner/_query.py::_try_doable_via_daemon kind="unit"  # noqa: E501
     @pytest.mark.skipif(
@@ -772,7 +773,8 @@ class TestProbeDaemon:
         liveness, version = probe_daemon(self._socket_dir(tmp_path))
         assert liveness is DaemonLiveness.NoSocket
         assert version is None
-# frob:tests src/frob/app/_daemon_proxy.py::probe_daemon
+
+    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon
 
     def test_dead_socket_file_is_orphaned(self, tmp_path):
         """A socket file that no process is listening on. This is the state
@@ -869,7 +871,8 @@ class TestProbeDaemon:
         _clear_orphaned_socket(root)
         assert not path.exists()
         assert probe_daemon(root)[0] is DaemonLiveness.NoSocket
-# frob:tests src/frob/app/_daemon_proxy.py::probe_daemon
+
+    # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon
 
     # frob:ticket T-3508
     # frob:tests src/frob/app/_daemon_proxy.py::probe_daemon

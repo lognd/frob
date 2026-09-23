@@ -387,7 +387,8 @@ class TestMigrateCliFillGapsFlag:
     cited evidence, method bodies now assert removal. Still-live
     engine-level coverage for `migrate_missing_v2` is
     `TestMigrateMissingV2` below."""
-# frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
+
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
 
     # frob:tests src/frob/app/ticket_runner/_query.py::_migrate
     def test_fill_gaps_flag_calls_migrate_missing_v2(
@@ -733,7 +734,8 @@ class TestMigrateMissingV2:
     `migrate_v1_to_v2` leaves open once a repo is already v2-mode
     (already-v2 no-ops the whole migrator, so legacy monofile-only
     tickets from before full cutover never get a v2 file at all)."""
-# frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
+
+    # frob:tests src/frob/tickets/_store_migrate.py::migrate_missing_v2
 
     def test_migrates_only_the_monofile_only_tickets(self, tmp_path: Path) -> None:
         """GIVEN a repo that is ALREADY v2-mode (one ticket already has a

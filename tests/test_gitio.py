@@ -274,7 +274,8 @@ class TestWorkingDiff:
         result = working_diff(repo, "does-not-exist")
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
-# frob:tests src/frob/gitio.py::excerpt
+
+    # frob:tests src/frob/gitio.py::excerpt
 
     def test_diff_command_failure_propagates(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

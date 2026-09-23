@@ -292,7 +292,8 @@ class TestPerfRunner:
         perf_run(heat_cfg)
         heat_out = capsys.readouterr()
         assert "unattributed" in (heat_out.out + heat_out.err)
-# frob:tests src/frob/app/perf_runner.py::_run_quiet_if_json kind="unit"
+
+    # frob:tests src/frob/app/perf_runner.py::_run_quiet_if_json kind="unit"
 
     def test_heat_json_mode(self, tmp_path: Path, capsys) -> None:
         script = _make_workload_script(tmp_path)

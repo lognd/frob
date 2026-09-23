@@ -62,7 +62,8 @@ class TestLoadManifest:
         resolved = result.danger_ok.repos[0].path
         assert resolved == (manifest_dir / "../typani")
         assert elsewhere not in resolved.parents
-# frob:tests src/frob/fleet/__init__.py::load_manifest
+
+    # frob:tests src/frob/fleet/__init__.py::load_manifest
 
     def test_load_manifest_missing(self, tmp_path: Path) -> None:
         result = load_manifest(tmp_path / "does-not-exist.toml")

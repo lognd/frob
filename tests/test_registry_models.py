@@ -36,7 +36,8 @@ class TestParseDisposition:
         d = parse_disposition("out-of-scope(manifest-extraction-artifact)")
         assert d.kind is DispositionKind.OUT_OF_SCOPE
         assert d.target == "manifest-extraction-artifact"
-# frob:tests src/frob/registry/_models.py::parse_disposition
+
+    # frob:tests src/frob/registry/_models.py::parse_disposition
 
     def test_undispositioned_pending(self) -> None:
         assert parse_disposition("pending").kind is DispositionKind.UNDISPOSITIONED

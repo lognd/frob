@@ -138,7 +138,8 @@ class TestTicketRunnerRootResolution:
         monkeypatch.setenv("FROB_ROOT", str(target))
         cfg = AppConfig(ticket_command="new")
         assert _resolve_ticket_root(cfg) == target.resolve()
-# frob:tests src/frob/app/ticket_runner/__init__.py::run
+
+    # frob:tests src/frob/app/ticket_runner/__init__.py::run
 
     def test_explicit_path_wins_over_frob_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

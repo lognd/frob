@@ -191,7 +191,8 @@ class TestProbeLandsInFlight:
     """`wait_for_land_slot.probe_lands_in_flight` -- the ONLY place that
     parses the status probe's output; `None` (unmeasured) must never be
     confused with a genuine `0` reading."""
-# frob:tests scripts/wait_for_land_slot.py::probe_lands_in_flight
+
+    # frob:tests scripts/wait_for_land_slot.py::probe_lands_in_flight
 
     def test_reads_a_genuine_count(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(

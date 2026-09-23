@@ -301,7 +301,9 @@ class TestSketchStore:
         assert sketch.buckets == {}
         assert sketch.zero_count == 0.0
 
+
 # frob:tests src/frob/tomlio.py::read_toml_lenient
+
 
 class TestSketchStoreConfig:
     """`load_sketch_config`'s `[perf.sketch]` frob.toml parsing."""
@@ -311,7 +313,8 @@ class TestSketchStoreConfig:
     def test_missing_frob_toml_returns_defaults(self, tmp_path: Path) -> None:
         config = load_sketch_config(tmp_path)
         assert config == SketchStoreConfig()
-# frob:tests src/frob/perf/_sketch_store.py::load_sketch_config
+
+    # frob:tests src/frob/perf/_sketch_store.py::load_sketch_config
 
     def test_parses_perf_sketch_table(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text(

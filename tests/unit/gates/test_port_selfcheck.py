@@ -85,7 +85,8 @@ class TestPort001:
         assert len(hits) == 1
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert hits[0].severity.value == "warn"
-# frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
+
+    # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
 
     def test_allowlisted_self_match_file_is_silent(self, tmp_path: Path) -> None:
         """The identical PORT001-PATH shape, at
@@ -108,8 +109,10 @@ class TestPort001:
         violations = port_selfcheck_gate(tmp_path)
 
         assert [
-            v for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
-        # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
+            v
+            for v in violations
+            if v.rule in ("PORT001-PATH", "PORT001-IDENT")
+            # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate
         ] == []
 
     # frob:tests src/frob/gates/_port_selfcheck.py::port_selfcheck_gate

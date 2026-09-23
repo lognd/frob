@@ -151,7 +151,8 @@ class TestSetParent:
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         assert loaded.danger_ok[child_id].parent == epic_id
-# frob:tests src/frob/tickets/_setters.py::set_parent
+
+    # frob:tests src/frob/tickets/_setters.py::set_parent
 
     def test_self_parent_refuses(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_self_parent_refuses  # noqa: E501

@@ -32,7 +32,8 @@ class TestPyprojectFileForArgs:
         root.mkdir()
         args = argparse.Namespace(ticket_path=str(root))
         assert _pyproject_file_for_args(args) == root / "pyproject.toml"
-# frob:tests src/frob/app/config.py::_pyproject_file_for_args kind="unit"
+
+    # frob:tests src/frob/app/config.py::_pyproject_file_for_args kind="unit"
 
     # frob:tests src/frob/app/config.py::AppConfig.from_args kind="unit"
     def test_frob_root_env_wins_over_cwd_when_no_explicit_path(

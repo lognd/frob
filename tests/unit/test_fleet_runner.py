@@ -41,7 +41,8 @@ class TestFleetRunner:
         assert "repo" in out
         assert "a" in out
         assert "main" in out
-# frob:tests src/frob/app/fleet_runner.py::run
+
+    # frob:tests src/frob/app/fleet_runner.py::run
 
     def test_run_status_missing_manifest(self, tmp_path: Path) -> None:
         cfg = AppConfig(fleet_manifest=tmp_path / "nope.toml")

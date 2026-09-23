@@ -479,7 +479,8 @@ class TestComplianceGate:
         )
         violations = compliance_gate(tmp_path, registry_dir)
         assert not any(v.rule == "COMPLIANCE005" for v in violations)
-# frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate
+
+    # frob:tests src/frob/gates/_decisions_compliance.py::compliance_gate
 
     # frob:ticket T-0788
     # frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_missing_registry_dir_is_silent  # noqa: E501
@@ -821,14 +822,15 @@ class TestExhaustiveHandlingGate:
                 "    except ValueError:\n"
                 "        pass\n"
             ),
-        # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
+            # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
         )
         violations = exhaustive_handling_gate(tmp_path)
         found = _by_rule(violations, "EXHAUST001")
         assert found
         assert any(v.symref == "mod.py::boundary" for v in found)
         assert not _by_rule(violations, "EXHAUST003")
-# frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
+
+    # frob:tests src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate
 
     # frob:tests \
     # tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001  # noqa: E501
@@ -1001,7 +1003,8 @@ class TestFfiBoundaryGate:
         )
         violations = ffi_boundary_gate(tmp_path, tmp_path)
         assert not _by_rule(violations, "FFI001")
-# frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
+
+    # frob:tests src/frob/gates/_ffi_boundary.py::ffi_boundary_gate
 
     # frob:tests \
     # frob:tests src/frob/arch/_ffi.py::scan_ctypes_boundary_calls

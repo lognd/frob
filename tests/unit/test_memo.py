@@ -262,7 +262,9 @@ def test_analyze_project_second_call_is_memo_hit(tmp_path: Path) -> None:
         assert hits == 1
         assert misses == 1
 
+
 # frob:tests src/frob/lang/__init__.py::parse_file
+
 
 # frob:ticket T-0410
 def test_parse_file_second_call_is_memo_hit(tmp_path: Path) -> None:

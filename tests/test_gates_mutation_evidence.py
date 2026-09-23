@@ -70,7 +70,8 @@ class TestMutationEvidenceViolations:
         assert len(violations) == 1
         assert violations[0].rule == "TEST016"
         assert violations[0].severity == "warn"
-# frob:tests src/frob/gates/_mutation_evidence.py::mutation_evidence_violations
+
+    # frob:tests src/frob/gates/_mutation_evidence.py::mutation_evidence_violations
 
     def test_confirmatory_finding_is_error_for_security_kind(
         self, tmp_path: Path
@@ -470,7 +471,8 @@ class TestNoBehaviorChange:
     """`_no_behavior_change_reason` (T-1616): parses `frob:no-behavior-
     change reason="..."` out of a ticket's body, same shape/precedent as
     `_bug002_waiver_reason`."""
-# frob:tests src/frob/gates/_bug_repro.py::_no_behavior_change_reason
+
+    # frob:tests src/frob/gates/_bug_repro.py::_no_behavior_change_reason
 
     def test_reason_present_recognized(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_reason_present_recognized  # noqa: E501
@@ -781,7 +783,9 @@ class TestBugReproTimeout:
         )
         assert outcome is _BugReproOutcome.FAILED_AT_PARENT
 
+
 # frob:tests src/frob/gates/_bug_repro.py::bug_repro_violations
+
 
 class TestBugReproViolations:
     def test_non_bug_kind_never_checked(self, tmp_path: Path) -> None:
@@ -1273,7 +1277,8 @@ class TestEnvAbsent:
     # frob:tests src/frob/gates/_bug_repro.py::_env_absent_vars
     """`_env_absent_vars` (T-3104): extracting `frob:env-absent
     VAR1,VAR2,...` directives from a ticket's body."""
-# frob:tests src/frob/gates/_bug_repro.py::_env_absent_vars
+
+    # frob:tests src/frob/gates/_bug_repro.py::_env_absent_vars
 
     def test_single_directive_extracted(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_single_directive_extracted  # noqa: E501

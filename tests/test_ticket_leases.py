@@ -559,7 +559,8 @@ class TestSweepWorktrees:
         assert verdicts[0].verdict == "kept:lease"
         assert "T-0900" in verdicts[0].detail
         assert wt.exists()
-# frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
+
+    # frob:tests src/frob/tickets/_worktree_sweep.py::sweep_worktrees
 
     def test_dirty_kept(self, sweep_repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept
@@ -835,7 +836,8 @@ class TestWorktreeSweepCli:
 class TestWorktreeRemoveCli:
     """`frob worktree remove PATH`'s CLI entry point (T-1779) -- the safe
     single-worktree alternative to raw `git worktree remove`."""
-# frob:tests src/frob/app/worktree_runner.py::run
+
+    # frob:tests src/frob/app/worktree_runner.py::run
 
     def test_remove_cli_removes_a_clean_unleased_worktree(
         self, sweep_repo: Path, capsys

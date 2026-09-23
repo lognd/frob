@@ -112,7 +112,8 @@ class TestTodo002Edges:
 class TestTodo001BareComment:
     """`_todo_fmt._todo001_bare_comment`: bare (non-`frob:`), untracked
     deferral-marker lines inside one parsed comment."""
-# frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
+
+    # frob:tests src/frob/gates/_todo_fmt.py::_todo001_bare_comment
 
     def test_bare_todo_fires(self) -> None:
         """A plain untracked deferral-marker comment fires TODO001 at its

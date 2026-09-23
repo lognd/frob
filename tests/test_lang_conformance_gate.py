@@ -87,7 +87,8 @@ class TestProjectLangConformanceGate:
         violations = project_lang_conformance_gate(tmp_path)
         lang002 = [v for v in violations if v.rule == "LANG002"]
         assert lang002 == []
-# frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate
+
+    # frob:tests src/frob/gates/_lang_conformance.py::project_lang_conformance_gate
 
     # frob:ticket T-0406
     def test_all_conformant_project_passes(self, tmp_path: Path) -> None:

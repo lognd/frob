@@ -103,7 +103,8 @@ class TestProfileRunnerShow:
 class TestProfileRunnerDowngrade:
     """`frob profile downgrade --reason TEXT`: the ONLY sanctioned caller
     of `downgrade_profile_ratchet`."""
-# frob:tests src/frob/app/profile_runner.py::run
+
+    # frob:tests src/frob/app/profile_runner.py::run
 
     def test_downgrade_requires_a_reason(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_profile_runner.py::TestProfileRunnerDowngrade.test_downgrade_requires_a_reason  # noqa: E501

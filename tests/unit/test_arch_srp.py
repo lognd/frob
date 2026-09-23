@@ -126,7 +126,8 @@ def _free_function(name: str, calls: list[str] | None = None) -> NormalizedFunct
 
 class TestGodModule:
     """ARCH102."""
-# frob:tests src/frob/arch/_srp.py::check_god_module
+
+    # frob:tests src/frob/arch/_srp.py::check_god_module
 
     def test_unrelated_export_clusters_trigger_god_module(self) -> None:
         functions = (
@@ -536,11 +537,12 @@ class TestArchGateSrpWiring:
 
     def test_mixed_concern_function_fires_arch103(self, tmp_path: Path) -> None:
         from frob.gates._arch import arch_gate
-# frob:tests src/frob/gates/_arch.py::arch_gate
+        # frob:tests src/frob/gates/_arch.py::arch_gate
 
         (tmp_path / "mod.py").write_text(_MIXED_CONCERN_SOURCE)
         assert [v for v in arch_gate(tmp_path) if v.rule == "ARCH103"]
-# frob:tests src/frob/gates/_arch.py::arch_gate
+
+    # frob:tests src/frob/gates/_arch.py::arch_gate
 
     def test_arch101_respects_explicit_frob_toml_override(self, tmp_path: Path) -> None:
         """A `frob.toml` `[arch] lcom4_min_methods = 100` override (well

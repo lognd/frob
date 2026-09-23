@@ -51,7 +51,8 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         assert len(until_edges) == 1
         assert until_edges[0].target == "T-0042"
         assert until_edges[0].src == "doc.md#section"
-# frob:tests src/frob/graph/dsl.py::markdown_anchors
+
+    # frob:tests src/frob/graph/dsl.py::markdown_anchors
 
     def test_negative_existence_phrase_emits_claims_absence_edge(self) -> None:
         """A "does not exist yet" line under a heading becomes a
@@ -130,7 +131,8 @@ class TestNegexist001Gate:
         assert len(violations) == 1
         assert violations[0].rule == "NEGEXIST001"
         assert "no `frob:until" in violations[0].message
-# frob:tests src/frob/gates/_negexist.py::negexist001_gate
+
+    # frob:tests src/frob/gates/_negexist.py::negexist001_gate
 
     def test_claim_bound_to_open_ticket_is_clean(self) -> None:
         """A CLAIMS_ABSENCE edge sharing its anchor with an UNTIL edge

@@ -25,7 +25,8 @@ class TestDetectorScope:
         assert is_detector_package_file("src/frob/vet/_capability_core.py")
         assert is_detector_package_file("src/frob/strata/_selfconform.py")
         assert is_detector_package_file("src/frob/check/_python.py")
-# frob:tests src/frob/gates/_detector_scope.py::DETECTOR_PACKAGE_ROOTS kind="unit"
+
+    # frob:tests src/frob/gates/_detector_scope.py::DETECTOR_PACKAGE_ROOTS kind="unit"
 
     def test_arch_is_not_a_member(self) -> None:
         """`arch/` was measured (module docstring) to construct ZERO

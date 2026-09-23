@@ -77,7 +77,8 @@ class TestDoc006FilePath:
         assert found
         assert any("gone.py" in v.message for v in found)
         assert all(v.severity == Severity.ERROR for v in found)
-# frob:tests src/frob/gates/_docptr.py::doc006_gate
+
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     def test_real_path_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -131,7 +132,8 @@ class TestDoc006DocAnchor:
         found = _by_rule(violations, "docs/guide.md")
         assert found
         assert any("nonexistent-anchor" in v.message for v in found)
-# frob:tests src/frob/gates/_docptr.py::doc006_gate
+
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     def test_real_anchor_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -165,8 +167,10 @@ class TestDoc006Cli:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", _CLI_CONFIG)
         _write(
-            tmp_path, "docs/guide.md", "Run `frob check --nonexistent-flag` first.\n"
-        # frob:tests src/frob/gates/_docptr.py::doc006_gate
+            tmp_path,
+            "docs/guide.md",
+            "Run `frob check --nonexistent-flag` first.\n",
+            # frob:tests src/frob/gates/_docptr.py::doc006_gate
         )
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
@@ -345,7 +349,8 @@ class TestDoc006Config:
     # frob:tests src/frob/gates/_docptr.py::doc006_gate
     capture `` `[x]` ``). These fixtures write the pointer as plain prose
     accordingly; a dedicated code-span-inertness test lives just below."""
-# frob:tests src/frob/gates/_docptr.py::doc006_gate
+
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     def test_bogus_section_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -564,7 +569,8 @@ class TestDoc006Symbol:
         found = _by_rule(violations, "docs/guide.md")
         assert found
         assert any("nonexistent_symbol" in v.message for v in found)
-# frob:tests src/frob/gates/_docptr.py::doc006_gate
+
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     def test_real_symbol_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -799,7 +805,8 @@ class TestDoc006FileSymbol:
         # frob:tests src/frob/gates/_docptr.py::doc006_gate
         assert found
         assert any("gone.py" in v.message for v in found)
-# frob:tests src/frob/gates/_docptr.py::doc006_gate
+
+    # frob:tests src/frob/gates/_docptr.py::doc006_gate
 
     # frob:tests src/frob/gates/_docptr.py::doc006_gate
     def test_ambiguous_basename_shorthand_not_flagged(self, tmp_path: Path) -> None:
@@ -831,7 +838,7 @@ class TestDoc006BareIdentifier:
             # frob:tests src/frob/gates/_docptr.py::doc006_gate
             "src/pkg/mod.py",
             f"# frob:doc docs/guide.md#anchor\n{module_body}",
-        # frob:tests src/frob/gates/_docptr.py::doc006_gate
+            # frob:tests src/frob/gates/_docptr.py::doc006_gate
         )
         _write(tmp_path, "docs/guide.md", f"# Anchor\n\n{doc_body}")
         # frob:tests src/frob/gates/_docptr.py::doc006_gate

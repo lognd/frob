@@ -658,7 +658,8 @@ class TestTypeScriptAdapter:
 
         restored = NormalizedModule.model_validate(module.model_dump())
         assert restored == module
-# frob:tests src/frob/arch/_typescript.py::TypeScriptAdapter
+
+    # frob:tests src/frob/arch/_typescript.py::TypeScriptAdapter
 
     # frob:tests src/frob/arch/_typescript.py::TypeScriptAdapter.adapt
     def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:
@@ -1192,7 +1193,8 @@ class TestRustAdapter:
         fn = module.functions[0]
         assert len(fn.catches) == 1
         assert fn.catches[0].exception_type == "Err"
-# frob:tests src/frob/arch/_rust.py::RustAdapter
+
+    # frob:tests src/frob/arch/_rust.py::RustAdapter
 
     # frob:tests src/frob/arch/_rust.py::RustAdapter.adapt
     def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:

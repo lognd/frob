@@ -1,5 +1,5 @@
 ---
-id: T-draft-0006b3a1
+id: T-5396
 title: 'self-model cascade: sys003/conform-eval-needle/sys_gate_zero_violations/selfconform
   x2/packs/logging-integration/scaffold_dx x2 fail on current dev tip'
 state: queued

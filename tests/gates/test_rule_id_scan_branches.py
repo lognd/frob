@@ -409,7 +409,8 @@ class TestGateRuleRegistryGate:
         found = next(v for v in matches if v.symref == "ZZZTEST030")
         assert found.severity == Severity.ERROR
         assert "not registered in _KNOWN_GATE_RULES" in found.message
-# frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
+
+    # frob:tests src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations
 
     def test_missing_src_dir_is_unresolved_not_silent_zero(
         self, tmp_path: Path

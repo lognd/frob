@@ -197,7 +197,8 @@ class TestApplyBulk:
             tmp_path / "tickets" / "archive" / "T-1002" / "ticket.md"
         ).read_text()
         assert "archived narrative" not in archived_body
-# frob:tests src/frob/narrative/_bulk.py::apply_bulk
+
+    # frob:tests src/frob/narrative/_bulk.py::apply_bulk
 
     # frob:ticket T-4697
     def test_apply_moves_live_and_archived_skips_untargeted(

@@ -104,7 +104,8 @@ class TestInv007:
 
 class TestInv008:
     """`frob:invariant ... establishes="..."` (establish-property)."""
-# frob:tests src/frob/gates/_design_invariants.py::inv008_violations
+
+    # frob:tests src/frob/gates/_design_invariants.py::inv008_violations
 
     # frob:tests tests/unit/test_design_invariants.py::TestInv008.test_missing_property_test_fires  # noqa: E501
     def test_missing_property_test_fires(self, tmp_path: Path) -> None:

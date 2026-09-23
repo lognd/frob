@@ -75,7 +75,8 @@ class TestDebtGate:
             snap, queue, current_date="2026-01-01", current_version="0.1.0"
         )
         assert not any(v.rule == "DEBT002" for v in violations)
-# frob:tests src/frob/gates/_debt_deprecated.py::debt_gate
+
+    # frob:tests src/frob/gates/_debt_deprecated.py::debt_gate
 
     def test_debt003_expired_by_date_is_reported(self, tmp_path: Path) -> None:
         # frob:tests \

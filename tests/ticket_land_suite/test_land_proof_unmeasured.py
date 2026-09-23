@@ -38,7 +38,8 @@ class TestEnforceClaimsReverifyVerdict:
         )
         assert result.is_ok
         assert not (tmp_path / "force-overrides.jsonl").exists()
-# frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict
+
+    # frob:tests src/frob/tickets/_land_finalize.py::_enforce_claims_reverify_verdict
 
     def test_deliberate_skip_is_ok_not_gated(self, tmp_path: Path) -> None:
         result = _enforce_claims_reverify_verdict(

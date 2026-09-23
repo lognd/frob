@@ -39,7 +39,8 @@ class TestPerf016:
         parsed = parse_file(_write(tmp_path, "mod.py", src)).danger_ok
         violations = loop_variant_effect_violations([parsed])
         assert any(v.rule == "PERF016" for v in violations)
-# frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations
+
+    # frob:tests src/frob/perf/_loop_variant.py::loop_variant_effect_violations
 
     def test_loop_invariant_spawn_is_not_flagged_by_perf016(
         self, tmp_path: Path

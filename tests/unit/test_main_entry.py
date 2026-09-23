@@ -430,7 +430,8 @@ class TestEnsureVenv:
     (project-scoped tool resolution, pytest collection) can still fall
     back to an active venv the same way they do when `uv run` DID launch
     this process."""
-# frob:tests src/frob/__main__.py::_ensure_ambient_virtual_env
+
+    # frob:tests src/frob/__main__.py::_ensure_ambient_virtual_env
 
     def test_sets_when_unset(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestEnsureVenv.test_sets_when_unset
@@ -590,7 +591,8 @@ class TestGroupedHelpFormatter:
             assert f"\n    {name} " in groups_section, (
                 f"{name!r} expected between the two headings"
             )
-# frob:tests src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter
+
+    # frob:tests src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter
 
     def test_non_group_verb_listed_after_also_available_directly(self) -> None:
         """A representative non-group top-level command (`scaffold`) is

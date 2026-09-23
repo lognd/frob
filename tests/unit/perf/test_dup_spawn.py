@@ -61,7 +61,8 @@ class TestPerf012DuplicateSpawn:
 
         violations = duplicate_spawn_violations([parsed])
         assert any(v.rule == "PERF012" for v in violations)
-# frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations
+
+    # frob:tests src/frob/perf/_dup_spawn.py::duplicate_spawn_violations
 
     def test_two_helpers_spawning_different_subprocess_args_is_not_flagged(
         self, tmp_path: Path

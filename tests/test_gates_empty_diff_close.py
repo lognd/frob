@@ -149,7 +149,8 @@ class TestTick014:
         assert len(violations) == 1
         assert violations[0].rule == "TICK014"
         assert "T-9001" in violations[0].message
-# frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
+
+    # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
 
     def test_feature_warns(self) -> None:
         """MUST-FIRE: the symmetric FEATURE-kind case, and the exact
@@ -187,7 +188,7 @@ class TestTick014:
             kind=TicketKind.BUG,
             tier=TicketTier.EPIC,
             body=_changed_block(" tickets/T-9004/ticket.md | 3 +"),
-        # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
+            # frob:tests src/frob/gates/_empty_diff_close.py::empty_code_diff_violations
         )
         queue = TicketQueue(tickets={t.id: t})
         assert empty_code_diff_violations(_UNUSED_ROOT, queue) == ()

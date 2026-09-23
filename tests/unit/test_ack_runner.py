@@ -52,7 +52,8 @@ class TestAckRunnerRun:
         with pytest.raises(SystemExit):
             run(cfg)
         assert "requires at least one" in caplog.text
-# frob:tests src/frob/app/ack_runner.py::run
+
+    # frob:tests src/frob/app/ack_runner.py::run
 
     def test_success_path_builds_cache_and_writes_lock(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture

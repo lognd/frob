@@ -109,7 +109,8 @@ class TestDoablePriorityOrdering:
 
 class TestSetPriority:
     """`set_priority` writes the ticket's priority field via the ledger."""
-# frob:tests src/frob/tickets/_setters.py::set_priority
+
+    # frob:tests src/frob/tickets/_setters.py::set_priority
 
     def test_updates_priority_field(self, tmp_path: Path) -> None:
         """Round-trips a priority change through `new_ticket` + `set_priority`

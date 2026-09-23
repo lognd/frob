@@ -63,7 +63,8 @@ class TestUnloggedErrorPath:
 class TestUnloggedBoundary:
     """`check_unlogged_boundary`
     (docs/modules/arch.md#logging-discipline-checks)."""
-# frob:tests src/frob/arch/_logging_checks.py::check_unlogged_boundary
+
+    # frob:tests src/frob/arch/_logging_checks.py::check_unlogged_boundary
 
     def test_public_entry_point_with_no_log_call_flagged(self) -> None:
         from frob.arch._logging_checks import check_unlogged_boundary
@@ -260,7 +261,8 @@ class TestUnhandledResult:
 class TestSwallowedException:
     """`check_swallowed_exception`
     (docs/modules/arch.md#fallibility-checks)."""
-# frob:tests src/frob/arch/_fallibility.py::check_swallowed_exception
+
+    # frob:tests src/frob/arch/_fallibility.py::check_swallowed_exception
 
     def test_bare_except_with_no_reaction_flagged(self) -> None:
         from frob.arch._fallibility import check_swallowed_exception

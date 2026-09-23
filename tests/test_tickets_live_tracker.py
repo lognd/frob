@@ -264,7 +264,8 @@ class TestLiveTrackerCitations:
         )
         _commit_all(tmp_path, "add registry")
         assert live_tracker_citations(tmp_path, "T-0605") == ()
-# frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
+
+    # frob:tests src/frob/tickets/_live_tracker.py::live_tracker_citations
 
     def test_finds_comment_waiver_ticket_attribute(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_ticket_attribute  # noqa: E501

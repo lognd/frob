@@ -163,7 +163,8 @@ class TestReclaimOrphanedSquashResidue:
         finally:
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
-# frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
+
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
 
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_clean_root_is_a_no_op kind="unit"  # noqa: E501
     def test_clean_root_is_a_no_op(self, tmp_path: Path) -> None:
@@ -177,7 +178,8 @@ class TestReclaimOrphanedSquashResidue:
 
         post = _run(["git", "status", "--porcelain"], root)
         assert post.stdout.strip() == ""
-# frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
+
+    # frob:tests src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue
 
     # frob:ticket T-2286
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_dirty_without_a_marker_is_never_reclaimed kind="unit"  # noqa: E501

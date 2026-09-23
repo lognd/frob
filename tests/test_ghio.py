@@ -167,7 +167,8 @@ class TestPreflight:
         env = result.danger_ok
         assert env.account == "acme/frob"
         assert "2.40.0" in env.gh_version
-# frob:tests src/frob/ghio.py::preflight
+
+    # frob:tests src/frob/ghio.py::preflight
 
     def test_no_gh_no_auth_no_remote_never_crashes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

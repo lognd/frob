@@ -54,7 +54,8 @@ class TestSysGate:
         sys001 = _by_rule(violations, "SYS001")
         assert len(sys001) == 1
         assert sys001[0].severity == Severity.ERROR
-# frob:tests src/frob/gates/_sys.py::sys_gate
+
+    # frob:tests src/frob/gates/_sys.py::sys_gate
 
     def test_sys001_valid(self, tmp_path: Path) -> None:
         _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
@@ -144,7 +145,8 @@ class TestSysGate:
         assert len(sys004) == 1
         assert sys004[0].file == "design/bad.strata"
         assert sys004[0].severity == Severity.ERROR
-# frob:tests src/frob/gates/_sys.py::_sys004
+
+    # frob:tests src/frob/gates/_sys.py::_sys004
 
     # frob:tests src/frob/gates/_sys.py::sys_gate
     def test_sys004_suppresses_sys001(self, tmp_path: Path) -> None:
@@ -1704,7 +1706,8 @@ class TestRenderLintGate:
         offender_hits = [v for v in hits if v.file == "src/frob/app/broken_runner.py"]
         assert len(offender_hits) == 1
         assert offender_hits[0].severity == Severity.ERROR
-# frob:tests src/frob/gates/_render_lint.py::render_lint_gate
+
+    # frob:tests src/frob/gates/_render_lint.py::render_lint_gate
 
     # frob:tests \
     # tests/gates_suite/test_sys.py::TestRenderLintGate.test_claude_hooks_dir_exempt

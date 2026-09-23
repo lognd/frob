@@ -396,7 +396,8 @@ class TestCoverageLockPlatformBackends:
     PLATFORM001-shaped fix T-2918/T-2934 applied elsewhere, closing this
     module's own former bare, unconditional `import fcntl` (which crashed
     every caller's import on Windows, not just coverage locking)."""
-# frob:tests src/frob/testing/_coverage_wait.py::CoverageLockUnavailable
+
+    # frob:tests src/frob/testing/_coverage_wait.py::CoverageLockUnavailable
 
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -29,7 +29,8 @@ class TestParseRunnerRun:
         with pytest.raises(SystemExit):
             run(cfg)
         assert "requires <tool>" in caplog.text
-# frob:tests src/frob/app/parse_runner.py::run
+
+    # frob:tests src/frob/app/parse_runner.py::run
 
     def test_unknown_tool_exits_with_error(
         self, caplog: pytest.LogCaptureFixture

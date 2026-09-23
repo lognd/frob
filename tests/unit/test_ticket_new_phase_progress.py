@@ -30,7 +30,8 @@ class TestPhaseProgress:
         start_time = time.monotonic()
         _report_phase_progress("ticket new", start_time, "a fast phase")
         assert caplog.records == []
-# frob:tests src/frob/app/ticket_runner/_new.py::_report_phase_progress
+
+    # frob:tests src/frob/app/ticket_runner/_new.py::_report_phase_progress
 
     def test_slow_run_names_the_phase(self, caplog) -> None:  # noqa: ANN001
         """A run already past the threshold logs one INFO line that names

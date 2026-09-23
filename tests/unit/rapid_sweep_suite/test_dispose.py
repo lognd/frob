@@ -436,7 +436,8 @@ class TestNormalizeIdentityFile:
 
         file = str(tmp_path / "a" / "b.py")
         assert _normalize_identity_file(tmp_path, file) == "a/b.py"
-# frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file
+
+    # frob:tests src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identity_file
 
     def test_already_relative_is_unchanged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile.test_already_relative_is_unchanged  # noqa: E501

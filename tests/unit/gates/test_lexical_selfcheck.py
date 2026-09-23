@@ -63,7 +63,8 @@ class TestLexcheck001:
         assert len(hits) == 1
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert "_bad_gate" in hits[0].message
-# frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
+
+    # frob:tests src/frob/gates/_lexical_selfcheck.py::lexical_selfcheck_gate
 
     def test_allowlisted_function_is_silent(self, tmp_path: Path) -> None:
         """The identical decider shape, at an `_ALLOWLIST`-listed (module,

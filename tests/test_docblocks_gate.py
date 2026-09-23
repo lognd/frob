@@ -528,8 +528,9 @@ class TestCliCommandTableGenerator:
     a fresh regeneration -- reuses `TestDoc005ReadmeTableDrift`'s synthetic
     `acme widget`/`acme gadget` CLI (`_fake_parser_factory`) so these
     tests never depend on frob's own live command count."""
-# frob:tests src/frob/gates/_docblocks.py::_doc005_cli_table_freshness_violations
-# frob:tests src/frob/gates/_docblocks.py::generate_cli_command_table
+
+    # frob:tests src/frob/gates/_docblocks.py::_doc005_cli_table_freshness_violations
+    # frob:tests src/frob/gates/_docblocks.py::generate_cli_command_table
 
     def test_generate_sorts_rows_across_sources(self, tmp_path: Path) -> None:
         from frob.gates._docblocks import generate_cli_command_table

@@ -759,7 +759,9 @@ def _fake_resolved(file_path: str):
         is_class=False,
     )
 
+
 # frob:tests src/frob/refactor/_transaction.py::build_plan
+
 
 class TestBuildPlan:
     # frob:tests src/frob/refactor/_transaction.py::build_plan
@@ -838,7 +840,8 @@ class TestRunRefactor:
         # frob:tests src/frob/refactor/_transaction.py::run_refactor
         assert result.is_err
         assert result.danger_err == RefactorError.DirtyWorkingTree
-# frob:tests src/frob/refactor/_transaction.py::run_refactor
+
+    # frob:tests src/frob/refactor/_transaction.py::run_refactor
 
     def test_rename_succeeds_and_commits(self, tmp_path):
         # frob:tests \
@@ -1203,6 +1206,8 @@ class TestRunRefactor:
         assert ledger_op in routed.reference_ops
         new_node_id = "src/pkg/mod.py::Greeter::salute"
         assert new_node_id in ledger_op.new_text
+
+
 # frob:tests src/frob/refactor/_verify.py::verify_import_resolution
 
 
@@ -1276,7 +1281,8 @@ class TestVerify:
         # frob:tests src/frob/refactor/_verify_exec.py::verify_pytest_collect
         assert outcome.passed is True
         assert outcome.name == "module_import"
-# frob:tests src/frob/refactor/_verify_exec.py::verify_pytest_collect
+
+    # frob:tests src/frob/refactor/_verify_exec.py::verify_pytest_collect
 
     def test_pytest_collect_reports_failure(self, tmp_path):
         # frob:tests \
@@ -1318,7 +1324,7 @@ class TestVerify:
         to collect -- this must pass-with-note, matching
         `verify_import_resolution`'s own empty-`trees` shape, not refuse."""
         from frob.refactor._verify_exec import verify_pytest_collect
-# frob:tests src/frob/refactor/_verify_exec.py::verify_check_delta
+        # frob:tests src/frob/refactor/_verify_exec.py::verify_check_delta
 
         prose = _write(tmp_path, "docs/design/notes.md", "just some prose\n")
         # frob:tests src/frob/refactor/_verify_exec.py::verify_check_delta
@@ -1494,7 +1500,8 @@ class TestGitOps:
         # frob:tests src/frob/refactor/_gitops.py::current_sha \
         assert result.is_ok
         assert result.danger_ok is False
-# frob:tests src/frob/refactor/_gitops.py::current_sha \
+
+    # frob:tests src/frob/refactor/_gitops.py::current_sha \
 
     # frob:tests src/frob/refactor/_gitops.py::current_sha frob:tests \
     # src/frob/refactor/_gitops.py::current_sha frob:tests \
@@ -1597,7 +1604,9 @@ class TestModuleToPath:
         path = module_to_path(tmp_path, "tests.sub.mod")
         assert path == tmp_path / "tests" / "sub" / "mod.py"
 
+
 # frob:tests src/frob/refactor/_resolve.py::import_roots
+
 
 # frob:ticket T-3587
 # frob:tests src/frob/refactor/_resolve.py::import_roots
@@ -1651,7 +1660,9 @@ class TestRootForPath:
         # frob:tests src/frob/refactor/_models.py::RefactorPlan.all_ops
         assert root_for_path(tmp_path, outside) is None
 
+
 # frob:tests src/frob/refactor/_models.py::RefactorPlan.all_ops
+
 
 # frob:tests src/frob/refactor/_models.py::RefactorPlan.all_ops
 class TestPlanProperties:
@@ -1704,7 +1715,9 @@ class TestBuildMoveOps:
         assert delete_op.new_text == ""
         assert "def hello" in append_op.new_text
 
+
 # frob:tests src/frob/refactor/_cli.py::add_refactor_parser
+
 
 class TestCli:
     # frob:tests src/frob/refactor/_cli.py::add_refactor_parser
@@ -1859,7 +1872,8 @@ class TestDirectiveCarrier:
     # frob:tests src/frob/refactor/_directives.py::extend_span_for_attached_directives
     """T-1199: `frob:*` directives and `frob.lock` acks move/repoint with
     a moved symbol."""
-# frob:tests src/frob/refactor/_directives.py::extend_span_for_attached_directives
+
+    # frob:tests src/frob/refactor/_directives.py::extend_span_for_attached_directives
 
     def test_attached_waiver_moves_with_symbol(self, tmp_path):
         # frob:tests \
@@ -1971,7 +1985,9 @@ class TestDirectiveCarrier:
         old_text = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
         assert "frob:waive ARCH101" not in old_text
 
+
 # frob:tests src/frob/refactor/_repointer.py::scan_pii_allowlist_carrier
+
 
 class TestRepointer:
     """T-1200: the three non-DSL reference kinds the directive carrier
@@ -2017,7 +2033,8 @@ class TestRepointer:
         )
         resolved = resolve_symbol(
             # frob:tests src/frob/refactor/_repointer.py::scan_evidence_citations
-            root, SymbolRef(module="pkg.mod", qualname="greet")
+            root,
+            SymbolRef(module="pkg.mod", qualname="greet"),
         ).danger_ok
         destination = SymbolRef(module="pkg.new", qualname="greet")
         ops, unresolved = scan_registry_citations(root, resolved, destination)
@@ -2242,7 +2259,8 @@ class TestProseCarrier:
         )
         resolved = resolve_symbol(
             # frob:tests src/frob/refactor/_prose.py::scan_doc_anchor_carriers
-            root, SymbolRef(module="pkg.mod", qualname="greet")
+            root,
+            SymbolRef(module="pkg.mod", qualname="greet"),
         ).danger_ok
         destination = SymbolRef(module="pkg.mod", qualname="hello")
         # frob:tests src/frob/refactor/_prose.py::scan_doc_anchor_carriers
@@ -2461,6 +2479,8 @@ class TestSplitReexport:
         assert "    b," in op.new_text
         assert "noqa: F401" in op.new_text
         assert op.start_line == -1
+
+
 # frob:tests src/frob/refactor/_split.py::run_split
 # frob:tests src/frob/refactor/_split.py::SplitReport.moved_symbols kind="unit"
 
@@ -2743,7 +2763,9 @@ class TestRunSplit:
         _run_chunk_verify(root, [good], run_pytest_collect=True, run_check_delta=False)
         assert captured["targets"] == [good]
 
+
 # frob:tests src/frob/refactor/_operands.py::OperandKind
+
 
 class TestOperands:
     # frob:tests src/frob/refactor/_operands.py::classify_operand
@@ -2830,8 +2852,10 @@ class TestOperands:
         assert result.is_ok
         assert result.danger_ok.is_relative_to(root / "src")
 
+
 # frob:tests src/frob/refactor/_module_resolve.py::resolve_module
 # frob:tests src/frob/refactor/_module_resolve.py::ResolvedModule
+
 
 class TestResolveModule:
     # frob:tests src/frob/refactor/_module_resolve.py::resolve_module
@@ -2866,7 +2890,9 @@ class TestResolveModule:
         assert result.is_err
         assert result.danger_err == RefactorError.UnsupportedLanguage
 
+
 # frob:tests src/frob/refactor/_module_lang.py::adapter_for
+
 
 class TestModuleLang:
     # frob:tests src/frob/refactor/_module_lang.py::adapter_for
@@ -2948,8 +2974,10 @@ class TestModuleScanPython:
         # frob:tests src/frob/refactor/_module_scan_python.py::scan_python_module_references  # noqa: E501
         resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
         ops, _aliases, _unresolved = scan_python_module_references(
-            root, resolved, ModuleRef(module="pkg.new_mod")
-        # frob:tests src/frob/refactor/_module_scan_python.py::scan_python_module_references  # noqa: E501
+            root,
+            resolved,
+            ModuleRef(module="pkg.new_mod"),
+            # frob:tests src/frob/refactor/_module_scan_python.py::scan_python_module_references  # noqa: E501
         )
         texts = {op.new_text for op in ops}
         assert "from pkg import new_mod" in texts
@@ -3213,7 +3241,9 @@ class TestBuildModulePlan:
         )
         result = build_module_plan(
             # frob:tests src/frob/refactor/_module_transaction.py::run_move_module
-            root, ModuleRef(module="pkg.old_mod"), ModuleRef(module="pkg.new_mod")
+            root,
+            ModuleRef(module="pkg.old_mod"),
+            ModuleRef(module="pkg.new_mod"),
         )
         assert result.is_ok
         plan = result.danger_ok

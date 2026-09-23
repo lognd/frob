@@ -141,7 +141,9 @@ def test_clean_dry_run_removes_nothing(repo: Path) -> None:
     assert report.dry_run is True
     assert report.count > 0
 
+
 # frob:tests src/frob/clean/_models.py::CleanReport.reclaimed_bytes
+
 
 # frob:tests tests/test_clean.py::test_clean_execute_removes_matched
 # frob:tests src/frob/clean/_core.py::clean

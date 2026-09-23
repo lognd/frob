@@ -83,7 +83,8 @@ class TestEnforceWorktreeLease:
         monkeypatch.delenv(FROB_WORKTREE_ENV, raising=False)
         _init_repo(tmp_path)
         assert enforce_worktree_lease(tmp_path).is_ok
-# frob:tests src/frob/tickets/_worktree_guard.py::enforce_worktree_lease
+
+    # frob:tests src/frob/tickets/_worktree_guard.py::enforce_worktree_lease
 
     def test_matching_worktree_passes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -580,7 +581,8 @@ class TestAgentRunnerEnv:
         out = capsys.readouterr().out
         assert f"export FROB_WORKTREE={shlex.quote(str(tmp_path.resolve()))}" in out
         assert f"export FROB_AGENT={shlex.quote('1')}" in out
-# frob:tests src/frob/app/agent_runner.py::run
+
+    # frob:tests src/frob/app/agent_runner.py::run
 
     def test_env_defaults_to_cwd(
         self,
@@ -640,7 +642,8 @@ class TestAgentEnvStdoutPurity:
     # frob:tests src/frob/app/agent_runner.py::run
     logging handlers -- and assert on every stdout line, not merely that
     the exports are present among other noise."""
-# frob:tests src/frob/app/agent_runner.py::run
+
+    # frob:tests src/frob/app/agent_runner.py::run
 
     def test_bare_eval_succeeds_with_no_filtering(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_bare_eval_succeeds_with_no_filtering  # noqa: E501

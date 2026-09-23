@@ -117,7 +117,8 @@ class TestPkg001DeclaredLongDescription:
 class TestPkg002NonDeclaredMarkdown:
     """PKG002: the same finding in a non-declared markdown file is a
     WARNING, never an error -- the MUST-STAY-QUIET severity fixture."""
-# frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate
+
+    # frob:tests src/frob/gates/_pkg_resources.py::pkg_resources_gate
 
     def test_relative_image_in_other_markdown_warns_not_errors(
         self, tmp_path: Path

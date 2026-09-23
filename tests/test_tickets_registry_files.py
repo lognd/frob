@@ -50,7 +50,8 @@ class TestRegistryFiles:
     def test_no_root_returns_default(self) -> None:
         """`registry_files(None)` returns the documented default set."""
         assert registry_files(None) == DEFAULT_REGISTRY_FILES
-# frob:tests src/frob/tickets/_registry_files.py::registry_files
+
+    # frob:tests src/frob/tickets/_registry_files.py::registry_files
 
     def test_no_frob_toml_returns_default(self, tmp_path: Path) -> None:
         """A repo root with no `frob.toml` at all falls back to default."""

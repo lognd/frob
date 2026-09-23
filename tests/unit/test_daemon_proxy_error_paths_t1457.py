@@ -138,7 +138,8 @@ class TestClassifyVersionReply:
         liveness, version = _classify_version_reply(b"not json at all\n")
         assert liveness is DaemonLiveness.Wedged
         assert version is None
-# frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply
+
+    # frob:tests src/frob/app/_daemon_proxy.py::_classify_version_reply
 
     def test_non_dict_result_is_wedged(self) -> None:
         # frob:tests \

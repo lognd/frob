@@ -74,7 +74,8 @@ class TestEffectiveMilestone:
         t = _ticket(ticket_id="T-1", milestone="1.0.0")
         queue = TicketQueue(tickets={t.id: t})
         assert effective_milestone(queue, t) == ("1.0.0", MilestoneSource.DECLARED)
-# frob:tests src/frob/tickets/_doable.py::effective_milestone
+
+    # frob:tests src/frob/tickets/_doable.py::effective_milestone
 
     def test_inherits_from_parent_story(self) -> None:
         """No own milestone, but the immediate parent (a story) has one:

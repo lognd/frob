@@ -366,9 +366,7 @@ def sync_dedupe_hook_registrations(
     if not project_settings_path.exists() or not user_settings_path.exists():
         return []
     try:
-        project_settings = json.loads(
-            project_settings_path.read_text(encoding="utf-8")
-        )
+        project_settings = json.loads(project_settings_path.read_text(encoding="utf-8"))
         user_settings = json.loads(user_settings_path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return []

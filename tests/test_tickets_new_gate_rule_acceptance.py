@@ -117,7 +117,8 @@ class TestNewGateRuleIds:
         _write_gates_source(tmp_path, _BASE_GATES_SOURCE)
         _commit_all(tmp_path, "base gates")
         assert new_gate_rule_ids(tmp_path, base_ref="main") == ()
-# frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids
+
+    # frob:tests src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids
 
     # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_unresolvable_base_ref_degrades_to_none  # noqa: E501
     def test_unresolvable_base_ref_degrades_to_none(self, tmp_path: Path) -> None:

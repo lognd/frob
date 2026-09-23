@@ -84,6 +84,8 @@ def _css_selector_text(node: Node) -> str:
     return _collapse_ws(_child_text(node))
 
 
+# frob:waive DUP002 reason="RawSymbol-constructor field list repeating, not real \
+# shared behavior with _walk_javascript.py::_const_symbol -- see T-5300"
 def _css_rule_symbol(node: Node, comment_types: frozenset[str]) -> RawSymbol:
     """A top-level `rule_set` `RawSymbol` (module docstring: always
     `SymbolKind.CLASS`, always public -- CSS has no visibility concept)."""

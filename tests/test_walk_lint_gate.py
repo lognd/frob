@@ -273,7 +273,7 @@ class TestPlatform001:
         "        raise LockUnavailable('no lock primitive on this platform')\n"
         "    yield\n"
     )
-# frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
 
     def test_warn_and_continue_fires(self) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
@@ -523,7 +523,8 @@ class TestPlatform001BareImport:
         sites = _scan_bare_restricted_imports(tree)
         assert len(sites) == 1
         assert sites[0].names == ("fcntl",)
-# frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
+
+    # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
 
     # frob:ticket T-2944
     def test_guarded_import_is_quiet(self) -> None:

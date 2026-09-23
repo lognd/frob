@@ -243,7 +243,7 @@ class TestRunBudgetedCheck:
         return CheckResult(
             path=".",
             results=[ToolResult(tool=group, exit_code=0, summary=f"{group} ok")],
-        # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
+            # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
         )
 
     def test_runs_selected_chunks_and_reports_result(
@@ -367,7 +367,8 @@ class TestRunBudgetedCheck:
         cfg = AppConfig(check_path=tmp_path, check_budget=1000)
         check_run(cfg)
         assert calls == ["g2"]
-# frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
+
+    # frob:tests src/frob/app/_check_chunking.py::_run_budgeted_check
 
     def test_clears_resume_state_once_every_group_has_run(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -35,7 +35,9 @@ def test_claim001_fires_on_unbound_never_claim(tmp_path: Path) -> None:
     assert len(violations) == 1
     assert violations[0].symref == "pkg/mod.py::parse"
 
+
 # frob:tests src/frob/gates/_claim_lint.py::claim_lint_gate
+
 
 def test_claim001_quiet_when_invariant_directive_present(tmp_path: Path) -> None:
     """Must-stay-quiet: the SAME docstring text, but WITH a

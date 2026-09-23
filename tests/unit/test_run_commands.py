@@ -58,7 +58,8 @@ class TestLoadCommands:
             ("ruff", "check", "."),
             ("pytest", "-q"),
         )
-# frob:tests src/frob/policy/_models.py::CommandEntry
+
+    # frob:tests src/frob/policy/_models.py::CommandEntry
 
     def test_single_command_entry_is_one_literal_argv(self, tmp_path):
         """A flat string array that does NOT match declared entry names is
@@ -132,6 +133,7 @@ class TestRun:
     def test_dry_run_prints_without_spawning(self, monkeypatch):
         """`--dry-run` resolves and prints the sequence without spawning
         any subprocess (asserted via a subprocess spy, not exit code)."""
+
         def fail_if_called(*args, **kwargs):
             pytest.fail("subprocess.run must not be called in --dry-run")
 

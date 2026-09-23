@@ -1002,7 +1002,8 @@ class TestWaive010Violations:
         violations = waive010_violations(snap)
         assert len(violations) == 1
         assert violations[0].rule == "WAIVE010"
-# frob:tests src/frob/gates/_waive.py::waive010_violations
+
+    # frob:tests src/frob/gates/_waive.py::waive010_violations
 
     def test_promise_phrase_with_resolved_ticket_still_warns(
         self, tmp_path: Path

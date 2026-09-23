@@ -125,7 +125,8 @@ class TestGate:
 
         violations = cve_fingerprint_scan_gate(repo)
         assert violations == ()
-# frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate
+
+    # frob:tests src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate
 
     # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_self_excluded_files_not_scanned  # noqa: E501
     def test_self_excluded_files_not_scanned(self, tmp_path: Path):

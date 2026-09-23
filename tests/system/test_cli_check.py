@@ -1142,8 +1142,9 @@ class TestGitlessTargetGateSeverity:
         out = r.stdout + r.stderr
         for gate in ("secrets_gate", "pii_structural_gate", "walk_lint_gate"):
             assert f"ERROR: {gate}: git ls-files" not in out, out
-# frob:tests src/frob/logging/logger.py::_init
-# frob:tests src/frob/logging/formatter.py::_FrobFormatter.format
+
+    # frob:tests src/frob/logging/logger.py::_init
+    # frob:tests src/frob/logging/formatter.py::_FrobFormatter.format
 
     def test_render_lint_gate_warns_not_errors_on_gitless_root(
         self, capsys, tmp_path, monkeypatch

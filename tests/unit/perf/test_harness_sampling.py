@@ -139,7 +139,8 @@ class TestHarnessSerialPoolsDecision:
         which is `!= "0"` -- `install_serial_pools()` IS called."""
         calls = self._run_with_spy(tmp_path, monkeypatch, None)
         assert calls == [True]
-# frob:tests src/frob/perf/_harness.py::main
+
+    # frob:tests src/frob/perf/_harness.py::main
 
     def test_env_one_installs_serial_pools(self, tmp_path, monkeypatch) -> None:
         """`FROB_PERF_SERIAL_POOLS=1` explicitly is `!= "0"` -- `install_
