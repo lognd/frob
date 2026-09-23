@@ -195,6 +195,7 @@ class MutationFinding(BaseModel):
     mode: str  # "delete" | "substitute"
     sys100_fired: bool
     sys101_fired: bool
+    sys101_expected: bool = True
     export_diff_fired: bool | None = None  # None: not applicable to this mode
     export_diff_expected: bool = False
     app_diff_fired: bool | None = None  # None: not applicable to this mode
@@ -210,7 +211,13 @@ class MutationFinding(BaseModel):
     @property
     def load_bearing(self) -> bool:
         """`True` iff every detector this finding is actually expected to
-        trip did trip: SYS100 always; SYS101 for a substitution; the
+        trip did trip: SYS100 always; SYS101 for a substitution UNLESS
+        `sys101_expected` is `False` (module docstring's `testsuite`
+        disclosure: that node's observed-capability set is the union of
+        everything the whole test suite legitimately does, so a
+        substituted kind is near-always already observed there and SYS101
+        is structurally blind for it -- a disclosed gap, not a failure,
+        the same shape as a deletion's `export_diff_expected`); the
         export diff and the app-manifest diff only when their own
         `_expected` flag is set (module docstring) -- a deletion whose kind
         is covered by NEITHER independent detector is still load-bearing on
@@ -218,7 +225,7 @@ class MutationFinding(BaseModel):
         if not self.sys100_fired:
             return False
         if self.mode == "substitute":
-            return self.sys101_fired
+            return self.sys101_fired or not self.sys101_expected
         seccomp_ok = not self.export_diff_expected or bool(self.export_diff_fired)
         app_ok = not self.app_diff_expected or bool(self.app_diff_fired)
         return seccomp_ok and app_ok
@@ -414,6 +421,13 @@ def _audit_one_atom(
         node, substituted, all_kinds_view
     ) or _extended_sys100_fires(node, substituted, extended_view)
     sys101_sub = _sys101_fires_for_kind(substituted, substitute_kind, all_kinds_view)
+    # `testsuite` is the one synthetic aggregate node whose observed set is
+    # the union of every capability the whole test suite legitimately
+    # exercises somewhere -- a substituted kind is therefore near-always
+    # already observed on it, so SYS101 is structurally blind for this
+    # node's substitutions (disclosed via `sys101_expected=False`, not
+    # silently accepted).
+    sys101_expected = node.id != "testsuite"
     findings.append(
         MutationFinding(
             node=node.id,
@@ -421,6 +435,7 @@ def _audit_one_atom(
             mode="substitute",
             sys100_fired=sys100_sub,
             sys101_fired=sys101_sub,
+            sys101_expected=sys101_expected,
             export_diff_fired=None,
         )
     )

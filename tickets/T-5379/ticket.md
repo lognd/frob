@@ -2,7 +2,7 @@
 id: T-5379
 title: 'test_every_may_is_load_bearing: 24 non-load-bearing ''may'' mutation findings
   on live repo design'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -43,6 +43,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
 designated_repro_test: null
 threat: null
 component: null
