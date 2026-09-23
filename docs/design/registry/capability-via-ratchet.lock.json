@@ -75,8 +75,8 @@
       "ticket": "T-2877"
     },
     "core::fs.read": {
-      "accepted_count": 42,
-      "reason": "branch-own via addition auto-accept (T-4437)"
+      "accepted_count": 43,
+      "reason": "branch-own via addition auto-accept (T-5302)"
     },
     "core::fs.write": {
       "accepted_count": 32,

@@ -2,7 +2,7 @@
 id: T-5302
 title: 'webapp rule-family scaffolding: framework detection, fixture layout, strata
   nodes'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -230,6 +230,18 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_missing_root_is_empty
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[nextjs-nextjs]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[vite-vite]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[django-django]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[flask-flask]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[fastapi-fastapi]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[rails-rails]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[laravel-laravel]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[sveltekit-sveltekit]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_positive_control[astro-astro]
+- tests/unit/test_webapp_detect.py::test_detect_frameworks_plain_python_cli_is_empty
 designated_repro_test: null
 threat: null
 component: null

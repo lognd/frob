@@ -179,14 +179,23 @@ ledger = ["src/frob/tickets/_store"]
 leases = ["src/frob/tickets/_leases.py"]
 land = ["src/frob/tickets/_land", "src/frob/app/ticket_runner/_rapid_sweep.py"]
 gates = ["src/frob/gates"]
+# T-5302: webapp/sql are shared-leaf detection utility layers (framework
+# detection, SQL literal detection) the WEBSEC/COMPLY/A11Y/SEO/WEBPERF/SQL
+# gate-rule leaves this epic adds (T-5301's reserved rule ids) all import
+# from `gates` -- same "shared leaf" role `lang` already plays, imports
+# nothing else in this table.
+webapp = ["src/frob/webapp"]
+sql = ["src/frob/sql"]
 
 [arch.layering.allow]
-app = ["lang", "land", "leases", "ledger", "gates"]
+app = ["lang", "land", "leases", "ledger", "gates", "webapp", "sql"]
 lang = []
 ledger = []
 leases = ["ledger"]
 land = ["leases", "ledger"]
-gates = ["lang"]
+gates = ["lang", "webapp", "sql"]
+webapp = []
+sql = []
 
 # T-2390 epic child (T-2437): known_keys declares this table's own
 # known-key set for GRAPHSCHEMA001 (an unknown/misspelled key,

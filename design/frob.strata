@@ -838,6 +838,13 @@ node fleet : trusted {
 // considered to own the file changes, which is a pure design-model
 // bookkeeping fix, not a code move.
 // frob:ticket T-3413
+// T-5302: adds src/frob/webapp/** (framework detection: detect_frameworks/
+// FrameworkKind, pure file-presence/content-sniff -- fs.read only, already
+// covered by this node's declared fs.read grant, no new capability) and
+// src/frob/sql/** (empty package stub, SQL rule family lands in a later
+// leaf of the T-5299 epic). Folded into `core` alongside `perf`/`policy`
+// rather than a new node: same shape (a pure-detection/pure-rule utility
+// package with no state of its own), no new effect surface.
 node core : trusted {
 
     attr interface=[
@@ -845,7 +852,7 @@ node core : trusted {
         ClonePair, CloneRegion, CollectedTests, CollectorError, CommitEntry, CoverageWaitError,
         CoverageWaitOutcome, CveError, CveRecord, CveState, DependencyGraph, DerivedArtifactStatus, Diagnostic,
         Diff, DupConfig, DupError, EdgeHit, EffectGraph, ExportsError,
-        ExportsResult, FlakeError, FuzzEnforce, FuzzError, FuzzObligation, FuzzPolicy,
+        ExportsResult, FlakeError, FrameworkKind, FuzzEnforce, FuzzError, FuzzObligation, FuzzPolicy,
         FuzzRegistry, FuzzResult, GitError, GitLogResult, HeatEntry, HeatReport,
         HitStream, Hunk, ManagedBlockStatus, ModuleExports, NativeSpec, OutlineError,
         PerfError, PolicyError, PoolError, ProcessGuardError, ProcResult, ProfileArtifact,
@@ -861,7 +868,7 @@ node core : trusted {
         changelog_skeleton_entry, check, check_ratchet, clean, collect, collect_cpp_tests,
         collect_python_tests, collect_rust_tests, collect_ts_tests, commit_stats, common_dir_and_branch, core_available,
         count_deltas, count_summary, coverage_lock_path, critical, current_branch, decay_sketch,
-        default_pool_dir, derived_state_lock, derived_state_write_lock, detect_collector_format, diff_class, dispatch_cost_report,
+        default_pool_dir, derived_state_lock, derived_state_write_lock, detect_collector_format, detect_frameworks, diff_class, dispatch_cost_report,
         drop_collection_cache, dump_all_thread_stacks, DUP001, DUP002, dup_matrix, duplicate_spawn_violations,
         evaluate_gate, excerpt, exec_enabled, exports_consumers, exports_package, extension_language,
         external_call_advisories, extra_patterns_from_config, extract_docstrings, fill_from_cache, find_clones, find_cycles,
@@ -910,7 +917,8 @@ node core : trusted {
         "src/frob/fuzz/**" "src/frob/cycle/**" "src/frob/testing/**"
         "src/frob/cve/**" "src/frob/clean/**"
         "src/frob/worktrees/**"
-        "src/frob/render/**";
+        "src/frob/render/**"
+        "src/frob/webapp/**" "src/frob/sql/**";
     may "env" via "src/frob/logging/color.py", "src/frob/perf/_harness.py", "src/frob/process/_guard.py", "src/frob/process/_lock.py", "src/frob/render/_color.py", "src/frob/testing/_runners.py";
     may "eval" via "src/frob/dup/_pipeline/_probe.py", "src/frob/fuzz/_signatures.py", "src/frob/perf/_harness.py", "src/frob/process/_lock.py";
     may "exec" via "src/frob/gitio.py", "src/frob/process/_guard.py", "src/frob/testing/_coverage_refresh.py";
@@ -953,7 +961,17 @@ node core : trusted {
     // T-4508: adds src/frob/testing/_dotnet_runner.py -- the dotnet TRX
     // read (_run_dotnet_test_process's trx_path.read_text) moved here
     // when the runner split out of _runners.py; same site, new module.
-    may "fs.read" via "src/frob/bind/__init__.py", "src/frob/cve/_parser.py", "src/frob/derived_state.py", "src/frob/docs/__init__.py", "src/frob/dup/_cache.py", "src/frob/dup/_template.py", "src/frob/excludes.py", "src/frob/fuzz/_stamp.py", "src/frob/gitio.py", "src/frob/map/__init__.py", "src/frob/outline/__init__.py", "src/frob/perf/_profile.py", "src/frob/perf/_ratchet.py", "src/frob/perf/_redundancy.py", "src/frob/perf/_rules.py", "src/frob/process/_proc_scan.py", "src/frob/process/_reap.py", "src/frob/policy/__init__.py", "src/frob/release/__init__.py", "src/frob/release/_fragments.py", "src/frob/repo_meta.py", "src/frob/scaffold/_managed.py", "src/frob/scaffold/_pool.py", "src/frob/scaffold/_skills_sync.py", "src/frob/stats/_agentic_shared.py", "src/frob/testing/_collect.py", "src/frob/testing/_collect_cpp.py", "src/frob/testing/_collect_python_cache.py", "src/frob/testing/_collect_kotlin.py", "src/frob/testing/_collect_rust.py", "src/frob/testing/_collect_shared.py", "src/frob/testing/_collect_ts.py", "src/frob/testing/_coverage_cache.py", "src/frob/testing/_coverage_refresh.py", "src/frob/testing/_coverage_wait.py", "src/frob/testing/_dotnet_runner.py", "src/frob/testing/_stability.py", "src/frob/xref/__init__.py", "src/frob/testing/_collect_csharp.py", "src/frob/testing/_runners.py", "src/frob/testing/_unity_batchmode.py", "src/frob/worktrees/_disposable_sweep.py";
+    // T-5302: adds src/frob/webapp/_detect.py -- detect_frameworks' marker/
+    // manifest reads (_read_text via Path.read_text, _has_any via
+    // Path.exists is not fs.read but the paired _manifest_mentions reads
+    // are) at lines 46 (_read_text), 53 (_has_any -- exists() only, no
+    // read, listed here to keep the whole detector-support cluster in one
+    // via-scoped grant rather than splitting hairs per line), 71
+    // (_manifest_mentions), 86 (_detect_sveltekit's own config-file read),
+    // 131 (_detect_django's manage.py read) -- SELFAUDIT001 flagged these
+    // as real, new fs.read sites this node's grant did not yet cover by
+    // filename.
+    may "fs.read" via "src/frob/bind/__init__.py", "src/frob/cve/_parser.py", "src/frob/derived_state.py", "src/frob/docs/__init__.py", "src/frob/dup/_cache.py", "src/frob/dup/_template.py", "src/frob/excludes.py", "src/frob/fuzz/_stamp.py", "src/frob/gitio.py", "src/frob/map/__init__.py", "src/frob/outline/__init__.py", "src/frob/perf/_profile.py", "src/frob/perf/_ratchet.py", "src/frob/perf/_redundancy.py", "src/frob/perf/_rules.py", "src/frob/process/_proc_scan.py", "src/frob/process/_reap.py", "src/frob/policy/__init__.py", "src/frob/release/__init__.py", "src/frob/release/_fragments.py", "src/frob/repo_meta.py", "src/frob/scaffold/_managed.py", "src/frob/scaffold/_pool.py", "src/frob/scaffold/_skills_sync.py", "src/frob/stats/_agentic_shared.py", "src/frob/testing/_collect.py", "src/frob/testing/_collect_cpp.py", "src/frob/testing/_collect_python_cache.py", "src/frob/testing/_collect_kotlin.py", "src/frob/testing/_collect_rust.py", "src/frob/testing/_collect_shared.py", "src/frob/testing/_collect_ts.py", "src/frob/testing/_coverage_cache.py", "src/frob/testing/_coverage_refresh.py", "src/frob/testing/_coverage_wait.py", "src/frob/testing/_dotnet_runner.py", "src/frob/testing/_stability.py", "src/frob/xref/__init__.py", "src/frob/testing/_collect_csharp.py", "src/frob/testing/_runners.py", "src/frob/testing/_unity_batchmode.py", "src/frob/worktrees/_disposable_sweep.py", "src/frob/webapp/_detect.py";
     // T-3029: `logging/logger.py` itself (not just `quiet.py`) reads
     // `FROB_VERBOSE`/`FROB_LOG_LEVEL` to pick its dictConfig level --
     // a real, new env.read site on the logger module.
