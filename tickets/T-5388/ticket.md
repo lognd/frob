@@ -1,5 +1,5 @@
 ---
-id: T-draft-8bb6f1dd
+id: T-5388
 title: COV006 rescue chain is O(edges x records) after T-5341 fix; full-repo self-scan
   exceeds 10 min
 state: queued

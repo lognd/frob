@@ -3059,6 +3059,10 @@ def _cov006_test_and_helper_called_names(
     test_parsed = parse_file(root / test_file)
     if test_parsed.is_err:
         return set()
+    if "::" not in edge.src:
+        # A whole-FILE `frob:tests` binding (no specific test function
+        # named) -- there is no test body to gather called-names from.
+        return set()
     test_qualname = edge.src.split("::", 1)[1]
     test_symbols = test_parsed.danger_ok.symbols
     test_sym = next(
@@ -3239,6 +3243,10 @@ def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
     if not wrapper_short_names:
         return False
 
+    if "::" not in edge.src:
+        # A whole-FILE `frob:tests` binding (no specific test function
+        # named) -- there is no test body to search for a wrapper call.
+        return False
     if test_file == target_file:
         test_symbols = target_symbols
     else:
@@ -3344,6 +3352,40 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:ticket T-5341
+def _cov006_canonical_test_edge(edge: Edge, snapshot: GraphSnapshot) -> Edge | None:
+    """`None` if `edge` is out of COV006's scope (not a TESTS edge, public
+    target, non-python target, an integration/e2e-kind edge); otherwise
+    the edge with its endpoints swapped back to the LEGACY `src`=test,
+    `target`=private-symbol shape `_cov006_edge_violation` and its three
+    rescue helpers have always assumed.
+
+    T-5341: `frob.graph.dsl._reorient_test_edge` (T-4710) canonicalizes
+    every TESTS edge to `src`=implementation symbol, `target`=test -- the
+    OPPOSITE of that legacy shape. Split out of `_cov006_edge_violation`
+    (ARCH001, T-5341) purely to keep that function under the long-function
+    threshold; still the single seam the whole rescue-chain family funnels
+    through."""
+    if edge.kind != EdgeKind.TESTS:
+        return None
+    test_edge = Edge(
+        src=edge.target,
+        kind=edge.kind,
+        target=edge.src,
+        origin=edge.origin,
+        attrs=edge.attrs,
+    )
+    target_record = snapshot.symbols.get(test_edge.target)
+    if target_record is None or target_record.public:
+        return None
+    target_file = test_edge.target.split("::", 1)[0]
+    if test_edge.attrs.get("kind") in ("integration", "e2e"):
+        return None
+    if not target_file.endswith(".py"):
+        return None
+    return test_edge
+
+
 # frob:ticket T-0598
 def _cov006_edge_violation(
     root: Path,
@@ -3352,58 +3394,56 @@ def _cov006_edge_violation(
     graph_cache: dict[tuple[str, ...], CallGraph],
 ) -> Violation | None:
     """One `frob:tests` edge's COV006 finding, or `None` if it is out of
-    scope (not a TESTS edge, public target, non-python target, an
-    integration/e2e-kind edge) or reachable by the direct closure check or
-    any of the three T-0528 rescue heuristics (`_cov006`'s per-edge body,
-    split out for ARCH001 -- T-0598)."""
+    scope (`_cov006_canonical_test_edge`) or reachable by the direct
+    closure check or any of the three T-0528 rescue heuristics (`_cov006`'s
+    per-edge body, split out for ARCH001 -- T-0598)."""
     from frob.graph.callgraph import build_call_graph, closure
 
-    if edge.kind != EdgeKind.TESTS:
+    test_edge = _cov006_canonical_test_edge(edge, snapshot)
+    if test_edge is None:
         return None
-    target_record = snapshot.symbols.get(edge.target)
-    if target_record is None or target_record.public:
-        return None
-    target_file = edge.target.split("::", 1)[0]
-    if edge.attrs.get("kind") in ("integration", "e2e"):
-        return None
-    if not target_file.endswith(".py"):
-        return None
-    test_file = edge.src.split("::", 1)[0]
+    target_file = test_edge.target.split("::", 1)[0]
+    test_file = test_edge.src.split("::", 1)[0]
     paths = (test_file,) if test_file == target_file else (test_file, target_file)
     graph = graph_cache.get(paths)
     if graph is None:
         graph = build_call_graph(root, paths)
         graph_cache[paths] = graph
-    if edge.target in closure(graph, edge.src):
+    if test_edge.target in closure(graph, test_edge.src):
         return None
-    if _cov006_public_wrapper_reachable(root, edge):
+    if _cov006_public_wrapper_reachable(root, test_edge):
         return None
-    if _cov006_implicit_dispatch_reachable(root, edge):
+    if _cov006_implicit_dispatch_reachable(root, test_edge):
         return None
-    if _cov006_third_file_reachable(root, edge):
+    if _cov006_third_file_reachable(root, test_edge):
         return None
-    _log.debug("COV006: %s -> %s has no call-graph reachability", edge.src, edge.target)
+    _log.debug(
+        "COV006: %s -> %s has no call-graph reachability",
+        test_edge.src,
+        test_edge.target,
+    )
     return Violation(
         rule="COV006",
         severity=Severity.WARN,
         file=test_file,
         line=0,
         message=(
-            f"COV006: frob:tests {edge.src} -> {edge.target} has no "
+            f"COV006: frob:tests {test_edge.src} -> {test_edge.target} has no "
             f"call-graph reachability to the bound private symbol "
             f"(frob.graph.callgraph, best-effort); confirm the test "
             f"actually exercises it, or bind a symbol it calls"
         ),
         # T-0525: symbol-exact, not file-scoped -- a COV006 finding is
-        # precisely about ONE frob:tests edge (edge.src, the test's own
-        # symref). Without this, `_match_waiver` falls back to file-scope
-        # matching (its symref-is-None branch) and a single `frob:waive
-        # COV006` comment anywhere in `test_file` silently suppresses
-        # EVERY COV006 finding in that file, including unrelated, unsound
-        # ones (verified: one waiver near one test suppressed all 7
-        # then-present COV006 findings in tests/test_gates.py). Mirrors
-        # TEST005's T-0148 precedent (see `Violation.symref`'s docstring).
-        symref=edge.src,
+        # precisely about ONE frob:tests edge (test_edge.src, the test's
+        # own symref). Without this, `_match_waiver` falls back to
+        # file-scope matching (its symref-is-None branch) and a single
+        # `frob:waive COV006` comment anywhere in `test_file` silently
+        # suppresses EVERY COV006 finding in that file, including
+        # unrelated, unsound ones (verified: one waiver near one test
+        # suppressed all 7 then-present COV006 findings in
+        # tests/test_gates.py). Mirrors TEST005's T-0148 precedent (see
+        # `Violation.symref`'s docstring).
+        symref=test_edge.src,
     )
 
 
