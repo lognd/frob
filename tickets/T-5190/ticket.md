@@ -23,6 +23,11 @@ tokens_out: null
 tokens_cache_read: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/__init__.py
+- docs/design/registry/check-coverage.yaml
+- tests/gates_suite/test_sys.py
+- tests/test_check_coverage_registry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +39,46 @@ scope_changes:
     of waiting on T-4113'
   actor: logan
   at: '2026-09-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: tests/gates_suite/test_sys.py
+  reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: tests/test_check_coverage_registry.py
+  reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: tests/gates_suite/test_sys.py
+  reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
+  actor: logan
+  at: '2026-09-22'
+- op: add
+  glob: tests/test_check_coverage_registry.py
+  reason: 17 rule ids need registering in _KNOWN_GATE_RULES + check-coverage.yaml
+  actor: logan
+  at: '2026-09-22'
 triage_changes:
 - field: sprint
   old_value: null
