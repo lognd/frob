@@ -1051,14 +1051,32 @@ def _reconcile_strip_stale_fields_cmd(root: Path, cfg: AppConfig) -> None:
     """`frob ticket reconcile --strip-stale-fields [--apply]`: report (and,
     with `--apply`, heal) T-0838's stale-extra-ledger-field anomaly --
     split out of `_reconcile_cmd` (ARCH001, T-5305) since the two anomaly
-    classes share nothing but the `reconcile` subcommand name."""
+    classes share nothing but the `reconcile` subcommand name.
+
+    T-5292: `--apply` can touch MANY ticket ids in one call (this repo's
+    own live ledger: >100 the first time this ran) -- routed through
+    `commit_full_ledger_change`, the same `archive`/`reconcile`-verb
+    precedent, so a real run never leaves the ledger dirty and silently
+    DirtyMain-blocking a concurrent `frob ticket land` the way the first
+    version of this function did (found running it for real, not caught
+    by a tmp_path-fixture test)."""
     from frob.tickets import strip_stale_fields
+    from frob.tickets._leases import commit_full_ledger_change
 
     strip_result = strip_stale_fields(root, apply=cfg.ticket_reconcile_apply)
     if strip_result.is_err:
         _log.error("ticket reconcile failed: %s", strip_result.danger_err)
         sys.exit(1)
     strip_report = strip_result.danger_ok
+    committed = commit_full_ledger_change(
+        root,
+        f"chore(tickets): reconcile stripped stale field(s) from "
+        f"{len(strip_report.stale_ticket_ids)} ticket(s)",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        _log.error("ticket reconcile failed: %s", committed.danger_err)
+        sys.exit(1)
     if strip_report.stale_ticket_ids:
         verb = "stripped" if strip_report.applied else "would strip"
         for ticket_id in strip_report.stale_ticket_ids:
@@ -1070,6 +1088,13 @@ def _reconcile_strip_stale_fields_cmd(root: Path, cfg: AppConfig) -> None:
             )
     else:
         _log.info("reconcile: no stale ledger fields found")
+    if strip_report.skipped_leased_ticket_ids:
+        _log.info(
+            "reconcile: skipped %d stale ticket(s) leased to another live "
+            "worktree, not stripped: %s",
+            len(strip_report.skipped_leased_ticket_ids),
+            list(strip_report.skipped_leased_ticket_ids),
+        )
 
 
 def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:

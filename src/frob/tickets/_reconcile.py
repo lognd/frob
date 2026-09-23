@@ -469,6 +469,7 @@ class StripStaleFieldsReport(BaseModel):
 
     stale_ticket_ids: tuple[str, ...]
     stripped_fields_by_ticket: dict[str, tuple[str, ...]]
+    skipped_leased_ticket_ids: tuple[str, ...] = ()
     applied: bool
 
 
@@ -498,7 +499,16 @@ def strip_stale_fields(
     healing: this only ever drops fields, never touches `state`/`scope`/
     any declared field, and refuses the same way `reconcile --apply` does
     if a land is in progress (`_refuse_apply_if_land_in_progress`), since
-    it writes to the same ledger those lands read."""
+    it writes to the same ledger those lands read.
+
+    T-5292: a ticket currently leased to ANOTHER live worktree is SKIPPED
+    (reported separately in `skipped_leased_ticket_ids`, never silently
+    dropped) rather than written -- `write_ticket`'s own ownership guard
+    (T-1617) already refuses a write from any checkout but the lease
+    holder, the same reason `reconcile`'s own stale-hold healing only
+    ever touches leases-LESS tickets by construction; this makes that
+    same constraint explicit here instead of surfacing as a caller-
+    visible `TicketOwnershipViolation` mid-batch."""
     guard = _refuse_apply_if_land_in_progress(root, apply=apply, wait_timeout_s=None)
     if guard.is_err:
         return Err(guard.danger_err)
@@ -507,12 +517,17 @@ def strip_stale_fields(
     if loaded.is_err:
         return Err(loaded.danger_err)
     tickets = loaded.danger_ok
+    leased_ticket_ids = frozenset(lease.ticket_id for lease in read_all_leases(root))
 
     stale_ids: list[str] = []
     stripped_by_id: dict[str, tuple[str, ...]] = {}
+    skipped_leased: list[str] = []
     for ticket_id, ticket in sorted(tickets.items()):
         extras = ticket.__pydantic_extra__
         if not extras:
+            continue
+        if ticket_id in leased_ticket_ids:
+            skipped_leased.append(ticket_id)
             continue
         stale_ids.append(ticket_id)
         stripped_by_id[ticket_id] = tuple(sorted(extras))
@@ -535,6 +550,7 @@ def strip_stale_fields(
         StripStaleFieldsReport(
             stale_ticket_ids=tuple(stale_ids),
             stripped_fields_by_ticket=stripped_by_id,
+            skipped_leased_ticket_ids=tuple(skipped_leased),
             applied=apply,
         )
     )

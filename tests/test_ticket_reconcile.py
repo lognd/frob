@@ -881,3 +881,31 @@ class TestReconcileStripStaleFields:
         result = strip_stale_fields(repo, apply=True)
         assert result.is_ok
         assert tid not in result.danger_ok.stale_ticket_ids
+
+    # frob:tests tests/test_ticket_reconcile.py::TestReconcileStripStaleFields.test_leased_ticket_is_skipped_not_written  # noqa: E501
+    def test_leased_ticket_is_skipped_not_written(self, repo: Path) -> None:
+        """T-5292 acceptance: a stale ticket currently leased to ANOTHER
+        live worktree is reported in `skipped_leased_ticket_ids`, never
+        written -- `write_ticket`'s own ownership guard (T-1617) would
+        refuse that write anyway; this makes the constraint explicit
+        instead of surfacing as a caller-visible error mid-batch."""
+        created = new_ticket(repo, _spec("Leased stale", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+        self._inject_stale_fields(repo, tid)
+
+        wt = repo.parent / "wt-leased"
+        _run(["git", "worktree", "add", "-b", "leased-elsewhere", str(wt)], repo)
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+
+        result = strip_stale_fields(repo, apply=True)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.stale_ticket_ids == ()
+        assert report.skipped_leased_ticket_ids == (tid,)
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok[tid].__pydantic_extra__

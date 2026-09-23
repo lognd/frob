@@ -1,7 +1,7 @@
 ---
 id: T-5292
 title: TICK008 flags real ledger branch/worktree fields it itself wrote
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -70,6 +70,10 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_leased_ticket_is_skipped_not_written
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_apply_strips_stale_fields
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_second_run_is_a_no_op
 designated_repro_test: null
 threat: null
 component: null
