@@ -25,6 +25,7 @@ scope:
 - .claude/hooks/_shellscan.py
 - .claude/hooks/sync-claude-config.py
 - .claude/settings.json
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +51,12 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: .claude/settings.json
+  reason: hook script, shared shellscan helper, sync manifest, registration, guide
+    section, test
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/guides/claude-hooks.md
   reason: hook script, shared shellscan helper, sync manifest, registration, guide
     section, test
   actor: logan
