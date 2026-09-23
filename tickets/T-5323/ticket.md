@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_a11y_structure.py
 - tests/fixtures/webapp/a11y1xx/structure/**
 - src/frob/gates/_a11y_gate.py
+- docs/modules/webapp-a11y-structure.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_a11y_gate.py
   reason: own the a11y gate discovery+registration for the family, T-5323
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/webapp-a11y-structure.md
+  reason: document the A11Y hook protocol, own doc file per SUBSTRATE-FANOUT brief
   actor: logan
   at: '2026-09-23'
 triage_changes:
