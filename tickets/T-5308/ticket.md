@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_websec_headers_log.py
 - tests/fixtures/webapp/websec1xx/headers_log/**
 - docs/modules/webapp-websec-headers-log.md
+- tests/unit/test_websec_headers_log.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: docs/modules/webapp-websec-headers-log.md
   reason: own doc file for the T-5308 leaf
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_websec_headers_log.py
+  reason: unit test binding frob:tests
   actor: logan
   at: '2026-09-23'
 triage_changes:
