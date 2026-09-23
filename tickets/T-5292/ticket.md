@@ -1,7 +1,7 @@
 ---
 id: T-5292
 title: TICK008 flags real ledger branch/worktree fields it itself wrote
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -25,6 +25,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/gates_suite/test_tick.py
 - src/frob/gates/_tickets_gate.py
+- src/frob/tickets/_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,14 @@ scope_changes:
     in _tickets_gate.py
   actor: logan
   at: '2026-09-22'
+- op: add
+  glob: src/frob/tickets/_reconcile.py
+  reason: T-5305's strip_stale_fields writes every stale ticket unconditionally, including
+    ones leased to another live worktree -- found while actually running it against
+    the real ledger for T-5292; needs the same leased_ticket_ids skip reconcile()'s
+    own stale-hold healing already uses
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
@@ -67,7 +76,5 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5292
-branch: t-5292
 ---
 gh run 35717833933 ubuntu Test job; re-verified on dev tip 3acf8c6b30: tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean fails -- ~35 real tickets carry unknown ledger field(s) ['branch','worktree'], gate treats as TICK008 violation on the live repo ledger itself.
