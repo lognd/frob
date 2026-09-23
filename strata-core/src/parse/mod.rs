@@ -67,40 +67,21 @@ include!("grammar_policy.rs");
 /// lives in Rust; JSON is the narrowest possible interface back to Python,
 /// keeping the grammar's only home in this file instead of duplicated in
 /// pydantic validators.
-// frob:tests \
 // strata-core/src/parse/mod.rs::tests.accepts_from_a_non_aliased_dotted_path_still_parses \
 // kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.layer_is_absent_by_default kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.parses_layer_declaration kind="unit"
-// frob:tests \
 // strata-core/src/parse/mod.rs::tests.existing_files_carry_empty_import_export_accepts_by_default \
 // kind="unit"
-// frob:tests \
 // strata-core/src/parse/mod.rs::tests.all_seven_litmus_files_still_parse_after_the_module_grammar_change kind="unit"
-// frob:tests \
 // strata-core/src/parse/mod.rs::tests.design_frob_strata_still_parses_after_the_module_grammar_change kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.empty_export_block_is_a_fully_private_module \
 // kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.parses_import_export_and_accepts kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.parses_dotted_module_name kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.parses_bare_module kind="unit"
-// frob:tests \
 // strata-core/src/parse/mod.rs::tests.existing_bare_module_files_parse_unchanged_with_no_vmodel_statements kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.vmodel_node_is_legal_before_the_module_statement \
 // kind="unit"
-// frob:tests \
 // strata-core/src/parse/mod.rs::tests.vmodel_edge_src_and_dst_are_not_resolved_at_parse_time \
 // kind="unit"
-// frob:tests \
 // strata-core/src/parse/mod.rs::tests.vmodel_node_duplicate_name_in_same_file_is_refused \
 // kind="unit"
-// frob:tests \
 // strata-core/src/parse/mod.rs::tests.vmodel_node_and_edge_attrs_default_to_empty_when_omitted \
 // kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.vmodel_node_and_edge_attrs_round_trip kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.vmodel_node_level_is_optional kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.vmodel_node_and_edge_round_trip kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.one_entity_many_architectures_both_satisfy_it \
 // kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
 pub(crate) fn parse_source_impl(text: &str) -> String {
@@ -146,6 +127,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3006
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl \
     fn one_entity_many_architectures_both_satisfy_it() {
         // must-stay-quiet: two DIFFERENT architectures, each in its own
         // file (single-file scope), both binding a module that realizes
@@ -382,6 +364,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
     fn vmodel_node_and_edge_round_trip() {
         let v = ok(r#"
             module m
@@ -401,6 +384,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
     fn vmodel_node_level_is_optional() {
         // A decision node has no level -- omitting `level` must parse.
         let v = ok(r#"module m
@@ -410,6 +394,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3044
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
     fn vmodel_node_and_edge_attrs_round_trip() {
         // T-3044 H3: the optional runnable/code_ref/reason clauses --
         // must-fire twin for the round trip actually carrying the value.
@@ -432,6 +417,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3044
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl
     fn vmodel_node_and_edge_attrs_default_to_empty_when_omitted() {
         // Must-stay-quiet twin: omitting the new clauses entirely still
         // parses, with an empty attrs object (not null, not an error) --
@@ -447,6 +433,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl
     fn vmodel_node_duplicate_name_in_same_file_is_refused() {
         let e = err(r#"
             module m
@@ -461,6 +448,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl
     fn vmodel_edge_src_and_dst_are_not_resolved_at_parse_time() {
         // Deliberate: a real V-model spans many files, so an edge naming a
         // node declared in ANOTHER file must parse fine here -- the kernel
@@ -474,6 +462,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl \
     fn vmodel_node_is_legal_before_the_module_statement() {
         // Like `entity`, a vmodel_node/vmodel_edge is pure declared spec --
         // it may appear BEFORE the module statement in the same file (a
@@ -489,6 +478,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl
     fn existing_bare_module_files_parse_unchanged_with_no_vmodel_statements() {
         // T-3042's own additive-parse regression, same guarantee as
         // T-3006's identically-named neighbor above but for THIS ticket's
@@ -505,6 +495,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-0148
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     fn parses_bare_module() {
         let v = ok("module payments");
         assert_eq!(v["name"], "payments");
@@ -513,6 +505,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
     fn parses_dotted_module_name() {
         // charter D6: `module a.b;` -- a dotted module path, degenerate
         // single-segment case is `parses_bare_module` above (unchanged).
@@ -522,6 +515,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
     fn parses_import_export_and_accepts() {
         // Planted new-syntax positive control (T-5125 acceptance
         // criterion 1): import/export/accepts all round-trip into the AST
@@ -549,6 +543,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl \
     fn empty_export_block_is_a_fully_private_module() {
         // D-M1: an absent OR empty export block both mean "fully private" --
         // this covers the explicit-but-empty spelling.
@@ -586,6 +581,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl
     fn design_frob_strata_still_parses_after_the_module_grammar_change() {
         // Acceptance criterion 3's literal positive control: the real
         // monolith (2766 lines, STRATA-MODULES.md section 2) parses
@@ -601,6 +597,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl
     fn all_seven_litmus_files_still_parse_after_the_module_grammar_change() {
         // Acceptance criterion 3, the other half: every design/litmus/*.strata
         // file (none use the new syntax) still parses cleanly.
@@ -621,6 +618,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl
     fn existing_files_carry_empty_import_export_accepts_by_default() {
         // Every pre-existing file (module system litmus: design/frob.strata
         // and all 7 design/litmus/*.strata) uses none of this new syntax,
@@ -637,6 +635,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
     fn parses_layer_declaration() {
         // D-M9: `layer N;` -- lower number is higher in the hierarchy.
         let v = ok(r#"
@@ -661,6 +660,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
     fn layer_is_absent_by_default() {
         let v = ok("module legacy");
         assert!(v["layer"].is_null());
@@ -687,6 +687,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-5125
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl
     fn accepts_from_a_non_aliased_dotted_path_still_parses() {
         // The same source, but `from` names the real dotted path instead
         // of the local alias -- legal, per D-M9's accept-by-reference rule.
@@ -700,6 +701,7 @@ mod tests {
         assert_eq!(v["nodes"][0]["accepts"][0]["from"], "platform.core");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_with_all_properties() {
         let v = ok(r#"module m
@@ -724,6 +726,7 @@ mod tests {
         assert_eq!(n["capacity"]["replicas_max"], 8);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_flow_with_all_properties() {
         let v = ok(r#"module m
@@ -747,6 +750,7 @@ mod tests {
         assert_eq!(f["transport"][0], "tls");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_percent_unit() {
         let v = ok(r#"module m
@@ -754,6 +758,7 @@ mod tests {
         assert_eq!(v["claims"][0]["limit"]["unit"], "%");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_boundary() {
         let v = ok(r#"module m
@@ -766,6 +771,7 @@ mod tests {
         assert_eq!(b["predicate"], "jwt_verified");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_assert_noflow_and_reach() {
         let v = ok(r#"module m
@@ -775,6 +781,7 @@ mod tests {
         assert_eq!(v["claims"][1]["kind"], "reach");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_assume_with_owner_and_review() {
         let v = ok(r#"module m
@@ -784,6 +791,7 @@ mod tests {
         assert_eq!(v["claims"][0]["review"], "2026-08-01");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_string_quoted_claim_id() {
         // T-0138: a discharge claim id naming a catalog obligation
@@ -796,6 +804,7 @@ mod tests {
         assert_eq!(v["claims"][0]["kind"], "noflow");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_string_quoted_claim_id_on_assume() {
         // T-0138: quoted claim id alongside the owner/review assume tail.
@@ -807,6 +816,7 @@ mod tests {
         assert_eq!(v["claims"][0]["review"], "2026-08-01");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn bare_ident_claim_id_still_parses() {
         // T-0138: the pre-existing bare-IDENT claim id form must keep
@@ -816,6 +826,7 @@ mod tests {
         assert_eq!(v["claims"][0]["id"], "c1");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unterminated_string_claim_id() {
         // T-0138: an unterminated string in the claim-id position fails
@@ -825,6 +836,7 @@ mod tests {
         assert!(e["message"].as_str().unwrap().contains("string"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source
     #[test]
     fn error_malformed_claim_id_neither_ident_nor_string() {
         // T-0138: a claim id that is neither IDENT nor STRING (e.g. a bare
@@ -834,6 +846,7 @@ mod tests {
         assert_eq!(e["line"], 2);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_code_globs_and_may_capabilities() {
         // T-0132: code=<glob> / may <capability> surface grammar.
@@ -850,6 +863,7 @@ mod tests {
         assert_eq!(n["may"][1], "fs.read:/etc/tls");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_without_code_or_may_defaults_empty() {
         // T-0132: pre-existing sources with no code/may statements must
@@ -860,6 +874,7 @@ mod tests {
         assert_eq!(n["may"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_code_requires_at_least_one_glob() {
         // T-0132: `code` is glob+, not glob*; a bare `code;` is a parse
@@ -871,6 +886,7 @@ mod tests {
         assert_eq!(e["message"], "expected code glob");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_may_requires_string_not_ident() {
         // T-0132: capability atoms are STRING-quoted; a bare ident is
@@ -882,6 +898,7 @@ mod tests {
         assert_eq!(e["message"], "expected may capability");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_carries_pii_tags() {
         // T-0154: `carries PII_TAG+` -- one or more STRING-quoted PII tags
@@ -895,6 +912,7 @@ mod tests {
         assert_eq!(n["carries"][1], "contact.phone");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_carries_pii_tags() {
         // T-0154: `carries` is also legal inside `store` -- the most
@@ -907,6 +925,7 @@ mod tests {
         assert_eq!(s["carries"][0], "identifier.email");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_store_code_globs_and_may_capabilities() {
         // T-0166: `code`/`may` are also legal inside `store` -- "component
@@ -924,6 +943,7 @@ mod tests {
         assert_eq!(s["may"][1], "exec");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_store_without_code_or_may_defaults_empty() {
         // T-0166: pre-existing store sources with no code/may statements
@@ -934,6 +954,7 @@ mod tests {
         assert_eq!(s["may"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn error_store_code_requires_at_least_one_glob() {
         // T-0166: `code` on a store is glob+, not glob*, same as `node`.
@@ -944,6 +965,7 @@ mod tests {
         assert_eq!(e["message"], "expected code glob");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn error_store_may_requires_string_not_ident() {
         // T-0166: capability atoms on a store are STRING-quoted, same as
@@ -955,6 +977,7 @@ mod tests {
         assert_eq!(e["message"], "expected may capability");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_without_carries_defaults_empty() {
         // T-0154: pre-existing sources with no `carries` statement must
@@ -964,6 +987,7 @@ mod tests {
         assert_eq!(n["carries"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn error_carries_requires_at_least_one_tag() {
         // T-0154: `carries` is tag+, not tag*; a bare `carries;` is a
@@ -975,6 +999,7 @@ mod tests {
         assert_eq!(e["message"], "expected carries pii tag");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_secret_construct() {
         // T-0136: `secret ID { issued_by ...; audience { ... }; lifetime
@@ -998,6 +1023,7 @@ mod tests {
         assert_eq!(s["revoke"]["unit"], "min");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_secret_without_revoke_or_audience() {
         // T-0136: `revoke`/`audience` are grammar-optional -- the mandatory-
@@ -1014,6 +1040,7 @@ mod tests {
         assert!(s["revoke"].is_null());
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_secret_requires_issued_by() {
         // T-0136: `issued_by` is mandatory -- a credential with no named
@@ -1025,6 +1052,7 @@ mod tests {
         assert_eq!(e["message"], "secret needs an issued_by clause");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_on_deploy_block() {
         // T-0136: `on deploy { canary { ... }; endorsed_by ...; rollback
@@ -1047,6 +1075,7 @@ mod tests {
         assert_eq!(d["rollback_budget"]["unit"], "min");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_without_on_deploy_defaults_null() {
         // T-0136: pre-existing sources with no `on deploy` block must still
@@ -1055,6 +1084,7 @@ mod tests {
         assert!(v["nodes"][0]["deploy"].is_null());
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn error_on_deploy_requires_rollback_budget() {
         // T-0136: `rollback_budget` has no default on `DeployContract`
@@ -1072,6 +1102,7 @@ mod tests {
         );
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_managed_marker() {
         // T-0172: `managed` is a bare marker on `node`, mirroring
@@ -1084,6 +1115,7 @@ mod tests {
         assert_eq!(v["nodes"][0]["is_managed"], true);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_without_managed_defaults_false() {
         // T-0172: pre-existing sources with no `managed` clause must still
@@ -1092,6 +1124,7 @@ mod tests {
         assert_eq!(v["nodes"][0]["is_managed"], false);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_managed_marker() {
         // T-0172: `store` is a node too (docs/strata/surface.md
@@ -1103,6 +1136,7 @@ mod tests {
         assert_eq!(v["stores"][0]["is_managed"], true);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_host_manifest_clauses() {
         // T-0255: std.host vocabulary -- runs_as/unit/owns/listens on a
@@ -1127,6 +1161,7 @@ mod tests {
         assert_eq!(n["listens"][1], 8443);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_without_host_manifest_defaults_empty() {
         // T-0255: pre-existing sources with no std.host clause must still
@@ -1141,6 +1176,7 @@ mod tests {
         assert_eq!(n["sudoers"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_group_and_sudoers_clauses() {
         // T-0272: std.host OS-group and sudoers-grant vocabulary on a node
@@ -1162,6 +1198,7 @@ mod tests {
         );
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_windows_host_manifest_clauses() {
         // T-0261: std.host Windows vocabulary -- platform/service_account/
@@ -1187,6 +1224,7 @@ mod tests {
         assert_eq!(n["listens"][0], 8443);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_bin_path_clause() {
         // T-0629: `bin_path "PATH" ["ARGS"]` desugars straight to
@@ -1208,6 +1246,7 @@ mod tests {
         assert!(attrs.contains(&"bin_path_args=--config C:\\ProgramData\\api\\config.yaml"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_bin_path_clause_without_args() {
         // T-0629: ARGS is optional -- `bin_path_args` is absent when omitted.
@@ -1228,6 +1267,7 @@ mod tests {
         assert!(!attrs.iter().any(|a| a.starts_with("bin_path_args=")));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_bin_path_clause() {
         // T-0629: `store` accepts the identical `bin_path` clause -- a
@@ -1249,6 +1289,7 @@ mod tests {
         assert!(attrs.contains(&"bin_path_args=--serve"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source
     #[test]
     fn parses_node_without_windows_host_manifest_defaults_empty() {
         // T-0261: pre-existing sources with no Windows std.host clause
@@ -1264,6 +1305,7 @@ mod tests {
         assert_eq!(n["pipes"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_store_windows_host_manifest_clauses() {
         // T-0261: same Windows std.host vocabulary on `store` -- a store
@@ -1286,6 +1328,7 @@ mod tests {
         assert_eq!(s["pipes"][0], "\\\\.\\pipe\\cache-control");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_host_manifest_clauses() {
         // T-0255: same std.host vocabulary on `store` -- a store is a
@@ -1307,6 +1350,7 @@ mod tests {
         assert_eq!(s["sudoers"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_group_and_sudoers_clauses() {
         // T-0272: same `group`/`sudoers` shape as `node`'s clauses on a
@@ -1325,12 +1369,14 @@ mod tests {
         );
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_module_missing() {
         let e = err("node a : trusted");
         assert_eq!(e["message"], "statement before module declaration");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_duplicate_module() {
         let e = err("module a\nmodule b");
@@ -1339,6 +1385,7 @@ mod tests {
         assert_eq!(e["col"], 1);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unknown_keyword() {
         let e = err("module a\nbogus x");
@@ -1347,30 +1394,35 @@ mod tests {
         assert_eq!(e["col"], 1);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unknown_node_property() {
         let e = err("module a\nnode n : trusted { bogus x; }");
         assert_eq!(e["message"], "unknown node property");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unknown_metric() {
         let e = err("module a\nassert c1 bound zorp x <= 1 s");
         assert!(e["message"].as_str().unwrap().contains("unknown metric"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_on_empty_input_never_panics() {
         let e = err("");
         assert_eq!(e["message"], "missing module statement");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_reports_accurate_line_col() {
         let e = err("module a\nnode n : trusted {\n  clearance ;\n}");
         assert_eq!(e["line"], 3);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn unit_slash_continues_but_stops_at_bare_ident() {
         let v = ok("module m\nflow f1 : a -> b { rate 5 req/s; }");
@@ -1379,6 +1431,7 @@ mod tests {
         assert_eq!(v2["nodes"][0]["capacity"]["rate"]["unit"], "min");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn round_trip_small_design() {
         let v = ok(r#"module payments
@@ -1394,6 +1447,7 @@ mod tests {
         assert_eq!(v["claims"].as_array().unwrap().len(), 2);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_refine_happy_path() {
         let v = ok(r#"module m
@@ -1410,6 +1464,7 @@ mod tests {
         assert_eq!(r["flows"][0]["id"], "f1");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_refine_zero_binds() {
         let e = err(r#"module m
@@ -1420,6 +1475,7 @@ mod tests {
         assert_eq!(e["message"], "refine block needs exactly one binds clause");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_refine_two_binds() {
         let e = err(r#"module m
@@ -1432,6 +1488,7 @@ mod tests {
         assert_eq!(e["message"], "refine block needs exactly one binds clause");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_refine_binds_lhs_mismatch() {
         let e = err(r#"module m
@@ -1446,12 +1503,14 @@ mod tests {
             .contains("must equal refine target"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_refine_before_module() {
         let e = err("refine api into { binds api = inner }");
         assert_eq!(e["message"], "statement before module declaration");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_with_all_properties() {
         let v = ok(r#"module m
@@ -1476,6 +1535,7 @@ mod tests {
         assert_eq!(s["append_only"], true);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_rpo() {
         let v = ok(r#"module m
@@ -1487,6 +1547,7 @@ mod tests {
         assert_eq!(s["rpo"]["unit"], "min");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_bare_store() {
         let v = ok("module m\nstore db : trusted");
@@ -1500,6 +1561,7 @@ mod tests {
         assert_eq!(s["deploy"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_store_errors_total_panics_and_observe() {
         // T-0247: store_prop now accepts the same errors_total/
@@ -1518,6 +1580,7 @@ mod tests {
         assert_eq!(s["observe"]["to"], "obs_sink");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_on_deploy() {
         // T-0247: store_prop now accepts the same `on deploy { ... }`
@@ -1536,18 +1599,21 @@ mod tests {
         assert_eq!(d["rollback_budget"]["value"], 5.0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn error_store_observe_unknown_log_property() {
         let e = err("module m\nstore db : trusted { observe { bogus x; } }");
         assert_eq!(e["message"], "unknown observe property");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unknown_store_property() {
         let e = err("module m\nstore db : trusted { bogus x; }");
         assert_eq!(e["message"], "unknown store property");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_cache_with_all_properties() {
         let v = ok(r#"module m
@@ -1571,18 +1637,21 @@ mod tests {
         assert_eq!(c["invalidate_on"][1], "f2");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_cache_ttl() {
         let v = ok("module m\ncache c of db { ttl 60 s; }");
         assert_eq!(v["caches"][0]["ttl"]["value"], 60.0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unknown_cache_property() {
         let e = err("module m\ncache c of db { bogus x; }");
         assert_eq!(e["message"], "unknown cache property");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_queue_with_all_properties() {
         let v = ok(r#"module m
@@ -1600,12 +1669,14 @@ mod tests {
         assert_eq!(q["clearance"], "Internal");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unknown_queue_property() {
         let e = err("module m\nqueue q { bogus x; }");
         assert_eq!(e["message"], "unknown queue property");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_queue_with_explicit_trust() {
         // T-0093: queue may now declare an explicit TRUST clause.
@@ -1616,6 +1687,7 @@ mod tests {
         assert_eq!(q["delivery"], "at_least_once");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_queue_without_trust_defaults_to_null() {
         // T-0093: omitting TRUST keeps parsing (backward compatible); the
@@ -1624,12 +1696,14 @@ mod tests {
         assert_eq!(v["queues"][0]["trust"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_bare_queue_with_trust() {
         let v = ok("module m\nqueue q : authenticated");
         assert_eq!(v["queues"][0]["trust"], "authenticated");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_cdn_with_all_properties() {
         let v = ok(r#"module m
@@ -1650,6 +1724,7 @@ mod tests {
         assert_eq!(c["tls_terminates_at_provider"], true);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_cdn_unlimited_staleness() {
         let v = ok(r#"module m
@@ -1658,12 +1733,14 @@ mod tests {
         assert_eq!(v["cdns"][0]["staleness"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unknown_cdn_property() {
         let e = err("module m\ncdn c of origin { bogus x; }");
         assert_eq!(e["message"], "unknown cdn property");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_balancer_with_all_properties() {
         let v = ok("module m\nbalancer b { policy round_robin; sticky; }");
@@ -1673,6 +1750,7 @@ mod tests {
         assert_eq!(b["sticky"], true);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_bare_balancer() {
         let v = ok("module m\nbalancer b");
@@ -1681,6 +1759,7 @@ mod tests {
         assert_eq!(v["balancers"][0]["trust"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_balancer_with_explicit_trust() {
         // T-0093: balancer may now declare an explicit TRUST clause.
@@ -1691,36 +1770,42 @@ mod tests {
         assert_eq!(b["policy"], "round_robin");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_bare_balancer_with_trust() {
         let v = ok("module m\nbalancer b : authenticated");
         assert_eq!(v["balancers"][0]["trust"], "authenticated");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_skew() {
         let v = ok("module m\nnode n : trusted { skew zipf 1.2; }");
         assert_eq!(v["nodes"][0]["attrs"][0], "skew=1.2");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_skew() {
         let v = ok("module m\nstore db : trusted { skew zipf 0.9; }");
         assert_eq!(v["stores"][0]["attrs"][0], "skew=0.9");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_flow_fanout() {
         let v = ok("module m\nflow f1 : a -> b { fanout 2.5; }");
         assert_eq!(v["flows"][0]["attrs"][0], "fanout=2.5");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_flow_growth() {
         let v = ok("module m\nflow f1 : a -> b { growth 5 %; }");
         assert_eq!(v["flows"][0]["attrs"][0], "growth=5");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_flow_utility() {
         // T-0226: `utility;` desugars to the bare flow attr "utility".
@@ -1728,24 +1813,28 @@ mod tests {
         assert_eq!(v["flows"][0]["attrs"][0], "utility");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_skew_requires_zipf_keyword() {
         let e = err("module m\nnode n : trusted { skew 1.2; }");
         assert_eq!(e["message"], "expected keyword \"zipf\"");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_growth_requires_percent() {
         let e = err("module m\nflow f1 : a -> b { growth 5; }");
         assert_eq!(e["message"], "expected \'%\'");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_unknown_balancer_property() {
         let e = err("module m\nbalancer b { bogus x; }");
         assert_eq!(e["message"], "unknown balancer property");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_policy_forbid_call_and_import() {
         let v = ok(r#"module m
@@ -1763,6 +1852,7 @@ mod tests {
         assert_eq!(p["rules"][1]["idents"][0], "ctypes");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_policy_confine_use() {
         let v = ok(r#"module m
@@ -1775,6 +1865,7 @@ mod tests {
         assert_eq!(r["home"], "src/api/db.py");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_policy_at_call_require_arg() {
         let v = ok(r#"module m
@@ -1787,6 +1878,7 @@ mod tests {
         assert_eq!(r["arg"], "timeout");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_policy_mediate() {
         let v = ok(r#"module m
@@ -1799,6 +1891,7 @@ mod tests {
         assert_eq!(r["mediator"], "db.py::TenantScopedSession");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_policy_enables_and_rationale() {
         let v = ok(r#"module m
@@ -1817,6 +1910,7 @@ mod tests {
         );
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_policy_label_scope() {
         let v = ok(r#"module m
@@ -1827,12 +1921,14 @@ mod tests {
         assert_eq!(v["policies"][0]["scope"]["value"], "Pii");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_policy_bare_no_rules() {
         let v = ok("module m\npolicy Empty on component Api {}");
         assert_eq!(v["policies"][0]["rules"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_policy_unknown_scope_keyword() {
         let e = err("module m\npolicy P on bogus X { forbid call eval }");
@@ -1842,24 +1938,28 @@ mod tests {
         );
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_policy_trust_scope_missing_ge() {
         let e = err("module m\npolicy P on trust trusted { forbid call eval }");
         assert_eq!(e["message"], "expected >=");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_policy_unknown_rule() {
         let e = err("module m\npolicy P on component Api { bogus x }");
         assert_eq!(e["message"], "unknown policy rule");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn error_policy_forbid_missing_call_or_import() {
         let e = err("module m\npolicy P on component Api { forbid eval }");
         assert_eq!(e["message"], "expected call or import after forbid");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn dotted_ident_list_round_trips_multiple_dots() {
         let v = ok(r#"module m
@@ -1871,6 +1971,7 @@ mod tests {
         assert_eq!(idents[1], "d");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_boundary_with_phases() {
         let v = ok(r#"module m
@@ -1896,6 +1997,7 @@ mod tests {
         assert_eq!(phases["refuse"]["frame"][0], "audit_log");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_boundary_without_phases_is_still_legal() {
         let v = ok(r#"module m
@@ -1903,6 +2005,7 @@ mod tests {
         assert!(v["boundaries"][0]["phases"].is_null());
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_operation_with_ok_and_err_frames() {
         let v = ok(r#"module m
@@ -1920,6 +2023,7 @@ mod tests {
         assert_eq!(op["atomic_via"], "LedgerDb");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_with_errors_total_panics_and_observe() {
         let v = ok(r#"module m
@@ -1936,6 +2040,7 @@ mod tests {
         assert_eq!(n["observe"]["to"], "obs_sink");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_bare_node_defaults_observability_fields() {
         let v = ok("module m\n            node api : trusted");
@@ -1945,6 +2050,7 @@ mod tests {
         assert!(n["observe"].is_null());
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn duplicate_phase_keyword_is_a_parse_error() {
         let e = err(r#"module m
@@ -1955,6 +2061,7 @@ mod tests {
         assert!(e["message"].as_str().unwrap().contains("duplicate judge"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn fuzz_safe_random_bytes_never_panic() {
         let samples = [
@@ -1972,6 +2079,7 @@ mod tests {
         }
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source
     #[test]
     fn parses_scenario_with_all_rewrite_kinds_and_nested_claims() {
         let v = ok(r#"module m
@@ -2000,6 +2108,7 @@ mod tests {
         assert_eq!(v["claims"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_bare_scenario_with_no_rewrites_or_claims() {
         let v = ok("module m\nscenario s { }");
@@ -2009,6 +2118,7 @@ mod tests {
         assert_eq!(s["claims"].as_array().unwrap().len(), 0);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn error_scenario_rejects_unknown_statement() {
         let e = err("module m\nscenario s { bogus x; }");
@@ -2018,6 +2128,7 @@ mod tests {
         );
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_scenario_trust_requires_coloneq() {
         let e = err("module m\nscenario s { trust n1 = foreign; }");
@@ -2027,6 +2138,7 @@ mod tests {
     // T-0700: `access "RESOURCE" mode MODE` node/store clause + `resource
     // ID { arbitrated_by NODE | lock "NAME" }` top-level construct.
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_access_clause() {
         let v = ok(r#"module m
@@ -2045,6 +2157,7 @@ mod tests {
         assert!(attrs.contains(&"access=cache_db:read"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_access_clause() {
         // T-0261 node/store symmetry: same `access` shape on `store`.
@@ -2062,6 +2175,7 @@ mod tests {
         assert!(attrs.contains(&"access=ledger_db:exclusive"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_all_access_modes() {
         let v = ok(r#"module m
@@ -2089,6 +2203,7 @@ mod tests {
         }
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_access_rejects_unknown_mode() {
         let e = err(r#"module m
@@ -2101,6 +2216,7 @@ mod tests {
         );
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn error_access_requires_mode_keyword() {
         let e = err(r#"module m
@@ -2110,6 +2226,7 @@ mod tests {
         assert_eq!(e["message"], "expected keyword \"mode\"");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_resource_with_arbitrated_by() {
         let v = ok(r#"module m
@@ -2123,6 +2240,7 @@ mod tests {
         assert_eq!(r["lock"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_resource_with_lock() {
         let v = ok(r#"module m
@@ -2135,6 +2253,7 @@ mod tests {
         assert_eq!(r["lock"], "ledger-lease");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_bare_resource_with_no_arbiter() {
         let v = ok("module m\nresource ledger_db");
@@ -2144,6 +2263,7 @@ mod tests {
         assert_eq!(r["lock"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source
     #[test]
     fn error_resource_rejects_both_arbitrated_by_and_lock() {
         let e = err(r#"module m
@@ -2159,6 +2279,7 @@ mod tests {
 
     // T-0702: `users NUMBER` / `rate NUMBER UNIT` entry-demand clauses.
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_users_and_rate() {
         let v = ok(r#"module m
@@ -2172,6 +2293,7 @@ mod tests {
         assert_eq!(n["rate"]["unit"], "req/s");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_without_users_or_rate_defaults_null() {
         let v = ok("module m\nnode plain : trusted { }");
@@ -2180,6 +2302,7 @@ mod tests {
         assert_eq!(n["rate"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_users_only_no_rate() {
         let v = ok("module m\nnode entry_a : trusted { users 200000; }");
@@ -2188,6 +2311,7 @@ mod tests {
         assert_eq!(n["rate"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_users_and_rate() {
         // T-0261 node/store symmetry: same `users`/`rate` shape on `store`.
@@ -2205,6 +2329,7 @@ mod tests {
     // T-2016: `growth PERCENT per PERIOD` trailing modifier on `users`/
     // `rate` (docs/strata/kernel.md#growth-rate-declarations-t-2016).
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_users_growth() {
         let v = ok(r#"module m
@@ -2218,6 +2343,7 @@ mod tests {
         assert_eq!(n["rate_growth"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_node_rate_growth() {
         let v = ok(r#"module m
@@ -2231,6 +2357,7 @@ mod tests {
         assert_eq!(n["users_growth"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source
     #[test]
     fn parses_node_users_and_rate_each_with_independent_growth() {
         let v = ok(r#"module m
@@ -2245,6 +2372,7 @@ mod tests {
         assert_eq!(n["rate_growth"]["period"], "w");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source \
     #[test]
     fn parses_node_users_without_growth_defaults_null() {
         let v = ok("module m\nnode entry_a : trusted { users 300000; }");
@@ -2253,6 +2381,7 @@ mod tests {
         assert_eq!(n["rate_growth"], serde_json::Value::Null);
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     #[test]
     fn parses_store_users_growth() {
         // T-0261 node/store symmetry: same `growth` shape on `store`.
@@ -2265,6 +2394,7 @@ mod tests {
         assert_eq!(s["users_growth"]["period"], "mo");
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source
     #[test]
     fn growth_clause_missing_percent_symbol_is_a_parse_error() {
         let e = err(r#"module m
@@ -2274,6 +2404,7 @@ mod tests {
         assert!(e["message"].as_str().unwrap().contains("expected"));
     }
 
+    // frob:tests strata-core/src/lib.rs::parse_source
     #[test]
     fn parses_node_rate_does_not_collide_with_capacity_rate() {
         // The top-level `rate` (T-0702 demand) and `capacity`'s own

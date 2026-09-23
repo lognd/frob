@@ -162,6 +162,8 @@ impl Graph {
     /// True if any cycle exists among matching edges.
     // frob:ticket T-3120
 // frob:doc docs/strata/graph.md#queries-strata-coresrcgraphqueryrs
+    // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_false_on_an_acyclic_graph
+    // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_true_on_a_planted_cycle
     pub fn has_cycle(&self, filter: &KindFilter) -> bool {
         self.find_cycle(filter).is_some()
     }
@@ -315,7 +317,6 @@ mod tests {
 
     // frob:ticket T-3120
     // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_true_on_a_planted_cycle
-    // frob:tests strata-core/src/graph/query.rs::Graph.has_cycle
     #[test]
     fn has_cycle_true_on_a_planted_cycle() {
         // T-3120: TEST001 gap -- `has_cycle` itself (not just `find_cycle`,
@@ -333,7 +334,6 @@ mod tests {
 
     // frob:ticket T-3120
     // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_false_on_an_acyclic_graph
-    // frob:tests strata-core/src/graph/query.rs::Graph.has_cycle
     #[test]
     fn has_cycle_false_on_an_acyclic_graph() {
         // T-3120: must-stay-quiet pair for the fixture above -- same node

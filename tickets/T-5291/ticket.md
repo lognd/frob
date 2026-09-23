@@ -1,7 +1,7 @@
 ---
 id: T-5291
 title: test_strata_tmlanguage.py grammar/keyword bidirectional coverage drifted
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -39,11 +39,16 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5291
+branch: t-5291
 ---
 gh run 35717833933; re-verified on dev tip 3acf8c6b30: test_construct_keywords_match_parser_bidirectionally and test_clause_keywords_covered_by_grammar both fail -- tmLanguage grammar and parser keyword sets have drifted apart.
