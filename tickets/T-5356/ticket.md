@@ -107,12 +107,18 @@ evidence:
 - tests/unit/test_webapp_websec_authz_substrate.py::TestDjango::test_owner_filtered_view_is_clean
 - tests/unit/test_webapp_websec_authz_substrate.py::TestDjango::test_unfiltered_view_is_flagged
 - tests/unit/test_webapp_websec_authz_substrate.py::TestRailsController::test_owner_filtered_action_is_clean
-- tests/unit/test_webapp_websec_authz_substrate.py::TestRails::test_unfiltered_action_is_flagged
+- tests/unit/test_webapp_websec_authz_substrate.py::TestRailsController::test_unfiltered_action_is_flagged
 - tests/unit/test_webapp_websec_authz_substrate.py::TestNonHandlerHelpersAreIgnored::test_plain_helper_is_not_flagged
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/unit/test_webapp_websec_authz_substrate.py::TestRails::test_owner_filtered_action_is_clean
   new_node: tests/unit/test_webapp_websec_authz_substrate.py::TestRailsController::test_owner_filtered_action_is_clean
+  reason: renamed TestRails -> TestRailsController when the module switched to text-based
+    scan_rails_controller
+  actor: logan
+  at: '2026-09-23'
+- old_node: tests/unit/test_webapp_websec_authz_substrate.py::TestRails::test_unfiltered_action_is_flagged
+  new_node: tests/unit/test_webapp_websec_authz_substrate.py::TestRailsController::test_unfiltered_action_is_flagged
   reason: renamed TestRails -> TestRailsController when the module switched to text-based
     scan_rails_controller
   actor: logan
