@@ -30,6 +30,7 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/webapp/_a11y_substrate.py
 - docs/modules/webapp-a11y.md
+- tests/unit/test_webapp_a11y_structure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +71,12 @@ scope_changes:
 - op: add
   glob: docs/modules/webapp-a11y.md
   reason: T-5422 residue on the substrate this leaf consumes
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_webapp_a11y_structure.py
+  reason: unit test file for the new hook module, per brief item 'test file under
+    tests/unit/'
   actor: logan
   at: '2026-09-23'
 triage_changes:
