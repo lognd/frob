@@ -39,7 +39,7 @@ scope_changes:
 - op: add
   glob: src/frob/lang/__init__.py
   reason: T-5300 landed, lease freed; fixing the unrelated walk_scss export gap the
-    same monolithic test also checks (filed as T-draft-94b73833)
+    same monolithic test also checks (filed as T-5391)
   actor: logan
   at: '2026-09-23'
 triage_changes:
