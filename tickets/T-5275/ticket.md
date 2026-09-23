@@ -1,7 +1,7 @@
 ---
 id: T-5275
 title: Wire FMT002 into gates dispatch and TIER_A_HANDLERS
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -17,6 +17,7 @@ unsized_ack_reason: null
 tokens_in: null
 tokens_out: null
 tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
@@ -39,11 +40,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+evidence:
+- tests/gates_suite/test_fix_engine.py::TestFmt002Wiring::test_fmt002_fires_through_run_gates_and_fix_is_idempotent
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5275
+branch: t-5275
 ---
 found while working T-4714: frob.gates._fmt_directives.noqa_strip_violations (FMT002) and frob.gates._fix_engine_text.fix_fmt002_noqa_strip exist and are tested, but are not yet called from anywhere -- run_gates in gates/__init__.py never collects noqa_strip_violations into the violation set, and TIER_A_HANDLERS in _fix_engine.py never registers fix_fmt002_noqa_strip. Both files were outside T-4714's declared scope. Same class of gap as T-draft-ced04135 (DSTACK001's own wiring follow-up, T-4713).

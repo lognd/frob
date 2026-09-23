@@ -138,6 +138,7 @@ from frob.gates._fmt_directives import (
     FmtChange,
     FmtReport,
     format_paths,
+    noqa_strip_violations,
 )
 from frob.gates._fuzz import fuzz_gate
 from frob.gates._gate_cache import (
@@ -9609,6 +9610,10 @@ def _assemble_gate_report(
         # docstring), so it runs alongside the other snapshot-only
         # self-checks rather than after job_violations.
         *stack_lint_violations(st.snapshot, threshold=_dstack_threshold(st.repo_root)),
+        # T-5275: FMT002 needs only `root` (it walks the tree itself,
+        # same posture as docarch001_violations above), so it runs
+        # alongside the other root-only self-checks.
+        *noqa_strip_violations(st.repo_root),
         # T-0779: stale-waiver detection needs only the snapshot's own
         # waive edges plus the merged ticket queue -- no assembled
         # violation set dependency, so it runs alongside the other WAIVE00*

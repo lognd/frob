@@ -2373,6 +2373,7 @@ class TestFixEngineTierABatch2:
             "TEST010",  # T-4710/T-5261
             "DOCARCH002",  # T-4694/T-5347
             "DSTACK001",  # T-5274
+            "FMT002",  # T-5275
         }
 
     def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
@@ -2464,6 +2465,67 @@ class TestDstack001Wiring:
             root, second_snapshot, TicketQueue(tickets={})
         )
         assert not any(a.rule == "DSTACK001" for a in second_applied)
+
+    def _snap(self, root: Path):
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+
+# frob:ticket T-5275
+class TestFmt002Wiring:
+    """FMT002 (T-5275) positive control: the rule's own lint/Tier-A-fix
+    halves already shipped and were already unit-tested (`tests/
+    test_gates_fmt_directives.py`) before this ticket, but was not
+    reachable from `run_gates` or `apply_tier_a_fixes` -- T-4714 built
+    the leaf, this ticket wires it into dispatch. Same posture as
+    `TestDstack001Wiring` immediately above: goes through the REAL
+    entry points end-to-end, not a synthetic direct call, so a reverted
+    wiring would actually fail this test."""
+
+    def _repo(self, tmp_path: Path) -> Path:
+        root = tmp_path / "repo"
+        root.mkdir()
+        _git_init(root)
+        return root
+
+    # frob:tests src/frob/gates/__init__.py::run_gates kind="unit"
+    # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"
+    def test_fmt002_fires_through_run_gates_and_fix_is_idempotent(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates import GateConfig, apply_tier_a_fixes, run_gates
+
+        root = self._repo(tmp_path)
+        # FMT002's lint half (`noqa_strip_violations`) walks git-tracked
+        # files only (`frob.excludes.iter_files`'s `git ls-files` fast
+        # path) -- the fixture must be committed, not just written.
+        _write(
+            root,
+            "src/pkg/n.py",
+            "# frob:ticket T-0001  # noqa: E501\ndef g():\n    pass\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+
+        cfg = GateConfig(root=str(root), base="main", gates=frozenset())
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert any(v.rule == "FMT002" for v in report.violations)
+
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert any(a.rule == "FMT002" for a in applied)
+
+        rewritten = (root / "src" / "pkg" / "n.py").read_text(encoding="utf-8")
+        assert "noqa" not in rewritten
+
+        # idempotent: a second pass over the already-stripped form
+        # applies nothing further for FMT002.
+        second_snapshot = self._snap(root)
+        second_applied = apply_tier_a_fixes(
+            root, second_snapshot, TicketQueue(tickets={})
+        )
+        assert not any(a.rule == "FMT002" for a in second_applied)
 
     def _snap(self, root: Path):
 

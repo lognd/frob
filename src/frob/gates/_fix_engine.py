@@ -75,6 +75,7 @@ from frob.gates._fix_engine_text import (
     fix_dstack001_merge,
     fix_e501_merge_introduced,
     fix_fmt001_directive_wrap,
+    fix_fmt002_noqa_strip,
     fix_suppress001_paired_suppression,
     fix_test010_redundant_test_declaration,
 )
@@ -1537,6 +1538,11 @@ TIER_A_HANDLERS: dict[
     # docstring for the merge shape.
     "DSTACK001": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
         fix_dstack001_merge(root, snapshot, queue, ticket_id)
+    ),
+    # T-5275: FMT002's noqa-strip fix, same pure-rewrite posture as FMT001
+    # above -- see `fix_fmt002_noqa_strip`'s own docstring.
+    "FMT002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_fmt002_noqa_strip(root)
     ),
     # T-4710/T-5261: TEST010's own redundant-production-side-frob:tests
     # shape only -- an invalid frob:tests kind= (TEST010's OTHER catch-all
