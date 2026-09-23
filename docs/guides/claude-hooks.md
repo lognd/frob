@@ -18,7 +18,10 @@ command-position regex (line start, after a shell connector, or after
 docstring names -- command-position anchoring and quoted-text exclusion --
 are built from. `strip_quoted` blanks quoted spans and heredoc bodies so a
 rule only ever matches what the shell would actually execute, never prose
-a command merely carries (commit messages, echoed strings). `segment_spans`
+a command merely carries (commit messages, echoed strings). `quoted_spans`
+returns those same spans as `(start, end)` pairs, for a rule that must keep
+a quoted argument visible but skip a match that starts inside carried text
+(`pgrep-self-match-guard.py`). `segment_spans`
 splits a command into `(start, end)` spans on its own top-level `;`, `&&`,
 `||`, `|` and newline separators, skipping ones inside quoted/heredoc text
 -- the one place that decides where one shell command ends and the next
@@ -126,6 +129,39 @@ T-3695: `_HELP_OR_DRY_RUN_RE` exempts a `--help`/`-h`/`--version`/
 it cannot exhibit the stall the guard exists to catch. Checked on the
 same quote-stripped text `PATTERN` itself scans, so a flag appearing
 only inside quoted prose does not falsely exempt a real invocation.
+
+## `pgrep-self-match-guard.py`
+
+A PreToolUse Bash hook that refuses a process-table poll whose pattern
+is a literal the command itself contains: `pgrep -f "frob check"`, or
+`ps aux | grep "frob check"` without the `[f]rob` bracket trick. The
+Claude Code harness runs every Bash call as `bash -c '<command text>'`,
+so the literal is a substring of the polling shell's own command line
+and the poll answers "still running" forever. Measured 2026-09-23
+(T-5436): 26 of about 40 live harness shells were pollers of this
+shape, 18 of them `until ! pgrep -f "<literal>"` loops written by
+implementer agents that outlived the watched command by up to 21 hours
+while the agents' turns ended waiting on them.
+
+`PGREP_LITERAL` matches `pgrep` with `-f` (alone or in a flag cluster)
+followed by a quoted or bare literal; a pattern built from a shell
+variable is invisible to pgrep as text and is allowed. `PS_GREP_LITERAL`
+matches `ps ... | grep <literal>` unless the literal opens with the
+bracket trick; a downstream `grep -v grep` is deliberately not honoured,
+because it removes the grep and not the `bash -c` shell carrying the
+text. `self_match` is the pure classifier; `main` reads the PreToolUse
+payload and emits `REASON`, which names the recipes that do not
+self-match: `pgrep -x <exe>`, a variable-assembled pattern, the bracket
+trick, or no process-table poll at all (wait on the harness task
+notification, or on a pid captured with `$!`). Loop or no loop is not
+distinguished: a one-shot `pgrep -f` gives the same wrong answer. A
+match that starts inside a quoted span or heredoc body (per
+`_shellscan.quoted_spans`) is carried text, not a poll: a commit message
+that mentions `pgrep -f`, an `echo`, or a `git grep` for the word stays
+quiet, while the poll's own quoted argument, which begins after the
+match start, stays visible. One override, `ACK_ENV`
+(`FROB_SELF_MATCH_ACK=1`), as a command prefix or an environment
+variable.
 
 ## `frob-directive-guard.py`
 

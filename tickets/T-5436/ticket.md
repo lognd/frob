@@ -1,7 +1,7 @@
 ---
-id: T-draft-9fdc1fcd
+id: T-5436
 title: 'Hook: deny self-matching pgrep -f pollers in Bash tool calls'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -68,12 +68,19 @@ scope_changes:
     section, test
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/test_hook_pgrep_self_match_guard.py::test_self_matching_polls_are_denied
+- tests/test_hook_pgrep_self_match_guard.py::test_non_self_matching_recipes_stay_quiet
+- tests/test_hook_pgrep_self_match_guard.py::test_override_prefix_and_env_allow
+- tests/test_hook_pgrep_self_match_guard.py::test_malformed_payload_is_ignored
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-9fdc1fcd
+branch: t-draft-9fdc1fcd
 ---
 Measured 2026-09-23: 26 of about 40 live harness shells were poll loops that could never exit. 18 were `until ! pgrep -f "<literal>"` / `while pgrep -f "<literal>"` loops written by implementer agents: the literal pattern appears in the polling shell's own `bash -c` command line, so pgrep always matches the poller itself. Each stayed alive for hours (one for 21 h) after the watched command finished, and the agents' turns ended "waiting" on them.
 

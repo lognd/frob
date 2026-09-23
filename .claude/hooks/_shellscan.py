@@ -49,6 +49,17 @@ _QUOTED = re.compile(
 
 
 # frob:doc docs/guides/claude-hooks.md#_shellscanpy
+# frob:tests tests/test_hook_pgrep_self_match_guard.py kind="integration"
+def quoted_spans(command: str) -> list[tuple[int, int]]:
+    """`(start, end)` of every quoted span and heredoc body in `command`,
+    for rules that must keep a quoted ARGUMENT visible (the literal a
+    `pgrep -f` is given) while still ignoring text the command merely
+    carries: a match whose start lies inside one of these spans is prose,
+    not a command."""
+    return [(m.start(), m.end()) for m in _QUOTED.finditer(command)]
+
+
+# frob:doc docs/guides/claude-hooks.md#_shellscanpy
 # frob:tests tests/test_hook_frob_suggest.py kind="integration"
 def strip_quoted(command: str) -> str:
     """`command` with quoted spans and heredoc bodies blanked to a space.

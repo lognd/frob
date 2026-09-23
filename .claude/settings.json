@@ -16,6 +16,17 @@
         ]
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/pgrep-self-match-guard.py",
+            "timeout": 10,
+            "statusMessage": "pgrep-self-match-guard"
+          }
+        ]
+      },
+      {
         "matcher": "Bash|Edit",
         "hooks": [
           {

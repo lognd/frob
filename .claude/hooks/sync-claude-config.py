@@ -121,6 +121,10 @@ MANAGED: list[tuple[str, str]] = [
         "hooks/root-cleanliness-detector.py",
     ),
     (".claude/hooks/diagnosis-nudge.py", "hooks/diagnosis-nudge.py"),
+    (
+        ".claude/hooks/pgrep-self-match-guard.py",
+        "hooks/pgrep-self-match-guard.py",
+    ),
     (".claude/hooks/dispatch-telemetry.py", "hooks/dispatch-telemetry.py"),
     ("docs/guides/agent-playbook.md", "refs/agent-playbook.md"),
 ]
