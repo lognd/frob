@@ -1,5 +1,5 @@
 ---
-id: T-draft-754e2ca4
+id: T-5344
 title: FMT001 directive-wrap Tier-A pass rewrites directive-shaped lines inside string
   literals (lexical scan, not token-based)
 state: queued
