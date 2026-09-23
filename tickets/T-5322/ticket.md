@@ -25,11 +25,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_a11y_forms_contrast.py
-- tests/fixtures/webapp/a11y1xx/**
+- tests/fixtures/webapp/a11y1xx/forms_contrast/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/a11y1xx/**
+  reason: narrow shared fixture glob to a per-leaf subdirectory so the four accessibility
+    leaves can hold concurrent leases
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/webapp/a11y1xx/forms_contrast/**
+  reason: narrow shared fixture glob to a per-leaf subdirectory so the four accessibility
+    leaves can hold concurrent leases
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
