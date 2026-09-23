@@ -14,7 +14,7 @@ tier: ticket
 sprint: ''
 runs_last: false
 milestone: 0.534.0
-points: 5
+points: 3
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -201,6 +201,12 @@ triage_changes:
   old_value: 0.535.0
   new_value: 0.534.0
   reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-23'
+- field: points
+  old_value: '5'
+  new_value: '3'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-23'
 designated_repro_test: null
