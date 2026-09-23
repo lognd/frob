@@ -8,7 +8,7 @@ created: '2026-09-22'
 priority: high
 parent: T-5140
 tier: ticket
-sprint: v0.535.0
+sprint: ''
 runs_last: false
 milestone: 0.535.0
 points: 3
@@ -93,6 +93,12 @@ triage_changes:
   old_value: 0.535.0
   new_value: 0.535.0
   reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-22'
+- field: sprint
+  old_value: v0.535.0
+  new_value: ''
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-22'
 designated_repro_test: null
