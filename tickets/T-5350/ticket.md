@@ -1,5 +1,5 @@
 ---
-id: T-draft-24793267
+id: T-5350
 title: DSTACK001 fixability tier missing from checked-in _KNOWN_RULE_FIXABILITY literal
 state: queued
 kind: bug
