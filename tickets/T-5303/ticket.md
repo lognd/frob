@@ -23,12 +23,29 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/__init__.py
 - src/frob/lang/_walk_css.py
-- tests/fixtures/lang/**
 - docs/modules/lang.md
+- tests/fixtures/lang/sample.css
+- tests/fixtures/lang/sample.scss
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/lang/**
+  reason: narrow to the two new fixtures this ticket adds
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/lang/sample.css
+  reason: narrow to the two new fixtures this ticket adds
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/lang/sample.scss
+  reason: narrow to the two new fixtures this ticket adds
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
