@@ -1,5 +1,5 @@
 ---
-id: T-draft-b8e34bbd
+id: T-5476
 title: 'vet fingerprint scan: self-exclusion regression matches its own catalog file'
 state: queued
 kind: bug
