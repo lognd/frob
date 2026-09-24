@@ -24,6 +24,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/gates/_directive_stack.py
+- frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_directive_stack.py
   reason: lower default threshold
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: frob.toml
+  reason: make dstack_threshold=2 explicit
   actor: logan
   at: '2026-09-24'
 triage_changes:
