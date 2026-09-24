@@ -29,7 +29,6 @@ scope:
 - strata-core/src/graph/model.rs
 - strata-core/src/graph/vmodel/mod.rs
 - src/frob/strata/_selfconform_models.py
-- docs/strata/vmodel.md
 - tests/unit/strata/test_vmodel_review_decision.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -71,6 +70,12 @@ scope_changes:
   glob: tests/unit/strata/test_vmodel_review_decision.py
   reason: sibling test file avoiding the test_vmodel_check.py collision with T-3010's
     live lease
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: docs/strata/vmodel.md
+  reason: collides with T-3010's live lease on this file; document review/decision-reason
+    in docs/modules/gates.md-adjacent location or defer cross-link until T-3010 lands
   actor: logan
   at: '2026-09-24'
 triage_changes:
