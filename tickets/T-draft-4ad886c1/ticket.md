@@ -2,7 +2,7 @@
 id: T-draft-4ad886c1
 title: 'frob coord status: queue, quarantine, leases vs states, worktree tiers, stale
   locks'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -21,13 +21,19 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-4ad886c1
+branch: t-draft-4ad886c1
 scope:
 - src/frob/_cli_parsers/_coord.py
 - src/frob/coord/_status.py
 - src/frob/coord/__init__.py
 - tests/unit/coord/test_status.py
+- src/frob/_cli_parsers/_root.py
+- src/frob/_cli_parsers/__init__.py
+- src/frob/__main__.py
+- docs/modules/coord.md
+- scripts/fleet_status.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +57,42 @@ scope_changes:
 - op: add
   glob: tests/unit/coord/test_status.py
   reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/_cli_parsers/_root.py
+  reason: coord stem CLI wiring mirrors agent/worktree registration + parser export
+    + dispatch, plus retiring fleet_status.py and adding strata node/docs per brief
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/_cli_parsers/__init__.py
+  reason: coord stem CLI wiring mirrors agent/worktree registration + parser export
+    + dispatch, plus retiring fleet_status.py and adding strata node/docs per brief
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/__main__.py
+  reason: coord stem CLI wiring mirrors agent/worktree registration + parser export
+    + dispatch, plus retiring fleet_status.py and adding strata node/docs per brief
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/coord.md
+  reason: coord stem CLI wiring mirrors agent/worktree registration + parser export
+    + dispatch, plus retiring fleet_status.py and adding strata node/docs per brief
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: scripts/fleet_status.py
+  reason: coord stem CLI wiring mirrors agent/worktree registration + parser export
+    + dispatch, plus retiring fleet_status.py and adding strata node/docs per brief
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: design/frob.strata
+  reason: coord stem CLI wiring mirrors agent/worktree registration + parser export
+    + dispatch, plus retiring fleet_status.py and adding strata node/docs per brief
   actor: logan
   at: '2026-09-24'
 triage_changes:
