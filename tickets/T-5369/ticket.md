@@ -27,7 +27,6 @@ worktree: null
 branch: null
 scope:
 - src/frob/doctor.py
-- docs/modules/gates.md
 - docs/guides/install.md
 - tests/unit/test_doctor.py
 scope_breadth_ack: false
@@ -39,6 +38,12 @@ scope_changes:
   glob: tests/unit/test_doctor.py
   reason: relevance test for the new lighthouse entry, per T-5324's own precedent
     test file
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: colliding with in-progress T-3068's lease; lighthouse doc lives in install.md's
+    tool paragraph per the coordinator's instruction, gates.md not strictly needed
   actor: logan
   at: '2026-09-24'
 triage_changes:
