@@ -7588,9 +7588,13 @@ Contract (identical shape to `UNRESOLVED`'s counting/rendering rules):
 
 T-5139 built `frob.doctor._RELEVANT_TOOLS`/`relevant_tool_findings`: a
 registry of external tools that serve specific gate rule ids (today:
-`cargo-audit` -> `VET005`), joined against a repo's own state (a
-`Cargo.lock` makes `cargo-audit` relevant here) to report which relevant
-tools are missing or failed. That registry landed unwired -- `src/frob/
+`cargo-audit` -> `VET005`; T-5324 adds `axe-core`/`pa11y` -> `A11Y120`,
+the dynamic-only color/contrast WCAG criteria no static tree-sitter
+query can measure), joined against a repo's own state (a `Cargo.lock`
+makes `cargo-audit` relevant; an html/jsx/vue markup surface PLUS a
+custom stylesheet makes `axe-core`/`pa11y` relevant, T-5324's
+`_axe_pa11y_relevant`) to report which relevant tools are missing or
+failed. That registry landed unwired -- `src/frob/
 check/*.py` and `src/frob/gates/__init__.py` both carried other
 tickets' live leases at T-5139's own ticket time. T-5267 does the wiring:
 
@@ -7638,6 +7642,41 @@ Not built in this ticket, disclosed rather than silently dropped: the
 dedicated CLI override flag above, and a `--json` `unmeasured[]` array
 distinct from the ordinary `violations[]` shape T-5139's design also
 named -- both need the same out-of-scope CLI/serialization surface.
+
+## Accessibility-statement content-lint (A11Y107-A11Y114, T-5324)
+
+<!-- frob:describes src/frob/webapp/_a11y_statement.py::a11y_findings -->
+<!-- frob:describes src/frob/webapp/_a11y_statement.py::_StatementSection -->
+
+`frob.webapp._a11y_statement.a11y_findings(root, frameworks)` is the
+accessibility-statement page's content-lint: given the `FrameworkKind`s
+`frob.webapp._detect.detect_frameworks` already found (T-5302), it
+locates the repo's accessibility-statement page/route and checks it
+against the W3C WAI "Developing an Accessibility Statement" guidance's
+seven required content sections -- commitment (**A11Y107**), conformance
+standard applied / WCAG 2.2 AA (**A11Y108**), contact/feedback channel
+(**A11Y109**), known limitations (**A11Y110**), measures taken
+(**A11Y111**), technical prerequisites (**A11Y112**), and tested
+environments (**A11Y113**) -- reporting one `Violation` per missing
+section. No page/route present at all reports the single precondition
+finding **A11Y114** instead of one finding per section (there is nothing
+to sniff sections out of yet).
+
+Same "single family-level findings function, gate module owns wiring"
+convention `websec_findings`/`comply_findings`-shaped siblings already
+follow (see the "catalogued is not enforced" lesson above `##Tool
+registry`): `a11y_findings` never imports `frob.gates` itself and is not
+yet called from any gate -- a sibling ticket wires the A11Y gate leaf
+to discover it, same posture T-5139's `_RELEVANT_TOOLS` landed
+reporting-only before `TOOL001`/`TOOL002` wired it in.
+
+`_RELEVANT_TOOLS` also gained two T-5324 entries this ticket:
+`axe-core`/`pa11y`, both serving **A11Y120** (WCAG's dynamic-only
+color/use-of-color and contrast criteria -- a rendered, computed color
+relationship no static tree-sitter query can measure), relevant only
+when `root` has an html/jsx/vue markup surface AND its own stylesheet
+(`frob.doctor._axe_pa11y_relevant`) -- see docs/guides/install.md's
+"Relevance-gated gate-serving tools" section for the general contract.
 
 ## Data models
 

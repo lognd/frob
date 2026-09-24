@@ -973,6 +973,65 @@ class RelevantToolFinding(BaseModel):
     detail: str = ""
 
 
+# frob:ticket T-5324
+# T-5324: an html/jsx/vue markup surface exists at all -- the same
+# shallow bounded-depth existence probe `frob.webapp._detect` style
+# checks use, kept local here (not a `frob.webapp` import) since
+# `_RELEVANT_TOOLS`'s own predicates are plain `Path -> bool` repo
+# sniffs, same posture as the `Cargo.lock` check beside it.
+def _html_or_jsx_present(root: Path) -> bool:
+    """True if `root` contains at least one `.html`/`.jsx`/`.tsx`/`.vue`
+    file, bounded to the first match found (an existence probe, never a
+    full inventory) -- axe-core/pa11y are only relevant to a repo that
+    actually ships markup for them to render and query.
+
+    frob:ticket T-5324
+    """
+    for pattern in ("*.html", "*.jsx", "*.tsx", "*.vue"):
+        try:
+            next(root.rglob(pattern))
+        except (StopIteration, OSError):
+            continue
+        return True
+    return False
+
+
+# frob:ticket T-5324
+def _color_only_criterion_in_scope(root: Path) -> bool:
+    """True if `root` ships its own stylesheet (`.css`/`.scss`), the
+    signal that WCAG's dynamic-only "use of color"/contrast criteria
+    (SC 1.4.1, 1.4.3 -- a computed, RENDERED color relationship, not a
+    static markup/AST fact `frob.webapp._a11y_substrate`'s tree-sitter
+    queries can ever see) are actually in scope for this repo: a repo
+    with no custom styling at all has no color-only-meaning surface for
+    axe-core/pa11y to catch.
+
+    frob:ticket T-5324
+    """
+    for pattern in ("*.css", "*.scss"):
+        try:
+            next(root.rglob(pattern))
+        except (StopIteration, OSError):
+            continue
+        return True
+    return False
+
+
+def _axe_pa11y_relevant(root: Path) -> bool:
+    """axe-core/pa11y are relevant to `root` only when BOTH an html/jsx/
+    vue markup surface exists AND a dynamic-only (color/contrast)
+    criterion is in scope (a repo with markup but no custom CSS has
+    nothing beyond default browser styling for a color-contrast check to
+    measure) -- the owner-decreed compound `relevant_when` this ticket's
+    body specifies, not a never-fail flag: absence when both hold is
+    still an UNMEASURED `RelevantToolFinding`, per every other
+    `_RELEVANT_TOOLS` entry's contract.
+
+    frob:ticket T-5324
+    """
+    return _html_or_jsx_present(root) and _color_only_criterion_in_scope(root)
+
+
 # frob:ticket T-5139
 # frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
 _RELEVANT_TOOLS: tuple[tuple[RelevantToolEntry, Callable[[Path], bool]], ...] = (
@@ -983,6 +1042,24 @@ _RELEVANT_TOOLS: tuple[tuple[RelevantToolEntry, Callable[[Path], bool]], ...] = 
             install_remedy="cargo install cargo-audit",
         ),
         lambda root: (root / "Cargo.lock").exists(),
+    ),
+    # frob:ticket T-5324
+    (
+        RelevantToolEntry(
+            name="axe-core",
+            rules_it_serves=("A11Y120",),
+            install_remedy="npm install --save-dev @axe-core/cli",
+        ),
+        _axe_pa11y_relevant,
+    ),
+    # frob:ticket T-5324
+    (
+        RelevantToolEntry(
+            name="pa11y",
+            rules_it_serves=("A11Y120",),
+            install_remedy="npm install --save-dev pa11y",
+        ),
+        _axe_pa11y_relevant,
     ),
 )
 

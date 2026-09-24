@@ -1,7 +1,7 @@
 ---
 id: T-5324
 title: Accessibility-statement page + axe-core/pa11y tool-registry entries
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -118,6 +118,11 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_complete_statement_is_clean
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_partial_statement_reports_missing_sections
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_missing_page_reports_single_precondition_finding
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_no_frameworks_reports_missing_page
 designated_repro_test: null
 threat: null
 component: null

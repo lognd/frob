@@ -789,6 +789,17 @@ the fuller Result-typed adapter failure taxonomy a real spawn-and-parse
 adapter reports, docs/modules/vet.md's `_osv.py::OsvQueryError` being one
 such adapter already built).
 
+T-5324 added a second `_RELEVANT_TOOLS` pair, `axe-core`/`pa11y`, both
+serving rule id `A11Y120` -- the compound `relevant_when` this ticket's
+owner decreed: an html/jsx/vue markup surface exists (`_html_or_jsx_
+present`) AND a dynamic-only, color/contrast WCAG criterion is actually
+in scope, sniffed as "this repo ships its own stylesheet at all"
+(`_color_only_criterion_in_scope`) -- a repo with markup but no custom
+CSS has nothing beyond default browser rendering for a color-contrast
+tool to measure. Same "required-for-family with relevance" posture as
+`cargo-audit`: there is no never-fail flag; an absent-and-relevant tool
+still reports the `A11Y120`-serving `RelevantToolFinding` above.
+
 `relevant_tool_findings` is reporting-only in this slice: wiring it into
 `frob check`'s loud end-of-run UNMEASURED block (exit non-zero for a
 relevant finding, `--allow-missing-tool NAME --reason` to override) is a
