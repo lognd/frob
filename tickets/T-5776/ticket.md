@@ -9,7 +9,6 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-5780
-- T-draft-76f89687
 - T-5761
 parent: T-5748
 tier: ticket
@@ -55,3 +54,6 @@ Positive control: post-audit, zero epics are both all-children-done and still op
 Doc page: docs/modules/tickets-lifecycle.md
 
 Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a3a4ea/scratchpad/LEDGER-TIERS-TREE.md (sections 2 and 5; section 5 overrides).
+
+## Unblock log
+- 2026-09-24: unblocked by T-draft-76f89687 -- 2026-09-24: dangling draft id; the land runner promoted this blocker to its real T-#### id without rewriting the edge, real-id edge re-added via frob ticket block
