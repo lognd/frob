@@ -25,6 +25,7 @@ branch: t-5633
 scope:
 - src/frob/coord/_ci_watch_poll.py
 - tests/frob/coord/test_ci_watch_poll.py
+- docs/modules/ci_validity.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,11 @@ scope_changes:
   reason: 'CI-2 own new file: coord watch''s shared poll primitive over frob.ci_validity;
     ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-draft-c099f096)
     lands and releases its lease'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/ci_validity.md
+  reason: 'CI-2: frob ci validity doc anchor for _run_validity'
   actor: logan
   at: '2026-09-24'
 triage_changes:
