@@ -45,6 +45,7 @@ helpers this family calls (`_apply_release_bump`/`_apply_gate_rule_sync`/
 from __future__ import annotations
 
 import tempfile
+import time
 from collections.abc import Callable
 from contextlib import nullcontext
 from pathlib import Path
@@ -1182,12 +1183,27 @@ def _publish_squash_apply(
 
 
 # frob:ticket T-4572
-#: T-4572: bounded retries for the ledger-only CAS-retry fast path below --
-#: after this many consecutive ledger-only sibling advances, `_fold_
-#: publish_and_resync` gives up the fast path and falls back to the
-#: ordinary full-recompose refusal (`Err(LandError.DirtyMain)`), so a
-#: pathologically busy ledger cannot spin this loop forever.
+#: T-4572: the FLOOR for the ledger-only CAS-retry fast path's bound below
+#: -- `_ledger_only_cas_retry_limit` (T-5491) never returns less
+#: than this, so a quiet repo still gets the original T-4572 guarantee.
 _LEDGER_ONLY_CAS_RETRY_LIMIT = 5
+
+# frob:ticket T-5491
+#: T-5491: the CEILING `_ledger_only_cas_retry_limit` will ever
+#: return -- even under a fleet busy enough that `tickets/**`-only sibling
+#: commits arrive every few minutes (the measured T-5326/T-5324/T-5474/
+#: T-5475 shape), the fast path must still eventually give up rather than
+#: spin forever against a ledger that never goes quiet.
+_LEDGER_ONLY_CAS_RETRY_MAX = 25
+
+# frob:ticket T-5491
+#: T-5491: sleep between ledger-only retry attempts (seconds),
+#: scaled by `min(attempt, 5)` for a capped linear backoff -- long enough
+#: that a rapid string of sibling `chore(tickets): ...` commits (T-4572's
+#: own worked example) has a real chance to go quiet between attempts,
+#: short enough that the fast path still beats a full recompose+refusal
+#: (minutes) by a wide margin even at the ceiling above.
+_LEDGER_ONLY_CAS_RETRY_BACKOFF_S = 0.5
 
 
 # frob:ticket T-4572
@@ -1225,6 +1241,7 @@ def _clean_root_on_refusal(
 
 
 # frob:ticket T-4572
+# frob:ticket T-5491
 def _refuse_cas_miss(
     root: Path,
     stage: Path,
@@ -1234,6 +1251,7 @@ def _refuse_cas_miss(
     base: str,
     candidate_sha: str,
     main_branch_name: str,
+    retry_limit: int,
 ) -> LandError:
     """Log and unwind a CAS publish that `_publish_with_ledger_only_retry`
     has given up on -- either a non-ledger-only advance, or the T-4572
@@ -1242,18 +1260,25 @@ def _refuse_cas_miss(
     `_publish_with_ledger_only_retry` (T-2214 length budget); shares the
     exact refusal shape `_fold_publish_and_resync`'s fold-failure branch
     uses (`_verified_reset_root` on `stage` plus the T-4572
-    `_clean_root_on_refusal` defensive root check)."""
+    `_clean_root_on_refusal` defensive root check).
+
+    T-5491: `retry_limit` is the ACTUAL, drift-proportional
+    bound `_publish_with_ledger_only_retry` used this call
+    (`_ledger_only_cas_retry_limit`'s return value, not the fixed T-4572
+    floor) -- the refusal message previously always cited the floor even
+    when the loop had genuinely exhausted a larger, drift-scaled bound,
+    understating how hard the fast path actually tried."""
     _log.error(
         "land: %s refused -- %s moved away from %s while this land was "
-        "composing (a sibling land published first, or the T-4572 "
-        "ledger-only fast path exhausted its %d-attempt bound), so the "
+        "composing (a sibling land published first, or the ledger-only "
+        "fast path exhausted its %d-attempt bound), so the "
         "compare-and-swap publish of %s was rejected. Nothing was "
         "overwritten and %s is untouched; re-run `frob ticket land %s "
         "--worktree ...` against the new tip",
         final_id,
         main_branch_name,
         base,
-        _LEDGER_ONLY_CAS_RETRY_LIMIT,
+        retry_limit,
         candidate_sha,
         root,
         final_id,
@@ -1263,43 +1288,148 @@ def _refuse_cas_miss(
     return LandError.DirtyMain
 
 
-# frob:ticket T-4572
-def _attempt_ledger_only_rebase(
-    root: Path, ref: str, base: str, candidate_sha: str, final_id: str, attempt: int
-) -> tuple[str, str, int] | None:
-    """One T-4572 fast-path attempt: if `ref`'s current tip is a
-    ledger-only advance over `base` (`commits_touch_only_ledger_paths`),
-    rebase `candidate_sha` onto it (`rebase_composed_commit_onto`) and
-    return the new `(base, candidate_sha, attempt + 1)` to retry the CAS
-    with; `None` if the advance is not (verifiably) ledger-only or the
-    rebase itself failed, telling `_publish_with_ledger_only_retry` to
-    give up and refuse. Split out of that function (T-2214 length
-    budget)."""
+# frob:ticket T-5491
+def _ledger_only_cas_retry_limit(root: Path, pre_land_tip: str, ref: str) -> int:
+    """T-5491: the ledger-only CAS-retry bound for THIS land,
+    scaled to how busy `ref` already is -- `max(_LEDGER_ONLY_CAS_RETRY_
+    LIMIT, sibling_commit_count)`, capped at `_LEDGER_ONLY_CAS_RETRY_MAX`.
+    `sibling_commit_count` is how many commits already separate `ref`'s
+    CURRENT tip from `pre_land_tip` at the moment this land starts
+    publishing -- a cheap, one-shot proxy for drift rate (not a live
+    rate measurement) that still fixes the T-4572 fast path's fixed
+    5-attempt bound reliably under-provisioning for a seven-agent fleet
+    landing `tickets/**`-only commits every few minutes (the measured
+    T-5326/T-5324/T-5474/T-5475 refusals: each drift was only one or two
+    commits, well under 5, so this proxy alone would not have changed
+    THEIR outcome -- the actual defect those refusals exposed is the
+    apply-failure short-circuit `_publish_with_ledger_only_retry` no
+    longer has, see that function's own docstring; this scaling is the
+    other, complementary half of this ticket's fix for busier repos)."""
     tip = _rev_parse(root, ref)
     if tip.is_err:
-        return None
+        return _LEDGER_ONLY_CAS_RETRY_LIMIT
     current = tip.danger_ok
+    if current == pre_land_tip:
+        return _LEDGER_ONLY_CAS_RETRY_LIMIT
+    counted = run_argv(
+        ("git", "-C", str(root), "rev-list", "--count", f"{pre_land_tip}..{current}")
+    )
+    if counted.is_err or counted.danger_ok.returncode != 0:
+        return _LEDGER_ONLY_CAS_RETRY_LIMIT
+    try:
+        sibling_commit_count = int(counted.danger_ok.stdout.strip())
+    except ValueError:
+        return _LEDGER_ONLY_CAS_RETRY_LIMIT
+    limit = min(
+        _LEDGER_ONLY_CAS_RETRY_MAX,
+        max(_LEDGER_ONLY_CAS_RETRY_LIMIT, sibling_commit_count),
+    )
+    _log.info(
+        "land: ledger-only CAS retry limit for %s..%s: %d sibling commit(s) "
+        "already observed -> bound=%d",
+        pre_land_tip,
+        current,
+        sibling_commit_count,
+        limit,
+    )
+    return limit
+
+
+# frob:ticket T-4572
+# frob:ticket T-5491
+def _attempt_ledger_only_rebase(
+    root: Path, ref: str, base: str, candidate_sha: str, final_id: str, attempt: int
+) -> tuple[str, tuple[str, str] | None]:
+    """One T-4572 fast-path attempt: if `ref`'s current tip is a
+    ledger-only advance over `base` (`commits_touch_only_ledger_paths`),
+    rebase `candidate_sha` onto it (`rebase_composed_commit_onto`).
+
+    T-5491: returns a `(outcome, payload)` pair distinguishing
+    WHY a retry did not advance -- `"not_ledger_only"` (the advance is
+    not verifiably ledger-only: give up, no amount of retrying changes
+    this) from `"apply_failed"` (the sibling WAS ledger-only, but this
+    land's own composed diff conflicts with it at the text level -- e.g.
+    both sides touch the same `tickets/<id>/ticket.md`, the measured
+    T-5326 refusal shape, `/tmp/land-T-5464.log` ~line 39087: `patch
+    failed: tickets/T-5467/ticket.md:12`). The prior boolean/`None`
+    return collapsed both into "give up", so `_publish_with_ledger_only_
+    retry` refused on the FIRST apply conflict even when its own log
+    line claimed the attempt bound was exhausted -- it had tried once.
+    `"apply_failed"` is instead WORTH RETRYING: `ref` can keep moving
+    (the conflicting sibling commit is not necessarily the newest one),
+    and a later tip may no longer conflict with this land's diff even
+    though it is layered onto MORE ledger-only commits, not fewer.
+    `payload` is `(new_base, new_candidate_sha)` only for a genuine
+    advance (`"advanced"`); `None` otherwise."""
+    tip = _rev_parse(root, ref)
+    if tip.is_err:
+        return "not_ledger_only", None
+    current = tip.danger_ok
+    if current == base:
+        # T-5491: ref has not moved since the last attempt --
+        # nothing new to retry against yet, distinct from a genuine
+        # apply conflict (which DID observe a fresh tip and still
+        # failed); the caller backs off before trying again either way.
+        return "apply_failed", None
     ledger_only = commits_touch_only_ledger_paths(root, base, current)
     if ledger_only.is_err or not ledger_only.danger_ok:
-        return None
+        return "not_ledger_only", None
     rebased = rebase_composed_commit_onto(root, base, candidate_sha, current)
     if rebased.is_err:
-        return None
-    attempt += 1
+        _log.warning(
+            "land: %s ledger-only rebase attempt %d against %s (base %s) "
+            "did not apply cleanly (%s) -- will retry against %s's next "
+            "tip rather than giving up on the first conflict",
+            final_id,
+            attempt + 1,
+            current,
+            base,
+            rebased.danger_err,
+            ref,
+        )
+        return "apply_failed", None
     _log.info(
         "land: %s CAS miss against a ledger-only advance (%s -> %s, "
-        "attempt %d/%d) -- rebasing the composed commit and retrying the "
+        "attempt %d) -- rebasing the composed commit and retrying the "
         "publish without re-running gates or the composed-tree check",
         final_id,
         base,
         current,
-        attempt,
-        _LEDGER_ONLY_CAS_RETRY_LIMIT,
+        attempt + 1,
     )
-    return current, rebased.danger_ok, attempt
+    return "advanced", (current, rebased.danger_ok)
 
 
 # frob:ticket T-4572
+# frob:ticket T-5491
+# frob:ticket T-5491
+def _publish_retry_step(
+    root: Path,
+    ref: str,
+    base: str,
+    candidate_sha: str,
+    final_id: str,
+    attempt: int,
+) -> tuple[bool, str, str]:
+    """One iteration body of `_publish_with_ledger_only_retry`'s loop
+    (T-5491, ARCH001 split): calls `_attempt_ledger_only_
+    rebase`, sleeps the capped backoff for an `"apply_failed"` outcome
+    (RETRYABLE -- the conflicting sibling commit is not necessarily
+    `ref`'s newest, a later tip may not conflict), and returns `(should_
+    continue, base, candidate_sha)` -- `should_continue=False` for
+    `"not_ledger_only"`, the one outcome no amount of retrying resolves."""
+    outcome, advanced = _attempt_ledger_only_rebase(
+        root, ref, base, candidate_sha, final_id, attempt
+    )
+    if outcome == "advanced":
+        assert advanced is not None
+        return True, advanced[0], advanced[1]
+    if outcome == "apply_failed":
+        time.sleep(_LEDGER_ONLY_CAS_RETRY_BACKOFF_S * min(attempt + 1, 5))
+        return True, base, candidate_sha
+    return False, base, candidate_sha
+
+
 def _publish_with_ledger_only_retry(
     root: Path,
     stage: Path,
@@ -1316,20 +1446,40 @@ def _publish_with_ledger_only_retry(
     (`_attempt_ledger_only_rebase`) -- or `Err(LandError.DirtyMain)` once
     every retry option is exhausted; see that helper's own docstring for
     the fast path's precondition and `_refuse_cas_miss` for the refusal
-    shape."""
+    shape.
+
+    T-5491: two changes to the T-4572 loop, both measured
+    against the same refusal shape (`/tmp/land-T-5464.log` lines 39087/
+    56253, `/tmp/land-T-5324.log`): (1) the attempt bound is now
+    `_ledger_only_cas_retry_limit`'s drift-proportional value, computed
+    ONCE at loop entry, not the fixed T-4572 floor; (2) an `"apply_
+    failed"` outcome from `_attempt_ledger_only_rebase` (this land's own
+    diff conflicts with a genuinely ledger-only sibling's content) now
+    RETRIES, via `_publish_retry_step`, instead of immediately refusing.
+    Only `"not_ledger_only"` (a real code-touching advance) still refuses
+    on the very first observation -- that outcome can never resolve
+    itself by waiting."""
+    retry_limit = _ledger_only_cas_retry_limit(root, pre_land_tip, ref)
     base = pre_land_tip
     attempt = 0
     while True:
         published = publish_ref_cas(root, ref, base, candidate_sha)
         if published.is_ok:
+            if attempt:
+                _log.info(
+                    "land: %s CAS publish succeeded after %d ledger-only "
+                    "retry attempt(s)",
+                    final_id,
+                    attempt,
+                )
             return Ok((base, candidate_sha))
 
-        if attempt < _LEDGER_ONLY_CAS_RETRY_LIMIT:
-            retried = _attempt_ledger_only_rebase(
+        if attempt < retry_limit:
+            should_continue, base, candidate_sha = _publish_retry_step(
                 root, ref, base, candidate_sha, final_id, attempt
             )
-            if retried is not None:
-                base, candidate_sha, attempt = retried
+            attempt += 1
+            if should_continue:
                 continue
 
         return Err(
@@ -1341,6 +1491,7 @@ def _publish_with_ledger_only_retry(
                 base=base,
                 candidate_sha=candidate_sha,
                 main_branch_name=main_branch_name,
+                retry_limit=retry_limit,
             )
         )
 

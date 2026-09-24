@@ -22,12 +22,17 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from typani.result import Err, Ok
 
 from frob.tickets._land_compose import (
+    LandComposeError,
     commits_touch_only_ledger_paths,
     rebase_composed_commit_onto,
 )
-from frob.tickets._land_squash import _fold_publish_and_resync
+from frob.tickets._land_squash import (
+    _attempt_ledger_only_rebase,
+    _fold_publish_and_resync,
+)
 from frob.tickets._models import LandError, Origin, Ticket, TicketKind, TicketState
 
 
@@ -317,3 +322,182 @@ class TestFoldPublishAndResync:
         porcelain = _run(["git", "status", "--porcelain"], scratch_repo).stdout
         assert porcelain == ""
         _run(["git", "worktree", "remove", "--force", str(stage)], scratch_repo)
+
+    # frob:ticket T-5491
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_with_ledger_only_retry kind="unit"  # noqa: E501
+    def test_apply_conflict_against_one_ledger_only_sibling_still_lands_after_a_second(
+        self, scratch_repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """BUG002 repro (T-5491): the FIRST CAS-miss retry
+        attempt's rebase fails to apply cleanly against a genuinely
+        ledger-only sibling (a text conflict, not a code touch), and the
+        SECOND attempt -- against a later sibling tip -- applies cleanly.
+        At `dev` (before this fix), `_attempt_ledger_only_rebase`'s
+        boolean/`None` return could not distinguish "apply conflict,
+        worth retrying" from "not ledger-only, give up", so
+        `_publish_with_ledger_only_retry` refused with `DirtyMain` after
+        exactly the FIRST failed rebase, never reaching the second,
+        applicable tip. At the fix, the apply conflict retries and the
+        publish succeeds on the second attempt. Mocked at the
+        `publish_ref_cas`/`rebase_composed_commit_onto`/`_rev_parse`
+        boundary (not real git) so this test exercises the SAME
+        orchestration code path `_fold_publish_and_resync` drives,
+        deterministically, without depending on git's own conflict
+        heuristics to reproduce a specific two-attempt sequence."""
+        import frob.tickets._land_squash as land_squash
+
+        old_tip = _run(["git", "rev-parse", "HEAD"], scratch_repo).stdout.strip()
+        tip_after_sibling_one = "sibling1" * 5
+        tip_after_sibling_two = "sibling2" * 5
+        candidate_sha = "composed" * 5
+        rebased_sha = "rebased0" * 5
+
+        rev_parse_calls = iter([tip_after_sibling_one, tip_after_sibling_two])
+        monkeypatch.setattr(
+            land_squash,
+            "_rev_parse",
+            lambda root, ref: Ok(next(rev_parse_calls)),
+        )
+        # T-5491: bypass the drift-proportional bound's own
+        # real `_rev_parse`/`rev-list` call entirely -- this test only
+        # cares about the two-attempt apply-conflict-then-advance
+        # sequence below, not the bound's own git-shelled-out logic
+        # (covered separately).
+        monkeypatch.setattr(
+            land_squash,
+            "_ledger_only_cas_retry_limit",
+            lambda root, pre_land_tip, ref: land_squash._LEDGER_ONLY_CAS_RETRY_LIMIT,
+        )
+        monkeypatch.setattr(
+            land_squash,
+            "commits_touch_only_ledger_paths",
+            lambda root, base, current: Ok(True),
+        )
+        rebase_calls = iter([Err(LandComposeError.ComposeFailed), Ok(rebased_sha)])
+        monkeypatch.setattr(
+            land_squash,
+            "rebase_composed_commit_onto",
+            lambda root, base, sha, new_base: next(rebase_calls),
+        )
+        publish_calls = iter(
+            [
+                Err(LandComposeError.ComposeFailed),
+                Err(LandComposeError.ComposeFailed),
+                Ok(None),
+            ]
+        )
+        monkeypatch.setattr(
+            land_squash,
+            "publish_ref_cas",
+            lambda root, ref, base, sha: next(publish_calls),
+        )
+        monkeypatch.setattr(land_squash.time, "sleep", lambda seconds: None)
+
+        result = land_squash._publish_with_ledger_only_retry(
+            scratch_repo,
+            scratch_repo,
+            "refs/heads/main",
+            old_tip,
+            candidate_sha,
+            "T-9999",
+            "main",
+        )
+
+        assert result.is_ok
+        assert result.danger_ok == (tip_after_sibling_two, rebased_sha)
+
+    # frob:ticket T-5491
+    # frob:tests src/frob/tickets/_land_squash.py::_publish_with_ledger_only_retry kind="unit"  # noqa: E501
+    def test_dev_advances_by_ledger_only_commit_between_compose_and_publish_lands(
+        self, scratch_repo: Path
+    ) -> None:
+        """Positive control (T-5491 acceptance): dev advances by
+        a `tickets/**`-only commit strictly BETWEEN this land's own
+        compose and its publish attempt -- the exact T-5326/T-5324/
+        T-5474/T-5475 shape (a `chore(tickets): points ...`/`mirror scope
+        ...` sibling commit racing a land's own compose). The land must
+        still publish on the first `_fold_publish_and_resync` call, never
+        surfacing `DirtyMain` to the caller."""
+        stage, pre_land_tip = self._stage_with_composed_change(scratch_repo)
+        # Simulates a sibling agent's `frob ticket points`/`scope --add`
+        # mirror commit landing on dev while THIS land's own compose was
+        # still running in `stage` -- by the time `_fold_publish_and_
+        # resync` runs, `scratch_repo` (dev) has already moved.
+        _commit_file(
+            scratch_repo,
+            "tickets/T-5470/ticket.md",
+            "id: T-5470\npoints: 5\n",
+            "chore(tickets): points T-5470",
+        )
+
+        result = _fold_publish_and_resync(
+            scratch_repo,
+            stage,
+            _ticket(),
+            "T-9999",
+            pre_land_tip=pre_land_tip,
+            main_branch_name="main",
+        )
+
+        assert result.is_ok
+        landed_code = _run(["git", "show", "main:code.py"], scratch_repo).stdout
+        assert landed_code == "x = 42\n"
+        landed_ledger = _run(
+            ["git", "show", "main:tickets/T-5470/ticket.md"], scratch_repo
+        ).stdout
+        assert landed_ledger == "id: T-5470\npoints: 5\n"
+
+
+class TestAttemptLedgerOnlyRebase:
+    """`_attempt_ledger_only_rebase`'s three-way outcome (T-5491)
+    -- `"advanced"`/`"apply_failed"`/`"not_ledger_only"` -- and, in
+    particular, that a text-level apply conflict against a GENUINELY
+    ledger-only sibling is reported as retryable (`"apply_failed"`), not
+    collapsed into the same give-up outcome a real code-touching advance
+    gets (`"not_ledger_only"`). This is the actual T-5326 defect: the
+    prior boolean/`None` return could not tell these apart, so
+    `_publish_with_ledger_only_retry` refused on the FIRST apply conflict
+    even though its own log line claimed the attempt bound was exhausted."""
+
+    # frob:tests src/frob/tickets/_land_squash.py::_attempt_ledger_only_rebase kind="unit"  # noqa: E501
+    # frob:ticket T-5491
+    def test_ledger_only_apply_conflict_is_retryable_not_a_hard_refusal(
+        self, scratch_repo: Path
+    ) -> None:
+        """Given a composed commit whose OWN diff also touches
+        `tickets/T-0001/ticket.md`, and a sibling commit that is STILL
+        ledger-only but edits that same ticket file differently (a text
+        conflict, not a code touch), when `_attempt_ledger_only_rebase`
+        runs, then it reports `"apply_failed"` (retryable) rather than
+        `"not_ledger_only"` (give up) -- `commits_touch_only_ledger_
+        paths` alone would already say `True` here; only the apply
+        itself fails."""
+        pre_land_tip = _run(["git", "rev-parse", "HEAD"], scratch_repo).stdout.strip()
+
+        _run(["git", "checkout", "-q", "-b", "landing"], scratch_repo)
+        (scratch_repo / "code.py").write_text("x = 42\n")
+        (scratch_repo / "tickets" / "T-0001").mkdir(parents=True)
+        (scratch_repo / "tickets" / "T-0001" / "ticket.md").write_text(
+            "id: T-0001\nfrom: land\n"
+        )
+        _run(["git", "add", "code.py", "tickets/T-0001/ticket.md"], scratch_repo)
+        _run(["git", "commit", "-q", "-m", "land: T-9999"], scratch_repo)
+        composed = _run(["git", "rev-parse", "landing"], scratch_repo).stdout.strip()
+        _run(["git", "checkout", "-q", "main"], scratch_repo)
+
+        new_base = _commit_file(
+            scratch_repo,
+            "tickets/T-0001/ticket.md",
+            "id: T-0001\nfrom: sibling\n",
+            "chore(tickets): mirror",
+        )
+
+        outcome, advanced = _attempt_ledger_only_rebase(
+            scratch_repo, "main", pre_land_tip, composed, "T-9999", attempt=0
+        )
+
+        assert outcome == "apply_failed"
+        assert advanced is None
+        # `main` was not force-moved or corrupted by the failed attempt.
+        current_tip = _run(["git", "rev-parse", "main"], scratch_repo).stdout.strip()
+        assert current_tip == new_base
