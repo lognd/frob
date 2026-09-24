@@ -8,7 +8,6 @@ origin: human
 created: '2026-09-24'
 priority: medium
 blocked_by:
-- T-draft-d17aa621
 - T-5758
 - T-5765
 parent: T-5748
@@ -58,3 +57,4 @@ Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a
 
 ## Unblock log
 - 2026-09-24: unblocked by T-draft-50f4484a -- 2026-09-24: dangling draft id; the land runner promoted this blocker to its real T-#### id without rewriting the edge, real-id edge re-added via frob ticket block
+- 2026-09-24: unblocked by T-draft-d17aa621 -- 2026-09-24: dangling draft id; the land runner promoted this blocker to its real T-#### id without rewriting the edge, real-id edge re-added via frob ticket block
