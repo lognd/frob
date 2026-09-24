@@ -7,8 +7,6 @@ kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
-blocked_by:
-- T-3067
 parent: T-3004
 tier: ticket
 sprint: strata-vmodel
@@ -78,3 +76,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Unblock log
+- 2026-09-24: unblocked by T-3067 -- coordinator directive 2026-09-24: build on top of branch t-3067 merged in, diffs kept separable; T-3067 already queued, its own land is independent
