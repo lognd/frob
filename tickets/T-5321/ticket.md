@@ -1,7 +1,7 @@
 ---
 id: T-5321
 title: 'A11Y116-128: keyboard, focus, target size, motion'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
