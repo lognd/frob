@@ -26,6 +26,7 @@ branch: null
 scope:
 - src/frob/_cli_parsers/_coord.py
 - src/frob/coord/_status.py
+- src/frob/coord/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
   at: '2026-09-24'
 - op: add
   glob: src/frob/coord/_status.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/coord/__init__.py
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
