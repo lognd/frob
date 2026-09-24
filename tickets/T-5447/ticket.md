@@ -26,8 +26,12 @@ worktree: null
 branch: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: both in-scope files (.claude/hooks/pgrep-self-match-guard.py,
+  src/frob/gates/_a11y_gate.py) are leased live by my own enqueued-but-not-landed
+  T-5440/T-5444; every other finding in this ticket lives inside src/frob/sql/** or
+  src/frob/webapp/** (or their tests/docs), out of touch-scope. Nothing fixable here
+  until T-5440/T-5444 land -- re-check then.
 triage_changes:
 - field: milestone
   old_value: null
