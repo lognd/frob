@@ -1,7 +1,7 @@
 ---
 id: T-5464
 title: 'TICK008 noise: Ticket model missing branch/worktree lease fields'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,9 +20,12 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5464
+branch: t-5464
 scope:
 - src/frob/tickets/_models.py
 - tests/gates_suite/test_tick.py
+- src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +39,12 @@ scope_changes:
 - op: add
   glob: tests/gates_suite/test_tick.py
   reason: TICK008 fix needs Ticket model branch/worktree fields plus test coverage
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: docstring update reconciling T-5120's original extra=allow claim with T-5464's
+    schema change
   actor: logan
   at: '2026-09-24'
 triage_changes:
