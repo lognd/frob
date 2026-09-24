@@ -33,6 +33,7 @@ scope:
 - src/frob/gates/_waive.py
 - design/frob.strata
 - docs/design/registry/check-coverage.yaml
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -97,6 +98,12 @@ scope_changes:
   glob: docs/design/registry/check-coverage.yaml
   reason: MSCLOSE001 needs a CHK-GATE-MSCLOSE001 registry entry, same REG002 step
     VMOD001 needed
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 gates::fs.read ratchet needs bumping 62->63 for _strata_milestone_closure.py's
+    new frob.toml read site
   actor: logan
   at: '2026-09-24'
 triage_changes:
