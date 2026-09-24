@@ -25,6 +25,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/gates/_a11y_gate.py
+- tests/unit/gates/test_cov002_strata_declarations.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,15 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_a11y_gate.py
   reason: checking lease availability for ARCH104/COV001/DOC002/OPAQUE001
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/gates/test_cov002_strata_declarations.py
+  reason: 'in-scope subset of post-land sweep residue: ARCH104/COV001/DOC002/OPAQUE001
+    on _a11y_gate.py (gates file, in-scope), DUP002 on tests/unit/gates/test_cov002_strata_declarations.py;
+    COV001/DOC002 on src/frob/webapp/_a11y_structure.py, DUP001 on tests/unit/test_webapp_a11y_structure.py,
+    INV003 on docs/modules/webapp-a11y-structure.md deferred (webapp-family owned);
+    DOC006 on tickets/T-5322/ticket.md deferred (never hand-edit ledger files)'
   actor: logan
   at: '2026-09-24'
 triage_changes:
