@@ -17,7 +17,7 @@ blocked_by:
 - T-draft-58029dd5
 - T-draft-08ef9199
 - T-draft-50f4484a
-- T-draft-0c50c6c1
+- T-5770
 parent: T-5748
 tier: ticket
 sprint: ledger-tiers
