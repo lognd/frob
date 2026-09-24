@@ -1,7 +1,7 @@
 ---
 id: T-5361
 title: 'LAUNCH checklist: advisory-only convention items'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -23,8 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5361
+branch: t-5361
 scope:
 - src/frob/webapp/_launch_checklist.py
 - tests/fixtures/webapp/launch1xx/**
@@ -58,6 +58,24 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch101_positive-LAUNCH101-True]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch101_negative-LAUNCH101-False]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch102_positive-LAUNCH102-True]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch102_negative-LAUNCH102-False]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch103_positive-LAUNCH103-True]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch103_negative-LAUNCH103-False]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch104_positive-LAUNCH104-True]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch104_negative-LAUNCH104-False]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch105_positive-LAUNCH105-True]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch105_negative-LAUNCH105-False]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch106_positive-LAUNCH106-True]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch106_negative-LAUNCH106-False]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch107_positive-LAUNCH107-True]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_fixture[launch107_negative-LAUNCH107-False]
+- tests/unit/test_launch_checklist.py::test_launch_checklist_findings_no_framework_short_circuits
+- tests/unit/test_launch_checklist.py::test_websec_findings_emits_advisory_severity_never_warn_or_error
+- tests/unit/test_launch_checklist.py::test_websec_findings_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null

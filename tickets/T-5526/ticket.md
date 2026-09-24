@@ -1,5 +1,5 @@
 ---
-id: T-draft-33350a09
+id: T-5526
 title: 'fixture secret shapes: a gate that refuses committed test fixtures whose secret-looking
   strings match push-protection detector patterns; canonical placeholder table'
 state: queued
