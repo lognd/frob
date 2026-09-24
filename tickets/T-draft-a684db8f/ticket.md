@@ -23,10 +23,26 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/tickets/_land_squash.py
+- tests/unit/test_land_cas_ledger_retry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_squash.py
+  reason: 'ledger-only CAS publish retry: distinguish apply-conflict-retryable from
+    non-ledger-only refusal, scale attempt bound to observed drift'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_land_cas_ledger_retry.py
+  reason: 'ledger-only CAS publish retry: distinguish apply-conflict-retryable from
+    non-ledger-only refusal, scale attempt bound to observed drift'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
