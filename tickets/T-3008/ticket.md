@@ -28,6 +28,7 @@ scope:
 - tests/gates/test_invariant_level.py
 - docs/strata/vmodel.md
 - docs/modules/gates.md
+- src/frob/gates/invariants.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -75,6 +76,12 @@ scope_changes:
   reason: declared scope named the wrong module -- INV001/INV002/Invariant actually
     live in src/frob/gates/invariants.py (SYS100-102 self-conformance is unrelated);
     swapping to the correct file
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/gates/invariants.py
+  reason: the real location of Invariant/INV001/INV002 this ticket adds a level field
+    and paired-level check to
   actor: logan
   at: '2026-09-24'
 triage_changes:
