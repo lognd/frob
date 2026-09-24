@@ -1,7 +1,7 @@
 ---
 id: T-5352
 title: 'WEBSEC209-217: JWT and OAuth token checks'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -22,11 +22,12 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5352
+branch: t-5352
 scope:
 - src/frob/webapp/_websec_tokens.py
 - tests/fixtures/webapp/websec2xx/jwt_oauth/**
+- tests/unit/test_websec_tokens.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,11 @@ scope_changes:
 - op: add
   glob: tests/fixtures/webapp/websec2xx/jwt_oauth/**
   reason: per-ticket fixture subdir, sibling T-5351 owns csrf_session/**
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_tokens.py
+  reason: unit test file, per T-5325-family convention
   actor: logan
   at: '2026-09-24'
 triage_changes:
