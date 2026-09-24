@@ -2,7 +2,7 @@
 id: T-5529
 title: 'SEC110 burn-down: 13 unmapped os.environ reads (strata effects, gates, hooks,
   tests)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5529
+branch: t-5529
 scope:
 - src/frob/strata/_effects.py
 - src/frob/gates/_inv.py
@@ -45,6 +45,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: BUG002 needs the opposite-direction check since this is metadata-only
+  actor: logan
+  at: '2026-09-24'
+  old_length: 1394
+  new_length: 1523
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_land_lock_root_sets_env_for_the_in_process_gate_call
+- tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_no_land_lock_root_leaves_env_untouched
 designated_repro_test: null
 threat: null
 component: null
@@ -81,3 +91,6 @@ that legitimately reads env vars as part of implementing the std.secrets
 mapping/effects system -- verify before waiving wholesale).
 
 frob:tests tests covering the touched sites' env-var handling (bind concrete ids once identified)
+
+
+frob:no-behavior-change reason="comment-only fix: adds one-line frob:waive SEC110 directives per site, no runtime code changed"
