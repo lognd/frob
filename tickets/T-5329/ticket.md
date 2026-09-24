@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_websec_debug_config.py
 - tests/fixtures/webapp/websec3xx/debug/**
 - tests/unit/test_websec_debug_config.py
+- docs/modules/webapp-websec-debug-config.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_websec_debug_config.py
   reason: unit test file for the new module, per T-5325-family convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-debug-config.md
+  reason: module doc, per T-5325-family convention
   actor: logan
   at: '2026-09-24'
 triage_changes:
