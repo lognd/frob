@@ -26,6 +26,7 @@ scope:
 - strata-core/src/graph/vmodel/mod.rs
 - src/frob/gates/_invariant_level.py
 - tests/gates/test_invariant_level.py
+- docs/strata/vmodel.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,11 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: tests/gates/test_invariant_level.py
+  reason: invariant level field + level-mismatch rule (INVLVL001)
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/strata/vmodel.md
   reason: invariant level field + level-mismatch rule (INVLVL001)
   actor: logan
   at: '2026-09-23'
