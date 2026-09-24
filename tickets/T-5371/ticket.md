@@ -1,7 +1,7 @@
 ---
 id: T-5371
 title: 'WEBPERF101-108: Core Web Vitals causes in markup'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -22,8 +22,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5371
+branch: t-5371
 scope:
 - src/frob/webapp/_webperf_markup.py
 - tests/fixtures/webapp/webperf1xx/markup/**
@@ -71,6 +71,24 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf101_positive-WEBPERF101-True]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf101_negative-WEBPERF101-False]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf102_positive-WEBPERF102-True]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf102_negative-WEBPERF102-False]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf103_positive-WEBPERF103-True]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf103_negative-WEBPERF103-False]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf104_positive-WEBPERF104-True]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf104_negative-WEBPERF104-False]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf105_positive-WEBPERF105-True]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf105_negative-WEBPERF105-False]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf106_positive-WEBPERF106-True]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf106_negative-WEBPERF106-False]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf108_positive-WEBPERF108-True]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_fixture[webperf108_negative-WEBPERF108-False]
+- tests/unit/test_webapp_webperf_markup.py::test_webperf107_never_emitted
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_findings_no_framework_short_circuits_via_hook
+- tests/unit/test_webapp_webperf_markup.py::test_websec_findings_discovery_hook_emits_violation
 designated_repro_test: null
 threat: null
 component: null
