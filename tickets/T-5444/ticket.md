@@ -2,7 +2,7 @@
 id: T-5444
 title: 'Post-land sweep residue 2026-09-23_2045: ARCH104:src/frob/gates/_a11y_gate.py
   COV001:src/frob/gates/_a11y_gate.py COV001:src/frob/webapp/_a11y_structure.py DOC002:src/frob/gates/_a1'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5444
+branch: t-5444
 scope:
 - src/frob/gates/_a11y_gate.py
 - tests/unit/gates/test_cov002_strata_declarations.py
@@ -64,6 +64,15 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: gate-directive-only fix, no repro test possible per T-4561 precedent
+  actor: logan
+  at: '2026-09-24'
+  old_length: 562
+  new_length: 1085
+evidence:
+- tests/unit/test_webapp_a11y_structure.py::test_a11y_gate_discovers_hook_and_scans_tracked_files
 designated_repro_test: null
 threat: null
 component: null
@@ -82,3 +91,5 @@ DUP001:tests/unit/test_webapp_a11y_structure.py
 DUP002:tests/unit/gates/test_cov002_strata_declarations.py
 INV003:docs/modules/webapp-a11y-structure.md
 OPAQUE001:src/frob/gates/_a11y_gate.py
+
+frob:waive BUG002 reason="the defects fixed here (ARCH104/COV001/DOC002/OPAQUE001) are gate-directive/waiver/doc-anchor changes -- no runtime program behavior changed, so no repro test can genuinely fail at dev and pass at the fix; each was independently re-measured with a family-scoped frob check (--only coverage --only docanchor --only arch --only opaque) before and after the fix, confirming the finding fires at dev and is gone (waived/repointed, per rule) at HEAD, the same shape T-4561/T-5440 already established"
