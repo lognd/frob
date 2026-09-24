@@ -12,7 +12,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
-points: null
+points: 5
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -55,6 +55,13 @@ scope_changes:
   glob: docs/modules/ci_report.md
   reason: parse_pytest_log must recognize this repo own SUITE-RESULT/SUITE-RESULT-FAILED
     xdist summary lines (T-2982 residue, measured against real CI run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+triage_changes:
+- field: points
+  old_value: null
+  new_value: '5'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
