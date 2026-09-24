@@ -29,6 +29,7 @@ scope:
 - tests/narrative/test_bulk.py
 - tests/unit/test_token_usage.py
 - tests/gates/test_docarch_structural.py
+- src/frob/tickets/_token_usage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -75,6 +76,15 @@ scope_changes:
     ''/'', token_usage.py''s fake harness keys usage on a posix-style leading-slash
     literal string, docarch_structural.py likely has the same class of path-keyed
     lookup'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/_token_usage.py
+  reason: test_budget_exceeded_stops_early_and_reports_incomplete (same file, part
+    of this cluster's original CI failure list, missed in initial triage) needs a
+    >= not > deadline comparison -- Windows clock-tick granularity lets a handful
+    of tiny-line iterations complete within one identical time.monotonic() tick, so
+    strict > never trips
   actor: logan
   at: '2026-09-24'
 triage_changes:
