@@ -32,6 +32,7 @@ scope:
 - tests/test_ghio.py
 - docs/modules/ci_report.md
 - tests/fixtures/ci_report
+- docs/modules/ghio.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -93,6 +94,11 @@ scope_changes:
     plus in-scope fix to ghio.view_run''s rejected --json jobs field (measured gh
     2.4.0 gap); _root.py/_cli_parsers/__init__.py deferred, held by sibling COORD-1
     lease'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/ghio.md
+  reason: view_run doc target for the --json jobs fix
   actor: logan
   at: '2026-09-24'
 triage_changes:
