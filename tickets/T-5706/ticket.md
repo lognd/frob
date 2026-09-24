@@ -24,6 +24,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,11 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/tickets/__init__.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
