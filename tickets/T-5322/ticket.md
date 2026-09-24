@@ -155,7 +155,7 @@ evidence:
 - tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y134_positive-A11Y134-True]
 - tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y134_negative-clean.css-A11Y134-False]
 - tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y135_positive-A11Y135-True]
-- tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y135_negative-A11Y135-False]
+- tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y135_negative-clean.scss-A11Y135-False]
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y130_negative-A11Y130-False]
@@ -172,6 +172,12 @@ evidence_changes:
   at: '2026-09-23'
 - old_node: tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y134_negative-A11Y134-False]
   new_node: tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y134_negative-clean.css-A11Y134-False]
+  reason: gate hook signature changed to (ctx, frameworks) after T-5323 landed; fixture
+    param now includes filename
+  actor: logan
+  at: '2026-09-23'
+- old_node: tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y135_negative-A11Y135-False]
+  new_node: tests/unit/test_webapp_a11y_forms_contrast.py::test_a11y_findings_fixture[a11y135_negative-clean.scss-A11Y135-False]
   reason: gate hook signature changed to (ctx, frameworks) after T-5323 landed; fixture
     param now includes filename
   actor: logan
