@@ -27,6 +27,8 @@ branch: null
 scope:
 - src/frob/webapp/_seo_tags.py
 - tests/fixtures/webapp/seo1xx/tags/**
+- tests/unit/test_seo_tags.py
+- docs/modules/webapp-seo-tags.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +44,16 @@ scope_changes:
   glob: tests/fixtures/webapp/seo1xx/tags/**
   reason: per-ticket fixture subdir, siblings own seo1xx/spam/** (T-5365) and seo1xx/crawl/**
     (T-5362)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_seo_tags.py
+  reason: unit test file + module doc, per T-5325-family convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-seo-tags.md
+  reason: unit test file + module doc, per T-5325-family convention
   actor: logan
   at: '2026-09-24'
 triage_changes:
