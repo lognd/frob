@@ -24,7 +24,6 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/strata/_selfconform_models.py
 - src/frob/gates/_invariant_level.py
 - tests/gates/test_invariant_level.py
 - docs/strata/vmodel.md
@@ -69,6 +68,13 @@ scope_changes:
   reason: no Rust kernel change needed -- the level field/pairing lives entirely in
     Python (frob.gates.invariants), avoiding a collision with T-3010's live lease
     on this file
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/strata/_selfconform_models.py
+  reason: declared scope named the wrong module -- INV001/INV002/Invariant actually
+    live in src/frob/gates/invariants.py (SYS100-102 self-conformance is unrelated);
+    swapping to the correct file
   actor: logan
   at: '2026-09-24'
 triage_changes:
