@@ -1,5 +1,5 @@
 ---
-id: T-draft-24183c71
+id: T-5630
 title: 'Coordinator, agent and CI command surface: frob coord, frob agent brief/precheck,
   frob ci'
 state: queued
