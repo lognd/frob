@@ -25,6 +25,7 @@ branch: null
 scope:
 - src/frob/webapp/_gallery_schema.py
 - tests/unit/test_webapp_gallery_schema.py
+- tests/fixtures/webapp/gallery/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_webapp_gallery_schema.py
   reason: unit tests for vendored gallery schema loader
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/gallery/
+  reason: vendored crunk fixture manifest for parity tests
   actor: logan
   at: '2026-09-24'
 triage_changes:
