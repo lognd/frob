@@ -21,10 +21,18 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- docs/strata/vmodel.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/strata/vmodel.md
+  reason: vmodel doc split (LARGE001) + canonical record schema
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: parent
   old_value: null
