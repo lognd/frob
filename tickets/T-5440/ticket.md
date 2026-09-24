@@ -23,10 +23,52 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- .claude/hooks/sync-claude-config.py
+- src/frob/lang/_common.py
+- src/frob/tickets/_reconcile.py
+- .claude/hooks/pgrep-self-match-guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/sync-claude-config.py
+  reason: 'in-scope subset of the post-land sweep residue: COV002/PERF004/SEC110/TEST010
+    on non-webapp/non-sql files; ARCH104:_taint_gate.py held by live T-5372, deferred;
+    remaining findings are inside src/frob/webapp/**, src/frob/sql/**, tests/fixtures/webapp/**,
+    docs/modules/webapp-*.md, docs/modules/sql.md, out of touch-scope per standing
+    brief -- handed off'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/lang/_common.py
+  reason: 'in-scope subset of the post-land sweep residue: COV002/PERF004/SEC110/TEST010
+    on non-webapp/non-sql files; ARCH104:_taint_gate.py held by live T-5372, deferred;
+    remaining findings are inside src/frob/webapp/**, src/frob/sql/**, tests/fixtures/webapp/**,
+    docs/modules/webapp-*.md, docs/modules/sql.md, out of touch-scope per standing
+    brief -- handed off'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/_reconcile.py
+  reason: 'in-scope subset of the post-land sweep residue: COV002/PERF004/SEC110/TEST010
+    on non-webapp/non-sql files; ARCH104:_taint_gate.py held by live T-5372, deferred;
+    remaining findings are inside src/frob/webapp/**, src/frob/sql/**, tests/fixtures/webapp/**,
+    docs/modules/webapp-*.md, docs/modules/sql.md, out of touch-scope per standing
+    brief -- handed off'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: .claude/hooks/pgrep-self-match-guard.py
+  reason: 'in-scope subset of the post-land sweep residue: COV002/PERF004/SEC110/TEST010
+    on non-webapp/non-sql files; ARCH104:_taint_gate.py held by live T-5372, deferred;
+    remaining findings are inside src/frob/webapp/**, src/frob/sql/**, tests/fixtures/webapp/**,
+    docs/modules/webapp-*.md, docs/modules/sql.md, out of touch-scope per standing
+    brief -- handed off'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: milestone
   old_value: null
