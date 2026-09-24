@@ -12,7 +12,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
-points: null
+points: 2
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -33,6 +33,12 @@ triage_changes:
   new_value: medium
   reason: 'corrected: root cause is one unguarded ''import fcntl'' collection error,
     not a suite hang/timeout'
+  actor: logan
+  at: '2026-09-24'
+- field: points
+  old_value: null
+  new_value: '2'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-24'
 body_changes:
