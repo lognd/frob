@@ -7,7 +7,6 @@ origin: human
 created: '2026-09-24'
 priority: medium
 blocked_by:
-- T-draft-d7c9c6c6
 - T-5776
 - T-5766
 parent: T-5748
@@ -54,3 +53,6 @@ Positive control: with E2/E3 landed, frob check reports zero TIER findings at ER
 Doc page: docs/modules/tickets-lifecycle.md
 
 Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a3a4ea/scratchpad/LEDGER-TIERS-TREE.md (sections 2 and 5; section 5 overrides).
+
+## Unblock log
+- 2026-09-24: unblocked by T-draft-d7c9c6c6 -- 2026-09-24: dangling draft id; the land runner promoted this blocker to its real T-#### id without rewriting the edge, real-id edge re-added via frob ticket block
