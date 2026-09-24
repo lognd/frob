@@ -24,6 +24,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - strata-core/src/graph/vmodel/closure.rs
 - src/frob/gates/_strata_milestone_closure.py
+- tests/unit/strata/test_vmodel_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: src/frob/gates/_strata_milestone_closure.py
+  reason: milestone-scoped closure over configuration binding
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/strata/test_vmodel_check.py
   reason: milestone-scoped closure over configuration binding
   actor: logan
   at: '2026-09-23'
