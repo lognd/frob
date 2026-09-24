@@ -11,7 +11,7 @@ blocked_by:
 - T-3067
 parent: T-3004
 tier: ticket
-sprint: null
+sprint: strata-vmodel
 runs_last: false
 milestone: 0.535.0
 points: null
@@ -39,6 +39,12 @@ triage_changes:
   old_value: 1.1.0
   new_value: 0.535.0
   reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-23'
+- field: sprint
+  old_value: null
+  new_value: strata-vmodel
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-23'
 designated_repro_test: null
