@@ -69,6 +69,15 @@ def _add_ops_parser(sub) -> None:
         "maturin develop, shared CARGO_TARGET_DIR)",
     )
     natives_sub = natives_p.add_subparsers(dest="natives_command")
+    # frob:ticket T-5474
+    # T-4522 mirrored `build`'s own `--path` onto the FLAT `frob natives`
+    # group parser (so bare `frob natives [--path DIR]` works without
+    # requiring the `build` subcommand explicitly) but never onto this
+    # `frob ops natives` twin -- restore parity the same way T-4522 did
+    # for the flat form, so `test_every_ops_leaf_matches_its_flat_twin`
+    # (tests/unit/test_cli_group_parity.py) stays true for every member.
+    natives_p.set_defaults(natives_command="build")
+    natives_p.add_argument("--path", dest="natives_path", metavar="DIR", default=".")
     _populate_natives_actions(natives_sub)
 
     doctor_p = ops_sub.add_parser(
