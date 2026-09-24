@@ -1,7 +1,7 @@
 ---
 id: T-5369
 title: Lighthouse tool-registry entry for dynamic-only Core Web Vitals measurement
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -23,8 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5369
+branch: t-5369
 scope:
 - src/frob/doctor.py
 - docs/guides/install.md
@@ -59,6 +59,10 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_doctor.py::TestLighthouseRelevant::test_lighthouse_relevant_and_missing_is_a_finding
+- tests/unit/test_doctor.py::TestLighthouseRelevant::test_lighthouse_irrelevant_missing_is_not_a_finding
+- tests/unit/test_doctor.py::TestLighthouseRelevant::test_lighthouse_relevant_present_is_not_a_finding
 designated_repro_test: null
 threat: null
 component: null

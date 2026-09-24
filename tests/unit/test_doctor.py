@@ -285,6 +285,59 @@ class TestRelevantToolFindings:
         assert doctor.relevant_tool_findings(tmp_path) == []
 
 
+class TestLighthouseRelevant:
+    """T-5369: lighthouse's compound `relevant_when` (a web-framework
+    marker AND a markup surface, WEBSUB-2) -- same "both halves must
+    hold" shape `_axe_pa11y_relevant` already established for
+    axe-core/pa11y."""
+
+    # frob:tests src/frob/doctor.py::relevant_tool_findings kind="unit"
+    def test_lighthouse_relevant_and_missing_is_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Positive control: a package.json marker plus an .html route
+        # file (both halves of the compound predicate) and a
+        # guaranteed-absent binary must yield a real finding naming a
+        # WEBPERF10x rule id and the install remedy.
+        from frob import doctor
+
+        (tmp_path / "package.json").write_text("{}", encoding="utf-8")
+        (tmp_path / "index.html").write_text("<html></html>", encoding="utf-8")
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
+
+        findings = doctor.relevant_tool_findings(tmp_path)
+        matching = [f for f in findings if f.entry.name == "lighthouse"]
+        assert len(matching) == 1
+        finding = matching[0]
+        assert "WEBPERF101" in finding.entry.rules_it_serves
+        assert finding.kind == doctor.RelevantToolFailureKind.MISSING
+        assert finding.entry.install_remedy == "npm install --save-dev lighthouse"
+
+    def test_lighthouse_irrelevant_missing_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # No framework marker and no markup file at all: lighthouse's
+        # absence is "not needed here", not a finding.
+        from frob import doctor
+
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
+
+        findings = doctor.relevant_tool_findings(tmp_path)
+        assert not any(f.entry.name == "lighthouse" for f in findings)
+
+    def test_lighthouse_relevant_present_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob import doctor
+
+        (tmp_path / "package.json").write_text("{}", encoding="utf-8")
+        (tmp_path / "index.html").write_text("<html></html>", encoding="utf-8")
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: "/usr/bin/lighthouse")
+
+        findings = doctor.relevant_tool_findings(tmp_path)
+        assert not any(f.entry.name == "lighthouse" for f in findings)
+
+
 # frob:tests src/frob/doctor.py::family_required_tool_findings
 class TestFamilyRequiredToolFindings:
     """T-5335 OWNER DIRECTIVE: `ToolCategory.REQUIRED_FOR_FAMILY`'s own

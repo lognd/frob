@@ -1141,6 +1141,55 @@ def _axe_pa11y_relevant(root: Path) -> bool:
     return _html_or_jsx_present(root) and _color_only_criterion_in_scope(root)
 
 
+# frob:ticket T-5369
+# WEBSUB-2's own shallow marker probe: a `package.json`/`requirements.txt`/
+# `Gemfile`/`composer.json` at (or one level under) `root` is the same
+# cheap "this looks like a web-framework repo" proxy every other
+# `_RELEVANT_TOOLS` predicate in this file already uses (never a
+# `frob.webapp._detect.detect_frameworks` import -- `_RELEVANT_TOOLS`'s
+# own predicates are plain `Path -> bool` repo sniffs kept local to this
+# module, `_axe_pa11y_relevant`'s own docstring/T-5324's comment above
+# names the identical layering reason).
+_WEB_FRAMEWORK_MARKER_NAMES = (
+    "package.json",
+    "requirements.txt",
+    "Gemfile",
+    "composer.json",
+)
+
+
+def _web_framework_marker_present(root: Path) -> bool:
+    """True if `root` carries at least one of `_WEB_FRAMEWORK_MARKER_NAMES`
+    (bounded to the first match found, `_html_or_jsx_present`'s own
+    existence-probe-not-inventory shape) -- the "a web framework is
+    detected" half of lighthouse's compound `relevant_when` (T-5369
+    ticket body, WEBSUB-2).
+
+    frob:ticket T-5369
+    """
+    for name in _WEB_FRAMEWORK_MARKER_NAMES:
+        try:
+            next(root.rglob(name))
+        except (StopIteration, OSError):
+            continue
+        return True
+    return False
+
+
+def _lighthouse_relevant(root: Path) -> bool:
+    """lighthouse is relevant to `root` only when BOTH a web framework is
+    detected AND a Core Web Vitals rule is in scope (a markup surface for
+    Lighthouse to render and measure) -- the ticket body's own compound
+    `relevant_when`, the same "both halves must hold" shape
+    `_axe_pa11y_relevant` already uses. Reuses `_html_or_jsx_present`
+    (already defined above for axe-core/pa11y) as the "a CWV rule is in
+    scope" half, rather than a second markup-existence probe.
+
+    frob:ticket T-5369
+    """
+    return _web_framework_marker_present(root) and _html_or_jsx_present(root)
+
+
 # frob:ticket T-5139
 # frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
 _RELEVANT_TOOLS: tuple[tuple[RelevantToolEntry, Callable[[Path], bool]], ...] = (
@@ -1169,6 +1218,24 @@ _RELEVANT_TOOLS: tuple[tuple[RelevantToolEntry, Callable[[Path], bool]], ...] = 
             install_remedy="npm install --save-dev pa11y",
         ),
         _axe_pa11y_relevant,
+    ),
+    # frob:ticket T-5369
+    (
+        RelevantToolEntry(
+            name="lighthouse",
+            rules_it_serves=(
+                "WEBPERF101",
+                "WEBPERF102",
+                "WEBPERF103",
+                "WEBPERF104",
+                "WEBPERF105",
+                "WEBPERF106",
+                "WEBPERF107",
+                "WEBPERF108",
+            ),
+            install_remedy="npm install --save-dev lighthouse",
+        ),
+        _lighthouse_relevant,
     ),
 )
 

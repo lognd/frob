@@ -807,6 +807,21 @@ tool to measure. Same "required-for-family with relevance" posture as
 `cargo-audit`: there is no never-fail flag; an absent-and-relevant tool
 still reports the `A11Y120`-serving `RelevantToolFinding` above.
 
+T-5369 added a third `_RELEVANT_TOOLS` entry, `lighthouse`, serving the
+dynamic-only Core Web Vitals rule block `WEBPERF101`-`WEBPERF108`
+(`WEBPERF109`-`WEBPERF115`, the STATIC config-shaped half of the same
+family, are checked without Lighthouse at all -- `frob.webapp.
+_webperf_server`, T-5366) -- the compound `relevant_when` the ticket
+body decreed: a web framework is detected (a `package.json`/
+`requirements.txt`/`Gemfile`/`composer.json` marker,
+`_web_framework_marker_present`) AND a Core Web Vitals rule is in scope
+(reusing `_html_or_jsx_present`, the same markup-existence probe
+`axe-core`/`pa11y` already use). Same posture as every other
+`_RELEVANT_TOOLS` entry: there is no never-fail flag on this registry
+row -- an absent-and-relevant `lighthouse` still reports a
+`WEBPERF101`-serving `RelevantToolFinding` above, exactly like
+`cargo-audit`/`axe-core`/`pa11y`.
+
 `relevant_tool_findings` is reporting-only in this slice: wiring it into
 `frob check`'s loud end-of-run UNMEASURED block (exit non-zero for a
 relevant finding, `--allow-missing-tool NAME --reason` to override) is a
