@@ -24,8 +24,12 @@ worktree: null
 branch: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 're-measured 2026-09-24: all 248 REG008 findings against
+  check-coverage.yaml are reserved-not-yet-implemented WEBSEC/A11Y/COMPLY/LAUNCH/SEO/SQL/WEBPERF
+  entries (T-5140/T-5301 epic), 100% inside src/frob/webapp/** and src/frob/sql/**,
+  both out of touch-scope per standing brief; zero non-webapp/sql findings exist to
+  fix here'
 triage_changes:
 - field: points
   old_value: null
