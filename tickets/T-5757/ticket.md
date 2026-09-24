@@ -1,7 +1,7 @@
 ---
-id: T-draft-58029dd5
-title: 'TIER005: sprint stays a pure filter -- refuse a sprint label as parent and
-  lint historical slips'
+id: T-5757
+title: 'TIER001: ticket (PBI) closer -- codify evidence, scope-closure and done-report
+  as the tier-1 baseline'
 state: queued
 kind: feature
 origin: human
@@ -45,9 +45,9 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-TIER005: sprint stays a pure filter -- refuse at write time a parent that names a sprint label (belt) and add a lint-only check flagging any that slipped in historically (suspenders). A sprint cannot close anything and cannot be closed. Lands at WARN.
+TIER001: ticket (PBI) closer unchanged -- codify the existing evidence + scope-closure + done-report requirement as the tier-1 baseline the other TIER rules reference. Lands at WARN (promoted to ERROR by the final leaf).
 
-Positive control: a ticket with parent pointing at a sprint label is refused at write time; TIER005 flags a historical one; zero findings on a clean ledger stays quiet.
+Positive control: a ticket missing a done-report section fails TIER001; a fully-evidenced leaf passes and stays quiet.
 
 Doc page: docs/modules/tickets-lifecycle.md
 

@@ -2,7 +2,7 @@
 id: T-3008
 title: 'Multi-level invariants: an invariant declared at level L must be verified
   at Ls paired test level (T-3004 section 7)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -99,13 +99,13 @@ scope_changes:
   at: '2026-09-24'
 - op: add
   glob: src/frob/gates/__init__.py
-  reason: T-3010's lease released; folding T-draft-56e0c50e in -- register invariant_level_gate
+  reason: T-3010's lease released; folding T-5759 in -- register invariant_level_gate
     in _ALL_GATES/_GATE_STAGE_GROUPS/dispatch, same wiring VMOD001/MSCLOSE001 needed
   actor: logan
   at: '2026-09-24'
 - op: add
   glob: src/frob/gates/_waive.py
-  reason: T-3010's lease released; folding T-draft-56e0c50e in -- INVLVL001 needs
+  reason: T-3010's lease released; folding T-5759 in -- INVLVL001 needs
     registering in _KNOWN_GATE_RULES, same REG002 step VMOD001/MSCLOSE001 needed
   actor: logan
   at: '2026-09-24'

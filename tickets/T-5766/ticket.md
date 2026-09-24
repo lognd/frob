@@ -1,5 +1,5 @@
 ---
-id: T-draft-d7c9c6c6
+id: T-5766
 title: 'Reclassify the 39 stories by flavour and the 11 kind: invariant tickets as
   quality-objective stories, then retire kind: invariant'
 state: queued
@@ -9,7 +9,7 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-5749
-- T-draft-76f89687
+- T-5761
 parent: T-5748
 tier: ticket
 sprint: ledger-tiers

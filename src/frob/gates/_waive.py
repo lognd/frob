@@ -521,6 +521,9 @@ _KNOWN_GATE_RULES = frozenset(
         # T-3010: MSCLOSE001 (frob.gates._strata_milestone_closure) -- a
         # live, enforced gate rule, same REG002 gap as VMOD001 above.
         "MSCLOSE001",
+        # T-3008: INVLVL001 (frob.gates._invariant_level) -- a live,
+        # enforced gate rule, same REG002 gap as VMOD001/MSCLOSE001 above.
+        "INVLVL001",
         # T-3456: LANDPARITY001/LANDPARITY002 (frob.gates._land_parity) --
         # newly wired gate rules, same "add to the frozenset" step every
         # rule above this comment already needed.

@@ -1,20 +1,20 @@
 ---
-id: T-draft-3661879e
-title: 'TIER001: ticket (PBI) closer -- codify evidence, scope-closure and done-report
-  as the tier-1 baseline'
+id: T-5758
+title: 'TIER-DEPTH lint: three nested tickets under one story flags promote-to-epic;
+  a childless story is also a finding'
 state: queued
 kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
 blocked_by:
-- T-5749
+- T-5756
 parent: T-5748
 tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
-points: 2
+points: 3
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -34,7 +34,7 @@ no_scope_declared_reason: null
 triage_changes:
 - field: points
   old_value: null
-  new_value: '2'
+  new_value: '3'
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
@@ -45,9 +45,9 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-TIER001: ticket (PBI) closer unchanged -- codify the existing evidence + scope-closure + done-report requirement as the tier-1 baseline the other TIER rules reference. Lands at WARN (promoted to ERROR by the final leaf).
+TIER-DEPTH lint: three (configurable) nested tickets under one story flags 'this story is an epic; promote it' as a WARN finding. Inverse (owner decision Q2): a story with zero children is also a finding.
 
-Positive control: a ticket missing a done-report section fails TIER001; a fully-evidenced leaf passes and stays quiet.
+Positive control: a story with 3+ levels of ticket nesting under it is flagged; a story with 2 levels stays quiet; a story with zero children is flagged.
 
 Doc page: docs/modules/tickets-lifecycle.md
 

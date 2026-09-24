@@ -179,9 +179,58 @@ class _Criticality(StrEnum):
 _CRITICALITY_VALUES = frozenset(c.value for c in _Criticality)
 
 
+# frob:doc docs/modules/gates.md#invariants-t-3008-multi-level
+#: T-3008 (T-3004 section 7): the V-model's five left-side artifact
+#: levels, outermost (`requirements`) first -- the SAME five strings
+#: `strata-core::graph::vmodel::v_pairing` declares, duplicated here
+#: rather than imported (no PyO3 surface exposes the pairing table to
+#: Python, and T-3010's own doc is explicit that T-3008/T-3009/T-3010 are
+#: Rust-API consumers of that crate, not necessarily new PyO3 surface --
+#: add one only when a concrete caller needs it, which this ticket does
+#: not). `docs/strata/vmodel.md`'s "Levels: the V pairing" table is the
+#: single source of truth both tables must stay in sync with by hand.
+INVARIANT_LEVELS: tuple[str, ...] = (
+    "requirements",
+    "requirement-specification",
+    "system-specification",
+    "system-design",
+    "component-design",
+)
+
+# frob:doc docs/modules/gates.md#invariants-t-3008-multi-level
+#: T-3008: the paired right-side (test) level for each `INVARIANT_LEVELS`
+#: entry, in the same order -- mirrors `strata-core::graph::vmodel::
+#: v_pairing`'s five (left, right) pairs (T-3004 section 1's table).
+INVARIANT_PAIRED_TEST_LEVEL: dict[str, str] = dict(
+    zip(
+        INVARIANT_LEVELS,
+        (
+            "customer-test",
+            "customer-test-plan",
+            "system-integration-test-plan",
+            "subsystem-integration-test-plan",
+            "component-unit-test",
+        ),
+        strict=True,
+    )
+)
+
+
 # frob:doc docs/modules/gates.md#invariants
+# frob:doc docs/modules/gates.md#invariants-t-3008-multi-level
 class Invariant(BaseModel):
-    """One tracked invariant: id, statement, criticality, and its evidence list."""
+    """One tracked invariant: id, statement, criticality, and its evidence
+    list. T-3008 additions (schema-only, T-3004 section 7): `level` is the
+    V-model artifact level this invariant is declared at (one of
+    `INVARIANT_LEVELS`, or `None` for an invariant that predates this
+    field / does not participate in level checking); `evidence_levels`
+    optionally tags one or more `evidence` entries with the test level
+    they were actually verified at, so `INVLVL001` (`frob.gates.
+    _invariant_level`) can compare a tagged entry's level against
+    `level`'s paired level (`INVARIANT_PAIRED_TEST_LEVEL`). An entry in
+    `evidence` with no matching key in `evidence_levels` is simply not
+    level-checked -- adding these fields never retroactively breaks an
+    existing `invariants/*.md` file that predates them."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -190,6 +239,8 @@ class Invariant(BaseModel):
     criticality: _Criticality
     evidence: tuple[str, ...] = ()
     path: str = ""
+    level: str | None = None
+    evidence_levels: dict[str, str] = {}
 
 
 # frob:doc docs/modules/gates.md#invariants
@@ -280,6 +331,48 @@ def _validate_invariant_shape(
     return Ok(None)
 
 
+# frob:ticket T-3008
+def _parse_level_fields(
+    raw: dict, path: Path, evidence_strs: tuple[str, ...]
+) -> Result[tuple[str | None, dict[str, str]], InvariantError]:
+    """T-3008: parse+validate `raw`'s optional `level`/`evidence_levels`
+    keys into `_build_invariant`'s constructor arguments -- split out of
+    that function (ARCH001) since these two fields are one self-contained
+    validation unit. `level` must name one of `INVARIANT_LEVELS` when
+    present; each `evidence_levels` key must be a declared `evidence`
+    item and each value one of `INVARIANT_PAIRED_TEST_LEVEL`'s values."""
+    raw_level = raw.get("level")
+    level = None if raw_level is None else str(raw_level)
+    if level is not None and level not in INVARIANT_LEVELS:
+        _log.warning("load_invariants: %s has unknown level %r", path, level)
+        return Err(InvariantError.Malformed)
+
+    raw_evidence_levels = raw.get("evidence_levels") or {}
+    if not isinstance(raw_evidence_levels, dict):
+        _log.warning("load_invariants: %s evidence_levels is not a mapping", path)
+        return Err(InvariantError.Malformed)
+    evidence_levels: dict[str, str] = {}
+    for key, value in raw_evidence_levels.items():
+        key_str, value_str = str(key), str(value)
+        if key_str not in evidence_strs:
+            _log.warning(
+                "load_invariants: %s evidence_levels names %r, not in evidence",
+                path,
+                key_str,
+            )
+            return Err(InvariantError.Malformed)
+        if value_str not in INVARIANT_PAIRED_TEST_LEVEL.values():
+            _log.warning(
+                "load_invariants: %s evidence_levels[%r] has unknown level %r",
+                path,
+                key_str,
+                value_str,
+            )
+            return Err(InvariantError.Malformed)
+        evidence_levels[key_str] = value_str
+    return Ok((level, evidence_levels))
+
+
 def _build_invariant(
     raw: dict, path: Path, root: Path
 ) -> Result[Invariant, InvariantError]:
@@ -296,13 +389,21 @@ def _build_invariant(
         )
         return Err(InvariantError.Malformed)
 
+    evidence_strs = tuple(str(item) for item in evidence)
+    level_fields = _parse_level_fields(raw, path, evidence_strs)
+    if level_fields.is_err:
+        return Err(level_fields.danger_err)
+    level, evidence_levels = level_fields.danger_ok
+
     try:
         invariant = Invariant(
             id=str(raw.get("id", "")),
             statement=str(raw.get("statement", "")),
             criticality=_Criticality(raw_criticality),
-            evidence=tuple(str(item) for item in evidence),
+            evidence=evidence_strs,
             path=str(path.relative_to(root).as_posix()),
+            level=level,
+            evidence_levels=evidence_levels,
         )
     except ValidationError as exc:
         _log.warning("load_invariants: %s failed validation: %s", path, exc)
@@ -389,6 +490,8 @@ def load_invariants(root: Path) -> LoadedInvariants:
 
 __all__ = [
     "EXCLUSIVITY_CLAIM_PATTERNS",
+    "INVARIANT_LEVELS",
+    "INVARIANT_PAIRED_TEST_LEVEL",
     "NORMATIVE_CLAIM_PATTERNS",
     "Invariant",
     "InvariantError",

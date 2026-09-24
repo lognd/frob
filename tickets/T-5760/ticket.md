@@ -1,7 +1,7 @@
 ---
-id: T-draft-d17aa621
-title: Enforce single-parent, no-epic-under-epic and milestone-is-top constraints
-  at write time
+id: T-5760
+title: 'TIER005: sprint stays a pure filter -- refuse a sprint label as parent and
+  lint historical slips'
 state: queued
 kind: feature
 origin: human
@@ -14,7 +14,7 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
-points: 3
+points: 2
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -26,7 +26,7 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/tickets/_models.py
+- src/frob/gates/_tickets_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,13 +34,7 @@ no_scope_declared_reason: null
 triage_changes:
 - field: points
   old_value: null
-  new_value: '3'
-  reason: ticket sizing
-  actor: logan
-  at: '2026-09-24'
-- field: points
-  old_value: '3'
-  new_value: '3'
+  new_value: '2'
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
@@ -51,12 +45,10 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Enforce single-parent, no-epic-under-epic and milestone-is-top constraints at write time (_validate_parent family).
+TIER005: sprint stays a pure filter -- refuse at write time a parent that names a sprint label (belt) and add a lint-only check flagging any that slipped in historically (suspenders). A sprint cannot close anything and cannot be closed. Lands at WARN.
 
-Positive control: frob ticket new --tier epic --parent <other-epic> is refused; frob ticket new --tier milestone --parent <anything> is refused.
+Positive control: a ticket with parent pointing at a sprint label is refused at write time; TIER005 flags a historical one; zero findings on a clean ledger stays quiet.
 
-Doc page: docs/modules/tickets-data-storage.md#data-models
-
-Owner decision Q2: every story has at least one child ticket; a one-change story is a story plus exactly one ticket created together via frob ticket new --tier story --with-ticket. Add the --with-ticket path here or in D2, whichever owns the runner surface; record the choice in the done report.
+Doc page: docs/modules/tickets-lifecycle.md
 
 Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a3a4ea/scratchpad/LEDGER-TIERS-TREE.md (sections 2 and 5; section 5 overrides).

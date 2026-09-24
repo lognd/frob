@@ -6251,6 +6251,69 @@ all yet; each needs individual triage (bind a real invariant, reword, or
 waive with a specific reason) rather than a blanket disposition -- tracked
 as a further follow-up ticket rather than hand-closed in this pass.
 
+### INVLVL001 (T-3008, T-3004 section 7) {#invlvl001-t-3008}
+
+<!-- frob:describes src/frob/gates/invariants.py::INVARIANT_LEVELS -->
+<!-- frob:describes src/frob/gates/invariants.py::INVARIANT_PAIRED_TEST_LEVEL -->
+<!-- frob:describes src/frob/gates/_invariant_level.py::invariant_level_gate -->
+
+T-3004 section 7 ("invariants become multi-level"): `Invariant`
+(`frob.gates.invariants`) gained two OPTIONAL fields --
+
+- `level` -- the V-model artifact level this invariant is declared at,
+  one of `INVARIANT_LEVELS` (the same five left-side levels
+  `docs/strata/vmodel.md`'s "Levels: the V pairing" table declares:
+  `requirements`, `requirement-specification`, `system-specification`,
+  `system-design`, `component-design`).
+- `evidence_levels` -- an OPTIONAL `{evidence item: test level}` mapping
+  tagging one or more `evidence` entries with the level they were
+  actually verified at (the paired right-side level, e.g.
+  `component-unit-test`).
+
+Both are schema-only additions (T-3008's L1 half): an `invariants/*.md`
+file that predates them parses exactly as before, with `level=None` and
+`evidence_levels={}`. `load_invariants` validates `level` against
+`INVARIANT_LEVELS` and each `evidence_levels` value against
+`INVARIANT_PAIRED_TEST_LEVEL`'s values at parse time -- an unknown level
+string is as malformed as a bad `criticality`.
+
+**INVLVL001 (WARN)** is the enforcement half (T-3008's L2, owner review:
+`INV003` already exists, this needed its own id): for every invariant
+declaring a `level`, every `evidence_levels`-tagged entry whose tagged
+level is not that level's PAIRED test level
+(`INVARIANT_PAIRED_TEST_LEVEL[level]`) fires. An invariant with no
+`level`, or an evidence entry left untagged, is never checked -- the same
+"declaration carries the claim, absence is not a violation" posture the
+V-model kernel's own required-attr design takes (this doc's T-3044 H3
+note). WARN, not ERROR, matching INV003's own precedent above: a new
+best-effort family over optional, not-yet-widely-adopted fields should
+not retrofit every existing invariant to a hard gate.
+
+**Positive control:** an invariant declared `level: system-design` whose
+only `evidence_levels`-tagged entry is `component-unit-test` (paired to
+`component-design`, not `system-design`) fires INVLVL001; the same
+invariant with that entry tagged `subsystem-integration-test-plan`
+(`system-design`'s real paired level) stays quiet
+(`tests/gates/test_invariant_level.py::TestInvariantLevelGate`).
+
+**Rust kernel pairing table duplication.** `strata-core::graph::vmodel::
+v_pairing` (this doc's own "Levels: the V pairing" section) already
+declares the identical five (left, right) pairs; `INVARIANT_LEVELS`/
+`INVARIANT_PAIRED_TEST_LEVEL` duplicate it in Python by hand rather than
+importing it, since no PyO3 surface exposes the pairing table to Python
+and T-3010's own doc note is explicit that T-3008/T-3009/T-3010 are
+Rust-API consumers of that crate, not necessarily new PyO3 surface --
+add one only when a concrete caller needs it, which this ticket's WARN-
+severity gate does not. Both tables must stay in sync by hand if the
+V-model pairing table ever changes.
+
+`invariant_level_gate` is registered in `frob check`'s gate dispatch
+table (`_ALL_GATES`/`_CANONICAL_GATE_ORDER`/`_GATE_STAGE_GROUPS`/the
+`_build_thread_jobs` lambda table, all in `src/frob/gates/__init__.py`,
+under the `"invariant_level"` job name -- `frob check --only
+invariant_level` runs it) and `_KNOWN_GATE_RULES`
+(`src/frob/gates/_waive.py`).
+
 ### INV005 (T-0543)
 
 <!-- frob:describes src/frob/gates/_inv.py::_invariant_evidence_proves_anchor -->

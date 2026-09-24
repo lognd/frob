@@ -1,5 +1,5 @@
 ---
-id: T-draft-9570bf46
+id: T-5763
 title: 'TIER002: story closer -- all children done plus flavour-specific acceptance
   (user story V-model test node, quality objective bound invariant)'
 state: queued
@@ -9,8 +9,8 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-5749
-- T-draft-151e03f4
-- T-draft-3661879e
+- T-5756
+- T-5757
 parent: T-5748
 tier: ticket
 sprint: ledger-tiers

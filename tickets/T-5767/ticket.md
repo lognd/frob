@@ -1,13 +1,13 @@
 ---
-id: T-draft-e956923a
-title: Review verdict as ticket evidence + strata verification node
+id: T-5767
+title: 'LAYOUT001-00x: render-exists, review-current (source_hash), unreviewed=fail'
 state: queued
 kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
 blocked_by:
-- T-draft-da74d98d
+- T-5764
 parent: T-5747
 tier: ticket
 sprint: layout-gate
@@ -25,8 +25,8 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/tickets/_evidence.py
-- docs/strata/vmodel.md
+- src/frob/gates/_layout_gate.py
+- src/frob/webapp/_layout_structure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,11 +45,11 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Review verdict as ticket evidence (existing --evidence-cmd wiring only, no new machinery) plus a strata verification node at customer-test level in docs/strata/vmodel.md.
+LAYOUT001-00x rules: render-exists, review-current (manifest source_hash matches current source and fixture props byte hash, owner decision Q3), unreviewed (verdict null) = fail. New gate module reusing the A11Y auto-discovery pattern.
 
-Positive control: a ticket bound to a LAYOUT-gated story with an --evidence-cmd pointing at frob gallery verify shows the verdict in frob ticket show; a stale verdict blocks frob check --ticket.
+Positive control: a fixture manifest entry with source_hash mismatch vs current file content raises LAYOUT002; a verdict=null entry raises LAYOUT001; both clear once real.
 
-Doc page: docs/strata/vmodel.md#layout-verification-node
+Doc page: docs/modules/webapp-layout-structure.md
 
 Cross-repo dependency: blocked on the crunk repo leaf titled 'Define versioned gallery manifest JSON schema' (crunk epic 'gallery: every component and layout rendered and reviewed en masse'). Ids differ across repos, so the edge is recorded here by title.
 

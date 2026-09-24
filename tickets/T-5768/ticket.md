@@ -1,13 +1,13 @@
 ---
-id: T-draft-887a320c
-title: Register crunk as REQUIRED_FOR_FAMILY tool for LAYOUT
+id: T-5768
+title: Review verdict as ticket evidence + strata verification node
 state: queued
 kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
 blocked_by:
-- T-draft-a03f18af
+- T-5767
 parent: T-5747
 tier: ticket
 sprint: layout-gate
@@ -25,7 +25,8 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/doctor.py
+- src/frob/tickets/_evidence.py
+- docs/strata/vmodel.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,11 +45,11 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Register crunk as a REQUIRED_FOR_FAMILY tool for the LAYOUT family: _FAMILY_TOOL_RELEVANCE entry plus relevance predicate in doctor.py (no never-fail override, per T-5335).
+Review verdict as ticket evidence (existing --evidence-cmd wiring only, no new machinery) plus a strata verification node at customer-test level in docs/strata/vmodel.md.
 
-Positive control: on a fixture repo with gallery org buckets declared but no crunk binary on PATH, scan_external_tools returns a FAILING finding; removing the buckets makes it silent.
+Positive control: a ticket bound to a LAYOUT-gated story with an --evidence-cmd pointing at frob gallery verify shows the verdict in frob ticket show; a stale verdict blocks frob check --ticket.
 
-Doc page: docs/modules/doctor.md#required-for-family
+Doc page: docs/strata/vmodel.md#layout-verification-node
 
 Cross-repo dependency: blocked on the crunk repo leaf titled 'Define versioned gallery manifest JSON schema' (crunk epic 'gallery: every component and layout rendered and reviewed en masse'). Ids differ across repos, so the edge is recorded here by title.
 

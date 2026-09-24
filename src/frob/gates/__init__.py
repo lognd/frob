@@ -156,6 +156,7 @@ from frob.gates._inv import (
     inv004_gate,
     invariant_gate,
 )
+from frob.gates._invariant_level import invariant_level_gate
 from frob.gates._land_format import land_format_gate
 from frob.gates._land_parity import (
     land_parity_doc_test_gate,
@@ -6526,6 +6527,9 @@ _ALL_GATES = frozenset(
         "scope",
         "prework",
         "invariant",
+        # T-3008: INVLVL001 (frob.gates._invariant_level.invariant_level_gate)
+        # -- immediately after "invariant", same INV-family concern.
+        "invariant_level",
         "test",
         "policy",
         "doclink",
@@ -7199,6 +7203,9 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "drift",
     "coverage",
     "invariant",
+    # T-3008: INVLVL001, immediately after "invariant" -- same position as
+    # its _ALL_GATES entry above.
+    "invariant_level",
     "test",
     "policy",
     "doclink",
@@ -7375,6 +7382,7 @@ _GATE_STAGE_GROUPS: dict[str, frozenset[str]] = {
     "gates_schema": frozenset(["gates-fast"]),
     "graph_schema": frozenset(["gates-fast"]),
     "invariant": frozenset(["gates-fast"]),
+    "invariant_level": frozenset(["gates-fast"]),
     "land_format": frozenset(["gates-fast"]),
     "land_parity": frozenset(["gates-fast"]),
     "lang_conformance": frozenset(["gates-fast"]),
@@ -7950,6 +7958,9 @@ def _build_thread_jobs(
             # design/ -- see `frob.gates._policy_weakening_gate`.
             *policy_weakening_gate(st.repo_root),
         ),
+        # T-3008: INVLVL001, same st.invariants the "invariant" job above
+        # already loads -- a level-mismatch check over the same set.
+        "invariant_level": lambda: invariant_level_gate(st.invariants),
         "test": lambda: test_gate(
             st.snapshot,
             st.systems,
