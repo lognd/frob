@@ -23,10 +23,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- tests/gates_suite/test_sys_assume_template.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates_suite/test_sys_assume_template.py
+  reason: 'bound fix: update SYS119 positive-control test''s hardcoded cluster count
+    6->7 to match design/frob.strata''s real current state (T-5396 added a 7th CWE-79
+    cluster); test_sys_gate_zero_violations is a separate, structurally-conflicting
+    test filed as its own residue ticket, not fixed here'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
