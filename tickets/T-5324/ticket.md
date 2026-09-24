@@ -122,13 +122,19 @@ evidence:
 - tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_complete_statement_is_clean
 - tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_partial_statement_reports_missing_sections
 - tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_non_statement_file_is_always_quiet
-- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_no_frameworks_reports_missing_page
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_no_frameworks_short_circuits_to_empty
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_missing_page_reports_single_precondition_finding
   new_node: tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_non_statement_file_is_always_quiet
   reason: T-5454 reworked a11y_findings to the per-file gate hook contract; this test
     renamed/replaces the missing-page test node
+  actor: logan
+  at: '2026-09-23'
+- old_node: tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_no_frameworks_reports_missing_page
+  new_node: tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_no_frameworks_short_circuits_to_empty
+  reason: T-5454 reworked a11y_findings to the per-file gate hook contract; this test
+    renamed the no-frameworks short-circuit test node
   actor: logan
   at: '2026-09-23'
 threat: null
