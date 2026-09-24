@@ -2,7 +2,7 @@
 id: T-3068
 title: 'TDD commit protocol: test-first commit marks the test xfail(strict=True),
   implementation commit removes it; a surviving xfail is tracked debt'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -21,11 +21,12 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3068
+branch: t-3068
 scope:
 - src/frob/gates/_tdd_order.py
 - tests/gates/test_tdd_order.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,11 @@ scope_changes:
   glob: tests/gates/test_tdd_order.py
   reason: 'TDD commit protocol: xfail(strict=True) marks test-first, its removal marks
     implementation'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/gates.md
+  reason: extend TDD001's own gates.md entry with a TDD002 subsection
   actor: logan
   at: '2026-09-24'
 triage_changes:
