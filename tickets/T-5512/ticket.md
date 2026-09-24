@@ -1,5 +1,5 @@
 ---
-id: T-draft-553232aa
+id: T-5512
 title: Wire a real frob.gates._seo_gate (SEO family discovery)
 state: queued
 kind: feature
