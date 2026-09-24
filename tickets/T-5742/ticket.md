@@ -1,5 +1,5 @@
 ---
-id: T-draft-89ab5cb2
+id: T-5742
 title: Recovered from T-5362's phantom TICK006 citation of T-5521
 state: queued
 kind: bug
