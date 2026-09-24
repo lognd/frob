@@ -27,6 +27,7 @@ scope:
 - src/frob/_cli_parsers/_core.py
 - src/frob/agent/_brief.py
 - tests/unit/agent/test_brief.py
+- docs/guides/agent-playbook.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,11 @@ scope_changes:
   at: '2026-09-24'
 - op: add
   glob: tests/unit/agent/test_brief.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/guides/agent-playbook.md
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
