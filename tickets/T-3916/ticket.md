@@ -6,7 +6,7 @@ kind: bug
 origin: human
 created: '2026-09-05'
 priority: high
-parent: T-3004
+parent: null
 tier: ticket
 sprint: null
 runs_last: false
@@ -33,6 +33,13 @@ triage_changes:
   reason: 'pass2 backlog org: theme bucket strata'
   actor: logan
   at: '2026-09-11'
+- field: parent
+  old_value: T-3004
+  new_value: null
+  reason: release-tooling bug (src/frob/release), keyword-bucketed under T-3004 on
+    2026-09-11; owner reparent 2026-09-23
+  actor: logan
+  at: '2026-09-23'
 designated_repro_test: null
 threat: null
 component: null
