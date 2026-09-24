@@ -2,7 +2,7 @@
 id: T-3067
 title: 'Curated landing: preserve the 2-7 real work commits per ticket, squash the
   9-21 bookkeeping commits, classify by paths touched'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -21,12 +21,13 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3067
+branch: t-3067
 scope:
 - src/frob/tickets/_land_squash.py
 - tests/unit/tickets/test_land_squash.py
 - docs/guides/landing.md
+- docs/guides/agent-playbook.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +48,12 @@ scope_changes:
   reason: 'curated landing: keep real work commits, squash the rest'
   actor: logan
   at: '2026-09-23'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: cross-link the new docs/guides/landing.md from the existing guides list,
+    same REF002-avoidance pattern every other guide entry already uses
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: sprint
   old_value: v0.532.0
