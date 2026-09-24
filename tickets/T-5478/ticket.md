@@ -94,6 +94,21 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: 'BUG002 refusal: evidence tests cannot fail at dev on this Linux host since
+    all 5 defects are windows-only path-separator/clock-granularity bugs; verified
+    on the real Windows mirror instead'
+  actor: logan
+  at: '2026-09-24'
+  old_length: 2121
+  new_length: 2693
+evidence:
+- tests/gates_suite/test_config_path_defaults.py::TestConfigPathDefaultGate::test_absolute_path_default_is_silent
+- tests/narrative/test_bulk.py::TestApplyBulk::test_apply_moves_live_and_archived_skips_untargeted
+- tests/unit/test_token_usage.py::TestCollectTicketUsage::test_sums_assistant_usage_fields
+- tests/unit/test_token_usage.py::TestClaudeCodeAdapterExtractUsage::test_budget_exceeded_stops_early_and_reports_incomplete
+- tests/gates/test_docarch_structural.py::TestDocarch002RatchetSeverity::test_baselined_finding_stays_warn_new_one_errors
 designated_repro_test: null
 threat: null
 component: null
@@ -135,3 +150,5 @@ diagnosis category, not necessarily one shared code path. May need
 splitting into per-file tickets once someone reads each implementation;
 filed together here since the drain pass that found them ran out of time
 to read all four production implementations.
+
+frob:waive BUG002 reason="the 5 defects are windows-only path-separator/clock-granularity bugs -- BUG002's own re-verification runs on this Linux checkout, where PurePosixPath/native str(Path)/time.monotonic granularity all behave differently and the bound evidence tests pass at dev regardless of the fix; all 5 defects and their fixes were instead measured directly on the real Windows mirror (winrun, recorded in the done-report): failing with the exact CI symptom at dev, passing after the fix, confirmed on two consecutive Windows runs for the timing-sensitive one"
