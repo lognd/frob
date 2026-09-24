@@ -4,7 +4,7 @@
 detectors in `frob.strata._assume_template` directly with synthetic
 `Claim`s. `TestSelfaudit001TemplatedAssume` is the ticket's MANDATORY
 positive control: the gate must be RED against today's real
-`design/frob.strata` (the 33 boilerplate CWE assumes SF-08 measured) --
+`design/frob.strata` (the 37 boilerplate CWE assumes SF-08 measured) --
 a green result there means the detector does not work.
 """
 # frob:ticket T-5105
@@ -226,14 +226,18 @@ class TestSelfaudit001TemplatedAssume:
     # kind="unit"
     # invariant spec: [INV-041](invariants/INV-041.md)
     def test_red_on_todays_design_frob_strata(self) -> None:
-        """GIVEN today's REAL `design/frob.strata` in this repo (SF-08: 33
+        """GIVEN today's REAL `design/frob.strata` in this repo (SF-08: 37
         boilerplate CWE assumes, one `noflow registry -> <node> owner
         logan review "2026-10-15"` shape per node per weakness class,
-        clustered into 6 groups by weakness code -- CWE-78 x18, CWE-94 x6,
-        CWE-89 x3, CWE-502/639/918 x2 each) WHEN
+        clustered into 7 groups by weakness code -- CWE-78 x18, CWE-94 x6,
+        CWE-89 x3, CWE-502/639 x2 each, CWE-918 x3, CWE-79 x3 (T-5463: T-5396
+        added a `may "html_render"` grant to core/graphlang/testsuite,
+        each dragging in its own CWE-79 discharge assume -- same
+        templated boilerplate shape as the other 6 clusters, a NEW 7th
+        cluster the detector correctly flags)) WHEN
         `_templated_assume_violations` runs against this repo's own root
-        THEN it is RED: exactly the 6 SF-08 clusters are reported as
-        SYS119 templated-assume findings, together naming all 33 assumed
+        THEN it is RED: exactly the 7 SF-08 clusters are reported as
+        SYS119 templated-assume findings, together naming all 37 assumed
         claim ids. A green (empty) result here means the detector does
         not work and this leaf is not done (ticket body, mandatory
         positive control). SYS120 (shared-expiry) is a SEPARATE finding
@@ -249,8 +253,8 @@ class TestSelfaudit001TemplatedAssume:
         )
         violations = _templated_assume_violations(repo_root, "design")
         sys114 = [v for v in violations if "SYS119" in v.message]
-        assert len(sys114) == 6, (
-            "expected the 6 SF-08 weakness-code clusters as SYS119 "
+        assert len(sys114) == 7, (
+            "expected the 7 SF-08 weakness-code clusters as SYS119 "
             f"findings; got {len(sys114)}: {[v.message for v in sys114]}"
         )
         all_ids = {
@@ -260,8 +264,8 @@ class TestSelfaudit001TemplatedAssume:
             .split(". Write")[0]
             .split(", ")
         }
-        assert len(all_ids) == 33, (
-            f"expected all 33 SF-08 boilerplate assumes named; got {len(all_ids)}"
+        assert len(all_ids) == 37, (
+            f"expected all 37 SF-08 boilerplate assumes named; got {len(all_ids)}"
         )
 
     # frob:tests src/frob/gates/_sys_selfaudit.py::_templated_assume_violations \

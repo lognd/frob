@@ -2,7 +2,7 @@
 id: T-5463
 title: 'SYS119 templated-assume drift: design/frob.strata gained a 7th near-duplicate
   cluster'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -21,8 +21,6 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
 scope:
 - tests/gates_suite/test_sys_assume_template.py
 scope_breadth_ack: false
@@ -45,12 +43,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/gates_suite/test_sys_assume_template.py::TestSelfaudit001TemplatedAssume::test_red_on_todays_design_frob_strata
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5463
+branch: t-5463
 ---
 Found while draining CI run 35951365410 (dev 9e0c89bb19). ubuntu and macos
 both fail two related node ids on the same root cause:
