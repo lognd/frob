@@ -9,7 +9,7 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-5749
-- T-draft-ea1c92d6
+- T-5780
 parent: T-5748
 tier: ticket
 sprint: ledger-tiers
