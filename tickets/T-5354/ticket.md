@@ -25,12 +25,57 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/webapp/_websec_crypto_tls.py
-- tests/fixtures/webapp/websec2xx/**
+- tests/fixtures/webapp/websec2xx/random_tls/**
+- src/frob/webapp/_websec_random_tls.py
+- tests/unit/test_websec_random_tls.py
+- docs/modules/webapp-websec-random-tls.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/websec2xx/**
+  reason: per-ticket fixture subdir to avoid session/auth sibling lease collision;
+    module renamed to _websec_random_tls.py per coordinator naming; scope test file
+    + doc per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/webapp/_websec_crypto_tls.py
+  reason: per-ticket fixture subdir to avoid session/auth sibling lease collision;
+    module renamed to _websec_random_tls.py per coordinator naming; scope test file
+    + doc per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/websec2xx/random_tls/**
+  reason: per-ticket fixture subdir to avoid session/auth sibling lease collision;
+    module renamed to _websec_random_tls.py per coordinator naming; scope test file
+    + doc per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/webapp/_websec_random_tls.py
+  reason: per-ticket fixture subdir to avoid session/auth sibling lease collision;
+    module renamed to _websec_random_tls.py per coordinator naming; scope test file
+    + doc per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_random_tls.py
+  reason: per-ticket fixture subdir to avoid session/auth sibling lease collision;
+    module renamed to _websec_random_tls.py per coordinator naming; scope test file
+    + doc per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-random-tls.md
+  reason: per-ticket fixture subdir to avoid session/auth sibling lease collision;
+    module renamed to _websec_random_tls.py per coordinator naming; scope test file
+    + doc per playbook convention
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
