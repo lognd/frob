@@ -2,7 +2,7 @@
 id: T-draft-c099f096
 title: 'frob ci report <run>: per-job, per-platform failures, cross-platform diff,
   clusters'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-c099f096
+branch: t-draft-c099f096
 scope:
 - src/frob/_cli_parsers/_ci.py
 - tests/unit/cli/test_ci_report.py
