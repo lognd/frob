@@ -26,6 +26,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_squash.py
 - tests/unit/tickets/test_land_squash.py
+- docs/guides/landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: tests/unit/tickets/test_land_squash.py
+  reason: 'curated landing: keep real work commits, squash the rest'
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/guides/landing.md
   reason: 'curated landing: keep real work commits, squash the rest'
   actor: logan
   at: '2026-09-23'
