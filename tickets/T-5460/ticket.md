@@ -1,5 +1,5 @@
 ---
-id: T-draft-258c9c5d
+id: T-5460
 title: 'strata kernel: semantic edge kinds refines/allocates/satisfies/verifies/decides/supersedes'
 state: dropped
 kind: feature

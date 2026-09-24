@@ -94,4 +94,4 @@ anchor_reason: null
 land_commit: null
 ---
 ## Unblock log
-- 2026-09-23: unblocked by T-draft-258c9c5d -- L0 dropped: edge kinds already landed (T-3007/T-3042)
+- 2026-09-23: unblocked by T-5460 -- L0 dropped: edge kinds already landed (T-3007/T-3042)
