@@ -11,7 +11,7 @@ parent: T-3004
 tier: ticket
 sprint: null
 runs_last: false
-milestone: 1.1.0
+milestone: 0.535.0
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -34,6 +34,12 @@ triage_changes:
     the strata software-engineering engine'
   actor: logan
   at: '2026-08-26'
+- field: milestone
+  old_value: 1.1.0
+  new_value: 0.535.0
+  reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-23'
 designated_repro_test: null
 threat: null
 component: null
