@@ -26,7 +26,6 @@ branch: t-3008
 scope:
 - src/frob/gates/_invariant_level.py
 - tests/gates/test_invariant_level.py
-- docs/modules/gates.md
 - src/frob/gates/invariants.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -89,6 +88,12 @@ scope_changes:
     only for now to avoid collision, cross-link can follow once T-3010 lands
   actor: logan
   at: '2026-09-24'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: T-3008's own INVLVL001 doc section is complete and committed; freeing the
+    lease so T-3068 (same agent, sequencing-only blocked_by) can extend it further
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: null
@@ -120,6 +125,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/gates/test_invariant_level.py::TestInvariantLevelGate::test_quiet_when_no_level_declared
+- tests/gates/test_invariant_level.py::TestInvariantLevelGate::test_fires_on_a_level_mismatch
+- tests/gates/test_invariant_level.py::TestInvariantLevelGate::test_quiet_when_verified_at_the_paired_level
+- tests/gates/test_invariant_level.py::TestInvariantLevelGate::test_quiet_for_untagged_evidence
+- tests/gates/test_invariant_level.py::TestInvariantLevelGate::test_multiple_invariants_only_mismatched_one_fires
 designated_repro_test: null
 threat: null
 component: null
