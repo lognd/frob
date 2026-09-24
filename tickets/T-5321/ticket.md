@@ -1,7 +1,7 @@
 ---
 id: T-5321
 title: 'A11Y116-128: keyboard, focus, target size, motion'
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -174,3 +174,4 @@ Skip link (SC 2.4.1), focus-visible not suppressed (outline:none without replace
 
 ## Reopen log
 - 2026-09-23: earlier land attempt was refused on DOC006 after leaving state=done; dev's own ledger still has T-5321 in-progress, reopening the worktree's stale local state to match before a fresh land
+- 2026-09-23: concurrent land-runner retry of the earlier queued entry finalized/closed T-5321 again while this worktree's evidence was being fixed; reopening to in-progress before a fresh land
