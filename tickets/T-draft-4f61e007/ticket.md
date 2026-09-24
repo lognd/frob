@@ -11,7 +11,7 @@ blocked_by:
 - T-3068
 parent: T-3004
 tier: ticket
-sprint: null
+sprint: strata-vmodel
 runs_last: false
 milestone: v0.535.0
 points: null
@@ -38,6 +38,12 @@ triage_changes:
   new_value: T-3004
   reason: 'T-3004 decomposition: wiring follow-up to T-3068''s xfail(strict=True)
     debt marker'
+  actor: logan
+  at: '2026-09-24'
+- field: sprint
+  old_value: null
+  new_value: strata-vmodel
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
