@@ -26,6 +26,7 @@ scope:
 - docs/strata/vmodel/**
 - strata-core/src/graph/vmodel/closure.rs
 - src/frob/strata/_selfconform_models.py
+- strata-core/src/graph/vmodel/mod.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,11 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: src/frob/strata/_selfconform_models.py
+  reason: vmodel doc split (LARGE001) + canonical record schema
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: strata-core/src/graph/vmodel/mod.rs
   reason: vmodel doc split (LARGE001) + canonical record schema
   actor: logan
   at: '2026-09-23'
