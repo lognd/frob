@@ -2,13 +2,11 @@
 id: T-3047
 title: 'Type-checked code review and decision records: review as a graph node with
   provenance, decisions carrying their reason as data'
-state: queued
+state: planned
 kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
-blocked_by:
-- T-3010
 parent: T-3004
 tier: ticket
 sprint: strata-vmodel
@@ -126,3 +124,4 @@ land_commit: null
 ---
 ## Unblock log
 - 2026-09-23: unblocked by T-5460 -- L0 dropped: edge kinds already landed (T-3007/T-3042)
+- 2026-09-24: unblocked by T-3010 -- coordinator directive 2026-09-24: T-3010's own blocked_by edge is sequencing-only (shared graph schema file); building T-3047 on top of t-3010 branch content merged in, diffs kept separable, T-3010 lands independently via its own land
