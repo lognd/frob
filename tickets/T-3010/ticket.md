@@ -32,6 +32,7 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_waive.py
 - design/frob.strata
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -90,6 +91,12 @@ scope_changes:
   glob: design/frob.strata
   reason: MSCLOSE001's _repo_milestone helper opens frob.toml directly (Path.open('rb')),
     a new fs.read site under src/frob/gates/**
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: MSCLOSE001 needs a CHK-GATE-MSCLOSE001 registry entry, same REG002 step
+    VMOD001 needed
   actor: logan
   at: '2026-09-24'
 triage_changes:
