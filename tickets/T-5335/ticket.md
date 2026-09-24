@@ -50,6 +50,20 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_sql_relevant_missing_sqlfluff_is_a_finding
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_no_sql_missing_sqlfluff_is_not_a_finding
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_sql_relevant_present_sqlfluff_is_not_a_finding
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_sqlfluff_is_required_for_family_category
+- tests/unit/sql/test_sqlfluff_plugin.py::test_select_star_is_flagged
+- tests/unit/sql/test_sqlfluff_plugin.py::test_named_columns_are_not_flagged
+- tests/unit/sql/test_sqlfluff_plugin.py::test_update_delete_without_where_is_flagged
+- tests/unit/sql/test_sqlfluff_plugin.py::test_update_delete_with_where_is_not_flagged
+- tests/unit/sql/test_sqlfluff_plugin.py::test_having_without_aggregate_is_flagged
+- tests/unit/sql/test_sqlfluff_plugin.py::test_having_with_aggregate_is_not_flagged
+- tests/unit/sql/test_sqlfluff_plugin.py::test_offset_pagination_is_flagged
+- tests/unit/sql/test_sqlfluff_plugin.py::test_limit_without_offset_is_not_flagged
+- tests/unit/sql/test_sqlfluff_plugin.py::test_get_rules_registers_all_four
 designated_repro_test: null
 threat: null
 component: null
