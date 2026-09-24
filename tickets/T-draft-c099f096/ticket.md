@@ -23,10 +23,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/_cli_parsers/_ci.py
+- tests/unit/cli/test_ci_report.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ci.py
+  reason: frob ci report CLI wrapper (CI-1)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/cli/test_ci_report.py
+  reason: frob ci report CLI wrapper (CI-1)
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: sprint
   old_value: null
