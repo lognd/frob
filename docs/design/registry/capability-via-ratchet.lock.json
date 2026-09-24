@@ -117,8 +117,9 @@
       "ticket": "T-2743"
     },
     "gates::fs.read": {
-      "accepted_count": 62,
-      "reason": "branch-own via addition auto-accept (T-4951)"
+      "accepted_count": 63,
+      "reason": "T-3010: adds src/frob/gates/_strata_milestone_closure.py to gates's fs.read via-list -- _repo_milestone opens frob.toml (rb) to resolve [tickets].default_milestone, one new named site. Bumping the ceiling 62 -> 63.",
+      "ticket": "T-3010"
     },
     "gates::fs.write": {
       "accepted_count": 40,
@@ -264,7 +265,7 @@
       "reason": "testsuite glob growth"
     },
     "testsuite::fs.write": {
-      "accepted_count": 595,
+      "accepted_count": 596,
       "reason": "testsuite glob growth"
     },
     "testsuite::html_render": {

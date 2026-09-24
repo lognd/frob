@@ -22,8 +22,9 @@ use std::collections::BTreeMap;
 
 mod closure;
 pub use closure::{
-    check_closure, check_no_orphan_requirements, check_no_orphan_test, check_no_trace_cycle,
-    check_no_unjustified_design, check_no_untested_artifact, ClosureViolation,
+    check_closure, check_milestone_closure, check_no_orphan_requirements, check_no_orphan_test,
+    check_no_trace_cycle, check_no_unjustified_design, check_no_untested_artifact,
+    ClosureViolation,
 };
 
 /// Required node-attr key on every `KIND_TEST` node (T-3044 H3): the
@@ -176,6 +177,7 @@ pub const EDGE_BLOCKED_BY: &str = "blocked_by";
 // frob:doc docs/strata/vmodel.md#schema-assembly
 // frob:ticket T-3260
 // strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind kind="unit"
+// strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind
 pub fn v_model_schema() -> GraphSchema {
     let mut s = GraphSchema::new();
     s.declare_node_kind(KIND_ARTIFACT)

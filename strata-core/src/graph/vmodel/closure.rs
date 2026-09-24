@@ -42,6 +42,15 @@ pub enum ClosureViolation {
     /// bool cycle checker has shipped blind to a real planted cycle in
     /// this repo before; keep the witness).
     TraceCycle { cycle: Vec<NodeId> },
+    /// Rule 6 (T-3010, milestone-scoped closure): an `artifact` node has
+    /// no incoming `verifies` edge (same emptiness test as rule 3) AND is
+    /// not named in the caller's `known_gaps` set -- an obligation this
+    /// milestone's configuration binding neither covers nor has declared
+    /// as a tracked gap. Generalises the `FacetState.KNOWN_GAP` pattern
+    /// (`frob.lang._support`) from language-conformance facets to V-model
+    /// artifacts: a gap is an acceptable steady state ONLY when something
+    /// says so by name, never by silent omission.
+    UncoveredMilestoneObligation { node: NodeId },
 }
 
 /// Every node of `kind` in `graph`, in id order -- shared by all four rules
@@ -125,6 +134,9 @@ fn closure_reaches_level(
 // strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires kind="unit"
 // kind="unit"
 // kind="unit"
+// strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.h2_genuine_four_level_chain_stays_quiet
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
 pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_SATISFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -158,6 +170,9 @@ pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
 // strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires kind="unit"
 // kind="unit"
 // kind="unit"
+// strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.h2_genuine_four_level_chain_stays_quiet
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
 pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
     let kinds = trace_kinds();
     let filter = KindFilter::Only(&kinds);
@@ -191,6 +206,11 @@ pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
 // strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_stay_quiet_when_verified_at_paired_level kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_fire_on_untested_requirement \
 // kind="unit"
+// strata-core/src/graph/vmodel/closure.rs::tests.rule3_wrong_level_test_is_refused_at_construction_not_silently_accepted
+// strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_stay_quiet_when_verified_at_paired_level
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule3_wrong_level_test_is_refused_at_construction_not_silently_accepted
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_stay_quiet_when_verified_at_paired_level
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_fire_on_untested_requirement
 pub fn check_no_untested_artifact(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_VERIFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -207,6 +227,8 @@ pub fn check_no_untested_artifact(graph: &Graph) -> Vec<ClosureViolation> {
 // strata-core/src/graph/vmodel/closure.rs::tests.rule4_must_stay_quiet_when_verifying_something \
 // kind="unit"
 // kind="unit"
+// strata-core/src/graph/vmodel/closure.rs::tests.rule4_must_stay_quiet_when_verifying_something
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule4_must_stay_quiet_when_verifying_something
 pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_VERIFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -225,6 +247,9 @@ pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
 // frob:ticket T-3260
 // strata-core/src/graph/vmodel/closure.rs::tests.rule5_stays_quiet_on_the_genuine_chain kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.rule5_must_fire_on_a_satisfies_cycle_via_check_closure kind="unit"
+// strata-core/src/graph/vmodel/closure.rs::tests.rule5_must_fire_on_a_satisfies_cycle_via_check_closure
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule5_stays_quiet_on_the_genuine_chain
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule5_must_fire_on_a_satisfies_cycle_via_check_closure
 pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
     let kinds = trace_kinds();
     let filter = KindFilter::Only(&kinds);
@@ -234,6 +259,47 @@ pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
     }
 }
 
+/// Rule 6 (T-3010): milestone-scoped closure over a configuration
+/// binding. Same domain and edge-emptiness test as rule 3
+/// (`check_no_untested_artifact`) -- every `artifact` node needs >=1
+/// incoming `verifies` edge -- except a node named in `known_gaps` is
+/// exempted rather than reported: T-3004 section 6's "a configuration may
+/// bind a partial architecture, as long as every uncovered obligation is
+/// DECLARED as a gap, not merely absent." `known_gaps` is caller-supplied
+/// rather than read from the graph itself -- this module stays domain-
+/// agnostic about how a caller decides an obligation is a tracked gap
+/// (frob's own gate generalises `frob.lang._support`'s
+/// `FacetState.KNOWN_GAP` registry pattern for this, T-3010's ticket
+/// body); the kernel only needs the resulting node-id set.
+///
+/// Deliberately NOT folded into `check_closure` (unlike rules 1-5): rule 6
+/// is opt-in per caller-supplied `known_gaps`, so a caller not passing a
+/// milestone binding at all (every existing `check_closure` call site)
+/// must see identical behaviour to before this ticket.
+// frob:doc docs/strata/vmodel.md#incremental-releases-milestone-scoped-closure-t-3010
+// frob:ticket T-3010
+// strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_fire_on_uncovered_ungapped_obligation kind="unit"
+// strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_stay_quiet_when_gap_is_declared kind="unit"
+// strata-core/src/graph/vmodel/closure.rs::tests.rule6_stays_quiet_when_covered_by_a_verifying_test
+// strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_stay_quiet_when_gap_is_declared
+// strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_fire_on_uncovered_ungapped_obligation
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule6_stays_quiet_when_covered_by_a_verifying_test
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_stay_quiet_when_gap_is_declared
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_fire_on_uncovered_ungapped_obligation
+pub fn check_milestone_closure(
+    graph: &Graph,
+    known_gaps: &std::collections::BTreeSet<NodeId>,
+) -> Vec<ClosureViolation> {
+    let filter_set = [EDGE_VERIFIES.to_string()].into();
+    let filter = KindFilter::Only(&filter_set);
+    nodes_of_kind(graph, KIND_ARTIFACT)
+        .into_iter()
+        .filter(|id| graph.backward_closure(id, &filter).is_empty())
+        .filter(|id| !known_gaps.contains(*id))
+        .map(|id| ClosureViolation::UncoveredMilestoneObligation { node: id.clone() })
+        .collect()
+}
+
 /// Run all five rules and concatenate their violations, in rule order
 /// (1, 2, 3, 4, 5). Empty means the graph is structurally closed --
 /// T-3004 section 2's "bad-but-complete passes" bar, nothing about quality.
@@ -241,6 +307,10 @@ pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
 // frob:ticket T-3260
 // strata-core/src/graph/vmodel/closure.rs::tests.check_closure_reports_all_four_rules_on_a_maximally_broken_graph kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.check_closure_is_empty_on_a_fully_closed_two_level_graph kind="unit"
+// strata-core/src/graph/vmodel/closure.rs::tests.check_closure_reports_all_four_rules_on_a_maximally_broken_graph
+// strata-core/src/graph/vmodel/closure.rs::tests.check_closure_is_empty_on_a_fully_closed_two_level_graph
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.check_closure_reports_all_four_rules_on_a_maximally_broken_graph
+// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.check_closure_is_empty_on_a_fully_closed_two_level_graph
 pub fn check_closure(graph: &Graph) -> Vec<ClosureViolation> {
     let mut out = check_no_orphan_requirements(graph);
     out.extend(check_no_unjustified_design(graph));
@@ -369,7 +439,6 @@ mod tests {
     #[test]
     // frob:ticket T-3007
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact
     fn rule3_must_fire_on_untested_requirement() {
         let g = base_graph();
         // req-1 and design-1 both exist; neither has any verifying test.
@@ -386,7 +455,6 @@ mod tests {
     #[test]
     // frob:ticket T-3007
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact
     fn rule3_must_stay_quiet_when_verified_at_paired_level() {
         let mut g = base_graph();
         g.add_node_with_attrs(
@@ -411,7 +479,6 @@ mod tests {
     #[test]
     // frob:ticket T-3007
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact
     fn rule3_wrong_level_test_is_refused_at_construction_not_silently_accepted() {
         // A customer-test (paired to `requirements`) cannot verify
         // `design-1` (paired to `component-design`) -- the kernel's
@@ -460,7 +527,6 @@ mod tests {
     #[test]
     // frob:ticket T-3007
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_test
     fn rule4_must_stay_quiet_when_verifying_something() {
         let mut g = base_graph();
         g.add_node_with_attrs(
@@ -477,7 +543,6 @@ mod tests {
     #[test]
     // frob:ticket T-3007
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_closure
     fn check_closure_is_empty_on_a_fully_closed_two_level_graph() {
         let mut g = base_graph();
         g.add_node_with_attrs(
@@ -502,8 +567,6 @@ mod tests {
     #[test]
     // frob:ticket T-3043
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements
     fn h2_mutual_satisfies_pair_with_zero_requirements_now_fires() {
         // T-3043 H2's exact escape: two system-design artifacts pointing
         // at each other via `satisfies`, each verified by a test at its
@@ -591,8 +654,6 @@ mod tests {
     #[test]
     // frob:ticket T-3043
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements
     fn h2_genuine_four_level_chain_stays_quiet() {
         // The positive control for the H2 fix: a real chain from a
         // requirement all the way down to a component design, verified at
@@ -672,7 +733,6 @@ mod tests {
     #[test]
     // frob:ticket T-3043
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle
     fn rule5_must_fire_on_a_satisfies_cycle_via_check_closure() {
         // T-3043 H2's second finding: find_cycle existed in the kernel but
         // nothing in check_closure ever called it. This plants a genuine
@@ -720,7 +780,6 @@ mod tests {
     #[test]
     // frob:ticket T-3043
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle
     fn rule5_stays_quiet_on_the_genuine_chain() {
         // Must-quiet twin over the SAME node layout as the fire case above
         // minus the closing edge, per the positive-control lesson.
@@ -729,9 +788,67 @@ mod tests {
     }
 
     #[test]
+    // frob:ticket T-3010
+    fn rule6_must_fire_on_uncovered_ungapped_obligation() {
+        let mut g = Graph::new(v_model_schema());
+        g.add_node_with_attrs(
+            "obligation-1",
+            KIND_ARTIFACT,
+            Some(LEVEL_REQUIREMENTS.into()),
+            attrs_with(ATTR_CODE_REF, "obligation-1"),
+        )
+        .unwrap();
+        let no_gaps: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+        let violations = check_milestone_closure(&g, &no_gaps);
+        assert_eq!(
+            violations,
+            vec![ClosureViolation::UncoveredMilestoneObligation {
+                node: "obligation-1".into()
+            }]
+        );
+    }
+
+    #[test]
+    // frob:ticket T-3010
+    fn rule6_must_stay_quiet_when_gap_is_declared() {
+        let mut g = Graph::new(v_model_schema());
+        g.add_node_with_attrs(
+            "obligation-1",
+            KIND_ARTIFACT,
+            Some(LEVEL_REQUIREMENTS.into()),
+            attrs_with(ATTR_CODE_REF, "obligation-1"),
+        )
+        .unwrap();
+        let gaps: std::collections::BTreeSet<String> = ["obligation-1".to_string()].into();
+        assert!(check_milestone_closure(&g, &gaps).is_empty());
+    }
+
+    #[test]
+    // frob:ticket T-3010
+    fn rule6_stays_quiet_when_covered_by_a_verifying_test() {
+        let mut g = Graph::new(v_model_schema());
+        g.add_node_with_attrs(
+            "obligation-1",
+            KIND_ARTIFACT,
+            Some(LEVEL_REQUIREMENTS.into()),
+            attrs_with(ATTR_CODE_REF, "obligation-1"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
+            "test-1",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "test-1"),
+        )
+        .unwrap();
+        g.add_edge(EDGE_VERIFIES, "test-1", "obligation-1").unwrap();
+        let no_gaps: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+        assert!(check_milestone_closure(&g, &no_gaps).is_empty());
+    }
+
+    #[test]
     // frob:ticket T-3007
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_closure
     fn check_closure_reports_all_four_rules_on_a_maximally_broken_graph() {
         let mut g = Graph::new(v_model_schema());
         g.add_node_with_attrs(

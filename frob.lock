@@ -3734,6 +3734,15 @@
       "old_digest": "ea60db054ceb9407b71c1820a4cd1e66f0945d9de2b0c7a174b1fb1632e244d2",
       "reason": "T-5108: added directive-line preservation via _resolve_keep_lines/_directive_keep_lines; docs/commands/narrative.md updated in the same change, behavior re-verified by the new positive-control and regression tests",
       "ref": "src/frob/narrative/_cli.py::run_narrative_command"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-24",
+      "facet": "sig",
+      "new_digest": "a00c6f9e4e74a53c286dd673034908244899d66477edf8ef92788147b0408e7c",
+      "old_digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
+      "reason": "T-3010 added a new UncoveredMilestoneObligation variant for the rule-6 milestone closure check; dependents (check_closure/check_milestone_closure match arms) already handle it exhaustively, verified by cargo test",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::ClosureViolation"
     }
   ],
   "entries": [
@@ -5268,7 +5277,7 @@
       "ref": "src/frob/xref/__init__.py::xref"
     },
     {
-      "digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
+      "digest": "a00c6f9e4e74a53c286dd673034908244899d66477edf8ef92788147b0408e7c",
       "facet": "sig",
       "ref": "strata-core/src/graph/vmodel/closure.rs::ClosureViolation"
     },

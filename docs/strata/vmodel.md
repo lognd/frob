@@ -282,6 +282,79 @@ A file that fails to parse is skipped by this gate (logged at DEBUG) --
 finding; `vmodel_gate` does not duplicate that report under a second rule
 id.
 
+## Incremental releases: milestone-scoped closure (T-3010)
+
+T-3004 section 6's incremental-release model: a milestone may bind a
+PARTIAL architecture, as long as every obligation it does not yet cover
+is DECLARED as a gap, not merely absent. This is a SIXTH closure rule
+(`strata-core::graph::vmodel::check_milestone_closure`,
+`strata-core/src/graph/vmodel/closure.rs`), deliberately NOT folded into
+`check_closure`'s unconditional five: it is opt-in per caller-supplied
+`known_gaps`, so every existing `check_closure` call site keeps its exact
+pre-T-3010 behaviour.
+
+`check_milestone_closure(graph, known_gaps)` runs the same edge-emptiness
+test rule 3 (`check_no_untested_artifact`) already runs -- every
+`artifact` node needs >=1 incoming `verifies` edge -- except a node named
+in the caller's `known_gaps` set is exempted rather than reported as
+`ClosureViolation::UncoveredMilestoneObligation`. The kernel stays
+domain-agnostic about how a caller decides an obligation is a tracked
+gap; it only needs the resulting node-id set.
+
+### PyO3 surface: `milestone_closure_check`
+
+Mirrors `vmodel_check`'s shape exactly, plus one argument:
+
+```
+milestone_closure_check(
+    nodes: list[tuple[str, str, str | None, dict[str, str]]],
+    edges: list[tuple[str, str, str, dict[str, str]]],
+    known_gaps: list[str],
+) -> tuple[list[str], list[str]]
+    # (construction_errors, [uncovered_node_id, ...])
+```
+
+Construction refusals are collected the same way `vmodel_check`'s are.
+The second slot is every `artifact` node id `check_milestone_closure`
+flagged -- empty when the milestone's configuration binding is closed.
+
+### Wired into `frob check`: MSCLOSE001 (`frob.gates._strata_milestone_closure`)
+
+Generalises `frob.lang._support`'s `FacetState.KNOWN_GAP` registry
+pattern -- a `(language, facet)` cell is `IMPLEMENTED`/`NOT_APPLICABLE`/
+`KNOWN_GAP`, never silently absent -- from language-conformance facets to
+V-model artifact obligations:
+
+- `MilestoneGap` (a pydantic model, `reason: str`) is the `FacetStatus`
+  analog: a gap with a blank `reason` is treated as NOT gapped (the same
+  "unreasoned cell is unaccounted for" rule
+  `frob.lang._support._unreasoned_names` already enforces).
+- `MILESTONE_GAP_REGISTRY: dict[str, dict[str, MilestoneGap]]` is the
+  `(milestone name) -> {artifact node id: MilestoneGap}` accounting
+  table this gate checks every uncovered obligation against --
+  hand-edited, the same shape `KNOWN_GAP_TRACKING_TICKETS` gives language
+  facets.
+
+`milestone_closure_gate(root, milestone=None)` walks the same aggregated
+`.strata` design-dir graph `vmodel_gate` builds (`_collect_vmodel_graph`,
+reused rather than re-parsing every file a second time), calls
+`strata_core.milestone_closure_check` with the milestone's declared gap
+ids, and reports one MSCLOSE001 finding per construction error or
+uncovered obligation. `milestone` defaults to `[tickets].
+default_milestone` (`frob.toml`) when not given explicitly.
+
+**Positive control (T-3010's tree entry):** a configuration binding an
+architecture that covers 3 of 5 declared obligations (3 `verifies` edges,
+2 `MilestoneGap` entries) passes; the same graph with one of those two
+remaining obligations left undeclared fires MSCLOSE001 on exactly that
+one (`tests/unit/strata/test_vmodel_check.py::TestMilestoneClosureCheck`,
+`tests/gates/test_milestone_closure.py::TestMilestoneClosureGate`).
+
+Same opt-in posture and WARN severity as VMOD001, for the identical
+reason: frob has no milestone-scoped V-model graph of its own yet, so an
+ERROR-severity rule here would just get waived away before any real
+milestone binding exists to check.
+
 ## Deferred (owner decision, T-3004 section 9)
 
 - The waterfall GATE (no implementation until spec closure) is explicitly

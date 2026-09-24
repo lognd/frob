@@ -2,7 +2,7 @@
 id: T-3010
 title: 'Incremental releases: milestone-scoped closure over a configuration binding
   partial architectures with declared gaps (T-3004 section 6)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -21,6 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3010
+branch: t-3010
 scope:
 - strata-core/src/graph/vmodel/closure.rs
 - src/frob/gates/_strata_milestone_closure.py
@@ -28,7 +30,6 @@ scope:
 - tests/gates/test_milestone_closure.py
 - docs/strata/vmodel.md
 - strata-core/src/lib.rs
-- strata-core/src/graph/vmodel/mod.rs
 - src/frob/gates/__init__.py
 - src/frob/gates/_waive.py
 - design/frob.strata
@@ -113,6 +114,13 @@ scope_changes:
     check to resolve the new PyO3 export
   actor: logan
   at: '2026-09-24'
+- op: remove
+  glob: strata-core/src/graph/vmodel/mod.rs
+  reason: T-3010's own mod.rs work (the check_milestone_closure re-export) is complete
+    and committed; freeing the lease so T-3047 (same agent, sequencing-only blocked_by)
+    can extend the schema further
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: null
@@ -163,6 +171,4 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-3010
-branch: t-3010
 ---

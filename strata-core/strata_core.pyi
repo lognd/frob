@@ -35,3 +35,13 @@ def vmodel_check(
     nodes: list[tuple[str, str, str | None, dict[str, str]]],
     edges: list[tuple[str, str, str, dict[str, str]]],
 ) -> tuple[list[str], list[tuple[str, str]]]: ...
+
+# T-3010: the sixth, opt-in closure rule (`check_milestone_closure`) over
+# the same flattened node/edge shape `vmodel_check` takes, plus a caller-
+# supplied `known_gaps` node-id list -- see
+# docs/strata/vmodel.md#incremental-releases-milestone-scoped-closure-t-3010.
+def milestone_closure_check(
+    nodes: list[tuple[str, str, str | None, dict[str, str]]],
+    edges: list[tuple[str, str, str, dict[str, str]]],
+    known_gaps: list[str],
+) -> tuple[list[str], list[str]]: ...

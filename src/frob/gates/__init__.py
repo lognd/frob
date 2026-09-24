@@ -217,6 +217,7 @@ from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._render_lint import render_lint_gate
 from frob.gates._root_asset_dirs import root_asset_dir_gate
 from frob.gates._secrets import fake_marker_staleness_gate, secrets_gate
+from frob.gates._strata_milestone_closure import milestone_closure_gate
 from frob.gates._suppress import (
     SuppressionDialect,
     suppress001_gate,
@@ -6547,6 +6548,10 @@ _ALL_GATES = frozenset(
         # (frob.gates._vmodel.vmodel_gate) -- the reachability half of the
         # V-model epic's H1 fix (vmodel_check previously had zero callers).
         "vmodel",
+        # T-3010: MSCLOSE001, milestone-scoped V-model closure
+        # (frob.gates._strata_milestone_closure.milestone_closure_gate)
+        # -- immediately after "vmodel", same aggregated graph.
+        "milestone_closure",
         # T-3456: LANDPARITY001/LANDPARITY002 -- diff-scoped land-parity
         # rules, immediately after "vmodel" (same position as its own
         # dispatch-dict entry below).
@@ -7223,6 +7228,9 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     # T-3042: VMOD001, immediately after "milestone" -- same position as
     # its _ALL_GATES entry above.
     "vmodel",
+    # T-3010: MSCLOSE001, same aggregated graph as vmodel, immediately
+    # after it.
+    "milestone_closure",
     # T-3456: LANDPARITY001/LANDPARITY002, same position as its own
     # _ALL_GATES entry above.
     "land_parity",
@@ -7373,6 +7381,7 @@ _GATE_STAGE_GROUPS: dict[str, frozenset[str]] = {
     "lang_project_conformance": frozenset(["gates-fast"]),
     "lexcheck": frozenset(["gates-fast"]),
     "milestone": frozenset(["gates-fast"]),
+    "milestone_closure": frozenset(["gates-fast"]),
     "narrative_blocks": frozenset(["gates-fast"]),
     "native_schema": frozenset(["gates-fast"]),
     "opaque": frozenset(["gates-security"]),
@@ -8033,6 +8042,10 @@ def _build_thread_jobs(
         # vmodel_gate walks `.strata` files under the SAME design dir
         # `sys_gate` resolves its own opt-in check against.
         "vmodel": lambda: vmodel_gate(st.root),
+        # T-3010: MSCLOSE001, same st.root/design dir as "vmodel" above --
+        # milestone_closure_gate resolves its own [tickets].default_milestone
+        # when not given one explicitly.
+        "milestone_closure": lambda: milestone_closure_gate(st.root),
         # T-3456: LANDPARITY001/LANDPARITY002, same `st.root` as "vmodel"/
         # "milestone" above -- both reuse land's own diff-scoped land-time
         # checks (frob.gates._land_parity), so `frob check --ticket <id>`

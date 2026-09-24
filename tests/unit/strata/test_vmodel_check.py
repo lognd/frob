@@ -190,3 +190,76 @@ class TestVmodelCheckNodePayload:
             ],
         )
         assert errors == []
+
+
+# frob:tests strata-core/src/graph/vmodel/closure.rs::check_milestone_closure \
+# kind="unit"
+# frob:tests strata-core/src/lib.rs::milestone_closure_check kind="unit"
+class TestMilestoneClosureCheck:
+    """T-3010: the sixth, opt-in closure rule over the same PyO3 boundary
+    `TestVmodelCheckClosureSemantics` exercises for rules 1-5 above."""
+
+    def test_fires_on_an_ungapped_uncovered_obligation(self) -> None:
+        """An artifact with no verifying edge and no declared gap fires."""
+        nodes = [("obligation-1", "artifact", "requirements", {"code_ref": "o1"})]
+        errors, uncovered = strata_core.milestone_closure_check(nodes, [], [])
+        assert errors == []
+        assert uncovered == ["obligation-1"]
+
+    def test_quiet_when_gap_is_declared(self) -> None:
+        """The SAME graph, but the caller names the obligation a known gap."""
+        nodes = [("obligation-1", "artifact", "requirements", {"code_ref": "o1"})]
+        errors, uncovered = strata_core.milestone_closure_check(
+            nodes, [], ["obligation-1"]
+        )
+        assert errors == []
+        assert uncovered == []
+
+    def test_quiet_when_covered_by_a_verifying_test(self) -> None:
+        """The SAME graph, but with a real verifying test attached instead
+        of a declared gap -- also quiet, same as rule 3's own behaviour."""
+        nodes = [
+            ("obligation-1", "artifact", "requirements", {"code_ref": "o1"}),
+            ("ctest-1", "test", "customer-test", {"runnable": "t.py::ctest_1"}),
+        ]
+        edges = [("verifies", "ctest-1", "obligation-1", {})]
+        errors, uncovered = strata_core.milestone_closure_check(nodes, edges, [])
+        assert errors == []
+        assert uncovered == []
+
+    def test_partial_coverage_three_of_five_with_two_gaps_passes(self) -> None:
+        """T-3010's tree positive control at its literal scale: 5 declared
+        obligations, 3 covered by verifying tests, 2 declared gaps --
+        the milestone-scoped closure over this configuration must pass."""
+        nodes = [
+            (f"obligation-{i}", "artifact", "requirements", {"code_ref": f"o{i}"})
+            for i in range(1, 6)
+        ] + [
+            (f"test-{i}", "test", "customer-test", {"runnable": f"t.py::test_{i}"})
+            for i in range(1, 4)
+        ]
+        edges = [("verifies", f"test-{i}", f"obligation-{i}", {}) for i in range(1, 4)]
+        errors, uncovered = strata_core.milestone_closure_check(
+            nodes, edges, ["obligation-4", "obligation-5"]
+        )
+        assert errors == []
+        assert uncovered == []
+
+    def test_same_configuration_with_an_undeclared_missing_obligation_fails(
+        self,
+    ) -> None:
+        """The SAME 5-obligation graph, but only ONE of the two uncovered
+        obligations is gapped -- the other must fire, not silently pass."""
+        nodes = [
+            (f"obligation-{i}", "artifact", "requirements", {"code_ref": f"o{i}"})
+            for i in range(1, 6)
+        ] + [
+            (f"test-{i}", "test", "customer-test", {"runnable": f"t.py::test_{i}"})
+            for i in range(1, 4)
+        ]
+        edges = [("verifies", f"test-{i}", f"obligation-{i}", {}) for i in range(1, 4)]
+        errors, uncovered = strata_core.milestone_closure_check(
+            nodes, edges, ["obligation-4"]
+        )
+        assert errors == []
+        assert uncovered == ["obligation-5"]

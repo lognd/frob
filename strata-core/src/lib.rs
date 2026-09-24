@@ -96,6 +96,11 @@ type Edge = (String, String, String, bool, bool);
 /// far as a chain of transitive ones.
 // strata-core/src/lib.rs::tests.non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain \
 // kind="unit"
+// strata-core/src/lib.rs::tests.non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain
+// frob:tests strata-core/src/lib.rs::tests.barriers_stop_taint_unless_asked kind="unit"
+// frob:tests strata-core/src/lib.rs::tests.non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain
+// frob:tests strata-core/src/lib.rs::tests.non_transitive_edge_is_a_terminal_hop kind="unit"
+// frob:tests strata-core/src/lib.rs::tests.reachable_returns_witness_paths kind="unit"
 #[pyfunction]
 fn reachable(
     py: Python<'_>,
@@ -400,6 +405,8 @@ fn zero_weight_path(
 /// running longest-path DP over the resulting DAG in topological order is
 /// then exact -- no caller-context-dependent memoization anywhere.
 // kind="unit"
+// frob:tests strata-core/src/lib.rs::tests.worst_age_is_infinite_on_positive_cycles kind="unit"
+// frob:tests strata-core/src/lib.rs::tests.worst_age_takes_the_stalest_path kind="unit"
 #[pyfunction]
 fn worst_age(py: Python<'_>, edges: Vec<AgedEdge>, target: String) -> (f64, Vec<String>) {
     // frob:doc docs/strata/kernel.md#strata-core
@@ -569,6 +576,7 @@ fn worst_age_impl(edges: Vec<AgedEdge>, target: String) -> (f64, Vec<String>) {
 /// hot path as the closures and grows fanout/skew multipliers in phase 2;
 /// keeping every propagation kernel on one side of the boundary avoids a
 /// Python/Rust split of the arithmetic later.
+// frob:tests strata-core/src/lib.rs::tests.demand_sums_only_the_target_node kind="unit"
 #[pyfunction]
 fn demand(rates: Vec<(String, f64)>, node: String) -> f64 {
     // frob:doc docs/strata/kernel.md#strata-core
@@ -677,6 +685,9 @@ fn compute_demand(
 /// with the cycle as witness, never a silent clamp (deny-by-default,
 /// charter law 2).
 // kind="unit"
+// frob:tests strata-core/src/lib.rs::tests.propagated_demand_positive_cycle_is_infinite kind="unit"
+// frob:tests strata-core/src/lib.rs::tests.propagated_demand_sums_converging_paths kind="unit"
+// frob:tests strata-core/src/lib.rs::tests.propagated_demand_chain_multiplies_fanout kind="unit"
 #[pyfunction]
 fn propagated_demand(py: Python<'_>, edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String>) {
     // frob:doc docs/strata/kernel.md#capacity-semantics
@@ -783,6 +794,10 @@ fn propagated_demand_impl(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<S
 // r kind="unit"
 // kind="unit"
 // strata-core/src/lib.rs::tests.vmodel_check_reports_construction_errors_and_closure_violations_together kind="unit"
+// strata-core/src/lib.rs::tests.vmodel_check_reports_missing_required_attr_as_a_construction_error
+// strata-core/src/lib.rs::tests.vmodel_check_reports_construction_errors_and_closure_violations_together
+// frob:tests strata-core/src/lib.rs::tests.vmodel_check_reports_missing_required_attr_as_a_construction_error
+// frob:tests strata-core/src/lib.rs::tests.vmodel_check_reports_construction_errors_and_closure_violations_together
 #[pyfunction]
 fn vmodel_check(
     py: Python<'_>,
@@ -829,10 +844,118 @@ fn vmodel_check_impl(
             ClosureViolation::TraceCycle { cycle } => {
                 ("trace_cycle".to_string(), cycle.join(" -> "))
             }
+            // T-3010: `check_closure` (rules 1-5) never produces this
+            // variant -- only `check_milestone_closure` (rule 6, T-3010's
+            // own opt-in call in `milestone_closure_check_impl` below)
+            // does. Kept as an explicit unreachable arm rather than a
+            // wildcard so a future rule-7 addition to `ClosureViolation`
+            // still fails this match at compile time instead of silently
+            // falling through.
+            ClosureViolation::UncoveredMilestoneObligation { node } => {
+                ("uncovered_milestone_obligation".to_string(), node)
+            }
         })
         .collect();
 
     (errors, violations)
+}
+
+/// BIND: milestone_closure_check
+///
+/// WHY: T-3010's PyO3 need -- the sixth, opt-in closure rule
+/// (`graph::vmodel::check_milestone_closure`) over the SAME flattened
+/// node/edge shape `vmodel_check` already takes, plus one caller-supplied
+/// `known_gaps` id list: a milestone's configuration binding may cover
+/// only a subset of the graph's `artifact` obligations, as long as every
+/// remaining one is named here (frob.gates._strata_milestone_closure
+/// generalises `frob.lang._support`'s `FacetState.KNOWN_GAP` registry
+/// pattern to build this list). Same collected-not-raised construction-
+/// error convention as `vmodel_check`; the second return slot is every
+/// uncovered node id NOT in `known_gaps`, empty when the milestone's
+/// binding is closed.
+// frob:doc docs/strata/vmodel.md#incremental-releases-milestone-scoped-closure-t-3010
+// strata-core/src/lib.rs::milestone_closure_pyo3_tests.milestone_closure_check_is_quiet_when_gap_is_declared kind="unit"
+// strata-core/src/lib.rs::milestone_closure_pyo3_tests.milestone_closure_check_fires_on_an_ungapped_uncovered_obligation kind="unit"
+#[pyfunction]
+fn milestone_closure_check(
+    py: Python<'_>,
+    nodes: Vec<(String, String, Option<String>, BTreeMap<String, String>)>,
+    edges: Vec<(String, String, String, BTreeMap<String, String>)>,
+    known_gaps: Vec<String>,
+) -> (Vec<String>, Vec<String>) {
+    py.allow_threads(|| {
+        run_on_big_stack(move || milestone_closure_check_impl(nodes, edges, known_gaps))
+    })
+}
+
+fn milestone_closure_check_impl(
+    nodes: Vec<(String, String, Option<String>, BTreeMap<String, String>)>,
+    edges: Vec<(String, String, String, BTreeMap<String, String>)>,
+    known_gaps: Vec<String>,
+) -> (Vec<String>, Vec<String>) {
+    use graph::vmodel::{check_milestone_closure, v_model_schema, ClosureViolation};
+    use graph::Graph;
+
+    let mut g = Graph::new(v_model_schema());
+    let mut errors = Vec::new();
+    for (id, kind, level, attrs) in nodes {
+        if let Err(e) = g.add_node_with_attrs(id, kind, level, attrs) {
+            errors.push(format!("{:?}", e));
+        }
+    }
+    for (kind, src, dst, attrs) in edges {
+        if let Err(e) = g.add_edge_with_attrs(kind, src, dst, attrs) {
+            errors.push(format!("{:?}", e));
+        }
+    }
+
+    let gaps: std::collections::BTreeSet<String> = known_gaps.into_iter().collect();
+    let violations = check_milestone_closure(&g, &gaps)
+        .into_iter()
+        .map(|v| match v {
+            ClosureViolation::UncoveredMilestoneObligation { node } => node,
+            // check_milestone_closure only ever produces this one variant;
+            // every other ClosureViolation kind belongs to check_closure's
+            // rules 1-5, never returned from here.
+            other => format!("{:?}", other),
+        })
+        .collect();
+
+    (errors, violations)
+}
+
+#[cfg(test)]
+mod milestone_closure_pyo3_tests {
+    use super::*;
+
+    #[test]
+    // frob:ticket T-3010
+    fn milestone_closure_check_fires_on_an_ungapped_uncovered_obligation() {
+        let nodes = vec![(
+            "obligation-1".to_string(),
+            "artifact".to_string(),
+            Some("requirements".to_string()),
+            BTreeMap::from([("code_ref".to_string(), "fixture::obligation-1".to_string())]),
+        )];
+        let (errors, violations) = milestone_closure_check_impl(nodes, vec![], vec![]);
+        assert!(errors.is_empty());
+        assert_eq!(violations, vec!["obligation-1".to_string()]);
+    }
+
+    #[test]
+    // frob:ticket T-3010
+    fn milestone_closure_check_is_quiet_when_gap_is_declared() {
+        let nodes = vec![(
+            "obligation-1".to_string(),
+            "artifact".to_string(),
+            Some("requirements".to_string()),
+            BTreeMap::from([("code_ref".to_string(), "fixture::obligation-1".to_string())]),
+        )];
+        let (errors, violations) =
+            milestone_closure_check_impl(nodes, vec![], vec!["obligation-1".to_string()]);
+        assert!(errors.is_empty());
+        assert!(violations.is_empty());
+    }
 }
 
 // strata-core/src/parse/mod.rs::tests.parses_node_rate_does_not_collide_with_capacity_rate \
@@ -880,12 +1003,122 @@ fn vmodel_check_impl(
 // kind="unit"
 // strata-core/src/parse/mod.rs::tests.error_malformed_claim_id_neither_ident_nor_string kind="unit"
 // kind="unit"
+// strata-core/src/parse/mod.rs::tests.parses_node_rate_does_not_collide_with_capacity_rate
+// strata-core/src/parse/mod.rs::tests.growth_clause_missing_percent_symbol_is_a_parse_error
+// strata-core/src/parse/mod.rs::tests.parses_node_users_and_rate_each_with_independent_growth
+// strata-core/src/parse/mod.rs::tests.parses_scenario_with_all_rewrite_kinds_and_nested_claims
+// strata-core/src/parse/mod.rs::tests.parses_node_without_windows_host_manifest_defaults_empty
+// strata-core/src/parse/mod.rs::tests.parses_node_rate_does_not_collide_with_capacity_rate
+// strata-core/src/parse/mod.rs::tests.growth_clause_missing_percent_symbol_is_a_parse_error
+// strata-core/src/parse/mod.rs::tests.parses_node_users_and_rate_each_with_independent_growth
+// strata-core/src/parse/mod.rs::tests.parses_scenario_with_all_rewrite_kinds_and_nested_claims
+// strata-core/src/parse/mod.rs::tests.parses_node_without_windows_host_manifest_defaults_empty
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_rate_does_not_collide_with_capacity_rate
+// frob:tests strata-core/src/parse/mod.rs::tests.growth_clause_missing_percent_symbol_is_a_parse_error
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_users_growth kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_users_and_rate_each_with_independent_growth
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_rate_growth kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_users_growth kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_users_and_rate kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_users_only_no_rate kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_users_and_rate kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_resource_rejects_both_arbitrated_by_and_lock
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_bare_resource_with_no_arbiter kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_resource_with_lock kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_resource_with_arbitrated_by kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_access_requires_mode_keyword kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_access_rejects_unknown_mode kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_all_access_modes kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_access_clause kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_access_clause kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_scenario_trust_requires_coloneq kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_scenario_with_all_rewrite_kinds_and_nested_claims
+// frob:tests strata-core/src/parse/mod.rs::tests.fuzz_safe_random_bytes_never_panic kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_boundary_with_phases kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_policy_unknown_rule kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_policy_trust_scope_missing_ge kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_policy_unknown_scope_keyword kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_policy_bare_no_rules kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_policy_label_scope kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_policy_enables_and_rationale kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_policy_mediate kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_policy_at_call_require_arg kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_policy_confine_use kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_policy_forbid_call_and_import kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unknown_balancer_property kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_growth_requires_percent kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_skew_requires_zipf_keyword kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_flow_utility kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_flow_growth kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_flow_fanout kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_skew kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_skew kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_bare_balancer_with_trust kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_balancer_with_explicit_trust kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_bare_balancer kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_balancer_with_all_properties kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unknown_cdn_property kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_cdn_unlimited_staleness kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_cdn_with_all_properties kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_bare_queue_with_trust kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_queue_with_explicit_trust kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unknown_queue_property kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_queue_with_all_properties kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unknown_cache_property kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_cache_ttl kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_cache_with_all_properties kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unknown_store_property kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_on_deploy kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_bare_store kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_rpo kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_with_all_properties kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_refine_before_module kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_refine_binds_lhs_mismatch kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_refine_two_binds kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_refine_zero_binds kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_refine_happy_path kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.round_trip_small_design kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_reports_accurate_line_col kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_on_empty_input_never_panics kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unknown_metric kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unknown_node_property kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unknown_keyword kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_duplicate_module kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_module_missing kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_group_and_sudoers_clauses kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_host_manifest_clauses kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_without_windows_host_manifest_defaults_empty
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_bin_path_clause kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_bin_path_clause kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_group_and_sudoers_clauses kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_host_manifest_clauses kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_managed_marker kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_managed_marker kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_on_deploy_block kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_secret_requires_issued_by kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_secret_construct kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_store_carries_pii_tags kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_carries_pii_tags kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_may_requires_string_not_ident kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_code_requires_at_least_one_glob kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.error_malformed_claim_id_neither_ident_nor_string
+// frob:tests strata-core/src/parse/mod.rs::tests.error_unterminated_string_claim_id kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.bare_ident_claim_id_still_parses kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_string_quoted_claim_id kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_assume_with_owner_and_review kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_assert_noflow_and_reach kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_boundary kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_percent_unit kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_flow_with_all_properties kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_with_all_properties kind="unit"
+// frob:tests strata-core/src/parse/mod.rs::tests.parses_bare_module kind="unit"
 #[pyfunction]
 fn parse_source(text: &str) -> String {
     // frob:doc docs/strata/surface.md#parser
     parse::parse_source_impl(text)
 }
 
+// frob:tests strata-core/src/lib.rs::tests.reachable_returns_witness_paths kind="unit"
 #[pymodule]
 fn strata_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // frob:doc docs/strata/kernel.md#strata-core
@@ -895,6 +1128,7 @@ fn strata_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(propagated_demand, m)?)?;
     m.add_function(wrap_pyfunction!(parse_source, m)?)?;
     m.add_function(wrap_pyfunction!(vmodel_check, m)?)?;
+    m.add_function(wrap_pyfunction!(milestone_closure_check, m)?)?;
     Ok(())
 }
 
@@ -910,8 +1144,6 @@ mod tests {
         (f.to_string(), s.to_string(), d.to_string(), false, false)
     }
 
-    // frob:tests strata-core/src/lib.rs::strata_core kind="unit"
-    // frob:tests strata-core/src/lib.rs::reachable kind="unit"
     #[test]
     fn reachable_returns_witness_paths() {
         let paths = reachable_impl(
@@ -922,7 +1154,6 @@ mod tests {
         assert_eq!(paths["c"], vec!["a", "f1", "b", "f2", "c"]);
     }
 
-    // frob:tests strata-core/src/lib.rs::reachable kind="unit"
     #[test]
     fn non_transitive_edge_is_a_terminal_hop() {
         //
@@ -941,7 +1172,6 @@ mod tests {
         assert!(!paths.contains_key("c"));
     }
 
-    // frob:tests strata-core/src/lib.rs::reachable
     #[test]
     fn non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain() {
         //
@@ -959,7 +1189,6 @@ mod tests {
         assert_eq!(paths["c"], vec!["a", "f1", "b", "f2", "c"]);
     }
 
-    // frob:tests strata-core/src/lib.rs::reachable kind="unit"
     #[test]
     fn barriers_stop_taint_unless_asked() {
         let edges = vec![edge("f1", "evil", "api", true)];
@@ -967,7 +1196,6 @@ mod tests {
         assert!(reachable_impl(edges, "evil".to_string(), true).contains_key("api"));
     }
 
-    // frob:tests strata-core/src/lib.rs::worst_age kind="unit"
     #[test]
     fn worst_age_takes_the_stalest_path() {
         let (age, path) = worst_age_impl(
@@ -1009,7 +1237,6 @@ mod tests {
         assert_eq!(path, vec!["C", "e4", "B", "e0", "A", "e2", "T"]);
     }
 
-    // frob:tests strata-core/src/lib.rs::worst_age kind="unit"
     #[test]
     fn worst_age_is_infinite_on_positive_cycles() {
         let (age, _) = worst_age_impl(
@@ -1022,7 +1249,6 @@ mod tests {
         assert!(age.is_infinite());
     }
 
-    // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
     #[test]
     fn propagated_demand_chain_multiplies_fanout() {
         // src(10/s) -> a (fanout 2) -> b (fanout 3): 10 * 2 * 3 = 60.
@@ -1036,7 +1262,6 @@ mod tests {
         assert_eq!(v, 60.0);
     }
 
-    // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
     #[test]
     fn propagated_demand_sums_converging_paths() {
         // two independent declared sources into the same target: sums.
@@ -1050,7 +1275,6 @@ mod tests {
         assert_eq!(v, 10.0);
     }
 
-    // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
     #[test]
     fn propagated_demand_positive_cycle_is_infinite() {
         // src feeds a, a<->b cycle (both undeclared), b is the target.
@@ -1081,7 +1305,6 @@ mod tests {
         assert_eq!(v, 0.0);
     }
 
-    // frob:tests strata-core/src/lib.rs::demand kind="unit"
     #[test]
     fn demand_sums_only_the_target_node() {
         let total = demand(
@@ -1102,7 +1325,6 @@ mod tests {
         BTreeMap::from([(key.to_string(), format!("fixture::{id}"))])
     }
 
-    // frob:tests strata-core/src/lib.rs::vmodel_check
     #[test]
     fn vmodel_check_reports_construction_errors_and_closure_violations_together() {
         // A well-formed pair (should produce zero errors, one closure
@@ -1199,7 +1421,6 @@ mod tests {
         assert!(violations.is_empty());
     }
 
-    // frob:tests strata-core/src/lib.rs::vmodel_check
     #[test]
     fn vmodel_check_reports_missing_required_attr_as_a_construction_error() {
         // T-3044 H3 must-fire fixture: an artifact node with NO code_ref
