@@ -23,10 +23,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- tests/unit/test_ticket_verbs_wait.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_verbs_wait.py
+  reason: guard the module-level import fcntl the way frob.process._lock.portable_flock_acquire
+    does for the same platform gap (T-2918/T-2934/T-3506) -- fcntl does not exist
+    on Windows and its bare import crashes pytest collection before either test's
+    own runtime os.name==nt skip can ever run
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: priority
   old_value: high
