@@ -1,5 +1,5 @@
 ---
-id: T-draft-5e670414
+id: T-5470
 title: 'WIRE002: three WIRE001 waivers name already-done follow-up tickets'
 state: queued
 kind: bug
