@@ -29,6 +29,7 @@ scope:
 - src/frob/webapp/_websec_authz_routes.py
 - tests/fixtures/webapp/websec4xx/routes/**
 - tests/unit/test_websec_authz_routes.py
+- docs/modules/webapp-websec-authz-routes.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +48,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_websec_authz_routes.py
   reason: unit test file, per T-5325-family convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-authz-routes.md
+  reason: module doc, per T-5325-family convention
   actor: logan
   at: '2026-09-24'
 triage_changes:
