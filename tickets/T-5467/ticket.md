@@ -23,10 +23,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/lang/_support.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: register frob.tickets/frob.webapp in LANGUAGE_SENSITIVE_PACKAGES, CI run
+    35951365410
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
