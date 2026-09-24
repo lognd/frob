@@ -1,5 +1,5 @@
 ---
-id: T-draft-d6f7f101
+id: T-5447
 title: 'Post-land sweep residue 2026-09-23_2142: COV001:src/frob/sql/_orm_rules.py
   COV001:src/frob/webapp/_a11y_statement.py COV002:.claude/hooks/pgrep-self-match-guard.py
   COV002:src/frob/g'
