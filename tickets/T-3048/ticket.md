@@ -12,7 +12,7 @@ tier: ticket
 sprint: strata-vmodel
 runs_last: false
 milestone: 0.535.0
-points: null
+points: 8
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -44,6 +44,12 @@ triage_changes:
   old_value: null
   new_value: strata-vmodel
   reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-23'
+- field: points
+  old_value: null
+  new_value: '8'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-23'
 designated_repro_test: null
