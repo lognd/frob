@@ -1,7 +1,7 @@
 ---
 id: T-5362
 title: 'SEO121-127: crawl/discovery config'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -22,8 +22,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5362
+branch: t-5362
 scope:
 - src/frob/webapp/_seo_crawl.py
 - tests/fixtures/webapp/seo1xx/crawl/**
@@ -71,6 +71,22 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo121_positive-SEO121-True]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo121_negative-SEO121-False]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo122_positive-SEO122-True]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo122_negative-SEO122-False]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo123_positive-SEO123-True]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo123_negative-SEO123-False]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo124_positive-SEO124-True]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo124_negative-SEO124-False]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo125_positive-SEO125-True]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo125_negative-SEO125-False]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo126_positive-SEO126-True]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_fixture[seo126_negative-SEO126-False]
+- tests/unit/test_seo_crawl.py::test_seo_crawl_findings_no_framework_short_circuits
+- tests/unit/test_seo_crawl.py::test_websec_findings_emits_violation_when_called_directly
+- tests/unit/test_seo_crawl.py::test_websec_findings_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null

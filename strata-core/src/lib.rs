@@ -98,7 +98,8 @@ type Edge = (String, String, String, bool, bool);
 // kind="unit"
 // strata-core/src/lib.rs::tests.non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain
 // frob:tests strata-core/src/lib.rs::tests.barriers_stop_taint_unless_asked kind="unit"
-// frob:tests strata-core/src/lib.rs::tests.non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain
+// frob:tests \
+// strata-core/src/lib.rs::tests.non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain
 // frob:tests strata-core/src/lib.rs::tests.non_transitive_edge_is_a_terminal_hop kind="unit"
 // frob:tests strata-core/src/lib.rs::tests.reachable_returns_witness_paths kind="unit"
 #[pyfunction]
@@ -796,8 +797,10 @@ fn propagated_demand_impl(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<S
 // strata-core/src/lib.rs::tests.vmodel_check_reports_construction_errors_and_closure_violations_together kind="unit"
 // strata-core/src/lib.rs::tests.vmodel_check_reports_missing_required_attr_as_a_construction_error
 // strata-core/src/lib.rs::tests.vmodel_check_reports_construction_errors_and_closure_violations_together
-// frob:tests strata-core/src/lib.rs::tests.vmodel_check_reports_missing_required_attr_as_a_construction_error
-// frob:tests strata-core/src/lib.rs::tests.vmodel_check_reports_construction_errors_and_closure_violations_together
+// frob:tests \
+// strata-core/src/lib.rs::tests.vmodel_check_reports_missing_required_attr_as_a_construction_error
+// frob:tests \
+// strata-core/src/lib.rs::tests.vmodel_check_reports_construction_errors_and_closure_violations_together
 #[pyfunction]
 fn vmodel_check(
     py: Python<'_>,
@@ -1013,10 +1016,13 @@ mod milestone_closure_pyo3_tests {
 // strata-core/src/parse/mod.rs::tests.parses_node_users_and_rate_each_with_independent_growth
 // strata-core/src/parse/mod.rs::tests.parses_scenario_with_all_rewrite_kinds_and_nested_claims
 // strata-core/src/parse/mod.rs::tests.parses_node_without_windows_host_manifest_defaults_empty
-// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_rate_does_not_collide_with_capacity_rate
-// frob:tests strata-core/src/parse/mod.rs::tests.growth_clause_missing_percent_symbol_is_a_parse_error
+// frob:tests \
+// strata-core/src/parse/mod.rs::tests.parses_node_rate_does_not_collide_with_capacity_rate
+// frob:tests \
+// strata-core/src/parse/mod.rs::tests.growth_clause_missing_percent_symbol_is_a_parse_error
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_store_users_growth kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_users_and_rate_each_with_independent_growth
+// frob:tests \
+// strata-core/src/parse/mod.rs::tests.parses_node_users_and_rate_each_with_independent_growth
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_node_rate_growth kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_node_users_growth kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_store_users_and_rate kind="unit"
@@ -1032,7 +1038,8 @@ mod milestone_closure_pyo3_tests {
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_store_access_clause kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_node_access_clause kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.error_scenario_trust_requires_coloneq kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.parses_scenario_with_all_rewrite_kinds_and_nested_claims
+// frob:tests \
+// strata-core/src/parse/mod.rs::tests.parses_scenario_with_all_rewrite_kinds_and_nested_claims
 // frob:tests strata-core/src/parse/mod.rs::tests.fuzz_safe_random_bytes_never_panic kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_boundary_with_phases kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.error_policy_unknown_rule kind="unit"
@@ -1087,7 +1094,8 @@ mod milestone_closure_pyo3_tests {
 // frob:tests strata-core/src/parse/mod.rs::tests.error_module_missing kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_store_group_and_sudoers_clauses kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_store_host_manifest_clauses kind="unit"
-// frob:tests strata-core/src/parse/mod.rs::tests.parses_node_without_windows_host_manifest_defaults_empty
+// frob:tests \
+// strata-core/src/parse/mod.rs::tests.parses_node_without_windows_host_manifest_defaults_empty
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_store_bin_path_clause kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_node_bin_path_clause kind="unit"
 // frob:tests strata-core/src/parse/mod.rs::tests.parses_node_group_and_sudoers_clauses kind="unit"

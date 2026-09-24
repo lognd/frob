@@ -136,7 +136,8 @@ fn closure_reaches_level(
 // kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
 // frob:tests strata-core/src/graph/vmodel/closure.rs::tests.h2_genuine_four_level_chain_stays_quiet
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
 pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_SATISFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -172,7 +173,8 @@ pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
 // kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
 // frob:tests strata-core/src/graph/vmodel/closure.rs::tests.h2_genuine_four_level_chain_stays_quiet
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.h2_mutual_satisfies_pair_with_zero_requirements_now_fires
 pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
     let kinds = trace_kinds();
     let filter = KindFilter::Only(&kinds);
@@ -208,8 +210,10 @@ pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
 // kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.rule3_wrong_level_test_is_refused_at_construction_not_silently_accepted
 // strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_stay_quiet_when_verified_at_paired_level
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule3_wrong_level_test_is_refused_at_construction_not_silently_accepted
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_stay_quiet_when_verified_at_paired_level
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.rule3_wrong_level_test_is_refused_at_construction_not_silently_accepted
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_stay_quiet_when_verified_at_paired_level
 // frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule3_must_fire_on_untested_requirement
 pub fn check_no_untested_artifact(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_VERIFIES.to_string()].into();
@@ -228,7 +232,8 @@ pub fn check_no_untested_artifact(graph: &Graph) -> Vec<ClosureViolation> {
 // kind="unit"
 // kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.rule4_must_stay_quiet_when_verifying_something
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule4_must_stay_quiet_when_verifying_something
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.rule4_must_stay_quiet_when_verifying_something
 pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_VERIFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -249,7 +254,8 @@ pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
 // strata-core/src/graph/vmodel/closure.rs::tests.rule5_must_fire_on_a_satisfies_cycle_via_check_closure kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.rule5_must_fire_on_a_satisfies_cycle_via_check_closure
 // frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule5_stays_quiet_on_the_genuine_chain
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule5_must_fire_on_a_satisfies_cycle_via_check_closure
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.rule5_must_fire_on_a_satisfies_cycle_via_check_closure
 pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
     let kinds = trace_kinds();
     let filter = KindFilter::Only(&kinds);
@@ -283,9 +289,12 @@ pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
 // strata-core/src/graph/vmodel/closure.rs::tests.rule6_stays_quiet_when_covered_by_a_verifying_test
 // strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_stay_quiet_when_gap_is_declared
 // strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_fire_on_uncovered_ungapped_obligation
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule6_stays_quiet_when_covered_by_a_verifying_test
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_stay_quiet_when_gap_is_declared
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_fire_on_uncovered_ungapped_obligation
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.rule6_stays_quiet_when_covered_by_a_verifying_test
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_stay_quiet_when_gap_is_declared
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.rule6_must_fire_on_uncovered_ungapped_obligation
 pub fn check_milestone_closure(
     graph: &Graph,
     known_gaps: &std::collections::BTreeSet<NodeId>,
@@ -309,8 +318,10 @@ pub fn check_milestone_closure(
 // strata-core/src/graph/vmodel/closure.rs::tests.check_closure_is_empty_on_a_fully_closed_two_level_graph kind="unit"
 // strata-core/src/graph/vmodel/closure.rs::tests.check_closure_reports_all_four_rules_on_a_maximally_broken_graph
 // strata-core/src/graph/vmodel/closure.rs::tests.check_closure_is_empty_on_a_fully_closed_two_level_graph
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.check_closure_reports_all_four_rules_on_a_maximally_broken_graph
-// frob:tests strata-core/src/graph/vmodel/closure.rs::tests.check_closure_is_empty_on_a_fully_closed_two_level_graph
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.check_closure_reports_all_four_rules_on_a_maximally_broken_graph
+// frob:tests \
+// strata-core/src/graph/vmodel/closure.rs::tests.check_closure_is_empty_on_a_fully_closed_two_level_graph
 pub fn check_closure(graph: &Graph) -> Vec<ClosureViolation> {
     let mut out = check_no_orphan_requirements(graph);
     out.extend(check_no_unjustified_design(graph));
