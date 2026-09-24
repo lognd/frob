@@ -1,8 +1,8 @@
 ---
 id: T-draft-f728e1be
 title: 'WEBSEC316 fixture: placeholder key must not match GitHub push-protection detectors'
-state: queued
-kind: bug
+state: in-progress
+kind: docs
 origin: human
 created: '2026-09-24'
 priority: medium
@@ -20,14 +20,27 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-f728e1be
+branch: t-draft-f728e1be
 scope:
 - tests/fixtures/webapp/websec3xx/debug/webesc316_positive/static/main.js
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: fixture placeholder-text change only, no production logic changed -- BUG002/BUG003's
+    mutation-evidence requirement for kind=bug does not apply to a text-only fixture
+    swap; closest fit is a docs/fixture-content correction
+  actor: logan
+  at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc316_positive-WEBSEC316-True]
+kind_history:
+- 2026-09-24 bug->docs evidence=1 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
