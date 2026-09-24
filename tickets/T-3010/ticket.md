@@ -28,6 +28,7 @@ scope:
 - tests/gates/test_milestone_closure.py
 - docs/strata/vmodel.md
 - strata-core/src/lib.rs
+- strata-core/src/graph/vmodel/mod.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,12 @@ scope_changes:
     the Python gate to call the new rule-6 Rust engine
   actor: logan
   at: '2026-09-23'
+- op: add
+  glob: strata-core/src/graph/vmodel/mod.rs
+  reason: check_milestone_closure needs the same pub use re-export mod.rs already
+    gives every other closure.rs rule function
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: null
