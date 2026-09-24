@@ -28,6 +28,7 @@ scope:
 - src/frob/webapp/_websec_tokens.py
 - tests/fixtures/webapp/websec2xx/jwt_oauth/**
 - tests/unit/test_websec_tokens.py
+- docs/modules/webapp-websec-jwt-oauth.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_websec_tokens.py
   reason: unit test file, per T-5325-family convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-jwt-oauth.md
+  reason: module doc, per T-5325-family convention
   actor: logan
   at: '2026-09-24'
 triage_changes:
