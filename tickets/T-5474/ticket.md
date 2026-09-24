@@ -20,10 +20,24 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/_cli_parsers/_ops.py
+- tests/unit/test_cli_group_parity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ops.py
+  reason: add missing --path mirror to frob ops natives group parser
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_cli_group_parity.py
+  reason: add missing --path mirror to frob ops natives group parser
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
