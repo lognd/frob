@@ -1,5 +1,5 @@
 ---
-id: T-draft-b8f6c120
+id: T-5638
 title: 'frob ci: every GhError mode surfaces as a named error at the CLI, no tracebacks'
 state: queued
 kind: feature
