@@ -23,10 +23,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/gates/_a11y_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_a11y_gate.py
+  reason: checking lease availability for ARCH104/COV001/DOC002/OPAQUE001
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: milestone
   old_value: null
