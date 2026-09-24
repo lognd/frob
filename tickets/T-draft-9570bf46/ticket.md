@@ -16,7 +16,7 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
-points: null
+points: 8
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -34,6 +34,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: points
+  old_value: null
+  new_value: '8'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
