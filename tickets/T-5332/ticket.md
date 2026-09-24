@@ -26,6 +26,7 @@ scope:
 - src/frob/webapp/_websec_logging_limits.py
 - tests/fixtures/webapp/websec3xx/logging/**
 - tests/unit/test_websec_logging_limits.py
+- docs/modules/webapp-websec-logging-limits.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_websec_logging_limits.py
   reason: unit test for the new module, standard test-file scope companion
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-logging-limits.md
+  reason: module doc required by frob:doc directive
   actor: logan
   at: '2026-09-24'
 triage_changes:
