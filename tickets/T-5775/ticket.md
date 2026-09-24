@@ -1,5 +1,5 @@
 ---
-id: T-draft-770084b7
+id: T-5775
 title: 'Tiered auto-close: parent auto-transitions to DONE when the last child''s
   close satisfies TIER002/003/004'
 state: queued
