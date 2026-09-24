@@ -9,6 +9,7 @@ priority: medium
 blocked_by:
 - T-draft-d7c9c6c6
 - T-5776
+- T-5766
 parent: T-5748
 tier: ticket
 sprint: ledger-tiers
