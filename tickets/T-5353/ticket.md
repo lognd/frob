@@ -1,7 +1,7 @@
 ---
 id: T-5353
 title: 'WEBSEC218-225: password policy and storage'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -22,11 +22,13 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5353
+branch: t-5353
 scope:
 - src/frob/webapp/_websec_password.py
 - tests/fixtures/webapp/websec2xx/password/**
+- tests/unit/test_websec_password.py
+- docs/modules/webapp-websec-password.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +44,21 @@ scope_changes:
   glob: tests/fixtures/webapp/websec2xx/password/**
   reason: per-ticket fixture subdir, siblings own csrf_session/** (T-5351) and jwt_oauth/**
     (T-5352)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_password.py
+  reason: unit test file, per T-5325-family convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-password.md
+  reason: module doc, per T-5325-family convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_password.py
+  reason: unit test file, per T-5325-family convention
   actor: logan
   at: '2026-09-24'
 triage_changes:
