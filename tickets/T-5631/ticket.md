@@ -48,6 +48,11 @@ scope_changes:
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: tests/unit/coord/test_watch.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: sprint
   old_value: null
