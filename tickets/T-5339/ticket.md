@@ -1,7 +1,7 @@
 ---
 id: T-5339
 title: EXPLAIN-obligation proof gate for waived SQL performance findings
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -24,11 +24,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_sql_explain_obligation.py
-- tests/fixtures/sql/**
+- tests/fixtures/sql/explain/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/sql/**
+  reason: use per-ticket fixture subdir tests/fixtures/sql/explain/** to avoid overlapping
+    T-5333's fixtures, per coordinator instruction
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/fixtures/sql/explain/**
+  reason: use per-ticket fixture subdir tests/fixtures/sql/explain/** to avoid overlapping
+    T-5333's fixtures, per coordinator instruction
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
@@ -48,5 +61,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5339
+branch: t-5339
 ---
 A query flagged by 5148-2's performance rules carries a frob:tests-style obligation requiring an attached EXPLAIN ANALYZE artifact before a frob:waive on that finding is accepted -- reuse the closest existing 'proof required before waiver' precedent in frob.gates (grep for frob:invariant's binding mechanism) rather than inventing a new obligation shape. Fixture: a waiver attempt with and without the attached EXPLAIN artifact.
