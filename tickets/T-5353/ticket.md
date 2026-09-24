@@ -22,13 +22,28 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/webapp/_websec_password.py
-- tests/fixtures/webapp/websec2xx/**
+- tests/fixtures/webapp/websec2xx/password/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/websec2xx/**
+  reason: per-ticket fixture subdir, siblings own csrf_session/** (T-5351) and jwt_oauth/**
+    (T-5352)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/websec2xx/password/**
+  reason: per-ticket fixture subdir, siblings own csrf_session/** (T-5351) and jwt_oauth/**
+    (T-5352)
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
