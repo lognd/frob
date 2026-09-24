@@ -2,7 +2,7 @@
 id: T-5482
 title: 'Windows-only: full suite INTERRUPTED after test_ticket_verbs_wait errors --
   failing set is a lower bound'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5482
+branch: t-5482
 scope:
 - tests/unit/test_ticket_verbs_wait.py
 scope_breadth_ack: false
@@ -60,6 +60,17 @@ body_changes:
   at: '2026-09-24'
   old_length: 1120
   new_length: 3416
+- mode: append
+  reason: 'BUG002 refusal: evidence test cannot fail at dev on this Linux CI/dev host
+    since the defect only manifests on win32; verified on the real Windows mirror
+    instead'
+  actor: logan
+  at: '2026-09-24'
+  old_length: 3415
+  new_length: 3936
+evidence:
+- tests/unit/test_ticket_verbs_wait.py::TestDispatchWait::test_window_opens_mid_wait_then_succeeds
+- tests/unit/test_ticket_verbs_wait.py::TestDispatchWait::test_budget_exhausted_names_holder
 designated_repro_test: null
 threat: null
 component: null
@@ -128,3 +139,5 @@ same way the sibling POSIX-only test files already do (skip cleanly on
 Windows instead of failing collection). Downgrading this ticket's
 priority is reasonable once fixed -- filed at high priority originally
 because it looked like a suite-wide interruption; it is not.
+
+frob:waive BUG002 reason="the defect is Windows-only (a bare 'import fcntl' crashes collection on win32, where fcntl does not exist at all) -- BUG002's own re-verification runs on this Linux checkout, where fcntl exists and the evidence test passes at dev regardless of the fix; the defect and the fix were both measured directly on the real Windows mirror instead (winrun, recorded in the done-report): collection failed with ModuleNotFoundError at dev, and all 5 tests including the bound evidence pass after the fix"
