@@ -2,7 +2,7 @@
 id: T-3049
 title: 'Normalize the shape of decisions, invariants and review records: one canonical
   schema, enforced, not per-author prose'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -41,3 +41,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Drop reason
+- 2026-09-23: folded into T-3048 (canonical record schema is the second half of the no-monofiles leaf); owner-reviewed tree 2026-09-23
