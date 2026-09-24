@@ -1,5 +1,5 @@
 ---
-id: T-draft-73fb0cdf
+id: T-5718
 title: 'WIP limits and dead-WIP detection: start refuses beyond the limit, WIP001
   findings'
 state: queued
@@ -25,6 +25,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/app/config.py
+- src/frob/tickets/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/app/config.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/__init__.py
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
