@@ -1,5 +1,5 @@
 ---
-id: T-draft-201c9d97
+id: T-5772
 title: Promote TIER001-006 from WARN to ERROR after the migration
 state: queued
 kind: feature
