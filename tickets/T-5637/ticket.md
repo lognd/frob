@@ -24,7 +24,6 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/_cli_parsers/_coord.py
 - src/frob/coord/_queue_ops.py
 - src/frob/tickets/_land_queue.py
 - tests/unit/coord/test_queue_ops.py
@@ -57,6 +56,12 @@ scope_changes:
 - op: add
   glob: tests/unit/tickets/test_land_queue.py
   reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/_cli_parsers/_coord.py
+  reason: collides with in-progress T-draft-4ad886c1's live lease on this exact file;
+    re-adding once COORD-1 lands and the lease clears (coordinator directive)
   actor: logan
   at: '2026-09-24'
 triage_changes:
