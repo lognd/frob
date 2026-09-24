@@ -1,5 +1,5 @@
 ---
-id: T-draft-d1d3ba27
+id: T-5466
 title: Scaffold DX generated logging integration test fails capsys assertion
 state: queued
 kind: bug
