@@ -1,7 +1,7 @@
 ---
 id: T-5332
 title: 'WEBSEC326-334: logging, timeouts, resource limits'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -25,6 +25,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_websec_logging_limits.py
 - tests/fixtures/webapp/websec3xx/logging/**
+- tests/unit/test_websec_logging_limits.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,11 @@ scope_changes:
   glob: tests/fixtures/webapp/websec3xx/logging/**
   reason: per-ticket fixture subdir so the four headers leaves do not lease-collide
     on the shared glob
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_logging_limits.py
+  reason: unit test for the new module, standard test-file scope companion
   actor: logan
   at: '2026-09-24'
 triage_changes:
@@ -67,5 +73,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5332
+branch: t-5332
 ---
 Auth-event audit logging (V16.3.1/V16.3.2), log metadata completeness + UTC timestamps, PII in logs (extends 5143-3's secret-pattern reuse with a PII field-name denylist), log-retention policy (config), outbound HTTP client timeout missing, request body size limit missing, server request timeout (config), GraphQL introspection/depth limit (config), least-functionality (debug/test routes in prod route table), outbound egress allowlist (config), client storage cleared on logout. WebSocket origin check is owned by T-5141-4, NOT this leaf -- cross-reference its rule id instead of reimplementing. Fixture per rule id.
