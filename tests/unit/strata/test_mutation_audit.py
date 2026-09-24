@@ -105,12 +105,32 @@ class TestMayMutationAuditRealRepo:
         fix -- adding `net.connect`/`net.listen` entries to
         `_SECCOMP_KIND_MAP` -- is filed as its own follow-up rather than
         forced into this pass; this assertion is updated to the CURRENT
-        honest gap set, not silently narrowed to hide it."""
+        honest gap set, not silently narrowed to hide it.
+
+        T-5473 added a fourth real, disclosed gap: `html_render` (T-5396
+        added `may "html_render"` to `core`/`graphlang`/`testsuite`, a
+        scanner-self-match discharge assume, not a real render
+        capability -- see design/frob.strata's own T-5396 comments on
+        each node) has neither a syscall-level seccomp entry (it names
+        no OS syscall at all -- there is nothing for `_SECCOMP_KIND_MAP`
+        to map it to) nor an `_APP_CAPABILITY_MANIFEST_MAP` entry (the
+        7 app-manifest kinds T-1328 named in this test's own title are
+        unchanged; `html_render` was never one of them and adding an
+        `app.html_render` entry with no real detector behind it would
+        be a second false discharge, not a fix). Outside this ticket's
+        declared scope (src/frob/strata/_mutation_audit.py, tests/unit/
+        strata/test_mutation_audit.py only) the same way process-
+        control/net-mutate/net.connect already were."""
         repo_root = Path(__file__).resolve().parents[3]
         result = run_may_mutation_audit(repo_root)
         assert result.is_ok
         gap_kinds = {g.kind for g in result.danger_ok.second_detector_gaps}
-        assert gap_kinds == {"process-control", "net-mutate", "net.connect"}
+        assert gap_kinds == {
+            "process-control",
+            "net-mutate",
+            "net.connect",
+            "html_render",
+        }
 
 
 class TestDetectableKindsVocabulary:

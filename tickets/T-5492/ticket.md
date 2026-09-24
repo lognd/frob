@@ -42,4 +42,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-found while working T-5491: docs/modules/tickets-landing.md's T-4572 section describes the fast path as a fixed 5-attempt bound that gives up on any rebase failure; T-5491 changed this to distinguish apply-conflict-retryable from non-ledger-only, with a drift-proportional bound -- update the doc section accordingly once T-draft-342a3548's lease on this file clears
+found while working T-5491: docs/modules/tickets-landing.md's T-4572 section describes the fast path as a fixed 5-attempt bound that gives up on any rebase failure; T-5491 changed this to distinguish apply-conflict-retryable from non-ledger-only, with a drift-proportional bound -- update the doc section accordingly once T-5518's lease on this file clears

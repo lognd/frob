@@ -135,10 +135,26 @@ APP_DETECTABLE_KINDS: frozenset[str] = frozenset(_APP_CAPABILITY_MANIFEST_MAP)
 #: A DETECTABLE substitution target for every declared kind: picked so it
 #: is never the same family as the atom being mutated (a same-family
 #: substitute could still be discharged by the coarse-family union,
-#: masking the SYS101 half of acceptance [1]'s pair). `sql`/`html_render`
-#: are two independent, unrelated extended kinds -- one of the two is
-#: always safe to pick.
-_SUBSTITUTE_CANDIDATES: tuple[str, ...] = ("sql", "html_render")
+#: masking the SYS101 half of acceptance [1]'s pair). T-5473: the
+#: original 2-entry tuple (`sql`/`html_render`) assumed "one of the two
+#: is always safe to pick" -- falsified once `graphlang` legitimately
+#: declared BOTH (T-5396 added `may "html_render"` to a node that
+#: already had `may "sql"`), which made `_substitute_kind_for`'s
+#: fallback branch pick an already-present kind for EVERY one of that
+#: node's atoms, silently defeating SYS101 detection across the board
+#: (measured directly: all 6 of graphlang's substitution findings lost
+#: their SYS101 trip simultaneously). `deserialize`/`fetch_url` extend
+#: the pool so a node would need to legitimately declare FOUR
+#: independent extended kinds before this degrades again -- cheaper
+#: than making `_substitute_kind_for` dynamically synthesize a kind no
+#: node could ever declare, and consistent with this list's own "a
+#: node this saturated is itself worth a follow-up" fallback comment.
+_SUBSTITUTE_CANDIDATES: tuple[str, ...] = (
+    "sql",
+    "html_render",
+    "deserialize",
+    "fetch_url",
+)
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules

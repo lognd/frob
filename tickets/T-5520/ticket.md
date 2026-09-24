@@ -1,5 +1,5 @@
 ---
-id: T-draft-bb3ada0c
+id: T-5520
 title: 'Curated landing: apply classify_ticket_commits in the land squash (keep 2-7
   real commits, squash bookkeeping)'
 state: queued

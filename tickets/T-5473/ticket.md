@@ -1,7 +1,7 @@
 ---
 id: T-5473
 title: 'mutation_audit: may-clause annotations drifted from real repo mutation findings'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5473
+branch: t-5473
 scope:
 - src/frob/strata/_mutation_audit.py
 - tests/unit/strata/test_mutation_audit.py
@@ -53,6 +53,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
 designated_repro_test: null
 threat: null
 component: null

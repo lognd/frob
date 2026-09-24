@@ -1,27 +1,20 @@
 ## Done report
 
-Four lands (T-5326, T-5324, T-5474, T-5475) refused with DirtyMain even
-though the entire drift was one or two tickets/**-only sibling commits --
-exactly what T-4572's ledger-only CAS-retry fast path exists to absorb.
-
-Root cause (measured in /tmp/land-T-5464.log ~line 39087): the fast path
-DID trigger, but on its first attempt the rebase failed to apply cleanly
-(a text conflict between this land's own composed diff and a genuinely
-ledger-only sibling commit touching the same ticket.md), and the loop's
-prior boolean/None return collapsed "not ledger-only, give up" and "IS
-ledger-only, apply conflicted" into one give-up outcome -- so it refused
-after exactly one attempt while its own log line claimed the 5-attempt
-bound was exhausted.
-
-Fix distinguishes the two outcomes, retries an apply conflict with a
-capped backoff (the conflicting sibling commit is not necessarily the
-ref's newest one), and scales the attempt bound to the sibling-commit
-count already observed at loop entry, capped at 25.
-
-docs/modules/tickets-landing.md is currently under T-5518's
-live scope lease (same file, unrelated ticket in progress in another
-worktree) so the doc update for this section could not be added in this
-pass; filed as a follow-up, see Done report.
+CI run 35951365410 failed both mutation-audit tests. Root-caused: T-5396
+added may "html_render" to graphlang, which already declared may "sql" --
+the ONLY two entries _SUBSTITUTE_CANDIDATES had. Every substitution
+mutation on graphlang's atoms now picked an already-present kind
+(measured directly: all 6 of graphlang's SYS101 substitution findings
+failed identically, confirming one shared root cause, not 6 independent
+bugs). Extended the candidate pool to 4 independent kinds (sql,
+html_render, deserialize, fetch_url) so a node needs to legitimately
+declare all 4 before this degrades again. Also disclosed html_render as
+this repo's 4th real second-detector gap (no seccomp syscall to map to,
+no genuine app-manifest capability behind it -- a scanner-self-match
+discharge, not a real render capability), matching the existing
+process-control/net-mutate/net.connect disclosed-gap precedent in the
+same acceptance test. Verified against the whole test_mutation_audit.py
+file (10/10 pass).
 
 ### Changed
 ```
@@ -40,7 +33,7 @@ pass; filed as a follow-up, see Done report.
  .github/dependabot.yml                             |     1 +
  .github/workflows/ci.yml                           |   123 +-
  .github/workflows/release.yml                      |    45 +-
- CHANGELOG.md                                       |   272 +
+ CHANGELOG.md                                       |   277 +
  changelog.d/T-2965.md                              |     2 +
  changelog.d/T-3020.md                              |     2 +
  changelog.d/T-3032.md                              |     2 +
@@ -282,6 +275,9 @@ pass; filed as a follow-up, see Done report.
  changelog.d/T-5323.md                              |     2 +
  changelog.d/T-5324.md                              |     2 +
  changelog.d/T-5325.md                              |     2 +
+ changelog.d/T-5326.md                              |     2 +
+ changelog.d/T-5329.md                              |     2 +
+ changelog.d/T-5331.md                              |     2 +
  changelog.d/T-5333.md                              |     2 +
  changelog.d/T-5334.md                              |     2 +
  changelog.d/T-5335.md                              |     2 +
@@ -313,6 +309,8 @@ pass; filed as a follow-up, see Done report.
  changelog.d/T-5436.md                              |     2 +
  changelog.d/T-5454.md                              |     2 +
  changelog.d/T-5464.md                              |     2 +
+ changelog.d/T-5467.md                              |     2 +
+ changelog.d/T-5491.md                              |     2 +
  design/frob.strata                                 |   355 +-
  design/litmus/fixtures/forbid_rules/clean.py       |    15 +
  design/litmus/fixtures/forbid_rules/violation.py   |    15 +
@@ -410,11 +408,14 @@ pass; filed as a follow-up, see Done report.
  docs/modules/webapp-seo.md                         |   109 +
  docs/modules/webapp-websec-authz.md                |    87 +
  docs/modules/webapp-websec-bounds.md               |    79 +
+ docs/modules/webapp-websec-debug-config.md         |    92 +
  docs/modules/webapp-websec-deser.md                |    88 +
  docs/modules/webapp-websec-headers-log.md          |    98 +
+ docs/modules/webapp-websec-headers-rules.md        |    96 +
  docs/modules/webapp-websec-headers.md              |   108 +
  docs/modules/webapp-websec-injection.md            |    72 +
  docs/modules/webapp-websec-session.md              |    99 +
+ docs/modules/webapp-websec-supply-chain.md         |    96 +
  docs/modules/webapp-websec-xss.md                  |    97 +
  docs/modules/webapp.md                             |    66 +
  docs/strata/charter.md                             |     4 +-
@@ -737,7 +738,7 @@ pass; filed as a follow-up, see Done report.
  src/frob/lang/_models.py                           |     1 -
  src/frob/lang/_nodes.py                            |   225 +-
  src/frob/lang/_project_detect.py                   |   135 +
- src/frob/lang/_support.py                          |   259 +-
+ src/frob/lang/_support.py                          |   284 +-
  src/frob/lang/_walk_bash.py                        |     5 -
  src/frob/lang/_walk_csharp.py                      |   119 +-
  src/frob/lang/_walk_css.py                         |   165 +
@@ -916,7 +917,7 @@ pass; filed as a follow-up, see Done report.
  src/frob/strata/_mode_conformance.py               |     3 -
  src/frob/strata/_models.py                         |     3 -
  src/frob/strata/_multifile.py                      |    20 -
- src/frob/strata/_mutation_audit.py                 |    85 +-
+ src/frob/strata/_mutation_audit.py                 |   109 +-
  src/frob/strata/_native_staleness.py               |    14 -
  src/frob/strata/_native_staleness_digest.py        |     3 -
  src/frob/strata/_native_test.py                    |     9 +-
@@ -995,7 +996,7 @@ pass; filed as a follow-up, see Done report.
  src/frob/tickets/_land_queue.py                    |   160 +-
  src/frob/tickets/_land_release.py                  |    88 +-
  src/frob/tickets/_land_splice.py                   |     5 -
- src/frob/tickets/_land_squash.py                   |   497 +-
+ src/frob/tickets/_land_squash.py                   |   517 +-
  src/frob/tickets/_land_verify.py                   |     9 -
  src/frob/tickets/_leases.py                        |   890 +-
  src/frob/tickets/_live_tracker.py                  |    42 +-
@@ -1072,11 +1073,14 @@ pass; filed as a follow-up, see Done report.
  src/frob/webapp/_seo_substrate.py                  |   433 +
  src/frob/webapp/_websec_authz_substrate.py         |   243 +
  src/frob/webapp/_websec_bounds.py                  |   495 +
+ src/frob/webapp/_websec_debug_config.py            |   490 +
  src/frob/webapp/_websec_deser.py                   |   694 +
  src/frob/webapp/_websec_headers.py                 |   462 +
  src/frob/webapp/_websec_headers_log.py             |   459 +
+ src/frob/webapp/_websec_headers_rules.py           |   478 +
  src/frob/webapp/_websec_session_config.py          |   467 +
  src/frob/webapp/_websec_sinks.py                   |   564 +
+ src/frob/webapp/_websec_supply_chain.py            |   657 +
  src/frob/webapp/_websec_xss.py                     |   302 +
  src/frob/worktrees/__init__.py                     |    14 +
  src/frob/worktrees/_disposable_sweep.py            |   220 +
@@ -1412,6 +1416,39 @@ pass; filed as a follow-up, see Done report.
  .../config/initializers/session_store.rb           |     5 +
  .../fixtures/webapp/websec3xx/caddy_full/Caddyfile |     9 +
  .../webapp/websec3xx/caddy_missing_hsts/Caddyfile  |     8 +
+ .../websec3xx/debug/webesc310_negative/manage.py   |     6 +
+ .../websec3xx/debug/webesc310_negative/settings.py |     3 +
+ .../websec3xx/debug/webesc310_positive/manage.py   |     6 +
+ .../websec3xx/debug/webesc310_positive/settings.py |     1 +
+ .../debug/webesc311_map_negative/manage.py         |     6 +
+ .../debug/webesc311_map_negative/static/main.js    |     1 +
+ .../debug/webesc311_map_positive/manage.py         |     6 +
+ .../webesc311_map_positive/static/main.js.map      |     1 +
+ .../websec3xx/debug/webesc311_negative/manage.py   |     6 +
+ .../debug/webesc311_negative/webpack.config.js     |     3 +
+ .../websec3xx/debug/webesc311_positive/manage.py   |     6 +
+ .../debug/webesc311_positive/webpack.config.js     |     3 +
+ .../websec3xx/debug/webesc312_negative/app.py      |     4 +
+ .../websec3xx/debug/webesc312_negative/manage.py   |     6 +
+ .../websec3xx/debug/webesc312_positive/app.py      |     4 +
+ .../websec3xx/debug/webesc312_positive/manage.py   |     6 +
+ .../websec3xx/debug/webesc313_negative/manage.py   |     6 +
+ .../websec3xx/debug/webesc313_negative/nginx.conf  |     5 +
+ .../websec3xx/debug/webesc313_positive/manage.py   |     6 +
+ .../websec3xx/debug/webesc313_positive/nginx.conf  |     5 +
+ .../debug/webesc314_negative/.dockerignore         |     1 +
+ .../websec3xx/debug/webesc314_negative/Dockerfile  |     3 +
+ .../websec3xx/debug/webesc314_negative/manage.py   |     6 +
+ .../websec3xx/debug/webesc314_positive/Dockerfile  |     3 +
+ .../websec3xx/debug/webesc314_positive/manage.py   |     6 +
+ .../websec3xx/debug/webesc315_negative/main.tf     |     4 +
+ .../websec3xx/debug/webesc315_negative/manage.py   |     6 +
+ .../websec3xx/debug/webesc315_positive/main.tf     |     4 +
+ .../websec3xx/debug/webesc315_positive/manage.py   |     6 +
+ .../websec3xx/debug/webesc316_negative/manage.py   |     6 +
+ .../debug/webesc316_negative/static/main.js        |     2 +
+ .../websec3xx/debug/webesc316_positive/manage.py   |     6 +
+ .../debug/webesc316_positive/static/main.js        |     2 +
  .../webapp/websec3xx/django_full/manage.py         |     7 +
  .../webapp/websec3xx/django_full/requirements.txt  |     1 +
  .../webapp/websec3xx/django_full/settings.py       |     7 +
@@ -1420,9 +1457,74 @@ pass; filed as a follow-up, see Done report.
  .../websec3xx/django_missing_xfo/settings.py       |     6 +
  .../webapp/websec3xx/express_helmet/app.js         |    11 +
  .../webapp/websec3xx/express_helmet/package.json   |     8 +
+ .../headers/websec301_negative/nginx.conf          |     3 +
+ .../headers/websec301_negative/requirements.txt    |     1 +
+ .../headers/websec301_positive/nginx.conf          |     3 +
+ .../headers/websec301_positive/requirements.txt    |     1 +
+ .../headers/websec302_negative/nginx.conf          |     3 +
+ .../headers/websec302_negative/requirements.txt    |     1 +
+ .../headers/websec302_positive/nginx.conf          |     3 +
+ .../headers/websec302_positive/requirements.txt    |     1 +
+ .../headers/websec303_negative/nginx.conf          |     3 +
+ .../headers/websec303_negative/requirements.txt    |     1 +
+ .../headers/websec303_positive/nginx.conf          |     3 +
+ .../headers/websec303_positive/requirements.txt    |     1 +
+ .../headers/websec304_negative/nginx.conf          |     3 +
+ .../headers/websec304_negative/requirements.txt    |     1 +
+ .../headers/websec304_positive/nginx.conf          |     3 +
+ .../headers/websec304_positive/requirements.txt    |     1 +
+ .../headers/websec305_negative/nginx.conf          |     3 +
+ .../headers/websec305_negative/requirements.txt    |     1 +
+ .../headers/websec305_positive/nginx.conf          |     3 +
+ .../headers/websec305_positive/requirements.txt    |     1 +
+ .../headers/websec306_negative/nginx.conf          |     3 +
+ .../headers/websec306_negative/requirements.txt    |     1 +
+ .../headers/websec306_positive/nginx.conf          |     3 +
+ .../headers/websec306_positive/requirements.txt    |     1 +
+ .../websec3xx/headers/websec307_negative/app.py    |    10 +
+ .../headers/websec307_negative/requirements.txt    |     1 +
+ .../websec3xx/headers/websec307_positive/app.py    |    10 +
+ .../headers/websec307_positive/requirements.txt    |     1 +
+ .../websec3xx/headers/websec308_negative/app.py    |    11 +
+ .../headers/websec308_negative/requirements.txt    |     1 +
+ .../websec3xx/headers/websec308_positive/app.py    |    11 +
+ .../headers/websec308_positive/requirements.txt    |     1 +
+ .../websec3xx/headers/websec309_negative/app.py    |    12 +
+ .../headers/websec309_negative/requirements.txt    |     1 +
+ .../websec3xx/headers/websec309_positive/app.py    |    10 +
+ .../headers/websec309_positive/requirements.txt    |     1 +
  .../webapp/websec3xx/nginx_full/nginx.conf         |    10 +
  .../webapp/websec3xx/nginx_missing_csp/nginx.conf  |     9 +
  .../fixtures/webapp/websec3xx/no_evidence/main.py  |    10 +
+ .../webesc318_negative/.github/workflows/ci.yml    |     9 +
+ .../supply/webesc318_negative/requirements.txt     |     1 +
+ .../webesc318_positive/.github/workflows/ci.yml    |     7 +
+ .../supply/webesc318_positive/requirements.txt     |     1 +
+ .../webesc319_negative/.github/workflows/ci.yml    |     8 +
+ .../supply/webesc319_negative/requirements.txt     |     1 +
+ .../webesc319_positive/.github/workflows/ci.yml    |    12 +
+ .../supply/webesc319_positive/requirements.txt     |     1 +
+ .../websec3xx/supply/webesc320_negative/Dockerfile |     5 +
+ .../supply/webesc320_negative/requirements.txt     |     1 +
+ .../websec3xx/supply/webesc320_positive/Dockerfile |     4 +
+ .../supply/webesc320_positive/requirements.txt     |     1 +
+ .../websec3xx/supply/webesc321_negative/Dockerfile |     3 +
+ .../supply/webesc321_negative/requirements.txt     |     1 +
+ .../websec3xx/supply/webesc321_positive/Dockerfile |     3 +
+ .../supply/webesc321_positive/requirements.txt     |     1 +
+ .../supply/webesc322_negative/package-lock.json    |     9 +
+ .../supply/webesc322_negative/package.json         |     7 +
+ .../supply/webesc322_positive/package.json         |     7 +
+ .../supply/webesc323_negative/package-lock.json    |    12 +
+ .../supply/webesc323_negative/package.json         |     8 +
+ .../supply/webesc323_positive/package-lock.json    |     9 +
+ .../supply/webesc323_positive/package.json         |     8 +
+ .../supply/webesc324_negative/package.json         |     8 +
+ .../supply/webesc324_positive/package.json         |     8 +
+ .../webesc325_negative/.github/workflows/ci.yml    |     8 +
+ .../supply/webesc325_negative/requirements.txt     |     1 +
+ .../webesc325_positive/.github/workflows/ci.yml    |     7 +
+ .../supply/webesc325_positive/requirements.txt     |     1 +
  tests/fixtures/webapp/websec4xx/django/views.py    |    15 +
  tests/fixtures/webapp/websec4xx/fastapi/main.py    |    25 +
  tests/fixtures/webapp/websec4xx/flask/app.py       |    21 +
@@ -1774,7 +1876,7 @@ pass; filed as a follow-up, see Done report.
  tests/unit/strata/test_message_schema.py           |    22 +-
  tests/unit/strata/test_mode_conformance.py         |    66 +-
  tests/unit/strata/test_multifile.py                |    24 +-
- tests/unit/strata/test_mutation_audit.py           |    35 +-
+ tests/unit/strata/test_mutation_audit.py           |    59 +-
  tests/unit/strata/test_native_staleness.py         |    91 +-
  tests/unit/strata/test_native_test.py              |    20 +-
  tests/unit/strata/test_obligation_proof.py         |    31 +-
@@ -1907,7 +2009,7 @@ pass; filed as a follow-up, see Done report.
  tests/unit/test_ids_assigned_once.py               |   116 +
  tests/unit/test_land_already_landed.py             |     7 +-
  tests/unit/test_land_auto_rebase.py                |    35 +
- tests/unit/test_land_cas_ledger_retry.py           |   420 +
+ tests/unit/test_land_cas_ledger_retry.py           |   503 +
  tests/unit/test_land_cmd_backpressure.py           |     4 +
  tests/unit/test_land_cmd_drain_wiring.py           |    64 +
  tests/unit/test_land_cmd_quarantine.py             |    76 +-
@@ -2056,9 +2158,12 @@ pass; filed as a follow-up, see Done report.
  tests/unit/test_webapp_websec_headers.py           |   118 +
  tests/unit/test_webapp_websec_session_config.py    |   162 +
  tests/unit/test_websec_bounds.py                   |    99 +
+ tests/unit/test_websec_debug_config.py             |   122 +
  tests/unit/test_websec_deser.py                    |   131 +
  tests/unit/test_websec_headers_log.py              |   203 +
+ tests/unit/test_websec_headers_rules.py            |   119 +
  tests/unit/test_websec_sinks.py                    |    93 +
+ tests/unit/test_websec_supply_chain.py             |   109 +
  tests/unit/test_websec_xss.py                      |    92 +
  tests/unit/test_wire001_atexit_register.py         |     9 +-
  .../unit/test_wire001_callback_keyword_argument.py |    11 +-
@@ -2137,12 +2242,12 @@ pass; filed as a follow-up, see Done report.
  tickets/T-3022/ticket.md                           |    29 +-
  tickets/T-3032/done-report.md                      |  2399 ++
  tickets/T-3032/ticket.md                           |    99 +-
- tickets/T-3047/ticket.md                           |    65 +-
+ tickets/T-3047/ticket.md                           |    97 +-
  tickets/T-3048/ticket.md                           |    70 +-
  tickets/T-3049/ticket.md                           |    15 +-
  tickets/T-3053/ticket.md                           |    39 +-
  tickets/T-3063/ticket.md                           |    30 +-
- tickets/T-3067/ticket.md                           |    68 +-
+ tickets/T-3067/ticket.md                           |    83 +-
  tickets/T-3068/ticket.md                           |    29 +-
  tickets/T-3073/ticket.md                           |    18 +-
  tickets/T-3076/ticket.md                           |    15 +-
@@ -3072,12 +3177,15 @@ pass; filed as a follow-up, see Done report.
  tickets/T-5324/ticket.md                           |   148 +
  tickets/T-5325/done-report.md                      |  4181 ++++
  tickets/T-5325/ticket.md                           |   177 +
- tickets/T-5326/ticket.md                           |   141 +
+ tickets/T-5326/done-report.md                      |  4479 ++++
+ tickets/T-5326/ticket.md                           |   164 +
  tickets/T-5327/ticket.md                           |    37 +
  tickets/T-5328/ticket.md                           |    34 +
- tickets/T-5329/ticket.md                           |   145 +
+ tickets/T-5329/done-report.md                      |  4475 ++++
+ tickets/T-5329/ticket.md                           |   165 +
  tickets/T-5330/ticket.md                           |    65 +
- tickets/T-5331/ticket.md                           |    91 +
+ tickets/T-5331/done-report.md                      |  4470 ++++
+ tickets/T-5331/ticket.md                           |   112 +
  tickets/T-5332/ticket.md                           |    85 +
  tickets/T-5333/done-report.md                      |  4385 ++++
  tickets/T-5333/ticket.md                           |    89 +
@@ -3112,26 +3220,26 @@ pass; filed as a follow-up, see Done report.
  tickets/T-5355/ticket.md                           |    62 +
  tickets/T-5356/done-report.md                      |  4022 ++++
  tickets/T-5356/ticket.md                           |   136 +
- tickets/T-5357/ticket.md                           |    83 +
+ tickets/T-5357/ticket.md                           |   114 +
  tickets/T-5358/ticket.md                           |    53 +
- tickets/T-5359/ticket.md                           |    96 +
+ tickets/T-5359/ticket.md                           |   155 +
  tickets/T-5360/done-report.md                      |  4026 ++++
  tickets/T-5360/ticket.md                           |    90 +
  tickets/T-5361/ticket.md                           |    47 +
  tickets/T-5362/ticket.md                           |    46 +
- tickets/T-5363/ticket.md                           |    46 +
+ tickets/T-5363/ticket.md                           |    81 +
  tickets/T-5364/done-report.md                      |  4006 ++++
  tickets/T-5364/ticket.md                           |    82 +
- tickets/T-5365/ticket.md                           |    47 +
+ tickets/T-5365/ticket.md                           |    82 +
  tickets/T-5366/ticket.md                           |    46 +
  tickets/T-5367/ticket.md                           |    48 +
  tickets/T-5368/ticket.md                           |    57 +
  tickets/T-5369/ticket.md                           |    48 +
- tickets/T-5370/ticket.md                           |    46 +
+ tickets/T-5370/ticket.md                           |    85 +
  tickets/T-5371/ticket.md                           |    46 +
- tickets/T-5372/ticket.md                           |    46 +
- tickets/T-5373/ticket.md                           |    46 +
- tickets/T-5374/ticket.md                           |    46 +
+ tickets/T-5372/ticket.md                           |    96 +
+ tickets/T-5373/ticket.md                           |    99 +
+ tickets/T-5374/ticket.md                           |    79 +
  tickets/T-5375/ticket.md                           |    37 +
  tickets/T-5376/done-report.md                      |  3917 ++++
  tickets/T-5376/ticket.md                           |    60 +
@@ -3207,14 +3315,15 @@ pass; filed as a follow-up, see Done report.
  tickets/T-5464/done-report.md                      |  4402 ++++
  tickets/T-5464/ticket.md                           |    87 +
  tickets/T-5465/ticket.md                           |    64 +
- tickets/T-5466/ticket.md                           |    77 +
- tickets/T-5467/ticket.md                           |    64 +
+ tickets/T-5466/ticket.md                           |   103 +
+ tickets/T-5467/done-report.md                      |  4429 ++++
+ tickets/T-5467/ticket.md                           |    66 +
  tickets/T-5468/ticket.md                           |    82 +
- tickets/T-5469/ticket.md                           |    49 +
+ tickets/T-5469/ticket.md                           |    74 +
  tickets/T-5470/ticket.md                           |    84 +
- tickets/T-5471/ticket.md                           |    48 +
- tickets/T-5472/ticket.md                           |    44 +
- tickets/T-5473/ticket.md                           |    53 +
+ tickets/T-5471/ticket.md                           |    85 +
+ tickets/T-5472/ticket.md                           |    69 +
+ tickets/T-5473/ticket.md                           |    85 +
  tickets/T-5474/ticket.md                           |    66 +
  tickets/T-5475/ticket.md                           |    95 +
  tickets/T-5476/ticket.md                           |    45 +
@@ -3227,9 +3336,14 @@ pass; filed as a follow-up, see Done report.
  tickets/T-5483/ticket.md                           |    74 +
  tickets/T-5487/ticket.md                           |    39 +
  tickets/T-5488/ticket.md                           |    38 +
- tickets/T-5492/ticket.md                 |    38 +
+ tickets/T-5489/ticket.md                           |    46 +
+ tickets/T-5490/ticket.md                           |    36 +
+ tickets/T-5491/done-report.md                      |  4452 ++++
+ tickets/T-5491/ticket.md                           |    73 +
+ tickets/T-5492/ticket.md                           |    45 +
+ tickets/T-5496/ticket.md                           |    38 +
+ tickets/T-5500/ticket.md                           |    38 +
  tickets/T-5518/ticket.md                 |    69 +
- tickets/T-5491/ticket.md                 |    72 +
  tickets/archive/T-0090/ticket.md                   |    18 +
  tickets/archive/T-0114/ticket.md                   |    45 +-
  tickets/archive/T-0143/ticket.md                   |    94 +-
@@ -4437,16 +4551,9 @@ pass; filed as a follow-up, see Done report.
  tickets/archive/T-5082/ticket.md                   |   345 +
  tickets/archive/T-5083/ticket.md                   |    90 +
  uv.lock                                            |   265 +-
- 4412 files changed, 763908 insertions(+), 23540 deletions(-)
+ 4533 files changed, 789827 insertions(+), 23550 deletions(-)
 ```
 
 ### Evidence
-- `tests/unit/test_land_cas_ledger_retry.py::TestLedgerOnlyAdvance::test_pure_ledger_advance_is_ledger_only` (pytest node id, verified passing when recorded)
-- `tests/unit/test_land_cas_ledger_retry.py::TestLedgerOnlyAdvance::test_a_single_code_touching_commit_is_not_ledger_only` (pytest node id, verified passing when recorded)
-- `tests/unit/test_land_cas_ledger_retry.py::TestRebaseComposedCommitOnto::test_rebased_commit_carries_the_same_content_change` (pytest node id, verified passing when recorded)
-- `tests/unit/test_land_cas_ledger_retry.py::TestRebaseComposedCommitOnto::test_rebase_failure_returns_err` (pytest node id, verified passing when recorded)
-- `tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_ledger_only_cas_miss_rebases_and_retries_without_regates` (pytest node id, verified passing when recorded)
-- `tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_code_touching_cas_miss_falls_back_to_full_recompose` (pytest node id, verified passing when recorded)
-- `tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_refused_land_leaves_root_clean` (pytest node id, verified passing when recorded)
-- `tests/unit/test_land_cas_ledger_retry.py::TestFoldPublishAndResync::test_dev_advances_by_ledger_only_commit_between_compose_and_publish_lands` (pytest node id, verified passing when recorded)
-- `tests/unit/test_land_cas_ledger_retry.py::TestAttemptLedgerOnlyRebase::test_ledger_only_apply_conflict_is_retryable_not_a_hard_refusal` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing` (pytest node id, verified passing when recorded)
