@@ -1,5 +1,5 @@
 ---
-id: T-draft-20f050bd
+id: T-5475
 title: WEBSEC120 positive fixture fires zero findings (webapp-owned)
 state: queued
 kind: bug
