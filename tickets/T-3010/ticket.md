@@ -34,6 +34,7 @@ scope:
 - design/frob.strata
 - docs/design/registry/check-coverage.yaml
 - docs/design/registry/capability-via-ratchet.lock.json
+- strata-core/strata_core.pyi
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -106,6 +107,12 @@ scope_changes:
     new frob.toml read site
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: strata-core/strata_core.pyi
+  reason: milestone_closure_check needs a type stub, same as vmodel_check's, for ty
+    check to resolve the new PyO3 export
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: null
@@ -137,6 +144,19 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/gates/test_milestone_closure.py::TestMilestoneGapNodeIds::test_refuses_a_blank_reason
+- tests/gates/test_milestone_closure.py::TestMilestoneClosureGate::test_quiet_on_no_design_dir
+- tests/gates/test_milestone_closure.py::TestMilestoneClosureGate::test_quiet_no_vmodel_declarations
+- tests/unit/strata/test_vmodel_check.py::TestMilestoneClosureCheck::test_fires_on_an_ungapped_uncovered_obligation
+- tests/unit/strata/test_vmodel_check.py::TestMilestoneClosureCheck::test_quiet_when_gap_is_declared
+- tests/unit/strata/test_vmodel_check.py::TestMilestoneClosureCheck::test_quiet_when_covered_by_a_verifying_test
+- tests/unit/strata/test_vmodel_check.py::TestMilestoneClosureCheck::test_partial_coverage_three_of_five_with_two_gaps_passes
+- tests/unit/strata/test_vmodel_check.py::TestMilestoneClosureCheck::test_same_configuration_with_an_undeclared_missing_obligation_fails
+- tests/gates/test_milestone_closure.py::TestMilestoneClosureGate::test_fires_msclose001_on_an_ungapped_uncovered_obligation
+- tests/gates/test_milestone_closure.py::TestMilestoneClosureGate::test_quiet_when_gap_is_declared
+- tests/gates/test_milestone_closure.py::TestMilestoneClosureGate::test_partial_milestone_with_gap_passes_the_ungapped_case_still_fires
+- tests/gates/test_milestone_closure.py::TestMilestoneClosureGate::test_default_milestone_reads_frob_toml
 designated_repro_test: null
 threat: null
 component: null
