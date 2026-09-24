@@ -22,10 +22,28 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/coord/_ci_watch_poll.py
+- tests/frob/coord/test_ci_watch_poll.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/coord/_ci_watch_poll.py
+  reason: 'CI-2 own new file: coord watch''s shared poll primitive over frob.ci_validity;
+    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-draft-c099f096)
+    lands and releases its lease'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/frob/coord/test_ci_watch_poll.py
+  reason: 'CI-2 own new file: coord watch''s shared poll primitive over frob.ci_validity;
+    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-draft-c099f096)
+    lands and releases its lease'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: sprint
   old_value: null
