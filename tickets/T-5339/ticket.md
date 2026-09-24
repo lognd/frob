@@ -1,7 +1,7 @@
 ---
 id: T-5339
 title: EXPLAIN-obligation proof gate for waived SQL performance findings
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -76,6 +76,15 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_sql_explain_obligation.py::test_bare_waiver_with_no_explain_attr_fires
+- tests/unit/test_sql_explain_obligation.py::test_explain_attr_naming_a_missing_file_still_fires
+- tests/unit/test_sql_explain_obligation.py::test_explain_attr_outside_the_artifact_dir_still_fires
+- tests/unit/test_sql_explain_obligation.py::test_explain_attr_naming_a_real_artifact_is_clean
+- tests/unit/test_sql_explain_obligation.py::test_non_obligated_rule_is_never_flagged
+- tests/unit/test_sql_explain_obligation.py::test_non_waive_edge_is_ignored
+- tests/unit/test_sql_explain_obligation.py::test_real_fixture_pair_unproven_fires_proven_is_clean
+- tests/unit/test_sql_explain_obligation.py::test_discover_obligation_rule_prefixes_includes_default
 designated_repro_test: null
 threat: null
 component: null

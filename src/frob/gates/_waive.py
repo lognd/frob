@@ -209,6 +209,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-2688
 # frob:ticket T-4212
 # frob:ticket T-4663
+# frob:ticket T-5339
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -1734,6 +1735,10 @@ _KNOWN_GATE_RULES = frozenset(
         "SQL128",
         "SQL129",
         "SQL130",
+        # T-5339: the EXPLAIN-ANALYZE-artifact obligation on a waiver
+        # of a T-5335 sqlfluff performance finding -- see
+        # docs/modules/gates.md#sqlexplain001-t-5339.
+        "SQLEXPLAIN001",
         "LAUNCH101",
         "LAUNCH102",
         "LAUNCH103",
