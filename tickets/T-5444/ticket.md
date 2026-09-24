@@ -21,6 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +40,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+- field: points
+  old_value: '3'
+  new_value: '3'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
