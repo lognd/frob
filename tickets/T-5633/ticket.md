@@ -1,7 +1,7 @@
 ---
 id: T-5633
 title: frob ci validity <run> and frob ci watch <run>
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5633
+branch: t-5633
 scope:
 - src/frob/coord/_ci_watch_poll.py
 - tests/frob/coord/test_ci_watch_poll.py
