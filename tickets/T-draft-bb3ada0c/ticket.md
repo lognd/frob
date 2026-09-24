@@ -9,7 +9,7 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-3067
-parent: null
+parent: T-3004
 tier: ticket
 sprint: strata-vmodel
 runs_last: false
@@ -38,6 +38,13 @@ triage_changes:
   old_value: null
   new_value: strata-vmodel
   reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-24'
+- field: parent
+  old_value: null
+  new_value: T-3004
+  reason: 'T-3004 decomposition: this is the wiring follow-up to T-3067''s curated-landing
+    primitive, same strata-vmodel sprint family'
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
