@@ -26,6 +26,7 @@ scope:
 - src/frob/coord/_ci_watch_poll.py
 - tests/frob/coord/test_ci_watch_poll.py
 - docs/modules/ci_validity.md
+- docs/modules/ci_watch_poll.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,11 @@ scope_changes:
 - op: add
   glob: docs/modules/ci_validity.md
   reason: 'CI-2: frob ci validity doc anchor for _run_validity'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/ci_watch_poll.md
+  reason: 'CI-2: new doc page for the coord/_ci_watch_poll.py poll primitive'
   actor: logan
   at: '2026-09-24'
 triage_changes:
