@@ -1,7 +1,7 @@
 ---
 id: T-5475
 title: WEBSEC120 positive fixture fires zero findings (webapp-owned)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,12 +20,53 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5475
+branch: t-5475
+scope:
+- src/frob/webapp/_websec_headers_log.py
+- tests/unit/test_websec_headers_log.py
+- tests/fixtures/webapp/websec1xx/headers_log/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/webapp/_websec_headers_log.py
+  reason: fix the WEBSEC120 MUST-FIRE positive fixture that fires zero findings (CI
+    run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_headers_log.py
+  reason: fix the WEBSEC120 MUST-FIRE positive fixture that fires zero findings (CI
+    run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/websec1xx/headers_log/**
+  reason: fix the WEBSEC120 MUST-FIRE positive fixture that fires zero findings (CI
+    run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/webapp/_websec_headers_log.py
+  reason: fix the WEBSEC120 MUST-FIRE positive fixture that fires zero findings (CI
+    run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_headers_log.py
+  reason: fix the WEBSEC120 MUST-FIRE positive fixture that fires zero findings (CI
+    run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/websec1xx/headers_log/**
+  reason: fix the WEBSEC120 MUST-FIRE positive fixture that fires zero findings (CI
+    run 35951365410)
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
