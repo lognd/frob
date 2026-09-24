@@ -22,10 +22,26 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- tests/golden/frob_export_k8s.yaml
+- tests/golden/frob_export_iam.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/golden/frob_export_k8s.yaml
+  reason: regenerate golden export fixtures against today's real design/frob.strata
+    per test_export_golden.py's own docstring
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/golden/frob_export_iam.json
+  reason: regenerate golden export fixtures against today's real design/frob.strata
+    per test_export_golden.py's own docstring
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
