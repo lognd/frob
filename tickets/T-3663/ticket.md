@@ -6,7 +6,7 @@ kind: feature
 origin: human
 created: '2026-09-01'
 priority: medium
-parent: T-3004
+parent: T-2994
 tier: ticket
 sprint: null
 runs_last: false
@@ -46,6 +46,13 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+- field: parent
+  old_value: T-3004
+  new_value: T-2994
+  reason: ARCH102 land-squash refactor remainder belongs to the T-2994 ARCH102 lineage,
+    not strata; owner reparent 2026-09-23
+  actor: logan
+  at: '2026-09-23'
 designated_repro_test: null
 threat: null
 component: null
