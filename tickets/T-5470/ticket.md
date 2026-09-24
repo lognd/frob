@@ -22,10 +22,33 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/testing/_dotnet_runner.py
+- src/frob/testing/_unity_batchmode.py
+- src/frob/webapp/_a11y_statement.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/testing/_dotnet_runner.py
+  reason: 'WIRE002: repoint/resolve three stale WIRE001 waivers naming already-done
+    follow-up tickets, CI run 35951365410'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/testing/_unity_batchmode.py
+  reason: 'WIRE002: repoint/resolve three stale WIRE001 waivers naming already-done
+    follow-up tickets, CI run 35951365410'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/webapp/_a11y_statement.py
+  reason: 'WIRE002: repoint/resolve three stale WIRE001 waivers naming already-done
+    follow-up tickets, CI run 35951365410'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
