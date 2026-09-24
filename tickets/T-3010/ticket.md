@@ -29,6 +29,7 @@ scope:
 - docs/strata/vmodel.md
 - strata-core/src/lib.rs
 - strata-core/src/graph/vmodel/mod.rs
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -69,6 +70,12 @@ scope_changes:
   glob: strata-core/src/graph/vmodel/mod.rs
   reason: check_milestone_closure needs the same pub use re-export mod.rs already
     gives every other closure.rs rule function
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: wire the new milestone_closure_gate into _ALL_GATES and the gates-fast stage
+    group, same wiring VMOD001 needed
   actor: logan
   at: '2026-09-24'
 triage_changes:
