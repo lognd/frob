@@ -25,6 +25,7 @@ worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-90b33f19
 branch: t-draft-90b33f19
 scope:
 - tests/unit/test_land_verify_natives.py
+- src/frob/testing/_runners.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,12 @@ scope_changes:
   reason: 'coordinator review: os.environ mutation trips SELFAUDIT001 (tickets_ledger
     node undeclared env.read/env.write); real fix moves to argv construction in frob.testing._runners,
     the actual uv run pytest spawn site'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/testing/_runners.py
+  reason: the actual uv run pytest argv is built here (_build_runner_argv/_run_one_runner)
+    -- insert --no-sync right after run for a uv-based declared test.runner command
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
