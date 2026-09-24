@@ -22,10 +22,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- tests/test_hook_frob_suggest.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_hook_frob_suggest.py
+  reason: 'root cause measured on real Windows: os.getppid() returns a DIFFERENT value
+    across sequential sibling subprocess.run calls from the same long-lived parent
+    process (confirmed via direct repro), so _session_key''s no-session_id ppid fallback
+    treats each call as a new session and re-blocks instead of deduping. Real Claude
+    Code hook invocations always supply session_id (per this test file''s own docstring);
+    thread a consistent session_id through the affected tests to match production
+    shape instead of exercising the Windows-unstable fallback'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
