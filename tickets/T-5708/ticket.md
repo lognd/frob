@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
-parent: null
+parent: T-5630
 tier: ticket
 sprint: null
 runs_last: false
@@ -27,6 +27,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-5630
+  reason: coord/agent/ci command-surface epic (owner decision 2026-09-24)
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
