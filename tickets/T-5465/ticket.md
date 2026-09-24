@@ -22,10 +22,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- tests/system/test_cli_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: T-5323 legitimately added a11y to gates-security; update the byte-identical
+    migration golden per its own docstring's anticipated drift procedure
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
