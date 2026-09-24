@@ -591,3 +591,6 @@ from.
 - `docs/guides/testing.md` -- the per-test pytest-timeout guard (T-0692),
   the deadlock class it catches, and how to add an override for a
   legitimately slow test.
+- `docs/guides/landing.md` -- curated landing (T-3067): classifying a
+  ticket branch's own commit history into real-work vs ledger-bookkeeping
+  commits.

@@ -2,7 +2,7 @@
 id: T-3067
 title: 'Curated landing: preserve the 2-7 real work commits per ticket, squash the
   9-21 bookkeeping commits, classify by paths touched'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -91,6 +91,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/tickets/test_land_squash.py::TestIsBookkeepingCommit::test_pure_ticket_ledger_paths_are_bookkeeping
+- tests/unit/tickets/test_land_squash.py::TestIsBookkeepingCommit::test_pure_frob_cache_paths_are_bookkeeping
+- tests/unit/tickets/test_land_squash.py::TestIsBookkeepingCommit::test_mixed_ledger_and_real_paths_is_not_bookkeeping
+- tests/unit/tickets/test_land_squash.py::TestIsBookkeepingCommit::test_pure_source_change_is_not_bookkeeping
+- tests/unit/tickets/test_land_squash.py::TestIsBookkeepingCommit::test_empty_path_set_is_not_bookkeeping
+- tests/unit/tickets/test_land_squash.py::TestClassifyTicketCommits::test_partitions_real_work_from_bookkeeping_preserving_order
+- tests/unit/tickets/test_land_squash.py::TestClassifyTicketCommits::test_empty_input_returns_two_empty_tuples
+- tests/unit/tickets/test_land_squash.py::TestClassifyTicketCommits::test_all_real_work_no_bookkeeping
+- tests/unit/tickets/test_land_squash.py::TestClassifyTicketCommits::test_all_bookkeeping_no_real_work
 designated_repro_test: null
 threat: null
 component: null

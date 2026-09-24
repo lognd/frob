@@ -46,7 +46,7 @@ from __future__ import annotations
 
 import tempfile
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from contextlib import nullcontext
 from pathlib import Path
 
@@ -103,6 +103,68 @@ from frob.tickets._models import (
 from frob.tickets._store import _parse_ledger, _store_mode, ledger_lock, ledger_path
 
 _log = get_logger(__name__)
+
+
+# frob:ticket T-3067
+#: A commit whose every changed path lives under one of these prefixes is
+#: pure ticket-ledger bookkeeping (a `frob ticket start`/`scope`/`points`/
+#: `evidence`/`done-report` write) -- never a real code/test/doc change.
+#: Mirrors the SAME `tickets/`-prefix convention `_exclude_dev_merged_
+#: ledger_files` (below, in this same module) already uses to separate
+#: ledger paths from everything else, applied per-commit instead of
+#: per-file-in-a-diff.
+_BOOKKEEPING_PATH_PREFIXES: tuple[str, ...] = ("tickets/", ".frob/")
+
+
+# frob:ticket T-3067
+def _is_bookkeeping_commit(paths: Sequence[str]) -> bool:
+    """`True` when `paths` (one commit's changed-path set) is non-empty AND
+    every path starts with a `_BOOKKEEPING_PATH_PREFIXES` entry -- a commit
+    touching ANY real source/test/doc path, even alongside a ledger write,
+    counts as real work (a ticket's evidence-binding commit that ALSO
+    fixes a typo in the same commit is not bookkeeping-only). An EMPTY
+    path set (a no-op commit) is never bookkeeping -- nothing to classify
+    away, and this function returning `True` on it would let
+    `classify_ticket_commits` silently drop a commit with unknown
+    content."""
+    if not paths:
+        return False
+    return all(
+        any(path.startswith(prefix) for prefix in _BOOKKEEPING_PATH_PREFIXES)
+        for path in paths
+    )
+
+
+# frob:doc docs/guides/landing.md#curated-landing-real-work-vs-bookkeeping-t-3067
+# frob:ticket T-3067
+def classify_ticket_commits(
+    commits: Sequence[tuple[str, Sequence[str]]],
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """T-3067 (curated landing): partition a ticket branch's commit shas
+    into `(real_work, bookkeeping)`, each a tuple of shas in `commits`'
+    own order -- `real_work` is every commit `_is_bookkeeping_commit`
+    says is NOT pure ledger bookkeeping, `bookkeeping` is every commit it
+    says IS. `commits` is `(sha, changed_paths)` pairs, the shape a
+    caller derives from `git log --name-only` over a ticket's own worktree
+    branch (this function does no git I/O itself -- same "prove the
+    mechanical primitive in isolation" precedent `frob.tickets._land_
+    splice.classify_test_then_impl_paths` set for T-3546, `docs/design/
+    land-splice-test-then-impl.md`).
+
+    Measured shape this ticket's title describes: a typical ticket's own
+    worktree history carries 2-7 real-work commits (the actual code/test/
+    doc changes) interleaved with 9-21 bookkeeping commits (`ticket
+    start`/`scope`/`points`/`evidence`/`done-report` ledger writes, one
+    or more per verb call) -- this function does not ENFORCE either
+    range, only classifies; a caller deciding what to do with an
+    out-of-range result (squash bookkeeping into one consolidated commit,
+    warn, refuse) is real follow-up work, same UNWIRED posture T-3546's
+    own primitive shipped with."""
+    real_work: list[str] = []
+    bookkeeping: list[str] = []
+    for sha, paths in commits:
+        (bookkeeping if _is_bookkeeping_commit(paths) else real_work).append(sha)
+    return tuple(real_work), tuple(bookkeeping)
 
 
 # frob:ticket T-0907
