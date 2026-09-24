@@ -30,6 +30,7 @@ scope:
 - strata-core/src/lib.rs
 - strata-core/src/graph/vmodel/mod.rs
 - src/frob/gates/__init__.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -76,6 +77,12 @@ scope_changes:
   glob: src/frob/gates/__init__.py
   reason: wire the new milestone_closure_gate into _ALL_GATES and the gates-fast stage
     group, same wiring VMOD001 needed
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: MSCLOSE001 needs registering in _KNOWN_GATE_RULES, same REG002 step VMOD001/TDD001
+    needed
   actor: logan
   at: '2026-09-24'
 triage_changes:
