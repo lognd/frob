@@ -9,7 +9,7 @@ created: '2026-09-24'
 priority: medium
 parent: T-5630
 tier: ticket
-sprint: null
+sprint: coord-surface
 runs_last: false
 milestone: v0.535.0
 points: null
@@ -32,6 +32,12 @@ triage_changes:
   old_value: null
   new_value: T-5630
   reason: coord/agent/ci command-surface epic (owner decision 2026-09-24)
+  actor: logan
+  at: '2026-09-24'
+- field: sprint
+  old_value: null
+  new_value: coord-surface
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
