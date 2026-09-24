@@ -9,6 +9,7 @@ created: '2026-08-26'
 priority: high
 blocked_by:
 - T-draft-258c9c5d
+- T-3010
 parent: T-3004
 tier: ticket
 sprint: strata-vmodel
