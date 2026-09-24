@@ -2,7 +2,7 @@
 id: T-5524
 title: 'WIRE002: repoint stale WIRE001 waivers in dotnet/unity runners off done ticket
   T-4516'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5524
+branch: t-5524
 scope:
 - src/frob/testing/_dotnet_runner.py
 - src/frob/testing/_unity_batchmode.py
@@ -37,6 +37,18 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: BUG002 needs the opposite-direction check since this is metadata-only
+  actor: logan
+  at: '2026-09-24'
+  old_length: 980
+  new_length: 1178
+evidence:
+- tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_maps_passing_and_failing_ids
+- tests/unit/test_dotnet_runner.py::TestRunDotnetTests::test_requested_id_missing_from_results_is_err
+- tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode::test_maps_passing_and_failing_ids
+- tests/unit/test_unity_batchmode.py::TestRunUnityBatchmode::test_requested_id_missing_from_results_is_err
 designated_repro_test: null
 threat: null
 component: null
@@ -63,3 +75,5 @@ src/frob/webapp/_a11y_statement.py:138 has the identical shape
 drain -- left for whichever ticket owns webapp/** to repoint separately.
 
 frob:tests tests/unit/test_dotnet_runner.py, tests/unit/test_unity_batchmode.py
+
+frob:no-behavior-change reason="comment-only fix: repoints a stale WIRE001 waiver follow_up= from a done ticket (T-4516) to the open ticket that now owns the gap (T-5523); no runtime code changed"
