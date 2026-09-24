@@ -2,7 +2,7 @@
 id: T-5467
 title: 'lang_support: frob.tickets and frob.webapp unregistered in source-tree facet
   audit'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -21,8 +21,6 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
 scope:
 - src/frob/lang/_support.py
 scope_breadth_ack: false
@@ -43,12 +41,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/test_lang_support.py::TestPackageAudit::test_real_repo_source_tree_is_fully_registered
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5467
+branch: t-5467
 ---
 Found while draining CI run 35951365410 (dev 9e0c89bb19). Failing:
 tests/test_lang_support.py::TestPackageAudit::test_real_repo_source_tree_is_fully_registered

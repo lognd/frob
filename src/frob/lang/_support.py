@@ -1401,6 +1401,31 @@ LANGUAGE_SENSITIVE_PACKAGES: dict[str, PackageAudit] = {
             "expected."
         ),
     ),
+    "frob.tickets": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.tickets._reconcile's only hit is Pydantic's own "
+            '`model_dump(mode="python")` -- a serialization-mode '
+            'literal ("python" vs "json"), not a programming-'
+            "language behavioral branch. frob.tickets has no "
+            "per-language logic at all (T-5467)."
+        ),
+    ),
+    "frob.webapp": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.webapp's per-language literals (`_a11y_interaction."
+            "_HTML_FAMILY_LANGUAGES`, `_a11y_substrate._JSX_FAMILY_"
+            "LANGUAGES`, `_seo_substrate`'s extractor-dispatch dict, "
+            "`_websec_authz_substrate`'s python-only guard, ...) are "
+            "symmetric membership/dispatch checks routing a WEBSEC/"
+            "COMPLY/A11Y/SEO/WEBPERF detector to the right per-language "
+            "extraction function -- the same posture `frob.app`'s own "
+            "AGNOSTIC entry documents, not a place a language can be "
+            "partially or incorrectly supported independent of "
+            "`frob.lang` grammar itself (T-5467)."
+        ),
+    ),
 }
 
 
