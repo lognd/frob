@@ -25,12 +25,57 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/webapp/_comply_international.py
-- tests/fixtures/webapp/comply1xx/**
+- tests/fixtures/webapp/comply1xx/gdpr/**
+- src/frob/webapp/_comply_gdpr.py
+- tests/unit/test_comply_gdpr.py
+- docs/modules/webapp-comply-gdpr.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/comply1xx/**
+  reason: per-ticket fixture subdir to avoid T-5372 lease collision; module renamed
+    to _comply_gdpr.py per coordinator naming; scope test file + doc per playbook
+    convention
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/webapp/_comply_international.py
+  reason: per-ticket fixture subdir to avoid T-5372 lease collision; module renamed
+    to _comply_gdpr.py per coordinator naming; scope test file + doc per playbook
+    convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/comply1xx/gdpr/**
+  reason: per-ticket fixture subdir to avoid T-5372 lease collision; module renamed
+    to _comply_gdpr.py per coordinator naming; scope test file + doc per playbook
+    convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/webapp/_comply_gdpr.py
+  reason: per-ticket fixture subdir to avoid T-5372 lease collision; module renamed
+    to _comply_gdpr.py per coordinator naming; scope test file + doc per playbook
+    convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_comply_gdpr.py
+  reason: per-ticket fixture subdir to avoid T-5372 lease collision; module renamed
+    to _comply_gdpr.py per coordinator naming; scope test file + doc per playbook
+    convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-comply-gdpr.md
+  reason: per-ticket fixture subdir to avoid T-5372 lease collision; module renamed
+    to _comply_gdpr.py per coordinator naming; scope test file + doc per playbook
+    convention
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
