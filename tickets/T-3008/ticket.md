@@ -2,7 +2,7 @@
 id: T-3008
 title: 'Multi-level invariants: an invariant declared at level L must be verified
   at Ls paired test level (T-3004 section 7)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3008
+branch: t-3008
 scope:
 - src/frob/gates/_invariant_level.py
 - tests/gates/test_invariant_level.py
