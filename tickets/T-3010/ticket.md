@@ -2,7 +2,7 @@
 id: T-3010
 title: 'Incremental releases: milestone-scoped closure over a configuration binding
   partial architectures with declared gaps (T-3004 section 6)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -27,6 +27,7 @@ scope:
 - tests/unit/strata/test_vmodel_check.py
 - tests/gates/test_milestone_closure.py
 - docs/strata/vmodel.md
+- strata-core/src/lib.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -55,6 +56,12 @@ scope_changes:
 - op: add
   glob: docs/strata/vmodel.md
   reason: milestone-scoped closure over configuration binding
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: strata-core/src/lib.rs
+  reason: milestone closure needs a PyO3 export mirroring vmodel_check's pattern for
+    the Python gate to call the new rule-6 Rust engine
   actor: logan
   at: '2026-09-23'
 triage_changes:
@@ -94,4 +101,6 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3010
+branch: t-3010
 ---
