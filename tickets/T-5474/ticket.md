@@ -20,6 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/_cli_parsers/_ops.py
 - tests/unit/test_cli_group_parity.py

@@ -2124,6 +2124,24 @@ class Ticket(BaseModel):
     # `scope_breadth_ack_reason`/`ScopeBreadthAckReasonMissing` already
     # enforce for their own bool+reason pair.
     runs_last_parallel_safe_reason: str | None = None
+    # frob:ticket T-5464
+    # T-5120's `_start_transition_ledger_fields` stamps these onto a
+    # ticket entering IN_PROGRESS (the durable cross-worktree lease
+    # record); its own docstring originally claimed no schema change was
+    # needed because `extra="allow"` round-trips them -- true for
+    # load/dump, but TICK008 (added after T-5120, T-0842) WARNs on every
+    # `__pydantic_extra__` key as presumed drift, and its own real-repo
+    # smoke test (`test_real_repo_ledger_is_tick008_clean`) explicitly
+    # forbids "calibrating around" a genuinely-known field via an
+    # allowlist -- the sanctioned fix is exactly this: declare the field.
+    # `worktree` is this ticket's own absolute checkout path; `branch` is
+    # its git branch name. Both `None` until the ticket's first IN_
+    # PROGRESS transition.
+    worktree: str | None = None
+    # frob:ticket T-5464
+    # see `worktree` immediately above -- the paired field from the same
+    # `_start_transition_ledger_fields` stamp.
+    branch: str | None = None
     scope: tuple[str, ...] = ()
     # frob:ticket T-2760
     # `(rule_id, file)` pair(s) this ticket declares itself to be ABOUT --

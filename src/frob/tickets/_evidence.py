@@ -1102,16 +1102,22 @@ def transition(
 # frob:ticket T-5120
 # tests/unit/tickets/test_start_transition_ledger.py::TestStartTransitionCommitsLedgerInFleetContext.test_in_progress_transition_stamps_worktree_and_branch  # noqa: E501
 def _start_transition_ledger_fields(root: Path) -> dict[str, object]:
-    """The `worktree`/`branch` extra fields to stamp onto a ticket entering
+    """The `worktree`/`branch` fields to stamp onto a ticket entering
     `IN_PROGRESS` (T-5120: a durable record on the ticket itself, not only
     `frob.tickets._leases`'s gitignored cross-worktree lease file). `Ticket`
-    declares `extra="allow"` (see its own docstring), so these two keys need
-    no schema change here -- they round-trip through `model_dump`/reload
-    like any other frontmatter field. Resolution failure (a `root` that is
-    not a git work tree, the same degrade `record_lease` already tolerates)
-    yields an empty dict rather than blocking the transition: the ledger
-    write and its commit are the source of truth this ticket fixes; the
-    worktree/branch fields are best-effort metadata riding along with it."""
+    declares both as real fields (T-5464): they started as bare
+    `extra="allow"` extras (T-5120's original claim was that no schema
+    change was needed since they round-trip through `model_dump`/reload
+    like any other frontmatter field either way), but TICK008 (T-0842,
+    added after T-5120) WARNs on every `__pydantic_extra__` key as
+    presumed drift, and its own real-repo smoke test explicitly forbids
+    "calibrating around" a genuinely-known field via an allowlist -- so
+    these two graduated to declared fields instead. Resolution failure (a
+    `root` that is not a git work tree, the same degrade `record_lease`
+    already tolerates) yields an empty dict rather than blocking the
+    transition: the ledger write and its commit are the source of truth
+    this ticket fixes; the worktree/branch fields are best-effort
+    metadata riding along with it."""
     from frob import gitio
 
     combined = gitio.common_dir_and_branch(root)
