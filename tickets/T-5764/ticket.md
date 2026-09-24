@@ -24,10 +24,17 @@ worktree: null
 branch: null
 scope:
 - src/frob/webapp/_gallery_schema.py
+- tests/unit/test_webapp_gallery_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_webapp_gallery_schema.py
+  reason: unit tests for vendored gallery schema loader
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: T-draft-3d1557ad
