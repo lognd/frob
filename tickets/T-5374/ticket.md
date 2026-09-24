@@ -22,13 +22,28 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/webapp/_seo_tags.py
-- tests/fixtures/webapp/seo1xx/**
+- tests/fixtures/webapp/seo1xx/tags/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/seo1xx/**
+  reason: per-ticket fixture subdir, siblings own seo1xx/spam/** (T-5365) and seo1xx/crawl/**
+    (T-5362)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/seo1xx/tags/**
+  reason: per-ticket fixture subdir, siblings own seo1xx/spam/** (T-5365) and seo1xx/crawl/**
+    (T-5362)
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
