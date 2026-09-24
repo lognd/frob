@@ -26,6 +26,8 @@ scope:
 - src/frob/sql/_squawk_adapter.py
 - src/frob/doctor.py
 - tests/fixtures/sql/squawk/**
+- docs/guides/install.md
+- docs/modules/sql.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +43,18 @@ scope_changes:
   glob: tests/fixtures/sql/squawk/**
   reason: avoid overlapping T-5339's tests/fixtures/sql/explain/** and other sibling
     fixture subdirs
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/guides/install.md
+  reason: one-line squawk mention beside T-5335's REQUIRED_FOR_FAMILY doc section
+    + public-API doc anchor for the new module
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/sql.md
+  reason: one-line squawk mention beside T-5335's REQUIRED_FOR_FAMILY doc section
+    + public-API doc anchor for the new module
   actor: logan
   at: '2026-09-23'
 triage_changes:
