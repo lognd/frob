@@ -1,7 +1,7 @@
 ---
 id: T-5454
 title: Fix a11y_findings signature to match T-5323 per-file gate contract
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -40,7 +40,14 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
-designated_repro_test: null
+evidence:
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_complete_statement_is_clean
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_partial_statement_reports_missing_sections
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_non_statement_file_is_always_quiet
+- tests/unit/test_webapp_a11y_statement.py::test_locate_statement_page_explicit_root
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_findings_no_frameworks_short_circuits_to_empty
+- tests/unit/test_webapp_a11y_statement.py::test_a11y_gate_does_not_crash_and_fires_statement_rule
+designated_repro_test: tests/unit/test_webapp_a11y_statement.py::test_a11y_gate_does_not_crash_and_fires_statement_rule
 threat: null
 component: null
 anchor: false
