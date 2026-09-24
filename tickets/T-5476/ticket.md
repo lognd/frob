@@ -22,10 +22,30 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/vet/_capability_scan.py
+- tests/vet_suite/test_fingerprint.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/vet/_capability_scan.py
+  reason: 'fingerprint self-exclusion list is stale: src/frob/webapp/_websec_deser.py
+    (a new WEBSEC109-116 sink detector, T-5309) contains yaml.load/eval/exec detection-pattern
+    literals in its own docstrings/data that self-match FP-DESERIALIZE-YAML-001 etc,
+    same self-match class as the already-excluded _cve_fingerprint.py/_dangerous_ops_*.py'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/vet_suite/test_fingerprint.py
+  reason: 'fingerprint self-exclusion list is stale: src/frob/webapp/_websec_deser.py
+    (a new WEBSEC109-116 sink detector, T-5309) contains yaml.load/eval/exec detection-pattern
+    literals in its own docstrings/data that self-match FP-DESERIALIZE-YAML-001 etc,
+    same self-match class as the already-excluded _cve_fingerprint.py/_dangerous_ops_*.py'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
