@@ -23,13 +23,42 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/webapp/_seo_spam.py
-- tests/fixtures/webapp/seo1xx/**
+- tests/fixtures/webapp/seo1xx/spam/**
+- tests/unit/test_seo_spam.py
+- docs/modules/webapp-seo-spam.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/seo1xx/**
+  reason: per-ticket fixture subdir (sibling T-5362 owns crawl/**) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/seo1xx/spam/**
+  reason: per-ticket fixture subdir (sibling T-5362 owns crawl/**) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_seo_spam.py
+  reason: per-ticket fixture subdir (sibling T-5362 owns crawl/**) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-seo-spam.md
+  reason: per-ticket fixture subdir (sibling T-5362 owns crawl/**) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
