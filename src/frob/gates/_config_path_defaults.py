@@ -34,7 +34,7 @@ mechanism.
 from __future__ import annotations
 
 import ast
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from frob.findings import Severity, Violation
 from frob.gates._tracked_files import tracked_files as _tracked_files
@@ -75,7 +75,20 @@ def _is_path_like_relative_literal(node: ast.expr) -> str | None:
         value = node.args[0].value
     if value is None:
         return None
-    if Path(value).is_absolute() or PureWindowsPath(value).is_absolute():
+    # T-5478: `Path(value).is_absolute()` is platform-native (WindowsPath
+    # on win32) and `PureWindowsPath(value).is_absolute()` covers a
+    # Windows-shaped literal on any host, but NEITHER recognizes a
+    # POSIX-style absolute literal (`/abs/dir/state.json`) when this
+    # gate runs on win32 -- `PureWindowsPath` requires a drive/UNC root
+    # for `is_absolute()`, so a bare-leading-slash path reads as
+    # "relative" there even though it is a real absolute path on the
+    # platform the source literal actually targets. Check all three so
+    # the gate's answer does not depend on which OS `frob check` runs on.
+    if (
+        Path(value).is_absolute()
+        or PureWindowsPath(value).is_absolute()
+        or PurePosixPath(value).is_absolute()
+    ):
         return None
     return value
 

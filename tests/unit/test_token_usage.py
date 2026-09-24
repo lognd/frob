@@ -245,10 +245,16 @@ class TestCollectTicketUsage:
                 iso_ts="2026-01-02T00:00:00Z",
             )
         ]
+        # T-5478: _FakeAdapter.extract_usage keys off str(transcript_path)
+        # where transcript_path is what collect_ticket_usage passes it --
+        # Path(session.transcript_path), native-separator on the current
+        # platform (backslash on Windows) -- so the fixture dict's own key
+        # must go through the same Path(...) conversion, not stay a bare
+        # POSIX-style literal that only matches on POSIX.
         adapter = _FakeAdapter(
             sessions,
             {
-                "/tmp/a.jsonl": (
+                str(Path("/tmp/a.jsonl")): (
                     {"input": 5, "output": 2, "cache_creation": 0, "cache_read": 0},
                     {"byte_offset": 100},
                     True,

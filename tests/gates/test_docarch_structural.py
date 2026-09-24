@@ -193,7 +193,12 @@ class TestDocarch002RatchetSeverity:
         )
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         after_new = docarch002_violations(tmp_path)
-        new_file_violations = [v for v in after_new if v.file == "src/new.py"]
+        # T-5478: Violation.file is str(Path(rel)) -- native separator
+        # (backslash on Windows) -- so the comparison literal must go
+        # through the same Path(...) conversion, not stay POSIX-only.
+        new_file_violations = [
+            v for v in after_new if v.file == str(Path("src/new.py"))
+        ]
         assert new_file_violations
         assert all(v.severity == "error" for v in new_file_violations)
 

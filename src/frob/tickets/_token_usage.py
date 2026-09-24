@@ -181,7 +181,16 @@ def _stream_transcript_usage(
         with transcript_path.open("rb") as fh:
             fh.seek(byte_offset)
             for raw_line in fh:
-                if time.monotonic() > deadline:
+                # T-5478: `>=`, not `>` -- with a budget of exactly 0.0s
+                # (the deliberately-forced "already expired" test shape),
+                # `time.monotonic()`'s clock tick on this loop's first
+                # pass can measure identical to the `deadline` captured a
+                # moment earlier (a real gap on Windows, where a handful
+                # of tiny-JSON-line iterations can complete inside one
+                # clock tick) -- `>` alone then never trips and the whole
+                # transcript reads to completion instead of stopping.
+                # "already at the deadline" must count as expired too.
+                if time.monotonic() >= deadline:
                     complete = False
                     break
                 byte_offset += len(raw_line)

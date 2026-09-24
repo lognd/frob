@@ -211,7 +211,11 @@ class TestApplyBulk:
         sweep_dir = self._fixture_dir(tmp_path)
         plan = apply_bulk(sweep_dir, apply=True, reason="test sweep", root=tmp_path)
 
-        statuses = {i.rel_path.split("/")[-1]: i.status for i in plan.items}
+        # T-5478: rel_path is str(Path) -- native separator (backslash on
+        # Windows). Path(...).name is separator-agnostic; a hardcoded
+        # '/' split silently no-ops on Windows and every key stays the
+        # full path instead of the basename.
+        statuses = {Path(i.rel_path).name: i.status for i in plan.items}
         assert statuses["live.py"] == "moved"
         assert statuses["archived.py"] == "moved"
         assert statuses["untargeted.py"] == "skipped"
@@ -257,7 +261,7 @@ class TestApplyBulk:
         # The reference line itself is no longer a discoverable block, so
         # the second sweep finds nothing left to move for live.py/archived.py.
         moved_files = {
-            i.rel_path.split("/")[-1] for i in plan2.items if i.status == "moved"
+            Path(i.rel_path).name for i in plan2.items if i.status == "moved"
         }
         assert "live.py" not in moved_files
         assert "archived.py" not in moved_files

@@ -2,7 +2,7 @@
 id: T-5478
 title: 'Windows-only: POSIX-path assumptions break config_path_defaults, narrative
   bulk, token_usage, docarch_structural'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
