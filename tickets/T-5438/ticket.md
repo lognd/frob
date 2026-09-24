@@ -1,5 +1,5 @@
 ---
-id: T-draft-ccd57f7f
+id: T-5438
 title: 'land: refuse at enqueue/dry-run when ticket state cannot transition to done'
 state: queued
 kind: bug
