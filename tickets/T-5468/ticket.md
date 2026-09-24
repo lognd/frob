@@ -33,6 +33,14 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: investigated per coordinator priority; every REG008 finding is in webapp/sql-owned
+    rule families, 100% out of touch-scope
+  actor: logan
+  at: '2026-09-24'
+  old_length: 828
+  new_length: 1932
 designated_repro_test: null
 threat: null
 component: null
@@ -54,3 +62,21 @@ against real coverage, or a detector regression that started flagging
 entries it previously accepted. This drain pass did not have time to
 root-cause which; needs a dedicated read of REG008's detector plus
 check-coverage.yaml's recent history.
+
+
+BLOCKED (investigated, not fixed): all 248 REG008 findings against
+docs/design/registry/check-coverage.yaml resolve to entry ids in exactly
+these families: CHK-GATE-WEBSEC101-115 (108 entries), CHK-GATE-A11Y102-131
+(30 entries), CHK-GATE-COMPLY101-127 (27), CHK-GATE-LAUNCH101-107 (7),
+CHK-GATE-SEO101-127 (27), CHK-GATE-SQL101-130 (30), CHK-GATE-WEBPERF101-115
+(15) -- every single one is a WEBSEC/A11Y/webapp-adjacent or SQL rule
+family, i.e. entirely inside src/frob/webapp/** and src/frob/sql/**, both
+explicitly out of touch-scope for this drain (other-agent-owned). There is
+no non-webapp/non-sql REG008 finding in this set at all -- this whole
+cluster is 100% blocked, not partially fixable. Each entry needs either a
+`frob:enforces CHK-GATE-<RULE>` directive added to its implementing rule
+function (if the rule is actually implemented and the directive was
+simply omitted), or re-dispositioning in check-coverage.yaml if the rule
+is not yet implemented (a large registry apparently pre-populated ahead
+of the rules' actual implementation). Handing off whole to the webapp/sql
+owning agent(s).
