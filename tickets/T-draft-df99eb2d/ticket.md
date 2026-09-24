@@ -2,7 +2,7 @@
 id: T-draft-df99eb2d
 title: 'frob agent brief <ticket>: render the dispatch brief from the playbook and
   the ledger'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -12,7 +12,7 @@ tier: ticket
 sprint: coord-surface
 runs_last: false
 milestone: v0.535.0
-points: null
+points: 5
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -21,13 +21,14 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-df99eb2d
+branch: t-draft-df99eb2d
 scope:
 - src/frob/_cli_parsers/_core.py
 - src/frob/agent/_brief.py
 - tests/unit/agent/test_brief.py
 - docs/guides/agent-playbook.md
+- src/frob/app/agent_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,11 +54,23 @@ scope_changes:
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: src/frob/app/agent_runner.py
+  reason: brief subcommand dispatch lives in agent_runner.run, the real entry point
+    _core.py's agent parser only describes for --help
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: sprint
   old_value: null
   new_value: coord-surface
   reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-24'
+- field: points
+  old_value: null
+  new_value: '5'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
