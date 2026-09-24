@@ -24,11 +24,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_websec_debug_config.py
-- tests/fixtures/webapp/websec3xx/**
+- tests/fixtures/webapp/websec3xx/debug/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/websec3xx/**
+  reason: per-ticket fixture subdir so the four headers leaves do not lease-collide
+    on the shared glob
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/websec3xx/debug/**
+  reason: per-ticket fixture subdir so the four headers leaves do not lease-collide
+    on the shared glob
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
