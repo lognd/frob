@@ -26,11 +26,38 @@ worktree: null
 branch: null
 scope:
 - src/frob/webapp/_comply_privacy.py
-- tests/fixtures/webapp/comply1xx/**
+- tests/fixtures/webapp/comply1xx/privacy/**
+- tests/unit/test_webapp_comply_privacy.py
+- docs/modules/webapp-comply-privacy.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/comply1xx/**
+  reason: 'narrow to the privacy leaf: siblings own comply1xx/gdpr, comply1xx/sector,
+    comply1xx/commerce; add this leaf''s own test+doc'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/comply1xx/privacy/**
+  reason: 'narrow to the privacy leaf: siblings own comply1xx/gdpr, comply1xx/sector,
+    comply1xx/commerce; add this leaf''s own test+doc'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_webapp_comply_privacy.py
+  reason: 'narrow to the privacy leaf: siblings own comply1xx/gdpr, comply1xx/sector,
+    comply1xx/commerce; add this leaf''s own test+doc'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-comply-privacy.md
+  reason: 'narrow to the privacy leaf: siblings own comply1xx/gdpr, comply1xx/sector,
+    comply1xx/commerce; add this leaf''s own test+doc'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
