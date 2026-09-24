@@ -24,6 +24,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - strata-core/src/graph/model.rs
 - strata-core/src/graph/vmodel/mod.rs
+- src/frob/strata/_selfconform_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: strata-core/src/graph/vmodel/mod.rs
+  reason: review and decision nodes with reason as data
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/strata/_selfconform_models.py
   reason: review and decision nodes with reason as data
   actor: logan
   at: '2026-09-23'
