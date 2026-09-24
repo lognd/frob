@@ -13,7 +13,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: 0.534.0
-points: 3
+points: 5
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -65,6 +65,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+- field: points
+  old_value: '3'
+  new_value: '5'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
