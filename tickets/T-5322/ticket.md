@@ -1,7 +1,7 @@
 ---
 id: T-5322
 title: 'A11Y129-135: redundant entry, accessible authentication, contrast'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'

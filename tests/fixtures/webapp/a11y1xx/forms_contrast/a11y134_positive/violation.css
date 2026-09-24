@@ -1,0 +1,6 @@
+/* frob:tests test_webapp_a11y_forms_contrast.py::_contrast_findings */
+.hero-heading {
+  color: #666666;
+  background-color: #777777;
+  font-size: 24px;
+}
