@@ -23,10 +23,33 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/tickets/_land_verify.py
+- tests/unit/tickets/test_land_verify*.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_verify.py
+  reason: rebuild stale worktree natives before post-merge evidence re-verification
+    (T-1213 second call site)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/tickets/test_land_verify*.py
+  reason: rebuild stale worktree natives before post-merge evidence re-verification
+    (T-1213 second call site)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: rebuild stale worktree natives before post-merge evidence re-verification
+    (T-1213 second call site)
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
