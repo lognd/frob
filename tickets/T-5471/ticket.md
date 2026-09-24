@@ -1,5 +1,5 @@
 ---
-id: T-draft-9de067c7
+id: T-5471
 title: test_packs auto-injection assertion fails on CI (macos) but not locally
 state: queued
 kind: bug
