@@ -1,7 +1,7 @@
 ---
 id: T-5471
 title: test_packs auto-injection assertion fails on CI (macos) but not locally
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5471
+branch: t-5471
 scope:
 - tests/unit/strata/test_packs.py
 - src/frob/strata/_packs.py
@@ -49,6 +49,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: 'BUG002 refusal: evidence test cannot fail deterministically at dev since
+    the defect is xdist ordering-dependent, not code-content-dependent'
+  actor: logan
+  at: '2026-09-24'
+  old_length: 925
+  new_length: 1517
+evidence:
+- tests/unit/strata/test_packs.py::TestAutoInjection::test_trusted_component_without_pack_gets_it_injected
 designated_repro_test: null
 threat: null
 component: null
@@ -71,3 +81,5 @@ Needs investigation with the exact CI failure text (not available locally
 since it does not reproduce here) -- validate any fix against the CI
 (macos) failure directly, not just local green, since local green does not
 currently mean the bug is absent.
+
+frob:waive BUG002 reason="the defect is xdist test-order dependent (a process-global log-once cache keyed by a module name shared with many other tests) -- it passes at dev in isolation exactly as it does at the fix, since reproducing it requires a specific full-suite worker ordering the test harness cannot pin; the root cause was instead demonstrated directly in an isolated repro script recorded in the done-report (elaborate a module named m twice in one process -- the second call's WARNING is suppressed) and the fix (a module name unique to this test) closes exactly that collision"
