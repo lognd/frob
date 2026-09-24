@@ -7,8 +7,6 @@ kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
-blocked_by:
-- T-3053
 parent: null
 tier: ticket
 sprint: strata-vmodel
@@ -23,6 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/tickets/_land_squash.py
 - tests/unit/tickets/test_land_squash.py
@@ -91,3 +91,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Unblock log
+- 2026-09-24: unblocked by T-3053 -- stale edge: T-3053 is the unrelated CAS/update-ref redesign (kernel decoupling); curated landing does not depend on it (measured 2026-09-24)
