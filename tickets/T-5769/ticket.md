@@ -2,7 +2,7 @@
 id: T-5769
 title: 'TIER003: epic closer -- all stories done plus a named outcome check recorded
   on the epic'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -47,3 +47,6 @@ Positive control: an epic with all stories done but no outcome-check field fails
 Doc page: docs/modules/tickets-lifecycle.md
 
 Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a3a4ea/scratchpad/LEDGER-TIERS-TREE.md (sections 2 and 5; section 5 overrides).
+
+## Drop reason
+- 2026-09-24: 2026-09-24: duplicate of T-5780 created by a land_compose splice recovering draft T-draft-ea1c92d6 before its promote; T-5780 is the canonical TIER003 leaf (absorbed by T-5780)
