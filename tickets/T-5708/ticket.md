@@ -9,6 +9,7 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-draft-4ad886c1
+- T-5706
 parent: T-5630
 tier: ticket
 sprint: coord-surface
