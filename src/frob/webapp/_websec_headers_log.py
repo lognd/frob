@@ -116,8 +116,12 @@ _LOG_CALL_RE = re.compile(
     r"""logger\.\w+\(\s*(?:f["'][^"']*\{([^}]+)\}[^)]*|[^)]*\+\s*([^)]+))\)"""
 )
 
+#: `[\s\S]{0,200}?` (not `[^\n]*`) so a `ruff format`-wrapped assignment --
+#: `response.headers["Content-Disposition"] = (\n    f"...filename=...\n)"`
+#: spanning multiple lines still matches; a same-line-only `[^\n]*` missed
+#: exactly this real formatted shape (T-5475, CI run 35951365410).
 _CONTENT_DISPOSITION_RE = re.compile(
-    r"""Content-Disposition[^\n]*filename[^\n]*\{([^}]+)\}|"""
+    r"""Content-Disposition[\s\S]{0,200}?filename[\s\S]{0,80}?\{([^}]+)\}|"""
     r"""attachment_filename\s*=\s*([^\s,)]+)"""
 )
 

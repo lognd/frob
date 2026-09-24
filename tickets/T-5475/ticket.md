@@ -1,7 +1,7 @@
 ---
 id: T-5475
 title: WEBSEC120 positive fixture fires zero findings (webapp-owned)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,8 +20,6 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5475
-branch: t-5475
 scope:
 - src/frob/webapp/_websec_headers_log.py
 - tests/unit/test_websec_headers_log.py
@@ -74,12 +72,17 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_headers_log.py::test_websec_headers_log_findings_fixture[websec120_positive-WEBSEC120-True]
+- tests/unit/test_websec_headers_log.py::test_websec_headers_log_findings_fixture[websec120_negative-WEBSEC120-False]
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5475
+branch: t-5475
 ---
 Found while draining CI run 35951365410 (dev 9e0c89bb19). Failing:
 tests/unit/test_websec_headers_log.py::test_websec_headers_log_findings_fixture[websec120_positive-WEBSEC120-True]
