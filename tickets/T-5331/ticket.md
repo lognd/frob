@@ -1,7 +1,7 @@
 ---
 id: T-5331
 title: 'WEBSEC318-325: CI/supply-chain hardening'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -25,6 +25,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/webapp/_websec_supply_chain.py
 - tests/fixtures/webapp/websec3xx/supply/**
+- tests/unit/test_websec_supply_chain.py
+- docs/modules/webapp-websec-supply-chain.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +42,16 @@ scope_changes:
   glob: tests/fixtures/webapp/websec3xx/supply/**
   reason: per-ticket fixture subdir so the four headers leaves do not lease-collide
     on the shared glob
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_supply_chain.py
+  reason: unit test + doc for the new module, per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-supply-chain.md
+  reason: unit test + doc for the new module, per playbook convention
   actor: logan
   at: '2026-09-24'
 triage_changes:
@@ -73,5 +85,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5331
+branch: t-5331
 ---
 Secrets in CI logs (workflow YAML lint for un-masked env echo), GitHub Actions pinned by tag not SHA, pull_request_target misuse (checkout of fork head + secrets use), Dockerfile running as root (no USER before entrypoint), Dockerfile :latest tag, lockfile presence/sync, typosquat edit-distance on newly added dependencies (bundled top-1000-per-ecosystem list, best-effort not exhaustive). YAML parse (reuse frob's existing GH-Actions YAML parsing if one exists, grep before adding a dependency) + Dockerfile line-scan + manifest/lockfile presence check. Fixture per rule id.
