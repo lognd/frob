@@ -24,6 +24,7 @@ scope:
 - strata-core/src/graph/model.rs
 - strata-core/src/graph/query.rs
 - strata-core/src/parse/**
+- docs/strata/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,11 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: strata-core/src/parse/**
+  reason: 'L0 semantic edges: kernel, grammar, doc, test'
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/strata/graph.md
   reason: 'L0 semantic edges: kernel, grammar, doc, test'
   actor: logan
   at: '2026-09-23'
