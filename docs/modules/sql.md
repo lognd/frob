@@ -143,3 +143,64 @@ No gate wires `orm_rule_findings` into `frob check` yet -- a later leaf
 folds it into a gate the same one-call-per-family shape
 `frob.gates._taint_gate.taint_gate` already uses for
 `websec_sink_findings`.
+
+## sqlfluff plugin (T-5335)
+
+<!-- frob:describes src/frob/sql/_sqlfluff_plugin.py::Rule_Frob_L001 -->
+<!-- frob:describes src/frob/sql/_sqlfluff_plugin.py::Rule_Frob_L002 -->
+<!-- frob:describes src/frob/sql/_sqlfluff_plugin.py::Rule_Frob_L003 -->
+<!-- frob:describes src/frob/sql/_sqlfluff_plugin.py::Rule_Frob_L004 -->
+<!-- frob:describes src/frob/sql/_sqlfluff_plugin.py::get_rules -->
+<!-- frob:describes src/frob/sql/_sqlfluff_plugin.py::load_default_config -->
+<!-- frob:describes src/frob/sql/_sqlfluff_plugin.py::get_configs_info -->
+
+OWNER DIRECTIVE (T-5148-1): sqlfluff hosts frob's own SQL performance-rule
+set as a real sqlfluff plugin (`pyproject.toml`'s
+`[project.entry-points.sqlfluff]` registers `frob.sql._sqlfluff_plugin`
+into the `sqlfluff` entry-point group sqlfluff's own plugin host
+discovers via `importlib.metadata.entry_points(group="sqlfluff")`, the
+same mechanism `pytest11` uses for pytest plugins). sqlfluff itself ships
+as the `sql` extra (`uv pip install "frob[sql]"`), not a core dependency
+-- the same "heavy, repo-conditional tool" posture the `smt` extra
+already established for z3-solver.
+
+### Rule set (Frob_L001-Frob_L004)
+
+sqlfluff's `RuleMetaclass` composes a plugin rule class named
+`Rule_Frob_LNNN` into the reported code `Frob_LNNN` (not one of frob's
+own gate rule ids -- these findings surface through sqlfluff's own
+CLI/API, not `frob check`):
+
+- **Frob_L001** -- `SELECT *` (a bare wildcard or a qualified `t.*`)
+  instead of naming the columns a query actually needs.
+- **Frob_L002** -- an `UPDATE`/`DELETE` statement with no `WHERE` clause.
+- **Frob_L003** -- a `HAVING` clause whose condition references no
+  aggregate function (a textual-proxy check over the function name only,
+  same posture `frob.sql._extract`'s own doc discloses for its psycopg
+  exclusion) -- the same filter as a `WHERE` predicate, but discarding
+  rows only after aggregation instead of before it.
+- **Frob_L004** -- `LIMIT ... OFFSET N` pagination, which re-scans and
+  discards every prior page's rows; keyset/cursor pagination stays
+  O(page size) at any offset.
+
+### Scope cut (T-5335's own contingency clause)
+
+T-5335's own ticket body named fourteen candidate rules and said: "If
+more than ~half of these don't fit sqlfluff's plugin rule-class cleanly,
+split the session/config-level ones ... into a follow-up ticket rather
+than forcing the fit." The other ten (WHERE-vs-ON on outer joins,
+non-sargable predicates, NOT-IN-over-nullable-subquery, OR-across-
+columns, correlated-subquery-where-join-fits, DISTINCT-masking-fan-out,
+COUNT(*)-vs-EXISTS, no-LIMIT-on-interactive-query, missing-
+statement_timeout, long-transaction) need schema/session state (an index
+catalog, cross-statement session config, a resolved query plan) beyond a
+single-statement AST plugin's reach -- filed as a follow-up ticket (see
+T-5335's own Done report for the id) rather than forced to fit.
+
+### REQUIRED_FOR_FAMILY tool gating
+
+See docs/guides/install.md#required_for_family-tool-gating-t-5335 for
+`frob.doctor.ToolCategory.REQUIRED_FOR_FAMILY`/
+`family_required_tool_findings` -- sqlfluff's absence is a FAILING
+verdict only when `sql_relevance` (above) is true for the repo, never
+demanded when no SQL surface exists at all.

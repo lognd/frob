@@ -737,7 +737,7 @@ bypassed frob entirely.
 
 `frob doctor` now enumerates and reports every external tool it can spawn
 or depends on for a gate to measure something, each tagged with one of
-three categories (`ToolCategory`):
+four categories (`ToolCategory`):
 
 - **REQUIRED** -- frob cannot perform the operation at all without it
   (`python`, `git`, `uv`, `ruff`, `ty`). Absence makes `frob doctor`
@@ -754,6 +754,13 @@ three categories (`ToolCategory`):
   own (that per-gate wiring is tracked separately: see T-3311/T-3316 in
   `tickets/archive/` for the call-site work this ticket's own scope,
   `src/frob/doctor.py`, did not reach).
+- **REQUIRED_FOR_FAMILY** (T-5335 OWNER DIRECTIVE) -- a whole RULE FAMILY
+  needs it, decided by that family's own relevance predicate rather than
+  a single gate: absent-and-relevant is a FAILING verdict for the
+  family (reported unmeasured, not silently folded into a passing
+  result); absent-and-irrelevant (the family's surface does not exist in
+  this repo at all) never demands the tool. See "REQUIRED_FOR_FAMILY
+  tool gating" below.
 
 `scan_external_tools()` probes each `_EXTERNAL_TOOLS` entry: a binary via
 `shutil.which` plus a best-effort `--version` spawn, a Python plugin
@@ -808,6 +815,31 @@ other agents' live in-progress leases at ticket time, the same
 `src/frob/check/**`/`src/frob/gates/**`-out-of-reach shape T-0570 hit
 before it (see that ticket's Done report, and this module's own
 docstring).
+
+### REQUIRED_FOR_FAMILY tool gating (T-5335)
+
+<!-- frob:describes src/frob/doctor.py::FamilyToolFinding -->
+<!-- frob:describes src/frob/doctor.py::family_required_tool_findings -->
+
+OWNER DIRECTIVE: sqlfluff (`frob.sql._sqlfluff_plugin`, see
+docs/modules/sql.md) is REQUIRED FOR THE SQL FAMILY, not
+`OPTIONAL_FOR_GATE` -- a repo that genuinely contains SQL and lacks
+sqlfluff must report that as a FAILING verdict, not a per-gate advisory
+folded into an otherwise-passing run. `_FAMILY_TOOL_RELEVANCE` pairs each
+`ToolCategory.REQUIRED_FOR_FAMILY` tool's name with the `Path -> bool`
+predicate that decides its family's relevance -- sqlfluff's own is
+`frob.sql._extract.sql_relevance` (T-5334: a tracked `.sql` file or a
+SQL-executing call site), reused verbatim rather than re-detected here.
+`family_required_tool_findings(root)` joins `scan_external_tools()`'s own
+presence probe (so presence itself is never re-probed, only reused) with
+that predicate: a `FamilyToolFinding` is reported only when the tool is
+BOTH absent AND relevant -- the same "not needed here is not a finding"
+posture `relevant_tool_findings` above already established, but with a
+FAILING rather than gate-UNMEASURED verdict, and with no never-fail
+override flag (the owner's directive is that a relevant-and-missing
+`REQUIRED_FOR_FAMILY` tool always fails). Wiring this into `frob check`'s
+end-of-run report is the same follow-up `relevant_tool_findings` above
+already named.
 
 ## Unity toolchain detection (T-4501)
 

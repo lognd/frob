@@ -109,6 +109,7 @@ from frob.process._guard import guarded_subprocess_run
 from frob.process._lock import derived_state_lock
 from frob.repo_meta import stale_binary_warning
 from frob.scaffold._managed import ManagedBlockStatus, scaffold_conformance_status
+from frob.sql._extract import sql_relevance
 
 _log = get_logger(__name__)
 
@@ -748,19 +749,32 @@ def _mutate_journal_remediation(stale: tuple[StaleJournal, ...]) -> str:
 # frob:ticket T-3276
 # frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
 class ToolCategory(StrEnum):
-    """T-3276: the three ways `frob doctor` treats a missing external
+    """T-3276: the four ways `frob doctor` treats a missing external
     tool, per the owner's own stated rule -- REQUIRED (frob cannot
     perform the operation at all without it: a loud, typed, install-
     command-naming failure), OPTIONAL (frob never uses it unless the
     repo opts in, e.g. a language toolchain for a language this repo
-    does not contain: silent when absent), and OPTIONAL_FOR_GATE (a
+    does not contain: silent when absent), OPTIONAL_FOR_GATE (a
     `frob check` gate needs it to MEASURE something: absence must report
     that gate UNMEASURED, loudly, distinguishable from CLEAN, never
-    silently skipped or folded into a passing result)."""
+    silently skipped or folded into a passing result), and
+    REQUIRED_FOR_FAMILY (T-5335 OWNER DIRECTIVE: a whole rule FAMILY's
+    own relevance predicate decides this, not a single gate -- when the
+    family's `relevant_when(root)` predicate is true (e.g. sqlfluff's
+    `sql_relevance`: the repo has at least one `.sql` file or SQL-
+    executing call site) the tool's absence is a FAILING verdict for
+    that family, reported as unmeasured rather than silently folded into
+    CLEAN; when the predicate is false -- no SQL anywhere in the repo --
+    the tool is never demanded at all, the same "not needed here is not
+    a finding" posture `relevant_tool_findings` already established for
+    T-5139's OPTIONAL_FOR_GATE-adjacent `_RELEVANT_TOOLS`. There is no
+    never-fail override flag for this category: the owner's directive is
+    that a relevant-and-missing REQUIRED_FOR_FAMILY tool always fails)."""
 
     REQUIRED = "required"
     OPTIONAL = "optional"
     OPTIONAL_FOR_GATE = "optional_for_gate"
+    REQUIRED_FOR_FAMILY = "required_for_family"
 
 
 # frob:ticket T-3276
@@ -828,6 +842,22 @@ _EXTERNAL_TOOLS: tuple[tuple[str, str, ToolCategory, str], ...] = (
         "binary",
         ToolCategory.OPTIONAL,
         "install the .NET SDK (https://dotnet.microsoft.com/download)",
+    ),
+    (
+        # T-5335 OWNER DIRECTIVE: sqlfluff is REQUIRED FOR THE SQL FAMILY
+        # (`ToolCategory.REQUIRED_FOR_FAMILY`'s own docstring), not
+        # `OPTIONAL_FOR_GATE` -- its family-relevance predicate
+        # (`frob.sql._extract.sql_relevance`, T-5334) lives in
+        # `_FAMILY_TOOL_RELEVANCE` below, keyed by this same name, since
+        # a `Path -> bool` predicate is not a plain tuple literal here
+        # any more than `_RELEVANT_TOOLS`'s own `relevant_when` is
+        # (see that tuple's docstring for the identical split).
+        "sqlfluff",
+        "package",
+        ToolCategory.REQUIRED_FOR_FAMILY,
+        "pip install sqlfluff (or: uv pip install 'frob[sql]') -- frob's "
+        "own performance-rule plugin (src/frob/sql/_sqlfluff_plugin.py) "
+        "registers into it via the `sqlfluff` entry-point group",
     ),
 )
 
@@ -913,6 +943,63 @@ def _external_tools_remediation(statuses: list[ExternalToolStatus]) -> str | Non
         return None
     lines = [f"{s.name} not found -- {s.install_hint}" for s in missing_required]
     return "required tool(s) missing: " + "; ".join(lines)
+
+
+# frob:ticket T-5335
+#: T-5335 OWNER DIRECTIVE: which `_EXTERNAL_TOOLS` entries (by name) carry
+#: `ToolCategory.REQUIRED_FOR_FAMILY`, paired with the `Path -> bool`
+#: family-relevance predicate that decides whether their absence is a
+#: FAILING verdict here -- same "predicate is not pydantic-serializable,
+#: so it lives beside the registry, not on the model" split
+#: `_RELEVANT_TOOLS` already uses for its own `relevant_when`.
+#: `frob.sql._extract.sql_relevance` (T-5334) is reused verbatim rather
+#: than re-detecting SQL surface here (this module's own NO-DUPLICATION
+#: rule).
+_FAMILY_TOOL_RELEVANCE: tuple[tuple[str, Callable[[Path], bool]], ...] = (
+    ("sqlfluff", sql_relevance),
+)
+
+
+# frob:ticket T-5335
+# frob:doc docs/guides/install.md#required_for_family-tool-gating-t-5335
+class FamilyToolFinding(BaseModel):
+    """T-5335 OWNER DIRECTIVE: one `ToolCategory.REQUIRED_FOR_FAMILY` tool
+    that IS relevant to `root` (its family-relevance predicate is true)
+    and is missing -- unlike `RelevantToolFinding` (T-5139, gate-level
+    UNMEASURED), this is a FAILING verdict for the whole rule family, not
+    an advisory. A tool that is not relevant here (no SQL surface at
+    all) is never reported, even if absent -- "not needed here" is not a
+    finding, same posture `relevant_tool_findings` already established."""
+
+    model_config = {}
+
+    name: str
+    install_hint: str
+
+
+# frob:ticket T-5335
+# frob:doc docs/guides/install.md#required_for_family-tool-gating-t-5335
+def family_required_tool_findings(root: Path) -> list[FamilyToolFinding]:
+    """Every `_FAMILY_TOOL_RELEVANCE` entry whose predicate is true for
+    `root` AND whose tool is absent (T-5335 OWNER DIRECTIVE) -- an empty
+    return means either no `REQUIRED_FOR_FAMILY` tool is relevant here
+    (e.g. no SQL surface: sqlfluff is never demanded) or every relevant
+    one is present; there is no never-fail override for a genuine
+    relevant-and-missing finding, per `ToolCategory.REQUIRED_FOR_FAMILY`'s
+    own docstring. Presence itself is `scan_external_tools`'s own probe
+    (binary via `shutil.which`, package via `importlib.metadata.version`)
+    reused verbatim rather than re-probed here (this module's own
+    NO-DUPLICATION rule)."""
+    statuses = {s.name: s for s in scan_external_tools()}
+    findings: list[FamilyToolFinding] = []
+    for name, relevant_when in _FAMILY_TOOL_RELEVANCE:
+        status = statuses.get(name)
+        if status is None or status.present:
+            continue
+        if not relevant_when(root):
+            continue
+        findings.append(FamilyToolFinding(name=name, install_hint=status.install_hint))
+    return findings
 
 
 # frob:ticket T-5139

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frob"
-version = "0.531.1.dev274"
+version = "0.531.1.dev275"
 description = "The enforcement layer for agentic development: obligation graph, ticket queue, and gates."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -135,7 +135,14 @@ native = ["frob-core==0.531.0", "frob-strata==0.531.0"]
 # own land silently dropped this exact edit while keeping uv.lock's
 # derived fix, then re-dropped it again -- see T-1814's Done report for
 # the land-time fix that closes this class of loss.)
-smt = ["z3-solver>=4.13,<4.15.5"]
+# T-5335 OWNER DIRECTIVE: sqlfluff is REQUIRED FOR THE SQL FAMILY (see
+# `frob.doctor.ToolCategory.REQUIRED_FOR_FAMILY`'s own docstring), but
+# stays an extra rather than a core dependency -- the same "heavy, repo-
+# conditional tool" posture `smt` above already established (z3-solver
+# is only needed for `probe_smt_equivalence`; sqlfluff is only needed
+# when `frob.sql._extract.sql_relevance` is true for this repo). Install
+# with: uv pip install "frob[sql]"
+sql = ["sqlfluff>=3.0,<4"]
 
 [project.scripts]
 frob = "frob.__main__:main"
@@ -157,6 +164,16 @@ frob = "frob.__main__:main"
 # here at all.
 [project.entry-points.pytest11]
 frob_addopts_neutralizer = "frob.testing._coverage_refresh"
+
+# T-5335: registers frob's own SQL performance-rule set into sqlfluff's
+# plugin host (sqlfluff discovers this group via
+# `importlib.metadata.entry_points(group="sqlfluff")`, the same
+# mechanism `pytest11` above uses for pytest) -- only importable when
+# the `sql` extra is installed (`ToolCategory.REQUIRED_FOR_FAMILY`'s own
+# absence-is-measured posture in `frob.doctor` covers the case where
+# it is not).
+[project.entry-points.sqlfluff]
+frob = "frob.sql._sqlfluff_plugin"
 
 [project.urls]
 Homepage = "https://github.com/lognd/frob"
@@ -234,6 +251,10 @@ frob = [
     "scaffold/data/**/*.j2",
     "scaffold/data/**/*.toml",
     "logging/config.toml",
+    # T-5335: frob.sql._sqlfluff_plugin's load_default_config reads this
+    # via sqlfluff's own load_config_resource (importlib.resources), so
+    # it must ship as real package data, not just a source-tree file.
+    "sql/sqlfluff_default_config.cfg",
 ]
 
 [tool.ruff]

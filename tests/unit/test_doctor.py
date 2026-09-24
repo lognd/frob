@@ -285,6 +285,73 @@ class TestRelevantToolFindings:
         assert doctor.relevant_tool_findings(tmp_path) == []
 
 
+# frob:tests src/frob/doctor.py::family_required_tool_findings
+class TestFamilyRequiredToolFindings:
+    """T-5335 OWNER DIRECTIVE: `ToolCategory.REQUIRED_FOR_FAMILY`'s own
+    `family_required_tool_findings` -- sqlfluff's absence is a FAILING
+    verdict only when `sql_relevance` is true for the repo (a `.sql`
+    file or a SQL-executing call site exists); a repo with no SQL
+    surface at all never demands sqlfluff, the same "not needed here is
+    never a finding" posture `TestRelevantToolFindings` above already
+    established for T-5139's gate-level registry."""
+
+    # frob:tests src/frob/doctor.py::FamilyToolFinding
+    # frob:tests src/frob/doctor.py::family_required_tool_findings
+    def test_sql_relevant_missing_sqlfluff_is_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::family_required_tool_findings kind="unit"
+        # Positive control: a real git-tracked .sql file (sql_relevance's
+        # own predicate needs a TRACKED file, not just a file on disk --
+        # see frob.sql._extract.sql_relevance's own docstring) plus a
+        # guaranteed-absent sqlfluff must yield a real FAILING finding,
+        # not a silent skip.
+        import subprocess
+
+        (tmp_path / "migration.sql").write_text("SELECT 1;\n", encoding="utf-8")
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
+
+        def _raise(name: str) -> str:
+            raise ModuleNotFoundError(name)
+
+        monkeypatch.setattr(doctor, "version", _raise)
+
+        findings = doctor.family_required_tool_findings(tmp_path)
+        assert len(findings) == 1
+        assert findings[0].name == "sqlfluff"
+        assert "pip install sqlfluff" in findings[0].install_hint
+
+    def test_no_sql_missing_sqlfluff_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::family_required_tool_findings kind="unit"
+        # No .sql file and no SQL-executing call site: sqlfluff's
+        # absence is "not needed here", never demanded.
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
+
+        assert doctor.family_required_tool_findings(tmp_path) == []
+
+    def test_sql_relevant_present_sqlfluff_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::family_required_tool_findings kind="unit"
+        import subprocess
+
+        (tmp_path / "migration.sql").write_text("SELECT 1;\n", encoding="utf-8")
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: "/usr/bin/sqlfluff")
+
+        assert doctor.family_required_tool_findings(tmp_path) == []
+
+    def test_sqlfluff_is_required_for_family_category(self) -> None:
+        # frob:tests src/frob/doctor.py::ToolCategory
+        entry = next(t for t in doctor._EXTERNAL_TOOLS if t[0] == "sqlfluff")
+        assert entry[2] == ToolCategory.REQUIRED_FOR_FAMILY
+
+
 class TestLintToolVersionLag:
     """T-5204 (T-5138 DESIGN item 7): a lint tool whose installed version
     is `_LINT_LAG_WARN_THRESHOLD`+ minor releases behind its registry's

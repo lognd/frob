@@ -2,7 +2,7 @@
 id: T-5335
 title: sqlfluff integration + frob performance-rule plugin + REQUIRED-for-family tool
   gating
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
