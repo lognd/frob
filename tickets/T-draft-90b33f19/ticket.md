@@ -26,6 +26,7 @@ branch: t-draft-90b33f19
 scope:
 - tests/unit/test_land_verify_natives.py
 - src/frob/testing/_runners.py
+- tests/unit/test_testing_runners_no_sync.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,11 @@ scope_changes:
   glob: src/frob/testing/_runners.py
   reason: the actual uv run pytest argv is built here (_build_runner_argv/_run_one_runner)
     -- insert --no-sync right after run for a uv-based declared test.runner command
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_testing_runners_no_sync.py
+  reason: new test file for the argv --no-sync insertion fix
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
