@@ -32,7 +32,6 @@ scope:
 - src/frob/_cli_parsers/__init__.py
 - src/frob/__main__.py
 - docs/modules/coord.md
-- scripts/fleet_status.py
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -93,6 +92,13 @@ scope_changes:
   glob: design/frob.strata
   reason: coord stem CLI wiring mirrors agent/worktree registration + parser export
     + dispatch, plus retiring fleet_status.py and adding strata node/docs per brief
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: scripts/fleet_status.py
+  reason: retiring fleet_status.py has 31 dependent test/script files (wait_for_land_slot.py
+    imports land_process_rows/_parse_land_argv_ticket_id directly) -- far beyond this
+    5pt leaf's blast radius; filing a follow-up ticket instead of deleting it here
   actor: logan
   at: '2026-09-24'
 triage_changes:
