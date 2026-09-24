@@ -28,6 +28,7 @@ scope:
 - src/frob/coord/_queue_ops.py
 - src/frob/tickets/_land_queue.py
 - tests/unit/coord/test_queue_ops.py
+- tests/unit/tickets/test_land_queue.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +51,11 @@ scope_changes:
   at: '2026-09-24'
 - op: add
   glob: tests/unit/coord/test_queue_ops.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/tickets/test_land_queue.py
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
