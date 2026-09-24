@@ -1,5 +1,5 @@
 ---
-id: T-draft-966779cc
+id: T-5479
 title: 'Windows-only: frob-suggest hook dedup-on-repeat fails (4 node ids)'
 state: queued
 kind: bug
