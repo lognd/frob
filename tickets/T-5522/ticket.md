@@ -1,5 +1,5 @@
 ---
-id: T-draft-3dd36307
+id: T-5522
 title: 'land CAS: apply-failed ledger-only rebase must fall back to full recompose,
   not refuse (T-5491 follow-up)'
 state: queued

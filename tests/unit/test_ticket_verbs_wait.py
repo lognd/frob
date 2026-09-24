@@ -16,13 +16,26 @@ this ticket's own acceptance criteria name)."""
 from __future__ import annotations
 
 import argparse
-import fcntl
+import importlib
 import os
 import subprocess
 import threading
 from pathlib import Path
 
 import pytest
+
+# T-5482: `fcntl` is POSIX-only and does not exist on Windows at all; a
+# bare module-level `import fcntl` crashed pytest COLLECTION on Windows
+# before either `TestDispatchWait` test's own `os.name == "nt"` runtime
+# skip could ever run (T-2918/T-2934's PLATFORM001 doctrine, the same
+# platform gap `frob.process._lock.portable_flock_acquire` already
+# guards with a `try/except ImportError` import -- these two tests are
+# already POSIX-only by design, so `fcntl` staying `None` on Windows is
+# fine: only the two runtime-skipped test bodies below ever touch it).
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- windows-only in this repo's CI
+    fcntl = None
 
 from frob._cli_parsers._ticket._new import (
     _TICKET_WAIT_DEFAULT_S,
@@ -134,6 +147,7 @@ class TestDispatchWait:
         refusing on its very first probe."""
         if os.name == "nt":
             pytest.skip("POSIX-only (flock)")
+        assert fcntl is not None  # narrows for ty: unreachable past the skip above
         lock_path = repo / TICKETS_LEDGER_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
@@ -142,6 +156,7 @@ class TestDispatchWait:
         def _release_soon() -> None:
             import time
 
+            assert fcntl is not None  # narrows for ty inside this closure too
             time.sleep(0.3)
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
@@ -167,6 +182,7 @@ class TestDispatchWait:
         reused unchanged by this ticket, not re-derived here)."""
         if os.name == "nt":
             pytest.skip("POSIX-only (flock)")
+        assert fcntl is not None  # narrows for ty: unreachable past the skip above
         lock_path = repo / TICKETS_LEDGER_LOCK_REL
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)

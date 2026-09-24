@@ -2,7 +2,7 @@
 id: T-5482
 title: 'Windows-only: full suite INTERRUPTED after test_ticket_verbs_wait errors --
   failing set is a lower bound'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
