@@ -6,7 +6,7 @@ kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
-parent: T-draft-3d1557ad
+parent: T-5747
 tier: ticket
 sprint: layout-gate
 runs_last: false
@@ -28,6 +28,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: T-draft-3d1557ad
+  new_value: T-5747
+  reason: re-parent to the promoted story id; story draft was promoted after this
+    leaf was filed and the child parent field was not rewritten
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
