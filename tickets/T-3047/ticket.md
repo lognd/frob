@@ -23,11 +23,12 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - strata-core/src/graph/model.rs
 - strata-core/src/graph/vmodel/mod.rs
 - src/frob/strata/_selfconform_models.py
-- tests/unit/strata/test_vmodel_check.py
 - docs/strata/vmodel.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -59,6 +60,12 @@ scope_changes:
   reason: review and decision nodes with reason as data
   actor: logan
   at: '2026-09-23'
+- op: remove
+  glob: tests/unit/strata/test_vmodel_check.py
+  reason: collides with T-3010's live lease (already covers recorded evidence, cannot
+    be freed); using a new sibling test file instead
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: null
