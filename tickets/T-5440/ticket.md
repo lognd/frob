@@ -28,6 +28,7 @@ scope:
 - src/frob/lang/_common.py
 - src/frob/tickets/_reconcile.py
 - .claude/hooks/pgrep-self-match-guard.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -67,6 +68,11 @@ scope_changes:
     remaining findings are inside src/frob/webapp/**, src/frob/sql/**, tests/fixtures/webapp/**,
     docs/modules/webapp-*.md, docs/modules/sql.md, out of touch-scope per standing
     brief -- handed off'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: doc anchor closure for pgrep-self-match-guard.py/sync-claude-config.py symbols
   actor: logan
   at: '2026-09-24'
 triage_changes:
