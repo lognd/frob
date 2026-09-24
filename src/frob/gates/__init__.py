@@ -58,6 +58,7 @@ from typani.result import Result
 
 from frob.doctor import RelevantToolFailureKind, relevant_tool_findings
 from frob.excludes import is_test_file
+from frob.gates._a11y_gate import a11y_gate
 from frob.gates._arch import arch_gate
 from frob.gates._arch_schema import arch_schema_gate
 from frob.gates._bare_toolchain import bare_toolchain_gate
@@ -6573,6 +6574,12 @@ _ALL_GATES = frozenset(
         # T-0665: OPAQUE001, fail-closed runtime-resolved capability-
         # indirection obligation (frob.gates._opaque.opaque_gate).
         "opaque",
+        # T-5323: A11Y101-115 (frob.gates._a11y_gate.a11y_gate) -- listed
+        # here (and in _CANONICAL_GATE_ORDER below) so `selected =
+        # cfg.gates or _ALL_GATES` actually includes it on a full run,
+        # same reachability requirement bare_toolchain's own comment
+        # above names.
+        "a11y",
         "pii_structural",
         "refs",
         "registry",
@@ -7205,6 +7212,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "bare_toolchain",
     # T-0665: OPAQUE001.
     "opaque",
+    # T-5323: A11Y101-115, same position as its own _ALL_GATES entry above.
+    "a11y",
     "tickets",
     # T-2576 M2: MILE003, immediately after "tickets" -- same queue-wide
     # ledger-hygiene concern, split into its own gate module rather than
@@ -7320,6 +7329,10 @@ assert len(_CANONICAL_GATE_ORDER) == len(set(_CANONICAL_GATE_ORDER)), (
 #: used today, kept expressible for e.g. a gate that is both diff-
 #: scoped and security-relevant).
 _GATE_STAGE_GROUPS: dict[str, frozenset[str]] = {
+    # T-5323: A11Y101-115 -- same "gates-security" group as opaque/pii_
+    # structural, the WEBSEC-adjacent posture every WARN-tier-at-first-
+    # turn-on structural rule family in this repo lands in.
+    "a11y": frozenset(["gates-security"]),
     "affect_drift": frozenset(["gates-fast"]),
     "arch_schema": frozenset(["gates-fast"]),
     "archgate": frozenset(["gates-native"]),
@@ -7503,6 +7516,10 @@ _CACHEABLE_PROCESS_GATES: frozenset[str] = frozenset(
         "sys",
         "secrets",
         "taint",
+        # T-5323: A11Y101-115, same repo-wide tracked-file-scan shape as
+        # taint above -- conservative root_content_key membership, not a
+        # per-file cache.
+        "a11y",
         # T-4146: BARETOOL001, same tracked-file-scan shape as taint above.
         "bare_toolchain",
         "opaque",
@@ -8150,6 +8167,13 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # T-0688 promotion posture) -- repo-writable .git/.frob state
         # reaching a subprocess argv sink with no validator hop or `--`.
         "taint": _ProcessJob(taint_gate, (st.root,)),
+        # T-5323: A11Y101-115, WARN-tier at first turn-on (same T-0688/
+        # T-0973 promotion posture as taint_gate/opaque_gate) -- the A11Y
+        # family's first gate registration (frob.gates._a11y_gate.
+        # a11y_gate), which owns the pkgutil-based hook discovery every
+        # future frob.webapp._a11y_* rule module opts into for free (see
+        # docs/modules/webapp-a11y-structure.md).
+        "a11y": _ProcessJob(a11y_gate, (st.root,)),
         # T-4146: BARETOOL001, WARN-tier at first turn-on (same opaque_gate/
         # taint_gate T-0688/T-0973 promotion posture) -- a bare toolchain
         # name in an argv literal resolves through the spawning process's

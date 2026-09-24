@@ -1,7 +1,7 @@
 ---
 id: T-5323
 title: 'A11Y101-115: non-text content, structure, forms'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -158,6 +158,25 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_webapp_a11y_structure.py::test_a11y101_missing_alt
+- tests/unit/test_webapp_a11y_structure.py::test_a11y102_svg_missing_name
+- tests/unit/test_webapp_a11y_structure.py::test_a11y103_skipped_heading_level
+- tests/unit/test_webapp_a11y_structure.py::test_a11y104_duplicate_h1
+- tests/unit/test_webapp_a11y_structure.py::test_a11y105_missing_title
+- tests/unit/test_webapp_a11y_structure.py::test_a11y106_missing_lang
+- tests/unit/test_webapp_a11y_structure.py::test_a11y107_empty_lang
+- tests/unit/test_webapp_a11y_structure.py::test_a11y108_link_no_name
+- tests/unit/test_webapp_a11y_structure.py::test_a11y109_button_no_name
+- tests/unit/test_webapp_a11y_structure.py::test_a11y110_generic_link_text
+- tests/unit/test_webapp_a11y_structure.py::test_a11y111_unlabeled_input
+- tests/unit/test_webapp_a11y_structure.py::test_a11y112_missing_autocomplete
+- tests/unit/test_webapp_a11y_structure.py::test_a11y113_duplicate_id
+- tests/unit/test_webapp_a11y_structure.py::test_a11y114_invalid_role
+- tests/unit/test_webapp_a11y_structure.py::test_a11y115_invalid_aria_attribute
+- tests/unit/test_webapp_a11y_structure.py::test_no_framework_short_circuits_to_empty
+- tests/unit/test_webapp_a11y_structure.py::test_a11y_gate_discovers_hook_and_scans_tracked_files
+- tests/unit/test_webapp_a11y_structure.py::test_a11y_gate_no_framework_short_circuits_to_empty
 designated_repro_test: null
 threat: null
 component: null

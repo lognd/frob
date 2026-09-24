@@ -87,6 +87,13 @@ _JSX_ELEMENT_TYPES = frozenset({"jsx_element", "jsx_self_closing_element"})
 # Heading tag names in ascending level order -- index + 1 is the heading level.
 _HEADING_TAGS = ("h1", "h2", "h3", "h4", "h5", "h6")
 
+# `_HEADING_TAGS`' own tag -> level map, built once at import time (PERF002:
+# an `.index()` call inside `heading_sequence`'s per-element loop would be
+# an O(n) scan per heading instead of this O(1) lookup).
+_HEADING_LEVEL_BY_TAG: dict[str, int] = {
+    tag: level for level, tag in enumerate(_HEADING_TAGS, start=1)
+}
+
 
 # frob:doc docs/modules/webapp-a11y.md#elementmatch
 class ElementMatch(BaseModel):
@@ -126,6 +133,45 @@ def _child_text(node: Node | None, source: bytes) -> str:
     return source[node.start_byte : node.end_byte].decode("utf-8", errors="ignore")
 
 
+def _extract_attrs(
+    container_children: list[Node],
+    source: bytes,
+    *,
+    attr_type: str,
+    name_type: str,
+    value_container_type: str,
+    value_leaf_type: str,
+) -> dict[str, str]:
+    """DUP001/DUP002 dedup (T-5323): the shared "for each `attr_type` child,
+    read its `name_type` name and its `value_container_type` ->
+    `value_leaf_type` value (or `""` for a valueless attribute)" walk both
+    `_html_family_tag_and_attrs` (html-family `attribute`/`attribute_name`/
+    `quoted_attribute_value`/`attribute_value`) and
+    `_jsx_family_tag_and_attrs` (jsx-family `jsx_attribute`/
+    `property_identifier`/`string`/`string_fragment`) used to duplicate
+    inline -- one grammar-parameterized helper instead of two near-clone
+    loop bodies."""
+    attrs: dict[str, str] = {}
+    for attr in container_children:
+        if attr.type != attr_type:
+            continue
+        name_node = next((c for c in attr.children if c.type == name_type), None)
+        name = _child_text(name_node, source)
+        if not name:
+            continue
+        value_node = next(
+            (c for c in attr.children if c.type == value_container_type), None
+        )
+        if value_node is not None:
+            inner = next(
+                (c for c in value_node.children if c.type == value_leaf_type), None
+            )
+            attrs[name] = _child_text(inner, source)
+        else:
+            attrs[name] = ""
+    return attrs
+
+
 def _html_family_tag_and_attrs(node: Node, source: bytes) -> tuple[str, dict[str, str]]:
     """The tag name and attribute map of an html-family `element` node
     (module docstring: shared by `.html` and `.vue` `<template>` blocks)."""
@@ -137,24 +183,14 @@ def _html_family_tag_and_attrs(node: Node, source: bytes) -> tuple[str, dict[str
         return "<element>", {}
     name_node = next((c for c in open_tag.children if c.type == "tag_name"), None)
     tag = _child_text(name_node, source) or "<element>"
-    attrs: dict[str, str] = {}
-    for attr in open_tag.children:
-        if attr.type != "attribute":
-            continue
-        name_node = next((c for c in attr.children if c.type == "attribute_name"), None)
-        name = _child_text(name_node, source)
-        if not name:
-            continue
-        value_node = next(
-            (c for c in attr.children if c.type == "quoted_attribute_value"), None
-        )
-        if value_node is not None:
-            inner = next(
-                (c for c in value_node.children if c.type == "attribute_value"), None
-            )
-            attrs[name] = _child_text(inner, source)
-        else:
-            attrs[name] = ""
+    attrs = _extract_attrs(
+        open_tag.children,
+        source,
+        attr_type="attribute",
+        name_type="attribute_name",
+        value_container_type="quoted_attribute_value",
+        value_leaf_type="attribute_value",
+    )
     return tag, attrs
 
 
@@ -170,24 +206,14 @@ def _jsx_family_tag_and_attrs(node: Node, source: bytes) -> tuple[str, dict[str,
         return "<element>", {}
     name_node = next((c for c in opening.children if c.type == "identifier"), None)
     tag = _child_text(name_node, source) or "<element>"
-    attrs: dict[str, str] = {}
-    for attr in opening.children:
-        if attr.type != "jsx_attribute":
-            continue
-        name_node = next(
-            (c for c in attr.children if c.type == "property_identifier"), None
-        )
-        name = _child_text(name_node, source)
-        if not name:
-            continue
-        string_node = next((c for c in attr.children if c.type == "string"), None)
-        if string_node is not None:
-            fragment = next(
-                (c for c in string_node.children if c.type == "string_fragment"), None
-            )
-            attrs[name] = _child_text(fragment, source)
-        else:
-            attrs[name] = ""
+    attrs = _extract_attrs(
+        opening.children,
+        source,
+        attr_type="jsx_attribute",
+        name_type="property_identifier",
+        value_container_type="string",
+        value_leaf_type="string_fragment",
+    )
     return tag, attrs
 
 
@@ -285,6 +311,32 @@ def elements_missing_attribute(
     return Ok(matches)
 
 
+# frob:doc docs/modules/webapp-a11y.md#all_elements
+def all_elements(
+    root: Node, language: str, source: bytes
+) -> Result[tuple[ElementMatch, ...], A11ySubstrateError]:
+    """Every element under `root`, unfiltered, in document order -- the
+    generic enumeration `elements_with_attribute`/`elements_missing_attribute`
+    both specialize with a tag/attribute filter. A11Y rules that need to
+    see EVERY element regardless of tag or attribute presence (duplicate
+    `id` detection, ARIA role/attribute validation) call this directly
+    instead of hand-rolling a second tree walk -- see T-5313's own module
+    docstring for why `_iter_elements` stays private and every consumer
+    goes through a named, documented entry point like this one.
+
+    frob:ticket T-5323
+    """
+    if language not in _SUPPORTED_LANGUAGES:
+        _log.debug("all_elements: unsupported language=%s", language)
+        return Err(A11ySubstrateError.UnsupportedLanguage)
+    matches = tuple(
+        ElementMatch(tag=tag, attributes=attrs, span=_span_of(node))
+        for tag, attrs, node in _iter_elements(root, language, source)
+    )
+    _log.debug("all_elements: %d element(s) found", len(matches))
+    return Ok(matches)
+
+
 # frob:doc docs/modules/webapp-a11y.md#heading_sequence
 def heading_sequence(
     root: Node, language: str, source: bytes
@@ -300,9 +352,9 @@ def heading_sequence(
         return Err(A11ySubstrateError.UnsupportedLanguage)
     headings: list[HeadingMatch] = []
     for tag, _attrs, node in _iter_elements(root, language, source):
-        if tag not in _HEADING_TAGS:
+        if tag not in _HEADING_LEVEL_BY_TAG:
             continue
-        level = _HEADING_TAGS.index(tag) + 1
+        level = _HEADING_LEVEL_BY_TAG[tag]
         headings.append(
             HeadingMatch(
                 level=level,

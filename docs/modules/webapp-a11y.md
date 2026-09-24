@@ -33,32 +33,70 @@ from every query function below.
 
 ## Query helpers
 
-- `elements_with_attribute(root, language, source, tag_names, attribute)`
-  -> `Result[tuple[ElementMatch, ...], A11ySubstrateError]`: every element
-  under `root` (any nesting depth) whose tag is in `tag_names` AND that
-  carries `attribute` -- the `img[alt]`/`input[aria-label]` query shape.
-- `elements_missing_attribute(root, language, source, tag_names, attribute)`
-  -> same shape, inverted: elements matching `tag_names` that do NOT
-  carry `attribute` -- what a "missing alt/aria-label" violation rule
-  queries.
-- `heading_sequence(root, language, source)` ->
-  `Result[tuple[HeadingMatch, ...], A11ySubstrateError]`: every `h1`..`h6`
-  heading in document order, each carrying its level (1-6), flattened
-  text, and span -- what a "skipped heading level" rule queries.
-- `html_lang(root, language, source)` -> `Result[str | None,
-  A11ySubstrateError]`: the top-level `<html lang="...">` value, or
-  `Ok(None)` if no `<html>` element is present or it has no `lang`
-  attribute. For a jsx-family `language` (no `<html>` root ever exists)
-  this returns `Ok(None)` rather than an error -- "no `<html>` element
-  here" is a legitimate answer, not a substrate failure.
+### elements_with_attribute
+
+`elements_with_attribute(root, language, source, tag_names, attribute)`
+-> `Result[tuple[ElementMatch, ...], A11ySubstrateError]`: every element
+under `root` (any nesting depth) whose tag is in `tag_names` AND that
+carries `attribute` -- the `img[alt]`/`input[aria-label]` query shape.
+
+### elements_missing_attribute
+
+`elements_missing_attribute(root, language, source, tag_names, attribute)`
+-> same shape, inverted: elements matching `tag_names` that do NOT
+carry `attribute` -- what a "missing alt/aria-label" violation rule
+queries.
+
+### all_elements
+
+`all_elements(root, language, source)` -> `Result[tuple[ElementMatch,
+...], A11ySubstrateError]` (T-5323): the unfiltered enumeration
+`elements_with_attribute`/`elements_missing_attribute` both specialize
+with a tag/attribute filter -- every element under `root`, in document
+order, regardless of tag or attribute presence. A rule that needs to see
+EVERY element (duplicate `id` detection, ARIA role/attribute validation,
+generic accessible-name checks) calls this directly instead of
+hand-rolling a second tree walk.
+
+### heading_sequence
+
+`heading_sequence(root, language, source)` ->
+`Result[tuple[HeadingMatch, ...], A11ySubstrateError]`: every `h1`..`h6`
+heading in document order, each carrying its level (1-6), flattened
+text, and span -- what a "skipped heading level" rule queries.
+
+### html_lang
+
+`html_lang(root, language, source)` -> `Result[str | None,
+A11ySubstrateError]`: the top-level `<html lang="...">` value, or
+`Ok(None)` if no `<html>` element is present or it has no `lang`
+attribute. For a jsx-family `language` (no `<html>` root ever exists)
+this returns `Ok(None)` rather than an error -- "no `<html>` element
+here" is a legitimate answer, not a substrate failure.
 
 ## Data shapes
 
-- `ElementMatch(tag: str, attributes: dict[str, str], span: tuple[int, int])`
-- `HeadingMatch(level: int, text: str, span: tuple[int, int])`
-- `A11ySubstrateError` (`ErrorSet`): `UnsupportedLanguage`
+### ElementMatch
+
+`ElementMatch(tag: str, attributes: dict[str, str], span: tuple[int, int])`
+
+### HeadingMatch
+
+`HeadingMatch(level: int, text: str, span: tuple[int, int])`
+
+### Errors
+
+`A11ySubstrateError` (`ErrorSet`): `UnsupportedLanguage`.
 
 `span` is always a 1-based, inclusive-line `(start, end)` pair.
+
+## Consumers
+
+`frob.webapp._a11y_structure.a11y_findings` (A11Y101-115, T-5323) is the
+first rule module built on this substrate, discovered and run by
+`frob.gates._a11y_gate.a11y_gate` -- see
+`docs/modules/webapp-a11y-structure.md` for the gate wiring and hook
+protocol.
 
 ## Fixtures
 

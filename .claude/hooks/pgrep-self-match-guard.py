@@ -114,9 +114,7 @@ def main() -> int:
     command = payload.get("tool_input", {}).get("command", "")
     if not isinstance(command, str):
         return 0
-    if os.environ.get(ACK_ENV) == "1" or command.lstrip().startswith(
-        f"{ACK_ENV}=1"
-    ):
+    if os.environ.get(ACK_ENV) == "1" or command.lstrip().startswith(f"{ACK_ENV}=1"):
         return 0
     literal = self_match(command)
     if literal is None:
@@ -128,8 +126,7 @@ def main() -> int:
                     "hookEventName": "PreToolUse",
                     "permissionDecision": "deny",
                     "permissionDecisionReason": (
-                        f"[pgrep-self-match-guard] pattern {literal!r}: "
-                        + REASON
+                        f"[pgrep-self-match-guard] pattern {literal!r}: " + REASON
                     ),
                 }
             }
