@@ -1,7 +1,7 @@
 ---
 id: T-5466
 title: Scaffold DX generated logging integration test fails capsys assertion
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5466
+branch: t-5466
 scope:
 - src/frob/scaffold/data/shared/python/logging/*.j2
 - tests/system/test_scaffold_dx.py
@@ -51,6 +51,16 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: record why one of the two original node ids could not be bound as clean
+    evidence in this session (fleet-load contention, not the fix)
+  actor: logan
+  at: '2026-09-24'
+  old_length: 1067
+  new_length: 2074
+evidence:
+- tests/system/test_scaffold_dx.py::test_hyphenated_name_scaffold_installs_and_console_script_runs
 designated_repro_test: null
 threat: null
 component: null
@@ -75,3 +85,19 @@ redirects per-test.
 Fix belongs in the scaffold project template under src/frob/scaffold/ (the
 generated logging config or its accompanying test) -- not narrowed to the
 exact template file in this drain pass.
+
+
+NOTE on test_python_toolchain_scaffold_passes_check_immediately[python-tool]:
+this node id could NOT be bound as clean pytest evidence in this session --
+it is blocked by T-2473's fleet-load advisory guard ("frob check: N other
+check(s) already running on this host"), which fires inside the generated
+demo project's own `frob check` step because this shared dev host
+currently has multiple concurrent agents running frob commands. This is
+unrelated to the logging fix: verified directly (see done-report) that
+with a clean/isolated `uv sync` + `uv run pytest tests/` on the rendered
+scaffold, all 19 tests (including the previously-failing integration test)
+pass; the OTHER originally-failing node id in this same cluster,
+test_hyphenated_name_scaffold_installs_and_console_script_runs, passed
+repeatably end to end including its own `frob check` step. Re-verify
+test_python_toolchain_scaffold_passes_check_immediately in a quieter
+window or in CI itself (a single isolated runner, no fleet contention).
