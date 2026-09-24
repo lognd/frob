@@ -1,7 +1,7 @@
 ---
 id: T-draft-258c9c5d
 title: 'strata kernel: semantic edge kinds refines/allocates/satisfies/verifies/decides/supersedes'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -77,3 +77,6 @@ anchor_reason: null
 land_commit: null
 ---
 Epic T-3004 section 3 (graph-not-blocks): the organizing relation between development artifacts is a set of typed semantic edges, not blocked_by. This leaf adds the edge kinds refines, allocates, satisfies, verifies, decides and supersedes to the strata-core graph kernel (model.rs, query.rs) and the .strata grammar, queryable by kind, with a required reason on supersedes and a named parse error for an undeclared kind. Positive control: a .strata file declaring `A satisfies B` and `D supersedes C reason "..."` parses into typed edges queryable by kind; an undeclared kind is rejected at parse time; a supersedes edge without a reason is rejected. Doc: docs/strata/graph.md gains a "Semantic edges" section. Owner-reviewed tree: scratchpad STRATA-VMODEL-TREE.md (2026-09-23). T-3047 (review and decision nodes) is blocked by this leaf.
+
+## Drop reason
+- 2026-09-23: duplicates landed work: EDGE_* kinds (vmodel/mod.rs, T-3007), vmodel_edge grammar (T-3042) and ATTR_REASON on supersedes already exist; planner misread section 3 as undelivered
