@@ -22,6 +22,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/webapp/_comply_privacy.py
 - tests/fixtures/webapp/comply1xx/**
@@ -36,6 +38,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+- field: points
+  old_value: '5'
+  new_value: '5'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
