@@ -26,13 +26,64 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/webapp/_websec_authz_integrations.py
-- src/frob/webapp/_websec_llm.py
-- tests/fixtures/webapp/websec4xx/**
+- tests/fixtures/webapp/websec4xx/rls_llm/**
+- src/frob/webapp/_websec_rls_llm.py
+- tests/unit/test_websec_rls_llm.py
+- docs/modules/webapp-websec-rls-llm.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/websec4xx/**
+  reason: per-ticket fixture subdir to avoid T-5357 lease collision; consolidated
+    to one module _websec_rls_llm.py per coordinator naming; scope test file + doc
+    per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/webapp/_websec_authz_integrations.py
+  reason: per-ticket fixture subdir to avoid T-5357 lease collision; consolidated
+    to one module _websec_rls_llm.py per coordinator naming; scope test file + doc
+    per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/webapp/_websec_llm.py
+  reason: per-ticket fixture subdir to avoid T-5357 lease collision; consolidated
+    to one module _websec_rls_llm.py per coordinator naming; scope test file + doc
+    per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/websec4xx/rls_llm/**
+  reason: per-ticket fixture subdir to avoid T-5357 lease collision; consolidated
+    to one module _websec_rls_llm.py per coordinator naming; scope test file + doc
+    per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/webapp/_websec_rls_llm.py
+  reason: per-ticket fixture subdir to avoid T-5357 lease collision; consolidated
+    to one module _websec_rls_llm.py per coordinator naming; scope test file + doc
+    per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_rls_llm.py
+  reason: per-ticket fixture subdir to avoid T-5357 lease collision; consolidated
+    to one module _websec_rls_llm.py per coordinator naming; scope test file + doc
+    per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-rls-llm.md
+  reason: per-ticket fixture subdir to avoid T-5357 lease collision; consolidated
+    to one module _websec_rls_llm.py per coordinator naming; scope test file + doc
+    per playbook convention
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
