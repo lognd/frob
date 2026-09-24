@@ -27,6 +27,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/gates/_tdd_order.py
+- tests/gates/test_tdd_order.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,12 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/_tdd_order.py
+  reason: 'TDD commit protocol: xfail(strict=True) marks test-first, its removal marks
+    implementation'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/gates/test_tdd_order.py
   reason: 'TDD commit protocol: xfail(strict=True) marks test-first, its removal marks
     implementation'
   actor: logan
