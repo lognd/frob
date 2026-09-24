@@ -23,10 +23,26 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/tickets/_land_squash.py
+- tests/unit/test_land_cas_ledger_retry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_squash.py
+  reason: apply-failed ledger-only rebase must perform a real recompose, not retry
+    an identical diff-apply against an unchanged tip
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_land_cas_ledger_retry.py
+  reason: apply-failed ledger-only rebase must perform a real recompose, not retry
+    an identical diff-apply against an unchanged tip
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
