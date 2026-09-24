@@ -1,5 +1,5 @@
 ---
-id: T-draft-df99eb2d
+id: T-5786
 title: 'frob agent brief <ticket>: render the dispatch brief from the playbook and
   the ledger'
 state: in-progress

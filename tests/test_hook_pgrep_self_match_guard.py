@@ -43,6 +43,9 @@ def _decision(command: str, env: dict[str, str] | None = None) -> str:
 
 
 # frob:ticket T-5436
+# frob:ticket T-5440
+# frob:tests .claude/hooks/pgrep-self-match-guard.py::self_match kind="integration"  # noqa: E501
+# frob:tests .claude/hooks/pgrep-self-match-guard.py::main kind="integration"
 @pytest.mark.parametrize(
     "command",
     [

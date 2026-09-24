@@ -1,5 +1,5 @@
 ---
-id: T-draft-4ad886c1
+id: T-5784
 title: 'frob coord status: queue, quarantine, leases vs states, worktree tiers, stale
   locks'
 state: in-progress

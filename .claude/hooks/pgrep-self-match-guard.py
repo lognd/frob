@@ -83,7 +83,6 @@ REASON = (
 
 
 # frob:doc docs/guides/claude-hooks.md#pgrep-self-match-guardpy
-# frob:tests tests/test_hook_pgrep_self_match_guard.py kind="integration"
 def self_match(command: str) -> str | None:
     """The literal pattern that would self-match, or None when the
     command is safe. A match that STARTS inside a quoted span or heredoc
@@ -103,7 +102,6 @@ def self_match(command: str) -> str | None:
 
 
 # frob:doc docs/guides/claude-hooks.md#pgrep-self-match-guardpy
-# frob:tests tests/test_hook_pgrep_self_match_guard.py kind="integration"
 def main() -> int:
     """Read the PreToolUse payload from stdin; emit a deny decision when
     the Bash command contains a self-matching process poll."""
@@ -114,6 +112,7 @@ def main() -> int:
     command = payload.get("tool_input", {}).get("command", "")
     if not isinstance(command, str):
         return 0
+    # frob:waive SEC110 reason="FROB_SELF_MATCH_ACK is a boolean hook-escape-hatch flag, same shape as FROB_SUGGEST_ACK -- not a secret"  # noqa: E501
     if os.environ.get(ACK_ENV) == "1" or command.lstrip().startswith(f"{ACK_ENV}=1"):
         return 0
     literal = self_match(command)

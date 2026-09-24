@@ -530,6 +530,7 @@ def strip_stale_fields(
             skipped_leased.append(ticket_id)
             continue
         stale_ids.append(ticket_id)
+        # frob:waive PERF004 reason="extras is THIS ticket's own small extra-field set, a different dict each iteration -- not a shared/loop-invariant collection re-sorted every pass"  # noqa: E501
         stripped_by_id[ticket_id] = tuple(sorted(extras))
         if not apply:
             continue
