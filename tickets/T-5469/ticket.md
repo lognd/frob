@@ -1,5 +1,5 @@
 ---
-id: T-draft-84d4129c
+id: T-5469
 title: strata export golden fixtures (k8s, iam) stale against real export shape
 state: queued
 kind: bug
