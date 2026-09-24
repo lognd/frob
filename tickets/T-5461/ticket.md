@@ -1,5 +1,5 @@
 ---
-id: T-draft-4227f6ef
+id: T-5461
 title: 'frob:tests edge: bare function id of a parametrized test does not resolve;
   refuse at fmt/dry-run, not at land'
 state: queued
