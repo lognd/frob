@@ -1,5 +1,5 @@
 ---
-id: T-draft-bdb6f881
+id: T-5639
 title: 'frob coord freeze|unfreeze: refuse root ledger writes; the drain is the only
   writer'
 state: queued
