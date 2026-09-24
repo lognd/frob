@@ -28,6 +28,8 @@ scope:
 - src/frob/tickets/_land_queue.py
 - tests/unit/coord/test_queue_ops.py
 - tests/unit/tickets/test_land_queue.py
+- docs/modules/tickets-verify-sweep.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +64,18 @@ scope_changes:
   glob: src/frob/_cli_parsers/_coord.py
   reason: collides with in-progress T-draft-4ad886c1's live lease on this exact file;
     re-adding once COORD-1 lands and the lease clears (coordinator directive)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: drain_next/enqueue keying-fix and queue reorder/repair/requeue change documented
+    behavior in the merge-queue reference docs
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: drain_next/enqueue keying-fix and queue reorder/repair/requeue change documented
+    behavior in the merge-queue reference docs
   actor: logan
   at: '2026-09-24'
 triage_changes:
