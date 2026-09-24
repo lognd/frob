@@ -2,7 +2,7 @@
 id: T-5478
 title: 'Windows-only: POSIX-path assumptions break config_path_defaults, narrative
   bulk, token_usage, docarch_structural'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -21,11 +21,14 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5478
+branch: t-5478
 scope:
 - src/frob/gates/_config_path_defaults.py
 - tests/gates_suite/test_config_path_defaults.py
+- tests/narrative/test_bulk.py
+- tests/unit/test_token_usage.py
+- tests/gates/test_docarch_structural.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +48,33 @@ scope_changes:
     on win32) and PureWindowsPath().is_absolute() but never PurePosixPath().is_absolute(),
     so a POSIX-style default path literal like /abs/dir/state.json is wrongly flagged
     as relative on Windows CI
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/narrative/test_bulk.py
+  reason: '3 more windows-only path-separator failures in this same cluster: test_bulk.py
+    splits rel_path (native-separator str, always backslash on Windows) on a hardcoded
+    ''/'', token_usage.py''s fake harness keys usage on a posix-style leading-slash
+    literal string, docarch_structural.py likely has the same class of path-keyed
+    lookup'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_token_usage.py
+  reason: '3 more windows-only path-separator failures in this same cluster: test_bulk.py
+    splits rel_path (native-separator str, always backslash on Windows) on a hardcoded
+    ''/'', token_usage.py''s fake harness keys usage on a posix-style leading-slash
+    literal string, docarch_structural.py likely has the same class of path-keyed
+    lookup'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/gates/test_docarch_structural.py
+  reason: '3 more windows-only path-separator failures in this same cluster: test_bulk.py
+    splits rel_path (native-separator str, always backslash on Windows) on a hardcoded
+    ''/'', token_usage.py''s fake harness keys usage on a posix-style leading-slash
+    literal string, docarch_structural.py likely has the same class of path-keyed
+    lookup'
   actor: logan
   at: '2026-09-24'
 triage_changes:
