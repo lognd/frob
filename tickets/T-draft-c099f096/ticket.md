@@ -26,6 +26,12 @@ branch: t-draft-c099f096
 scope:
 - src/frob/_cli_parsers/_ci.py
 - tests/unit/cli/test_ci_report.py
+- src/frob/app/app.py
+- src/frob/app/ci_runner.py
+- src/frob/ghio.py
+- tests/test_ghio.py
+- docs/modules/ci_report.md
+- tests/fixtures/ci_report
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +45,54 @@ scope_changes:
 - op: add
   glob: tests/unit/cli/test_ci_report.py
   reason: frob ci report CLI wrapper (CI-1)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/app/app.py
+  reason: 'CI-1: frob ci report app-layer wiring (app.py runner mapping, new ci_runner.py)
+    plus in-scope fix to ghio.view_run''s rejected --json jobs field (measured gh
+    2.4.0 gap); _root.py/_cli_parsers/__init__.py deferred, held by sibling COORD-1
+    lease'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/app/ci_runner.py
+  reason: 'CI-1: frob ci report app-layer wiring (app.py runner mapping, new ci_runner.py)
+    plus in-scope fix to ghio.view_run''s rejected --json jobs field (measured gh
+    2.4.0 gap); _root.py/_cli_parsers/__init__.py deferred, held by sibling COORD-1
+    lease'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/ghio.py
+  reason: 'CI-1: frob ci report app-layer wiring (app.py runner mapping, new ci_runner.py)
+    plus in-scope fix to ghio.view_run''s rejected --json jobs field (measured gh
+    2.4.0 gap); _root.py/_cli_parsers/__init__.py deferred, held by sibling COORD-1
+    lease'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/test_ghio.py
+  reason: 'CI-1: frob ci report app-layer wiring (app.py runner mapping, new ci_runner.py)
+    plus in-scope fix to ghio.view_run''s rejected --json jobs field (measured gh
+    2.4.0 gap); _root.py/_cli_parsers/__init__.py deferred, held by sibling COORD-1
+    lease'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/ci_report.md
+  reason: 'CI-1: frob ci report app-layer wiring (app.py runner mapping, new ci_runner.py)
+    plus in-scope fix to ghio.view_run''s rejected --json jobs field (measured gh
+    2.4.0 gap); _root.py/_cli_parsers/__init__.py deferred, held by sibling COORD-1
+    lease'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/ci_report
+  reason: 'CI-1: frob ci report app-layer wiring (app.py runner mapping, new ci_runner.py)
+    plus in-scope fix to ghio.view_run''s rejected --json jobs field (measured gh
+    2.4.0 gap); _root.py/_cli_parsers/__init__.py deferred, held by sibling COORD-1
+    lease'
   actor: logan
   at: '2026-09-24'
 triage_changes:
