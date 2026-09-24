@@ -25,6 +25,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/coord/_velocity.py
+- tests/unit/coord/test_velocity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/coord/_velocity.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/coord/test_velocity.py
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
