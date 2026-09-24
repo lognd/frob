@@ -1,7 +1,7 @@
 ---
 id: T-5306
 title: 'WEBSEC101-108: output-encoding and template sinks'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -78,11 +78,22 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_websec_xss.py::test_taint_gate_discovers_websec_xss_hook
+- tests/unit/test_websec_xss.py::test_websec_xss_findings_fixture[webesc107_positive-WEBSEC107-True]
+- tests/unit/test_websec_xss.py::test_websec_xss_findings_fixture[webesc107_negative-WEBSEC107-False]
+- tests/unit/test_websec_xss.py::test_websec_xss_findings_fixture[webesc108_positive-WEBSEC108-True]
+- tests/unit/test_websec_xss.py::test_websec_xss_findings_fixture[webesc108_negative-WEBSEC108-False]
+- tests/unit/test_websec_xss.py::test_websec_xss_findings_no_framework_short_circuits
+- tests/unit/test_websec_xss.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_xss.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5306
+branch: t-5306
 ---
 Rule ids WEBSEC101 (reflected/stored XSS encoding, ASVS V1.2.1), 102 (innerHTML/outerHTML/document.write/insertAdjacentHTML JS/TS AST), 103 (dangerouslySetInnerHTML JSX), 104 (v-html Vue SFC), 105 (Jinja |safe/autoescape=False regex), 106 (Django mark_safe/autoescape-off Python AST + template regex), 107 (Rails .html_safe/raw() regex), 108 (PHP echo of superglobals without htmlspecialchars, regex). Dispatched by framework detection (WEBSUB-2) so a Django-only repo never runs the Rails rule. Fixture: one planted finding per rule id.
