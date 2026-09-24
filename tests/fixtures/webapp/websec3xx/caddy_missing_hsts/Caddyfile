@@ -1,0 +1,8 @@
+example.com {
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Content-Security-Policy "default-src 'self'"
+        Referrer-Policy "no-referrer"
+    }
+}

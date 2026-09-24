@@ -1,7 +1,7 @@
 ---
 id: T-5325
 title: 'WEBSEC config/headers substrate: response-header lint engine'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -127,6 +127,12 @@ evidence:
 - tests/unit/test_webapp_websec_headers.py::test_express_helmet_reports_default_headers_present
 - tests/unit/test_webapp_websec_headers.py::test_no_evidence_is_advisory_not_error
 - tests/unit/test_webapp_websec_headers.py::test_root_not_a_directory_is_err
+- tests/unit/test_webapp_websec_headers.py::test_full_evidence_all_present[nginx_full-nginx]
+- tests/unit/test_webapp_websec_headers.py::test_full_evidence_all_present[caddy_full-caddy]
+- tests/unit/test_webapp_websec_headers.py::test_full_evidence_all_present[django_full-app_django]
+- tests/unit/test_webapp_websec_headers.py::test_one_missing_header_reports_missing[nginx_missing_csp-Content-Security-Policy-Strict-Transport-Security]
+- tests/unit/test_webapp_websec_headers.py::test_one_missing_header_reports_missing[caddy_missing_hsts-Strict-Transport-Security-X-Frame-Options]
+- tests/unit/test_webapp_websec_headers.py::test_one_missing_header_reports_missing[django_missing_xfo-X-Frame-Options-Content-Security-Policy]
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/unit/test_webapp_websec_headers.py::test_nginx_full_all_present
@@ -165,5 +171,7 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5325
+branch: t-5325
 ---
 HeaderSourceKind union parser: (a) app-code AST lint for helmet(...)/django-secure/SECURE_* settings/manual response.headers[...]= calls, (b) nginx/Caddy config-file line parser for add_header/directive blocks, (c) documented gap for CDN-layer-only header injection (Cloudflare/Fastly dashboards) as a WARN advisory ('no in-repo evidence; confirm at your edge') rather than a false ERROR. Fixture: nginx conf, Django settings, Express+helmet fixture, one with and one without each header.
