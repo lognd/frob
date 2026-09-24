@@ -22,13 +22,42 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/webapp/_webperf_markup.py
-- tests/fixtures/webapp/webperf1xx/**
+- tests/fixtures/webapp/webperf1xx/markup/**
+- tests/unit/test_webapp_webperf_markup.py
+- docs/modules/webapp-webperf-markup.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/webperf1xx/**
+  reason: narrow shared webperf1xx fixture glob to markup-only subtree per sibling
+    T-5366 split (server/**); add test+doc files for the new module
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/webperf1xx/markup/**
+  reason: narrow shared webperf1xx fixture glob to markup-only subtree per sibling
+    T-5366 split (server/**); add test+doc files for the new module
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_webapp_webperf_markup.py
+  reason: narrow shared webperf1xx fixture glob to markup-only subtree per sibling
+    T-5366 split (server/**); add test+doc files for the new module
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-webperf-markup.md
+  reason: narrow shared webperf1xx fixture glob to markup-only subtree per sibling
+    T-5366 split (server/**); add test+doc files for the new module
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
