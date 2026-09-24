@@ -22,10 +22,26 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/app/fmt_runner.py
+- tests/unit/test_app_runners_json_guard_t2492.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/fmt_runner.py
+  reason: announce_shim's DEBUG log call happens before _guard_json_stdout_writes()
+    is entered, so it is unprotected -- move it inside the guarded span
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_app_runners_json_guard_t2492.py
+  reason: announce_shim's DEBUG log call happens before _guard_json_stdout_writes()
+    is entered, so it is unprotected -- move it inside the guarded span
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
