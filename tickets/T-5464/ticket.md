@@ -20,10 +20,24 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_models.py
+- tests/gates_suite/test_tick.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: TICK008 fix needs Ticket model branch/worktree fields plus test coverage
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/gates_suite/test_tick.py
+  reason: TICK008 fix needs Ticket model branch/worktree fields plus test coverage
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
