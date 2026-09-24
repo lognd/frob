@@ -22,10 +22,30 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/strata/_mutation_audit.py
+- tests/unit/strata/test_mutation_audit.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_mutation_audit.py
+  reason: graphlang's may html_render (T-5396) plus its pre-existing may sql saturates
+    both _SUBSTITUTE_CANDIDATES entries, silently defeating SYS101 substitution detection
+    for every one of its atoms; also disclose html_render as a 4th known second-detector
+    gap
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/strata/test_mutation_audit.py
+  reason: graphlang's may html_render (T-5396) plus its pre-existing may sql saturates
+    both _SUBSTITUTE_CANDIDATES entries, silently defeating SYS101 substitution detection
+    for every one of its atoms; also disclose html_render as a 4th known second-detector
+    gap
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
