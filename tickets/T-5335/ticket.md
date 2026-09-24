@@ -27,10 +27,29 @@ scope:
 - src/frob/sql/_sqlfluff_plugin.py
 - src/frob/doctor.py
 - pyproject.toml
+- docs/guides/install.md
+- docs/modules/sql.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/install.md
+  reason: 'T-2114: new public symbols (ToolCategory.REQUIRED_FOR_FAMILY, FamilyToolFinding,
+    family_required_tool_findings, Rule_Frob_L001-L004, get_rules, load_default_config,
+    get_configs_info) need a frob:doc edge; both docs already own the closest existing
+    sections for these families'
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/sql.md
+  reason: 'T-2114: new public symbols (ToolCategory.REQUIRED_FOR_FAMILY, FamilyToolFinding,
+    family_required_tool_findings, Rule_Frob_L001-L004, get_rules, load_default_config,
+    get_configs_info) need a frob:doc edge; both docs already own the closest existing
+    sections for these families'
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: points
   old_value: null
