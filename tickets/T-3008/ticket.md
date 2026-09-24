@@ -26,7 +26,6 @@ branch: null
 scope:
 - src/frob/gates/_invariant_level.py
 - tests/gates/test_invariant_level.py
-- docs/strata/vmodel.md
 - docs/modules/gates.md
 - src/frob/gates/invariants.py
 scope_breadth_ack: false
@@ -82,6 +81,12 @@ scope_changes:
   glob: src/frob/gates/invariants.py
   reason: the real location of Invariant/INV001/INV002 this ticket adds a level field
     and paired-level check to
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: docs/strata/vmodel.md
+  reason: T-3010 holds a live lease on this file; document INVLVL001 in docs/modules/gates.md
+    only for now to avoid collision, cross-link can follow once T-3010 lands
   actor: logan
   at: '2026-09-24'
 triage_changes:
