@@ -22,10 +22,28 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/scaffold/data/shared/python/logging/*.j2
+- tests/system/test_scaffold_dx.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/data/shared/python/logging/*.j2
+  reason: fix the scaffold logging template's stream=ext://sys.stdout being resolved
+    once at dictConfig time instead of per-emit, breaking pytest capsys in every generated
+    project's own test suite
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/system/test_scaffold_dx.py
+  reason: fix the scaffold logging template's stream=ext://sys.stdout being resolved
+    once at dictConfig time instead of per-emit, breaking pytest capsys in every generated
+    project's own test suite
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
