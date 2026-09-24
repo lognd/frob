@@ -25,6 +25,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_sql_explain_obligation.py
 - tests/fixtures/sql/explain/**
+- tests/unit/test_sql_explain_obligation.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,12 @@ scope_changes:
   glob: tests/fixtures/sql/explain/**
   reason: use per-ticket fixture subdir tests/fixtures/sql/explain/** to avoid overlapping
     T-5333's fixtures, per coordinator instruction
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: tests/unit/test_sql_explain_obligation.py
+  reason: 'unit test for the new gate function (BRIEF item: prove positive control
+    with a real test that calls the gate function)'
   actor: logan
   at: '2026-09-23'
 triage_changes:
