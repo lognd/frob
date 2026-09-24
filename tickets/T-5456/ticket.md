@@ -24,10 +24,22 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/gates/_sql_explain_obligation.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_sql_explain_obligation.py
+  reason: 'in-scope subset of post-land sweep residue: COV001/OPAQUE001/WIRE001 on
+    _sql_explain_obligation.py (lives in src/frob/gates/**, not src/frob/sql/**, so
+    in-scope despite the name); every other finding in this ticket lives inside src/frob/webapp/**
+    or tests/fixtures/webapp/**/docs/modules/webapp-*.md or tests/unit/test_websec_*.py,
+    out of touch-scope, deferred whole'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: milestone
   old_value: null
