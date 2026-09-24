@@ -2,7 +2,7 @@
 id: T-5642
 title: 'frob agent precheck: run the recorded pre-land refusal classes inside the
   worktree'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -23,8 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5642
+branch: t-5642
 scope:
 - src/frob/agent/_precheck.py
 - tests/unit/agent/test_precheck.py
