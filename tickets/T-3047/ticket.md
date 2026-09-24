@@ -7,6 +7,8 @@ kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
+blocked_by:
+- T-draft-258c9c5d
 parent: T-3004
 tier: ticket
 sprint: strata-vmodel
