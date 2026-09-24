@@ -1,7 +1,7 @@
 ---
 id: T-5326
 title: 'WEBSEC301-309: security headers (CSP/HSTS/COOP/CORP/CORS/Cache-Control)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -129,6 +129,29 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_headers_rules.py::test_taint_gate_discovers_websec_headers_rules_hook
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec301_positive-WEBSEC301-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec302_positive-WEBSEC302-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec303_positive-WEBSEC303-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec304_positive-WEBSEC304-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec305_positive-WEBSEC305-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec306_positive-WEBSEC306-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec307_positive-WEBSEC307-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec308_positive-WEBSEC308-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec309_positive-WEBSEC309-True]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec301_negative-WEBSEC301-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec302_negative-WEBSEC302-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec303_negative-WEBSEC303-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec304_negative-WEBSEC304-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec305_negative-WEBSEC305-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec306_negative-WEBSEC306-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec307_negative-WEBSEC307-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec308_negative-WEBSEC308-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_fixture[websec309_negative-WEBSEC309-False]
+- tests/unit/test_websec_headers_rules.py::test_websec_headers_rules_findings_no_framework_short_circuits
+- tests/unit/test_websec_headers_rules.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_headers_rules.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null
