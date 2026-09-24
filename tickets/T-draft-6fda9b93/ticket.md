@@ -26,6 +26,7 @@ branch: null
 scope:
 - src/frob/coord/_plan.py
 - src/frob/gates/_strata_milestone_closure.py
+- tests/unit/coord/test_plan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
   at: '2026-09-24'
 - op: add
   glob: src/frob/gates/_strata_milestone_closure.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/coord/test_plan.py
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
