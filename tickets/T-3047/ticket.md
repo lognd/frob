@@ -27,6 +27,7 @@ scope:
 - strata-core/src/graph/model.rs
 - strata-core/src/graph/vmodel/mod.rs
 - tests/unit/strata/test_vmodel_review_decision.py
+- tests/unit/strata/test_vmodel_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -82,6 +83,13 @@ scope_changes:
     schema module needed
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: tests/unit/strata/test_vmodel_check.py
+  reason: T-3010's lease released; apply the saved fix for decision nodes now requiring
+    reason (scratchpad/t3047-fix-for-t3010-test_vmodel_check.patch) so the schema
+    change does not break dev
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: null
@@ -115,6 +123,14 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/strata/test_vmodel_review_decision.py::TestDecisionNodeRequiresReason::test_fires_a_construction_error_on_a_bare_decision_node
+- tests/unit/strata/test_vmodel_review_decision.py::TestDecisionNodeRequiresReason::test_quiet_when_reason_is_present
+- tests/unit/strata/test_vmodel_review_decision.py::TestReviewNodeRequiresCommitAndReason::test_fires_on_a_bare_review_node
+- tests/unit/strata/test_vmodel_review_decision.py::TestReviewNodeRequiresCommitAndReason::test_quiet_when_commit_and_reason_are_present
+- tests/unit/strata/test_vmodel_review_decision.py::TestSupersedesRoundTrip::test_reasoned_supersedes_edge_between_two_decisions_round_trips
+- tests/unit/strata/test_vmodel_review_decision.py::TestSupersedesRoundTrip::test_supersedes_edge_missing_reason_is_a_construction_error
+- tests/unit/strata/test_vmodel_review_decision.py::TestSupersedesRoundTrip::test_review_node_can_decide_an_artifact
 designated_repro_test: null
 threat: null
 component: null
