@@ -1,0 +1,12 @@
+on: pull_request_target
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: deploy
+        env:
+          TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: deploy.sh

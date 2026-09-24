@@ -1,0 +1,9 @@
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: use
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: deploy.sh

@@ -1,7 +1,7 @@
 ---
 id: T-5331
 title: 'WEBSEC318-325: CI/supply-chain hardening'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -79,6 +79,27 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_supply_chain.py::test_taint_gate_discovers_websec_supply_chain_hook
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc318_positive-WEBSEC318-True]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc318_negative-WEBSEC318-False]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc319_positive-WEBSEC319-True]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc319_negative-WEBSEC319-False]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc320_positive-WEBSEC320-True]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc320_negative-WEBSEC320-False]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc321_positive-WEBSEC321-True]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc321_negative-WEBSEC321-False]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc322_positive-WEBSEC322-True]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc322_negative-WEBSEC322-False]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc323_positive-WEBSEC323-True]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc323_negative-WEBSEC323-False]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc324_positive-WEBSEC324-True]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc324_negative-WEBSEC324-False]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc325_positive-WEBSEC325-True]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_fixture[webesc325_negative-WEBSEC325-False]
+- tests/unit/test_websec_supply_chain.py::test_websec_supply_chain_findings_no_framework_short_circuits
+- tests/unit/test_websec_supply_chain.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_supply_chain.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null
