@@ -181,6 +181,15 @@ _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     # same reason as its two siblings rather than given `may net`/`may
     # exec` capabilities it does not have.
     ("frob", "arch", "_async_hazards.py"),
+    # T-5476: `frob.webapp._websec_deser` (T-5309, WEBSEC109-116) is a
+    # sink-shape DETECTOR -- its own module docstring/comments and rule-
+    # description strings NAME `yaml.load(...)`/`eval(x)`/`exec(x)`/
+    # `os.system(x)` as the patterns it looks FOR in OTHER code's AST,
+    # never performing deserialization/exec itself -- the same self-match
+    # class `_cve_fingerprint.py`/`_dangerous_ops_*.py` above already
+    # establish for a detector whose own literal needle text matches its
+    # own fingerprint/capability catalog.
+    ("frob", "webapp", "_websec_deser.py"),
 )
 
 #: `[project]`-table `name = "frob"` line, tomllib-free (matches this

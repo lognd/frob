@@ -1,7 +1,7 @@
 ---
 id: T-5476
 title: 'vet fingerprint scan: self-exclusion regression matches its own catalog file'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5476
+branch: t-5476
 scope:
 - src/frob/vet/_capability_scan.py
 - tests/vet_suite/test_fingerprint.py
@@ -53,6 +53,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself
 designated_repro_test: null
 threat: null
 component: null
