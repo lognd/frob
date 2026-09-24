@@ -31,6 +31,7 @@ scope:
 - strata-core/src/graph/vmodel/mod.rs
 - src/frob/gates/__init__.py
 - src/frob/gates/_waive.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -83,6 +84,12 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: MSCLOSE001 needs registering in _KNOWN_GATE_RULES, same REG002 step VMOD001/TDD001
     needed
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: design/frob.strata
+  reason: MSCLOSE001's _repo_milestone helper opens frob.toml directly (Path.open('rb')),
+    a new fs.read site under src/frob/gates/**
   actor: logan
   at: '2026-09-24'
 triage_changes:
