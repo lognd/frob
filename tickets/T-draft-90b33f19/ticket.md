@@ -2,7 +2,7 @@
 id: T-draft-90b33f19
 title: 'land: evidence re-verification spawn must not uv-sync after the post-squash
   natives rebuild'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,15 +21,22 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-90b33f19
+branch: t-draft-90b33f19
 scope:
-- src/frob/tickets/_land_verify.py
 - tests/unit/test_land_verify_natives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_land_verify.py
+  reason: 'coordinator review: os.environ mutation trips SELFAUDIT001 (tickets_ledger
+    node undeclared env.read/env.write); real fix moves to argv construction in frob.testing._runners,
+    the actual uv run pytest spawn site'
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
