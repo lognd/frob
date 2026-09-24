@@ -1,7 +1,7 @@
 ---
 id: T-5479
 title: 'Windows-only: frob-suggest hook dedup-on-repeat fails (4 node ids)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5479
+branch: t-5479
 scope:
 - tests/test_hook_frob_suggest.py
 scope_breadth_ack: false
@@ -47,6 +47,20 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: 'BUG002 refusal: evidence tests cannot fail at dev on this Linux host since
+    the defect is a Windows-only os.getppid() instability; verified on the real Windows
+    mirror instead'
+  actor: logan
+  at: '2026-09-24'
+  old_length: 1143
+  new_length: 1704
+evidence:
+- tests/test_hook_frob_suggest.py::test_second_identical_check_pipeline_is_allowed_through
+- tests/test_hook_frob_suggest.py::test_second_identical_fleet_probe_is_allowed_through
+- tests/test_hook_frob_suggest.py::test_third_identical_command_is_blocked_again
+- tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_frob_suggest_ack_env_var_bypasses_it
 designated_repro_test: null
 threat: null
 component: null
@@ -74,3 +88,5 @@ across two invocations on Windows.
 Needs someone to read the frob-suggest hook's dedup-key implementation
 with Windows path/newline normalization in mind; not root-caused further
 in this drain pass.
+
+frob:waive BUG002 reason="the defect is windows-only (os.getppid() instability across sequential sibling subprocess.run calls, measured directly on the real Windows mirror) -- BUG002's own re-verification runs on this Linux checkout, where os.getppid() is stable and the bound evidence tests pass at dev regardless of the fix; the defect and the fix were both measured directly on the real Windows mirror instead (winrun, recorded in the done-report): failing with the exact CI symptom at dev, passing after the fix, confirmed on two consecutive Windows runs"
