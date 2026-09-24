@@ -56,6 +56,12 @@ triage_changes:
   reason: coord/agent/ci command-surface epic (owner decision 2026-09-24)
   actor: logan
   at: '2026-09-24'
+- field: sprint
+  old_value: coord-surface
+  new_value: coord-surface
+  reason: sprint set via `frob ticket sprint assign`
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
