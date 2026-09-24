@@ -23,10 +23,30 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/gates/_config_path_defaults.py
+- tests/gates_suite/test_config_path_defaults.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_config_path_defaults.py
+  reason: CONFIGPATH001's absolute-path check tries Path().is_absolute() (WindowsPath
+    on win32) and PureWindowsPath().is_absolute() but never PurePosixPath().is_absolute(),
+    so a POSIX-style default path literal like /abs/dir/state.json is wrongly flagged
+    as relative on Windows CI
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/gates_suite/test_config_path_defaults.py
+  reason: CONFIGPATH001's absolute-path check tries Path().is_absolute() (WindowsPath
+    on win32) and PureWindowsPath().is_absolute() but never PurePosixPath().is_absolute(),
+    so a POSIX-style default path literal like /abs/dir/state.json is wrongly flagged
+    as relative on Windows CI
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
