@@ -2,7 +2,7 @@
 id: T-5440
 title: 'Post-land sweep residue 2026-09-23_2032: ARCH102:src/frob/webapp/_seo_substrate.py
   ARCH104:src/frob/gates/_taint_gate.py COV001:design/frob.strata COV001:src/frob/webapp/_seo_substr'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5440
+branch: t-5440
 scope:
 - .claude/hooks/sync-claude-config.py
 - src/frob/lang/_common.py
@@ -94,6 +94,17 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: gate-directive-only fix, no repro test possible per T-4561 precedent
+  actor: logan
+  at: '2026-09-24'
+  old_length: 2300
+  new_length: 2870
+evidence:
+- tests/test_hook_pgrep_self_match_guard.py::test_self_matching_polls_are_denied
+- tests/test_hook_pgrep_self_match_guard.py::test_non_self_matching_recipes_stay_quiet
+- tests/test_ticket_reconcile.py::TestReconcileStaleHold::test_dry_run_reports_but_does_not_requeue
 designated_repro_test: null
 threat: null
 component: null
@@ -148,3 +159,5 @@ WIRE001:src/frob/webapp/_comply_substrate.py
 WIRE001:src/frob/webapp/_seo_substrate.py
 WIRE001:src/frob/webapp/_websec_authz_substrate.py
 WIRE001:tests/unit/test_websec_headers_log.py
+
+frob:waive BUG002 reason="the defects fixed here (PERF004/SEC110/TEST010) are all gate-directive/waiver-annotation changes on lines the fix itself only comments above -- no runtime program behavior changed, so no repro test can genuinely fail at dev and pass at the fix; each was instead independently re-measured with a family-scoped frob check (--only pii_structural --only test, and --only perf) before and after the fix, confirming the finding fires at dev and is gone (waived/moved, per rule) at HEAD, the same shape T-4561's identical waiver already established"
