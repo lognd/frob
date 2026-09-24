@@ -90,3 +90,56 @@ No gate wires `sql_injection_findings` into `frob check` yet -- that is a
 later leaf of the T-5148 epic, the same "extraction substrate lands
 before its gate registration" shape T-5302's `frob.sql` package stub
 itself documents.
+
+## `frob.sql._orm_rules` -- ORM N+1/pooling/transaction/index rules (T-5337)
+
+`src/frob/sql/_orm_rules.py` is a Python-first (SQLAlchemy/Django) ORM
+lint family, walked the same `frob.lang.raw_tree`-via-tree-sitter shape
+`frob.sql._extract` already uses. It is the canonical owner of two things
+sibling epics import instead of reimplementing: `migration_scan` (the
+tracked-`.sql`-migration-file `CREATE INDEX` parser T-5145-3's COMPLY
+GDPR storage-limitation PII-retention-TTL-column check blocks on) and the
+DB-pool-config detection folded into SQL106 (T-5147-6/WEBPERF blocks on
+this leaf for pool config instead of reimplementing it).
+
+Five rule ids, one `orm_rule_findings(root)` call:
+
+- **SQL101** -- a `for`-loop attribute access on the loop variable, with
+  no `joinedload`/`selectinload`/`select_related`/`prefetch_related` call
+  anywhere in the enclosing function (the classic N+1 lazy-relationship-
+  in-a-loop shape).
+- **SQL102** -- a bare `.all()` call with no `.limit(` in the same call
+  chain -- an unbounded result set on a request path.
+- **SQL104** -- an ORM model's `ForeignKey`-declared column with no
+  matching index in any tracked migration file (`migration_scan`'s own
+  index registry).
+- **SQL105** -- two or more write calls (`.save(`, `.delete(`,
+  `.execute(`, `.bulk_create(`, `.update(`) in one function body with no
+  `atomic`/`transaction`/`begin` token anywhere in that body.
+- **SQL106** -- no connection-pool config token (`pool_size`,
+  `max_overflow`, `QueuePool`, a `pgbouncer` reference) anywhere in a
+  repo `sql_relevance` reports real SQL surface for -- one repo-level
+  finding (`file=""`, `line=0`), not a per-file one.
+
+SQL103 (filter-after-fetch) and SQL107 (server-cache-layer-for-repeated-
+expensive-queries) are OUT of this leaf's scope, filed as a follow-up
+(see T-5337's own done-report) rather than widened in place. A
+TypeScript/Prisma N+1 walk (Prisma's `include`/no-`include` mirrors
+Django's `select_related`) is likewise a follow-up, not this leaf.
+
+### Public API
+
+- `OrmRuleFinding` -- one SQL10x finding: `rule`, `file`, `line`,
+  `message`.
+- `MigrationIndexInfo` -- one parsed `CREATE INDEX` statement: `file`,
+  `table`, `columns`.
+- `migration_scan(root: Path) -> tuple[MigrationIndexInfo, ...]` -- every
+  `CREATE INDEX`/`CREATE UNIQUE INDEX` statement in tracked `.sql` files
+  under `root`.
+- `orm_rule_findings(root: Path) -> tuple[OrmRuleFinding, ...]` -- every
+  SQL101/SQL102/SQL104/SQL105/SQL106 finding under `root`.
+
+No gate wires `orm_rule_findings` into `frob check` yet -- a later leaf
+folds it into a gate the same one-call-per-family shape
+`frob.gates._taint_gate.taint_gate` already uses for
+`websec_sink_findings`.

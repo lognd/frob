@@ -2,7 +2,7 @@
 id: T-5337
 title: ORM N+1 and pooling rules (Python/TS) + DB pool config, cache-layer, migration-TTL
   scan
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -70,6 +70,18 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/sql/test_orm_rules.py::test_sql101_lazy_relationship_in_loop_flagged
+- tests/unit/sql/test_orm_rules.py::test_sql101_eager_loaded_loop_not_flagged
+- tests/unit/sql/test_orm_rules.py::test_sql102_unbounded_all_flagged
+- tests/unit/sql/test_orm_rules.py::test_sql102_limited_all_not_flagged
+- tests/unit/sql/test_orm_rules.py::test_sql105_multi_write_no_transaction_flagged
+- tests/unit/sql/test_orm_rules.py::test_sql105_wrapped_transaction_not_flagged
+- tests/unit/sql/test_orm_rules.py::test_migration_scan_parses_create_index
+- tests/unit/sql/test_orm_rules.py::test_sql104_missing_index_flagged
+- tests/unit/sql/test_orm_rules.py::test_sql104_indexed_column_not_flagged
+- tests/unit/sql/test_orm_rules.py::test_sql106_missing_pool_config_flagged
+- tests/unit/sql/test_orm_rules.py::test_sql106_configured_pool_not_flagged
 designated_repro_test: null
 threat: null
 component: null
