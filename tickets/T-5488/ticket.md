@@ -1,5 +1,5 @@
 ---
-id: T-draft-9fadcc07
+id: T-5488
 title: Widen a11y_gate hook contract so _locate_statement_page gets a repo root
 state: queued
 kind: feature
