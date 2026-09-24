@@ -9,7 +9,7 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-3068
-parent: null
+parent: T-3004
 tier: ticket
 sprint: null
 runs_last: false
@@ -32,6 +32,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3004
+  reason: 'T-3004 decomposition: wiring follow-up to T-3068''s xfail(strict=True)
+    debt marker'
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
