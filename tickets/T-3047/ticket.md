@@ -23,6 +23,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - strata-core/src/graph/model.rs
+- strata-core/src/graph/vmodel/mod.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,11 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: strata-core/src/graph/model.rs
+  reason: review and decision nodes with reason as data
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: strata-core/src/graph/vmodel/mod.rs
   reason: review and decision nodes with reason as data
   actor: logan
   at: '2026-09-23'
