@@ -2,7 +2,7 @@
 id: T-3047
 title: 'Type-checked code review and decision records: review as a graph node with
   provenance, decisions carrying their reason as data'
-state: planned
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-3047
+branch: t-3047
 scope:
 - strata-core/src/graph/model.rs
 - strata-core/src/graph/vmodel/mod.rs
