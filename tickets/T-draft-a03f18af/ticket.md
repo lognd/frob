@@ -11,7 +11,7 @@ tier: ticket
 sprint: layout-gate
 runs_last: false
 milestone: v0.537.0
-points: null
+points: 5
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -34,6 +34,12 @@ triage_changes:
   new_value: T-5747
   reason: re-parent to the promoted story id; story draft was promoted after this
     leaf was filed and the child parent field was not rewritten
+  actor: logan
+  at: '2026-09-24'
+- field: points
+  old_value: null
+  new_value: '5'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
