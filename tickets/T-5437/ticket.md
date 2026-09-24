@@ -1,5 +1,5 @@
 ---
-id: T-draft-b219802c
+id: T-5437
 title: 'claude sync: keep user-level registrations for hooks materialized for global
   use'
 state: queued
