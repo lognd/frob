@@ -21,10 +21,42 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
+scope:
+- src/frob/ci_report.py
+- tests/test_ci_report.py
+- tests/fixtures/ci_report/**
+- docs/modules/ci_report.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/ci_report.py
+  reason: parse_pytest_log must recognize this repo own SUITE-RESULT/SUITE-RESULT-FAILED
+    xdist summary lines (T-2982 residue, measured against real CI run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/test_ci_report.py
+  reason: parse_pytest_log must recognize this repo own SUITE-RESULT/SUITE-RESULT-FAILED
+    xdist summary lines (T-2982 residue, measured against real CI run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/ci_report/**
+  reason: parse_pytest_log must recognize this repo own SUITE-RESULT/SUITE-RESULT-FAILED
+    xdist summary lines (T-2982 residue, measured against real CI run 35951365410)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/ci_report.md
+  reason: parse_pytest_log must recognize this repo own SUITE-RESULT/SUITE-RESULT-FAILED
+    xdist summary lines (T-2982 residue, measured against real CI run 35951365410)
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
