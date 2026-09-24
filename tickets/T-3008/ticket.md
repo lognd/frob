@@ -29,6 +29,7 @@ scope:
 - src/frob/gates/invariants.py
 - src/frob/gates/__init__.py
 - src/frob/gates/_waive.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -106,6 +107,12 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: T-3010's lease released; folding T-draft-56e0c50e in -- INVLVL001 needs
     registering in _KNOWN_GATE_RULES, same REG002 step VMOD001/MSCLOSE001 needed
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: INVLVL001 needs a CHK-GATE-INVLVL001 registry entry, same REG002 step VMOD001/MSCLOSE001
+    needed
   actor: logan
   at: '2026-09-24'
 triage_changes:
