@@ -7,6 +7,8 @@ kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
+blocked_by:
+- T-draft-df99eb2d
 parent: T-5630
 tier: ticket
 sprint: coord-surface
