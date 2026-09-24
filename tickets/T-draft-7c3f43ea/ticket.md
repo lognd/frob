@@ -6,7 +6,7 @@ kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
-parent: null
+parent: T-4703
 tier: ticket
 sprint: null
 runs_last: false
@@ -26,6 +26,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4703
+  reason: 'leaf of T-4703 story: lower DSTACK001 threshold per owner decision'
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
