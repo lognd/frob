@@ -22,13 +22,42 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/webapp/_seo_crawl.py
-- tests/fixtures/webapp/seo1xx/**
+- tests/fixtures/webapp/seo1xx/crawl/**
+- tests/unit/test_seo_crawl.py
+- docs/modules/webapp-seo-crawl.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/seo1xx/**
+  reason: per-ticket fixture subdir (siblings own tags/ and spam/) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/seo1xx/crawl/**
+  reason: per-ticket fixture subdir (siblings own tags/ and spam/) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_seo_crawl.py
+  reason: per-ticket fixture subdir (siblings own tags/ and spam/) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-seo-crawl.md
+  reason: per-ticket fixture subdir (siblings own tags/ and spam/) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
