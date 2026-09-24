@@ -1,7 +1,7 @@
 ---
 id: T-5351
 title: 'WEBSEC201-208: CSRF and session lifecycle'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -22,11 +22,13 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5351
+branch: t-5351
 scope:
 - src/frob/webapp/_websec_csrf_session.py
 - tests/fixtures/webapp/websec2xx/csrf_session/**
+- tests/unit/test_websec_csrf_session.py
+- docs/modules/webapp-websec-csrf-session.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +42,16 @@ scope_changes:
 - op: add
   glob: tests/fixtures/webapp/websec2xx/csrf_session/**
   reason: per-ticket fixture subdir so the session/auth leaves do not lease-collide
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_websec_csrf_session.py
+  reason: unit test + doc for the new module, per playbook convention
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-websec-csrf-session.md
+  reason: unit test + doc for the new module, per playbook convention
   actor: logan
   at: '2026-09-24'
 triage_changes:
