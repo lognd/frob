@@ -21,10 +21,18 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- strata-core/src/graph/model.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: strata-core/src/graph/model.rs
+  reason: review and decision nodes with reason as data
+  actor: logan
+  at: '2026-09-23'
 triage_changes:
 - field: parent
   old_value: null
