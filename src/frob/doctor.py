@@ -859,6 +859,24 @@ _EXTERNAL_TOOLS: tuple[tuple[str, str, ToolCategory, str], ...] = (
         "own performance-rule plugin (src/frob/sql/_sqlfluff_plugin.py) "
         "registers into it via the `sqlfluff` entry-point group",
     ),
+    (
+        # T-5333: squawk (migration-safety linter: NOT-NULL-without-
+        # default, index-without-CONCURRENTLY, lock-taking rewrites) is
+        # REQUIRED_FOR_FAMILY the SAME way sqlfluff is -- reuses
+        # `sql_relevance` verbatim as its `_FAMILY_TOOL_RELEVANCE`
+        # predicate below rather than a narrower migrations-directory-
+        # only check, per T-5335's own owner-decreed posture (SQL tools
+        # are required-for-the-family with absence reported as
+        # "unmeasured", failing only when the repo actually contains
+        # SQL surface).
+        "squawk",
+        "binary",
+        ToolCategory.REQUIRED_FOR_FAMILY,
+        "cargo install squawk (or download a release binary: "
+        "https://github.com/sbdchd/squawk) -- frob's own adapter "
+        "(src/frob/sql/_squawk_adapter.py) spawns it with `--reporter "
+        "json` and parses its findings into frob Violations",
+    ),
 )
 
 
@@ -957,6 +975,10 @@ def _external_tools_remediation(statuses: list[ExternalToolStatus]) -> str | Non
 #: rule).
 _FAMILY_TOOL_RELEVANCE: tuple[tuple[str, Callable[[Path], bool]], ...] = (
     ("sqlfluff", sql_relevance),
+    # T-5333: squawk reuses `sql_relevance` verbatim, same predicate as
+    # sqlfluff's own entry above -- see this ticket's `_EXTERNAL_TOOLS`
+    # comment for why a migrations-directory-only predicate was NOT used.
+    ("squawk", sql_relevance),
 )
 
 

@@ -1,0 +1,14 @@
+[
+  {
+    "file": "0002_index_without_concurrently.sql",
+    "line_number": 4,
+    "rule_name": "require-concurrent-index-creation",
+    "messages": [
+      {
+        "level": "Error",
+        "content": "Creating an index without CONCURRENTLY blocks writes on the table for the duration of the build."
+      }
+    ],
+    "help": "Add CONCURRENTLY to the CREATE INDEX statement."
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "file": "0001_not_null_no_default.sql",
+    "line_number": 4,
+    "rule_name": "adding-not-nullable-field",
+    "messages": [
+      {
+        "level": "Error",
+        "content": "Adding a NOT NULL column without a default locks the table for the duration of the migration."
+      }
+    ],
+    "help": "Add the column as nullable, backfill, then add the NOT NULL constraint in a later migration."
+  }
+]

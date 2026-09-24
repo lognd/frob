@@ -841,6 +841,13 @@ override flag (the owner's directive is that a relevant-and-missing
 end-of-run report is the same follow-up `relevant_tool_findings` above
 already named.
 
+T-5333 registers squawk (`frob.sql._squawk_adapter`, see
+docs/modules/sql.md) into this SAME machinery rather than a new
+tool-gating shape -- `_FAMILY_TOOL_RELEVANCE`'s squawk entry reuses
+`sql_relevance` verbatim, the identical predicate sqlfluff's own entry
+uses, per the owner's stated posture that SQL tools are required for the
+family with no never-fail override.
+
 ## Unity toolchain detection (T-4501)
 
 <!-- frob:describes src/frob/doctor.py::UnityEditorStatus -->

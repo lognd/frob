@@ -204,3 +204,35 @@ See docs/guides/install.md#required_for_family-tool-gating-t-5335 for
 `family_required_tool_findings` -- sqlfluff's absence is a FAILING
 verdict only when `sql_relevance` (above) is true for the repo, never
 demanded when no SQL surface exists at all.
+
+## `frob.sql._squawk_adapter` -- squawk migration-safety adapter (T-5333)
+
+`src/frob/sql/_squawk_adapter.py` spawns
+[squawk](https://github.com/sbdchd/squawk) with its `--reporter json`
+flag against every tracked `.sql` file and parses its findings verbatim
+(keyed by squawk's own `rule_name`, e.g. `adding-not-nullable-field`,
+`require-concurrent-index-creation`, `renaming-column`) into
+`SquawkFinding`s -- this adapter transcribes squawk's own rule corpus, it
+does not re-derive or re-classify migration anti-patterns itself.
+
+squawk is registered `frob.doctor.ToolCategory.REQUIRED_FOR_FAMILY` the
+SAME way sqlfluff is (T-5335's own machinery, extended rather than
+reinvented) -- `_FAMILY_TOOL_RELEVANCE`'s squawk entry reuses
+`sql_relevance` verbatim as its predicate, so squawk's absence is a
+FAILING, unmeasured verdict only when the repo actually has SQL surface,
+never demanded otherwise. `squawk_findings(root)` itself also
+short-circuits to `()` when `squawk` is not on PATH (its absence is
+`family_required_tool_findings`'s own concern to report, not
+re-reported here).
+
+### Public API
+
+- `SquawkFinding` -- one squawk finding: `rule`, `file`, `line`,
+  `message`.
+- `squawk_findings(root: Path) -> tuple[SquawkFinding, ...]` -- every
+  squawk finding across tracked `.sql` files under `root`.
+
+No gate wires `squawk_findings` into `frob check` yet -- a later leaf
+folds it into a gate the same one-call-per-family shape
+`frob.gates._taint_gate.taint_gate` already uses for
+`websec_sink_findings`.

@@ -1,7 +1,7 @@
 ---
 id: T-5333
 title: squawk migration-safety adapter
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -70,6 +70,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/sql/test_squawk_adapter.py::test_parse_squawk_json_not_null_no_default
+- tests/unit/sql/test_squawk_adapter.py::test_parse_squawk_json_index_without_concurrently
+- tests/unit/sql/test_squawk_adapter.py::test_parse_squawk_json_empty_array_is_no_findings
+- tests/unit/sql/test_squawk_adapter.py::test_parse_squawk_json_malformed_text_is_no_findings
+- tests/unit/sql/test_squawk_adapter.py::test_parse_squawk_json_missing_messages_falls_back_to_help
+- tests/unit/sql/test_squawk_adapter.py::test_squawk_findings_absent_binary_is_empty_not_raising
 designated_repro_test: null
 threat: null
 component: null
