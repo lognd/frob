@@ -1,0 +1,28 @@
+2026-09-24T03:41:02.1010000Z ##[group]Run make check
+2026-09-24T03:41:02.1020000Z pytest -n auto --dist=loadgroup -q
+2026-09-24T03:43:10.4410000Z tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
+2026-09-24T03:43:10.4420000Z Generated project's own nested pytest run (NOT the outer run's summary):
+2026-09-24T03:43:10.4430000Z FAILED tests/integration/test_logging_integration.py::test_log_line_reaches_stdout - AssertionError: expected log line not in capsys output
+2026-09-24T03:43:10.4440000Z 1 failed, 16 passed in 0.42s
+2026-09-24T03:43:10.4450000Z FAILED
+2026-09-24T03:44:55.7710000Z SUITE-RESULT: exitstatus=1 collected=15565 failed=19
+2026-09-24T03:44:55.7720000Z SUITE-RESULT-FAILED: tests/gates_suite/test_sys_assume_template.py::TestSelfaudit001TemplatedAssume::test_red_on_todays_design_frob_strata (failed)
+2026-09-24T03:44:55.7730000Z SUITE-RESULT-FAILED: tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean (failed)
+2026-09-24T03:44:55.7740000Z SUITE-RESULT-FAILED: tests/system/test_cli_check.py::TestCheckStageGroups::test_gate_stage_group_migration_is_byte_identical (failed)
+2026-09-24T03:44:55.7750000Z SUITE-RESULT-FAILED: tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool] (failed)
+2026-09-24T03:44:55.7760000Z SUITE-RESULT-FAILED: tests/system/test_scaffold_dx.py::test_hyphenated_name_scaffold_installs_and_console_script_runs (failed)
+2026-09-24T03:44:55.7770000Z SUITE-RESULT-FAILED: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations (failed)
+2026-09-24T03:44:55.7780000Z SUITE-RESULT-FAILED: tests/test_check_gate_base.py::TestCheckDefaultBase::test_falls_back_to_current_branch_not_literal_main (failed)
+2026-09-24T03:44:55.7790000Z SUITE-RESULT-FAILED: tests/test_lang_support.py::TestPackageAudit::test_real_repo_source_tree_is_fully_registered (failed)
+2026-09-24T03:44:55.7800000Z SUITE-RESULT-FAILED: tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml (failed)
+2026-09-24T03:44:55.7810000Z SUITE-RESULT-FAILED: tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s (failed)
+2026-09-24T03:44:55.7820000Z SUITE-RESULT-FAILED: tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam (failed)
+2026-09-24T03:44:55.7830000Z SUITE-RESULT-FAILED: tests/unit/gates/test_wire002_live_repo.py::test_wire002_zero_against_live_repo (failed)
+2026-09-24T03:44:55.7840000Z SUITE-RESULT-FAILED: tests/unit/strata/test_packs.py::TestAutoInjection::test_trusted_component_without_pack_gets_it_injected (failed)
+2026-09-24T03:44:55.7850000Z SUITE-RESULT-FAILED: tests/unit/test_app_runners_json_guard_t2492.py::TestFmtRunnerJsonGuard::test_planted_leak_does_not_reach_stdout (failed)
+2026-09-24T03:44:55.7860000Z SUITE-RESULT-FAILED: tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds (failed)
+2026-09-24T03:44:55.7870000Z SUITE-RESULT-FAILED: tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing (failed)
+2026-09-24T03:44:55.7880000Z SUITE-RESULT-FAILED: tests/unit/test_cli_group_parity.py::TestOpsGroupParity::test_every_ops_leaf_matches_its_flat_twin[natives] (failed)
+2026-09-24T03:44:55.7890000Z SUITE-RESULT-FAILED: tests/unit/test_websec_headers_log.py::test_websec_headers_log_findings_fixture[websec120_positive-WEBSEC120-True] (failed)
+2026-09-24T03:44:55.7900000Z SUITE-RESULT-FAILED: tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself (failed)
+2026-09-24T03:44:55.7910000Z ##[error]Process completed with exit code 1.

@@ -2,7 +2,7 @@
 id: T-5477
 title: 'ci_report/ghio: unusable against this repo''s real xdist CI logs (T-2982 command-surface
   gap)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5477
+branch: t-5477
 scope:
 - src/frob/ci_report.py
 - tests/test_ci_report.py
@@ -64,6 +64,10 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/test_ci_report.py::TestParseSuiteResultLog::test_recovers_all_19_real_failing_node_ids
+- tests/test_ci_report.py::TestParseSuiteResultLog::test_nested_subprocess_vanilla_failed_line_is_not_the_outer_result
+- tests/test_ci_report.py::TestParseSuiteResultLog::test_passing_job_stays_quiet
 designated_repro_test: null
 threat: null
 component: null

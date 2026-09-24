@@ -28,6 +28,40 @@ count line -- both written once, at the very end of a run that actually
 reached that point. `parse_pytest_log` never attempts positional
 inference.
 
+## This repo's own SUITE-RESULT summary (T-5477)
+
+`-n auto --dist=loadgroup` is exactly why vanilla pytest's own
+end-of-run summary text (`"=== N failed, M passed in Ts ==="` plus
+`"FAILED <nodeid> - <reason>"` lines) is unreliable for THIS repo in the
+first place -- and it turns out `tests/conftest.py`'s own
+`pytest_sessionfinish` hook already knows this and writes an alternate,
+authoritative summary instead: one `SUITE-RESULT: exitstatus=N
+collected=N failed=N` line, followed by one `SUITE-RESULT-FAILED:
+<nodeid> (failed|error)` line per named failure. `parse_pytest_log` tries
+this SUITE-RESULT shape FIRST (`_parse_suite_result_log`); only when no
+`SUITE-RESULT:` line exists at all does it fall back to the vanilla-
+pytest path unchanged.
+
+Measured gap this closed (T-5477, CI run 35951365410): before this fix,
+`parse_pytest_log` matched NEITHER shape against this repo's own real
+`gh api .../actions/jobs/<id>/logs` output -- every line there also
+carries a leading ISO-8601 timestamp (`2026-09-24T03:43:26.1010000Z `)
+that defeats the `^`-anchored vanilla regexes even where literal pytest
+text happens to appear (e.g. inside `tests/system/test_scaffold_dx.py`'s
+generated-project pytest subprocess output, which is NOT the outer run's
+own result and must never be read as one). Net effect: `build_job_report`
+returned `"not_recoverable"` for every real completed CI job in this
+repo, silently -- the exact false-negative class this module's own
+docstring says it exists to prevent. `_SUITE_RESULT_LINE`/
+`_SUITE_RESULT_FAILED_LINE` both accept the optional timestamp prefix and
+are authoritative over the vanilla path whenever a `SUITE-RESULT:` line
+is present at all, so a nested subprocess's own vanilla summary can never
+override the outer run's real result.
+
+`tests/fixtures/ci_report/run_35951365410_ubuntu_trimmed.log` is a
+trimmed but otherwise real capture proving all 19 of that run's actual
+failing node ids are recovered end to end.
+
 ## The `not_recoverable` outcome
 
 `JobReport.outcome` is one of three values, never collapsed to two:

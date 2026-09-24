@@ -98,6 +98,81 @@ class TestParsePytestLog:
         assert failures == ()
 
 
+_CI_FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "ci_report"
+
+
+class TestParseSuiteResultLog:
+    """T-5477: `parse_pytest_log` recognizing this repo's OWN
+    `tests/conftest.py` xdist `SUITE-RESULT:`/`SUITE-RESULT-FAILED:`
+    summary (with a `gh api .../logs` ISO-timestamp line prefix), which
+    vanilla pytest's own `_RESULT_LINE`/`_SUMMARY_LINE` regexes never
+    match under this repo's `-n auto --dist=loadgroup` addopts (module
+    docstring's WHY NOT POSITIONAL section). Fixtures are TRIMMED real
+    captures from CI run 35951365410 (dev @ 9e0c89bb19)."""
+
+    # frob:tests tests/test_ci_report.py::TestParseSuiteResultLog.test_recovers_all_19_real_failing_node_ids  # noqa: E501
+    # frob:tests src/frob/ci_report.py::parse_pytest_log kind="unit"
+    def test_recovers_all_19_real_failing_node_ids(self) -> None:
+        """MUST-FIRE: the real trimmed ubuntu log (run 35951365410, job
+        107480417008) recovers exactly the 19 failing node ids the
+        module's own docstring says it exists to name -- the SAME set
+        that was, before this fix, extracted by hand (ticket body)."""
+        text = (_CI_FIXTURE_ROOT / "run_35951365410_ubuntu_trimmed.log").read_text(
+            encoding="utf-8"
+        )
+        outcome, failures = parse_pytest_log(text, truncated=False)
+        assert outcome == "failures"
+        node_ids = {f.node_id for f in failures}
+        assert len(node_ids) == 19, node_ids
+        assert (
+            "tests/gates_suite/test_sys_assume_template.py::"
+            "TestSelfaudit001TemplatedAssume::"
+            "test_red_on_todays_design_frob_strata" in node_ids
+        )
+        assert (
+            "tests/vet_suite/test_fingerprint.py::TestFingerprintScan::"
+            "test_scan_directory_fingerprints_excludes_the_catalog_itself" in node_ids
+        )
+
+    # frob:tests tests/test_ci_report.py::TestParseSuiteResultLog.test_nested_subprocess_vanilla_failed_line_is_not_the_outer_result  # noqa: E501
+    # frob:tests src/frob/ci_report.py::parse_pytest_log kind="unit"
+    def test_nested_subprocess_vanilla_failed_line_is_not_the_outer_result(
+        self,
+    ) -> None:
+        """The fixture also contains a NESTED, vanilla-pytest-shaped
+        `FAILED tests/integration/test_logging_integration.py::... -
+        AssertionError: ...` line and its own `1 failed, 16 passed`
+        summary, from `test_scaffold_dx.py`'s generated-project pytest
+        subprocess -- neither must appear in the recovered node ids nor
+        change the outer run's own failed-count (SUITE-RESULT is always
+        authoritative once present, per `_parse_suite_result_log`'s own
+        docstring)."""
+        text = (_CI_FIXTURE_ROOT / "run_35951365410_ubuntu_trimmed.log").read_text(
+            encoding="utf-8"
+        )
+        _outcome, failures = parse_pytest_log(text, truncated=False)
+        node_ids = {f.node_id for f in failures}
+        assert (
+            "tests/integration/test_logging_integration.py::"
+            "test_log_line_reaches_stdout" not in node_ids
+        )
+        assert len(node_ids) == 19, node_ids
+
+    # frob:tests tests/test_ci_report.py::TestParseSuiteResultLog.test_passing_job_stays_quiet  # noqa: E501
+    # frob:tests src/frob/ci_report.py::parse_pytest_log kind="unit"
+    def test_passing_job_stays_quiet(self) -> None:
+        """MUST-STAY-QUIET: a real passing job's trimmed log
+        (`SUITE-RESULT: exitstatus=0 ... failed=0`) reports `"clean"`
+        with zero failures -- the SUITE-RESULT path must not manufacture
+        findings out of a genuinely green run."""
+        text = (_CI_FIXTURE_ROOT / "passing_job_trimmed.log").read_text(
+            encoding="utf-8"
+        )
+        outcome, failures = parse_pytest_log(text, truncated=False)
+        assert outcome == "clean"
+        assert failures == ()
+
+
 class TestBuildJobReport:
     # frob:tests src/frob/ci_report.py::JobReport
     def test_clean_job(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

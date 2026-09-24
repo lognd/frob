@@ -73,6 +73,42 @@ _RESULT_LINE = re.compile(
     re.MULTILINE,
 )
 
+#: T-5477: a `gh api .../logs` line prefix -- every line of a REST-
+#: fetched job log carries a leading ISO-8601 timestamp
+#: (`2026-09-24T03:43:26.1010000Z `, fractional seconds and the literal
+#: `Z` both present) that defeats every `^`-anchored regex above unless
+#: stripped or matched around. Optional (a locally captured log, or one
+#: already stripped by the caller, has no such prefix).
+_GH_LOG_TIMESTAMP_PREFIX = r"(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\s+)?"
+
+#: T-5477: this repo's OWN end-of-run summary line
+#: (`tests/conftest.py`'s `pytest_sessionfinish` hook), written instead
+#: of trusting vanilla pytest's positional dot-stream under `-n auto
+#: --dist=loadgroup` (module docstring's WHY NOT POSITIONAL section) --
+#: `SUITE-RESULT: exitstatus=N collected=N failed=N`. Only the
+#: `completed` shape (module docstring's own `_EXIT_STATUS_LABELS`
+#: branch is NOT matched here on purpose: a partial/interrupted run's
+#: line carries an extra label token this pattern's `$` anchor refuses,
+#: correctly falling through to `not_recoverable` for that case exactly
+#: like an absent `_RESULT_LINE` already does).
+_SUITE_RESULT_LINE = re.compile(
+    _GH_LOG_TIMESTAMP_PREFIX
+    + r"SUITE-RESULT: exitstatus=(\d+) collected=(\d+) failed=(\d+)\s*$",
+    re.MULTILINE,
+)
+
+#: T-5477: one `SUITE-RESULT-FAILED: <nodeid> (failed|error)[ -- <cause>]`
+#: line per named failure -- `tests/conftest.py` also emits a non-node-id
+#: continuation line (`SUITE-RESULT-FAILED: and N more`, once the
+#: `_suite_result_max_node_ids()` cap is hit) that this pattern's
+#: `\((failed|error)\)` requirement deliberately does NOT match, so that
+#: continuation is silently skipped rather than misread as a node id.
+_SUITE_RESULT_FAILED_LINE = re.compile(
+    _GH_LOG_TIMESTAMP_PREFIX
+    + r"SUITE-RESULT-FAILED: (\S+) \((failed|error)\)(?:\s+--\s+(.*))?\s*$",
+    re.MULTILINE,
+)
+
 #: Digits, hex blobs, and quoted literals -- stripped from a failure's
 #: reason line so two failures differing only in a specific value (an id,
 #: a path, a timestamp) still cluster under the same signature.
@@ -163,6 +199,67 @@ def _signature(kind: str, reason: str) -> str:
     return f"{kind}:{exc_type}:{rest}" if rest else f"{kind}:{exc_type}"
 
 
+# frob:ticket T-5477
+def _parse_suite_result_log(
+    text: str, *, truncated: bool
+) -> tuple[str, tuple[TestFailure, ...]] | None:
+    """T-5477: `parse_pytest_log`'s SUITE-RESULT half -- this repo's OWN
+    `tests/conftest.py` xdist summary (`_SUITE_RESULT_LINE`/
+    `_SUITE_RESULT_FAILED_LINE`, module docstring's WHY NOT POSITIONAL
+    section explains why this repo emits it instead of trusting vanilla
+    pytest's positional dot-stream). `None` when no `_SUITE_RESULT_LINE`
+    is present at all, telling the caller to fall back to the vanilla-
+    pytest path unchanged -- this function NEVER returns `None` once a
+    real `SUITE-RESULT:` line is found, so a repo that emits BOTH this
+    line and (inside some nested subprocess-captured output, e.g.
+    `tests/system/test_scaffold_dx.py`'s generated-project pytest run)
+    vanilla `FAILED`/summary text never has that nested text mistaken for
+    the OUTER run's own result -- SUITE-RESULT, when present, is always
+    authoritative over vanilla parsing, never merely a tie-breaker.
+
+    Takes the LAST `_SUITE_RESULT_LINE` match (a partial/interrupted run
+    can write more than one across retries; the last is the most recent
+    state) and every `_SUITE_RESULT_FAILED_LINE` in the text (which may
+    appear before OR after that line, so this is a full-text scan, not
+    scoped to follow the chosen result line)."""
+    result_matches = list(_SUITE_RESULT_LINE.finditer(text))
+    if not result_matches:
+        return None
+    last = result_matches[-1]
+    failed_count = int(last.group(3))
+    failures = tuple(
+        TestFailure(
+            node_id=m.group(1),
+            kind=m.group(2).lower(),
+            reason=(m.group(3) or "").strip(),
+            signature=_signature(m.group(2).lower(), (m.group(3) or "").strip()),
+        )
+        for m in _SUITE_RESULT_FAILED_LINE.finditer(text)
+    )
+    if failures:
+        return "failures", failures
+    if failed_count > 0:
+        # The line claims failures but no SUITE-RESULT-FAILED line
+        # matched (e.g. every one fell past the _suite_result_max_
+        # node_ids() cap and only an "and N more" continuation
+        # survived) -- honest not_recoverable, never a silent "clean"
+        # for a run that named failures it could not enumerate.
+        _log.warning(
+            "ci_report: SUITE-RESULT claims %d failure(s) but no "
+            "SUITE-RESULT-FAILED node id matched -- not_recoverable, "
+            "not clean",
+            failed_count,
+        )
+        return "not_recoverable", ()
+    if truncated:
+        _log.warning(
+            "ci_report: SUITE-RESULT line present and clean but log is "
+            "truncated -- not_recoverable, not clean"
+        )
+        return "not_recoverable", ()
+    return "clean", ()
+
+
 # frob:doc docs/modules/ci_report.md#public-api
 # tests/test_ci_report.py::TestParsePytestLog.test_truncated_with_no_evidence_is_not_recoverable  # noqa: E501
 def parse_pytest_log(
@@ -174,7 +271,18 @@ def parse_pytest_log(
     is `True` and no `_RESULT_LINE` was actually observed -- a truncated
     log's silence is `"not_recoverable"`, never read as a clean run
     (module docstring's own doctrine, matching `frob.ghio.JobLog`'s own
-    `truncated` field this function is the direct consumer of)."""
+    `truncated` field this function is the direct consumer of).
+
+    T-5477: tries `_parse_suite_result_log` FIRST -- this repo's own
+    `tests/conftest.py` xdist summary is authoritative whenever present
+    (see that function's own docstring for why nested vanilla-pytest text
+    from a subprocess-under-test must never override it); only when no
+    `SUITE-RESULT:` line exists at all does this fall through to the
+    vanilla-pytest `_RESULT_LINE`/`_SUMMARY_LINE` path unchanged."""
+    suite_result = _parse_suite_result_log(text, truncated=truncated)
+    if suite_result is not None:
+        return suite_result
+
     result_matches = list(_RESULT_LINE.finditer(text))
     if not result_matches:
         _log.info(

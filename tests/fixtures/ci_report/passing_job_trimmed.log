@@ -1,0 +1,5 @@
+2026-09-24T03:41:02.1010000Z ##[group]Run make check
+2026-09-24T03:41:02.1020000Z pytest -n auto --dist=loadgroup -q
+2026-09-24T03:44:20.3330000Z SUITE-RESULT: exitstatus=0 collected=15565 failed=0
+2026-09-24T03:44:20.3340000Z ##[group]Run make check (self-gate)
+2026-09-24T03:44:25.1110000Z frob check .  [PASS]  0 errors  0 warnings
