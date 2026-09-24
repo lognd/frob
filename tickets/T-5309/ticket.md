@@ -1,7 +1,7 @@
 ---
 id: T-5309
 title: 'WEBSEC109-116: code-injection and deserialization sinks'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -73,6 +73,27 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-23'
+evidence:
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_no_framework_short_circuits
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc109_positive-WEBSEC109-True]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc109_negative-WEBSEC109-False]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc110_positive-WEBSEC110-True]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc110_negative-WEBSEC110-False]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc111_positive-WEBSEC111-True]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc111_negative-WEBSEC111-False]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc112_positive-WEBSEC112-True]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc112_negative-WEBSEC112-False]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc113_positive-WEBSEC113-True]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc113_negative-WEBSEC113-False]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc114_positive-WEBSEC114-True]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc114_negative-WEBSEC114-False]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc115_positive-WEBSEC115-True]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc115_negative-WEBSEC115-False]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc116_positive-WEBSEC116-True]
+- tests/unit/test_websec_deser.py::test_websec_deser_findings_fixture[webesc116_negative-WEBSEC116-False]
+- tests/unit/test_websec_deser.py::TestWebsecFindingsGateHook::test_websec_findings_emits_violation
+- tests/unit/test_websec_deser.py::TestWebsecFindingsGateHook::test_websec_findings_short_circuits_on_empty_frameworks
+- tests/unit/test_websec_deser.py::TestTaintGateDiscoversWebsecDeser::test_taint_gate_reports_planted_webesc110_fixture
 designated_repro_test: null
 threat: null
 component: null
