@@ -22,13 +22,42 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/webapp/_webperf_server.py
-- tests/fixtures/webapp/webperf1xx/**
+- tests/fixtures/webapp/webperf1xx/server/**
+- tests/unit/test_webperf_server.py
+- docs/modules/webapp-webperf-server.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/webperf1xx/**
+  reason: per-ticket fixture subdir (sibling T-5371 owns markup/**) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/webperf1xx/server/**
+  reason: per-ticket fixture subdir (sibling T-5371 owns markup/**) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_webperf_server.py
+  reason: per-ticket fixture subdir (sibling T-5371 owns markup/**) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/webapp-webperf-server.md
+  reason: per-ticket fixture subdir (sibling T-5371 owns markup/**) plus test file
+    and module doc, batched at intake
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
