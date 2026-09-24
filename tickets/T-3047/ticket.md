@@ -8,7 +8,6 @@ origin: human
 created: '2026-08-26'
 priority: high
 blocked_by:
-- T-draft-258c9c5d
 - T-3010
 parent: T-3004
 tier: ticket
@@ -94,3 +93,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Unblock log
+- 2026-09-23: unblocked by T-draft-258c9c5d -- L0 dropped: edge kinds already landed (T-3007/T-3042)
