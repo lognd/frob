@@ -25,6 +25,7 @@ branch: null
 scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/__init__.py
+- src/frob/_cli_parsers/_ticket/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,11 @@ scope_changes:
   at: '2026-09-24'
 - op: add
   glob: src/frob/tickets/__init__.py
+  reason: coord tree scope (COORD-TREE.md)
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/**
   reason: coord tree scope (COORD-TREE.md)
   actor: logan
   at: '2026-09-24'
