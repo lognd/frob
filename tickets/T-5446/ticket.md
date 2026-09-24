@@ -1,5 +1,5 @@
 ---
-id: T-draft-8730b2b6
+id: T-5446
 title: 'sqlfluff plugin: schema/session-level performance rules split off T-5335'
 state: queued
 kind: feature
