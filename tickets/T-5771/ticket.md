@@ -10,7 +10,6 @@ priority: medium
 blocked_by:
 - T-5749
 - T-5751
-- T-draft-9570bf46
 - T-5780
 - T-5774
 - T-draft-58029dd5
@@ -70,3 +69,4 @@ Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a
 
 ## Unblock log
 - 2026-09-24: unblocked by T-draft-3661879e -- 2026-09-24: dangling draft id; the land runner promoted this blocker to its real T-#### id without rewriting the edge, real-id edge re-added via frob ticket block
+- 2026-09-24: unblocked by T-draft-9570bf46 -- 2026-09-24: dangling draft id; the land runner promoted this blocker to its real T-#### id without rewriting the edge, real-id edge re-added via frob ticket block
