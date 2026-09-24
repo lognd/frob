@@ -24,6 +24,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_selfconform_models.py
 - strata-core/src/graph/vmodel/mod.rs
+- src/frob/gates/_invariant_level.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
   at: '2026-09-23'
 - op: add
   glob: strata-core/src/graph/vmodel/mod.rs
+  reason: invariant level field + level-mismatch rule (INVLVL001)
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/gates/_invariant_level.py
   reason: invariant level field + level-mismatch rule (INVLVL001)
   actor: logan
   at: '2026-09-23'
