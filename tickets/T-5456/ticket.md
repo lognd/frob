@@ -3,7 +3,7 @@ id: T-5456
 title: 'Post-land sweep residue 2026-09-23_2251: COV001:src/frob/gates/_sql_explain_obligation.py
   COV002:src/frob/webapp/_a11y_forms_contrast.py COV002:src/frob/webapp/_a11y_statement.py
   CO'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -22,8 +22,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5456
+branch: t-5456
 scope:
 - src/frob/gates/_sql_explain_obligation.py
 scope_breadth_ack: false
