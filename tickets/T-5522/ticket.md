@@ -2,7 +2,7 @@
 id: T-5522
 title: 'land CAS: apply-failed ledger-only rebase must fall back to full recompose,
   not refuse (T-5491 follow-up)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5522
+branch: t-5522
 scope:
 - src/frob/tickets/_land_squash.py
 - tests/unit/test_land_cas_ledger_retry.py
@@ -50,7 +50,10 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_cas_ledger_retry.py::TestAttemptLedgerOnlyRebase::test_context_only_apply_conflict_recovers_via_full_recompose
+- tests/unit/test_land_cas_ledger_retry.py::TestAttemptLedgerOnlyRebase::test_ledger_only_apply_conflict_is_retryable_not_a_hard_refusal
+designated_repro_test: tests/unit/test_land_cas_ledger_retry.py::TestAttemptLedgerOnlyRebase::test_context_only_apply_conflict_recovers_via_full_recompose
 threat: null
 component: null
 anchor: false

@@ -52,9 +52,10 @@ from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
-from frob.gitio import current_branch, run_argv
+from frob.gitio import current_branch, excerpt, run_argv
 from frob.logging import get_logger
 from frob.tickets._land_compose import (
+    LandComposeError,
     commits_touch_only_ledger_paths,
     fold_worktree_into_commit,
     publish_ref_cas,
@@ -1399,6 +1400,85 @@ def _ledger_only_cas_retry_limit(root: Path, pre_land_tip: str, ref: str) -> int
 
 # frob:ticket T-4572
 # frob:ticket T-5491
+# frob:ticket T-5522
+def _recompose_via_merge(
+    root: Path, new_base: str, composed_sha: str, final_id: str
+) -> Result[str, LandComposeError]:
+    """T-5522: the ACTUAL full-recompose fallback `_attempt_ledger_only_
+    rebase`'s own docstring promised but never ran -- a real 3-way `git
+    merge`, not a second diff-and-apply against the same unchanged tip
+    (`rebase_composed_commit_onto`'s own mechanism, T-4572). Measured
+    (T-5477's land, `/tmp/land-T-3010.log` ~line 31200): a diff-and-apply
+    rebase failed 5 times running the IDENTICAL apply against an
+    UNCHANGED sibling tip (deterministic -- it fails the same way every
+    time), so every retry after the first was wasted, and the promised
+    recompose never actually happened.
+
+    Builds a disposable worktree detached at `new_base`
+    (`_add_scratch_worktree`), `git merge --no-commit --no-ff
+    composed_sha` into it (a real three-way merge against `composed_sha`'s
+    OWN parent as merge-base, which resolves independent same-file edits
+    a textual `git apply` cannot), and folds the result into a commit
+    (`fold_worktree_into_commit`) parented on `new_base` if the merge
+    resolves cleanly. A genuine, unresolvable content conflict aborts the
+    merge and returns `Err(ComposeFailed)` -- the one case this fallback
+    is NOT expected to paper over, and the caller's correct signal to
+    stop retrying rather than spin forever."""
+    with tempfile.TemporaryDirectory(prefix="frob-land-recompose-") as parent:
+        scratch = str(Path(parent) / "wt")
+        added = _add_scratch_worktree(root, scratch, new_base, final_id)
+        if added.is_err:
+            return Err(LandComposeError.ComposeFailed)
+        try:
+            return _merge_and_fold_recompose(
+                root, scratch, new_base, composed_sha, final_id
+            )
+        finally:
+            _remove_scratch_worktree(root, scratch, final_id)
+
+
+# frob:ticket T-5522
+def _merge_and_fold_recompose(
+    root: Path, scratch: str, new_base: str, composed_sha: str, final_id: str
+) -> Result[str, LandComposeError]:
+    """`_recompose_via_merge`'s own merge-then-fold body, split out to
+    keep that function under ARCH001's length threshold (T-2214). `git
+    merge --no-commit --no-ff composed_sha` inside the already-checked-
+    out `scratch` worktree, aborted and reported as `Err(ComposeFailed)`
+    on a genuine content conflict; folded into a new commit parented on
+    `new_base` via `fold_worktree_into_commit` on a clean merge."""
+    merged = run_argv(
+        ("git", "-C", scratch, "merge", "--no-commit", "--no-ff", composed_sha)
+    )
+    if merged.is_err or merged.danger_ok.returncode != 0:
+        _log.warning(
+            "land: %s full recompose merge of %s onto %s conflicted "
+            "(%s) -- a genuine content conflict, not retryable",
+            final_id,
+            composed_sha,
+            new_base,
+            excerpt(merged.danger_ok.stderr) if merged.is_ok else merged.danger_err,
+        )
+        run_argv(("git", "-C", scratch, "merge", "--abort"))
+        return Err(LandComposeError.ComposeFailed)
+    folded = fold_worktree_into_commit(
+        root,
+        Path(scratch),
+        new_base,
+        f"land: {final_id} full recompose onto {new_base}",
+    )
+    if folded.is_err:
+        return Err(folded.danger_err)
+    _log.info(
+        "land: %s full recompose succeeded: %s merged onto %s -> %s",
+        final_id,
+        composed_sha,
+        new_base,
+        folded.danger_ok,
+    )
+    return Ok(folded.danger_ok)
+
+
 def _attempt_ledger_only_rebase(
     root: Path, ref: str, base: str, candidate_sha: str, final_id: str, attempt: int
 ) -> tuple[str, tuple[str, str] | None]:
@@ -1422,7 +1502,17 @@ def _attempt_ledger_only_rebase(
     and a later tip may no longer conflict with this land's diff even
     though it is layered onto MORE ledger-only commits, not fewer.
     `payload` is `(new_base, new_candidate_sha)` only for a genuine
-    advance (`"advanced"`); `None` otherwise."""
+    advance (`"advanced"`); `None` otherwise.
+
+    T-5522: a diff-and-apply failure no longer returns `"apply_failed"`
+    immediately -- retrying that SAME diff-and-apply against an UNCHANGED
+    `current` tip is deterministic (measured, T-5477's land: 5 identical
+    failed attempts, the promised recompose never ran). This function now
+    attempts `_recompose_via_merge` (a real 3-way `git merge`, not a
+    second diff-apply) FIRST; only when that ALSO conflicts (a genuine,
+    unresolvable content conflict) does it fall through to `"apply_failed"`
+    -- still retryable, since a LATER sibling tip may no longer carry the
+    conflicting content at all."""
     tip = _rev_parse(root, ref)
     if tip.is_err:
         return "not_ledger_only", None
@@ -1438,15 +1528,35 @@ def _attempt_ledger_only_rebase(
         return "not_ledger_only", None
     rebased = rebase_composed_commit_onto(root, base, candidate_sha, current)
     if rebased.is_err:
+        # T-5522: the cheap diff-and-apply shortcut failed -- retrying
+        # THAT identical apply against this SAME `current` tip again
+        # later would fail the same deterministic way (the measured
+        # T-5477 defect: 5 wasted attempts, the promised recompose never
+        # ran). Perform the ACTUAL full recompose now, a real 3-way
+        # merge, before giving up on this tip.
+        recomposed = _recompose_via_merge(root, current, candidate_sha, final_id)
+        if recomposed.is_ok:
+            _log.info(
+                "land: %s ledger-only diff-apply failed against %s (base "
+                "%s) but the full recompose (3-way merge) succeeded -- "
+                "retrying the publish with the recomposed commit",
+                final_id,
+                current,
+                base,
+            )
+            return "advanced", (current, recomposed.danger_ok)
         _log.warning(
             "land: %s ledger-only rebase attempt %d against %s (base %s) "
-            "did not apply cleanly (%s) -- will retry against %s's next "
-            "tip rather than giving up on the first conflict",
+            "did not apply cleanly (%s), and the full recompose ALSO "
+            "conflicted (%s) -- a genuine content conflict; will still "
+            "retry against %s's next tip (a later sibling commit may "
+            "supersede the conflicting one) rather than giving up outright",
             final_id,
             attempt + 1,
             current,
             base,
             rebased.danger_err,
+            recomposed.danger_err,
             ref,
         )
         return "apply_failed", None

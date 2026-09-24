@@ -501,3 +501,66 @@ class TestAttemptLedgerOnlyRebase:
         # `main` was not force-moved or corrupted by the failed attempt.
         current_tip = _run(["git", "rev-parse", "main"], scratch_repo).stdout.strip()
         assert current_tip == new_base
+
+    # frob:ticket T-5522
+    # frob:tests tests/unit/test_land_cas_ledger_retry.py::TestAttemptLedgerOnlyRebase.test_context_only_apply_conflict_recovers_via_full_recompose  # noqa: E501
+    # frob:tests src/frob/tickets/_land_squash.py::_attempt_ledger_only_rebase kind="unit"  # noqa: E501
+    def test_context_only_apply_conflict_recovers_via_full_recompose(
+        self, scratch_repo: Path
+    ) -> None:
+        """Positive control (T-5522): the composed commit and the
+        sibling ledger-only commit touch the SAME `tickets/**` file, but
+        at DIFFERENT lines (a genuinely non-conflicting 3-way merge --
+        `status` vs `notes`) -- a textual `git apply` still fails here
+        because its context lines (the WHOLE 3-line file, no common-
+        ancestor awareness) no longer match after the sibling's edit,
+        exactly the measured T-5477 shape (`ComposeFailed: building the
+        out-of-tree commit ...`). `_attempt_ledger_only_rebase` must
+        recover via `_recompose_via_merge`'s real 3-way merge (which DOES
+        know the common ancestor and sees the two edits do not overlap)
+        and report `"advanced"`, not exhaust retries and refuse."""
+        _commit_file(
+            scratch_repo,
+            "tickets/T-5522/ticket.md",
+            "id: T-5522\nstatus: open\nowner: a\nkind: bug\nnotes: none\n",
+            "chore(tickets): seed T-5522",
+        )
+        pre_land_tip = _run(["git", "rev-parse", "HEAD"], scratch_repo).stdout.strip()
+
+        _run(["git", "checkout", "-q", "-b", "landing"], scratch_repo)
+        (scratch_repo / "code.py").write_text("x = 42\n")
+        (scratch_repo / "tickets" / "T-5522" / "ticket.md").write_text(
+            "id: T-5522\nstatus: closed\nowner: a\nkind: bug\nnotes: none\n"
+        )
+        _run(["git", "add", "code.py", "tickets/T-5522/ticket.md"], scratch_repo)
+        _run(["git", "commit", "-q", "-m", "land: T-5522"], scratch_repo)
+        composed = _run(["git", "rev-parse", "landing"], scratch_repo).stdout.strip()
+        _run(["git", "checkout", "-q", "main"], scratch_repo)
+
+        new_base = _commit_file(
+            scratch_repo,
+            "tickets/T-5522/ticket.md",
+            "id: T-5522\nstatus: open\nowner: a\nkind: bug\nnotes: mirrored\n",
+            "chore(tickets): mirror scope T-5522 from worktree",
+        )
+
+        outcome, advanced = _attempt_ledger_only_rebase(
+            scratch_repo, "main", pre_land_tip, composed, "T-5522", attempt=0
+        )
+
+        assert outcome == "advanced", outcome
+        assert advanced is not None
+        new_base_out, recomposed_sha = advanced
+        assert new_base_out == new_base
+        show_ledger = _run(
+            ["git", "show", f"{recomposed_sha}:tickets/T-5522/ticket.md"],
+            scratch_repo,
+        ).stdout
+        assert (
+            show_ledger
+            == "id: T-5522\nstatus: closed\nowner: a\nkind: bug\nnotes: mirrored\n"
+        )
+        show_code = _run(
+            ["git", "show", f"{recomposed_sha}:code.py"], scratch_repo
+        ).stdout
+        assert show_code == "x = 42\n"
