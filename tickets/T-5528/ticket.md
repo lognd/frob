@@ -1,5 +1,5 @@
 ---
-id: T-draft-7c3f43ea
+id: T-5528
 title: 'DSTACK001: fire the stack merge on every directive stack (threshold 2 by default)'
 state: queued
 kind: feature
