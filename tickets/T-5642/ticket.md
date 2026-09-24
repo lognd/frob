@@ -1,5 +1,5 @@
 ---
-id: T-draft-e094dfbf
+id: T-5642
 title: 'frob agent precheck: run the recorded pre-land refusal classes inside the
   worktree'
 state: queued
