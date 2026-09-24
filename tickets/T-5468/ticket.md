@@ -1,5 +1,5 @@
 ---
-id: T-draft-73587936
+id: T-5468
 title: 'REG008 burn-down: 249 findings against check-coverage.yaml registry'
 state: queued
 kind: bug
