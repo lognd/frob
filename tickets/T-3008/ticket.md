@@ -21,9 +21,10 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/strata/_selfconform_models.py
-- strata-core/src/graph/vmodel/mod.rs
 - src/frob/gates/_invariant_level.py
 - tests/gates/test_invariant_level.py
 - docs/strata/vmodel.md
@@ -63,6 +64,13 @@ scope_changes:
   reason: invariant level field + level-mismatch rule (INVLVL001)
   actor: logan
   at: '2026-09-23'
+- op: remove
+  glob: strata-core/src/graph/vmodel/mod.rs
+  reason: no Rust kernel change needed -- the level field/pairing lives entirely in
+    Python (frob.gates.invariants), avoiding a collision with T-3010's live lease
+    on this file
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: null
