@@ -26,12 +26,18 @@ branch: null
 scope:
 - src/frob/strata/_effects.py
 - src/frob/gates/_inv.py
-- .claude/hooks/pgrep-self-match-guard.py
 - tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: .claude/hooks/pgrep-self-match-guard.py
+  reason: T-5440 has a live lease on this file; leaving its SEC110 site (line 117)
+    for T-5440 own owner to fix
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
