@@ -27,6 +27,7 @@ scope:
 - src/frob/gates/_invariant_level.py
 - tests/gates/test_invariant_level.py
 - src/frob/gates/invariants.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -92,6 +93,12 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: T-3008's own INVLVL001 doc section is complete and committed; freeing the
     lease so T-3068 (same agent, sequencing-only blocked_by) can extend it further
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: T-3010's lease released; folding T-draft-56e0c50e in -- register invariant_level_gate
+    in _ALL_GATES/_GATE_STAGE_GROUPS/dispatch, same wiring VMOD001/MSCLOSE001 needed
   actor: logan
   at: '2026-09-24'
 triage_changes:
