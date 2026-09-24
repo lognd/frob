@@ -28,7 +28,6 @@ branch: null
 scope:
 - strata-core/src/graph/model.rs
 - strata-core/src/graph/vmodel/mod.rs
-- src/frob/strata/_selfconform_models.py
 - tests/unit/strata/test_vmodel_review_decision.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -76,6 +75,13 @@ scope_changes:
   glob: docs/strata/vmodel.md
   reason: collides with T-3010's live lease on this file; document review/decision-reason
     in docs/modules/gates.md-adjacent location or defer cross-link until T-3010 lands
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/strata/_selfconform_models.py
+  reason: wrong module -- SYS100-102 self-conformance is unrelated; decision/review-node
+    reason enforcement is entirely Rust-side construction-time validation, no Python
+    schema module needed
   actor: logan
   at: '2026-09-24'
 triage_changes:
