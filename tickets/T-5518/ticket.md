@@ -2,7 +2,7 @@
 id: T-5518
 title: 'land: rebuild stale natives after squash-apply, before post-merge evidence
   re-verification'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-342a3548
+branch: t-draft-342a3548
 scope:
 - src/frob/tickets/_land_verify.py
 - tests/unit/tickets/test_land_verify*.py
@@ -57,6 +57,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_land_verify_natives.py::TestRebuildStaleWorktreeNatives::test_stale_fake_native_triggers_rebuild
+- tests/unit/test_land_verify_natives.py::TestRebuildStaleWorktreeNatives::test_fresh_natives_stay_quiet
 designated_repro_test: null
 threat: null
 component: null

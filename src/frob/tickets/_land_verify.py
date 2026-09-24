@@ -84,6 +84,90 @@ by `ticket_id` to print it on the `LAND-PROOF:` line, the same way it
 already reads `_LAST_CLAIMS_OUTCOME`."""
 
 
+# frob:ticket T-5518
+# frob:doc docs/modules/tickets-landing.md#stale-natives-before-post-merge-evidence-re-verification-t-5518  # noqa: E501
+def _rebuild_stale_worktree_natives(worktree: Path) -> None:
+    """T-5518: the T-1213 stale-natives detector's SECOND call
+    site -- `frob.gates._maybe_autorebuild_natives` was previously only
+    invoked in the PRE-squash gates phase (`frob.gates.run_gates`) and
+    once more, best-effort, by `frob.app.ticket_runner._land_cmd.
+    _worktree_natives_verifiably_healthy` before Tier-A fixes. Neither
+    call runs between `_land_merge_stage`'s merge-main-into-worktree step
+    and this module's own post-merge evidence re-verification
+    (`_reverify_evidence_post_merge`, right below), so a land whose
+    worktree branch itself adds a new Rust export builds that export
+    once at `ticket work` time and then goes stale the moment ANY later
+    edit touches the crate again without a matching `frob natives
+    build` -- the evidence subprocess `_land_collected_fn`/`_land_
+    passed_fn` spawn (`uv run pytest`, cwd=worktree) then imports the
+    worktree's own site-packages extension, built from source that
+    predates the export, and every test importing it fails "individually"
+    (T-0856's `_reverify_failing_bucket_individually`).
+
+    Measured (T-3010's land, `/tmp/land-T-5464.log` ~line 24069): the
+    SAME tests pass with no source change after a manual `frob natives
+    build` in the worktree -- proof the worktree's own compiled artifact,
+    not the test source, was stale. This function closes that gap:
+    called from `_reverify_evidence_post_merge` right before it spawns
+    the evidence run, it triggers the identical `_maybe_autorebuild_
+    natives(worktree)` detect-and-rebuild `build_natives` already uses
+    elsewhere in the land path (T-0864's `maturin develop --uv
+    --release`, which installs into whichever venv `worktree` itself
+    resolves to via `uv`, not the primary checkout's), and separately
+    logs -- at INFO, unconditionally -- the interpreter and compiled
+    extension file `importlib.util.find_spec` resolves for each declared
+    native, for the reader diagnosing a land that still lands stale
+    (e.g. a native this repo's process cannot see because it runs under
+    a wholly separate interpreter than `uv run pytest` under `worktree`
+    would spawn). Best-effort and never fatal: a load/build failure here
+    is a `_log.warning` in `_maybe_autorebuild_natives` itself; this
+    function does not add its own try/except around it because that
+    function already fails closed and returns `None` unconditionally."""
+    import importlib.util
+    import sys
+
+    from frob.gates import _maybe_autorebuild_natives
+    from frob.strata._native_staleness import _artifact_mtime
+    from frob.testing._runners import load_natives
+
+    _maybe_autorebuild_natives(worktree)
+
+    loaded = load_natives(worktree)
+    if loaded.is_err:
+        _log.debug(
+            "land: %s could not re-load [[native]] entries post-rebuild "
+            "attempt for interpreter/extension logging (%s)",
+            worktree,
+            loaded.danger_err,
+        )
+        return
+    for spec in loaded.danger_ok:
+        try:
+            found = importlib.util.find_spec(spec.name)
+        except (ImportError, ValueError) as exc:
+            _log.info(
+                "land: %s evidence native %s -- find_spec raised %s under "
+                "interpreter %s (this process, not necessarily the "
+                "worktree's own pytest subprocess interpreter)",
+                worktree,
+                spec.name,
+                exc,
+                sys.executable,
+            )
+            continue
+        origin = found.origin if found is not None else None
+        artifact_mtime = _artifact_mtime(spec)
+        _log.info(
+            "land: %s evidence native %s resolves to %s (artifact_mtime="
+            "%s) via interpreter %s",
+            worktree,
+            spec.name,
+            origin,
+            artifact_mtime,
+            sys.executable,
+        )
+
+
 def _reverify_evidence_post_merge(
     worktree: Path,
     ticket_id: str,
@@ -103,9 +187,20 @@ def _reverify_evidence_post_merge(
     result (`Ok(frozenset[str])`) when `passed` was supplied, else
     `Ok(None)` -- letting `_reverify_done_report_claims_post_merge` derive
     its own re-verified test count from this SAME real run instead of
-    paying for a second collect+run of the identical evidence set."""
+    paying for a second collect+run of the identical evidence set.
+
+    T-5518: rebuilds `worktree`'s natives (`_rebuild_stale_
+    worktree_natives`, the T-1213 detector's second call site) BEFORE
+    `collected`/`passed` run -- both closures spawn evidence against
+    `worktree`'s own tree post `_land_merge_stage`'s merge, which can
+    bring in Rust source the worktree's currently-installed extension
+    predates (measured: T-3010's land, `/tmp/land-T-5464.log` ~line
+    24069 -- every evidence test importing a brand-new PyO3 export
+    failed "individually" even though the identical tests passed right
+    after a manual `frob natives build` with no source change)."""
     if collected is None and passed is None:
         return Ok(None)
+    _rebuild_stale_worktree_natives(worktree)
     from frob.tickets import _load_one
 
     loaded = _load_one(worktree, ticket_id)

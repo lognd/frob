@@ -2740,6 +2740,46 @@ preflight sequence should copy this same shape (self-delegating
 re-invocation, called after `_land_merge_stage`, pinned by an equivalent
 source-order test) until the generic registry exists.
 
+## Stale natives before post-merge evidence re-verification (T-5518)
+
+<!-- frob:describes src/frob/tickets/_land_verify.py::_rebuild_stale_worktree_natives -->
+
+`frob.gates._maybe_autorebuild_natives` (T-1213) had exactly two call
+sites before this fix: `run_gates`'s own pre-squash gates phase, and
+`frob.app.ticket_runner._land_cmd._worktree_natives_verifiably_healthy`
+(T-1578, gating the Tier-A WAIVE004 batch). Neither runs between
+`_land_merge_stage`'s merge-main-into-worktree step and
+`_reverify_evidence_post_merge`'s own evidence spawn
+(`_land_collected_fn`/`_land_passed_fn`, both `uv run pytest` subprocess
+calls with `cwd=worktree`) -- so a ticket whose OWN branch adds Rust
+source (a new PyO3 export, say) can land its evidence tests failing
+"individually" (T-0856's `_reverify_failing_bucket_individually`)
+against a worktree extension that was built before the export existed,
+even though nothing about the evidence tests themselves is wrong.
+
+Measured on T-3010's land (`/tmp/land-T-5464.log` ~line 24069): every
+evidence test importing the new `milestone_closure_check` export failed
+individually on the first attempt; the identical tests passed with no
+source change after a manual `frob natives build` in the worktree. A
+pre-land natives rebuild run as coordinator hygiene did not help --
+proof the extension the evidence subprocess actually imports is not
+necessarily the one any earlier, out-of-process rebuild touched.
+
+THE FIX: `_rebuild_stale_worktree_natives(worktree)` is a third call
+site for the SAME T-1213 detector, invoked from
+`_reverify_evidence_post_merge` immediately before it spawns
+`collected()`/`passed()` -- i.e. after the merge that could have brought
+in Rust source, right before the subprocess that will import whatever is
+currently built. It also logs, at INFO, which interpreter
+(`sys.executable`) and which resolved extension file
+(`importlib.util.find_spec(spec.name).origin`) each declared
+`[[native]]` entry currently points at, so a land that still lands stale
+after this fix has the exact interpreter/file pair to diagnose from in
+the log, rather than a bare pass/fail. Best-effort and never fatal, the
+same posture `_maybe_autorebuild_natives` itself already takes: a
+load/build failure degrades to a `_log.warning` there, not a land
+refusal here.
+
 ## Auto-sync after a successful land (T-1720, rebase replaced by merge in T-2173)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main -->
