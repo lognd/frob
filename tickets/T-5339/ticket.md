@@ -26,6 +26,8 @@ scope:
 - src/frob/gates/_sql_explain_obligation.py
 - tests/fixtures/sql/explain/**
 - tests/unit/test_sql_explain_obligation.py
+- docs/modules/gates.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +49,18 @@ scope_changes:
   glob: tests/unit/test_sql_explain_obligation.py
   reason: 'unit test for the new gate function (BRIEF item: prove positive control
     with a real test that calls the gate function)'
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-2114 frob:doc edge for sql_explain_obligation_gate + register SQLEXPLAIN001
+    in _KNOWN_GATE_RULES
+  actor: logan
+  at: '2026-09-23'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: T-2114 frob:doc edge for sql_explain_obligation_gate + register SQLEXPLAIN001
+    in _KNOWN_GATE_RULES
   actor: logan
   at: '2026-09-23'
 triage_changes:
