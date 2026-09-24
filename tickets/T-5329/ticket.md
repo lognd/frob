@@ -1,7 +1,7 @@
 ---
 id: T-5329
 title: 'WEBSEC310-317: debug/info-leak config'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -133,6 +133,26 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_debug_config.py::test_taint_gate_discovers_websec_debug_config_hook
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc310_positive-WEBSEC310-True]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc310_negative-WEBSEC310-False]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc311_positive-WEBSEC311-True]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc311_negative-WEBSEC311-False]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc312_positive-WEBSEC312-True]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc312_negative-WEBSEC312-False]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc313_positive-WEBSEC313-True]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc313_negative-WEBSEC313-False]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc314_positive-WEBSEC314-True]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc314_negative-WEBSEC314-False]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc315_positive-WEBSEC315-True]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc315_negative-WEBSEC315-False]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc316_positive-WEBSEC316-True]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_fixture[webesc316_negative-WEBSEC316-False]
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_map_file_variant
+- tests/unit/test_websec_debug_config.py::test_websec_debug_config_findings_no_framework_short_circuits
+- tests/unit/test_websec_debug_config.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_debug_config.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null
