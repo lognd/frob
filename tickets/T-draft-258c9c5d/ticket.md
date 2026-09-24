@@ -6,7 +6,7 @@ kind: feature
 origin: human
 created: '2026-09-23'
 priority: medium
-parent: null
+parent: T-3004
 tier: ticket
 sprint: null
 runs_last: false
@@ -24,6 +24,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3004
+  reason: epic section 3 leaf, owner-reviewed tree 2026-09-23
+  actor: logan
+  at: '2026-09-23'
 designated_repro_test: null
 threat: null
 component: null
