@@ -27,6 +27,8 @@ scope:
 - tests/unit/test_land_queue.py
 - docs/modules/tickets-landing.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +53,18 @@ scope_changes:
   glob: design/frob.strata
   reason: declare exec capability for tickets_ledger so os.execv in the between-lands
     re-exec is a declared, not undeclared, capability (SELFAUDIT001/SYS100)
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet bump for the new tickets_ledger::exec site, plus SCOPE002
+    doc-target coverage for pre-existing _land_queue.py symbols already in scope
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: SYS111 ratchet bump for the new tickets_ledger::exec site, plus SCOPE002
+    doc-target coverage for pre-existing _land_queue.py symbols already in scope
   actor: logan
   at: '2026-09-25'
 triage_changes:
