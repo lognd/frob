@@ -12,6 +12,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: user_story
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,6 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5132
+branch: t-5132
 scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/_setters.py
@@ -87,6 +92,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 body_changes:
 - mode: append
   reason: 'owner 2026-09-20: track agent token usage per ticket, optional, absent
@@ -190,8 +202,6 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5132
-branch: t-5132
 ---
 Owner directive 2026-09-20: tickets need story points and/or effort hours, linted. Design decision (agreed default, revisit if the owner objects): points only, no hours field. points: int | None on Ticket and TicketSpec, allowed values 1 2 3 5 8 13 (Fibonacci, validated at write time like validate_milestone, never at ledger load). --points N on frob ticket new; frob ticket points ID N setter with T-1615 auto-commit. Hours are DERIVED, not entered: actual wall from the start transition to the close transition (already mined by _flow for velocity) is reported per ticket and as points-per-hour calibration in frob ticket flow, so the human enters one small number and the system measures the rest. ENFORCEMENT is at the state transition, not a repo-wide lint: frob ticket start refuses a ticket with points=None (single override flag --unsized-ack REASON, recorded on the ticket like scope_breadth_ack), frob ticket new WARNs when --points is omitted. This makes every ticket that actually enters work sized, needs no backfill of the 666 existing queued tickets, and never touches done/dropped/archived tickets -- the backwards-compat question disappears because old tickets only meet the check when someone starts them. frob ticket flow, sprint show, epic and board gain a points column and a points-weighted burn-down ETA next to the count-based one. Epics/stories roll up the sum of leaf points.
 
