@@ -24,6 +24,7 @@ worktree: /home/logan/projects/frob
 branch: dev
 scope:
 - src/frob/tickets/_new_renumber.py
+- tests/test_tickets_points.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_new_renumber.py
   reason: fix new_ticket dropping spec.points onto Ticket
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/test_tickets_points.py
+  reason: positive-control regression test for the points-persist fix
   actor: logan
   at: '2026-09-24'
 triage_changes:
