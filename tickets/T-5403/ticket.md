@@ -2,7 +2,7 @@
 id: T-5403
 title: land --dry-run stops before squash-apply so T-3324 self-conformance and DOC006
   pointer refusals never run; DRY RUN clean is a false READY
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -12,6 +12,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -66,6 +67,10 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks::test_dry_run_refuses_on_a_planted_selfaudit001_sink
+- tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks::test_dry_run_refuses_on_a_planted_doc006_pointer
+- tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks::test_clean_worktree_dry_run_stays_clean
 designated_repro_test: null
 threat: null
 component: null

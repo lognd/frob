@@ -247,7 +247,7 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 333,
+      "accepted_count": 334,
       "reason": "testsuite glob growth"
     },
     "testsuite::fetch_url": {
@@ -265,7 +265,7 @@
       "reason": "testsuite glob growth"
     },
     "testsuite::fs.write": {
-      "accepted_count": 603,
+      "accepted_count": 604,
       "reason": "testsuite glob growth"
     },
     "testsuite::html_render": {

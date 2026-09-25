@@ -128,7 +128,12 @@ from frob.tickets._land_merge import _validate_closeable
 # stable.
 from frob.tickets._land_merge import splice_ledger as splice_ledger  # noqa: E402
 from frob.tickets._land_passenger_identity import classify_directive_ids
-from frob.tickets._land_squash import _land_squash_apply, _v2_effective_scope
+from frob.tickets._land_squash import (
+    _land_squash_apply,
+    _refuse_if_selfaudit_findings_in_touched_files,
+    _v2_effective_scope,
+    _worktree_full_changeset,
+)
 from frob.tickets._land_verify import (
     _ClaimsReverifyOutcome,
     _reverify_done_report_claims_post_merge,
@@ -3116,6 +3121,18 @@ def _land_locked(
                 return Err(LandError.ClaimDivergence)
 
         if dry_run_report is not None:
+            # frob:ticket T-5403
+            # T-5403: same D-05 "prove the exact refusal a real run would
+            # hit" rationale as every check above -- without this, a dry
+            # run returns clean here having never built or measured the
+            # squash preview the real land commits from, so the T-3324/
+            # DOC006/SELFAUDIT001 findings that preview surfaces were only
+            # ever discovered at the real land.
+            squash_preview_check = _dry_run_squash_preview_pre_commit_checks(
+                root, worktree, ticket_id, main_branch_name, root_pre_land_tip.danger_ok
+            )
+            if squash_preview_check.is_err:
+                return Err(squash_preview_check.danger_err)
             # T-3787: same target-branch stamp as the real-land return below.
             return Ok(
                 dry_run_report.model_copy(update={"target_branch": main_branch_name})
@@ -8395,6 +8412,104 @@ def _dry_run_report(
         ledger_spliced=did_merge,
         unowned_deletions=(),
     )
+
+
+# frob:ticket T-5403
+# tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_dry_run_refuses_on_a_planted_doc006_pointer  # noqa: E501
+# tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_dry_run_refuses_on_a_planted_selfaudit001_sink  # noqa: E501
+# tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_clean_worktree_dry_run_stays_clean  # noqa: E501
+def _dry_run_squash_preview_pre_commit_checks(
+    root: Path,
+    worktree: Path,
+    ticket_id: str,
+    main_branch_name: str,
+    pre_land_tip: str,
+) -> Result[None, LandError]:
+    """T-5403: `--dry-run` used to report READY the instant the ordinary
+    worktree merge and its post-merge re-verifications passed, never
+    building the SQUASH preview a real land commits from -- so the T-3324
+    self-conformance sweep and the DOC006/SELFAUDIT001 findings
+    `_refuse_if_selfaudit_findings_in_touched_files` runs against that
+    preview (see its own docstring) were only ever discovered at the real
+    land, making a clean dry run a false READY (observed twice: T-5302,
+    T-5360).
+
+    Fix: build the SAME staged squash preview a real land commits from
+    (`compose_squash_in_disposable_worktree`, `root` pinned at
+    `pre_land_tip`) and run the identical self-conformance/DOC006/
+    SELFAUDIT001 check against it, then let the disposable worktree's own
+    context manager remove it -- `root` and `worktree` are never mutated
+    by this function, so a dry run stays a dry run.
+
+    `touched_files` is `worktree`'s full branch changeset vs
+    `main_branch_name` (`_worktree_full_changeset`) -- independent of
+    whether the ordinary merge this dry run already ran/aborted is
+    currently staged, since it diffs the two refs directly, not the
+    worktree's working copy.
+
+    Best-effort at the COMPOSE step only: if the disposable worktree
+    cannot even be cut (`ComposeFailed` -- e.g. no disk, no git worktree
+    support), this degrades to `Ok(None)` and logs a warning rather than
+    refusing a dry run for an environment problem a real land's own
+    (mandatory) compose step would surface on its own -- the same
+    fail-open posture `_exclude_dev_merged_ledger_files` uses for its own
+    best-effort git call. A conflicted squash is likewise not refused
+    here: conflict resolution is `_squash_and_splice_ledger`'s job, run
+    only by the real land, and a dry run cannot predict its outcome."""
+    changeset = _worktree_full_changeset(worktree, main_branch_name)
+    if changeset.is_err:
+        _log.warning(
+            "land: %s dry-run could not compute its full changeset to scope "
+            "the T-3324/DOC006/SELFAUDIT001 preview check (%s) -- skipping "
+            "the preview, same posture as before T-5403; a real land still "
+            "measures it",
+            ticket_id,
+            changeset.danger_err,
+        )
+        return Ok(None)
+    touched_files = changeset.danger_ok
+
+    branch = current_branch(worktree)
+    if branch.is_err:
+        _log.warning(
+            "land: %s dry-run could not resolve its own branch name to "
+            "compose a squash preview (T-5403) -- skipping the preview",
+            ticket_id,
+        )
+        return Ok(None)
+
+    with compose_squash_in_disposable_worktree(
+        root, pre_land_tip, branch.danger_ok
+    ) as composed:
+        if composed.is_err:
+            _log.warning(
+                "land: %s dry-run could not stage a squash preview to run "
+                "the T-3324/DOC006/SELFAUDIT001 check against (%s) -- "
+                "skipping the preview (T-5403); a real land's own mandatory "
+                "compose step still measures it",
+                ticket_id,
+                composed.danger_err,
+            )
+            return Ok(None)
+        stage = composed.danger_ok
+        if stage.conflicted:
+            _log.info(
+                "land: %s dry-run squash preview left %d path(s) conflicted "
+                "-- conflict resolution runs only at the real land, so the "
+                "T-3324/DOC006/SELFAUDIT001 preview check is skipped this "
+                "run (T-5403)",
+                ticket_id,
+                len(stage.conflicted),
+            )
+            return Ok(None)
+        return _refuse_if_selfaudit_findings_in_touched_files(
+            stage.worktree,
+            ticket_id,
+            ticket_id,
+            pre_land_tip,
+            touched_files,
+            land_lock_root=root,
+        )
 
 
 def _check_unowned_deletions(

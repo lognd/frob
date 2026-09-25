@@ -1,5 +1,5 @@
 ---
-id: T-draft-741eded5
+id: T-6521
 title: DSTACK001 autofix emits unparsable multi-target frob:tests lines; verify edge-set
   round-trip before applying
 state: queued
