@@ -14,6 +14,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 0.534.0
+flavour: quality_objective
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -23,10 +26,20 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: flavour
+  old_value: null
+  new_value: quality_objective
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 body_changes:
 - mode: append
   reason: 'owner 2026-09-20: carry the research corpus in the ticket body, not only
