@@ -6,6 +6,8 @@ kind: feature
 origin: agent
 created: '2026-09-25'
 priority: medium
+blocked_by:
+- T-5776
 parent: T-5748
 tier: ticket
 sprint: null
