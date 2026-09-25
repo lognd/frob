@@ -1,7 +1,7 @@
 ---
 id: T-draft-5bf0e803
 title: 'dropped: approaching/exceeding the 16MB BSON document size limit by embedding'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-25'
@@ -50,3 +50,6 @@ genuinely new static signal.
 
 Reason: dynamic-only -- becomes a frob:tests / EXPLAIN-style obligation,
 never a static rule.
+
+## Drop reason
+- 2026-09-25: dynamic-only: becomes a frob:tests / EXPLAIN-style obligation, never a static rule
