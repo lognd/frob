@@ -1,7 +1,7 @@
 ---
 id: T-5353
 title: 'WEBSEC218-225: password policy and storage'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -104,6 +104,25 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc218_positive-WEBSEC218-True]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc218_negative-WEBSEC218-False]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc219_positive-WEBSEC219-True]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc219_negative-WEBSEC219-False]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc220_positive-WEBSEC220-True]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc220_negative-WEBSEC220-False]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc221_positive-WEBSEC221-True]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc221_negative-WEBSEC221-False]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc222_positive-WEBSEC222-True]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc222_negative-WEBSEC222-False]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc223_positive-WEBSEC223-True]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc223_negative-WEBSEC223-False]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc224_positive-WEBSEC224-True]
+- tests/unit/test_websec_password.py::test_websec_password_findings_fixture[webesc224_negative-WEBSEC224-False]
+- tests/unit/test_websec_password.py::test_websec_password_findings_no_framework_short_circuits
+- tests/unit/test_websec_password.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_password.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
+- tests/unit/test_websec_password.py::test_taint_gate_discovers_websec_password_hook
 designated_repro_test: null
 threat: null
 component: null
