@@ -35,14 +35,14 @@ scope_changes:
 - op: add
   glob: src/frob/coord/_ci_watch_poll.py
   reason: 'CI-2 own new file: coord watch''s shared poll primitive over frob.ci_validity;
-    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-draft-c099f096)
+    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-5805)
     lands and releases its lease'
   actor: logan
   at: '2026-09-24'
 - op: add
   glob: tests/frob/coord/test_ci_watch_poll.py
   reason: 'CI-2 own new file: coord watch''s shared poll primitive over frob.ci_validity;
-    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-draft-c099f096)
+    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-5805)
     lands and releases its lease'
   actor: logan
   at: '2026-09-24'

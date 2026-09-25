@@ -6,4 +6,4 @@ limiter = Limiter(app)
 
 
 def login(user):
-    return 'ok'
+    return "ok"

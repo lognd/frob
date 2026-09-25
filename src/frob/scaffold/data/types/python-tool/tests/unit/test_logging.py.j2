@@ -1,10 +1,12 @@
 """Unit tests for the logging setup."""
 
 import logging
+import sys
 
 from {{ project.import_name }}.logging.filter import BelowLevelFilter
 from {{ project.import_name }}.logging.formatter import SimpleFormatter
 from {{ project.import_name }}.logging.logger import get_logger
+from {{ project.import_name }}.logging.stream_handler import LiveStreamHandler
 
 
 def _record(level: int) -> logging.LogRecord:
@@ -29,3 +31,34 @@ def test_get_logger_returns_a_configured_logger() -> None:
     # frob:tests src/{{ project.import_name }}/logging/logger.py::get_logger kind="unit"
     log = get_logger(__name__)
     assert isinstance(log, logging.Logger)
+
+
+def test_live_stream_handler_reads_the_current_sys_stream() -> None:
+    # frob:tests src/{{ project.import_name }}/logging/stream_handler.py::LiveStreamHandler.stream kind="unit"
+    """`LiveStreamHandler.stream` must read `sys.stdout`/`sys.stderr`
+    freshly on every access (T-5466), not a value captured once at
+    construction -- the exact property that keeps it working under
+    pytest's `capsys`, which swaps `sys.stdout`/`sys.stderr` per test."""
+    handler = LiveStreamHandler("stdout")
+    assert handler.stream is sys.stdout
+
+    class _FakeStdout:
+        pass
+
+    fake = _FakeStdout()
+    original = sys.stdout
+    sys.stdout = fake  # type: ignore[assignment]
+    try:
+        assert handler.stream is fake
+    finally:
+        sys.stdout = original
+
+
+def test_live_stream_handler_rejects_unknown_stream_name() -> None:
+    # frob:tests src/{{ project.import_name }}/logging/stream_handler.py::LiveStreamHandler.__init__ kind="unit"
+    try:
+        LiveStreamHandler("not-a-real-stream")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for an unknown stream_name")

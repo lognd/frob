@@ -4,4 +4,4 @@ app = Flask(__name__)
 
 
 def login(user):
-    return 'ok'
+    return "ok"

@@ -5,4 +5,4 @@ app = Flask(__name__)
 
 
 def call_upstream():
-    return requests.get('https://upstream.example.com/data', verify=False)
+    return requests.get("https://upstream.example.com/data", verify=False)

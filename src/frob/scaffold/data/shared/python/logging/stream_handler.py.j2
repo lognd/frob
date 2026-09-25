@@ -1,0 +1,56 @@
+from __future__ import annotations
+
+import logging
+import sys
+
+
+# frob:doc docs/index.md#public-api
+class LiveStreamHandler(logging.StreamHandler):
+    """A `StreamHandler` that reads `sys.stdout`/`sys.stderr` freshly on
+    every emit instead of binding to whatever object `dictConfig`'s
+    `ext://sys.stdout` resolver captured once, at config-load time.
+
+    `logging.config.dictConfig`'s `ext://` convention resolves its target
+    ONCE, when the config is applied -- fine for a long-running process
+    where `sys.stdout` never changes identity, but broken under pytest's
+    `capsys`/`capfd` fixtures, which install a NEW stdout/stderr object
+    per test. Since this project's own `get_logger` initializes logging
+    exactly once per process (see `logger.py`), a handler bound at
+    `ext://sys.stdout` time keeps writing to whichever test's stdout
+    object happened to be live at that first call -- invisible to
+    `capsys.readouterr()` in every other test, including the very
+    integration test (`tests/integration/test_logging_integration.py`)
+    this template exists to keep green. Overriding `stream` as a
+    property that reads `sys.stdout`/`sys.stderr` live on each access
+    fixes this for both production code (identical behavior, since real
+    processes never swap `sys.stdout`) and test code (each test's capsys
+    swap is picked up immediately, no stale reference)."""
+
+    def __init__(self, stream_name: str) -> None:
+        super().__init__()
+        if stream_name not in ("stdout", "stderr"):
+            raise ValueError(
+                f"stream_name must be 'stdout' or 'stderr', got {stream_name!r}"
+            )
+        self._stream_name = stream_name
+
+    @property
+    def stream(self):  # noqa: ANN201
+        # frob:doc docs/index.md#public-api
+        # Plain literal attribute access on each branch (never
+        # `getattr(sys, self._stream_name)`, OPAQUE001's runtime-resolved
+        # capability indirection) -- only two fixed, known stream names
+        # are ever valid (enforced in __init__ above), so a static
+        # resolver can see exactly what this reads either way.
+        if self._stream_name == "stdout":
+            return sys.stdout
+        return sys.stderr
+
+    @stream.setter
+    def stream(self, value: object) -> None:
+        # `logging.StreamHandler.__init__` assigns `self.stream = stream`
+        # unconditionally; swallow that one assignment (its `stream`
+        # parameter is unused via `super().__init__()`'s default) so the
+        # live-lookup property above is never shadowed by an instance
+        # attribute of the same name.
+        pass

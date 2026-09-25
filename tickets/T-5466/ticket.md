@@ -1,7 +1,7 @@
 ---
 id: T-5466
 title: Scaffold DX generated logging integration test fails capsys assertion
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'

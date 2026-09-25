@@ -12,17 +12,22 @@ below = "WARNING"
 "()" = "{{ project.import_name }}.logging.formatter.SimpleFormatter"
 show_level = true
 
+# T-5466: "()" custom-callable + stream_name kwarg (not class = "logging.StreamHandler"
+# with stream = "ext://sys.stdout") -- the ext:// resolver only runs once,
+# at dictConfig-load time, which breaks pytest capsys (a new stdout object
+# per test) in this project's own generated test suite. LiveStreamHandler
+# reads sys.stdout/sys.stderr fresh on every emit instead.
 [handlers.stdout]
-class = "logging.StreamHandler"
+"()" = "{{ project.import_name }}.logging.stream_handler.LiveStreamHandler"
+stream_name = "stdout"
 formatter = "stdout_fmt"
-stream = "ext://sys.stdout"
 level = "DEBUG"
 filters = ["below_warning"]
 
 [handlers.stderr]
-class = "logging.StreamHandler"
+"()" = "{{ project.import_name }}.logging.stream_handler.LiveStreamHandler"
+stream_name = "stderr"
 formatter = "stderr_fmt"
-stream = "ext://sys.stderr"
 level = "WARNING"
 
 # T-4764: this project's OWN top-level logger, named after its package

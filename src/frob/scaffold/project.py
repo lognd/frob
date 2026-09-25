@@ -77,6 +77,10 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
             "src/{{ project.import_name }}/logging/formatter.py",
         ),
         _ManifestEntry(
+            "shared/python/logging/stream_handler.py.j2",
+            "src/{{ project.import_name }}/logging/stream_handler.py",
+        ),
+        _ManifestEntry(
             "shared/python/logging/logger.py.j2",
             "src/{{ project.import_name }}/logging/logger.py",
         ),
@@ -152,6 +156,10 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry(
             "shared/python/logging/formatter.py.j2",
             "src/{{ project.import_name }}/logging/formatter.py",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/stream_handler.py.j2",
+            "src/{{ project.import_name }}/logging/stream_handler.py",
         ),
         _ManifestEntry(
             "shared/python/logging/logger.py.j2",

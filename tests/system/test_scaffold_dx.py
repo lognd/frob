@@ -45,8 +45,8 @@ def _venv_console_script(venv_dir: Path, name: str) -> Path:
 
 
 def _subprocess_env() -> dict[str, str]:
-    """Parent env minus VIRTUAL_ENV/UV_PROJECT_ENVIRONMENT and the
-    COVERAGE_* measurement vars.
+    """Parent env minus VIRTUAL_ENV/UV_PROJECT_ENVIRONMENT/PYTHONPATH and
+    the COVERAGE_* measurement vars.
 
     This test suite itself runs under `uv run pytest` inside frob's own
     dev venv, which sets VIRTUAL_ENV -- inherited by every subprocess.run
@@ -63,10 +63,21 @@ def _subprocess_env() -> dict[str, str]:
     files, and its `combine` then dies with "Can't combine branch
     coverage data with statement data" -- a failure entirely manufactured
     by the parent's measurement setup.
+
+    T-5466: PYTHONPATH is the same class of leak -- `frob agent env`
+    (an agent running this suite from a worktree) sets `PYTHONPATH` to
+    that worktree's own `src/` so `frob` imports without an editable
+    install; inherited into a scaffolded project's own isolated `.venv`,
+    it makes THAT interpreter's `sys.path` see frob's own source tree,
+    which pytest's `pytest11` entry-point autoload then tries to import
+    -- and fails on a dependency (`pathspec`) frob needs but the
+    scaffolded project's minimal venv never installed. Strip it for the
+    same "a real terminal never has this set" reason as the other three.
     """
     env = os.environ.copy()
     env.pop("VIRTUAL_ENV", None)
     env.pop("UV_PROJECT_ENVIRONMENT", None)
+    env.pop("PYTHONPATH", None)
     env.pop("COVERAGE_PROCESS_START", None)
     env.pop("COVERAGE_FILE", None)
     return env
