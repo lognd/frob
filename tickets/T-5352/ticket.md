@@ -1,7 +1,7 @@
 ---
 id: T-5352
 title: 'WEBSEC209-217: JWT and OAuth token checks'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -85,6 +85,27 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc209_positive-WEBSEC209-True]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc209_negative-WEBSEC209-False]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc210_positive-WEBSEC210-True]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc210_negative-WEBSEC210-False]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc211_positive-WEBSEC211-True]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc211_negative-WEBSEC211-False]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc212_positive-WEBSEC212-True]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc212_negative-WEBSEC212-False]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc213_positive-WEBSEC213-True]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc213_negative-WEBSEC213-False]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc214_positive-WEBSEC214-True]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc214_negative-WEBSEC214-False]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc215_positive-WEBSEC215-True]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc215_negative-WEBSEC215-False]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc216_positive-WEBSEC216-True]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_fixture[webesc216_negative-WEBSEC216-False]
+- tests/unit/test_websec_tokens.py::test_websec_token_findings_no_framework_short_circuits
+- tests/unit/test_websec_tokens.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_tokens.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
+- tests/unit/test_websec_tokens.py::test_taint_gate_discovers_websec_tokens_hook
 designated_repro_test: null
 threat: null
 component: null
