@@ -25,6 +25,7 @@ worktree: /home/logan/projects/frob
 branch: dev
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/unit/test_check_scoped_files.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,11 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_land_cmd.py
   reason: both _land_touched_paths call sites need target_branch, plus a test for
     it
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/unit/test_check_scoped_files.py
+  reason: AST regression test asserting no _land_touched_paths call site omits target_branch=
   actor: logan
   at: '2026-09-25'
 triage_changes:
