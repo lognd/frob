@@ -2,7 +2,7 @@
 id: T-draft-cbdee0d3
 title: 'verify: ruff-format drift (warning-only nonzero exit) classified unmeasurable,
   watermark never advances'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,12 +21,14 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-cbdee0d3
+branch: t-draft-cbdee0d3
 scope:
 - src/frob/check/_python.py
 - src/frob/verify/_worker.py
 - tests/unit/verify/test_worker.py
+- src/frob/process/parsers/ruff.py
+- tests/unit/test_ruff_reformat_parser.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +49,25 @@ scope_changes:
   reason: verify format-drift fix
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: src/frob/process/parsers/ruff.py
+  reason: 'root cause is ruff 0.16.5''s grammar change (''unformatted: File would
+    be reformatted'' + a --> path:line:col line) that parse_ruff_would_reformat_paths
+    does not recognise yet, producing zero diagnostics on a nonzero ruff-format exit
+    -- the actual fix belongs in the shared parser and its test file'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_ruff_reformat_parser.py
+  reason: 'root cause is ruff 0.16.5''s grammar change (''unformatted: File would
+    be reformatted'' + a --> path:line:col line) that parse_ruff_would_reformat_paths
+    does not recognise yet, producing zero diagnostics on a nonzero ruff-format exit
+    -- the actual fix belongs in the shared parser and its test file'
+  actor: logan
+  at: '2026-09-24'
+evidence:
+- tests/unit/verify/test_worker.py::TestDefaultVerifyFnRuffFormatDriftIsMeasured::test_warning_only_diagnostic_yields_a_measured_result
+- tests/unit/verify/test_worker.py::TestDefaultVerifyFnRuffFormatDriftIsMeasured::test_zero_diagnostics_is_still_unmeasurable
 designated_repro_test: null
 threat: null
 component: null
