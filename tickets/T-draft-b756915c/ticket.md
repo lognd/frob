@@ -14,7 +14,7 @@ milestone: 0.536.0
 flavour: null
 due: null
 rank: null
-points: null
+points: 3
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -46,6 +46,12 @@ triage_changes:
   old_value: null
   new_value: 0.536.0
   reason: milestone set via `frob ticket milestone`
+  actor: logan
+  at: '2026-09-24'
+- field: points
+  old_value: null
+  new_value: '3'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
