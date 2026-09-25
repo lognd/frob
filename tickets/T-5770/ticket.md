@@ -15,6 +15,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -27,12 +30,25 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/app/ticket_runner/*
 - src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/*
+  reason: narrow the wildcard glob to the specific dispatch file to avoid an unrelated
+    agent's lease collision on _land_cmd.py
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: narrow the wildcard glob to the specific dispatch file to avoid an unrelated
+    agent's lease collision on _land_cmd.py
+  actor: logan
+  at: '2026-09-25'
 triage_changes:
 - field: points
   old_value: null
