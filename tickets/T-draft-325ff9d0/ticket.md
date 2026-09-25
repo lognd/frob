@@ -31,6 +31,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 969
+  new_length: 1058
 designated_repro_test: null
 threat: null
 component: null
@@ -58,5 +65,5 @@ SYSDESIGN-INVENTORY.md sec 2: "docker-compose: NOT FOUND. Zero hits for 'docker-
 
 Acceptance criteria: `frob.lang._config_compose.parse(path) -> list[ConfigDoc]` reads
 `services.<name>.{image, ports, environment, depends_on, deploy.resources, restart}` from
-compose.yaml/docker-compose.yml. Positive-control fixture: tests/fixtures/sysdesign/
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->compose.yaml/docker-compose.yml. Positive-control fixture: tests/fixtures/sysdesign/
 config-compose/env-baked-secret-in-service/**.

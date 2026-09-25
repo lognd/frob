@@ -32,6 +32,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1249
+  new_length: 1338
 designated_repro_test: null
 threat: null
 component: null
@@ -64,4 +71,4 @@ ch.20 (hedged requests), Envoy hedge policy."
 Acceptance criteria: flow_prop gains `hedge after QUANTITY`, desugars to attr `hedge_after=`,
 registered in T-STORE-301-ATTR's table. Downstream RULE leaf (SYSDESIGN303, Story E) is
 blocked_by this ticket. Positive-control fixture: tests/fixtures/sysdesign/flow-hedge/
-hedge-non-idempotent-dst/design.strata.
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->hedge-non-idempotent-dst/design.strata.

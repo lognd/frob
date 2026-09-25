@@ -34,6 +34,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 3456
+  new_length: 3545
 designated_repro_test: null
 threat: null
 component: null
@@ -98,4 +105,4 @@ Acceptance criteria: all six clauses land in one change; `drain`/`cert_expiry`/`
 `slo`/`error_budget` become typed fields (arithmetic-consuming per charter law 1), `health`
 becomes closed-vocabulary IDENT, `owner` (node-level) desugars to attr and registers in
 T-STORE-301-ATTR's table. Positive-control fixture: tests/fixtures/sysdesign/node-ops/
-rollout-no-drain-bound/design.strata.
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->rollout-no-drain-bound/design.strata.

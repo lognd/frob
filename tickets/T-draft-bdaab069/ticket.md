@@ -29,6 +29,13 @@ scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator; re
   edit only
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 2110
+  new_length: 2199
 designated_repro_test: null
 threat: null
 component: null
@@ -44,7 +51,7 @@ parent: T-SYS-SH
 milestone: 0.539.0
 sprint: sysdesign
 points: 3
-scope: scratchpad/sysdesign-research.md (only; a research-corpus edit, no source scope)
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->scope: scratchpad/sysdesign-research.md (only; a research-corpus edit, no source scope)
 blocked_by: []
 
 Body:

@@ -26,6 +26,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: epic parent, no direct code scope
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 11022
+  new_length: 11289
 designated_repro_test: null
 threat: null
 component: null
@@ -48,7 +55,7 @@ Body:
 Strata must be able to model any mature, horizontally scaled, distributed system, and frob
 must lint toward an optimized design once that system is modeled -- not just toward "does not
 crash." This epic covers two coupled gaps found by three research passes (scratchpad/
-sysdesign-research.md, scratchpad/SYSDESIGN-INVENTORY.md, scratchpad/STRATA-EXPRESSIVENESS.md):
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->sysdesign-research.md, scratchpad/SYSDESIGN-INVENTORY.md, scratchpad/STRATA-EXPRESSIVENESS.md):
 (1) strata's surface grammar cannot express roughly a third of the taxonomy of mature-system
 concerns (serverless lifecycle, deployment cells/multi-region, store sharding/consistency,
 request hedging, cache stampede guards, and -- the single highest-leverage item -- a fixed,
@@ -59,7 +66,7 @@ REL200/REL210 read `timeout`/`health`, and frob ingests zero config surfaces (Ku
 Helm, Terraform, docker-compose, Envoy/NGINX/Caddy) that would let a SYSDESIGN rule see the
 deployed shape at all.
 
-## Scaling stance (verbatim from scratchpad/sysdesign-research.md, "Scaling stance" section)
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->## Scaling stance (verbatim from scratchpad/sysdesign-research.md, "Scaling stance" section)
 
 **What "plan for horizontal scale from the start" concretely requires, per the sourced
 authorities:**
@@ -118,7 +125,7 @@ to get right. Applying CQRS/event sourcing with no stated divergent-scaling or a
 rationale is filed as a lint condition (sec. 8.7/8.10 of the research) precisely because these
 patterns are targeted tools, not defaults.
 
-## Coverage tallies (from scratchpad/SYSDESIGN-INVENTORY.md and STRATA-EXPRESSIVENESS.md)
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->## Coverage tallies (from scratchpad/SYSDESIGN-INVENTORY.md and STRATA-EXPRESSIVENESS.md)
 
 Research catalogue: 76 rows across 10 sections (10/10/10/8/10/10/13/10/10/8) plus the closing
 Scaling Stance section. 2 rows are tagged dynamic-only (8.3 cache stampede, 9.8 chaos testing).

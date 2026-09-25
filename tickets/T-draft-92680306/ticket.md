@@ -32,6 +32,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 2376
+  new_length: 2465
 designated_repro_test: null
 threat: null
 component: null
@@ -53,7 +60,7 @@ scope: src/frob/strata/_stampede.py (new), docs/modules/gates.md (SYSDESIGN304 r
 blocked_by: [T-SYS-A-INFRA-CACHE-QUEUE]
 tag: Static: design (declared-vs-observed pair; see dynamic-only note below)
 
-Research row 8.3 is tagged dynamic-only in scratchpad/sysdesign-research.md ("Hot-key
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->Research row 8.3 is tagged dynamic-only in scratchpad/sysdesign-research.md ("Hot-key
 cache-read code with no single-flight/lock guard around the recompute-on-miss path flags a
 stampede risk when the design model marks the key as high-QPS | dynamic-only"). Per the owner
 stance, the RUNTIME stampede-under-load behavior itself is a test obligation, not a static
