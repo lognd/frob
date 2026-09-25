@@ -12,7 +12,7 @@ sprint: null
 runs_last: false
 milestone: null
 flavour: null
-points: null
+points: 2
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -70,6 +70,13 @@ scope_changes:
     tuple instead of a new gate module (T-5372 already generalized it to (_websec_,
     _comply_)); one end-to-end control per family in the already-landed SEO/WEBPERF
     test files'
+  actor: logan
+  at: '2026-09-25'
+triage_changes:
+- field: points
+  old_value: null
+  new_value: '2'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-25'
 designated_repro_test: null
