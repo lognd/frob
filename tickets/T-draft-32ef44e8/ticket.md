@@ -1,7 +1,7 @@
 ---
 id: T-draft-32ef44e8
 title: 'WIRE002: 4 WIRE001 waivers name already-done tickets'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-25'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/webapp/_a11y_statement.py
 - src/frob/webapp/_websec_headers.py
