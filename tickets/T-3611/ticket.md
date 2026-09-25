@@ -28,8 +28,9 @@ worktree: null
 branch: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: tier=epic rollup, no file scope of its own -- E3 epic audit
+  close, T-5776
 triage_changes:
 - field: parent
   old_value: null
