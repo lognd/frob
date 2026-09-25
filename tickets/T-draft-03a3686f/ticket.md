@@ -2,7 +2,7 @@
 id: T-draft-03a3686f
 title: 'dropped: MongoDB schema-less drift (inconsistent field types/names across
   documents)'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-25'
@@ -45,3 +45,6 @@ not a call-shape or repo-fact one.
 
 Reason: dynamic-only -- becomes a frob:tests / EXPLAIN-style obligation,
 never a static rule.
+
+## Drop reason
+- 2026-09-25: dynamic-only: becomes a frob:tests / EXPLAIN-style obligation, never a static rule
