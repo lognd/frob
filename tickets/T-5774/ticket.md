@@ -2,7 +2,7 @@
 id: T-5774
 title: 'TIER004: milestone closer -- MSCLOSE001 also requires every child epic done
   or explicitly gapped (MilestoneGap)'
-state: queued
+state: planned
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -15,6 +15,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -28,10 +31,19 @@ worktree: null
 branch: null
 scope:
 - src/frob/gates/_strata_milestone_closure.py
+- src/frob/gates/_tickets_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: TIER004's epic-vs-milestone check needs the TicketQueue only _tickets_gate.py's
+    dispatch already has in scope; the rule definition + MilestoneGap reuse stays
+    in _strata_milestone_closure.py, this only wires the call site
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
