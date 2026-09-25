@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
-parent: null
+parent: T-5630
 tier: ticket
 sprint: null
 runs_last: false
@@ -32,6 +32,12 @@ triage_changes:
   old_value: null
   new_value: '8'
   reason: ticket sizing
+  actor: logan
+  at: '2026-09-24'
+- field: parent
+  old_value: null
+  new_value: T-5630
+  reason: coord drain pipelining belongs to the coord surface epic
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
