@@ -415,3 +415,127 @@ class TestRestoreAbsorbedPathsOnRefusal:
             pass
 
         assert target.read_text() != original
+
+
+# frob:ticket T-5813
+class TestStaleNativesRebuildPrecedesTyCheck:
+    """T-5813: `_land_core_prepare` must rebuild the worktree's
+    stale natives (T-5518's `_rebuild_stale_worktree_natives`) BEFORE
+    running the pre-land `ty` check (`_assert_touched_files_type_check_
+    pre_land`) -- measured twice landing stale (T-3010, T-5366): `ty`
+    reported a native extension missing a symbol the touched source
+    genuinely defines, because the check ran against an extension built
+    before that source existed."""
+
+    # frob:tests \
+    # tests/test_ticket_land_dry_run.py::TestStaleNativesRebuildPrecedesTyCheck.test_rebuild_call_precedes_the_ty_check_call  # noqa: E501
+    def test_rebuild_call_precedes_the_ty_check_call(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Positive control: patch both the rebuild helper (where
+        `_land_core_prepare` actually imports it from,
+        `frob.tickets._land_verify`) and the ty-check assertion, run
+        `_land_core_prepare`, and assert the rebuild call landed in
+        `call_order` strictly before the ty-check call."""
+        import frob.tickets._land_verify as _land_verify
+
+        call_order: list[str] = []
+
+        def _fake_rebuild(worktree: Path) -> None:
+            call_order.append("rebuild")
+
+        def _fake_ty_check(*_args: object, **_kwargs: object) -> None:
+            call_order.append("ty_check")
+
+        monkeypatch.setattr(
+            _land_verify, "_rebuild_stale_worktree_natives", _fake_rebuild
+        )
+        monkeypatch.setattr(
+            _land_cmd, "_assert_touched_files_type_check_pre_land", _fake_ty_check
+        )
+
+        def _pass(*_args: object, **_kwargs: object) -> None:
+            return None
+
+        for name in (
+            "_assert_touched_files_lint_clean_pre_land",
+            "_assert_new_public_symbols_have_doc_and_test_edge_pre_land",
+            "_assert_diff_does_not_worsen_long_functions_pre_land",
+            "_assert_diff_does_not_add_new_file_local_errors_pre_land",
+        ):
+            monkeypatch.setattr(_land_cmd, name, _pass)
+        monkeypatch.setattr(_land_cmd, "_resolve_land_root", lambda root, *a, **k: root)
+        monkeypatch.setattr(_land_cmd, "_report_stale_post_land_verify_markers", _pass)
+        monkeypatch.setattr(
+            _land_cmd, "_report_stale_land_finish_pending_markers", _pass
+        )
+        monkeypatch.setattr(_land_cmd, "_warn_land_override_flags", _pass)
+
+        cfg = AppConfig(
+            ticket_command="land", ticket_id="T-5813", ticket_dry_run=False
+        )
+
+        try:
+            _land_core_prepare(repo, cfg, repo)
+        except Exception:
+            # Same posture as the T-4475 success control above: this stub
+            # does not satisfy every precondition past the try/except
+            # block -- only the call-order assertion below matters.
+            pass
+
+        assert call_order == ["rebuild", "ty_check"]
+
+    def test_rebuild_runs_even_when_natives_are_fresh(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Must-stay-quiet-shaped control: the rebuild call always
+        precedes the ty check (it is unconditional, best-effort, and
+        `_rebuild_stale_worktree_natives` itself already no-ops when
+        nothing is stale) -- this asserts the ORDER invariant holds even
+        when the ty check finds nothing to report, not only on the
+        refusal path."""
+        import frob.tickets._land_verify as _land_verify
+
+        call_order: list[str] = []
+
+        def _fake_rebuild(worktree: Path) -> None:
+            call_order.append("rebuild")
+
+        def _fake_ty_check_quiet(*_args: object, **_kwargs: object) -> None:
+            call_order.append("ty_check")
+            return None
+
+        monkeypatch.setattr(
+            _land_verify, "_rebuild_stale_worktree_natives", _fake_rebuild
+        )
+        monkeypatch.setattr(
+            _land_cmd, "_assert_touched_files_type_check_pre_land", _fake_ty_check_quiet
+        )
+
+        def _pass(*_args: object, **_kwargs: object) -> None:
+            return None
+
+        for name in (
+            "_assert_touched_files_lint_clean_pre_land",
+            "_assert_new_public_symbols_have_doc_and_test_edge_pre_land",
+            "_assert_diff_does_not_worsen_long_functions_pre_land",
+            "_assert_diff_does_not_add_new_file_local_errors_pre_land",
+        ):
+            monkeypatch.setattr(_land_cmd, name, _pass)
+        monkeypatch.setattr(_land_cmd, "_resolve_land_root", lambda root, *a, **k: root)
+        monkeypatch.setattr(_land_cmd, "_report_stale_post_land_verify_markers", _pass)
+        monkeypatch.setattr(
+            _land_cmd, "_report_stale_land_finish_pending_markers", _pass
+        )
+        monkeypatch.setattr(_land_cmd, "_warn_land_override_flags", _pass)
+
+        cfg = AppConfig(
+            ticket_command="land", ticket_id="T-5813", ticket_dry_run=False
+        )
+
+        try:
+            _land_core_prepare(repo, cfg, repo)
+        except Exception:
+            pass
+
+        assert call_order == ["rebuild", "ty_check"]

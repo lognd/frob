@@ -1,5 +1,5 @@
 ---
-id: T-draft-e6027ecc
+id: T-5819
 title: ticket promote leaves dangling parent/blocked_by references and drops evidence
 state: queued
 kind: bug

@@ -13,9 +13,6 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
-flavour: null
-due: null
-rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -67,5 +64,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+flavour: null
+due: null
+rank: null
 ---
 found while working E2 (T-5766, ledger-tiers): frob ticket set has no flavour field -- A1 (T-5749) added StoryFlavour to the model but deferred the CLI setter verb. Add flavour as the seventh field in _TICKET_SET_FIELDS (_metadata.py), a set_flavour setter (_setters.py, mirroring set_tier's shape), and its runner dispatch (_mutate.py), so E2 can reclassify the 41 live stories through the normal accountable write path instead of a direct ledger edit.

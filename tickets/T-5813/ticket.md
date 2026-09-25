@@ -1,8 +1,8 @@
 ---
-id: T-draft-42b1e188
+id: T-5813
 title: 'land: run the ty pre-check after the post-merge natives rebuild (stale extension
   at ty time)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-42b1e188
+branch: t-draft-42b1e188
 scope:
 - src/frob/tickets/_land_verify.py
 - src/frob/app/ticket_runner/_land_cmd.py
@@ -30,7 +30,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_land_dry_run.py::TestStaleNativesRebuildPrecedesTyCheck::test_rebuild_call_precedes_the_ty_check_call
+- tests/test_ticket_land_dry_run.py::TestStaleNativesRebuildPrecedesTyCheck::test_rebuild_runs_even_when_natives_are_fresh
+designated_repro_test: tests/test_ticket_land_dry_run.py::TestStaleNativesRebuildPrecedesTyCheck::test_rebuild_call_precedes_the_ty_check_call
 threat: null
 component: null
 anchor: false

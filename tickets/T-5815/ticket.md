@@ -1,5 +1,5 @@
 ---
-id: T-draft-4626b5d7
+id: T-5815
 title: ticket new --points is not persisted
 state: in-progress
 kind: bug

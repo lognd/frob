@@ -6422,6 +6422,24 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # "nothing changed", and does not risk publishing a Tier-A rewrite
     # that itself introduced the very violation refusing the land.
     try:
+        # frob:ticket T-5813
+        # T-5813: rebuild the worktree's own stale natives BEFORE
+        # the ty pre-check below, not only post-merge (T-5518's original
+        # call site, `_reverify_evidence_post_merge`). Measured twice: a
+        # ticket whose worktree branch adds/changes a Rust export (T-3010,
+        # `/tmp/land-T-5464.log`) or that lands AFTER such a change already
+        # merged onto the target branch (T-5366, `/tmp/land-T-5366.log`)
+        # got `ty check` run against an extension built before that export
+        # existed -- "Module strata_core has no member ..." -- even though
+        # the identical check passed immediately after a manual `frob
+        # natives build` with no source change. `_rebuild_stale_worktree_
+        # natives` is best-effort and never fatal (see its own docstring),
+        # so calling it here costs nothing on the (common) case where
+        # nothing is stale.
+        from frob.tickets._land_verify import _rebuild_stale_worktree_natives
+
+        _rebuild_stale_worktree_natives(worktree)
+
         _assert_touched_files_type_check_pre_land(
             worktree, cfg.ticket_id, touched_paths
         )

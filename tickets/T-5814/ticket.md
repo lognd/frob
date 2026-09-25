@@ -1,5 +1,5 @@
 ---
-id: T-draft-16f22785
+id: T-5814
 title: 'land --drain: re-exec between lands when frob''s own source changed'
 state: in-progress
 kind: feature
@@ -62,7 +62,7 @@ land_commit: null
 ---
 `frob ticket land --drain` runs every queued entry in ONE python
 process. With 40+ entries queued it never exits, so engine fixes that
-LAND during the drain (today: T-5518, T-5522, T-5785, T-draft-42b1e188)
+LAND during the drain (today: T-5518, T-5522, T-5785, T-5813)
 do not take effect until someone kills and restarts it, and a kill mid-
 land is unsafe. Fix: at the top of each drain iteration, between lands,
 compare the mtime/tree hash of frob's own installed source (the

@@ -14,9 +14,6 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
-flavour: null
-due: null
-rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -75,6 +72,9 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+flavour: null
+due: null
+rank: null
 ---
 Census script (scratchpad only, no ledger writes): enumerate the 39 tier: story tickets by flavour candidate (user-facing vs non-functional), the 42 tier: epic tickets by all-children-done status, childless stories acting as oversized tickets, and the 11 kind: invariant tickets slated for reclassification.
 

@@ -1,5 +1,5 @@
 ---
-id: T-draft-60cd980e
+id: T-5816
 title: 'coord drain: pipeline the next entry''s pre-land phase during the current
   publish'
 state: queued
