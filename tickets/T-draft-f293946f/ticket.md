@@ -8,7 +8,7 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-draft-16f22785
-parent: null
+parent: T-5630
 tier: ticket
 sprint: null
 runs_last: false
@@ -37,6 +37,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+- field: parent
+  old_value: null
+  new_value: T-5630
+  reason: docs follow-up for T-5403's dry-run squash-preview contract, grouped under
+    T-5630
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 threat: null
 component: null
