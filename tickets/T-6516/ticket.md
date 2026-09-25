@@ -1,5 +1,5 @@
 ---
-id: T-draft-8e461c26
+id: T-6516
 title: 'land: stacked successor hunks silently dropped after the base squash-lands;
   verify hunk presence post-merge'
 state: queued

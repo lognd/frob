@@ -1,5 +1,5 @@
 ---
-id: T-draft-9f52cf73
+id: T-6517
 title: 'land: refuse non-landable ticket state up front and auto-start a queued stacked
   leaf whose blockers are ahead in the queue'
 state: queued

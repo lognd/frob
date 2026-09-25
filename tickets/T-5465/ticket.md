@@ -1,7 +1,7 @@
 ---
 id: T-5465
 title: 'gates-security stage-group golden drifted: extra a11y member'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -11,6 +11,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -20,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5465
+branch: t-5465
 scope:
 - tests/system/test_cli_check.py
 scope_breadth_ack: false
@@ -42,6 +43,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_gate_stage_group_migration_is_byte_identical
 designated_repro_test: null
 threat: null
 component: null

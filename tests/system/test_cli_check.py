@@ -684,8 +684,6 @@ class TestCheckStageGroups:
 
     # frob:ticket T-4336
     def test_gate_stage_group_migration_is_byte_identical(self):
-        # frob:tests \
-        # tests/system/test_cli_check.py::TestCheckStageGroups.test_gate_stage_group_migration_is_byte_identical  # noqa: E501
         """T-4336 migration proof: the gate->groups mapping computed from
         the new declaration-site source of truth (`frob.gates.
         _GATE_STAGE_GROUPS`) must equal, gate for gate and group for
@@ -734,12 +732,18 @@ class TestCheckStageGroups:
                 "gates_schema",
                 "graph_schema",
                 "invariant",
+                # T-5465: invariant_level and milestone_closure landed on
+                # dev after this golden was captured -- per this test's
+                # own docstring, a future gate legitimately joining a
+                # group is expected to require updating this golden too.
+                "invariant_level",
                 "land_format",
                 "land_parity",
                 "lang_conformance",
                 "lang_project_conformance",
                 "lexcheck",
                 "milestone",
+                "milestone_closure",
                 "narrative_blocks",
                 "native_schema",
                 "parse_failures",
@@ -778,6 +782,11 @@ class TestCheckStageGroups:
                 "cache",
                 "protocol_summary",
                 "opaque",
+                # T-5323: A11Y101-115 legitimately joined gates-security
+                # after this golden was captured -- per this test's own
+                # docstring, a future gate legitimately changing group is
+                # expected to require updating this golden value too.
+                "a11y",
             }
         )
         assert _STAGE_GROUPS["gates-fast"] == golden_gates_fast
