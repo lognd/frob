@@ -27,6 +27,7 @@ branch: null
 scope:
 - src/frob/doctor.py
 - tests/unit/test_doctor.py
+- docs/modules/doctor.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_doctor.py
   reason: unit tests for crunk REQUIRED_FOR_FAMILY gallery relevance
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/doctor.md
+  reason: REQUIRED_FOR_FAMILY doc anchor for crunk gallery tool
   actor: logan
   at: '2026-09-24'
 triage_changes:
