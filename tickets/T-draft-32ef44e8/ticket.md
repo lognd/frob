@@ -26,6 +26,7 @@ branch: dev
 scope:
 - src/frob/webapp/_websec_headers.py
 - docs/modules/webapp-websec-headers.md
+- tests/unit/test_webapp_websec_headers.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +58,12 @@ scope_changes:
   reason: T-5470 already owns _a11y_statement.py's WIRE002 fix live (CROSSTICKET001
     collision); dropping it from this ticket. Adding webapp-websec-headers.md since
     SCOPE002 flagged lint_response_headers's frob:doc target as out of scope.
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/unit/test_webapp_websec_headers.py
+  reason: 'SCOPE002: this ticket''s remaining scope (_websec_headers.py) covers symbols
+    whose frob:tests target this file; adding it to close the coverage gap.'
   actor: logan
   at: '2026-09-25'
 designated_repro_test: null
