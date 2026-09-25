@@ -1,5 +1,5 @@
 ---
-id: T-draft-78db85e9
+id: T-5797
 title: 'TIER002: resolve frob:verifies against the strata V-model graph'
 state: queued
 kind: feature
