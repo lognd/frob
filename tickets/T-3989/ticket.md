@@ -7,10 +7,13 @@ origin: agent
 created: '2026-09-06'
 priority: medium
 parent: T-3984
-tier: ticket
+tier: story
 sprint: null
 runs_last: false
 milestone: 0.536.0
+flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -20,6 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/gates/_inv.py
 scope_breadth_ack: false
@@ -33,6 +38,14 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: tier
+  old_value: ticket
+  new_value: story
+  reason: 'E2 (T-5766, owner decision Q3): reclassify kind:invariant as tier=story;
+    evidence-split into a child ticket + kind:invariant retirement deferred to a follow-up
+    leaf'
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 acceptance:
 - text: given a frob:invariant directive naming an id with no matching registered
