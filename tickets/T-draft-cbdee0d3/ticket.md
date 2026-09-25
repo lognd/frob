@@ -26,6 +26,7 @@ branch: null
 scope:
 - src/frob/check/_python.py
 - src/frob/verify/_worker.py
+- tests/unit/verify/test_worker.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
   at: '2026-09-24'
 - op: add
   glob: src/frob/verify/_worker.py
+  reason: verify format-drift fix
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/verify/test_worker.py
   reason: verify format-drift fix
   actor: logan
   at: '2026-09-24'
