@@ -156,11 +156,13 @@ class TestVmodelCheckNodePayload:
 
     # frob:tests strata-core/src/lib.rs::vmodel_check kind="unit"
     def test_supersedes_edge_missing_reason_is_a_construction_error(self) -> None:
-        """Must-fire: a supersedes edge with no reason attr."""
+        """Must-fire: a supersedes edge with no reason attr. Decision nodes
+        carry their own required `reason` (T-3047) so this stays scoped to
+        the EDGE's own missing-attr refusal, not a second unrelated one."""
         errors, _violations = strata_core.vmodel_check(
             [
-                ("old-1", "decision", None, {}),
-                ("new-1", "decision", None, {}),
+                ("old-1", "decision", None, {"reason": "original"}),
+                ("new-1", "decision", None, {"reason": "supersedes original"}),
             ],
             [("supersedes", "new-1", "old-1", {})],
         )
@@ -176,8 +178,8 @@ class TestVmodelCheckNodePayload:
             [
                 ("req-1", "artifact", "requirements", {"code_ref": "src/x.rs:Req1"}),
                 ("ctest-1", "test", "customer-test", {"runnable": "t.py::test_req1"}),
-                ("old-1", "decision", None, {}),
-                ("new-1", "decision", None, {}),
+                ("old-1", "decision", None, {"reason": "original"}),
+                ("new-1", "decision", None, {"reason": "supersedes original"}),
             ],
             [
                 ("verifies", "ctest-1", "req-1", {}),

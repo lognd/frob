@@ -443,7 +443,7 @@ wheels = [
 
 [[package]]
 name = "frob"
-version = "0.531.1.dev310"
+version = "0.531.1.dev311"
 source = { editable = "." }
 dependencies = [
     { name = "frob-core" },

@@ -50,6 +50,12 @@ pub const ATTR_CODE_REF: &str = "code_ref";
 // frob:doc docs/strata/vmodel.md#nodeedge-payload-t-3044-h3
 // frob:ticket T-3260
 pub const ATTR_REASON: &str = "reason";
+/// Required node-attr key on every `KIND_REVIEW` node (T-3047): the
+/// reviewed commit's sha -- the review's provenance as DATA, not a PR
+/// description a human has to go read.
+// frob:doc docs/strata/vmodel.md#nodeedge-payload-t-3044-h3
+// frob:ticket T-3047
+pub const ATTR_COMMIT: &str = "commit";
 
 /// Node kind: a left-side artifact at some V-model level (requirement,
 /// spec, system design, component design, decision, ...).
@@ -63,10 +69,21 @@ pub const KIND_ARTIFACT: &str = "artifact";
 pub const KIND_TEST: &str = "test";
 /// Node kind: a decision record -- the target of a `decides`/`supersedes`
 /// edge (T-3004 section 8: change justification is a typed edge, not
-/// inline prose).
+/// inline prose). T-3047: REQUIRES `ATTR_REASON` -- a decision with no
+/// stated reason is not a decision record, it is an unexplained fact.
 // frob:doc docs/strata/vmodel.md#node-kinds
 // frob:ticket T-3260
+// frob:ticket T-3047
 pub const KIND_DECISION: &str = "decision";
+/// Node kind: a type-checked code review record with provenance (T-3047,
+/// T-3004 section 8's review/decision family) -- the reviewed commit is
+/// data (`ATTR_COMMIT`), not prose in a PR description. REQUIRES both
+/// `ATTR_COMMIT` (the reviewed commit sha) and `ATTR_REASON` (the verdict
+/// rationale) -- same "declaration carries the claim" discipline
+/// `ATTR_CODE_REF`/`ATTR_RUNNABLE` already enforce for `artifact`/`test`.
+// frob:doc docs/strata/vmodel.md#node-kinds
+// frob:ticket T-3047
+pub const KIND_REVIEW: &str = "review";
 
 /// Left-side V-model levels, outermost (customer-facing) first. Exposed so
 /// callers building fixtures do not hand-type the strings.
@@ -178,20 +195,29 @@ pub const EDGE_BLOCKED_BY: &str = "blocked_by";
 // frob:ticket T-3260
 // strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind kind="unit"
 // strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind
+// frob:tests strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind
 pub fn v_model_schema() -> GraphSchema {
     let mut s = GraphSchema::new();
     s.declare_node_kind(KIND_ARTIFACT)
         .declare_node_kind(KIND_TEST)
-        .declare_node_kind(KIND_DECISION);
+        .declare_node_kind(KIND_DECISION)
+        .declare_node_kind(KIND_REVIEW);
     // T-3044 H3: a node kind is not fully typed until construction refuses
     // one missing its payload -- `test` binds to something runnable,
-    // `artifact` binds to real code. `decision` carries no required attr
-    // here on purpose: T-3049 owns normalizing the decision/invariant/
-    // review-record SHAPE (title/rationale/status/etc) as one canonical
-    // schema, and a single ad hoc required key here would be exactly the
-    // per-author-prose duplication that ticket is meant to replace.
+    // `artifact` binds to real code. T-3047 (owner review, superseding the
+    // prior "decision carries no required attr" note): `decision` now
+    // REQUIRES `ATTR_REASON` -- a decision record with no stated reason is
+    // an unexplained fact, not a decision; `review` REQUIRES both
+    // `ATTR_COMMIT` (the reviewed commit) and `ATTR_REASON` (the verdict
+    // rationale), its provenance as data. T-3049 still owns normalizing
+    // the FULL decision/invariant/review-record shape (title/status/...)
+    // as one canonical schema; this ticket only adds the one field each
+    // kind cannot be meaningfully absent, the same minimal-required-attr
+    // precedent `ATTR_CODE_REF`/`ATTR_RUNNABLE` already set.
     s.declare_required_node_attrs(KIND_TEST, [ATTR_RUNNABLE]);
     s.declare_required_node_attrs(KIND_ARTIFACT, [ATTR_CODE_REF]);
+    s.declare_required_node_attrs(KIND_DECISION, [ATTR_REASON]);
+    s.declare_required_node_attrs(KIND_REVIEW, [ATTR_COMMIT, ATTR_REASON]);
 
     let mut pairing: BTreeMap<Level, Level> = BTreeMap::new();
     for (left, right) in v_pairing() {
@@ -239,7 +265,10 @@ pub fn v_model_schema() -> GraphSchema {
     s.declare_edge_kind(
         EDGE_DECIDES,
         EdgeKindSchema {
-            allowed_src_kinds: [KIND_DECISION.to_string()].into(),
+            // T-3047: a review record can also resolve a question about
+            // an artifact (a review's verdict IS a decision about the
+            // reviewed code), not only a standalone `decision` node.
+            allowed_src_kinds: [KIND_DECISION.to_string(), KIND_REVIEW.to_string()].into(),
             allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
             level_relation: LevelRelation::Any,
             required_attrs: std::collections::BTreeSet::new(),
@@ -293,7 +322,6 @@ mod tests {
     #[test]
     // frob:ticket T-3007
     // frob:ticket T-3260
-    // frob:tests strata-core/src/graph/vmodel/mod.rs::v_model_schema
     fn v_model_schema_declares_every_kind_level_and_edge_kind() {
         let s = v_model_schema();
         assert_eq!(
@@ -302,6 +330,7 @@ mod tests {
                 KIND_ARTIFACT.to_string(),
                 KIND_TEST.to_string(),
                 KIND_DECISION.to_string(),
+                KIND_REVIEW.to_string(),
             ])
         );
         assert_eq!(s.levels.len(), 10);
@@ -322,5 +351,90 @@ mod tests {
             s.edge_kinds.get(EDGE_VERIFIES).unwrap().level_relation,
             LevelRelation::Paired(_)
         ));
+    }
+
+    #[test]
+    // frob:ticket T-3047
+    fn decision_node_with_no_reason_fails_schema_validation() {
+        use super::super::model::Graph;
+        let mut g = Graph::new(v_model_schema());
+        let err = g.add_node("decision-1", KIND_DECISION, None).unwrap_err();
+        assert!(matches!(
+            err,
+            super::super::model::GraphError::MissingNodeAttr { .. }
+        ));
+    }
+
+    #[test]
+    // frob:ticket T-3047
+    fn decision_node_with_a_reason_constructs() {
+        use super::super::model::Graph;
+        let mut g = Graph::new(v_model_schema());
+        g.add_node_with_attrs(
+            "decision-1",
+            KIND_DECISION,
+            None,
+            attrs_with(ATTR_REASON, "because the old approach leaked memory"),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    // frob:ticket T-3047
+    fn review_node_requires_commit_and_reason() {
+        use super::super::model::Graph;
+        let mut g = Graph::new(v_model_schema());
+        let err = g.add_node("review-1", KIND_REVIEW, None).unwrap_err();
+        assert!(matches!(
+            err,
+            super::super::model::GraphError::MissingNodeAttr { .. }
+        ));
+    }
+
+    #[test]
+    // frob:ticket T-3047
+    fn supersedes_edge_with_a_reason_round_trips_through_the_graph() {
+        // T-3047's tree positive control: a decision node superseding an
+        // earlier one via a typed `supersedes` edge carrying a reason
+        // must round-trip through parse -> graph -> query. Parse-time
+        // round-trip is already covered by `grammar_vmodel.rs`'s own
+        // fixtures (`vmodel_edge kind "supersedes" ... reason "...";`);
+        // this exercises the GRAPH half directly: construction accepts a
+        // reasoned edge, and it is queryable afterward.
+        use super::super::model::Graph;
+        use super::super::query::KindFilter;
+        let mut g = Graph::new(v_model_schema());
+        g.add_node_with_attrs(
+            "old-decision",
+            KIND_DECISION,
+            None,
+            attrs_with(ATTR_REASON, "original call"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
+            "new-decision",
+            KIND_DECISION,
+            None,
+            attrs_with(ATTR_REASON, "supersedes original call"),
+        )
+        .unwrap();
+        g.add_edge_with_attrs(
+            EDGE_SUPERSEDES,
+            "new-decision",
+            "old-decision",
+            attrs_with(ATTR_REASON, "the original call was wrong, here is why"),
+        )
+        .unwrap();
+
+        let filter_set: std::collections::BTreeSet<String> = [EDGE_SUPERSEDES.to_string()].into();
+        let filter = KindFilter::Only(&filter_set);
+        let closure = g.forward_closure("new-decision", &filter);
+        assert!(closure.contains("old-decision"));
+    }
+
+    /// Test-only helper mirroring `closure.rs::tests::attrs_with`.
+    // frob:ticket T-3047
+    fn attrs_with(key: &str, value: &str) -> BTreeMap<String, String> {
+        BTreeMap::from([(key.to_string(), value.to_string())])
     }
 }

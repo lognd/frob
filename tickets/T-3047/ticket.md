@@ -2,7 +2,7 @@
 id: T-3047
 title: 'Type-checked code review and decision records: review as a graph node with
   provenance, decisions carrying their reason as data'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
