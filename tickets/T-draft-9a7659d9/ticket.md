@@ -9,7 +9,7 @@ created: '2026-09-24'
 priority: medium
 parent: T-5747
 tier: ticket
-sprint: null
+sprint: layout-gate
 runs_last: false
 milestone: v0.537.0
 points: null
@@ -33,6 +33,12 @@ triage_changes:
   new_value: T-5747
   reason: leaf of the LAYOUT review gate story, closes the catalogued-not-enforced
     gap T-5768 documented
+  actor: logan
+  at: '2026-09-24'
+- field: sprint
+  old_value: null
+  new_value: layout-gate
+  reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
