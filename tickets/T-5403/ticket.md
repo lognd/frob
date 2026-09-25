@@ -26,6 +26,7 @@ branch: dev
 scope:
 - src/frob/tickets/_land_squash.py
 - docs/modules/tickets-land.md
+- src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,13 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-land.md
   reason: update dry-run contract docs to reflect real pre-commit checks
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: dry-run early-return (_land_merge_stage/_dry_run_report) is where the fix
+    belongs -- must build a staged squash preview and run the pre-commit checks before
+    reporting READY
   actor: logan
   at: '2026-09-24'
 triage_changes:
