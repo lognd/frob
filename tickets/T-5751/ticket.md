@@ -12,6 +12,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -25,10 +28,71 @@ worktree: null
 branch: null
 scope:
 - src/frob/tickets/_models.py
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/tickets/_setters.py
+- src/frob/tickets/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
+    own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
+    verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
+    own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
+    verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/_setters.py
+  reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
+    own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
+    verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
+    own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
+    verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
+    own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
+    verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
+    own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
+    verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/_setters.py
+  reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
+    own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
+    verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
+    own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
+    verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: T-draft-b2d257c3
