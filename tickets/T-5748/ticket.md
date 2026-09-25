@@ -11,6 +11,9 @@ tier: story
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: quality_objective
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -26,6 +29,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: flavour
+  old_value: null
+  new_value: quality_objective
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 threat: null
 component: null
