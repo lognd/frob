@@ -31,11 +31,24 @@ worktree: null
 branch: null
 scope:
 - tickets/T-*/ticket.md
+- scripts/check_epic_audit_closed.py
+- tests/gates_suite/test_tier_gate.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: bulk ledger audit over epic rows only; ticket-count-scaled
   by design
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: scripts/check_epic_audit_closed.py
+  reason: positive-control script + its unit test for the --evidence-cmd binding
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/gates_suite/test_tier_gate.py
+  reason: positive-control script + its unit test for the --evidence-cmd binding
+  actor: logan
+  at: '2026-09-25'
 triage_changes:
 - field: points
   old_value: null
