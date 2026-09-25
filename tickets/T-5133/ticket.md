@@ -12,6 +12,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: user_story
+due: null
+rank: null
 points: null
 unsized_ack: true
 unsized_ack_reason: sizing verb CLI still broken pending T-5280/T-4702 land; ack recorded
@@ -22,6 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5133
+branch: t-5133
 scope:
 - src/frob/tickets/_sprint.py
 - src/frob/tickets/_setters.py
@@ -79,6 +84,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 body_changes:
 - mode: append
   reason: 'owner directive 2026-09-20: sprint names are overarching goals, not versions
@@ -149,8 +161,6 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5133
-branch: t-5133
 ---
 Owner directive 2026-09-20: sprint has been carrying the version (v0.533.0 .. v0.553.0 on 592 of 691 open tickets) while milestone is null on 398 and mixed-format on the rest (1.0.0 vs v0.541.0, 82 values still carry the v prefix validate_milestone now strips). The two fields have collapsed into one. Decision: milestone = the semver a ticket ships with (totally ordered, what ships together); sprint = a time box (when we work), smaller than one release so several milestones can close inside one sprint and a milestone can span sprints. Steps: (1) one-shot migration from the root: for every ticket whose sprint matches v?\d+\.\d+\.\d+, set milestone to that value (v stripped) when milestone is null, else keep the existing milestone and warn on conflict; then clear sprint; also normalize every existing v-prefixed milestone to bare semver; (2) validate_sprint refuses a semver-shaped label going forward (one override flag --semver-sprint-ack) so the collapse cannot recur; (3) re-slice open tickets into weekly sprints labelled YYYY-Www by milestone order and priority, sized against measured velocity (~20 lands/day over the last 7 days, ~29 over 21 days) and, once the sizing story lands, by points; (4) frob ticket sprint show and flow print both axes: per-sprint and per-milestone rollups; (5) update the one-minor-version-per-sprint directive in docs to one-or-more-milestones-per-sprint. Sizing story: see the ticket filed alongside this one.
 
