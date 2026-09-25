@@ -25,6 +25,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/check/_python.py
+- src/frob/verify/_worker.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/check/_python.py
+  reason: verify format-drift fix
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/verify/_worker.py
   reason: verify format-drift fix
   actor: logan
   at: '2026-09-24'
