@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24T00:00:00Z",
+  "tool_version": "0.1.0",
+  "entries": [
+    {
+      "component_id": "Button",
+      "kind": "component",
+      "source_path": "src/components/Button.jsx",
+      "source_hash": "abc123",
+      "states": [
+        {"kind": "empty", "breakpoint": null},
+        {"kind": "breakpoint", "breakpoint": "sm"}
+      ],
+      "artifacts": [
+        {"path": "ci/Button-empty.png", "state": {"kind": "empty", "breakpoint": null}}
+      ],
+      "verdict": {
+        "status": "approved",
+        "reviewer": "logan@logandapp.com",
+        "timestamp": "2026-09-24T01:00:00Z",
+        "note": "looks right"
+      }
+    }
+  ]
+}

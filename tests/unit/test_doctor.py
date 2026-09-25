@@ -404,6 +404,73 @@ class TestFamilyRequiredToolFindings:
         entry = next(t for t in doctor._EXTERNAL_TOOLS if t[0] == "sqlfluff")
         assert entry[2] == ToolCategory.REQUIRED_FOR_FAMILY
 
+    # frob:tests src/frob/doctor.py::_gallery_org_buckets_relevance
+    # frob:tests src/frob/doctor.py::family_required_tool_findings
+    def test_gallery_relevant_missing_crunk_is_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::family_required_tool_findings kind="unit"
+        # Positive control (T-5762's own acceptance criterion): a
+        # crunk.toml declaring a `components` org bucket plus a
+        # guaranteed-absent `crunk` binary must yield a real FAILING
+        # finding, not a silent skip.
+        (tmp_path / "crunk.toml").write_text(
+            '[org]\nbuckets = ["base", "components", "layouts"]\n',
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
+
+        findings = doctor.family_required_tool_findings(tmp_path)
+        crunk_findings = [f for f in findings if f.name == "crunk"]
+        assert len(crunk_findings) == 1
+        assert "pip install crunk" in crunk_findings[0].install_hint
+
+    def test_no_gallery_buckets_missing_crunk_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::family_required_tool_findings kind="unit"
+        # T-5762's own acceptance criterion, negative half: removing the
+        # gallery buckets makes crunk's absence silent -- no crunk.toml
+        # at all here.
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: None)
+
+        findings = doctor.family_required_tool_findings(tmp_path)
+        assert not any(f.name == "crunk" for f in findings)
+
+    def test_gallery_buckets_present_crunk_is_not_a_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/doctor.py::family_required_tool_findings kind="unit"
+        (tmp_path / "crunk.toml").write_text(
+            '[org]\nbuckets = ["components"]\n', encoding="utf-8"
+        )
+        monkeypatch.setattr(doctor.shutil, "which", lambda _name: "/usr/bin/crunk")
+
+        findings = doctor.family_required_tool_findings(tmp_path)
+        assert not any(f.name == "crunk" for f in findings)
+
+    def test_crunk_is_required_for_family_category(self) -> None:
+        # frob:tests src/frob/doctor.py::ToolCategory
+        entry = next(t for t in doctor._EXTERNAL_TOOLS if t[0] == "crunk")
+        assert entry[2] == ToolCategory.REQUIRED_FOR_FAMILY
+
+    # frob:tests src/frob/doctor.py::_gallery_org_buckets_relevance
+    def test_gallery_relevance_false_on_non_gallery_buckets(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/doctor.py::_gallery_org_buckets_relevance kind="unit"
+        # An org.buckets list present but with neither "components" nor
+        # "layouts" declared is not gallery-relevant.
+        (tmp_path / "crunk.toml").write_text(
+            '[org]\nbuckets = ["tokens", "utilities"]\n', encoding="utf-8"
+        )
+        assert doctor._gallery_org_buckets_relevance(tmp_path) is False
+
+    def test_gallery_relevance_false_on_malformed_toml(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/doctor.py::_gallery_org_buckets_relevance kind="unit"
+        (tmp_path / "crunk.toml").write_text("not [ valid toml", encoding="utf-8")
+        assert doctor._gallery_org_buckets_relevance(tmp_path) is False
+
 
 class TestLintToolVersionLag:
     """T-5204 (T-5138 DESIGN item 7): a lint tool whose installed version

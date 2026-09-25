@@ -261,11 +261,11 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 237,
+      "accepted_count": 238,
       "reason": "testsuite glob growth"
     },
     "testsuite::fs.write": {
-      "accepted_count": 600,
+      "accepted_count": 601,
       "reason": "testsuite glob growth"
     },
     "testsuite::html_render": {

@@ -1,7 +1,7 @@
 ---
 id: T-5762
 title: Register crunk as REQUIRED_FOR_FAMILY tool for LAYOUT
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -13,6 +13,7 @@ tier: ticket
 sprint: layout-gate
 runs_last: false
 milestone: v0.537.0
+flavour: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -22,8 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5762
+branch: t-5762
 scope:
 - src/frob/doctor.py
 - tests/unit/test_doctor.py
@@ -56,6 +57,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_gallery_relevant_missing_crunk_is_a_finding
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_no_gallery_buckets_missing_crunk_is_not_a_finding
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_gallery_buckets_present_crunk_is_not_a_finding
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_crunk_is_required_for_family_category
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_gallery_relevance_false_on_non_gallery_buckets
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_gallery_relevance_false_on_malformed_toml
 designated_repro_test: null
 threat: null
 component: null

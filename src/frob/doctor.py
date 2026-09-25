@@ -83,6 +83,7 @@ import platform
 import re
 import shutil
 import time
+import tomllib
 import urllib.error
 import urllib.request
 from collections.abc import Callable
@@ -877,6 +878,25 @@ _EXTERNAL_TOOLS: tuple[tuple[str, str, ToolCategory, str], ...] = (
         "(src/frob/sql/_squawk_adapter.py) spawns it with `--reporter "
         "json` and parses its findings into frob Violations",
     ),
+    (
+        # T-5762 (frob leaf F-1 of the LAYOUT review gate story T-5747):
+        # crunk is REQUIRED_FOR_FAMILY the SAME way sqlfluff/squawk are --
+        # its relevance predicate (`_gallery_org_buckets_relevance` below)
+        # is true only when the target repo's `crunk.toml` declares a
+        # `components`/`layouts` org bucket (crunk's gallery pipeline has
+        # something to enumerate); a repo with no such buckets never
+        # demands crunk. This module never imports crunk (webapp/doctor
+        # stay leaf layers, same posture as the vendored schema in
+        # `frob.webapp._gallery_schema`, T-5764) -- relevance is decided
+        # by reading `crunk.toml` as plain TOML, not by crunk's own
+        # pydantic `OrgConfig`.
+        "crunk",
+        "binary",
+        ToolCategory.REQUIRED_FOR_FAMILY,
+        "pip install crunk (or: uv pip install crunk) -- frob's LAYOUT "
+        "gate (F-2) reads the gallery-manifest.v1.json crunk's gallery "
+        "pipeline writes",
+    ),
 )
 
 
@@ -963,6 +983,54 @@ def _external_tools_remediation(statuses: list[ExternalToolStatus]) -> str | Non
     return "required tool(s) missing: " + "; ".join(lines)
 
 
+# frob:ticket T-5762
+# frob:doc docs/modules/doctor.md#required_for_family
+# frob:tests \
+# tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_gallery_relevant_missing_crunk_is_a_finding  # noqa: E501
+# frob:tests \
+# tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_no_gallery_buckets_missing_crunk_is_not_a_finding  # noqa: E501
+def _gallery_org_buckets_relevance(root: Path) -> bool:
+    """True if `root` declares a `components` or `layouts` org bucket in
+    its `crunk.toml` (crunk's `[org].buckets`, `src/crunk/spec/models.py`
+    `OrgConfig`) -- this is what makes `crunk` REQUIRED-for-the-LAYOUT-
+    family in this module's own tool registry (a repo with no gallery-
+    eligible bucket declared has nothing for crunk's gallery pipeline to
+    enumerate, so crunk's absence is never a finding). Reads `crunk.toml`
+    as plain TOML rather than importing crunk's own `OrgConfig` model --
+    `doctor.py`/`frob.webapp` stay leaf layers with no crunk dependency,
+    same posture `frob.webapp._gallery_schema` (T-5764) already takes for
+    the manifest schema. Any read/parse failure (missing file, malformed
+    TOML, missing `[org]`/`buckets` keys) is treated as False, not
+    raised -- matching `sql_relevance`'s own fail-soft discipline."""
+    config_path = root / "crunk.toml"
+    if not config_path.is_file():
+        _log.debug("doctor: gallery relevance false, no crunk.toml under %s", root)
+        return False
+    try:
+        data = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError, UnicodeDecodeError) as exc:
+        _log.debug(
+            "doctor: gallery relevance false, unreadable crunk.toml path=%s error=%s",
+            config_path,
+            exc,
+        )
+        return False
+    org = data.get("org")
+    if not isinstance(org, dict):
+        return False
+    buckets = org.get("buckets")
+    if not isinstance(buckets, list):
+        return False
+    relevant = "components" in buckets or "layouts" in buckets
+    _log.debug(
+        "doctor: gallery relevance=%s (crunk.toml buckets=%r) under %s",
+        relevant,
+        buckets,
+        root,
+    )
+    return relevant
+
+
 # frob:ticket T-5335
 #: T-5335 OWNER DIRECTIVE: which `_EXTERNAL_TOOLS` entries (by name) carry
 #: `ToolCategory.REQUIRED_FOR_FAMILY`, paired with the `Path -> bool`
@@ -979,6 +1047,9 @@ _FAMILY_TOOL_RELEVANCE: tuple[tuple[str, Callable[[Path], bool]], ...] = (
     # sqlfluff's own entry above -- see this ticket's `_EXTERNAL_TOOLS`
     # comment for why a migrations-directory-only predicate was NOT used.
     ("squawk", sql_relevance),
+    # T-5762: crunk's own gallery-bucket predicate, not `sql_relevance`
+    # (crunk relevance is about declared org buckets, not SQL surface).
+    ("crunk", _gallery_org_buckets_relevance),
 )
 
 
