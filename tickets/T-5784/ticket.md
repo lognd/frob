@@ -32,7 +32,6 @@ scope:
 - src/frob/_cli_parsers/__init__.py
 - src/frob/__main__.py
 - docs/modules/coord.md
-- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -101,6 +100,12 @@ scope_changes:
     5pt leaf's blast radius; filing a follow-up ticket instead of deleting it here
   actor: logan
   at: '2026-09-24'
+- op: remove
+  glob: design/frob.strata
+  reason: 'orphaned hold: T-5784 has no worktree and no live agent; its scope lease
+    on design/frob.strata blocks T-5814''s SELFAUDIT001 capability declaration'
+  actor: logan
+  at: '2026-09-25'
 triage_changes:
 - field: sprint
   old_value: null
