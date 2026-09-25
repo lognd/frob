@@ -13,6 +13,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: user_story
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -22,6 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5139
+branch: t-5139
 scope:
 - src/frob/doctor.py
 - src/frob/vet/_osv.py
@@ -68,6 +73,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 evidence:
 - tests/vet_suite/test_advisories.py::TestOsvViolationsUnresolved::test_unparseable_response_is_vet005_unresolved_with_tail
 - tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_unparseable_response_is_distinct_from_unavailable
@@ -123,7 +135,5 @@ component: check
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5139
-branch: t-5139
 ---
 Owner directive 2026-09-20: when a tool is missing (cargo-audit, osv-scanner, sqlfluff, squawk, gh, a build system) or any step of an adapter fails, the run must be LOUD at the end, never a quiet skip. MEASURED today: doctor already owns an _EXTERNAL_TOOLS inventory with REQUIRED/optional categories (T-3276) but check and land do not consume it; 18 separate shutil.which call sites decide presence locally; an absent osv-scanner is an INFO log plus a 'skipped' note and the rule counts as clean (this is how VET005 never ran here without anyone noticing); vet.required_tools exists but is opt-in per tool. DESIGN: (1) One registry: promote doctor's inventory to frob.tools.REGISTRY, each entry {name, kind binary|package, purpose, rules_it_serves, relevant_when (a repo predicate: Cargo.lock present, *.sql present, package.json present, .github/workflows present, tests present...), install_remedy per platform, version_min}. Every adapter looks up presence through it; the 18 ad-hoc which() sites are replaced (DUP rule fires on a new bare shutil.which in src/frob outside the registry). (2) Result-typed adapters: every spawn returns typani Result[ToolOutput, ToolFailure] where ToolFailure is an enum: Missing, VersionTooOld, SpawnFailed, NonZeroExit, Timeout, UnparseableOutput, NetworkUnavailable. UnparseableOutput and Timeout are NOT clean (wrapper exit code is not the work; silent zero). (3) Relevance decides severity: a tool whose relevant_when predicate is true for this repo and is Missing or failed makes every rule it serves UNMEASURED and the run exit non-zero (new rule TOOL001 missing-relevant-tool, TOOL002 tool-failed, TOOL003 tool-too-old); an irrelevant tool is listed once as 'not needed here'. Override is one flag per tool with a reason, --allow-missing-tool NAME --reason, recorded like a waiver. (4) Loud summary: every frob check, frob vet, frob test and frob ticket land ends with an UNMEASURED block, printed last and coloured, listing rule family -> tool -> failure kind -> remedy command; the --json output carries the same list under unmeasured[]; land refuses when the block is non-empty for a relevant tool (same override flag). (5) Bootstrap: frob doctor --install prints or runs the remedy commands for every missing relevant tool (uv tool install sqlfluff squawk-cli pip-audit; cargo install cargo-audit; gh via package manager); CI runs doctor first and fails on TOOL001. (6) Every step: adapters log spawn argv, exit, duration and bytes at DEBUG; a partial pipeline (tool ran, parse failed) reports the raw tail of stderr in the block. (7) Docs: check.md and vet.md gain the UNMEASURED contract and the registry table is generated from the registry (DOC drift-lock).
