@@ -2,7 +2,7 @@
 id: T-draft-9f8c47d7
 title: 'dropped: S3 key path used as a queryable "schema", listing as the primary
   query path'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-25'
@@ -46,3 +46,6 @@ property) distinguishes the two.
 
 Reason: dynamic-only -- becomes a frob:tests / EXPLAIN-style obligation,
 never a static rule.
+
+## Drop reason
+- 2026-09-25: dynamic-only: becomes a frob:tests / EXPLAIN-style obligation, never a static rule
