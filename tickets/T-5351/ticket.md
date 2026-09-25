@@ -1,7 +1,7 @@
 ---
 id: T-5351
 title: 'WEBSEC201-208: CSRF and session lifecycle'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-22'
@@ -67,6 +67,27 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_csrf_session.py::test_taint_gate_discovers_websec_csrf_session_hook
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc201_positive-WEBSEC201-True]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc201_negative-WEBSEC201-False]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc202_positive-WEBSEC202-True]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc202_negative-WEBSEC202-False]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc203_positive-WEBSEC203-True]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc203_negative-WEBSEC203-False]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc204_positive-WEBSEC204-True]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc204_negative-WEBSEC204-False]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc205_positive-WEBSEC205-True]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc205_negative-WEBSEC205-False]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc206_positive-WEBSEC206-True]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc206_negative-WEBSEC206-False]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc207_positive-WEBSEC207-True]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc207_negative-WEBSEC207-False]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc208_positive-WEBSEC208-True]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_fixture[webesc208_negative-WEBSEC208-False]
+- tests/unit/test_websec_csrf_session.py::test_websec_csrf_session_findings_no_framework_short_circuits
+- tests/unit/test_websec_csrf_session.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_csrf_session.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null
