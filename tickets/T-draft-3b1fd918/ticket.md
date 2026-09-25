@@ -1,7 +1,7 @@
 ---
 id: T-draft-3b1fd918
 title: 'dropped: EAV (entity-attribute-value) schema detection from data shape'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-25'
@@ -57,3 +57,6 @@ never a static rule.
 
 
 frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"
+
+## Drop reason
+- 2026-09-25: dynamic-only: becomes a frob:tests / EXPLAIN-style obligation, never a static rule
