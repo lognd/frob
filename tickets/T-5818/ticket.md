@@ -1,7 +1,7 @@
 ---
 id: T-5818
 title: git spawn budget of 30 s fails legitimate calls under fleet load
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -20,10 +20,11 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5818
+branch: t-5818
 scope:
 - src/frob/gitio.py
+- tests/test_gitio.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
   glob: src/frob/gitio.py
   reason: make git spawn budget configurable, default 120s, WARN over 30s with load
     average, keep hard hang ceiling
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/test_gitio.py
+  reason: positive-control regression tests for the configurable spawn budget
   actor: logan
   at: '2026-09-25'
 triage_changes:
