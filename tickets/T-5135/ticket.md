@@ -12,6 +12,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: user_story
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,6 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5135
+branch: t-5135
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/gates/__init__.py
@@ -48,6 +53,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 body_changes:
 - mode: append
   reason: 'owner 2026-09-20: carry the research corpus in the ticket body, not only
@@ -115,8 +127,6 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5135
-branch: t-5135
 ---
 Measured 2026-09-20 on dev at 0.531.0, 691 open tickets, 11436 ledger commits. Full audit attached (perf-audit.md). Fix in this order. (H2) frob ticket doable 76s: _rapid_sweep._reproducing_identities_cached returns on the UNMEASURABLE branch (line ~3759) without calling _write_revalidation_cache (success path only, ~3768), so the 20s budget re-check (which always exceeds its budget+60s timeout at this size) is re-spawned on every call and buys nothing. Cache the negative outcome with a TTL and a known-unmeasurable sentinel that makes zero spawns; keep 'unmeasurable is never resolved'. Secondary: the child frob check --budget 20 runs past 80s, so --budget is not bounding; measure and fix separately if confirmed. (H3) frob check COV002: gates/__init__._ledger_states_at_base_v2 spawns git show <base>:<path> once per ticket file (~691 spawns per check on the land hot path); replace with one git cat-file --batch stream. (H4/H5) land precheck: _land._sibling_branch_ref re-runs read_all_leases per candidate, discarding the leases hoist T-4492 added one frame above; thread the hoisted leases through. _sibling_branch_touched_path spawns two git show per (sibling, path); batch. (M7) frob doctor 23s: _unlanded._directive_anchored_ticket_ids spawns git show per changed file per branch (719 spawns, 13 branches); one git grep -l frob:ticket <branch> -- <paths> or cat-file --batch per branch. (xref/map 11s) lang._parse_file_with_artifact_cache is a passthrough whenever PARSE_ARTIFACT_CACHE_ENV is unset, i.e. every single-process command; 1643 uncached parses per frob explore xref. Open the artifact cache read-only for explore commands. Also in the audit, lower priority: M1 git log -S per changed file in waive-audit, M2 cat-file -e per touched file in land baselines, M3 two spawns per commit in verify attribution, M4/M5 repeated load_queue in work --cluster and close (four loads), M6 BUG003 re-runs pytest per directive uncached.
 
