@@ -24,14 +24,27 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/testing/_dotnet_runner.py
-- src/frob/testing/_unity_batchmode.py
 - src/frob/webapp/_a11y_statement.py
 - src/frob/webapp/_websec_headers.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/testing/_dotnet_runner.py
+  reason: T-5524 already in-progress and owns these two files' WIRE001 waiver repoint;
+    narrowing this ticket to the remaining a11y_statement.py/_websec_headers.py waivers
+    to avoid scope collision
+  actor: logan
+  at: '2026-09-25'
+- op: remove
+  glob: src/frob/testing/_unity_batchmode.py
+  reason: T-5524 already in-progress and owns these two files' WIRE001 waiver repoint;
+    narrowing this ticket to the remaining a11y_statement.py/_websec_headers.py waivers
+    to avoid scope collision
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 threat: null
 component: null
