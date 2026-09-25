@@ -2,7 +2,7 @@
 id: T-5161
 title: land --dry-run skips the unscoped pre-land sweep, so a clean dry run is still
   refused by the real land on SELFAUDIT001/DOC004/REG findings
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-09-20'
@@ -12,6 +12,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: 0.534.0
+flavour: null
 points: 3
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,15 +22,23 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5161
+branch: t-5161
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_verify.py
+- tests/ticket_land_suite/test_land_dry_run_squash_preview.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/ticket_land_suite/test_land_dry_run_squash_preview.py
+  reason: add a positive-control test for the T-5161 unscoped-sweep preview via the
+    warm stage
+  actor: logan
+  at: '2026-09-25'
 triage_changes:
 - field: milestone
   old_value: null
