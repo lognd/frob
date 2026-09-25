@@ -8,6 +8,7 @@ created: '2026-09-25'
 priority: medium
 blocked_by:
 - T-draft-6a23884f
+- T-draft-46691c55
 parent: T-draft-8c7707f1
 tier: ticket
 sprint: store-family
