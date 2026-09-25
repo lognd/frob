@@ -9,10 +9,13 @@ origin: agent
 created: '2026-09-19'
 priority: high
 parent: T-4804
-tier: ticket
+tier: story
 sprint: null
 runs_last: false
 milestone: 0.536.0
+flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -22,6 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - tests/gates_suite/test_sys_rule_liveness.py
 - design/litmus/sys_liveness.strata
@@ -29,6 +34,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: tier
+  old_value: ticket
+  new_value: story
+  reason: 'E2 (T-5766, owner decision Q3): reclassify kind:invariant as tier=story;
+    evidence-split into a child ticket + kind:invariant retirement deferred to a follow-up
+    leaf'
+  actor: logan
+  at: '2026-09-25'
 evidence:
 - tests/gates_suite/test_sys_rule_liveness.py::test_every_registered_rule_has_a_liveness_fixture
 - tests/gates_suite/test_sys_rule_liveness.py::test_every_mapped_fixture_node_id_actually_exists_and_passes
