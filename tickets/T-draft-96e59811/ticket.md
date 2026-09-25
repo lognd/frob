@@ -2,7 +2,7 @@
 id: T-draft-96e59811
 title: 'dropped: graph DB used for tabular/columnar (`GROUP BY`-style) aggregation
   over most/all nodes'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-25'
@@ -45,3 +45,6 @@ without knowing what fraction of the graph the (unconstrained) `MATCH
 
 Reason: dynamic-only -- becomes a frob:tests / EXPLAIN-style obligation,
 never a static rule.
+
+## Drop reason
+- 2026-09-25: dynamic-only: becomes a frob:tests / EXPLAIN-style obligation, never a static rule
