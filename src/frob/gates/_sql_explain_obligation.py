@@ -77,10 +77,12 @@ _HOOK_ATTR_NAME = "EXPLAIN_OBLIGATION_RULE_PREFIX"
 #: `explain=` attribute is a proof-location claim, not a free-form note,
 #: so a claim outside the one directory this obligation actually audits
 #: is not proof of anything this gate can itself verify).
+# frob:doc docs/modules/gates.md#sqlexplain001-t-5339
 EXPLAIN_ARTIFACT_DIR = "tests/fixtures/sql/explain"
 
 
 # frob:ticket T-5339
+# frob:waive OPAQUE001 reason="dotted name comes from pkgutil's own enumeration of frob.sql's real submodules, not attacker/config input -- same shape _taint_gate.py::_discover_websec_hook_modules already carries a waiver for"  # noqa: E501
 def _discover_obligation_rule_prefixes() -> frozenset[str]:
     """`_DEFAULT_OBLIGATION_RULE_PREFIXES` plus every `frob.sql._*`
     submodule's own declared `EXPLAIN_OBLIGATION_RULE_PREFIX` (T-5308's

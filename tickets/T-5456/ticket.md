@@ -3,7 +3,7 @@ id: T-5456
 title: 'Post-land sweep residue 2026-09-23_2251: COV001:src/frob/gates/_sql_explain_obligation.py
   COV002:src/frob/webapp/_a11y_forms_contrast.py COV002:src/frob/webapp/_a11y_statement.py
   CO'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -59,6 +59,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_sql_explain_obligation.py::test_bare_waiver_with_no_explain_attr_fires
+- tests/unit/test_sql_explain_obligation.py::test_discover_obligation_rule_prefixes_includes_default
 designated_repro_test: null
 threat: null
 component: null
