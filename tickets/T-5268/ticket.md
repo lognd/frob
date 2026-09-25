@@ -11,7 +11,7 @@ tier: story
 sprint: null
 runs_last: false
 milestone: null
-flavour: null
+flavour: quality_objective
 due: null
 rank: null
 points: null
@@ -37,6 +37,14 @@ triage_changes:
   old_value: ticket
   new_value: story
   reason: 'E2 (T-5766, owner decision Q3): reclassify kind:invariant as tier=story;
+    evidence-split into a child ticket + kind:invariant retirement deferred to a follow-up
+    leaf'
+  actor: logan
+  at: '2026-09-25'
+- field: flavour
+  old_value: null
+  new_value: quality_objective
+  reason: 'E2 (T-5766, owner decision Q3): reclassify kind:invariant as flavour=quality_objective;
     evidence-split into a child ticket + kind:invariant retirement deferred to a follow-up
     leaf'
   actor: logan
