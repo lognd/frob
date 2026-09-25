@@ -12,6 +12,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: user_story
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,6 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5134
+branch: t-5134
 scope:
 - src/frob/_cli_parsers/*.py
 - tests/unit/coordinator_suite/test_count_ticket_citations.py
@@ -263,6 +268,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 evidence:
 - tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindHelpCitations::test_positive_control_plants_a_citation_the_detector_must_report
 - tests/unit/coordinator_suite/test_count_ticket_citations.py::TestFindDocsCitations::test_prose_citation_is_reported
@@ -289,7 +301,5 @@ component: cli
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5134
-branch: t-5134
 ---
 Owner directive 2026-09-20: ticket prose (T-#### citations) is removed in its entirety from frob documentation and help. Measured: 462 T-#### mentions across src/frob/_cli_parsers/*.py alone (visible in every --help output, e.g. 'free-form sprint commitment label (e.g. 2026-W30, sprint-14, T-0715)'), plus the docs/ prose T-4422 (DOC012) already covers. Scope of THIS story: (1) argparse help/description/epilog strings in src/frob/_cli_parsers and any runner-side help text: strip the citation, keep the sentence, move any WHY worth keeping into the ticket ledger or a docs/design page; (2) refusal and remedy messages the user reads at the terminal (the 'T-2006 dropped N stale...' log lines are fine as INFO logs, but ERROR text and remedies must not cite tickets); (3) docs/ prose beyond T-4422's DOC012 scope: tables, headings, code-fence captions; (4) a lint so it cannot recur: extend DOC012 (or add DOC013) to fire on a T-#### token inside an argparse help= / description= string literal and inside docs/ prose outside the tickets ledger and docs/audits history; the ledger, done-reports, frob:ticket directive comments, commit messages and CHANGELOG remain the only homes for ticket ids. Coordinate with T-4422 (docs prose) and T-4691 (source comment narrative) so the three stories do not collide on the same files: this story owns _cli_parsers and user-facing message strings; T-4422 owns docs/ prose; T-4691 owns source comments.
