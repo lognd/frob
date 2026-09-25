@@ -8,6 +8,7 @@ created: '2026-09-25'
 priority: medium
 blocked_by:
 - T-draft-ebcfc698
+- T-draft-bdaab069
 parent: T-draft-56ac0a37
 tier: ticket
 sprint: sysdesign
