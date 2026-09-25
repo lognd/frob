@@ -11,6 +11,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 0.534.0
+flavour: user_story
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -20,6 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - tests/gates_suite/test_compliance.py
 - tests/gates_suite/test_coverage.py
@@ -351,6 +356,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-16'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 body_changes:
 - mode: append
   reason: record per-subdirectory DOCARCH001 measurement and narrowing decision
