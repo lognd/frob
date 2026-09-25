@@ -23,10 +23,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- Makefile
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: Makefile
+  reason: '$(STAMP): pyproject.toml''s recipe syncs only --extra serve, narrowing
+    an already-full uv sync --all-extras --all-groups back down before CI''s Typecheck
+    step runs (via make core-wheels'' core -> $(STAMP) dependency chain), dropping
+    sqlfluff and breaking ty check on all 3 platforms'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
