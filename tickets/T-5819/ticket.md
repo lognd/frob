@@ -25,6 +25,7 @@ branch: null
 scope:
 - src/frob/tickets/_draft_finalize.py
 - tests/test_ticket_promote_dangling_refs.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,11 @@ scope_changes:
 - op: add
   glob: tests/test_ticket_promote_dangling_refs.py
   reason: positive-control regression test for main-ledger dangling reference fix
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: document T-5819 land-time dangling-reference fix
   actor: logan
   at: '2026-09-25'
 triage_changes:
