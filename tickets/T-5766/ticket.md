@@ -2,7 +2,7 @@
 id: T-5766
 title: 'Reclassify the 39 stories by flavour and the 11 kind: invariant tickets as
   quality-objective stories, then retire kind: invariant'
-state: queued
+state: planned
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -15,6 +15,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 8
 unsized_ack: false
 unsized_ack_reason: null
@@ -46,6 +49,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: append
+  reason: record the E2 scope cut per coordinator instruction
+  actor: logan
+  at: '2026-09-25'
+  old_length: 742
+  new_length: 1208
 designated_repro_test: null
 threat: null
 component: null
@@ -60,3 +70,6 @@ Positive control: post-edit grep -c '^flavour:' over story rows equals 39 + 11 =
 Doc page: docs/modules/tickets-lifecycle.md
 
 Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a3a4ea/scratchpad/LEDGER-TIERS-TREE.md (sections 2 and 5; section 5 overrides).
+
+
+Scope cut (coordinator-approved 2026-09-24/25): the evidence-split into a child ticket per invariant, and the retirement of TicketKind.invariant from the enum, are deferred to T-draft-4ba74499 ("invariant stories: split evidence into child tickets and retire TicketKind.invariant", parent T-5748, blocked by T-5766, milestone v0.536.0, 5 pts). This leaf (T-5766) does the tier=story/flavour=quality_objective reclassification of all 11 kind:invariant tickets only.
