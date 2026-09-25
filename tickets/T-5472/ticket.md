@@ -1,7 +1,7 @@
 ---
 id: T-5472
 title: 'app_runners JSON guard: runner produces empty stdout instead of JSON'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5472
+branch: t-5472
 scope:
 - src/frob/app/fmt_runner.py
 - tests/unit/test_app_runners_json_guard_t2492.py
@@ -49,6 +49,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_app_runners_json_guard_t2492.py::TestFmtRunnerJsonGuard::test_planted_leak_does_not_reach_stdout
 designated_repro_test: null
 threat: null
 component: null

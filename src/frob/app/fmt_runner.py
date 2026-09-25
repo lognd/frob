@@ -47,22 +47,6 @@ def run(cfg: AppConfig) -> None:
     from frob._cli_parsers._shims import announce_shim
     from frob.gates._fmt_directives import FmtChange, FmtReport, format_paths
 
-    # T-4690: routed through the ONE shared deprecation-shim mechanism
-    # (`frob._cli_parsers._shims.announce_shim`) instead of this module's
-    # own hand-rolled stderr warning -- "finish it" per T-4690's own text:
-    # this is the precedent the shared shim generalizes, so it must not
-    # keep a second, divergent implementation of the same sunset check.
-    # T-2492 precedent preserved: the notice goes to STDERR unconditionally
-    # (never stdout, which is the `--json` payload channel).
-    announce_shim(
-        old_name="fmt",
-        new_name="format --directives",
-        sunset="2026-12-01",
-        ticket="T-3911",
-        color=cfg.color,
-        no_color=cfg.no_color,
-    )
-
     # T-2492: pre-existing bug, fixed incidentally because `ty` (correctly)
     # refuses this ticket's land on it otherwise -- `and` always discarded
     # a real `cfg.fmt_path` (returning the literal `Path(".")` instead) and
@@ -72,6 +56,15 @@ def run(cfg: AppConfig) -> None:
     guard_ctx = (
         _guard_json_stdout_writes() if cfg.fmt_json else contextlib.nullcontext()
     )
+    # T-5472: `announce_shim` (its own `_log.debug` call) now runs INSIDE
+    # `guard_ctx`, not before it -- previously called ahead of the guard,
+    # so its log record could reach real stdout (this repo's own tests
+    # deliberately install a stricter-than-production DEBUG-level stdout
+    # handler to prove the guard, not just log level, does the real
+    # protecting) unprotected, corrupting a `--json` payload with a
+    # leading non-JSON line. `_guard_json_stdout_writes()` is a no-op
+    # `contextlib.nullcontext()` when `cfg.fmt_json` is False, so moving
+    # the call inside changes nothing for the human-readable path.
     # T-2761: no `limit=` override here any more -- `format_paths`'s own
     # default (`None`) lets EACH FILE resolve its own width via T-1606's
     # `resolve_line_length` (rustfmt.toml/prettier config/.clang-format,
@@ -82,6 +75,22 @@ def run(cfg: AppConfig) -> None:
     # entrypoint.
     all_changes: list[FmtChange] = []
     with guard_ctx:
+        # T-4690: routed through the ONE shared deprecation-shim mechanism
+        # (`frob._cli_parsers._shims.announce_shim`) instead of this
+        # module's own hand-rolled stderr warning -- "finish it" per
+        # T-4690's own text: this is the precedent the shared shim
+        # generalizes, so it must not keep a second, divergent
+        # implementation of the same sunset check. T-2492 precedent
+        # preserved: the notice goes to STDERR unconditionally (never
+        # stdout, which is the `--json` payload channel).
+        announce_shim(
+            old_name="fmt",
+            new_name="format --directives",
+            sunset="2026-12-01",
+            ticket="T-3911",
+            color=cfg.color,
+            no_color=cfg.no_color,
+        )
         for path in paths:
             change_report = format_paths(
                 path.resolve(),
