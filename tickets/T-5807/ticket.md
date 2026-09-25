@@ -2,7 +2,7 @@
 id: T-5807
 title: 'land: touched-path set diffs against main not the land target, scanning ~3800
   files per land'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
