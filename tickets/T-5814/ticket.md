@@ -26,6 +26,7 @@ scope:
 - src/frob/tickets/_land_queue.py
 - tests/unit/test_land_queue.py
 - docs/modules/tickets-landing.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,12 @@ scope_changes:
   reason: document the re-exec behavior alongside the rest of the drain queue docs
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: design/frob.strata
+  reason: declare exec capability for tickets_ledger so os.execv in the between-lands
+    re-exec is a declared, not undeclared, capability (SELFAUDIT001/SYS100)
+  actor: logan
+  at: '2026-09-25'
 triage_changes:
 - field: points
   old_value: null
