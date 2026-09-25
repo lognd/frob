@@ -25,6 +25,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/tickets/_land_squash.py
+- docs/modules/tickets-land.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_land_squash.py
   reason: add shared preview-build-and-unwind helper used by both real land and dry-run
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/tickets-land.md
+  reason: update dry-run contract docs to reflect real pre-commit checks
   actor: logan
   at: '2026-09-24'
 triage_changes:
