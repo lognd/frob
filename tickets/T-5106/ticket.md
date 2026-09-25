@@ -15,6 +15,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 0.535.0
+flavour: user_story
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -24,6 +27,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -209,6 +214,13 @@ triage_changes:
     the land kernel (T-4654), not one ticket'
   actor: logan
   at: '2026-09-21'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 body_changes:
 - mode: set
   reason: design after mapping the existing queue machinery (T-1345/T-3613) and the
