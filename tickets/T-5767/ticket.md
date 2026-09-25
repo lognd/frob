@@ -27,10 +27,17 @@ branch: null
 scope:
 - src/frob/gates/_layout_gate.py
 - src/frob/webapp/_layout_structure.py
+- tests/unit/test_layout_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_layout_gate.py
+  reason: unit tests for LAYOUT001-003 gate
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
