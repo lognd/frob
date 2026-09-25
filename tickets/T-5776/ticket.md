@@ -3,7 +3,7 @@ id: T-5776
 title: 'Audit the 42 epics: close all-children-done ones via TIER003, record an outcome
   check or a dropped reason for the rest'
 state: planned
-kind: feature
+kind: docs
 origin: human
 created: '2026-09-24'
 priority: medium
@@ -47,6 +47,14 @@ triage_changes:
   old_value: '8'
   new_value: '8'
   reason: ticket sizing
+  actor: logan
+  at: '2026-09-25'
+- field: kind
+  old_value: feature
+  new_value: docs
+  reason: T-5776 is a pure ledger audit (tickets/T-*/ticket.md + two real epic closes
+    through the state machine) with no code diff of its own -- docs-kind for the --evidence-cmd
+    binding
   actor: logan
   at: '2026-09-25'
 body_changes:
