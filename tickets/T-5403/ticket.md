@@ -27,6 +27,7 @@ scope:
 - src/frob/tickets/_land_squash.py
 - docs/modules/tickets-land.md
 - src/frob/tickets/_land.py
+- tests/ticket_land_suite/test_land_dry_run_squash_preview.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +48,11 @@ scope_changes:
   reason: dry-run early-return (_land_merge_stage/_dry_run_report) is where the fix
     belongs -- must build a staged squash preview and run the pre-commit checks before
     reporting READY
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/ticket_land_suite/test_land_dry_run_squash_preview.py
+  reason: positive control test for the dry-run squash-preview pre-commit check
   actor: logan
   at: '2026-09-24'
 triage_changes:

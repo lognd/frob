@@ -1,5 +1,5 @@
 ---
-id: T-draft-1c20d0e0
+id: T-5811
 title: 'CI: make core-wheels narrows uv sync to --extra serve, dropping sqlfluff before
   Typecheck (all 3 legs)'
 state: queued

@@ -24,6 +24,7 @@ worktree: /home/logan/projects/frob
 branch: dev
 scope:
 - src/frob/tickets/_land_queue.py
+- tests/unit/test_land_queue.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_land_queue.py
   reason: drain loop re-exec on frob source change
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/unit/test_land_queue.py
+  reason: unit tests for the between-lands re-exec check
   actor: logan
   at: '2026-09-24'
 triage_changes:
