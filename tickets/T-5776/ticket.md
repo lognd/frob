@@ -2,7 +2,7 @@
 id: T-5776
 title: 'Audit the 42 epics: close all-children-done ones via TIER003, record an outcome
   check or a dropped reason for the rest'
-state: queued
+state: planned
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -15,6 +15,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 8
 unsized_ack: false
 unsized_ack_reason: null
@@ -46,6 +49,14 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-25'
+body_changes:
+- mode: append
+  reason: record the E3 scope cut and the close-timeout friction ticket per coordinator
+    instruction
+  actor: logan
+  at: '2026-09-25'
+  old_length: 747
+  new_length: 1549
 designated_repro_test: null
 threat: null
 component: null
@@ -63,3 +74,6 @@ Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a
 
 ## Unblock log
 - 2026-09-24: unblocked by T-draft-76f89687 -- 2026-09-24: dangling draft id; the land runner promoted this blocker to its real T-#### id without rewriting the edge, real-id edge re-added via frob ticket block
+
+
+Scope cut (coordinator-approved 2026-09-24/25): the audit of the 40 (live: 41) still-open epics that are NOT all-children-done is deferred to T-draft-31c35523 ("audit the 40 open epics: outcome-check or dropped child per epic", parent T-5748, blocked by T-5776, milestone v0.536.0, 8 pts). This leaf (T-5776) closes the 2 all-children-done epics (T-3611, T-4513) properly through the real close flow (verified children, real frob:outcome-metric, evidence, done-report). Also filed T-draft-e03cfa51 (bug, high priority, parent T-5630, milestone v0.535.0): frob ticket close's internal own-obligations check spawns frob check --only gates with a hardcoded 600s timeout with no override, which refused both close attempts under tonight's fleet load -- traced to src/frob/app/ticket_runner/_close_cmd.py.
