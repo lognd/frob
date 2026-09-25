@@ -25,11 +25,24 @@ worktree: null
 branch: null
 scope:
 - tests/test_ticket_reconcile.py
-- src/frob/tickets
+- src/frob/tickets/_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets
+  reason: src/frob/tickets whole-directory scope collided with T-5161's lease on _land.py;
+    narrowing to the actual reconcile-stale-fields module this bug lives in.
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/tickets/_reconcile.py
+  reason: src/frob/tickets whole-directory scope collided with T-5161's lease on _land.py;
+    narrowing to the actual reconcile-stale-fields module this bug lives in.
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 threat: null
 component: null
