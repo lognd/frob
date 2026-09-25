@@ -12,6 +12,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: user_story
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,6 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5138
+branch: t-5138
 scope:
 - src/frob/vet/*.py
 - frob.toml
@@ -38,6 +43,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 evidence:
 - tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_positive_control_fires_a_known_advisory
 - tests/vet_suite/test_advisories.py::TestOsvAdapter::test_query_advisories_serves_fresh_cache_with_no_network_call
@@ -79,7 +91,5 @@ component: vet
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5138
-branch: t-5138
 ---
 Owner directive 2026-09-20: frob must have current CVE and dependency-advisory information. MEASURED: VET005 is opt-in (frob.toml vet.osv = false) and delegates to an osv-scanner binary that is not installed on this machine; pip-audit and cargo-audit are also absent; so advisories have NEVER fired here (catalogued is not enforced). The CVE fingerprint catalog (_cve_fingerprint.py) holds 19 hand-curated entries. DESIGN: (1) Source: query OSV.dev directly over HTTPS (POST https://api.osv.dev/v1/querybatch, up to 1000 {package:{purl}} or {package:{name,ecosystem},version} queries per call; GET /v1/vulns/{id} for details) using the stdlib or the already-vetted HTTP client; OSV aggregates GitHub Advisory DB (GHSA), PyPA, RustSec, npm, Go, and NVD-derived CVE aliases, so it is the one upstream. No external binary required; osv-scanner, pip-audit, npm audit and cargo audit remain optional adapters that add nothing when absent. (2) Inputs: every lockfile frob already parses for VET007 (uv.lock, poetry.lock, requirements*.txt, package-lock.json, pnpm-lock.yaml, yarn.lock, Cargo.lock, go.sum, packages.lock.json for C#), mapped to purls. (3) Cache: .frob/vet.db table advisories(purl, version, fetched_at, payload) plus a per-lockfile-hash verdict; TTL 24 h; a run whose cache is older than vet.advisory_max_age_days (default 7) and cannot reach OSV yields a VET012 ERROR 'advisory data stale since <date>' rather than a silent clean (silent-zero lesson); a run with no cache and no network yields VET012 as well, never a pass. (4) Automatic: on by default (vet.osv default flips to true; rename to vet.advisories); runs inside frob vet, the VET stage of frob check, and the pre-land sweep; a background refresh piggybacks on the post-commit trigger so interactive runs hit the cache. Positive control: a test that pins a known-vulnerable version (e.g. requests 2.31.0 or a fixture lockfile) and asserts VET005 fires; the CI job runs it with network. (5) Severity: CVSS from the OSV record; error at >= 7.0 or when a fix version exists, warn otherwise; remedy text names the fixed version. (6) Fingerprints: extend the catalog loader to pull affected-function ranges from OSV 'affected[].ecosystem_specific' and 'database_specific' where present so the 19 hand entries stop being the only vulnerable-usage source; keep the hand entries for what OSV cannot express. (7) Lint-tool currency: frob doctor reports the installed versions of ruff, ty, mypy, eslint, clippy against the latest release on PyPI/npm/crates (cached 24 h) and warns past a configurable lag. (8) Docs: docs/modules/vet.md gains the data-flow, TTL and staleness semantics; the compliance registry entry cites CISA KEV as an optional second list (https://www.cisa.gov/known-exploited-vulnerabilities-catalog) for an exploited-in-the-wild escalation.
