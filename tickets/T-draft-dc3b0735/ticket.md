@@ -1,7 +1,7 @@
 ---
 id: T-draft-dc3b0735
 title: 'dropped: runtime cache-stampede-under-load detection (research row 8.3)'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-25'
@@ -49,3 +49,6 @@ frob:tests obligation, never a static rule -- actually detecting a stampede requ
 load, which no static analysis can observe. The declared-vs-observed STATIC companion (does the
 design declare and prove a `stampede_guard`) is a legitimately different, separately justified
 check and is filed as SYSDESIGN304/305 (T-SYS-E-STAMPEDE), not dropped.
+
+## Drop reason
+- 2026-09-25: dynamic-only: becomes a frob:tests obligation, never a static rule
