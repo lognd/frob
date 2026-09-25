@@ -1,5 +1,5 @@
 ---
-id: T-draft-23fb010a
+id: T-6523
 title: secrets_gate self-check flags its own WEBSEC positive fixtures as real credentials
 state: queued
 kind: bug

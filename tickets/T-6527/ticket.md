@@ -1,5 +1,5 @@
 ---
-id: T-draft-d59006cf
+id: T-6527
 title: 'Windows self-gate: pytest-node-shaped stray paths hit WinError2 stat failures'
 state: queued
 kind: bug

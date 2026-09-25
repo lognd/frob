@@ -57,9 +57,7 @@ def scratch_land(tmp_path: Path) -> tuple[Path, Path]:
     _run(["git", "commit", "-q", "-m", "base"], root)
 
     worktree = tmp_path / "worktree"
-    _run(
-        ["git", "worktree", "add", "-q", "-b", "ticket", str(worktree), "main"], root
-    )
+    _run(["git", "worktree", "add", "-q", "-b", "ticket", str(worktree), "main"], root)
     (worktree / "src" / "feature.py").write_text("# new in this land\n")
     _run(["git", "add", "src/feature.py"], worktree)
     _run(["git", "commit", "-q", "-m", "T-0001: add feature.py"], worktree)

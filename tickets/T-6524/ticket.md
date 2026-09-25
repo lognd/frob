@@ -1,5 +1,5 @@
 ---
-id: T-draft-32ef44e8
+id: T-6524
 title: 'WIRE002: 4 WIRE001 waivers name already-done tickets'
 state: in-progress
 kind: bug

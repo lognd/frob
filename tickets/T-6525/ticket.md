@@ -1,5 +1,5 @@
 ---
-id: T-draft-3753ba68
+id: T-6525
 title: 'SQL/LAUNCH tool-family landing incomplete: REG008 enforces edges, doctor double-finding,
   exports, runtime_deps'
 state: queued

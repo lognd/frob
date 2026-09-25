@@ -1,7 +1,7 @@
 ---
 id: T-5372
 title: 'COMPLY101-108: privacy-policy page content, CCPA/CalOPPA'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -86,6 +86,27 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[missing_page-COMPLY101-True]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[missing_categories-COMPLY102-True]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[missing_effective_date-COMPLY103-True]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[missing_do_not_track-COMPLY104-True]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[missing_last_updated-COMPLY105-True]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[stale_last_updated-COMPLY106-True]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[missing_do_not_sell-COMPLY107-True]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[missing_categories_sold-COMPLY108-True]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[compliant-COMPLY101-False]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[compliant-COMPLY102-False]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[compliant-COMPLY103-False]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[compliant-COMPLY104-False]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[compliant-COMPLY105-False]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[compliant-COMPLY106-False]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[compliant-COMPLY107-False]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_fixture[compliant-COMPLY108-False]
+- tests/unit/test_webapp_comply_privacy.py::test_comply_privacy_findings_no_framework_short_circuits
+- tests/unit/test_webapp_comply_privacy.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_webapp_comply_privacy.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
+- tests/unit/test_webapp_comply_privacy.py::test_taint_gate_discovers_comply_privacy_hook
 designated_repro_test: null
 threat: null
 component: null

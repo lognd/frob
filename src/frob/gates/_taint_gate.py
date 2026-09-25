@@ -61,11 +61,16 @@ _log = get_logger(__name__)
 
 __all__ = ["taint_gate"]
 
-#: Module-basename prefix `_discover_websec_hook_modules` scans
+#: Module-basename prefixes `_discover_websec_hook_modules` scans
 #: `frob.webapp` for -- every `frob.webapp._websec_*` submodule is a
-#: candidate hook provider (T-5308).
+#: candidate hook provider (T-5308). Widened to also match `_comply_*`
+#: (T-5372): `frob.webapp._comply_substrate`'s own doc defines no
+#: comply-specific gate-discovery hook or convention of its own, so
+#: COMPLY leaves reuse this exact `websec_findings(root, frameworks)`
+#: hook shape rather than a second discovery mechanism.
 # frob:ticket T-5308
-_WEBSEC_MODULE_PREFIX = "_websec_"
+# frob:ticket T-5372
+_WEBSEC_MODULE_PREFIXES = ("_websec_", "_comply_")
 
 #: Name of the module-level hook `_discover_websec_hook_modules` looks
 #: for on each candidate module (T-5308's discovery contract, documented
@@ -80,11 +85,12 @@ _WEBSEC_HOOK_NAME = "websec_findings"
 # frob:waive OPAQUE001 reason="dotted name comes from pkgutil's own enumeration of \
 # frob.webapp's real submodules, not attacker/config input -- see docstring."
 def _discover_websec_hook_modules() -> tuple[object, ...]:
-    """Every `frob.webapp._websec_*` submodule exposing a module-level
-    `websec_findings(root, frameworks) -> tuple[Violation, ...]` callable
-    (T-5308's discovery contract), imported via `importlib` and returned
-    in sorted-name order for deterministic scan order. A submodule with
-    no `websec_findings` attribute (T-5307's `_websec_sinks`, T-5311's
+    """Every `frob.webapp._websec_*`/`_comply_*` submodule exposing a
+    module-level `websec_findings(root, frameworks) -> tuple[Violation,
+    ...]` callable (T-5308's discovery contract, widened to `_comply_*`
+    by T-5372), imported via `importlib` and returned in sorted-name
+    order for deterministic scan order. A submodule with no
+    `websec_findings` attribute (T-5307's `_websec_sinks`, T-5311's
     `_websec_bounds` as of this leaf) is silently skipped -- discovery
     is additive, never a replacement for those modules' own existing
     direct calls below."""
@@ -92,7 +98,7 @@ def _discover_websec_hook_modules() -> tuple[object, ...]:
     for module_info in sorted(
         pkgutil.iter_modules(frob.webapp.__path__), key=lambda m: m.name
     ):
-        if not module_info.name.startswith(_WEBSEC_MODULE_PREFIX):
+        if not module_info.name.startswith(_WEBSEC_MODULE_PREFIXES):
             continue
         dotted = f"{frob.webapp.__name__}.{module_info.name}"
         module = importlib.import_module(dotted)

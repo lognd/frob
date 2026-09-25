@@ -1,5 +1,5 @@
 ---
-id: T-draft-f3fbbd7d
+id: T-6528
 title: 'CI regression sweep: export_golden, websec_rls_llm, TICK008, scaffold_dx,
   SELFAUDIT001, registry count'
 state: queued

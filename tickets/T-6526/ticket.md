@@ -1,5 +1,5 @@
 ---
-id: T-draft-7267fe35
+id: T-6526
 title: 'a11y gate: give a11y_findings a real repo root so _locate_statement_page can
   leave test-only status'
 state: queued

@@ -1,5 +1,5 @@
 ---
-id: T-draft-1ff08bb5
+id: T-6522
 title: 'ticket reconcile stale-field detection regressed: always reports empty'
 state: queued
 kind: bug
