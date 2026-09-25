@@ -14,6 +14,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 3
 unsized_ack: false
 unsized_ack_reason: null
@@ -27,10 +30,18 @@ worktree: null
 branch: null
 scope:
 - src/frob/tickets/_models.py
+- src/frob/tickets/_new_renumber.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: A4 positive control requires refusing frob ticket new --tier epic/milestone
+    parent-shape at write time, wired through _validate_new_ticket_spec in _new_renumber.py
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
