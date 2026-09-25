@@ -26,6 +26,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1064
+  new_length: 1202
 designated_repro_test: null
 threat: null
 component: null
@@ -49,3 +56,6 @@ file, the same enforcement SYS100/SYS101 already give every other
 capability kind; (d) the five STORE30x rules themselves, each comparing
 the declared paradigm against the observed access pattern in the bound
 files.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"
