@@ -1,5 +1,5 @@
 ---
-id: T-draft-a9c4460e
+id: T-5817
 title: 'ticket set flavour: CLI setter for story flavour'
 state: planned
 kind: feature
