@@ -1319,6 +1319,20 @@
     {
       "action": "read",
       "effect": "Allow",
+      "principal": "narrative",
+      "resource": "gates",
+      "sid": "f_t5396_narrative_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "narrative",
+      "resource": "gates",
+      "sid": "f_t5396_narrative_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
       "principal": "testsuite",
       "resource": "checker",
       "sid": "f_testsuite_checker-read"

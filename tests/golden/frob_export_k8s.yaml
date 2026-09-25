@@ -454,6 +454,10 @@ spec:
   - from:
     - podSelector:
         matchLabels:
+          app: narrative
+  - from:
+    - podSelector:
+        matchLabels:
           app: registry_model
   - from:
     - podSelector:
@@ -630,6 +634,10 @@ spec:
     - podSelector:
         matchLabels:
           app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: gates
   - to:
     - podSelector:
         matchLabels:

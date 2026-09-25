@@ -1,7 +1,7 @@
 ---
 id: T-5469
 title: strata export golden fixtures (k8s, iam) stale against real export shape
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -11,6 +11,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -20,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5469
+branch: t-5469
 scope:
 - tests/golden/frob_export_k8s.yaml
 - tests/golden/frob_export_iam.json
@@ -49,6 +50,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
 designated_repro_test: null
 threat: null
 component: null
