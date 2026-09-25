@@ -2,7 +2,7 @@
 id: T-5403
 title: land --dry-run stops before squash-apply so T-3324 self-conformance and DOC006
   pointer refusals never run; DRY RUN clean is a false READY
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-23'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/tickets/_land_squash.py
 - docs/modules/tickets-land.md
