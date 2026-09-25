@@ -1,7 +1,7 @@
 ---
 id: T-5366
 title: 'WEBPERF109-115: server/network performance config'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -22,8 +22,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5366
+branch: t-5366
 scope:
 - src/frob/webapp/_webperf_server.py
 - tests/fixtures/webapp/webperf1xx/server/**
@@ -71,6 +71,24 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf109_positive-WEBPERF109-True]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf109_negative-WEBPERF109-False]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf110_positive-WEBPERF110-True]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf110_negative-WEBPERF110-False]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf111_positive-WEBPERF111-True]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf111_negative-WEBPERF111-False]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf112_positive-WEBPERF112-True]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf112_negative-WEBPERF112-False]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf113_positive-WEBPERF113-True]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf113_negative-WEBPERF113-False]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf114_positive-WEBPERF114-True]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf114_negative-WEBPERF114-False]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf115_positive-WEBPERF115-True]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_fixture[webperf115_negative-WEBPERF115-False]
+- tests/unit/test_webperf_server.py::test_webperf_server_findings_no_framework_short_circuits
+- tests/unit/test_webperf_server.py::test_websec_findings_emits_violation_when_called_directly
+- tests/unit/test_webperf_server.py::test_websec_findings_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null

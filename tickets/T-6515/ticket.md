@@ -1,5 +1,5 @@
 ---
-id: T-draft-8dc841a4
+id: T-6515
 title: 'land: run ty/pre-checks on the merged tree, not the stale worktree tip; retire
   dead landing markers'
 state: queued

@@ -195,7 +195,8 @@ pub const EDGE_BLOCKED_BY: &str = "blocked_by";
 // frob:ticket T-3260
 // strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind kind="unit"
 // strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind
-// frob:tests strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind
+// frob:tests \
+// strata-core/src/graph/vmodel/mod.rs::tests.v_model_schema_declares_every_kind_level_and_edge_kind
 pub fn v_model_schema() -> GraphSchema {
     let mut s = GraphSchema::new();
     s.declare_node_kind(KIND_ARTIFACT)
