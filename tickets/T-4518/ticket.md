@@ -12,6 +12,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 0.533.0
+flavour: user_story
+due: null
+rank: null
 points: 1
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,6 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-4518
+branch: t-4518
 scope:
 - src/frob/scaffold/data/types/unity-project/**
 - src/frob/scaffold/project.py
@@ -42,6 +47,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 evidence:
 - tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject::test_writes_frob_toml_with_unity_excludes
 - tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject::test_one_strata_file_per_asmdef
@@ -57,8 +69,6 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-4518
-branch: t-4518
 ---
 Story: recognize and scaffold Unity projects. Parent for the four leaves below.
 
