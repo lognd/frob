@@ -12,6 +12,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 0.536.0
+flavour: user_story
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,6 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -32,6 +37,13 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-19'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 body_changes:
 - mode: append
   reason: '2026-09-19: record the cross-story ordering on .claude/hooks/tool-call-telemetry.py
