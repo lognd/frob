@@ -7,10 +7,13 @@ origin: agent
 created: '2026-09-06'
 priority: medium
 parent: T-4036
-tier: ticket
+tier: story
 sprint: null
 runs_last: false
 milestone: 1.1.0
+flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -20,6 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/strata/_models.py
 scope_breadth_ack: false
@@ -39,6 +44,14 @@ triage_changes:
   reason: sprint set via `frob ticket sprint assign`
   actor: logan
   at: '2026-09-20'
+- field: tier
+  old_value: ticket
+  new_value: story
+  reason: 'E2 (T-5766, owner decision Q3): reclassify kind:invariant as tier=story;
+    evidence-split into a child ticket + kind:invariant retirement deferred to a follow-up
+    leaf'
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 acceptance:
 - text: given a design note for the state/transition construct's grammar (named states,
