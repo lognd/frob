@@ -28,10 +28,6 @@ worktree: null
 branch: null
 scope:
 - src/frob/tickets/_models.py
-- src/frob/_cli_parsers/_ticket/_new.py
-- src/frob/tickets/_new_renumber.py
-- src/frob/tickets/_setters.py
-- src/frob/tickets/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -91,6 +87,34 @@ scope_changes:
   reason: frob ticket new --due/--rank CLI wiring + setters needed to satisfy A2's
     own positive control (round-trip via frob ticket new); frob ticket due/rank --top/--before/--after
     verbs with derivation deferred to a follow-up ticket, out of this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: scaling back to model-only leaf per A2's declared scope; CLI due/rank verbs
+    with derivation logic filed as a separate follow-up ticket instead of widening
+    this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/tickets/_new_renumber.py
+  reason: scaling back to model-only leaf per A2's declared scope; CLI due/rank verbs
+    with derivation logic filed as a separate follow-up ticket instead of widening
+    this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/tickets/_setters.py
+  reason: scaling back to model-only leaf per A2's declared scope; CLI due/rank verbs
+    with derivation logic filed as a separate follow-up ticket instead of widening
+    this leaf
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: src/frob/tickets/__init__.py
+  reason: scaling back to model-only leaf per A2's declared scope; CLI due/rank verbs
+    with derivation logic filed as a separate follow-up ticket instead of widening
+    this leaf
   actor: logan
   at: '2026-09-24'
 triage_changes:
