@@ -23,6 +23,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -35,13 +38,40 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- docs/modules/tickets*.md
 - docs/guides/extending/ticket-kinds-states.md
 - docs/strata/vmodel.md
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets-lifecycle.md
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/tickets*.md
+  reason: narrow the wildcard to the three actual files this leaf touches, avoiding
+    an unrelated agent's lease on docs/modules/tickets-landing.md
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: narrow the wildcard to the three actual files this leaf touches, avoiding
+    an unrelated agent's lease on docs/modules/tickets-landing.md
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: narrow the wildcard to the three actual files this leaf touches, avoiding
+    an unrelated agent's lease on docs/modules/tickets-landing.md
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: narrow the wildcard to the three actual files this leaf touches, avoiding
+    an unrelated agent's lease on docs/modules/tickets-landing.md
+  actor: logan
+  at: '2026-09-25'
 triage_changes:
 - field: points
   old_value: null
