@@ -2,7 +2,7 @@
 id: T-5749
 title: Add milestone to TicketTier and StoryFlavour enum (user_story|quality_objective)
   on Ticket/TicketSpec
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5749
+branch: t-5749
 scope:
 - src/frob/tickets/_models.py
 scope_breadth_ack: false
@@ -49,12 +49,20 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/test_tickets.py::TestStoryFlavour::test_flavour_round_trips_on_story
+- tests/test_tickets.py::TestStoryFlavour::test_flavour_rejected_on_non_story_tier
+- tests/test_tickets.py::TestStoryFlavour::test_milestone_tier_value_exists
+- tests/test_tickets.py::TestStoryFlavour::test_flavour_none_legal_on_any_tier
+- tests/test_tickets.py::TestStoryFlavour::test_ticket_spec_rejects_flavour_on_non_story_tier
+- tests/test_tickets.py::TestStoryFlavour::test_ticket_spec_accepts_flavour_on_story_tier
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+flavour: null
 ---
 Add milestone to TicketTier; add StoryFlavour enum (user_story | quality_objective) on Ticket/TicketSpec.
 

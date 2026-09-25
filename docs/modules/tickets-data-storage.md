@@ -81,7 +81,12 @@ class AcceptanceCriterion(BaseModel):   # T-0572
     evidence: tuple[str, ...] = ()   # evidence id(s) demonstrating this criterion
 
 class TicketTier(StrEnum):      # T-0715: epic -> story -> ticket organization
+    MILESTONE = "milestone"     # T-5749 (A1): top of the hierarchy, parents epics
     EPIC = "epic"; STORY = "story"; TICKET = "ticket"   # default TICKET
+
+class StoryFlavour(StrEnum):    # T-5749 (A1): only legal on tier=story
+    USER_STORY = "user_story"           # customer-facing requirement
+    QUALITY_OBJECTIVE = "quality_objective"  # non-functional/invariant-shaped
 
 class Ticket(BaseModel):
     id: str                     # ^T-\d{4}$
@@ -93,7 +98,12 @@ class Ticket(BaseModel):
     priority: Priority = Priority.MEDIUM   # T-0411: importance, doable's primary sort key
     blocked_by: tuple[str, ...]
     parent: str | None
-    tier: TicketTier = TicketTier.TICKET   # T-0715: epic|story|ticket, default ticket
+    tier: TicketTier = TicketTier.TICKET   # T-0715: milestone|epic|story|ticket, default ticket
+    flavour: StoryFlavour | None = None    # T-5749: only legal when tier=story
+        # (`_flavour_requires_story_tier`, a real `model_validator` -- a
+        # brand-new field, so unlike `milestone`/`points` it is validated
+        # STRICTLY at both construction and ledger LOAD time, not only at
+        # write sites). `None` means unclassified, legal on any tier.
     sprint: str | None = None   # T-0715: free-form commitment label, e.g. "2026-W30"
     milestone: str | None = None   # T-2574: real semver, totally ordered
         # ("what ships together"), distinct from `sprint` ("when we

@@ -23,6 +23,7 @@ from frob.tickets import (
     TicketKind,
     TicketSpec,
     TicketState,
+    TicketTier,
     add_acceptance,
     add_evidence,
     archive,
@@ -37,6 +38,7 @@ from frob.tickets import (
     transition,
     validate_evidence,
 )
+from frob.tickets._models import StoryFlavour
 from frob.tickets._store import _serialize_ticket
 
 
@@ -53,6 +55,8 @@ def _ticket(
     parent: str | None = None,
     scope: tuple[str, ...] = (),
     no_scope_declared: bool = False,
+    tier: TicketTier = TicketTier.TICKET,
+    flavour: StoryFlavour | None = None,
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
@@ -68,6 +72,8 @@ def _ticket(
         attachments=(),
         body=body,
         no_scope_declared=no_scope_declared,
+        tier=tier,
+        flavour=flavour,
     )
 
 
@@ -3121,6 +3127,70 @@ class TestValidateMilestone:
         result = validate_milestone("v0.531.0")
         assert result.is_ok
         assert result.danger_ok == "0.531.0"
+
+
+# frob:ticket T-5749
+class TestStoryFlavour:
+    """`StoryFlavour` (A1, ledger-tiers): only legal on a `tier=story`
+    ticket -- `Ticket`/`TicketSpec` both refuse any other combination via
+    `_flavour_requires_story_tier`."""
+
+    # frob:tests src/frob/tickets/_models.py::StoryFlavour kind="unit"  # noqa: E501
+    def test_flavour_round_trips_on_story(self) -> None:
+        # frob:tests tests/test_tickets.py::TestStoryFlavour.test_flavour_round_trips_on_story kind="unit"  # noqa: E501
+        from frob.tickets._models import StoryFlavour, TicketTier
+
+        ticket = _ticket(tier=TicketTier.STORY, flavour=StoryFlavour.QUALITY_OBJECTIVE)
+        dumped = ticket.model_dump()
+        loaded = Ticket.model_validate(dumped)
+        assert loaded.flavour is StoryFlavour.QUALITY_OBJECTIVE
+        assert loaded.tier is TicketTier.STORY
+
+    def test_flavour_rejected_on_non_story_tier(self) -> None:
+        # frob:tests tests/test_tickets.py::TestStoryFlavour.test_flavour_rejected_on_non_story_tier kind="unit"  # noqa: E501
+        from frob.tickets._models import StoryFlavour, TicketTier
+
+        with pytest.raises(Exception):
+            _ticket(tier=TicketTier.TICKET, flavour=StoryFlavour.USER_STORY)
+
+    def test_milestone_tier_value_exists(self) -> None:
+        # frob:tests tests/test_tickets.py::TestStoryFlavour.test_milestone_tier_value_exists kind="unit"  # noqa: E501
+        from frob.tickets._models import TicketTier
+
+        assert TicketTier.MILESTONE == "milestone"
+
+    def test_flavour_none_legal_on_any_tier(self) -> None:
+        # frob:tests tests/test_tickets.py::TestStoryFlavour.test_flavour_none_legal_on_any_tier kind="unit"  # noqa: E501
+        from frob.tickets._models import TicketTier
+
+        ticket = _ticket(tier=TicketTier.TICKET)
+        assert ticket.flavour is None
+
+    def test_ticket_spec_rejects_flavour_on_non_story_tier(self) -> None:
+        # frob:tests tests/test_tickets.py::TestStoryFlavour.test_ticket_spec_rejects_flavour_on_non_story_tier kind="unit"  # noqa: E501
+        from frob.tickets._models import StoryFlavour, TicketTier
+
+        with pytest.raises(Exception):
+            TicketSpec(
+                title="x",
+                kind=TicketKind.FEATURE,
+                origin=Origin.HUMAN,
+                tier=TicketTier.EPIC,
+                flavour=StoryFlavour.USER_STORY,
+            )
+
+    def test_ticket_spec_accepts_flavour_on_story_tier(self) -> None:
+        # frob:tests tests/test_tickets.py::TestStoryFlavour.test_ticket_spec_accepts_flavour_on_story_tier kind="unit"  # noqa: E501
+        from frob.tickets._models import StoryFlavour, TicketTier
+
+        spec = TicketSpec(
+            title="x",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            tier=TicketTier.STORY,
+            flavour=StoryFlavour.QUALITY_OBJECTIVE,
+        )
+        assert spec.flavour is StoryFlavour.QUALITY_OBJECTIVE
 
 
 # frob:ticket T-4463

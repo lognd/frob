@@ -299,9 +299,38 @@ class TicketTier(StrEnum):
     ledger row (with no `tier:` field at all) loads as a plain leaf ticket,
     unaffected."""
 
+    # frob:ticket T-5749
+    # A1 (ledger-tiers): the top of the milestone -> epic -> story -> ticket
+    # hierarchy (owner decisions, LEDGER-TIERS-TREE.md section 5) -- a
+    # shippable/dated container above `EPIC`. Distinct from the pre-existing
+    # `Ticket.milestone` STRING field (T-2574, a semver "what ships with
+    # what" label any tier can carry): this is a TIER value, i.e. a ticket
+    # can itself organizationally BE a milestone, parenting epics, the same
+    # way a `STORY` tier ticket parents `TICKET` tier children. Write-time
+    # parent-shape constraints (milestone is top, no epic-under-epic, single
+    # parent) are enforced by A4 (T-5765), out of this leaf's scope.
+    MILESTONE = "milestone"
     EPIC = "epic"
     STORY = "story"
     TICKET = "ticket"
+
+
+# frob:ticket T-5749
+# frob:doc docs/modules/tickets-data-storage.md#data-models
+class StoryFlavour(StrEnum):
+    """Which shape a `tier=STORY` ticket takes (A1, ledger-tiers section 2):
+    `USER_STORY` is a customer-facing requirement (closer binds a V-model
+    customer-level test node, B2/T-5751+); `QUALITY_OBJECTIVE` is a non-
+    functional/invariant-shaped requirement (closer binds an invariant at a
+    derived or declared V-model level, owner decision Q1). Only ever legal
+    on a `tier=STORY` ticket -- `_flavour_requires_story_tier` on `Ticket`/
+    `TicketSpec` refuses any other combination; `None` (the default) means
+    "not yet classified" and is always legal regardless of tier, matching
+    every other optional-until-triaged field's absence-means-undecided
+    convention (see `component`, `threat`)."""
+
+    USER_STORY = "user_story"
+    QUALITY_OBJECTIVE = "quality_objective"
 
 
 # frob:doc docs/modules/tickets.md#public-api
@@ -2059,6 +2088,14 @@ class Ticket(BaseModel):
     # starts to matter. Settable via `frob ticket new --milestone` or
     # `frob ticket milestone <id> <value>` (`set_milestone`).
     milestone: str | None = None
+    # frob:ticket T-5749
+    # A1 (ledger-tiers): which shape a `tier=STORY` ticket takes -- see
+    # `StoryFlavour`. `None` means unclassified (always legal, any tier);
+    # a non-`None` value is only legal when `tier == TicketTier.STORY`,
+    # enforced by `_flavour_requires_story_tier` below. Settable via
+    # `frob ticket new --flavour` / a future `frob ticket flavour <id>`
+    # setter (out of this leaf's scope, see T-5751+).
+    flavour: StoryFlavour | None = None
     # frob:ticket T-5132
     # story-point size on the Fibonacci scale (1 2 3 5 8 13, `POINTS_
     # ALLOWED`), validated via `validate_points` at every write site
@@ -2465,6 +2502,25 @@ class Ticket(BaseModel):
             )
         return self
 
+    # frob:ticket T-5749
+    # tests/test_tickets.py::TestStoryFlavour::test_flavour_rejected_on_non_story_tier
+    @model_validator(mode="after")
+    def _flavour_requires_story_tier(self) -> Ticket:
+        """Refuse a non-`None` `flavour` on any tier other than `STORY`
+        (A1, ledger-tiers section 2) -- unlike the lenient-on-ledger-load
+        pattern `milestone`/`points` use (T-1132's reasoning: those fields
+        predate strict validation and a historical bad row must still
+        load), `flavour` is a brand-new field with no pre-existing ledger
+        rows to break, so it is safe and correct to enforce this at the
+        model level, on both the ledger LOAD path and construction,
+        exactly as the positive control (A1) requires."""
+        if self.flavour is not None and self.tier is not TicketTier.STORY:
+            raise ValueError(
+                f"flavour={self.flavour.value!r} is only legal on a "
+                f"tier=story ticket, not tier={self.tier.value!r} (T-5749)"
+            )
+        return self
+
     # frob:ticket T-0838
     @model_serializer(mode="wrap")
     def _omit_empty_collections_on_dump(
@@ -2517,6 +2573,14 @@ class TicketSpec(BaseModel):
     # reasoning as `scope_breadth_ack_reason`'s own plain function-level
     # guard).
     milestone: str | None = None
+    # frob:ticket T-5749
+    # see `Ticket.flavour`/`StoryFlavour` -- settable at filing time via
+    # `frob ticket new --flavour user_story|quality_objective`; validated
+    # against `tier` by `_flavour_requires_story_tier` below (a real
+    # `model_validator`, not a write-time-only function guard, since this
+    # is `TicketSpec`'s construction path and the field has no historical
+    # ledger rows to stay lenient for).
+    flavour: StoryFlavour | None = None
     # frob:ticket T-5132
     # see `Ticket.points` -- settable at filing time via `frob ticket
     # new --points N`; validated by `_validate_new_ticket_spec` via
@@ -2639,6 +2703,20 @@ class TicketSpec(BaseModel):
         """Reject a malformed `parent` entry at `frob ticket new` time
         (T-1132) -- see `_validate_parent`."""
         return _validate_parent(value)
+
+    # frob:ticket T-5749
+    @model_validator(mode="after")
+    def _flavour_requires_story_tier(self) -> TicketSpec:
+        """Refuse a non-`None` `flavour` at `frob ticket new` time unless
+        `tier == TicketTier.STORY` -- the `TicketSpec` (filing-time, strict)
+        twin of `Ticket._flavour_requires_story_tier`, same rule, same
+        message shape."""
+        if self.flavour is not None and self.tier is not TicketTier.STORY:
+            raise ValueError(
+                f"flavour={self.flavour.value!r} is only legal on a "
+                f"tier=story ticket, not tier={self.tier.value!r} (T-5749)"
+            )
+        return self
 
 
 # frob:doc docs/modules/tickets-data-storage.md#data-models
