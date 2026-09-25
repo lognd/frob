@@ -1,0 +1,46 @@
+---
+id: T-draft-3b1fd918
+title: 'dropped: EAV (entity-attribute-value) schema detection from data shape'
+state: queued
+kind: feature
+origin: agent
+created: '2026-09-25'
+priority: medium
+parent: T-draft-929e1bd0
+tier: ticket
+sprint: store-family
+runs_last: false
+milestone: 0.538.0
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Research file, Relational anti-pattern #2. Static tier: "dynamic-only
+for detecting 'is this actually EAV' from schema shape; static (config)
+once table/column names match the pattern" -- the table/column-name
+heuristic alone is too weak to file as a real rule (any generic
+`Attribute`/`EntityAttribute`-named model trips it, whether or not the
+design is genuinely EAV), and the load-bearing signal (is this table
+ACTUALLY being used generically, i.e. attribute-name cardinality/value-
+type variance) is runtime data a linter cannot see from source.
+
+Reason: dynamic-only -- becomes a frob:tests / EXPLAIN-style obligation,
+never a static rule.
