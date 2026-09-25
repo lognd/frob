@@ -2,7 +2,7 @@
 id: T-draft-838a1940
 title: 'dropped: chaos/fault-injection test execution and verification (research row
   9.8)'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-25'
@@ -54,3 +54,6 @@ shaped" is noted for a future frob:tests obligation documenting `scenario` as th
 but that documentation-only follow-up is not itself a lint rule and is not filed as a separate
 ticket here (it is a docs/strata/surface.md note the T-SYS-A-LATTICE or a future docs pass can
 pick up incidentally, not a scoped leaf of its own).
+
+## Drop reason
+- 2026-09-25: dynamic-only: becomes a frob:tests obligation, never a static rule
