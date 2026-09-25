@@ -33,6 +33,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 52614
   new_length: 52752
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 52752
+  new_length: 52930
 designated_repro_test: null
 threat: null
 component: null
@@ -53,8 +59,8 @@ today. Tier 4 (dynamic-only: EAV detection from data, document growth,
 runtime cardinality) is out of scope for a static rule and is recorded as
 dropped tickets, never faked with a lexical heuristic (owner rule).
 
-Sourced from scratchpad/DB-PARADIGM-ASSESSMENT.md (tiering) and
-scratchpad/db-paradigm-research.md (45 anti-pattern rows, 8 sections, 30
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->Sourced from scratchpad/DB-PARADIGM-ASSESSMENT.md (tiering) and
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->scratchpad/db-paradigm-research.md (45 anti-pattern rows, 8 sections, 30
 vendor pages fetched, 13 rows carrying an explicit gap/partial-gap
 citation note). Every filed STORE rule cites its vendor authority
 verbatim in its own ticket body (owner rule: every rule cites its

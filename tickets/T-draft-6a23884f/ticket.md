@@ -41,6 +41,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 2227
   new_length: 2365
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 2365
+  new_length: 2543
 designated_repro_test: null
 threat: null
 component: null
@@ -77,9 +83,9 @@ Acceptance criteria:
 - `STORE101` through `STORE305` (and `STORE101`-adjacent reserved-but-
   unshipped ids for the ones not in this tree yet) all appear in
   `docs/modules/gates.md`'s rule catalog and `_KNOWN_GATE_RULES`.
-- `docs/modules/store.md` documents the family shape: tiering, per-
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->- `docs/modules/store.md` documents the family shape: tiering, per-
   client detection gate, and a pointer to
-  scratchpad/db-paradigm-research.md's authority citations for anyone
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->  scratchpad/db-paradigm-research.md's authority citations for anyone
   auditing a rule's sourcing later.
 - No rule finding function exists yet in this leaf's scope -- that is
   every downstream leaf's own job; this leaf only wires the substrate
