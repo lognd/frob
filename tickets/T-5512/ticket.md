@@ -11,6 +11,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+flavour: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -23,12 +24,54 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob/gates/_seo_gate.py
-- src/frob/gates/__init__.py
+- src/frob/gates/_taint_gate.py
+- tests/unit/test_seo_crawl.py
+- tests/unit/test_webapp_webperf_markup.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/_seo_gate.py
+  reason: 're-scoped per coordinator: widen _taint_gate''s existing discovery prefix
+    tuple instead of a new gate module (T-5372 already generalized it to (_websec_,
+    _comply_)); one end-to-end control per family in the already-landed SEO/WEBPERF
+    test files'
+  actor: logan
+  at: '2026-09-25'
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: 're-scoped per coordinator: widen _taint_gate''s existing discovery prefix
+    tuple instead of a new gate module (T-5372 already generalized it to (_websec_,
+    _comply_)); one end-to-end control per family in the already-landed SEO/WEBPERF
+    test files'
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/gates/_taint_gate.py
+  reason: 're-scoped per coordinator: widen _taint_gate''s existing discovery prefix
+    tuple instead of a new gate module (T-5372 already generalized it to (_websec_,
+    _comply_)); one end-to-end control per family in the already-landed SEO/WEBPERF
+    test files'
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/unit/test_seo_crawl.py
+  reason: 're-scoped per coordinator: widen _taint_gate''s existing discovery prefix
+    tuple instead of a new gate module (T-5372 already generalized it to (_websec_,
+    _comply_)); one end-to-end control per family in the already-landed SEO/WEBPERF
+    test files'
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/unit/test_webapp_webperf_markup.py
+  reason: 're-scoped per coordinator: widen _taint_gate''s existing discovery prefix
+    tuple instead of a new gate module (T-5372 already generalized it to (_websec_,
+    _comply_)); one end-to-end control per family in the already-landed SEO/WEBPERF
+    test files'
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 threat: null
 component: null
