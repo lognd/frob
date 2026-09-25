@@ -2,7 +2,7 @@
 id: T-5770
 title: 'frob ticket promote-to-story / promote-to-epic verbs: restructure tier and
   re-point children atomically'
-state: queued
+state: planned
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -33,6 +33,7 @@ scope:
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner/_lifecycle.py
 - src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,12 @@ scope_changes:
   glob: src/frob/_cli_parsers/_ticket/_metadata.py
   reason: CLI surface for promote-to-story/promote-to-epic, mirroring the T-5817 flavour
     setter shape
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: the frob ticket subparser registration list lives here, same as _metadata.py's
+    own dispatch table
   actor: logan
   at: '2026-09-25'
 triage_changes:
