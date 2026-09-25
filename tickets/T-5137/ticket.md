@@ -14,6 +14,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: user_story
+due: null
+rank: null
 points: 8
 unsized_ack: false
 unsized_ack_reason: null
@@ -23,6 +26,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5137
+branch: t-5137
 scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/_token_usage.py
@@ -85,6 +90,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-22'
+- field: flavour
+  old_value: null
+  new_value: user_story
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 evidence:
 - tests/unit/test_token_usage.py::TestClaudeCodeAdapterDiscoverSessions::test_filters_by_worktree_and_window
 - tests/unit/test_token_usage.py::TestClaudeCodeAdapterDiscoverSessions::test_missing_telemetry_file_is_empty
@@ -140,7 +152,5 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5137
-branch: t-5137
 ---
 Owner directive 2026-09-20: token usage per ticket is set AUTOMATICALLY, never costs model tokens, never costs significant time, handles interrupted sessions, and lives in ONE abstraction (supersedes the manual --tokens flags sketched in T-5132's amendment). DESIGN. (1) Session identity capture, zero cost: a Claude Code SessionStart hook (stdin JSON carries session_id, transcript_path, cwd) appends one line {session_id, transcript_path, cwd, iso_ts} to .frob/sessions.jsonl; PostToolUse/Stop are NOT used (too chatty). frob ticket start/work records nothing new; the lease already has the worktree path and start time. (2) Collection at close and at land (whichever comes first, idempotent): frob.tickets._token_usage.collect_ticket_usage(root, ticket, lease) -> Result[TicketUsage | None, UsageError]: select sessions whose cwd is the ticket's worktree (or root when no worktree) and whose start is inside [lease.acquired, now]; for each transcript, stream the jsonl and sum message.usage.{input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens} over assistant entries with timestamp inside the window; per-transcript cursor {path, byte_offset, partial sums} cached in .frob/token-usage-cache.json so re-collection is incremental and a 100 MB transcript is read once. (3) Model: TicketUsage(pydantic, frozen): input, output, cache_creation, cache_read, sessions: tuple[str,...], transcripts_seen, window_start, window_end, collected_at, complete: bool. Ticket gains usage: TicketUsage | None; None means human or unmeasured and is valid forever; never write 0 for unmeasured (silent-zero lesson). (4) Edge cases, each a logged branch: session interrupted or killed -> transcript is still on disk, sum what exists and set complete=False when the last entry predates lease release; resumed session with the same session_id -> same transcript, cursor continues; several agents or sessions on one ticket -> sum across sessions and list them; transcript rotated, deleted or unreadable -> usage stays None with the reason logged, not an error; ticket requeued and restarted -> the window restarts at the new lease and earlier sessions are kept as a prior_windows entry; a session whose cwd is the shared root while working a ticket without a worktree -> attributed only if the ticket is the only in-progress ticket for that session's window, else left None with reason 'ambiguous'; subagent transcripts (Agent tool) nest under the parent session and are included when their path is under the same project slug. (5) One abstraction, no duplication: a HarnessAdapter protocol (transcript discovery + usage extraction) with the Claude Code adapter first; stats/_agentic.py's output_tokens_est stays a frob-output estimate but adopts the TicketUsage field names so flow, stats and sprint show render one shape. (6) Cost bounds: no model calls anywhere; hook append is O(1); collection is at most one streaming pass per new transcript bytes, capped at 2 s wall, beyond which it records complete=False and returns. (7) Reporting: frob ticket show prints usage; flow and sprint show add tokens per landed ticket and tokens per point.
