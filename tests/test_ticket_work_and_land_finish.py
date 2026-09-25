@@ -3123,6 +3123,8 @@ class TestSelfauditFindingsInTouchedFiles:
         assert "feature.py" not in status
 
     # frob:ticket T-4596
+    # frob:waive SEC110 reason="asserts directly on the FROB_LAND_LOCK_ROOT seam this \
+    # test proves (T-4596) -- a filesystem path, never a secret"
     def test_land_lock_root_sets_env_for_the_in_process_gate_call(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -3173,6 +3175,8 @@ class TestSelfauditFindingsInTouchedFiles:
         assert os.environ.get("FROB_LAND_LOCK_ROOT") is None
 
     # frob:ticket T-4596
+    # frob:waive SEC110 reason="asserts directly on the FROB_LAND_LOCK_ROOT seam this \
+    # test proves stays untouched (T-4596) -- a filesystem path, never a secret"
     def test_no_land_lock_root_leaves_env_untouched(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

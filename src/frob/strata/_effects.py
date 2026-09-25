@@ -1430,6 +1430,9 @@ FROB_LAND_TICKET_ENV = "FROB_LAND_TICKET_ID"
 
 
 # frob:ticket T-4633
+# frob:waive SEC110 reason="FROB_LAND_TICKET_ENV is this same-process \
+# in-flight-land-id handoff seam (T-4633) -- it carries a ticket id, never a secret, \
+# and this function IS the seam's own set/restore implementation"
 @contextmanager
 def _land_ticket_id_env(ticket_id: str | None):
     """Context manager: while `ticket_id` is truthy, sets `FROB_LAND_
@@ -1454,6 +1457,9 @@ def _land_ticket_id_env(ticket_id: str | None):
 
 
 # frob:ticket T-4596
+# frob:waive SEC110 reason="FROB_LAND_LOCK_ROOT_ENV is this same-process \
+# in-flight-land primary-root handoff seam (T-4596/T-4583) -- it carries a filesystem \
+# path, never a secret, and this function IS the seam's own set/restore implementation"
 @contextmanager
 def _land_lock_root_env(land_lock_root: Path | None):
     """Context manager: while `land_lock_root` is not `None`, sets
@@ -1485,6 +1491,8 @@ def _land_lock_root_env(land_lock_root: Path | None):
 
 # frob:ticket T-4563
 # frob:ticket T-4583
+# frob:waive SEC110 reason="reads the FROB_LAND_LOCK_ROOT_ENV seam this same module \
+# owns (T-4596/T-4583) -- a filesystem path, never a secret"
 def _land_commit_in_progress(root: Path) -> bool:
     """`True` when a `frob ticket land` run currently holds its own
     `land.lock` (T-4563). The T-4495 testsuite-glob auto-accept
@@ -1815,6 +1823,8 @@ def _branch_own_via_growth(root: Path) -> dict[str, int]:
 
 
 # frob:ticket T-4633
+# frob:waive SEC110 reason="reads the FROB_LAND_TICKET_ENV seam this same module owns \
+# (T-4633) -- a ticket id, never a secret"
 def _branch_own_via_growth_reason() -> str:
     """T-4633: the lock-entry reason `_capability_ratchet_
     growth_finding` writes for a branch-own via-addition auto-accept --

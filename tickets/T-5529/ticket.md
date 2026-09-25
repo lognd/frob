@@ -2,7 +2,7 @@
 id: T-5529
 title: 'SEC110 burn-down: 13 unmapped os.environ reads (strata effects, gates, hooks,
   tests)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'

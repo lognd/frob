@@ -588,6 +588,9 @@ _TIME_STABLE_TIMEOUT_S = 60.0
 
 # frob:ticket T-4221
 # frob:doc docs/modules/gate-time-stable-invariant.md#inv010-t-4221
+# frob:waive SEC110 reason="TIME_STABLE_OFFSET_ENV is a test-only clock-offset knob \
+# this gate's own re-spawn contract sets on itself (T-4221) -- it carries an integer \
+# second count, never a secret"
 def time_stable_offset_s() -> int:
     """The current process's own time-stable clock offset, in seconds
     (`TIME_STABLE_OFFSET_ENV`, default `0`) -- the one function a test

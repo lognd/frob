@@ -309,9 +309,7 @@ class TestWorkingDiff:
         assert "feat.py" in files
 
     # frob:tests src/frob/gitio.py::_merge_base
-    def test_no_fallback_when_base_already_names_a_remote(
-        self, tmp_path: Path
-    ) -> None:
+    def test_no_fallback_when_base_already_names_a_remote(self, tmp_path: Path) -> None:
         """A base that already carries a `/` (e.g. an explicit
         `origin/main`) is never retried a second time -- a genuinely bad
         remote ref still surfaces as `GitFailed`, not a silent extra
