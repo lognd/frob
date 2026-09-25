@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-09-24'
 priority: medium
-parent: null
+parent: T-5747
 tier: ticket
 sprint: null
 runs_last: false
@@ -27,6 +27,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-5747
+  reason: leaf of the LAYOUT review gate story, closes the catalogued-not-enforced
+    gap T-5768 documented
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
