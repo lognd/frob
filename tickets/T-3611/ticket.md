@@ -12,6 +12,9 @@ tier: epic
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,6 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +55,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+body_changes:
+- mode: append
+  reason: TIER003 outcome-check, epic audit E3 (T-5776)
+  actor: logan
+  at: '2026-09-25'
+  old_length: 2027
+  new_length: 2179
 designated_repro_test: null
 threat: null
 component: null
@@ -91,3 +103,6 @@ Children (file each as its own ticket, blocked_by this epic id):
 3. --wait mode on write verbs.
 4. Guards: pass --help/--version/read-only forms unconditionally; stop
    matching command CONTENT (heredoc bodies) lexically.
+
+
+frob:outcome-metric all children done (1/1, T-3614); the T-1613/T-3612 write-path latency work this epic tracked landed and stayed quiet (B3, T-5780).
