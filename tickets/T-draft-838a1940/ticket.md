@@ -27,6 +27,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1478
+  new_length: 1470
 designated_repro_test: null
 threat: null
 component: null
@@ -43,7 +50,7 @@ scope: --
 blocked_by: []
 
 Reason: research row 9.8 ("Chaos testing / fault injection practiced, not just designed for")
-is explicitly tagged dynamic-only in scratchpad/sysdesign-research.md's tag column: "A service
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->is explicitly tagged dynamic-only in scratchpad/sysdesign-research.md's tag column: "A service
 with circuit breakers/retries/graceful-degradation declared (sec. 6) but no chaos/fault-
 injection test referencing it flags as an unverified resilience claim | dynamic-only". Per the
 owner stance, dynamic-only rows become a frob:tests obligation, never a static rule -- whether
@@ -54,6 +61,3 @@ shaped" is noted for a future frob:tests obligation documenting `scenario` as th
 but that documentation-only follow-up is not itself a lint rule and is not filed as a separate
 ticket here (it is a docs/strata/surface.md note the T-SYS-A-LATTICE or a future docs pass can
 pick up incidentally, not a scoped leaf of its own).
-
-## Drop reason
-- 2026-09-25: dynamic-only: becomes a frob:tests obligation, never a static rule
