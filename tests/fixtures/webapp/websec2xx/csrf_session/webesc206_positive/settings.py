@@ -1,8 +1,8 @@
-SECRET_KEY = 'x'
+SECRET_KEY = "x"
 MIDDLEWARE = [
-    'django.middleware.csrf.CsrfViewMiddleware',
+    "django.middleware.csrf.CsrfViewMiddleware",
 ]
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = 1209600

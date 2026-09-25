@@ -2,7 +2,7 @@
 id: T-5359
 title: 'WEBSEC408-419: Supabase RLS, webhooks, payments, LLM surface (OWASP LLM Top
   10)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -14,6 +14,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: 0.534.0
+flavour: null
 points: 8
 unsized_ack: false
 unsized_ack_reason: null
@@ -23,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5359
+branch: t-5359
 scope:
 - tests/fixtures/webapp/websec4xx/rls_llm/**
 - src/frob/webapp/_websec_rls_llm.py
@@ -145,6 +146,35 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_rls_llm.py::test_taint_gate_discovers_websec_rls_llm_hook
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc408_positive-WEBSEC408-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc408_negative-WEBSEC408-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc409_positive-WEBSEC409-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc409_negative-WEBSEC409-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc410_positive-WEBSEC410-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc410_negative-WEBSEC410-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc411_positive-WEBSEC411-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc411_negative-WEBSEC411-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc412_positive-WEBSEC412-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc412_negative-WEBSEC412-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc413_positive-WEBSEC413-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc413_negative-WEBSEC413-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc414_positive-WEBSEC414-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc414_negative-WEBSEC414-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc415_positive-WEBSEC415-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc415_negative-WEBSEC415-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc416_positive-WEBSEC416-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc416_negative-WEBSEC416-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc417_positive-WEBSEC417-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc417_negative-WEBSEC417-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc418_positive-WEBSEC418-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc418_negative-WEBSEC418-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc419_positive-WEBSEC419-True]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc419_negative-WEBSEC419-False]
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_no_framework_short_circuits
+- tests/unit/test_websec_rls_llm.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_rls_llm.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null

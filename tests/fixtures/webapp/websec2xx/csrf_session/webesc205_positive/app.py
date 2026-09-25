@@ -4,5 +4,5 @@ app = Flask(__name__)
 
 
 def login(user):
-    session['user_id'] = user.id
-    return 'ok'
+    session["user_id"] = user.id
+    return "ok"
