@@ -72,6 +72,11 @@ scope_changes:
     an unrelated agent's lease on docs/modules/tickets-landing.md
   actor: logan
   at: '2026-09-25'
+- op: add
+  glob: docs/guides/extending/ticket-kinds-states.md
+  reason: already declared in original scope list but re-affirming after the narrow
+  actor: logan
+  at: '2026-09-25'
 triage_changes:
 - field: points
   old_value: null
