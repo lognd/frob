@@ -24,13 +24,21 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- tests/fixtures/webapp/websec3xx/debug/webesc316_positive/static/main.js
 - tests/fixtures/webapp/websec4xx/rls_llm/webesc417_positive/app.py
 - tests/test_secrets_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/fixtures/webapp/websec3xx/debug/webesc316_positive/static/main.js
+  reason: 'T-5658 (in-progress) already owns main.js''s specific GH-push-protection
+    placeholder fix; making this ticket the complement: exclude tests/fixtures/webapp/
+    WEBSEC positive fixtures from the secrets self-check via the test''s existing
+    by-path exclusion mechanism instead of editing fixture content.'
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 threat: null
 component: null
