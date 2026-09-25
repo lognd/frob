@@ -25,6 +25,7 @@ branch: t-5818
 scope:
 - src/frob/gitio.py
 - tests/test_gitio.py
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,11 @@ scope_changes:
 - op: add
   glob: tests/test_gitio.py
   reason: positive-control regression tests for the configurable spawn budget
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: docs/modules/testing.md
+  reason: document the configurable git spawn budget
   actor: logan
   at: '2026-09-25'
 triage_changes:
