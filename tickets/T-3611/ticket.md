@@ -15,7 +15,7 @@ milestone: 1.0.0
 flavour: null
 due: null
 rank: null
-points: null
+points: 1
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -55,6 +55,12 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+- field: points
+  old_value: null
+  new_value: '1'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-25'
 body_changes:
 - mode: append
   reason: TIER003 outcome-check, epic audit E3 (T-5776)
