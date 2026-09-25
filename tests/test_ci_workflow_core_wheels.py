@@ -89,3 +89,52 @@ class TestCoreWheelsResolvesMaturinViaUvx:
         assert "--out" in recipe, (
             "core-wheels no longer directs maturin's output at target/wheels\n" + recipe
         )
+
+
+# frob:ticket T-5811
+def _install_stamp_recipe() -> str:
+    """The `$(STAMP): pyproject.toml` rule's own recipe lines out of the
+    Makefile -- same extraction shape as `_core_wheels_recipe` above, for
+    the sibling regression this ticket closes."""
+    text = (_REPO_ROOT / "Makefile").read_text(encoding="utf-8")
+    match = re.search(
+        r"^\$\(STAMP\): pyproject\.toml\n((?:\t.*\n?)+)", text, re.MULTILINE
+    )
+    assert match is not None, (
+        "Makefile has no '$(STAMP): pyproject.toml' rule at all -- T-0340's "
+        "own install-stamp target has regressed further than an extras bug"
+    )
+    return match.group(1)
+
+
+class TestInstallStampSyncsSqlExtra:
+    """T-5811 MUST-FIRE/MUST-STAY-QUIET: the `$(STAMP)` rule's `uv sync`
+    must request `--extra sql` -- CI's `make core-wheels` step reaches
+    this same rule (via `core-wheels` -> `core` -> `$(STAMP)`) AFTER the
+    workflow's own initial `uv sync --all-extras --all-groups`, so a
+    narrower sync here silently UNINSTALLS `sqlfluff` (a real top-level
+    import in the tracked `src/frob/sql/_sqlfluff_plugin.py`) before the
+    later `Typecheck` step runs -- measured directly: CI run 36086669322,
+    `ty check` failing with `unresolved-import` on every `sqlfluff.*`
+    name, on all three platforms."""
+
+    def test_recipe_syncs_sql_extra(self) -> None:
+        # frob:tests Makefile
+        recipe = _install_stamp_recipe()
+        assert "--extra sql" in recipe, (
+            "$(STAMP)'s recipe does not sync --extra sql -- it will "
+            "silently uninstall sqlfluff (a real top-level import in "
+            "src/frob/sql/_sqlfluff_plugin.py) whenever this rule runs "
+            "after a wider sync, breaking ty check (CI run 36086669322, "
+            "all three platforms)\n" + recipe
+        )
+
+    def test_recipe_does_not_sync_smt_extra(self) -> None:
+        # frob:tests Makefile
+        recipe = _install_stamp_recipe()
+        assert "--extra smt" not in recipe and "smt" not in recipe, (
+            "$(STAMP)'s recipe now syncs --extra smt -- z3-solver "
+            "(the smt extra) can fail to build from source on some "
+            "platforms (see the comment above this rule); it must stay "
+            "opt-in, not part of the routine install-stamp sync\n" + recipe
+        )

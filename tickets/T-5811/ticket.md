@@ -2,7 +2,7 @@
 id: T-5811
 title: 'CI: make core-wheels narrows uv sync to --extra serve, dropping sqlfluff before
   Typecheck (all 3 legs)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -12,6 +12,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
 points: 1
 unsized_ack: false
 unsized_ack_reason: null
@@ -52,6 +53,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/test_ci_workflow_core_wheels.py::TestInstallStampSyncsSqlExtra::test_recipe_syncs_sql_extra
+- tests/test_ci_workflow_core_wheels.py::TestInstallStampSyncsSqlExtra::test_recipe_does_not_sync_smt_extra
 designated_repro_test: null
 threat: null
 component: null

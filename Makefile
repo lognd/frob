@@ -428,8 +428,22 @@ pool-status:
 # right after this rule's `uv sync` -- natives are restored before any
 # consumer target's recipe body runs, instead of surfacing later as an
 # oblique `ModuleNotFoundError`/`NativeExtensionUnavailable` mid-collection.
+#
+# T-5811: `--extra sql` added alongside `--extra serve` -- `sqlfluff`
+# (the `sql` extra) is a real top-level import in a TRACKED source file
+# (`src/frob/sql/_sqlfluff_plugin.py`), not conditionally guarded, so any
+# `ty`/`mypy` typecheck pass needs it importable regardless of whether
+# this repo's own SQL-relevance heuristic fires. Measured directly: CI's
+# `make core-wheels` step (which reaches this rule via `core` ->
+# `$(STAMP)`) ran AFTER the workflow's own initial `uv sync --all-extras
+# --all-groups`, and this rule's narrower `--extra serve`-only sync
+# UNINSTALLED sqlfluff again before the later `Typecheck` step ran,
+# breaking `ty check` on all three CI platforms (T-5811's own Done
+# report). `smt` (z3-solver) deliberately stays OUT of this list --
+# see the comment above naming why it can fail to build on some hosts;
+# `sql` (pure-Python `sqlfluff`) carries no such risk.
 $(STAMP): pyproject.toml
-	uv sync --extra serve
+	uv sync --extra serve --extra sql
 	@touch $(STAMP)
 
 install: $(STAMP) core

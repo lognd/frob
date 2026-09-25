@@ -5,4 +5,4 @@ app = Flask(__name__)
 
 
 def charge_customer(amount):
-    return stripe.PaymentIntent.create(amount=amount, currency='usd')
+    return stripe.PaymentIntent.create(amount=amount, currency="usd")

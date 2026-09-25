@@ -1,5 +1,5 @@
 ---
-id: T-draft-da2ce678
+id: T-6519
 title: 'verify: single-instance full checks with memory admission; name the stage
   when the pass is unmeasurable; stop 30-min blocks on a stale watermark'
 state: queued
