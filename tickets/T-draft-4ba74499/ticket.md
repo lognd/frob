@@ -14,7 +14,7 @@ milestone: v0.536.0
 flavour: null
 due: null
 rank: null
-points: null
+points: 5
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -34,6 +34,12 @@ triage_changes:
   old_value: null
   new_value: T-5748
   reason: part of the ledger-tiers story (T-5748), the E2 scope cut
+  actor: logan
+  at: '2026-09-25'
+- field: points
+  old_value: null
+  new_value: '5'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-25'
 designated_repro_test: null
