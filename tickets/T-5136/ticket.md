@@ -14,6 +14,9 @@ tier: story
 sprint: null
 runs_last: false
 milestone: 1.0.0
+flavour: quality_objective
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -23,6 +26,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5136
+branch: t-5136
 scope:
 - src/frob/perf/*.py
 - docs/design/coding-performance-corpus.md
@@ -69,6 +74,13 @@ triage_changes:
   reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-20'
+- field: flavour
+  old_value: null
+  new_value: quality_objective
+  reason: 'E2 (T-5766): census-based flavour classification (heuristic per E1''s own
+    candidate signal)'
+  actor: logan
+  at: '2026-09-24'
 evidence:
 - tests/unit/perf/test_loop_variant.py::TestPerf016::test_git_spawn_with_loop_variable_pathspec_is_flagged
 - tests/unit/perf/test_loop_variant.py::TestPerf016::test_loop_invariant_spawn_is_not_flagged_by_perf016
@@ -108,8 +120,6 @@ component: perf
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5136
-branch: t-5136
 ---
 Perf-findings-become-lint-rules directive. Every HIGH in the attached audit (T-5135) was invisible to PERF001-014 for one of three reasons, each becoming a rule. WHY THE GATE MISSED THEM: PERF008 fires only when EVERY argument of a spawn-reaching call in a loop is loop-invariant; all five HIGHs pass a loop-variant ticket id or path, so they are exempt by construction (guard exempts the normal case). PERF007 cross-stage redundancy is advisory and driven by [[perf.heavy]] in frob.toml, which is EMPTY on this repo, so it fires on nothing (catalogued is not enforced). Nothing models cost across invocations: a cache written on the success path only, or a cache that exists but is unreachable from a command entry point. RULES, ship in this order: PERF016 (first, LOW false-positive): a git spawn inside a loop whose argv carries the loop variable as a pathspec or revision; remedy names the batched form (cat-file --batch, one log -- <dir>, grep -l <rev>). PERF017: an effect (spawn/timeout) whose result cache is written on the success branch only; detect a function that calls a *cache_write* helper on one branch of a try/if and returns on the other after a Timeout/None. PERF018: a value hoisted above a loop (assigned from an expensive callee per [[perf.heavy]] or the spawn tables) while a transitive callee inside the loop calls the same expensive callee with no parameter carrying the hoisted value. PERF015 (advisory WARN, HIGH volume: ~106 candidate sites): the negation of PERF008, any loop-variant spawn-reaching call; ship behind a config threshold on estimated iteration source (tickets, files, commits). Also: populate [[perf.heavy]] in frob.toml with read_all_leases, load_queue, parse_file, build_graph, git ls-files so PERF007 actually fires; positive-control test per rule that plants each audit shape and asserts the finding.
 
