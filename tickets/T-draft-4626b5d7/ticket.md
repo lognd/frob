@@ -40,6 +40,11 @@ scope_changes:
   reason: positive-control regression test for the points-persist fix
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: tests/test_tickets_points.py
+  reason: positive-control regression test for the points-persist fix
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
