@@ -10,7 +10,7 @@ parent: T-5747
 tier: ticket
 sprint: null
 runs_last: false
-milestone: null
+milestone: 0.537.0
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -34,6 +34,12 @@ triage_changes:
   old_value: null
   new_value: T-5747
   reason: wiring leaf for the LAYOUT review gate story, filed while working T-5767
+  actor: logan
+  at: '2026-09-24'
+- field: milestone
+  old_value: null
+  new_value: 0.537.0
+  reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
