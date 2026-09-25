@@ -33,6 +33,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 1113
   new_length: 1105
+- mode: set
+  reason: 'DOC006 inline waiver: dotted pointer to a future module (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1105
+  new_length: 1105
 designated_repro_test: null
 threat: null
 component: null
