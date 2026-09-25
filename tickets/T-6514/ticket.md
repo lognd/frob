@@ -1,5 +1,5 @@
 ---
-id: T-draft-6d585d1b
+id: T-6514
 title: register src/frob/agent as a cli-owned module glob in design/frob.strata
 state: queued
 kind: docs
