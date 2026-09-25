@@ -3,7 +3,7 @@ id: T-5766
 title: 'Reclassify the 39 stories by flavour and the 11 kind: invariant tickets as
   quality-objective stories, then retire kind: invariant'
 state: planned
-kind: feature
+kind: docs
 origin: human
 created: '2026-09-24'
 priority: medium
@@ -49,6 +49,14 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+- field: kind
+  old_value: feature
+  new_value: docs
+  reason: T-5766 is a pure ledger reclassification (tickets/T-*/ticket.md only, no
+    code diff) -- docs-kind is required to bind the --evidence-cmd (T-0215) shell-evidence
+    channel verifying the flavour counts
+  actor: logan
+  at: '2026-09-25'
 body_changes:
 - mode: append
   reason: record the E2 scope cut per coordinator instruction
