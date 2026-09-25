@@ -14,6 +14,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -25,10 +28,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- scripts/tier_census.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: scripts/tier_census.py
+  reason: E1's census script (built per coordinator instruction) lives at scripts/tier_census.py,
+    matching the repo's scripts/ convention for measurement scripts
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
