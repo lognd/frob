@@ -11,7 +11,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
-points: null
+points: 2
 unsized_ack: false
 unsized_ack_reason: null
 tokens_in: null
@@ -32,6 +32,13 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_new_renumber.py
   reason: fix new_ticket dropping spec.points onto Ticket
+  actor: logan
+  at: '2026-09-24'
+triage_changes:
+- field: points
+  old_value: null
+  new_value: '2'
+  reason: ticket sizing
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
