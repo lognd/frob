@@ -39,6 +39,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 1055
   new_length: 1193
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1193
+  new_length: 1282
 designated_repro_test: null
 threat: null
 component: null
@@ -58,7 +64,7 @@ argument, located inside a function reachable from an HTTP route handler
 (call-graph reachability from a router decorator/registration).
 
 Detection: reuses the light call-graph reachability helper T-STORE-106/
-STORE107/STORE114 already build against `frob.webapp.detect_frameworks`
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->STORE107/STORE114 already build against `frob.webapp.detect_frameworks`
 route markers, applied uniformly across every declared store paradigm
 rather than per-client-library (this rule is paradigm-agnostic by
 design, per the research row).

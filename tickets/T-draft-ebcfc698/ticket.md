@@ -31,6 +31,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1646
+  new_length: 1735
 designated_repro_test: null
 threat: null
 component: null
@@ -61,7 +68,7 @@ regex scan, without duplicating or replacing the existing WEBSEC header-line sca
 DUPLICATION -- WEBSEC's scan stays as-is; this is a separate, structural reader for a different
 rule family's needs).
 
-Acceptance criteria: `frob.lang._config_proxy.parse(path) -> list[ConfigDoc]` covers Envoy
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->Acceptance criteria: `frob.lang._config_proxy.parse(path) -> list[ConfigDoc]` covers Envoy
 YAML (`clusters[].health_checks`, `outlier_detection`, `circuit_breakers`, `transport_socket`
 for mTLS), nginx.conf directives (`client_max_body_size`, `limit_conn_zone`,
 `keepalive_timeout`, timeouts), and Caddyfile equivalents, as a structural extractor (block/

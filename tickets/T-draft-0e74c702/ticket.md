@@ -31,6 +31,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1492
+  new_length: 1581
 designated_repro_test: null
 threat: null
 component: null
@@ -60,7 +67,7 @@ existing cluster YAML (SYSDESIGN-INVENTORY.md sec 2). This leaf is the INGEST di
 Story F horizontal-readiness rules (HPA, PDB, probes, resource requests/limits, topology
 spread) and Story C edge rules (Ingress TLS annotation) are blocked_by.
 
-Acceptance criteria: `frob.lang._config_k8s.parse(path) -> list[ConfigDoc]` covers `kind:
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->Acceptance criteria: `frob.lang._config_k8s.parse(path) -> list[ConfigDoc]` covers `kind:
 Deployment|Service|Ingress|HorizontalPodAutoscaler|PodDisruptionBudget|NetworkPolicy` at
 minimum, exposing `spec.template.spec.containers[].readinessProbe/livenessProbe/startupProbe/
 resources`, `spec.minReplicas`, `spec.minAvailable`, `spec.rules` (Ingress). Positive-control

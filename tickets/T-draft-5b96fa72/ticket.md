@@ -39,6 +39,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 52752
   new_length: 52930
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 52930
+  new_length: 53019
 designated_repro_test: null
 threat: null
 component: null
@@ -72,7 +78,7 @@ citation gap before the rule ships.
 One epic, four stories:
 - Story 1 (STORE1xx): call-shape-alone rules, one findings function
   family per client library, gated by client-library import detection
-  the same way `frob.webapp.detect_frameworks` gates the WEBSEC/A11Y/
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->  the same way `frob.webapp.detect_frameworks` gates the WEBSEC/A11Y/
   SEO/WEBPERF families -- a repo importing none of redis/pymongo/motor/
   boto3/neo4j/elasticsearch-py/clickhouse-connect/influxdb-client sees
   no STORE finding at all.

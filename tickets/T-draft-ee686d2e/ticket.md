@@ -39,6 +39,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 1424
   new_length: 1562
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1562
+  new_length: 1651
 designated_repro_test: null
 threat: null
 component: null
@@ -67,7 +73,7 @@ Call shapes:
 
 Detection: call-shape match on `$lookup` plus call-site reachability
 from a request-handler entry point (framework-route-decorator detection,
-reuse `frob.webapp.detect_frameworks`'s route markers rather than a
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->reuse `frob.webapp.detect_frameworks`'s route markers rather than a
 second router-detection pass).
 
 Positive-control fixture:

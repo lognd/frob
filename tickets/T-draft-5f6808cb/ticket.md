@@ -30,6 +30,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 2924
+  new_length: 3102
 designated_repro_test: null
 threat: null
 component: null
@@ -62,7 +69,7 @@ rate_limit clause the way REL200/210/etc check for missing timeout/health is a s
 open question -- grep... found none... EXPRESSIBLE grammar, NOT YET LINTED (RULE-ONLY gap, not
 a grammar gap). Proposal (RULE-ONLY): new REL-family rule 'a boundary crossing an
 untrusted->trusted trust escalation with no `admit.rate_limit` declared' (REL2xx-sibling,
-module frob.strata._boundary_admission). Authority: OWASP API Security Top 10 (API4:2023
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->module frob.strata._boundary_admission). Authority: OWASP API Security Top 10 (API4:2023
 Unrestricted Resource Consumption)."
 
 Research row 3.4 (same authority): OWASP API Security Top 10 (2023), https://owasp.org/
@@ -71,7 +78,7 @@ Satisfying API requests requires resources such as network bandwidth, CPU, memor
 storage... Successful attacks can lead to Denial of Service or an increase of operational
 costs."
 
-Acceptance criteria: new module `frob.strata._boundary_admission` implements the declared/
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->Acceptance criteria: new module `frob.strata._boundary_admission` implements the declared/
 proven pair as ONE rule id, per the coordinator's contiguous-numbering directive: SYSDESIGN201
 fires on either of two conditions -- a boundary crossing untrusted->trusted with no
 `admit.rate_limit`/`admit.max_size` declared flags as missing; a boundary declaring

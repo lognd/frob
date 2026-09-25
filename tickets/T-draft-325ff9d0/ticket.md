@@ -38,6 +38,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 969
   new_length: 1058
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1058
+  new_length: 1147
 designated_repro_test: null
 threat: null
 component: null
@@ -63,7 +69,7 @@ Body:
 SYSDESIGN-INVENTORY.md sec 2: "docker-compose: NOT FOUND. Zero hits for 'docker-compose'/
 'compose.yaml' in src/." Genuine zero-coverage gap.
 
-Acceptance criteria: `frob.lang._config_compose.parse(path) -> list[ConfigDoc]` reads
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->Acceptance criteria: `frob.lang._config_compose.parse(path) -> list[ConfigDoc]` reads
 `services.<name>.{image, ports, environment, depends_on, deploy.resources, restart}` from
 <!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->compose.yaml/docker-compose.yml. Positive-control fixture: tests/fixtures/sysdesign/
 config-compose/env-baked-secret-in-service/**.

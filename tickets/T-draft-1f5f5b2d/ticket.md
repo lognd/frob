@@ -30,6 +30,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 2153
+  new_length: 2331
 designated_repro_test: null
 threat: null
 component: null
@@ -59,10 +66,10 @@ with no Kubernetes/Helm/Terraform/compose/Envoy-NGINX-Caddy files present runs n
 per-surface parsers below.
 
 Acceptance criteria:
-- `frob.lang._config_detect.detect_config_surfaces(repo_root)` returns the set of surfaces
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->- `frob.lang._config_detect.detect_config_surfaces(repo_root)` returns the set of surfaces
   present (k8s, helm, terraform, compose, envoy, nginx, caddy), by file-glob + light content
   sniff (e.g. a YAML with `apiVersion`+`kind` top-level keys is k8s, not generic YAML).
-- `frob.lang._config_doc.ConfigDoc` is a pydantic model: `kind: Literal[...]`, `path: Path`,
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->- `frob.lang._config_doc.ConfigDoc` is a pydantic model: `kind: Literal[...]`, `path: Path`,
   `raw: dict | list`, and a `get(*keys, default=None)` dotted-path accessor so per-surface
   parsers (T-SYS-B-K8S etc.) return a uniform `list[ConfigDoc]` regardless of source dialect.
 - No parsing library dependency is added without `frob vet` per the global CLAUDE.md rule

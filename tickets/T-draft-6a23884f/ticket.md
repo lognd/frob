@@ -47,6 +47,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 2365
   new_length: 2543
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 2543
+  new_length: 2632
 designated_repro_test: null
 threat: null
 component: null
@@ -59,7 +65,7 @@ Every STORE rule leaf needs three things before it can ship a finding:
 _detect.py::detect_store_clients` sniffs a repo's tracked imports for
 redis/pymongo/motor/mongoose/boto3/neo4j/elasticsearch-py/clickhouse-
 connect/influxdb-client, returning a `frozenset[StoreClientKind]`, empty
-for a repo with none of them (mirrors `frob.webapp.detect_frameworks`'s
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->for a repo with none of them (mirrors `frob.webapp.detect_frameworks`'s
 own shape and its owner directive verbatim: "a CLI repo with no detected
 framework runs none of this work" -- here, a repo with no detected store
 client runs no STORE check); (2) one shared findings dataclass

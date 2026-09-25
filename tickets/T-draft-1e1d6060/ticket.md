@@ -31,6 +31,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1263
+  new_length: 1352
 designated_repro_test: null
 threat: null
 component: null
@@ -58,7 +65,7 @@ positives -- every one traced back is either the English word 'help'-derived or.
 `helmet()` middleware call-site scan for WEBSEC-family security-header checks, unrelated to
 Helm charts." Genuine zero-coverage gap.
 
-Acceptance criteria: `frob.lang._config_helm.parse(chart_dir) -> list[ConfigDoc]` reads
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->Acceptance criteria: `frob.lang._config_helm.parse(chart_dir) -> list[ConfigDoc]` reads
 `values.yaml` plus any `values-<env>.yaml` overlays, resolving the merge order Helm itself uses
 (base values overridden by environment-specific files, last-wins) so downstream rules see the
 same effective config Helm would render. Positive-control fixture: tests/fixtures/sysdesign/

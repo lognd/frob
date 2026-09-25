@@ -31,6 +31,13 @@ scope_breadth_ack: true
 scope_breadth_ack_reason: sysdesign epic tree, scope reviewed by coordinator
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1829
+  new_length: 1918
 designated_repro_test: null
 threat: null
 component: null
@@ -60,7 +67,7 @@ closes that gap for the resource kinds the edge/network rules in Story C need: s
 (`aws_security_group`), load balancers (`aws_lb`/`aws_lb_target_group`), WAF (`aws_wafv2_*`,
 `cloudflare_ruleset`), and DNS records (`aws_route53_record`/`cloudflare_record`).
 
-Acceptance criteria: `frob.lang._config_terraform.parse(path) -> list[ConfigDoc]` covers the
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->Acceptance criteria: `frob.lang._config_terraform.parse(path) -> list[ConfigDoc]` covers the
 named resource kinds' block-level attributes (ingress/egress cidr_blocks, health_check blocks,
 deregistration_delay, managed ruleset bindings, DNS record type/health-check reference). A
 real HCL grammar is preferred; if budget does not allow a full parser in this leaf, the
