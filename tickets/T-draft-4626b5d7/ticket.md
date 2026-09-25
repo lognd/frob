@@ -1,7 +1,7 @@
 ---
 id: T-draft-4626b5d7
 title: ticket new --points is not persisted
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/tickets/_new_renumber.py
 scope_breadth_ack: false
