@@ -7,12 +7,24 @@ origin: agent
 created: '2026-09-06'
 priority: high
 parent: T-3942
-tier: ticket
+tier: story
 sprint: null
 runs_last: false
 milestone: null
+flavour: null
+due: null
+rank: null
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
 scope:
 - src/frob/gates/_design_invariants.py
 - src/frob/graph/callgraph.py
@@ -39,6 +51,15 @@ scope_changes:
   reason: standalone INV011 doc page (docs/modules/gates.md leased by T-4111)
   actor: logan
   at: '2026-09-19'
+triage_changes:
+- field: tier
+  old_value: ticket
+  new_value: story
+  reason: 'E2 (T-5766, owner decision Q3): reclassify kind:invariant as tier=story;
+    evidence-split into a child ticket + kind:invariant retirement deferred to a follow-up
+    leaf'
+  actor: logan
+  at: '2026-09-25'
 evidence:
 - tests/unit/test_design_invariants.py::TestInv011::test_unguarded_path_fires
 - tests/unit/test_design_invariants.py::TestInv011::test_guarded_path_clears
