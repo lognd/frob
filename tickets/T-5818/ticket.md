@@ -60,6 +60,13 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-25'
+evidence:
+- tests/test_gitio.py::TestGitSpawnBudgetT5818::test_slow_but_under_budget_spawn_succeeds_and_warns
+- tests/test_gitio.py::TestGitSpawnBudgetT5818::test_fast_spawn_under_warn_threshold_logs_nothing
+- tests/test_gitio.py::TestGitSpawnBudgetT5818::test_default_timeout_env_override_is_honored_and_clamped
+- tests/test_gitio.py::TestGitSpawnBudgetT5818::test_default_timeout_env_garbage_falls_back_to_default
+- tests/test_gitio.py::TestGitSpawnBudgetT5818::test_default_is_now_120s_not_the_old_30s_hang_guard
+- tests/test_gitio.py::TestGitSpawnBudgetT5818::test_explicit_timeout_is_still_clamped_to_hard_ceiling
 designated_repro_test: null
 threat: null
 component: null
