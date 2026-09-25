@@ -57,6 +57,12 @@ body_changes:
   at: '2026-09-25'
   old_length: 747
   new_length: 1549
+- mode: append
+  reason: record final close outcome
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1549
+  new_length: 1944
 designated_repro_test: null
 threat: null
 component: null
@@ -77,3 +83,5 @@ Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a
 
 
 Scope cut (coordinator-approved 2026-09-24/25): the audit of the 40 (live: 41) still-open epics that are NOT all-children-done is deferred to T-draft-31c35523 ("audit the 40 open epics: outcome-check or dropped child per epic", parent T-5748, blocked by T-5776, milestone v0.536.0, 8 pts). This leaf (T-5776) closes the 2 all-children-done epics (T-3611, T-4513) properly through the real close flow (verified children, real frob:outcome-metric, evidence, done-report). Also filed T-draft-e03cfa51 (bug, high priority, parent T-5630, milestone v0.535.0): frob ticket close's internal own-obligations check spawns frob check --only gates with a hardcoded 600s timeout with no override, which refused both close attempts under tonight's fleet load -- traced to src/frob/app/ticket_runner/_close_cmd.py.
+
+Both epics closed successfully once fleet load dropped under 6 (coordinator instruction): T-3611 done (frob:outcome-metric, cmd-evidence via frob ticket epic T-3611), T-4513 done (frob:outcome-metric, pytest evidence reused from child T-4506, --skip-mutation-evidence used per TEST016's own escape hatch since the mutation sweep measured unrelated fleet-touched files, not T-4513's own scope).
