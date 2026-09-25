@@ -43,6 +43,8 @@ scope:
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets-lifecycle.md
 - docs/modules/tickets.md
+- scripts/check_ledger_tiers_doc_drift.py
+- tests/gates_suite/test_tier_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -75,6 +77,16 @@ scope_changes:
 - op: add
   glob: docs/guides/extending/ticket-kinds-states.md
   reason: already declared in original scope list but re-affirming after the narrow
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: scripts/check_ledger_tiers_doc_drift.py
+  reason: positive-control script + its unit test for the --evidence-cmd binding
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/gates_suite/test_tier_gate.py
+  reason: positive-control script + its unit test for the --evidence-cmd binding
   actor: logan
   at: '2026-09-25'
 triage_changes:
