@@ -25,6 +25,7 @@ branch: dev
 scope:
 - src/frob/tickets/_land_queue.py
 - tests/unit/test_land_queue.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_land_queue.py
   reason: unit tests for the between-lands re-exec check
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: document the re-exec behavior alongside the rest of the drain queue docs
   actor: logan
   at: '2026-09-24'
 triage_changes:
