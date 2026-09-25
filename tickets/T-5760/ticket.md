@@ -14,6 +14,9 @@ tier: ticket
 sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
+flavour: null
+due: null
+rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -27,10 +30,27 @@ worktree: null
 branch: null
 scope:
 - src/frob/gates/_tickets_gate.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: B5 needs a write-time belt refusal (parent naming a sprint label) wired
+    through _new_renumber.py, and TIER005's gate-rule-id registration in _waive.py
+    -- same split A4/T-5765 established
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: B5 needs a write-time belt refusal (parent naming a sprint label) wired
+    through _new_renumber.py, and TIER005's gate-rule-id registration in _waive.py
+    -- same split A4/T-5765 established
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
