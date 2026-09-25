@@ -10,7 +10,7 @@ parent: T-5748
 tier: ticket
 sprint: null
 runs_last: false
-milestone: null
+milestone: 0.536.0
 flavour: null
 due: null
 rank: null
@@ -40,6 +40,12 @@ triage_changes:
   new_value: T-5748
   reason: part of the ledger-tiers story (T-5748); the due/rank CLI verbs deferred
     out of T-5751's model-only scope
+  actor: logan
+  at: '2026-09-24'
+- field: milestone
+  old_value: null
+  new_value: 0.536.0
+  reason: milestone set via `frob ticket milestone`
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
