@@ -1,7 +1,7 @@
 ---
 id: T-5481
 title: 'Windows-only: land CAS ledger retry/compose fails (2 node ids)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -11,6 +11,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
 points: 3
 unsized_ack: false
 unsized_ack_reason: null

@@ -81,7 +81,15 @@ def _apply_diff_to_scratch_index(
         return Ok(None)
 
     patch_file = Path(scratch) / "patch.diff"
-    patch_file.write_text(diff_text)
+    # T-5481: `newline=""` -- `Path.write_text`'s default newline
+    # translation writes CRLF on Windows for every bare `\n` in
+    # `diff_text` (already LF-normalized in memory: `run_argv`'s text-mode
+    # capture of `git diff`'s own LF-only output). A unified diff's line
+    # endings are part of its syntax; `git apply --cached` parsing a
+    # CRLF-corrupted patch file no longer applies cleanly, which is
+    # exactly the "does not apply" ComposeFailed this rebase/compose path
+    # measured on Windows (T-5481).
+    patch_file.write_text(diff_text, newline="")
     applied = run_argv(
         ("git", "-C", str(repo), "apply", "--cached", str(patch_file)), env=env
     )
