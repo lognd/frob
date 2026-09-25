@@ -32,6 +32,7 @@ branch: null
 scope:
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner/_lifecycle.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +48,12 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_lifecycle.py
   reason: narrow the wildcard glob to the specific dispatch file to avoid an unrelated
     agent's lease collision on _land_cmd.py
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: CLI surface for promote-to-story/promote-to-epic, mirroring the T-5817 flavour
+    setter shape
   actor: logan
   at: '2026-09-25'
 triage_changes:
