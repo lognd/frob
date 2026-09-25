@@ -38,6 +38,12 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+- field: points
+  old_value: '2'
+  new_value: '2'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-24'
 designated_repro_test: null
 threat: null
 component: null
