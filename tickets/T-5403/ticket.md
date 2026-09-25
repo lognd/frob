@@ -25,7 +25,6 @@ worktree: /home/logan/projects/frob
 branch: dev
 scope:
 - src/frob/tickets/_land_squash.py
-- docs/modules/tickets-land.md
 - src/frob/tickets/_land.py
 - tests/ticket_land_suite/test_land_dry_run_squash_preview.py
 scope_breadth_ack: false
@@ -53,6 +52,11 @@ scope_changes:
 - op: add
   glob: tests/ticket_land_suite/test_land_dry_run_squash_preview.py
   reason: positive control test for the dry-run squash-preview pre-commit check
+  actor: logan
+  at: '2026-09-24'
+- op: remove
+  glob: docs/modules/tickets-land.md
+  reason: wrong filename -- real doc is tickets-landing.md
   actor: logan
   at: '2026-09-24'
 triage_changes:
