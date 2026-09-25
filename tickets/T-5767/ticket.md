@@ -28,6 +28,7 @@ scope:
 - src/frob/gates/_layout_gate.py
 - src/frob/webapp/_layout_structure.py
 - tests/unit/test_layout_gate.py
+- tests/fixtures/webapp/layout1xx/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_layout_gate.py
   reason: unit tests for LAYOUT001-003 gate
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/fixtures/webapp/layout1xx/
+  reason: gallery manifest fixtures for LAYOUT gate tests
   actor: logan
   at: '2026-09-24'
 triage_changes:
