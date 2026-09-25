@@ -2,7 +2,7 @@
 id: T-5811
 title: 'CI: make core-wheels narrows uv sync to --extra serve, dropping sqlfluff before
   Typecheck (all 3 legs)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -21,10 +21,11 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5811
+branch: t-5811
 scope:
 - Makefile
+- tests/test_ci_workflow_core_wheels.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,12 @@ scope_changes:
     an already-full uv sync --all-extras --all-groups back down before CI''s Typecheck
     step runs (via make core-wheels'' core -> $(STAMP) dependency chain), dropping
     sqlfluff and breaking ty check on all 3 platforms'
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/test_ci_workflow_core_wheels.py
+  reason: add a regression test locking 's recipe onto including --extra sql, matching
+    T-4479's own precedent shape for core-wheels
   actor: logan
   at: '2026-09-24'
 triage_changes:
