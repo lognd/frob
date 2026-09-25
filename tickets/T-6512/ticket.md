@@ -1,5 +1,5 @@
 ---
-id: T-draft-110f85b3
+id: T-6512
 title: retire scripts/fleet_status.py in favor of frob coord status
 state: queued
 kind: docs
