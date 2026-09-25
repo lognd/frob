@@ -1,7 +1,7 @@
 ---
 id: T-5354
 title: 'WEBSEC226-230: randomness and TLS verification'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -22,8 +22,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5354
+branch: t-5354
 scope:
 - tests/fixtures/webapp/websec2xx/random_tls/**
 - src/frob/webapp/_websec_random_tls.py
@@ -101,6 +101,21 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_random_tls.py::test_taint_gate_discovers_websec_random_tls_hook
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc226_positive-WEBSEC226-True]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc226_negative-WEBSEC226-False]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc227_positive-WEBSEC227-True]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc227_negative-WEBSEC227-False]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc228_positive-WEBSEC228-True]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc228_negative-WEBSEC228-False]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc229_positive-WEBSEC229-True]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc229_negative-WEBSEC229-False]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc230_positive-WEBSEC230-True]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_fixture[webesc230_negative-WEBSEC230-False]
+- tests/unit/test_websec_random_tls.py::test_websec_random_tls_findings_no_framework_short_circuits
+- tests/unit/test_websec_random_tls.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_random_tls.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null
