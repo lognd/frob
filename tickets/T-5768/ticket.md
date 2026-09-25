@@ -27,10 +27,17 @@ branch: null
 scope:
 - src/frob/tickets/_evidence.py
 - docs/strata/vmodel.md
+- tests/system/test_cli_evidence_enforcement.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_cli_evidence_enforcement.py
+  reason: worked-example test for LAYOUT review verdict as ticket evidence
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
@@ -40,6 +47,12 @@ triage_changes:
   at: '2026-09-24'
 - field: points
   old_value: '5'
+  new_value: '3'
+  reason: ticket sizing
+  actor: logan
+  at: '2026-09-24'
+- field: points
+  old_value: '3'
   new_value: '3'
   reason: ticket sizing
   actor: logan
