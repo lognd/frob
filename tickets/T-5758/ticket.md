@@ -2,7 +2,7 @@
 id: T-5758
 title: 'TIER-DEPTH lint: three nested tickets under one story flags promote-to-epic;
   a childless story is also a finding'
-state: queued
+state: planned
 kind: feature
 origin: human
 created: '2026-09-24'
