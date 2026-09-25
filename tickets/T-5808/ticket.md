@@ -24,6 +24,7 @@ worktree: /home/logan/projects/frob
 branch: dev
 scope:
 - src/frob/natives/_build.py
+- tests/unit/test_natives_build.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
   glob: src/frob/natives/_build.py
   reason: reuse a built native extension when the crate tree digest is unchanged,
     instead of always rebuilding
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/unit/test_natives_build.py
+  reason: fix existing test fakes for the new rustc --version toolchain-id spawn,
+    plus new reuse tests
   actor: logan
   at: '2026-09-25'
 triage_changes:
