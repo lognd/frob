@@ -1,7 +1,7 @@
 ---
 id: T-5808
 title: 'land: reuse built native extensions when the crate tree hash is unchanged'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/natives/_build.py
 scope_breadth_ack: false
