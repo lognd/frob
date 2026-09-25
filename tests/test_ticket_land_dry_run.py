@@ -471,9 +471,7 @@ class TestStaleNativesRebuildPrecedesTyCheck:
         )
         monkeypatch.setattr(_land_cmd, "_warn_land_override_flags", _pass)
 
-        cfg = AppConfig(
-            ticket_command="land", ticket_id="T-5813", ticket_dry_run=False
-        )
+        cfg = AppConfig(ticket_command="land", ticket_id="T-5813", ticket_dry_run=False)
 
         try:
             _land_core_prepare(repo, cfg, repo)
@@ -529,9 +527,7 @@ class TestStaleNativesRebuildPrecedesTyCheck:
         )
         monkeypatch.setattr(_land_cmd, "_warn_land_override_flags", _pass)
 
-        cfg = AppConfig(
-            ticket_command="land", ticket_id="T-5813", ticket_dry_run=False
-        )
+        cfg = AppConfig(ticket_command="land", ticket_id="T-5813", ticket_dry_run=False)
 
         try:
             _land_core_prepare(repo, cfg, repo)

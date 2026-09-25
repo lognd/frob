@@ -275,6 +275,56 @@ class TestWorkingDiff:
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
 
+    # frob:tests src/frob/gitio.py::_merge_base
+    def test_falls_back_to_origin_base_when_local_ref_is_absent(
+        self, tmp_path: Path
+    ) -> None:
+        """T-5525: a shallow CI checkout (`actions/checkout` default depth)
+        fetches only the remote-tracking branch, never a local `main`/`dev`
+        ref -- `working_diff(repo, "main")` must still resolve against
+        `origin/main` instead of hard-failing every diff-dependent gate."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "base.py").write_text("x = 1\n")
+        _commit(repo, "base")
+        main_sha = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "main"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+        _git(repo, "checkout", "-q", "-b", "feature")
+        (repo / "feat.py").write_text("y = 1\n")
+        _commit(repo, "feature commit")
+
+        # Simulate the shallow-checkout shape: a remote-tracking ref exists,
+        # but the local branch it was fetched from does not.
+        _git(repo, "update-ref", "refs/remotes/origin/main", main_sha)
+        _git(repo, "branch", "-D", "main")
+
+        result = working_diff(repo, "main")
+        assert result.is_ok
+        files = {hunk.file for hunk in result.danger_ok.hunks}
+        assert "feat.py" in files
+
+    # frob:tests src/frob/gitio.py::_merge_base
+    def test_no_fallback_when_base_already_names_a_remote(
+        self, tmp_path: Path
+    ) -> None:
+        """A base that already carries a `/` (e.g. an explicit
+        `origin/main`) is never retried a second time -- a genuinely bad
+        remote ref still surfaces as `GitFailed`, not a silent extra
+        subprocess spawn."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "base.py").write_text("x = 1\n")
+        _commit(repo, "base")
+
+        result = working_diff(repo, "origin/does-not-exist")
+        assert result.is_err
+        assert result.danger_err == GitError.GitFailed
+
     # frob:tests src/frob/gitio.py::excerpt
 
     def test_diff_command_failure_propagates(

@@ -80,4 +80,4 @@ Doc page: docs/modules/tickets-lifecycle.md
 Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a3a4ea/scratchpad/LEDGER-TIERS-TREE.md (sections 2 and 5; section 5 overrides).
 
 
-Scope cut (coordinator-approved 2026-09-24/25): the evidence-split into a child ticket per invariant, and the retirement of TicketKind.invariant from the enum, are deferred to T-draft-4ba74499 ("invariant stories: split evidence into child tickets and retire TicketKind.invariant", parent T-5748, blocked by T-5766, milestone v0.536.0, 5 pts). This leaf (T-5766) does the tier=story/flavour=quality_objective reclassification of all 11 kind:invariant tickets only.
+Scope cut (coordinator-approved 2026-09-24/25): the evidence-split into a child ticket per invariant, and the retirement of TicketKind.invariant from the enum, are deferred to T-6419 ("invariant stories: split evidence into child tickets and retire TicketKind.invariant", parent T-5748, blocked by T-5766, milestone v0.536.0, 5 pts). This leaf (T-5766) does the tier=story/flavour=quality_objective reclassification of all 11 kind:invariant tickets only.

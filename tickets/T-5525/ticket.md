@@ -2,7 +2,7 @@
 id: T-5525
 title: 'TODO001/gitio working_diff: merge-base against local main fails under shallow
   checkout (no local main ref)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -21,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5525
+branch: t-5525
 scope:
 - src/frob/gitio.py
 scope_breadth_ack: false
@@ -36,6 +36,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/test_gitio.py::TestWorkingDiff::test_falls_back_to_origin_base_when_local_ref_is_absent
+- tests/test_gitio.py::TestWorkingDiff::test_no_fallback_when_base_already_names_a_remote
 designated_repro_test: null
 threat: null
 component: null

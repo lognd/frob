@@ -9,7 +9,7 @@ created: '2026-09-24'
 priority: medium
 blocked_by:
 - T-5768
-- T-draft-0ab8e38c
+- T-6391
 parent: T-5747
 tier: ticket
 sprint: layout-gate

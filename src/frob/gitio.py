@@ -495,8 +495,21 @@ def common_dir_and_branch(root: Path) -> Result[tuple[Path, str], GitError]:
 
 
 def _merge_base(root: Path, base: str) -> Result[str, GitError]:
-    """`git merge-base HEAD <base>`, trimmed to a bare sha."""
-    return _run_git(("merge-base", "HEAD", base), cwd=root).map(str.strip)
+    """`git merge-base HEAD <base>`, trimmed to a bare sha; falls back to
+    `origin/<base>` when `<base>` has no local ref (T-5525: a shallow CI
+    checkout fetches only the remote-tracking branch, never a local
+    `main`/`dev` ref, which otherwise hard-fails every diff-dependent gate
+    with a load failure instead of resolving the diff)."""
+    result = _run_git(("merge-base", "HEAD", base), cwd=root).map(str.strip)
+    if result.is_ok or "/" in base:
+        return result
+    remote_base = f"origin/{base}"
+    _log.warning(
+        "gitio: merge-base: local ref %r not found, retrying against %r",
+        base,
+        remote_base,
+    )
+    return _run_git(("merge-base", "HEAD", remote_base), cwd=root).map(str.strip)
 
 
 _HUNK_HEADER_PREFIX = "@@ "
