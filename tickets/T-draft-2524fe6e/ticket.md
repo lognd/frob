@@ -7,6 +7,9 @@ kind: feature
 origin: agent
 created: '2026-09-25'
 priority: medium
+blocked_by:
+- T-draft-6a23884f
+- T-draft-46691c55
 parent: T-draft-8980afab
 tier: ticket
 sprint: store-family
