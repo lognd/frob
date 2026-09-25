@@ -1,7 +1,7 @@
 ---
 id: T-draft-0ab8e38c
 title: Wire layout_gate into frob check + register LAYOUT001-003 in _KNOWN_GATE_RULES
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -20,15 +20,23 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-0ab8e38c
+branch: t-draft-0ab8e38c
 scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_waive.py
+- tests/system/test_cli_check_layout_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_cli_check_layout_gate.py
+  reason: 'positive control: planted unreviewed manifest entry surfaces via frob check,
+    frob:waive LAYOUT001 accepted'
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: parent
   old_value: null
