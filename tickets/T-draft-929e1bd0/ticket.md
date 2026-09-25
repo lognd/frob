@@ -26,6 +26,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 407
+  new_length: 545
 designated_repro_test: null
 threat: null
 component: null
@@ -39,3 +46,6 @@ gap-flagged row is not yet dischargeable; (2) record every genuinely
 dynamic-only (tier 4) research row as a dropped ticket with a reason,
 never deleted -- these become `frob:tests`/EXPLAIN-style proof
 obligations later, never a lexical-heuristic static rule now.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

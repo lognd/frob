@@ -30,6 +30,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1661
+  new_length: 1799
 designated_repro_test: null
 threat: null
 component: null
@@ -69,3 +76,6 @@ Relevance gate: strata `store` node declared for a paradigm with no
 native multi-record transaction primitive (redis kv, or DynamoDB
 document without `TransactWriteItems` in its client-kind capability
 set).
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

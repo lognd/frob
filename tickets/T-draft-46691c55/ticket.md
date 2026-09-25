@@ -26,6 +26,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 2934
+  new_length: 3072
 designated_repro_test: null
 threat: null
 component: null
@@ -86,3 +93,6 @@ each of the 13 rows above, or an explicit owner-approved "advisory tier,
 gap accepted" note in place of the old gap note, and zero remaining bare
 "gap"/"partial gap" strings in the epic body's research-corpus section
 that are not accompanied by one of those two outcomes.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

@@ -30,6 +30,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1323
+  new_length: 1461
 designated_repro_test: null
 threat: null
 component: null
@@ -68,3 +75,6 @@ Reuse note: this is the relational-paradigm sibling of SQL10x's own
 call-shape scan; import `frob.sql._orm_rules`'s `_iter_nodes`/
 `_function_defs` walker helpers rather than re-implementing a second
 tree-sitter walk.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

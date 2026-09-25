@@ -29,6 +29,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1092
+  new_length: 1230
 designated_repro_test: null
 threat: null
 component: null
@@ -60,3 +67,6 @@ Positive-control fixture: `tests/fixtures/store/store112-es-deep-pagination/`.
 
 Relevance gate: elasticsearch-py (or equivalent JS client) import
 detected.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

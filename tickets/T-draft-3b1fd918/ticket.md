@@ -26,12 +26,22 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 645
+  new_length: 783
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+flavour: null
+due: null
+rank: null
 ---
 Research file, Relational anti-pattern #2. Static tier: "dynamic-only
 for detecting 'is this actually EAV' from schema shape; static (config)
@@ -44,3 +54,6 @@ type variance) is runtime data a linter cannot see from source.
 
 Reason: dynamic-only -- becomes a frob:tests / EXPLAIN-style obligation,
 never a static rule.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

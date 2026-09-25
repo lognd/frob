@@ -29,6 +29,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 800
+  new_length: 938
 designated_repro_test: null
 threat: null
 component: null
@@ -57,3 +64,6 @@ leading `*`.
 Positive-control fixture: `tests/fixtures/store/store113-es-leading-wildcard/`.
 
 Relevance gate: elasticsearch client import detected.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

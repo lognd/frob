@@ -26,6 +26,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'DOC006: body names files this ticket will create (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 52614
+  new_length: 52752
 designated_repro_test: null
 threat: null
 component: null
@@ -434,3 +441,6 @@ outright on first attempt and were successfully recovered on retry (Redis
 persistence 404, Redis pipelining stub, InfluxDB gzip); one DynamoDB Scan
 page and one DynamoDB Query/Scan comparison page remained JS-rendered/empty
 after retry and are marked blocked rather than dropped.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"
