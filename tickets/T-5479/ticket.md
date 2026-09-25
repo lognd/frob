@@ -1,7 +1,7 @@
 ---
 id: T-5479
 title: 'Windows-only: frob-suggest hook dedup-on-repeat fails (4 node ids)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'

@@ -90,6 +90,7 @@ def _run_edit_hook(
     home: Path,
     cwd: Path,
     env: dict | None = None,
+    session_id: str | None = None,
 ):
     """Invoke the hook's Edit-tool PreToolUse contract (T-3069): same
     stdin/stdout shape as `_run_hook`, but a `tool_name: "Edit"` payload
@@ -97,7 +98,14 @@ def _run_edit_hook(
     `command`. `FROB_SUGGEST_ACK` is stripped from the inherited base
     environment (T-3375) so an ambient exported value in the RUNNER's own
     shell can never leak into a test's observed behaviour -- each call
-    controls its own acked/unacked case explicitly via `env`."""
+    controls its own acked/unacked case explicitly via `env`. `session_id`
+    (T-5478/T-5479) is threaded into the payload the same way `_run_hook`
+    does -- REQUIRED for any test making multiple calls that must share
+    one escalation counter: `_session_key`'s no-session_id fallback reads
+    `os.getppid()`, measured directly to return a DIFFERENT value across
+    sequential sibling `subprocess.run` calls from the same long-lived
+    parent process on Windows, so omitting it silently starts a fresh
+    counter every call there."""
     payload = {
         "tool_name": "Edit",
         "tool_input": {
@@ -107,6 +115,8 @@ def _run_edit_hook(
         },
         "cwd": str(cwd),
     }
+    if session_id is not None:
+        payload["session_id"] = session_id
     return subprocess.run(
         [sys.executable, str(_HOOK)],
         input=json.dumps(payload),
@@ -203,9 +213,9 @@ def test_second_identical_check_pipeline_is_allowed_through(tmp_path: Path):
     root = tmp_path / "repo"
     _init_repo(root)
     command = 'uv run frob check --only gates 2>&1 | grep -E "^ERROR" | tail -25'
-    first = _run_hook(command, home=home, cwd=root)
+    first = _run_hook(command, home=home, cwd=root, session_id="session-a")
     assert _denial_reason(first) is not None
-    second = _run_hook(command, home=home, cwd=root)
+    second = _run_hook(command, home=home, cwd=root, session_id="session-a")
     assert second.stdout.strip() == ""
 
 
@@ -217,9 +227,9 @@ def test_second_identical_fleet_probe_is_allowed_through(tmp_path: Path):
     root = tmp_path / "repo"
     _init_repo(root)
     command = "git status --porcelain && ps aux | grep frob"
-    first = _run_hook(command, home=home, cwd=root)
+    first = _run_hook(command, home=home, cwd=root, session_id="session-a")
     assert _denial_reason(first) is not None
-    second = _run_hook(command, home=home, cwd=root)
+    second = _run_hook(command, home=home, cwd=root, session_id="session-a")
     assert second.stdout.strip() == ""
 
 
@@ -237,11 +247,11 @@ def test_third_identical_command_is_blocked_again(tmp_path: Path):
     root = tmp_path / "repo"
     _init_repo(root)
     command = "git status --porcelain && ps aux | grep frob"
-    first = _run_hook(command, home=home, cwd=root)
+    first = _run_hook(command, home=home, cwd=root, session_id="session-a")
     assert _denial_reason(first) is not None
-    second = _run_hook(command, home=home, cwd=root)
+    second = _run_hook(command, home=home, cwd=root, session_id="session-a")
     assert second.stdout.strip() == ""
-    third = _run_hook(command, home=home, cwd=root)
+    third = _run_hook(command, home=home, cwd=root, session_id="session-a")
     reason = _denial_reason(third)
     assert reason is not None, "expected the third identical attempt to be blocked"
     assert "FROB_SUGGEST_ACK=1" in reason
@@ -1038,22 +1048,42 @@ class TestHandRenameEditMultifile:
         new_text = "from pkg.new import thing\n"
 
         first = _run_edit_hook(
-            str(root / "src/pkg/a.py"), old_text, new_text, home=home, cwd=root
+            str(root / "src/pkg/a.py"),
+            old_text,
+            new_text,
+            home=home,
+            cwd=root,
+            session_id="session-a",
         )
         assert first.stdout.strip() == ""
 
         second = _run_edit_hook(
-            str(root / "src/pkg/b.py"), old_text, new_text, home=home, cwd=root
+            str(root / "src/pkg/b.py"),
+            old_text,
+            new_text,
+            home=home,
+            cwd=root,
+            session_id="session-a",
         )
         assert _denial_reason(second) is not None
 
         third = _run_edit_hook(
-            str(root / "src/pkg/c.py"), old_text, new_text, home=home, cwd=root
+            str(root / "src/pkg/c.py"),
+            old_text,
+            new_text,
+            home=home,
+            cwd=root,
+            session_id="session-a",
         )
         assert third.stdout.strip() == ""
 
         fourth_unacked = _run_edit_hook(
-            str(root / "src/pkg/d.py"), old_text, new_text, home=home, cwd=root
+            str(root / "src/pkg/d.py"),
+            old_text,
+            new_text,
+            home=home,
+            cwd=root,
+            session_id="session-a",
         )
         assert _denial_reason(fourth_unacked) is not None
 
@@ -1064,6 +1094,7 @@ class TestHandRenameEditMultifile:
             home=home,
             cwd=root,
             env={"FROB_SUGGEST_ACK": "1"},
+            session_id="session-a",
         )
         assert fourth_acked.stdout.strip() == ""
 

@@ -1,5 +1,5 @@
 ---
-id: T-draft-b756915c
+id: T-5791
 title: frob ticket due/rank CLI verbs with default-rank derivation
 state: queued
 kind: feature
@@ -11,9 +11,6 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: 0.536.0
-flavour: null
-due: null
-rank: null
 points: 3
 unsized_ack: false
 unsized_ack_reason: null
@@ -60,5 +57,8 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+flavour: null
+due: null
+rank: null
 ---
 found while working T-5751 (A2, ledger-tiers): the model fields Ticket.due/Ticket.rank landed model-only; CLI verbs 'frob ticket due <id> <date>' and 'frob ticket rank <id> --top|--before <id>|--after <id>' with a default rank derivation (priority, then blocked_by depth, then age) are still needed and were out of T-5751's declared scope (src/frob/tickets/_models.py only).
