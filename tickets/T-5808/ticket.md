@@ -26,6 +26,7 @@ scope:
 - src/frob/natives/_build.py
 - tests/unit/test_natives_build.py
 - docs/modules/cli.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: docs/modules/cli.md
   reason: 'AFFECT001: document the native-reuse behavior alongside frob natives build'
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: frob.lock
+  reason: frob ack for build_natives's body digest after the ARCH001-motivated extraction
   actor: logan
   at: '2026-09-25'
 triage_changes:
