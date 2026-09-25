@@ -22,10 +22,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
+scope:
+- src/frob/gitio.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gitio.py
+  reason: make git spawn budget configurable, default 120s, WARN over 30s with load
+    average, keep hard hang ceiling
+  actor: logan
+  at: '2026-09-25'
 triage_changes:
 - field: points
   old_value: null
