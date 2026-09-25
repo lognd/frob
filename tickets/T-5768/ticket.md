@@ -38,6 +38,11 @@ scope_changes:
   reason: worked-example test for LAYOUT review verdict as ticket evidence
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: tests/system/test_cli_evidence_enforcement.py
+  reason: worked-example test for LAYOUT review verdict as ticket evidence
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
