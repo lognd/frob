@@ -1,7 +1,7 @@
 ---
 id: T-draft-98159bb1
 title: 'dropped: large (multi-MB) values stored in a single Redis key/field'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-09-25'
@@ -46,3 +46,6 @@ size) is runtime-only.
 
 Reason: dynamic-only -- becomes a frob:tests / EXPLAIN-style obligation,
 never a static rule.
+
+## Drop reason
+- 2026-09-25: dynamic-only: becomes a frob:tests / EXPLAIN-style obligation, never a static rule
