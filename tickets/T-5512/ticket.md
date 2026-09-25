@@ -1,7 +1,7 @@
 ---
 id: T-5512
 title: Wire a real frob.gates._seo_gate (SEO family discovery)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -21,12 +21,13 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5512
+branch: t-5512
 scope:
 - src/frob/gates/_taint_gate.py
 - tests/unit/test_seo_crawl.py
 - tests/unit/test_webapp_webperf_markup.py
+- tests/fixtures/webapp/webperf1xx/markup/webperf101_positive/next.config.js
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +71,14 @@ scope_changes:
     tuple instead of a new gate module (T-5372 already generalized it to (_websec_,
     _comply_)); one end-to-end control per family in the already-landed SEO/WEBPERF
     test files'
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/fixtures/webapp/webperf1xx/markup/webperf101_positive/next.config.js
+  reason: the pre-existing xfail-marked end-to-end control's fixture has no framework
+    marker file, so detect_frameworks(root) returns empty and taint_gate's real discovery
+    path never calls the hook even once discovery is widened; add the minimal Next.js
+    marker the fixture needs to make this genuinely pass, not just remove the xfail
   actor: logan
   at: '2026-09-25'
 triage_changes:
