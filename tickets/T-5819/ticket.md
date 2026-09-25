@@ -24,6 +24,7 @@ worktree: null
 branch: null
 scope:
 - src/frob/tickets/_draft_finalize.py
+- tests/test_ticket_promote_dangling_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
   glob: src/frob/tickets/_draft_finalize.py
   reason: fix land-path draft promotion leaving dangling parent/blocked_by references
     on already-landed main-ledger tickets
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/test_ticket_promote_dangling_refs.py
+  reason: positive-control regression test for main-ledger dangling reference fix
   actor: logan
   at: '2026-09-25'
 triage_changes:
