@@ -26,10 +26,17 @@ worktree: null
 branch: null
 scope:
 - src/frob/doctor.py
+- tests/unit/test_doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_doctor.py
+  reason: unit tests for crunk REQUIRED_FOR_FAMILY gallery relevance
+  actor: logan
+  at: '2026-09-24'
 triage_changes:
 - field: points
   old_value: null
