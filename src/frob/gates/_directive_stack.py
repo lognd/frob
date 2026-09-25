@@ -27,14 +27,14 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-#: T-4713: the stack-lint threshold's default -- "N+ consecutive directive
-#: lines above one symbol is a finding", N configurable. This leaf's own
-#: declared scope does not include `frob.toml` (a lease collision with a
-#: concurrently in-progress ticket, T-4663, refused adding it at write
-#: time -- see this ticket's Done report); `stack_lint_violations`'s own
-#: `threshold` parameter is the configurability surface until a follow-up
-#: wires a `frob.toml` value through to it.
-DEFAULT_STACK_THRESHOLD = 4
+#: T-5528: the stack-lint threshold's default -- "N+ consecutive directive
+#: lines above one symbol is a finding", N configurable. Owner decision
+#: 2026-09-24 lowered this from T-4713's original 4 to 2: DSTACK001 and
+#: its Tier-A merge fix must fire on EVERY directive stack (a run of 2 or
+#: more consecutive same-kind directive lines above one symbol), not only
+#: 4+. `[gates] dstack_threshold` in `frob.toml` (read by
+#: `frob.gates._dstack_threshold`) overrides this default per-repo.
+DEFAULT_STACK_THRESHOLD = 2
 
 RULE_DSTACK001 = "DSTACK001"
 

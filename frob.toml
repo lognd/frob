@@ -440,6 +440,12 @@ tick015_requeue = false
 # TICK015 (T-5358): a ticket's own cross-worktree lease younger than this
 # many hours is never treated as dead, regardless of process liveness.
 tick015_min_lease_age_hours = 6
+# frob:ticket T-5528
+# DSTACK001 (T-5528): owner decision 2026-09-24 lowers the stack-lint
+# threshold to 2 (any run of 2+ consecutive same-kind directive lines
+# above one symbol is a finding), explicit here rather than relying on
+# `DEFAULT_STACK_THRESHOLD` in `frob.gates._directive_stack`.
+dstack_threshold = 2
 
 # frob:ticket T-4693
 # frob:doc docs/modules/gates.md#docarch002

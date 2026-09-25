@@ -1,7 +1,7 @@
 ---
 id: T-5528
 title: 'DSTACK001: fire the stack merge on every directive stack (threshold 2 by default)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -20,8 +20,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5528
+branch: t-5528
 scope:
 - src/frob/gates/_directive_stack.py
 - frob.toml
@@ -59,6 +59,20 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/test_gates_directive_stack.py::TestStackThresholdOffByOne::test_n_minus_one_is_not_a_finding
+- tests/test_gates_directive_stack.py::TestStackThresholdOffByOne::test_n_is_exactly_one_finding
+- tests/test_gates_directive_stack.py::TestStackThresholdOffByOne::test_custom_threshold_is_honored
+- tests/test_gates_directive_stack.py::TestStackThresholdOffByOne::test_default_threshold_fires_on_a_two_line_stack
+- tests/test_gates_directive_stack.py::TestStackThresholdOffByOne::test_a_single_directive_line_stays_quiet
+- tests/test_gates_directive_stack.py::TestOnlyStackedSymbolFires::test_scattered_directives_across_symbols_do_not_fire
+- tests/test_gates_directive_stack.py::TestOnlyStackedSymbolFires::test_stacked_symbol_fires_alongside_a_scattered_run_of_the_same_length
+- tests/test_gates_directive_stack.py::TestMultiTargetLineCountsOnce::test_multi_target_edges_sharing_an_origin_count_as_one_line
+- tests/test_gates_directive_stack.py::TestDstack001MergeFix::test_interleaved_doc_tests_doc_collapses_to_one_doc_then_one_tests
+- tests/test_gates_directive_stack.py::TestDstack001MergeFix::test_tests_doc_tests_puts_tests_first_not_a_hardcoded_kind_order
+- tests/test_gates_directive_stack.py::TestDstack001MergeFix::test_merge_is_idempotent
+- tests/test_gates_directive_stack.py::TestDstack001MergeFix::test_only_paths_scoping_leaves_an_unlisted_file_untouched
+- tests/test_gates_directive_stack.py::TestDstack001MergeFix::test_non_default_attrs_leaves_the_stack_untouched
 designated_repro_test: null
 threat: null
 component: null

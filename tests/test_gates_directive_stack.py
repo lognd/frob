@@ -63,6 +63,24 @@ class TestStackThresholdOffByOne:
         assert stack_lint_violations(snapshot, threshold=2) != ()
         assert stack_lint_violations(snapshot, threshold=3) == ()
 
+    def test_default_threshold_fires_on_a_two_line_stack(self) -> None:
+        """T-5528 owner decision: DSTACK001 must fire on EVERY directive
+        stack -- a run of 2 consecutive same-kind directive lines above
+        one symbol -- at the DEFAULT threshold, hardcoded to 2 rather than
+        parametrized by `DEFAULT_STACK_THRESHOLD` so this test cannot pass
+        if the default silently regresses back toward 4."""
+        assert DEFAULT_STACK_THRESHOLD == 2
+        snapshot = _snapshot(self._edges_for_count(2))
+        violations = stack_lint_violations(snapshot)
+        assert len(violations) == 1
+        assert violations[0].rule == RULE_DSTACK001
+
+    def test_a_single_directive_line_stays_quiet(self) -> None:
+        """MUST-STAY-QUIET control: one directive line above a symbol is
+        never a stack, regardless of threshold."""
+        snapshot = _snapshot(self._edges_for_count(1))
+        assert stack_lint_violations(snapshot) == ()
+
 
 class TestOnlyStackedSymbolFires:
     """A same-length run of directives NOT stacked above one symbol (each

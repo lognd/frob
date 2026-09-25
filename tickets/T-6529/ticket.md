@@ -1,5 +1,5 @@
 ---
-id: T-draft-f999a5f0
+id: T-6529
 title: 'ledger verbs write before taking the lock: a lock-blocked verb dirties the
   root and refuses the land it waits on'
 state: queued
