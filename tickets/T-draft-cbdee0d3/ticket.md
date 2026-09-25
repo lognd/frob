@@ -65,6 +65,14 @@ scope_changes:
     -- the actual fix belongs in the shared parser and its test file'
   actor: logan
   at: '2026-09-24'
+body_changes:
+- mode: set
+  reason: 'DOC006: _run_ruff_format was renamed to _ruff_format_result on dev; pointer
+    updated'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1606
+  new_length: 1609
 evidence:
 - tests/unit/verify/test_worker.py::TestDefaultVerifyFnRuffFormatDriftIsMeasured::test_warning_only_diagnostic_yields_a_measured_result
 - tests/unit/verify/test_worker.py::TestDefaultVerifyFnRuffFormatDriftIsMeasured::test_zero_diagnostics_is_still_unmeasurable
@@ -84,7 +92,7 @@ parsable result -- watermark left untouched". The watermark has sat at
 trips the standard-profile backpressure ceiling (depth 5) and blocks for
 the full 30-minute timeout.
 
-Root cause: `src/frob/check/_python.py::_run_ruff_format` returns
+Root cause: `src/frob/check/_python.py::_ruff_format_result` returns
 exit_code=1 with WARNING-severity "needs formatting" diagnostics, while
 the T-2521 completeness check in the verify worker path only accepts an
 ERROR-severity diagnostic as the explanation of a nonzero exit. A real,
