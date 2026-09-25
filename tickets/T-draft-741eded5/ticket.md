@@ -33,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waiver: names a file T-5767 creates'
+  actor: logan
+  at: '2026-09-25'
+  old_length: 1534
+  new_length: 1712
 designated_repro_test: null
 threat: null
 component: null
@@ -42,8 +49,8 @@ land_commit: null
 ---
 Measured 2026-09-25 on T-5767 (LAYOUT F-3): the land engine's Tier-A
 DSTACK001 autofix merged the four production-side `# frob:tests` lines
-above `src/frob/webapp/_layout_structure.py::layout_findings` into ONE
-line on the test file, tests/unit/test_layout_gate.py:78, with a missing
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->above `src/frob/webapp/_layout_structure.py::layout_findings` into ONE
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->line on the test file, tests/unit/test_layout_gate.py:78, with a missing
 comma between the first two targets and a backslash-continued target
 whose trailing `# noqa: E501` was folded into the target string. That
 line never parsed into a resolvable Edge, so the land then refused with
