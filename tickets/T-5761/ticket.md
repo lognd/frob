@@ -3,7 +3,7 @@ id: T-5761
 title: 'Census script: enumerate stories by flavour candidate, epics by all-children-done,
   childless stories, and the 11 kind: invariant tickets'
 state: queued
-kind: feature
+kind: docs
 origin: human
 created: '2026-09-24'
 priority: medium
@@ -30,6 +30,7 @@ worktree: null
 branch: null
 scope:
 - scripts/tier_census.py
+- tests/gates_suite/test_tier_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,12 @@ scope_changes:
   glob: scripts/tier_census.py
   reason: E1's census script (built per coordinator instruction) lives at scripts/tier_census.py,
     matching the repo's scripts/ convention for measurement scripts
+  actor: logan
+  at: '2026-09-24'
+- op: add
+  glob: tests/gates_suite/test_tier_gate.py
+  reason: frob:tests citations on tier_census.py's parse_ticket_file/build_census
+    point here
   actor: logan
   at: '2026-09-24'
 triage_changes:
@@ -52,6 +59,14 @@ triage_changes:
   old_value: '2'
   new_value: '2'
   reason: ticket sizing
+  actor: logan
+  at: '2026-09-24'
+- field: kind
+  old_value: feature
+  new_value: docs
+  reason: E1 is a measurement/reporting ticket with no code diff of its own beyond
+    the reusable census script; docs-kind is required to bind the --evidence-cmd (T-0215)
+    shell-evidence channel the coordinator asked for
   actor: logan
   at: '2026-09-24'
 designated_repro_test: null
