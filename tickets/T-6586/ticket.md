@@ -2,7 +2,7 @@
 id: T-6586
 title: 'frob ticket new --points N is silently dropped: the ticket is written with
   points null'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -61,3 +61,6 @@ from `cfg.ticket_points` (src/frob/app/ticket_runner/_new.py) through
 Positive control: a test that files with --points 3 and asserts the
 written ticket.md carries `points: 3`; the same test must fail on the
 current tree. Designated repro: that test.
+
+## Drop reason
+- 2026-09-26: duplicate of T-5815 (ticket new --points not persisted), which landed on dev 430899e128 on 2026-09-26
