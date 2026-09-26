@@ -1,0 +1,55 @@
+---
+id: T-draft-4584c2f5
+title: '`frob check --fix` TEST010 MOVE handler corrupts Python: re-parse after every
+  Tier-A edit and roll back on failure'
+state: queued
+kind: bug
+origin: agent
+created: '2026-09-26'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: 0.534.0
+flavour: null
+due: null
+rank: null
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+worktree: null
+branch: null
+scope:
+- src/frob/gates/_fix_engine_tier_b.py
+- src/frob/gates/_fix_engine_text.py
+- src/frob/gates/_fix_engine.py
+- tests/unit/gates/test_fix_engine_roundtrip.py
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Source: logand.app-v2 FROBLEMS.md (peer coordinator report, 2026-09-26, frob 0.531.1.dev332). Reproduction lives in that repo (read-only for frob agents); the frob-side positive control must be a fixture here.
+
+F-398: a full `frob check --ticket T-0424 --fix` (~403 hunks) left two files unparsable: backend/.../domain/users/state.py (IndentationError at line 149: the TEST010 MOVE handler inserted the relocated frob:doc/frob:tests block for BOTH production symbols that share one test target, deleting `return row`/`return None` in the process) and backend/.../domain/notifications/mailer.py (unmatched ')' -- a directive re-insertion clobbered a multi-line signature). The baseline tree had no PARTIAL-tree warnings; the corruption is fix-introduced. Inferred root cause: `fix_test010_redundant_test_declaration`'s MOVE case resolves destinations by `GraphSnapshot.symbols[target].span` and does not recompute spans after each textual edit in the same file, so the second insertion for a shared target lands on stale offsets.
+
+Deliver:
+1. Every Tier-A text fix re-parses the file it touched (tree-sitter for the file's grammar, `ast.parse` for Python) and rolls the file back to its pre-fix bytes when the parse fails or gains a PARTIAL tree; the fix is reported as skipped with the reason, never applied.
+2. Multi-edit files: apply edits back-to-front against original spans, or recompute spans after each edit; shared frob:tests targets (one test for N production symbols) insert once.
+3. Positive control: a fixture with two production symbols sharing one test target plus a multi-line signature; without the fix the file breaks, with it the file parses and the directives are placed once.
+4. docs/modules/gates.md 'TEST010 redundant test declaration Tier-A fix' states the parse-or-rollback guarantee.
+Related: <!-- frob:waive DOC006 reason="future-facing: created by this ticket" -->T-draft-741eded5 (DSTACK001 autofix emits unparsable directives) is the same class; share the round-trip guard.
