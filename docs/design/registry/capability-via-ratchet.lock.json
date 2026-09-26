@@ -316,9 +316,9 @@
       "ticket": "T-1628"
     },
     "tickets_ledger::exec": {
-      "accepted_count": 2,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 3,
+      "reason": "T-5814: added src/frob/tickets/_land_queue.py to the exec via-list -- _reexec_if_source_changed calls os.execv to restart the --drain process onto newly-landed frob source between lands (2 -> 3).",
+      "ticket": "T-5814"
     },
     "tickets_ledger::fs.read": {
       "accepted_count": 25,

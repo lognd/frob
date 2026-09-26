@@ -1059,6 +1059,28 @@ explicit flag.
   recovery fix, layered onto the existing queue rather than a redesign
   of it.
 
+- **Between-lands re-exec on frob's own source change (T-5814).**
+  <!-- frob:describes src/frob/tickets/_land_queue.py::_frob_source_signature -->
+  <!-- frob:describes src/frob/tickets/_land_queue.py::_reexec_if_source_changed -->
+  Because `--drain` runs every queued entry in one process, an engine
+  fix that LANDS mid-drain (a fix to frob's own source or native
+  extensions) previously never took effect for the rest of that drain
+  -- someone had to kill and restart the drainer, and a kill mid-land
+  is unsafe. `drain_next` now opens every call with `_reexec_if_
+  source_changed()`, which compares an mtime fingerprint
+  (`_frob_source_signature`: every `.py` under `Path(frob.__file__).
+  parent` plus the `strata_core`/`frob_core` native extension files)
+  against the value captured on this process's first call. An
+  unchanged fingerprint (the common case) is a no-op; a changed one
+  logs the change and `os.execv`s the identical argv, so the NEXT
+  `drain_next` call runs under the newly-landed code. This is safe
+  because leases, the shared queue file and `land.lock` are all
+  durable across the re-exec -- nothing queued is lost. The check lives
+  in `drain_next` itself (not in `--drain`'s own CLI loop,
+  `frob.app.ticket_runner._land_cmd._land_drain`) since `--drain` calls
+  `drain_next` once per iteration -- checking at the top of `drain_next`
+  IS "the top of each drain iteration, between lands."
+
 ### Batch mutation-evidence sweep (TEST016, T-1518)
 
 <!-- frob:describes src/frob/tickets/_mutation_sweep_queue.py::enqueue_pending_sweep -->

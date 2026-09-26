@@ -1589,7 +1589,12 @@ store tickets_ledger : trusted {
     // (already-declared, `core`'s or `process`'s own node) `fcntl`/
     // `msvcrt` dynamic import; no `tickets/**` file does its own dynamic
     // import anymore.
-    may "exec" via "src/frob/tickets/_evidence.py", "src/frob/tickets/clipboard.py";
+    // T-5814: `_land_queue.py::_reexec_if_source_changed` calls
+    // `os.execv` to restart THIS SAME `--drain` process onto newly-
+    // landed frob source between two lands in the same drain -- a
+    // real, new exec site (not a dynamic-import artifact like the
+    // ones the T-3506 removal above discusses).
+    may "exec" via "src/frob/tickets/_evidence.py", "src/frob/tickets/clipboard.py", "src/frob/tickets/_land_queue.py";
     attr flag=frob_check_exec_kill_switch;
     // T-3029: `_land_compose.py::compose_tree_out_of_tree` writes the
     // scratch `patch.diff` file it feeds to `git apply --cached` -- a

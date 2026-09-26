@@ -1,7 +1,7 @@
 ---
 id: T-5814
 title: 'land --drain: re-exec between lands when frob''s own source changed'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -11,6 +11,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
+due: null
+rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -26,9 +29,6 @@ scope:
 - src/frob/tickets/_land_queue.py
 - tests/unit/test_land_queue.py
 - docs/modules/tickets-landing.md
-- design/frob.strata
-- docs/design/registry/capability-via-ratchet.lock.json
-- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,24 +49,6 @@ scope_changes:
   reason: document the re-exec behavior alongside the rest of the drain queue docs
   actor: logan
   at: '2026-09-24'
-- op: add
-  glob: design/frob.strata
-  reason: declare exec capability for tickets_ledger so os.execv in the between-lands
-    re-exec is a declared, not undeclared, capability (SELFAUDIT001/SYS100)
-  actor: logan
-  at: '2026-09-25'
-- op: add
-  glob: docs/design/registry/capability-via-ratchet.lock.json
-  reason: SYS111 ratchet bump for the new tickets_ledger::exec site, plus SCOPE002
-    doc-target coverage for pre-existing _land_queue.py symbols already in scope
-  actor: logan
-  at: '2026-09-25'
-- op: add
-  glob: docs/modules/tickets-verify-sweep.md
-  reason: SYS111 ratchet bump for the new tickets_ledger::exec site, plus SCOPE002
-    doc-target coverage for pre-existing _land_queue.py symbols already in scope
-  actor: logan
-  at: '2026-09-25'
 triage_changes:
 - field: points
   old_value: null
@@ -74,6 +56,11 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_land_queue.py::TestReexecIfSourceChanged::test_reexec_if_source_changed_noop_first_call
+- tests/unit/test_land_queue.py::TestReexecIfSourceChanged::test_reexec_if_source_changed_noop_when_unchanged
+- tests/unit/test_land_queue.py::TestReexecIfSourceChanged::test_reexec_if_source_changed_execs_on_change
+- tests/unit/test_land_queue.py::TestReexecIfSourceChanged::test_drain_next_calls_reexec_check
 designated_repro_test: null
 threat: null
 component: null

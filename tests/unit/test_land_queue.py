@@ -80,6 +80,7 @@ class TestQueueStatus:
         assert result.danger_ok == ()
 
 
+# frob:ticket T-5814
 class TestDrainNext:
     """T-1345: `drain_next` pops the oldest `queued` entry, runs it through
     `land_fn`, and records the outcome without dropping it."""
@@ -172,6 +173,7 @@ class TestDrainNext:
         assert entry.status == "landed"
 
     # frob:ticket T-3613
+    # frob:ticket T-5814
     def test_dead_drainer_landing_entry_is_reclaimed_and_redrained(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -208,6 +210,7 @@ class TestDrainNext:
         assert entry.status == "landed"
 
     # frob:ticket T-3613
+    # frob:ticket T-5814
     def test_live_drainer_landing_entry_is_not_reclaimed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -304,16 +307,19 @@ class TestWriteJsonRecords:
         assert parsed[0]["ticket_id"] == "T-0001"
 
 
+# frob:ticket T-5814
 class TestIntentRecord:
     """T-3613: `.frob/land-queue/<ticket_id>.json` -- the per-ticket,
     cheap-to-poll completion record `read_intent_record` reads."""
 
+    # frob:ticket T-5814
     def test_missing_record_reports_not_found(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
         result = read_intent_record(tmp_path, "T-9999")
         assert result.is_err
         assert result.danger_err is QueueError.NotFound
 
+    # frob:ticket T-5814
     def test_enqueue_writes_a_readable_intent_record(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
         # frob:tests src/frob/tickets/_land_queue.py::enqueue kind="unit"
@@ -323,6 +329,7 @@ class TestIntentRecord:
         assert result.danger_ok.status == "queued"
         assert result.danger_ok.ticket_id == "T-0001"
 
+    # frob:ticket T-5814
     def test_record_tracks_transitions_through_landed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
         # frob:tests src/frob/tickets/_land_queue.py::drain_next kind="unit"
@@ -333,6 +340,7 @@ class TestIntentRecord:
         assert result.danger_ok.status == "landed"
         assert result.danger_ok.commit_sha == "cafebabe"
 
+    # frob:ticket T-5814
     def test_record_captures_refusal_text_verbatim_on_failure(
         self, tmp_path: Path
     ) -> None:
@@ -347,6 +355,7 @@ class TestIntentRecord:
         assert result.danger_ok.status == "failed"
         assert result.danger_ok.error == LandError.MergeConflict.value
 
+    # frob:ticket T-5814
     def test_corrupt_intent_record_errors(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_land_queue.py::read_intent_record kind="unit"
         record_dir = tmp_path / ".frob" / "land-queue"
@@ -355,3 +364,76 @@ class TestIntentRecord:
         result = read_intent_record(tmp_path, "T-0001")
         assert result.is_err
         assert result.danger_err is QueueError.StoreCorrupt
+
+
+# frob:ticket T-5814
+class TestReexecIfSourceChanged:
+    """T-5814: between-lands re-exec when frob's own source or
+    native extensions change mid-drain."""
+
+    @pytest.fixture(autouse=True)
+    # frob:ticket T-5814
+    def _reset_baseline(self):
+        """Reset the module-level re-exec baseline before/after each test so
+        one test's `_DRAIN_SOURCE_BASELINE` never leaks into the next."""
+        import frob.tickets._land_queue as land_queue_module
+
+        land_queue_module._DRAIN_SOURCE_BASELINE = None
+        yield
+        land_queue_module._DRAIN_SOURCE_BASELINE = None
+
+    def test_reexec_if_source_changed_noop_first_call(self, monkeypatch) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::_reexec_if_source_changed \
+        # kind="unit"
+        import frob.tickets._land_queue as land_queue_module
+
+        execs: list[tuple] = []
+        monkeypatch.setattr(land_queue_module.os, "execv", lambda *a: execs.append(a))
+        monkeypatch.setattr(
+            land_queue_module, "_frob_source_signature", lambda: (1.0, 2.0)
+        )
+        land_queue_module._reexec_if_source_changed()
+        assert execs == []
+        assert land_queue_module._DRAIN_SOURCE_BASELINE == (1.0, 2.0)
+
+    def test_reexec_if_source_changed_noop_when_unchanged(self, monkeypatch) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::_reexec_if_source_changed \
+        # kind="unit"
+        import frob.tickets._land_queue as land_queue_module
+
+        execs: list[tuple] = []
+        monkeypatch.setattr(land_queue_module.os, "execv", lambda *a: execs.append(a))
+        monkeypatch.setattr(
+            land_queue_module, "_frob_source_signature", lambda: (1.0, 2.0)
+        )
+        land_queue_module._reexec_if_source_changed()
+        land_queue_module._reexec_if_source_changed()
+        assert execs == []
+
+    def test_reexec_if_source_changed_execs_on_change(self, monkeypatch) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::_reexec_if_source_changed \
+        # kind="unit"
+        # frob:tests src/frob/tickets/_land_queue.py::drain_next kind="unit"
+        import frob.tickets._land_queue as land_queue_module
+
+        execs: list[tuple] = []
+        monkeypatch.setattr(land_queue_module.os, "execv", lambda *a: execs.append(a))
+        signatures = iter([(1.0, 2.0), (1.0, 3.0)])
+        monkeypatch.setattr(
+            land_queue_module, "_frob_source_signature", lambda: next(signatures)
+        )
+        land_queue_module._reexec_if_source_changed()
+        land_queue_module._reexec_if_source_changed()
+        assert len(execs) == 1
+        assert execs[0][0] == land_queue_module.sys.executable
+
+    def test_drain_next_calls_reexec_check(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::drain_next kind="unit"
+        import frob.tickets._land_queue as land_queue_module
+
+        calls: list[bool] = []
+        monkeypatch.setattr(
+            land_queue_module, "_reexec_if_source_changed", lambda: calls.append(True)
+        )
+        drain_next(tmp_path, lambda e: Ok(_report(e.ticket_id)))  # noqa: ARG005
+        assert calls == [True]

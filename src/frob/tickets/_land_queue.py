@@ -65,8 +65,10 @@ Design (T-1345's own design questions, answered here rather than assumed):
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
+import sys
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -86,6 +88,88 @@ from frob.process._pid_liveness import pid_alive_tristate
 from frob.tickets._models import LandError, LandReport
 
 _log = get_logger(__name__)
+
+#: T-5814: mtime fingerprint of frob's own source+natives
+#: captured the first time `_reexec_if_source_changed` runs in this
+#: process (i.e. at the start of a `--drain` invocation); `None` until
+#: that first call establishes the baseline.
+# frob:ticket T-5814
+_DRAIN_SOURCE_BASELINE: tuple[float, ...] | None = None
+
+
+# frob:ticket T-5814
+# frob:waive OPAQUE001 reason="T-5814: fixed 2-element literal tuple ('strata_core', \
+# 'frob_core'), never a computed/user-influenced name"
+def _frob_source_signature() -> tuple[float, ...]:
+    """Mtime fingerprint of frob's own installed package (every `.py`
+    under `Path(frob.__file__).parent`) plus its native extensions
+    (`strata_core`, `frob_core`) -- WHY: a drain that runs many lands in
+    one process needs a cheap, order-stable way to tell "did a land
+    during THIS drain change frob's own code" so `_reexec_if_source_
+    changed` can decide whether to restart onto it (T-5814)."""
+    import frob
+    from frob.excludes import iter_files
+
+    frob_dir = Path(frob.__file__).resolve().parent
+    stamps: list[float] = []
+    for path in sorted(iter_files(frob_dir, suffix=".py")):
+        try:
+            stamps.append(path.stat().st_mtime)
+        except OSError:  # pragma: no cover -- file removed mid-walk, racy but harmless
+            continue
+    native_paths: list[Path] = []
+    for native_module_name in ("strata_core", "frob_core"):
+        try:
+            native_module = importlib.import_module(native_module_name)
+        except ImportError:  # pragma: no cover -- native not installed in this env
+            continue
+        native_file = getattr(native_module, "__file__", None)
+        if native_file is None:  # pragma: no cover -- namespace package, no single file
+            continue
+        # frob:waive PERF008 reason="T-5814: exactly 2 fixed natives, resolve() must \
+        # re-run per name (not invariant, different path each time)"
+        native_paths.append(Path(native_file).resolve())
+    for native_path in native_paths:
+        try:
+            stamps.append(native_path.stat().st_mtime)
+        except OSError:  # pragma: no cover -- extension removed mid-walk
+            continue
+    return tuple(stamps)
+
+
+# frob:ticket T-5814
+# frob:waive SELFAUDIT001 reason="T-5814: re-execs THIS SAME process onto newly-landed \
+# code, no capability crossed beyond what already running it implies"
+def _reexec_if_source_changed() -> None:
+    """Between-lands re-exec (T-5814): called at the top of
+    every `drain_next` iteration. WHY: `frob ticket land --drain` runs
+    every queued entry in ONE process, so a fix to frob's own source
+    that LANDS mid-drain (e.g. T-5518, T-draft-42b1e188) never takes
+    effect for the rest of that drain unless something restarts it, and
+    killing a drain mid-land is unsafe. WHAT: compares `_frob_source_
+    signature()` against the value captured at this process's first
+    call (its own start, functionally); an unchanged signature is a
+    no-op, and the first call in a process is always a no-op (it only
+    establishes the baseline). On a changed signature, logs the change
+    and `os.execv`s the identical argv so the next `drain_next` call
+    runs under the newly-landed code -- safe because leases, the queue
+    file (`_QUEUE_REL`) and `land.lock` are all durable across the
+    re-exec, so nothing queued is lost."""
+    global _DRAIN_SOURCE_BASELINE
+    current = _frob_source_signature()
+    if _DRAIN_SOURCE_BASELINE is None:
+        _DRAIN_SOURCE_BASELINE = current
+        return
+    if current == _DRAIN_SOURCE_BASELINE:
+        return
+    _log.warning(
+        "land_queue: drain_next: frob's own source/native extensions changed "
+        "mid-drain -- re-exec'ing pid %d onto the new code (argv=%r)",
+        os.getpid(),
+        sys.argv,
+    )
+    os.execv(sys.executable, [sys.executable, *sys.argv])
+
 
 # T-1345/T-3506: `file_lock` used to be POSIX-only, degrading to a
 # SILENT, unconditional, logged-but-unlocked no-op on a platform without
@@ -116,9 +200,11 @@ _QUEUE_LOCK_REL = Path(".frob") / "land-queue.lock"
 #: `ticket_id` -- the exact "a file, not a lock probe" shape T-3613's own
 #: ticket body asks for, and cheaper than repeatedly re-probing
 #: `.frob/land.lock`'s holder the way agents were forced to before this.
+# frob:ticket T-5814
 _INTENT_DIR_REL = Path(".frob") / "land-queue"
 
 
+# frob:ticket T-5814
 def _intent_record_path(root: Path, ticket_id: str) -> Path:
     """Where `ticket_id`'s per-intent completion record lives under
     `root` (T-3613) -- the file `frob ticket land --status <id>` and any
@@ -126,6 +212,7 @@ def _intent_record_path(root: Path, ticket_id: str) -> Path:
     return root / _INTENT_DIR_REL / f"{ticket_id}.json"
 
 
+# frob:ticket T-5814
 def _write_intent_record(root: Path, entry: QueueEntry) -> None:
     """Mirror `entry` to its own `.frob/land-queue/<ticket_id>.json` file
     (T-3613) -- called at every queue-state transition (`enqueue`, the
@@ -158,6 +245,7 @@ def _write_intent_record(root: Path, entry: QueueEntry) -> None:
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
+# frob:ticket T-5814
 def read_intent_record(root: Path, ticket_id: str) -> Result[QueueEntry, QueueError]:
     """`ticket_id`'s current per-intent completion record (T-3613) --
     cheap poll target for `frob ticket land --status <id>` and any agent
@@ -183,6 +271,7 @@ def read_intent_record(root: Path, ticket_id: str) -> Result[QueueEntry, QueueEr
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
+# frob:ticket T-5814
 class QueueError(ErrorSet):
     """Fallible outcomes of this module's queue operations -- deliberately
     a SEPARATE `ErrorSet` from `LandError` (a queue-bookkeeping failure and
@@ -201,6 +290,7 @@ class QueueError(ErrorSet):
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
+# frob:ticket T-5814
 class QueueEntry(BaseModel):
     """One `.frob/land-queue.json` record: a ticket's branch, waiting for
     (or having gone through) the drainer's serial `land()` call."""
@@ -384,6 +474,7 @@ def queue_status(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:doc docs/modules/tickets-landing.md#merge-queue-as-the-default-agent-path-with-pollable-completion-records-t-3613  # noqa: E501
+# frob:ticket T-5814
 def enqueue(
     root: Path, ticket_id: str, worktree: Path, branch: str
 ) -> Result[QueueEntry, QueueError]:
@@ -425,6 +516,7 @@ def enqueue(
         return Ok(entry)
 
 
+# frob:ticket T-5814
 def _reclaim_dead_landing_entries(
     entries: tuple[QueueEntry, ...],
 ) -> tuple[QueueEntry, ...]:
@@ -480,7 +572,15 @@ def drain_next(
     branch that no longer merges cleanly is rejected back to the agent
     (dequeued, never silently dropped, never auto-retried) rather than
     raised as a queue-level failure. Only a queue-file-level problem
-    (`QueueError.StoreCorrupt`) returns `Err` here."""
+    (`QueueError.StoreCorrupt`) returns `Err` here.
+
+    T-5814: the very first thing each call does is `_reexec_
+    if_source_changed()` -- a `--drain` invocation calls this function
+    once per iteration, so checking here IS "the top of each drain
+    iteration, between lands" without `--drain`'s own CLI loop
+    (`frob.app.ticket_runner._land_cmd._land_drain`) needing to know
+    anything about it."""
+    _reexec_if_source_changed()
     with _queue_lock(root):
         loaded = _load_queue(root)
         if loaded.is_err:
