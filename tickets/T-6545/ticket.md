@@ -6,7 +6,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-09-26'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -36,6 +36,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: high
+  new_value: critical
+  reason: a consumer repo has no path to vitest evidence until this lands (logand
+    T-0443/T-0445 parked)
+  actor: logan
+  at: '2026-09-26'
 body_changes:
 - mode: append
   reason: 'peer follow-ons: vitest {files} renders the full id; select_tests hardcodes
