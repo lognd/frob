@@ -1,7 +1,7 @@
 ---
 id: T-5767
 title: 'LAYOUT001-00x: render-exists, review-current (source_hash), unreviewed=fail'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -13,6 +13,9 @@ tier: ticket
 sprint: layout-gate
 runs_last: false
 milestone: v0.537.0
+flavour: null
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -22,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5767
+branch: t-5767
 scope:
 - src/frob/gates/_layout_gate.py
 - src/frob/webapp/_layout_structure.py
@@ -63,6 +66,14 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_layout_gate.py::test_recompute_source_hash_matches_props_less_compute_source_hash
+- tests/unit/test_layout_gate.py::test_unreviewed_entry_raises_layout001
+- tests/unit/test_layout_gate.py::test_stale_hash_raises_layout002
+- tests/unit/test_layout_gate.py::test_reviewed_current_entry_is_clean
+- tests/unit/test_layout_gate.py::test_missing_artifacts_raises_layout003
+- tests/unit/test_layout_gate.py::test_gate_discovers_hook_and_scans_manifest
+- tests/unit/test_layout_gate.py::test_gate_returns_empty_with_no_manifest_files
 designated_repro_test: null
 threat: null
 component: null

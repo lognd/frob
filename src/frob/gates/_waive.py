@@ -1669,6 +1669,12 @@ _KNOWN_GATE_RULES = frozenset(
         "A11Y133",
         "A11Y134",
         "A11Y135",
+        # T-5767: LAYOUT001 (unreviewed), LAYOUT002 (stale
+        # review), LAYOUT003 (render-exists) -- frob.gates._layout_gate
+        # (T-5767's LAYOUT family, wired into `frob check` by this ticket).
+        "LAYOUT001",
+        "LAYOUT002",
+        "LAYOUT003",
         "SEO101",
         "SEO102",
         "SEO103",
