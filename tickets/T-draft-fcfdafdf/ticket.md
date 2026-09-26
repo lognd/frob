@@ -3,7 +3,7 @@ id: T-draft-fcfdafdf
 title: 'frob check: csharp/unity project type -- detection via detect_unity_project
   or *.asmdef and a dispatcher that runs gates plus a configurable [[test.runner]]
   step'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-09-26'
@@ -25,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/check/__init__.py
 - src/frob/app/check_runner.py
