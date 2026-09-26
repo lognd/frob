@@ -2,7 +2,7 @@
 id: T-6528
 title: 'CI regression sweep: export_golden, websec_rls_llm, TICK008, scaffold_dx,
   SELFAUDIT001, registry count'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-25'
@@ -24,14 +24,17 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-6528
+branch: t-6528
 scope:
 - tests/unit/strata/test_export_golden.py
 - tests/unit/test_websec_rls_llm.py
 - tests/gates_suite/test_tick.py
 - tests/system/test_scaffold_dx.py
 - tests/system/test_frob_self_model.py
+- src/frob/webapp/_websec_rls_llm.py
+- src/frob/scaffold/data/types/python-tool/__main__.py.j2
+- src/frob/scaffold/data/types/python-tool/tests/unit/test_logging.py.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +46,24 @@ scope_changes:
     is leased by in-progress T-6525, which is enqueued and already fixes the SQL/LAUNCH
     registry-count gap this item flags; re-check after T-6525 lands rather than colliding
     with its lease
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/webapp/_websec_rls_llm.py
+  reason: add the actual source files fixed for items 2 (webesc417 multi-line system-prompt
+    regex) and 4 (scaffold python-tool template COV007/TEST001)
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/__main__.py.j2
+  reason: add the actual source files fixed for items 2 (webesc417 multi-line system-prompt
+    regex) and 4 (scaffold python-tool template COV007/TEST001)
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/tests/unit/test_logging.py.j2
+  reason: add the actual source files fixed for items 2 (webesc417 multi-line system-prompt
+    regex) and 4 (scaffold python-tool template COV007/TEST001)
   actor: logan
   at: '2026-09-25'
 designated_repro_test: null
