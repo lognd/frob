@@ -13,6 +13,8 @@ sprint: null
 runs_last: false
 milestone: 0.534.0
 flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -30,11 +32,19 @@ scope:
 - tests/gates_suite/test_tick.py
 - tests/system/test_scaffold_dx.py
 - tests/system/test_frob_self_model.py
-- tests/test_check_coverage_registry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/test_check_coverage_registry.py
+  reason: test_gate_rule_entries_match_live_known_rules (item 6, assert 666==664)
+    is leased by in-progress T-6525, which is enqueued and already fixes the SQL/LAUNCH
+    registry-count gap this item flags; re-check after T-6525 lands rather than colliding
+    with its lease
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 threat: null
 component: null
