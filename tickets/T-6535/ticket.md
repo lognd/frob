@@ -36,6 +36,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: land-path variant reported by logand.app-v2 2026-09-26
+  actor: logan
+  at: '2026-09-26'
+  old_length: 2003
+  new_length: 2665
 designated_repro_test: null
 threat: null
 component: null
@@ -53,3 +60,14 @@ Deliver:
 3. Positive control: a fixture with two production symbols sharing one test target plus a multi-line signature; without the fix the file breaks, with it the file parses and the directives are placed once.
 4. docs/modules/gates.md 'TEST010 redundant test declaration Tier-A fix' states the parse-or-rollback guarantee.
 Related: <!-- frob:waive DOC006 reason="future-facing: created by this ticket" -->T-draft-741eded5 (DSTACK001 autofix emits unparsable directives) is the same class; share the round-trip guard.
+
+
+Land-path variant (logand.app-v2, 2026-09-26): the same MOVE handler runs
+inside `frob ticket land`'s pre-land Tier-A step across the whole tree, so
+its corruption was committed as "wip: pre-land snapshot for T-0442"
+(5f32ff6d, 67 files, 4 in scope) and squashed onto logand main under that
+ticket; T-0427's land (dce72944, 46 files) did the same and was caught only
+by CrossTicketLeakage. `--dry-run` skips Tier-A (T-4179) so a clean dry run
+does not show it. Scope restriction and the disable knob are the separate
+critical ticket filed the same day (search title "applies Tier-A fixes
+across the WHOLE tree"); this ticket still owns the handler fix itself.
