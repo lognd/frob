@@ -13,6 +13,8 @@ sprint: null
 runs_last: false
 milestone: 0.535.0
 flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -34,6 +36,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'crunk data point: land merged a queued ticket then failed at close'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1943
+  new_length: 2299
 designated_repro_test: null
 threat: null
 component: null
@@ -76,3 +85,10 @@ Deliver (tiered safety):
    fix the stacked land fails at close; with it, the stacked leaf lands
    and is done, and a stacked leaf whose blocker is NOT in the queue is
    still refused up front.
+
+
+Second measured case (crunk-ba, 2026-09-26, frob 0.531.1.dev338): `frob
+ticket land` merged a QUEUED (never started) ticket's branch into the
+worktree, ran the whole pre-land pipeline, and only failed at close with
+InvalidTransition. The state check must run before the merge and before
+any pre-land rewrite, naming the state and the verb that fixes it.
