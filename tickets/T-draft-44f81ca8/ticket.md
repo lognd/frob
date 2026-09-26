@@ -33,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names external or future-facing paths (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 852
+  new_length: 958
 designated_repro_test: null
 threat: null
 component: null
@@ -41,7 +48,7 @@ anchor_reason: null
 land_commit: null
 ---
 Reported by the crunk session (2026-09-26): after crunk renamed `src/apollo/...`,
-frob.lock's ack_log still points at the old symbols. `frob graph why` reports
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->frob.lock's ack_log still points at the old symbols. `frob graph why` reports
 UnknownSymbol for each of them, but `frob ack` has no way to re-point an ack
 to the renamed symbol or to prune refs that no longer resolve; `frob ack --list`
 only shows the trail. Verified against dev b41443f46d: `frob ack --help` offers
