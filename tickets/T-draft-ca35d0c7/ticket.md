@@ -34,6 +34,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: DOC006 inline waivers (T-draft-7ee140de)
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1640
+  new_length: 1852
 designated_repro_test: null
 threat: null
 component: null
@@ -43,9 +50,9 @@ land_commit: null
 ---
 Measured 2026-09-26 landing T-5767 twice: "refused -- src/frob/webapp/
 _layout_structure.py:155 new public symbol 'layout_findings' has no
-frob:tests edge (T-2114)" although tests/unit/test_layout_gate.py (a file
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->frob:tests edge (T-2114)" although tests/unit/test_layout_gate.py (a file
 the same ticket adds) carries the test-side declaration
-`# frob:tests src/frob/webapp/_layout_structure.py::layout_findings`
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->`# frob:tests src/frob/webapp/_layout_structure.py::layout_findings`
 directly above test_unreviewed_entry_raises_layout001, which is also bound
 evidence. Verified on dev e98e686cbc: `_symbol_has_test_side_edge`
 (src/frob/gates/_land_parity.py, T-5299) consults the snapshot from
