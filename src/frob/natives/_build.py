@@ -33,6 +33,20 @@ root's own site-packages instead of rebuilding. The stamp lives under
 the SAME git-common-dir-keyed directory `CARGO_TARGET_DIR` already
 does (`_REUSE_STAMP_REL`), so it is visible to every worktree of the
 clone, not just the one that built it.
+
+T-5808 follow-up (measured 2026-09-26, a live land segfaulting in
+`strata_core.parse_source` on every attempt): the reuse copy above used
+`shutil.copy2`, truncating-and-rewriting THIS interpreter's own
+already-mmapped `.so` in place -- a genuine correctness AND safety bug,
+not just a perf one. `_copy_native_package` now copies every file via
+`_atomic_copy_file`/`_atomic_copy_tree` (temp-sibling-then-`os.replace`,
+never an in-place truncate), `_try_reuse_native` refuses outright to
+copy over a native already present in `sys.modules`
+(`_native_module_already_imported`), and every reuse copy is re-checked
+against `frob.strata.stale_natives` immediately after landing on disk
+(`_reused_copy_is_still_stale`) -- a digest/toolchain stamp match that
+still admits a stale artifact (the measured incident) is rolled back
+(`_restore_snapshot`) rather than trusted.
 """
 
 from __future__ import annotations
@@ -43,6 +57,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import uuid
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -52,7 +67,7 @@ from typani.result import Result
 from frob.gitio import git_common_dir
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
-from frob.strata._native_staleness import record_native_build_attempt
+from frob.strata._native_staleness import record_native_build_attempt, stale_natives
 from frob.strata._native_staleness_digest import _tracked_source_digest
 from frob.testing._models import NativeSpec
 from frob.testing._runners import load_natives
@@ -244,14 +259,56 @@ def _native_package_dir(spec: NativeSpec) -> Path:
     return Path(sysconfig.get_paths()["purelib"]) / spec.name
 
 
+# frob:ticket T-5808
+def _atomic_copy_file(source: Path, dest: Path) -> None:
+    """T-5808 deliverable (a): copy `source` to `dest` by writing into a
+    temp SIBLING file (same directory, so the final `os.replace` is a
+    same-filesystem rename, never a cross-device copy) and swapping it
+    into place -- never `shutil.copy2(source, dest)` directly, which
+    truncates-and-rewrites `dest`'s EXISTING inode in place. `dest` may
+    be a shared object THIS interpreter (or a sibling process) already
+    has open/mmapped; `os.replace` retargets the directory entry to a
+    brand-new inode atomically, leaving whatever the old inode's bytes
+    were -- and any live mapping of them -- completely untouched."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.parent / f".{dest.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}"
+    try:
+        shutil.copy2(source, tmp)
+        os.replace(tmp, dest)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+# frob:ticket T-5808
+# frob:invariant terminates reason="recurses only into a DIRECT child directory entry \
+# yielded by source_dir.iterdir() -- a real filesystem directory tree has finite depth \
+# (unlike a symlink cycle, iterdir() never yields a path that is an ancestor of \
+# source_dir itself), so each recursive call strictly descends one level toward the \
+# tree's actual leaves" measure="filesystem tree depth under source_dir, strictly \
+# decreasing per recursive call"
+def _atomic_copy_tree(source_dir: Path, dest_dir: Path) -> None:
+    """`_atomic_copy_file`, recursively, for every file under `source_dir`
+    -- each individual file lands via its own atomic replace, so a
+    multi-file package (e.g. a `.dist-info` directory alongside the
+    compiled extension) never leaves any ONE file truncated mid-copy."""
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    for item in source_dir.iterdir():
+        target = dest_dir / item.name
+        if item.is_dir():
+            _atomic_copy_tree(item, target)
+        else:
+            _atomic_copy_file(item, target)
+
+
 def _copy_native_package(source_dir: Path, dest_dir: Path) -> bool:
     """Copy every file in `source_dir` (a native's installed package
-    directory) into `dest_dir`, overwriting -- best effort: any `OSError`
-    aborts the copy and returns `False` (the caller falls through to a
-    real `maturin develop` rebuild rather than leave a partially-copied,
-    possibly-broken extension in place). `True` on a clean copy. A no-op
-    (returns `True`) when the two directories already resolve to the
-    same path -- nothing to copy, the artifact is already exactly there."""
+    directory) into `dest_dir`, file-by-file via `_atomic_copy_file` --
+    best effort: any `OSError` aborts the copy and returns `False` (the
+    caller falls through to a real `maturin develop` rebuild rather than
+    leave a partially-copied, possibly-broken extension in place). `True`
+    on a clean copy. A no-op (returns `True`) when the two directories
+    already resolve to the same path -- nothing to copy, the artifact is
+    already exactly there."""
     try:
         if source_dir.resolve() == dest_dir.resolve():
             return True
@@ -260,12 +317,7 @@ def _copy_native_package(source_dir: Path, dest_dir: Path) -> bool:
     if not source_dir.is_dir():
         return False
     try:
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        for item in source_dir.iterdir():
-            if item.is_dir():
-                shutil.copytree(item, dest_dir / item.name, dirs_exist_ok=True)
-            else:
-                shutil.copy2(item, dest_dir / item.name)
+        _atomic_copy_tree(source_dir, dest_dir)
     except OSError as exc:
         _log.warning(
             "build_natives: reuse copy from %s to %s failed (%s) -- falling "
@@ -279,21 +331,95 @@ def _copy_native_package(source_dir: Path, dest_dir: Path) -> bool:
 
 
 # frob:ticket T-5808
+def _native_module_already_imported(spec: NativeSpec) -> bool:
+    """T-5808 deliverable (b): true when `spec.name` is already present in
+    `sys.modules` -- THIS process has already `import`ed (and, for a
+    compiled extension, `dlopen`'d/mmapped) that native. Even an atomic
+    `os.replace`-based copy (deliverable (a)) is refused in this case:
+    `_try_reuse_native`'s caller is `run_gates`'s in-process T-1213 auto-
+    rebuild, and swapping the on-disk package out from under an already-
+    imported extension risks a subsequent re-import (or any code path
+    that re-opens the package directory, e.g. re-reading its
+    `.dist-info`) observing a directory whose files were replaced one at
+    a time and were briefly inconsistent with each other. Log and fall
+    through to a real rebuild instead, which the T-1213 caller is
+    documented to run safely regardless (see this module's own T-5808
+    docstring note)."""
+    return spec.name in sys.modules
+
+
+# frob:ticket T-5808
+def _snapshot_existing_files(dest_dir: Path) -> dict[Path, bytes] | None:
+    """A relative-path -> bytes snapshot of every file already under
+    `dest_dir` before a reuse copy overwrites it, so `_try_reuse_native`
+    can restore the prior artifact byte-for-byte if the post-copy
+    staleness re-check (deliverable (c)) rejects the copy. `None` when
+    `dest_dir` did not exist yet -- nothing to restore; a rejected copy
+    in that case instead removes the directory the copy itself created."""
+    if not dest_dir.is_dir():
+        return None
+    return {
+        path.relative_to(dest_dir): path.read_bytes()
+        for path in dest_dir.rglob("*")
+        if path.is_file()
+    }
+
+
+# frob:ticket T-5808
+def _restore_snapshot(dest_dir: Path, snapshot: dict[Path, bytes] | None) -> None:
+    """Roll back a reuse copy `_try_reuse_native` rejected after its
+    post-copy staleness re-check: `snapshot is None` means `dest_dir` was
+    newly created by the rejected copy, so it is removed entirely (best
+    effort); otherwise every snapshotted file is restored via the same
+    atomic-replace discipline the copy itself used, so the rollback
+    cannot corrupt an already-loaded extension either."""
+    if snapshot is None:
+        shutil.rmtree(dest_dir, ignore_errors=True)
+        return
+    for rel_path, data in snapshot.items():
+        target = dest_dir / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.parent / f".{target.name}.tmp-restore-{os.getpid()}"
+        try:
+            tmp.write_bytes(data)
+            os.replace(tmp, target)
+        finally:
+            tmp.unlink(missing_ok=True)
+
+
+# frob:ticket T-5808
+def _reused_copy_is_still_stale(root: Path, spec: NativeSpec) -> bool:
+    """T-5808 deliverable (c): the final gate after a reuse copy --
+    `frob.strata.stale_natives` re-checked, from scratch, against the
+    JUST-copied artifact on disk. A digest/toolchain stamp match can
+    still admit a stale artifact (the measured incident this ticket
+    documents: a reused artifact whose build predated the crate's last
+    real source edit despite a nominally matching stamp) -- this is the
+    independent, ground-truth check that catches that case regardless of
+    why the stamp match itself was wrong."""
+    return any(s.spec.name == spec.name for s in stale_natives(root))
+
+
+# frob:ticket T-5808
 # tests/unit/test_natives_build.py::TestNativeReuse.test_reuses_a_matching_prior_build
 # tests/unit/test_natives_build.py::TestNativeReuse.test_digest_mismatch_falls_back_to_a_real_build  # noqa: E501
 # tests/unit/test_natives_build.py::TestNativeReuse.test_toolchain_mismatch_falls_back_to_a_real_build  # noqa: E501
-def _try_reuse_native(
+# tests/unit/test_natives_build.py::TestNativeReuseSafety.test_reuse_copy_is_atomic_and_does_not_mutate_an_open_inode  # noqa: E501
+# tests/unit/test_natives_build.py::TestNativeReuseSafety.test_reuse_refused_when_native_already_imported_in_process  # noqa: E501
+# tests/unit/test_natives_build.py::TestNativeReuseSafety.test_stamp_predating_a_source_edit_refuses_reuse  # noqa: E501
+# tests/unit/test_natives_build.py::TestNativeReuseSafety.test_post_copy_staleness_check_rolls_back_a_falsely_matching_reuse  # noqa: E501
+def _resolve_matching_reuse_stamp(
     root: Path, spec: NativeSpec, common_dir: Path
-) -> CrateBuildResult | None:
-    """T-5808: `None` if there is nothing to reuse (no matching crate
-    directory, no reuse stamp yet, a digest/toolchain mismatch, the
-    stamped artifact directory no longer exists, or the copy itself
-    failed) -- the caller's signal to fall through to an ordinary
-    `maturin develop` build, UNCHANGED. A non-`None` `CrateBuildResult`
-    (`reused=True`, `returncode=0`) means a previously-built artifact
-    matching this crate's CURRENT source digest and toolchain was
-    copied into this root's own site-packages, and `_build_one_crate`
-    must not spawn `maturin` at all."""
+) -> tuple[Path, str, str] | None:
+    """T-5808/ARCH001 split: the stamp-matching half of `_try_reuse_native`
+    -- `None` if there is no matching crate directory, this crate's
+    current source digest or toolchain id could not be determined
+    (fail-closed), no reuse stamp is recorded yet, or the recorded
+    stamp's digest/toolchain does not match CURRENT values. Otherwise
+    `(crate_dir, stamped_artifact_dir, toolchain)`: the crate directory
+    (for the caller's own `CrateBuildResult.crate_dir` display), the
+    stamped source directory a reuse copy would read FROM, and the
+    toolchain id the match was made against (for logging)."""
     crate_dir = _crate_dir_for(root, spec)
     if crate_dir is None:
         return None
@@ -309,9 +435,87 @@ def _try_reuse_native(
         return None
     if entry.get("digest") != digest or entry.get("toolchain") != toolchain:
         return None
-    source_dir = Path(entry.get("artifact_dir", ""))
-    dest_dir = _native_package_dir(spec)
+    return crate_dir, entry.get("artifact_dir", ""), toolchain
+
+
+# frob:ticket T-5808
+def _refuse_reuse_if_already_imported(spec: NativeSpec) -> bool:
+    """T-5808 deliverable (b), split out of `_try_reuse_native`: logs and
+    returns `True` when `spec` is already imported in THIS process
+    (`_native_module_already_imported`) -- the caller's signal to refuse
+    the reuse copy outright and fall through to a real rebuild instead.
+    `False` (silent) is the common case -- nothing to refuse."""
+    if not _native_module_already_imported(spec):
+        return False
+    _log.warning(
+        "build_natives: refusing to reuse %s -- already imported in this "
+        "process; copying over a loaded extension's package directory "
+        "risks a torn, inconsistent read -- falling back to a real "
+        "rebuild",
+        spec.name,
+    )
+    return True
+
+
+# frob:ticket T-5808
+def _copy_reuse_artifact_with_rollback(
+    root: Path, spec: NativeSpec, source_dir: Path, dest_dir: Path
+) -> bool:
+    """T-5808 deliverables (a)/(c), split out of `_try_reuse_native`:
+    snapshots whatever already lives at `dest_dir` (so a rejected copy can
+    be restored byte-for-byte), copies `source_dir` in via
+    `_copy_native_package`'s atomic-replace discipline, then independently
+    re-verifies the result against `_reused_copy_is_still_stale` -- a
+    digest/toolchain stamp match that STILL reports stale (the false-
+    positive this ticket measured) is rolled back via `_restore_snapshot`
+    rather than trusted. `True` only when the copy succeeded AND the
+    post-copy staleness re-check came back clean; `False` for every
+    rejection path (copy failure or still-stale), logged either way by
+    the callee it delegates to (still-stale case logged here)."""
+    dest_existed_before = dest_dir.is_dir()
+    snapshot = _snapshot_existing_files(dest_dir) if dest_existed_before else None
     if not _copy_native_package(source_dir, dest_dir):
+        return False
+    if _reused_copy_is_still_stale(root, spec):
+        _log.warning(
+            "build_natives: reuse copy for %s still reports stale immediately "
+            "after copying -- rolling back and falling back to a real "
+            "rebuild",
+            spec.name,
+        )
+        _restore_snapshot(dest_dir, snapshot)
+        return False
+    return True
+
+
+def _try_reuse_native(
+    root: Path, spec: NativeSpec, common_dir: Path
+) -> CrateBuildResult | None:
+    """T-5808: `None` if there is nothing to reuse (no matching crate
+    directory, no reuse stamp yet, a digest/toolchain mismatch, the
+    stamped artifact directory no longer exists, the native is already
+    imported in THIS process (deliverable (b)), the copy itself failed,
+    or the post-copy staleness re-check (deliverable (c)) rejected the
+    result) -- the caller's signal to fall through to an ordinary
+    `maturin develop` build, UNCHANGED. A non-`None` `CrateBuildResult`
+    (`reused=True`, `returncode=0`) means a previously-built artifact
+    matching this crate's CURRENT source digest and toolchain was
+    copied into this root's own site-packages, and `_build_one_crate`
+    must not spawn `maturin` at all. The three ARCH001-split helpers
+    above (`_resolve_matching_reuse_stamp`, `_refuse_reuse_if_already_
+    imported`, `_copy_reuse_artifact_with_rollback`) are this function's
+    own three concerns (stamp matching, already-imported refusal,
+    copy+verify+rollback), each independently testable and separately
+    docstringed; this function is just their ordered composition."""
+    matched = _resolve_matching_reuse_stamp(root, spec, common_dir)
+    if matched is None:
+        return None
+    crate_dir, source_dir_raw, toolchain = matched
+    if _refuse_reuse_if_already_imported(spec):
+        return None
+    source_dir = Path(source_dir_raw)
+    dest_dir = _native_package_dir(spec)
+    if not _copy_reuse_artifact_with_rollback(root, spec, source_dir, dest_dir):
         return None
     _log.info(
         "build_natives: reusing %s -- crate tree digest unchanged (source=%s, "

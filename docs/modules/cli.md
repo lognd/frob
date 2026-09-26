@@ -188,6 +188,27 @@ to `{digest, toolchain, artifact_dir}`; only a genuine `maturin` build
 guard against reusing across an unknown toolchain change -- always
 falls through to a real rebuild.
 
+**T-5808 follow-up: the reuse copy must never corrupt an artifact this
+process (or a sibling) already has open.** Measured 2026-09-26: a live
+land process segfaulted in `strata_core.parse_source` because
+`_copy_native_package` used `shutil.copy2`, truncating-and-rewriting the
+running interpreter's OWN already-mmapped `.so` in place, and the
+reused artifact was independently stale (its build predated the crate's
+last real source edit despite a nominally matching digest/toolchain
+stamp). Three fixes, all in `_try_reuse_native`/`_copy_native_package`:
+(a) every file lands via `_atomic_copy_file`/`_atomic_copy_tree` -- a
+temp-sibling write plus `os.replace`, never an in-place truncate, so an
+existing open/mmapped inode is left completely untouched and the path
+resolves to a brand-new inode afterward; (b) `_try_reuse_native` refuses
+outright (`_native_module_already_imported`, `spec.name in sys.modules`)
+to reuse-copy over a native this process has already imported, logging
+and falling through to a real rebuild instead; (c) every reuse copy is
+re-verified, from scratch, against `frob.strata.stale_natives`
+immediately after landing on disk (`_reused_copy_is_still_stale`) -- a
+digest/toolchain stamp match that still reports stale is rolled back
+(`_restore_snapshot`, restoring the pre-copy artifact byte-for-byte, or
+removing the directory entirely if none existed) rather than trusted.
+
 ## frob coverage (T-1525)
 
 `frob coverage` is the user-facing CLI verb over

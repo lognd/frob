@@ -1,8 +1,8 @@
 ---
-id: T-draft-73138a7a
+id: T-6598
 title: 'T-5808 native reuse overwrites the running process own loaded extension in
   place with a STALE artifact: every land segfaults in strata_core parse_source'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -24,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: /home/logan/projects/frob
-branch: dev
+worktree: /home/logan/projects/frob/.claude/worktrees/t-draft-73138a7a
+branch: t-draft-73138a7a
 scope:
 - src/frob/natives/_build.py
 - tests/unit/test_natives_build.py
@@ -40,7 +40,15 @@ body_changes:
   at: '2026-09-26'
   old_length: 2938
   new_length: 3150
-designated_repro_test: null
+evidence:
+- tests/unit/test_natives_build.py::TestNativeReuseSafety::test_reuse_copy_is_atomic_and_does_not_mutate_an_open_inode
+- tests/unit/test_natives_build.py::TestNativeReuseSafety::test_reuse_refused_when_native_already_imported_in_process
+- tests/unit/test_natives_build.py::TestNativeReuseSafety::test_stamp_predating_a_source_edit_refuses_reuse
+- tests/unit/test_natives_build.py::TestNativeReuseSafety::test_post_copy_staleness_check_rolls_back_a_falsely_matching_reuse
+- tests/unit/test_natives_build.py::TestNativeReuse::test_reuses_a_matching_prior_build
+- tests/unit/test_natives_build.py::TestNativeReuse::test_digest_mismatch_falls_back_to_a_real_build
+- tests/unit/test_natives_build.py::TestNativeReuse::test_toolchain_mismatch_falls_back_to_a_real_build
+designated_repro_test: tests/unit/test_natives_build.py::TestNativeReuseSafety::test_reuse_copy_is_atomic_and_does_not_mutate_an_open_inode
 threat: null
 component: null
 anchor: false

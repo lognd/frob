@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -503,10 +505,21 @@ class TestNativeReuse:
         # frob:tests src/frob/natives/_build.py::build_natives kind="unit"
         _write_frob_toml(tmp_path, _rust_native_entry("strata_core"))
         _git_commit_crate(tmp_path, "strata_core")
+        # T-5808 deliverable (b) refuses reuse for an already-imported
+        # native; strata_core is genuinely imported by this very test
+        # process elsewhere in the suite, so scrub it for this test's
+        # digest/toolchain-matching assertions, which are unrelated.
+        monkeypatch.delitem(sys.modules, "strata_core", raising=False)
         common_dir = tmp_path / ".common"
         monkeypatch.setattr(
             native_build_module, "git_common_dir", lambda root: Ok(common_dir)
         )
+        # This test's fake `guarded_subprocess_run` never actually writes a
+        # real compiled artifact to disk, so the post-copy ground-truth
+        # `stale_natives` re-check (deliverable (c)) has nothing genuine to
+        # verify here -- that check gets its OWN dedicated test
+        # (`TestNativeReuseSafety.test_post_copy_staleness_check_rolls_back_a_falsely_matching_reuse`).  # noqa: E501
+        monkeypatch.setattr(native_build_module, "stale_natives", lambda root: ())
         fake_run, spawned = self._fake_run_factory()
         monkeypatch.setattr(native_build_module, "guarded_subprocess_run", fake_run)
 
@@ -532,6 +545,11 @@ class TestNativeReuse:
         # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
         _write_frob_toml(tmp_path, _rust_native_entry("strata_core"))
         crate_dir = _git_commit_crate(tmp_path, "strata_core")
+        # T-5808 deliverable (b) refuses reuse for an already-imported
+        # native; strata_core is genuinely imported by this very test
+        # process elsewhere in the suite, so scrub it for this test's
+        # digest/toolchain-matching assertions, which are unrelated.
+        monkeypatch.delitem(sys.modules, "strata_core", raising=False)
         common_dir = tmp_path / ".common"
         monkeypatch.setattr(
             native_build_module, "git_common_dir", lambda root: Ok(common_dir)
@@ -561,6 +579,11 @@ class TestNativeReuse:
         # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
         _write_frob_toml(tmp_path, _rust_native_entry("strata_core"))
         _git_commit_crate(tmp_path, "strata_core")
+        # T-5808 deliverable (b) refuses reuse for an already-imported
+        # native; strata_core is genuinely imported by this very test
+        # process elsewhere in the suite, so scrub it for this test's
+        # digest/toolchain-matching assertions, which are unrelated.
+        monkeypatch.delitem(sys.modules, "strata_core", raising=False)
         common_dir = tmp_path / ".common"
         monkeypatch.setattr(
             native_build_module, "git_common_dir", lambda root: Ok(common_dir)
@@ -594,3 +617,213 @@ class TestNativeReuse:
         _git_commit_crate(tmp_path, "strata_core")
         result = _try_reuse_native(tmp_path, spec, tmp_path / ".common")
         assert result is None
+
+
+# frob:ticket T-5808
+class TestNativeReuseSafety:
+    """T-5808 follow-up: deliverables (a)-(c) -- the reuse copy must never
+    corrupt an artifact THIS process may already have open/mmapped, must
+    refuse outright when the native is already imported, and must reject
+    a digest/toolchain stamp match the artifact's own post-copy staleness
+    re-check disagrees with."""
+
+    def test_reuse_copy_is_atomic_and_does_not_mutate_an_open_inode(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::_copy_native_package kind="unit"
+        # Positive control (designated repro): before the T-5808 fix this
+        # copied via `shutil.copy2`, truncating-and-rewriting `dest`'s
+        # EXISTING inode in place -- exactly the shape that segfaulted a
+        # live land process with `strata_core` mmapped.
+        source_dir = tmp_path / "source" / "strata_core"
+        source_dir.mkdir(parents=True)
+        (source_dir / "strata_core.abi3.so").write_bytes(b"NEW-BUILD-BYTES")
+
+        dest_dir = tmp_path / "dest" / "strata_core"
+        dest_dir.mkdir(parents=True)
+        target = dest_dir / "strata_core.abi3.so"
+        target.write_bytes(b"OLD-LOADED-BYTES")
+
+        # A fd opened before the copy stands in for "the running
+        # interpreter already has this file open/mmapped": it stays
+        # valid against the OLD inode even after the directory entry is
+        # swapped to a new one by an atomic `os.replace`, but would see
+        # truncated/rewritten bytes under the old in-place `copy2`.
+        fd = os.open(target, os.O_RDONLY)
+        try:
+            before_stat = os.fstat(fd)
+
+            ok = native_build_module._copy_native_package(source_dir, dest_dir)
+            assert ok is True
+
+            after_fd_stat = os.fstat(fd)
+            assert after_fd_stat.st_ino == before_stat.st_ino, (
+                "the fd opened before the copy must still resolve to the "
+                "SAME inode -- an in-place truncate/overwrite would corrupt "
+                "bytes a running process already had mapped"
+            )
+            with os.fdopen(os.dup(fd), "rb") as still_open:
+                assert still_open.read() == b"OLD-LOADED-BYTES"
+
+            new_stat = target.stat()
+            assert new_stat.st_ino != before_stat.st_ino, (
+                "the path must now resolve to a NEW inode (an atomic "
+                "os.replace), not the same file truncated in place"
+            )
+            assert target.read_bytes() == b"NEW-BUILD-BYTES"
+        finally:
+            os.close(fd)
+
+    def test_reuse_refused_when_native_already_imported_in_process(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
+        from frob.natives._build import _try_reuse_native
+        from frob.testing._models import NativeSpec
+
+        name = "fake_native_already_imported_t5808"
+        _write_frob_toml(tmp_path, _rust_native_entry(name))
+        _git_commit_crate(tmp_path, name)
+        common_dir = tmp_path / ".common"
+        monkeypatch.setattr(
+            native_build_module, "git_common_dir", lambda root: Ok(common_dir)
+        )
+        digest = native_build_module._crate_digest(
+            tmp_path, NativeSpec(name=name, language="rust", build_cmd="make core")
+        )
+        assert digest is not None
+        native_build_module._save_reuse_stamps(
+            common_dir,
+            {
+                name: {
+                    "digest": digest,
+                    "toolchain": native_build_module._toolchain_id()
+                    or "rustc 1.0.0 (fake)",
+                    "artifact_dir": str(tmp_path / "some-prior-artifact"),
+                }
+            },
+        )
+        monkeypatch.setattr(
+            native_build_module, "_toolchain_id", lambda: "rustc 1.0.0 (fake)"
+        )
+        monkeypatch.setitem(sys.modules, name, object())
+        try:
+            spec = NativeSpec(name=name, language="rust", build_cmd="make core")
+            result = _try_reuse_native(tmp_path, spec, common_dir)
+        finally:
+            monkeypatch.delitem(sys.modules, name, raising=False)
+        assert result is None, "already-imported native must never be reused"
+
+    def test_stamp_predating_a_source_edit_refuses_reuse(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
+        from frob.natives._build import _try_reuse_native
+        from frob.testing._models import NativeSpec
+
+        name = "strata_core"
+        _write_frob_toml(tmp_path, _rust_native_entry(name))
+        crate_dir = _git_commit_crate(tmp_path, name)
+        common_dir = tmp_path / ".common"
+        monkeypatch.setattr(
+            native_build_module, "git_common_dir", lambda root: Ok(common_dir)
+        )
+        monkeypatch.setattr(
+            native_build_module, "_toolchain_id", lambda: "rustc 1.0.0 (fake)"
+        )
+        spec = NativeSpec(name=name, language="rust", build_cmd="make core")
+
+        # A stamp recorded against the CURRENT (pre-edit) digest.
+        stale_digest = native_build_module._crate_digest(tmp_path, spec)
+        assert stale_digest is not None
+        native_build_module._save_reuse_stamps(
+            common_dir,
+            {
+                name: {
+                    "digest": stale_digest,
+                    "toolchain": "rustc 1.0.0 (fake)",
+                    "artifact_dir": str(tmp_path / "some-prior-artifact"),
+                }
+            },
+        )
+
+        # A real source edit after the stamp was recorded.
+        (crate_dir / "src").mkdir(exist_ok=True)
+        (crate_dir / "src" / "lib.rs").write_text("// changed after stamp\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "edit after stamp"],
+            cwd=tmp_path,
+            check=True,
+        )
+
+        result = _try_reuse_native(tmp_path, spec, common_dir)
+        assert result is None, (
+            "a stamp whose digest predates a real source edit must never be reused"
+        )
+
+    def test_post_copy_staleness_check_rolls_back_a_falsely_matching_reuse(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
+        # Deliverable (c): even when the digest/toolchain stamp DOES match
+        # (the exact class of false-positive T-5808 measured), a
+        # post-copy `stale_natives` re-check that still reports stale
+        # must roll the copy back and refuse to reuse.
+        from frob.natives._build import _try_reuse_native
+        from frob.testing._models import NativeSpec
+
+        name = "strata_core"
+        _write_frob_toml(tmp_path, _rust_native_entry(name))
+        _git_commit_crate(tmp_path, name)
+        common_dir = tmp_path / ".common"
+        monkeypatch.setattr(
+            native_build_module, "git_common_dir", lambda root: Ok(common_dir)
+        )
+        monkeypatch.setattr(
+            native_build_module, "_toolchain_id", lambda: "rustc 1.0.0 (fake)"
+        )
+        spec = NativeSpec(name=name, language="rust", build_cmd="make core")
+        digest = native_build_module._crate_digest(tmp_path, spec)
+        assert digest is not None
+
+        prior_artifact = tmp_path / "prior-artifact" / name
+        prior_artifact.mkdir(parents=True)
+        (prior_artifact / f"{name}.abi3.so").write_bytes(b"REUSABLE-BYTES")
+
+        native_build_module._save_reuse_stamps(
+            common_dir,
+            {
+                name: {
+                    "digest": digest,
+                    "toolchain": "rustc 1.0.0 (fake)",
+                    "artifact_dir": str(prior_artifact),
+                }
+            },
+        )
+
+        dest_dir = tmp_path / "site-packages" / name
+        dest_dir.mkdir(parents=True)
+        pre_existing = dest_dir / f"{name}.abi3.so"
+        pre_existing.write_bytes(b"PRE-EXISTING-BYTES")
+        monkeypatch.setattr(
+            native_build_module, "_native_package_dir", lambda s: dest_dir
+        )
+
+        # Force the ground-truth post-copy check to say "still stale"
+        # regardless of the (matching) stamp -- the exact false-positive
+        # shape T-5808 measured on disk.
+        fake_stale = type("FakeStale", (), {"spec": spec})()
+        monkeypatch.setattr(
+            native_build_module, "stale_natives", lambda root: (fake_stale,)
+        )
+
+        result = _try_reuse_native(tmp_path, spec, common_dir)
+        assert result is None, (
+            "a post-copy staleness re-check that still reports stale must "
+            "reject the reuse even with a matching digest/toolchain stamp"
+        )
+        assert pre_existing.read_bytes() == b"PRE-EXISTING-BYTES", (
+            "a rejected reuse copy must roll the destination back to its "
+            "pre-copy contents"
+        )
