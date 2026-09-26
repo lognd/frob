@@ -1,5 +1,5 @@
 ---
-id: T-draft-2556f942
+id: T-6532
 title: strata/source `frob:waive SYS113` applies on one run and not the next identical
   run (cache); make waiver resolution deterministic
 state: queued

@@ -26,9 +26,20 @@ def _module(text: str):
 class TestAutoInjection:
     # frob:tests src/frob/strata/_packs.py::require_analyzable kind="unit"
     def test_trusted_component_without_pack_gets_it_injected(self, caplog):
+        # T-5471: `_packs._WARNED_ANALYZABLE_MODULES` is a process-global
+        # log-once-per-module-name cache (deliberate, to avoid log spam in
+        # real usage) -- under xdist, many OTHER tests in this same
+        # worker build a module named the generic "m" with a trusted
+        # node too, so whichever test hits `elaborate` first wins the
+        # WARNING and every later one silently gets `_log.debug` instead
+        # (measured: this test fails intermittently in CI's full-suite
+        # xdist run, never locally in isolation, purely from test
+        # ordering). A module name unique to this test can never collide
+        # with any other test's "m", closing the flake without touching
+        # the deliberate production log-once behavior.
         module = _module(
             """
-            module m
+            module m_test_trusted_component_without_pack_gets_it_injected
             node api : trusted
             """
         )

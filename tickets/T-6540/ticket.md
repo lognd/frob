@@ -1,5 +1,5 @@
 ---
-id: T-draft-bf486065
+id: T-6540
 title: 'detect_frameworks only sniffs the repo root: follow workspace members so web
   families run on monorepos'
 state: queued

@@ -1,7 +1,7 @@
 ---
 id: T-5471
 title: test_packs auto-injection assertion fails on CI (macos) but not locally
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-24'
@@ -11,6 +11,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
+due: null
+rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null

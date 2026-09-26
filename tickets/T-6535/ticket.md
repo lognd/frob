@@ -1,5 +1,5 @@
 ---
-id: T-draft-4584c2f5
+id: T-6535
 title: '`frob check --fix` TEST010 MOVE handler corrupts Python: re-parse after every
   Tier-A edit and roll back on failure'
 state: queued

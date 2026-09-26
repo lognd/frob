@@ -1,5 +1,5 @@
 ---
-id: T-draft-65e4780b
+id: T-6536
 title: web rule modules print progress to stdout from library calls; route through
   the module logger
 state: queued

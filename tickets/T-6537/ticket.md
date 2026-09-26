@@ -1,5 +1,5 @@
 ---
-id: T-draft-685d8c69
+id: T-6537
 title: 'land: evidence collection runs pytest through the tool venv python; use the
   repo''s own environment or declare pytest a frob dependency'
 state: queued

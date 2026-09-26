@@ -1,5 +1,5 @@
 ---
-id: T-draft-c7340674
+id: T-6541
 title: 'frob upgrade turns a green main red: version-bump baseline for new rules,
   COV003 must not re-grade closed tickets, stale sweep misattribution'
 state: queued
