@@ -25,10 +25,12 @@ under `frob.testing`.
 from __future__ import annotations
 
 import contextvars
+import os
 import shutil
 import subprocess
 import sys
 import threading
+import time
 from collections import Counter
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -44,7 +46,63 @@ from frob.process._guard import guarded_subprocess_run
 _log = get_logger(__name__)
 
 _EXCERPT_LINES = 40
-_DEFAULT_TIMEOUT_S = 30.0
+
+# frob:ticket T-5818
+# T-5818: 30s was a HANG guard (catch a genuinely stuck git process), not a
+# load budget -- under a running land drain plus 5-7 concurrent agents, a
+# perfectly healthy `git status`/`git diff` spawn routinely took longer than
+# 30s waiting for CPU/disk contention alone, and every caller (ticket
+# scope/land/etc.) surfaced that as "a required git operation failed",
+# indistinguishable from a real hang (measured 2026-09-24: T-draft-90b33f19's
+# land, several `frob ticket scope` calls). Raised to 120s -- still bounded
+# (never the unbounded wait T-1515 already refused to reintroduce elsewhere
+# in this package), but wide enough to absorb ordinary fleet contention.
+# `FROB_GIT_SPAWN_TIMEOUT_S` overrides the default (e.g. `[git]
+# spawn_timeout_s` in a consumer's own config layer, threaded through as
+# this env var by the caller) -- always clamped to `_HARD_TIMEOUT_CEILING_S`
+# so a misconfigured override cannot turn this back into a genuine
+# unbounded hang guard, the one thing this budget must never become.
+_DEFAULT_TIMEOUT_S = 120.0
+_SPAWN_WARN_THRESHOLD_S = 30.0
+_HARD_TIMEOUT_CEILING_S = 300.0
+_SPAWN_TIMEOUT_ENV = "FROB_GIT_SPAWN_TIMEOUT_S"
+
+
+# frob:ticket T-5818
+def _configured_default_timeout_s() -> float:
+    """T-5818: the effective default git-spawn timeout used whenever a
+    caller does not pass its own explicit `timeout_s` -- `_DEFAULT_TIMEOUT_S`
+    (120s) unless overridden by `FROB_GIT_SPAWN_TIMEOUT_S`, always clamped
+    to `_HARD_TIMEOUT_CEILING_S` (never below 1s either) so a misconfigured
+    override cannot silently turn this into an unbounded hang guard -- the
+    one property `run_argv`'s docstring and this module's whole design
+    promise never changes, only the load-budget half of it does."""
+    raw = os.environ.get(_SPAWN_TIMEOUT_ENV)
+    if raw is None:
+        return _DEFAULT_TIMEOUT_S
+    try:
+        value = float(raw)
+    except ValueError:
+        _log.warning(
+            "gitio: %s=%r is not a number, ignoring (using default %gs)",
+            _SPAWN_TIMEOUT_ENV,
+            raw,
+            _DEFAULT_TIMEOUT_S,
+        )
+        return _DEFAULT_TIMEOUT_S
+    return min(max(value, 1.0), _HARD_TIMEOUT_CEILING_S)
+
+
+# frob:ticket T-5818
+def _load_average_str() -> str:
+    """`os.getloadavg()`'s 1-minute figure as a log-friendly string, or
+    `'unavailable'` on a platform (win32) or sandbox that does not support
+    it -- best-effort context for the T-5818 slow-spawn WARNING, never
+    something a caller should depend on existing."""
+    try:
+        return f"{os.getloadavg()[0]:.2f}"
+    except (OSError, AttributeError):
+        return "unavailable"
 
 
 # frob:doc docs/modules/testing.md#error-types
@@ -215,11 +273,46 @@ def _resolve_win32_executable(name: str) -> str:
 
 # frob:ticket T-3799
 # frob:doc docs/modules/testing.md#public-api
+def _resolve_spawn_timeout(timeout_s: float | None) -> float:
+    """T-5818: the effective timeout for one `run_argv` spawn -- `None`
+    (the caller's default) resolves to `_configured_default_timeout_s()`
+    at CALL time, not at import time, so `FROB_GIT_SPAWN_TIMEOUT_S` is read
+    fresh on every spawn rather than baked into a stale default the moment
+    this module first loaded. An explicit `timeout_s` a caller DOES pass is
+    still honored, but likewise clamped to `_HARD_TIMEOUT_CEILING_S` -- the
+    hard hang ceiling applies uniformly, never bypassable by a caller-
+    supplied value either."""
+    if timeout_s is None:
+        return _configured_default_timeout_s()
+    return min(timeout_s, _HARD_TIMEOUT_CEILING_S)
+
+
+# frob:ticket T-5818
+def _warn_slow_spawn(
+    full_argv: tuple[str, ...], elapsed_s: float, effective_timeout_s: float
+) -> None:
+    """T-5818: log a WARNING (elapsed time, budget, 1-minute load average)
+    when one `run_argv` spawn took longer than `_SPAWN_WARN_THRESHOLD_S`
+    (30s, the OLD hardcoded budget) -- a load-driven slowdown is now
+    visible in the log even when the (now much wider) budget absorbs it
+    without failing the caller. A no-op under the threshold."""
+    if elapsed_s <= _SPAWN_WARN_THRESHOLD_S:
+        return
+    _log.warning(
+        "gitio: spawn of %s took %.1fs (budget=%gs, load average=%s) -- "
+        "a load-driven slowdown, not necessarily a hang",
+        full_argv,
+        elapsed_s,
+        effective_timeout_s,
+        _load_average_str(),
+    )
+
+
 def run_argv(
     argv: Sequence[str],
     *,
     cwd: Path | None = None,
-    timeout_s: float = _DEFAULT_TIMEOUT_S,
+    timeout_s: float | None = None,
     env: Mapping[str, str] | None = None,
 ) -> Result[ProcResult, GitError]:
     """Spawn an already-resolved argv (never shell=True); public seam `frob.testing`
@@ -240,12 +333,19 @@ def run_argv(
     BUG002's `_run_designated_test`, PYTHONPATH-pointed at a parent-commit
     checkout) had no way to pass it through, and the override was silently
     dropped, so the spawned process ran with the CALLER's own environment
-    instead."""
+    instead.
+
+    T-5818: the spawn-timeout budget is now CONFIGURABLE rather than a
+    flat 30s -- see `_resolve_spawn_timeout` for how `timeout_s` resolves
+    and clamps, and `_warn_slow_spawn` for the slow-spawn log line."""
+    effective_timeout_s = _resolve_spawn_timeout(timeout_s)
     full_argv = tuple(argv)
     recorder = _active_recorder.get()
     if recorder is not None:
         recorder.record(full_argv)
-    _log.debug("gitio: spawning %s (cwd=%s, timeout=%gs)", full_argv, cwd, timeout_s)
+    _log.debug(
+        "gitio: spawning %s (cwd=%s, timeout=%gs)", full_argv, cwd, effective_timeout_s
+    )
     # T-3799: resolve a bare argv[0] through PATHEXT on win32 only -- see
     # _resolve_win32_executable's docstring. `full_argv` (used for logging,
     # the spawn recorder, and the returned ProcResult) stays exactly what
@@ -256,12 +356,13 @@ def run_argv(
         if full_argv
         else full_argv
     )
+    started = time.monotonic()
     try:
         guarded = guarded_subprocess_run(
             list(spawn_argv),
             cwd=str(cwd) if cwd is not None else None,
             capture_output=True,
-            timeout=timeout_s,
+            timeout=effective_timeout_s,
             text=True,
             check=False,
             env=dict(env) if env is not None else None,
@@ -269,6 +370,9 @@ def run_argv(
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("gitio: spawn failed for %s: %s", full_argv, exc)
         return Err(GitError.GitFailed)
+    finally:
+        # frob:ticket T-5818
+        _warn_slow_spawn(full_argv, time.monotonic() - started, effective_timeout_s)
     if guarded.is_err:
         # Kill switch flipped (FROB_DISABLE_EXEC=1) -- guard already logged
         # a warning and never spawned anything; surface as the same
@@ -287,7 +391,7 @@ def run_argv(
 
 
 def _run_git(
-    args: Sequence[str], *, cwd: Path, timeout_s: float = _DEFAULT_TIMEOUT_S
+    args: Sequence[str], *, cwd: Path, timeout_s: float | None = None
 ) -> Result[str, GitError]:
     """Run `git <args>` in `cwd`; `Ok(stdout)` on exit 0, else `Err(GitFailed)`."""
     argv = ("git", "-C", str(cwd), *args)

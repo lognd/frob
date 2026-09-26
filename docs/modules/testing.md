@@ -434,7 +434,7 @@ def recent_commits(root: Path, *, since: str | None = None,
     # candidate-commit enumeration build_ad_hoc_batch walks.
 def current_branch(root: Path) -> Result[str, GitError]
 def run_argv(argv: Sequence[str], *, cwd: Path | None = None,
-             timeout_s: float = 30.0,
+             timeout_s: float | None = None,
              env: Mapping[str, str] | None = None) -> Result[ProcResult, GitError]
     # The one process-with-timeout primitive in the package. frob.testing
     # imports THIS function for its own runner/pytest spawns instead of
@@ -453,6 +453,19 @@ def run_argv(argv: Sequence[str], *, cwd: Path | None = None,
     # missing binary still fails the same way). The logged/recorded/
     # returned argv (ProcResult.argv, the spawn recorder) is always the
     # CALLER's original argv, never the resolved one.
+    # T-5818: `timeout_s=None` (the default) resolves to a CONFIGURABLE
+    # 120s (was a flat, hardcoded 30s) via `_configured_default_timeout_s`
+    # -- 30s was a HANG guard, not a load budget, and routinely failed a
+    # perfectly healthy spawn under fleet contention alone (a running land
+    # drain plus several concurrent agents). `FROB_GIT_SPAWN_TIMEOUT_S`
+    # overrides the default, always clamped to `_HARD_TIMEOUT_CEILING_S`
+    # (300s) so a misconfigured override cannot turn this into a genuine
+    # unbounded hang guard -- the clamp applies to an explicit caller-
+    # supplied `timeout_s` too, unconditionally. Any spawn exceeding the
+    # OLD 30s threshold (`_SPAWN_WARN_THRESHOLD_S`) now logs a WARNING with
+    # the elapsed time and the current 1-minute load average instead of
+    # failing outright, so a load-driven slowdown stays visible without
+    # costing the caller a spurious "a required git operation failed".
 
 @contextmanager
 def spawn_recorder() -> Iterator[SpawnRecorder]

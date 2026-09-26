@@ -1,7 +1,7 @@
 ---
 id: T-5818
 title: git spawn budget of 30 s fails legitimate calls under fleet load
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -11,6 +11,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
+due: null
+rank: null
 points: 3
 unsized_ack: false
 unsized_ack_reason: null

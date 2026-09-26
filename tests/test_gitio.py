@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+import frob.gitio as gitio_mod
 from frob.gitio import (
     GitError,
     _resolve_win32_executable,
@@ -453,6 +454,81 @@ class TestRunArgv:
         assert result.danger_err == GitError.GitFailed
         assert not spawned
         assert any("exec disabled" in record.message for record in caplog.records)
+
+
+# frob:ticket T-5818
+class TestGitSpawnBudgetT5818:
+    """T-5818 POSITIVE CONTROL: 30s was a hang guard, not a load budget --
+    a git spawn slow only because of fleet contention (not actually stuck)
+    must still SUCCEED, up to the new, much wider default budget, and log
+    a WARNING (with the load average) rather than fail the caller the way
+    the old 30s ceiling did. `_SPAWN_WARN_THRESHOLD_S`/`_DEFAULT_TIMEOUT_S`
+    are monkeypatched down to keep this test fast while preserving the
+    exact "over warn threshold, under budget" shape a real 45s-vs-30s spawn
+    has."""
+
+    def test_slow_but_under_budget_spawn_succeeds_and_warns(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests src/frob/gitio.py::run_argv kind="unit"
+        monkeypatch.setattr(gitio_mod, "_SPAWN_WARN_THRESHOLD_S", 0.05)
+        with caplog.at_level(logging.WARNING):
+            result = run_argv(["sleep", "0.2"], cwd=tmp_path, timeout_s=5.0)
+        assert result.is_ok, result.err
+        assert result.danger_ok.returncode == 0
+        warnings = [r for r in caplog.records if "took" in r.message]
+        assert warnings, "expected a slow-spawn WARNING to be logged"
+        assert "load average" in warnings[0].message
+
+    def test_fast_spawn_under_warn_threshold_logs_nothing(
+        self,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests src/frob/gitio.py::run_argv kind="unit"
+        with caplog.at_level(logging.WARNING):
+            result = run_argv(["echo", "hi"], cwd=tmp_path)
+        assert result.is_ok
+        assert not any("took" in r.message for r in caplog.records)
+
+    def test_default_timeout_env_override_is_honored_and_clamped(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gitio.py::_configured_default_timeout_s kind="unit"
+        monkeypatch.setenv(gitio_mod._SPAWN_TIMEOUT_ENV, "45")
+        assert gitio_mod._configured_default_timeout_s() == 45.0
+
+        # A misconfigured override cannot exceed the hard hang ceiling --
+        # the one property this budget must never lose.
+        monkeypatch.setenv(gitio_mod._SPAWN_TIMEOUT_ENV, "99999")
+        assert (
+            gitio_mod._configured_default_timeout_s()
+            == gitio_mod._HARD_TIMEOUT_CEILING_S
+        )
+
+    def test_default_timeout_env_garbage_falls_back_to_default(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gitio.py::_configured_default_timeout_s kind="unit"
+        monkeypatch.setenv(gitio_mod._SPAWN_TIMEOUT_ENV, "not-a-number")
+        assert gitio_mod._configured_default_timeout_s() == gitio_mod._DEFAULT_TIMEOUT_S
+
+    def test_default_is_now_120s_not_the_old_30s_hang_guard(self) -> None:
+        # frob:tests src/frob/gitio.py::_configured_default_timeout_s kind="unit"
+        assert gitio_mod._DEFAULT_TIMEOUT_S == 120.0
+
+    def test_explicit_timeout_is_still_clamped_to_hard_ceiling(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gitio.py::run_argv kind="unit"
+        # A caller passing an absurd explicit timeout_s must not bypass
+        # the hard ceiling either -- only the CONFIGURED default gets the
+        # env-var escape hatch; the ceiling itself is unconditional.
+        result = run_argv(["echo", "ok"], cwd=tmp_path, timeout_s=999999.0)
+        assert result.is_ok
 
 
 class TestResolveWin32Executable:
