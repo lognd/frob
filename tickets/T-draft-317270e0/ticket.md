@@ -36,6 +36,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names external or future-facing paths (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1594
+  new_length: 1700
 designated_repro_test: null
 threat: null
 component: null
@@ -45,7 +52,7 @@ land_commit: null
 ---
 Reported by the project-hullbreach session (2026-09-26) on the Unity 6 game
 repo: a correct
-    // frob:tests Assets/Scripts/Hullbreach.Ship/ShipBody.cs::ShipBody.AppliedForcesThisStep
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->    // frob:tests Assets/Scripts/Hullbreach.Ship/ShipBody.cs::ShipBody.AppliedForcesThisStep
 above an NUnit [Test] in Assets/Tests/EditMode/Hullbreach.Ship.Tests/
 ShipBodyTests.cs is reported as "malformed directive: frob:tests on
 production symbol ... is redundant (T-4710)" with the test and production
