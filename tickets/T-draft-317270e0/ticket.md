@@ -30,12 +30,21 @@ branch: null
 scope:
 - src/frob/graph/dsl.py
 - src/frob/graph/__init__.py
-- src/frob/gates/_tdd_order.py
 - src/frob/testing/_collect_csharp.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/_tdd_order.py
+  reason: T-3068 holds a live in-progress lease on this file; consolidating the duplicate
+    _looks_like_test_path there collides with active work. Fix the graph-side collector-based
+    predicate now (dsl.py, graph/__init__.py, testing/_collect_csharp.py) and file
+    a follow-up ticket to fold _tdd_order.py's copy onto the shared implementation
+    once T-3068 lands.
+  actor: logan
+  at: '2026-09-26'
 body_changes:
 - mode: set
   reason: 'DOC006 inline waivers: body names external or future-facing paths (T-draft-7ee140de)'
