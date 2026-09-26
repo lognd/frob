@@ -1,7 +1,7 @@
 ---
 id: T-5363
 title: 'COMPLY123-127: subscription/cancellation/commerce dark patterns'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -13,6 +13,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: 0.534.0
+flavour: null
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -22,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5363
+branch: t-5363
 scope:
 - src/frob/webapp/_comply_commerce.py
 - tests/fixtures/webapp/comply1xx/commerce/**
@@ -71,6 +74,23 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[no_cancel_route-COMPLY123-True]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[compliant_routes-COMPLY123-False]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[compliant_commerce-COMPLY123-False]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[deep_cancel_route-COMPLY124-True]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[compliant_routes-COMPLY124-False]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[compliant_commerce-COMPLY124-False]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[missing_unsubscribe-COMPLY125-True]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[compliant_commerce-COMPLY125-False]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[missing_postal_address-COMPLY126-True]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[compliant_commerce-COMPLY126-False]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[raw_card_field-COMPLY127-True]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_fixture[compliant_commerce-COMPLY127-False]
+- tests/unit/test_webapp_comply_commerce.py::test_comply_commerce_findings_no_framework_short_circuits
+- tests/unit/test_webapp_comply_commerce.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_webapp_comply_commerce.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
+- tests/unit/test_webapp_comply_commerce.py::test_taint_gate_discovers_comply_commerce_hook
 designated_repro_test: null
 threat: null
 component: null
