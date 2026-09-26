@@ -31,6 +31,7 @@ scope:
 - src/frob/graph/dsl.py
 - src/frob/graph/__init__.py
 - src/frob/testing/_collect_csharp.py
+- docs/modules/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +44,12 @@ scope_changes:
     predicate now (dsl.py, graph/__init__.py, testing/_collect_csharp.py) and file
     a follow-up ticket to fold _tdd_order.py's copy onto the shared implementation
     once T-3068 lands.
+  actor: logan
+  at: '2026-09-26'
+- op: add
+  glob: docs/modules/graph.md
+  reason: test-side detection rule change belongs in the module doc that already documents
+    it
   actor: logan
   at: '2026-09-26'
 body_changes:
