@@ -33,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names external or future-facing paths (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1096
+  new_length: 1308
 designated_repro_test: null
 threat: null
 component: null
@@ -42,7 +49,7 @@ land_commit: null
 ---
 Measured 2026-09-26 landing T-5784 (adds `frob coord status`): the land's
 self-conformance pass (T-3324) refused with "DOC006: cli invocation pointer
-in docs/modules/coord.md:1 does not resolve -- `frob coord status` does not
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->in docs/modules/coord.md:1 does not resolve -- `frob coord status` does not
 resolve to a known subcommand", while `_subparser_tree(_build_parser())`
 inside the worktree resolves coord -> status fine. The pre-merge DOC005
 guard already loads the parser factory from the merge-candidate root
@@ -53,7 +60,7 @@ Workaround used: inline DOC006 waivers on the two pointer lines.
 
 Deliver: the self-conformance pass threads the same root-bound loader as
 the DOC005 guard so a verb registered by the landing ticket resolves;
-remove the T-5784 workaround waivers in docs/modules/coord.md. Positive
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->remove the T-5784 workaround waivers in docs/modules/coord.md. Positive
 control: a fixture where a doc points at a verb that exists only in the
 candidate tree; the in-process loader reports DOC006, the root-bound
 loader does not.
