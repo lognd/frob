@@ -35,6 +35,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: DOC006 inline waivers (T-draft-7ee140de)
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1605
+  new_length: 1711
 designated_repro_test: null
 threat: null
 component: null
@@ -43,7 +50,7 @@ anchor_reason: null
 land_commit: null
 ---
 Reported by the project-hullbreach session (2026-09-26) on its platform
-repo: CI's `npx prettier --check .` failed on docs/backlog.md while `frob
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->repo: CI's `npx prettier --check .` failed on docs/backlog.md while `frob
 check`'s prettier stage reported "0 files need formatting". Verified on
 dev 430899e128 in src/frob/check/_ts.py::_run_prettier: prettier prints
 each unformatted file as `[warn] <path>`, and the line filter
