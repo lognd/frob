@@ -33,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names external or future-facing paths (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 949
+  new_length: 1055
 designated_repro_test: null
 threat: null
 component: null
@@ -45,7 +52,7 @@ Jira items. Reproduced by the coordinator on BOTH the global tool
 (0.531.1.dev338) and the working tree (0.531.1.dev344) in a fresh
 python-tool scaffold:
     frob ticket new --title "points repro" --kind feature --tier ticket --points 3 --scope src/ --no-commit
-    -> created T-0001, tickets/T-0001/ticket.md has `points: null`
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->    -> created T-0001, tickets/T-0001/ticket.md has `points: null`
 No warning is printed (the "filed with no --points" WARN does not fire
 either, so `spec.points` is set at validation time and lost before the
 write). `frob ticket points <id> N` afterwards does persist. Trace the value
