@@ -32,6 +32,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'crunk data point: dry-run and check --ticket miss T-2114'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 875
+  new_length: 1624
 designated_repro_test: null
 threat: null
 component: null
@@ -53,3 +60,16 @@ the T-5161 sweep preview; the DRY RUN summary names each pre-land probe
 it ran so a "clean" is auditable. Positive control: a fixture worktree
 with one over-long line in a touched file; the dry run reports E501 and
 the real land refuses on the same finding.
+
+
+Second case (crunk-ba, 2026-09-26, crunk T-0208): `land --dry-run`
+reported "DRY RUN clean -- merged=True" and `frob check --ticket` was
+fully clean, then the real land refused with T-2114 "new public symbol
+... has no frob:tests edge" for 3 symbols in src/crunk/tailwind_runtime/
+models.py. Widen this ticket: the dry run runs EVERY pre-land guard that
+does not need the merge commit (the scoped ruff pass, T-1907 ty on the
+touched set, T-2114/T-5299 new-public-symbol doc/test edges, scope and
+cross-ticket checks) against the staged preview, and `frob check
+--ticket` surfaces T-2114 too, so a clean ticket check plus a clean dry
+run implies the land will not refuse before the merge commit exists.
+The DRY RUN summary lists each guard it ran.
