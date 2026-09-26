@@ -1,5 +1,5 @@
 ---
-id: T-draft-09d74d21
+id: T-6592
 title: 'SELFAUDIT001 SYS119: 34 templated self-audit assume entries across CWE-502/639/78/79/89/918/94
   need module-owned rewrites'
 state: queued
