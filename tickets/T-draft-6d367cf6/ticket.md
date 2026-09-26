@@ -34,6 +34,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names external or future-facing paths (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 971
+  new_length: 1077
 designated_repro_test: null
 threat: null
 component: null
@@ -42,7 +49,7 @@ anchor_reason: null
 land_commit: null
 ---
 Reported by the crunk session (2026-09-26): while working T-0176, `frob
-format` rewrote src/crunk/__main__.py and src/crunk/rules/_breakpoints.py,
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->format` rewrote src/crunk/__main__.py and src/crunk/rules/_breakpoints.py,
 pre-existing repo-wide ruff drift outside the ticket's declared scope, and
 the agent had to `git checkout --` them by hand. Verified on dev
 b41443f46d: `frob format --help` offers --code/--directives/--check/--json/
