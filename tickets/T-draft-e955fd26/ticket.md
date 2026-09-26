@@ -29,6 +29,7 @@ branch: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/gates/_fix_engine.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,11 @@ scope_changes:
   reason: config.py under live T-draft-fcfdafdf lease/in-progress state, collision
     blocks start; disabled-list config key deferred to a follow-up once that lease
     clears
+  actor: logan
+  at: '2026-09-26'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: doc target for _land_cmd.py symbols touched by this ticket
   actor: logan
   at: '2026-09-26'
 designated_repro_test: null
