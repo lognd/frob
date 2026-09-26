@@ -2,7 +2,7 @@
 id: T-draft-73138a7a
 title: 'T-5808 native reuse overwrites the running process own loaded extension in
   place with a STALE artifact: every land segfaults in strata_core parse_source'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -24,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/natives/_build.py
 - tests/unit/test_natives_build.py
