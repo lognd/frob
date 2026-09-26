@@ -47,6 +47,13 @@ scope_changes:
   reason: doc target for _land_cmd.py symbols touched by this ticket
   actor: logan
   at: '2026-09-26'
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names external or future-facing paths (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1936
+  new_length: 2148
 designated_repro_test: null
 threat: null
 component: null
@@ -59,7 +66,7 @@ Reported by the logand.app-v2 session (2026-09-26, dev332/dev338):
 before landing. Verified on dev b41443f46d: the step runs the WHOLE tree
 (the T-1404 comment in _land_cmd.py says so; `touched_paths` only gates
 the fmt half), `exclude` is a caller-only parameter (FMT001), there is no
-CLI flag and no frob.toml knob to disable a fixer, and `--dry-run` skips
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->CLI flag and no frob.toml knob to disable a fixer, and `--dry-run` skips
 the step entirely (T-4179), so a clean dry run hides it.
 
 Measured damage on logand main: T-0442's land (5f32ff6d, 67 files, 4 in
@@ -74,7 +81,7 @@ Deliver:
 1. At land, `apply_tier_a_fixes` receives the ticket's declared scope plus
    touched paths and rewrites nothing outside them; a fix that would touch
    an out-of-scope file is logged and skipped.
-2. `[fix] disabled = ["TEST010", ...]` in frob.toml (and `--no-tier-a` on
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->2. `[fix] disabled = ["TEST010", ...]` in frob.toml (and `--no-tier-a` on
    land as the explicit-flag tier) so a known-broken handler can be gated
    off in a consumer repo; TEST010's handler ships disabled by default
    until T-6535 lands and re-enables it.
