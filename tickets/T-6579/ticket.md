@@ -32,6 +32,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'crunk root cause: 9P PATH walk during ticket mutations'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 996
+  new_length: 2416
 designated_repro_test: null
 threat: null
 component: null
@@ -54,3 +61,27 @@ subprocess or lock wait inside `ticket new` with a refusal naming the
 stage, and the duplicate-title check before any graph or check work.
 Positive control: a test that plants a held tickets.lock and shows ticket
 new refuses with the lock holder within the deadline instead of waiting.
+
+
+Root cause (crunk-ba, 2026-09-26, four more instances): `frob ticket body
+--append`, `done-report`, `scope --add` and a logand `ticket body` had sat
+in D state for 1-3 h with /proc/<pid>/wchan = p9_client_rpc, WSL's 9P
+client: every one of them was inside a Windows-side (/mnt/c) path probe.
+This is the F-023 class already documented at
+src/frob/app/ticket_runner/_new.py (the clipboard probe's powershell.exe
+exec hung in the PATH-search stat() calls before subprocess's timeout
+clock starts), but the T-3322 opt-in gate only covers the clipboard
+offer in `ticket new`; body/scope/done-report never reach that gate and
+still hang, so the exec that hangs is a different spawn on the mutation
+path (any bare-name `subprocess.run` of git/ruff/pytest walks the 43
+appended /mnt/c PATH entries when the 9P mount stalls).
+
+Deliver: (1) a single process-wide spawn PATH that strips /mnt/* entries
+(honouring WSL's appendWindowsPath=false semantics) used by every
+`gitio`/tool spawn, with the resolved absolute path cached per binary;
+(2) a wall-clock deadline around the spawn itself (fork/exec), not only
+the wait, on every ticket-mutation subprocess, refusing with the stage
+name; (3) `frob doctor` reports appended Windows PATH entries on WSL as
+a hang risk. Positive control: a fake PATH entry on a FUSE mount that
+blocks stat() plus a `ticket body --append`; the verb completes within
+the deadline instead of hanging.
