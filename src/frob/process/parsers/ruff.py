@@ -34,26 +34,48 @@ _TEXT_LINE = re.compile(r"^(.*?):(\d+):(\d+):\s+([A-Z]\d+)\s+(.*)$")
 # to the same real path.
 _WOULD_REFORMAT_LINE = re.compile(r"^Would reformat:?\s+(.+)$")
 
+# frob:ticket T-draft-cbdee0d3
+# T-draft-cbdee0d3: ruff 0.16.5 replaced the "Would reformat[:] <path>"
+# line entirely with a diagnostic-style block:
+#   unformatted: File would be reformatted
+#     --> <path>:<line>:<col>
+#   <diff>
+# followed by a trailing "N files would be reformatted, M files already
+# formatted" summary. Neither `_WOULD_REFORMAT_LINE` form ever matches
+# this grammar, so `parse_ruff_would_reformat_paths` silently returned
+# zero paths on 0.16.5 -- `_ruff_format_result` then built a `ToolResult`
+# with `exit_code=1` and `diagnostics=[]`, which the T-2521 completeness
+# check (correctly) reads as a crashed/silent tool stage, not a real,
+# measured format-drift finding. Anchored on the `--> <path>:<line>:<col>`
+# line ruff emits right after its `unformatted:` header; `<line>`/`<col>`
+# are discarded (the same file-level granularity every other ruff-format
+# grammar this module parses already returns).
+_UNFORMATTED_ARROW_LINE = re.compile(r"^-->\s+(.+):\d+:\d+$")
+
 
 # frob:doc docs/modules/process.md#public-api
 def parse_ruff_would_reformat_paths(stdout_and_stderr: str) -> tuple[str, ...]:
     """Extract real file paths from `ruff format --check`'s "Would
-    reformat" lines (T-5393), tolerating both the colon (ruff >=0.15.16)
-    and colon-less (older ruff) forms of the line -- the single shared
+    reformat" output, tolerating three grammars this module has measured
+    live: the colon form (ruff >=0.15.16), the colon-less form (older
+    ruff), and ruff 0.16.5's `unformatted: ...` + `--> <path>:<line>:
+    <col>` diagnostic block (T-draft-cbdee0d3) -- the single shared
     parser `frob.gates._land_format` and `frob.check._python` both call,
     replacing each module's own partial (colon-blind) strip. Returns
-    paths sorted for determinism; a line that does not match the "Would
-    reformat" grammar contributes nothing."""
-    return tuple(
-        sorted(
-            m.group(1).strip()
-            for m in (
-                _WOULD_REFORMAT_LINE.match(line.strip())
-                for line in stdout_and_stderr.splitlines()
-            )
-            if m is not None
-        )
-    )
+    paths sorted and de-duplicated for determinism (0.16.5's block can
+    in principle emit more than one `-->` line per file across hunks);
+    a line that matches neither grammar contributes nothing."""
+    paths: set[str] = set()
+    for line in stdout_and_stderr.splitlines():
+        stripped = line.strip()
+        reformat_match = _WOULD_REFORMAT_LINE.match(stripped)
+        if reformat_match is not None:
+            paths.add(reformat_match.group(1).strip())
+            continue
+        arrow_match = _UNFORMATTED_ARROW_LINE.match(stripped)
+        if arrow_match is not None:
+            paths.add(arrow_match.group(1).strip())
+    return tuple(sorted(paths))
 
 
 # frob:ticket T-0045

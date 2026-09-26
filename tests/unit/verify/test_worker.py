@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
+from typani.result import Ok, Result
 
+from frob.gitio import ProcResult
 from frob.verify import _worker as _worker_mod
 from frob.verify._watermark import (
     advance_watermark,
@@ -1075,3 +1079,92 @@ class TestDefaultVerifyFnRecordsUnmeasurableReason:
         result = _worker_mod._default_verify_fn(Path("/nonexistent"), "sha-measured")
         assert result == findings
         assert "sha-measured" not in _worker_mod._LAST_UNMEASURABLE_REASON
+
+
+# frob:ticket T-draft-cbdee0d3
+class TestDefaultVerifyFnRuffFormatDriftIsMeasured:
+    """T-draft-cbdee0d3 positive control: `_default_verify_fn`'s own
+    real `unscoped_error_findings` -> `_unscoped_error_findings` ->
+    `_parse_error_findings_from_stdout` -> `_parse_error_findings_from_
+    json` chain must read a `ruff-format` `ToolResult` that exited
+    nonzero with a WARNING-severity "needs formatting" diagnostic as a
+    MEASURED verify pass (a real, comparable `frozenset`, never `None`)
+    -- the incident this closes: `frob verify now` classified exactly
+    this shape `Unmeasurable` and the watermark could not advance while
+    any queue tip had format drift, which is precisely the case
+    verification should REPORT as a finding, not refuse to measure
+    (T-2521's completeness check, `_verify.py::_incomplete_tool_
+    results`, accepts ANY diagnostic -- warning included -- as
+    explaining a tool's nonzero exit; this test exercises that guarantee
+    end to end through this module's own production entrypoint). The
+    companion negative case (a nonzero `ruff-format` result with NO
+    diagnostics at all -- the genuine crashed/malformed-tool-stage
+    shape) must still read as unmeasurable."""
+
+    @staticmethod
+    def _check_json_payload(diagnostics: list[dict]) -> str:
+        """A `frob check --json` payload shaped like a real full run
+        whose only failing stage is `ruff-format`: a passing `gate-
+        summary` rollup (no gate violations) plus one `ruff-format`
+        `ToolResult` at `exit_code=1` carrying `diagnostics`."""
+        return json.dumps(
+            {
+                "results": [
+                    {"tool": "gate-summary", "exit_code": 0, "diagnostics": []},
+                    {
+                        "tool": "ruff-format",
+                        "exit_code": 1,
+                        "diagnostics": diagnostics,
+                        "summary": f"{len(diagnostics)} file(s) would be reformatted",
+                    },
+                ]
+            }
+        )
+
+    def test_warning_only_diagnostic_yields_a_measured_result(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::_default_verify_fn kind="unit"
+        from frob.app import ticket_runner
+
+        payload = self._check_json_payload(
+            [
+                {
+                    "file": "a.py",
+                    "severity": "warning",
+                    "message": "needs formatting",
+                    "code": None,
+                }
+            ]
+        )
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=1, stdout=payload, stderr="")
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+
+        result = _worker_mod._default_verify_fn(tmp_path, "sha-format-drift")
+
+        assert result is not None
+        assert result == frozenset()
+
+    def test_zero_diagnostics_is_still_unmeasurable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::_default_verify_fn kind="unit"
+        from frob.app import ticket_runner
+
+        payload = self._check_json_payload([])
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=1, stdout=payload, stderr="")
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+
+        result = _worker_mod._default_verify_fn(tmp_path, "sha-crashed-tool")
+
+        assert result is None

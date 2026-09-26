@@ -2,7 +2,7 @@
 id: T-6488
 title: 'verify: ruff-format drift (warning-only nonzero exit) classified unmeasurable,
   watermark never advances'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -12,6 +12,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
