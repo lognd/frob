@@ -1,7 +1,7 @@
 ---
 id: T-5764
 title: Vendor crunk's gallery manifest schema for frob-side validation
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -11,6 +11,7 @@ tier: ticket
 sprint: layout-gate
 runs_last: false
 milestone: v0.537.0
+flavour: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -20,8 +21,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5764
+branch: t-5764
 scope:
 - src/frob/webapp/_gallery_schema.py
 - tests/unit/test_webapp_gallery_schema.py
@@ -67,6 +68,14 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_webapp_gallery_schema.py::test_fixture_manifest_round_trips
+- tests/unit/test_webapp_gallery_schema.py::test_missing_source_hash_rejected
+- tests/unit/test_webapp_gallery_schema.py::test_load_gallery_manifest_not_found
+- tests/unit/test_webapp_gallery_schema.py::test_load_gallery_manifest_malformed
+- tests/unit/test_webapp_gallery_schema.py::test_entry_is_stale_on_hash_change
+- tests/unit/test_webapp_gallery_schema.py::test_entry_is_stale_false_when_unchanged
+- tests/unit/test_webapp_gallery_schema.py::test_vendored_schema_matches_crunk_source
 designated_repro_test: null
 threat: null
 component: null

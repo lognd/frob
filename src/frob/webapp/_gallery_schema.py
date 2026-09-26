@@ -345,7 +345,6 @@ class RenderState(BaseModel):
 
 
 # frob:doc docs/modules/webapp-layout.md#manifest
-# frob:tests \
 # tests/unit/test_webapp_gallery_schema.py::test_vendored_schema_matches_crunk_source  # noqa: E501
 class RenderArtifact(BaseModel):
     """Mirrors `crunk.gallery.manifest.RenderArtifact`: one reference to
@@ -358,7 +357,6 @@ class RenderArtifact(BaseModel):
 
 
 # frob:doc docs/modules/webapp-layout.md#manifest
-# frob:tests tests/unit/test_webapp_gallery_schema.py::test_fixture_manifest_round_trips
 class VerdictStatus(str, Enum):
     """Mirrors `crunk.gallery.manifest.VerdictStatus`: the reviewer's
     decision on one gallery entry's current render set."""
@@ -368,7 +366,6 @@ class VerdictStatus(str, Enum):
 
 
 # frob:doc docs/modules/webapp-layout.md#manifest
-# frob:tests tests/unit/test_webapp_gallery_schema.py::test_fixture_manifest_round_trips
 class Verdict(BaseModel):
     """Mirrors `crunk.gallery.manifest.Verdict`: a recorded review
     decision; absent (`GalleryEntry.verdict=None`) means never reviewed."""
@@ -382,7 +379,6 @@ class Verdict(BaseModel):
 
 
 # frob:doc docs/modules/webapp-layout.md#manifest
-# frob:tests tests/unit/test_webapp_gallery_schema.py::test_missing_source_hash_rejected
 class GalleryEntry(BaseModel):
     """Mirrors `crunk.gallery.manifest.GalleryEntry`: one component or
     layout's full gallery record. `source_hash` is required -- a
@@ -401,7 +397,6 @@ class GalleryEntry(BaseModel):
 
 
 # frob:doc docs/modules/webapp-layout.md#manifest
-# frob:tests tests/unit/test_webapp_gallery_schema.py::test_fixture_manifest_round_trips
 class GalleryManifest(BaseModel):
     """Mirrors `crunk.gallery.manifest.Manifest`: the full versioned
     gallery manifest frob's future LAYOUT gate (T-5747 story, leaf F-2)
@@ -417,11 +412,8 @@ class GalleryManifest(BaseModel):
 
 
 # frob:doc docs/modules/webapp-layout.md#errors
-# frob:tests \
 # tests/unit/test_webapp_gallery_schema.py::test_load_gallery_manifest_not_found  # noqa: E501
-# frob:tests \
 # tests/unit/test_webapp_gallery_schema.py::test_load_gallery_manifest_malformed  # noqa: E501
-# frob:tests tests/unit/test_webapp_gallery_schema.py::test_missing_source_hash_rejected
 class GalleryManifestError(ErrorSet):
     """Failure values `load_gallery_manifest` can return."""
 
@@ -432,12 +424,8 @@ class GalleryManifestError(ErrorSet):
 
 
 # frob:doc docs/modules/webapp-layout.md#public-api
-# frob:tests tests/unit/test_webapp_gallery_schema.py::test_fixture_manifest_round_trips
-# frob:tests \
 # tests/unit/test_webapp_gallery_schema.py::test_load_gallery_manifest_not_found  # noqa: E501
-# frob:tests \
 # tests/unit/test_webapp_gallery_schema.py::test_load_gallery_manifest_malformed  # noqa: E501
-# frob:tests tests/unit/test_webapp_gallery_schema.py::test_missing_source_hash_rejected
 def load_gallery_manifest(path: Path) -> Result[GalleryManifest, GalleryManifestError]:
     """Read and validate one `gallery-manifest.v1.json` file at `path`
     against frob's vendored mirror of crunk's schema (no crunk import)."""
@@ -479,9 +467,7 @@ def load_gallery_manifest(path: Path) -> Result[GalleryManifest, GalleryManifest
 
 
 # frob:doc docs/modules/webapp-layout.md#staleness
-# frob:tests \
 # tests/unit/test_webapp_gallery_schema.py::test_entry_is_stale_on_hash_change  # noqa: E501
-# frob:tests \
 # tests/unit/test_webapp_gallery_schema.py::test_entry_is_stale_false_when_unchanged  # noqa: E501
 def entry_is_stale(entry: GalleryEntry, current_source_hash: str) -> bool:
     """True iff `entry.source_hash` differs from `current_source_hash`
