@@ -24,11 +24,34 @@ runs_last_parallel_safe_reason: null
 worktree: null
 branch: null
 scope:
-- src/frob
+- src/frob/process/_derived_lock.py
+- tests/unit/test_process_lock.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob
+  reason: narrow from whole-tree scope to the one malformed frob:tests directive file
+    this ticket fixes; src/frob/tickets/_land.py's matching directives are leased
+    by in-progress T-5161, filed separately
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: src/frob/process/_derived_lock.py
+  reason: narrow from whole-tree scope to the one malformed frob:tests directive file
+    this ticket fixes; src/frob/tickets/_land.py's matching directives are leased
+    by in-progress T-5161, filed separately
+  actor: logan
+  at: '2026-09-25'
+- op: add
+  glob: tests/unit/test_process_lock.py
+  reason: narrow from whole-tree scope to the one malformed frob:tests directive file
+    this ticket fixes; src/frob/tickets/_land.py's matching directives are leased
+    by in-progress T-5161, filed separately
+  actor: logan
+  at: '2026-09-25'
 designated_repro_test: null
 threat: null
 component: null
