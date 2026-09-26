@@ -299,14 +299,22 @@ def list_runs(
 
 
 # frob:doc docs/modules/ghio.md#public-api
+# tests/test_ghio.py::TestViewRun::test_success_parses_jobs
 def view_run(root: Path, run_id: str) -> Result[RunDetail, GhError]:
-    """`gh run view <run_id> --json status,conclusion,jobs`: one run plus
-    every job it contains, in a single call. `Err(GhError.NotFound)` for
-    an id that does not exist (mapped from gh's own "could not find any
-    workflow run" / HTTP 404 stderr via `_classify_gh_failure`)."""
-    result = _run_gh(
-        ("run", "view", run_id, "--json", "status,conclusion,jobs"), cwd=root
-    )
+    """`gh run view <run_id> --json status,conclusion` for the run's own
+    status, plus `gh api repos/{owner}/{repo}/actions/runs/{run_id}/jobs`
+    for its jobs, in two calls rather than one. Measured 2026-09-24: this
+    host's `gh` (2.4.0) rejects `--json jobs` on `run view` outright
+    ("Unknown JSON field: jobs") -- `--json jobs` is not a field that
+    version's `run view` recognizes at all, so the single-call form this
+    function used to use could never actually retrieve jobs on this host.
+    The job-scoped REST route does not share that gap (same doctrine as
+    `job_log`'s own job-scoped route, see that function's docstring), so
+    this splits the same way: run status/conclusion from `run view`, jobs
+    from `gh api`. `Err(GhError.NotFound)` for a run id that does not
+    exist (mapped from gh's own "could not find any workflow run" / HTTP
+    404 stderr via `_classify_gh_failure`) -- from either call."""
+    result = _run_gh(("run", "view", run_id, "--json", "status,conclusion"), cwd=root)
     if result.is_err:
         return Err(result.danger_err)
     try:
@@ -314,14 +322,33 @@ def view_run(root: Path, run_id: str) -> Result[RunDetail, GhError]:
     except json.JSONDecodeError:
         _log.warning("ghio: view_run: could not parse gh run view JSON")
         return Err(GhError.GhFailed)
+
+    owner_result = _resolve_owner_repo(root)
+    if owner_result.is_err:
+        return Err(owner_result.danger_err)
+    owner_repo = owner_result.danger_ok
+
+    jobs_result = _run_gh(
+        ("api", f"repos/{owner_repo}/actions/runs/{run_id}/jobs"), cwd=root
+    )
+    if jobs_result.is_err:
+        return Err(jobs_result.danger_err)
+    try:
+        jobs_parsed = json.loads(jobs_result.danger_ok.stdout)
+    except json.JSONDecodeError:
+        _log.warning("ghio: view_run: could not parse gh api jobs JSON")
+        return Err(GhError.GhFailed)
+    # The REST "list jobs for a workflow run" route names the job's own
+    # id "id", not "databaseId" (that field name is specific to `gh`'s
+    # own `--json` output shape, which this route does not share).
     jobs = tuple(
         JobSummary(
-            job_id=str(job.get("databaseId", "")),
+            job_id=str(job.get("id", "")),
             name=str(job.get("name", "")),
             status=str(job.get("status", "")),
             conclusion=str(job.get("conclusion", "") or ""),
         )
-        for job in parsed.get("jobs", [])
+        for job in jobs_parsed.get("jobs", [])
     )
     return Ok(
         RunDetail(

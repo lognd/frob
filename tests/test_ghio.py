@@ -239,26 +239,39 @@ class TestViewRun:
     def test_success_parses_jobs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """Measured 2026-09-24: this host's `gh` rejects `--json jobs` on
+        `run view` ("Unknown JSON field: jobs") -- jobs come from the
+        `gh api .../actions/runs/<id>/jobs` route instead (view_run's own
+        docstring), whose "id" field (not `--json`'s "databaseId") is the
+        job id."""
         # frob:tests src/frob/ghio.py::view_run
-        payload = {
-            "status": "completed",
-            "conclusion": "failure",
+        run_payload = {"status": "completed", "conclusion": "failure"}
+        jobs_payload = {
             "jobs": [
                 {
-                    "databaseId": 1,
+                    "id": 1,
                     "name": "ubuntu",
                     "status": "completed",
                     "conclusion": "failure",
                 },
                 {
-                    "databaseId": 2,
+                    "id": 2,
                     "name": "macos",
                     "status": "completed",
                     "conclusion": "success",
                 },
-            ],
+            ]
         }
-        _scripted(monkeypatch, {"run view": _ok(json.dumps(payload))})
+        _scripted(
+            monkeypatch,
+            {
+                "run view": _ok(json.dumps(run_payload)),
+                "repo view": _ok(json.dumps({"nameWithOwner": "acme/frob"})),
+                "api repos/acme/frob/actions/runs/42/jobs": _ok(
+                    json.dumps(jobs_payload)
+                ),
+            },
+        )
         result = view_run(tmp_path, "42")
         assert result.is_ok
         detail = result.danger_ok
@@ -316,23 +329,25 @@ class TestJobLog:
         run_conclusion: str = "failure",
         job_conclusion: str = "failure",
     ) -> None:
-        run_payload = {
-            "status": run_status,
-            "conclusion": run_conclusion,
+        run_payload = {"status": run_status, "conclusion": run_conclusion}
+        jobs_payload = {
             "jobs": [
                 {
-                    "databaseId": 7,
+                    "id": 7,
                     "name": "windows",
                     "status": "completed",
                     "conclusion": job_conclusion,
                 }
-            ],
+            ]
         }
         _scripted(
             monkeypatch,
             {
                 "repo view": _ok(json.dumps({"nameWithOwner": "acme/frob"})),
                 "api repos/acme/frob/actions/jobs/7/logs": api_response,
+                "api repos/acme/frob/actions/runs/100/jobs": _ok(
+                    json.dumps(jobs_payload)
+                ),
                 "run view": _ok(json.dumps(run_payload)),
             },
         )

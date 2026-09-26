@@ -120,8 +120,26 @@ boundary (`job_log`/`view_run` monkeypatched), the same discipline
 `tests/test_ghio.py` uses one layer down -- no test here depends on `gh`
 being installed, authenticated, or pointed at a real remote.
 
+## `frob ci report <run-id>` (T-2982, CI-1)
+
+`frob.app.ci_runner.run` is the CLI porcelain over `build_run_report`:
+`frob ci report <run-id>` prints, per job/platform, the failing test node
+ids and failing steps, the cross-platform diff (failure signatures shared
+across every failing job vs unique to one job -- `_cross_platform_diff`),
+and a per-file cluster grouping (`_clusters_by_file`, built entirely from
+`build_run_report`'s own `FailureCluster`s, no new signature logic).
+`--json` prints the exact same `RunReport` `build_run_report` returns via
+`model_dump_json` -- the CLI's own parity control
+(`tests/unit/cli/test_ci_report.py::TestCiReportParity`). A fully clean
+run still prints an explicit "no failures" line, never empty output (the
+same silent-zero doctrine this module's own "Why" section applies one
+layer down). Every `GhError` `build_run_report` can hand back renders as
+its own named `str()` message and a non-zero exit, never a traceback
+(`tests/unit/cli/test_ci_report.py::TestCiReportErrors`).
+
 ## frob:doc coverage
 
 This anchor is the `frob:doc` target for every public symbol in
-`src/frob/ci_report.py`; see that file's own `frob:doc`/`frob:tests`
-directives for the per-symbol binding this page satisfies.
+`src/frob/ci_report.py` AND `src/frob/app/ci_runner.py`'s `run`; see
+each file's own `frob:doc`/`frob:tests` directives for the per-symbol
+binding this page satisfies.

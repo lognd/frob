@@ -225,6 +225,10 @@ class Subcommand(str, enum.Enum):
     # velocity) -- reuses frob.gates._baseline/frob.app.verify_runner/
     # frob.tickets.ticket_flow, adds no new counting mechanism of its own.
     status = "status"
+    # frob:ticket T-draft-c099f096
+    # T-2982 (CI-1): `frob ci report <run-id>` -- the CLI surface over
+    # frob.ci_report.build_run_report/frob.ghio.
+    ci = "ci"
 
 
 # frob:doc docs/modules/app.md#config
@@ -1228,6 +1232,12 @@ class AppConfig(BaseModel):
     verify_dispose_dismissed: list[str] = []
     verify_dispose_reason: str | None = None
     verify_dispose_actor: str | None = None
+
+    # ci (T-2982, CI-1): `frob ci report <run-id>` over frob.ci_report/frob.ghio.
+    ci_command: str | None = None  # report
+    ci_run_id: str | None = None
+    ci_json: bool = False
+    ci_path: Path | None = None
     #: `frob verify dispose --retire-unidentifiable` (T-2217/T-2207):
     #: dispose every currently-raised identity-less finding -- the only
     #: path that can, since --file-ticket/--dismiss's RULE:FILE:LINE

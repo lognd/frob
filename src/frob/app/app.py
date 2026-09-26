@@ -17,6 +17,7 @@ _RUNNER_MODULE_NAMES = (
     "ack_runner",
     "arch_runner",
     "check_runner",
+    "ci_runner",
     "claude_runner",
     "clean_runner",
     "coverage_runner",
@@ -85,6 +86,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.exports: "exports_runner",
     Subcommand.fleet: "fleet_runner",
     Subcommand.check: "check_runner",
+    Subcommand.ci: "ci_runner",
     Subcommand.gitlog: "gitlog_runner",
     Subcommand.graph: "graph_runner",
     Subcommand.ack: "ack_runner",
@@ -155,6 +157,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.arch_runner as module
     elif name == "check_runner":
         import frob.app.check_runner as module
+    elif name == "ci_runner":
+        import frob.app.ci_runner as module
     elif name == "claude_runner":
         import frob.app.claude_runner as module
     elif name == "clean_runner":
