@@ -39,6 +39,12 @@ body_changes:
   at: '2026-09-26'
   old_length: 996
   new_length: 2416
+- mode: append
+  reason: 'logand data point: hang after the ledger write, lock files left'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 2416
+  new_length: 3109
 designated_repro_test: null
 threat: null
 component: null
@@ -85,3 +91,15 @@ name; (3) `frob doctor` reports appended Windows PATH entries on WSL as
 a hang risk. Positive control: a fake PATH entry on a FUSE mount that
 blocks stat() plus a `ticket body --append`; the verb completes within
 the deadline instead of hanging.
+
+
+Third data point (logand-app-v2, 2026-09-26): pid 3097114 (`ticket body
+--append` in a worktree) was at state R with wchan "-" after 2 h 49 m,
+and the appended text was already present exactly once in the ticket
+file from the same call, so the verb had finished its ledger write and
+then spun or blocked in whatever follows it (the auto-commit git spawn,
+the post-mutation splice check, or the cross-worktree lease scan). After
+SIGKILL the worktree was clean; three per-ticket lock files remained
+under .frob/tickets (T-0425 and two drafts). So the deadline must cover
+the post-write phase too, and a killed verb must not leave lock files
+that a later run reports as orphaned (F-401 shape).
