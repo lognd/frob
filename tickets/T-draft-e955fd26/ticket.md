@@ -29,11 +29,18 @@ branch: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/gates/_fix_engine.py
-- src/frob/app/config.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/config.py
+  reason: config.py under live T-draft-fcfdafdf lease/in-progress state, collision
+    blocks start; disabled-list config key deferred to a follow-up once that lease
+    clears
+  actor: logan
+  at: '2026-09-26'
 designated_repro_test: null
 threat: null
 component: null
