@@ -130,7 +130,7 @@ from frob.tickets._land_merge import splice_ledger as splice_ledger  # noqa: E40
 from frob.tickets._land_passenger_identity import classify_directive_ids
 from frob.tickets._land_squash import (
     _land_squash_apply,
-    _refuse_if_selfaudit_findings_in_touched_files,
+    _run_pre_commit_checks,
     _v2_effective_scope,
     _worktree_full_changeset,
 )
@@ -3128,8 +3128,21 @@ def _land_locked(
             # squash preview the real land commits from, so the T-3324/
             # DOC006/SELFAUDIT001 findings that preview surfaces were only
             # ever discovered at the real land.
+            # frob:ticket T-5161
+            # T-5161: `pre_commit_sweep` is the SAME closure a real land
+            # threads all the way down to `_run_pre_commit_checks` (T-1514's
+            # unscoped sweep, skipped only under the rapid profile) -- a
+            # `--dry-run` that never ran it reported clean while the real
+            # land it was previewing still refused on SELFAUDIT001/DOC004/
+            # REG findings the sweep alone catches (measured: T-4759,
+            # T-4114, T-4115).
             squash_preview_check = _dry_run_squash_preview_pre_commit_checks(
-                root, worktree, ticket_id, main_branch_name, root_pre_land_tip.danger_ok
+                root,
+                worktree,
+                ticket_id,
+                main_branch_name,
+                root_pre_land_tip.danger_ok,
+                pre_commit_sweep,
             )
             if squash_preview_check.is_err:
                 return Err(squash_preview_check.danger_err)
@@ -8415,31 +8428,42 @@ def _dry_run_report(
 
 
 # frob:ticket T-5403
+# frob:ticket T-5161
 # tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_dry_run_refuses_on_a_planted_doc006_pointer  # noqa: E501
 # tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_dry_run_refuses_on_a_planted_selfaudit001_sink  # noqa: E501
 # tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_clean_worktree_dry_run_stays_clean  # noqa: E501
+# tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_dry_run_refuses_when_the_pre_commit_sweep_finds_something  # noqa: E501
+# tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_dry_run_pre_commit_sweep_preview_is_clean_when_the_sweep_passes  # noqa: E501
 def _dry_run_squash_preview_pre_commit_checks(
     root: Path,
     worktree: Path,
     ticket_id: str,
     main_branch_name: str,
     pre_land_tip: str,
+    pre_commit_sweep: Callable[[Path, str], bool | None] | None,
 ) -> Result[None, LandError]:
     """T-5403: `--dry-run` used to report READY the instant the ordinary
     worktree merge and its post-merge re-verifications passed, never
     building the SQUASH preview a real land commits from -- so the T-3324
     self-conformance sweep and the DOC006/SELFAUDIT001 findings
-    `_refuse_if_selfaudit_findings_in_touched_files` runs against that
-    preview (see its own docstring) were only ever discovered at the real
-    land, making a clean dry run a false READY (observed twice: T-5302,
-    T-5360).
+    `_run_pre_commit_checks` runs against that preview (see its own
+    docstring) were only ever discovered at the real land, making a clean
+    dry run a false READY (observed twice: T-5302, T-5360).
+
+    T-5161: `_run_pre_commit_checks` ALSO runs the pluggable T-1514
+    unscoped pre-land sweep (`pre_commit_sweep`, `None` under the rapid
+    profile -- same posture the real land already uses) BEFORE the T-5403
+    self-conformance/DOC006/SELFAUDIT001 check -- a dry run that only ran
+    the latter still reported clean while the real land it was previewing
+    refused on SELFAUDIT001/DOC004/REG findings only the sweep catches
+    (measured: T-4759, T-4114, T-4115).
 
     Fix: build the SAME staged squash preview a real land commits from
     (`compose_squash_in_disposable_worktree`, `root` pinned at
-    `pre_land_tip`) and run the identical self-conformance/DOC006/
-    SELFAUDIT001 check against it, then let the disposable worktree's own
-    context manager remove it -- `root` and `worktree` are never mutated
-    by this function, so a dry run stays a dry run.
+    `pre_land_tip`) and run the identical two-stage pre-commit check
+    (`_run_pre_commit_checks`) against it, then let the disposable
+    worktree's own context manager remove it -- `root` and `worktree` are
+    never mutated by this function, so a dry run stays a dry run.
 
     `touched_files` is `worktree`'s full branch changeset vs
     `main_branch_name` (`_worktree_full_changeset`) -- independent of
@@ -8478,6 +8502,52 @@ def _dry_run_squash_preview_pre_commit_checks(
         )
         return Ok(None)
 
+    # frob:ticket T-5161
+    # T-5161: a real `pre_commit_sweep` (T-1514, non-`None` outside the
+    # rapid profile) spawns an unscoped `frob check` -- running that
+    # against a bare `compose_squash_in_disposable_worktree` preview would
+    # hit the exact T-3135 problem `_squash_apply_on_disposable_stage`'s
+    # own docstring diagnosed (no `.venv`/built natives/`.frob` cache, so
+    # the spawn either reports unmeasurable or floods false findings).
+    # Reuse the SAME persistent warm sweep stage (`_ensure_warm_sweep_
+    # stage`/`_squash_into_warm_stage`) the real land uses instead --
+    # `_ensure_warm_sweep_stage` resets it to `pre_land_tip` on every
+    # call, so this dry-run preview leaves nothing for the next caller
+    # (dry-run or real land) to clean up. If the warm stage cannot be
+    # prepared or squash-composed, this degrades to skipping the sweep
+    # ONLY -- the self-conformance/DOC006/SELFAUDIT001 check below still
+    # runs against the lightweight disposable preview, same fail-open
+    # posture as every other best-effort step in this function.
+    if pre_commit_sweep is not None:
+        warm_stage = _ensure_warm_sweep_stage(root, pre_land_tip)
+        if warm_stage is not None and _squash_into_warm_stage(
+            warm_stage, branch.danger_ok
+        ):
+            _log.info(
+                "land: %s dry-run running the T-1514 pre-commit sweep "
+                "preview against the persistent warm stage %s (T-5161)",
+                ticket_id,
+                warm_stage,
+            )
+            return _run_pre_commit_checks(
+                warm_stage,
+                ticket_id,
+                ticket_id,
+                pre_land_tip,
+                pre_commit_sweep,
+                touched_files,
+                land_lock_root=root,
+            )
+        _log.warning(
+            "land: %s dry-run could not compose the warm sweep stage to "
+            "preview the T-1514 unscoped sweep (T-5161) -- skipping the "
+            "sweep this run (the self-conformance/DOC006/SELFAUDIT001 "
+            "check below still runs); a real land still measures the "
+            "sweep",
+            ticket_id,
+        )
+        pre_commit_sweep = None
+
     with compose_squash_in_disposable_worktree(
         root, pre_land_tip, branch.danger_ok
     ) as composed:
@@ -8502,11 +8572,12 @@ def _dry_run_squash_preview_pre_commit_checks(
                 len(stage.conflicted),
             )
             return Ok(None)
-        return _refuse_if_selfaudit_findings_in_touched_files(
+        return _run_pre_commit_checks(
             stage.worktree,
             ticket_id,
             ticket_id,
             pre_land_tip,
+            pre_commit_sweep,
             touched_files,
             land_lock_root=root,
         )

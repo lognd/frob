@@ -1,5 +1,5 @@
 ---
-id: T-draft-39377bc7
+id: T-6549
 title: 'test runners: exit-code-only outcome records PASS when the filter selects
   nothing; require executed-and-passed per bound id from the runner report'
 state: queued

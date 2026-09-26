@@ -2,7 +2,7 @@
 id: T-5161
 title: land --dry-run skips the unscoped pre-land sweep, so a clean dry run is still
   refused by the real land on SELFAUDIT001/DOC004/REG findings
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-09-20'
@@ -13,6 +13,8 @@ sprint: null
 runs_last: false
 milestone: 0.534.0
 flavour: null
+due: null
+rank: null
 points: 3
 unsized_ack: false
 unsized_ack_reason: null
@@ -52,6 +54,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks::test_dry_run_refuses_when_the_pre_commit_sweep_finds_something
+- tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks::test_dry_run_pre_commit_sweep_preview_is_clean_when_the_sweep_passes
 designated_repro_test: null
 threat: null
 component: null

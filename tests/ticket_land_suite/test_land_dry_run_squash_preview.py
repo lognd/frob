@@ -103,7 +103,7 @@ class TestDryRunSquashPreviewPreCommitChecks:
         )
 
         result = _dry_run_squash_preview_pre_commit_checks(
-            root, worktree, "T-0001", "main", pre_land_tip
+            root, worktree, "T-0001", "main", pre_land_tip, None
         )
 
         assert result.is_err
@@ -143,7 +143,7 @@ class TestDryRunSquashPreviewPreCommitChecks:
         )
 
         result = _dry_run_squash_preview_pre_commit_checks(
-            root, worktree, "T-0001", "main", pre_land_tip
+            root, worktree, "T-0001", "main", pre_land_tip, None
         )
 
         assert result.is_err
@@ -169,7 +169,78 @@ class TestDryRunSquashPreviewPreCommitChecks:
         )
 
         result = _dry_run_squash_preview_pre_commit_checks(
-            root, worktree, "T-0001", "main", pre_land_tip
+            root, worktree, "T-0001", "main", pre_land_tip, None
+        )
+
+        assert result.is_ok
+        assert _run(["git", "rev-parse", "main"], root).stdout.strip() == pre_land_tip
+
+    # frob:tests tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_dry_run_refuses_when_the_pre_commit_sweep_finds_something  # noqa: E501
+    def test_dry_run_refuses_when_the_pre_commit_sweep_finds_something(
+        self, scratch_land: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-5161 positive control: a non-`None` `pre_commit_sweep` that
+        reports `False` (T-1514's own "refuse" verdict) must refuse the
+        dry-run preview with the SAME `LandError.PreLandUnscopedSweepFailed`
+        a real land reports -- this is the T-4759/T-4114/T-4115 class the
+        pre-T-5161 dry-run never measured at all. The sweep is called
+        against the PERSISTENT warm stage (T-3135), not `worktree` or
+        `root`, and not the plain per-call disposable preview -- recorded
+        via the fake sweep's own call args."""
+        root, worktree = scratch_land
+        pre_land_tip = _run(["git", "rev-parse", "main"], root).stdout.strip()
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.sys111_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.docptr_findings_touching", lambda root, files: ()
+        )
+        calls: list[tuple[Path, str]] = []
+
+        def _fake_sweep(stage: Path, final_id: str) -> bool:
+            calls.append((stage, final_id))
+            return False
+
+        result = _dry_run_squash_preview_pre_commit_checks(
+            root, worktree, "T-0001", "main", pre_land_tip, _fake_sweep
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.PreLandUnscopedSweepFailed
+        assert len(calls) == 1
+        swept_stage, swept_final_id = calls[0]
+        assert swept_final_id == "T-0001"
+        assert swept_stage != worktree
+        assert swept_stage != root
+        # Neither checkout was mutated by the preview.
+        assert _run(["git", "status", "--porcelain"], root).stdout == ""
+        assert _run(["git", "status", "--porcelain"], worktree).stdout == ""
+        assert _run(["git", "rev-parse", "main"], root).stdout.strip() == pre_land_tip
+
+    # frob:tests tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks.test_dry_run_pre_commit_sweep_preview_is_clean_when_the_sweep_passes  # noqa: E501
+    def test_dry_run_pre_commit_sweep_preview_is_clean_when_the_sweep_passes(
+        self, scratch_land: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Negative control: a non-`None` `pre_commit_sweep` that reports
+        `True` (or `None`, T-1514's "no-op/pass" verdicts) must leave the
+        dry-run preview clean."""
+        root, worktree = scratch_land
+        pre_land_tip = _run(["git", "rev-parse", "main"], root).stdout.strip()
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.sys111_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.docptr_findings_touching", lambda root, files: ()
+        )
+
+        result = _dry_run_squash_preview_pre_commit_checks(
+            root, worktree, "T-0001", "main", pre_land_tip, lambda stage, fid: True
         )
 
         assert result.is_ok
