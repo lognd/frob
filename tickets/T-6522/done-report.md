@@ -1,0 +1,18 @@
+## Done report
+
+Root cause: TestReconcileStripStaleFields._inject_stale_fields used branch/worktree as its undeclared-extra fixture; T-5464 promoted both to declared Ticket fields, so the test silently stopped exercising __pydantic_extra__. Fixed by switching the fixture to legacy_owner/legacy_priority_hint; strip_stale_fields itself was never broken.
+
+### Changed
+```
+ tests/test_ticket_reconcile.py | 27 ++++++++++++++++++++-------
+ tickets/T-6522/done-report.md  | 13 +++++++++++++
+ tickets/T-6522/ticket.md       | 16 ++++++++++++----
+ 3 files changed, 45 insertions(+), 11 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_dry_run_reports_but_does_not_strip` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_apply_strips_stale_fields` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_second_run_is_a_no_op` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_clean_ticket_is_untouched` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_leased_ticket_is_skipped_not_written` (pytest node id, verified passing when recorded)

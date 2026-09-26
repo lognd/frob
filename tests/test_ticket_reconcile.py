@@ -794,20 +794,30 @@ class TestReconcileStripStaleFields:
     ledger fields (`extra="allow"` on `Ticket`, T-0838) an older writer
     left behind and the current model no longer declares."""
 
+    #: T-6522: `branch`/`worktree` were this fixture's original stand-in
+    #: for "an old writer's undeclared extra field" -- true until T-5464
+    #: promoted BOTH onto the real `Ticket` model (to quiet TICK008's
+    #: every-extra-key WARN), which silently turned this fixture into a
+    #: same-shape round-trip of two now-real fields instead of a genuine
+    #: pydantic-extra case, so `__pydantic_extra__` came back empty and
+    #: every test below false-failed. `legacy_owner`/`legacy_priority_hint`
+    #: are not, and as of this writing never have been, declared on
+    #: `Ticket` -- picked to actually exercise the extra-field path this
+    #: class means to test, not to resemble real historical field names.
     def _inject_stale_fields(self, root: Path, ticket_id: str) -> None:
         """Write `ticket_id`'s ledger record with two undeclared extra
-        fields (`branch`/`worktree`) directly -- models an older `frob`
-        version whose `Ticket` model once declared those as real fields."""
+        fields directly -- models an older `frob` version whose `Ticket`
+        model once declared fields the current model does not."""
         loaded = load_all(root)
         assert loaded.is_ok
         ticket = loaded.danger_ok[ticket_id]
         dumped = ticket.model_dump(mode="python")
-        dumped["branch"] = "t-stale"
-        dumped["worktree"] = "/tmp/stale-worktree"
+        dumped["legacy_owner"] = "t-stale"
+        dumped["legacy_priority_hint"] = "/tmp/stale-worktree"
         stale = Ticket.model_validate(dumped)
         assert stale.__pydantic_extra__ == {
-            "branch": "t-stale",
-            "worktree": "/tmp/stale-worktree",
+            "legacy_owner": "t-stale",
+            "legacy_priority_hint": "/tmp/stale-worktree",
         }
         assert write_ticket(root, stale, strict_no_content_loss=False).is_ok
 
@@ -823,7 +833,10 @@ class TestReconcileStripStaleFields:
         assert result.is_ok
         report = result.danger_ok
         assert report.stale_ticket_ids == (tid,)
-        assert report.stripped_fields_by_ticket[tid] == ("branch", "worktree")
+        assert report.stripped_fields_by_ticket[tid] == (
+            "legacy_owner",
+            "legacy_priority_hint",
+        )
         assert report.applied is False
 
         loaded = load_all(repo)
@@ -831,7 +844,7 @@ class TestReconcileStripStaleFields:
         assert loaded.danger_ok[tid].__pydantic_extra__
 
     # frob:tests src/frob/tickets/_reconcile.py::strip_stale_fields kind="unit"
-    # frob:tests src/frob/tickets/_reconcile.py::StripStaleFieldsReport  # noqa: E501
+    # frob:tests src/frob/tickets/_reconcile.py::StripStaleFieldsReport
     # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_reconcile_strip_stale_fields_cmd  # noqa: E501
     def test_apply_strips_stale_fields(self, repo: Path) -> None:
         created = new_ticket(repo, _spec("Stale fields 2", scope=("src/feature.py",)))

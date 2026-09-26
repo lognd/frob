@@ -1,7 +1,7 @@
 ---
 id: T-6522
 title: 'ticket reconcile stale-field detection regressed: always reports empty'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-25'
@@ -12,6 +12,8 @@ sprint: null
 runs_last: false
 milestone: 0.534.0
 flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,8 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-6522
+branch: t-6522
 scope:
 - tests/test_ticket_reconcile.py
 - src/frob/tickets/_reconcile.py
@@ -43,6 +45,12 @@ scope_changes:
     narrowing to the actual reconcile-stale-fields module this bug lives in.
   actor: logan
   at: '2026-09-25'
+evidence:
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_dry_run_reports_but_does_not_strip
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_apply_strips_stale_fields
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_second_run_is_a_no_op
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_clean_ticket_is_untouched
+- tests/test_ticket_reconcile.py::TestReconcileStripStaleFields::test_leased_ticket_is_skipped_not_written
 designated_repro_test: null
 threat: null
 component: null
