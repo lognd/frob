@@ -2,7 +2,7 @@
 id: T-5357
 title: 'WEBSEC401-407: route-level authorization (admin routes, IDOR/BOLA, mass assignment,
   pagination)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -14,6 +14,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: 0.534.0
+flavour: null
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -104,6 +107,25 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc401_positive-WEBSEC401-True]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc401_negative-WEBSEC401-False]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc402_positive-WEBSEC402-True]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc402_negative-WEBSEC402-False]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc403_positive-WEBSEC403-True]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc403_negative-WEBSEC403-False]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc404_positive-WEBSEC404-True]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc404_negative-WEBSEC404-False]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc405_positive-WEBSEC405-True]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc405_negative-WEBSEC405-False]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc406_positive-WEBSEC406-True]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc406_negative-WEBSEC406-False]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc407_positive-WEBSEC407-True]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_fixture[webesc407_negative-WEBSEC407-False]
+- tests/unit/test_websec_authz_routes.py::test_websec_authz_route_findings_no_framework_short_circuits
+- tests/unit/test_websec_authz_routes.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_websec_authz_routes.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
+- tests/unit/test_websec_authz_routes.py::test_taint_gate_discovers_websec_authz_routes_hook
 designated_repro_test: null
 threat: null
 component: null
