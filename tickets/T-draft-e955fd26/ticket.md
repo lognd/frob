@@ -2,7 +2,7 @@
 id: T-draft-e955fd26
 title: 'ticket land applies Tier-A fixes across the WHOLE tree and squashes them under
   the landing ticket: restrict to scope, add a disable list, gate TEST010'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -24,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/gates/_fix_engine.py
