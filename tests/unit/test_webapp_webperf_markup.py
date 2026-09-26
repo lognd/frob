@@ -97,22 +97,14 @@ def test_websec_findings_discovery_hook_emits_violation() -> None:
 
 
 # frob:tests src/frob/webapp/_webperf_markup.py::websec_findings kind="unit"
-@pytest.mark.xfail(
-    reason="T-draft-553232aa has not landed yet: _taint_gate's discovery hook "
-    "only scans frob.webapp._websec_* modules, so this module's "
-    "websec_findings is not yet reachable through the live gate scan -- "
-    "see docs/modules/webapp-webperf-markup.md#gate-discovery",
-    strict=True,
-)
 def test_webperf_markup_reachable_via_gate_discovery_end_to_end() -> None:
-    """End-to-end control (brief 2026-09-24): once T-draft-553232aa widens
-    `_taint_gate._WEBSEC_MODULE_PREFIX`-style discovery to also match
-    `_webperf_`, `taint_gate`'s own scan should fold in a WEBPERF101
-    finding from this fixture without this module being named anywhere in
-    `frob.gates._taint_gate`. Marked xfail(strict=True) so the moment
-    discovery is widened, this test starts PASSING and the strict xfail
-    itself fails loudly, forcing the marker's removal instead of the gap
-    going unnoticed."""
+    """POSITIVE CONTROL, end-to-end (T-5512): `_taint_gate`'s discovery
+    hook now also scans `frob.webapp._webperf_*` modules (widened from
+    `_websec_*`/`_comply_*`/`_seo_*`), so `taint_gate`'s own scan folds
+    in a WEBPERF101 finding from this fixture without this module being
+    named anywhere in `frob.gates._taint_gate`. Was
+    `xfail(strict=True)` pending T-5512 (formerly T-draft-553232aa);
+    now un-xfailed since that widening has landed."""
     from frob.gates._taint_gate import taint_gate
 
     root = _FIXTURE_ROOT / "webperf101_positive"

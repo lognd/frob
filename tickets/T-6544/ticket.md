@@ -1,5 +1,5 @@
 ---
-id: T-draft-adeca257
+id: T-6544
 title: 'ledger: dead-pid land record lingers as ''write allowed during in-progress
   land''; rolled-back ticket new leaves an orphaned per-ticket lock and skips the
   id'

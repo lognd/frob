@@ -1,5 +1,5 @@
 ---
-id: T-draft-e92b0d29
+id: T-6545
 title: 'test runners: ''typescript'' and ''ts'' (and js/javascript) are not aliased,
   so vitest evidence never binds; one canonical language table + loader refusal'
 state: queued

@@ -1,5 +1,5 @@
 ---
-id: T-draft-f18bcbe5
+id: T-6546
 title: uv tool reinstall takes frob off PATH for ~1 minute; provide an atomic swap
   or a waiting shim
 state: queued

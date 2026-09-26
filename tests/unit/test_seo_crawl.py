@@ -81,3 +81,20 @@ def test_websec_findings_empty_frameworks_short_circuits() -> None:
     otherwise plant a SEO121 finding."""
     root = _FIXTURE_ROOT / "seo121_positive"
     assert websec_findings(root, frozenset()) == ()
+
+
+# frob:tests src/frob/gates/_taint_gate.py::taint_gate kind="unit"
+def test_taint_gate_discovers_seo_crawl_hook() -> None:
+    """POSITIVE CONTROL, end-to-end (T-5512): `frob.gates._taint_gate.
+    taint_gate`'s pkgutil-based discovery now also scans
+    `frob.webapp._seo_*` modules (widened from `_websec_*`/`_comply_*`),
+    so it finds and calls THIS module's `websec_findings` hook without
+    any `_taint_gate.py` edit specific to `_seo_crawl`, and reports the
+    planted SEO121 finding in the fixture's real `Violation` output."""
+    from frob.gates._taint_gate import taint_gate
+
+    root = _FIXTURE_ROOT / "seo121_positive"
+    violations = taint_gate(root)
+    matching = [v for v in violations if v.rule == "SEO121"]
+    assert len(matching) == 1, violations
+    assert matching[0].severity.value == "warn"

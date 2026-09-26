@@ -1,5 +1,5 @@
 ---
-id: T-draft-9f60573b
+id: T-6543
 title: '`frob ticket done-report` (no --fix) mutates the tree: its internal scoped
   check wrote 60 frob:tests directive lines into test files'
 state: queued

@@ -1,7 +1,7 @@
 ---
 id: T-5512
 title: Wire a real frob.gates._seo_gate (SEO family discovery)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -12,6 +12,8 @@ sprint: null
 runs_last: false
 milestone: null
 flavour: null
+due: null
+rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -88,6 +90,9 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-25'
+evidence:
+- tests/unit/test_seo_crawl.py::test_taint_gate_discovers_seo_crawl_hook
+- tests/unit/test_webapp_webperf_markup.py::test_webperf_markup_reachable_via_gate_discovery_end_to_end
 designated_repro_test: null
 threat: null
 component: null
