@@ -2,7 +2,7 @@
 id: T-5524
 title: 'WIRE002: repoint stale WIRE001 waivers in dotnet/unity runners off done ticket
   T-4516'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'

@@ -177,9 +177,8 @@ def _run_dotnet_test_process(
 # frob:doc docs/modules/testing.md#public-api
 # frob:ticket T-4508
 # frob:waive WIRE001 reason="the direct evidence-channel entry point this ticket adds; \
-# routing frob's ticket-runner CLI to call it for csharp node ids is T-4516's own \
-# scope (blocked_by T-4518's project-model detection), not this ticket's" \
-# follow_up="T-4516"
+# routing frob's ticket-runner CLI to call it for csharp node ids is T-5523's own \
+# scope, not this ticket's" follow_up="T-5523"
 def run_dotnet_tests(
     items: tuple[str, ...],
     root: Path,

@@ -222,8 +222,8 @@ def _run_unity_batchmode_process(
 # frob:doc docs/guides/unity.md#unity-batchmode-evidence-channel
 # frob:ticket T-4508
 # frob:waive WIRE001 reason="the direct evidence-channel entry point this ticket adds; \
-# routing frob's ticket-runner CLI to call it for Unity node ids is T-4516's own scope \
-# (blocked_by T-4518's project-model detection), not this ticket's" follow_up="T-4516"
+# routing frob's ticket-runner CLI to call it for Unity node ids is T-5523's own \
+# scope, not this ticket's" follow_up="T-5523"
 def run_unity_batchmode(
     items: tuple[str, ...],
     root: Path,
