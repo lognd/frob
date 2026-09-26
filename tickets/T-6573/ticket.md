@@ -41,6 +41,12 @@ body_changes:
   at: '2026-09-26'
   old_length: 1431
   new_length: 1537
+- mode: append
+  reason: 'crunk data point: formatter emits a continuation form DSL001 rejects'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1527
+  new_length: 2252
 designated_repro_test: null
 threat: null
 component: null
@@ -71,3 +77,17 @@ stacked 64-char frob:doc lines above one symbol; after the fix the merged
 header is wrapped and ruff reports nothing. Related: T-6589
 (scope-restrict Tier-A at land), T-6535, T-draft-741eded5 (DSTACK001
 malformed output).
+
+
+Second data point (crunk-ba, 2026-09-26): the backslash-continuation form
+suggested as a workaround fails build_graph with DSL001 "continuation join
+lands inside the target token", and so does the form `frob format
+--directives` itself emits, so the formatter produces a header its own
+parser rejects. The only form that parses (0 malformed, both doc edges
+present) AND is format-canonical is a comma after the first target:
+    # frob:doc a.md#x, \
+    # b.md#y
+Deliver, in the same change: the DSTACK001 merge and `frob format
+--directives` both emit that comma-separated canonical form, and a
+round-trip test (format -> parse_directives -> identical edge set) is the
+positive control for every multi-target header kind.
