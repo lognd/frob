@@ -1262,6 +1262,12 @@ node natives : trusted {
     may "exec";  // because: "build_natives shells out to cargo/maturin from wherever a native crate build is invoked"
     attr flag=frob_check_exec_kill_switch;
     may "env";  // because: "cargo's own target-dir caching env (CARGO_CACHE_DIRNAME and friends) is read/set from wherever build_natives runs"
+    // T-5808: _try_reuse_native's own reuse-stamp file (a JSON map of
+    // {digest, toolchain, artifact_dir} per crate, keyed off the clone's
+    // shared git-common-dir cache) is read before every build attempt
+    // and written after a genuine one succeeds.
+    may "fs.read";  // because: "_load_reuse_stamps reads the shared native-reuse-stamps.json before deciding whether to rebuild or reuse"
+    may "fs.write";  // because: "_save_reuse_stamps persists the reuse stamp after a genuine build succeeds, plus _copy_native_package copying a reused artifact into this root's own site-packages"
 }
 
 // T-0440: `frob serve` -- the MCP adapter exposing frob's enforcement

@@ -1,3 +1,5 @@
+<!-- frob:waive DOC006 reason="T-5808 resync: the generated command table's own 'frob narrative' row prose illustrates its FILE LINE argv shape, not a doc-to-code pointer -- pre-existing generated text, not a broken reference" -->
+<!-- frob:waive WIRE003 reason="T-5808 resync: 'FILE LINE' inside the generated 'frob narrative' row's own prose is illustrative argv, matched as a false-positive verb by the literal scan -- pre-existing generated text" -->
 # frob CLI command tiers
 
 T-0580 audited actual CLI usage (this session, 1035 CLI events) to decide,
@@ -105,6 +107,7 @@ cargo's own target-dir file locking, not a new lock this subcommand adds.
 <!-- frob:describes src/frob/natives/_build.py::CrateBuildResult -->
 <!-- frob:describes src/frob/natives/_build.py::BuildReport -->
 <!-- frob:describes src/frob/natives/_build.py::build_natives -->
+<!-- frob:describes src/frob/natives/_build.py::_try_reuse_native -->
 <!-- frob:describes src/frob/app/natives_runner.py::run -->
 
 ```python
@@ -118,6 +121,7 @@ class CrateBuildResult(BaseModel):
     returncode: int
     stdout: str
     stderr: str
+    reused: bool = False  # T-5808: copied, not rebuilt
     @property
     def ok(self) -> bool  # returncode == 0
 
@@ -159,6 +163,30 @@ happened. A bare `touch` on the artifact still latches exactly as before
 -- only a real, exit-zero `build_natives` call can ever populate that
 record. See docs/modules/testing.md#public-api for
 `record_native_build_attempt`/`stale_natives`'s own side of this.
+
+**T-5808: reuse a matching prior build instead of always rebuilding.**
+Measured on every land: `_maybe_autorebuild_natives`/`frob natives build`
+ran a full `maturin develop --uv --release` (70-190s) even when a
+worktree's Rust sources were byte-identical to an extension already
+built elsewhere (the root checkout, or a sibling worktree branched from
+the same commit). Before spawning `maturin`, `_build_one_crate` now
+calls `_try_reuse_native`, which compares this crate's current GIT-
+TRACKED source digest (`_tracked_source_digest`, the same worktree-safe
+digest T-4431/T-4434 already use to seed mtimes -- ignores untracked
+build noise like `uv.lock`) plus a `rustc --version` toolchain id
+against a stamp recorded the last time ANY build (in any worktree of
+this clone) succeeded for that crate. On a match, it copies the
+previously-built compiled package directory into this root's own
+site-packages (`sysconfig.get_paths()["purelib"]`, the same venv
+`maturin develop --uv` itself targets) instead of rebuilding, and the
+returned `CrateBuildResult.reused` is `True`. The stamp file lives
+alongside `CARGO_TARGET_DIR` under the clone's git-common-dir (visible
+to every worktree, not just the one that built it), keyed by crate name
+to `{digest, toolchain, artifact_dir}`; only a genuine `maturin` build
+(never a reuse) updates it, and a digest or toolchain mismatch -- or a
+`rustc --version` that could not be determined at all, a fail-CLOSED
+guard against reusing across an unknown toolchain change -- always
+falls through to a real rebuild.
 
 ## frob coverage (T-1525)
 
@@ -547,55 +575,56 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | Command | Description |
 | --- | --- |
 | `frob ack` | acknowledge current digests for one or more symbol refs |
-| `frob agent` | print/export the dispatched-agent guard env (T-0574) |
-| `frob arch` | arch analysis: long functions, god classes, coupling |
-| `frob bind` | verify binding declarations match source signatures |
+| `frob agent` | print/export the dispatched-agent guard env -- 'env' is implied: bare `frob agent` runs it (T-4546); the two-word `frob agent env` spelling still works as an alias |
+| `frob arch` | ==SUPPRESS== |
+| `frob bind` | ==SUPPRESS== |
 | `frob check` | aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; errors first, easy to hand to subagents |
-| `frob claude` | sync this repo's tracked Claude config to ~/.claude/ (T-1808) |
+| `frob claude` | sync this repo's tracked Claude config to ~/.claude/ -- 'sync' is implied: bare `frob claude` runs it (T-4522); the two-word `frob claude sync` spelling still works as an alias |
 | `frob clean` | remove build/test/cache artifacts (tiered, dry-run by default) |
-| `frob coverage` | refresh coverage.xml / the coverage stamp via native_coverage_refresh (T-1516/T-1525) -- touched-set incremental by default |
-| `frob cycle` | detect dependency cycles |
-| `frob debt` | list outstanding frob:debt entries (rule, site, ticket, until) |
+| `frob coverage` | refresh coverage.xml / the coverage stamp via native_coverage_refresh -- touched-set incremental by default |
+| `frob cycle` | ==SUPPRESS== |
+| `frob debt` | ==SUPPRESS== |
 | `frob deploy` | compile std.host manifests into install/status/uninstall bash |
-| `frob deprecated` | list outstanding frob:deprecated entries (symref, since, sunset, ticket, status) |
-| `frob design` | design-knowledge surfaces: sys/registry/docs/graph/exports grouped under one verb (T-1568) |
-| `frob docs` | extract docstrings or search docs/ for a file/symbol |
+| `frob deprecated` | ==SUPPRESS== |
+| `frob design` | ==SUPPRESS== |
+| `frob docs` | ==SUPPRESS== |
 | `frob doctor` | verify native extensions (frob_core, strata_core) are installed |
-| `frob dup` | detect duplicate/clone code segments (Type 1 exact, Type 2 renamed) |
-| `frob explore` | navigation: map/outline/xref/docs-search grouped under one verb (T-1238) |
-| `frob exports` | generate __init__.py from public symbols in a package directory |
-| `frob fleet` | cross-repo status, gate rollup, and ticket routing over a fleet.toml manifest of sibling repos (T-0573) |
-| `frob fmt` | DEPRECATED alias for frob format --directives (T-3906, sunset 2026-12-01) |
-| `frob format` | ruff (code) + frob: directive formatting, write mode by default (T-2251/T-0441/T-3906) |
-| `frob gitlog` | summarize git history by type/granularity (conventional commits) |
+| `frob dup` | ==SUPPRESS== |
+| `frob explore` | read-only analysis: navigation, gitlog, stats, graph queries, debt/deprecated listings, grouped under one verb |
+| `frob exports` | ==SUPPRESS== |
+| `frob fleet` | cross-repo status, gate rollup, and ticket routing over a fleet.toml manifest of sibling repos |
+| `frob fmt` | ==SUPPRESS== |
+| `frob format` | ruff (code) + frob: directive formatting, write mode by default |
+| `frob gitlog` | ==SUPPRESS== |
 | `frob graph` | obligation graph: build cache, query symbols, explain drift |
-| `frob map` | show whole-project structural map (symbols + line counts) -- also available as `frob explore map` (T-1238) |
+| `frob map` | ==SUPPRESS== |
 | `frob mutate` | mutation testing: perturb a file, see which mutants survive |
-| `frob narrative` | migrate a T-#### narrative comment block |
-| `frob natives` | build declared [[native]] crates (T-0864: frob-owned maturin develop, shared CARGO_TARGET_DIR) |
-| `frob ops` | release/fleet/infra plumbing: release, natives, doctor, clean, fleet, deploy, scaffold, gitlog, stats (T-1569) |
-| `frob outline` | show structural skeleton of a file (classes, functions, line numbers) -- also available as `frob explore outline` (T-1238) |
+| `frob narrative` | migrate a T-#### narrative comment block -- 'move' is implied: bare `frob narrative FILE LINE` runs it (T-4546); the two-word `frob narrative move` spelling still works as an alias | <!-- frob:waive DOC006 reason="illustrative argv shape in generated prose, not a doc pointer" -->
+| `frob natives` | build declared [[native]] crates (frob-owned maturin develop, shared CARGO_TARGET_DIR) -- 'build' is implied: bare `frob natives` runs it (T-4522); the two-word `frob natives build` spelling still works as an alias |
+| `frob ops` | ==SUPPRESS== |
+| `frob outline` | ==SUPPRESS== |
 | `frob parse` | parse tool output (pytest/ruff/ty/clang/junit) into compact summary |
 | `frob perf` | profile a command/test suite and inspect its heat-map |
-| `frob pool` | ratchet-pool baseline management (T-0569): warn-rule findings frozen as a tracked baseline, new findings error |
-| `frob profile` | development profile (rapid/standard/fortress) status and the one-way auto-ratchet's explicit downgrade (T-1575) |
-| `frob quality` | correctness/hygiene gates: check/test/dup/arch/bind/cycle/mutate/perf grouped under one verb (T-1567) |
+| `frob pool` | ratchet-pool baseline management: warn-rule findings frozen as a tracked baseline, new findings error |
+| `frob process` | process/forkserver maintenance: reap orphaned forkservers on demand -- also available as `frob ops process`  |
+| `frob profile` | development profile (rapid/standard/fortress) status and the one-way auto-ratchet's explicit downgrade |
+| `frob quality` | ==SUPPRESS== |
 | `frob refactor` | transactional symbol move/rename/split |
-| `frob registry` | unified design-knowledge registry (T-0407) |
+| `frob registry` | unified design-knowledge registry |
 | `frob release` | mechanical semver from the public-API graph (REL001) |
 | `frob scaffold` | scaffold a new project from a template |
 | `frob serve` | MCP stdio adapter exposing frob's enforcement queries as tools |
-| `frob stats` | delivery measurement: queue health + commit cadence |
+| `frob stats` | ==SUPPRESS== |
 | `frob status` | delta-first movement summary: findings burned/introduced since the last baseline, verification lag, ticket landing velocity -- reuses frob check --stamp-baseline/frob verify status/frob ticket flow's own data, invents no new counter |
-| `frob sync-skills` | bidirectionally sync agents/ and skills/ into ~/.claude (T-2241) -- replaces the old Makefile sync-skills: bash recipe |
+| `frob sync-skills` | bidirectionally sync agents/ and skills/ into ~/.claude -- replaces the old Makefile sync-skills: bash recipe |
 | `frob sys` | strata design-model applications (plan, doc, export, ...) |
 | `frob test` | select and run tests for the touched set (or --all) |
 | `frob ticket` | the statically-checkable ticket queue |
-| `frob verify` | the T-1686 unverified window: depth/age/quarantine status, force a drain, explain an attribution, dispose a quarantined finding |
+| `frob verify` | the unverified window: depth/age/quarantine status, force a drain, explain an attribution, dispose a quarantined finding |
 | `frob vet` | dependency-vetting: lockfile allow conformance, quarantine, typosquat, lifecycle scripts, osv advisories |
-| `frob whereis` | print the interpreter/site-packages path of the frob ACTUALLY RUNNING this invocation (T-4299) |
-| `frob worktree` | manage dispatched-agent git worktrees (T-0836) |
-| `frob xref` | find where a symbol is defined and every file that uses it -- also available as `frob explore xref` (T-1238) |
+| `frob whereis` | ==SUPPRESS== |
+| `frob worktree` | manage dispatched-agent git worktrees |
+| `frob xref` | ==SUPPRESS== |
 
 <!-- frob:generated-end cli-commands T-1011 -->
 None of the four (`map_runner.py`, `outline_runner.py`, `xref_runner.py`,

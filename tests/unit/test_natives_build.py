@@ -135,6 +135,9 @@ class TestBuildNatives:
         spawned: list[list[str]] = []
 
         def _fake_run(args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            if args[0] == "rustc":
+                # T-5808: _toolchain_id's own spawn, no env= kwarg
+                return Ok(_fake_completed(0, stdout="rustc 1.0.0 (fake)"))
             spawned.append(list(args))
             assert kwargs["env"]["CARGO_TARGET_DIR"] == str(
                 tmp_path / ".git" / native_build_module.CARGO_CACHE_DIRNAME
@@ -335,7 +338,9 @@ class TestBuildNatives:
             lambda args, **kwargs: Ok(_fake_completed(0, stdout="built")),
         )
 
-        result = _build_one_crate(tmp_path, _Spec(), tmp_path / ".cargo-target")
+        result = _build_one_crate(
+            tmp_path, _Spec(), tmp_path / ".cargo-target", tmp_path / ".git"
+        )
         assert result.is_ok
         built = result.danger_ok
         assert built is not None
@@ -455,3 +460,137 @@ class TestNativesRunner:
         with pytest.raises(SystemExit) as exc:
             natives_runner.run(self._cfg(tmp_path))
         assert exc.value.code == 1
+
+
+# frob:waive WIRE001 reason="4 real call sites below" follow_up="T-draft-8d6a4cc7"
+def _git_commit_crate(tmp_path: Path, name: str) -> Path:
+    """`_make_crate_dir` plus a real git init + commit -- `_try_reuse_
+    native`'s digest step needs `git ls-files` to resolve against a real
+    repo, unlike most of this module's other synthetic-frob.toml tests."""
+    from tests.conftest import _git_init
+
+    crate_dir = _make_crate_dir(tmp_path, name)
+    _git_init(tmp_path)
+    return crate_dir
+
+
+# frob:ticket T-5808
+# frob:ticket T-5808
+class TestNativeReuse:
+    """`_try_reuse_native`/`_record_reuse_stamp` reuse a previously-built
+    native artifact instead of re-running `maturin develop` when the
+    crate's git-tracked source digest AND toolchain id are unchanged from
+    a prior recorded build."""
+
+    def _fake_run_factory(self, *, rustc_output: str = "rustc 1.0.0 (fake)"):
+        """A `guarded_subprocess_run` fake that answers `rustc --version`
+        without requiring `env=`/`cwd=` kwargs (unlike the real maturin
+        spawn), and records every OTHER (maturin) invocation."""
+        spawned: list[list[str]] = []
+
+        def _fake_run(args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            if args[0] == "rustc":
+                return Ok(_fake_completed(0, stdout=rustc_output))
+            spawned.append(list(args))
+            return Ok(_fake_completed(0, stdout="built"))
+
+        return _fake_run, spawned
+
+    def test_reuses_a_matching_prior_build(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
+        # frob:tests src/frob/natives/_build.py::build_natives kind="unit"
+        _write_frob_toml(tmp_path, _rust_native_entry("strata_core"))
+        _git_commit_crate(tmp_path, "strata_core")
+        common_dir = tmp_path / ".common"
+        monkeypatch.setattr(
+            native_build_module, "git_common_dir", lambda root: Ok(common_dir)
+        )
+        fake_run, spawned = self._fake_run_factory()
+        monkeypatch.setattr(native_build_module, "guarded_subprocess_run", fake_run)
+
+        # First build: no stamp yet -- a real maturin spawn.
+        first = build_natives(tmp_path)
+        assert first.is_ok
+        assert first.danger_ok.ok
+        assert len(spawned) == 1
+        assert first.danger_ok.results[0].reused is False
+
+        # Second build (e.g. a sibling worktree with the identical
+        # crate tree): the stamp from the first build now matches --
+        # reused, no second maturin spawn.
+        second = build_natives(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok.ok
+        assert len(spawned) == 1, "must not spawn maturin a second time"
+        assert second.danger_ok.results[0].reused is True
+
+    def test_digest_mismatch_falls_back_to_a_real_build(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
+        _write_frob_toml(tmp_path, _rust_native_entry("strata_core"))
+        crate_dir = _git_commit_crate(tmp_path, "strata_core")
+        common_dir = tmp_path / ".common"
+        monkeypatch.setattr(
+            native_build_module, "git_common_dir", lambda root: Ok(common_dir)
+        )
+        fake_run, spawned = self._fake_run_factory()
+        monkeypatch.setattr(native_build_module, "guarded_subprocess_run", fake_run)
+
+        first = build_natives(tmp_path)
+        assert first.is_ok and len(spawned) == 1
+
+        # A real source edit: the crate tree's git-tracked content changes.
+        (crate_dir / "src").mkdir(exist_ok=True)
+        (crate_dir / "src" / "lib.rs").write_text("// changed\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "edit crate"], cwd=tmp_path, check=True
+        )
+
+        second = build_natives(tmp_path)
+        assert second.is_ok
+        assert len(spawned) == 2, "a changed crate tree must rebuild, not reuse"
+        assert second.danger_ok.results[0].reused is False
+
+    def test_toolchain_mismatch_falls_back_to_a_real_build(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
+        _write_frob_toml(tmp_path, _rust_native_entry("strata_core"))
+        _git_commit_crate(tmp_path, "strata_core")
+        common_dir = tmp_path / ".common"
+        monkeypatch.setattr(
+            native_build_module, "git_common_dir", lambda root: Ok(common_dir)
+        )
+        fake_run, spawned = self._fake_run_factory(rustc_output="rustc 1.0.0 (fake)")
+        monkeypatch.setattr(native_build_module, "guarded_subprocess_run", fake_run)
+
+        first = build_natives(tmp_path)
+        assert first.is_ok and len(spawned) == 1
+
+        # Simulate a toolchain bump between the two builds.
+        fake_run2, spawned2 = self._fake_run_factory(rustc_output="rustc 2.0.0 (fake)")
+        monkeypatch.setattr(native_build_module, "guarded_subprocess_run", fake_run2)
+
+        second = build_natives(tmp_path)
+        assert second.is_ok
+        assert len(spawned2) == 1, "a different toolchain id must rebuild, not reuse"
+        assert second.danger_ok.results[0].reused is False
+
+    def test_missing_toolchain_id_never_reuses(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/natives/_build.py::_try_reuse_native kind="unit"
+        # T-5808 fail-closed guard: `_toolchain_id` returning `None`
+        # (no `rustc` on PATH) must never be treated as a wildcard match.
+        from frob.natives._build import _try_reuse_native
+        from frob.testing._models import NativeSpec
+
+        monkeypatch.setattr(native_build_module, "_toolchain_id", lambda: None)
+        spec = NativeSpec(name="strata_core", language="rust", build_cmd="make core")
+        _git_commit_crate(tmp_path, "strata_core")
+        result = _try_reuse_native(tmp_path, spec, tmp_path / ".common")
+        assert result is None

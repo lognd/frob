@@ -3743,6 +3743,24 @@
       "old_digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
       "reason": "T-3010 added a new UncoveredMilestoneObligation variant for the rule-6 milestone closure check; dependents (check_closure/check_milestone_closure match arms) already handle it exhaustively, verified by cargo test",
       "ref": "strata-core/src/graph/vmodel/closure.rs::ClosureViolation"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-25",
+      "facet": "body",
+      "new_digest": "7b08615b7b08e5ec2347157543619ae6b80c09f95c8ab9f4d1d29cb1e74cf034",
+      "old_digest": "ecbc6a0ef3fb98159ccc05131ceee6e8801ab1da607c5c472dcd4df080e8347b",
+      "reason": "T-5808: re-verified after extracting _record_successful_build to keep the loop body under the ARCH001 threshold -- behavior unchanged, docs already updated",
+      "ref": "src/frob/natives/_build.py::build_natives"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-25",
+      "facet": "sig",
+      "new_digest": "6173f6401a8ba8dc3239b679974d02248543205c1a6bbcc0a3581cfe77454001",
+      "old_digest": "6173f6401a8ba8dc3239b679974d02248543205c1a6bbcc0a3581cfe77454001",
+      "reason": "T-5808: re-verified after extracting _record_successful_build to keep the loop body under the ARCH001 threshold -- behavior unchanged, docs already updated",
+      "ref": "src/frob/natives/_build.py::build_natives"
     }
   ],
   "entries": [
@@ -4532,7 +4550,7 @@
       "ref": "src/frob/narrative/_cli.py::run_narrative_command"
     },
     {
-      "digest": "ecbc6a0ef3fb98159ccc05131ceee6e8801ab1da607c5c472dcd4df080e8347b",
+      "digest": "7b08615b7b08e5ec2347157543619ae6b80c09f95c8ab9f4d1d29cb1e74cf034",
       "facet": "body",
       "ref": "src/frob/natives/_build.py::build_natives"
     },

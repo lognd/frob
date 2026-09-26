@@ -1,7 +1,7 @@
 ---
 id: T-5808
 title: 'land: reuse built native extensions when the crate tree hash is unchanged'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -11,6 +11,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
+due: null
+rank: null
 points: 3
 unsized_ack: false
 unsized_ack_reason: null
@@ -61,6 +64,11 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_natives_build.py::TestNativeReuse::test_reuses_a_matching_prior_build
+- tests/unit/test_natives_build.py::TestNativeReuse::test_digest_mismatch_falls_back_to_a_real_build
+- tests/unit/test_natives_build.py::TestNativeReuse::test_toolchain_mismatch_falls_back_to_a_real_build
+- tests/unit/test_natives_build.py::TestNativeReuse::test_missing_toolchain_id_never_reuses
 designated_repro_test: null
 threat: null
 component: null
