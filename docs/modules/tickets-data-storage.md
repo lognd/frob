@@ -112,6 +112,16 @@ class Ticket(BaseModel):
         # LOAD time -- an invalid value is refused, not sorted
         # arbitrarily. Never blocks on its own at this stage (M1); M2's
         # MILE00x gates give it teeth.
+    due: date | None = None     # T-5751: a real calendar date, "by WHEN"
+        # -- distinct from `milestone` ("what ships together") and
+        # `sprint` ("when we worked"). Usage convention (not a hard
+        # schema rule): meant for milestone/sprint-bearing tickets; a
+        # plain ticket may still carry one.
+    rank: int | None = None     # T-5751: explicit sibling-ordering HINT
+        # among tickets sharing one `parent`, lower sorts first.
+        # DELIBERATELY NOT a unique key -- a `rank` collision among
+        # siblings is tolerated and never raises (an ordering hint, not
+        # an ordering guarantee).
     scope: tuple[str, ...]      # path globs and/or symrefs
         # T-4453: normalized to a tuple by `_normalize_scope`
         # (`field_validator("scope", mode="before")`) on every

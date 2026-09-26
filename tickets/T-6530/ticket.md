@@ -1,5 +1,5 @@
 ---
-id: T-draft-8d6a4cc7
+id: T-6530
 title: 'natives: wire _git_commit_crate test helper (or retire the WIRE001 waiver)
   after T-5808'
 state: queued

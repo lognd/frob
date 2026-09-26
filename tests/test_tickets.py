@@ -57,6 +57,8 @@ def _ticket(
     no_scope_declared: bool = False,
     tier: TicketTier = TicketTier.TICKET,
     flavour: StoryFlavour | None = None,
+    due: date | None = None,
+    rank: int | None = None,
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
@@ -74,6 +76,8 @@ def _ticket(
         no_scope_declared=no_scope_declared,
         tier=tier,
         flavour=flavour,
+        due=due,
+        rank=rank,
     )
 
 
@@ -3191,6 +3195,49 @@ class TestStoryFlavour:
             flavour=StoryFlavour.QUALITY_OBJECTIVE,
         )
         assert spec.flavour is StoryFlavour.QUALITY_OBJECTIVE
+
+
+# frob:ticket T-5751
+class TestDueAndRank:
+    """`Ticket.due`/`Ticket.rank` (A2, ledger-tiers): `due` is a real
+    calendar date (`YYYY-MM-DD`), `rank` is an explicit sibling-ordering
+    HINT, deliberately non-unique -- a collision among siblings sharing
+    one `parent` must never raise."""
+
+    def test_due_and_rank_round_trip(self) -> None:
+        # frob:tests tests/test_tickets.py::TestDueAndRank.test_due_and_rank_round_trip kind="unit"  # noqa: E501
+        ticket = _ticket(due=date(2026, 12, 1), rank=3)
+        dumped = ticket.model_dump()
+        loaded = Ticket.model_validate(dumped)
+        assert loaded.due == date(2026, 12, 1)
+        assert loaded.rank == 3
+
+    def test_due_and_rank_default_to_none(self) -> None:
+        # frob:tests tests/test_tickets.py::TestDueAndRank.test_due_and_rank_default_to_none kind="unit"  # noqa: E501
+        ticket = _ticket()
+        assert ticket.due is None
+        assert ticket.rank is None
+
+    def test_rank_collision_among_siblings_does_not_raise(self) -> None:
+        # frob:tests tests/test_tickets.py::TestDueAndRank.test_rank_collision_among_siblings_does_not_raise kind="unit"  # noqa: E501
+        # T-5751: rank is an ordering HINT, not a unique key -- two
+        # siblings sharing one `parent` and the identical `rank` value is
+        # tolerated by construction, never refused.
+        first = _ticket(ticket_id="T-0002", parent="T-0001", rank=1)
+        second = _ticket(ticket_id="T-0003", parent="T-0001", rank=1)
+        assert first.rank == second.rank == 1
+
+    def test_ticket_spec_due_and_rank_round_trip(self) -> None:
+        # frob:tests tests/test_tickets.py::TestDueAndRank.test_ticket_spec_due_and_rank_round_trip kind="unit"  # noqa: E501
+        spec = TicketSpec(
+            title="x",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            due=date(2026, 12, 1),
+            rank=3,
+        )
+        assert spec.due == date(2026, 12, 1)
+        assert spec.rank == 3
 
 
 # frob:ticket T-4463

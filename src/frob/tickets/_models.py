@@ -2096,6 +2096,31 @@ class Ticket(BaseModel):
     # `frob ticket new --flavour` / a future `frob ticket flavour <id>`
     # setter (out of this leaf's scope, see T-5751+).
     flavour: StoryFlavour | None = None
+    # frob:ticket T-5751
+    # A2 (ledger-tiers): a real calendar date this milestone/sprint-bearing
+    # ticket is targeted to land by -- distinct from `milestone` (a semver
+    # "what ships together" label) and `sprint` (a free-form "when we
+    # worked" label): `due` is the only field that answers "by WHEN".
+    # `None` means no committed date (the default, matching every other
+    # optional planning field). Not tier-restricted at the model level
+    # (unlike `flavour`): a plain leaf ticket can carry a personal due
+    # date too, the write-time verb (`frob ticket due <id> <date>`, out
+    # of this leaf's model-only scope) is where "milestone/sprint-bearing"
+    # is enforced as a USAGE convention, not a hard schema rule -- same
+    # lenient-on-ledger-load posture `milestone`/`sprint` already use.
+    due: date | None = None
+    # frob:ticket T-5751
+    # A2 (ledger-tiers): explicit sibling-ordering HINT among tickets that
+    # share one `parent` -- lower sorts first. Deliberately NOT a unique
+    # key: two siblings sharing a `rank` is tolerated (the owner's framing,
+    # LEDGER-TIERS-TREE.md section 3 risk note) and must never raise: a
+    # concurrent-write race between two agents assigning the same rank is
+    # exactly the ordinary case, not a bug. `None` means unranked -- the
+    # write-time verb (`frob ticket rank <id> --top|--before|--after`, out
+    # of this leaf's model-only scope) derives a default from priority,
+    # then blocked_by depth, then age when a caller does not pass an
+    # explicit value.
+    rank: int | None = None
     # frob:ticket T-5132
     # story-point size on the Fibonacci scale (1 2 3 5 8 13, `POINTS_
     # ALLOWED`), validated via `validate_points` at every write site
@@ -2581,6 +2606,18 @@ class TicketSpec(BaseModel):
     # is `TicketSpec`'s construction path and the field has no historical
     # ledger rows to stay lenient for).
     flavour: StoryFlavour | None = None
+    # frob:ticket T-5751
+    # see `Ticket.due` -- settable at filing time via `frob ticket new
+    # --due YYYY-MM-DD`; no field_validator (a real `date` type already
+    # rejects a malformed value at construction; there is nothing further
+    # to check, unlike `milestone`'s semver-shape or `flavour`'s tier
+    # constraint).
+    due: date | None = None
+    # frob:ticket T-5751
+    # see `Ticket.rank` -- settable at filing time via `frob ticket new
+    # --rank N`; a plain int, no validator (collisions among siblings are
+    # tolerated by design, see `Ticket.rank`'s own docstring).
+    rank: int | None = None
     # frob:ticket T-5132
     # see `Ticket.points` -- settable at filing time via `frob ticket
     # new --points N`; validated by `_validate_new_ticket_spec` via

@@ -2,7 +2,7 @@
 id: T-5751
 title: Add due date to milestone/sprint-bearing tickets and rank sibling-ordering
   hint to Ticket/TicketSpec
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -13,8 +13,6 @@ sprint: ledger-tiers
 runs_last: false
 milestone: v0.536.0
 flavour: null
-due: null
-rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -24,8 +22,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5751
+branch: t-5751
 scope:
 - src/frob/tickets/_models.py
 scope_breadth_ack: false
@@ -137,12 +135,19 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/test_tickets.py::TestDueAndRank::test_due_and_rank_round_trip
+- tests/test_tickets.py::TestDueAndRank::test_due_and_rank_default_to_none
+- tests/test_tickets.py::TestDueAndRank::test_rank_collision_among_siblings_does_not_raise
+- tests/test_tickets.py::TestDueAndRank::test_ticket_spec_due_and_rank_round_trip
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+due: null
+rank: null
 ---
 Add due: date | None to milestone/sprint-bearing tickets and rank: int | None (explicit sibling ordering hint) to Ticket/TicketSpec.
 
