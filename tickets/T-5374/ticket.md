@@ -1,7 +1,7 @@
 ---
 id: T-5374
 title: 'SEO101-112: per-page tags'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -22,8 +22,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5374
+branch: t-5374
 scope:
 - src/frob/webapp/_seo_tags.py
 - tests/fixtures/webapp/seo1xx/tags/**
@@ -69,6 +69,34 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo101_positive-SEO101-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo101_negative-SEO101-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo102_positive-SEO102-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo102_negative-SEO102-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo103_positive-SEO103-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo103_negative-SEO103-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo104_positive-SEO104-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo104_negative-SEO104-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo105_positive-SEO105-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo105_negative-SEO105-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo106_positive-SEO106-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo106_negative-SEO106-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo107_positive-SEO107-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo107_negative-SEO107-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo108_positive-SEO108-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo108_negative-SEO108-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo109_positive-SEO109-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo109_negative-SEO109-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo110_positive-SEO110-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo110_negative-SEO110-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo111_positive-SEO111-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo111_negative-SEO111-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo112_positive-SEO112-True]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_fixture[seo112_negative-SEO112-False]
+- tests/unit/test_seo_tags.py::test_seo_tag_findings_no_framework_short_circuits
+- tests/unit/test_seo_tags.py::test_websec_findings_emits_violation_when_called_directly
+- tests/unit/test_seo_tags.py::test_websec_findings_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null
