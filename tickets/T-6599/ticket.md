@@ -1,5 +1,5 @@
 ---
-id: T-draft-ba7a3223
+id: T-6599
 title: LAYOUT001-003 consume crunk gallery check --json (stable contract) instead
   of the vendored v1 manifest schema, which misreads crunk manifest v3 and has no
   platform axis

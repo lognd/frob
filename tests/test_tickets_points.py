@@ -54,6 +54,35 @@ class TestValidatePoints:
         assert result.danger_err is TicketError.InvalidPoints
 
 
+# frob:ticket T-5815
+class TestNewTicketPointsPersisted:
+    """T-5815: `frob ticket new --points N` must persist `points`
+    onto the created `Ticket`, not just accept and validate it -- the
+    positive control the ticket itself names."""
+
+    # frob:ticket T-5815
+    def test_new_with_points_persists_value(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::_ticket_from_spec kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(
+            title="a sized ticket",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=("src/m.py",),
+            points=3,
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        assert created.danger_ok.points == 3
+
+        reloaded = load_active(tmp_path)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok.tickets[created.danger_ok.id].points == 3
+
+
 class TestSetPoints:
     """`set_points`: the `frob ticket points <id> <value>` library
     entrypoint."""

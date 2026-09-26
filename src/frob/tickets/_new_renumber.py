@@ -352,6 +352,7 @@ def _unlock_and_close_counter_file(fd: int) -> None:
 
 
 # frob:ticket T-1613
+# frob:ticket T-5815
 def _ticket_from_spec(
     ticket_id: str, spec: TicketSpec, evidence: tuple[str, ...]
 ) -> Ticket:
@@ -373,7 +374,16 @@ def _ticket_from_spec(
     reloaded both as their default/`False` value regardless of what the
     spec declared) -- `scope_breadth_ack`/`scope_breadth_ack_reason`
     (T-2302) was already wired correctly and is the shape every new pair
-    must match."""
+    must match.
+
+    T-5815: `spec.points` (`frob ticket new --points N`) was
+    ALSO missing from this same `Ticket(...)` call, the exact T-3081
+    dropped-field class this docstring already warns about -- accepted by
+    the CLI, validated by `_validate_new_ticket_spec` via `validate_
+    points`, then silently discarded here, so every freshly filed ticket
+    round-tripped with `points: null` regardless of what `--points`
+    declared (measured 2026-09-24 filing the coord and tiers trees; every
+    filer script had to follow up with `frob ticket points`)."""
     body = sanitize_narrative_for_ledger(spec.body)
     if spec.kind == TicketKind.INCIDENT and not body.strip():
         body = _INCIDENT_TEMPLATE
@@ -390,6 +400,8 @@ def _ticket_from_spec(
         tier=spec.tier,
         sprint=spec.sprint,
         runs_last=spec.runs_last,
+        # frob:ticket T-5815
+        points=spec.points,
         # frob:ticket T-2574
         milestone=spec.milestone,
         scope=spec.scope,

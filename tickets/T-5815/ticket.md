@@ -1,7 +1,7 @@
 ---
 id: T-5815
 title: ticket new --points is not persisted
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -11,6 +11,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
+due: null
+rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -58,6 +61,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/test_tickets_points.py::TestNewTicketPointsPersisted::test_new_with_points_persists_value
 designated_repro_test: null
 threat: null
 component: null

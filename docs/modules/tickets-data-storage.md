@@ -392,6 +392,13 @@ out-of-scale value). `Ticket` itself stays lenient on the ledger LOAD
 path, same T-1132 reasoning `milestone`/`blocked_by`/`parent` already
 document.
 
+`_ticket_from_spec` (`frob.tickets._new_renumber`) now copies `spec.
+points` onto the `Ticket(...)` it builds (T-5815) -- until
+this fix `frob ticket new --points N` was validated but never actually
+written, so every freshly filed ticket round-tripped with `points:
+null` regardless of `--points`, the same T-3081 dropped-field class
+`no_scope_declared`/`runs_last_parallel_safe` hit before it.
+
 Hours are DERIVED, never entered: `frob ticket flow`'s `points_per_hour`
 is mined from git history (`_ticket_points_per_hour`, `frob.tickets.
 _flow`) -- the actual wall-clock span between a closed, sized ticket's
