@@ -41,6 +41,13 @@ body_changes:
   at: '2026-09-26'
   old_length: 1640
   new_length: 1852
+- mode: append
+  reason: 'crunk data point: continuation-form directives invisible to the T-2114
+    reader'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1852
+  new_length: 2526
 designated_repro_test: null
 threat: null
 component: null
@@ -73,3 +80,15 @@ docstring is corrected, never a silent refusal. Positive control: a
 fixture where a ticket adds a public symbol and a test-side-only
 declaration in a new test file with no graph cache; the check passes,
 and an unbound symbol still refuses.
+
+
+Second data point (crunk-ba, 2026-09-26): even with PRODUCTION-side
+frob:tests directives the T-2114 check refused 4 symbols because the
+directives were in the backslash-continuation form (`# frob:tests \`
+then `# tests/...::test kind="unit"`) that `frob format --directives`
+itself emits for long targets; `_frob_directive_block`'s lexical reader
+takes one physical line. Same family as T-6573 (formatter emits a form a
+reader rejects). Deliver, in the same change: the directive-block reader
+folds continuation runs with the formatter's canonical-lines helper
+before matching, and a round-trip test (format -> read) covers
+frob:tests/frob:doc above a new public symbol.
