@@ -1,5 +1,5 @@
 ---
-id: T-draft-83d3fc8c
+id: T-6595
 title: 'land prepare: re-sync the worktree venv (uv sync) after the dev merge whenever
   pyproject.toml or uv.lock changed, so evidence collection does not fail on a missing
   dependency'

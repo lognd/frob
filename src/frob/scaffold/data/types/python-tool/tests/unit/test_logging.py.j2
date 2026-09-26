@@ -5,7 +5,7 @@ import sys
 
 from {{ project.import_name }}.logging.filter import BelowLevelFilter
 from {{ project.import_name }}.logging.formatter import SimpleFormatter
-from {{ project.import_name }}.logging.logger import get_logger
+from {{ project.import_name }}.logging.logger import ROOT_LOGGER_NAME, get_logger, get_root_logger
 from {{ project.import_name }}.logging.stream_handler import LiveStreamHandler
 
 
@@ -31,6 +31,13 @@ def test_get_logger_returns_a_configured_logger() -> None:
     # frob:tests src/{{ project.import_name }}/logging/logger.py::get_logger kind="unit"
     log = get_logger(__name__)
     assert isinstance(log, logging.Logger)
+
+
+def test_get_root_logger_returns_the_project_named_logger() -> None:
+    # frob:tests src/{{ project.import_name }}/logging/logger.py::get_root_logger kind="unit"
+    log = get_root_logger()
+    assert isinstance(log, logging.Logger)
+    assert log.name == ROOT_LOGGER_NAME
 
 
 def test_live_stream_handler_reads_the_current_sys_stream() -> None:

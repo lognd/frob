@@ -2,7 +2,7 @@
 id: T-6528
 title: 'CI regression sweep: export_golden, websec_rls_llm, TICK008, scaffold_dx,
   SELFAUDIT001, registry count'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-25'
@@ -66,6 +66,9 @@ scope_changes:
     regex) and 4 (scaffold python-tool template COV007/TEST001)
   actor: logan
   at: '2026-09-25'
+evidence:
+- tests/unit/test_websec_rls_llm.py::test_websec_rls_llm_findings_fixture[webesc417_positive-WEBSEC417-True]
+- tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
 designated_repro_test: null
 threat: null
 component: null

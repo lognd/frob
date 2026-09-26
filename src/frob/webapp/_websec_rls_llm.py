@@ -158,7 +158,13 @@ _TOOL_WRITE_CAPABILITY_RE = re.compile(
 _CONFIRMATION_RE = re.compile(r"confirm|approval", re.IGNORECASE)
 
 _SYSTEM_PROMPT_RE = re.compile(
-    r"""role["']?\s*[:=]\s*["']system["'][^\n]*content["']?\s*[:=]\s*["']([^"']*)["']|"""
+    # T-6528: `[\s\S]*?` (not `[^\n]*`) between the `role` and `content`
+    # keys -- a dict literal spread across multiple lines (the common
+    # Python formatting style, `{"role": "system",\n"content": "..."}`,
+    # T-6528's own webesc417_positive fixture included) has a real
+    # newline between them, which `[^\n]*` can never cross, silently
+    # missing every multi-line system-prompt dict.
+    r"""role["']?\s*[:=]\s*["']system["'][\s\S]*?content["']?\s*[:=]\s*["']([^"']*)["']|"""
     r"""SystemMessage\(\s*content\s*=\s*["']([^"']*)["']""",
     re.IGNORECASE,
 )

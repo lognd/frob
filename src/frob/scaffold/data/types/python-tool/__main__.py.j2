@@ -14,7 +14,6 @@ from {{ project.import_name }}.logging import get_logger
 _log = get_logger(__name__)
 
 
-# frob:doc docs/index.md#public-api
 def _build_parser() -> argparse.ArgumentParser:
     """Build this tool's top-level argument parser."""
     p = argparse.ArgumentParser(prog="{{ project.name }}")

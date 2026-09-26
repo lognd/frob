@@ -1,5 +1,5 @@
 ---
-id: T-draft-bd2c0509
+id: T-6596
 title: 'TDD001 test-side predicate in _tdd_order.py is still lexical after T-6570:
   unify it with the collector-driven rule in graph.dsl once T-3068 lands'
 state: queued

@@ -1,5 +1,5 @@
 ---
-id: T-draft-ca35d0c7
+id: T-6597
 title: land T-2114/T-5299 new-public-symbol check reads the cached graph snapshot,
   which predates the ticket own test-side frob:tests declaration, and refuses a correctly
   bound symbol
