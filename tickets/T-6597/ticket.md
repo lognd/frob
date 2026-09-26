@@ -48,6 +48,13 @@ body_changes:
   at: '2026-09-26'
   old_length: 1852
   new_length: 2526
+- mode: append
+  reason: 'crunk correction: test-side edges are read; continuation-wrapped blocks
+    drop symbols'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 2526
+  new_length: 3431
 designated_repro_test: null
 threat: null
 component: null
@@ -92,3 +99,18 @@ reader rejects). Deliver, in the same change: the directive-block reader
 folds continuation runs with the formatter's canonical-lines helper
 before matching, and a round-trip test (format -> read) covers
 frob:tests/frob:doc above a new public symbol.
+
+
+Correction (crunk-ba, 2026-09-26, from two real lands): production-side
+frob:tests did NOT satisfy T-2114 either (crunk T-0208 was refused with
+single-line production-side directives carrying a trailing `# noqa:
+E501` and a frob:waive line between them and the class), while T-0205
+LANDED cleanly with TEST-side declarations written one production symbol
+per physical line. So the land does read test-side edges; what breaks
+both readers is a backslash-continued directive block, whose symbols
+after the first physical line are silently dropped (T-6573 family). The
+T-5767 frob case above may therefore have been the continuation form
+too, not the cached snapshot alone. Deliver additionally: a positive
+control for each of (1) a continuation-wrapped test-side block, (2) a
+production-side directive with trailing `# noqa: E501`, (3) a
+frob:waive line between the directive and the def; each must bind.
