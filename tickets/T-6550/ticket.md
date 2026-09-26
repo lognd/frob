@@ -1,5 +1,5 @@
 ---
-id: T-draft-d042dc82
+id: T-6550
 title: 'evidence: a bare test-file id resolves in matches_collected when at least
   one case from that file was collected and binds every case'
 state: queued

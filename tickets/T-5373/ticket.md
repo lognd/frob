@@ -1,7 +1,7 @@
 ---
 id: T-5373
 title: 'COMPLY109-116: GDPR/international disclosures'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-23'
@@ -13,6 +13,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: 0.534.0
+flavour: null
+due: null
+rank: null
 points: 8
 unsized_ack: false
 unsized_ack_reason: null
@@ -22,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5373
+branch: t-5373
 scope:
 - tests/fixtures/webapp/comply1xx/gdpr/**
 - src/frob/webapp/_comply_gdpr.py
@@ -89,6 +92,28 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_comply_gdpr.py::test_taint_gate_discovers_comply_gdpr_hook
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply109_positive-COMPLY109-True]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply109_negative-COMPLY109-False]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply110_positive-COMPLY110-True]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply110_negative-COMPLY110-False]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply111_positive-COMPLY111-True]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply111_negative-COMPLY111-False]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply112_positive-COMPLY112-True]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply112_negative-COMPLY112-False]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply113_positive-COMPLY113-True]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply113_negative-COMPLY113-False]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply114_positive-COMPLY114-True]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply114_negative-COMPLY114-False]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply115_positive-COMPLY115-True]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply115_negative-COMPLY115-False]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply116_positive-COMPLY116-True]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_fixture[comply116_negative-COMPLY116-False]
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_no_framework_short_circuits
+- tests/unit/test_comply_gdpr.py::test_comply_gdpr_findings_no_signal_short_circuits
+- tests/unit/test_comply_gdpr.py::test_websec_findings_discovery_hook_emits_violation
+- tests/unit/test_comply_gdpr.py::test_websec_findings_discovery_hook_empty_frameworks_short_circuits
 designated_repro_test: null
 threat: null
 component: null
