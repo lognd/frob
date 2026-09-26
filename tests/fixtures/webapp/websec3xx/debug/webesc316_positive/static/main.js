@@ -1,2 +1,2 @@
-const apiKey = "sk_live_abcdefghijklmnop1234567890";
+const apiKey = "sk_live_FAKE_PLACEHOLDER";
 console.log(apiKey);

@@ -1,7 +1,7 @@
 ---
 id: T-5658
 title: 'WEBSEC316 fixture: placeholder key must not match GitHub push-protection detectors'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-24'
@@ -11,6 +11,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
