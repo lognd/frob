@@ -37,6 +37,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names external or future-facing paths (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 2091
+  new_length: 2621
 designated_repro_test: null
 threat: null
 component: null
@@ -45,7 +52,7 @@ anchor_reason: null
 land_commit: null
 ---
 Reported by the project-hullbreach session (2026-09-26), blocking the owner's
-Unity 6 game repo. `frob scaffold unity-project .` works (frob.toml plus one
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->Unity 6 game repo. `frob scaffold unity-project .` works (frob.toml plus one
 design/unity_*.strata per asmdef), but `frob check` and `frob check --only
 gates` exit 1 at once with CHECK001 "unknown project type: 'unknown' (no
 dispatchable language stage)". Verified on dev b41443f46d:
@@ -56,23 +63,23 @@ consults it, although T-4506 (C# adapter parity), T-4518 (Unity project
 model) and T-4516 (NUnit collection) are done.
 
 Deliver:
-1. Detection: a root with Assets/ + ProjectSettings/ProjectVersion.txt
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->1. Detection: a root with Assets/ + ProjectSettings/ProjectVersion.txt
    (detect_unity_project) or any *.asmdef resolves to "unity"; a root with
    a .sln/.csproj and no Unity markers resolves to "csharp". `frob check
    --type unity|csharp` accepted.
 2. Dispatch: `_DISPATCH_BY_TYPE["unity"]` and `["csharp"]` run the gates
    stage (strata, tickets, docs, policy) exactly like the other types, then
-   an OPTIONAL build/test step taken from `[[test.runner]]` in frob.toml.
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->   an OPTIONAL build/test step taken from `[[test.runner]]` in frob.toml.
    Unity roots have no project file, so no `dotnet test .` default: with no
    runner configured the step is skipped with one INFO line naming the
    config key; the scaffolded unity-project runner must not assume dotnet.
-   (hullbreach runs `tools/plaincs/run_tests.sh`, a hand-written net8
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->   (hullbreach runs `tools/plaincs/run_tests.sh`, a hand-written net8
    csproj over Assets/Scripts.)
 3. `--only gates` on a unity/csharp root never touches the runner.
 4. Positive control: a fixture Unity root (Assets/, ProjectSettings/
    ProjectVersion.txt, one asmdef, one strata fragment) where `frob check
    --only gates` exits 0 and a planted strata error is reported; a second
    run with a `[[test.runner]]` that exits 3 propagates the failure.
-5. Docs: docs/modules/check.md lists the two new types and the runner key.
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->5. Docs: docs/modules/check.md lists the two new types and the runner key.
 Follow-on: T-5198 (unity-project strata fragments have no root module) is
 expected to fire on a real repo right after this; leave it to that ticket.
