@@ -647,3 +647,48 @@ class TestRapidCheckScopeFilesCallerDependents:
             "caller-dependent scoping unavailable" in rec.message
             for rec in caplog.records
         )
+
+
+class TestLandTouchedPathsCallersPassTargetBranch:
+    """T-5807: every `_land_touched_paths` call site inside
+    `_land_cmd.py` must pass an explicit `target_branch=` -- relying on
+    the function's own `"main"` default silently widens the touched-set
+    scan to every commit since `main`, on a repo whose land target is
+    `dev` (T-5807's own measured incident: ~3800 files for a 42-file
+    ticket diff). A source-level AST check, not a behavioral one: the
+    fix is "always pass the resolved target", and the cheapest thing
+    that can regress it is a NEW call site added later that forgets to,
+    which this test catches regardless of which caller it is."""
+
+    def test_no_land_cmd_call_site_omits_target_branch(self) -> None:
+        # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths \
+        # kind="unit"
+        import ast
+        import inspect
+
+        from frob.app.ticket_runner import _land_cmd
+
+        source = inspect.getsource(_land_cmd)
+        tree = ast.parse(source)
+        offending: list[int] = []
+
+        class _Visitor(ast.NodeVisitor):
+            def visit_Call(self, node: ast.Call) -> None:  # noqa: N802
+                is_target = (
+                    isinstance(node.func, ast.Name)
+                    and node.func.id == "_land_touched_paths"
+                )
+                if is_target:
+                    has_target_branch = any(
+                        kw.arg == "target_branch" for kw in node.keywords
+                    )
+                    if not has_target_branch:
+                        offending.append(node.lineno)
+                self.generic_visit(node)
+
+        _Visitor().visit(tree)
+        assert offending == [], (
+            f"_land_touched_paths call(s) at line(s) {offending} in "
+            "_land_cmd.py omit target_branch= and silently fall back to "
+            "the 'main' default (T-5807)"
+        )

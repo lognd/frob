@@ -2565,6 +2565,39 @@ hit. `frob ticket show` surfaces the same per-path reason for a ticket's
 ticket's scope is printed), so the two present identically whether
 discovered via a land refusal or an ordinary `show`.
 
+## Touched-path set diffs against the resolved land target, not `main` (T-5807)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_touched_paths -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_absorb_pre_land_fixes -->
+
+Measured on `T-5354` (and every land in `/tmp/land-*.log`): a land
+carrying 3784 files OUTSIDE its own 42-file declared scope, all of them
+every file `dev` had changed since `main` -- because `_land_core_
+prepare`'s two `_land_touched_paths(worktree, ticket_id)` calls (feeding
+both `_absorb_pre_land_fixes`'s fmt/Tier-A absorption and the pre-land
+lint/type/doc/ARCH001 assertions right after it) omitted `target_branch=`
+and fell back to `_land_touched_paths`'s own `"main"` default (T-4547
+kept that default byte-for-byte when it added the parameter). Lands
+target `dev` (`_resolve_land_target_branch`/`cfg.ticket_land_branch`),
+which had already diverged from `main` by hundreds of unrelated commits
+-- every one of them read as "touched", inflating the cross-ticket
+leakage scan, scope validation, and Tier-A/self-conformance attribution
+by roughly 90x per land.
+
+Fix: both call sites now resolve the real land target the same way
+`_land_core_invoke` already did for its own `_rapid_check_scope_files`
+call (`_resolve_land_target_branch(root, cfg.ticket_id, cfg.
+ticket_land_branch)`, degrading to `"main"` only if resolution itself
+fails) and thread it through as `target_branch=`.
+`_absorb_pre_land_fixes` gained a `target_branch: str = "main"` keyword
+(default preserved for any caller that still wants historical behavior,
+e.g. a test fixture) that it forwards to its own `_land_touched_paths`
+call. `tests/unit/test_check_scoped_files.py::
+TestLandTouchedPathsCallersPassTargetBranch` is a source-level AST
+regression test asserting no `_land_touched_paths` call site anywhere in
+`_land_cmd.py` omits `target_branch=` -- a cheap guard against a future
+call site silently reintroducing the same default-fallback defect.
+
 ## Orphaned evidence deletion (T-1946)
 
 <!-- frob:describes src/frob/tickets/_land.py::_check_orphaned_evidence_deletion -->

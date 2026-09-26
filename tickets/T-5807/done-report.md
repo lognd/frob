@@ -1,0 +1,33 @@
+## Done report
+
+Both _land_touched_paths call sites in _land_core_prepare (feeding
+_absorb_pre_land_fixes and the pre-land lint/type/doc/ARCH001
+assertions) now resolve the real land target (_resolve_land_target_
+branch) instead of relying on the "main" default -- matching the
+pattern _land_core_invoke already used for its own
+_rapid_check_scope_files call. _absorb_pre_land_fixes gained a
+target_branch keyword it forwards to its own _land_touched_paths call.
+Added an AST-level regression test asserting no _land_touched_paths
+call site in _land_cmd.py omits target_branch=.
+
+Known gap: docs/modules/tickets-landing.md update is written but not
+yet committed to this scope -- blocked by a ScopeLeaseConflict with
+T-5814 (also editing that file), which is currently queued for land.
+Not gate-required (frob check --ticket is clean without it); will add
+once the lease frees, or as a fast-follow if this lands first.
+
+### Changed
+```
+ docs/modules/tickets-landing.md         | 33 ++++++++++++++++++++++
+ src/frob/app/ticket_runner/_land_cmd.py | 50 +++++++++++++++++++++++++++++----
+ tests/unit/test_check_scoped_files.py   | 45 +++++++++++++++++++++++++++++
+ tickets/T-5807/ticket.md                |  2 ++
+ 4 files changed, 125 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check_scoped_files.py::TestLandTouchedPathsCallersPassTargetBranch::test_no_land_cmd_call_site_omits_target_branch` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)

@@ -592,12 +592,14 @@ def _rapid_caller_dependents(
 # frob:ticket T-1175
 # frob:ticket T-1404
 # frob:ticket T-1903
+# frob:ticket T-5807
 def _absorb_pre_land_fixes(
     worktree: Path,
     ticket_id: str,
     root: Path | None = None,
     *,
     dry_run: bool = False,
+    target_branch: str = "main",
 ) -> list[str]:
     """`frob ticket land`'s T-1175 absorption step: run `frob fmt`
     (directive canonicalization) and the T-1138 Tier-A deterministic
@@ -671,9 +673,19 @@ def _absorb_pre_land_fixes(
     handler can resolve a Done report's citation against main's CURRENT
     ledger, not just this worktree's own pre-merge snapshot -- see that
     function's own docstring for the false-positive incident this
-    closes."""
+    closes.
+
+    T-5807: `target_branch` (default `"main"`, matching every pre-T-5807
+    caller byte-for-byte) is forwarded to `_land_touched_paths` -- a
+    caller landing onto a `dev`-style target diverged from `main` by
+    hundreds of commits MUST pass the resolved land target
+    (`_resolve_land_target_branch`/`cfg.ticket_land_branch`), the same
+    fix T-4547 already made `_land_touched_paths` itself support; this
+    was the one remaining caller still defaulting to `"main"`."""
     merge_root = root if root is not None else worktree
-    touched_paths = _land_touched_paths(worktree, ticket_id)
+    touched_paths = _land_touched_paths(
+        worktree, ticket_id, target_branch=target_branch
+    )
     written: list[str] = []
     written += _fmt_pre_land_step(worktree, ticket_id, touched_paths, dry_run=dry_run)
     written += _ruff_format_pre_land_step(
@@ -775,7 +787,9 @@ def _ruff_format_pre_land_step(
 
     Diff-scoped, deliberately, mirroring `_land_format_touched_py_files`'s
     own touched-set source exactly (both read `touched_paths`, this
-    step's caller's own `_land_touched_paths(worktree, "main")` diff):
+    step's caller's own `_land_touched_paths(worktree, ticket_id,
+    target_branch=...)` diff, T-5807: against the RESOLVED land target,
+    not a hardcoded `"main"`):
     `touched_paths is None` (the diff itself could not be computed) skips
     this step outright rather than falling back to a whole-tree `ruff
     format` pass -- unlike `_fmt_pre_land_step`'s own whole-tree fallback,
@@ -6387,6 +6401,25 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     long-function threshold."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
+    # T-5807: resolve the REAL land target (T-3787's own
+    # `_resolve_land_target_branch`, the same resolution `_land_core_
+    # invoke` below already applies for its own `_land_touched_paths`
+    # call) instead of letting the two calls below default to the
+    # hardcoded `"main"` -- on a repo whose land target is `dev` and has
+    # diverged from `main` by hundreds of commits, every prior sibling
+    # ticket's already-landed commit read as "touched" against the stale
+    # `main` merge-base (measured: ~3800 files for a 42-file ticket diff,
+    # T-5807's own incident). A resolution failure degrades to `"main"`,
+    # matching this module's other `_resolve_land_target_branch` callers.
+    from frob.tickets._land import _resolve_land_target_branch
+
+    _resolved_target = _resolve_land_target_branch(
+        root, cfg.ticket_id, cfg.ticket_land_branch
+    )
+    target_branch_for_absorb = (
+        _resolved_target.danger_ok if _resolved_target.is_ok else "main"
+    )
+
     # T-1175: fmt/sync-interface/Tier-A-fix absorption runs BEFORE land's
     # own merge, for a real land -- any file rewritten here becomes an
     # ordinary uncommitted change `land()`'s own wip-commit step already
@@ -6404,11 +6437,18 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # `_absorb_pre_land_fixes` now runs every absorbed step read-only
     # under `--dry-run` instead.
     absorbed_paths = _absorb_pre_land_fixes(
-        worktree, cfg.ticket_id, root, dry_run=cfg.ticket_dry_run
+        worktree,
+        cfg.ticket_id,
+        root,
+        dry_run=cfg.ticket_dry_run,
+        target_branch=target_branch_for_absorb,
     )
 
     # frob:ticket T-1907
-    touched_paths = _land_touched_paths(worktree, cfg.ticket_id)
+    # frob:ticket T-5807
+    touched_paths = _land_touched_paths(
+        worktree, cfg.ticket_id, target_branch=target_branch_for_absorb
+    )
     # T-4475: every pre-land assertion in this block can `sys.exit(1)`
     # (T-4473's own incident: `_assert_touched_files_lint_clean_pre_land`
     # refused on a NEW E501 finding the absorption step above had JUST

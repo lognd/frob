@@ -2,7 +2,7 @@
 id: T-5807
 title: 'land: touched-path set diffs against main not the land target, scanning ~3800
   files per land'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-24'
@@ -12,6 +12,7 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: v0.534.0
+flavour: null
 points: 3
 unsized_ack: false
 unsized_ack_reason: null
@@ -49,6 +50,8 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/test_check_scoped_files.py::TestLandTouchedPathsCallersPassTargetBranch::test_no_land_cmd_call_site_omits_target_branch
 designated_repro_test: null
 threat: null
 component: null
