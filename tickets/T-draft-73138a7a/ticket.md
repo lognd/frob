@@ -2,7 +2,7 @@
 id: T-draft-73138a7a
 title: 'T-5808 native reuse overwrites the running process own loaded extension in
   place with a STALE artifact: every land segfaults in strata_core parse_source'
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -33,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: DOC006 inline waivers (T-draft-7ee140de)
+  actor: logan
+  at: '2026-09-26'
+  old_length: 2938
+  new_length: 3150
 designated_repro_test: null
 threat: null
 component: null
@@ -43,7 +50,7 @@ land_commit: null
 Measured 2026-09-26 after T-5808 landed (dev e98e686cbc): three consecutive
 `frob ticket land --drain` runs died with rc=139 (T-5756 twice, T-6528,
 T-5815), faulthandler showing the same frame every time:
-    frob/strata/_parse.py:79 parse_module -> strata_core.parse_source
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->    frob/strata/_parse.py:79 parse_module -> strata_core.parse_source
     <- _design_load.load_design_ids <- _fix_engine_sync._capability_counts_at_head
     <- fix_sys111_capability_ratchet_sync <- apply_tier_a_fixes
     <- _land_cmd._tier_a_pre_land_step <- _absorb_pre_land_fixes <- _land_core_prepare
@@ -68,7 +75,7 @@ artifact into THIS interpreter's own site-packages (`_native_package_dir`
    reuse, so the digest/stamp match admitted an artifact built from an
    older source tree.
 Coordinator mitigation applied: deleted
-.git/frob-cargo-target-cache/native-reuse-stamps.json (backup in the
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->.git/frob-cargo-target-cache/native-reuse-stamps.json (backup in the
 session scratchpad) and rebuilt root natives with a real maturin build.
 
 Deliver: (a) the reuse copy writes to a temp name in the destination
