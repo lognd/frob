@@ -3,7 +3,7 @@ id: T-draft-317270e0
 title: 'frob:tests test-side detection is lexical (lowercase tests/ or test_*.py):
   Unity Assets/Tests NUnit files are read as production and correct bindings are reported
   redundant'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -25,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/graph/dsl.py
 - src/frob/graph/__init__.py
