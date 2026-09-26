@@ -34,6 +34,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 inline waivers: body names external paths (T-draft-7ee140de)'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1431
+  new_length: 1537
 designated_repro_test: null
 threat: null
 component: null
@@ -46,7 +53,7 @@ T-0169: `frob ticket land` refused with "ruff check found 1 NEW
 violation(s) in this ticket's own touched file(s): src/crunk/gallery/
 manifest.py:361: E501 Line too long (134 > 88)" while the worktree,
 the merged tree and `--dry-run` are all clean. Line 361 is a 64-char
-`# frob:doc docs/design/subsystems/gallery-manifest.md#public-api`
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->`# frob:doc docs/design/subsystems/gallery-manifest.md#public-api`
 followed by a second stacked `# frob:doc ...#migrating-v1-to-v2-t-0169`;
 64 + 1 + the second target is exactly 134. Cause, verified on dev
 b41443f46d: the land's pre-land Tier-A step runs `fix_dstack001_merge`
