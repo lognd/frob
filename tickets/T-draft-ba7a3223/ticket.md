@@ -37,6 +37,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: DOC006 inline waivers (T-draft-7ee140de)
+  actor: logan
+  at: '2026-09-26'
+  old_length: 2004
+  new_length: 2216
 designated_repro_test: null
 threat: null
 component: null
@@ -47,11 +54,11 @@ land_commit: null
 Reported by the crunk session (2026-09-26): crunk's gallery manifest moved
 from v1 to v2 (T-0169) and v3 (T-0221/T-0219) today. v3 keys VerdictRecord
 and RenderArtifact by (state_id, platform) with platform_hash and
-captured_attrs, SCHEMA_VERSION=3, schemas/gallery-manifest.v3.json, and
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->captured_attrs, SCHEMA_VERSION=3, schemas/gallery-manifest.v3.json, and
 migrates v1/v2 on read. crunk's own gate is GALLERY001 (missing render per
 cell), 002 (unapproved), 003 (expired: source, fixture or platform hash),
 004 (rejected), 005 (undeclared screen); contract documented in crunk's
-docs/design/subsystems/gallery-manifest.md ("FROB-SIDE VENDORING NOTE").
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->docs/design/subsystems/gallery-manifest.md ("FROB-SIDE VENDORING NOTE").
 Verified on dev 9f1474a3c1: frob's LAYOUT001-003 (T-5767) reads the
 vendored v1 mirror (`_VENDORED_SCHEMA_VERSION = 1`, keyed on source_hash
 only, no platform axis, review-current recomputes over source bytes
