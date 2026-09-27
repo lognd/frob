@@ -2,7 +2,7 @@
 id: T-6545
 title: 'test runners: ''typescript'' and ''ts'' (and js/javascript) are not aliased,
   so vitest evidence never binds; one canonical language table + loader refusal'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -24,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/testing/_collect.py
 - tests/unit/test_runner_language_aliases.py
