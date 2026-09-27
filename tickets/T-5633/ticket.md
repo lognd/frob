@@ -31,6 +31,7 @@ scope:
 - docs/modules/ci_validity.md
 - docs/modules/ci_watch_poll.md
 - src/frob/_cli_parsers/_ci.py
+- src/frob/app/ci_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,12 @@ scope_changes:
   glob: src/frob/_cli_parsers/_ci.py
   reason: CI-1 (T-draft-c099f096) landed, releasing its lease over this file; CI-2
     now owns its own validity/watch subcommand registration
+  actor: logan
+  at: '2026-09-26'
+- op: add
+  glob: src/frob/app/ci_runner.py
+  reason: CI-1 landed; CI-2's validity/watch subcommand dispatch lives in the shared
+    ci_runner module
   actor: logan
   at: '2026-09-26'
 triage_changes:
