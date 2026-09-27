@@ -12,6 +12,8 @@ sprint: null
 runs_last: false
 milestone: 0.534.0
 flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -66,6 +68,16 @@ scope_changes:
     whose frob:tests target this file; adding it to close the coverage gap.'
   actor: logan
   at: '2026-09-25'
+body_changes:
+- mode: append
+  reason: 'BUG002 remedy (2): comment-only waiver removal filed as kind=bug'
+  actor: logan
+  at: '2026-09-26'
+  old_length: 1004
+  new_length: 1205
+evidence:
+- tests/unit/test_webapp_websec_headers.py::test_full_evidence_all_present
+- tests/unit/test_webapp_websec_headers.py::test_one_missing_header_reports_missing
 designated_repro_test: null
 threat: null
 component: null
@@ -91,3 +103,5 @@ needs to be actually fixed and the waiver comment removed.
 
 Proposed fix: for each site, either resolve the WIRE001 condition directly,
 or file a fresh open follow-up ticket and repoint the waiver at it.
+
+frob:no-behavior-change reason="comment-only change: removes a stale WIRE001 waiver whose follow-up T-5326 already wired the engine; no runtime path changes, so the bound tests pass at dev and after"
