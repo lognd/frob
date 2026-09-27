@@ -2,7 +2,7 @@
 id: T-5285
 title: CLI shim announce_shim logs at INFO, leaking a stray line onto every shimmed
   command's stdout (breaks --json)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-22'
@@ -12,6 +12,9 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: 0.534.0
+flavour: null
+due: null
+rank: null
 points: 2
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,6 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/_cli_parsers/_shims.py
 scope_breadth_ack: false
@@ -54,8 +59,6 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
-worktree: /home/logan/projects/frob/.claude/worktrees/t-5285
-branch: t-5285
 ---
 CI run 35717833933 on dev tip 197238c35e: ~150 of the ~170 total ubuntu test failures share ONE root cause. src/frob/_cli_parsers/_shims.py::announce_shim (T-4690's one deprecation-shim mechanism, called by every deleted/renamed top-level CLI verb: arch, dup, map, outline, xref, gitlog, and more) logs its notice via `_log.info(...)`. frob's default logging config (src/frob/logging/config.toml, T-2979) routes INFO-level records to the STDOUT handler -- so every shimmed command's stdout is now prefixed with a literal "cli shim: arch -> check --only arch (ticket=T-4690 sunset=2026-12-01 past_sunset=False)" line before its real output, breaking json.loads() on every `--json` invocation of a shimmed command (confirmed directly: tests/system/test_cli_arch.py::test_json_is_valid's captured stdout starts with that exact line, then the real JSON). This explains the mass failure across tests/system/test_cli_arch.py, test_cli_dup.py, test_cli_map.py, test_cli_outline.py, test_cli_xref.py, test_cli_gitlog.py, test_cli_scale.py, test_system.py, and more -- all invoke a shimmed alias with --json.
 
