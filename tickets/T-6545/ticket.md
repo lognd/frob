@@ -28,7 +28,6 @@ worktree: null
 branch: null
 scope:
 - src/frob/testing/_collect.py
-- src/frob/app/config.py
 - tests/unit/test_runner_language_aliases.py
 - docs/modules/testing.md
 scope_breadth_ack: false
@@ -40,6 +39,12 @@ scope_changes:
   glob: src/frob/testing/_runners.py
   reason: T-5782 holds the lease on _runners.py; deferring the files/names vitest
     split (item 4) until it frees, per coordinator instruction
+  actor: logan
+  at: '2026-09-26'
+- op: remove
+  glob: src/frob/app/config.py
+  reason: T-6590 has an in-progress claim on config.py (worktree=root, branch=dev);
+    deferring the TESTRUNNERSCHEMA001 loader-refusal wiring until it clears
   actor: logan
   at: '2026-09-26'
 triage_changes:
