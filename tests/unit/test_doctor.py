@@ -371,10 +371,15 @@ class TestFamilyRequiredToolFindings:
 
         monkeypatch.setattr(doctor, "version", _raise)
 
+        # T-6525: squawk (T-5333) shares this same `sql_relevance`
+        # predicate as a second `REQUIRED_FOR_FAMILY` entry, so a
+        # SQL-relevant tree with every external tool mocked absent
+        # legitimately reports BOTH as missing -- this asserts sqlfluff's
+        # own finding is present and correct, not that it is the only one.
         findings = doctor.family_required_tool_findings(tmp_path)
-        assert len(findings) == 1
-        assert findings[0].name == "sqlfluff"
-        assert "pip install sqlfluff" in findings[0].install_hint
+        by_name = {f.name: f for f in findings}
+        assert "sqlfluff" in by_name
+        assert "pip install sqlfluff" in by_name["sqlfluff"].install_hint
 
     def test_no_sql_missing_sqlfluff_is_not_a_finding(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -395,7 +400,13 @@ class TestFamilyRequiredToolFindings:
         (tmp_path / "migration.sql").write_text("SELECT 1;\n", encoding="utf-8")
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+        # T-6525: sqlfluff (and squawk, sharing the same predicate) are
+        # `"package"`-kind entries -- presence is probed via
+        # `importlib.metadata.version`, not `shutil.which`, so both must
+        # be faked present for this real dev venv (which may not have the
+        # `sql` extra installed) to exercise the "present" branch.
         monkeypatch.setattr(doctor.shutil, "which", lambda _name: "/usr/bin/sqlfluff")
+        monkeypatch.setattr(doctor, "version", lambda _name: "0.0.0")
 
         assert doctor.family_required_tool_findings(tmp_path) == []
 

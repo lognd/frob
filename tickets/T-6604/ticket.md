@@ -1,5 +1,5 @@
 ---
-id: T-draft-695e4323
+id: T-6604
 title: 'frob check --ticket: refuse a second concurrent full check for the same worktree
   (per-worktree lock), --allow-concurrent to override, so stacked agent checks cannot
   starve the shared host'

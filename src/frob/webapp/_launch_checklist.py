@@ -158,6 +158,7 @@ def _repo_wide_finding(rule: str, message: str) -> WebsecLaunchChecklistFinding:
     return WebsecLaunchChecklistFinding(rule=rule, file=".", line=1, message=message)
 
 
+# frob:enforces CHK-GATE-LAUNCH101
 def _team_photo_findings(
     pages: tuple[str, ...], texts: dict[str, str]
 ) -> list[WebsecLaunchChecklistFinding]:
@@ -179,6 +180,7 @@ def _team_photo_findings(
     ]
 
 
+# frob:enforces CHK-GATE-LAUNCH102
 def _case_studies_findings(
     pages: tuple[str, ...], texts: dict[str, str]
 ) -> list[WebsecLaunchChecklistFinding]:
@@ -200,6 +202,7 @@ def _case_studies_findings(
     ]
 
 
+# frob:enforces CHK-GATE-LAUNCH103
 def _faq_count_findings(
     pages: tuple[str, ...], texts: dict[str, str]
 ) -> list[WebsecLaunchChecklistFinding]:
@@ -230,6 +233,7 @@ def _faq_count_findings(
     return findings
 
 
+# frob:enforces CHK-GATE-LAUNCH104
 def _thank_you_page_findings(
     pages: tuple[str, ...],
 ) -> list[WebsecLaunchChecklistFinding]:
@@ -250,6 +254,7 @@ def _thank_you_page_findings(
     ]
 
 
+# frob:enforces CHK-GATE-LAUNCH105
 def _sticky_cta_findings(texts: dict[str, str]) -> list[WebsecLaunchChecklistFinding]:
     """LAUNCH105: no sticky mobile CTA anywhere.
 
@@ -271,6 +276,7 @@ def _sticky_cta_findings(texts: dict[str, str]) -> list[WebsecLaunchChecklistFin
     ]
 
 
+# frob:enforces CHK-GATE-LAUNCH106
 def _response_time_findings(
     texts: dict[str, str],
 ) -> list[WebsecLaunchChecklistFinding]:
@@ -291,6 +297,7 @@ def _response_time_findings(
     ]
 
 
+# frob:enforces CHK-GATE-LAUNCH107
 def _analytics_findings(
     root: Path, pages: tuple[str, ...], texts: dict[str, str]
 ) -> list[WebsecLaunchChecklistFinding]:

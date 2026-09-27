@@ -2,7 +2,7 @@
 id: T-6525
 title: 'SQL/LAUNCH tool-family landing incomplete: REG008 enforces edges, doctor double-finding,
   exports, runtime_deps'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-25'
@@ -13,6 +13,8 @@ sprint: null
 runs_last: false
 milestone: 0.534.0
 flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -22,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-6525
+branch: t-6525
 scope:
 - docs/design/registry/check-coverage.yaml
 - src/frob/doctor.py
@@ -37,6 +39,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_sql_relevant_missing_sqlfluff_is_a_finding
+- tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_sql_relevant_present_sqlfluff_is_not_a_finding
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
+- tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_every_unguarded_third_party_import_is_declared
 designated_repro_test: null
 threat: null
 component: null

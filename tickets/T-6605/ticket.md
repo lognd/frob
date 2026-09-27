@@ -1,5 +1,5 @@
 ---
-id: T-draft-9db8e341
+id: T-6605
 title: promoting a draft at land leaves follow_up="T-draft-..." and other repo-wide
   references stale, so WIRE002 fires on the next land; promotion rewrites the references
   or WIRE002 resolves the promoted alias

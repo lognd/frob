@@ -39,6 +39,13 @@ _ALLOWED_UNDECLARED = {
     "strata_core",  # local native crate, shipped with the wheel build
     "frob_core",  # local native crate, shipped with the wheel build
     "frob",  # self-imports
+    # frob:ticket T-6525: sqlfluff (the `sql` extra, pyproject.toml's
+    # `[project.optional-dependencies].sql`, not a core [project.dependencies]
+    # entry) is only importable through sqlfluff's own entry-points plugin
+    # host, which only loads _sqlfluff_plugin.py when sqlfluff itself is
+    # already installed -- the same "import-site guarded by an external
+    # loader, not by an in-module try/except" shape z3 uses above.
+    "sqlfluff",
 }
 
 

@@ -1,5 +1,5 @@
 ---
-id: T-draft-3af801a0
+id: T-6603
 title: 'frob test reports NoRunner when a touched set contains test fixture data files
   (tests/fixtures/*.html): runner selection must ignore non-source fixtures or map
   them to the tests that reference them'
