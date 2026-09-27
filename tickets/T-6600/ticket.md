@@ -1,5 +1,5 @@
 ---
-id: T-draft-88e7607b
+id: T-6600
 title: register PRECHECK001-006 in gates _KNOWN_GATE_RULES and src/frob/agent/_precheck.py
   in design/frob.strata
 state: queued
