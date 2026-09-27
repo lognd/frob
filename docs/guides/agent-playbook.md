@@ -96,6 +96,43 @@ per-topic rule, and the appendix holds the full WHY and recovery recipes.
     with the full series report: per ticket, the land hash, evidence
     bound, and residue with verified real ids.
 
+## 0a. Dispatch contract addenda (moved from the coordinator scratchpad)
+
+These were tracked as hand-typed coordinator scratchpad prose before
+T-draft-df99eb2d moved them here -- `frob agent brief <ticket>` (sec 0's
+own automation) now renders this section straight from this file, so a
+scratchpad copy would silently drift out of sync with the rule the agent
+actually reads.
+
+1. At most ONE background command at a time; wait for its notification
+   before starting another, and never arm a poller in its place.
+2. Long-running frob verbs are foreground, not background: Bash TOOL-level
+   `timeout: 600000` PLUS a shell-level `timeout 540 ...`/`timeout 580 ...`
+   wrapper (sec 3b) -- never a background invocation "to save time".
+3. Exactly ONE `frob ticket land <id> --worktree <wt> --dry-run` from the
+   ROOT before reporting READY; fix every refusal the dry-run prints, then
+   re-run it until clean.
+4. The dry-run does NOT measure every refusal class (appendix sec 0/T-
+   draft-c7aa1ed2) -- verify these by hand before READY: post-squash
+   self-conformance; DOC006 doc-pointer refusals, including a dotted
+   module pointer at an UNLANDED sibling ticket; a bare (non-
+   parametrized) `frob:tests` id where the covering test is actually
+   parametrized; native artifact freshness (`uv run frob natives build`
+   re-run since the last source change); and that the worktree's `uv
+   sync --all-extras` is not stale against `pyproject.toml`.
+5. Ledger writes at ticket intake (new/scope/points) are batched, not one
+   <!-- frob:waive DOC006 reason="illustrative `frob ticket ...` placeholder for any ledger verb, not a real invocation" -->
+   `frob ticket ...` call per field when several are known up front --
+   fewer ledger-lock round trips under fleet concurrency.
+6. Test fixtures for a given ticket live under a per-ticket subdirectory
+   (e.g. `tests/.../fixtures/<ticket-id>/`), never flat-mixed with a
+   sibling ticket's fixtures in the same directory.
+7. A `frob:doc`/`frob:tests`/`frob:ticket`/`frob:waive` directive sits
+   directly above the `def`/`class` line it covers -- never separated by
+   a blank line or another comment, and never trailing the line instead
+   (sec 7b's comment-placement rules apply to these the same as any other
+   directive).
+
 ## 1. Worktree warm-up (do this FIRST, every time)
 
 0. BEFORE any `git merge main` (warm-up or mid-ticket): check that no

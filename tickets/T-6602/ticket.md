@@ -1,5 +1,5 @@
 ---
-id: T-draft-703785b9
+id: T-6602
 title: frob check ty stage feeds non-Python files (.md) to ty when a scoped file set
   contains them, and the done-report totals fallback counts the resulting spurious
   errors as real

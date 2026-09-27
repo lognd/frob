@@ -556,16 +556,19 @@ def _add_agent_parser(sub) -> None:
     """Register the `frob agent` subcommand tree for `--help` discovery
     only -- actual dispatch bypasses this parser entirely (see `_dispatch`
     below and `frob.app.agent_runner`'s module docstring), mirroring
-    `bind`'s own precedent. `agent` has exactly one child (`env`), so bare
-    `frob agent` dispatches straight to it at the REAL dispatch layer
-    (T-4546, same flattening `_add_claude_parser`/`_add_natives_parser`
-    established, T-4522); the two-word `frob agent env` spelling is kept
-    working as a documented alias for one release. This tree only sets
-    the default subcommand dest for `--help` rendering -- it does NOT
-    mirror `env`'s own `path` positional the way `claude`/`natives`
-    mirrored their optional flags: a bare positional here would collide
-    with `add_subparsers`' own positional slot (argparse would try to
-    match the first token as a subcommand name first). The REAL argv
+    `bind`'s own precedent. `agent` has two children (`env`, and `brief`
+    added by T-draft-df99eb2d); a bare `frob agent [path]` still
+    dispatches straight to `env` at the REAL dispatch layer (T-4546, same
+    flattening `_add_claude_parser`/`_add_natives_parser` established,
+    T-4522) -- `brief` must always be named explicitly
+    (`frob agent brief <ticket>`), it has no bare-`agent` implication.
+    The two-word `frob agent env` spelling is kept working as a
+    documented alias for one release. This tree only sets the default
+    subcommand dest for `--help` rendering -- it does NOT mirror `env`'s
+    own `path` positional the way `claude`/`natives` mirrored their
+    optional flags: a bare positional here would collide with
+    `add_subparsers`' own positional slot (argparse would try to match
+    the first token as a subcommand name first). The REAL argv
     normalization lives in `frob.app.agent_runner._normalize_agent_argv`,
     which this help-only tree is never parsed through."""
     agent_p = sub.add_parser(
@@ -596,6 +599,24 @@ def _add_agent_parser(sub) -> None:
         nargs="?",
         default=".",
         help="worktree path to resolve (default: cwd)",
+    )
+    # frob:ticket T-draft-df99eb2d
+    agent_brief_p = agent_sub.add_parser(
+        "brief",
+        help="print the dispatch brief for one ticket "
+        "(playbook contract + ledger fields, T-draft-df99eb2d)",
+    )
+    agent_brief_p.add_argument(
+        "agent_brief_ticket_id",
+        metavar="ticket",
+        help="ticket id to brief",
+    )
+    agent_brief_p.add_argument(
+        "--path",
+        dest="agent_brief_path",
+        default=".",
+        metavar="DIR",
+        help="repo root to resolve the ledger/playbook against (default: cwd)",
     )
 
 

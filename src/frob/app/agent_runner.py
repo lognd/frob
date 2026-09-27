@@ -73,24 +73,27 @@ def _all_logs_to_stderr() -> Iterator[None]:
 
 
 def _build_agent_parser() -> argparse.ArgumentParser:
-    """Argument parser for `frob agent`. `agent` has exactly one child
-    (`env`), so bare `frob agent [path]` now dispatches straight to it
-    (T-4546, same flattening `frob claude`/`frob natives` got, T-4522);
-    the two-word `frob agent env [path]` spelling is kept working as a
-    documented alias for one release. `run` (below) normalizes `argv` to
-    insert the implied `env` token BEFORE parsing -- a `path` positional
-    cannot be mirrored directly onto the group parser the way T-4522
-    mirrored `claude`/`natives`' own optional FLAGS, because a bare
-    positional here would collide with `add_subparsers`' own positional
-    slot (argparse tries to match the first token as a subcommand name
-    first, so `frob agent /some/path` would otherwise fail with "invalid
-    choice: '/some/path'")."""
+    """Argument parser for `frob agent`. `agent` has two children -- `env`
+    (bare `frob agent [path]` dispatches straight to it, T-4546, same
+    flattening `frob claude`/`frob natives` got, T-4522) and `brief`
+    (T-draft-df99eb2d, always named explicitly: `frob agent brief
+    <ticket>`, no bare-`agent` implication). The two-word `frob agent env
+    [path]` spelling is kept working as a documented alias for one
+    release. `run` (below) normalizes `argv` to insert the implied `env`
+    token BEFORE parsing -- a `path` positional cannot be mirrored
+    directly onto the group parser the way T-4522 mirrored `claude`/
+    `natives`' own optional FLAGS, because a bare positional here would
+    collide with `add_subparsers`' own positional slot (argparse tries to
+    match the first token as a subcommand name first, so `frob agent
+    /some/path` would otherwise fail with "invalid choice:
+    '/some/path'")."""
     p = argparse.ArgumentParser(
         prog="frob agent",
         description="Print/export the dispatched-agent guard env for a "
         "worktree. 'env' is implied (T-4546): bare `frob agent` runs it; "
         "the two-word `frob agent env` spelling is kept working as a "
-        "documented alias for one release.",
+        "documented alias for one release. `brief <ticket>` (T-draft-"
+        "df99eb2d) prints the dispatch brief for one ticket instead.",
     )
     agent_sub = p.add_subparsers(dest="agent_command")
     env_p = agent_sub.add_parser(
@@ -104,18 +107,37 @@ def _build_agent_parser() -> argparse.ArgumentParser:
         help="worktree path to resolve (default: cwd, also the default "
         "action for bare `frob agent`, T-4546)",
     )
+    # frob:ticket T-draft-df99eb2d
+    brief_p = agent_sub.add_parser(
+        "brief",
+        help="print the dispatch brief for one ticket "
+        "(playbook contract + ledger fields, T-draft-df99eb2d)",
+    )
+    brief_p.add_argument("ticket", help="ticket id to brief")
+    brief_p.add_argument(
+        "--path",
+        dest="path",
+        default=".",
+        metavar="DIR",
+        help="repo root to resolve the ledger/playbook against (default: cwd)",
+    )
     return p
 
 
 # frob:ticket T-4546
+# frob:ticket T-draft-df99eb2d
 def _normalize_agent_argv(argv: list[str]) -> list[str]:
     """Insert the implied `env` subcommand token ahead of `argv` when it is
-    missing (T-4546): `agent` has exactly one child, so bare `frob agent
-    [path]` must run what `frob agent env [path]` ran. Leaves `argv`
-    untouched when the first token already IS `env`, or is a help flag --
-    both must reach `_build_agent_parser` unmodified so argparse's own
-    `--help`/usage handling stays exactly as it always has."""
-    if argv and argv[0] not in ("env", "-h", "--help"):
+    missing (T-4546): a bare `frob agent [path]` must run what `frob
+    agent env [path]` ran. `brief` (T-draft-df99eb2d) is NEVER implied --
+    it always requires its own explicit token, since a bare `frob agent`
+    has meant `env` since T-4546 and silently reinterpreting it as `brief`
+    depending on the next token's shape would be a surprise, not a
+    convenience. Leaves `argv` untouched when the first token already IS
+    `env`, `brief`, or is a help flag -- all three must reach
+    `_build_agent_parser` unmodified so argparse's own `--help`/usage
+    handling stays exactly as it always has."""
+    if argv and argv[0] not in ("env", "brief", "-h", "--help"):
         return ["env", *argv]
     return argv or ["env"]
 
@@ -208,18 +230,49 @@ def _run_env(path: str) -> None:
             renderer.line(f"export {key}={shlex.quote(value)}")
 
 
+# frob:ticket T-draft-df99eb2d
+def _run_brief(ticket_id: str, path: str) -> None:
+    """`frob agent brief <ticket> [--path DIR]` (T-draft-df99eb2d): resolve
+    `path`'s (default cwd) repo root, render `frob.agent.render_agent_
+    brief`'s dispatch brief for `ticket_id`, and print it to stdout.
+    Exits 1 with a logged error when the ticket does not resolve (mirrors
+    `_run_env`'s exit-1-on-resolve-failure posture)."""
+    from pathlib import Path
+
+    # frob:waive SYS003 reason="frob.agent is an intra-cli helper, owned by cli's own \
+    # code= glob (design/frob.strata, src/frob/app/**) same as frob.app.agent_runner \
+    # -- src/frob/agent/** belongs on that glob list too (T-draft-6d585d1b tracks \
+    # adding it); this import is permanently intra-cli, not a cross-component edge"
+    from frob.agent import render_agent_brief
+
+    result = render_agent_brief(Path(path), ticket_id)
+    if result.is_err:
+        _log.error(
+            "frob agent brief: %s failed under %s (%s)",
+            ticket_id,
+            path,
+            result.danger_err.value,
+        )
+        sys.exit(1)
+    renderer = Renderer.for_stream(sys.stdout)
+    renderer.line(result.danger_ok)
+
+
 # frob:doc docs/modules/app.md#runners
 def run(argv: list[str]) -> None:
     """`frob agent [subcommand]` entry point (T-0574), dispatched directly
-    by `__main__._dispatch` the same way `frob bind` is. `agent` has
-    exactly one child (`env`), so a bare/missing subcommand now runs it
-    too (T-4546) -- `_normalize_agent_argv` inserts the implied token
-    before parsing; the two-word `frob agent env` spelling still works as
-    a documented alias for one release."""
+    by `__main__._dispatch` the same way `frob bind` is. `agent` has two
+    children: `env` (bare/missing subcommand runs it too, T-4546 --
+    `_normalize_agent_argv` inserts the implied token before parsing; the
+    two-word `frob agent env` spelling still works as a documented alias
+    for one release) and `brief` (T-draft-df99eb2d, always explicit)."""
     parser = _build_agent_parser()
     args = parser.parse_args(_normalize_agent_argv(argv))
     if args.agent_command == "env":
         _run_env(args.path)
+        return
+    if args.agent_command == "brief":
+        _run_brief(args.ticket, args.path)
         return
     parser.print_help(sys.stderr)
     sys.exit(1)

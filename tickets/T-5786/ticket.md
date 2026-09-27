@@ -2,7 +2,7 @@
 id: T-5786
 title: 'frob agent brief <ticket>: render the dispatch brief from the playbook and
   the ledger'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-24'
@@ -12,6 +12,9 @@ tier: ticket
 sprint: coord-surface
 runs_last: false
 milestone: v0.535.0
+flavour: null
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -73,6 +76,10 @@ triage_changes:
   reason: ticket sizing
   actor: logan
   at: '2026-09-24'
+evidence:
+- tests/unit/agent/test_brief.py::TestRenderAgentBrief::test_renders_scope_and_blocked_by_verbatim_and_excludes_other_tickets_scope
+- tests/unit/agent/test_brief.py::TestRenderAgentBrief::test_no_scope_ticket_prints_warning_not_blank_section
+- tests/unit/agent/test_brief.py::TestCliParity::test_run_brief_prints_render_agent_brief_result
 designated_repro_test: null
 threat: null
 component: null
