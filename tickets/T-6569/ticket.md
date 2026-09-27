@@ -33,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'crunk: TICK015 on the landing ticket itself now blocks lands'
+  actor: logan
+  at: '2026-09-27'
+  old_length: 1033
+  new_length: 1769
 designated_repro_test: null
 threat: null
 component: null
@@ -56,3 +63,16 @@ whose subject is not the landing ticket and logs them as informational;
 a TICK015 about the landing ticket itself still refuses. Positive control:
 a fixture ledger with a dead-worktree sibling; the landing ticket's claim
 check passes and the log names the sibling's TICK015 as ignored.
+
+
+Now BLOCKING (crunk-ba, 2026-09-27): when an implementer finishes and
+exits, TICK015 fires on the landing ticket's OWN worktree (no live
+process cwd'd there), and the land's ClaimDivergence refuses; `frob
+ticket done-report` in the worktree runs a scoped check with files=0, so
+the refresh never captures the TICK015 row and the retry fails
+identically. Working workaround in crunk (T-0257, T-0211 landed with
+it): keep a live process with cwd in the worktree (a background sleep)
+for the duration of `frob ticket land`. Deliver in addition: the landing
+ticket's own TICK015 row is excluded from its claim comparison (a land in
+progress IS the live use of that worktree), and the done-report's
+scoped check must not run with files=0.
