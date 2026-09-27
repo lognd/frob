@@ -1,5 +1,5 @@
 ---
-id: T-draft-50b0f83a
+id: T-6610
 title: 'SEO119/SEO120: split scaled-content vs. doorway-page detectors'
 state: queued
 kind: feature
