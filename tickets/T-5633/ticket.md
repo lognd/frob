@@ -33,6 +33,7 @@ scope:
 - src/frob/_cli_parsers/_ci.py
 - src/frob/app/ci_runner.py
 - src/frob/ci_validity.py
+- tests/unit/cli/test_ci_report.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -78,6 +79,12 @@ scope_changes:
   glob: src/frob/ci_validity.py
   reason: 'CI-2''s own new module: STILL_VALID/STALE/UNKNOWN classification frob.app.ci_runner._run_validity
     wraps'
+  actor: logan
+  at: '2026-09-26'
+- op: add
+  glob: tests/unit/cli/test_ci_report.py
+  reason: unit coverage for _run_validity/_run_watch, including this leaf's own unknown-verbatim
+    positive control
   actor: logan
   at: '2026-09-26'
 triage_changes:
