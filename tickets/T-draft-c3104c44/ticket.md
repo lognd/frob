@@ -43,6 +43,13 @@ body_changes:
   at: '2026-09-27'
   old_length: 2052
   new_length: 2052
+- mode: append
+  reason: 'T-6538 report: start from the root pins the row; refuse start without a
+    worktree'
+  actor: logan
+  at: '2026-09-27'
+  old_length: 2052
+  new_length: 3111
 designated_repro_test: null
 threat: null
 component: null
@@ -83,3 +90,20 @@ row and ignore a root-pinned row that has no lease; (4) positive
 control: a fixture with a held root lock; `start` either waits and
 mirrors or exits non-zero naming the stale fields, and reconcile repairs
 the planted degraded row.
+
+
+Correction from the T-6538 implementer's report (2026-09-27): the root
+row was NOT a lost mirror write. `frob ticket start T-6538` was run from
+the shared primary checkout and frob printed "T-6538 lease NOT recorded
+-- /home/logan/projects/frob is the shared primary checkout ... work this
+ticket from a dedicated worktree instead (T-2007)" but still transitioned
+the row to in-progress with worktree=/home/logan/projects/frob,
+branch=dev and no lease file; later `frob ticket work` / `sweep` runs
+could not repair the fields ("already in-progress"). So the primary
+deliverable is: `start` on the shared primary checkout REFUSES (tiered
+safety: a real decision) unless `--worktree <path>` (or `frob ticket
+work`, which creates one) is given; a root-pinned in-progress row is
+repairable by `frob ticket work <id> --worktree <path>` re-mirroring the
+fields; and the passenger/sibling guards ignore a root-pinned row with no
+lease. The lost-mirror-under-land case in the body stays as the second
+shape (T-5285: root queued, worktree in-progress with a lease).
