@@ -55,6 +55,12 @@ body_changes:
   at: '2026-09-26'
   old_length: 2526
   new_length: 3431
+- mode: append
+  reason: 'T-6590: Tier-A deletes the continuation header and orphans the block'
+  actor: logan
+  at: '2026-09-27'
+  old_length: 3431
+  new_length: 4274
 designated_repro_test: null
 threat: null
 component: null
@@ -114,3 +120,17 @@ too, not the cached snapshot alone. Deliver additionally: a positive
 control for each of (1) a continuation-wrapped test-side block, (2) a
 production-side directive with trailing `# noqa: E501`, (3) a
 frob:waive line between the directive and the def; each must bind.
+
+
+Mechanism found on T-6590 (frob, 2026-09-27): the land's pre-land Tier-A
+pass ("applied 5 fix(es)") DELETED the `# frob:tests \` header line of a
+continuation-wrapped production-side block and left the three
+`# tests/...::...  # noqa: E501` continuation lines orphaned, so the
+symbol had no directive at all and T-2114 refused. So the reader is not
+the only culprit: a Tier-A handler treats the bare header as a redundant
+or malformed directive and removes it without folding the block. Deliver
+in addition: no Tier-A handler may delete a directive header whose
+continuation lines follow it (fold first, then decide), and the positive
+control covers a wrapped block surviving `frob check --fix` unchanged.
+Correct directive form for the graph is `file::Class.method` (dotted
+qualname inside the symbol half), never pytest's `Class::method`.
