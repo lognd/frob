@@ -30,11 +30,16 @@ scope:
 - src/frob/tickets/_land_verify.py
 - src/frob/tickets/_land.py
 - tests/unit/tickets/test_claim_divergence_baseline.py
-- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/tickets-landing.md
+  reason: collides with in-progress T-6589 lease; doc update not needed for this fix
+  actor: logan
+  at: '2026-09-26'
 designated_repro_test: null
 threat: null
 component: null
