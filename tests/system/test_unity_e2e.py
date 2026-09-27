@@ -45,18 +45,19 @@ detection logic the ticket's acceptance criteria describe, invoked the
 way a first-party source-tree audit would (frob vet has no first-party-
 tree scan mode as of this writing).
 
-STRATA PARSE CAVEAT: `render_unity_project`'s per-node `design/*.strata`
-fragments (T-4512's `render_unity_fragment`) carry no leading `module`
-declaration and the unity-project scaffold writes no companion root
-`design/frob.strata` either, so `frob check`'s strata loader logs a
-`ParseFailed` warning for each fragment when nothing else in the tree
-supplies that module header (docs/strata/surface.md's own T-4512 section:
-these fragments are meant to be "loaded and merged" alongside SOME root
-module file). This does not block `--only dead_symbols` (confirmed clean
-exit, 0 diagnostics) or the capability/test-collection assertions below,
-none of which touch strata parsing -- filed as T-draft-330aa06d rather
-than fixed here (out of this ticket's declared scope:
-`src/frob/scaffold/_unity_project.py` is not in T-4509's scope list)."""
+STRATA PARSE CAVEAT (CLOSED by T-5198): `render_unity_project`'s per-node
+`design/*.strata` fragments (T-4512's `render_unity_fragment`) used to
+carry no leading `module` declaration, and the unity-project scaffold
+wrote no companion root `design/frob.strata` either, so `frob check`'s
+strata loader logged a `ParseFailed` warning for each fragment (filed as
+T-draft-330aa06d, since fixing it was out of THIS ticket's own declared
+scope). T-5198 closed that gap: `_write_unity_fragments` now stamps every
+fragment with the same `module <name>` line a new starter `design/
+frob.strata` also declares (`_fragment_module_header`'s docstring covers
+why a companion file alone does not suffice -- each file must parse
+standalone), so `load_design_ids`/`frob check`'s strata loader now report
+zero parse errors against a freshly scaffolded project (see
+`tests/unit/test_scaffold_unity_project.py::TestModuleDeclaration`)."""
 
 from __future__ import annotations
 
@@ -105,8 +106,12 @@ class TestUnityScaffoldAndAsmdefNodes:
         # T-4512 criterion 3) -- exactly three, matching "two asmdef files"
         # plus the implicit catch-all the Editor/ script (no asmdef of its
         # own, by this ticket's own two-asmdef acceptance wording) falls
-        # into.
+        # into. T-5198 adds a fourth file, `design/frob.strata`, the
+        # starter root module declaration every per-node fragment's own
+        # module line now matches (`_fragment_module_header`) -- this
+        # ticket's own STRATA PARSE CAVEAT above, closed.
         assert fragment_names == [
+            "frob",
             "unity_default_assembly",
             "unity_game_runtime",
             "unity_game_tests",

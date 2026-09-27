@@ -1,5 +1,5 @@
 ---
-id: T-draft-96a5a38e
+id: T-6606
 title: frob test --base selects module-level names (tests/...::_TOML) as test ids
   from the touched symbol set and exits 4 while plain pytest passes; selection must
   come only from collected pytest items

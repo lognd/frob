@@ -99,10 +99,14 @@ that already has `Assets/`/`Packages/`) via its own entry point,
 `render_unity_project(root, *, force=False)` -- see Public API below. It
 writes a starter `frob.toml` with Unity's `Library/Temp/Logs/obj/*.meta`
 excludes pre-populated (T-4515's `UNITY_EXCLUDE_GLOBS`) and a
-`dotnet test` `[[test.runner]]` entry, plus one `design/<node_id>.strata`
+`dotnet test` `[[test.runner]]` entry, a starter `design/frob.strata`
+root module declaration (T-5198), plus one `design/<node_id>.strata`
 component-boundary fragment per detected `.asmdef` (T-4512's asmdef
 reader, reused unchanged -- one node per asmdef, plus the always-present
-default-assembly node covering any `.cs` file no asmdef claims). A
+default-assembly node covering any `.cs` file no asmdef claims); every
+fragment carries the same `module` line as the starter file (T-5198), so
+each parses standalone and the whole `design/` directory loads with zero
+`ParseFailed` errors. A
 directory with neither `Assets/` nor `Packages/` is refused with
 `ScaffoldError.NotAUnityProject`, never a bogus config; a second run
 without `force=True` is refused with `OutputExists` before anything is
@@ -197,12 +201,16 @@ def render_project(project_type, name, output_dir, *, force=False) -> Result[lis
 
 def render_unity_project(root, *, force=False) -> Result[list[Path], ScaffoldError]
     # T-4503: scaffold the unity-project type onto an EXISTING Unity
-    # project directory at root -- frob.toml plus one design/*.strata
-    # per detected .asmdef (T-4512's discover_asmdefs/build_component_
-    # nodes, reused unchanged). Err(NotAUnityProject) for a directory
+    # project directory at root -- frob.toml, a starter design/frob.strata
+    # root module declaration (T-5198), plus one design/*.strata per
+    # detected .asmdef (T-4512's discover_asmdefs/build_component_
+    # nodes, reused unchanged) -- every fragment stamped with the same
+    # module line the starter file declares (T-5198), so each parses
+    # standalone. Err(NotAUnityProject) for a directory
     # with neither Assets/ nor Packages/; Err(OutputExists) when
-    # frob.toml or any computed design/*.strata path already exists and
-    # force is not set, checked before anything is written.
+    # frob.toml, design/frob.strata, or any computed design/*.strata
+    # fragment path already exists and force is not set, checked before
+    # anything is written.
 
 def install_worktree_lease_hook(root, *, force=False) -> Result[tuple[Path, ...], ScaffoldError]
     # T-0431: installs pre-commit + pre-merge-commit git hooks into root's

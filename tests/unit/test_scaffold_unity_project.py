@@ -57,9 +57,12 @@ class TestRenderUnityProject:
         strata_files = sorted(p.name for p in design_dir.glob("*.strata"))
         # The fixture has four .asmdef files (Editor, Runtime, RuntimeUtils,
         # Tests) plus the always-present default-assembly node (T-4512's
-        # own acceptance criterion 3) -- five files total, one per node.
-        assert len(strata_files) == 5
+        # own acceptance criterion 3) -- five per-node fragments, PLUS
+        # T-5198's starter `design/frob.strata` root module declaration --
+        # six files total.
+        assert len(strata_files) == 6
         assert "unity_default_assembly.strata" in strata_files
+        assert "frob.strata" in strata_files
 
     # frob:tests src/frob/scaffold/_unity_project.py::render_unity_project
 
@@ -136,3 +139,45 @@ class TestNotAUnityProject:
         assert result.is_err
         assert not (plain_dir / "frob.toml").exists()
         assert not (plain_dir / "design").exists()
+
+
+class TestModuleDeclaration:
+    """T-5198: every `design/*.strata` file this scaffold writes -- the
+    per-node fragments AND the starter `design/frob.strata` -- parses
+    standalone (each carries its own `module` declaration), and
+    `frob.strata._design_load.load_design_ids` loads the whole
+    `design/` directory with zero `ParseFailed` errors (the ticket's own
+    positive control: this is the exact same real-repo defect T-4509's
+    Done report and `tests/system/test_unity_e2e.py` both documented as
+    still-open before this ticket)."""
+
+    # frob:tests tests/unit/test_scaffold_unity_project.py::TestModuleDeclaration.test_every_fragment_has_its_own_module_line  # noqa: E501
+    # frob:tests src/frob/scaffold/_unity_project.py::_write_unity_fragments
+    def test_every_fragment_has_its_own_module_line(self, unity_project: Path) -> None:
+        result = render_unity_project(unity_project)
+        assert result.is_ok, result.err
+
+        design_dir = unity_project / "design"
+        for strata_path in design_dir.glob("*.strata"):
+            lines = [
+                line
+                for line in strata_path.read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.strip().startswith("//")
+            ]
+            assert lines, f"{strata_path} has no non-comment content"
+            assert lines[0].startswith("module "), (
+                f"{strata_path} has no leading module declaration: {lines[0]!r}"
+            )
+
+    # frob:tests tests/unit/test_scaffold_unity_project.py::TestModuleDeclaration.test_load_design_ids_reports_zero_parse_errors  # noqa: E501
+    # frob:tests src/frob/scaffold/_unity_project.py::_fragment_module_header
+    def test_load_design_ids_reports_zero_parse_errors(
+        self, unity_project: Path
+    ) -> None:
+        from frob.strata._design_load import load_design_ids
+
+        result = render_unity_project(unity_project)
+        assert result.is_ok, result.err
+
+        ids = load_design_ids(unity_project)
+        assert ids.errors == (), ids.errors

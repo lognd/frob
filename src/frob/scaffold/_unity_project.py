@@ -3,7 +3,8 @@ py`'s `_MANIFESTS`, this one scaffolds ONTO an EXISTING Unity project
 directory (one that already has `Assets/`/`Packages/`) rather than
 creating a fresh `<output_dir>/<name>/` tree -- a starter `frob.toml`
 with Unity's build-cache/meta excludes pre-populated (T-4515's
-`UNITY_EXCLUDE_GLOBS`), plus one `design/<node_id>.strata` file per
+`UNITY_EXCLUDE_GLOBS`), a starter `design/frob.strata` root module
+declaration (T-5198), plus one `design/<node_id>.strata` file per
 detected `.asmdef` (T-4512's `discover_asmdefs`/`build_component_nodes`,
 reused unchanged -- this module adds no second asmdef reader).
 
@@ -54,6 +55,8 @@ _log = get_logger(__name__)
 # uses -- only the dynamic `design/*.strata` files need bespoke handling.
 _UNITY_PROJECT_MANIFEST: list[_ManifestEntry] = [
     _ManifestEntry("types/unity-project/frob.toml.j2", "frob.toml"),
+    # frob:ticket T-5198
+    _ManifestEntry("types/unity-project/design/frob.strata.j2", "design/frob.strata"),
 ]
 
 
@@ -92,9 +95,36 @@ def _unity_fragment_paths(
     return [(node, root / "design" / f"{node.node_id}.strata") for node in model.nodes]
 
 
+# frob:ticket T-5198
+def _fragment_module_header(root: Path) -> str:
+    """The `module <name>\\n\\n` line `_write_unity_fragments` stamps
+    ahead of every per-node fragment's own (unchanged) rendered text.
+
+    T-5198: `render_unity_fragment` (T-4512) emits only `node {...}`/
+    `flow ...` blocks, never a leading `module` declaration -- verified
+    empirically (not just per the ticket body's own wording) that
+    `frob.strata._design_load.load_design_ids` parses each `design/
+    *.strata` file INDEPENDENTLY (`_parse.parse_module` per file, before
+    `_multifile.merge_modules` ever runs), so a companion `design/
+    frob.strata` carrying the module declaration on its own does NOT
+    make the other module-less fragments parseable -- each file needs
+    its OWN `module` line to parse standalone at all. `merge_modules`
+    discards each file's own `Module.name` in favor of a shared "design"
+    name for the merged unit, so every fragment (and the starter
+    `design/frob.strata`) declaring the SAME module name here causes no
+    conflict -- T-1196's cross-file merge is exactly what already
+    handles that. `render_unity_fragment`'s own return value is used
+    byte-for-byte unchanged (T-5198's fragment-format-must-not-change
+    constraint) -- only the on-disk file gets this header prepended, at
+    the write step, never inside the pure renderer itself."""
+    return f"module {_to_import_name(root.name)}\n\n"
+
+
 # frob:ticket T-4503
+# frob:ticket T-5198
 # frob:callee-raises OSError
 def _write_unity_fragments(
+    root: Path,
     paths: list[tuple[UnityComponentNode, Path]],
 ) -> Result[list[Path], ScaffoldError]:
     """Render and write one `.strata` fragment per `(node, path)` pair --
@@ -104,11 +134,18 @@ def _write_unity_fragments(
     `node {...}` block plus its `flow` lines to whatever it depends on,
     even when that dependency's own node block lives in a sibling
     `design/*.strata` file -- cross-file node references are how every
-    other multi-file `design/` directory in this repo already works)."""
+    other multi-file `design/` directory in this repo already works).
+
+    T-5198: each written file is stamped with `_fragment_module_header`
+    ahead of `render_unity_fragment`'s own unchanged text -- see that
+    helper's docstring for why a SEPARATE starter `design/frob.strata`
+    file alone (this scaffold also writes one, `_UNITY_PROJECT_MANIFEST`)
+    is not sufficient on its own: every fragment must parse standalone."""
+    header = _fragment_module_header(root)
     written: list[Path] = []
     for node, out_path in paths:
         single_node_model = UnityAssemblyModel(nodes=(node,))
-        fragment_text = render_unity_fragment(single_node_model)
+        fragment_text = header + render_unity_fragment(single_node_model)
         try:
             out_path.parent.mkdir(parents=True, exist_ok=True)
             out_path.write_text(fragment_text, encoding="utf-8")
@@ -129,7 +166,11 @@ def render_unity_project(
     create a fresh `<output_dir>/<name>/` tree, `root` here already has
     `Assets/`/`Packages/` and this only adds frob's own config alongside
     it): a starter `frob.toml` with Unity's build-cache/meta excludes
-    pre-populated (T-4515's `UNITY_EXCLUDE_GLOBS`), plus one `design/
+    pre-populated (T-4515's `UNITY_EXCLUDE_GLOBS`), a starter `design/
+    frob.strata` root module declaration (T-5198 -- see
+    `_fragment_module_header`'s docstring for why this alone does not
+    fix per-fragment parseability, and why every fragment ALSO gets the
+    same module line stamped at write time), plus one `design/
     <node_id>.strata` file per detected `.asmdef` (T-4512's `discover_
     asmdefs`/`build_component_nodes`, reused unchanged -- this module
     adds no second asmdef reader).
@@ -137,10 +178,10 @@ def render_unity_project(
     `Err(NotAUnityProject)` when `root` has neither `Assets/` nor
     `Packages/` (acceptance criterion 3: a clear, specific error, never a
     bogus config written for a non-Unity directory). `Err(OutputExists)`
-    when `frob.toml` or any of the computed `design/*.strata` paths
-    already exists and `force` is not set (criterion 2) -- checked BEFORE
-    any file is written, so a refusal never leaves a partial scaffold
-    behind."""
+    when `frob.toml`, `design/frob.strata`, or any of the computed
+    `design/*.strata` fragment paths already exists and `force` is not
+    set (criterion 2) -- checked BEFORE any file is written, so a
+    refusal never leaves a partial scaffold behind."""
     discovered = discover_asmdefs(root)
     if discovered.is_err:
         asmdef_err = discovered.danger_err
@@ -174,7 +215,7 @@ def render_unity_project(
     written_result = _write_manifest_entries(resolved, env, ctx)
     if written_result.is_err:
         return Err(written_result.danger_err)
-    fragments_result = _write_unity_fragments(fragment_paths)
+    fragments_result = _write_unity_fragments(root, fragment_paths)
     if fragments_result.is_err:
         return Err(fragments_result.danger_err)
     return Ok(written_result.danger_ok + fragments_result.danger_ok)

@@ -2,7 +2,7 @@
 id: T-5198
 title: unity-project scaffold's design/*.strata fragments have no root module declaration,
   unparseable standalone
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-19'
@@ -12,8 +12,20 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+flavour: null
+due: null
+rank: null
+points: null
+unsized_ack: false
+unsized_ack_reason: null
+tokens_in: null
+tokens_out: null
+tokens_cache_read: null
+usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-5198
+branch: t-5198
 scope:
 - src/frob/scaffold/_unity_project.py
 - src/frob/scaffold/data/types/unity-project/**
@@ -21,6 +33,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_scaffold_unity_project.py::TestModuleDeclaration::test_every_fragment_has_its_own_module_line
+- tests/unit/test_scaffold_unity_project.py::TestModuleDeclaration::test_load_design_ids_reports_zero_parse_errors
+- tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject::test_one_strata_file_per_asmdef
+- tests/system/test_unity_e2e.py::TestUnityScaffoldAndAsmdefNodes::test_scaffold_succeeds_and_nodes_match_the_two_asmdefs
 designated_repro_test: null
 threat: null
 component: null

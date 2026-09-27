@@ -110,8 +110,11 @@ give it, only the directory. This writes:
   pre-populated (`Library/`, `Temp/`, `Logs/`, `obj/`, every `*.meta`
   file -- see `src/frob/excludes.py::UNITY_EXCLUDE_GLOBS`), so those
   never show up as tracked-file noise in `frob check`/`frob dup`/etc;
+- a starter `design/frob.strata` root module declaration (T-5198);
 - one `design/<node_id>.strata` fragment per detected `.asmdef` (see
-  "Asmdef component boundaries" below).
+  "Asmdef component boundaries" below) -- each stamped with the same
+  `module` line the starter file declares, so every fragment parses
+  standalone and `frob check`'s strata loader reports zero parse errors.
 
 A directory with neither `Assets/` nor `Packages/` is refused with a
 clear `NotAUnityProject` error, never a bogus config written. A second
