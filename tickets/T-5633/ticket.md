@@ -34,6 +34,7 @@ scope:
 - src/frob/app/ci_runner.py
 - src/frob/ci_validity.py
 - tests/unit/cli/test_ci_report.py
+- tests/test_ci_validity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -85,6 +86,11 @@ scope_changes:
   glob: tests/unit/cli/test_ci_report.py
   reason: unit coverage for _run_validity/_run_watch, including this leaf's own unknown-verbatim
     positive control
+  actor: logan
+  at: '2026-09-26'
+- op: add
+  glob: tests/test_ci_validity.py
+  reason: unit coverage for frob.ci_validity's classify_test/run_validity
   actor: logan
   at: '2026-09-26'
 triage_changes:
