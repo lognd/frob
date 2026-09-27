@@ -27,7 +27,6 @@ worktree: /home/logan/projects/frob
 branch: dev
 scope:
 - src/frob/webapp/_a11y_statement.py
-- src/frob/webapp/_websec_headers.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +46,12 @@ scope_changes:
     to avoid scope collision
   actor: logan
   at: '2026-09-25'
+- op: remove
+  glob: src/frob/webapp/_websec_headers.py
+  reason: T-6531 (queued to land) removes this file's stale WIRE001 waiver; T-6524
+    keeps the _a11y_statement.py one
+  actor: logan
+  at: '2026-09-26'
 designated_repro_test: null
 threat: null
 component: null
