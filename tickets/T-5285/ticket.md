@@ -2,7 +2,7 @@
 id: T-5285
 title: CLI shim announce_shim logs at INFO, leaking a stray line onto every shimmed
   command's stdout (breaks --json)
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-22'
