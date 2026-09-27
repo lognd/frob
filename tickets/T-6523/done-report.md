@@ -1,0 +1,16 @@
+## Done report
+
+The secrets gate self-check flagged WEBSEC positive fixtures under tests/fixtures/webapp/ as real credentials. Extended TestGateIsGreenOnItself's existing by-file exclusion precedent (_LEDGER_NARRATIVE_FILES) with a tests/fixtures/webapp/ path-prefix exclusion; the detector itself is untouched. T-5658 owns the specific main.js placeholder fix.
+
+### Changed
+```
+ tests/test_secrets_gate.py    | 13 +++++++++++++
+ tickets/T-6523/done-report.md | 14 ++++++++++++++
+ tickets/T-6523/ticket.md      | 14 ++++++++++----
+ 3 files changed, 37 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_secrets_module_source_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_this_test_file_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_repo_is_clean` (pytest node id, verified passing when recorded)

@@ -1,7 +1,7 @@
 ---
 id: T-6523
 title: secrets_gate self-check flags its own WEBSEC positive fixtures as real credentials
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-25'
@@ -12,6 +12,8 @@ sprint: null
 runs_last: false
 milestone: 0.534.0
 flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -21,8 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob/.claude/worktrees/t-6523
+branch: t-6523
 scope:
 - tests/fixtures/webapp/websec4xx/rls_llm/webesc417_positive/app.py
 - tests/test_secrets_gate.py
@@ -39,7 +41,11 @@ scope_changes:
     by-path exclusion mechanism instead of editing fixture content.'
   actor: logan
   at: '2026-09-25'
-designated_repro_test: null
+evidence:
+- tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_secrets_module_source_is_clean
+- tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_this_test_file_is_clean
+- tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_repo_is_clean
+designated_repro_test: tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_repo_is_clean
 threat: null
 component: null
 anchor: false

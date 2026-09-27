@@ -1,5 +1,5 @@
 ---
-id: T-draft-0d58d9a7
+id: T-6601
 title: 'frob check prettier stage passes while CI prettier --check fails: the [warn]
   <path> lines are filtered out and unformatted files are warnings, so a nonzero prettier
   exit never fails the check'

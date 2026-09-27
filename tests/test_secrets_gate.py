@@ -881,6 +881,18 @@ class TestGateIsGreenOnItself:
     #: not by loosening the scanner itself.
     _LEDGER_NARRATIVE_FILES = frozenset({"tickets.md", "tickets-archive.md"})
 
+    #: T-6523: `tests/fixtures/webapp/**` holds the WEBSEC gate suite's
+    #: POSITIVE fixtures -- files deliberately written to contain
+    #: real-looking provider credentials so the WEBSEC gates have something
+    #: to fire on (e.g. `websec3xx/debug/webesc316_positive/static/main.js`,
+    #: `websec4xx/rls_llm/webesc417_positive/app.py`). Excluding this whole
+    #: subtree from the self-check, same "excluded here by file, not by
+    #: loosening the scanner" precedent as `_LEDGER_NARRATIVE_FILES` above --
+    #: the scanner itself must keep flagging these paths for real callers
+    #: (`frob check`), it is only THIS test's is-the-repo-clean self-check
+    #: that must not treat known-deliberate fixture secrets as a live leak.
+    _WEBAPP_FIXTURE_PREFIX = "tests/fixtures/webapp/"
+
     def test_repo_is_clean(self) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         root = Path(__file__).resolve().parents[1]
@@ -888,6 +900,7 @@ class TestGateIsGreenOnItself:
             v
             for v in secrets_gate(root)
             if v.file not in TestGateIsGreenOnItself._LEDGER_NARRATIVE_FILES
+            and not v.file.startswith(TestGateIsGreenOnItself._WEBAPP_FIXTURE_PREFIX)
         ]
         assert violations == [] or violations == (), (
             "secrets_gate found real-looking credentials in the live repo: "
