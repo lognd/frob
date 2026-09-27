@@ -42,6 +42,12 @@ body_changes:
   at: '2026-09-26'
   old_length: 1792
   new_length: 1792
+- mode: append
+  reason: 'crunk: ruff/ty lint .mjs as Python'
+  actor: logan
+  at: '2026-09-27'
+  old_length: 1792
+  new_length: 2173
 designated_repro_test: null
 threat: null
 component: null
@@ -77,3 +83,11 @@ why `frob check --ticket --json` emitted no totals line in T-0207's run
 loudly; (4) positive control: a scoped set with one .py and one .md
 yields ty findings only for the .py; a done-report run whose ty output
 names a .md file records unmeasured, not a count.
+
+
+Same defect, second language (crunk-ba, 2026-09-27): the ruff and ty
+stages linted src/crunk/tailwind_runtime/node/helper.mjs (JavaScript) as
+Python and produced about 950 false diagnostics. The file filter for
+every Python tool stage must be by language (suffix/grammar), never "in
+the ticket set"; cover .md, .mjs/.js/.ts, .toml, .json and any non-.py
+in the positive control.
