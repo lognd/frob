@@ -3,7 +3,7 @@ id: T-6570
 title: 'frob:tests test-side detection is lexical (lowercase tests/ or test_*.py):
   Unity Assets/Tests NUnit files are read as production and correct bindings are reported
   redundant'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -59,7 +59,10 @@ body_changes:
   at: '2026-09-26'
   old_length: 1594
   new_length: 1700
-designated_repro_test: null
+evidence:
+- tests/unit/graph/test_dsl.py::TestUnityNUnitTestSideIsCollectorNotPathDecided::test_hullbreach_shipbody_test_side_directive_binds_cleanly
+- tests/unit/graph/test_dsl.py::TestUnityNUnitTestSideIsCollectorNotPathDecided::test_hullbreach_shipbody_test_side_declaration_is_not_flagged_redundant
+designated_repro_test: tests/unit/graph/test_dsl.py::TestUnityNUnitTestSideIsCollectorNotPathDecided::test_hullbreach_shipbody_test_side_directive_binds_cleanly
 threat: null
 component: null
 anchor: false

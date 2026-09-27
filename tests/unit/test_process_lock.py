@@ -417,7 +417,13 @@ class TestNoBarePytestNodeIdDirectives:
         import re
         from pathlib import Path
 
-        src = Path(__file__).resolve().parents[2] / "src" / "frob" / "process" / "_derived_lock.py"
+        src = (
+            Path(__file__).resolve().parents[2]
+            / "src"
+            / "frob"
+            / "process"
+            / "_derived_lock.py"
+        )
         text = src.read_text(encoding="utf-8")
         match = re.search(r"# frob:tests (\S+)", text)
         if match is None:

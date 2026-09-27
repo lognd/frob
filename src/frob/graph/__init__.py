@@ -942,6 +942,7 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
 
 
 # frob:ticket T-4710
+# frob:ticket T-draft-317270e0
 def _partition_test_declarations(
     edges: Sequence[Edge],
 ) -> tuple[set[tuple[str, str]], list[Edge]]:
@@ -951,17 +952,37 @@ def _partition_test_declarations(
     A production-side and a derived test-side declaration both end up as
     the identical `(src, target)` pair once `dsl._reorient_test_edge` has
     run -- the only surviving difference is which FILE the comment
-    physically lives in, read back from `edge.origin`. `test_side_pairs`
-    is every `(src, target)` pair with at least one test-side origin;
-    `prod_side` is every edge whose OWN origin is not test-shaped (a
-    candidate for `_redundant_test_declarations`' finding)."""
+    physically lives in. `test_side_pairs` is every `(src, target)` pair
+    with at least one test-side origin; `prod_side` is every edge whose
+    OWN origin is not test-shaped (a candidate for
+    `_redundant_test_declarations`' finding).
+
+    T-draft-317270e0: the test-shaped decision is read back from `edge.
+    attrs["origin_test_shaped"]` -- `dsl._reorient_test_edge` already made
+    it once, with the language collector's own grammar rule (NUnit
+    attributes for C#, pytest discovery for python) and `looks_like_test_
+    path`'s lexical rule only as ITS fallback, at the one point a
+    `ParsedFile` was in hand. Re-deriving it here from `edge.origin`'s bare
+    path string, with no `ParsedFile` or collector available at this
+    whole-repo stage, could only ever fall back to the lexical rule --
+    exactly the bug this ticket fixes (a Unity `Assets/Tests/...` NUnit
+    fixture reads as production-shaped by path alone). Absent for a TESTS
+    edge from any origin OTHER than `dsl.parse_directives` (none exists
+    today -- see that edge kind's own single-producer note), so absence
+    still falls back to the lexical rule rather than silently misclassify
+    a hypothetical future producer."""
     test_side_pairs: set[tuple[str, str]] = set()
     prod_side: list[Edge] = []
     for edge in edges:
         if edge.kind is not EdgeKind.TESTS:
             continue
-        origin_file = edge.origin.rpartition(":")[0] or edge.origin
-        if looks_like_test_path(origin_file):
+        stamped = edge.attrs.get("origin_test_shaped")
+        if stamped is not None:
+            origin_is_test = stamped == "true"
+        else:
+            origin_file = edge.origin.rpartition(":")[0] or edge.origin
+            origin_is_test = looks_like_test_path(origin_file)
+        if origin_is_test:
             test_side_pairs.add((edge.src, edge.target))
         else:
             prod_side.append(edge)

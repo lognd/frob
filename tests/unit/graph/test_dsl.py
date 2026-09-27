@@ -1537,3 +1537,104 @@ class TestMultiTargetFoldRoundTrip:
         tests_edges = [e for e in edges if e.kind == EdgeKind.TESTS]
         assert len(tests_edges) == 2
         assert {e.target for e in tests_edges} == {"a.py::A.m", "b.py::B.n"}
+
+
+class TestUnityNUnitTestSideIsCollectorNotPathDecided:
+    """T-draft-317270e0 (bug, T-4710 follow-up): a Unity `Assets/Tests/...`
+    NUnit fixture is capitalized (`Tests`, not `tests`) and its own file is
+    conventionally named `*Tests.cs` (no `test_`/`_test` leaf shape) -- the
+    lexical path rule reads it as PRODUCTION code, backwards from what its
+    own `[Test]` method attribute says. Designated repro for T-draft-
+    317270e0 (`frob ticket evidence ... --designate-repro`)."""
+
+    # frob:tests src/frob/graph/dsl.py::_collector_claims_test_file
+    # frob:tests src/frob/graph/dsl.py::looks_like_test_path
+    def test_hullbreach_shipbody_test_side_directive_binds_cleanly(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        test_src = (
+            "namespace Hullbreach.Ship.Tests\n"
+            "{\n"
+            "    public class ShipBodyTests\n"
+            "    {\n"
+            "        // frob:tests Assets/Scripts/Hullbreach.Ship/ShipBody.cs"
+            "::ShipBody.AppliedForcesThisStep\n"
+            "        [Test]\n"
+            "        public void AppliedForcesThisStep_ReturnsZero()\n"
+            "        {\n"
+            "        }\n"
+            "    }\n"
+            "}\n"
+        )
+        pf = parse_file(
+            _write(
+                tmp_path,
+                "Assets/Tests/EditMode/Hullbreach.Ship.Tests/ShipBodyTests.cs",
+                test_src,
+            )
+        ).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        tests_edges = [e for e in edges if e.kind == EdgeKind.TESTS]
+        assert len(tests_edges) == 1
+        edge = tests_edges[0]
+        # T-4710's canonical implementation -> test shape: reoriented even
+        # though the path alone (capitalized `Tests`, `*Tests.cs` leaf
+        # name) looks production-shaped -- the `[Test]` attribute on
+        # `ShipBodyTests.AppliedForcesThisStep_ReturnsZero`, read straight
+        # off `RawSymbol.sig_tokens`, is what actually decided this.
+        assert (
+            edge.src
+            == "Assets/Scripts/Hullbreach.Ship/ShipBody.cs::ShipBody.AppliedForcesThisStep"
+        )  # noqa: E501
+        assert edge.target.startswith(
+            "Assets/Tests/EditMode/Hullbreach.Ship.Tests/ShipBodyTests.cs::"
+        )
+        assert edge.attrs["origin_test_shaped"] == "true"
+
+    # frob:tests src/frob/graph/__init__.py::_partition_test_declarations
+    def test_hullbreach_shipbody_test_side_declaration_is_not_flagged_redundant(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        from frob.graph import _redundant_test_declarations
+
+        test_src = (
+            "namespace Hullbreach.Ship.Tests\n"
+            "{\n"
+            "    public class ShipBodyTests\n"
+            "    {\n"
+            "        // frob:tests Assets/Scripts/Hullbreach.Ship/ShipBody.cs"
+            "::ShipBody.AppliedForcesThisStep\n"
+            "        [Test]\n"
+            "        public void AppliedForcesThisStep_ReturnsZero()\n"
+            "        {\n"
+            "        }\n"
+            "    }\n"
+            "}\n"
+        )
+        pf = parse_file(
+            _write(
+                tmp_path,
+                "Assets/Tests/EditMode/Hullbreach.Ship.Tests/ShipBodyTests.cs",
+                test_src,
+            )
+        ).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        # Positive control (T-4710 leaf 1 part (b)'s own finding still
+        # fires): a genuine second, PRODUCTION-side declaration of the
+        # identical pair still reports as redundant.
+        tests_edge = next(e for e in edges if e.kind == EdgeKind.TESTS)
+        prod_dup = tests_edge.model_copy(
+            update={
+                "origin": "Assets/Scripts/Hullbreach.Ship/ShipBody.cs:9",
+                "attrs": {},
+            }
+        )
+        findings = _redundant_test_declarations([*edges, prod_dup])
+        assert len(findings) == 1
+        assert findings[0].file == "Assets/Scripts/Hullbreach.Ship/ShipBody.cs"
+        assert findings[0].line == 9
+        assert "delete" in findings[0].reason

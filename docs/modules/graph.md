@@ -1200,11 +1200,38 @@ graph -> tickets dependency cycle).
 it covers -- not the other way around. The canonical edge orientation
 (what every consumer, including TDD001's commit-order check, sees) is
 always `src = <implementation symbol>`, `target = <test symbol>`; a
-directive whose comment lives in a test-shaped file (`dsl.
-looks_like_test_path` -- `tests/` anywhere in the path, or a
-`test_*.py`/`*_test.py` leaf name) has its `src`/`target` swapped by
-`dsl._reorient_test_edge` at parse time, before any gate ever sees it.
-One declaration, one parse; the graph derives the reverse edge internally.
+directive whose comment lives in a test-shaped file has its `src`/`target`
+swapped by `dsl._reorient_test_edge` at parse time, before any gate ever
+sees it. One declaration, one parse; the graph derives the reverse edge
+internally.
+
+"Test-shaped" (`dsl.looks_like_test_path`) is decided from the language
+COLLECTOR's own token/grammar rule whenever one exists for the file's
+language (`dsl._collector_claims_test_file`, T-draft-317270e0 -- owner
+directive: token/grammar, never lexical) -- a C# file is test-shaped when
+one of its methods carries an NUnit/Unity Test Framework attribute
+(`[Test]`/`[TestCase]`/`[TestCaseSource]`/`[UnityTest]`, read straight off
+`RawSymbol.sig_tokens`, no second parse), a python file when one of its
+symbols is pytest-discoverable by NAME (`Test*` class, `test_*`
+function/method -- pytest's own default `python_classes`/`python_functions`
+convention). The lexical rule (`tests/` anywhere in the path, or a
+`test_*.py`/`*_test.py` leaf name) survives ONLY as the fallback for a
+language with no such rule, or for the `target` side of a `frob:tests`
+edge (a different file this parse has not read). Before T-draft-317270e0,
+every language used the lexical rule unconditionally -- a Unity
+`Assets/Tests/...` NUnit fixture (capitalized `Tests`, `*Tests.cs` leaf
+name) read as PRODUCTION code, backwards from what its own `[Test]`
+attribute said, and a correct test-side declaration there was reported as
+a redundant production-side one (T-4710's own finding, aimed at the wrong
+side).
+
+The decision is stamped onto the edge itself
+(`edge.attrs["origin_test_shaped"]`) at parse time, where the collector
+rule (and the `ParsedFile` it needs) is in hand -- `frob.graph.
+_partition_test_declarations` (below) reads this back rather than
+re-deriving it lexically from `edge.origin`'s bare path string at the
+whole-repo stage, where no `ParsedFile` is available to re-derive it any
+other way.
 
 ```python
 # tests/unit/frob/test_foo.py

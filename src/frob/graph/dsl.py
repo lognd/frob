@@ -29,25 +29,75 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
-# frob:ticket T-4710
-# frob:doc \
-# docs/modules/graph.md#frobtests-test-side-declaration-derived-reverse-edge-t-4710
-def looks_like_test_path(path: str) -> bool:
-    """Whether `path` (a symref's file half) is a conventional test file --
-    `tests/` anywhere in its directory parts, or a `test_*.py`/`*_test.py`
-    leaf name. T-4710: the shape check `parse_directives` uses to tell a
-    TEST-SIDE `frob:tests` declaration (comment lives in a test file) from
-    the legacy PRODUCTION-SIDE one (comment lives on the implementation
-    symbol) so it can reorient the derived edge into the one canonical
-    `implementation -> test` shape `frob.gates._tdd_order` (TDD001)
-    validates, regardless of which side declared it. Exported (not
-    module-private) so `frob.graph`'s cross-file redundancy pass can reuse
-    the identical predicate rather than re-deriving it -- see that
-    predicate's own near-duplicate in `frob.gates._tdd_order.
-    _looks_like_test_path`, kept local there for the layering reason its
-    own waiver states (gates must not import graph-internal helpers back
-    the other way); this one is the graph-side original the two now share
-    in spirit, not in code, across that boundary."""
+# T-draft-317270e0: the NUnit/Unity Test Framework attribute names a C#
+# method carries when it is test-shaped -- mirrors `frob.testing.
+# _collect_csharp._TEST_ATTRIBUTE_NAMES` exactly (that module's own node-id
+# collection uses the same allowlist). Kept as a local literal rather than
+# imported: `frob.testing` already imports `frob.graph` (its `_select.py`),
+# so `frob.graph.dsl` importing back from `frob.testing._collect_csharp`
+# would form the same layering cycle `_looks_like_test_path`'s own
+# near-duplicate in `frob.gates._tdd_order` already declines to close (see
+# that function's docstring) -- one frozenset literal shared in SPIRIT, not
+# in code, across a boundary neither side may cross the other way.
+# frob:ticket T-draft-317270e0
+_CSHARP_TEST_ATTRIBUTE_TOKENS = frozenset(
+    {"Test", "TestCase", "TestCaseSource", "UnityTest"}
+)
+
+
+# frob:ticket T-draft-317270e0
+def _collector_claims_test_file(parsed: ParsedFile) -> bool | None:
+    """Whether `parsed`'s own language has a token/grammar rule this
+    module can apply directly to decide test-shapedness -- `True`/`False`
+    when it does, `None` when no such rule exists for `parsed.language`
+    (the caller falls back to `_lexical_test_path` for that path, module
+    docstring's "fallback when no collector claims the file").
+
+    T-draft-317270e0 (bug, T-4710 follow-up): a Unity `Assets/Tests/...`
+    NUnit fixture is capitalized (`Tests`, not `tests`) and its file is
+    conventionally named `*Tests.cs`, so the lexical path rule below
+    reads it as PRODUCTION code -- backwards from what its own NUnit
+    `[Test]`/`[TestCase]`/`[TestCaseSource]`/`[UnityTest]` method
+    attributes say. Those attribute tokens are already present, verbatim,
+    in `RawSymbol.sig_tokens` for every C# method (`_walk_csharp.
+    _cs_method_symbol` tokenizes the whole `method_declaration` node,
+    attribute list included) -- no second parse, no cross-layer import,
+    just reading the same grammar-derived data `frob.graph` already
+    carries. Python is decided the same grammar way: a pytest-discoverable
+    `Test*` class or `test_*` function/method SYMBOL NAME (pytest's own
+    default collection convention, `python_classes`/`python_functions`),
+    not the file's path."""
+    if parsed.language == "csharp":
+        return any(
+            _CSHARP_TEST_ATTRIBUTE_TOKENS & set(sym.sig_tokens)
+            for sym in parsed.symbols
+            if sym.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+        )
+    if parsed.language == "python":
+        return any(_pytest_discoverable_symbol(sym) for sym in parsed.symbols)
+    return None
+
+
+# frob:ticket T-draft-317270e0
+def _pytest_discoverable_symbol(sym) -> bool:  # noqa: ANN001
+    """One `RawSymbol`'s own leaf name against pytest's default discovery
+    convention (`python_classes = Test*`, `python_functions = test_*`) --
+    the grammar-level (symbol name, not file path) half of
+    `_collector_claims_test_file`'s python branch."""
+    leaf = sym.qualname.rsplit(".", 1)[-1]
+    if sym.kind is SymbolKind.CLASS:
+        return leaf.startswith("Test")
+    if sym.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD):
+        return leaf.startswith("test_")
+    return False
+
+
+def _lexical_test_path(path: str) -> bool:
+    """The pure path-shape rule -- `tests/` anywhere in `path`'s directory
+    parts, or a `test_*.py`/`*_test.py` leaf name. `looks_like_test_path`'s
+    FALLBACK, used only when no collector claims the file (module
+    docstring); never called directly for a file `_collector_claims_test_
+    file` already resolved."""
     from pathlib import PurePosixPath
 
     parts = PurePosixPath(path).parts
@@ -55,6 +105,43 @@ def looks_like_test_path(path: str) -> bool:
     return (
         "tests" in parts[:-1] or name.startswith("test_") or name.endswith("_test.py")
     )
+
+
+# frob:ticket T-4710
+# frob:ticket T-draft-317270e0
+# frob:doc \
+# docs/modules/graph.md#frobtests-test-side-declaration-derived-reverse-edge-t-4710
+def looks_like_test_path(path: str, *, parsed: ParsedFile | None = None) -> bool:
+    """Whether `path` (a symref's file half) is test-shaped. T-4710: the
+    shape check `parse_directives` uses to tell a TEST-SIDE `frob:tests`
+    declaration (comment lives in a test file) from the legacy
+    PRODUCTION-SIDE one (comment lives on the implementation symbol) so
+    it can reorient the derived edge into the one canonical
+    `implementation -> test` shape `frob.gates._tdd_order` (TDD001)
+    validates, regardless of which side declared it.
+
+    T-draft-317270e0: decided from the language collector's own
+    token/grammar rule (`_collector_claims_test_file`) whenever `parsed`
+    is given AND `parsed.path == path` (the only shape every caller in
+    this module ever has -- the comment always lives in the file being
+    parsed) -- never from `path`'s shape when a collector rule exists.
+    `_lexical_test_path` survives only as the fallback: `parsed` omitted
+    (a caller with no `ParsedFile`, e.g. `frob.graph`'s whole-repo
+    redundancy pass reading `edge.origin` back after the fact), or
+    `parsed.language` has no collector rule of its own (T-4710's original
+    python-only shape stays exactly this for every OTHER language).
+    Exported (not module-private) so `frob.graph`'s cross-file redundancy
+    pass can reuse the identical predicate rather than re-deriving it --
+    see that predicate's own near-duplicate in `frob.gates._tdd_order.
+    _looks_like_test_path`, kept local there for the layering reason its
+    own waiver states (gates must not import graph-internal helpers back
+    the other way); this one is the graph-side original the two now share
+    in spirit, not in code, across that boundary."""
+    if parsed is not None and parsed.path == path:
+        claim = _collector_claims_test_file(parsed)
+        if claim is not None:
+            return claim
+    return _lexical_test_path(path)
 
 
 def _tests_edge_target_file(target: str) -> str:
@@ -70,7 +157,7 @@ def _tests_edge_target_file(target: str) -> str:
     return target
 
 
-def _reorient_test_edge(edge: Edge) -> Edge:
+def _reorient_test_edge(edge: Edge, parsed: ParsedFile) -> Edge:
     """T-4710: fold a TEST-SIDE `frob:tests` declaration into the one
     canonical `implementation -> test` edge shape.
 
@@ -86,19 +173,44 @@ def _reorient_test_edge(edge: Edge) -> Edge:
     already canonical) or when both sides are test-like (including true
     self-reference, `src == target`, which T-4710's docs settle as still
     valid parse-time and still TDD001's own concern, not this function's)
-    -- reorientation applies ONLY to the one shape it exists to fix."""
+    -- reorientation applies ONLY to the one shape it exists to fix.
+
+    T-draft-317270e0: `parsed` is the `ParsedFile` `parse_directives` is
+    currently walking -- always the file `edge.src` lives in (`src` is
+    always the comment's own site, module docstring above), so
+    `looks_like_test_path(src_file, parsed=parsed)` gets the collector-
+    grammar answer for the SRC side. `target_file` names a DIFFERENT file
+    this pass has not parsed -- no collector claims it here, so it falls
+    back to the lexical rule, exactly the fallback `looks_like_test_path`
+    documents."""
     if edge.kind is not EdgeKind.TESTS:
         return edge
     src_file = _tests_edge_target_file(edge.src)
     target_file = _tests_edge_target_file(edge.target)
-    if not looks_like_test_path(src_file) or looks_like_test_path(target_file):
-        return edge
+    src_is_test = looks_like_test_path(src_file, parsed=parsed)
+    # T-draft-317270e0: stamp the collector-grammar answer for the origin
+    # file (always `src_file`, module docstring's "src is always the
+    # comment's own site") onto the edge itself, so `frob.graph`'s later
+    # whole-repo redundancy pass (`_partition_test_declarations`) can read
+    # it straight back instead of re-deriving it lexically from `edge.
+    # origin` with no `ParsedFile` (and no collector) in hand at that
+    # point -- the one place this decision is made, not two.
+    attrs = dict(edge.attrs)
+    attrs["origin_test_shaped"] = "true" if src_is_test else "false"
+    if not src_is_test or looks_like_test_path(target_file):
+        return Edge(
+            src=edge.src,
+            kind=edge.kind,
+            target=edge.target,
+            origin=edge.origin,
+            attrs=attrs,
+        )
     return Edge(
         src=edge.target,
         kind=edge.kind,
         target=edge.src,
         origin=edge.origin,
-        attrs=edge.attrs,
+        attrs=attrs,
     )
 
 
@@ -1927,7 +2039,7 @@ def parse_directives(
                 result = result.model_copy(update={"reason": dsl001_reason})
             malformed.append(result)
         else:
-            edges.extend(_reorient_test_edge(edge) for edge in result)
+            edges.extend(_reorient_test_edge(edge, parsed) for edge in result)
     extra_edges, coherence_malformed = _debt_todo_coherence(edges)
     edges.extend(extra_edges)
     malformed.extend(coherence_malformed)
