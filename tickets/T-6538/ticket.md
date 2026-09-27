@@ -2,7 +2,7 @@
 id: T-6538
 title: 'land: ClaimDivergence charges the landing ticket with findings main already
   had; baseline against pre-land main'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -24,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/tickets/_land_verify.py
 - src/frob/tickets/_land.py
