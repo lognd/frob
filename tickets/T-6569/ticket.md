@@ -2,7 +2,7 @@
 id: T-6569
 title: land claim check attributes another ticket's TICK015 (dead worktree agent,
   unlanded) to the landing ticket and refuses with ClaimDivergence
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -76,3 +76,6 @@ for the duration of `frob ticket land`. Deliver in addition: the landing
 ticket's own TICK015 row is excluded from its claim comparison (a land in
 progress IS the live use of that worktree), and the done-report's
 scoped check must not run with files=0.
+
+## Failure log
+- 2026-09-27 attempt 1: started in wrong location (repo root), requeue to start in dedicated worktree
