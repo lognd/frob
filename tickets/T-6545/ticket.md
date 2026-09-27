@@ -2,7 +2,7 @@
 id: T-6545
 title: 'test runners: ''typescript'' and ''ts'' (and js/javascript) are not aliased,
   so vitest evidence never binds; one canonical language table + loader refusal'
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-09-26'
