@@ -11,6 +11,9 @@ tier: ticket
 sprint: coord-surface
 runs_last: false
 milestone: v0.535.0
+flavour: null
+due: null
+rank: null
 points: 5
 unsized_ack: false
 unsized_ack_reason: null
@@ -27,6 +30,7 @@ scope:
 - tests/frob/coord/test_ci_watch_poll.py
 - docs/modules/ci_validity.md
 - docs/modules/ci_watch_poll.md
+- src/frob/_cli_parsers/_ci.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,15 +39,15 @@ scope_changes:
 - op: add
   glob: src/frob/coord/_ci_watch_poll.py
   reason: 'CI-2 own new file: coord watch''s shared poll primitive over frob.ci_validity;
-    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-5805)
-    lands and releases its lease'
+    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-5805) lands and
+    releases its lease'
   actor: logan
   at: '2026-09-24'
 - op: add
   glob: tests/frob/coord/test_ci_watch_poll.py
   reason: 'CI-2 own new file: coord watch''s shared poll primitive over frob.ci_validity;
-    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-5805)
-    lands and releases its lease'
+    ci_runner.py/_ci.py/config.py additions deferred until CI-1 (T-5805) lands and
+    releases its lease'
   actor: logan
   at: '2026-09-24'
 - op: add
@@ -56,6 +60,12 @@ scope_changes:
   reason: 'CI-2: new doc page for the coord/_ci_watch_poll.py poll primitive'
   actor: logan
   at: '2026-09-24'
+- op: add
+  glob: src/frob/_cli_parsers/_ci.py
+  reason: CI-1 (T-draft-c099f096) landed, releasing its lease over this file; CI-2
+    now owns its own validity/watch subcommand registration
+  actor: logan
+  at: '2026-09-26'
 triage_changes:
 - field: sprint
   old_value: null
