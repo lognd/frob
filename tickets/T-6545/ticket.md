@@ -28,7 +28,6 @@ worktree: null
 branch: null
 scope:
 - src/frob/testing/_collect.py
-- src/frob/testing/_runners.py
 - src/frob/app/config.py
 - tests/unit/test_runner_language_aliases.py
 - docs/modules/testing.md
@@ -36,6 +35,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/testing/_runners.py
+  reason: T-5782 holds the lease on _runners.py; deferring the files/names vitest
+    split (item 4) until it frees, per coordinator instruction
+  actor: logan
+  at: '2026-09-26'
 triage_changes:
 - field: priority
   old_value: high
