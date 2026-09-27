@@ -1,7 +1,7 @@
 ---
 id: T-6524
 title: 'WIRE002: 4 WIRE001 waivers name already-done tickets'
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-09-25'
@@ -12,6 +12,8 @@ sprint: null
 runs_last: false
 milestone: 0.534.0
 flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
