@@ -1,5 +1,5 @@
 ---
-id: T-draft-36c10996
+id: T-6611
 title: Diff-driven gates (AFFECT/FMT/COV002/pre-commit land-owned-file guard) compare
   against stale local 'main' instead of 'dev', flooding worktree checks/commits with
   unrelated noise
