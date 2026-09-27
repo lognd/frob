@@ -1,5 +1,5 @@
 ---
-id: T-draft-893f70cb
+id: T-6607
 title: 'rust test runner: {ids} on a cargo runner splices one positional per test
   id, which cargo rejects; a rust-aware {filters} placeholder already exists but nothing
   steers or refuses the wrong one'

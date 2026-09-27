@@ -1,5 +1,5 @@
 ---
-id: T-draft-c3104c44
+id: T-6608
 title: 'ticket start under a live land loses its root-ledger mirror write silently:
   the root row keeps state queued or an empty worktree while the worktree is in-progress,
   so reconcile and the passenger guard misjudge the ticket as root-pinned'

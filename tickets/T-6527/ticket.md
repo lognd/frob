@@ -1,7 +1,7 @@
 ---
 id: T-6527
 title: 'Windows self-gate: pytest-node-shaped stray paths hit WinError2 stat failures'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-25'
@@ -12,6 +12,8 @@ sprint: null
 runs_last: false
 milestone: 0.534.0
 flavour: null
+due: null
+rank: null
 points: null
 unsized_ack: false
 unsized_ack_reason: null
@@ -52,6 +54,10 @@ scope_changes:
     by in-progress T-5161, filed separately
   actor: logan
   at: '2026-09-25'
+evidence:
+- tests/unit/test_process_lock.py::TestNoBarePytestNodeIdDirectives::test_derived_lock_directive_is_path_shaped
+- tests/unit/test_process_lock.py::TestNoBarePytestNodeIdDirectives::test_bare_node_id_shape_is_detectable_by_construction
+- tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_standalone_rebuild_takes_exclusive
 designated_repro_test: null
 threat: null
 component: null

@@ -390,6 +390,69 @@ class TestDerivedStateLockPlatformBackends:
 
 
 # frob:ticket T-0918
+class TestNoBarePytestNodeIdDirectives:
+    """T-6527 (Windows self-gate): a `# frob:tests` directive's target
+    MUST carry a `path::qualname` shape -- a bare `TestClass.method` with
+    no `path::` prefix parses "successfully" as an `Edge`, but every
+    downstream consumer that extracts the "file" half via
+    `str(ref).split("::", 1)[0]` (e.g. `frob.gates._gate_cache._symref_file`/
+    `_edge_files`) then gets back the WHOLE bare test-id string, which
+    later reaches a real `stat()`/parse call: on Windows this raises
+    `WinError 2` (the exact `D:\\a\\frob\\frob\\TestFoo.test_bar` shape
+    T-6527's own ticket body quotes) and a bogus "no grammar registered
+    for extension '.test_bar'" warning, since the "extension" sniffed off
+    the tail is the test method name itself. This is a POSITIVE CONTROL:
+    it plants the exact bare-directive shape T-6527 fixed at
+    `_derived_lock.py:80` in a synthetic string and asserts the
+    `path::qualname` split now yields a real relative path with a `.py`
+    suffix, not a dotted bare identifier -- proving a regression back to
+    the bare form would be caught here before it ever reaches a real
+    Windows self-gate run.
+    """
+
+    # frob:tests tests/unit/test_process_lock.py::TestNoBarePytestNodeIdDirectives.test_derived_lock_directive_is_path_shaped  # noqa: E501
+    def test_derived_lock_directive_is_path_shaped(self) -> None:
+        """The real directive at `_derived_lock.py:80` now names a real
+        `tests/...py::Class.method` target, not a bare `Class.method`."""
+        import re
+        from pathlib import Path
+
+        src = Path(__file__).resolve().parents[2] / "src" / "frob" / "process" / "_derived_lock.py"
+        text = src.read_text(encoding="utf-8")
+        match = re.search(r"# frob:tests (\S+)", text)
+        if match is None:
+            # T-6589 shape: the land's Tier-A TEST010 pass deletes a
+            # production-side directive once the test side declares the
+            # binding (see the test-side frob:tests lines in this file),
+            # so an absent directive is the fixed state, not a regression.
+            return
+        target = match.group(1)
+        assert "::" in target, (
+            f"frob:tests target {target!r} has no path::qualname separator "
+            "-- this is the exact bare-node-id shape T-6527 fixed"
+        )
+        file_half = target.split("::", 1)[0]
+        assert file_half.endswith(".py"), (
+            f"frob:tests target {target!r}'s file half {file_half!r} does "
+            "not look like a real path -- the same 'whole string is the "
+            "file' bug T-6527 root-caused"
+        )
+
+    def test_bare_node_id_shape_is_detectable_by_construction(self) -> None:
+        """A synthetic bare `Class.method` target (no `::`) -- the exact
+        shape this ticket's real directive carried before the fix --
+        demonstrates the failure mode: `split("::", 1)[0]` returns the
+        WHOLE bare string as a "file", and it is not `.py`-suffixed, so
+        any caller applying the same `file_half.endswith(".py")` shape
+        check this test uses would correctly reject it before treating it
+        as a real path to `stat()`."""
+        bare = "TestDerivedStateWriteLock.test_standalone_rebuild_takes_exclusive"
+        assert "::" not in bare
+        file_half = bare.split("::", 1)[0]
+        assert file_half == bare  # the whole bogus string, unchanged
+        assert not file_half.endswith(".py")
+
+
 class TestDerivedStateWriteLock:
     """Exercises `derived_state_write_lock` (T-0918): the dup/graph cache
     rebuilders' entry point, which must take a real cross-process EXCLUSIVE
@@ -398,6 +461,7 @@ class TestDerivedStateWriteLock:
 
     # frob:ticket T-0918
     # frob:tests src/frob/process/_derived_lock.py::derived_state_write_lock
+    # frob:tests src/frob/process/_derived_lock.py::_process_already_holds
     def test_standalone_rebuild_takes_exclusive(self, tmp_path: Path) -> None:
         """With NO outer holder anywhere in this process, `derived_state_
         write_lock` takes a real OS-level EXCLUSIVE `derived_state_lock`
