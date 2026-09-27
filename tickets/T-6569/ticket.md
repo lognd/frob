@@ -2,7 +2,7 @@
 id: T-6569
 title: land claim check attributes another ticket's TICK015 (dead worktree agent,
   unlanded) to the landing ticket and refuses with ClaimDivergence
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -24,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob
+branch: dev
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/gates/_tickets_gate.py
