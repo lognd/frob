@@ -32,6 +32,7 @@ scope:
 - docs/modules/ci_watch_poll.md
 - src/frob/_cli_parsers/_ci.py
 - src/frob/app/ci_runner.py
+- src/frob/ci_validity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -71,6 +72,12 @@ scope_changes:
   glob: src/frob/app/ci_runner.py
   reason: CI-1 landed; CI-2's validity/watch subcommand dispatch lives in the shared
     ci_runner module
+  actor: logan
+  at: '2026-09-26'
+- op: add
+  glob: src/frob/ci_validity.py
+  reason: 'CI-2''s own new module: STILL_VALID/STALE/UNKNOWN classification frob.app.ci_runner._run_validity
+    wraps'
   actor: logan
   at: '2026-09-26'
 triage_changes:
