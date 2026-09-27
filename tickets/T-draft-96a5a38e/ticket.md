@@ -35,6 +35,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: DOC006 inline waivers (T-draft-7ee140de)
+  actor: logan
+  at: '2026-09-27'
+  old_length: 1268
+  new_length: 1480
 designated_repro_test: null
 threat: null
 component: null
@@ -44,8 +51,8 @@ land_commit: null
 ---
 Reported by the crunk session (2026-09-26, crunk T-0211): `frob test
 --base main` selected module-level constants as test ids
-(tests/integration/test_int_02_ingest_fs.py::_TOML and
-tests/integration/test_int_11_jsx.py::_TOML) and exited 4, while plain
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->(tests/integration/test_int_02_ingest_fs.py::_TOML and
+<!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->tests/integration/test_int_11_jsx.py::_TOML) and exited 4, while plain
 pytest on both files passes. The touched-symbol walk hands every changed
 symbol in a test file to the runner as `file::name`, so a module-level
 constant that changed (or that carries a frob:tests binding) becomes a
