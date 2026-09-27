@@ -36,6 +36,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: DOC006 inline waivers (T-draft-7ee140de)
+  actor: logan
+  at: '2026-09-27'
+  old_length: 1472
+  new_length: 1472
 designated_repro_test: null
 threat: null
 component: null
