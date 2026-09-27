@@ -3805,6 +3805,82 @@ def _refuse_filing_for_stale_verification_queue(
     return True
 
 
+#: T-6569: matches `frob.gates._tickets_gate._tick_subject_identity_
+#: file`'s `tickets.md#<ticket-id>` identity encoding for a per-ticket
+#: TICK-rule finding.
+_TICK_SUBJECT_FILE_RE = re.compile(r"^tickets\.md#(T-[A-Za-z0-9-]+)$")
+
+
+# frob:ticket T-6569
+def _tick_row_subject(rule: str, file: str) -> str | None:
+    """WHAT: the subject ticket id encoded in a per-ticket TICK-rule
+    finding's own identity (`tickets.md#<id>`, T-6569), or `None` for any
+    non-`TICK*` rule, or a `TICK*` finding whose `file` does not (yet, or
+    ever) carry a subject in that shape.
+
+    WHY: `_filter_tick_rows_for_claim_check` needs to tell which ticket a
+    `(rule, file)` pair is ABOUT before deciding whether it belongs in a
+    claim comparison for some OTHER ticket's land."""
+    if not rule.startswith("TICK"):
+        return None
+    match = _TICK_SUBJECT_FILE_RE.match(file)
+    return match.group(1) if match else None
+
+
+# frob:ticket T-6569
+def _filter_tick_rows_for_claim_check(
+    fresh: frozenset[tuple[str, str]], landing_ticket_id: str
+) -> frozenset[tuple[str, str]]:
+    """WHAT: drops every per-ticket TICK-rule finding from `fresh` whose
+    subject (`_tick_row_subject`) is not `landing_ticket_id`, plus drops
+    a TICK015 row about `landing_ticket_id` ITSELF, before `fresh` is
+    handed to the claim-divergence comparator.
+
+    WHY: one ticket's TICK015/TICK010/etc row describes THAT ticket's own
+    worktree/lease state, not the ticket currently landing -- comparing
+    it against a DIFFERENT ticket's captured claim is exactly T-6569's
+    incident (T-0176's dead-worktree TICK015, unlanded past its 6h lease
+    age, attributed to T-0160's own land and refusing it with
+    `ClaimDivergence`). Every excluded sibling row is logged at INFO
+    naming which ticket it actually belongs to -- ignored, never silently
+    dropped.
+
+    A TICK015 row ABOUT the landing ticket itself is ALSO excluded
+    (crunk-ba addendum, 2026-09-27): a land in progress IS the live use
+    of that worktree, so TICK015's "no live process holds this worktree"
+    reading firing on the ticket's OWN worktree mid-land (its implementer
+    process having already exited before the land command ran) is a
+    structural false positive for this comparison, not a real dead-
+    worktree finding -- every other TICK rule about the landing ticket
+    itself is left untouched and can still refuse the land."""
+    kept: set[tuple[str, str]] = set()
+    for rule, file in fresh:
+        subject = _tick_row_subject(rule, file)
+        if subject is None:
+            kept.add((rule, file))
+            continue
+        if subject != landing_ticket_id:
+            _log.info(
+                "rapid sweep: %s claim check: ignoring %s row about "
+                "sibling ticket %s (not the landing ticket) -- "
+                "informational only, not compared",
+                landing_ticket_id,
+                rule,
+                subject,
+            )
+            continue
+        if rule == "TICK015":
+            _log.info(
+                "rapid sweep: %s claim check: excluding this ticket's "
+                "own TICK015 row -- a land in progress is the live use "
+                "of its worktree",
+                landing_ticket_id,
+            )
+            continue
+        kept.add((rule, file))
+    return frozenset(kept)
+
+
 # frob:ticket T-2938
 def _claim_divergence_finding_pairs(
     claims, fresh: frozenset[tuple[str, str]], ticket_scope: Sequence[str]
@@ -4030,12 +4106,18 @@ def _check_claim_divergence_post_land(
         )
         return
 
+    # T-6569: filter out any per-ticket TICK-rule row that is not about
+    # `final_id` (a sibling ticket's own dead-worktree/lease finding) and
+    # any TICK015 row about `final_id` itself (a land in progress is the
+    # live use of that worktree) before this comparison ever sees them --
+    # see `_filter_tick_rows_for_claim_check`'s own docstring.
+    filtered_fresh = _filter_tick_rows_for_claim_check(fresh, final_id)
     outcome = _reverify_gate_state_claim(
         ticket,
         claims,
         final_id,
-        check_gates=lambda: (len(fresh), None, None),
-        check_gate_findings=lambda: fresh,
+        check_gates=lambda: (len(filtered_fresh), None, None),
+        check_gate_findings=lambda: filtered_fresh,
     )
     if outcome.is_ok:
         _log.info(
@@ -4047,7 +4129,7 @@ def _check_claim_divergence_post_land(
         )
         return
 
-    pairs = _claim_divergence_finding_pairs(claims, fresh, ticket.scope)
+    pairs = _claim_divergence_finding_pairs(claims, filtered_fresh, ticket.scope)
     _log.error(
         "rapid sweep: %s deferred claim-divergence check: Done report "
         "claim DIVERGED from the tree measured at %s -- %d identit(ies) "

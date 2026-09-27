@@ -1997,6 +1997,29 @@ def _tick015_candidates(
     return candidates
 
 
+# frob:ticket T-6569
+def _tick_subject_identity_file(subject_ticket_id: str) -> str:
+    """WHAT: encodes `subject_ticket_id` into the `(rule, file)` finding
+    identity every per-ticket TICK rule reports through (T-6569).
+
+    WHY: a bare `file="tickets.md"` is ALWAYS in scope for every ticket
+    (`frob.tickets._models.scope_matches`'s `LEDGER_PATH`-always-in-scope
+    rule), so a land's claim-divergence comparator (`frob.tickets.
+    _land_verify._reverify_gate_findings_by_identity`, fed via `frob.app.
+    ticket_runner._rapid_sweep`'s deferred post-land check) could never
+    tell "this TICK015 row is about MY ticket" apart from "this TICK015
+    row is about some entirely different ticket" -- both were the exact
+    same identity. T-0176's dead-worktree TICK015 (fired after its 6h
+    lease aged out, unlanded) attributed to T-0160's own land this way,
+    refusing it with `ClaimDivergence` for a finding about a ticket it
+    never touched.
+
+    Parsed back out by `frob.app.ticket_runner._rapid_sweep._tick_row_
+    subject`; never treated as a real filesystem path by anything else
+    reading a `Violation.file`."""
+    return f"tickets.md#{subject_ticket_id}"
+
+
 # frob:ticket T-5358
 def _tick015_report_or_requeue(
     root: Path, t: Ticket, reason: str, *, requeue_enabled: bool
@@ -2011,7 +2034,7 @@ def _tick015_report_or_requeue(
         return Violation(
             rule="TICK015",
             severity=Severity.ERROR,
-            file="tickets.md",
+            file=_tick_subject_identity_file(t.id),
             line=0,
             message=(
                 f"TICK015: {t.id} is in-progress but its recorded "
@@ -2026,7 +2049,7 @@ def _tick015_report_or_requeue(
     return Violation(
         rule="TICK015",
         severity=Severity.ERROR,
-        file="tickets.md",
+        file=_tick_subject_identity_file(t.id),
         line=0,
         message=(
             f"TICK015: {t.id} is in-progress but its recorded "

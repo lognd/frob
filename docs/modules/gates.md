@@ -2687,6 +2687,27 @@ report-only and names the manual remedy, `frob ticket fail <id>`.
 Silent (as before T-5358) for a ticket with no recorded worktree at all
 (started before T-5120) or a live holder.
 
+**T-6569: subject-carrying identity.** Every per-ticket TICK015
+`Violation` now reports `file="tickets.md#<ticket-id>"`
+(`frob.gates._tickets_gate._tick_subject_identity_file`) instead of a
+bare `"tickets.md"`. A bare `"tickets.md"` is ALWAYS in-scope for every
+ticket (`frob.tickets._models.scope_matches`'s `LEDGER_PATH`-always-in-
+scope rule), so a land's claim-divergence comparator could not tell "a
+TICK015 row about MY ticket" apart from "a TICK015 row about some other
+ticket entirely" -- both were the exact same identity. T-0176's
+dead-worktree TICK015 (fired once its 6h lease aged out while unlanded)
+attributed this way to T-0160's own land, refusing it with
+`ClaimDivergence` for a finding that had nothing to do with it.
+`frob.app.ticket_runner._rapid_sweep._filter_tick_rows_for_claim_check`
+parses the subject back out and drops any TICK-rule row whose subject is
+not the landing ticket (logged INFO, informational only) before the
+comparison runs, plus drops a TICK015 row about the landing ticket
+ITSELF -- a land in progress is the live use of that worktree, so
+TICK015 firing on the ticket's own worktree mid-land (its implementer
+process having already exited) is a structural false positive for this
+comparison, not a real dead-worktree finding. Every other TICK rule
+about the landing ticket itself is untouched and can still refuse.
+
 ### COMPLIANCE005 (T-0788)
 
 <!-- frob:describes src/frob/gates/_decisions_compliance.py::compliance_gate -->

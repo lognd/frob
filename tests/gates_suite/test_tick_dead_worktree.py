@@ -160,6 +160,11 @@ class TestTick015DeadWorktreeRequeue:
         assert len(tick015) == 1
         assert tick015[0].severity == Severity.ERROR
         assert tid in tick015[0].message
+        # T-6569: the finding identity carries the SUBJECT ticket id
+        # (`tickets.md#<id>`), not the bare always-in-scope "tickets.md",
+        # so a land's claim comparator can tell whose ticket this row is
+        # about.
+        assert tick015[0].file == f"tickets.md#{tid}"
 
         reloaded = load_queue(repo)
         assert reloaded.is_ok

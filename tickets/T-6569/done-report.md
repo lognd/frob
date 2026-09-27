@@ -1,0 +1,27 @@
+## Done report
+
+TICK015 (and per-ticket TICK rows) now carry the subject ticket id in the finding identity (tickets.md#<id>), and the deferred post-land claim-divergence check filters out a sibling ticket's TICK row plus the landing ticket's own TICK015 row before comparing, so T-0176-shaped dead-worktree findings no longer refuse T-0160's land with ClaimDivergence.
+
+### Changed
+```
+ docs/modules/gates.md                          |  21 +++++
+ src/frob/app/ticket_runner/_rapid_sweep.py     |  88 ++++++++++++++++++-
+ src/frob/gates/_tickets_gate.py                |  27 +++++-
+ tests/gates_suite/test_tick_dead_worktree.py   |   5 ++
+ tests/unit/rapid_sweep_suite/test_sweep_run.py | 116 +++++++++++++++++++++++++
+ tickets/T-6569/ticket.md                       |  13 ++-
+ tickets/T-6609/ticket.md             |  42 +++++++++
+ 7 files changed, 304 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_tick_row_subject_parses_encoded_identity` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_sibling_ticket_tick015_row_is_dropped` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_landing_tickets_own_tick015_row_is_dropped` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_landing_tickets_own_non_tick015_row_still_kept` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_end_to_end_sibling_tick015_no_longer_diverges_the_land` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue::test_deleted_worktree_fires_and_requeues` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)

@@ -556,6 +556,122 @@ class TestClaimDivergencePostLand:
         assert raised == []
 
 
+class TestTickRowClaimFiltering:
+    """T-6569: `_filter_tick_rows_for_claim_check`/`_tick_row_subject` --
+    a per-ticket TICK-rule finding's subject-carrying identity
+    (`tickets.md#<ticket-id>`, `frob.gates._tickets_gate._tick_subject_
+    identity_file`) must exclude a sibling ticket's row from another
+    ticket's claim comparison, and must exclude the landing ticket's OWN
+    TICK015 row (a land in progress is the live use of that worktree),
+    while leaving every other row (a non-TICK rule, or a TICK rule about
+    the landing ticket itself that is not TICK015) untouched."""
+
+    def test_tick_row_subject_parses_encoded_identity(self) -> None:
+        """Must-fire control: `_tick_row_subject` recovers the ticket id
+        `_tick_subject_identity_file` encoded."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering.test_tick_row_subject_parses_encoded_identity  # noqa: E501
+        assert _rapid_sweep._tick_row_subject("TICK015", "tickets.md#T-0176") == "T-0176"
+
+    def test_tick_row_subject_ignores_non_tick_rule(self) -> None:
+        """A non-`TICK*` rule never carries a subject, whatever its
+        `file` looks like."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering.test_tick_row_subject_ignores_non_tick_rule  # noqa: E501
+        assert _rapid_sweep._tick_row_subject("COV003", "tickets.md#T-0176") is None
+
+    def test_tick_row_subject_ignores_bare_ledger_file(self) -> None:
+        """A `TICK*` finding still carrying the pre-T-6569 bare
+        `"tickets.md"` file has no encoded subject -- falls through
+        unfiltered rather than crashing."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering.test_tick_row_subject_ignores_bare_ledger_file  # noqa: E501
+        assert _rapid_sweep._tick_row_subject("TICK004", "tickets.md") is None
+
+    def test_sibling_ticket_tick015_row_is_dropped(self) -> None:
+        """T-6569's positive control: a dead-worktree sibling's TICK015
+        row is excluded from `T-0160`'s own claim comparison."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering.test_sibling_ticket_tick015_row_is_dropped  # noqa: E501
+        fresh = frozenset(
+            {("TICK015", "tickets.md#T-0176"), ("COV003", "src/a.py")}
+        )
+        filtered = _rapid_sweep._filter_tick_rows_for_claim_check(fresh, "T-0160")
+        assert filtered == frozenset({("COV003", "src/a.py")})
+
+    def test_landing_tickets_own_tick015_row_is_dropped(self) -> None:
+        """The crunk-ba addendum: TICK015 about the LANDING ticket itself
+        is also excluded -- a land in progress is the live use of its
+        worktree."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering.test_landing_tickets_own_tick015_row_is_dropped  # noqa: E501
+        fresh = frozenset(
+            {("TICK015", "tickets.md#T-0160"), ("COV003", "src/a.py")}
+        )
+        filtered = _rapid_sweep._filter_tick_rows_for_claim_check(fresh, "T-0160")
+        assert filtered == frozenset({("COV003", "src/a.py")})
+
+    def test_landing_tickets_own_non_tick015_row_still_kept(self) -> None:
+        """A per-ticket TICK rule OTHER than TICK015 about the landing
+        ticket itself is not exempted -- only TICK015's own-worktree
+        false positive is special-cased."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering.test_landing_tickets_own_non_tick015_row_still_kept  # noqa: E501
+        fresh = frozenset({("TICK010", "tickets.md#T-0160")})
+        filtered = _rapid_sweep._filter_tick_rows_for_claim_check(fresh, "T-0160")
+        assert filtered == fresh
+
+    def test_end_to_end_sibling_tick015_no_longer_diverges_the_land(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-6569 end-to-end: a Done report claiming a clean gate state
+        must still pass the deferred claim-divergence check when the only
+        fresh finding is a SIBLING ticket's TICK015 row -- reproducing
+        T-0176's dead-worktree TICK015 no longer refusing T-0160's own
+        land."""
+        # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering.test_end_to_end_sibling_tick015_no_longer_diverges_the_land  # noqa: E501
+        from frob.tickets._models import (
+            DoneReportClaims,
+            Origin,
+            Ticket,
+            TicketKind,
+            TicketState,
+            render_claims_block,
+        )
+
+        claims = DoneReportClaims(
+            test_count=1,
+            evidence_count=1,
+            gate_errors=0,
+            gate_warnings=0,
+            gate_waived=0,
+            error_findings=frozenset(),
+        )
+        body = "## Done report\n\nlanded cleanly.\n\n" + render_claims_block(claims)
+        ticket = Ticket(
+            id="T-0160",
+            title="landing ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date(2026, 1, 1),
+            body=body,
+            scope=("src/a.py",),
+        )
+        from typani.result import Ok
+
+        monkeypatch.setattr("frob.tickets._load_one", lambda root, tid: Ok(ticket))
+        monkeypatch.setattr("frob.verify.rapid_soft_warning", lambda root: None)
+        raised: list[dict[str, object]] = []
+        monkeypatch.setattr(
+            "frob.verify._quarantine.raise_quarantine",
+            lambda root, **kw: raised.append(kw) or Ok(object()),
+        )
+
+        _check_claim_divergence_post_land(
+            tmp_path,
+            "T-0160",
+            "deadbeef",
+            frozenset({("TICK015", "tickets.md#T-0176")}),
+        )
+
+        assert raised == []
+
+
 class TestDeferredSweepSpawn:
     """The spawn records debt BEFORE spawning and never blocks."""
 

@@ -2,7 +2,7 @@
 id: T-6569
 title: land claim check attributes another ticket's TICK015 (dead worktree agent,
   unlanded) to the landing ticket and refuses with ClaimDivergence
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-09-26'
@@ -24,8 +24,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: /home/logan/projects/frob
-branch: dev
+worktree: /home/logan/projects/frob/.claude/worktrees/t-6569
+branch: t-6569
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/gates/_tickets_gate.py
@@ -40,6 +40,13 @@ body_changes:
   at: '2026-09-27'
   old_length: 1033
   new_length: 1769
+evidence:
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_tick_row_subject_parses_encoded_identity
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_sibling_ticket_tick015_row_is_dropped
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_landing_tickets_own_tick015_row_is_dropped
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_landing_tickets_own_non_tick015_row_still_kept
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestTickRowClaimFiltering::test_end_to_end_sibling_tick015_no_longer_diverges_the_land
+- tests/gates_suite/test_tick_dead_worktree.py::TestTick015DeadWorktreeRequeue::test_deleted_worktree_fires_and_requeues
 designated_repro_test: null
 threat: null
 component: null
