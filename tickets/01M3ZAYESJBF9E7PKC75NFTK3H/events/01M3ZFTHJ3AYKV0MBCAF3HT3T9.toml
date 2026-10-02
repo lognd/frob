@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-obligations/**", "crates/frob-check/**", "crates/frob-tests/**"]
+new = ["crates/frob-obligations/**", "crates/frob-check/**", "crates/frob-tests/**", "crates/gob-check/**", "crates/frob-ack/**", "docs/reference/**", "Cargo.lock"]
+reason = "the pipeline and ack rules also consume FileInfo; generated pages may change"
+at = "2026-10-02T23:40:06Z"
+actor = "lognd"
+rev = 1
