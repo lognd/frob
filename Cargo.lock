@@ -853,6 +853,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "frob-obligations"
+version = "0.0.0"
+dependencies = [
+ "frob-ack",
+ "frob-ledger",
+ "frob-tests",
+ "globset",
+ "gob-config",
+ "gob-directives",
+ "gob-git",
+ "gob-languages",
+ "gob-lock",
+ "gob-mdtest",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "schemars",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "frob-tests"
 version = "0.0.0"
 dependencies = [

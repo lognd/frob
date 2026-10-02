@@ -1,7 +1,7 @@
 ---
 id: T-0022
 title: 'frob-obligations: COV, TODO, DOC, REF, INV rule subset'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -27,22 +27,26 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0022
+branch: t-0022
 scope:
 - crates/frob-obligations/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p frob-obligations exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given each rule's corpus, when the mdtests run, then every rule has a passing
     fire and clean case
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-obligations exit=0 sha256=e3b0c44298fc
 - text: Given a frob:defer bound to a ticket that is done, when check runs, then EXC003
     fires and the suppressed finding is shown
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-obligations exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-obligations
 anchor: false

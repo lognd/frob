@@ -1,0 +1,36 @@
+[package]
+name = "frob-obligations"
+version = "0.0.0"
+description = "Accounting rules of frob: COV, TODO, DOC, REF and INV subsets plus accept and defer exception handling (EXC001, EXC003, EXC005, EXC007)."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+frob-ack = { path = "../frob-ack" }
+frob-ledger = { path = "../frob-ledger" }
+frob-tests = { path = "../frob-tests" }
+globset = "0.4"
+gob-config = { path = "../gob-config" }
+gob-directives = { path = "../gob-directives" }
+gob-languages = { path = "../gob-languages" }
+gob-lock = { path = "../gob-lock" }
+gob-rules = { path = "../gob-rules" }
+gob-symbols = { path = "../gob-symbols" }
+gob-text = { path = "../gob-text" }
+gob-walk = { path = "../gob-walk" }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+gob-git = { path = "../gob-git" }
+gob-mdtest = { path = "../gob-mdtest" }
+tempfile = "3"
+
+[lints]
+workspace = true

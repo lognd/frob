@@ -1,0 +1,345 @@
+//! Multi-file scenarios, exceptions, registry facts and the per-file entry point.
+
+mod common;
+
+use frob_obligations::{InvariantsConfig, collect, evaluate_file};
+use gob_lock::{LockEntry, LockFile};
+use gob_rules::{ExceptionKind, Finding, Registry, Severity};
+use gob_symbols::Symref;
+
+const DEFER_PREFIX: &str = "/* frob:defer COV001 because=\"split after the parser lands\" ticket=";
+
+fn count(findings: &[Finding], rule: &str) -> usize {
+    findings.iter().filter(|f| f.rule.as_str() == rule).count()
+}
+
+fn defaults() -> InvariantsConfig {
+    InvariantsConfig::load(tempfile::tempdir().expect("tempdir").path()).expect("defaults")
+}
+
+/// A lock holding a fresh entry for `symref` of the tree at `root`.
+fn lock_for(root: &std::path::Path, symref: &Symref) -> LockFile {
+    let collected = collect(root).expect("collect");
+    let rec = collected.graph.get(symref).expect("symbol in graph");
+    let mut lock = LockFile::default();
+    lock.entries.insert(
+        symref.to_string(),
+        LockEntry::new(
+            &rec.digests.sig.to_string(),
+            &rec.digests.body.to_string(),
+            &rec.digests.doc.to_string(),
+            "tester",
+            "2026-10-02T00:00:00Z",
+        ),
+    );
+    lock
+}
+
+#[test]
+fn defer_bound_to_a_done_ticket_raises_exc003_and_lists_the_suppressed_finding() {
+    let t = common::shared_tickets();
+    let dir = tempfile::tempdir().expect("tempdir");
+    let text = format!(
+        "{DEFER_PREFIX}{} */\n/// Does f.\npub fn f() {{}}\n",
+        t.done
+    );
+    common::write_tree(dir.path(), &[("src/lib.rs", &text)]);
+    let ev = common::evaluate_tree(dir.path(), Some(&t.ledger), &defaults(), None);
+    assert_eq!(
+        count(&ev.findings, "EXC003"),
+        1,
+        "{:?}",
+        common::ids(&ev.findings)
+    );
+    assert_eq!(count(&ev.findings, "COV001"), 0);
+    assert_eq!(ev.suppressed.len(), 1);
+    let (finding, exception) = &ev.suppressed[0];
+    assert_eq!(finding.rule.as_str(), "COV001");
+    assert_eq!(exception.kind, ExceptionKind::Defer);
+    assert_eq!(exception.ticket.as_deref(), Some(t.done.as_str()));
+}
+
+#[test]
+fn defer_to_an_open_ticket_suppresses_quietly_and_a_missing_one_is_exc007() {
+    let t = common::shared_tickets();
+    let dir = tempfile::tempdir().expect("tempdir");
+    let text = format!(
+        "{DEFER_PREFIX}{} */\n/// Does f.\npub fn f() {{}}\n",
+        t.open
+    );
+    common::write_tree(dir.path(), &[("src/lib.rs", &text)]);
+    let ev = common::evaluate_tree(dir.path(), Some(&t.ledger), &defaults(), None);
+    assert_eq!(ev.suppressed.len(), 1);
+    assert_eq!(
+        count(&ev.findings, "EXC003") + count(&ev.findings, "EXC007"),
+        0
+    );
+    let text =
+        format!("{DEFER_PREFIX}01J9QKX3M8Z4T7N2V5B6C0D1E2 */\n/// Does f.\npub fn f() {{}}\n");
+    common::write_tree(dir.path(), &[("src/lib.rs", &text)]);
+    let ev = common::evaluate_tree(dir.path(), Some(&t.ledger), &defaults(), None);
+    assert_eq!(count(&ev.findings, "EXC007"), 1);
+}
+
+#[test]
+fn accept_with_a_bad_reason_raises_exc001_but_still_suppresses() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[(
+            "src/lib.rs",
+            "/* frob:accept COV001 because=\"temporary hack for now\" */\n/// Does f.\npub fn f() {}\n",
+        )],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    assert_eq!(
+        count(&ev.findings, "EXC001"),
+        1,
+        "{:?}",
+        common::ids(&ev.findings)
+    );
+    assert_eq!(
+        ev.findings
+            .iter()
+            .find(|f| f.rule.as_str() == "EXC001")
+            .map(|f| f.severity),
+        Some(Severity::Error)
+    );
+    assert_eq!(ev.suppressed.len(), 1);
+    assert_eq!(ev.suppressed[0].1.kind, ExceptionKind::Accept);
+}
+
+#[test]
+fn accept_attestation_is_checked_against_frob_lock() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[(
+            "src/lib.rs",
+            "/* frob:accept COV001 because=\"generated entry point, see ADR-0007\" */\n/// Does f.\npub fn f() {}\n",
+        )],
+    );
+    let f = Symref::symbol("src/lib.rs", vec!["f".to_owned()]);
+    let unattested = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    assert_eq!(count(&unattested.findings, "EXC005"), 1);
+    assert!(
+        unattested
+            .findings
+            .iter()
+            .any(|x| x.message.contains("frob ack"))
+    );
+
+    let lock = lock_for(dir.path(), &f);
+    let attested = common::evaluate_tree(dir.path(), None, &defaults(), Some(lock.clone()));
+    assert_eq!(
+        count(&attested.findings, "EXC005"),
+        0,
+        "{:?}",
+        common::ids(&attested.findings)
+    );
+    assert_eq!(attested.suppressed.len(), 1);
+
+    let mut stale = lock;
+    stale.entries.get_mut("src/lib.rs::f").expect("entry").body = "0".repeat(64);
+    let drifted = common::evaluate_tree(dir.path(), None, &defaults(), Some(stale));
+    assert_eq!(count(&drifted.findings, "EXC005"), 1);
+    assert!(
+        drifted
+            .findings
+            .iter()
+            .any(|x| x.message.contains("changed since"))
+    );
+}
+
+#[test]
+fn an_exception_covers_only_its_bound_symbol() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[(
+            "src/lib.rs",
+            "/* frob:accept COV001 because=\"generated entry point, see ADR-0007\" */\n/// Does f.\npub fn f() {}\n\n/// Does g.\npub fn g() {}\n",
+        )],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    let cov: Vec<_> = ev
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "COV001")
+        .collect();
+    assert_eq!(cov.len(), 1);
+    assert!(cov[0].message.contains("src/lib.rs::g"));
+    assert_eq!(ev.suppressed.len(), 1);
+}
+
+#[test]
+fn file_level_accept_covers_the_whole_file() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[(
+            "src/lib.rs",
+            "//! Generated bindings.\n//! frob:accept COV001 because=\"generated bindings, see ADR-0007\"\n\n/// Does f.\npub fn f() {}\n\n/// Does g.\npub fn g() {}\n",
+        )],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    assert_eq!(
+        count(&ev.findings, "COV001"),
+        0,
+        "{:?}",
+        common::ids(&ev.findings)
+    );
+    assert_eq!(ev.suppressed.len(), 2);
+}
+
+#[test]
+fn inv002_reports_a_forbidden_import_from_frob_toml() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[
+            (
+                "frob.toml",
+                "[invariants]\nforbid_imports = [{ from = \"crates/gob-text/**\", to = \"frob_ledger\", reason = \"gob crates never import frob crates\" }]\n",
+            ),
+            (
+                "crates/gob-text/src/lib.rs",
+                "//! Text.\nuse frob_ledger::Ledger;\n",
+            ),
+            (
+                "crates/frob-x/src/lib.rs",
+                "//! X.\nuse frob_ledger::Ledger;\n",
+            ),
+        ],
+    );
+    let config = InvariantsConfig::load(dir.path()).expect("config");
+    assert_eq!(config.forbid_imports.len(), 1);
+    let ev = common::evaluate_tree(dir.path(), None, &config, None);
+    let inv: Vec<_> = ev
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "INV002")
+        .collect();
+    assert_eq!(inv.len(), 1, "{:?}", common::ids(&ev.findings));
+    assert!(
+        inv[0]
+            .message
+            .contains("gob crates never import frob crates")
+    );
+    assert!(inv[0].message.contains("crates/gob-text/src/lib.rs"));
+}
+
+#[test]
+fn inv001_is_satisfied_by_a_directive_in_another_file() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[
+            ("invariants/INV-0001.md", "# One\n"),
+            ("invariants/INV-0002.md", "# Two\n"),
+            (
+                "src/a.rs",
+                "// frob:invariant INV-0001\n/// Holds it.\npub fn holds() {}\n",
+            ),
+        ],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    let inv: Vec<_> = ev
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "INV001")
+        .collect();
+    assert_eq!(inv.len(), 1);
+    assert!(inv[0].message.contains("INV-0002"));
+}
+
+#[test]
+fn cov001_counts_a_test_in_another_file_and_a_cross_file_call() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[
+            (
+                "src/lib.rs",
+                "/// Tripled.\npub fn triple_unique(x: i32) -> i32 { x * 3 }\n\n/// Never tested.\npub fn lonely_unique() {}\n",
+            ),
+            (
+                "tests/it.rs",
+                "#[test]\nfn triples() { assert_eq!(triple_unique(1), 3); }\n",
+            ),
+        ],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    let cov: Vec<_> = ev
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "COV001")
+        .collect();
+    assert_eq!(cov.len(), 1, "{cov:?}");
+    assert!(cov[0].message.contains("lonely_unique"));
+}
+
+#[test]
+fn cov003_is_declared_but_never_emitted() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[(
+            "src/lib.rs",
+            "/* frob:tests tests::missing */\n/// Does f.\npub fn f() {}\n",
+        )],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    assert_eq!(count(&ev.findings, "COV003"), 0);
+    let reg = Registry::global();
+    assert!(reg.by_id("COV003").is_some());
+    assert_eq!(frob_obligations::COV003_ALIAS_OF, "TEST001");
+    assert!(reg.verify_unique().is_ok());
+}
+
+#[test]
+fn every_rule_is_registered_exactly_once() {
+    let reg = Registry::global();
+    for id in [
+        "COV001", "COV003", "TODO001", "TODO002", "DOC001", "DOC002", "REF001", "INV001", "INV002",
+        "EXC001", "EXC003", "EXC005", "EXC007",
+    ] {
+        assert!(reg.by_id(id).is_some(), "{id} not registered");
+    }
+    assert_eq!(
+        reg.by_id("COV001").map(|m| m.severity),
+        Some(Severity::Warn)
+    );
+    assert_eq!(
+        reg.by_id("DOC002").map(|m| m.severity),
+        Some(Severity::Error)
+    );
+}
+
+#[test]
+fn ledger_rules_stay_silent_without_a_ledger() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[(
+            "src/lib.rs",
+            "// frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2\n// frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2 later\n/// Does f.\npub fn f() {}\n",
+        )],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    for rule in ["REF001", "TODO002", "EXC003", "EXC007"] {
+        assert_eq!(count(&ev.findings, rule), 0, "{rule}");
+    }
+}
+
+#[test]
+fn evaluate_file_runs_the_per_file_rules_on_toml_text() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(dir.path(), &[("Cargo.toml", "a = 1 # FIXME pin\n")]);
+    let mut collected = collect(dir.path()).expect("collect");
+    let file = collected.files.intern("Cargo.toml");
+    let config = defaults();
+    let inputs = collected.inputs(dir.path(), None, &config);
+    let found = evaluate_file(&inputs, file, "Cargo.toml", "a = 1 # FIXME pin\n");
+    assert_eq!(common::ids(&found), ["TODO001"]);
+}
