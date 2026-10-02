@@ -288,15 +288,11 @@ grimble's behalf (D28).
 ### 9.5 The sibling contract and absence
 
 `grimble check --json` emits a versioned document (schema in
-docs/schemas/sibling.json, generated) carrying: schema_version,
-product, the compute-config digest, fidelity per language (level and
-capability cells), findings (rule id, severity including Unresolved
-with reason codes and the `required` mark, polarity, subject count,
-logical location such as `node/cli`, range), exception records (kind,
-reason, opaque `ticket=`, exit state Evaluated or UnresolvedExit),
-suppressed findings, per-rule subject counts, and the entity and
-binding lists frob may display. frob validates the schema version and
-the compute digest. When grimble.toml exists and the binary is absent
+docs/schemas/sibling.json, hand-written until the derive generates it)
+whose fields, version negotiation, merge rules and failure cases are
+defined once in sibling-contract.md; the `grimble.graph/1` export of 9.3
+is section 3.8 there. frob validates the schema version and the compute
+digest. When grimble.toml exists and the binary is absent
 or incompatible, `frob check` emits one Unresolved finding per missing
 product marked `required`, so the gate fails with exit 1 under the
 default `[check] fail_on_unresolved = "required"` and `[check]

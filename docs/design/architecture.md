@@ -232,6 +232,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[invariants] forbid_imports` (M1) | frob.toml | no | empty (entries of `from`, `to`, `reason`) | frob-obligations |
 | `[check] fail_on_unresolved` | frob.toml | yes | `"required"` (`"never"` or `"all"`; the one gate mechanism, cli.md section 2; today gob-diagnostics skips Unresolved, Milestone 2 item 1) | frob (config), gob-diagnostics |
 | `[check] require_siblings` | frob.toml | yes | true (a configured sibling that is absent or incompatible is a required Unresolved) | frob-check |
+| `[check] sibling_timeout_secs` | frob.toml | yes | 120 (wall-clock bound of one sibling `check --json` run; expiry is a required Unresolved `SIB001` with reason `timeout`; sibling-contract.md section 7) | frob-check |
 | `[check] strictness` | frob.toml | yes | `"warn-new-rules"` | frob-check |
 | `[check] ticket_hops` | frob.toml | yes | 1 | frob-check |
 | `[check] new_rule_warn_releases` | frob.toml | yes | 1 | gob-rules |

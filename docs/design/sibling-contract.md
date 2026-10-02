@@ -1,0 +1,651 @@
+# The sibling JSON contract (G03)
+
+Status: DRAFT under T-0001 (a v1-format id that migrates with an alias);
+written under ticket 01M3Z712PSRGMHPGJ01CMBK6TR (G03). It makes
+grimble-model.md section 9.5 precise: the one document a sibling product
+(grimble, crunk) prints for `check --json`, how frob validates and merges
+it, and what frob does when the sibling is absent or incompatible. The
+machine-readable form is docs/schemas/sibling.json (hand-written until
+grimble's derive generates it).
+
+Inputs: grimble-model.md 9.3, 9.5, 9.6, 9.7; binding.md (SYS001-SYS012,
+the polarity and Unresolved conditions of 6.13, the capability matrix of
+section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-017);
+cli.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
+three required reasons); universal-model.md 3.3 and 4 (fidelity, answer
+lattice, polarity); exceptions.md (kinds, opaque `ticket=`, the
+evaluation boundary of D28); notes/review/grimble-review.md H3;
+docs/schemas/envelope.json and the landed `gob-diagnostics` types
+(`FindingRecord`, `RequiredReason`, `Envelope`).
+
+## 1. Purpose
+
+D28 makes the sibling's `--json` the only channel between frob and a
+sibling: products never depend on each other. frob needs six things from
+it (H3): (a) merge the findings into one report, (b) evaluate the
+ticket-bound exits of sibling exceptions, (c) enforce the close guard,
+(d) validate `implements design:node/x`, (e) resolve `frob:` directives
+written inside `.grmb` files and traverse `binds` rows for AFFECT and
+evidence reach, (f) render the capability census. The landed
+`FindingRecord` carries none of the extra data and is `Serialize` only.
+This file fixes the document that carries all six, the version rule that
+keeps the two binaries honest with each other, and the gate behaviour
+when the document cannot be had. One document serves grimble and crunk:
+the contract is named after its first producer, both products emit the
+identical `schema_version` string `grimble.sibling/1` and distinguish
+themselves with `product`.
+
+## 2. The invocation contract
+
+```
+grimble check --json [--ticket-scope <path>...] [--base <ref>]
+crunk   check --json [--ticket-scope <path>...] [--base <ref>]
+grimble graph --json                       # the graph export, section 3.8
+```
+
+- `--ticket-scope <path>...` takes repository-relative paths (one flag
+  occurrence per path, or a comma list). It narrows per-file rules to
+  those files; repository-scope rules (SYS, MDL) still run in full
+  because a model finding does not belong to one file. frob computes the
+  path set (the ticket's files plus `[check] ticket_hops` of dependents,
+  rules.md section 3 step 4); the sibling never re-derives it. Absent
+  flag means an unscoped run.
+- `--base <ref>` is the ref diff-scoped rules diff against. frob passes
+  `[check] base`; a sibling with no diff-scoped rule echoes it and
+  ignores it.
+- The sibling reads the same `[compute]` table as frob (architecture.md
+  section 6): from `frob.toml`, or from its own `grimble.toml` when no
+  `frob.toml` exists.
+- Stdout is exactly one JSON document followed by one newline: the
+  envelope of cli.md section 2 (`verb`, `already`, `ok`, `data`,
+  `findings`, `warnings`, `error`, `schema_version`) with the sibling
+  document in `data`. Nothing else is written to stdout, in any mode,
+  including `--format text` being ignored under `--json`.
+- Stderr carries logs only (tracing output, never parsed). frob captures
+  it for diagnostics (section 8) and never reads it for meaning.
+- `ok` is true when the product ran to completion; findings never make it
+  false. The envelope's own `findings` array is always empty: the
+  document's `findings` is authoritative, because the landed
+  `FindingRecord` cannot carry the extra fields and one list must not be
+  stored twice.
+- Exit codes are cli.md section 2, unchanged: 0 ok, 1 domain negative
+  (the product's own gate failed under its own `fail_on` and
+  `fail_on_unresolved`), 2 usage, 3 guard, 4 internal. frob reads the
+  document on exit 0 or 1 and never uses the exit code as the answer: it
+  re-applies the gate to the merged findings (section 5). Exit 2, 3 or 4,
+  or a failure envelope (`ok` false), is a failed sibling (section 6).
+- The verb is read-only: `already` is false, no lock is taken, nothing
+  is written outside the product's own cache (`.grimble/`).
+
+## 3. The document
+
+### 3.1 Wire layout
+
+```
+{ "verb": "check", "already": false, "ok": true,
+  "data": { <sibling document> },
+  "findings": [], "warnings": [], "error": null, "schema_version": 1 }
+```
+
+The sibling document is the `data` payload. Its `schema_version` is the
+string `grimble.sibling/<major>`; the envelope's integer `schema_version`
+keeps its own meaning (the envelope layout, `SCHEMA_VERSION` in
+gob-diagnostics). The two version numbers move independently. Field
+order within an object is not significant; producers print keys in the
+order of the tables below and sort every array by the key stated, so two
+runs over one tree print byte-identical documents (determinism, a
+property the conformance corpus pins).
+
+### 3.2 Top-level fields
+
+| Field | Type | Meaning |
+|---|---|---|
+| `schema_version` | string | `grimble.sibling/1`: the contract name and its integer major |
+| `product` | `"grimble"` or `"crunk"` | the producing product; the namespace of fingerprints (section 5) |
+| `product_version` | string | semantic version of the producing binary, display and bug reports only; never a compatibility test |
+| `compute_digest` | string | `blake3:` plus 64 hex digits; the digest of the `compute` object (3.3) |
+| `compute` | object | the six `[compute]` knobs with defaults materialized: `public_signatures`, `effects`, `dynamic_calls`, `expansion_steps`, `normalization`, `notebook_order` |
+| `invocation` | object | echo: `verb`, `root` (always `"."`), `ticket_scope` (list or null), `base` (ref or null) |
+| `fidelity` | array | per language, 3.4 |
+| `rules` | array | per rule that ran, 3.5: polarity and subject counts |
+| `findings` | array | live findings, 3.5 |
+| `suppressed` | array | findings parked by an exception, 3.6 |
+| `exceptions` | array | every parsed exception, 3.6 |
+| `entities` | array | model entities, 3.7 (empty for crunk) |
+| `bindings` | array | rows of B, 3.7 (empty for crunk) |
+| `timing` | object | `elapsed_ms`, wall time of the run |
+
+No field is optional: a value that does not apply is `null`, an empty
+list or `0` as the schema states, never absent. That is what makes "the
+`required` mark is missing" a schema failure rather than a default.
+
+### 3.3 The compute digest
+
+`compute` is the object `{public_signatures, effects, dynamic_calls,
+expansion_steps, normalization, notebook_order}` read from the `[compute]`
+table with every omitted key replaced by its default, so a missing key
+and an explicit default hash identically. `compute_digest` is
+`blake3:` plus the hex blake3 of the canonical JSON of that object: keys
+sorted bytewise, no insignificant whitespace, integers as decimal, no
+floats. There is one implementation, `gob-config::compute_digest`,
+used by frob (over `frob.toml`) and by every sibling (over the table it
+read), so the two digests are equal exactly when the six knobs are.
+Adding a knob to `[compute]` changes the canonical object and therefore
+is a contract major bump (section 4). The reason this is checked at all:
+a knob such as `public_signatures` changes which nodes are opaque, so two
+products with different values would build different U terms for one file
+(architecture.md section 6). `compute` is echoed beside the digest so
+frob's mismatch message can name the differing knobs.
+
+### 3.4 Fidelity
+
+One entry per language the run saw, sorted by `language`:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `language` | string | language id of the adapter registry |
+| `adapter`, `adapter_version` | string | the adapter that produced U terms for it |
+| `level` | `F0`..`F4` | universal-model.md 3.3 |
+| `capabilities` | object | atom id (pack-qualified) to `typed`, `lexical`, `none` or `not_applicable`: the answer of `detectors(lang, atom)` of grimble-model.md 9.6 (`typed` and `lexical` are the precisions, `none` means no detector so the cell is unknown, `not_applicable` is a declared impossibility) |
+| `not_applicable_rules` | array of rule ids | the rules whose whole scope is NotApplicable in this language, listed once here and never as findings (universal-model.md 4.2) |
+
+frob uses the list for `frob doctor --languages`, the capability census
+and the check summary; it never derives a finding from it.
+
+### 3.5 Findings and rule records
+
+A finding is the landed `FindingRecord` (rule, slug, severity, file,
+line, column, message, fingerprint, fix, required) plus the fields
+below; the schema composes the two by reference to envelope.json so the
+shared part has one definition. Every field is always present.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `rule` | string | rule id such as `SYS006` |
+| `slug` | string or null | kebab slug when the registry knows the rule |
+| `severity` | `error`, `warning`, `advisory`, `unresolved` | the landed `severity_label` spellings; Warn prints as `warning` |
+| `polarity` | `P+`, `P-`, `P0`, `Pn`, `Pc` | the rule's declared polarity |
+| `subjects_examined` | integer | subjects the rule examined in the scope this finding rolls up (universal-model.md 4.2); zero only on a vacuous Unresolved |
+| `reason` | string or null | the Unresolved reason code, a kebab-case word: the conditions of binding.md 6.13 (`unseen-remainder`, `may-only-owner`, `fidelity`, `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable`, `vacuous`) and `annotation-required`; the codes frob itself uses for a missing sibling (section 6). Null unless `severity` is `unresolved`; the schema enforces both directions |
+| `maybe` | array of strings | for an Unresolved on a P+ rule, the maybe-set `hi` minus `lo` as anchors or symrefs; empty otherwise |
+| `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`), verbatim; set only on an Unresolved finding. This is the mark of cli.md section 2; the key is mandatory even when null |
+| `file`, `line`, `column` | string or null, integer or null | the landed location: repository-relative path with `/` separators, 1-based line and column; null for a finding with only a logical location |
+| `range` | `{start, end}` or null | byte range of the span in `file` (half-open); frob re-renders spans from it and the file |
+| `anchor` | string or null | logical location, `kind/full-name` or `kind/full-name/clause[i]` (grmb-spec 9.1), for example `node/cli/owns[0]` |
+| `entity` | string or null | the `kind/full-name` of the entity concerned (H3's `entity` on the finding record; the SARIF mapping uses it) |
+| `message` | string | human text; never embeds a matched secret value (section 8) |
+| `remedy` | string or null | the exact corrected command or edit |
+| `fix` | string or null | title of the attached fix, as landed |
+| `fingerprint` | string | 64 lowercase hex digits, the landed stable fingerprint, not yet namespaced |
+
+`rules` has one record per rule that ran: `rule`, `polarity`,
+`subjects_examined` (whole run), `findings`, `suppressed`, `unresolved`
+(counts). It is the "per-rule subject counts" of grimble-model.md 9.5 and
+what lets frob distinguish "clean" from "measured nothing": a rule with
+`subjects_examined` 0 and no Unresolved is a product bug (its framework
+must emit the vacuous Unresolved), and frob reports it as one
+(section 5, item 7).
+
+### 3.6 Exceptions and suppressed findings
+
+`exceptions` lists every parsed exception (clauses in `.grmb`,
+`exceptions.toml` rows, code directives, baseline pool keys), whether or
+not it suppressed anything this run, because the close guard needs the
+ones that suppress nothing:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | stable hex id from kind, rule and site |
+| `kind` | `accept`, `defer`, `hotfix`, `baseline` | exceptions.md section 1 |
+| `rule` | string | the excepted rule id |
+| `on` | string | anchor, symref or glob the exception applies to |
+| `file`, `line` | string or null, integer or null | where it is written; null for a baseline pool key |
+| `because` | string | the reason text, verbatim |
+| `until` | `YYYY-MM-DD` or null | the optional date exit |
+| `ticket` | string or null | the `ticket=` value, VERBATIM AND OPAQUE: the sibling checks only the syntactic shape grmb-spec requires (MDL013) and never resolves it |
+| `exit_state` | `evaluated` or `unresolved_exit` | `unresolved_exit` exactly when `ticket` is set (exceptions.md section 1, the evaluation boundary of D28); `evaluated` otherwise |
+| `status` | `active`, `stale`, `reattest`, `expired` or null | the outcome of the exits the product evaluated itself (date, digest, staleness), null when it evaluated none; `expired` here is date-based only, a ticket-bound expiry is frob's |
+| `suppresses` | integer | findings this exception suppressed in this run |
+
+A `suppressed` entry is `{finding, exception}`: the finding exactly as
+it would have been reported, and the `id` of its exception. Suppressed
+findings do not count toward `fail_on` or the gate. An `accept` never
+parks an Unresolved finding (EXC016): a document with a suppressed
+finding of severity `unresolved` whose exception is an `accept` is
+malformed. Exceptions that name a ticket carry `ticket` on the record,
+not on the finding, so one ticket string has one home.
+
+### 3.7 Entities and bindings
+
+`entities` lists every model entity (empty for crunk): `anchor`
+(`kind/full-name`, the target of a `design:` link), `kind`, `name`,
+`module`, `file`, `line`, `range`, `digest_scheme`, `body_digest`,
+`doc_digest` (blake3 digests of the Body and Doc facets, or null),
+`renamed_from` (former names, so an old `design:` link still resolves
+with MDL012 behaviour) and `directives`.
+
+`directives` is how frob resolves a `frob:` directive written inside a
+`.grmb` file (grimble-model.md 9.3): grimble attaches the directive by
+the position rule of grmb-spec 8.1, which only it can apply, and hands
+over the raw text of each `frob:` directive as `{namespace: "frob",
+verb, args, line, range}`; frob parses `verb args` with its own
+directive grammar (`gob-directives`) and evaluates `frob:ticket`,
+`frob:doc` and the rest on the entity exactly as it would on a code
+unit. Directives of grimble's own namespace are consumed by grimble and
+not listed. Without grimble the `.grmb` file is F0 opaque to frob and
+the directive is reported Unresolved (grimble-model.md 9.3); with it,
+nothing silently unbound is possible.
+
+`bindings` lists the rows of B (binding.md 1.2) for display and for
+frob's traversal: `entity` (anchor), `role` (`owns`, `producer`,
+`consumer`, `shape`, `runnable`, `ref`, `evidence`), `identity` (a
+symref, or null for the hidden remainder), `status` (`must`, `may`,
+`unknown`), `rank` (1 to 4, binding.md section 2), `anchor` (clause or
+directive site) and `reason` (the residual code of a rank 4 row). frob
+uses them for `design:` link display, for AFFECT and evidence reach, and
+for the GUI; it never recomputes B. Both lists can be large on a big
+model; they are sorted by `anchor` then `role` then `identity` and are
+always emitted in full, since a partial list would make a design link
+look dangling.
+
+### 3.8 The graph export grimble.graph/1
+
+`grimble graph --json` prints the same envelope with `data` of
+`schema_version` `grimble.graph/1`: `product`, `product_version`,
+`compute_digest`, `module`, the same `entities` and `bindings` records
+as 3.7 (one definition, `$defs` in sibling.json) and `edges`: `kind`
+(`flow`, `claim_operand`, `vmodel_link`, `include`, `extend`), `from`,
+`to`, `contract` (the flow's contract anchor or null) and `anchor`. It
+is what the D-rows and gui.md mean by "the graph export": frob's
+`implements design:node/x` validation, the GUI design view and the
+frob-side DRIFT and REF rules read it, so they need no findings.
+`check --json` carries `entities` and `bindings` too so that the one run
+frob already does serves display and directives; `graph --json` exists
+for the edges and for callers that do not want a check. The graph
+document has its own major, negotiated like section 4; the same
+`compute_digest` rule applies. It is defined by `GraphDocument` in
+sibling.json and will move to docs/schemas/grimble-graph.json
+(documentation.md lists that path) when the derive generates it.
+
+## 4. Version negotiation
+
+- The contract version is the integer major in `schema_version`
+  (`grimble.sibling/1`). A change is additive when it only adds optional
+  keys; consumers ignore unknown keys (frob's serde types do not
+  `deny_unknown_fields`) and the major does not move. Any removed or
+  retyped key, any change of meaning, a new required key and any change
+  to the canonical `compute` object is a new major.
+- frob declares the majors it accepts per product, as a constant in
+  `frob-check` (`ACCEPTED_SIBLING_MAJORS: &[u32] = &[1]`). It is code,
+  not configuration: accepting a major is accepting a parser. During a
+  migration frob may accept `[1, 2]` for one release; the sibling prints
+  only the major it implements, there is no downgrade negotiation and no
+  `--schema-version` flag.
+- A document whose contract name is not `grimble.sibling`, whose major is
+  not accepted, or that does not parse at all, is incompatible. Frob does
+  not try to read its findings.
+- Mismatch is a required Unresolved of kind `sibling_missing`
+  (`RequiredReason::SiblingMissing { product }`, cli.md section 2) with
+  `reason` `incompatible`, one finding per product, rule `SIB001`
+  (section 6). The compute digest is part of compatibility: unequal
+  digests are the same finding with detail `compute digest differs`.
+- The schema in docs/schemas/sibling.json describes major 1 and is
+  strict (`unevaluatedProperties: false`): it is a producer conformance
+  test, so a typo is caught where it is made, while consumers stay
+  lenient.
+
+## 5. frob's merge rules
+
+Applied in this order to each sibling document that passed validation:
+
+1. Validation. Parse; check `schema_version` against the accepted
+   majors; compare `compute_digest` with frob's own; check that
+   `product` equals the product asked and that every `file` is a
+   repository-relative path without a leading `/`, a drive letter or a
+   `..` segment. Failure is section 6.
+2. Namespacing. frob stores each fingerprint as `<product>:<hex>`
+   (`grimble:6c1f...`), so a sibling finding can never collide with a
+   frob finding and a baseline pool key names its product. Rule ids are
+   already family-namespaced in the shared registry (rules.md section 2);
+   a rule id the sibling uses that the registry assigns to a frob family
+   is a contract violation, reported as a warning and the finding kept.
+3. Severity mapping. `error`, `warning`, `advisory`, `unresolved` map to
+   `Error`, `Warn`, `Advisory`, `Unresolved` one to one; frob does not
+   re-grade them. `[check] fail_on` then applies to the merged set as to
+   frob's own findings and never counts Unresolved (cli.md section 2).
+4. The required mark. `required` is taken verbatim from each finding;
+   frob never re-derives it. The gate is the one mechanism of cli.md
+   section 2 applied to the merged set: under `[check] fail_on_unresolved
+   = "required"` a finding that is Unresolved and has `required` set
+   fails the run with exit 1; `"all"` fails on any Unresolved; `"never"`
+   on none. The sibling's own exit code and its own policy knobs play no
+   part: a product run under a laxer standalone configuration cannot
+   weaken frob's gate, because frob reads marks, not exit codes. A
+   suppressed finding is outside the gate.
+5. Exceptions. frob evaluates every exception with `exit_state`
+   `unresolved_exit`: EXC007 when the opaque `ticket` names no ticket,
+   EXC003 when it names a terminal one, and the later EXC014 and EXC015
+   (exceptions.md section 6). These are frob findings located at the
+   exception's `file` and `line`; the suppressed finding stays
+   suppressed and the EXC finding is what fails the gate. frob also
+   writes the `exception` event on the named ticket, and the close guard
+   ("a ticket cannot close while a `defer` points at it") reads
+   `exceptions` from a sibling run made for that close; if the sibling
+   cannot be run the guard cannot prove the absence and refuses with the
+   `sibling_missing` remedy. Exceptions with `exit_state` `evaluated`
+   are trusted as reported; frob raises no EXC finding for them (the
+   product emitted its own EXC findings in `findings`).
+6. Composition with the summary. Merged counts, the capability census
+   and the language table are computed over the merged set; per-product
+   subtotals use `product`. `suppressed` and `exceptions` feed the
+   exception ledger of `frob status`.
+7. Self-check. A rule record with `subjects_examined` 0, no unresolved
+   and no finding is reported by frob as a warning naming the product
+   and rule (a framework bug), never as clean evidence.
+
+Merged findings keep the sibling's `slug`, `message`, `remedy` and
+`range`; frob's renderers (text, SARIF, GitHub annotations) work from the
+flat location and need no second path to the file.
+
+## 6. Absent and incompatible, end to end
+
+A sibling is CONFIGURED when its config file exists at the repository
+root (`grimble.toml`, `crunk.toml`). A product that is not configured is
+not run and produces nothing, not even a note (a repository with no
+design model owes grimble nothing). For a configured sibling frob does:
+
+1. Discovery (products.md section 6): in-process with the `bundle`
+   feature, otherwise the binary `grimble` or `crunk` on PATH. In-process
+   runs build the same typed document without a JSON round trip and go
+   through steps 4 to 6 unchanged.
+2. Spawn through `gob-exec` with the argv of section 2, the timeout of
+   section 7, the environment scrubbed, output capped, stderr captured.
+3. Read stdout as one document. Any of the cases below is a failed
+   sibling.
+4. Check version and digest (section 4).
+5. Merge (section 5).
+
+The failed cases are one finding each, per product, never one per
+symptom. They are rule `SIB001` (slug `sibling-unavailable`, family SIB,
+severity Unresolved, polarity P-: the good thing is a usable document),
+with `required` = `{"kind": "sibling_missing", "product": "<product>"}`
+when `[check] require_siblings` is true (the default) and null when it is
+false, in which case the finding still prints and counts and fails only
+under `fail_on_unresolved = "all"`. The `reason` code distinguishes them,
+and `remedy` is always an exact command:
+
+| `reason` | Cause | Remedy |
+|---|---|---|
+| `absent` | not in-process and not on PATH, or not executable | `uv tool install frob` (the bundling wheel), or the product's install command |
+| `incompatible` | unaccepted major, wrong contract name, `product` mismatch, or `compute_digest` differs (the message says which) | `uv tool install --upgrade frob`, or align `[compute]` |
+| `failed` | exit 2, 3 or 4, a failure envelope, or a spawn error | the product's own `remedy` when the failure envelope carries one, else `grimble check --json` |
+| `timeout` | `[check] sibling_timeout_secs` elapsed; the child is killed | raise the knob or run the product alone |
+| `malformed` | stdout is not exactly one JSON document, or fails the schema, or exceeds the output cap | `grimble check --json | head` to inspect |
+
+These are all the `sibling_missing` case of cli.md section 2. That
+section names three triggers (not installed, another `schema_version`, a
+different `[compute]` digest); `failed`, `timeout` and `malformed` are the
+same hole by another door (a sibling that cannot be used is a sibling
+that did not run), so they carry the same mark. Rule SIB001 is
+registered in rules.md by G13 with the other frob-side rule ids.
+
+The end-to-end consequence, which closes H3's failure scenario: a
+repository with `grimble.toml` whose CI image installs crates.io
+`frob-cli` (no `bundle`) and no grimble prints
+`SIB001 unresolved [required: sibling-missing: grimble] grimble is
+configured but not installed`, exits 1 under the default
+`fail_on_unresolved = "required"`, and `frob land` refuses with
+`E-LAND-CHECK`. Turning `require_siblings` off is the one way to reduce it
+to a reported Unresolved, and that is a tracked, reviewable config
+change. The same mechanism run by a standalone grimble applies to its
+own required findings (grimble-model.md 9.5).
+
+## 7. Performance budget
+
+The 2 s warm budget of architecture.md counts frob's own pipeline. Sibling
+time is counted outside it, like `[[check.tool]]` stages (git-io.md
+section 3): frob starts the siblings concurrently at the start of the
+pipeline, runs its own families meanwhile, and joins them after. The run
+reports each sibling's wall time separately (`--timing`, and the check
+summary line `grimble 1.4 s`), never added to the frob figure. The
+sibling's own warm target is stated in its own design (a model check
+reads only the model and the touched files through `gob-cache`).
+
+`[check] sibling_timeout_secs` (default 120, materialized in `frob.toml`
+by `frob init`; a missing key is CFG001; added to the architecture.md
+knob table by this ticket) bounds each sibling run under the timeout
+contract of cli.md section 3. On expiry the child and its process group
+are killed and the finding is `SIB001` with reason `timeout`. The knob
+bounds one sibling, not the sum.
+
+frob does not cache the document: the sibling's own `gob-cache` keys make
+a warm re-run cheap, and a cached copy would need a key over the
+sibling's inputs that only the sibling can compute.
+
+## 8. Security
+
+- No secrets in output. A rule that finds a secret literal reports its
+  location, rule id and fingerprint, never the matched value in
+  `message`, `maybe`, `remedy` or anywhere else. The fingerprint is
+  derived from rule, symref and a hash of the normalized message, so it
+  cannot reverse a value. Environment variables, tokens and absolute
+  home paths are never emitted.
+- Paths are relative to the repository root, `/` separated, with no
+  leading `/`, drive letter or `..` segment; the document says `root:
+  "."` in `invocation`. frob refuses a document with any other path
+  (section 5 step 1, `malformed`), so a sibling cannot point frob at a
+  file outside the checkout.
+- Stderr is logs only and is run through the `gob-log` and `gob-exec`
+  redaction before frob shows it (in `--timing` output or the tail of a
+  `failed` finding). frob never executes anything named in the document,
+  never follows `remedy` automatically and treats `ticket` as inert text.
+- The child gets a scrubbed environment and the repository root as its
+  working directory (`gob-exec`); stdout is capped, and a document over
+  the cap is `malformed`.
+
+## 9. Worked examples
+
+This repository after G09 has created `crates/grimble-check/src/sibling.rs`
+and before G13 has created the consumer. Model: grmb-spec section 13 and
+binding.md 9.1. Two findings are live: MDL005 (Warn) because the flow's
+consumer selector matches no file, and SYS006 as a required Unresolved
+because the contract flow has no acked ends and the rule is
+`must_measure`. One finding is suppressed: SYS001 (an unowned artifact)
+deferred to a ticket. The deferred ticket id is a placeholder ULID, and
+digests and fingerprints are illustrative.
+
+```json
+{"verb":"check","already":false,"ok":true,"data":{
+  "schema_version":"grimble.sibling/1",
+  "product":"grimble",
+  "product_version":"0.1.0",
+  "compute_digest":"blake3:bfc07185ac7c28b2b19c162930e7e857b3f7943de75affc27c92a14ce55c44c2",
+  "compute":{"public_signatures":"warn-unresolved","effects":"warn-unresolved","dynamic_calls":"warn-unresolved","expansion_steps":1000,"normalization":"warn-unresolved","notebook_order":"warn-unresolved"},
+  "invocation":{"verb":"check","root":".","ticket_scope":["crates/frob-check/src/sibling.rs"],"base":"main"},
+  "fidelity":[
+    {"language":"grmb","adapter":"grimble-model","adapter_version":"0.1.0","level":"F4",
+     "capabilities":{"fs.read":"typed"},"not_applicable_rules":[]},
+    {"language":"markdown","adapter":"gob-languages/markdown","adapter_version":"0.1.0","level":"F1",
+     "capabilities":{"fs.read":"not_applicable","net.connect":"not_applicable"},
+     "not_applicable_rules":["CAP001","CAP002"]},
+    {"language":"rust","adapter":"gob-languages/rust","adapter_version":"0.1.0","level":"F3",
+     "capabilities":{"exec":"lexical","fs.read":"lexical","net.connect":"none"},"not_applicable_rules":[]}],
+  "rules":[
+    {"rule":"MDL005","polarity":"P-","subjects_examined":6,"findings":1,"suppressed":0,"unresolved":0},
+    {"rule":"SYS001","polarity":"P-","subjects_examined":212,"findings":0,"suppressed":1,"unresolved":0},
+    {"rule":"SYS006","polarity":"P0","subjects_examined":0,"findings":0,"suppressed":0,"unresolved":1}],
+  "findings":[
+    {"rule":"MDL005","slug":"selector-no-file","severity":"warning","polarity":"P-","subjects_examined":6,
+     "file":"design/frob.grmb","line":41,"column":14,"range":{"start":1180,"end":1222},
+     "anchor":"flow/f_sibling/consumer[0]","entity":"flow/f_sibling",
+     "message":"selector \"crates/frob-check/src/sibling.rs::read\" matches no file in the walk",
+     "remedy":"create crates/frob-check/src/sibling.rs or correct the selector",
+     "fix":null,"required":null,"reason":null,"maybe":[],
+     "fingerprint":"6c1f6c62218ff149b1443599ca7cf2bcab52444bd810c6147ff72737d17a07c5"},
+    {"rule":"SYS006","slug":"contract-skew","severity":"unresolved","polarity":"P0","subjects_examined":0,
+     "file":"design/frob.grmb","line":38,"column":1,"range":{"start":1050,"end":1160},
+     "anchor":"flow/f_sibling","entity":"flow/f_sibling",
+     "message":"no flow with a contract and acked ends was examined; drift is unmeasured, not absent",
+     "remedy":"grimble ack flow/f_sibling",
+     "fix":null,"required":{"kind":"zero_subjects","rule":"SYS006"},"reason":"vacuous","maybe":[],
+     "fingerprint":"b4500080b0be30fe16c7524aab16c142c4b857c5997e458c64a377c2cebc6603"}],
+  "suppressed":[
+    {"finding":{"rule":"SYS001","slug":"unowned","severity":"warning","polarity":"P-","subjects_examined":212,
+       "file":"scripts/legacy-bench.sh","line":null,"column":null,"range":null,
+       "anchor":null,"entity":null,
+       "message":"scripts/legacy-bench.sh is owned by no node",
+       "remedy":"add an owns selector to a node or exclude the path",
+       "fix":null,"required":null,"reason":null,"maybe":[],
+       "fingerprint":"e9c04bd3951ac9c223ccc08e70224564838258360972791f00858b536e3e00f2"},
+     "exception":"0d60719e68c05a96"}],
+  "exceptions":[
+    {"id":"0d60719e68c05a96","kind":"defer","rule":"SYS001","on":"scripts/legacy-bench.sh",
+     "file":"design/frob.grmb","line":57,
+     "because":"retire or assign the legacy bench script after the sibling stage lands",
+     "until":null,"ticket":"01M3Z7ZZZZZZZZZZZZZZZZZZZZ","exit_state":"unresolved_exit","status":null,"suppresses":1}],
+  "entities":[
+    {"anchor":"node/frob","kind":"node","name":"frob","module":"frob","file":"design/frob.grmb","line":12,
+     "range":{"start":240,"end":610},"digest_scheme":2,
+     "body_digest":"blake3:230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+     "doc_digest":null,"renamed_from":[],"directives":[]},
+    {"anchor":"flow/f_sibling","kind":"flow","name":"f_sibling","module":"frob","file":"design/frob.grmb","line":38,
+     "range":{"start":1050,"end":1160},"digest_scheme":2,
+     "body_digest":"blake3:230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+     "doc_digest":"blake3:139d544b821b13ebea14f1b0fe18577222e415c2966e3a3511c4196055232202",
+     "renamed_from":[],
+     "directives":[{"namespace":"frob","verb":"ticket","args":"01M3Z714BATXCX8X2XN0XW0SPK","line":37,"range":{"start":1010,"end":1049}}]}],
+  "bindings":[
+    {"entity":"node/frob","role":"owns","identity":"crates/frob-check/src/lib.rs","status":"must","rank":2,
+     "anchor":"node/frob/owns[0]","reason":null},
+    {"entity":"flow/f_sibling","role":"producer","identity":"crates/grimble-check/src/sibling.rs::emit","status":"must","rank":2,
+     "anchor":"flow/f_sibling/producer[0]","reason":null},
+    {"entity":"flow/f_sibling","role":"consumer","identity":null,"status":"unknown","rank":4,
+     "anchor":"flow/f_sibling/consumer[0]","reason":"unseen-remainder"}],
+  "timing":{"elapsed_ms":212}},
+ "findings":[],"warnings":[],"error":null,"schema_version":1}
+```
+
+What frob does with it: the two live findings join the report as
+`grimble:6c1f...` and `grimble:b450...`; MDL005 is Warn and does not fail
+`fail_on = "error"`; SYS006 is Unresolved with `required` set and
+fails the gate with exit 1 under the default `fail_on_unresolved`. The
+`defer` is evaluated by frob: the ticket string is looked up, found
+absent and EXC007 fires at `design/frob.grmb:57` (the placeholder is
+deliberately not a real ticket); the SYS001 finding stays suppressed.
+`frob:ticket 01M3Z714BATXCX8X2XN0XW0SPK` on `flow/f_sibling` resolves to
+that ticket (G13) and gives the entity its REF link.
+
+A crunk document differs only in its product, its empty model lists and
+its own rules; it is validated by the same schema:
+
+```json
+{"verb":"check","already":false,"ok":true,"data":{
+  "schema_version":"grimble.sibling/1",
+  "product":"crunk",
+  "product_version":"0.1.0",
+  "compute_digest":"blake3:bfc07185ac7c28b2b19c162930e7e857b3f7943de75affc27c92a14ce55c44c2",
+  "compute":{"public_signatures":"warn-unresolved","effects":"warn-unresolved","dynamic_calls":"warn-unresolved","expansion_steps":1000,"normalization":"warn-unresolved","notebook_order":"warn-unresolved"},
+  "invocation":{"verb":"check","root":".","ticket_scope":null,"base":null},
+  "fidelity":[{"language":"css","adapter":"gob-languages/css","adapter_version":"0.1.0","level":"F2",
+               "capabilities":{"net.connect":"not_applicable"},"not_applicable_rules":[]}],
+  "rules":[{"rule":"TOK001","polarity":"P+","subjects_examined":318,"findings":1,"suppressed":0,"unresolved":0}],
+  "findings":[
+    {"rule":"TOK001","slug":"off-palette-color","severity":"error","polarity":"P+","subjects_examined":318,
+     "file":"web/src/button.css","line":9,"column":10,"range":{"start":212,"end":219},
+     "anchor":null,"entity":null,
+     "message":"color #3a7bd6 is not in the declared palette",
+     "remedy":"use token color.primary.500",
+     "fix":"replace with var(--color-primary-500)","required":null,"reason":null,"maybe":[],
+     "fingerprint":"effe81cacc437d6f39936b7a611adba4e245a2a8b5446429d363fa8a306ac64a"}],
+  "suppressed":[],"exceptions":[],"entities":[],"bindings":[],
+  "timing":{"elapsed_ms":88}},
+ "findings":[],"warnings":[],"error":null,"schema_version":1}
+```
+
+### 9.1 Validation
+
+The schema references envelope.json by relative path, so a validator
+must resolve both files. Validated with `python3` and jsonschema 4.23
+(`Draft202012Validator`; the system python's jsonschema 3.2 does not
+implement 2020-12, so the run used `uvx --with jsonschema==4.23.0
+python`), loading docs/schemas/envelope.json and docs/schemas/sibling.json
+into a `referencing.Registry` under the names `envelope.json` and
+`sibling.json`, extracting the two JSON blocks of this section from this
+file and validating each. Both pass. Negative cases that fail, each for
+the stated reason: deleting `required` from a finding (missing required
+mark); `severity: "warning"` with `required` set (a mark on a
+non-Unresolved finding); `severity: "unresolved"` with `reason: null`;
+an `accept` exception carrying a `ticket`; a `ticket` with `exit_state:
+"evaluated"`; `schema_version: "grimble.sibling/2"`; an unknown key on a
+finding; a non-empty envelope `findings` array. The harness lives in the
+conformance corpus of G09 once it exists; until then the run above is the
+evidence.
+
+## 10. Who produces and consumes each field
+
+| Field or group | Producer | Consumer |
+|---|---|---|
+| envelope, `verb`, `ok`, `error` | `gob-diagnostics` (`Envelope`) wrapped by `gob-cli` | `frob-check` (`sibling.rs`) via `gob-exec` capture |
+| `schema_version`, `product`, `product_version`, the document type `SiblingDoc` | `grimble-check` (`sibling.rs::emit`); `crunk-rules` front for crunk | `frob-check` (`sibling.rs::read`, version negotiation) |
+| `compute`, `compute_digest` | `gob-config` (`compute_digest`) called by each product | `frob-check` compares with its own call of the same function |
+| `invocation` | `grimble-check`, `crunk` bin (`gob-cli` flags) | `frob-check` (verifies the request was honoured) |
+| `fidelity`, `capabilities` | `gob-ir` registry and adapters (levels, `detectors`) summarized by `grimble-capabilities` | `frob-check` (doctor, census), `gob-diagnostics` text |
+| `rules`, polarity, `subjects_examined` | `gob-rules` (rule metadata and outcome accounting) | `frob-check` (summary, self-check) |
+| `findings` base fields | `gob-diagnostics` (`FindingRecord`, which gains `Deserialize`) | `frob-check`, renderers in `gob-diagnostics` |
+| `findings` extension (`polarity`, `reason`, `maybe`, `anchor`, `entity`, `range`, `remedy`) | `gob-diagnostics` (`FindingRecord` extension, shared by the products) | `frob-check` |
+| `required` | `gob-diagnostics` (`RequiredReason`, `RequiredMarks`); marks set by `gob-check` and the rule frameworks (`must_measure` in `gob-rules`) | `frob-check` applies `fail_on_unresolved` through `gob-diagnostics` exit policy |
+| `exceptions`, `suppressed`, `ticket` | `gob-rules` (exception matching, G06) | `frob-obligations` (EXC003, EXC007, EXC014, EXC015, close guard), `frob-ledger` events |
+| `entities`, directives | `grimble-model` (spans, anchors, digests, the position rule) | `frob-check`, `gob-directives` (parses the raw directive), the frob GUI |
+| `bindings` | `grimble-bind` (B and its provenance) | `frob-check` (AFFECT, evidence reach), GUI |
+| `edges`, `grimble.graph/1` | `grimble-check` (`graph` verb) over `grimble-model` | `frob-check` (`implements design:` validation), GUI |
+| `SIB001` finding, the failed-sibling cases | `frob-check` (`sibling.rs`) | `gob-diagnostics` gate, `frob-land` (E-LAND-CHECK) |
+| `sibling_timeout_secs` | `gob-config` (frob.toml `[check]`) | `frob-check`, `gob-exec` |
+| `docs/schemas/sibling.json` | hand-written now; `cargo dev gen schemas` (`gob-dev`) from the derive later | conformance test in G09 and G13 |
+
+## 11. Open questions
+
+1. Contract name. `grimble.sibling/1` is fixed by this ticket's brief but
+   crunk emits it too. Should it be renamed `sibling/1` with the
+   `product` field alone distinguishing producers, before any consumer
+   exists? Renaming later is a major bump.
+2. `FindingRecord` wire evolution. This file extends the finding with
+   seven fields; the landed type has three of the needed ones missing
+   and no `Deserialize`. Proposal: extend `FindingRecord` itself (the
+   new fields default to null or empty, so the envelope schema changes
+   additively) rather than introduce a second record. G09 decides; the
+   alternative is a `SiblingFinding` type in `grimble-check` that wraps a
+   `FindingRecord`.
+3. `SIB001` as one rule with a reason code versus five rule ids. One id
+   keeps the registry small and matches "one finding per product"; five
+   ids would let an `accept`-style exception address a cause, which
+   EXC016 forbids anyway, so one is proposed.
+4. `failed`, `timeout` and `malformed` are classified as required
+   `sibling_missing` although cli.md section 2 names only three
+   triggers. If the owner wants the list kept at three, `malformed`
+   folds into `incompatible` and `failed` and `timeout` into `absent`.
+5. Output cap for a sibling document on a very large model. The
+   `gob-exec` cap of git-io.md is sized for tool output; the entities
+   and bindings lists may need a larger per-sibling cap or a
+   `--no-model` flag on `check --json` (frob would then need `graph
+   --json` for display). Not decided here.
+6. `require_siblings = false` yields a non-required `SIB001`. Whether a
+   configured but absent sibling should be silent in that mode is left
+   as stated (reported, counted, not failing) because "unmeasured is not
+   zero" argues against silence.
+7. Crunk's field coverage. crunk has no model, so `entities` and
+   `bindings` are empty; whether crunk's token tables deserve their own
+   export (a `crunk.graph/1`) is a crunk design question.
+8. `exceptions` for `hotfix`: the day-count expiry is product-evaluated
+   (date-based) while the follow-up ticket is frob's; the record carries
+   both (`status` and `ticket`), and frob combines them. Confirm in G06
+   that the hotfix clock starts at the commit date, as EXC004 does.
+
+## 12. Changes to other documents
+
+- grimble-model.md 9.5 points here and drops the sentence that listed the
+  fields.
+- architecture.md section 6 gains the `[check] sibling_timeout_secs`
+  row.
+- README.md gains the index row and decision D67.
+- The envelope's `findings` array is empty for a sibling run; the
+  extension of `FindingRecord` is a G09 decision (question 2).
