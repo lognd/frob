@@ -115,6 +115,13 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 
 ## Status log (newest first)
 
+- 2026-10-04: T-0035 landed (29 done). T-0025 (self-host switch) is
+  complete on branch t-0025 and NOT merged: the cutover must re-import
+  T-0035/T-0036 and merge by hand after the owner review. Design work
+  during the pause: docs/design/universal-model.md (DRAFT) with three
+  research notes and a reading list under notes/research/. The research
+  notes lack web verification; `[verify]` tags mark uncertain citations.
+
 - 2026-10-03 (night): OWNER PAUSE. After T-0035 and T-0025 land, no new
   dispatches. The owner reviews (1) what has been done and (2) the
   design docs afresh, with one stated concern: the IR (code-model.md
