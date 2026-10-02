@@ -2,13 +2,13 @@
 id = "01M3Z712AFAG3GCEAZ66KPBWD1"
 title = "Unresolved gate: fail_on_unresolved knob, required marks, exit 1"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-02T21:06:23Z"
+updated = "2026-10-02T21:16:42Z"
 idempotency_key = "m2-gate"
 labels = ["milestone:2"]
 scope = ["crates/gob-diagnostics/**", "crates/frob-check/**", "crates/frob/**", "docs/reference/**", "docs/schemas/**"]
