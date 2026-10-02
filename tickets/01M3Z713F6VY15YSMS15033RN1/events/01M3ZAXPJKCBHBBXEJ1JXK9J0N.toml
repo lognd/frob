@@ -1,0 +1,90 @@
+kind = "evidence"
+at = "2026-10-02T22:14:27Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-symbols -p frob-cli"
+digest = "b2cf10bc5a440be3daba8c6ae8df3ef22e01de027534f17188a721944691f7c8"
+status = "measured"
+captured_at = "2026-10-02T22:14:27Z"
+accepts = [1, 2]
+passed = true
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+────────────
+ Nextest run ID 49e357bd-46b4-4cbe-bb69-cb8ab63e7ef8 with nextest profile: ci
+    Starting 69 tests across 10 binaries
+        PASS [   0.017s] ( 1/69) frob-cli::cli every_verb_is_in_the_command_inventory
+        PASS [   0.017s] ( 2/69) frob-cli config::tests::registry_files_alias_extends_lease_shared_files_without_duplicates
+        PASS [   0.058s] ( 3/69) frob-cli::check_verb explain_prints_the_rule_page_and_unknown_is_usage
+        PASS [   0.043s] ( 4/69) frob-cli::cli init_outside_a_repo_is_a_refusal
+        PASS [   0.077s] ( 5/69) frob-cli::cli config_show_rejects_unknown_keys_with_a_suggestion
+        PASS [   0.104s] ( 6/69) frob-cli::cli dry_run_is_rejected_on_verbs_that_do_not_opt_in
+        PASS [   0.113s] ( 7/69) frob-cli::cli config_show_effective_reports_provenance
+        PASS [   0.114s] ( 8/69) frob-cli::cli config_sync_adds_missing_knobs_once
+        PASS [   0.138s] ( 9/69) frob-cli::cli in_process_root_matches_the_binary_contract
+        PASS [   0.041s] (10/69) frob-cli::cli schema_verb_dumps_envelope_and_config
+        PASS [   0.132s] (11/69) frob-cli::cli init_dry_run_writes_nothing
+        PASS [   0.037s] (12/69) frob-cli::cli unknown_verb_exits_2_with_a_suggestion
+        PASS [   0.187s] (13/69) frob-cli::cli doctor_outside_a_repo_still_succeeds
+        PASS [   0.160s] (14/69) frob-cli::cli schema_flag_prints_the_verb_schema
+        PASS [   0.215s] (15/69) frob-cli::ticket merge_driver_fails_with_exit_1_when_the_fold_fails
+        PASS [   0.386s] (16/69) frob-cli::cli doctor_languages_prints_fidelity_precisions_and_f0_extensions
+        PASS [   0.407s] (17/69) frob-cli::cli doctor_piped_is_json_envelope_even_with_cfg001
+        PASS [   0.355s] (18/69) frob-cli::cli json_flag_is_an_alias_and_conflicts_with_text
+        PASS [   0.324s] (19/69) frob-cli::cli text_format_goes_to_stdout_and_errors_to_stderr
+        PASS [   0.462s] (20/69) frob-cli::check_verb error_finding_exits_1_and_fail_on_none_exits_0
+        PASS [   0.494s] (21/69) frob-cli::cli init_twice_second_is_already_and_changes_nothing
+        PASS [   0.015s] (22/69) gob-symbols markdown::tests::github_slugs
+        PASS [   0.015s] (23/69) gob-symbols paths::tests::module_paths
+        PASS [   0.012s] (24/69) gob-symbols symref::tests::bracket_dots_stay_in_segment
+        PASS [   0.009s] (25/69) gob-symbols symref::tests::rejects_malformed
+        PASS [   0.014s] (26/69) gob-symbols symref::tests::round_trips
+        PASS [   0.198s] (27/69) frob-cli::wiring registry_files_alias_is_accepted_and_shared_tables_are_listed
+        PASS [   0.440s] (28/69) frob-cli::ticket new_with_the_same_key_returns_already
+        PASS [   0.215s] (29/69) frob-cli::wiring sibling_verbs_print_schemas
+        PASS [   0.010s] (30/69) gob-symbols::gaps contract_digest_erases_names_but_sig_keeps_them
+        PASS [   0.016s] (31/69) gob-symbols::corpus rust_depth_limit_collapses_into_opaque_and_keeps_calls
+        PASS [   0.010s] (32/69) gob-symbols::gaps g02_edges_carry_must_may_unknown_status
+        PASS [   0.564s] (33/69) frob-cli::ticket ambiguous_handle_exits_3_listing_both_candidates
+        PASS [   0.019s] (34/69) gob-symbols::gaps g01_unresolved_calls_poison_reach_instead_of_being_dropped
+        PASS [   0.009s] (35/69) gob-symbols::gaps g04_function_passed_as_value_is_a_may_reference_edge
+        PASS [   0.011s] (36/69) gob-symbols::gaps g07_outer_attributes_are_in_sig_and_attr_digests
+        PASS [   0.020s] (37/69) gob-symbols::gaps g03_calls_of_function_values_are_unknown_not_dropped
+        PASS [   0.013s] (38/69) gob-symbols::gaps g08_comments_in_a_body_do_not_change_the_body_digest
+        PASS [   0.010s] (39/69) gob-symbols::gaps g09_markdown_body_is_section_local_with_a_separate_subtree_digest
+        PASS [   0.119s] (40/69) gob-symbols::corpus markdown_corpus_covers_every_claimed_operator
+        PASS [   0.013s] (41/69) gob-symbols::gaps g11_parse_errors_are_holes_and_parse_status_is_a_query
+        PASS [   0.017s] (42/69) gob-symbols::gaps g10_public_api_follows_pub_use_reexports
+        PASS [   0.014s] (43/69) gob-symbols::gaps g19_unknown_language_is_one_opaque_f0_unit
+        PASS [   0.012s] (44/69) gob-symbols::gaps imports_pick_the_callee_among_same_named_functions
+        PASS [   0.011s] (45/69) gob-symbols::symbols affects_is_transitive_and_ambiguity_is_kept
+        PASS [   0.014s] (46/69) gob-symbols::gaps markdown_links_resolve_to_anchors_or_are_broken_unknown_edges
+        PASS [   0.128s] (47/69) gob-symbols::corpus rust_corpus_covers_every_claimed_operator
+        PASS [   0.011s] (48/69) gob-symbols::symbols change_doc_changes_doc_only_and_whitespace_is_ignored
+        PASS [   0.017s] (49/69) gob-symbols::symbols caller_is_affected_by_callee
+        PASS [   0.019s] (50/69) gob-symbols::symbols consistent_param_rename_is_alpha_equivalent_but_a_type_change_is_not
+        PASS [   0.014s] (51/69) gob-symbols::symbols edit_body_changes_body_only
+        PASS [   0.019s] (52/69) gob-symbols::symbols corpus_matches_expected_symrefs
+        PASS [   0.012s] (53/69) gob-symbols::symbols graph_digest_tracks_structure
+        PASS [   0.018s] (54/69) gob-symbols::symbols every_public_item_has_symref_kind_and_digests
+        PASS [   0.009s] (55/69) gob-symbols::symbols imports_link_files_in_the_graph
+        PASS [   0.013s] (56/69) gob-symbols::symbols markdown_slugs_dedupe_and_nest
+        PASS [   0.021s] (57/69) gob-symbols::symbols imports_are_flattened_and_classified
+        PASS [   0.017s] (58/69) gob-symbols::symbols public_api_hides_private_containers
+        PASS [   0.012s] (59/69) gob-symbols::symbols qualified_calls_narrow_candidates
+        PASS [   0.012s] (60/69) gob-symbols::symbols resolve_accepts_unique_suffixes_and_reports_ambiguity
+        PASS [   0.429s] (61/69) frob-cli::wiring close_of_a_task_without_evidence_is_refused_with_the_test_remedy
+        PASS [   0.138s] (62/69) gob-symbols::gaps g19_walked_files_without_an_adapter_are_counted_opaque
+        PASS [   0.726s] (63/69) frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   0.121s] (64/69) gob-symbols::symbols second_build_extracts_nothing
+        PASS [   0.621s] (65/69) frob-cli::wiring no_evidence_with_a_reason_closes_and_records_a_bypass_event
+        PASS [   0.647s] (66/69) frob-cli::wiring doable_hides_tickets_overlapping_a_live_lease_and_shows_them_otherwise
+        PASS [   0.937s] (67/69) frob-cli::ticket merge_driver_unions_events_from_both_branches_and_refolds
+        PASS [   0.975s] (68/69) frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        PASS [   0.876s] (69/69) frob-cli::ticket update_set_comment_brief_and_parent
+────────────
+     Summary [   1.242s] 69 tests run: 69 passed, 0 skipped
+"""
+size = 6930
