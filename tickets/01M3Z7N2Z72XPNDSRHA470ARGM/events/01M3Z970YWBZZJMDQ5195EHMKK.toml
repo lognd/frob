@@ -1,0 +1,74 @@
+kind = "evidence"
+at = "2026-10-02T21:44:35Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p frob-check -p frob-lease"
+digest = "3b141bc45138b08078e662b269db0030c425454a70f91633b8b494a644a02dad"
+status = "measured"
+captured_at = "2026-10-02T21:44:35Z"
+accepts = [1]
+passed = true
+exit_code = 0
+inline = """
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/470ARGM/crates/frob-check)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/470ARGM/crates/frob-lease)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.08s
+────────────
+ Nextest run ID afa31ccc-871c-4651-b414-66f4da22c05d with nextest profile: ci
+    Starting 51 tests across 6 binaries
+        PASS [   0.009s] ( 1/51) frob-check required::tests::pending_mark_matches_by_rule_and_message
+        PASS [   0.009s] ( 2/51) frob-check tools::tests::printed_paths_become_repo_relative
+        PASS [   0.008s] ( 3/51) frob-check tool_parse::tests::zizmor_output_parses_with_byte_spans
+        PASS [   0.009s] ( 4/51) frob-check required::tests::unrelated_unresolved_is_not_marked
+        PASS [   0.009s] ( 5/51) frob-check tool_parse::tests::versions_are_found_in_banner_text
+        PASS [   0.009s] ( 6/51) frob-check tool_parse::tests::actionlint_output_parses_with_line_and_column
+        PASS [   0.008s] ( 7/51) frob-check tool_parse::tests::version_range_is_inclusive_and_numeric
+        PASS [   0.009s] ( 8/51) frob-check tool_parse::tests::actionlint_runner_labels_follow_the_labels_knob
+        PASS [   0.009s] ( 9/51) frob-check tool_parse::tests::id_map_overrides_and_bad_targets_fall_back
+        PASS [   0.010s] (10/51) frob-check required::tests::annotation_prefix_maps_to_a_required_reason
+        PASS [   0.023s] (11/51) frob-check tool_parse::tests::zizmor_ids_map_to_ci_ids_and_the_rest_is_tool002
+        PASS [   0.014s] (12/51) frob-check::check fix_is_refused_without_a_ticket_when_the_knob_requires_scope
+        PASS [   2.648s] (13/51) frob-check::check a_failing_tool_stage_yields_tool001_outside_the_budget
+        PASS [   2.723s] (14/51) frob-check::check an_annotation_required_unresolved_finding_is_marked_required
+        PASS [   2.763s] (15/51) frob-check::check a_changed_side_input_misses_the_cache
+        PASS [   2.851s] (16/51) frob-check::check bare_marker_fires_and_second_run_hits_the_cache_with_identical_output
+        PASS [   2.852s] (17/51) frob-check::check a_non_required_unresolved_finding_passes_under_required_and_fails_under_all
+        PASS [   2.848s] (18/51) frob-check::check only_filters_by_family_and_rejects_unknown_names
+        PASS [   2.864s] (19/51) frob-check::check fail_on_maps_severity_to_the_exit_code
+        PASS [   2.891s] (20/51) frob-check::check fix_rewrites_the_file_and_the_next_run_is_clean
+        PASS [   0.143s] (21/51) frob-check::check ticket_without_a_ledger_is_an_error
+        PASS [   3.006s] (22/51) frob-check::check a_branch_touching_an_out_of_scope_file_still_fires_scope001
+        PASS [   3.000s] (23/51) frob-check::check base_advancing_does_not_leak_into_scope001
+        PASS [   3.001s] (24/51) frob-check::check a_missing_tool_binary_fails_under_required_and_passes_under_never
+        PASS [   0.164s] (25/51) frob-check::tool_bind a_frob_accept_suppresses_a_tool_finding_like_a_native_one
+        PASS [   0.396s] (26/51) frob-check::check telemetry_line_is_appended_when_enabled
+        PASS [   3.119s] (27/51) frob-check::check editing_a_file_invalidates_only_its_entries
+        PASS [   0.128s] (28/51) frob-check::tool_bind a_tool_outside_its_version_range_yields_one_non_required_unresolved
+        PASS [   0.006s] (29/51) frob-lease overlap::tests::bad_glob_is_reported
+        PASS [   0.020s] (30/51) frob-lease overlap::tests::text_overlap_cases
+        PASS [   0.026s] (31/51) frob-lease::lease contention_ranks_shared_files
+        PASS [   0.167s] (32/51) frob-check::tool_bind actionlint_findings_map_to_ci014_and_configured_labels_are_dropped
+        PASS [   0.028s] (33/51) frob-lease::lease disjoint_scopes_coexist_and_release_frees
+        PASS [   0.016s] (34/51) frob-lease::lease guard_hides_overlapping_tickets
+        PASS [   0.012s] (35/51) frob-lease::lease held_error_maps_to_retryable_refusal_naming_holder
+        PASS [   0.011s] (36/51) frob-lease::lease same_holder_reacquire_is_already
+        PASS [   0.013s] (37/51) frob-lease::lease renew_extends_and_wip_limit_refuses
+        PASS [   0.182s] (38/51) frob-check::tool_bind unparseable_output_is_a_tool001_error
+        PASS [   0.019s] (39/51) frob-lease::lease scope001_flags_outside_paths_only
+        PASS [   0.016s] (40/51) frob-lease::lease steal_records_history_and_returns_previous
+        PASS [   0.016s] (41/51) frob-lease::lease ttl_expiry_frees_and_prunes
+        PASS [   0.086s] (42/51) frob-lease::lease concurrent_overlapping_globs_grant_exactly_one
+        PASS [   0.030s] (43/51) frob-lease::lease shared_files_are_exempt
+        PASS [   0.035s] (44/51) frob-lease::lease verbs_list_leases_and_contention
+        PASS [   0.197s] (45/51) frob-check::tool_bind zizmor_findings_carry_ci_ids_and_real_spans
+        PASS [   0.628s] (46/51) frob-check::check perf001_fires_only_when_enforced_and_over_budget
+        PASS [   0.517s] (47/51) frob-check::check the_ledger_directory_is_exempt_from_scope001
+        PASS [   0.330s] (48/51) frob-check::tool_bind an_optional_missing_tool_is_unresolved_but_not_required
+        PASS [   0.491s] (49/51) frob-check::check uncommitted_out_of_scope_edits_still_fire_scope001
+        PASS [   0.545s] (50/51) frob-check::check ticket_restricts_per_file_rules_to_its_scope
+        PASS [  17.071s] (51/51) frob-check::perf warm_run_on_this_repository_is_under_two_seconds
+────────────
+     Summary [  19.946s] 51 tests run: 51 passed, 0 skipped
+"""
+size = 5550

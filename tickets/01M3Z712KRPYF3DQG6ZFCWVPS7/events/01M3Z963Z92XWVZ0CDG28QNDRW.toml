@@ -1,0 +1,11 @@
+kind = "evidence"
+at = "2026-10-02T21:44:05Z"
+actor = "lognd"
+rev = 1
+provider = "file"
+ref = "docs/design/binding.md"
+digest = "ca96df419f08390cb4e40f5405f25b7df460c92ac45e6b61a9dfb6a15a33915c"
+status = "measured"
+captured_at = "2026-10-02T21:44:05Z"
+accepts = [1]
+size = 92191
