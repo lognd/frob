@@ -1,5 +1,7 @@
 //! The keyword table (grmb-spec 2.6): the single source for the parser and the editor grammar.
 
+// frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+
 /// Reserved words, in every position.
 pub const KEYWORDS: &[&str] = &[
     "accept",

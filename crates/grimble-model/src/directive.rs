@@ -6,6 +6,8 @@
 //! comment line whose text starts with `<namespace>:<verb>`) and validates verbs against
 //! the shared registry plus the verbs grmb-spec 8.2 adds.
 
+// frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+
 use gob_directives::{all_directives, is_full_ulid, looks_like_ticket_ref};
 
 use crate::lex::{Comment, CommentKind};

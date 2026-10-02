@@ -3,6 +3,8 @@
 //! `gob-ir` registers `net.connect` and `fs.write`; the remaining core atoms named by the
 //! worked example are submitted here so a model that links this crate resolves them.
 
+// frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+
 use gob_ir::registry::{AtomEntry, DetectorEntry, DetectorKind};
 
 inventory::submit! {

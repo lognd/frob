@@ -23,6 +23,7 @@ fn messages(mf: &ModelFiles) -> Vec<(String, String)> {
 }
 
 #[test]
+// frob:tests crates/grimble-model/src/model.rs::ModelFiles.new
 fn duplicate_entities_are_reported_independent_of_include_order() {
     let a = format!("{P}node dup : trusted {{\n}}\n");
     let b = format!("{P}node dup : trusted {{\n}}\n");
@@ -105,6 +106,7 @@ fn mounting_prefixes_anchors_and_the_term_binds_the_prefix() {
 }
 
 #[test]
+// frob:tests crates/grimble-model/src/adapter.rs::grammar_identity
 fn the_adapter_is_f4_and_folds_through_the_gob_symbols_contract() {
     let a = GrmbAdapter;
     assert_eq!(a.fidelity(), Fidelity::F4);
@@ -168,4 +170,63 @@ fn the_registry_knows_the_mdl_family() {
         reg.by_id("MDL005").map(|m| m.severity),
         Some(gob_rules::Severity::Warn)
     );
+}
+
+#[test]
+// frob:tests crates/grimble-model/src/text.rs::atom_text
+fn an_exception_edit_changes_only_the_attr_facet() {
+    use gob_ir::Facet;
+    let digests = |src: &str| {
+        let parsed = parse_file("f.grmb", src.as_bytes());
+        let folded = fold_file(&parsed, "").expect("fold");
+        let unit = folded
+            .term
+            .units()
+            .into_iter()
+            .find(|u| u.symref.to_string() == "f.grmb::n")
+            .expect("unit n");
+        folded
+            .term
+            .facet_digests(unit.node)
+            .map(|(f, d)| (f, format!("{d:?}")))
+    };
+    let base = digests(&format!(
+        "{H}/// Doc.\nnode n : trusted {{\n  kind component;\n}}\n"
+    ));
+    let with_exc = digests(&format!(
+        "{H}/// Doc.\nnode n : trusted {{\n  kind component;\n  accept CAP003 because=\"by design\";\n}}\n"
+    ));
+    let changed: Vec<Facet> = base
+        .iter()
+        .zip(&with_exc)
+        .filter(|(a, b)| a.1 != b.1)
+        .map(|(a, _)| a.0)
+        .collect();
+    assert_eq!(
+        changed,
+        [Facet::Attr],
+        "adding an accept never makes its own entity changed"
+    );
+    let doc_edit = digests(&format!(
+        "{H}/// Other.\nnode n : trusted {{\n  kind component;\n}}\n"
+    ));
+    let changed: Vec<Facet> = base
+        .iter()
+        .zip(&doc_edit)
+        .filter(|(a, b)| a.1 != b.1)
+        .map(|(a, _)| a.0)
+        .collect();
+    assert_eq!(changed, [Facet::Doc]);
+    let trust_edit = digests(&format!(
+        "{H}/// Doc.\nnode n : foreign {{\n  kind component;\n}}\n"
+    ));
+    assert!(
+        base.iter()
+            .zip(&trust_edit)
+            .any(|(a, b)| a.0 == Facet::Sig && a.1 != b.1)
+    );
+    let reformatted = digests(&format!(
+        "{H}\n\n/// Doc.\nnode   n:trusted{{kind component;}}\n"
+    ));
+    assert_eq!(base, reformatted, "reformatting never changes a digest");
 }

@@ -4,6 +4,8 @@
 //! canonical order (sorted by a location-free key) before it is lowered into the arena.
 //! That is what makes `a & b` and `b & a`, and a file with its items permuted, one term.
 
+// frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+
 use std::collections::BTreeMap;
 
 use gob_ir::{

@@ -6,6 +6,8 @@
 //! small and LL(1), so a hand-written parser gives that recovery without the cost of
 //! a generated grammar, a C toolchain dependency and an ABI to pin.
 
+// frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+
 use std::collections::BTreeMap;
 
 use gob_walk::Selector;
@@ -19,6 +21,9 @@ use crate::ast::{
 use crate::keywords::is_keyword;
 use crate::lex::{Comment, CommentKind, Punct, Tok, Token, lex};
 use crate::span::{Diagnostic, Span};
+
+/// The deepest `namespace` nesting the parser accepts (a bound on recursion, not a language rule).
+pub const MAX_NESTING: usize = 32;
 
 /// The only language major this crate reads (grmb-spec 3.4).
 pub const SUPPORTED_MAJOR: &str = "2";
@@ -53,6 +58,7 @@ struct Parser<'a> {
     next_id: usize,
     targets: Vec<Target>,
     holes: usize,
+    depth: usize,
 }
 
 /// Checks the encoding rules of grmb-spec 2.1; `Err` is the opaque reason.
@@ -126,6 +132,7 @@ pub fn parse_file(path: &str, bytes: &[u8]) -> ParsedFile {
         next_id: 0,
         targets: Vec::new(),
         holes: file.lex_holes.len(),
+        depth: 0,
     };
     p.file(&mut file);
     file.diags.append(&mut p.diags);
@@ -355,10 +362,10 @@ impl Parser<'_> {
                 let mut items = Vec::new();
                 let mut span = t.span;
                 while !self.at_p(Punct::RBracket) {
-                    let item = self.value()?;
-                    if matches!(item.value, Value::List(_)) {
-                        return fail(item.span, "lists do not nest");
+                    if self.at_p(Punct::LBracket) {
+                        return fail(self.peek().span, "lists do not nest");
                     }
+                    let item = self.value()?;
                     items.push(item.value);
                     if !self.eat_p(Punct::Comma) {
                         break;
@@ -665,6 +672,16 @@ impl Parser<'_> {
 
     fn namespace(&mut self) -> PResult<Namespace> {
         let start = self.bump().span;
+        if self.depth >= MAX_NESTING {
+            return fail(start, format!("namespaces nest at most {MAX_NESTING} deep"));
+        }
+        self.depth += 1;
+        let r = self.namespace_body(start);
+        self.depth -= 1;
+        r
+    }
+
+    fn namespace_body(&mut self, start: Span) -> PResult<Namespace> {
         let name = self.name("a namespace name")?;
         let open = self.expect_p(Punct::LBrace)?;
         let mut items = Vec::new();
@@ -1168,6 +1185,19 @@ mod tests {
         assert_eq!(e.clauses.len(), 3);
         assert!(matches!(e.clauses[0].kind, ClauseKind::Hole(_)));
         assert_eq!(f.items.len(), 2);
+    }
+
+    #[test]
+    fn pathological_nesting_does_not_overflow_the_stack() {
+        let deep = format!("{}{}", "namespace a { ".repeat(5000), "}".repeat(5000));
+        let f = parse(&format!("grimble = \"2\";\nmodule m;\n{deep}\n"));
+        assert!(f.holes > 0);
+        let lists = format!(
+            "grimble = \"2\";\nmodule m;\nnode a : trusted {{ attr x = {}1{}; }}\n",
+            "[".repeat(5000),
+            "]".repeat(5000)
+        );
+        assert!(parse(&lists).holes > 0);
     }
 
     #[test]

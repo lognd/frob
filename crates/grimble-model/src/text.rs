@@ -1,5 +1,7 @@
 //! Canonical spellings shared by the formatter, the U adapter and the rules (grmb-spec 9.3).
 
+// frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+
 use std::fmt::Write as _;
 
 use gob_walk::Selector;
@@ -112,14 +114,6 @@ pub fn selector_text(sel: &Sel) -> String {
         Ok(s) => node_text(&canon_node(s.root())),
         Err(_) => sel.text.trim().to_owned(),
     }
-}
-
-/// The canonical selector, or `None` when it did not parse.
-pub fn canonical_selector(sel: &Sel) -> Option<Selector> {
-    sel.parsed
-        .as_ref()
-        .ok()
-        .map(|s| Selector::new(canon_node(s.root())))
 }
 
 /// An atom as written.

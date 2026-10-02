@@ -190,8 +190,80 @@ fn signature(path: &str, text: &str) -> (String, bool) {
     (u_signature(&folded), parsed.is_damaged())
 }
 
+fn soup() -> impl Strategy<Value = String> {
+    let words = prop::sample::select(vec![
+        "grimble",
+        "=",
+        "\"2\"",
+        ";",
+        "module",
+        "m",
+        "part",
+        "of",
+        "node",
+        "flow",
+        "claim",
+        "{",
+        "}",
+        "(",
+        ")",
+        "[",
+        "]",
+        ":",
+        "::",
+        "->",
+        "<=",
+        "&",
+        "|",
+        "!",
+        ",",
+        ".",
+        "owns",
+        "may",
+        "at",
+        "\"a/**\"",
+        "// c\n",
+        "/* x",
+        "*/",
+        "///",
+        "30",
+        "s",
+        "2026-01-01",
+        "include",
+        "namespace",
+        "extend",
+        "accept",
+        "because",
+        "\"",
+        "\\",
+        "\n",
+        "x",
+        "trusted",
+    ]);
+    prop::collection::vec(words, 0..60)
+        .prop_map(|w| format!("grimble = \"2\"; module m; {}", w.join(" ")))
+}
+
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
+
+    #[test]
+    fn the_pipeline_is_total_on_token_soup(src in soup()) {
+        let parsed = parse_file("s.grmb", src.as_bytes());
+        let folded = fold_file(&parsed, "").expect("a fold never fails");
+        let _ = u_signature(&folded);
+        let _ = format_file(&parsed);
+        let mf = grimble_model::ModelFiles::new().with_file("s.grmb", src.clone());
+        let _ = grimble_model::check_model(&mf);
+    }
+
+    #[test]
+    fn the_pipeline_is_total_on_arbitrary_bytes(bytes in prop::collection::vec(any::<u8>(), 0..200)) {
+        let parsed = parse_file("b.grmb", &bytes);
+        let folded = fold_file(&parsed, "").expect("a fold never fails");
+        let _ = u_signature(&folded);
+    }
+
 
     #[test]
     fn fmt_is_a_fixed_point_and_preserves_u(src in model()) {

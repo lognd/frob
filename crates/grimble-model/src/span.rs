@@ -1,5 +1,7 @@
 //! Byte spans and diagnostics produced before findings exist.
 
+// frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+
 use std::fmt;
 
 /// A half-open byte range of one .grmb file.

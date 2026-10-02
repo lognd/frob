@@ -1,5 +1,7 @@
 //! Deterministic text dumps of a folded file for the conformance corpus and `grimble graph`.
 
+// frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+
 use std::fmt::Write as _;
 
 use gob_ir::{AttrValue, NodeId, Operator, Resolution, ScopeGraph, Term, Universal};
