@@ -1,5 +1,5 @@
 ---
-id: T-draft-8eccb7b2
+id: T-0030
 title: gob-git LocalEdits check refuses after git checkout under core.autocrlf=true
 state: queued
 kind: bug
