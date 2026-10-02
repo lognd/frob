@@ -115,6 +115,19 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 
 ## Status log (newest first)
 
+- 2026-10-02 (self-host): T-0025 switches this repository to frob v2.
+  From the commit that merges it, `frob` v2 built from this tree checks
+  the repo (`frob check`, `frob doctor`, `frob test`, CI runs them) and the
+  ledger in `tickets/` is the v2 format: ULID ids with `~handles`, one event
+  file per change, every v1 id kept as an alias (`frob ticket show T-0003`
+  resolves). The v1 ledger lives in git history before the import commit
+  `chore(tickets): import the v1 ledger into the frob v2 format (T-0025)`;
+  `docs/migration/v1-import.md` lists what the import dropped. Future
+  tickets are filed with the v2 binary (`frob ticket new`), not the v1
+  tool, and `[tickets] ref` stays `refs/heads/experimental` until the
+  merge to main. The v1 ground rules above (installed v1 frob, `frob
+  ticket work`, DOC006 quirks) are historical from this point.
+
 - 2026-10-03 (evening): landed T-0028 (TicketSchema derive on a mirror
   struct), T-0029 (design reconciled, D38-D55), T-0023 (frob-check;
   warm fresh-process run 0.66 s on this repo). 27 done; T-0032/T-0033

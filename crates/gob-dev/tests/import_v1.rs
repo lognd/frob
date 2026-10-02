@@ -4,7 +4,10 @@ use std::path::Path;
 
 use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::{doc, event::Event};
-use gob_dev::import_v1::{ImportError, ImportOptions, load_tree, run, verify};
+use gob_dev::import_v1::{
+    ImportError, ImportOptions, load_tree, render_id_map, render_report_md, render_table, run,
+    verify,
+};
 
 const HEAD: &str = "origin: agent\ncreated: '2026-10-02'\npriority: high\nmilestone: 2.0.0\nworktree: /x\nbranch: t\n";
 
@@ -62,6 +65,7 @@ fn opts(root: &Path, dry_run: bool) -> ImportOptions {
     }
 }
 
+// frob:tests crates/gob-dev/src/import_v1.rs::run
 #[test]
 fn imports_maps_and_verifies() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -121,4 +125,32 @@ fn refuses_a_non_empty_target() {
     std::fs::write(tmp.path().join("v2/x"), "x").expect("x");
     let err = run(&opts(tmp.path(), false)).expect_err("refused");
     assert!(matches!(err, ImportError::TargetNotEmpty(_)));
+}
+
+fn dry_report() -> gob_dev::import_v1::ImportReport {
+    let tmp = tempfile::tempdir().expect("tmp");
+    std::fs::create_dir(tmp.path().join("v1")).expect("v1");
+    fixture(&tmp.path().join("v1"));
+    run(&opts(tmp.path(), true)).expect("dry run")
+}
+
+// frob:tests crates/gob-dev/src/import_v1.rs::render_table
+#[test]
+fn renders_the_summary_table() {
+    let table = render_table(&dry_report().rows);
+    assert_eq!(table.len(), 4, "header plus three rows");
+}
+
+// frob:tests crates/gob-dev/src/import_v1.rs::render_id_map
+#[test]
+fn renders_the_id_map() {
+    assert!(render_id_map(&dry_report().rows).starts_with("T-0001\t"));
+}
+
+// frob:tests crates/gob-dev/src/import_v1.rs::render_report_md
+#[test]
+fn renders_the_migration_report() {
+    let md = render_report_md(&dry_report());
+    assert!(md.contains("| `worktree` | 3 |"));
+    assert!(md.contains("3 tickets"));
 }

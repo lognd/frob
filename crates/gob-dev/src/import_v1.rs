@@ -16,6 +16,7 @@
 //! ULID time and `at` agree (the doctor skew check) and the `create` event
 //! sorts first. These instants are synthetic: real times live in git history.
 
+// frob:ticket 01M3WYJ80SHJ13W4MKEA81AHGY
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -955,4 +956,61 @@ pub fn render_id_map(rows: &[Row]) -> String {
         out.push('\n');
         out
     })
+}
+
+/// Render `docs/migration/v1-import.md`: the mapping rules, counts and every dropped v1 field with its reason.
+///
+/// The page names no ULIDs (they are random per run); resolve ids with `frob ticket show T-0003`.
+pub fn render_report_md(report: &ImportReport) -> String {
+    let mut out = String::from(
+        "# v1 ticket import\n\n\
+         Written by `cargo dev import-v1-tickets` (T-0025). Every v1 ticket became a v2 ULID \
+         ticket whose `aliases` hold the v1 id, so `frob ticket show T-0003` resolves. The v1 \
+         ledger itself stays in git history before the import commit.\n\n\
+         ## Identity and time\n\n\
+         v1 keeps only a creation date. A ticket ULID carries that date at 00:00:00 UTC plus \
+         the v1 ticket number as milliseconds, so creation order is preserved and ids never \
+         share a prefix. Event `i` of a ticket sits `i` seconds after the date (ULID time and \
+         `at` agree). These instants are synthetic; real times are in git history.\n\n\
+         ## Field mapping\n\n\
+         | v1 | v2 |\n|---|---|\n\
+         | `kind` feature, ux | type `task` (ux also sets flavour `ux`) |\n\
+         | `kind` bug, security, docs, invariant, incident | the same type |\n\
+         | `tier` epic, story | type `epic`, `story` (wins over `kind`) |\n\
+         | `state` queued, planned, in-progress | category `todo` (leases do not carry over) |\n\
+         | `state` done, archived | category `done`, outcome `done` |\n\
+         | `state` dropped | category `done`, outcome `wont-fix`, drop reason kept as a comment event |\n\
+         | `blocked_by`, `parent` | `blocked-by` links, `parent` (mapped through the id map) |\n\
+         | `milestone`, `component` | labels `milestone:<v>`, `component:<v>` |\n\
+         | `origin` | actor of the `create` event and reporter |\n\
+         | `acceptance` | acceptance criteria with `bound = false` |\n\
+         | `evidence` (`cmd:` lines) | `evidence` events, provider `command`, status measured when exit is 0 |\n\
+         | `done-report.md` | `decision` comment event titled `v1 done-report` |\n\
+         | body | the markdown body |\n\n",
+    );
+    out.push_str(&format!(
+        "## Result\n\n{} tickets and {} events. By type: {}. By category: {}.\n\n",
+        report.rows.len(),
+        report.events,
+        counts_text(&report.by_type),
+        counts_text(&report.by_category),
+    ));
+    out.push_str("## Dropped v1 fields\n\n| v1 field | Tickets with a value | Why it is not carried |\n|---|---|---|\n");
+    for (field, reason) in DROPPED_FIELDS {
+        let n = report.dropped.get(*field).copied().unwrap_or(0);
+        out.push_str(&format!("| `{field}` | {n} | {reason} |\n"));
+    }
+    out.push_str("\n## Dropped behaviour\n\n| What | Why |\n|---|---|\n");
+    for (what, reason) in DROPPED_BEHAVIOUR {
+        out.push_str(&format!("| {what} | {reason} |\n"));
+    }
+    out
+}
+
+fn counts_text(counts: &BTreeMap<String, usize>) -> String {
+    counts
+        .iter()
+        .map(|(k, v)| format!("{k} {v}"))
+        .collect::<Vec<_>>()
+        .join(", ")
 }

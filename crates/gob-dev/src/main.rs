@@ -47,6 +47,9 @@ enum Task {
         /// Also write the `T-NNNN<TAB>ulid` id map to this file.
         #[arg(long)]
         map_out: Option<PathBuf>,
+        /// Also write the migration report markdown (docs/migration/v1-import.md) here.
+        #[arg(long)]
+        report_md: Option<PathBuf>,
     },
 }
 
@@ -71,7 +74,12 @@ fn main() -> Result<(), Failed> {
             to,
             dry_run,
             map_out,
-        } => import_tickets(&ImportOptions { from, to, dry_run }, map_out.as_deref()),
+            report_md,
+        } => import_tickets(
+            &ImportOptions { from, to, dry_run },
+            map_out.as_deref(),
+            report_md.as_deref(),
+        ),
         Task::Gen { kind, check, root } => {
             let workspace = workspace_root();
             let root = root.unwrap_or_else(|| workspace.clone());
@@ -99,7 +107,11 @@ fn main() -> Result<(), Failed> {
 }
 
 /// Run the v1 import and print its summary table, counts and dropped fields.
-fn import_tickets(opts: &ImportOptions, map_out: Option<&std::path::Path>) -> Result<(), Failed> {
+fn import_tickets(
+    opts: &ImportOptions,
+    map_out: Option<&std::path::Path>,
+    report_md: Option<&std::path::Path>,
+) -> Result<(), Failed> {
     let report = import_v1::run(opts).map_err(|e| {
         tracing::error!(error = %e, "import failed");
         Failed(format!("error: {e}"))
@@ -127,9 +139,14 @@ fn import_tickets(opts: &ImportOptions, map_out: Option<&std::path::Path>) -> Re
     for warning in &report.warnings {
         emit(&format!("warning: {warning}"));
     }
+    let write = |path: &std::path::Path, text: String| {
+        std::fs::write(path, text).map_err(|e| Failed(format!("error: {}: {e}", path.display())))
+    };
     if let Some(path) = map_out {
-        std::fs::write(path, import_v1::render_id_map(&report.rows))
-            .map_err(|e| Failed(format!("error: {}: {e}", path.display())))?;
+        write(path, import_v1::render_id_map(&report.rows))?;
+    }
+    if let Some(path) = report_md {
+        write(path, import_v1::render_report_md(&report))?;
     }
     Ok(())
 }
