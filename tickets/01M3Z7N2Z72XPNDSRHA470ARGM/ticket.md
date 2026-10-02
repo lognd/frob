@@ -2,7 +2,8 @@
 id = "01M3Z7N2Z72XPNDSRHA470ARGM"
 title = "frob check --ticket diffs two-dot against the base and flags ledger commits as SCOPE001"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
