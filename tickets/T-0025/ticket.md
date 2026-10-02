@@ -2,7 +2,7 @@
 id: T-0025
 title: 'Self-host switch: v2 frob.toml, import this repo''s v1 tickets, CI runs frob
   v2 check'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -26,8 +26,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0025
+branch: t-0025
 scope:
 - frob.toml
 - tickets/**
