@@ -11,7 +11,7 @@ created = "2026-10-02T21:06:24Z"
 updated = "2026-10-02T23:18:53Z"
 idempotency_key = "m2-dirconf"
 labels = ["milestone:2"]
-scope = ["crates/gob-directives/**", "crates/gob-macros/**", "docs/reference/**", "docs/schemas/**"]
+scope = ["crates/gob-directives/**", "crates/gob-macros/**", "docs/reference/**", "docs/schemas/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a frob:effects reads(X) writes(Y) directive, when scanned, then the record carries the parsed atom set and the directive page documents it"
