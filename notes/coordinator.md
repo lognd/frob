@@ -79,7 +79,35 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 5. Cargo.lock is an append-shared registry file (frob.toml
    `[tickets] registry_files`), exempt from leases.
 
+### v1 land quirks learned on T-0003 (apply to every land)
+
+- Run `frob ticket land T-#### --worktree ../frob-v2-wt/t-####` from the
+  primary root; the primary must be clean (no uncommitted files of any
+  other ticket's scope).
+- Deletions are matched against literal scope paths, not globs: a ticket
+  that deletes a file must list the exact path in its scope at filing
+  time (scope changes made later do not reach the worktree ledger copy).
+- The land merges experimental into the worktree before checking, and
+  its touched set is computed from the original fork point, so a branch
+  that has absorbed experimental merges counts everything merged in as
+  its own. If a land refuses on files the ticket never touched, rebase
+  the worktree branch onto experimental first (ticket.md conflicts: keep
+  both sides).
+- The land-time DOC006 check matches any finding whose message contains
+  a touched file name; config-pointer messages all contain "Cargo.toml",
+  so any DOC006 anywhere blocks any land touching Cargo.toml. Planned
+  paths and config tables in docs/notes carry inline
+  `<!-- frob:waive DOC006 reason="..." -->` on the line above. Ticket
+  bodies must not contain `[section.key]` TOML pointers.
+- A removed `frob:waive` comment in a deleted or rewritten v1 file must
+  be named in the done-report text (file:RULE) or the land refuses.
+
 ## Status log (newest first)
+
+- 2026-10-02 (later): docs/notes committed under T-0001 (fe510db);
+  T-0003 landed (fc3dd9e) after four v1 land refusals (see quirks
+  above); T-0026 filed for .github cleanup and .gitattributes; T-0004
+  and T-0007 worktrees created and implementers dispatched in parallel.
 
 - 2026-10-02: audit received (9 H / 36 M / 22 L); decisions D23-D37
   written in docs/design/README.md; fixer agent propagating them through
