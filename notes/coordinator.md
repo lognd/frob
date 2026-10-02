@@ -108,6 +108,15 @@ for history.
 - Two Claude Code crashes (one Bun bus error) happened while long
   background shells ran; keep shell steps short and in the foreground.
 
+### Evidence covers the whole workspace (decided 2026-10-04)
+
+The land gate runs `frob check`, not the test suite, and per-package
+evidence let a ticket land while other crates' tests were broken (the
+directive ticket left three frob-cli tests stale). Code tickets record
+evidence with `cargo nextest run --profile ci` over the WHOLE workspace;
+the coordinator runs the full suite on experimental after each land
+that touches shared crates.
+
 ### Format-bump lands (decided 2026-10-04 on G05)
 
 A ticket that changes an on-disk format the landing binary reads (for
