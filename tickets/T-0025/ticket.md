@@ -45,6 +45,7 @@ scope:
 - deny.toml
 - .cargo/**
 - .config/**
+- crates/frob-ack/tests/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: self-host switch imports every v1 ticket into the v2 ledger;
   tickets/** is the deliverable
@@ -103,6 +104,12 @@ scope_changes:
   glob: .config/**
   reason: T-0025 self-host switch must touch .config/** (directive/comment cleanup
     and v2 migration)
+  actor: logan
+  at: '2026-10-02'
+- op: add
+  glob: crates/frob-ack/tests/**
+  reason: T-0025 self-host switch must touch crates/frob-ack/tests/** (directive/comment
+    cleanup and v2 migration)
   actor: logan
   at: '2026-10-02'
 designated_repro_test: null
