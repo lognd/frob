@@ -2,13 +2,13 @@
 id = "01M3Z713J7EDZCJSM7NWKASW54"
 title = "G05: digest scheme, typed lock entries and ack planner in gob-lock"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T21:06:24Z"
+updated = "2026-10-02T22:30:33Z"
 idempotency_key = "m2-digests"
 labels = ["milestone:2"]
 scope = ["crates/gob-lock/**", "crates/frob-ack/**", "crates/gob-symbols/**", "frob.lock"]
