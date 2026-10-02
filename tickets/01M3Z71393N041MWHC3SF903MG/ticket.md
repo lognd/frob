@@ -8,10 +8,10 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T23:11:08Z"
+updated = "2026-10-02T23:18:53Z"
 idempotency_key = "m2-dirconf"
 labels = ["milestone:2"]
-scope = ["crates/gob-directives/**", "crates/gob-macros/**", "docs/reference/**"]
+scope = ["crates/gob-directives/**", "crates/gob-macros/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given a frob:effects reads(X) writes(Y) directive, when scanned, then the record carries the parsed atom set and the directive page documents it"
