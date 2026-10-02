@@ -707,6 +707,31 @@
       ],
       "type": "object"
     },
+    "PackRef": {
+      "additionalProperties": false,
+      "description": "Identity of one enabled data pack: name, version and pack digest (packs.md section 7).",
+      "properties": {
+        "digest": {
+          "description": "Pack digest of packs.md 2.5.",
+          "pattern": "^blake3:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "name": {
+          "description": "Pack id, `<namespace>/<name>`.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Semantic version of the pack.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "digest",
+        "name",
+        "version"
+      ],
+      "type": "object"
+    },
     "Range": {
       "additionalProperties": false,
       "description": "Half-open byte range inside the file named by the owning record.",
@@ -780,6 +805,14 @@
     },
     "SiblingDocument": {
       "additionalProperties": false,
+      "dependentRequired": {
+        "packs": [
+          "packs_digest"
+        ],
+        "packs_digest": [
+          "packs"
+        ]
+      },
       "description": "The data payload of `<product> check --json`.",
       "properties": {
         "bindings": {
@@ -865,6 +898,18 @@
         "invocation": {
           "$ref": "#/$defs/Invocation"
         },
+        "packs": {
+          "description": "Enabled data packs used by the run, sorted by name; omitted by products without packs (additive key).",
+          "items": {
+            "$ref": "#/$defs/PackRef"
+          },
+          "type": "array"
+        },
+        "packs_digest": {
+          "description": "blake3 of the canonical JSON of the `packs` array; present exactly when `packs` is.",
+          "pattern": "^blake3:[0-9a-f]{64}$",
+          "type": "string"
+        },
         "product": {
           "description": "Producing product.",
           "enum": [
@@ -885,7 +930,7 @@
           "type": "array"
         },
         "schema_version": {
-          "const": "grimble.sibling/1",
+          "const": "gob.sibling/1",
           "description": "Contract name and major.",
           "type": "string"
         },

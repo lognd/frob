@@ -32,7 +32,7 @@ This file fixes the document that carries all six, the version rule that
 keeps the two binaries honest with each other, and the gate behaviour
 when the document cannot be had. One document serves grimble and crunk:
 the contract is named after its first producer, both products emit the
-identical `schema_version` string `grimble.sibling/1` and distinguish
+identical `schema_version` string `gob.sibling/1` and distinguish
 themselves with `product`.
 
 ## 2. The invocation contract
@@ -88,7 +88,7 @@ grimble graph --json                       # the graph export, section 3.8
 ```
 
 The sibling document is the `data` payload. Its `schema_version` is the
-string `grimble.sibling/<major>`; the envelope's integer `schema_version`
+string `gob.sibling/<major>`; the envelope's integer `schema_version`
 keeps its own meaning (the envelope layout, `SCHEMA_VERSION` in
 gob-diagnostics). The two version numbers move independently. Field
 order within an object is not significant; producers print keys in the
@@ -100,7 +100,7 @@ property the conformance corpus pins).
 
 | Field | Type | Meaning |
 |---|---|---|
-| `schema_version` | string | `grimble.sibling/1`: the contract name and its integer major |
+| `schema_version` | string | `gob.sibling/1`: the contract name and its integer major |
 | `product` | `"grimble"` or `"crunk"` | the producing product; the namespace of fingerprints (section 5) |
 | `product_version` | string | semantic version of the producing binary, display and bug reports only; never a compatibility test |
 | `compute_digest` | string | `blake3:` plus 64 hex digits; the digest of the `compute` object (3.3) |
@@ -114,8 +114,16 @@ property the conformance corpus pins).
 | `entities` | array | model entities, 3.7 (empty for crunk) |
 | `bindings` | array | rows of B, 3.7 (empty for crunk) |
 | `timing` | object | `elapsed_ms`, wall time of the run |
+| `packs` | array, optional | the data packs the run used: one `{name, version, digest}` per enabled pack, sorted by `name` (packs.md section 7); `digest` is `blake3:` plus 64 hex digits, the pack digest of packs.md 2.5 |
+| `packs_digest` | string, optional | `blake3:` plus 64 hex digits, the digest of the canonical JSON of the `packs` array (packs.md section 7); the side-input digest of the rules that read the registry |
 
-No field is optional: a value that does not apply is `null`, an empty
+The two `packs` keys are the only optional keys and they are additive
+(section 4): a product with no pack mechanism (crunk) omits both, grimble
+emits both whenever `grimble.toml` exists (an empty `packs` array and the
+digest of `[]` when no pack is enabled), and they appear together or not
+at all. frob prints `packs` in `doctor` and never validates it; it is not
+part of `compute_digest` (packs.md section 7). Apart from those two,
+no field is optional: a value that does not apply is `null`, an empty
 list or `0` as the schema states, never absent. That is what makes "the
 `required` mark is missing" a schema failure rather than a default.
 
@@ -166,7 +174,7 @@ shared part has one definition. Every field is always present.
 | `severity` | `error`, `warning`, `advisory`, `unresolved` | the landed `severity_label` spellings; Warn prints as `warning` |
 | `polarity` | `P+`, `P-`, `P0`, `Pn`, `Pc` | the rule's declared polarity |
 | `subjects_examined` | integer | subjects the rule examined in the scope this finding rolls up (universal-model.md 4.2); zero only on a vacuous Unresolved |
-| `reason` | string or null | the Unresolved reason code, a kebab-case word: the conditions of binding.md 6.13 (`unseen-remainder`, `may-only-owner`, `fidelity`, `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable`, `vacuous`) and `annotation-required`; the codes frob itself uses for a missing sibling (section 6). Null unless `severity` is `unresolved`; the schema enforces both directions |
+| `reason` | string or null | the Unresolved reason code, a kebab-case word: the conditions of binding.md 6.13 (`unseen-remainder`, `may-only-owner`, `fidelity`, `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable`, `vacuous`), `annotation-required` and `pack-unavailable` (an enabled data pack could not be loaded, PACK006, packs.md section 9); the codes frob itself uses for a missing sibling (section 6). Null unless `severity` is `unresolved`; the schema enforces both directions |
 | `maybe` | array of strings | for an Unresolved on a P+ rule, the maybe-set `hi` minus `lo` as anchors or symrefs; empty otherwise |
 | `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`), verbatim; set only on an Unresolved finding. This is the mark of cli.md section 2; the key is mandatory even when null |
 | `file`, `line`, `column` | string or null, integer or null | the landed location: repository-relative path with `/` separators, 1-based line and column; null for a finding with only a logical location |
@@ -270,7 +278,7 @@ sibling.json and will move to docs/schemas/grimble-graph.json
 ## 4. Version negotiation
 
 - The contract version is the integer major in `schema_version`
-  (`grimble.sibling/1`). A change is additive when it only adds optional
+  (`gob.sibling/1`). A change is additive when it only adds optional
   keys; consumers ignore unknown keys (frob's serde types do not
   `deny_unknown_fields`) and the major does not move. Any removed or
   retyped key, any change of meaning, a new required key and any change
@@ -281,7 +289,7 @@ sibling.json and will move to docs/schemas/grimble-graph.json
   migration frob may accept `[1, 2]` for one release; the sibling prints
   only the major it implements, there is no downgrade negotiation and no
   `--schema-version` flag.
-- A document whose contract name is not `grimble.sibling`, whose major is
+- A document whose contract name is not `gob.sibling`, whose major is
   not accepted, or that does not parse at all, is incompatible. Frob does
   not try to read its findings.
 - Mismatch is a required Unresolved of kind `sibling_missing`
@@ -382,12 +390,13 @@ and `remedy` is always an exact command:
 | `timeout` | `[check] sibling_timeout_secs` elapsed; the child is killed | raise the knob or run the product alone |
 | `malformed` | stdout is not exactly one JSON document, or fails the schema, or exceeds the output cap | `grimble check --json | head` to inspect |
 
-These are all the `sibling_missing` case of cli.md section 2. That
-section names three triggers (not installed, another `schema_version`, a
-different `[compute]` digest); `failed`, `timeout` and `malformed` are the
-same hole by another door (a sibling that cannot be used is a sibling
-that did not run), so they carry the same mark. Rule SIB001 is
-registered in rules.md by G13 with the other frob-side rule ids.
+These are all the `sibling_missing` case of cli.md section 2, which
+(since ticket 01M3ZAABA0DY25WGBZ8KDJD9BA) names all five reasons as required: `failed`,
+`timeout` and `malformed` are the same hole as `absent` and
+`incompatible` by another door (a sibling that cannot be used is a
+sibling that did not run), so they carry the same mark. Rule SIB001 is
+registered in rules.md and boundaries.md 2.5 (family SIB, ids
+SIB001-SIB099, owner frob-check).
 
 The end-to-end consequence, which closes H3's failure scenario: a
 repository with `grimble.toml` whose CI image installs crates.io
@@ -452,11 +461,13 @@ consumer selector matches no file, and SYS006 as a required Unresolved
 because the contract flow has no acked ends and the rule is
 `must_measure`. One finding is suppressed: SYS001 (an unowned artifact)
 deferred to a ticket. The deferred ticket id is a placeholder ULID, and
-digests and fingerprints are illustrative.
+digests and fingerprints are illustrative, and the one `packs` entry
+is `grimble/core-effects` with a made-up pack digest (its `packs_digest`
+is the real blake3 of the canonical `packs` array).
 
 ```json
 {"verb":"check","already":false,"ok":true,"data":{
-  "schema_version":"grimble.sibling/1",
+  "schema_version":"gob.sibling/1",
   "product":"grimble",
   "product_version":"0.1.0",
   "compute_digest":"blake3:bfc07185ac7c28b2b19c162930e7e857b3f7943de75affc27c92a14ce55c44c2",
@@ -521,6 +532,8 @@ digests and fingerprints are illustrative.
      "anchor":"flow/f_sibling/producer[0]","reason":null},
     {"entity":"flow/f_sibling","role":"consumer","identity":null,"status":"unknown","rank":4,
      "anchor":"flow/f_sibling/consumer[0]","reason":"unseen-remainder"}],
+  "packs":[{"name":"grimble/core-effects","version":"1.0.0","digest":"blake3:5d1e0c7a5d1e0c7a5d1e0c7a5d1e0c7a5d1e0c7a5d1e0c7a5d1e0c7a5d1e0c7a"}],
+  "packs_digest":"blake3:dfd2f233ac5320191985f522cd0547c3ceedd005137dd51c90629c7fc555e7cd",
   "timing":{"elapsed_ms":212}},
  "findings":[],"warnings":[],"error":null,"schema_version":1}
 ```
@@ -540,7 +553,7 @@ its own rules; it is validated by the same schema:
 
 ```json
 {"verb":"check","already":false,"ok":true,"data":{
-  "schema_version":"grimble.sibling/1",
+  "schema_version":"gob.sibling/1",
   "product":"crunk",
   "product_version":"0.1.0",
   "compute_digest":"blake3:bfc07185ac7c28b2b19c162930e7e857b3f7943de75affc27c92a14ce55c44c2",
@@ -576,8 +589,15 @@ the stated reason: deleting `required` from a finding (missing required
 mark); `severity: "warning"` with `required` set (a mark on a
 non-Unresolved finding); `severity: "unresolved"` with `reason: null`;
 an `accept` exception carrying a `ticket`; a `ticket` with `exit_state:
-"evaluated"`; `schema_version: "grimble.sibling/2"`; an unknown key on a
-finding; a non-empty envelope `findings` array. The harness lives in the
+"evaluated"`; `schema_version: "gob.sibling/2"`; an unknown key on a
+finding; a non-empty envelope `findings` array; the retired name
+`grimble` plus `.sibling/1` as `schema_version` (the pre-rename contract
+name); an unknown field inside a `packs` entry (`source`). That is ten
+negative mutations, all of which fail. Two further checks cover the
+additive keys: deleting `packs_digest` while `packs` stays, and the
+reverse, both fail through `dependentRequired`; the grimble example
+carries both keys and the crunk example omits both, and both pass.
+The harness lives in the
 conformance corpus of G09 once it exists; until then the run above is the
 evidence.
 
@@ -604,10 +624,12 @@ evidence.
 
 ## 11. Open questions
 
-1. Contract name. `grimble.sibling/1` is fixed by this ticket's brief but
-   crunk emits it too. Should it be renamed `sibling/1` with the
-   `product` field alone distinguishing producers, before any consumer
-   exists? Renaming later is a major bump.
+1. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA (packs.md question 3): the contract is
+   `gob.sibling/1`. The first draft named it with a grimble prefix, but
+   crunk emits the same document and `product` already distinguishes
+   the producer; the product-neutral name was chosen before any consumer
+   exists, since renaming later is a major bump. `grimble.graph/1` keeps
+   its name because only grimble produces it.
 2. `FindingRecord` wire evolution. This file extends the finding with
    seven fields; the landed type has three of the needed ones missing
    and no `Deserialize`. Proposal: extend `FindingRecord` itself (the
@@ -615,14 +637,17 @@ evidence.
    additively) rather than introduce a second record. G09 decides; the
    alternative is a `SiblingFinding` type in `grimble-check` that wraps a
    `FindingRecord`.
-3. `SIB001` as one rule with a reason code versus five rule ids. One id
+3. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA: `SIB001` stays one rule with a reason code
+   (family SIB, owner frob-check, ids SIB001-SIB099 registered in
+   rules.md and boundaries.md 2.5), and cli.md section 2 now states that
+   all five `sibling_missing` reasons (`absent`, `incompatible`,
+   `failed`, `timeout`, `malformed`) are required Unresolved. One id
    keeps the registry small and matches "one finding per product"; five
    ids would let an `accept`-style exception address a cause, which
-   EXC016 forbids anyway, so one is proposed.
-4. `failed`, `timeout` and `malformed` are classified as required
-   `sibling_missing` although cli.md section 2 names only three
-   triggers. If the owner wants the list kept at three, `malformed`
-   folds into `incompatible` and `failed` and `timeout` into `absent`.
+   EXC016 forbids anyway.
+4. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA together with question 3: the five reasons
+   are the required list, so `failed`, `timeout` and `malformed` are not
+   folded into `absent` and `incompatible`; cli.md section 2 names them.
 5. Output cap for a sibling document on a very large model. The
    `gob-exec` cap of git-io.md is sized for tool output; the entities
    and bindings lists may need a larger per-sibling cap or a
@@ -646,6 +671,12 @@ evidence.
   fields.
 - architecture.md section 6 gains the `[check] sibling_timeout_secs`
   row.
-- README.md gains the index row and decision D67.
+- README.md gains the index row and decision D67; ticket 01M3ZAABA0DY25WGBZ8KDJD9BA adds D69
+  (rename, `packs` keys, `pack-unavailable`, SIB, PACK and MDL
+  registration).
+- Done by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA: the contract name is `gob.sibling/1`; section 3.2
+  gains the optional `packs` and `packs_digest` keys and section 3.5 the
+  `pack-unavailable` reason; sibling.json gains `PackRef` and the two
+  keys; cli.md section 2 lists the five required reasons.
 - The envelope's `findings` array is empty for a sibling run; the
   extension of `FindingRecord` is a G09 decision (question 2).

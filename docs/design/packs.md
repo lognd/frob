@@ -791,13 +791,15 @@ and the pack identity already has a better home.
 Contribution of packs to the contract, all additive (sibling-contract.md
 section 4: new optional keys do not move the major):
 
-- `packs`: an array of `{name, id, version, digest, source, locked}`
-  sorted by name, one per enabled pack: the identity of the registry the
-  run used and whether it equalled the lock (`locked: false` exactly
-  when PACK001 fired for that pack). frob prints it in `doctor` and
-  never validates it.
-- `packs_digest`: `blake3:` of the canonical JSON of the `packs` array
-  without `locked`. It is the SIDE-INPUT digest of D30 (architecture.md,
+- `packs`: an array of `{name, version, digest}` sorted by name, one per
+  enabled pack: the identity of the registry the run used (`name` is the
+  pack id of 3.1, `digest` the pack digest of 2.5). Whether the run
+  equalled the lock is not a key here; PACK001 findings carry it. frob
+  prints the array in `doctor` and never validates it. The schema is
+  `PackRef` in docs/schemas/sibling.json and the key is optional, present
+  together with `packs_digest` (done by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA).
+- `packs_digest`: `blake3:` plus the hex blake3 of the canonical JSON of
+  the `packs` array. It is the SIDE-INPUT digest of D30 (architecture.md,
   "findings are persisted per (file digest, rule id, rule version,
   side-input digest)") for every rule whose predicate reads the
   registry: CAP001 to CAP003, the NEAT effects rules, CI008 and CI009,
@@ -812,7 +814,7 @@ section 4: new optional keys do not move the major):
 
 The finding records for PACK rules use the standard `FindingRecord`
 (sibling-contract.md 3.5) with `reason` `pack-unavailable` for PACK006
-(a new code to add to the list of 3.5; section 12).
+(a code now listed in sibling-contract.md 3.5, added by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA).
 
 ## 8. The three built-in packs of milestone 2
 
@@ -1216,8 +1218,8 @@ one pack-level finding for the version, and nothing else changes until
    pins stay; `grimble packs update` rewrites the lock alone by default
    and the `version` and `digest` clauses of named `pack` entities only
    under `--write-model`; never as a side effect of another verb.
-3. Answer to sibling-contract.md open question 1 (rename
-   `grimble.sibling/1`): YES, rename to the product-neutral
+3. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA. Answer to sibling-contract.md open
+   question 1 (rename of the grimble-prefixed contract name): YES, rename to the product-neutral
    `gob.sibling/1`, before any consumer exists. Reasons: crunk emits the
    same document and `product` already distinguishes the producer, so a
    `grimble.` prefix leaks one product's name into the other's wire
@@ -1274,15 +1276,17 @@ one pack-level finding for the version, and nothing else changes until
 - architecture.md section 6 gains, for the implementation ticket:
   `[packs] enabled`, `[packs] lock`, `[[packs.external]]`, `[packs.severity]`
   and `[neat.effects.exclude]` rows (owner `grimble-capabilities`;
-  materialized: `enabled` and `lock`).
+  materialized: `enabled` and `lock`), plus the `grimble.packs.lock` row
+  of the storage table; added by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA.
 - grmb-spec.md: the `pack` entity's `ref` grammar is the id of 3.1;
   atoms and infer rule ids are `ident` segments (2.2 here). Examples in
   other files that write kebab-case ids in `attr infer` (binding.md 2.3
   writes `cargo.crate-owns-dir`) are illustrative.
-- sibling-contract.md: add `pack-unavailable` to the reason codes of 3.5,
-  add the optional `packs` and `packs_digest` keys of section 7 here to
-  3.2, and decide the rename of question 3 above (a G03 follow-up).
-- rules.md: register the PACK family (section 9) at implementation time.
+- sibling-contract.md: done by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA: `pack-unavailable` in the
+  reason codes of 3.5, the optional `packs` and `packs_digest` keys in
+  3.2, and the rename of question 3 above.
+- rules.md and boundaries.md 2.5: the PACK family (section 9, ids
+  PACK001-PACK099) is registered by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA.
 - notes: no registry YAML survives from v1 (notes/v1/strata.md section 8);
   v1's `frob registry` drift-lock has no direct successor beyond the
   generated rule registry of grimble-model.md section 6 and this lock.

@@ -290,7 +290,7 @@ grimble's behalf (D28).
 
 ### 9.5 The sibling contract and absence
 
-`grimble check --json` emits a versioned document (schema in
+`grimble check --json` emits a versioned document, `gob.sibling/1` (schema in
 docs/schemas/sibling.json, hand-written until the derive generates it)
 whose fields, version negotiation, merge rules and failure cases are
 defined once in sibling-contract.md; the `grimble.graph/1` export of 9.3

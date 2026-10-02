@@ -119,6 +119,7 @@ crate measures the fresh-process case.
 | design model | `design/*.grmb` (grimble) | yes |
 | invariants, decisions | `invariants/INV-*.md`, `docs/decisions/*.md` | yes |
 | config | `frob.toml`, `grimble.toml`, `crunk.toml` (one per product) | yes |
+| pack drift-lock | `grimble.packs.lock` (one per repository, written only by `grimble packs update`; packs.md section 4) | yes |
 | leases | `<common_dir>/frob/leases/<ulid>.toml` plus one `<common_dir>/frob/leases.lock`; single clone, shared by its worktrees | no |
 | local evidence artifacts | `.git/frob/artifacts/` (non-authoritative; a missing blob reads as Unmeasured) | no |
 | cache, index, telemetry | `.frob/` per worktree: `cache.sqlite` (gob-cache), `tickets.sqlite` (frob-ledger index, keyed by the tickets subtree id, not the whole tree) | no, delete-safe |
@@ -284,6 +285,11 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[telemetry] file` | frob.toml | no (logging only) | true | gob-log |
 | `[notify] webhook` (Milestone 2 or later (D36)) | frob.toml | no | unset | frob-serve |
 | `[grimble] strict`, `modeled`, `packs` | grimble.toml | yes, yes, no | false, empty, empty | grimble-check |
+| `[packs] enabled` | grimble.toml | yes | the three built-ins of packs.md 8 (`grimble/core-effects`, `grimble/ci-github`, `grimble/rust-ecosystem`); a pack not listed is off and a model naming it is MDL009 | grimble-capabilities |
+| `[packs] lock` | grimble.toml | yes | `"grimble.packs.lock"` (path of the drift-lock, one per repository; packs.md 3.6 and 4) | grimble-capabilities |
+| `[[packs.external]]` | grimble.toml | no | none (url plus digest per external pack, vendored; packs.md 3.4) | grimble-capabilities |
+| `[packs.severity]` | grimble.toml | no (only when it differs) | empty (repository override per atom and rule, wins over the pack; equal to the pack value is PACK008; packs.md 3.6 and 5) | grimble-capabilities |
+| `[neat.effects.exclude.<lang>]` | grimble.toml | no | empty (names removed from the effect vocabulary, each with a `because`; packs.md 3.6) | grimble-capabilities |
 | `[[policy]]`, `rules/*.grl.toml` (code) | grimble.toml and next to it | no | none | grimble-lints |
 | crunk tables | crunk.toml | per notes/crunk.md section 4 | per crunk | crunk crates |
 

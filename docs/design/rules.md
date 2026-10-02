@@ -126,6 +126,9 @@ scope and content.
 | NARR | comments | ticket narrative in comments (documentation.md section 4) |
 | CFG | config | a materialized knob is missing (architecture.md section 6) |
 | REG, DEC | registry | enforces-site present, decision implemented |
+| SIB | frob | sibling unavailable: SIB001 `sibling-unavailable` (sibling-contract.md section 6), one required Unresolved per configured product with a reason of `absent`, `incompatible`, `failed`, `timeout` or `malformed`; ids SIB001-SIB099; owner frob, crate frob-check |
+| PACK | grimble | data packs and the registry drift-lock: PACK001 lock mismatch, PACK002 unknown atom, PACK003 detector unavailable, PACK004 duplicate, PACK005 malformed pack, PACK006 pack unavailable, PACK007 unknown infer rule, PACK008 redundant override (packs.md section 9); ids PACK001-PACK099; owner grimble, crate grimble-capabilities |
+| MDL | grimble | .grmb well-formedness: MDL000 lexical and parse errors, MDL001-MDL017 (grmb-spec.md section 11 table: includes, headers, names, selectors, types, exceptions, V-model, atoms, duplicate clauses); ids MDL000-MDL099; owner grimble, crate grimble-model |
 | SYS, CAP | grimble | model binds, capability matrix, declared-plus-proven (one parametric rule, not 51) |
 | PM | frob | project-management discipline (pm-enforcement.md) |
 | SEC, PII, VET | code+deps | secrets, pii structural, dependency vetting |
