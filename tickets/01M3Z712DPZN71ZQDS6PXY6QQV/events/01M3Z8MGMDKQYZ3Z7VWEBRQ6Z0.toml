@@ -1,0 +1,95 @@
+kind = "evidence"
+at = "2026-10-02T21:34:29Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-ir"
+digest = "ad46ecbdc034a048f46ce6c8312dec7ffcf89384028da93cd607939c5f085dc5"
+status = "measured"
+captured_at = "2026-10-02T21:34:29Z"
+accepts = [1, 2]
+passed = true
+exit_code = 0
+inline = """
+    Blocking waiting for file lock on package cache
+   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/PXY6QQV/crates/gob-rules)
+   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/PXY6QQV/crates/gob-ir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.42s
+────────────
+ Nextest run ID d83e04a7-eacb-439f-bcf6-dfcb3cf4a59a with nextest profile: ci
+    Starting 71 tests across 6 binaries
+        PASS [   0.006s] ( 1/71) gob-ir::corpus notebook::notebook_locations_order_by_cell_then_range
+        PASS [   0.007s] ( 2/71) gob-ir::corpus markdown::link_by_anchor_resolves_must
+        PASS [   0.006s] ( 3/71) gob-ir::corpus notebook::group_carries_user_history_order
+        PASS [   0.007s] ( 4/71) gob-ir::corpus markdown::nested_section_edit_changes_ancestor_body_today
+        PASS [   0.007s] ( 5/71) gob-ir::corpus opaque::lexical_queries_read_the_opaque_payload
+        PASS [   0.006s] ( 6/71) gob-ir::corpus opaque::opaque_may_define_downgrades_must_to_may_and_unknown_stays_unknown
+        PASS [   0.008s] ( 7/71) gob-ir::corpus grid::opaque_indirect_reads_scope_lexically_and_payload_is_exact
+        PASS [   0.010s] ( 8/71) gob-ir::corpus grid::cell_symrefs_and_must_references
+        PASS [   0.011s] ( 9/71) gob-ir::corpus opaque::hole_makes_facets_unknown_and_binders_unknown
+        PASS [   0.008s] (10/71) gob-ir::corpus rustlike::identity_anchors_on_symref_with_body_as_content
+        PASS [   0.015s] (11/71) gob-ir::corpus markdown::sections_are_units_with_anchor_symrefs
+        PASS [   0.015s] (12/71) gob-ir::corpus notebook::cross_cell_use_is_may_never_must
+        PASS [   0.016s] (13/71) gob-ir::corpus grid::grid_locations_order_row_major_and_contain_only_themselves
+        PASS [   0.010s] (14/71) gob-ir::corpus rustlike::trivia_never_changes_a_digest
+        PASS [   0.010s] (15/71) gob-ir::corpus rustlike::units_and_symrefs_in_document_order
+        PASS [   0.011s] (16/71) gob-ir::corpus rustlike::contract_erases_names_but_sig_keeps_them
+        PASS [   0.013s] (17/71) gob-ir::corpus rustlike::attachments_and_facets
+        PASS [   0.013s] (18/71) gob-ir::corpus rustlike::resolution_is_must_for_lexical_and_unknown_for_external
+        PASS [   0.011s] (19/71) gob-ir::eval a_wholly_not_applicable_scope_emits_no_findings
+        PASS [   0.007s] (20/71) gob-ir::eval annotation_required_opaque_is_required_when_configured
+        PASS [   0.012s] (21/71) gob-ir::eval an_exact_answer_computed_through_poison_is_downgraded_to_unknown
+        PASS [   0.006s] (22/71) gob-ir::eval kleene_connectives
+        PASS [   0.007s] (23/71) gob-ir::eval malformed_programs_are_errors
+        PASS [   0.006s] (24/71) gob-ir::eval p_minus_fires_when_no_good_thing_and_is_clean_when_one_exists
+        PASS [   0.009s] (25/71) gob-ir::eval must_measure_makes_a_vacuous_rule_required
+        PASS [   0.009s] (26/71) gob-ir::eval p_minus_bounds_table
+        PASS [   0.006s] (27/71) gob-ir::eval p_plus_clean_when_no_offender_in_hi
+        PASS [   0.011s] (28/71) gob-ir::eval opaque_subject_reports_one_rolled_up_unresolved_with_the_reason_code
+        PASS [   0.010s] (29/71) gob-ir::eval p0_requires_exact_on_both_sides
+        PASS [   0.008s] (30/71) gob-ir::eval p_plus_bounds_table
+        PASS [   0.010s] (31/71) gob-ir::eval p_plus_fires_on_lo_and_certifies_clean_elsewhere
+        PASS [   0.009s] (32/71) gob-ir::eval pc_may_cycle_is_unresolved_but_a_must_cycle_elsewhere_still_fires
+        PASS [   0.027s] (33/71) gob-ir::corpus rustlike::free_variables_binders_and_occurrences
+        PASS [   0.007s] (34/71) gob-ir::eval pn_max_and_min_thresholds
+        PASS [   0.008s] (35/71) gob-ir::eval pc_reach_table
+        PASS [   0.011s] (36/71) gob-ir::eval pc_must_cycle_fires_and_acyclic_is_clean
+        PASS [   0.007s] (37/71) gob-ir::eval zero_subjects_is_vacuous_unresolved_never_clean
+        PASS [   0.013s] (38/71) gob-ir::eval p_plus_over_an_opaque_cone_is_unresolved_never_error_or_clean
+        PASS [   0.009s] (39/71) gob-ir::eval strata_derive_relations_read_by_later_strata_and_checks
+        PASS [   0.008s] (40/71) gob-ir::eval unknown_subject_set_is_unresolved
+        PASS [   0.015s] (41/71) gob-ir::eval relation_closure_is_a_kleene_least_fixpoint
+        PASS [   0.009s] (42/71) gob-ir::properties golden_digest_is_stable_across_runs
+        PASS [   0.008s] (43/71) gob-ir::queries builder_rejects_malformed_terms
+        PASS [   0.016s] (44/71) gob-ir::properties a_token_change_always_changes_the_body_digest
+        PASS [   0.009s] (45/71) gob-ir::queries location_queries
+        PASS [   0.011s] (46/71) gob-ir::queries by_digest_finds_units_with_equal_facets
+        PASS [   0.013s] (47/71) gob-ir::queries identity_delta_distinguishes_change_from_rename
+        PASS [   0.008s] (48/71) gob-ir::queries multi_part_units_are_one_identity_with_combined_facets
+        PASS [   0.010s] (49/71) gob-ir::queries packs_extend_vocabularies_through_inventory
+        PASS [   0.018s] (50/71) gob-ir::queries atom_registry_and_callee_vocabulary
+        PASS [   0.010s] (51/71) gob-ir::queries structure_queries
+        PASS [   0.011s] (52/71) gob-ir::queries occurrences_literals_and_free_variables_of_subterms
+        PASS [   0.010s] (53/71) gob-ir::queries symref_grammar_cases
+        PASS [   0.008s] (54/71) gob-ir::scope must_through_lexical_nesting
+        PASS [   0.011s] (55/71) gob-ir::scope multi_part_unit_is_one_declaration
+        PASS [   0.010s] (56/71) gob-ir::scope opaque_may_define_downgrades_only_the_names_it_covers
+        PASS [   0.011s] (57/71) gob-ir::scope nearer_may_declaration_does_not_shadow
+        PASS [   0.014s] (58/71) gob-ir::scope must_import_shadows_lexical_but_may_import_does_not
+        PASS [   0.020s] (59/71) gob-ir::scope may_edge_downgrades_a_found_declaration
+        PASS [   0.013s] (60/71) gob-ir::scope nearer_must_declaration_shadows
+        PASS [   0.007s] (61/71) gob-ir::scope opaque_reader_makes_declarations_possibly_used
+        PASS [   0.019s] (62/71) gob-ir::scope opaque_may_define_any_makes_undeclared_names_unknown_and_declared_ones_may
+        PASS [   0.010s] (63/71) gob-ir::scope status_is_ordered_and_meets_to_the_weaker
+        PASS [   0.010s] (64/71) gob-ir::scope undeclared_names_and_unknown_edges_are_unknown
+        PASS [   0.010s] (65/71) gob-ir::scope two_must_declarations_are_ambiguous_so_may
+        PASS [   0.011s] (66/71) gob-ir::scope unknown_status_declaration_is_unknown
+        PASS [   0.024s] (67/71) gob-ir::scope scope_cycles_terminate
+        PASS [   0.098s] (68/71) gob-ir::properties symref_display_parse_round_trip
+        PASS [   0.225s] (69/71) gob-ir::properties trivia_is_outside_every_facet_digest
+        PASS [   0.272s] (70/71) gob-ir::properties alpha_equivalent_terms_print_and_digest_identically
+        PASS [   0.279s] (71/71) gob-ir::properties building_twice_is_deterministic
+────────────
+     Summary [   0.314s] 71 tests run: 71 passed, 0 skipped
+"""
+size = 7043
