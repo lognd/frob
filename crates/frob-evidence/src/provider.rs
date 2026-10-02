@@ -1,0 +1,402 @@
+//! Evidence providers: `nextest`, `command` and `file`.
+//!
+//! Each provider turns one measurement into a [`Capture`] (or a hashed file),
+//! and [`build_record`] turns that into an [`EvidenceRecord`]: the transcript is
+//! redacted with `gob_log::redact`, hashed with blake3 and stored inline or in
+//! the blob store. Processes only ever run through `gob-exec` with a bounded
+//! timeout.
+
+use std::path::Path;
+use std::time::Duration;
+
+use frob_ledger::model::Stamp;
+use gob_exec::{Outcome, Program, Runner, Spec};
+
+use crate::error::{EvidenceError, Result};
+use crate::record::{EvidenceRecord, Provider, Status, digest_hex};
+use crate::store::{BlobStore, Stored};
+use crate::workspace::Workspace;
+
+/// What one measured process produced.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Capture {
+    /// The exit code when the process exited normally.
+    pub exit_code: Option<i32>,
+    /// True when the process exited 0 and no test failed.
+    pub passed: bool,
+    /// False when the process timed out or died on a signal (the run is unmeasured).
+    pub measured: bool,
+    /// Names of the tests that executed.
+    pub tests: Vec<String>,
+    /// The redacted transcript.
+    pub transcript: String,
+}
+
+/// Split `input` into arguments, honouring single and double quotes (no escapes, no shell).
+///
+/// # Errors
+///
+/// [`EvidenceError::BadReference`] for an unterminated quote.
+pub fn split_args(input: &str) -> Result<Vec<String>> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    let mut quote: Option<char> = None;
+    let mut started = false;
+    for ch in input.chars() {
+        match (quote, ch) {
+            (Some(q), c) if c == q => quote = None,
+            (Some(_), c) => cur.push(c),
+            (None, '\'' | '"') => {
+                quote = Some(ch);
+                started = true;
+            }
+            (None, c) if c.is_whitespace() => {
+                if started {
+                    out.push(std::mem::take(&mut cur));
+                    started = false;
+                }
+            }
+            (None, c) => {
+                cur.push(c);
+                started = true;
+            }
+        }
+    }
+    if quote.is_some() {
+        return Err(EvidenceError::BadReference(format!(
+            "unterminated quote in `{input}`"
+        )));
+    }
+    if started {
+        out.push(cur);
+    }
+    Ok(out)
+}
+
+/// The test names in nextest's libtest-json lines (`ok` and `failed` events), plus whether any failed.
+pub fn parse_libtest_json(stdout: &str) -> (Vec<String>, bool) {
+    let mut names = Vec::new();
+    let mut failed = false;
+    for line in stdout.lines().map(str::trim).filter(|l| l.starts_with('{')) {
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
+            continue;
+        };
+        if v.get("type").and_then(|t| t.as_str()) != Some("test") {
+            continue;
+        }
+        let event = v.get("event").and_then(|e| e.as_str()).unwrap_or_default();
+        if !matches!(event, "ok" | "failed") {
+            continue;
+        }
+        failed |= event == "failed";
+        if let Some(name) = v.get("name").and_then(|n| n.as_str()) {
+            // nextest names are `<binary id>$<test path>`; keep the test path.
+            let name = name.rsplit_once('$').map_or(name, |(_, t)| t);
+            if !names.iter().any(|n| n == name) {
+                names.push(name.to_owned());
+            }
+        }
+    }
+    (names, failed)
+}
+
+/// The test names in nextest's human `PASS`/`FAIL` lines, plus whether any failed.
+///
+/// Used when libtest-json is unavailable or printed no test events.
+pub fn parse_human(transcript: &str) -> (Vec<String>, bool) {
+    let mut names = Vec::new();
+    let mut failed = false;
+    for line in transcript.lines().map(str::trim) {
+        let verdict = if line.starts_with("PASS ") {
+            false
+        } else if line.starts_with("FAIL ") {
+            true
+        } else {
+            continue;
+        };
+        let Some((_, after)) = line.split_once(']') else {
+            continue;
+        };
+        failed |= verdict;
+        if let Some(name) = after.split_whitespace().last()
+            && !names.iter().any(|n| n == name)
+        {
+            names.push(name.to_owned());
+        }
+    }
+    (names, failed)
+}
+
+fn spec(program: Program, args: Vec<String>, cwd: &Path, timeout: Duration) -> Spec {
+    Spec {
+        program,
+        args,
+        cwd: Some(cwd.to_path_buf()),
+        env: Vec::new(),
+        timeout,
+        capture: true,
+    }
+}
+
+fn exit_of(status: Outcome) -> (Option<i32>, bool) {
+    match status {
+        Outcome::Exited(c) => (Some(c), true),
+        Outcome::Signaled | Outcome::TimedOut => (None, false),
+    }
+}
+
+/// Run `cargo nextest run [--profile <profile>] <filter_args>` in `cwd` and capture the verdict and executed tests.
+///
+/// An empty `profile` passes no `--profile`.
+///
+/// First tries `--message-format libtest-json`; if nextest rejects it (older
+/// versions) or prints no events, the human `PASS`/`FAIL` lines are parsed.
+///
+/// # Errors
+///
+/// [`EvidenceError::Exec`] when cargo cannot be started.
+pub fn run_nextest(
+    runner: &Runner,
+    cwd: &Path,
+    filter_args: &[String],
+    profile: &str,
+    timeout: Duration,
+) -> Result<Capture> {
+    let mut args = vec!["nextest".to_owned(), "run".to_owned()];
+    if !profile.is_empty() {
+        args.extend(["--profile".to_owned(), profile.to_owned()]);
+    }
+    args.extend(filter_args.iter().cloned());
+    let mut json_args = args.clone();
+    json_args.extend(["--message-format".to_owned(), "libtest-json".to_owned()]);
+    let mut json_spec = spec(Program::Cargo, json_args, cwd, timeout);
+    json_spec.env = vec![(
+        "NEXTEST_EXPERIMENTAL_LIBTEST_JSON".to_owned(),
+        "1".to_owned(),
+    )];
+    let mut out = runner.run(&json_spec)?;
+    let (mut tests, mut failed) = parse_libtest_json(&out.stdout);
+    let mut json = !tests.is_empty();
+    if !json
+        && matches!(out.status, Outcome::Exited(c) if c != 0)
+        && (out.stderr.contains("libtest-json") || out.stderr.contains("message-format"))
+    {
+        tracing::info!("nextest rejected libtest-json; retrying with the human reporter");
+        out = runner.run(&spec(Program::Cargo, args, cwd, timeout))?;
+        json = false;
+    }
+    let mut transcript = out.stderr.clone();
+    if !json {
+        (tests, failed) = parse_human(&out.stderr);
+        if tests.is_empty() {
+            (tests, failed) = parse_human(&out.stdout);
+        }
+        if !out.stdout.trim().is_empty() {
+            transcript.push_str(&out.stdout);
+        }
+    }
+    let (exit_code, measured) = exit_of(out.status);
+    let passed = exit_code == Some(0) && !failed;
+    tracing::info!(
+        ?exit_code,
+        passed,
+        tests = tests.len(),
+        json,
+        "nextest captured"
+    );
+    Ok(Capture {
+        exit_code,
+        passed,
+        measured,
+        tests,
+        transcript,
+    })
+}
+
+/// Run an allowlisted tool (`argv[0]` must be in `allowed`) and capture exit code and transcript.
+///
+/// # Errors
+///
+/// [`EvidenceError::BadReference`] for an empty command, [`EvidenceError::ToolNotAllowed`]
+/// for a tool outside the allowlist, [`EvidenceError::Exec`] when it cannot start.
+pub fn run_command(
+    runner: &Runner,
+    allowed: &[String],
+    cwd: &Path,
+    argv: &[String],
+    timeout: Duration,
+) -> Result<Capture> {
+    let (tool, rest) = argv
+        .split_first()
+        .ok_or_else(|| EvidenceError::BadReference("empty command".to_owned()))?;
+    if !allowed.iter().any(|a| a == tool) {
+        tracing::warn!(tool, "command evidence refused: tool not allowlisted");
+        return Err(EvidenceError::ToolNotAllowed { tool: tool.clone() });
+    }
+    let program = match tool.as_str() {
+        "cargo" => Program::Cargo,
+        "git" => Program::Git,
+        name => Program::Tool {
+            name: name.to_owned(),
+        },
+    };
+    let out = runner.run(&spec(program, rest.to_vec(), cwd, timeout))?;
+    let (exit_code, measured) = exit_of(out.status);
+    let mut transcript = out.stdout;
+    transcript.push_str(&out.stderr);
+    Ok(Capture {
+        exit_code,
+        passed: exit_code == Some(0),
+        measured,
+        tests: Vec::new(),
+        transcript,
+    })
+}
+
+/// Turn a capture into a record: redact, hash, store inline or by URI.
+///
+/// # Errors
+///
+/// [`EvidenceError::Io`] when the blob store cannot be written.
+pub fn build_record(
+    store: &BlobStore,
+    provider: Provider,
+    reference: &str,
+    capture: &Capture,
+    accepts: &[usize],
+) -> Result<EvidenceRecord> {
+    let redacted = gob_log::redact(&capture.transcript).into_owned();
+    let digest = digest_hex(redacted.as_bytes());
+    let (uri, inline) = match store.put(&redacted)? {
+        Stored::Inline(t) => (None, Some(t)),
+        Stored::Uri(u) => (Some(u), None),
+    };
+    Ok(EvidenceRecord {
+        provider,
+        reference: reference.to_owned(),
+        digest,
+        uri,
+        status: if capture.measured {
+            Status::Measured
+        } else {
+            Status::Unmeasured
+        },
+        captured_at: Stamp::now(),
+        accepts: accepts.to_vec(),
+        passed: capture.measured.then_some(capture.passed),
+        exit_code: capture.exit_code,
+        tests: capture.tests.clone(),
+        inline,
+        size: redacted.len() as u64,
+    })
+}
+
+/// Hash the file at `path` (relative to `root`) as a `file` record.
+///
+/// # Errors
+///
+/// [`EvidenceError::Io`] when the file cannot be read.
+pub fn hash_file(root: &Path, path: &str, accepts: &[usize]) -> Result<EvidenceRecord> {
+    let full = root.join(path);
+    let bytes = std::fs::read(&full).map_err(|e| EvidenceError::io(&full, e))?;
+    tracing::info!(path, bytes = bytes.len(), "file evidence hashed");
+    Ok(EvidenceRecord {
+        provider: Provider::File,
+        reference: path.to_owned(),
+        digest: digest_hex(&bytes),
+        uri: None,
+        status: Status::Measured,
+        captured_at: Stamp::now(),
+        accepts: accepts.to_vec(),
+        passed: None,
+        exit_code: None,
+        tests: Vec::new(),
+        inline: None,
+        size: bytes.len() as u64,
+    })
+}
+
+/// Run the provider named by `provider` for `reference` and return its record.
+///
+/// `reference` is the nextest filter args, the command line or the file path.
+///
+/// # Errors
+///
+/// Whatever the provider returns: allowlist, spawn, I/O or store failures.
+pub fn capture(
+    ws: &Workspace,
+    provider: Provider,
+    reference: &str,
+    accepts: &[usize],
+) -> Result<EvidenceRecord> {
+    tracing::info!(
+        provider = provider.as_str(),
+        reference,
+        "capturing evidence"
+    );
+    match provider {
+        Provider::File => hash_file(&ws.root, reference, accepts),
+        Provider::Nextest => {
+            let args = split_args(reference)?;
+            let cap = run_nextest(
+                &ws.runner(),
+                &ws.root,
+                &args,
+                &ws.evidence.nextest_profile,
+                ws.timeout(),
+            )?;
+            build_record(&ws.store, provider, reference, &cap, accepts)
+        }
+        Provider::Command => {
+            let argv = split_args(reference)?;
+            let cap = run_command(
+                &ws.runner(),
+                &ws.evidence.allowed_tools,
+                &ws.root,
+                &argv,
+                ws.timeout(),
+            )?;
+            build_record(&ws.store, provider, reference, &cap, accepts)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn split_args_honours_quotes() {
+        let got = split_args(r#"-p frob-ledger -E 'test(=a) | test(=b)' "x y""#).unwrap();
+        assert_eq!(
+            got,
+            ["-p", "frob-ledger", "-E", "test(=a) | test(=b)", "x y"]
+        );
+        assert!(split_args("a 'b").is_err());
+        assert!(split_args("   ").unwrap().is_empty());
+        assert_eq!(split_args("a '' b").unwrap(), ["a", "", "b"]);
+    }
+
+    #[test]
+    fn libtest_json_events_become_names() {
+        let out = concat!(
+            "{\"type\":\"suite\",\"event\":\"started\",\"test_count\":2}\n",
+            "{\"type\":\"test\",\"event\":\"started\",\"name\":\"c::bin/c$tests::a\"}\n",
+            "{\"type\":\"test\",\"event\":\"ok\",\"name\":\"c::bin/c$tests::a\"}\n",
+            "{\"type\":\"test\",\"event\":\"failed\",\"name\":\"c::bin/c$tests::b\"}\n",
+            "not json\n",
+        );
+        let (names, failed) = parse_libtest_json(out);
+        assert_eq!(names, ["tests::a", "tests::b"]);
+        assert!(failed);
+    }
+
+    #[test]
+    fn human_lines_become_names() {
+        let out = "        PASS [   0.004s] frob-tests tests::one\n        FAIL [   0.004s] frob-tests tests::two\n     Summary [   0.01s] 2 tests run: 1 passed, 1 failed\n";
+        let (names, failed) = parse_human(out);
+        assert_eq!(names, ["tests::one", "tests::two"]);
+        assert!(failed);
+        assert_eq!(parse_human("nothing here"), (Vec::new(), false));
+    }
+}

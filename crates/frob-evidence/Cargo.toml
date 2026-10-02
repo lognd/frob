@@ -1,0 +1,31 @@
+[package]
+name = "frob-evidence"
+version = "0.0.0"
+description = "Evidence providers, the dir: blob store, evidence events and the close guard for frob tickets."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+blake3 = "1"
+frob-ledger = { path = "../frob-ledger" }
+gob-cli = { path = "../gob-cli" }
+gob-config = { path = "../gob-config" }
+gob-exec = { path = "../gob-exec" }
+gob-git = { path = "../gob-git" }
+gob-log = { path = "../gob-log" }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+toml = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

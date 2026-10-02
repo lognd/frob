@@ -2,7 +2,7 @@
 id: T-0020
 title: 'frob-evidence + frob-tests: evidence providers, dir store, touched-set test
   selection'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -28,8 +28,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0020
+branch: t-0020
 scope:
 - crates/frob-evidence/**
 - crates/frob-tests/**
@@ -43,14 +43,18 @@ scope_changes:
   reason: verb wiring moves to T-0030 so the three crates run in parallel
   actor: logan
   at: '2026-10-02'
+evidence:
+- cmd:cargo nextest run --profile ci -p frob-evidence -p frob-tests exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a worktree where one function changed, when frob test --base main runs,
     then only tests reaching that function run and an evidence event is appended
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-evidence -p frob-tests exit=0 sha256=e3b0c44298fc
 - text: Given a ticket of a code-changing type with no measured evidence, when close
     runs, then exit is 3 with the remedy naming frob test
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-evidence -p frob-tests exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-evidence
 anchor: false

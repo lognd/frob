@@ -1,0 +1,278 @@
+//! Selection, dry-run and a real nextest run against a tiny two-crate cargo workspace.
+
+use std::path::Path;
+use std::time::Duration;
+
+use frob_evidence::events;
+use frob_evidence::guard::EvidenceGuard;
+use frob_ledger::model::{Outcome, TicketType};
+use frob_ledger::ops::NewTicket;
+use frob_ledger::{Ledger, LedgerConfig};
+use frob_tests::{TestTarget, build_repo_graph, select_tests, touched_set};
+use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
+use gob_git::Repo;
+
+fn git(dir: &Path, args: &[&str]) -> String {
+    let spec = Spec {
+        program: Program::Git,
+        args: args.iter().map(|a| (*a).to_owned()).collect(),
+        cwd: Some(dir.to_path_buf()),
+        env: Vec::new(),
+        timeout: Duration::from_secs(30),
+        capture: true,
+    };
+    let out = Runner::new(Limits { jobs: 1 }).run(&spec).expect("git");
+    assert_eq!(
+        out.status,
+        ExecOutcome::Exited(0),
+        "git {args:?}: {}",
+        out.stderr
+    );
+    out.stdout.trim().to_owned()
+}
+
+fn write(root: &Path, rel: &str, text: &str) {
+    let path = root.join(rel);
+    std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+    std::fs::write(path, text).expect("write");
+}
+
+const ALPHA: &str = r"pub fn double(x: i32) -> i32 {
+    x * 2
+}
+
+pub fn triple(x: i32) -> i32 {
+    x * 3
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn doubles() {
+        assert_eq!(double(2), 4);
+    }
+
+    #[test]
+    fn triples() {
+        assert_eq!(triple(2), 6);
+    }
+}
+";
+
+const BETA: &str = r"pub fn quad(x: i32) -> i32 {
+    alpha::double(alpha::double(x))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn quads() {
+        assert_eq!(quad(1), 4);
+    }
+
+    #[test]
+    fn unrelated() {
+        assert!(true);
+    }
+}
+";
+
+const BETA_IT: &str = r"#[test]
+fn integration_quad() {
+    assert_eq!(beta::quad(2), 8);
+}
+";
+
+/// Two crates (`beta` depends on `alpha`), committed on `main`; returns the dir and the base commit.
+fn fixture() -> (tempfile::TempDir, String) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let p = dir.path();
+    git(p, &["init", "-q"]);
+    git(p, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+    git(p, &["config", "user.name", "Test User"]);
+    git(p, &["config", "user.email", "test@example.com"]);
+    git(p, &["config", "core.autocrlf", "false"]);
+    write(p, ".gitignore", "target/\n");
+    write(
+        p,
+        "Cargo.toml",
+        "[workspace]\nmembers = [\"alpha\", \"beta\"]\nresolver = \"2\"\n",
+    );
+    write(
+        p,
+        "alpha/Cargo.toml",
+        "[package]\nname = \"alpha\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    );
+    write(p, "alpha/src/lib.rs", ALPHA);
+    write(
+        p,
+        "beta/Cargo.toml",
+        "[package]\nname = \"beta\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\nalpha = { path = \"../alpha\" }\n",
+    );
+    write(p, "beta/src/lib.rs", BETA);
+    write(p, "beta/tests/it.rs", BETA_IT);
+    git(p, &["add", "-A"]);
+    git(p, &["commit", "-q", "-m", "base"]);
+    let base = git(p, &["rev-parse", "HEAD"]);
+    (dir, base)
+}
+
+fn change_double(root: &Path) {
+    write(root, "alpha/src/lib.rs", &ALPHA.replace("x * 2", "x + x"));
+}
+
+fn names(selected: &[TestTarget]) -> Vec<String> {
+    selected
+        .iter()
+        .map(|t| format!("{} {}", t.package, t.test_path))
+        .collect()
+}
+
+#[test]
+fn only_tests_reaching_the_changed_function_are_selected() {
+    let (dir, base) = fixture();
+    change_double(dir.path());
+    let repo = Repo::discover(dir.path()).expect("repo");
+    let graph = build_repo_graph(dir.path()).expect("graph");
+    let touched = touched_set(&repo, &graph, &base).expect("touched");
+    assert_eq!(touched.files, ["alpha/src/lib.rs"]);
+    let symbols: Vec<String> = touched.symbols.iter().map(ToString::to_string).collect();
+    assert_eq!(
+        symbols,
+        ["alpha/src/lib.rs::double"],
+        "only `double` changed"
+    );
+    let selected = select_tests(dir.path(), &graph, &touched);
+    assert_eq!(
+        names(&selected),
+        [
+            "alpha tests::doubles",
+            "beta integration_quad",
+            "beta tests::quads"
+        ],
+        "triples and unrelated must not be selected"
+    );
+}
+
+#[test]
+fn an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests() {
+    let (dir, base) = fixture();
+    let repo = Repo::discover(dir.path()).expect("repo");
+    let graph = build_repo_graph(dir.path()).expect("graph");
+    let touched = touched_set(&repo, &graph, &base).expect("touched");
+    assert!(touched.files.is_empty());
+    assert!(select_tests(dir.path(), &graph, &touched).is_empty());
+
+    write(
+        dir.path(),
+        "beta/tests/it.rs",
+        &format!("{BETA_IT}\n// touched\n"),
+    );
+    let graph = build_repo_graph(dir.path()).expect("graph");
+    let touched = touched_set(&repo, &graph, &base).expect("touched");
+    assert_eq!(
+        names(&select_tests(dir.path(), &graph, &touched)),
+        ["beta integration_quad"]
+    );
+}
+
+fn cli() -> gob_cli::Cli {
+    frob_tests::register(frob_evidence::register(gob_cli::Cli::new("frob", "0.0.0")))
+}
+
+#[test]
+fn dry_run_prints_the_selection_and_runs_nothing() {
+    let (dir, base) = fixture();
+    change_double(dir.path());
+    let (code, out, err) = gob_cli::run_for_test(
+        &cli(),
+        &["--text", "test", "--base", &base, "--dry-run"],
+        dir.path(),
+    );
+    assert_eq!(code, 0, "{out}{err}");
+    for line in [
+        "alpha tests::doubles",
+        "beta tests::quads",
+        "beta integration_quad",
+    ] {
+        assert!(out.contains(&format!("- {line}")), "missing {line}:\n{out}");
+    }
+    assert!(
+        !out.contains("tests::triples") && !out.contains("unrelated"),
+        "{out}"
+    );
+    assert!(out.contains("ran: false"), "{out}");
+    assert!(
+        !dir.path().join("target").exists(),
+        "dry run must not build"
+    );
+}
+
+#[test]
+fn test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree() {
+    let (dir, base) = fixture();
+    let p = dir.path();
+    let ledger = Ledger::open(Repo::discover(p).expect("repo"), LedgerConfig::default());
+    let mut req = NewTicket::new("Speed up double", TicketType::Task);
+    req.acceptance = vec!["double is fast".into()];
+    let applied = ledger.new_ticket(req).expect("ticket");
+    let id = applied.ticket.front.id;
+    // A lease file shaped like frob-lease's: `ticket` and `holder.worktree`.
+    let leases = p.join(".git/frob/leases");
+    std::fs::create_dir_all(&leases).expect("leases dir");
+    std::fs::write(
+        leases.join("lease.toml"),
+        format!(
+            "ticket = \"{id}\"\n\n[holder]\nworktree = \"{}\"\n",
+            p.display()
+        ),
+    )
+    .expect("lease");
+    // The outer `cargo nextest run --profile ci` leaks NEXTEST_PROFILE into the child, and
+    // the fixture has no such profile, so pin the profile through the config knob.
+    write(
+        p,
+        "frob.toml",
+        "[evidence]\nnextest_profile = \"default\"\n",
+    );
+    change_double(p);
+
+    let cli = cli();
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["--json", "test", "--base", &base], p);
+    assert_eq!(code, 0, "{out}{err}");
+    let v: serde_json::Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(v["data"]["passed"], true, "{out}");
+    let executed: Vec<&str> = v["data"]["executed"]
+        .as_array()
+        .expect("executed")
+        .iter()
+        .filter_map(|n| n.as_str())
+        .collect();
+    assert!(executed.contains(&"tests::doubles"), "{executed:?}");
+    assert!(executed.contains(&"tests::quads"), "{executed:?}");
+    assert!(executed.contains(&"integration_quad"), "{executed:?}");
+    assert!(!executed.contains(&"tests::triples"), "{executed:?}");
+    assert!(!executed.contains(&"tests::unrelated"), "{executed:?}");
+    assert!(v["data"]["evidence"]["event"].is_string(), "{out}");
+
+    let stored = events::list(&ledger, id).expect("evidence");
+    assert_eq!(stored.len(), 1);
+    assert_eq!(stored[0].record.passed, Some(true));
+    assert!(
+        stored[0]
+            .record
+            .tests
+            .contains(&"tests::doubles".to_owned())
+    );
+
+    // The recorded run now satisfies the close guard.
+    let store = frob_evidence::Workspace::open(p).expect("ws").store;
+    let guard = EvidenceGuard::for_ticket(&ledger, &store, id).expect("guard");
+    ledger
+        .close(id, Some(Outcome::Done), None, &[&guard])
+        .expect("close with measured evidence");
+}

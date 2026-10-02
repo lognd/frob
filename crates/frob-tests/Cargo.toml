@@ -1,0 +1,35 @@
+[package]
+name = "frob-tests"
+version = "0.0.0"
+description = "Touched-set test selection, nextest runs, evidence capture and the TEST001 rule for frob."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+frob-evidence = { path = "../frob-evidence" }
+frob-ledger = { path = "../frob-ledger" }
+gob-cache = { path = "../gob-cache" }
+gob-cli = { path = "../gob-cli" }
+gob-directives = { path = "../gob-directives" }
+gob-exec = { path = "../gob-exec" }
+gob-git = { path = "../gob-git" }
+gob-rules = { path = "../gob-rules" }
+gob-symbols = { path = "../gob-symbols" }
+gob-walk = { path = "../gob-walk" }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+toml = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+gob-languages = { path = "../gob-languages" }
+serde_json = "1"
+tempfile = "3"
+
+[lints]
+workspace = true
