@@ -1,5 +1,5 @@
 ---
-id: T-draft-153875eb
+id: T-0023
 title: 'frob-check: orchestration, --ticket scoping, --fix tier A, persisted findings,
   timing budget'
 state: queued
