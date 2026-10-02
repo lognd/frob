@@ -6,7 +6,7 @@ use std::path::Path;
 use gob_dev::{Kind, Mode, apply, generate, workspace_root};
 
 fn crates_dir() -> std::path::PathBuf {
-    workspace_root().join("crates")
+    workspace_root().expect("workspace root").join("crates")
 }
 
 fn tree(root: &Path) -> Vec<(String, String)> {
@@ -80,7 +80,9 @@ fn every_rule_has_a_page_and_every_page_a_rule() {
 
 #[test]
 fn committed_pages_have_no_orphans_on_disk() {
-    let dir = workspace_root().join("docs/reference/rules");
+    let dir = workspace_root()
+        .expect("workspace root")
+        .join("docs/reference/rules");
     let rules: BTreeSet<String> = gob_rules::Registry::global()
         .iter()
         .map(|m| format!("{}.md", m.id))
