@@ -2,7 +2,8 @@
 id = "01M3ZBRRMQ55G1B8VCNKDR4ZBR"
 title = "Changing a ticket's scope does not refresh the holder's lease"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
