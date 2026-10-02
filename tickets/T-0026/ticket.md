@@ -1,5 +1,5 @@
 ---
-id: T-draft-821c201a
+id: T-0026
 title: 'Repo hygiene: remove v1 GitHub templates and release workflow, add .gitattributes'
 state: queued
 kind: feature
