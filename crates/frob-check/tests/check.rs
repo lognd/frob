@@ -661,3 +661,64 @@ fn uncommitted_out_of_scope_edits_still_fire_scope001() {
     assert_eq!(hits.len(), 1, "{hits:?}");
     assert!(hits[0].contains("src/d/lib.rs"), "{hits:?}");
 }
+
+/// Unresolved findings of `report` as (rule, reason) pairs.
+fn zero_subject_rules(report: &frob_check::CheckReport) -> Vec<String> {
+    report
+        .findings
+        .iter()
+        .filter(|f| f.required.is_some())
+        .map(|f| f.rule.to_string())
+        .collect()
+}
+
+// frob:tests crates/frob-check/src/product.rs::applicable
+#[test]
+fn a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_does_not() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "README.md", "# Plain\n");
+    let silent = run(dir.path(), &quiet()).expect("unconfigured");
+    assert!(
+        zero_subject_rules(&silent).is_empty(),
+        "no ledger expected, none missed"
+    );
+    assert_eq!(silent.exit_code(), ExitCode::Ok);
+
+    write(dir.path(), "frob.toml", "[tickets]\n");
+    let configured = run(dir.path(), &quiet()).expect("configured");
+    let mut rules = zero_subject_rules(&configured);
+    rules.sort();
+    assert_eq!(rules, ["REF001", "TODO002"]);
+    assert_eq!(configured.exit_code(), ExitCode::Negative);
+    assert_eq!(
+        configured.required.get(&configured.findings[0]),
+        Some(&RequiredReason::ZeroSubjects {
+            rule: configured.findings[0].rule.to_string()
+        })
+    );
+}
+
+// frob:tests crates/frob-check/src/product.rs::applicable
+#[test]
+fn cov001_measures_only_where_a_test_capable_language_is_present() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "//! Only data.\npub const X: u8 = 1;\n",
+    );
+    let rust = run(dir.path(), &quiet()).expect("rust without functions");
+    assert_eq!(
+        zero_subject_rules(&rust),
+        ["COV001"],
+        "a Rust graph with no functions is vacuous"
+    );
+
+    let docs = tempfile::tempdir().expect("tempdir");
+    write(docs.path(), "README.md", "# Docs only\n");
+    let md = run(docs.path(), &quiet()).expect("markdown only");
+    assert!(
+        zero_subject_rules(&md).is_empty(),
+        "no test capability, no required silence"
+    );
+}

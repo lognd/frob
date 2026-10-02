@@ -19,6 +19,8 @@ use gob_rules::Rule;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pminus,
+    must_measure = true,
     version = 1
 )]
 pub struct Cov001;
@@ -38,6 +40,7 @@ pub struct Cov001;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pminus,
     version = 1
 )]
 pub struct Cov003;
@@ -58,6 +61,7 @@ pub struct Cov003;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Todo001;
@@ -76,6 +80,8 @@ pub struct Todo001;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
+    must_measure = true,
     version = 1
 )]
 pub struct Todo002;
@@ -95,6 +101,7 @@ pub struct Todo002;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pminus,
     version = 1
 )]
 pub struct Doc001;
@@ -115,6 +122,7 @@ pub struct Doc001;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Doc002;
@@ -133,6 +141,8 @@ pub struct Doc002;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
+    must_measure = true,
     version = 1
 )]
 pub struct Ref001;
@@ -152,6 +162,7 @@ pub struct Ref001;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pminus,
     version = 1
 )]
 pub struct Inv001;
@@ -172,6 +183,7 @@ pub struct Inv001;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Inv002;
@@ -191,6 +203,7 @@ pub struct Inv002;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Exc001;
@@ -210,6 +223,7 @@ pub struct Exc001;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Exc003;
@@ -229,6 +243,7 @@ pub struct Exc003;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Exc005;
@@ -246,6 +261,7 @@ pub struct Exc005;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Exc007;

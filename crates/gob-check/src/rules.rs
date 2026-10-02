@@ -16,6 +16,7 @@ use gob_rules::Rule;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Proc001;
@@ -34,6 +35,7 @@ pub struct Proc001;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Tool001;
@@ -53,6 +55,7 @@ pub struct Tool001;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Perf001;
@@ -71,6 +74,7 @@ pub struct Perf001;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Ci001;
@@ -89,6 +93,7 @@ pub struct Ci001;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Ci003;
@@ -107,6 +112,7 @@ pub struct Ci003;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Ci006;
@@ -125,6 +131,7 @@ pub struct Ci006;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Ci007;
@@ -143,6 +150,7 @@ pub struct Ci007;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Ci010;
@@ -161,6 +169,7 @@ pub struct Ci010;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Ci014;
@@ -179,6 +188,7 @@ pub struct Ci014;
     tier = Universal,
     scope = File,
     fix = Manual,
+    polarity = Pplus,
     version = 1
 )]
 pub struct Tool002;
