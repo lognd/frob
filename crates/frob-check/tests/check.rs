@@ -571,3 +571,93 @@ fn an_annotation_required_unresolved_finding_is_marked_required() {
     );
     assert_eq!(report.exit_code(), ExitCode::Negative);
 }
+
+fn scope001_paths(r: &frob_check::CheckReport) -> Vec<String> {
+    r.findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "SCOPE001")
+        .map(|f| f.message.clone())
+        .collect()
+}
+
+fn ticket_opts(id: &str) -> CheckOptions {
+    CheckOptions {
+        ticket: Some(id.to_owned()),
+        base: Some("main".to_owned()),
+        ..quiet()
+    }
+}
+
+/// Branch `work` off `main` in `ticket_fixture`, then commit `files` onto `main` behind it.
+fn branched(files: &[(&str, &str)], on_main: &[(&str, &str)]) -> (tempfile::TempDir, String) {
+    let (dir, id) = ticket_fixture();
+    let repo = Repo::discover(dir.path()).expect("discover");
+    let opts = CommitOptions::default();
+    let put = |r: &str, set: &[(&str, &str)], msg: &str| {
+        let changes: Vec<_> = set
+            .iter()
+            .map(|(p, c)| (RelPath::new(*p).expect("path"), Some(c.as_bytes().to_vec())))
+            .collect();
+        repo.commit_paths(r, &changes, msg, &opts).expect("commit");
+    };
+    let tip = repo.rev_parse("main").expect("main");
+    std::fs::write(repo.git_dir().join("refs/heads/work"), format!("{tip}\n")).expect("branch");
+    std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/work\n").expect("head");
+    put("refs/heads/work", files, "work");
+    put("refs/heads/main", on_main, "tickets(land): ~X unrelated");
+    (dir, id)
+}
+
+#[test]
+fn base_advancing_does_not_leak_into_scope001() {
+    let (dir, id) = branched(
+        &[("src/a/lib.rs", "pub fn a() {}\n")],
+        &[
+            ("src/b/lib.rs", "pub fn b() {}\n"),
+            ("tickets/OTHER/ticket.md", "x\n"),
+        ],
+    );
+    let r = run(dir.path(), &ticket_opts(&id)).expect("run");
+    assert!(scope001_paths(&r).is_empty(), "{:?}", scope001_paths(&r));
+}
+
+#[test]
+fn a_branch_touching_an_out_of_scope_file_still_fires_scope001() {
+    let (dir, id) = branched(
+        &[
+            ("src/a/lib.rs", "pub fn a() {}\n"),
+            ("src/c/lib.rs", "pub fn c() {}\n"),
+        ],
+        &[("src/b/lib.rs", "pub fn b() {}\n")],
+    );
+    let r = run(dir.path(), &ticket_opts(&id)).expect("run");
+    let hits = scope001_paths(&r);
+    assert_eq!(hits.len(), 1, "{hits:?}");
+    assert!(hits[0].contains("src/c/lib.rs"), "{hits:?}");
+}
+
+#[test]
+fn the_ledger_directory_is_exempt_from_scope001() {
+    let (dir, id) = branched(
+        &[
+            ("src/a/lib.rs", "pub fn a() {}\n"),
+            ("tickets/MINE/events/1.md", "e\n"),
+        ],
+        &[("src/b/lib.rs", "pub fn b() {}\n")],
+    );
+    let r = run(dir.path(), &ticket_opts(&id)).expect("run");
+    assert!(scope001_paths(&r).is_empty(), "{:?}", scope001_paths(&r));
+}
+
+#[test]
+fn uncommitted_out_of_scope_edits_still_fire_scope001() {
+    let (dir, id) = branched(
+        &[("src/a/lib.rs", "pub fn a() {}\n")],
+        &[("src/b/lib.rs", "pub fn b() {}\n")],
+    );
+    write(dir.path(), "src/d/lib.rs", "pub fn d() {}\n");
+    let r = run(dir.path(), &ticket_opts(&id)).expect("run");
+    let hits = scope001_paths(&r);
+    assert_eq!(hits.len(), 1, "{hits:?}");
+    assert!(hits[0].contains("src/d/lib.rs"), "{hits:?}");
+}

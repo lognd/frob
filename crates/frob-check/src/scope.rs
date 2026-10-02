@@ -4,7 +4,7 @@ use std::collections::{BTreeSet, HashMap};
 
 use frob_lease::{Holder, Lease, LeaseConfig, LeaseStore, overlap::glob_set, scope001};
 use frob_ledger::model::Stamp;
-use gob_git::{RelPath, Repo, TreeRef};
+use gob_git::{GitError, RelPath, Repo, TreeRef};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 use gob_symbols::{CallEdge, SymbolGraph};
 
@@ -137,6 +137,38 @@ fn unresolved<R: Rule>(rule: &R, message: String) -> Finding {
     Finding::new(id_of(rule), Severity::Unresolved, None, message, "base")
 }
 
+/// Paths this branch changed since it left `base`, committed or not, minus ledger bookkeeping.
+///
+/// Diffs the worktree against `merge_base(base, HEAD)` (three-dot semantics) so
+/// commits that only landed on `base` never count. Everything under the ledger
+/// directory is written by frob's own ledger commits, so it is exempt.
+fn branch_changes(repo: &Repo, base: &str, ledger_dir: &str) -> Result<Vec<RelPath>, GitError> {
+    let from = if let Some(mb) = repo.merge_base(base, "HEAD")? {
+        tracing::debug!(base, merge_base = %mb, "SCOPE001 diffs from the merge base");
+        TreeRef::Oid(mb)
+    } else {
+        tracing::warn!(
+            base,
+            "no merge base with HEAD; diffing against the base tip"
+        );
+        TreeRef::Ref(base.to_owned())
+    };
+    let prefix = format!("{}/", ledger_dir.trim_end_matches('/'));
+    let paths = repo
+        .diff_names(&from, &TreeRef::WorkTree)?
+        .into_iter()
+        .filter(|c| {
+            let ledger = c.path.starts_with(&prefix);
+            if ledger {
+                tracing::trace!(path = %c.path, "ledger path exempt from SCOPE001");
+            }
+            !ledger
+        })
+        .filter_map(|c| RelPath::new(c.path).ok())
+        .collect();
+    Ok(paths)
+}
+
 /// `SCOPE001` (diff against `base` versus the lease) and `TICK002` (referenced tickets on `base`).
 pub(crate) fn ticket_rules(
     snap: &Snapshot,
@@ -172,14 +204,8 @@ pub(crate) fn ticket_rules(
         ];
     }
     let mut out = Vec::new();
-    match repo.diff_names(&TreeRef::Ref(base.to_owned()), &TreeRef::WorkTree) {
-        Ok(changed) => {
-            let paths: Vec<RelPath> = changed
-                .iter()
-                .filter_map(|c| RelPath::new(c.path.clone()).ok())
-                .collect();
-            out.extend(scope001(&paths, &scope.lease, shared));
-        }
+    match branch_changes(&repo, base, &state.ledger.config().dir) {
+        Ok(paths) => out.extend(scope001(&paths, &scope.lease, shared)),
         Err(err) => out.push(unresolved(
             &frob_lease::Scope001,
             format!("diff against `{base}` failed ({err}); SCOPE001 not evaluated"),
