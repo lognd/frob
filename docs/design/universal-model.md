@@ -72,11 +72,13 @@ are all expressible in them):
 
 1. ABT terms over Sigma_U + Sigma_L (the universal signature below plus
    the language's own operators).
-2. Identities: every `unit` has an identity independent of its name,
-   file and position (content hash of its alpha-normal form by default;
-   adapters may supply a stable id such as a Unison hash, a cell
-   address or a generated node id). Symrefs (2.6) are names FOR
-   identities, not the identities themselves.
+2. Identities: every `unit` has a stable identity anchored on its
+   symref and separate from its content (grimble-model.md 9.2: a rename
+   is a new identity whose body facet equals a vanished one; a change is
+   the same identity with a new facet). Adapters may anchor identity
+   differently where the language does (Unison hashes, cell addresses,
+   generated node ids). The content hash is a facet of the identity, not
+   the identity. Symrefs (2.6) are the human names of identities.
 3. The resolution relation: a scope graph (scopes, declarations,
    references, labelled edges) built by the adapter's declared binding
    discipline. Each resolution edge carries a status Must | May |
@@ -325,6 +327,37 @@ verify or answer Unknown. Where it is undecidable, no adapter may claim
 Must. The theorem does not and cannot prove that a given bind_L is
 correct for its language; that is a per-language conformance
 obligation discharged by the fidelity corpus (3.3).
+
+### 4.6 Computability by construction: annotate or be opaque
+
+Theorem 3 says what cannot be decided. This subsection says what the
+tool does about it, and it is a rule, not a hope: wherever a query's
+precision depends on information that is undecidable to infer but
+cheap to declare, the adapter REQUIRES the declaration and treats its
+absence as `opaque` with the reason `annotation-required`. The finding
+that results is loud (an Unresolved with a remedy naming the exact
+annotation), never a silent widening to May.
+
+Instances, each a materialized knob under `[compute]` so a repository
+can tighten or loosen it explicitly (no invisible variables):
+
+| Question | Undecidable or expensive without | Required declaration | Reason code |
+|---|---|---|---|
+| Types of public items in languages with inference | System F-style inference (Wells 1999); whole-program HM | type annotations on the public surface (`[compute] public_signatures = "required"`) | `annotation-required:signature` |
+| Purity or honesty of a function (section 5 of notes/research/neatness.md) | effect inference in a language without an effect system | a language-native effect marker where one exists (Verse specifiers, D `pure`, Nim `func`, Rust `const fn`, Haskell types) or a `frob:effects ...` directive | `annotation-required:effects` |
+| Targets of dynamic dispatch, reflection, `eval`, late binding | runtime state | a `frob:calls <symref>...` directive on the call site or an adapter capability at May precision | `dynamic:unresolvable` |
+| Macro and template expansion | termination of expansion (Veldhuizen 2003 for templates) | expansion within the adapter's step budget, else the `phase` node stays unexpanded | `expansion:budget` |
+| Dependent type checking | normalization of open terms with general recursion | the language's own termination checker must accept the definition; otherwise the body is opaque | `normalization:unverified` |
+| Notebook and spreadsheet evaluation order | the user's execution history | a recorded execution order (notebook metadata) or declared dependency order | `order:unrecorded` |
+| Shell and build-script word splitting, `eval`, dynamic includes | string semantics at run time | none possible; the region is opaque and the enclosing unit's edges are May | `dynamic:string-code` |
+
+Rules read the reason code and degrade with it: a P+ rule stays silent
+on an opaque subject (it cannot prove an offender), a P- rule reports
+Unresolved with the remedy, and a repository that wants the rule to
+certify clean must add the declaration. This is the mechanical form of
+"require type annotations": the cost of analysis is paid once, in the
+source, where a reader benefits from it too, and the analysis stays
+polynomial because it never infers what it can read.
 
 ## 5. The universal query interface
 

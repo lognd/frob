@@ -196,3 +196,118 @@ Decided 2026-10-02: `.grmb` is its own language with its own parser
 (leaf crate, spans for every construct, JSON export on day one, editor
 grammar generated from the keyword table); FOREIGN symbols are Warn
 until `[grimble] strict = true` in `grimble.toml`.
+
+## 9. Revision after the universal model (2026-10-04, DRAFT for review)
+
+notes/review/grimble-review.md audited this file against
+universal-model.md and found 4 HIGH, 12 MEDIUM and 7 LOW gaps. The
+decisions below resolve the HIGH ones and set the frame for the
+milestone-2 design tickets G01-G04 (full .grmb specification, binding
+semantics, sibling JSON contract, packs and drift-lock), which must land
+before any grimble crate is built.
+
+### 9.1 What "binds" is
+
+A model is a set of entities E (nodes, flows, contracts, claims,
+V-model links) declared in .grmb files. The code is a U term with
+identities I (universal-model.md 2.2). Binding is a relation
+B subset of E x I x {Must, May, Unknown} produced by four sources in
+this precedence: explicit `grimble:binds` directives in code (Must);
+`owns` selectors in the model resolved through gob-walk and the
+scope graph (Must for literal paths, May for globs that match units
+with Unknown edges); inference from names and attributes declared by
+data packs (May); and nothing (Unknown, reported as SYS-UNRESOLVED,
+never as clean). The twelve v1 mechanisms map onto these four sources
+in notes/review/grimble-review.md section 2; none survives as its own
+mechanism. "Human symref canonical, SCIP derived" stands: the symref is
+the human-facing name of an identity, SCIP occurrences are one more
+inference source at May.
+
+### 9.2 Identity, rename and the lock
+
+An identity is the stable symref-anchored id of a `unit`; its content
+hash is a facet, not the identity. SYS008 (renamed) is detected as a
+new identity whose body facet equals a disappeared identity's body
+facet; SYS007 (changed) is the same identity with a different facet.
+Lock entries (gob-lock) are typed: key = identity, fields = the facet
+digests, the role (producer, consumer, plain) and the flow key where
+the entry backs a contract, so SYS-CONTRACT-SKEW compares the two ends
+of one flow. The lock file carries a `digest_scheme` version separate
+from the file format version; a scheme change invalidates acks loudly
+(every entry becomes REATTEST) instead of silently. Digests are
+computed over the canonical facet stream of U (universal-model.md 7,
+items G7-G9), not over collapsed text.
+
+### 9.3 .grmb is a language with an adapter
+
+grimble-model owns a U adapter for .grmb at fidelity F4: entities are
+`unit` nodes (kinds node, flow, contract, claim, vmodel, pack), selector
+expressions are `apply(kind=select)` with May edges to the units they
+match, `excuses` and the four exception kinds are `attr` nodes, and
+directives (`frob:doc`, `frob:ticket`, `grimble:...`) bind to entities
+exactly as they bind to code units. Consequently every frob rule that
+works on code works on the model (DRIFT between a design doc and its
+.grmb entity, REF from an entity to a ticket), and `grimble fmt` is the
+alpha-normal printer. The grammar specification (lexical rules,
+scoping of entity names, includes across files, versioning) is ticket
+G01; until it lands, the examples in sections 1-3 are illustrative.
+
+### 9.4 Drift on partial languages
+
+SYS-CHANGED, SYS-CONTRACT-SKEW and CAP-STALE are equality rules
+(polarity P0 in universal-model.md 4.2). On an F0 or F1 language, or on
+an identity whose facets touch `opaque`, they report Unresolved with
+the fidelity reason, never clean and never changed. A standalone
+grimble run computes digests itself through gob-symbols and gob-lock;
+frob never does it on grimble's behalf (D28).
+
+### 9.5 The sibling contract and absence
+
+`grimble check --json` emits a versioned document (schema in
+docs/schemas/sibling.json, generated): schema_version, product,
+fidelity per language, findings with rule id, severity including
+Unresolved with reason codes, polarity, subject count, exception (kind,
+reason, opaque `ticket=`), suppressed findings, and the entity and
+binding lists frob may display. frob validates the schema version and
+refuses on mismatch. When grimble.toml exists and the binary is absent
+or incompatible, `frob check` emits one Unresolved finding per missing
+product AND fails the gate by default (`[check] require_siblings =
+true`, materialized), closing the audit's "absent grimble passes" hole;
+Severity ordering is amended so that Unresolved can fail when a rule
+declares it must (subject accounting, universal-model.md 4.2).
+
+### 9.6 The capability matrix, one definition
+
+Cells are: uses (detector fired, Exact), undeclared (uses without a
+grant: CAP001), declared-unused (grant without a use: CAP002),
+excused (grant waived with reason), and unknown (no detector for this
+atom in this language, or the detector answered Unknown). `n/a` is
+retired; `unknown` is reported as Unresolved in the summary, one per
+node, never as clean. Each atom is registered with its detector kind
+per language (query over U, callee vocabulary, attribute, pack-declared
+pattern, or none); data packs may add atoms and detectors because the
+atom registry lives in a shared `gob-*` crate as inventory entries, not
+as a closed Rust enum. A language with no detectors yields a column of
+`unknown` and one summary Unresolved per node.
+
+### 9.7 Orchestration and crates
+
+The check pipeline (walk, inputs, per-file and repo rules, exceptions,
+render) moves from frob-check into a substrate crate `gob-check` that
+both frob and grimble drive; exception matching moves into gob-rules.
+grimble depends on gob-walk, gob-cache, gob-exec, gob-ir, gob-symbols,
+gob-lock, gob-check and gob-rules, never on a frob crate. The verbs are
+check, status, graph, shrink, init, doctor, fmt, packs, explore, ack,
+exceptions, migrate and serve --mcp; owners per boundaries.md are fixed
+in the review's section 8 and the milestone-2 cut (19 tickets, critical
+path T-IR, G01, G02, G07, G08, G09, G11, G14, about 70 points; first
+visible value is model-free CYCLE after the binary skeleton).
+
+### 9.8 What grimble needs from U that U must add
+
+A stable identity separate from the content hash (done above, to be
+written into universal-model.md 2.2); selector semantics as a U query;
+detector and atom registries in shared crates; `norm_sig` in the adapter
+contract; a build-manifest reader (Cargo.toml, pyproject, package.json)
+as an F2 adapter so ownership can follow packages; polarity and subject
+count on Rule and Finding types.

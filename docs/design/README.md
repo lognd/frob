@@ -27,6 +27,7 @@ ACCEPTED and further changes go through tickets.
 | documentation.md | one home per kind of knowledge, generated vs written pages, NARR rules that keep ticket narrative out of code, ADRs, changelog fragments, rustdoc discipline |
 | boundaries.md | placement test, full capability map per product and crate, splits considered, naming and dependency rules |
 | git-io.md | in-process git via gix, bounded spawns, GitHub over HTTPS, one hook binary |
+| neatness.md | DRAFT for owner review: the NEAT rule family (honesty and effects vocabulary, one level of abstraction, caller-friendly signatures, thin hooks and dispatchers; the ruff PR 29076 example; first ten rules) |
 | universal-model.md | DRAFT for owner review: the universal structural model U (sorted ABTs, scope graph with Must/May/Unknown, opaque, provenance), totality / adequacy / honesty theorems, answer lattice and rule polarity, 47-query interface, paradigm coverage, gaps in landed code |
 
 Evidence behind the decisions lives in `notes/`:
@@ -49,6 +50,8 @@ Evidence behind the decisions lives in `notes/`:
 | notes/research/paradigms.md | 202 languages in 33 paradigm families answering a 9-point structural questionnaire; the 10 features a universal model must carry |
 | notes/research/calculi.md | lambda cube, substructural and effect calculi, universal cores, categorical semantics, impossibility results, the five-primitive recommendation and theorem statement |
 | notes/research/lint-requirements.md | every rule family (667 v1 ids, v2, grimble, crunk) mapped to the 47 queries it reads; answer lattice with polarity; capability table; worked examples; gaps G1-G19 in landed code |
+| notes/research/neatness.md | Logan Smith channel (13 videos) and referenced speakers; linter coverage; 37-rule NEAT catalogue with decidability and annotations |
+| notes/review/grimble-review.md | audit of the grimble system against the universal model: 4 HIGH, 12 MEDIUM, 7 LOW; milestone-2 cut of 19 tickets |
 | notes/research/reading-list.md | learning path: 13 books and about 60 primary papers on language design and the mathematics of languages |
 
 ## Decision log
