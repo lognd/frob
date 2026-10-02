@@ -2,7 +2,7 @@
 
 use gob_rules::{Finding, Severity};
 
-use crate::required::{RequiredMarks, UnresolvedPolicy};
+use crate::required::UnresolvedPolicy;
 
 /// The one exit-code table (cli.md section 2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -35,13 +35,12 @@ impl From<ExitCode> for i32 {
 /// `Negative` when a finding reaches `threshold`, or an Unresolved one fails `policy`.
 ///
 /// `threshold` gates Error, Warn and Advisory only (`None` disables it).
-/// Unresolved fails under `All`, or under `Required` when `marks` carries a
-/// reason for it; the result is never `Refused` (cli.md section 2).
+/// Unresolved fails under `All`, or under `Required` when the finding carries a
+/// required reason; the result is never `Refused` (cli.md section 2).
 pub fn fail_on(
     findings: &[Finding],
     threshold: Option<Severity>,
     policy: UnresolvedPolicy,
-    marks: &RequiredMarks,
 ) -> ExitCode {
     let by_severity = |f: &&Finding| {
         f.severity != Severity::Unresolved && threshold.is_some_and(|t| f.severity >= t)
@@ -51,7 +50,7 @@ pub fn fail_on(
             && match policy {
                 UnresolvedPolicy::All => true,
                 UnresolvedPolicy::Never => false,
-                UnresolvedPolicy::Required => marks.get(f).is_some(),
+                UnresolvedPolicy::Required => f.required.is_some(),
             }
     };
     let failing = findings.iter().filter(by_severity).count();

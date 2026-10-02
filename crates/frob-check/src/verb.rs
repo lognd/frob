@@ -316,10 +316,7 @@ fn data_of(
     let records: Vec<FindingRecord> = report
         .findings
         .iter()
-        .map(|f: &Finding| {
-            FindingRecord::from_finding(f, &sources, registry)
-                .with_required(report.required.get(f).cloned())
-        })
+        .map(|f: &Finding| FindingRecord::from_finding(f, &sources, registry))
         .collect();
     CheckData {
         counts: Counts::of(&report.findings),

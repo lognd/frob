@@ -507,7 +507,7 @@ fn a_missing_tool_binary_fails_under_required_and_passes_under_never() {
     assert_eq!(rules_of(&report.findings), ["TOOL001"]);
     assert_eq!(report.findings[0].severity, gob_rules::Severity::Unresolved);
     assert_eq!(
-        report.required.get(&report.findings[0]),
+        report.findings[0].required.as_ref(),
         Some(&RequiredReason::SiblingMissing {
             product: "frob-no-such-binary".to_owned()
         })
@@ -541,7 +541,7 @@ fn a_non_required_unresolved_finding_passes_under_required_and_fails_under_all()
     write(dir.path(), "notes.txt", "sample too small\n");
     let report = run(dir.path(), &opaque_options()).expect("required");
     assert_eq!(report.findings.len(), 1);
-    assert!(report.required.is_empty());
+    assert!(report.findings[0].required.is_none());
     assert_eq!(report.exit_code(), ExitCode::Ok);
 
     write(
@@ -563,7 +563,7 @@ fn an_annotation_required_unresolved_finding_is_marked_required() {
     );
     let report = run(dir.path(), &opaque_options()).expect("run");
     assert_eq!(
-        report.required.get(&report.findings[0]),
+        report.findings[0].required.as_ref(),
         Some(&RequiredReason::AnnotationRequired {
             code: "opaque-fn".to_owned(),
             public_surface: true
@@ -691,7 +691,7 @@ fn a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_doe
     assert_eq!(rules, ["REF001", "TODO002"]);
     assert_eq!(configured.exit_code(), ExitCode::Negative);
     assert_eq!(
-        configured.required.get(&configured.findings[0]),
+        configured.findings[0].required.as_ref(),
         Some(&RequiredReason::ZeroSubjects {
             rule: configured.findings[0].rule.to_string()
         })

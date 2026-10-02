@@ -15,10 +15,9 @@ mod text;
 
 pub use envelope::{Envelope, EnvelopeError, SCHEMA_VERSION, envelope_schema, render_json};
 pub use exit::{ExitCode, fail_on};
+pub use gob_rules::RequiredReason;
 pub use record::FindingRecord;
 pub use refusal::{Refusal, RefusalClass};
-pub use required::{RequiredMarks, RequiredReason, UnresolvedPolicy};
+pub use required::UnresolvedPolicy;
 pub use source::{MemorySources, SourceProvider};
-pub use text::{
-    ColorChoice, Report, TextOptions, is_tty, render_text, render_text_marked, severity_label,
-};
+pub use text::{ColorChoice, Report, TextOptions, is_tty, render_text, severity_label};

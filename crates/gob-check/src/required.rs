@@ -2,12 +2,10 @@
 //!
 //! A finding carries its own [`gob_rules::RequiredReason`]; this module adds the
 //! two pipeline-level sources (an `annotation-required:` message and a
-//! `must_measure` rule that examined nothing) and turns the marks into the
-//! [`gob_diagnostics::RequiredMarks`] table the gate reads.
+//! `must_measure` rule that examined nothing); the gate reads `Finding.required`.
 
 use std::collections::BTreeMap;
 
-use gob_diagnostics::{RequiredMarks, RequiredReason as GateReason};
 use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity};
 
 /// Message prefix gob-ir uses for an opaque that needs an annotation.
@@ -76,29 +74,8 @@ fn annotation_reason(f: &Finding) -> Option<RequiredReason> {
     })
 }
 
-/// The gate-side form of a finding's required reason.
-///
-/// `gob-diagnostics` keeps its own copy of the enum until it re-exports
-/// `gob_rules::RequiredReason` and drops `RequiredMarks`.
-fn gate_reason(reason: &RequiredReason) -> GateReason {
-    match reason {
-        RequiredReason::SiblingMissing { product } => GateReason::SiblingMissing {
-            product: product.clone(),
-        },
-        RequiredReason::AnnotationRequired {
-            code,
-            public_surface,
-        } => GateReason::AnnotationRequired {
-            code: code.clone(),
-            public_surface: *public_surface,
-        },
-        RequiredReason::ZeroSubjects { rule } => GateReason::ZeroSubjects { rule: rule.clone() },
-    }
-}
-
-/// Give annotation-prefixed Unresolved findings their reason, then collect every mark.
-pub(crate) fn build_marks(findings: &mut [Finding]) -> RequiredMarks {
-    let mut marks = RequiredMarks::new();
+/// Give annotation-prefixed Unresolved findings their required reason.
+pub(crate) fn mark_annotations(findings: &mut [Finding]) {
     for f in findings
         .iter_mut()
         .filter(|f| f.severity == Severity::Unresolved)
@@ -106,11 +83,7 @@ pub(crate) fn build_marks(findings: &mut [Finding]) -> RequiredMarks {
         if f.required.is_none() {
             f.required = annotation_reason(f);
         }
-        if let Some(reason) = &f.required {
-            marks.insert(f, gate_reason(reason));
-        }
     }
-    marks
 }
 
 #[cfg(test)]
@@ -127,14 +100,14 @@ mod tests {
         )
     }
 
-    // frob:tests crates/gob-check/src/required.rs::build_marks
+    // frob:tests crates/gob-check/src/required.rs::mark_annotations
     #[test]
     fn annotation_prefix_maps_to_a_required_reason() {
         let mut fs = [unresolved("annotation-required: opaque-fn at pub fn x")];
-        let marks = build_marks(&mut fs);
+        mark_annotations(&mut fs);
         assert_eq!(
-            marks.get(&fs[0]),
-            Some(&GateReason::AnnotationRequired {
+            fs[0].required,
+            Some(RequiredReason::AnnotationRequired {
                 code: "opaque-fn".into(),
                 public_surface: true
             })
@@ -144,7 +117,8 @@ mod tests {
     #[test]
     fn unrelated_unresolved_is_not_marked() {
         let mut fs = [unresolved("sample too small")];
-        assert!(build_marks(&mut fs).is_empty());
+        mark_annotations(&mut fs);
+        assert!(fs[0].required.is_none());
     }
 
     #[test]
@@ -153,7 +127,8 @@ mod tests {
             product: "crunk".into(),
         });
         let mut fs = [f];
-        assert_eq!(build_marks(&mut fs).len(), 1);
+        mark_annotations(&mut fs);
+        assert!(fs[0].required.is_some());
     }
 
     static MEASURED: RuleMeta = RuleMeta {
