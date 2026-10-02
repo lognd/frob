@@ -1,0 +1,20 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @markdown (unit "section" "impl" name="group" (group "sequence" (lit "heading" "Group")) (markdown.paragraph (lit "inline" "Text before."))) (unit "section" "impl" name="nested" (group "sequence" (lit "heading" "Nested")) (markdown.paragraph (lit "inline" "Text inside."))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S1:Must
+D0 S1 Unit "group" Must
+D1 S1 Unit "nested" Must
+
+== file ==
+fidelity F4 status Complete
+== symbols ==
+tests/corpus/markdown/ops/group.md#group Heading Public parent=
+tests/corpus/markdown/ops/group.md#nested Heading Public parent=tests/corpus/markdown/ops/group.md#group
+== edges ==

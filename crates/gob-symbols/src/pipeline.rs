@@ -1,20 +1,30 @@
 //! Per-file extraction and the parallel, cached graph build.
 
+// frob:ticket 01M3Z713F6VY15YSMS15033RN1
+
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use gob_cache::{ArtifactKey, Cache};
-use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
+use gob_languages::ParseLimits;
 use gob_walk::{FileEntry, LanguageHint};
 use rayon::prelude::*;
 
+use crate::adapter::{Adapter, Fidelity, FileInput, Folded, ParseStatus};
+use crate::fold::{base_file, opaque_file};
 use crate::graph::SymbolGraph;
+use crate::markdown::MarkdownAdapter;
 use crate::model::FileSymbols;
-use crate::{markdown, rust};
+use crate::opaque::OpaqueAdapter;
+use crate::rust::RustAdapter;
 
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
-pub const EXTRACTOR_VERSION: u32 = 1;
+pub const EXTRACTOR_VERSION: u32 = 2;
+
+static RUST: RustAdapter = RustAdapter;
+static MARKDOWN: MarkdownAdapter = MarkdownAdapter;
+static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Counters from one [`build_graph_with_stats`] run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -23,59 +33,98 @@ pub struct BuildStats {
     pub extracted: usize,
     /// Files served from the cache.
     pub cached: usize,
-    /// Files with no supported language, unreadable or unparsable.
+    /// Files that could not be read.
     pub skipped: usize,
+    /// Files no adapter claims, folded as one opaque unit each (G19).
+    pub opaque: usize,
 }
 
-fn language_of(entry: &FileEntry) -> Option<Language> {
-    match entry.language {
-        LanguageHint::Rust => Some(Language::Rust),
-        LanguageHint::Markdown => Some(Language::Markdown),
+/// Every real adapter (F1 and above), in a stable order.
+pub fn adapters() -> [&'static dyn Adapter; 2] {
+    [&RUST, &MARKDOWN]
+}
+
+/// The F0 adapter used for files no real adapter claims.
+pub fn opaque_adapter() -> &'static dyn Adapter {
+    &OPAQUE
+}
+
+/// The adapter claiming `hint`, or `None` for an adapter-less language.
+pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
+    match hint {
+        LanguageHint::Rust => Some(&RUST),
+        LanguageHint::Markdown => Some(&MARKDOWN),
         _ => None,
     }
 }
 
-/// Extracts symbols, imports and call sites from one file's `text`.
+fn input_of<'a>(entry: &'a FileEntry, digest: &'a str, text_len: usize) -> FileInput<'a> {
+    FileInput {
+        path: &entry.path,
+        digest,
+        size: u32::try_from(text_len).unwrap_or(u32::MAX),
+    }
+}
+
+/// Folds one file's `text` into its term, scope graph and compatibility view.
 ///
-/// Files of other languages yield an empty result; an unparsable file yields
-/// an empty result with `degraded` set.
+/// Adapter-less files fold to one opaque unit at F0; `text` is not read for them.
+///
+/// # Errors
+///
+/// [`crate::FoldError`] only when an adapter builds an ill-formed term (a bug).
+pub fn fold_file(entry: &FileEntry, text: &str) -> Result<Folded, crate::FoldError> {
+    let digest = entry.digest.to_string();
+    let Some(adapter) = adapter_for(&entry.language) else {
+        let size = u32::try_from(entry.size).unwrap_or(u32::MAX);
+        let input = FileInput {
+            path: &entry.path,
+            digest: &digest,
+            size,
+        };
+        tracing::debug!(path = %entry.path, "no adapter for language");
+        return opaque_fold(&input);
+    };
+    let input = input_of(entry, &digest, text.len());
+    let tree = adapter.parse(text, &ParseLimits::default());
+    adapter.fold(&tree, &input)
+}
+
+fn opaque_fold(input: &FileInput<'_>) -> Result<Folded, crate::FoldError> {
+    let ext = Path::new(input.path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    opaque_file(input, &ext)
+}
+
+/// Extracts symbols, imports, call sites and references from one file's `text`.
+///
+/// A file whose language has no adapter yields one opaque unit at F0
+/// (`parse_status` is `NotParsed`); an unparsable file yields no symbols with
+/// `degraded` set and `parse_status` `Failed`.
 pub fn extract_file(entry: &FileEntry, text: &str) -> FileSymbols {
-    let out = FileSymbols {
-        path: entry.path.clone(),
-        file_digest: entry.digest.to_string(),
-        size: u32::try_from(text.len()).unwrap_or(u32::MAX),
-        ..FileSymbols::default()
-    };
-    let Some(lang) = language_of(entry) else {
-        return out;
-    };
-    match parse(lang, text, &ParseLimits::default()) {
-        ParseResult::Parsed(tree) => {
-            if tree.has_errors() {
-                tracing::warn!(path = %entry.path, "syntax errors; extracting what parsed");
-            }
-            match lang {
-                Language::Rust => rust::extract(&tree, &entry.path, out),
-                _ => markdown::extract(&tree, &entry.path, out),
-            }
-        }
-        ParseResult::Unresolved(u) => {
-            tracing::warn!(path = %entry.path, reason = %u.reason, "file not extracted");
-            FileSymbols {
-                degraded: true,
-                ..out
-            }
+    match fold_file(entry, text) {
+        Ok(f) => f.file,
+        Err(err) => {
+            tracing::error!(path = %entry.path, %err, "adapter bug: fold failed");
+            let digest = entry.digest.to_string();
+            let mut out = base_file(&input_of(entry, &digest, text.len()), "");
+            out.degraded = true;
+            out.fidelity = Fidelity::F0;
+            out.parse_status = ParseStatus::Failed {
+                reason: err.to_string(),
+            };
+            out
         }
     }
 }
 
-fn key(entry: &FileEntry, lang: Language) -> ArtifactKey {
+fn key(entry: &FileEntry, adapter: &dyn Adapter) -> ArtifactKey {
     ArtifactKey {
         content_digest: entry.digest.to_string(),
-        producer_identity: format!(
-            "gob-symbols/v{EXTRACTOR_VERSION}/{}",
-            grammar_identity(lang)
-        ),
+        producer_identity: adapter.identity(),
     }
 }
 
@@ -85,6 +134,11 @@ pub fn build_graph(root: &Path, files: &[FileEntry], cache: &Cache) -> SymbolGra
 }
 
 /// Like [`build_graph`], also returning hit/miss counters.
+///
+/// Per-file artifacts are the serialized [`FileSymbols`] view, keyed by file
+/// digest and the adapter identity (name, version, grammar identity). The U term
+/// itself is not cached: gob-ir has no serialization yet, so a miss re-folds the
+/// file from source.
 pub fn build_graph_with_stats(
     root: &Path,
     files: &[FileEntry],
@@ -93,14 +147,15 @@ pub fn build_graph_with_stats(
     let extracted = AtomicUsize::new(0);
     let cached = AtomicUsize::new(0);
     let skipped = AtomicUsize::new(0);
+    let opaque = AtomicUsize::new(0);
     let per_file: Vec<FileSymbols> = files
         .par_iter()
         .filter_map(|entry| {
-            let Some(lang) = language_of(entry) else {
-                skipped.fetch_add(1, Ordering::Relaxed);
-                return None;
+            let Some(adapter) = adapter_for(&entry.language) else {
+                opaque.fetch_add(1, Ordering::Relaxed);
+                return Some(extract_file(entry, ""));
             };
-            let k = key(entry, lang);
+            let k = key(entry, adapter);
             if let Some(bytes) = cache.get_artifact(&k) {
                 match postcard::from_bytes::<FileSymbols>(&bytes) {
                     Ok(fs) if fs.path == entry.path => {
@@ -139,6 +194,7 @@ pub fn build_graph_with_stats(
         extracted: extracted.load(Ordering::Relaxed),
         cached: cached.load(Ordering::Relaxed),
         skipped: skipped.load(Ordering::Relaxed),
+        opaque: opaque.load(Ordering::Relaxed),
     };
     tracing::info!(?stats, "symbol extraction done");
     (SymbolGraph::from_files(per_file), stats)

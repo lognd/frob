@@ -71,13 +71,21 @@ fn corpus_matches_expected_symrefs() {
 const BASE: &str = "/// Doc one.\npub fn f(a: u32) -> u32 {\n    a + 1\n}\n";
 
 #[test]
-fn rename_param_changes_sig_not_body_or_doc() {
+fn consistent_param_rename_is_alpha_equivalent_but_a_type_change_is_not() {
     let a = extract("x.rs", BASE);
-    let b = extract("x.rs", &BASE.replace("a: u32", "b: u32"));
-    let (da, db) = (find(&a, "x.rs::f").digests, find(&b, "x.rs::f").digests);
-    assert_ne!(da.sig, db.sig);
+    let renamed = extract("x.rs", &BASE.replace('a', "b"));
+    let (da, db) = (
+        find(&a, "x.rs::f").digests,
+        find(&renamed, "x.rs::f").digests,
+    );
+    // Bound variable names are erased by alpha-normality (digest scheme 2).
+    assert_eq!(da.sig, db.sig);
     assert_eq!(da.body, db.body);
-    assert_eq!(da.doc, db.doc);
+    let retyped = extract("x.rs", &BASE.replace("a: u32", "a: u64"));
+    let dc = find(&retyped, "x.rs::f").digests;
+    assert_ne!(da.sig, dc.sig);
+    assert_eq!(da.body, dc.body);
+    assert_eq!(da.doc, dc.doc);
 }
 
 #[test]
@@ -256,11 +264,11 @@ fn markdown_slugs_dedupe_and_nest() {
     assert_eq!(details.kind, SymbolKind::Heading);
     let setup = find(&fs, "d.md#setup");
     assert_ne!(setup.digests.body, find(&fs, "d.md#setup-1").digests.body);
-    // A section body runs to the next heading of equal or higher level.
-    let again = find(&fs, "d.md#setup-1");
+    // A section body is section-local: it stops at the next heading of any level.
+    let alone = extract("d.md", "## Setup\n\nAgain.\n");
     assert_eq!(
-        again.digests,
-        gob_symbols::Digests::of_facets("Setup", "Again.", "")
+        find(&alone, "d.md#setup").digests.body,
+        find(&fs, "d.md#setup-1").digests.body
     );
 }
 
@@ -321,9 +329,15 @@ fn second_build_extracts_nothing() {
     let cache = Cache::open(cache_dir.path());
     assert!(!cache.is_null());
     let (g1, s1) = build_graph_with_stats(root.path(), &entries, &cache);
-    assert_eq!((s1.extracted, s1.cached, s1.skipped), (2, 0, 1));
+    assert_eq!(
+        (s1.extracted, s1.cached, s1.skipped, s1.opaque),
+        (2, 0, 0, 1)
+    );
     let (g2, s2) = build_graph_with_stats(root.path(), &entries, &cache);
-    assert_eq!((s2.extracted, s2.cached, s2.skipped), (0, 2, 1));
+    assert_eq!(
+        (s2.extracted, s2.cached, s2.skipped, s2.opaque),
+        (0, 2, 0, 1)
+    );
     assert_eq!(g1.graph_digest(), g2.graph_digest());
     assert!(g2.resolve("README.md#hi").is_ok());
 }

@@ -2,13 +2,13 @@
 id = "01M3Z713NBP986Q2ZDHKKR84AW"
 title = "G06: gob-check pipeline crate; exceptions into gob-rules; polarity and subjects_examined"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T21:06:24Z"
+updated = "2026-10-02T21:48:45Z"
 idempotency_key = "m2-gobcheck"
 labels = ["milestone:2"]
 scope = ["crates/gob-check/**", "crates/gob-rules/**", "crates/gob-macros/**", "crates/frob-check/**", "crates/frob-obligations/**", "docs/reference/**"]

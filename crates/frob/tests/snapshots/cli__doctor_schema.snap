@@ -45,6 +45,24 @@ expression: v
       ],
       "type": "object"
     },
+    "CapabilityRow": {
+      "description": "One capability of an adapter with its precision label.",
+      "properties": {
+        "capability": {
+          "description": "Capability name (`resolve_ref`, `apply_targets`, ...).",
+          "type": "string"
+        },
+        "precision": {
+          "description": "Precision label (`lexical+imports`, `none`, `not-applicable`, ...).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "capability",
+        "precision"
+      ],
+      "type": "object"
+    },
     "ConfigInfo": {
       "description": "Config materialization status.",
       "properties": {
@@ -123,6 +141,68 @@ expression: v
       ],
       "type": "object"
     },
+    "LanguageRow": {
+      "description": "One language adapter.",
+      "properties": {
+        "adapter": {
+          "description": "Adapter name, version and grammar identity (the cache key component).",
+          "type": "string"
+        },
+        "capabilities": {
+          "description": "Capability precisions in table order.",
+          "items": {
+            "$ref": "#/$defs/CapabilityRow"
+          },
+          "type": "array"
+        },
+        "fidelity": {
+          "description": "Fidelity level, `F0` to `F4` (universal-model.md 3.3).",
+          "type": "string"
+        },
+        "files": {
+          "description": "Walked files this adapter claims.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "language": {
+          "description": "Language tag (`rust`, `markdown`).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "language",
+        "fidelity",
+        "adapter",
+        "files",
+        "capabilities"
+      ],
+      "type": "object"
+    },
+    "LanguagesReport": {
+      "description": "`doctor --languages`: adapters and the extensions that have none.",
+      "properties": {
+        "adapters": {
+          "description": "Every adapter, then the F0 adapter.",
+          "items": {
+            "$ref": "#/$defs/LanguageRow"
+          },
+          "type": "array"
+        },
+        "unadapted": {
+          "description": "Extensions with no adapter, sorted.",
+          "items": {
+            "$ref": "#/$defs/UnadaptedRow"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "adapters",
+        "unadapted"
+      ],
+      "type": "object"
+    },
     "LedgerInfo": {
       "description": "Ledger ref reachability.",
       "properties": {
@@ -174,6 +254,36 @@ expression: v
         }
       },
       "type": "object"
+    },
+    "UnadaptedRow": {
+      "description": "A walked file extension no adapter claims: one opaque unit per file at F0.",
+      "properties": {
+        "extension": {
+          "description": "The extension with its dot, or `(none)`.",
+          "type": "string"
+        },
+        "fidelity": {
+          "description": "Always `F0`.",
+          "type": "string"
+        },
+        "files": {
+          "description": "Walked files with this extension.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unit": {
+          "description": "Always `opaque(no-adapter)`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "extension",
+        "fidelity",
+        "unit",
+        "files"
+      ],
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -190,6 +300,17 @@ expression: v
     "git": {
       "$ref": "#/$defs/GitInfo",
       "description": "Git discovery."
+    },
+    "languages": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LanguagesReport"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Language adapters; present only with `--languages`."
     },
     "ledger": {
       "$ref": "#/$defs/LedgerInfo",

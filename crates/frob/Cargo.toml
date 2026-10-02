@@ -24,6 +24,8 @@ gob-config = { path = "../gob-config" }
 gob-exec = { path = "../gob-exec" }
 gob-git = { path = "../gob-git" }
 gob-rules = { path = "../gob-rules" }
+gob-symbols = { path = "../gob-symbols" }
+gob-walk = { path = "../gob-walk" }
 frob-ack = { path = "../frob-ack" }
 frob-check = { path = "../frob-check" }
 frob-evidence = { path = "../frob-evidence" }

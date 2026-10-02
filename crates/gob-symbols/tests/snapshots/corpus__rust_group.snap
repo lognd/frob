@@ -1,0 +1,23 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Groups: statement sequences and the signature group of a unit.")) (unit "function" "impl" name="steps" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn")) (group "sequence" (rust.expression_statement (apply "call" (ref "first")) (lit ";" ";")) (rust.expression_statement (apply "call" (ref "second")) (lit ";" ";")) (rust.expression_statement (apply "call" (ref "third")) (lit ";" ";")))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+D0 S1 Unit "steps" Must
+R0 S2 unknown "first"
+R1 S2 unknown "second"
+R2 S2 unknown "third"
+
+== file ==
+fidelity F3 status Complete
+== symbols ==
+tests/corpus/rust/ops/group.rs::steps Function Public parent=
+== edges ==
+Calls tests/corpus/rust/ops/group.rs::steps -> ? Unknown Some(Unbound) Some("first")
+Calls tests/corpus/rust/ops/group.rs::steps -> ? Unknown Some(Unbound) Some("second")
+Calls tests/corpus/rust/ops/group.rs::steps -> ? Unknown Some(Unbound) Some("third")

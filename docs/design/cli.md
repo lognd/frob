@@ -85,10 +85,15 @@ Every verb, every time:
   answer), never exit 3, which stays reserved for refusals; `"all"`
   fails on any Unresolved and `"never"` on none. The required
   Unresolved findings are exactly three: (a) a configured sibling
-  product that is absent or incompatible (not installed, `--json` with
-  another `schema_version`, or a different `[compute]` digest;
+  product that is unusable, in any of five reasons, all required:
+  `absent` (not installed), `incompatible` (`--json` with another
+  `schema_version` or a different `[compute]` digest), `failed` (exit 2,
+  3 or 4, a failure envelope or a spawn error), `timeout` (`[check]
+  sibling_timeout_secs` elapsed) and `malformed` (stdout not exactly one
+  schema-valid document, or over the output cap), reported as one
+  `SIB001` per product (sibling-contract.md section 6);
   `[check] require_siblings`, default true, is what makes a configured
-  sibling required); (b) an `annotation-required` opaque on the public
+  sibling required; (b) an `annotation-required` opaque on the public
   surface when `[compute]` requires the declaration (universal-model.md
   4.6); (c) a rule flagged `must_measure` that examined zero subjects.
   Every other Unresolved is reported, counted in the summary, and does

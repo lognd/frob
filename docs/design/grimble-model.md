@@ -159,14 +159,17 @@ one resolved edge and an undeclared flow is caught.
 
 ## 5. Data packs
 
-Threat obligations (capability -> obligation discharged by a claim at a
-rung), reliability markers (one "marker plus evidence" rule shape, not
-51 REL ids), compliance views, CVE fingerprints, and PII categories ship
-as TOML packs under `packs/` and are enabled per repo in `grimble.toml`
-(`[grimble] packs = ["threat", "reliability"]`). Milestone 2 or later
-(D36). A pack contributes
-capability atoms, detectors, obligations, and rule parameters; it never
-contributes grammar.
+Threat obligations, reliability markers, compliance views, CVE
+fingerprints, PII categories and every other optional vocabulary ship as
+data packs, never as grammar; milestone 2 or later (D36). A pack
+contributes capability atoms, detectors, callee vocabularies, inference
+rules, claim templates, node kinds and (decision pending) lattice
+extensions. packs.md (G04) is the definition: the pack format and its
+JSON Schema, where packs live (built-in as inventory entries of the
+shared registry crate, repository `packs/`, external by URL and digest),
+the drift-lock `grimble.packs.lock`, materialization, how detectors
+become matrix cells, and the three built-in packs `core-effects`,
+`ci-github` and `rust-ecosystem`. This file does not repeat it.
 
 ## 6. Registry drift-lock
 
@@ -287,16 +290,12 @@ grimble's behalf (D28).
 
 ### 9.5 The sibling contract and absence
 
-`grimble check --json` emits a versioned document (schema in
-docs/schemas/sibling.json, generated) carrying: schema_version,
-product, the compute-config digest, fidelity per language (level and
-capability cells), findings (rule id, severity including Unresolved
-with reason codes and the `required` mark, polarity, subject count,
-logical location such as `node/cli`, range), exception records (kind,
-reason, opaque `ticket=`, exit state Evaluated or UnresolvedExit),
-suppressed findings, per-rule subject counts, and the entity and
-binding lists frob may display. frob validates the schema version and
-the compute digest. When grimble.toml exists and the binary is absent
+`grimble check --json` emits a versioned document, `gob.sibling/1` (schema in
+docs/schemas/sibling.json, hand-written until the derive generates it)
+whose fields, version negotiation, merge rules and failure cases are
+defined once in sibling-contract.md; the `grimble.graph/1` export of 9.3
+is section 3.8 there. frob validates the schema version and the compute
+digest. When grimble.toml exists and the binary is absent
 or incompatible, `frob check` emits one Unresolved finding per missing
 product marked `required`, so the gate fails with exit 1 under the
 default `[check] fail_on_unresolved = "required"` and `[check]

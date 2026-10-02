@@ -1,0 +1,17 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Attributes: doc comments and outer attributes are attr children and feed Sig.")) (unit "function" "impl" name="old" (attr "doc" (lit "str" "Documented.")) (attr "deprecated" (lit "(" "(") (lit "identifier" "note") (lit "=" "=") (lit "\"" "\"") (lit "string_content" "use other") (lit "\"" "\"") (lit ")" ")")) (attr "inline") (group "sequence" (attr "deprecated" (lit "(" "(") (lit "identifier" "note") (lit "=" "=") (lit "\"" "\"") (lit "string_content" "use other") (lit "\"" "\"") (lit ")" ")")) (attr "inline") (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn")) (group "sequence")))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+D0 S1 Unit "old" Must
+
+== file ==
+fidelity F3 status Complete
+== symbols ==
+tests/corpus/rust/ops/attr.rs::old Function Public parent=
+== edges ==

@@ -2,13 +2,14 @@
 id = "01M3Z712SX9DEEAF4K8ER867TX"
 title = "G04: data packs and registry drift-lock specification"
 type = "docs"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-02T21:06:23Z"
+updated = "2026-10-02T22:03:52Z"
 idempotency_key = "m2-packs"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]

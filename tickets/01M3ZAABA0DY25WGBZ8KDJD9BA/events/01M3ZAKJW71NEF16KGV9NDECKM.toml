@@ -1,0 +1,11 @@
+kind = "evidence"
+at = "2026-10-02T22:08:55Z"
+actor = "lognd"
+rev = 1
+provider = "file"
+ref = "docs/schemas/sibling.json"
+digest = "b8caeace354a9c17e2b44761f14fce2ce06976ac6fb5b2f9f2619179862b26c7"
+status = "measured"
+captured_at = "2026-10-02T22:08:55Z"
+accepts = [1]
+size = 29673
