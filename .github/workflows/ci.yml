@@ -5,6 +5,9 @@ on:
     branches: [main, experimental]
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -17,8 +20,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           # frob reads the ledger ref and diffs against origin/experimental.
           fetch-depth: 0
       - name: Install pinned Rust toolchain
@@ -27,8 +31,8 @@ jobs:
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
           rustup toolchain install "$channel" --profile minimal --component rustfmt --component clippy
           rustup default "$channel"
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
         with:
           tool: nextest
       - name: Install mold (linux linker)
@@ -49,13 +53,21 @@ jobs:
             git fetch --no-tags origin '+refs/heads/experimental:refs/remotes/origin/experimental'
             git update-ref refs/heads/experimental refs/remotes/origin/experimental
           fi
+      - name: Install uv (runs the zizmor and actionlint tool stages)
+        if: runner.os == 'Linux'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Fetch zizmor and actionlint (versions match frob.toml)
+        if: runner.os == 'Linux'
+        run: |
+          uvx zizmor@1.30.1 --version
+          uvx --from actionlint-py==1.7.12 actionlint -version
       - name: frob doctor (self-hosted, frob v2 built from this tree)
         if: runner.os == 'Linux'
         run: cargo run -p frob-cli -- doctor
       - name: frob check
         if: runner.os == 'Linux'
         run: cargo run -p frob-cli -- check
-      - name: frob test selection (dry run: CI holds no lease)
+      - name: "frob test selection (dry run, CI holds no lease)"
         if: runner.os == 'Linux'
         run: cargo run -p frob-cli -- test --base origin/experimental --dry-run
       - name: Docs
