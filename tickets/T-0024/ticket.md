@@ -1,5 +1,5 @@
 ---
-id: T-draft-09c0af96
+id: T-0024
 title: 'frob-land: synchronous land with preconditions, dry-run, close on land'
 state: queued
 kind: feature
