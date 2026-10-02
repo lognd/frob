@@ -49,6 +49,7 @@ scope:
 - crates/frob-obligations/tests/**
 - Cargo.toml
 - README.md
+- docs/migration/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: self-host switch imports every v1 ticket into the v2 ledger;
   tickets/** is the deliverable
@@ -131,6 +132,12 @@ scope_changes:
   glob: README.md
   reason: T-0025 self-host switch must touch README.md (directive/comment cleanup
     and v2 migration)
+  actor: logan
+  at: '2026-10-02'
+- op: add
+  glob: docs/migration/**
+  reason: the importer's dropped-field report lives at docs/migration/v1-import.md
+    (task 2 deliverable)
   actor: logan
   at: '2026-10-02'
 designated_repro_test: null
