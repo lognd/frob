@@ -2,7 +2,8 @@
 id = "01M3ZBQPK3ZFE8TVB3GV5F85PC"
 title = "ticket update: empty --set clears list fields silently; ticket show --json omits scope"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
