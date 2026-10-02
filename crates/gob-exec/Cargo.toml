@@ -1,0 +1,23 @@
+[package]
+name = "gob-exec"
+version = "0.0.0"
+description = "Bounded process pool, spawn allowlist and PROC001 scan for the frob/grimble/crunk goblins."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+gob-log = { path = "../gob-log" }
+thiserror = "2"
+tracing = "0.1"
+walkdir = "2"
+which = "8"
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.31", default-features = false, features = ["signal"] }
+
+[lints]
+workspace = true

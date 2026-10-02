@@ -1,7 +1,7 @@
 ---
 id: T-0009
 title: 'gob-exec: bounded process pool, spawn allowlist, PROC001'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,22 +25,26 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0009
+branch: t-0009
 scope:
 - crates/gob-exec/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-exec exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a spec with a 100 ms timeout and a sleeping process, when run, then
     it returns a Timeout outcome within 1 s and the child is gone
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-exec exit=0 sha256=e3b0c44298fc
 - text: Given a Rust file outside gob-exec and gob-git that references std::process,
     when PROC001 runs, then it fires with the span
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-exec exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-exec
 anchor: false
