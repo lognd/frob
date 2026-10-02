@@ -1,5 +1,5 @@
 ---
-id: T-draft-3d2913e2
+id: T-0003
 title: 'Workspace skeleton: Cargo workspace, lints as errors, linker, CI, MIT'
 state: queued
 kind: feature
