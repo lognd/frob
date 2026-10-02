@@ -1,0 +1,16 @@
+---
+source: crates/gob-diagnostics/tests/contract.rs
+expression: "out.replace('\\u{1b}', \"<ESC>\")"
+---
+src/a.rs
+  1:1: <ESC>[1m<ESC>[36madvisory[DOC002]<ESC>[0m: style note
+  2:5: <ESC>[1m<ESC>[31merror[DOC001]<ESC>[0m: bad call
+  fix: remove call
+
+src/b.rs
+  1:5: <ESC>[1m<ESC>[33mwarning[COV006]<ESC>[0m: unused x
+
+(no location)
+  <ESC>[1m<ESC>[35munresolved[TOOL001]<ESC>[0m: tool missing
+
+1 errors, 1 warnings, 1 advisory, 1 unresolved

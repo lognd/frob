@@ -1,7 +1,7 @@
 ---
 id: T-0008
 title: 'gob-diagnostics: envelope, exit-code table, text and JSON renderers'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,22 +25,26 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0008
+branch: t-0008
 scope:
 - crates/gob-diagnostics/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-diagnostics exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given findings of mixed severity and fail_on = error, when evaluated, then
     exit is 1 only if an Error finding exists and 0 otherwise
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-diagnostics exit=0 sha256=e3b0c44298fc
 - text: Given stdout is not a TTY, when rendered, then output is the JSON envelope
     with schema_version
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-diagnostics exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-diagnostics
 anchor: false

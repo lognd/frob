@@ -1,0 +1,213 @@
+//! Snapshot and contract tests for gob-diagnostics.
+#![allow(missing_docs)]
+
+use gob_diagnostics::{
+    ColorChoice, Envelope, ExitCode, FindingRecord, MemorySources, Refusal, RefusalClass, Report,
+    TextOptions, envelope_schema, fail_on, render_json, render_text,
+};
+use gob_rules::{Finding, Fix, FixKind, Registry, Severity};
+use gob_text::{FileId, FileInterner, SourceText, Span, TextRange};
+
+struct Fixture {
+    sources: MemorySources,
+    findings: Vec<Finding>,
+}
+
+fn range(a: u32, b: u32) -> TextRange {
+    TextRange::new(a.into(), b.into())
+}
+
+fn fixture() -> Fixture {
+    let mut files = FileInterner::new();
+    let a: FileId = files.intern("src/a.rs");
+    let b: FileId = files.intern("src/b.rs");
+    let mut sources = MemorySources::new();
+    sources.insert(
+        a,
+        "src/a.rs",
+        SourceText::new("fn main() {\n    bad_call();\n}\n").unwrap(),
+    );
+    sources.insert(b, "src/b.rs", SourceText::new("let x = 1;\n").unwrap());
+    let r = |s: &str| s.parse().unwrap();
+    let findings = vec![
+        Finding::new(
+            r("COV006"),
+            Severity::Warn,
+            Some(Span::new(b, range(4, 5))),
+            "unused x",
+            "src/b.rs",
+        ),
+        Finding::new(
+            r("DOC001"),
+            Severity::Error,
+            Some(Span::new(a, range(16, 24))),
+            "bad call",
+            "src/a.rs",
+        )
+        .with_fix(Fix {
+            kind: FixKind::Manual,
+            title: "remove call".into(),
+            edits: vec![],
+        }),
+        Finding::new(
+            r("DOC002"),
+            Severity::Advisory,
+            Some(Span::new(a, range(0, 2))),
+            "style note",
+            "src/a.rs",
+        ),
+        Finding::new(
+            r("TOOL001"),
+            Severity::Unresolved,
+            None,
+            "tool missing",
+            "repo",
+        ),
+    ];
+    Fixture { sources, findings }
+}
+
+fn records(fx: &Fixture) -> Vec<FindingRecord> {
+    fx.findings
+        .iter()
+        .map(|f| FindingRecord::from_finding(f, &fx.sources, Registry::global()))
+        .collect()
+}
+
+#[test]
+fn text_plain_snapshot() {
+    let fx = fixture();
+    let report = Report {
+        findings: &fx.findings,
+        sources: &fx.sources,
+    };
+    let out = render_text(
+        &report,
+        &TextOptions {
+            color: ColorChoice::Never,
+            snippets: true,
+        },
+    );
+    insta::assert_snapshot!(out);
+}
+
+#[test]
+fn text_color_snapshot() {
+    let fx = fixture();
+    let report = Report {
+        findings: &fx.findings,
+        sources: &fx.sources,
+    };
+    let out = render_text(
+        &report,
+        &TextOptions {
+            color: ColorChoice::Always,
+            snippets: false,
+        },
+    );
+    assert!(out.contains('\u{1b}'));
+    insta::assert_snapshot!(out.replace('\u{1b}', "<ESC>"));
+}
+
+#[test]
+fn json_success_snapshot() {
+    let fx = fixture();
+    let env = Envelope::success(serde_json::json!({"n": 4}), records(&fx));
+    let out = render_json(&env);
+    assert!(out.ends_with('\n'));
+    assert!(out.contains("\"schema_version\":1"));
+    insta::assert_snapshot!(out);
+}
+
+#[test]
+fn json_refusal_snapshot() {
+    let r = Refusal::new(
+        "E-LEASE-HELD",
+        RefusalClass::GuardRetryByWaiting,
+        "held by bot",
+    )
+    .with_remedy("frob ticket start T-1 --wait 60");
+    let env: Envelope<()> = Envelope::failure((&r).into());
+    insta::assert_snapshot!(render_json(&env));
+    assert_eq!(r.to_string(), "E-LEASE-HELD: held by bot");
+}
+
+#[test]
+fn fail_on_threshold() {
+    let fx = fixture();
+    assert_eq!(fail_on(&fx.findings, Severity::Error), ExitCode::Negative);
+    assert_eq!(fail_on(&fx.findings[..1], Severity::Error), ExitCode::Ok);
+    assert_eq!(
+        fail_on(&fx.findings[..1], Severity::Warn),
+        ExitCode::Negative
+    );
+    assert_eq!(fail_on(&[], Severity::Advisory), ExitCode::Ok);
+    // Unresolved never fails on its own, even at the lowest threshold.
+    assert_eq!(
+        fail_on(&fx.findings[3..], Severity::Unresolved),
+        ExitCode::Ok
+    );
+}
+
+#[test]
+fn exit_code_table() {
+    let table = [
+        (RefusalClass::DomainNegative, 1, false),
+        (RefusalClass::UsageError, 2, false),
+        (RefusalClass::GuardRetryByWaiting, 3, true),
+        (RefusalClass::GuardNeedsAction, 3, false),
+        (RefusalClass::Timeout, 3, true),
+        (RefusalClass::Internal, 4, false),
+    ];
+    assert_eq!(table.len(), RefusalClass::ALL.len());
+    for (class, code, retry) in table {
+        assert_eq!(i32::from(class.exit_code()), code, "{class:?}");
+        assert_eq!(class.retryable(), retry, "{class:?}");
+        assert!(!class.doc().is_empty());
+        let r = Refusal::new("E-X", class, "m");
+        assert_eq!(r.exit_code(), class.exit_code());
+        assert_eq!(gob_diagnostics::EnvelopeError::from(&r).retryable, retry);
+    }
+    assert_eq!(i32::from(ExitCode::Ok), 0);
+}
+
+#[test]
+fn schema_has_envelope_fields() {
+    let schema = envelope_schema();
+    let props = schema["properties"].as_object().unwrap();
+    let names: Vec<&str> = props.keys().map(String::as_str).collect();
+    for k in [
+        "ok",
+        "data",
+        "findings",
+        "warnings",
+        "error",
+        "schema_version",
+    ] {
+        assert!(names.contains(&k), "missing {k}");
+    }
+}
+
+#[test]
+fn slug_resolves_from_registry() {
+    use gob_rules::{RuleMeta, Scope, Tier};
+    static META: RuleMeta = RuleMeta {
+        id: "DOC001",
+        slug: "bad-call",
+        family: "DOC",
+        product: "frob",
+        severity: Severity::Error,
+        summary: "s",
+        explanation: "e",
+        tier: Tier::Universal,
+        scope: Scope::File,
+        fix: FixKind::Manual,
+        version: 1,
+        since: "0.0.0",
+        module: "t",
+    };
+    let fx = fixture();
+    let reg = Registry::from_metas([&META]);
+    let rec = FindingRecord::from_finding(&fx.findings[1], &fx.sources, &reg);
+    assert_eq!(rec.slug.as_deref(), Some("bad-call"));
+}

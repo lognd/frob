@@ -1,0 +1,5 @@
+---
+source: crates/gob-diagnostics/tests/contract.rs
+expression: render_json(&env)
+---
+{"ok":false,"data":null,"findings":[],"warnings":[],"error":{"code":"E-LEASE-HELD","message":"held by bot","remedy":"frob ticket start T-1 --wait 60","retryable":true},"schema_version":1}

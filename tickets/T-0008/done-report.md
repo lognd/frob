@@ -1,0 +1,26 @@
+## Done report
+
+gob-diagnostics per cli.md sections 1-2 (D27) and architecture.md section 4: Envelope with stable field order and schema_version, FindingRecord projection of gob_rules::Finding with 1-based line and column from a SourceProvider, ExitCode 0-4 converting to i32 (no std::process import so PROC001 stays clean; the binary builds the process exit), RefusalClass table (DomainNegative 1, UsageError 2, GuardRetryByWaiting 3 retryable, GuardNeedsAction 3, Timeout 3 retryable, Internal 4), Refusal error type with E-codes, fail_on threshold evaluator (Unresolved never fails), text renderer grouped by file with snippets and a summary line via anstream, compact JSON renderer, JSON Schema via schemars; insta snapshots. Deviations: SourceProvider exposes SourceText rather than a bare LineIndex; severity serialized as a lowercase string; retry_after_ms and holder fields are not modelled yet (frob-lease adds them).
+
+### Changed
+```
+ Cargo.lock                                         | 141 +++++++++++++-
+ crates/gob-diagnostics/Cargo.toml                  |  27 +++
+ crates/gob-diagnostics/src/envelope.rs             |  89 +++++++++
+ crates/gob-diagnostics/src/exit.rs                 |  48 +++++
+ crates/gob-diagnostics/src/lib.rs                  |  20 ++
+ crates/gob-diagnostics/src/record.rs               |  67 +++++++
+ crates/gob-diagnostics/src/refusal.rs              | 111 +++++++++++
+ crates/gob-diagnostics/src/source.rs               |  43 +++++
+ crates/gob-diagnostics/src/text.rs                 | 168 ++++++++++++++++
+ crates/gob-diagnostics/tests/contract.rs           | 213 +++++++++++++++++++++
+ .../snapshots/contract__json_refusal_snapshot.snap |   5 +
+ .../snapshots/contract__json_success_snapshot.snap |   5 +
+ .../snapshots/contract__text_color_snapshot.snap   |  16 ++
+ .../snapshots/contract__text_plain_snapshot.snap   |  25 +++
+ tickets/T-0008/ticket.md                           |   6 +-
+ 15 files changed, 979 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)

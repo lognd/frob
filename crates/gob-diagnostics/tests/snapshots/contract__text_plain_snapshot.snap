@@ -1,0 +1,25 @@
+---
+source: crates/gob-diagnostics/tests/contract.rs
+expression: out
+---
+src/a.rs
+  1:1: advisory[DOC002]: style note
+    |
+  1 | fn main() {
+    | ^^
+  2:5: error[DOC001]: bad call
+    |
+  2 |     bad_call();
+    |     ^^^^^^^^
+  fix: remove call
+
+src/b.rs
+  1:5: warning[COV006]: unused x
+    |
+  1 | let x = 1;
+    |     ^
+
+(no location)
+  unresolved[TOOL001]: tool missing
+
+1 errors, 1 warnings, 1 advisory, 1 unresolved
