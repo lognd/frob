@@ -16,7 +16,9 @@
 //! - Rules [`Parse001`] (malformed directive), [`Dsl001`] (unknown verb with
 //!   did-you-mean) and [`Dsl002`] (abbreviated ticket id).
 //! - [`frob`]: the milestone-1 verbs `ticket`, `todo`, `doc`, `tests`,
-//!   `invariant`, `accept`, `defer`.
+//!   `invariant`, `accept`, `defer`, and the milestone-2 claim verbs `effects`,
+//!   `pure`, `honest`, `core`, `shell`, `hook`, `dispatcher`, `idempotent`,
+//!   `trusted`, `calls` (parsed only; see [`EffectSet`] for the effect grammar).
 //!
 //! # Grammar
 //!
@@ -40,6 +42,8 @@ extern crate self as gob_directives;
 mod args;
 mod bind;
 mod comments;
+mod config;
+mod effects;
 pub mod frob;
 mod lex;
 mod meta;
@@ -47,8 +51,10 @@ mod rules;
 mod scan;
 mod ulid;
 
-pub use args::{ArgError, ArgKind, ArgList, ArgMeta, Cursor, FromArg, Keyed, Token};
+pub use args::{ArgError, ArgKind, ArgList, ArgMeta, Cursor, FromArg, FromArgs, Keyed, Token};
 pub use bind::Binding;
+pub use config::DirectivesConfig;
+pub use effects::{EffectAlias, EffectAtom, EffectBase, EffectSet, EffectsClaim, effects_claim};
 pub use gob_macros::Directive;
 pub use inventory;
 pub use meta::{Directive, DirectiveEntry, DirectiveMeta, all_directives, validate};

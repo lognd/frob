@@ -1,5 +1,6 @@
 //! Raw directive arguments, the typed-argument trait and the derive's cursor.
 
+use gob_symbols::Symref;
 use gob_text::TextRange;
 
 /// One argument value as written, with its byte range in the scanned file.
@@ -184,12 +185,34 @@ impl FromArg for bool {
     }
 }
 
+impl FromArg for Symref {
+    const KIND: ArgKind = ArgKind::Str;
+
+    fn from_token(token: &Token) -> Result<Self, &'static str> {
+        Symref::parse(&token.value).map_err(|_| "a symref such as `src/a.rs::name`")
+    }
+}
+
 impl FromArg for gob_rules::RuleId {
     const KIND: ArgKind = ArgKind::Str;
 
     fn from_token(token: &Token) -> Result<Self, &'static str> {
         token.value.parse().map_err(|_| "a rule id such as COV006")
     }
+}
+
+/// A type parsed from every remaining positional token together.
+pub trait FromArgs: Sized {
+    /// The primitive kind of one token, for docs and the JSON schema.
+    const KIND: ArgKind;
+
+    /// Parse the remaining tokens; `name` is the field name for errors.
+    ///
+    /// # Errors
+    ///
+    /// [`ArgError::Missing`] when `tokens` is empty and a value is required,
+    /// else [`ArgError::Invalid`] pointing at the offending text.
+    fn from_tokens(name: &str, tokens: &[Token]) -> Result<Self, ArgError>;
 }
 
 /// Reads typed fields out of an [`ArgList`]; used by derive-generated code.
@@ -270,6 +293,17 @@ impl<'a> Cursor<'a> {
         let rest = self.args.positional.get(self.next..).unwrap_or_default();
         self.next = self.args.positional.len();
         rest.iter().map(|t| Self::convert(name, t)).collect()
+    }
+
+    /// Every remaining positional parsed together as one `T`.
+    ///
+    /// # Errors
+    ///
+    /// The [`ArgError`] from `T::from_tokens`.
+    pub fn rest<T: FromArgs>(&mut self, name: &str) -> Result<T, ArgError> {
+        let rest = self.args.positional.get(self.next..).unwrap_or_default();
+        self.next = self.args.positional.len();
+        T::from_tokens(name, rest)
     }
 
     /// Reject undeclared or repeated keys and leftover positionals.

@@ -10,6 +10,7 @@ use gob_text::{FileId, FileInterner, LineIndex, Span, TextRange};
 use crate::args::{ArgList, Token};
 use crate::bind::{Binding, Site, bind, is_test_item};
 use crate::comments::{Segment, segments};
+use crate::config::DirectivesConfig;
 use crate::lex::{is_word, range_at, tokenize};
 use crate::meta::{DirectiveEntry, entries};
 use crate::rules::{Dsl001, Dsl002, Parse001};
@@ -25,6 +26,17 @@ pub struct ScanConfig {
     pub namespaces: Vec<String>,
     /// Product the PARSE and DSL findings are emitted under (D32).
     pub product: String,
+}
+
+impl ScanConfig {
+    /// A scan configuration honouring the namespaces of `[directives]`, reporting as `product`.
+    pub fn from_config(config: &DirectivesConfig, product: &str) -> Self {
+        tracing::debug!(namespaces = ?config.namespaces, product, "scan config from [directives]");
+        Self {
+            namespaces: config.namespaces.clone(),
+            product: product.to_owned(),
+        }
+    }
 }
 
 impl Default for ScanConfig {

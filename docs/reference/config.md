@@ -32,6 +32,16 @@ Materialized: yes.
 | `ticket_hops` | `u32` | `1` | no | Hops of dependents (callers, via the symbol graph) added to a `--ticket` run. |
 | `tool` | `Vec<ToolStage>` | `[]` | no | External tool stages run after the built-in rules, outside the time budget. |
 
+## `[directives]`
+
+Which directive namespaces are honoured (code-model section 4, decision D63).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `namespaces` | `Vec<String>` | `["frob", "grimble", "crunk"]` | yes | Comment namespaces the scanner reads; comments in any other are ignored. |
+
 ## `[evidence]`
 
 How evidence is captured and where large blobs go.

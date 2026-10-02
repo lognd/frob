@@ -303,7 +303,8 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
 ///
 /// Struct attribute `#[directive(namespace = "frob", verb = "ticket")]`; field
 /// attributes `#[arg(positional)]` (the default), `#[arg(key = "because")]`,
-/// `#[arg(list)]` (a `Vec<T>` taking the remaining positionals), plus
+/// `#[arg(list)]` (a `Vec<T>` taking the remaining positionals),
+/// `#[arg(rest)]` (a plain `T: FromArgs` parsed from all remaining positionals), plus
 /// `optional` (needs `Option<T>`) and `ticket_ref` (value is a ticket id).
 /// The summary comes from the first non-empty `///` doc line.
 #[proc_macro_derive(Directive, attributes(directive, arg))]
