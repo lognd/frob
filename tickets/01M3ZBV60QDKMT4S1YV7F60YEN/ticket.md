@@ -8,10 +8,10 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T22:30:33Z"
-updated = "2026-10-02T23:01:09Z"
+updated = "2026-10-02T23:01:50Z"
 idempotency_key = "m2-g06-followups"
 labels = ["milestone:2"]
-scope = ["crates/gob-diagnostics/**", "crates/gob-check/**", "crates/gob-ir/**", "crates/gob-dev/**", "crates/frob-ledger/**", "docs/reference/**", "docs/schemas/**"]
+scope = ["crates/gob-diagnostics/**", "crates/gob-check/**", "crates/gob-ir/**", "crates/gob-dev/**", "crates/frob-ledger/**", "docs/reference/**", "docs/schemas/**", "crates/frob-check/**"]
 
 [[acceptance]]
 text = "Given the workspace, when grepped for RequiredMarks and for a Polarity enum outside gob-rules, then neither exists and every rule page shows polarity"
