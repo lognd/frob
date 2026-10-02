@@ -1,0 +1,108 @@
++++
+id = "01M3WYJ8117ZBVRENF632Q3MCR"
+title = "post-land sweep regression from an unattributed source (sweep spawned by T-0028): 40 new (rule, file) identit(ies), 135 finding(s) (COV003, REF001, REF002, TEST001)"
+type = "bug"
+category = "done"
+outcome = "wont-fix"
+priority = "high"
+reporter = "agent"
+created = "2026-10-02T00:00:00Z"
+updated = "2026-10-02T00:00:02Z"
+aliases = ["T-0033"]
+scope = ["crates/frob-obligations/src/collect.rs", "crates/frob-obligations/src/comments.rs", "crates/frob-obligations/src/config.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/src/doc.rs", "crates/frob-obligations/src/exc.rs", "crates/frob-obligations/src/inv.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/refs.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/src/tickets.rs", "crates/frob-obligations/src/todo.rs", "crates/frob-obligations/src/util.rs", "crates/frob-obligations/tests/corpus.rs", "crates/frob-obligations/tests/mdtest/cov001.md", "crates/frob-obligations/tests/mdtest/doc001.md", "crates/frob-obligations/tests/mdtest/doc002.md", "crates/frob-obligations/tests/mdtest/exc001.md", "crates/frob-obligations/tests/mdtest/exc003.md", "crates/frob-obligations/tests/mdtest/exc007.md", "crates/frob-obligations/tests/mdtest/inv001.md", "crates/frob-obligations/tests/mdtest/inv002.md", "crates/frob-obligations/tests/mdtest/ref001.md", "crates/frob-obligations/tests/mdtest/todo001.md", "crates/frob-obligations/tests/mdtest/todo002.md", "crates/frob-obligations/tests/repo.rs", "crates/gob-macros/src/ticket_schema.rs", "crates/gob-macros/tests/ui/ticket_schema_no_doc.rs", "crates/gob-macros/tests/ui/ticket_schema_no_doc.stderr", "crates/gob-macros/tests/ui/ticket_schema_required_default.rs", "crates/gob-macros/tests/ui/ticket_schema_required_default.stderr", "tickets/T-0022", "tickets/T-0028"]
++++
+
+The deferred post-land unscoped sweep (T-1684) for an unattributed source (sweep spawned by T-0028) at commit b669c5eb8751c51d3353b77b171b2e3ae1d3a054 found 40 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES (40), not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). An independent re-measurement found 135 actual finding(s) across those 40 identit(ies).
+
+New (rule, file) identit(ies) filed here:
+
+- COV003  tickets/T-0022
+- COV003  tickets/T-0028
+- REF001  crates/frob-obligations/src/collect.rs
+- REF001  crates/frob-obligations/src/comments.rs
+- REF001  crates/frob-obligations/src/config.rs
+- REF001  crates/frob-obligations/src/cov.rs
+- REF001  crates/frob-obligations/src/doc.rs
+- REF001  crates/frob-obligations/src/exc.rs
+- REF001  crates/frob-obligations/src/inv.rs
+- REF001  crates/frob-obligations/src/refs.rs
+- REF001  crates/frob-obligations/src/rules.rs
+- REF001  crates/frob-obligations/src/tickets.rs
+- REF001  crates/frob-obligations/src/todo.rs
+- REF001  crates/frob-obligations/tests/corpus.rs
+- REF001  crates/frob-obligations/tests/mdtest/cov001.md
+- REF001  crates/frob-obligations/tests/mdtest/doc001.md
+- REF001  crates/frob-obligations/tests/mdtest/doc002.md
+- REF001  crates/frob-obligations/tests/mdtest/exc001.md
+- REF001  crates/frob-obligations/tests/mdtest/exc003.md
+- REF001  crates/frob-obligations/tests/mdtest/exc007.md
+- REF001  crates/frob-obligations/tests/mdtest/inv001.md
+- REF001  crates/frob-obligations/tests/mdtest/inv002.md
+- REF001  crates/frob-obligations/tests/mdtest/ref001.md
+- REF001  crates/frob-obligations/tests/mdtest/todo001.md
+- REF001  crates/frob-obligations/tests/mdtest/todo002.md
+- REF001  crates/frob-obligations/tests/repo.rs
+- REF001  crates/gob-macros/src/ticket_schema.rs
+- REF001  crates/gob-macros/tests/ui/ticket_schema_no_doc.rs
+- REF001  crates/gob-macros/tests/ui/ticket_schema_no_doc.stderr
+- REF001  crates/gob-macros/tests/ui/ticket_schema_required_default.rs
+- REF001  crates/gob-macros/tests/ui/ticket_schema_required_default.stderr
+- REF002  crates/frob-obligations/src/util.rs
+- TEST001  crates/frob-obligations/src/collect.rs
+- TEST001  crates/frob-obligations/src/doc.rs
+- TEST001  crates/frob-obligations/src/lib.rs
+- TEST001  crates/frob-obligations/src/refs.rs
+- TEST001  crates/frob-obligations/src/tickets.rs
+- TEST001  crates/frob-obligations/src/todo.rs
+- TEST001  crates/frob-obligations/src/util.rs
+- TEST001  crates/gob-macros/src/ticket_schema.rs
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- COV003  tickets/T-0022  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV003  tickets/T-0028  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/collect.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/comments.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/config.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/cov.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/doc.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/exc.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/inv.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/refs.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/rules.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/tickets.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/src/todo.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/corpus.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/cov001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/doc001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/doc002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/exc001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/exc003.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/exc007.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/inv001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/inv002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/ref001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/todo001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/mdtest/todo002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-obligations/tests/repo.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/gob-macros/src/ticket_schema.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/gob-macros/tests/ui/ticket_schema_no_doc.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/gob-macros/tests/ui/ticket_schema_no_doc.stderr  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/gob-macros/tests/ui/ticket_schema_required_default.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/gob-macros/tests/ui/ticket_schema_required_default.stderr  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  crates/frob-obligations/src/util.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-obligations/src/collect.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-obligations/src/doc.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-obligations/src/lib.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-obligations/src/refs.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-obligations/src/tickets.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-obligations/src/todo.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-obligations/src/util.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/gob-macros/src/ticket_schema.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-10-02: v1 post-land sweep applying v1 gate heuristics to the Rust v2 tree; superseded by the v2 self-host switch T-0025

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-10-02: v1 post-land sweep applying v1 gate heuristics to the Rust v2 tree; superseded by the v2 self-host switch T-0025"
+at = "2026-10-02T00:00:01Z"
+actor = "import"
+rev = 1

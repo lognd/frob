@@ -1,0 +1,23 @@
+kind = "create"
+title = "gob-directives: Directive derive, frob: namespace parser, binding rules, PARSE and DSL rules"
+type = "task"
+category = "todo"
+priority = "high"
+points = 8
+parent = "01M3WYJ802PGVRR55XCM9C3KV9"
+aliases = ["T-0014"]
+labels = ["milestone:2.0.0", "component:gob-directives"]
+scope = ["crates/gob-directives/**", "crates/gob-macros/**"]
+acceptance = ["Given a comment with frob:ticket followed by a fn two lines later, when scanned, then the directive binds to that fn", "Given a frob: directive with an unknown verb, when scanned, then DSL001 fires with the span and a did-you-mean", "Given a 7-char ticket handle in a directive, when scanned, then DSL002 fires with the expansion fix"]
+body = 'Implement crates/gob-directives and the Directive derive in gob-macros per code-model.md section 4 and D32. #[derive(Directive)] with #[directive(namespace = "frob", verb = "ticket")] and typed fields (positional, key=value, lists), generating the parser table, a docs entry and the JSON schema. Scanner over comments in Rust (via gob-languages) and markdown HTML comments, honoring the namespaces listed in the [directives] namespaces knob; unknown namespaces ignored, unknown verbs in an honored namespace -> DSL001. Binding rules from v1 carried unchanged: a directive binds to the symbol that starts within 2 lines after it, else the enclosing symbol, else the file; frob:tests canonical reorientation. Directives for milestone 1: frob:ticket <ulid>, frob:todo <ulid>, frob:doc <path#slug>, frob:tests <test id>, frob:invariant <name>, frob:accept and frob:defer (exception kinds with because=, ticket=, until=). Rules: PARSE001 malformed directive, DSL001 unknown verb, DSL002 abbreviated ticket id (D24: only full 26-char ULIDs persist). Output DirectiveRecord { namespace, verb, args, span, bound symref }. Tests via corpus files.'
+at = "2026-10-02T00:00:00Z"
+actor = "agent"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3WYJ80DXNAA5MYY3ZZVND2C"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3WYJ80546ATY80P3VS9T9XE"

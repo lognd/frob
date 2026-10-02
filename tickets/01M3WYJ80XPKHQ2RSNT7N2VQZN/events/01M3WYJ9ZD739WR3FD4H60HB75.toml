@@ -1,0 +1,13 @@
+kind = "evidence"
+at = "2026-10-02T00:00:02Z"
+actor = "import"
+rev = 1
+provider = "command"
+ref = "git diff --stat experimental -- docs/design"
+digest = "9dd511125cf2"
+status = "measured"
+captured_at = "2026-10-02T00:00:02Z"
+accepts = [1]
+passed = true
+exit_code = 0
+size = 0

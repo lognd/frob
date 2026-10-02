@@ -1,0 +1,314 @@
++++
+id = "01M3WYJ810ZBM3PZRYMVX7YP7S"
+title = "post-land sweep regression from T-0031: 143 new (rule, file) identit(ies), 765 finding(s) (COV003, DOC001, DRIFT002, REF001)"
+type = "bug"
+category = "done"
+outcome = "wont-fix"
+priority = "high"
+reporter = "agent"
+created = "2026-10-02T00:00:00Z"
+updated = "2026-10-02T00:00:02Z"
+aliases = ["T-0032"]
+scope = ["crates/frob-ack/src/ack.rs", "crates/frob-ack/src/cmd.rs", "crates/frob-ack/src/error.rs", "crates/frob-ack/src/inputs.rs", "crates/frob-ack/src/repo_rule.rs", "crates/frob-ack/src/rules.rs", "crates/frob-ack/tests/ack.rs", "crates/frob-ack/tests/workspace.rs", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/src/events.rs", "crates/frob-evidence/src/guard.rs", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/store.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/workspace.rs", "crates/frob-evidence/tests/evidence.rs", "crates/frob-lease/src/config.rs", "crates/frob-lease/src/error.rs", "crates/frob-lease/src/guard.rs", "crates/frob-lease/src/lib.rs", "crates/frob-lease/src/model.rs", "crates/frob-lease/src/overlap.rs", "crates/frob-lease/src/rule.rs", "crates/frob-lease/src/store.rs", "crates/frob-lease/src/verbs.rs", "crates/frob-lease/tests/lease.rs", "crates/frob-ledger/benches/ledger.rs", "crates/frob-ledger/src/brief.rs", "crates/frob-ledger/src/doc.rs", "crates/frob-ledger/src/doctor.rs", "crates/frob-ledger/src/error.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/guards.rs", "crates/frob-ledger/src/id.rs", "crates/frob-ledger/src/index.rs", "crates/frob-ledger/src/ledger.rs", "crates/frob-ledger/src/links.rs", "crates/frob-ledger/src/merge.rs", "crates/frob-ledger/src/model.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/schema.rs", "crates/frob-ledger/tests/ledger.rs", "crates/frob-tests/src/catalog.rs", "crates/frob-tests/src/error.rs", "crates/frob-tests/src/lease.rs", "crates/frob-tests/src/lib.rs", "crates/frob-tests/src/reach.rs", "crates/frob-tests/src/rule.rs", "crates/frob-tests/src/run.rs", "crates/frob-tests/src/select.rs", "crates/frob-tests/src/touched.rs", "crates/frob-tests/src/verb.rs", "crates/frob-tests/tests/rule.rs", "crates/frob-tests/tests/selection.rs", "crates/frob-worktree/src/config.rs", "crates/frob-worktree/src/error.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/tests/work.rs", "crates/frob/src/ticket/doctor_cmd.rs", "crates/frob/src/ticket/merge_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/read.rs", "crates/frob/src/ticket/write.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/wiring.rs", "crates/gob-lock/src/diff.rs", "crates/gob-lock/src/file.rs", "crates/gob-lock/tests/lock.rs", "docs/reference/rules/AFFECT001.md", "docs/reference/rules/DRIFT001.md", "docs/reference/rules/DRIFT002.md", "docs/reference/rules/DRIFT003.md", "docs/reference/rules/SCOPE001.md", "docs/reference/rules/TEST001.md", "docs/reference/rules/TICK001.md", "docs/reference/rules/TICK002.md", "docs/reference/rules/TICK003.md", "tickets/T-0018", "tickets/T-0019", "tickets/T-0020", "tickets/T-0021", "tickets/T-0030", "tickets/T-0031"]
++++
+
+The deferred post-land unscoped sweep (T-1684) for T-0031 at commit ba2471f963f5b2f5ea28d63a01c2c1704144d264 found 143 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES (143), not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). An independent re-measurement found 765 actual finding(s) across those 143 identit(ies).
+
+New (rule, file) identit(ies) filed here:
+
+- COV003  tickets/T-0018
+- COV003  tickets/T-0019
+- COV003  tickets/T-0020
+- COV003  tickets/T-0021
+- COV003  tickets/T-0030
+- COV003  tickets/T-0031
+- DOC001  docs/reference/rules/AFFECT001.md
+- DOC001  docs/reference/rules/DRIFT001.md
+- DOC001  docs/reference/rules/DRIFT002.md
+- DOC001  docs/reference/rules/DRIFT003.md
+- DOC001  docs/reference/rules/SCOPE001.md
+- DOC001  docs/reference/rules/TEST001.md
+- DOC001  docs/reference/rules/TICK001.md
+- DOC001  docs/reference/rules/TICK002.md
+- DOC001  docs/reference/rules/TICK003.md
+- DRIFT002  crates/frob-ack/tests/ack.rs
+- REF001  crates/frob-ack/src/ack.rs
+- REF001  crates/frob-ack/src/cmd.rs
+- REF001  crates/frob-ack/src/error.rs
+- REF001  crates/frob-ack/src/inputs.rs
+- REF001  crates/frob-ack/src/repo_rule.rs
+- REF001  crates/frob-ack/src/rules.rs
+- REF001  crates/frob-ack/tests/ack.rs
+- REF001  crates/frob-ack/tests/workspace.rs
+- REF001  crates/frob-evidence/src/config.rs
+- REF001  crates/frob-evidence/src/error.rs
+- REF001  crates/frob-evidence/src/events.rs
+- REF001  crates/frob-evidence/src/guard.rs
+- REF001  crates/frob-evidence/src/provider.rs
+- REF001  crates/frob-evidence/src/record.rs
+- REF001  crates/frob-evidence/src/store.rs
+- REF001  crates/frob-evidence/src/verbs.rs
+- REF001  crates/frob-evidence/src/workspace.rs
+- REF001  crates/frob-evidence/tests/evidence.rs
+- REF001  crates/frob-lease/src/config.rs
+- REF001  crates/frob-lease/src/error.rs
+- REF001  crates/frob-lease/src/guard.rs
+- REF001  crates/frob-lease/src/model.rs
+- REF001  crates/frob-lease/src/overlap.rs
+- REF001  crates/frob-lease/src/rule.rs
+- REF001  crates/frob-lease/src/store.rs
+- REF001  crates/frob-lease/src/verbs.rs
+- REF001  crates/frob-lease/tests/lease.rs
+- REF001  crates/frob-ledger/benches/ledger.rs
+- REF001  crates/frob-ledger/src/brief.rs
+- REF001  crates/frob-ledger/src/doc.rs
+- REF001  crates/frob-ledger/src/doctor.rs
+- REF001  crates/frob-ledger/src/error.rs
+- REF001  crates/frob-ledger/src/event.rs
+- REF001  crates/frob-ledger/src/fold.rs
+- REF001  crates/frob-ledger/src/guards.rs
+- REF001  crates/frob-ledger/src/id.rs
+- REF001  crates/frob-ledger/src/index.rs
+- REF001  crates/frob-ledger/src/ledger.rs
+- REF001  crates/frob-ledger/src/links.rs
+- REF001  crates/frob-ledger/src/merge.rs
+- REF001  crates/frob-ledger/src/model.rs
+- REF001  crates/frob-ledger/src/ops.rs
+- REF001  crates/frob-ledger/src/rules.rs
+- REF001  crates/frob-ledger/src/schema.rs
+- REF001  crates/frob-ledger/tests/ledger.rs
+- REF001  crates/frob-tests/src/catalog.rs
+- REF001  crates/frob-tests/src/error.rs
+- REF001  crates/frob-tests/src/lease.rs
+- REF001  crates/frob-tests/src/reach.rs
+- REF001  crates/frob-tests/src/rule.rs
+- REF001  crates/frob-tests/src/run.rs
+- REF001  crates/frob-tests/src/select.rs
+- REF001  crates/frob-tests/src/touched.rs
+- REF001  crates/frob-tests/src/verb.rs
+- REF001  crates/frob-tests/tests/rule.rs
+- REF001  crates/frob-tests/tests/selection.rs
+- REF001  crates/frob-worktree/src/config.rs
+- REF001  crates/frob-worktree/src/error.rs
+- REF001  crates/frob-worktree/src/verbs.rs
+- REF001  crates/frob-worktree/src/work.rs
+- REF001  crates/frob-worktree/tests/work.rs
+- REF001  crates/frob/src/ticket/doctor_cmd.rs
+- REF001  crates/frob/src/ticket/merge_cmd.rs
+- REF001  crates/frob/src/ticket/read.rs
+- REF001  crates/frob/src/ticket/write.rs
+- REF001  crates/frob/tests/ticket.rs
+- REF001  crates/frob/tests/wiring.rs
+- REF001  crates/gob-lock/src/diff.rs
+- REF001  crates/gob-lock/src/file.rs
+- REF001  crates/gob-lock/tests/lock.rs
+- REF002  docs/reference/rules/AFFECT001.md
+- REF002  docs/reference/rules/DRIFT001.md
+- REF002  docs/reference/rules/DRIFT002.md
+- REF002  docs/reference/rules/DRIFT003.md
+- REF002  docs/reference/rules/SCOPE001.md
+- REF002  docs/reference/rules/TEST001.md
+- REF002  docs/reference/rules/TICK001.md
+- REF002  docs/reference/rules/TICK002.md
+- REF002  docs/reference/rules/TICK003.md
+- SEC001  crates/frob-evidence/tests/evidence.rs
+- TEST001  crates/frob-ack/src/ack.rs
+- TEST001  crates/frob-ack/src/cmd.rs
+- TEST001  crates/frob-ack/src/inputs.rs
+- TEST001  crates/frob-ack/src/rules.rs
+- TEST001  crates/frob-evidence/src/error.rs
+- TEST001  crates/frob-evidence/src/events.rs
+- TEST001  crates/frob-evidence/src/guard.rs
+- TEST001  crates/frob-evidence/src/lib.rs
+- TEST001  crates/frob-evidence/src/provider.rs
+- TEST001  crates/frob-evidence/src/record.rs
+- TEST001  crates/frob-evidence/src/store.rs
+- TEST001  crates/frob-evidence/src/workspace.rs
+- TEST001  crates/frob-lease/src/error.rs
+- TEST001  crates/frob-lease/src/guard.rs
+- TEST001  crates/frob-lease/src/lib.rs
+- TEST001  crates/frob-lease/src/model.rs
+- TEST001  crates/frob-lease/src/overlap.rs
+- TEST001  crates/frob-lease/src/store.rs
+- TEST001  crates/frob-ledger/src/doctor.rs
+- TEST001  crates/frob-ledger/src/error.rs
+- TEST001  crates/frob-ledger/src/event.rs
+- TEST001  crates/frob-ledger/src/fold.rs
+- TEST001  crates/frob-ledger/src/guards.rs
+- TEST001  crates/frob-ledger/src/id.rs
+- TEST001  crates/frob-ledger/src/index.rs
+- TEST001  crates/frob-ledger/src/ledger.rs
+- TEST001  crates/frob-ledger/src/links.rs
+- TEST001  crates/frob-ledger/src/merge.rs
+- TEST001  crates/frob-ledger/src/model.rs
+- TEST001  crates/frob-ledger/src/ops.rs
+- TEST001  crates/frob-ledger/src/rules.rs
+- TEST001  crates/frob-ledger/src/schema.rs
+- TEST001  crates/frob-tests/src/catalog.rs
+- TEST001  crates/frob-tests/src/error.rs
+- TEST001  crates/frob-tests/src/lease.rs
+- TEST001  crates/frob-tests/src/lib.rs
+- TEST001  crates/frob-tests/src/reach.rs
+- TEST001  crates/frob-tests/src/rule.rs
+- TEST001  crates/frob-tests/src/run.rs
+- TEST001  crates/frob-tests/src/select.rs
+- TEST001  crates/frob-tests/src/touched.rs
+- TEST001  crates/frob-worktree/src/config.rs
+- TEST001  crates/frob-worktree/src/error.rs
+- TEST001  crates/frob-worktree/src/lib.rs
+- TEST001  crates/frob-worktree/src/work.rs
+- TEST001  crates/frob/src/ticket/mod.rs
+- TEST001  crates/gob-lock/src/file.rs
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- COV003  tickets/T-0018  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV003  tickets/T-0019  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV003  tickets/T-0020  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV003  tickets/T-0021  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV003  tickets/T-0030  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- COV003  tickets/T-0031  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/AFFECT001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/DRIFT001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/DRIFT002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/DRIFT003.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/SCOPE001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/TEST001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/TICK001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/TICK002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DOC001  docs/reference/rules/TICK003.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  crates/frob-ack/tests/ack.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ack/src/ack.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ack/src/cmd.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ack/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ack/src/inputs.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ack/src/repo_rule.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ack/src/rules.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ack/tests/ack.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ack/tests/workspace.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/config.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/events.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/guard.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/provider.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/record.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/store.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/verbs.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/src/workspace.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-evidence/tests/evidence.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/src/config.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/src/guard.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/src/model.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/src/overlap.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/src/rule.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/src/store.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/src/verbs.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-lease/tests/lease.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/benches/ledger.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/brief.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/doc.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/doctor.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/event.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/fold.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/guards.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/id.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/index.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/ledger.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/links.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/merge.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/model.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/ops.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/rules.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/src/schema.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-ledger/tests/ledger.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/catalog.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/lease.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/reach.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/rule.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/run.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/select.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/touched.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/src/verb.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/tests/rule.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-tests/tests/selection.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-worktree/src/config.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-worktree/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-worktree/src/verbs.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-worktree/src/work.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob-worktree/tests/work.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob/src/ticket/doctor_cmd.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob/src/ticket/merge_cmd.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/frob/src/ticket/read.rs  -> attributed to T-0031 (commit ba2471f963f5, already closed/dropped -- filed below) via crates/frob/src/ticket/read.rs::Brief
+- REF001  crates/frob/src/ticket/write.rs  -> attributed to T-0031 (commit ba2471f963f5, already closed/dropped -- filed below) via crates/frob/src/ticket/write.rs::Close
+- REF001  crates/frob/tests/ticket.rs  -> attributed to T-0031 (commit ba2471f963f5, already closed/dropped -- filed below) via crates/frob/tests/ticket.rs::links_blocked_doable_and_repeat_semantics -> crates/frob/tests/ticket.rs::Repo.new
+- REF001  crates/frob/tests/wiring.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/gob-lock/src/diff.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/gob-lock/src/file.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  crates/gob-lock/tests/lock.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/AFFECT001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/DRIFT001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/DRIFT002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/DRIFT003.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/SCOPE001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/TEST001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/TICK001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/TICK002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF002  docs/reference/rules/TICK003.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SEC001  crates/frob-evidence/tests/evidence.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ack/src/ack.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ack/src/cmd.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ack/src/inputs.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ack/src/rules.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-evidence/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-evidence/src/events.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-evidence/src/guard.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-evidence/src/lib.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-evidence/src/provider.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-evidence/src/record.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-evidence/src/store.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-evidence/src/workspace.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-lease/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-lease/src/guard.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-lease/src/lib.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-lease/src/model.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-lease/src/overlap.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-lease/src/store.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/doctor.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/event.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/fold.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/guards.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/id.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/index.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/ledger.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/links.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/merge.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/model.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/ops.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/rules.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-ledger/src/schema.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/catalog.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/lease.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/lib.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/reach.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/rule.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/run.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/select.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-tests/src/touched.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-worktree/src/config.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-worktree/src/error.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-worktree/src/lib.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob-worktree/src/work.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/frob/src/ticket/mod.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  crates/gob-lock/src/file.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-10-02: v1 post-land sweep applying v1 Python-era gate heuristics (COV003, DOC001, DRIFT002, REF001) to the Rust v2 tree; not actionable, superseded by the v2 self-host switch T-0025

@@ -1,0 +1,13 @@
+kind = "evidence"
+at = "2026-10-02T00:00:01Z"
+actor = "import"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-cli -p frob-cli"
+digest = "e3b0c44298fc"
+status = "measured"
+captured_at = "2026-10-02T00:00:01Z"
+accepts = [1, 2]
+passed = true
+exit_code = 0
+size = 0

@@ -1,0 +1,22 @@
++++
+id = "01M3WYJ80XPKHQ2RSNT7N2VQZN"
+title = "Reconcile design docs with milestone-1 implementation decisions"
+type = "docs"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 3
+parent = "01M3WYJ802PGVRR55XCM9C3KV9"
+reporter = "agent"
+created = "2026-10-02T00:00:00Z"
+updated = "2026-10-02T00:00:04Z"
+aliases = ["T-0029"]
+labels = ["milestone:2.0.0", "component:docs"]
+scope = ["docs/design/**"]
+
+[[acceptance]]
+text = "Given the design set after the change, when grepped for each item in the body, then the text matches the landed code and the README log has one row per decision"
+bound = false
++++
+
+Collect the deviations recorded in the done-reports of T-0003 through T-0027 and fold them into docs/design plus the README decision log: cache file name cache.sqlite (architecture.md says cache.db); [check] fail_on default error; cas_retries under [git]; [tickets] ref default refs/heads/main; envelope carries verb and already (and whether they move into gob-diagnostics); tree-sitter core pinned 0.27.0 with ast-grep-core 0.45.3 compatible; gix 0.87.1; gob-text owns TextSize/TextRange; impl member symref forms Type.method and Type[Trait].method; whitespace-collapsed facet normalization; PROC001 allow list includes the frob binary crate; FacetDigest vs gob-walk Digest; mdtest one nextest case per corpus. Each becomes a decision-log row or a corrected sentence; nothing is left contradicting the code.

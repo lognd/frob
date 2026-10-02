@@ -1,0 +1,52 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+gob-cli, the Command derive and the frob binary (package frob-cli) per cli.md sections 1-4 (D27) and architecture.md sections 4 and 6: clap root with --format json|text|auto (--json/--text aliases), --quiet, -v, --color, --cwd, --schema, per-verb --dry-run opt-in; Command trait with Outcome/Payload/CliError mapping to the exit table; #[derive(Command)] registering CommandMeta (verb, product, idempotent, dry_run, exits, summary, module) in inventory; single render function over gob-diagnostics; Registry::verify_unique at startup. Verbs: doctor (toolchain, git discovery, worktree kind, cache stats, CFG001 status, ledger ref reachability; never fails on findings), init (materialize frob.toml, .frob/ in .gitignore, merge driver config and .gitattributes line; second run already=true; E-NOT-A-REPO outside git), config show --effective with provenance, config sync, schema. M1 ConfigTables: tickets (ref, dir), check (fail_on, exclude, size_cap), cache (busy_timeout_ms), git (cas_retries). Out of scope by one line: crates/gob-exec/src/proc001.rs adds frob to the PROC001 allow list because main calls std::process::exit. Deviations to reconcile in the design: envelope gains verb and already fields (proposal: move them into gob-diagnostics Envelope); fail_on default error vs design none; cas_retries under [git]; tickets.ref default refs/heads/main.
+
+### Changed
+```
+ Cargo.lock                                         | 144 ++++++++
+ crates/frob/Cargo.toml                             |  39 +++
+ crates/frob/src/config.rs                          | 100 ++++++
+ crates/frob/src/config_cmd.rs                      | 242 +++++++++++++
+ crates/frob/src/doctor.rs                          | 277 +++++++++++++++
+ crates/frob/src/init.rs                            | 189 ++++++++++
+ crates/frob/src/lib.rs                             |  26 ++
+ crates/frob/src/main.rs                            |  11 +
+ crates/frob/src/workspace.rs                       |  73 ++++
+ crates/frob/tests/cli.rs                           | 281 +++++++++++++++
+ .../tests/snapshots/cli__doctor_fresh_repo.snap    |  80 +++++
+ .../frob/tests/snapshots/cli__doctor_schema.snap   | 212 ++++++++++++
+ .../frob/tests/snapshots/cli__init_frob_toml.snap  |  15 +
+ crates/gob-cli/Cargo.toml                          |  30 ++
+ crates/gob-cli/src/cli.rs                          | 384 +++++++++++++++++++++
+ crates/gob-cli/src/command.rs                      |  83 +++++
+ crates/gob-cli/src/context.rs                      |  45 +++
+ crates/gob-cli/src/error.rs                        |  87 +++++
+ crates/gob-cli/src/lib.rs                          |  35 ++
+ crates/gob-cli/src/meta.rs                         |  50 +++
+ crates/gob-cli/src/render.rs                       | 214 ++++++++++++
+ crates/gob-cli/src/schema_cmd.rs                   |  48 +++
+ crates/gob-cli/tests/root.rs                       | 197 +++++++++++
+ crates/gob-exec/src/proc001.rs                     |   3 +-
+ crates/gob-macros/Cargo.toml                       |   3 +-
+ crates/gob-macros/src/command.rs                   | 117 +++++++
+ crates/gob-macros/src/lib.rs                       |  20 +-
+ crates/gob-macros/tests/ui.rs                      |   2 +-
+ crates/gob-macros/tests/ui/command_bad_exit.rs     |   8 +
+ crates/gob-macros/tests/ui/command_bad_exit.stderr |   7 +
+ crates/gob-macros/tests/ui/command_no_doc.rs       |   7 +
+ crates/gob-macros/tests/ui/command_no_doc.stderr   |   7 +
+ tickets/T-0017/ticket.md                           |   6 +-
+ 33 files changed, 3034 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)"""
+at = "2026-10-02T00:00:02Z"
+actor = "import"
+rev = 1
