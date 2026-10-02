@@ -1,5 +1,5 @@
 ---
-id: T-draft-dc0830a1
+id: T-0035
 title: gob-git commit_paths leaves other checkouts holding the ref with a stale index
 state: queued
 kind: bug
