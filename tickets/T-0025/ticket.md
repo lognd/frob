@@ -2,7 +2,7 @@
 id: T-0025
 title: 'Self-host switch: v2 frob.toml, import this repo''s v1 tickets, CI runs frob
   v2 check'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -26,8 +26,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0025
+branch: t-0025
 scope:
 - frob.toml
 - tickets/**
@@ -36,11 +36,19 @@ scope:
 - CONTRIBUTING.md
 - notes/coordinator.md
 - .gitignore
+- notes/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: self-host switch imports every v1 ticket into the v2 ledger;
   tickets/** is the deliverable
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: notes/**
+  reason: T-0025 self-host switch must touch notes/** (directive/comment cleanup and
+    v2 migration)
+  actor: logan
+  at: '2026-10-02'
 designated_repro_test: null
 acceptance:
 - text: Given the repository after the switch, when CI runs, then frob check and frob
