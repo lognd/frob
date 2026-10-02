@@ -2,7 +2,8 @@
 id = "01M3Z9ANCK7KPMGKPCSFPM502E"
 title = "gob-dev and gob-mdtest locate the repository through compile-time CARGO_MANIFEST_DIR"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
