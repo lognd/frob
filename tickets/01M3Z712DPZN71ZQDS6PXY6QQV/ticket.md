@@ -2,7 +2,8 @@
 id = "01M3Z712DPZN71ZQDS6PXY6QQV"
 title = "gob-ir: U terms, scope graph with status, canonical facet stream, queries, Kleene evaluator"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
