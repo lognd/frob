@@ -2,7 +2,8 @@
 id = "01M3Z713VGKF4Z0JJ3263XJMC3"
 title = "G08: grimble-model crate: .grmb parser, printer, fmt and U adapter"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
