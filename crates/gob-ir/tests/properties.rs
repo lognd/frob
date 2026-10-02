@@ -282,11 +282,11 @@ fn golden_digest_is_stable_across_runs() {
     let d = m.term().facet_digest(u, Facet::Body);
     assert_eq!(
         d,
-        FacetDigest::Exact(Digest::of("gob-ir/2/body", br#"(body (ref #0))"#))
+        FacetDigest::Exact(Digest::of("gob-ir/2/body", b"(body (ref #0))"))
     );
     assert_eq!(
         m.term().facet_stream(u, Facet::Body),
-        FacetStream::Stream(r#"(body (ref #0))"#.to_owned())
+        FacetStream::Stream("(body (ref #0))".to_owned())
     );
     assert_eq!(format!("{d:?}"), "Exact(Digest(de4d74a833fd))");
 }

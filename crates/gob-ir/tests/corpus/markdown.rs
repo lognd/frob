@@ -77,5 +77,5 @@ fn nested_section_edit_changes_ancestor_body_today() {
         t.facet_digest(fx.setup, Facet::Body)
     );
     assert_eq!(t.literals(fx.intro).len(), 2);
-    assert!(t.comments(fx.usage).len() == 1);
+    assert_eq!(t.comments(fx.usage).len(), 1);
 }

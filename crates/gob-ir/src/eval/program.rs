@@ -524,10 +524,7 @@ impl RuleProgram {
         let term = model.term();
         let mut findings = Vec::new();
         if !not_applicable {
-            let anchor_of = |n: NodeId| {
-                term.symref_of(n)
-                    .map_or_else(|| term.locator().to_owned(), ToString::to_string)
-            };
+            let anchor_of = |n: NodeId| enclosing_symref(model, n);
             let mut rolled: BTreeMap<(FileId, String), Vec<NodeId>> = BTreeMap::new();
             for r in &results {
                 for v in &r.verdicts {
@@ -604,10 +601,7 @@ impl RuleProgram {
         let names: Vec<String> = sites
             .iter()
             .take(3)
-            .map(|&n| {
-                term.symref_of(n)
-                    .map_or_else(|| n.to_string(), ToString::to_string)
-            })
+            .map(|&n| enclosing_symref(model, n))
             .collect();
         let message = format!(
             "{}: unresolved ({reason}) at {} site(s): {}",
@@ -642,4 +636,13 @@ fn taint(obs: Observation) -> Observation {
         Observation::Count(a) => Observation::Count(down(a)),
         reach @ Observation::Reach { .. } => reach,
     }
+}
+
+/// The symref of the nearest unit at or above `n`, else the artifact locator.
+fn enclosing_symref(model: &Model, n: NodeId) -> String {
+    let term = model.term();
+    std::iter::once(n)
+        .chain(term.ancestors(n))
+        .find_map(|a| term.symref_of(a))
+        .map_or_else(|| term.locator().to_owned(), ToString::to_string)
 }
