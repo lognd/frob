@@ -397,7 +397,7 @@ mod tests {
                 end: 324
             }
         );
-        assert!(found[0].message.contains("this step"));
+        assert!(found[0].message.contains("not pinned to a hash"));
     }
 
     #[test]
