@@ -1,0 +1,385 @@
+//! Integration tests against temporary repositories built with gix only.
+
+use std::path::Path;
+use std::sync::{Arc, Barrier};
+
+use gob_git::{
+    ChangeKind, CommitOptions, GitError, RelPath, Repo, StatusKind, StatusOptions, TreeRef,
+};
+
+const MAIN: &str = "refs/heads/main";
+
+fn opts() -> CommitOptions {
+    CommitOptions {
+        cas_retries: 5,
+        author: Some(("Test".into(), "test@example.com".into())),
+    }
+}
+
+fn rp(s: &str) -> RelPath {
+    RelPath::new(s).unwrap()
+}
+
+fn change(path: &str, body: &str) -> (RelPath, Option<Vec<u8>>) {
+    (rp(path), Some(body.as_bytes().to_vec()))
+}
+
+/// Init a repo whose HEAD is symbolic to `main`, with one root commit made by `commit_paths`.
+fn fixture() -> (tempfile::TempDir, Repo) {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = Repo::init(dir.path()).unwrap();
+    // Point HEAD at main regardless of init.defaultBranch.
+    std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").unwrap();
+    repo.commit_paths(MAIN, &[change("README.md", "hello\n")], "root", &opts())
+        .unwrap();
+    (dir, repo)
+}
+
+fn commit_count(repo: &Repo, rev: &str) -> usize {
+    let mut n = 0;
+    let mut cur = Some(repo.rev_parse(rev).unwrap());
+    while let Some(id) = cur {
+        n += 1;
+        cur = repo.rev_parse(&format!("{id}^")).ok();
+    }
+    n
+}
+
+#[test]
+fn root_commit_on_missing_ref_and_checkout_sync() {
+    let (dir, repo) = fixture();
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("README.md")).unwrap(),
+        "hello\n"
+    );
+    assert_eq!(repo.head().unwrap().branch.as_deref(), Some("main"));
+    assert!(repo.status(&StatusOptions::default()).unwrap().is_empty());
+}
+
+#[test]
+fn concurrent_writers_lose_nothing() {
+    let (dir, _repo) = fixture();
+    let barrier = Arc::new(Barrier::new(2));
+    let handles: Vec<_> = ["tickets/a/ticket.md", "tickets/b/ticket.md"]
+        .into_iter()
+        .map(|p| {
+            let (path, barrier) = (dir.path().to_path_buf(), barrier.clone());
+            std::thread::spawn(move || {
+                let repo = Repo::discover(&path).unwrap();
+                barrier.wait();
+                // Bare ref write path only: the checked-out sync is exercised elsewhere.
+                repo.commit_paths(MAIN, &[change(p, p)], "add", &opts())
+                    .unwrap()
+            })
+        })
+        .collect();
+    let outcomes: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
+    let repo = Repo::discover(dir.path()).unwrap();
+    for p in ["tickets/a/ticket.md", "tickets/b/ticket.md", "README.md"] {
+        assert!(repo.read_blob_at(MAIN, p).unwrap().is_some(), "{p} missing");
+    }
+    assert_eq!(commit_count(&repo, MAIN), 3);
+    // The checked-out index must carry both entries too (no lost index update).
+    assert!(repo.status(&StatusOptions::default()).unwrap().is_empty());
+    eprintln!(
+        "retries: {:?}",
+        outcomes.iter().map(|o| o.retries).collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn staged_unrelated_file_is_untouched() {
+    let (dir, repo) = fixture();
+    // Stage an unrelated file by hand using the index API.
+    std::fs::write(dir.path().join("staged.txt"), "wip\n").unwrap();
+    stage(&repo, dir.path(), "staged.txt");
+    let before = repo.status(&StatusOptions::default()).unwrap();
+    assert!(
+        before
+            .iter()
+            .any(|e| e.path == "staged.txt" && e.staged && e.kind == StatusKind::Added)
+    );
+
+    let out = repo
+        .commit_paths(
+            MAIN,
+            &[change("tickets/x/ticket.md", "x1\n")],
+            "add x",
+            &opts(),
+        )
+        .unwrap();
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("tickets/x/ticket.md")).unwrap(),
+        "x1\n"
+    );
+    let repo = Repo::discover(dir.path()).unwrap();
+    assert!(
+        repo.read_blob_at(MAIN, "staged.txt").unwrap().is_none(),
+        "staged file swept in"
+    );
+    let after = repo.status(&StatusOptions::default()).unwrap();
+    assert_eq!(after, before, "only the staged file should remain dirty");
+    assert_eq!(repo.head().unwrap().oid, Some(out.oid));
+}
+
+fn stage(repo: &Repo, root: &Path, rel: &str) {
+    // Test helper: stage via gix index editing so no git binary is needed.
+    let gix = gix::open(repo.work_dir().unwrap()).unwrap();
+    let bytes = std::fs::read(root.join(rel)).unwrap();
+    let id = gix.write_blob(&bytes).unwrap().detach();
+    let mut index = gix.open_index().unwrap();
+    let md = gix::index::fs::Metadata::from_path_no_follow(&root.join(rel)).unwrap();
+    let stat = gix::index::entry::Stat::from_fs(&md).unwrap();
+    index.dangerously_push_entry(
+        stat,
+        id,
+        gix::index::entry::Flags::empty(),
+        gix::index::entry::Mode::FILE,
+        rel.into(),
+    );
+    index.sort_entries();
+    index.remove_tree();
+    index.write(gix::index::write::Options::default()).unwrap();
+}
+
+#[test]
+fn delete_via_none_and_local_edit_refusal() {
+    let (dir, repo) = fixture();
+    repo.commit_paths(
+        MAIN,
+        &[change("tickets/t/ticket.md", "t\n")],
+        "add t",
+        &opts(),
+    )
+    .unwrap();
+    repo.commit_paths(MAIN, &[(rp("tickets/t/ticket.md"), None)], "rm t", &opts())
+        .unwrap();
+    assert!(
+        repo.read_blob_at(MAIN, "tickets/t/ticket.md")
+            .unwrap()
+            .is_none()
+    );
+    assert!(!dir.path().join("tickets/t/ticket.md").exists());
+    assert!(repo.status(&StatusOptions::default()).unwrap().is_empty());
+
+    // A local edit to a ledger path is refused with a remedy.
+    repo.commit_paths(MAIN, &[change("tickets/e.md", "1\n")], "add e", &opts())
+        .unwrap();
+    std::fs::write(dir.path().join("tickets/e.md"), "mine\n").unwrap();
+    let err = repo
+        .commit_paths(MAIN, &[change("tickets/e.md", "2\n")], "upd e", &opts())
+        .unwrap_err();
+    assert!(matches!(err, GitError::LocalEdits { .. }), "{err}");
+    assert_eq!(err.code(), "E-GIT-LOCAL-EDITS");
+}
+
+#[test]
+fn cas_exhausted_when_ref_keeps_churning() {
+    let (dir, repo) = fixture();
+    let other = Repo::discover(dir.path()).unwrap();
+    let mut n = 0;
+    let o = CommitOptions {
+        cas_retries: 3,
+        ..opts()
+    };
+    let err = repo
+        .commit_paths_with(MAIN, &[change("tickets/z.md", "z\n")], "z", &o, &mut |_| {
+            n += 1;
+            other
+                .commit_paths(
+                    MAIN,
+                    &[change(&format!("churn/{n}.md"), "c\n")],
+                    "churn",
+                    &opts(),
+                )
+                .unwrap();
+        })
+        .unwrap_err();
+    match err {
+        GitError::CasExhausted { attempts, .. } => assert_eq!(attempts, 4),
+        e => panic!("unexpected {e}"),
+    }
+    assert!(repo.read_blob_at(MAIN, "tickets/z.md").unwrap().is_none());
+}
+
+#[test]
+fn cas_succeeds_after_one_lost_race() {
+    let (dir, repo) = fixture();
+    let other = Repo::discover(dir.path()).unwrap();
+    let mut first = true;
+    let out = repo
+        .commit_paths_with(
+            MAIN,
+            &[change("tickets/y.md", "y\n")],
+            "y",
+            &opts(),
+            &mut |_| {
+                if std::mem::take(&mut first) {
+                    other
+                        .commit_paths(MAIN, &[change("tickets/w.md", "w\n")], "w", &opts())
+                        .unwrap();
+                }
+            },
+        )
+        .unwrap();
+    assert_eq!(out.retries, 1);
+    for p in ["tickets/y.md", "tickets/w.md"] {
+        assert!(repo.read_blob_at(MAIN, p).unwrap().is_some());
+    }
+}
+
+#[test]
+fn read_apis() {
+    let (dir, repo) = fixture();
+    let first = repo.rev_parse(MAIN).unwrap();
+    repo.commit_paths(
+        MAIN,
+        &[change("a.txt", "a\n"), (rp("README.md"), None)],
+        "two",
+        &opts(),
+    )
+    .unwrap();
+    let second = repo.rev_parse("main").unwrap();
+    assert_ne!(first, second);
+
+    let d = repo
+        .diff_names(&TreeRef::Oid(first), &TreeRef::Ref("main".into()))
+        .unwrap();
+    let got: Vec<_> = d.iter().map(|c| (c.path.as_str(), c.kind)).collect();
+    assert_eq!(
+        got,
+        [
+            ("README.md", ChangeKind::Deleted),
+            ("a.txt", ChangeKind::Added)
+        ]
+    );
+
+    assert_eq!(
+        repo.merge_base("main", &first.to_string()).unwrap(),
+        Some(first)
+    );
+    assert_eq!(repo.read_blob_at("main", "a.txt").unwrap().unwrap(), b"a\n");
+    assert_eq!(
+        repo.read_blob_at(&first.to_string(), "README.md")
+            .unwrap()
+            .unwrap(),
+        b"hello\n"
+    );
+    assert!(repo.read_blob_at("main", "nope").unwrap().is_none());
+    assert!(repo.rev_parse("no-such-ref").is_err());
+
+    // status: untracked file shows, ignored file does not.
+    std::fs::write(dir.path().join(".gitignore"), "*.log\n").unwrap();
+    std::fs::write(dir.path().join("new.txt"), "n").unwrap();
+    std::fs::write(dir.path().join("x.log"), "n").unwrap();
+    let st = repo.status(&StatusOptions::default()).unwrap();
+    let paths: Vec<_> = st.iter().map(|e| (e.path.as_str(), e.kind)).collect();
+    assert!(
+        paths.contains(&("new.txt", StatusKind::Untracked)),
+        "{paths:?}"
+    );
+    assert!(!paths.iter().any(|(p, _)| *p == "x.log"));
+
+    // Ref vs worktree: edit a tracked file and add an untracked one.
+    std::fs::write(dir.path().join("a.txt"), "changed\n").unwrap();
+    let wt = repo.diff_names(&TreeRef::Head, &TreeRef::WorkTree).unwrap();
+    assert!(
+        wt.iter()
+            .any(|c| c.path == "a.txt" && c.kind == ChangeKind::Modified)
+    );
+    assert!(
+        wt.iter()
+            .any(|c| c.path == "new.txt" && c.kind == ChangeKind::Added)
+    );
+    assert!(wt.iter().all(|c| c.path != "x.log"));
+    assert!(repo.diff_names(&TreeRef::WorkTree, &TreeRef::Head).is_err());
+
+    assert_eq!(repo.config_user().is_some(), repo.config_user().is_some());
+    assert!(!repo.is_linked_worktree());
+    assert_eq!(repo.list_worktrees().unwrap().len(), 1);
+}
+
+#[test]
+fn rel_path_validation_and_error_codes() {
+    for bad in ["", "/abs", "a/../b", "a//b", ".git/config", "a\\b"] {
+        let e = RelPath::new(bad).unwrap_err();
+        assert_eq!(e.code(), "E-GIT-PATH");
+    }
+    assert!(RelPath::new("tickets/T-0001/ticket.md").is_ok());
+    let dir = tempfile::tempdir().unwrap();
+    assert_eq!(
+        Repo::discover(dir.path()).unwrap_err().code(),
+        "E-GIT-DISCOVER"
+    );
+}
+
+fn have_git() -> bool {
+    std::process::Command::new("git")
+        .arg("--version")
+        .output()
+        .is_ok()
+}
+
+#[test]
+fn spawn_fallbacks_worktree_merge_push() {
+    if !have_git() {
+        eprintln!("skipped: git binary absent");
+        return;
+    }
+    let (dir, repo) = fixture();
+    let before = repo.runner().spawn_count();
+    let wt_dir = tempfile::tempdir().unwrap();
+    let wt = wt_dir.path().join("wt");
+    repo.worktree_add(&wt, "feature", "main").unwrap();
+    let linked = Repo::discover(&wt).unwrap();
+    assert!(linked.is_linked_worktree());
+    assert_eq!(linked.current_branch().unwrap().as_deref(), Some("feature"));
+    assert_eq!(repo.list_worktrees().unwrap().len(), 2);
+
+    // Up to date: no spawn.
+    let n = repo.runner().spawn_count();
+    assert_eq!(
+        repo.merge_branch(&wt, "main").unwrap(),
+        gob_git::MergeOutcome::UpToDate
+    );
+    assert_eq!(repo.runner().spawn_count().since(n), 0);
+
+    // Fast-forward feature to a newer main.
+    repo.commit_paths(MAIN, &[change("tickets/m.md", "m\n")], "m", &opts())
+        .unwrap();
+    assert_eq!(
+        repo.merge_branch(&wt, "main").unwrap(),
+        gob_git::MergeOutcome::FastForward
+    );
+
+    // Conflicts: both sides edit README.md.
+    let id = &["-c", "user.name=T", "-c", "user.email=t@e.x"];
+    std::fs::write(wt.join("README.md"), "feature\n").unwrap();
+    let g = |cwd: &Path, args: &[&str]| {
+        let s = std::process::Command::new("git")
+            .current_dir(cwd)
+            .args(id)
+            .args(args)
+            .status()
+            .unwrap();
+        assert!(s.success());
+    };
+    g(&wt, &["commit", "-am", "f"]);
+    repo.commit_paths(MAIN, &[change("README.md", "main\n")], "r", &opts())
+        .unwrap();
+    assert_eq!(
+        linked.merge_branch(&wt, "main").unwrap(),
+        gob_git::MergeOutcome::Conflicts(vec!["README.md".into()])
+    );
+    g(&wt, &["merge", "--abort"]);
+
+    // Push to a bare remote.
+    let remote = tempfile::tempdir().unwrap();
+    g(remote.path(), &["init", "--bare", "-b", "main"]);
+    g(
+        dir.path(),
+        &["remote", "add", "origin", &remote.path().to_string_lossy()],
+    );
+    repo.push("origin", "main").unwrap();
+    assert!(repo.runner().spawn_count().since(before) >= 3);
+}
