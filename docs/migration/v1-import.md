@@ -26,14 +26,14 @@ v1 keeps only a creation date. A ticket ULID carries that date at 00:00:00 UTC p
 
 ## Result
 
-35 tickets and 124 events. By type: bug 5, docs 1, epic 2, task 27. By category: done/done 28, done/wont-fix 2, todo 5.
+35 tickets and 127 events. By type: bug 5, docs 1, epic 2, task 27. By category: done/done 29, done/wont-fix 2, todo 4.
 
 ## Dropped v1 fields
 
 | v1 field | Tickets with a value | Why it is not carried |
 |---|---|---|
-| `worktree` | 29 | per-checkout lease state; v2 leases are local runtime state and worktrees derive from the handle |
-| `branch` | 29 | per-checkout lease state; v2 derives the branch name from the handle |
+| `worktree` | 30 | per-checkout lease state; v2 leases are local runtime state and worktrees derive from the handle |
+| `branch` | 30 | per-checkout lease state; v2 derives the branch name from the handle |
 | `sprint` | 0 | v2 has no sprint field (cycles arrive in milestone 2) |
 | `due` | 0 | v2 has no due-date field |
 | `rank` | 0 | v2 orders by priority and points; no manual rank |
@@ -50,7 +50,7 @@ v1 keeps only a creation date. A ticket ULID carries that date at 00:00:00 UTC p
 | `scope_breadth_ack_reason` | 3 | reason for a dropped v1 scope-breadth waiver |
 | `no_scope_declared` | 0 | v1 scope gate waiver; v2 treats an empty scope as unscoped |
 | `no_scope_declared_reason` | 0 | reason for a dropped v1 scope waiver |
-| `scope_changes` | 9 | v1 scope audit trail; v2 records changes as field events going forward, the old trail stays in git history |
+| `scope_changes` | 10 | v1 scope audit trail; v2 records changes as field events going forward, the old trail stays in git history |
 | `body_changes` | 1 | v1 body audit trail; the old trail stays in git history |
 | `triage_changes` | 1 | v1 triage audit trail; the old trail stays in git history |
 | `designated_repro_test` | 0 | v1 bug repro binding; v2 binds tests with `frob:tests` |

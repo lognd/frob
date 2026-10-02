@@ -1,0 +1,30 @@
++++
+id = "01M3WYJ80C2XQD40EYQWHEWDKK"
+title = "gob-languages: tree-sitter rust, markdown, toml behind features"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "high"
+points = 5
+parent = "01M3WYJ802ZVWE6E3050EVRCSV"
+reporter = "agent"
+created = "2026-10-02T00:00:00Z"
+updated = "2026-10-02T00:00:03Z"
+aliases = ["T-0012"]
+labels = ["milestone:2.0.0", "component:gob-languages"]
+scope = ["crates/gob-languages/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3WYJ804VRZGKGH6ECGXSH9N"
+
+[[acceptance]]
+text = "Given a Rust file over the size cap, when parsed, then the result is Unresolved with the cap named and no panic"
+bound = false
+
+[[acceptance]]
+text = "Given the same text, when parsed twice, then the grammar identity is identical and changes when the grammar crate version changes"
+bound = false
++++
+
+Implement crates/gob-languages per code-model.md section 3 and the audit L17. Feature-gated grammars: rust (tree-sitter-rust), markdown (tree-sitter-md), toml (tree-sitter-toml-ng or equivalent); pick tree-sitter 0.25 or 0.27 consistently and record the version choice and the ast-grep compatibility question in the done-report (audit M26). API: Language enum, detect(path) -> Option<Language>, parse(language, text) -> ParsedTree with a per-file size cap and parse timeout (both knobs) returning Unresolved markers rather than panicking, a grammar identity string (crate version + grammar hash) for cache keys, a query helper that compiles tree-sitter queries once per language (cached) and iterates captures with gob-text spans. Document how to add a language (docs comment in lib.rs and a generated docs/reference/languages page later).
