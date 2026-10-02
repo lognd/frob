@@ -1,5 +1,5 @@
 ---
-id: T-draft-10c44009
+id: T-0006
 title: 'gob-config: ConfigTable derive, layered load, materialized knobs, CFG001'
 state: queued
 kind: feature
