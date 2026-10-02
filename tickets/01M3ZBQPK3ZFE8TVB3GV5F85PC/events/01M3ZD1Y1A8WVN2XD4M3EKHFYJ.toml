@@ -1,0 +1,112 @@
+kind = "evidence"
+at = "2026-10-02T22:51:43Z"
+actor = "lognd"
+rev = 1
+provider = "nextest"
+ref = "-p frob-check -p frob-cli -p frob-evidence -p frob-land -p frob-ledger -p frob-tests -p frob-worktree -p gob-dev -p gob-git -p gob-ir -p gob-symbols -p gob-walk -E '(package(=frob-check) & (test(=a_branch_touching_an_out_of_scope_file_still_fires_scope001) | test(=base_advancing_does_not_leak_into_scope001) | test(=the_ledger_directory_is_exempt_from_scope001) | test(=ticket_restricts_per_file_rules_to_its_scope) | test(=uncommitted_out_of_scope_edits_still_fire_scope001))) | (package(=frob-cli) & (test(=add_scope_and_remove_scope_round_trip_with_noop_semantics) | test(=ambiguous_handle_exits_3_listing_both_candidates) | test(=empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event) | test(=links_blocked_doable_and_repeat_semantics) | test(=merge_driver_fails_with_exit_1_when_the_fold_fails) | test(=merge_driver_unions_events_from_both_branches_and_refolds) | test(=new_update_close_makes_three_commits_and_frontmatter_equals_the_fold) | test(=new_with_the_same_key_returns_already) | test(=show_json_has_every_schema_field) | test(=update_set_comment_brief_and_parent))) | (package(=frob-evidence) & (test(=guard_refuses_a_task_without_evidence_and_passes_with_a_measured_record) | test(=non_code_tickets_need_no_evidence_and_bypass_is_recorded) | test(=verbs_add_list_and_fetch_round_trip))) | (package(=frob-land) & (test(=an_unleased_ticket_and_another_worktree_are_refused) | test(=conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean) | test(=dirty_worktree_refuses_and_lists_paths) | test(=dry_run_plan_is_deterministic_and_changes_nothing) | test(=happy_path_lands_closes_and_cleans_up) | test(=landing_from_inside_the_worktree_defaults_to_its_ticket) | test(=lock_contention_refuses_retryably_naming_the_holder) | test(=missing_evidence_refuses_unless_bypassed_with_a_reason) | test(=red_check_refuses_with_exit_3_and_moves_nothing))) | (package(=frob-ledger) & (test(=concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent) | test(=doctor_flags_and_fixes_a_stale_frontmatter) | test(=handles_resolve_and_ambiguous_suffixes_refuse) | test(=index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise) | test(=lifecycle_new_update_link_comment_close) | test(=link_topology_is_enforced) | test(=update_validates_and_repeats_are_already))) | (package(=frob-tests) & (test(=an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests) | test(=only_tests_reaching_the_changed_function_are_selected) | test(=test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree))) | (package(=frob-worktree) & (test(=another_holder_is_refused_and_can_steal_with_a_reason) | test(=concurrent_work_on_overlapping_tickets_grants_exactly_one) | test(=doable_hides_tickets_overlapping_a_live_lease) | test(=start_leases_the_current_checkout_and_requeue_releases) | test(=unworkable_tickets_are_refused) | test(=work_creates_worktree_and_is_idempotent_for_the_holder) | test(=worktree_dir_knob_moves_the_worktree))) | (package(=gob-dev) & (test(=imports_maps_and_verifies))) | (package(=gob-git) & (test(=cas_exhausted_when_ref_keeps_churning) | test(=cas_succeeds_after_one_lost_race) | test(=commit_from_linked_worktree_syncs_primary_checkout) | test(=concurrent_writers_lose_nothing) | test(=crlf_checkout_rewrite_is_not_a_local_edit) | test(=delete_via_none_and_local_edit_refusal) | test(=primary_with_local_edit_is_reported_and_keeps_it) | test(=read_apis) | test(=real_edit_still_refused_under_autocrlf) | test(=spawn_fallbacks_worktree_merge_push) | test(=staged_unrelated_file_is_untouched))) | (package(=gob-ir) & (test(=a_hidden_remainder_blocks_foreign) | test(=owner_of_a_unit_prefers_the_symbol_level_selector) | test(=owner_through_a_may_edge_is_may) | test(=owner_ties_are_unknown_with_both_candidates_recorded) | test(=unknown_attribute_makes_the_narrower_candidate_may_and_the_owner_bounds))) | (package(=gob-symbols) & (test(=g11_parse_errors_are_holes_and_parse_status_is_a_query) | test(=g19_unknown_language_is_one_opaque_f0_unit) | test(=g19_walked_files_without_an_adapter_are_counted_opaque) | test(=rust_depth_limit_collapses_into_opaque_and_keeps_calls) | test(=second_build_extracts_nothing))) | (package(=gob-walk) & (test(=owner::tests::may_more_specific_over_must_broader_gives_bounds) | test(=owner::tests::may_only_candidates_may_be_foreign) | test(=owner::tests::most_specific_must_wins) | test(=owner::tests::must_dominates_less_specific_may) | test(=owner::tests::nobody_is_foreign_unless_something_is_hidden) | test(=owner::tests::same_entity_rows_never_tie_with_themselves) | test(=owner::tests::tie_of_must_candidates_is_unknown_with_both_recorded) | test(=owner::tests::tie_with_a_higher_may_is_not_a_tie)))'"
+digest = "084f5c339ac5c8e1199ab10f4853eb6150453544ff6b85c41990ff1ca8221eda"
+status = "measured"
+captured_at = "2026-10-02T22:51:43Z"
+passed = true
+exit_code = 0
+tests = ["a_branch_touching_an_out_of_scope_file_still_fires_scope001", "uncommitted_out_of_scope_edits_still_fire_scope001", "the_ledger_directory_is_exempt_from_scope001", "base_advancing_does_not_leak_into_scope001", "ticket_restricts_per_file_rules_to_its_scope", "verbs_add_list_and_fetch_round_trip", "guard_refuses_a_task_without_evidence_and_passes_with_a_measured_record", "non_code_tickets_need_no_evidence_and_bypass_is_recorded", "merge_driver_fails_with_exit_1_when_the_fold_fails", "ambiguous_handle_exits_3_listing_both_candidates", "empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event", "new_update_close_makes_three_commits_and_frontmatter_equals_the_fold", "new_with_the_same_key_returns_already", "add_scope_and_remove_scope_round_trip_with_noop_semantics", "merge_driver_unions_events_from_both_branches_and_refolds", "links_blocked_doable_and_repeat_semantics", "show_json_has_every_schema_field", "update_set_comment_brief_and_parent", "handles_resolve_and_ambiguous_suffixes_refuse", "doctor_flags_and_fixes_a_stale_frontmatter", "index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise", "concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent", "update_validates_and_repeats_are_already", "lifecycle_new_update_link_comment_close", "link_topology_is_enforced", "imports_maps_and_verifies", "a_hidden_remainder_blocks_foreign", "owner_of_a_unit_prefers_the_symbol_level_selector", "owner_ties_are_unknown_with_both_candidates_recorded", "unknown_attribute_makes_the_narrower_candidate_may_and_the_owner_bounds", "owner_through_a_may_edge_is_may", "conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean", "dirty_worktree_refuses_and_lists_paths", "an_unleased_ticket_and_another_worktree_are_refused", "dry_run_plan_is_deterministic_and_changes_nothing", "happy_path_lands_closes_and_cleans_up", "landing_from_inside_the_worktree_defaults_to_its_ticket", "red_check_refuses_with_exit_3_and_moves_nothing", "missing_evidence_refuses_unless_bypassed_with_a_reason", "lock_contention_refuses_retryably_naming_the_holder", "rust_depth_limit_collapses_into_opaque_and_keeps_calls", "owner::tests::may_more_specific_over_must_broader_gives_bounds", "owner::tests::may_only_candidates_may_be_foreign", "owner::tests::most_specific_must_wins", "owner::tests::nobody_is_foreign_unless_something_is_hidden", "owner::tests::must_dominates_less_specific_may", "owner::tests::same_entity_rows_never_tie_with_themselves", "owner::tests::tie_of_must_candidates_is_unknown_with_both_recorded", "owner::tests::tie_with_a_higher_may_is_not_a_tie", "g11_parse_errors_are_holes_and_parse_status_is_a_query", "g19_unknown_language_is_one_opaque_f0_unit", "g19_walked_files_without_an_adapter_are_counted_opaque", "second_build_extracts_nothing", "cas_succeeds_after_one_lost_race", "cas_exhausted_when_ref_keeps_churning", "concurrent_writers_lose_nothing", "crlf_checkout_rewrite_is_not_a_local_edit", "read_apis", "real_edit_still_refused_under_autocrlf", "delete_via_none_and_local_edit_refusal", "commit_from_linked_worktree_syncs_primary_checkout", "staged_unrelated_file_is_untouched", "primary_with_local_edit_is_reported_and_keeps_it", "spawn_fallbacks_worktree_merge_push", "concurrent_work_on_overlapping_tickets_grants_exactly_one", "doable_hides_tickets_overlapping_a_live_lease", "another_holder_is_refused_and_can_steal_with_a_reason", "start_leases_the_current_checkout_and_requeue_releases", "worktree_dir_knob_moves_the_worktree", "unworkable_tickets_are_refused", "work_creates_worktree_and_is_idempotent_for_the_holder", "an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests", "only_tests_reaching_the_changed_function_are_selected", "test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree"]
+inline = """
+   Compiling bit-vec v0.8.0
+   Compiling quick-error v1.2.3
+   Compiling rand_xorshift v0.4.0
+   Compiling unarray v0.1.4
+   Compiling rusty-fork v0.3.1
+   Compiling gob-dev v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/gob-dev)
+   Compiling bit-set v0.8.0
+   Compiling proptest v1.11.0
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/gob-symbols)
+   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/gob-ir)
+   Compiling gob-walk v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/gob-walk)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/frob-land)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/frob-tests)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/frob-evidence)
+   Compiling gob-git v0.0.0 (/home/logan/projects/frob-v2-wt/V5F85PC/crates/gob-git)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.13s
+────────────
+ Nextest run ID 067b453b-05ef-477e-be50-1c328bf27cc3 with nextest profile: default
+    Starting 74 tests across 40 binaries (267 tests skipped)
+        PASS [   0.167s] ( 1/74) frob-cli::ticket merge_driver_fails_with_exit_1_when_the_fold_fails
+        PASS [   0.405s] ( 2/74) frob-cli::ticket ambiguous_handle_exits_3_listing_both_candidates
+        PASS [   0.444s] ( 3/74) frob-check::check a_branch_touching_an_out_of_scope_file_still_fires_scope001
+        PASS [   0.447s] ( 4/74) frob-check::check uncommitted_out_of_scope_edits_still_fire_scope001
+        PASS [   0.468s] ( 5/74) frob-check::check the_ledger_directory_is_exempt_from_scope001
+        PASS [   0.471s] ( 6/74) frob-cli::ticket empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event
+        PASS [   0.494s] ( 7/74) frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   0.508s] ( 8/74) frob-check::check base_advancing_does_not_leak_into_scope001
+        PASS [   0.356s] ( 9/74) frob-cli::ticket new_with_the_same_key_returns_already
+        PASS [   0.616s] (10/74) frob-check::check ticket_restricts_per_file_rules_to_its_scope
+        PASS [   0.669s] (11/74) frob-cli::ticket add_scope_and_remove_scope_round_trip_with_noop_semantics
+        PASS [   0.716s] (12/74) frob-cli::ticket merge_driver_unions_events_from_both_branches_and_refolds
+        PASS [   0.775s] (13/74) frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        PASS [   0.472s] (14/74) frob-cli::ticket show_json_has_every_schema_field
+        PASS [   0.378s] (15/74) frob-land::land conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean
+        PASS [   0.418s] (16/74) frob-evidence::evidence verbs_add_list_and_fetch_round_trip
+        PASS [   0.374s] (17/74) frob-land::land dirty_worktree_refuses_and_lists_paths
+        PASS [   0.474s] (18/74) frob-evidence::evidence guard_refuses_a_task_without_evidence_and_passes_with_a_measured_record
+        PASS [   0.484s] (19/74) frob-evidence::evidence non_code_tickets_need_no_evidence_and_bypass_is_recorded
+        PASS [   0.073s] (20/74) frob-ledger::ledger handles_resolve_and_ambiguous_suffixes_refuse
+        PASS [   0.238s] (21/74) frob-ledger::ledger doctor_flags_and_fixes_a_stale_frontmatter
+        PASS [   0.697s] (22/74) frob-land::land an_unleased_ticket_and_another_worktree_are_refused
+        PASS [   0.604s] (23/74) frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   0.331s] (24/74) frob-ledger::ledger index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise
+        PASS [   0.847s] (25/74) frob-cli::ticket update_set_comment_brief_and_parent
+        PASS [   0.441s] (26/74) frob-ledger::ledger concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent
+        PASS [   0.172s] (27/74) frob-ledger::ledger update_validates_and_repeats_are_already
+        PASS [   0.162s] (28/74) frob-tests::selection an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests
+        PASS [   0.161s] (29/74) frob-tests::selection only_tests_reaching_the_changed_function_are_selected
+        PASS [   0.625s] (30/74) frob-ledger::ledger lifecycle_new_update_link_comment_close
+        PASS [   0.366s] (31/74) frob-worktree::work concurrent_work_on_overlapping_tickets_grants_exactly_one
+        PASS [   1.068s] (32/74) frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   1.031s] (33/74) frob-land::land landing_from_inside_the_worktree_defaults_to_its_ticket
+        PASS [   0.877s] (34/74) frob-land::land red_check_refuses_with_exit_3_and_moves_nothing
+        PASS [   0.640s] (35/74) frob-ledger::ledger link_topology_is_enforced
+        PASS [   0.030s] (36/74) gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.404s] (37/74) frob-worktree::work doable_hides_tickets_overlapping_a_live_lease
+        PASS [   0.504s] (38/74) frob-worktree::work another_holder_is_refused_and_can_steal_with_a_reason
+        PASS [   0.073s] (39/74) gob-git::ledger cas_succeeds_after_one_lost_race
+        PASS [   0.978s] (40/74) frob-land::land missing_evidence_refuses_unless_bypassed_with_a_reason
+        PASS [   0.410s] (41/74) frob-worktree::work start_leases_the_current_checkout_and_requeue_releases
+        PASS [   0.103s] (42/74) gob-git::ledger cas_exhausted_when_ref_keeps_churning
+        PASS [   0.084s] (43/74) gob-git::ledger concurrent_writers_lose_nothing
+        PASS [   0.068s] (44/74) gob-git::ledger crlf_checkout_rewrite_is_not_a_local_edit
+        PASS [   0.063s] (45/74) gob-git::ledger read_apis
+        PASS [   0.052s] (46/74) gob-git::ledger real_edit_still_refused_under_autocrlf
+        PASS [   0.010s] (47/74) gob-ir::select a_hidden_remainder_blocks_foreign
+        PASS [   0.011s] (48/74) gob-ir::select owner_of_a_unit_prefers_the_symbol_level_selector
+        PASS [   0.082s] (49/74) gob-git::ledger delete_via_none_and_local_edit_refusal
+        PASS [   0.162s] (50/74) gob-git::ledger commit_from_linked_worktree_syncs_primary_checkout
+        PASS [   0.012s] (51/74) gob-ir::select owner_ties_are_unknown_with_both_candidates_recorded
+        PASS [   0.011s] (52/74) gob-ir::select unknown_attribute_makes_the_narrower_candidate_may_and_the_owner_bounds
+        PASS [   0.015s] (53/74) gob-ir::select owner_through_a_may_edge_is_may
+        PASS [   1.180s] (54/74) frob-land::land lock_contention_refuses_retryably_naming_the_holder
+        PASS [   0.016s] (55/74) gob-symbols::corpus rust_depth_limit_collapses_into_opaque_and_keeps_calls
+        PASS [   0.018s] (56/74) gob-symbols::gaps g11_parse_errors_are_holes_and_parse_status_is_a_query
+        PASS [   0.012s] (57/74) gob-walk owner::tests::may_more_specific_over_must_broader_gives_bounds
+        PASS [   0.026s] (58/74) gob-symbols::gaps g19_unknown_language_is_one_opaque_f0_unit
+        PASS [   0.008s] (59/74) gob-walk owner::tests::may_only_candidates_may_be_foreign
+        PASS [   0.014s] (60/74) gob-walk owner::tests::most_specific_must_wins
+        PASS [   0.019s] (61/74) gob-walk owner::tests::nobody_is_foreign_unless_something_is_hidden
+        PASS [   0.025s] (62/74) gob-walk owner::tests::must_dominates_less_specific_may
+        PASS [   0.012s] (63/74) gob-walk owner::tests::same_entity_rows_never_tie_with_themselves
+        PASS [   0.100s] (64/74) gob-git::ledger staged_unrelated_file_is_untouched
+        PASS [   0.016s] (65/74) gob-walk owner::tests::tie_of_must_candidates_is_unknown_with_both_recorded
+        PASS [   0.019s] (66/74) gob-walk owner::tests::tie_with_a_higher_may_is_not_a_tie
+        PASS [   0.159s] (67/74) gob-git::ledger primary_with_local_edit_is_reported_and_keeps_it
+        PASS [   0.136s] (68/74) gob-symbols::gaps g19_walked_files_without_an_adapter_are_counted_opaque
+        PASS [   0.143s] (69/74) gob-symbols::symbols second_build_extracts_nothing
+        PASS [   0.263s] (70/74) gob-git::ledger spawn_fallbacks_worktree_merge_push
+        PASS [   0.403s] (71/74) frob-worktree::work worktree_dir_knob_moves_the_worktree
+        PASS [   0.532s] (72/74) frob-worktree::work unworkable_tickets_are_refused
+        PASS [   0.432s] (73/74) frob-worktree::work work_creates_worktree_and_is_idempotent_for_the_holder
+        PASS [   1.384s] (74/74) frob-tests::selection test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree
+────────────
+     Summary [   2.678s] 74 tests run: 74 passed, 267 skipped
+"""
+size = 8760
