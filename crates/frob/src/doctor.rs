@@ -1,10 +1,13 @@
 //! `frob doctor`: report the environment; findings never make it fail.
 
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use gob_cache::{Cache, CacheConfig};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
+use gob_symbols::{Fidelity, adapter_for, adapters, opaque_adapter};
+use gob_walk::{WalkConfig, walk};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -23,7 +26,56 @@ const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
     idempotent = true,
     exits(ok, refused)
 )]
-pub struct Doctor;
+pub struct Doctor {
+    /// Also report each language adapter's fidelity and capability precisions.
+    languages: bool,
+}
+
+/// One capability of an adapter with its precision label.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct CapabilityRow {
+    /// Capability name (`resolve_ref`, `apply_targets`, ...).
+    pub capability: String,
+    /// Precision label (`lexical+imports`, `none`, `not-applicable`, ...).
+    pub precision: String,
+}
+
+/// One language adapter.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct LanguageRow {
+    /// Language tag (`rust`, `markdown`).
+    pub language: String,
+    /// Fidelity level, `F0` to `F4` (universal-model.md 3.3).
+    pub fidelity: String,
+    /// Adapter name, version and grammar identity (the cache key component).
+    pub adapter: String,
+    /// Walked files this adapter claims.
+    pub files: usize,
+    /// Capability precisions in table order.
+    pub capabilities: Vec<CapabilityRow>,
+}
+
+/// A walked file extension no adapter claims: one opaque unit per file at F0.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct UnadaptedRow {
+    /// The extension with its dot, or `(none)`.
+    pub extension: String,
+    /// Always `F0`.
+    pub fidelity: String,
+    /// Always `opaque(no-adapter)`.
+    pub unit: String,
+    /// Walked files with this extension.
+    pub files: usize,
+}
+
+/// `doctor --languages`: adapters and the extensions that have none.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct LanguagesReport {
+    /// Every adapter, then the F0 adapter.
+    pub adapters: Vec<LanguageRow>,
+    /// Extensions with no adapter, sorted.
+    pub unadapted: Vec<UnadaptedRow>,
+}
 
 /// Versions of the tools frob shells out to.
 #[derive(Debug, Serialize, JsonSchema)]
@@ -105,6 +157,9 @@ pub struct DoctorData {
     pub config: ConfigInfo,
     /// Ledger ref.
     pub ledger: LedgerInfo,
+    /// Language adapters; present only with `--languages`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub languages: Option<LanguagesReport>,
 }
 
 /// First stdout line of `<program> --version`, or `None` when it cannot run.
@@ -136,8 +191,19 @@ fn probe(runner: &Runner, program: Program, cwd: &std::path::Path) -> Option<Str
 impl Command for Doctor {
     type Data = DoctorData;
 
-    fn from_matches(_matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
-        Ok(Self)
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(
+            gob_cli::clap::Arg::new("languages")
+                .long("languages")
+                .action(gob_cli::clap::ArgAction::SetTrue)
+                .help("Report each adapter's fidelity and capability precisions"),
+        )
+    }
+
+    fn from_matches(matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            languages: matches.get_flag("languages"),
+        })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<DoctorData> {
@@ -184,6 +250,9 @@ impl Command for Doctor {
         };
 
         let ledger = ledger_info(&located, &cfg);
+        let languages = self
+            .languages
+            .then(|| languages_report(&located.root, &cfg));
         tracing::info!(
             git = git.discovered,
             cache = %cache.state,
@@ -197,8 +266,87 @@ impl Command for Doctor {
             cache,
             config,
             ledger,
+            languages,
         })
         .with_findings(findings))
+    }
+}
+
+/// Adapters with their fidelity and capabilities, plus the walked extensions with none.
+fn languages_report(root: &std::path::Path, cfg: &FrobConfig) -> LanguagesReport {
+    let mut exclude = vec!["/.frob/".to_owned(), "/target/".to_owned()];
+    exclude.extend(cfg.check.exclude.iter().cloned());
+    let walked = walk(
+        root,
+        &WalkConfig {
+            exclude,
+            size_cap: cfg.check.size_cap,
+            ..WalkConfig::default()
+        },
+    );
+    let files = match walked {
+        Ok(w) => w.files,
+        Err(e) => {
+            tracing::warn!(error = %e, "walk failed; language report has no file counts");
+            Vec::new()
+        }
+    };
+    let mut claimed: BTreeMap<&'static str, usize> = BTreeMap::new();
+    let mut unadapted: BTreeMap<String, usize> = BTreeMap::new();
+    for f in &files {
+        if let Some(a) = adapter_for(&f.language) {
+            *claimed.entry(a.language()).or_default() += 1;
+        } else {
+            let ext = std::path::Path::new(&f.path)
+                .extension()
+                .and_then(|e| e.to_str())
+                .map_or_else(
+                    || "(none)".to_owned(),
+                    |e| format!(".{}", e.to_ascii_lowercase()),
+                );
+            *unadapted.entry(ext).or_default() += 1;
+        }
+    }
+    let mut rows: Vec<LanguageRow> = adapters()
+        .into_iter()
+        .chain([opaque_adapter()])
+        .map(|a| LanguageRow {
+            language: a.language().to_owned(),
+            fidelity: a.fidelity().to_string(),
+            adapter: a.identity(),
+            files: claimed.get(a.language()).copied().unwrap_or(0),
+            capabilities: a
+                .capabilities()
+                .rows()
+                .into_iter()
+                .map(|(c, p)| CapabilityRow {
+                    capability: c.name().to_owned(),
+                    precision: p.label().to_owned(),
+                })
+                .collect(),
+        })
+        .collect();
+    for r in &mut rows {
+        if r.language == "opaque" {
+            r.files = unadapted.values().sum();
+        }
+    }
+    tracing::info!(
+        adapters = rows.len(),
+        extensions = unadapted.len(),
+        "language report"
+    );
+    LanguagesReport {
+        adapters: rows,
+        unadapted: unadapted
+            .into_iter()
+            .map(|(extension, files)| UnadaptedRow {
+                extension,
+                fidelity: Fidelity::F0.to_string(),
+                unit: "opaque(no-adapter)".to_owned(),
+                files,
+            })
+            .collect(),
     }
 }
 

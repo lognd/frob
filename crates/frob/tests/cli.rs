@@ -60,6 +60,53 @@ fn doctor_piped_is_json_envelope_even_with_cfg001() {
 }
 
 #[test]
+fn doctor_languages_prints_fidelity_precisions_and_f0_extensions() {
+    let dir = repo();
+    std::fs::write(dir.path().join("a.rs"), "fn main() {}\n").expect("write");
+    std::fs::write(dir.path().join("b.md"), "# B\n").expect("write");
+    std::fs::write(dir.path().join("data.csv"), "1,2\n").expect("write");
+    std::fs::write(dir.path().join("Makefile"), "all:\n").expect("write");
+    let out = frob(dir.path(), &["doctor", "--languages"]);
+    assert_eq!(code(&out), 0);
+    let v = json(&out);
+    let langs = &v["data"]["languages"];
+    let row = |name: &str| {
+        langs["adapters"]
+            .as_array()
+            .expect("adapters")
+            .iter()
+            .find(|r| r["language"] == name)
+            .unwrap_or_else(|| panic!("no adapter row {name}"))
+            .clone()
+    };
+    assert_eq!(row("rust")["fidelity"], "F3");
+    assert_eq!(row("rust")["files"], 1);
+    assert_eq!(row("markdown")["fidelity"], "F4");
+    assert_eq!(row("opaque")["fidelity"], "F0");
+    let apply = row("rust")["capabilities"]
+        .as_array()
+        .expect("capabilities")
+        .iter()
+        .find(|c| c["capability"] == "apply_targets")
+        .expect("apply_targets")
+        .clone();
+    assert_eq!(apply["precision"], "by-name-in-crate (May)");
+    let un = langs["unadapted"].as_array().expect("unadapted");
+    let exts: Vec<&str> = un
+        .iter()
+        .map(|r| r["extension"].as_str().expect("ext"))
+        .collect();
+    assert!(
+        exts.contains(&".csv") && exts.contains(&"(none)"),
+        "{exts:?}"
+    );
+    assert!(un.iter().all(|r| r["fidelity"] == "F0"));
+    // Without the flag the report is absent.
+    let plain = json(&frob(dir.path(), &["doctor"]));
+    assert!(plain["data"].get("languages").is_none());
+}
+
+#[test]
 fn doctor_outside_a_repo_still_succeeds() {
     let dir = tempfile::tempdir().expect("tempdir");
     let out = frob(
