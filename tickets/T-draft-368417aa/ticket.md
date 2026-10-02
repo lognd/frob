@@ -2,7 +2,7 @@
 id: T-draft-368417aa
 title: 'post-land sweep regression from T-0031: 143 new (rule, file) identit(ies),
   765 finding(s) (COV003, DOC001, DRIFT002, REF001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-10-02'
@@ -712,3 +712,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TEST001  crates/gob-lock/src/file.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-10-02: v1 post-land sweep applying v1 Python-era gate heuristics (COV003, DOC001, DRIFT002, REF001) to the Rust v2 tree; not actionable, superseded by the v2 self-host switch T-0025
