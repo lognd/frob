@@ -13,6 +13,10 @@ pub mod reserved {
     /// A boolean: the opaque region may read names of the enclosing scope.
     pub const MAY_READ_SCOPE: &str = "ir.may_read_scope";
 
+    /// A boolean on the root node: the adapter provides unit attributes completely. `false`
+    /// makes an absent attribute Unknown rather than No for `attr(...)` selectors (grmb-spec 6.3).
+    pub const ATTRS_PROVIDED: &str = "ir.attrs_provided";
+
     /// True when `key` is reserved for gob-ir.
     pub fn is_reserved(key: &str) -> bool {
         key.starts_with("ir.")

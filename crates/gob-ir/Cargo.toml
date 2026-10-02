@@ -12,6 +12,7 @@ publish.workspace = true
 [dependencies]
 blake3 = "1"
 gob-rules = { path = "../gob-rules" }
+gob-walk = { path = "../gob-walk" }
 gob-text = { path = "../gob-text" }
 inventory = "0.3"
 thiserror = "2"

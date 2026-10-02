@@ -5,6 +5,8 @@
 //! each leaf and the combinators here produce [`Row`]s (specificity plus truth), so both
 //! layers and the owner function share one set of semantics.
 
+// frob:ticket 01M3Z713RETBN30XBC6CK11FBF
+
 mod glob;
 mod lex;
 mod parse;

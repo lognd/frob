@@ -4,6 +4,10 @@
 //! digest and a language guess, sorted by relative path so two walks of the
 //! same tree are identical. Files above the size cap are reported in
 //! [`WalkResult::oversized`] without being read.
+//!
+//! The [`selector`] module parses the grmb-spec 6 selector grammar and evaluates it over the walk
+//! ([`select_files`]); gob-ir evaluates the same selectors over units. [`owner`] resolves which
+//! entity owns an item by [`Specificity`] and the possible-worlds reading of binding.md 2.2.
 
 use std::fmt;
 use std::path::Path;

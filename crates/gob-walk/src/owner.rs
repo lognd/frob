@@ -2,6 +2,8 @@
 //! (grmb-spec 6.5, binding.md 2.2). Ranks 1 (directive binds) and 3 (pack inference) belong to
 //! grimble-bind; this module resolves rank 2 only.
 
+// frob:ticket 01M3Z713RETBN30XBC6CK11FBF
+
 use std::collections::BTreeSet;
 use std::fmt;
 

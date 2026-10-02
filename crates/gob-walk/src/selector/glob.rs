@@ -1,5 +1,7 @@
 //! Glob strings: `PATH [ "::" QUALNAME ]` (grmb-spec 6.2).
 
+// frob:ticket 01M3Z713RETBN30XBC6CK11FBF
+
 use crate::specificity::Specificity;
 
 /// Why a glob string was rejected, with the byte offset inside the string content.
@@ -328,6 +330,14 @@ impl Glob {
     /// The QUALNAME pattern text, if the glob has `::`.
     pub fn qual(&self) -> Option<&str> {
         self.qual.as_deref()
+    }
+
+    /// The QUALNAME segments as written (for a literal glob these are the exact segments).
+    pub fn qual_segments(&self) -> Vec<&str> {
+        self.qual
+            .as_deref()
+            .map(|q| qual_segments(q).into_iter().map(|(_, s)| s).collect())
+            .unwrap_or_default()
     }
 
     /// The full glob text, `PATH` or `PATH::QUALNAME`.

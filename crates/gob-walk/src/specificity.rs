@@ -1,5 +1,7 @@
 //! The six-component specificity vector of grmb-spec 6.5.
 
+// frob:ticket 01M3Z713RETBN30XBC6CK11FBF
+
 use std::fmt;
 
 /// How specific a matching selector is; compared lexicographically, larger wins.
