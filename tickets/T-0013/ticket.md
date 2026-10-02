@@ -1,5 +1,5 @@
 ---
-id: T-draft-e7375914
+id: T-0013
 title: 'gob-symbols: symrefs, three-facet digests, imports and call graph for Rust
   and markdown'
 state: queued
