@@ -40,10 +40,18 @@ scope:
 - crates/gob-dev/**
 - crates/gob-text/**
 - .gitignore
+- .github/workflows/release.yml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .github/workflows/release.yml
+  reason: v1 PyPI release workflow deleted by the Rust skeleton; .github/** glob not
+    matched by the deletion check
+  actor: logan
+  at: '2026-10-02'
 designated_repro_test: null
 acceptance:
 - text: Given a fresh clone, when cargo nextest run and cargo clippy --all-targets
