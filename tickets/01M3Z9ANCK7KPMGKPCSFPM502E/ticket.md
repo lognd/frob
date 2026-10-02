@@ -2,13 +2,13 @@
 id = "01M3Z9ANCK7KPMGKPCSFPM502E"
 title = "gob-dev and gob-mdtest locate the repository through compile-time CARGO_MANIFEST_DIR"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:46:34Z"
-updated = "2026-10-02T21:46:34Z"
+updated = "2026-10-02T21:47:47Z"
 idempotency_key = "m2-manifest-dir"
 labels = ["milestone:2"]
 scope = ["crates/gob-dev/**", "crates/gob-mdtest/**"]

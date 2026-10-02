@@ -1,0 +1,43 @@
+kind = "evidence"
+at = "2026-10-02T21:47:47Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-dev -p gob-mdtest"
+digest = "2e1d04495587af7223651cb76b200ea900a05f2a44145c6ad1a8cb8190acff08"
+status = "measured"
+captured_at = "2026-10-02T21:47:47Z"
+accepts = [1]
+passed = true
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+────────────
+ Nextest run ID a81816f5-97aa-4a34-a1b8-c87f22507398 with nextest profile: ci
+    Starting 22 tests across 6 binaries
+        PASS [   0.007s] ( 1/22) gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.008s] ( 2/22) gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.011s] ( 3/22) gob-dev render::rules::tests::index_groups_by_family_and_escapes
+        PASS [   0.011s] ( 4/22) gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [   0.013s] ( 5/22) gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.015s] ( 6/22) gob-dev tests::real_workspace_found_regardless_of_compile_time_path
+        PASS [   0.016s] ( 7/22) gob-dev tests::finds_workspace_root_from_nested_dir
+        PASS [   0.018s] ( 8/22) gob-dev::import_v1 refuses_a_non_empty_target
+        PASS [   0.019s] ( 9/22) gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.007s] (10/22) gob-dev::bin/gob-dev tests::gen_check_parses
+        PASS [   0.015s] (11/22) gob-dev::import_v1 renders_the_id_map
+        PASS [   0.012s] (12/22) gob-dev::bin/gob-dev tests::import_parses
+        PASS [   0.020s] (13/22) gob-dev::import_v1 renders_the_migration_report
+        PASS [   0.017s] (14/22) gob-dev::import_v1 ulids_keep_creation_order
+        PASS [   0.012s] (15/22) gob-mdtest::selftest fail_dir_reports_every_file
+        PASS [   0.030s] (16/22) gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.018s] (17/22) gob-dev::import_v1 renders_the_summary_table
+        PASS [   0.013s] (18/22) gob-mdtest::selftest mdtest_corpus
+        PASS [   0.011s] (19/22) gob-mdtest::selftest wrong_line_fails_showing_both_lines
+        PASS [   0.015s] (20/22) gob-mdtest::selftest missing_control_fails_naming_rule
+        PASS [   0.034s] (21/22) gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.067s] (22/22) gob-dev::generate output_is_deterministic_and_check_passes
+────────────
+     Summary [   0.069s] 22 tests run: 22 passed, 0 skipped
+"""
+size = 2248
