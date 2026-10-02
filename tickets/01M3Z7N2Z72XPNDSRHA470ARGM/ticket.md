@@ -2,13 +2,13 @@
 id = "01M3Z7N2Z72XPNDSRHA470ARGM"
 title = "frob check --ticket diffs two-dot against the base and flags ledger commits as SCOPE001"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:17:19Z"
-updated = "2026-10-02T21:17:19Z"
+updated = "2026-10-02T21:41:08Z"
 idempotency_key = "m2-scope-diff"
 labels = ["milestone:2"]
 scope = ["crates/frob-check/**", "crates/frob-lease/**"]
