@@ -16,7 +16,7 @@ use crate::filecheck::{FileCheck, builtin_checks, run_file_checks};
 use crate::fix;
 use crate::options::CheckOptions;
 use crate::repo::run_repo_rules;
-use crate::report::{CheckReport, Counts, FixOutcome, Stats, Timing};
+use crate::report::{CheckReport, Counts, FixOutcome, PendingMark, Stats, Timing};
 use crate::required::{MUST_MEASURE, build_marks, zero_subjects};
 use crate::rules::Perf001;
 use crate::scope;
@@ -56,6 +56,63 @@ fn sort_findings(findings: &mut [Finding], files: &FileInterner) {
             f.message.clone(),
         )
     });
+}
+
+/// Apply `frob:accept` and `frob:defer` to `raw`, then keep what `--only` selects.
+fn resolve_exceptions(
+    snap: &Snapshot,
+    files: &FileInterner,
+    raw: Vec<Finding>,
+    only: &[String],
+    timing: &mut Timing,
+) -> (Vec<Finding>, Vec<(Finding, gob_rules::Exception)>) {
+    let started = Instant::now();
+    let resolved = apply_exceptions(&snap.obligations(), files, raw);
+    timing.push("exceptions", started.elapsed(), true);
+    let keep = |f: &Finding| matches_only(only, f.rule.family(), f.rule.as_str());
+    let findings = resolved.findings.into_iter().filter(|f| keep(f)).collect();
+    let suppressed = resolved
+        .suppressed
+        .into_iter()
+        .filter(|(f, _)| keep(f))
+        .collect();
+    (findings, suppressed)
+}
+
+/// Run the `[[check.tool]]` stages unless skipped or filtered out by `--only`.
+fn tool_stages(
+    root: &Path,
+    opts: &CheckOptions,
+    table: &CheckTable,
+    only: &[String],
+    scope: Option<&scope::TicketScope>,
+    timing: &mut Timing,
+    files: &mut FileInterner,
+) -> (Vec<Finding>, Vec<PendingMark>) {
+    let wanted = only.is_empty()
+        || only
+            .iter()
+            .any(|o| o.starts_with("TOOL") || o.starts_with("CI"));
+    if opts.skip_tools || !wanted {
+        return (Vec::new(), Vec::new());
+    }
+    let (found, marks) = run_tools(root, &table.tool, timing, files);
+    // Spanless findings (a missing tool) always stand; located ones obey a `--ticket` scope.
+    let found = found
+        .into_iter()
+        .filter(|f| match (scope, f.span) {
+            (Some(s), Some(span)) => files.path(span.file).is_some_and(|p| s.files.contains(p)),
+            _ => true,
+        })
+        .collect();
+    let marks = marks
+        .into_iter()
+        .filter(|m| {
+            let family = m.rule.trim_end_matches(|c: char| c.is_ascii_digit());
+            matches_only(only, family, &m.rule)
+        })
+        .collect();
+    (found, marks)
 }
 
 /// Give every finding the same fingerprint scheme: rule, file path (or none), message.
@@ -183,19 +240,23 @@ fn pass(
         timing.push("ticket-rules", started.elapsed(), true);
     }
 
-    let (zero_findings, pending) = zero_subjects(&snap, MUST_MEASURE);
+    let (zero_findings, mut pending) = zero_subjects(&snap, MUST_MEASURE);
     raw.extend(zero_findings.into_iter().filter(|f| wanted_rule(f)));
 
-    let started = Instant::now();
-    let resolved = apply_exceptions(&snap.obligations(), &files, raw);
-    timing.push("exceptions", started.elapsed(), true);
-    let keep = |f: &Finding| matches_only(only, f.rule.family(), f.rule.as_str());
-    let mut findings: Vec<Finding> = resolved.findings.into_iter().filter(|f| keep(f)).collect();
-    let suppressed = resolved
-        .suppressed
-        .into_iter()
-        .filter(|(f, _)| keep(f))
-        .collect();
+    // Tool findings join the raw set so `frob:accept` applies to them like native ones.
+    let (found, marks) = tool_stages(
+        root,
+        opts,
+        table,
+        only,
+        scope.as_ref(),
+        &mut timing,
+        &mut files,
+    );
+    raw.extend(found);
+    pending.extend(marks);
+
+    let (mut findings, suppressed) = resolve_exceptions(&snap, &files, raw, only, &mut timing);
 
     if let Some(f) = perf_finding(perf, &timing, only) {
         warnings.push("PERF001: time budget exceeded".to_owned());
@@ -252,11 +313,6 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CheckReport, CheckError> 
             skipped_overlap: applied.skipped_overlap,
             remaining: report.findings.len(),
         });
-    }
-    if !opts.skip_tools && matches_only(&only, "TOOL", "TOOL001") {
-        let (found, pending) = run_tools(root, &table.tool, &mut report.timing);
-        report.findings.extend(found);
-        report.pending.extend(pending);
     }
     refingerprint(&mut report.findings, &report.files);
     report.required = build_marks(&report.findings, &report.pending);

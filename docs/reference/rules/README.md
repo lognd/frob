@@ -14,6 +14,17 @@
 |---|---|---|---|---|
 | [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | A materialized config knob is missing from the product config file. |
 
+## CI
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [CI001](CI001.md) | pinned-ref | warn | manual | An external `uses:` reference is not pinned to a full commit SHA. |
+| [CI003](CI003.md) | no-top-level-write | warn | manual | A workflow or job grants a broader `GITHUB_TOKEN` scope than it needs. |
+| [CI006](CI006.md) | no-prt-head-checkout | error | manual | A dangerous trigger (`pull_request_target`, `workflow_run`) runs with untrusted pull request content. |
+| [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | A `run:` script interpolates an expression an attacker can influence. |
+| [CI010](CI010.md) | checkout-no-persist | advisory | manual | `actions/checkout` leaves credentials in the workspace. |
+| [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | actionlint rejects the workflow syntax, schema, expression or runner label. |
+
 ## COV
 
 | Rule | Slug | Severity | Fix | Summary |
@@ -115,3 +126,4 @@
 | Rule | Slug | Severity | Fix | Summary |
 |---|---|---|---|---|
 | [TOOL001](TOOL001.md) | tool-stage-failed | error | manual | A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start. |
+| [TOOL002](TOOL002.md) | tool-finding-unmapped | advisory | manual | A bound tool reported a finding that no frob rule id covers. |

@@ -26,6 +26,30 @@ name = "cargo"
 command = "cargo"
 args = ["dev", "gen", "all", "--check"]
 
+# zizmor and actionlint are bound through `uvx` (pinned versions); frob maps
+# their findings to CI ids. The version range makes a tool that lags the
+# GitHub schema an Unresolved finding instead of a violation. CI warms the
+# same uvx cache before `frob check` (see .github/workflows/ci.yml).
+[[check.tool]]
+name = "zizmor"
+command = "uvx"
+args = ["zizmor@1.30.1", "--offline", "--format", "json-v1", "--no-exit-codes", "."]
+parser = "zizmor-json-v1"
+version_args = ["zizmor@1.30.1", "--version"]
+min_version = "1.30.0"
+max_version = "1.30.99"
+
+[[check.tool]]
+name = "actionlint"
+command = "uvx"
+args = ["--from", "actionlint-py==1.7.12", "actionlint", "-format", "{{json .}}"]
+parser = "actionlint-json"
+version_args = ["--from", "actionlint-py==1.7.12", "actionlint", "-version"]
+min_version = "1.7.0"
+max_version = "1.7.99"
+# Custom self-hosted runner labels go here; this repository uses GitHub-hosted runners only.
+labels = []
+
 [git]
 # Compare-and-swap retries when moving a ledger ref.
 cas_retries = 5

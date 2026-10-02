@@ -51,14 +51,15 @@ mod scope;
 mod snapshot;
 mod store;
 mod telemetry;
+mod tool_parse;
 mod tools;
 mod verb;
 
-pub use config::{CheckTable, FailOn, PerfTable, ToolStage};
+pub use config::{CheckTable, FailOn, PerfTable, ToolParser, ToolStage};
 pub use error::CheckError;
 pub use filecheck::{CheckCtx, FileCheck, SharedCtx};
 pub use options::CheckOptions;
 pub use pipeline::run;
 pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};
-pub use rules::{Perf001, Proc001, Tool001};
+pub use rules::{Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Tool001, Tool002};
 pub use verb::{Check, CheckData, Explained, TimingView, register};

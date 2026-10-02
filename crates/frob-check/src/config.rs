@@ -1,5 +1,6 @@
 //! The `[check]` and `[perf]` config tables and the `[[check.tool]]` stage entries.
 
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use gob_config::{ConfigError, ConfigTable};
@@ -48,6 +49,21 @@ impl FailOn {
     }
 }
 
+/// How a tool stage's stdout becomes findings (`parser` of `[[check.tool]]`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+pub enum ToolParser {
+    /// No parsing: only the exit status matters (`TOOL001`).
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    /// zizmor `--format json-v1`: an array of audit findings with byte spans.
+    #[serde(rename = "zizmor-json-v1")]
+    ZizmorJsonV1,
+    /// actionlint `-format '{{json .}}'`: an array of findings with line and column.
+    #[serde(rename = "actionlint-json")]
+    ActionlintJson,
+}
+
 /// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -65,6 +81,27 @@ pub struct ToolStage {
     /// When true a nonzero exit (or a timeout) is an Error finding (`TOOL001`).
     #[serde(default = "default_true")]
     pub fail_on_nonzero: bool,
+    /// Output format of the tool; anything but `none` turns its findings into frob findings.
+    #[serde(default)]
+    pub parser: ToolParser,
+    /// Runner labels the repository defines (actionlint `runner-label` findings for these are dropped).
+    #[serde(default)]
+    pub labels: Vec<String>,
+    /// Tool finding id to frob rule id overrides, merged over the parser's default map.
+    #[serde(default)]
+    pub id_map: BTreeMap<String, String>,
+    /// Lowest tool version (inclusive, dotted numbers) whose output is trusted.
+    #[serde(default)]
+    pub min_version: Option<String>,
+    /// Highest tool version (inclusive, dotted numbers) whose output is trusted.
+    #[serde(default)]
+    pub max_version: Option<String>,
+    /// Arguments of `command` that print the tool version; defaults to the parser's flag.
+    #[serde(default)]
+    pub version_args: Option<Vec<String>>,
+    /// When true a missing binary is a non-required Unresolved finding instead of a required one.
+    #[serde(default)]
+    pub optional: bool,
 }
 
 fn default_tool_timeout() -> u64 {
