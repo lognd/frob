@@ -2,13 +2,13 @@
 id = "01M3Z712WWYRXPSWNVDXX6K71R"
 title = "Bind zizmor and actionlint through frob check tool stages; adopt in this repository"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-02T21:06:23Z"
+updated = "2026-10-02T21:18:42Z"
 idempotency_key = "m2-toolbind"
 labels = ["milestone:2"]
 scope = ["crates/frob-check/**", "frob.toml", ".github/**", "docs/reference/**"]
