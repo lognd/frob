@@ -1,5 +1,5 @@
 ---
-id: T-draft-9e9a9501
+id: T-0017
 title: 'gob-cli + frob binary: clap root, Command derive, global flags, frob doctor,
   frob init, frob config'
 state: queued
