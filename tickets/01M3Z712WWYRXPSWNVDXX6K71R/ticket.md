@@ -2,7 +2,8 @@
 id = "01M3Z712WWYRXPSWNVDXX6K71R"
 title = "Bind zizmor and actionlint through frob check tool stages; adopt in this repository"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
