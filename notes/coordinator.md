@@ -104,6 +104,16 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 
 ## Status log (newest first)
 
+- 2026-10-02 (evening): landed T-0004 T-0007 T-0026 T-0009 T-0012 T-0005
+  T-0011 (9/24 done, 66 tests). Land takes experimental's Cargo.lock, so
+  the coordinator regenerates and commits the lock after every land; do
+  NOT pre-merge experimental into worktrees. File deletions are done by
+  the coordinator in the primary after the land. Design reconciliation
+  owed: cache file name (architecture.md says cache.db, code uses
+  cache.sqlite); tree-sitter pinned at core 0.27.0 with ast-grep-core
+  0.45.3 compatible (audit M26 answered). Dispatched T-0006 T-0008
+  T-0010 T-0013 T-0015 in parallel.
+
 - 2026-10-02 (later): docs/notes committed under T-0001 (fe510db);
   T-0003 landed (fc3dd9e) after four v1 land refusals (see quirks
   above); T-0026 filed for .github cleanup and .gitattributes; T-0004
