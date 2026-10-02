@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+flow f : a -> b {
+  label Pii;
+}
+boundary bd declassify f : Pii -> Public;

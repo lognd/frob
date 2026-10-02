@@ -1,0 +1,8 @@
+grimble = "2";
+module m;
+node a : trusted {
+  owns ;
+  kind component;
+}
+node b : trusted {
+}

@@ -1,0 +1,8 @@
+// A line comment.
+grimble = "2";
+module m;
+
+/* A block comment /* nested */ still a comment */
+/// Doc for a.
+node a : trusted {
+}

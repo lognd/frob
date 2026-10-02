@@ -1,0 +1,12 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+flow f : a -> b {
+  label Public;
+}
+claim c {
+  bound rate f <= 100 req/s;
+}

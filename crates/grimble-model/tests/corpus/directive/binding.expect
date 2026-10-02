@@ -1,0 +1,5 @@
+bind: - file frob:doc
+bind: - node/a frob:ticket
+bind: - node/a frob:doc
+bind: - node/a/kind[0] frob:todo
+bind: - node/a/owns[0] frob:invariant

@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+namespace ns {
+  node a : trusted {
+  }
+}

@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+// a line comment
+/* a block comment */
+node n : trusted {
+}

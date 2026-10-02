@@ -1,0 +1,28 @@
+[package]
+name = "grimble-model"
+version = "0.0.0"
+description = "The .grmb language: lexer, parser, formatter, U adapter (F4) and the MDL well-formedness rules."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-directives = { path = "../gob-directives" }
+gob-ir = { path = "../gob-ir" }
+gob-languages = { path = "../gob-languages" }
+gob-rules = { path = "../gob-rules" }
+gob-symbols = { path = "../gob-symbols" }
+gob-text = { path = "../gob-text" }
+gob-walk = { path = "../gob-walk" }
+inventory = "0.3"
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+proptest = "1"

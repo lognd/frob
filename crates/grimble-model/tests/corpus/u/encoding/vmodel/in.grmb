@@ -1,0 +1,7 @@
+grimble = "2";
+module m;
+vmodel v {
+  kind artifact;
+  level requirements;
+  ref "d.md#x";
+}

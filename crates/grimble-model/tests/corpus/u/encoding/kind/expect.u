@@ -1,0 +1,18 @@
+=== in.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..60 symref=in.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..60
+    decl:unit kind=node role=declaration name=k @25..59 anchor=node/k symref=in.grmb::k
+      decl:attr name=trust @34..41 facet=sig
+        use:ref "trusted" @34..41
+      exp:group unordered @25..59
+        decl:attr name=kind @46..57 anchor=node/k/kind[0]
+          exp:lit kind=ident "store" @51..56
+--- refs
+ref "trusted" @34 -> Must trusted
+--- directives
+

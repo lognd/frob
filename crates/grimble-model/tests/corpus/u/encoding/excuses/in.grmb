@@ -1,0 +1,5 @@
+grimble = "2";
+module m;
+node e : trusted {
+  excuses net.listen because="never serves";
+}

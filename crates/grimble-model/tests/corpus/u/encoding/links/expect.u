@@ -1,0 +1,32 @@
+=== in.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..178 symref=in.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..178
+    decl:unit kind=vmodel role=declaration name=r @25..92 anchor=vmodel/r symref=in.grmb::r
+      decl:attr name=kind @38..52 anchor=vmodel/r/kind[0] facet=sig
+        exp:lit kind=ident "artifact" @43..51
+      decl:attr name=level @55..74 anchor=vmodel/r/level[0] facet=sig
+        exp:lit kind=ident "requirements" @61..73
+      exp:group unordered @25..92
+        decl:attr name=ref @77..90 anchor=vmodel/r/ref[0]
+          use:ref "d.md#r" @81..89
+    decl:unit kind=vmodel role=declaration name=t @93..177 anchor=vmodel/t symref=in.grmb::t
+      decl:attr name=kind @106..116 anchor=vmodel/t/kind[0] facet=sig
+        exp:lit kind=ident "test" @111..115
+      decl:attr name=level @119..139 anchor=vmodel/t/level[0] facet=sig
+        exp:lit kind=ident "customer_test" @125..138
+      exp:group unordered @93..177
+        exp:apply kind=verifies @164..175 anchor=vmodel/t/verifies[0]
+          use:ref "r" @173..174
+        decl:attr name=runnable @142..161 anchor=vmodel/t/runnable[0]
+          exp:apply kind=select @151..160
+            exp:lit kind=glob "t.rs::x" @151..160
+--- refs
+ref "d.md#r" @81 -> Unknown
+ref "r" @173 -> Must r
+--- directives
+

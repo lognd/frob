@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  owns "a/**" | "b/**" & !"c/**";
+  owns ("a/**" | "b/**") & lang(rust);
+  owns kind(function, method) & attr(vis = "pub");
+  owns "x/**" & attr(timeout <= 30 s) & !attr(deprecated);
+  surface !"private/**" | lang(python);
+}

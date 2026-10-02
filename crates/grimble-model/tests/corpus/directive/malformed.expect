@@ -1,0 +1,6 @@
+# malformed directives are reported, never dropped
+error: PARSE001
+error: PARSE001
+error: PARSE001
+error: DSL001
+error: DSL002

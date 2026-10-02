@@ -1,0 +1,81 @@
+kind = "evidence"
+at = "2026-10-02T23:20:03Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-directives -p gob-macros"
+digest = "7074faa8c7c771433bfa9885286a73bb1940c7b88c10db7df9050ac948f721c4"
+status = "measured"
+captured_at = "2026-10-02T23:20:03Z"
+accepts = [1]
+passed = true
+exit_code = 0
+inline = """
+   Compiling gob-macros v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-macros)
+   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-rules)
+   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-ir)
+   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-config)
+   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-mdtest)
+   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-diagnostics)
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-symbols)
+   Compiling gob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-cli)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-directives)
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.15s
+────────────
+ Nextest run ID 2ea0692d-a47b-45d9-b3ee-8731cb4272e1 with nextest profile: ci
+    Starting 50 tests across 6 binaries
+        PASS [   0.023s] ( 1/50) gob-directives lex::tests::escapes
+        PASS [   0.034s] ( 2/50) gob-directives effects::tests::atom_lists_combine_sort_and_dedupe
+        PASS [   0.033s] ( 3/50) gob-directives lex::tests::positionals_and_keys
+        PASS [   0.033s] ( 4/50) gob-directives comments::tests::block_lines
+        PASS [   0.033s] ( 5/50) gob-directives effects::tests::display_round_trips
+        PASS [   0.033s] ( 6/50) gob-directives comments::tests::html_and_hash
+        PASS [   0.034s] ( 7/50) gob-directives lex::tests::errors_have_positions
+        PASS [   0.034s] ( 8/50) gob-directives effects::tests::errors_name_the_offending_token
+        PASS [   0.035s] ( 9/50) gob-directives comments::tests::line_and_doc_prefixes
+        PASS [   0.034s] (10/50) gob-directives effects::tests::symref_errors_point_inside_the_parentheses
+        PASS [   0.008s] (11/50) gob-directives::derive typed_errors
+        PASS [   0.009s] (12/50) gob-directives ulid::tests::ref_shapes
+        PASS [   0.023s] (13/50) gob-directives ulid::tests::full_ulid_accepted
+        PASS [   0.046s] (14/50) gob-directives effects::tests::levels_parse_alone_and_with_total
+        PASS [   0.013s] (15/50) gob-directives::derive optionals_may_be_absent
+        PASS [   0.015s] (16/50) gob-directives::derive constants_and_meta
+        PASS [   0.016s] (17/50) gob-directives ulid::tests::near_misses_rejected
+        PASS [   0.018s] (18/50) gob-directives::derive parses_every_mode
+        PASS [   0.017s] (19/50) gob-directives::scan binds_to_adjacent_fn_and_doc_comment_form
+        PASS [   0.018s] (20/50) gob-directives::scan aliases_yield_the_same_claim_as_the_long_form
+        PASS [   0.007s] (21/50) gob-directives::scan claim_verbs_are_registered_and_documented
+        PASS [   0.061s] (22/50) gob-directives effects::tests::panic_and_diverge_parse_without_total
+        PASS [   0.017s] (23/50) gob-directives::scan block_comment_lines_are_scanned_individually
+        PASS [   0.009s] (24/50) gob-directives::scan effects_record_carries_the_parsed_atom_set
+        PASS [   0.018s] (25/50) gob-directives::scan binds_to_fn_two_lines_later
+        PASS [   0.014s] (26/50) gob-directives::scan directives_config_defaults_and_scan_config
+        PASS [   0.014s] (27/50) gob-directives::scan dsl001_suggests_the_new_claim_verbs
+        PASS [   0.012s] (28/50) gob-directives::scan effect_set_errors_point_inside_the_token
+        PASS [   0.019s] (29/50) gob-directives::scan dsl001_suggests_close_verb_and_points_at_it
+        PASS [   0.034s] (30/50) gob-directives::corpus mdtest_corpus
+        PASS [   0.015s] (31/50) gob-directives::scan file_level_when_no_symbols
+        PASS [   0.130s] (32/50) gob-directives::scan registry_lists_every_verb_with_schemas
+        PASS [   0.133s] (33/50) gob-directives::scan parse001_points_at_the_exact_token
+        PASS [   0.134s] (34/50) gob-directives::scan markdown_binds_to_preceding_heading
+        PASS [   0.120s] (35/50) gob-directives::scan tests_outside_a_test_item_does_not_reorient
+        PASS [   0.151s] (36/50) gob-directives::scan dsl002_names_the_remedy_and_has_no_fix
+        PASS [   0.137s] (37/50) gob-directives::scan record_span_covers_directive_text
+        PASS [   0.141s] (38/50) gob-directives::scan innermost_enclosing_wins
+        PASS [   0.138s] (39/50) gob-directives::scan rules_are_registered_with_d32_identity
+        PASS [   0.153s] (40/50) gob-directives::scan enclosing_symbol_when_nothing_follows
+        PASS [   0.009s] (41/50) gob-directives::scan three_lines_away_is_not_following
+        PASS [   0.011s] (42/50) gob-directives::scan tests_reorients_to_target_inside_test_item
+        PASS [   0.138s] (43/50) gob-directives::scan tests_inside_module_tests_reorients
+        PASS [   0.012s] (44/50) gob-directives::scan tests_with_bad_target_in_test_item_is_parse001
+        PASS [   0.145s] (45/50) gob-directives::scan inner_doc_binds_to_container_not_next_item
+        PASS [   0.006s] (46/50) gob-directives::scan typed_args_round_trip
+        PASS [   0.009s] (47/50) gob-directives::scan toml_hash_comment_is_file_bound
+        PASS [   0.146s] (48/50) gob-directives::scan markdown_before_first_heading_is_file
+        PASS [   0.007s] (49/50) gob-directives::scan unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown
+        PASS [   7.627s] (50/50) gob-macros::ui ui
+────────────
+     Summary [   7.832s] 50 tests run: 50 passed, 0 skipped
+"""
+size = 5645

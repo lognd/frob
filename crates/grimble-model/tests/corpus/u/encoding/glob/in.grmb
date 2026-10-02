@@ -1,0 +1,5 @@
+grimble = "2";
+module m;
+node n : trusted {
+  owns "crates/*/src/**/mod.rs::a.*.b";
+}

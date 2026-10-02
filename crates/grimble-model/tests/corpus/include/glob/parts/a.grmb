@@ -1,0 +1,4 @@
+grimble = "2";
+part of m;
+node a : trusted {
+}

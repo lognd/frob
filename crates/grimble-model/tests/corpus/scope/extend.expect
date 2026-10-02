@@ -1,0 +1,3 @@
+# an additive extend is fine; a scalar extend is MDL008; an extend of nothing is MDL006
+error: MDL008
+error: MDL006

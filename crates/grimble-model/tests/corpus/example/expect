@@ -1,0 +1,8 @@
+# grmb-spec 13: zero errors, MDL005 for the three crates that do not exist yet.
+walk: crates/frob/src/lib.rs crates/frob-ledger/src/lib.rs crates/frob-check/src/snapshot.rs
+walk: crates/gob-walk/src/lib.rs crates/gob-exec/src/lib.rs crates/gob-git/src/lib.rs
+walk: crates/gob-symbols/src/symref.rs crates/frob/tests/wiring.rs crates/frob/tests/check_verb.rs
+warn: MDL005
+warn: MDL005
+warn: MDL005
+bind: vmodel.grmb vmodel/req_gate_exit frob:doc

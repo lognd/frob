@@ -1,0 +1,7 @@
+grimble = "2";
+module m;
+pack p {
+  ref "grimble/p";
+  version "1.0.0";
+  digest "blake3:aa";
+}

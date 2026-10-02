@@ -1,0 +1,52 @@
+kind = "evidence"
+at = "2026-10-02T23:16:04Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p grimble-model"
+digest = "5f5b84d6369c60cc2bb4d815424a4657db43e61ffc40404106977562edac897a"
+status = "measured"
+captured_at = "2026-10-02T23:16:04Z"
+accepts = [1]
+passed = true
+exit_code = 0
+inline = """
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+────────────
+ Nextest run ID 4e8c0a3d-7ccb-4f99-b3ac-0500ceaa47c4 with nextest profile: ci
+    Starting 29 tests across 5 binaries
+        PASS [   0.019s] ( 1/29) grimble-model parse::tests::minimal_model_parses
+        PASS [   0.020s] ( 2/29) grimble-model lex::tests::raw_newline_in_string_is_reported
+        PASS [   0.020s] ( 3/29) grimble-model directive::tests::code_side_verbs_are_mdl013
+        PASS [   0.020s] ( 4/29) grimble-model directive::tests::finds_line_and_block_directives
+        PASS [   0.021s] ( 5/29) grimble-model parse::tests::comments_bind_by_rule
+        PASS [   0.020s] ( 6/29) grimble-model parse::tests::missing_header_refuses_the_file
+        PASS [   0.022s] ( 7/29) grimble-model lex::tests::comments_nest_and_leave_the_token_stream
+        PASS [   0.022s] ( 8/29) grimble-model parse::tests::bare_cr_and_bom_are_opaque
+        PASS [   0.025s] ( 9/29) grimble-model fmt::tests::prints_canonical_text_and_is_idempotent
+        PASS [   0.025s] (10/29) grimble-model fmt::tests::a_hole_is_never_formatted_away
+        PASS [   0.006s] (11/29) grimble-model parse::tests::syntax_error_becomes_hole_and_parsing_continues
+        PASS [   0.026s] (12/29) grimble-model lex::tests::quantities_dates_and_strings
+        PASS [   0.031s] (13/29) grimble-model fmt::tests::long_selectors_wrap_after_operators
+        PASS [   0.011s] (14/29) grimble-model::model mounting_prefixes_anchors_and_the_term_binds_the_prefix
+        PASS [   0.011s] (15/29) grimble-model::model glob_includes_expand_in_byte_order_and_the_diamond_loads_once
+        PASS [   0.014s] (16/29) grimble-model::model an_exception_edit_changes_only_the_attr_facet
+        PASS [   0.014s] (17/29) grimble-model::model the_adapter_is_f4_and_folds_through_the_gob_symbols_contract
+        PASS [   0.019s] (18/29) grimble-model::model an_extension_is_one_identity_with_two_parts
+        PASS [   0.016s] (19/29) grimble-model::model duplicate_entities_are_reported_independent_of_include_order
+        PASS [   0.014s] (20/29) grimble-model::model the_registry_knows_the_mdl_family
+        PASS [   0.025s] (21/29) grimble-model parse::tests::pathological_nesting_does_not_overflow_the_stack
+        PASS [   0.010s] (22/29) grimble-model::selectors owner_distinguishes_owned_foreign_and_unknown
+        PASS [   0.011s] (23/29) grimble-model::selectors literal_selectors_are_must_and_holes_add_a_hidden_placeholder
+        PASS [   0.008s] (24/29) grimble-model::selectors specificity_is_a_total_order_and_ties_are_unknown
+        PASS [   0.106s] (25/29) grimble-model::roundtrip the_pipeline_is_total_on_arbitrary_bytes
+        PASS [   0.142s] (26/29) grimble-model::roundtrip the_pipeline_is_total_on_token_soup
+        PASS [   0.200s] (27/29) grimble-model::corpus conformance_corpus
+        PASS [   0.849s] (28/29) grimble-model::roundtrip the_generator_makes_valid_models
+        PASS [   1.698s] (29/29) grimble-model::roundtrip fmt_is_a_fixed_point_and_preserves_u
+────────────
+     Summary [   1.726s] 29 tests run: 29 passed, 0 skipped
+"""
+size = 3275

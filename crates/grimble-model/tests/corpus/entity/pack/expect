@@ -1,0 +1,8 @@
+# not under packs/ (1), version skew (1), digest mismatch (1); one atom the pack does not provide (MDL016)
+pack: grimble/threat 1.2.0 blake3:aa atoms=injection.sql
+pack: grimble/skew 1.1.0
+pack: grimble/dig 1.0.0 blake3:cc
+error: MDL004
+error: MDL004
+error: MDL004
+error: MDL016

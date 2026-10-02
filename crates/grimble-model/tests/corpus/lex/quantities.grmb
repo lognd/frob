@@ -1,0 +1,18 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  attr t1 = 30s;
+  attr t2 = 30 s;
+  attr t3 = 4KiB;
+  attr t4 = 5 req/s;
+  attr t5 = 15%;
+  attr t6 = 1.5 h;
+}
+flow f : a -> a {
+  label Public;
+  rate 100 req/s;
+  age 5 min;
+  size 4 KiB;
+  growth 15 %/d;
+}

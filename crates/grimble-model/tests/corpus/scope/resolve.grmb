@@ -1,0 +1,18 @@
+grimble = "2";
+module m;
+
+node cli : trusted {
+}
+namespace api {
+  node cli : trusted {
+  }
+  flow f : cli -> cli {
+    label Public;
+  }
+  flow g : ::cli -> cli {
+    label Public;
+  }
+}
+flow h : cli -> missing {
+  label Public;
+}

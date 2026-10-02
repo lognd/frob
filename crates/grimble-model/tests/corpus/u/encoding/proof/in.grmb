@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+claim c {
+  noflow a -> b;
+  proof L4;
+}

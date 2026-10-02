@@ -1,0 +1,25 @@
+grimble = "2";
+module m;
+
+pack threat {
+  ref "grimble/threat";
+  version "1.2.0";
+  digest "blake3:aa";
+}
+pack missing {
+  ref "grimble/none";
+  version "1.0.0";
+}
+pack skew {
+  ref "grimble/skew";
+  version "1.0.0";
+}
+pack dig {
+  ref "grimble/dig";
+  version "1.0.0";
+  digest "blake3:bb";
+}
+node n : trusted {
+  may threat::injection.sql at "x/**";
+  may threat::nope at "x/**";
+}

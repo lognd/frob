@@ -1,0 +1,25 @@
+=== in.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..88 symref=in.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..88
+    decl:unit kind=node role=declaration name=s @25..87 anchor=node/s symref=in.grmb::s
+      decl:attr name=trust @34..41 facet=sig
+        use:ref "trusted" @34..41
+      exp:group unordered @25..87
+        decl:attr name=surface @46..85 anchor=node/s/surface[0]
+          exp:apply kind=select @54..84
+            exp:apply kind=and @54..84
+              exp:group unordered @54..84
+                exp:apply kind=pred @54..68
+                  use:ref "kind" @54..68
+                  exp:lit kind=ident "function" @54..68
+                exp:lit kind=glob "crates/a/**" @71..84
+--- refs
+ref "trusted" @34 -> Must trusted
+ref "kind" @54 -> Must kind
+--- directives
+

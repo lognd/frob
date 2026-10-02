@@ -1,0 +1,5 @@
+grimble = "2";
+module m;
+node n : trusted {
+  owns lang(rust) & kind(function, method) & attr(vis = "pub") & attr(marker);
+}

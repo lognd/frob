@@ -1,0 +1,3 @@
+# canonical item, clause and operand order
+pack: grimble/p 1.0.0
+fmt: roundtrip

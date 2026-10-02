@@ -2213,6 +2213,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble-model"
+version = "0.0.0"
+dependencies = [
+ "gob-directives",
+ "gob-ir",
+ "gob-languages",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "inventory",
+ "proptest",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "half"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

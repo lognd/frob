@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+node n : trusted {
+  accept SYS004 because="by design";
+}
+accept SYS004 on n because="top level form";

@@ -1,0 +1,7 @@
+grimble = "2";
+module m;
+node n : trusted {
+  owns "b/**" | "a/**" & !"c/**";
+  owns "a/**" & "b/**";
+  owns "b/**" & "a/**";
+}

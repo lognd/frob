@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+
+// grimble:binds crates/b/src/lib.rs::g
+node explicit : trusted {
+  owns "crates/a/**";
+}
+node other : trusted {
+  owns "crates/b/**";
+}

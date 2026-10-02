@@ -1,0 +1,11 @@
+grimble = "2";
+module m;
+
+node _a1 : trusted {
+}
+node abc_9 : trusted {
+}
+node node : trusted {
+}
+node "str" : trusted {
+}

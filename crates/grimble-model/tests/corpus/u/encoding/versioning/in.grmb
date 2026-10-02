@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+contract c {
+  shape "x.rs::S";
+  versioning scheme=semver current="1.0.0" compat=full;
+}

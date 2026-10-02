@@ -1,0 +1,3 @@
+# a file with a hole is not rewritten
+error: MDL000
+fmt: refuses

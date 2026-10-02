@@ -1,0 +1,15 @@
+grimble = "2";
+module m;
+
+node cli : trusted {
+  owns "a/**";
+}
+extend node cli {
+  may fs.read at "b/**";
+}
+extend node cli {
+  clearance Internal;
+}
+extend node nope {
+  owns "x/**";
+}

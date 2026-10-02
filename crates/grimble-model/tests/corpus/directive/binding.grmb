@@ -1,0 +1,11 @@
+// frob:doc docs/design/file.md#top
+grimble = "2";
+module m;
+
+// frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2
+node a : trusted { // frob:doc docs/design/a.md#trail
+  // frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2
+  kind component;
+  owns "x/**"; // frob:invariant no io in here
+  // frob:doc docs/design/a.md#closer
+}

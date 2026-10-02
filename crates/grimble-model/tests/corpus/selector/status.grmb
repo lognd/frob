@@ -1,0 +1,8 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  owns "crates/a/src/lib.rs::f";
+  owns "crates/a/src/**" & kind(function);
+  owns "crates/a/src/lib.rs" & attr(vis = "pub");
+}

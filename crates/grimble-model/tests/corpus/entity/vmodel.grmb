@@ -1,0 +1,67 @@
+grimble = "2";
+module m;
+
+node n : trusted {
+}
+vmodel req {
+  kind artifact;
+  level requirements;
+  ref "docs/design/a.md#req";
+}
+vmodel design {
+  kind artifact;
+  level system_design;
+  ref "docs/design/a.md#design";
+  satisfies req;
+  refines req;
+  allocates req;
+}
+vmodel t_ok {
+  kind test;
+  level acceptance;
+  runnable "t.rs::ok";
+  verifies req;
+}
+vmodel d1 {
+  kind decision;
+  level system_design;
+  decides design;
+}
+vmodel d2 {
+  kind decision;
+  level system_design;
+  supersedes d1 because="d1 was wrong";
+  blocked_by d1;
+}
+vmodel t_missing {
+  kind test;
+  level customer_test;
+}
+vmodel t_unpaired {
+  kind test;
+  level system_integration_test_plan;
+  runnable "t.rs::u";
+  verifies req;
+}
+vmodel t_dup {
+  kind test;
+  level customer_test;
+  runnable "t.rs::d";
+  verifies req;
+  verifies req;
+}
+vmodel t_wrong {
+  kind test;
+  level customer_test;
+  runnable "t.rs::w";
+  verifies n;
+}
+vmodel d3 {
+  kind decision;
+  level system_design;
+  supersedes d1;
+}
+vmodel req_noref {
+  kind artifact;
+  level requirements;
+}

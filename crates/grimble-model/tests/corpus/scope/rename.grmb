@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+
+node new_name : trusted {
+  renamed_from old_name;
+  alias legacy;
+}
+flow f : old_name -> legacy {
+  label Public;
+}

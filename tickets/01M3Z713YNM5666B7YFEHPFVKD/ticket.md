@@ -2,16 +2,16 @@
 id = "01M3Z713YNM5666B7YFEHPFVKD"
 title = "G09: grimble binary skeleton: check --json, init, doctor, fmt, exceptions list"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T21:06:24Z"
+updated = "2026-10-02T23:19:36Z"
 idempotency_key = "m2-grimblebin"
 labels = ["milestone:2"]
-scope = ["crates/grimble/**", "crates/grimble-check/**"]
+scope = ["crates/grimble/**", "crates/grimble-check/**", "crates/gob-cli/**"]
 
 [[links]]
 kind = "blocked-by"

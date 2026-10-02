@@ -1,0 +1,5 @@
+grimble = "2";
+part of m;
+node handlers : trusted {
+}
+flow g : ::cli -> handlers { label Internal; }

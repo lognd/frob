@@ -1,0 +1,6 @@
+grimble = "2";
+part of m;
+include "shared.grmb";
+node b : trusted {
+}
+flow f : a -> s { label Public; }

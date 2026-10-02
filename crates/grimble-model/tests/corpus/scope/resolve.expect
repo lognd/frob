@@ -1,0 +1,5 @@
+# api.cli shadows ::cli at three references; `missing` resolves nowhere
+advisory: MDL015
+advisory: MDL015
+advisory: MDL015
+error: MDL006

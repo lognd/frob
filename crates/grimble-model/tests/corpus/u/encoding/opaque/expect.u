@@ -1,0 +1,21 @@
+=== bad.grmb
+lang_param="grimble=\"?\""
+decl:unit kind=module role=declaration @0..11 symref=bad.grmb
+  any:opaque reason=not-utf8 bytes=11 @0..11
+--- refs
+--- directives
+
+=== root.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..45 symref=root.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..45
+    exp:apply kind=include @25..44
+      use:ref "bad.grmb" @33..43
+--- refs
+ref "bad.grmb" @33 -> Unknown
+--- directives
+

@@ -1,0 +1,16 @@
+grimble = "2";
+part of frob;
+
+// frob:doc docs/design/cli.md#2-output-contract
+vmodel req_gate_exit {
+  kind artifact;
+  level requirements;
+  ref "docs/design/cli.md#2-output-contract";
+}
+
+vmodel t_gate_exit {
+  kind test;
+  level customer_test;
+  runnable "crates/frob/tests/check_verb.rs::error_finding_exits_1_and_fail_on_none_exits_0";
+  verifies req_gate_exit;
+}

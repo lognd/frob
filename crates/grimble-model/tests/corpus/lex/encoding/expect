@@ -1,0 +1,6 @@
+# not-UTF-8, BOM, NUL and a bare CR are opaque; CRLF is accepted
+error: MDL000
+error: MDL000
+error: MDL000
+error: MDL000
+fmt: roundtrip

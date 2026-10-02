@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+include "b.grmb";
+node in_a : trusted {
+}
+flow f : in_a -> in_b { label Public; }

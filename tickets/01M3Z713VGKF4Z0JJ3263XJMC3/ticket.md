@@ -2,13 +2,14 @@
 id = "01M3Z713VGKF4Z0JJ3263XJMC3"
 title = "G08: grimble-model crate: .grmb parser, printer, fmt and U adapter"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T22:38:09Z"
+updated = "2026-10-02T23:17:22Z"
 idempotency_key = "m2-grmbmodel"
 labels = ["milestone:2"]
 scope = ["crates/grimble-model/**", "crates/gob-languages/**"]
