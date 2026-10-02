@@ -58,7 +58,21 @@ M11), ast-grep tree-sitter unification spike (M26), gob-ir and universal
 rules, grimble crates, crunk crates, serve/GUI, daemon, PM cycles and
 forecasts, exception kinds hotfix and baseline, migration tooling.
 
-## Implementer workflow (v1 frob drives v2 work)
+## Implementer workflow (frob v2 self-hosted, from 2026-10-04)
+
+The repository is checked and ticketed by the v2 binary. Build it with
+`CARGO_TARGET_DIR=/home/logan/projects/frob-v2-wt/.target cargo build -p
+frob-cli` and call `$CARGO_TARGET_DIR/debug/frob` (alias F). Verbs:
+`F ticket doable`, `F work <handle>` (worktree under ../frob-v2-wt/,
+branch ticket/<handle>, lease taken), implement, `F test --base
+experimental`, `F ticket evidence add <handle> --provider command --ref
+"<cargo nextest ...>" --accepts N`, `F check --ticket <handle>`, then
+the coordinator runs `F land <handle>`. Ticket ids are ULIDs; handles
+are `~` plus the unique suffix; directives use full ULIDs. The v1 tool
+is no longer used in this repository. The old section below is kept
+for history.
+
+## Implementer workflow until the cutover (v1 frob drove v2 work)
 
 1. Coordinator runs `frob ticket work T-#### --worktree ../frob-v2-wt/t-####
    --foreground` from the primary root (lease holder is the coordinator's
@@ -114,6 +128,14 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
   be named in the done-report text (file:RULE) or the land refuses.
 
 ## Status log (newest first)
+
+- 2026-10-04 (cutover): design review integrated (D56-D64). Cutover
+  done: experimental fast-forwarded to t-0025 (re-imported final v1
+  ledger, 35 tickets, v2 frob.toml, notes/ excluded from check); v2
+  doctor, ticket doctor and check are clean on the primary; 359 tests.
+  T-0025 closed with the v2 binary. All v1 worktrees removed. Milestone
+  2 is filed next with the v2 binary in the order of
+  build-test-ci.md "Milestone 2".
 
 - 2026-10-04 (review pause, closing): owner asked for (1) a survey of
   paradigms and a universal model with coverage proofs, (2) loud
