@@ -2,13 +2,13 @@
 id = "01M3ZBQPK3ZFE8TVB3GV5F85PC"
 title = "ticket update: empty --set clears list fields silently; ticket show --json omits scope"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T22:28:39Z"
-updated = "2026-10-02T22:28:39Z"
+updated = "2026-10-02T22:47:04Z"
 idempotency_key = "m2-update-scope"
 labels = ["milestone:2"]
 scope = ["crates/frob-ledger/**", "crates/frob/**"]
