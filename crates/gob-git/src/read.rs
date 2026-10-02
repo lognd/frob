@@ -84,6 +84,16 @@ impl Repo {
         }
     }
 
+    /// Open a handle with its own index cache.
+    ///
+    /// gix shares one index snapshot across clones and revalidates it by index
+    /// mtime alone, so rapid successive index rewrites (as `commit_paths`
+    /// does) can leave it stale; index readers must not use the shared one.
+    pub(crate) fn fresh_gix(&self) -> Result<gix::Repository, GitError> {
+        let path = self.gix.workdir().unwrap_or_else(|| self.gix.git_dir());
+        gix::open(path).map_err(odb_err)
+    }
+
     /// Use `runner` (shared with the rest of the process) for spawn fallbacks.
     #[must_use]
     pub fn with_runner(mut self, runner: Arc<Runner>) -> Self {

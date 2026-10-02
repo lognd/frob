@@ -260,7 +260,7 @@ impl Repo {
         let root = self.work_dir().expect("checked_out implies a worktree");
         let tree = self.gix.find_tree(base_tree).map_err(odb_err)?;
         let index = self
-            .gix
+            .fresh_gix()?
             .index_or_empty()
             .map_err(|e| GitError::Index(e.to_string()))?;
         for p in planned {

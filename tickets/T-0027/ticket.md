@@ -1,7 +1,7 @@
 ---
 id: T-0027
 title: gob-git test delete_via_none_and_local_edit_refusal fails in the primary checkout
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-10-02'
@@ -23,19 +23,22 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0027
+branch: t-0027
 scope:
 - crates/gob-git/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-git exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given the primary checkout and any ticket worktree on this host, when cargo
     nextest run -p gob-git runs, then every test passes in both
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-git exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-git
 anchor: false

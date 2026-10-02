@@ -100,8 +100,8 @@ impl Repo {
         } else {
             UntrackedFiles::None
         };
-        let platform = self
-            .gix
+        let fresh = self.fresh_gix()?;
+        let platform = fresh
             .status(gix::progress::Discard)
             .map_err(|e| st_err(&e))?
             .untracked_files(untracked);
@@ -228,7 +228,7 @@ impl Repo {
 
     fn index_map(&self) -> Result<TreeMap, GitError> {
         let index = self
-            .gix
+            .fresh_gix()?
             .index_or_empty()
             .map_err(|e| GitError::Index(e.to_string()))?;
         Ok(index
