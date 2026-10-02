@@ -1,0 +1,79 @@
+kind = "evidence"
+at = "2026-10-02T21:03:10Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-dev -p frob-cli"
+digest = "f05c59e8ca4d95c76d05ac41558a7b25c402dee36e21a513e77266d0a97dd170"
+status = "measured"
+captured_at = "2026-10-02T21:03:10Z"
+accepts = [1, 2]
+passed = true
+exit_code = 0
+inline = """
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2/crates/frob-ledger)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2/crates/frob-ack)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2/crates/frob-lease)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2/crates/frob)
+   Compiling gob-dev v0.0.0 (/home/logan/projects/frob-v2/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 49.00s
+────────────
+ Nextest run ID 43d7f9cf-0279-41ab-96d7-a5a83033ca0c with nextest profile: ci
+    Starting 47 tests across 10 binaries
+        PASS [   0.048s] ( 1/47) frob-cli::cli every_verb_is_in_the_command_inventory
+        PASS [   0.057s] ( 2/47) frob-cli config::tests::registry_files_alias_extends_lease_shared_files_without_duplicates
+        PASS [   0.108s] ( 3/47) frob-cli::cli init_outside_a_repo_is_a_refusal
+        PASS [   0.166s] ( 4/47) frob-cli::cli config_show_effective_reports_provenance
+        PASS [   0.167s] ( 5/47) frob-cli::cli config_show_rejects_unknown_keys_with_a_suggestion
+        PASS [   0.179s] ( 6/47) frob-cli::cli dry_run_is_rejected_on_verbs_that_do_not_opt_in
+        PASS [   0.201s] ( 7/47) frob-cli::check_verb explain_prints_the_rule_page_and_unknown_is_usage
+        PASS [   0.247s] ( 8/47) frob-cli::cli init_dry_run_writes_nothing
+        PASS [   0.083s] ( 9/47) frob-cli::cli schema_verb_dumps_envelope_and_config
+        PASS [   0.073s] (10/47) frob-cli::cli unknown_verb_exits_2_with_a_suggestion
+        PASS [   0.330s] (11/47) frob-cli::cli schema_flag_prints_the_verb_schema
+        PASS [   0.531s] (12/47) frob-cli::cli doctor_outside_a_repo_still_succeeds
+        PASS [   1.534s] (13/47) frob-cli::cli config_sync_adds_missing_knobs_once
+        PASS [   1.544s] (14/47) frob-cli::cli in_process_root_matches_the_binary_contract
+        PASS [   3.263s] (15/47) frob-cli::ticket merge_driver_fails_with_exit_1_when_the_fold_fails
+        PASS [   4.824s] (16/47) frob-cli::cli json_flag_is_an_alias_and_conflicts_with_text
+        PASS [   4.804s] (17/47) frob-cli::cli text_format_goes_to_stdout_and_errors_to_stderr
+        PASS [   7.272s] (18/47) frob-cli::cli doctor_piped_is_json_envelope_even_with_cfg001
+        PASS [   9.830s] (19/47) frob-cli::cli init_twice_second_is_already_and_changes_nothing
+        PASS [   8.417s] (20/47) frob-cli::ticket new_with_the_same_key_returns_already
+        PASS [   0.014s] (21/47) gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.011s] (22/47) gob-dev render::rules::tests::index_groups_by_family_and_escapes
+        PASS [   0.017s] (23/47) gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.011s] (24/47) gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [  10.030s] (25/47) frob-cli::check_verb error_finding_exits_1_and_fail_on_none_exits_0
+        PASS [   2.759s] (26/47) frob-cli::wiring registry_files_alias_is_accepted_and_shared_tables_are_listed
+        PASS [   6.496s] (27/47) frob-cli::wiring close_of_a_task_without_evidence_is_refused_with_the_test_remedy
+        PASS [   0.020s] (28/47) gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.040s] (29/47) gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.075s] (30/47) gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   9.840s] (31/47) frob-cli::ticket ambiguous_handle_exits_3_listing_both_candidates
+        PASS [   0.047s] (32/47) gob-dev::import_v1 refuses_a_non_empty_target
+        PASS [   0.039s] (33/47) gob-dev::import_v1 renders_the_id_map
+        PASS [   0.086s] (34/47) gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.051s] (35/47) gob-dev::import_v1 renders_the_migration_report
+        PASS [   0.013s] (36/47) gob-dev::bin/gob-dev tests::gen_check_parses
+        PASS [   0.031s] (37/47) gob-dev::import_v1 renders_the_summary_table
+        PASS [   0.024s] (38/47) gob-dev::bin/gob-dev tests::import_parses
+        PASS [   0.140s] (39/47) gob-dev::generate output_is_deterministic_and_check_passes
+        PASS [   0.055s] (40/47) gob-dev::import_v1 ulids_keep_creation_order
+        PASS [   0.315s] (41/47) frob-cli::wiring sibling_verbs_print_schemas
+        PASS [   9.734s] (42/47) frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   5.311s] (43/47) frob-cli::wiring doable_hides_tickets_overlapping_a_live_lease_and_shows_them_otherwise
+        PASS [   5.315s] (44/47) frob-cli::wiring no_evidence_with_a_reason_closes_and_records_a_bypass_event
+        PASS [   9.957s] (45/47) frob-cli::ticket merge_driver_unions_events_from_both_branches_and_refolds
+        PASS [   8.945s] (46/47) frob-cli::ticket update_set_comment_brief_and_parent
+        PASS [  10.248s] (47/47) frob-cli::ticket links_blocked_doable_and_repeat_semantics
+────────────
+     Summary [  10.507s] 47 tests run: 47 passed, 0 skipped
+"""
+size = 5591
