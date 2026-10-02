@@ -1,7 +1,7 @@
 ---
 id: T-0030
 title: gob-git LocalEdits check refuses after git checkout under core.autocrlf=true
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-10-02'
@@ -23,20 +23,23 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0030
+branch: t-0030
 scope:
 - crates/gob-git/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-git exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a repo with core.autocrlf=true and a checked-out ledger ref, when commit_paths
     writes a ticket twice with a checkout in between, then the second write succeeds
     and a genuine local content edit still refuses
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-git exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-git
 anchor: false

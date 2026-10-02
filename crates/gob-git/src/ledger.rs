@@ -259,9 +259,15 @@ impl Repo {
     fn check_local_edits(&self, planned: &[Planned<'_>], base_tree: Oid) -> Result<(), GitError> {
         let root = self.work_dir().expect("checked_out implies a worktree");
         let tree = self.gix.find_tree(base_tree).map_err(odb_err)?;
-        let index = self
-            .fresh_gix()?
+        let fresh = self.fresh_gix()?;
+        let index = fresh
             .index_or_empty()
+            .map_err(|e| GitError::Index(e.to_string()))?;
+        // Filter-aware: disk bytes are converted to their git representation
+        // (core.autocrlf, .gitattributes text/eol) before hashing, so a pure
+        // line-ending rewrite by `git checkout` is never a local edit.
+        let (mut pipeline, pipe_index) = fresh
+            .filter_pipeline(None)
             .map_err(|e| GitError::Index(e.to_string()))?;
         for p in planned {
             let old = tree
@@ -270,11 +276,18 @@ impl Repo {
                 .map(|e| e.object_id());
             let new = p.blob.as_ref().map(|(id, _)| *id);
             let staged = index.entry_by_path(p.path.as_str().into()).map(|e| e.id);
-            let disk = match std::fs::read(root.join(p.path.as_str())) {
-                Ok(b) => Some(
-                    gix::objs::compute_hash(self.gix.object_hash(), gix::object::Kind::Blob, &b)
+            let disk = match std::fs::File::open(root.join(p.path.as_str())) {
+                Ok(f) => {
+                    let bytes = to_git_bytes(&mut pipeline, &pipe_index, p.path, f)?;
+                    Some(
+                        gix::objs::compute_hash(
+                            self.gix.object_hash(),
+                            gix::object::Kind::Blob,
+                            &bytes,
+                        )
                         .map_err(odb_err)?,
-                ),
+                    )
+                }
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
                 Err(e) => return Err(GitError::io(format!("reading {}", p.path), e)),
             };
@@ -350,6 +363,31 @@ impl Repo {
         debug!(paths = planned.len(), "checkout index and worktree updated");
         Ok(())
     }
+}
+
+/// Read `src` for `path` and return its git (clean-filtered) representation.
+fn to_git_bytes(
+    pipeline: &mut gix::filter::Pipeline<'_>,
+    index: &gix::index::State,
+    path: &RelPath,
+    src: std::fs::File,
+) -> Result<Vec<u8>, GitError> {
+    use gix::filter::plumbing::pipeline::convert::ToGitOutcome;
+    use std::io::Read;
+    let ctx = |e: std::io::Error| GitError::io(format!("reading {path}"), e);
+    let outcome = pipeline
+        .convert_to_git(src, Path::new(path.as_str()), index)
+        .map_err(|e| GitError::Index(e.to_string()))?;
+    let mut out = Vec::new();
+    match outcome {
+        ToGitOutcome::Unchanged(mut f) => f.read_to_end(&mut out).map_err(ctx)?,
+        ToGitOutcome::Buffer(b) => {
+            out.extend_from_slice(b);
+            b.len()
+        }
+        ToGitOutcome::Process(mut r) => r.read_to_end(&mut out).map_err(ctx)?,
+    };
+    Ok(out)
 }
 
 /// Serialise `index` into the held `index.lock` and atomically commit it.

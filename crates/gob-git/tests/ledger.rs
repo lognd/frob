@@ -383,3 +383,55 @@ fn spawn_fallbacks_worktree_merge_push() {
     repo.push("origin", "main").unwrap();
     assert!(repo.runner().spawn_count().since(before) >= 3);
 }
+
+/// Repo with `core.autocrlf=true` in its local config (T-0030).
+fn autocrlf_fixture() -> (tempfile::TempDir, Repo) {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = Repo::init(dir.path()).unwrap();
+    std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").unwrap();
+    let cfg = repo.git_dir().join("config");
+    let mut text = std::fs::read_to_string(&cfg).unwrap();
+    text.push_str("[core]\n\tautocrlf = true\n");
+    std::fs::write(&cfg, text).unwrap();
+    let repo = Repo::discover(dir.path()).unwrap();
+    repo.commit_paths(MAIN, &[change("README.md", "hello\n")], "root", &opts())
+        .unwrap();
+    (dir, repo)
+}
+
+#[test]
+fn crlf_checkout_rewrite_is_not_a_local_edit() {
+    let (dir, repo) = autocrlf_fixture();
+    repo.commit_paths(MAIN, &[change("tickets/c.md", "a\nb\n")], "add c", &opts())
+        .unwrap();
+    // What `git checkout` does under autocrlf=true: rewrite the file with CRLF.
+    std::fs::write(dir.path().join("tickets/c.md"), "a\r\nb\r\n").unwrap();
+    repo.commit_paths(
+        MAIN,
+        &[change("tickets/c.md", "a\nb\nc\n")],
+        "upd c",
+        &opts(),
+    )
+    .expect("a pure line-ending difference must not refuse");
+    assert_eq!(
+        repo.read_blob_at(MAIN, "tickets/c.md").unwrap().unwrap(),
+        b"a\nb\nc\n"
+    );
+}
+
+#[test]
+fn real_edit_still_refused_under_autocrlf() {
+    let (dir, repo) = autocrlf_fixture();
+    repo.commit_paths(MAIN, &[change("tickets/c.md", "a\nb\n")], "add c", &opts())
+        .unwrap();
+    std::fs::write(dir.path().join("tickets/c.md"), "a\r\nmine\r\n").unwrap();
+    let err = repo
+        .commit_paths(
+            MAIN,
+            &[change("tickets/c.md", "a\nb\nc\n")],
+            "upd c",
+            &opts(),
+        )
+        .unwrap_err();
+    assert!(matches!(err, GitError::LocalEdits { .. }), "{err}");
+}
