@@ -1,0 +1,46 @@
+## Done report
+
+frob-ledger per tickets.md sections 2-5 and 11 with D23, D24, D33, D34: tickets/<ulid>/ticket.md TOML frontmatter plus events/<ulid>.toml, frontmatter as the fold of events (create event added as the birth event), categories plus close guards with outcome, derived blocked, canonical links with inverses and acyclicity, writes through gob-git commit_paths on [tickets] ref with ref_mode trunk|branch, SQLite index under .frob keyed by the tickets subtree id (show 0.16 ms, list 1 ms over 1000 tickets), ~suffix handles and aliases with E-TICKET-AMBIGUOUS, verbs new/show/list/update/link/unlink/comment/close/drop/reopen/doable/brief/doctor and the hidden merge-driver that unions events from disk and every merge head then re-folds, TICK001-003, CloseGuard and LeaseCheck trait hooks, --idempotency-key. error_set kept for this crate (verdict in the crate docs). Deviations: create event kind; link kind spawned; epics excluded from doable; reconcile commits on concurrent event writes; TicketField derive deferred to T-0028; evidence guard to T-0020; lease check to T-0019.
+
+### Changed
+```
+ Cargo.lock                                         | 155 +++++
+ crates/frob-ledger/Cargo.toml                      |  36 ++
+ crates/frob-ledger/benches/ledger.rs               | 108 ++++
+ crates/frob-ledger/src/brief.rs                    |  82 +++
+ crates/frob-ledger/src/doc.rs                      | 125 ++++
+ crates/frob-ledger/src/doctor.rs                   | 200 ++++++
+ crates/frob-ledger/src/error.rs                    | 221 +++++++
+ crates/frob-ledger/src/event.rs                    | 379 +++++++++++
+ crates/frob-ledger/src/fold.rs                     | 330 ++++++++++
+ crates/frob-ledger/src/guards.rs                   |  90 +++
+ crates/frob-ledger/src/id.rs                       | 230 +++++++
+ crates/frob-ledger/src/index.rs                    | 538 ++++++++++++++++
+ crates/frob-ledger/src/ledger.rs                   | 527 +++++++++++++++
+ crates/frob-ledger/src/lib.rs                      |  77 +++
+ crates/frob-ledger/src/links.rs                    | 327 ++++++++++
+ crates/frob-ledger/src/merge.rs                    | 127 ++++
+ crates/frob-ledger/src/model.rs                    | 481 ++++++++++++++
+ crates/frob-ledger/src/ops.rs                      | 707 +++++++++++++++++++++
+ crates/frob-ledger/src/rules.rs                    | 162 +++++
+ crates/frob-ledger/src/schema.rs                   | 405 ++++++++++++
+ crates/frob-ledger/tests/ledger.rs                 | 650 +++++++++++++++++++
+ crates/frob/Cargo.toml                             |   3 +-
+ crates/frob/src/config.rs                          |  40 ++
+ crates/frob/src/lib.rs                             |  16 +-
+ crates/frob/src/ticket/doctor_cmd.rs               |  70 ++
+ crates/frob/src/ticket/merge_cmd.rs                | 132 ++++
+ crates/frob/src/ticket/mod.rs                      | 165 +++++
+ crates/frob/src/ticket/read.rs                     | 280 ++++++++
+ crates/frob/src/ticket/write.rs                    | 585 +++++++++++++++++
+ crates/frob/src/workspace.rs                       |  10 +
+ crates/frob/tests/cli.rs                           |  26 +-
+ .../tests/snapshots/cli__doctor_fresh_repo.snap    |  13 +-
+ .../frob/tests/snapshots/cli__init_frob_toml.snap  |   2 +
+ crates/frob/tests/ticket.rs                        | 370 +++++++++++
+ tickets/T-0018/ticket.md                           |   6 +-
+ 35 files changed, 7661 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)

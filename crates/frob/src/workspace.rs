@@ -38,6 +38,16 @@ impl Located {
         }
     }
 
+    /// Take the repo (with a work tree) and its root, or the `E-NOT-A-REPO` refusal.
+    pub(crate) fn into_repo(self) -> Result<(Repo, PathBuf), CliError> {
+        self.require_repo()?;
+        let Self { repo, root } = self;
+        Ok((
+            repo.unwrap_or_else(|| unreachable!("require_repo checked")),
+            root,
+        ))
+    }
+
     /// The repo and its work tree, or the `E-NOT-A-REPO` refusal.
     pub(crate) fn require_repo(&self) -> Result<&Repo, CliError> {
         match &self.repo {

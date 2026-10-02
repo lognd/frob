@@ -13,3 +13,5 @@ cas_retries = 5
 [tickets]
 # Ref holding the ledger; the ledger merge driver and `doctor` resolve it.
 ref = "refs/heads/main"
+# `trunk` commits to `ref`; `branch` commits to the checked-out branch.
+ref_mode = "trunk"

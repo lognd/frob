@@ -1,0 +1,330 @@
+//! Folding a ticket's events into its state: the integrity invariant.
+//!
+//! `fold(events) == frontmatter` is checked by `doctor` and rule `TICK001`.
+//! Events are applied in (ULID time, `at`, id) order; a `field` or
+//! `transition` event whose recorded previous value disagrees with the state
+//! it meets is applied anyway (last writer in fold order wins) and reported
+//! as a [`Conflict`], never silently picked.
+
+use crate::error::{LedgerError, Result};
+use crate::event::{
+    CreateData, Event, EventBody, FieldChange, LinkData, TransitionData, sort_events,
+};
+use crate::id::{EventId, TicketId};
+use crate::model::{Acceptance, Category, Frontmatter, LinkOp, Ticket, normalize_body};
+use crate::schema::{get_field, set_field};
+
+/// A concurrent pair of changes that disagree about the previous value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Conflict {
+    /// The event whose recorded `old` or `from` did not match.
+    pub event: EventId,
+    /// The field (or `category`) involved.
+    pub field: String,
+    /// What the event said the previous value was.
+    pub expected: Option<String>,
+    /// What the fold had at that point.
+    pub found: Option<String>,
+}
+
+/// The result of a fold.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Folded {
+    /// The ticket state.
+    pub ticket: Ticket,
+    /// Conflicting concurrent changes, in fold order.
+    pub conflicts: Vec<Conflict>,
+}
+
+fn initial(id: TicketId, at: crate::model::Stamp, actor: &str, c: &CreateData) -> Ticket {
+    let mut links = c.links.clone();
+    links.sort();
+    links.dedup();
+    Ticket {
+        front: Frontmatter {
+            id,
+            title: c.title.clone(),
+            ty: c.ty,
+            flavour: c.flavour.clone(),
+            category: c.category,
+            outcome: None,
+            priority: c.priority,
+            points: c.points,
+            parent: c.parent,
+            reporter: actor.to_owned(),
+            assignee: c.assignee.clone(),
+            created: at,
+            updated: at,
+            persona: c.persona.clone(),
+            capability: c.capability.clone(),
+            outcome_text: c.outcome_text.clone(),
+            idempotency_key: c.idempotency_key.clone(),
+            aliases: c.aliases.clone(),
+            labels: c.labels.clone(),
+            scope: c.scope.clone(),
+            links,
+            acceptance: c
+                .acceptance
+                .iter()
+                .map(|text| Acceptance {
+                    text: text.clone(),
+                    bound: false,
+                })
+                .collect(),
+        },
+        body: normalize_body(&c.body),
+    }
+}
+
+fn show(v: Option<&toml::Value>) -> Option<String> {
+    v.map(ToString::to_string)
+}
+
+fn apply_field(
+    id: TicketId,
+    t: &mut Ticket,
+    ev: &Event,
+    c: &FieldChange,
+    out: &mut Vec<Conflict>,
+) -> Result<()> {
+    let current = get_field(t, &c.field);
+    if c.old.is_some() || current.is_some() {
+        let same = match (&c.old, &current) {
+            (Some(a), Some(b)) => a == b,
+            (None, None) => true,
+            _ => false,
+        };
+        if !same {
+            tracing::debug!(ticket = %id, field = %c.field, event = %ev.id, "concurrent field conflict");
+            out.push(Conflict {
+                event: ev.id,
+                field: c.field.clone(),
+                expected: show(c.old.as_ref()),
+                found: show(current.as_ref()),
+            });
+        }
+    }
+    set_field(t, &c.field, c.new.as_ref())
+        .map_err(|m| LedgerError::fold(id, format!("event {}: {m}", ev.id)))
+}
+
+fn apply_transition(
+    id: TicketId,
+    t: &mut Ticket,
+    ev: &Event,
+    c: &TransitionData,
+    out: &mut Vec<Conflict>,
+) -> Result<()> {
+    let fm = &mut t.front;
+    if fm.category != c.from {
+        out.push(Conflict {
+            event: ev.id,
+            field: "category".to_owned(),
+            expected: Some(c.from.to_string()),
+            found: Some(fm.category.to_string()),
+        });
+    }
+    match (c.to, c.outcome) {
+        (Category::Done, Some(o)) => fm.outcome = Some(o),
+        (Category::Done, None) => {
+            return Err(LedgerError::fold(
+                id,
+                format!("event {}: transition to done has no outcome", ev.id),
+            ));
+        }
+        (_, None) => fm.outcome = None,
+        (_, Some(_)) => {
+            return Err(LedgerError::fold(
+                id,
+                format!(
+                    "event {}: outcome given for a non-terminal transition",
+                    ev.id
+                ),
+            ));
+        }
+    }
+    fm.category = c.to;
+    Ok(())
+}
+
+fn apply_link(t: &mut Ticket, c: &LinkData) {
+    let link = crate::model::Link {
+        kind: c.link,
+        target: c.target,
+    };
+    let links = &mut t.front.links;
+    match c.op {
+        LinkOp::Add => {
+            if !links.contains(&link) {
+                links.push(link);
+                links.sort();
+            }
+        }
+        LinkOp::Remove => links.retain(|l| *l != link),
+    }
+}
+
+/// Fold `events` (any order) into the state of ticket `id`.
+///
+/// # Errors
+///
+/// [`LedgerError::Fold`] when there is no `create` event or more than one,
+/// when a field event names an unknown or unsettable field or carries a bad
+/// value, or when a transition breaks the outcome rule.
+pub fn fold(id: TicketId, events: &[Event]) -> Result<Folded> {
+    let mut ordered: Vec<&Event> = events.iter().collect();
+    ordered.sort_by_key(|e| e.order_key());
+    let mut iter = ordered.into_iter();
+    let first = iter
+        .next()
+        .ok_or_else(|| LedgerError::fold(id, "no events"))?;
+    let EventBody::Create(create) = &first.body else {
+        return Err(LedgerError::fold(
+            id,
+            format!(
+                "the first event {} is `{}`, not `create`",
+                first.id, first.kind
+            ),
+        ));
+    };
+    let mut ticket = initial(id, first.at, &first.actor, create);
+    let mut conflicts = Vec::new();
+    let mut last = first.at;
+    for ev in iter {
+        match &ev.body {
+            EventBody::Create(_) => {
+                return Err(LedgerError::fold(
+                    id,
+                    format!("event {} is a second `create`", ev.id),
+                ));
+            }
+            EventBody::Field(c) => apply_field(id, &mut ticket, ev, c, &mut conflicts)?,
+            EventBody::Transition(c) => apply_transition(id, &mut ticket, ev, c, &mut conflicts)?,
+            EventBody::Link(c) => apply_link(&mut ticket, c),
+            EventBody::Comment(_) | EventBody::Exception(_) | EventBody::Other => {}
+        }
+        last = ev.at;
+    }
+    ticket.front.updated = last;
+    tracing::debug!(ticket = %id, events = events.len(), conflicts = conflicts.len(), "folded");
+    Ok(Folded { ticket, conflicts })
+}
+
+/// Sort a copy of `events` into fold order (a convenience for callers that list them).
+pub fn ordered(events: &[Event]) -> Vec<Event> {
+    let mut v = events.to_vec();
+    sort_events(&mut v);
+    v
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::event::{CommentData, FieldChange};
+    use crate::model::{CommentSubtype, Outcome, Priority, TicketType};
+
+    fn create_event(actor: &str) -> Event {
+        Event::new(
+            actor,
+            EventBody::Create(Box::new(CreateData {
+                title: "T".into(),
+                ty: TicketType::Task,
+                category: Category::Todo,
+                priority: Priority::Medium,
+                flavour: None,
+                points: None,
+                parent: None,
+                assignee: None,
+                persona: None,
+                capability: None,
+                outcome_text: None,
+                idempotency_key: None,
+                aliases: vec![],
+                labels: vec![],
+                scope: vec![],
+                acceptance: vec!["a".into()],
+                body: "hello".into(),
+                links: vec![],
+            })),
+        )
+    }
+
+    fn set(field: &str, old: Option<&str>, new: &str) -> Event {
+        Event::new(
+            "a",
+            EventBody::Field(FieldChange {
+                field: field.into(),
+                old: old.map(|s| toml::Value::String(s.into())),
+                new: Some(toml::Value::String(new.into())),
+                reason: None,
+            }),
+        )
+    }
+
+    #[test]
+    fn fold_applies_creation_fields_and_transitions() {
+        let id = TicketId::mint();
+        let evs = vec![
+            create_event("logan"),
+            set("title", Some("T"), "Renamed"),
+            Event::new(
+                "a",
+                EventBody::Comment(CommentData {
+                    subtype: CommentSubtype::Note,
+                    body: "n".into(),
+                }),
+            ),
+            Event::new(
+                "a",
+                EventBody::Transition(TransitionData {
+                    from: Category::Todo,
+                    to: Category::Done,
+                    outcome: Some(Outcome::Fixed),
+                    reason: None,
+                }),
+            ),
+        ];
+        let f = fold(id, &evs).expect("fold");
+        assert_eq!(f.ticket.front.title, "Renamed");
+        assert_eq!(f.ticket.front.category, Category::Done);
+        assert_eq!(f.ticket.front.outcome, Some(Outcome::Fixed));
+        assert_eq!(f.ticket.front.reporter, "logan");
+        assert_eq!(f.ticket.body, "hello");
+        assert!(f.conflicts.is_empty());
+        // Input order does not matter.
+        let mut rev = evs.clone();
+        rev.reverse();
+        assert_eq!(fold(id, &rev).expect("fold").ticket, f.ticket);
+    }
+
+    #[test]
+    fn concurrent_field_changes_are_reported() {
+        let id = TicketId::mint();
+        let evs = vec![
+            create_event("a"),
+            set("title", Some("T"), "Left"),
+            set("title", Some("T"), "Right"),
+        ];
+        let f = fold(id, &evs).expect("fold");
+        assert_eq!(f.ticket.front.title, "Right");
+        assert_eq!(f.conflicts.len(), 1);
+        assert_eq!(f.conflicts[0].field, "title");
+    }
+
+    #[test]
+    fn missing_or_duplicate_create_is_an_error() {
+        let id = TicketId::mint();
+        assert!(fold(id, &[]).is_err());
+        assert!(fold(id, &[set("title", None, "x")]).is_err());
+        assert!(fold(id, &[create_event("a"), create_event("a")]).is_err());
+    }
+
+    #[test]
+    fn bad_field_is_an_error() {
+        let id = TicketId::mint();
+        let evs = vec![create_event("a"), set("category", None, "done")];
+        assert!(fold(id, &evs).is_err());
+        let evs = vec![create_event("a"), set("nope", None, "x")];
+        assert!(fold(id, &evs).is_err());
+    }
+}

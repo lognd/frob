@@ -2,7 +2,7 @@
 id: T-0018
 title: 'frob-ledger: ULID tickets, events, fold, index, merge driver, core ticket
   verbs'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -27,8 +27,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0018
+branch: t-0018
 scope:
 - crates/frob-ledger/**
 - crates/frob/**
@@ -43,18 +43,23 @@ scope_changes:
     can run in parallel
   actor: logan
   at: '2026-10-02'
+evidence:
+- cmd:cargo nextest run --profile ci -p frob-ledger -p frob-cli exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a temp repo, when ticket new then update then close run, then events
     exist for each, the frontmatter equals the fold, and three commits exist on the
     ledger ref with only tickets/ paths
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-ledger -p frob-cli exit=0 sha256=e3b0c44298fc
 - text: Given two branches each adding events to the same ticket, when merged with
     the merge driver, then all events survive and the frontmatter is re-folded
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-ledger -p frob-cli exit=0 sha256=e3b0c44298fc
 - text: Given a ticket handle that matches two tickets, when show runs, then exit
     is 3 with both candidates
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-ledger -p frob-cli exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-ledger
 anchor: false

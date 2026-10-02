@@ -22,6 +22,25 @@ pub enum FailOn {
     Error,
 }
 
+/// Where ledger commits go (`[tickets] ref_mode`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum RefModeKnob {
+    /// Commits advance the configured `ref`, whatever branch is checked out.
+    Trunk,
+    /// Commits go on the currently checked-out branch (protected trunk, forks).
+    Branch,
+}
+
+impl From<RefModeKnob> for frob_ledger::RefMode {
+    fn from(k: RefModeKnob) -> Self {
+        match k {
+            RefModeKnob::Trunk => Self::Trunk,
+            RefModeKnob::Branch => Self::Branch,
+        }
+    }
+}
+
 /// Where the ticket ledger lives.
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "tickets", materialize)]
@@ -32,6 +51,15 @@ pub struct TicketsTable {
     /// Directory of ticket files, relative to the repository root.
     #[config(default = "tickets".to_owned())]
     pub dir: String,
+    /// `trunk` commits to `ref`; `branch` commits to the checked-out branch.
+    #[config(default = RefModeKnob::Trunk, enforcement)]
+    pub ref_mode: RefModeKnob,
+    /// Shortest ticket handle shown (`~` plus this many id characters).
+    #[config(default = 7)]
+    pub handle_min_len: u32,
+    /// Actor recorded on events; empty means git `user.name`.
+    #[config(default = String::new())]
+    pub actor: String,
 }
 
 /// Settings of `frob check`.
@@ -81,6 +109,18 @@ pub struct FrobConfig {
 }
 
 impl FrobConfig {
+    /// The ledger settings these tables imply.
+    pub fn ledger(&self) -> frob_ledger::LedgerConfig {
+        frob_ledger::LedgerConfig {
+            ref_name: self.tickets.r#ref.clone(),
+            mode: self.tickets.ref_mode.into(),
+            dir: self.tickets.dir.clone(),
+            cas_retries: self.git.cas_retries,
+            handle_min_len: self.tickets.handle_min_len as usize,
+            actor: (!self.tickets.actor.is_empty()).then(|| self.tickets.actor.clone()),
+        }
+    }
+
     /// Load all four tables from `<root>/frob.toml` (a missing file is defaults).
     ///
     /// # Errors

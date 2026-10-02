@@ -1,0 +1,200 @@
+//! `doctor`: ledger integrity (fold equals frontmatter, dangling links, event order).
+
+use gob_rules::Finding;
+use schemars::JsonSchema;
+use serde::Serialize;
+
+use crate::error::Result;
+use crate::event::EventBody;
+use crate::fold::fold;
+use crate::id::TicketId;
+use crate::ledger::Ledger;
+use crate::rules::{tick001, tick003};
+
+/// Seconds an event's `at` may differ from its ULID time before it is flagged.
+pub const CLOCK_SKEW_SECS: i64 = 600;
+
+/// A problem that is not one of the TICK rules.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct Issue {
+    /// Stable code: `E-DOCTOR-UNREADABLE`, `E-DOCTOR-ORDER`, `E-DOCTOR-CONFLICT`, `E-DOCTOR-ID`.
+    pub code: String,
+    /// The ticket concerned.
+    pub ticket: TicketId,
+    /// What is wrong.
+    pub message: String,
+}
+
+/// The result of [`Ledger::doctor`].
+#[derive(Debug, Clone)]
+pub struct DoctorReport {
+    /// Tickets examined.
+    pub tickets: usize,
+    /// Events examined.
+    pub events: usize,
+    /// `TICK001` and `TICK003` findings.
+    pub findings: Vec<Finding>,
+    /// Other problems.
+    pub issues: Vec<Issue>,
+    /// Tickets whose frontmatter `--fix` rewrote.
+    pub fixed: Vec<TicketId>,
+}
+
+impl DoctorReport {
+    /// True when nothing is wrong.
+    pub fn is_clean(&self) -> bool {
+        self.findings.is_empty() && self.issues.is_empty()
+    }
+}
+
+impl Ledger {
+    /// Re-fold every ticket from the ledger tip and compare with its frontmatter.
+    ///
+    /// With `fix`, tickets whose frontmatter differs from the fold are
+    /// rewritten (one `reconcile` commit each).
+    ///
+    /// # Errors
+    ///
+    /// Git read or commit failures; unreadable tickets are reported as issues, not errors.
+    pub fn doctor(&self, fix: bool) -> Result<DoctorReport> {
+        let ref_name = self.ledger_ref()?;
+        let mut report = DoctorReport {
+            tickets: 0,
+            events: 0,
+            findings: Vec::new(),
+            issues: Vec::new(),
+            fixed: Vec::new(),
+        };
+        let Some(tip) = self.tip_of(&ref_name)? else {
+            return Ok(report);
+        };
+        let hex = tip.to_string();
+        let ids = self.ticket_ids_at(&hex)?;
+        let known: std::collections::BTreeSet<TicketId> = ids.iter().copied().collect();
+        let mut to_fix = Vec::new();
+        for id in &ids {
+            report.tickets += 1;
+            if self.check_ticket(&hex, *id, &known, &mut report) {
+                to_fix.push(*id);
+            }
+        }
+        if fix {
+            for id in to_fix {
+                if self.reconcile(id)?.is_some() {
+                    report.fixed.push(id);
+                }
+            }
+            let fixed = &report.fixed;
+            report.findings.retain(|f| {
+                !(f.rule.as_str() == "TICK001"
+                    && fixed.iter().any(|i| f.message.contains(&i.to_string())))
+            });
+        }
+        tracing::info!(
+            tickets = report.tickets,
+            findings = report.findings.len(),
+            issues = report.issues.len(),
+            fixed = report.fixed.len(),
+            "doctor finished"
+        );
+        Ok(report)
+    }
+
+    /// Check one ticket against its events; true when its frontmatter needs re-folding.
+    fn check_ticket(
+        &self,
+        hex: &str,
+        id: TicketId,
+        known: &std::collections::BTreeSet<TicketId>,
+        report: &mut DoctorReport,
+    ) -> bool {
+        let issue = |code: &str, message: String| Issue {
+            code: code.to_owned(),
+            ticket: id,
+            message,
+        };
+        let stored = match self.read_ticket_at(hex, id) {
+            Ok(Some(t)) => t,
+            Ok(None) => return false,
+            Err(e) => {
+                report
+                    .issues
+                    .push(issue("E-DOCTOR-UNREADABLE", e.to_string()));
+                return false;
+            }
+        };
+        if stored.front.id != id {
+            report.issues.push(issue(
+                "E-DOCTOR-ID",
+                format!(
+                    "directory {id} holds a ticket whose id is {}",
+                    stored.front.id
+                ),
+            ));
+        }
+        let events = match self.read_events_at(hex, id) {
+            Ok(e) => e,
+            Err(e) => {
+                report
+                    .issues
+                    .push(issue("E-DOCTOR-UNREADABLE", e.to_string()));
+                return false;
+            }
+        };
+        report.events += events.len();
+        for ev in &events {
+            let ulid_secs = i64::try_from(ev.id.timestamp_ms() / 1000).unwrap_or(0);
+            let skew = (ev.at.unix() - ulid_secs).abs();
+            if skew > CLOCK_SKEW_SECS {
+                report.issues.push(issue(
+                    "E-DOCTOR-ORDER",
+                    format!(
+                        "event {} has at={} but its ULID says a time {skew}s away",
+                        ev.id, ev.at
+                    ),
+                ));
+            }
+        }
+        if let Some(first) = events.first()
+            && !matches!(first.body, EventBody::Create(_))
+        {
+            report.issues.push(issue(
+                "E-DOCTOR-ORDER",
+                format!(
+                    "event {} ({}) sorts before the create event",
+                    first.id, first.kind
+                ),
+            ));
+        }
+        report
+            .findings
+            .extend(tick003(&stored.front, &|t| known.contains(&t)));
+        match fold(id, &events) {
+            Ok(folded) => {
+                for c in &folded.conflicts {
+                    report.issues.push(issue(
+                        "E-DOCTOR-CONFLICT",
+                        format!(
+                            "event {} changed `{}` expecting {} but found {}",
+                            c.event,
+                            c.field,
+                            c.expected.as_deref().unwrap_or("unset"),
+                            c.found.as_deref().unwrap_or("unset")
+                        ),
+                    ));
+                }
+                if let Some(f) = tick001(id, &folded.ticket, &stored) {
+                    report.findings.push(f);
+                    return true;
+                }
+                false
+            }
+            Err(e) => {
+                report
+                    .issues
+                    .push(issue("E-DOCTOR-UNREADABLE", e.to_string()));
+                false
+            }
+        }
+    }
+}

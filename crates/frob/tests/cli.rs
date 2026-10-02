@@ -46,7 +46,7 @@ fn doctor_piped_is_json_envelope_even_with_cfg001() {
     assert_eq!(v["ok"], true);
     assert_eq!(v["verb"], "doctor");
     let findings = v["findings"].as_array().expect("findings");
-    assert_eq!(findings.len(), 3, "one CFG001 per materialized knob");
+    assert_eq!(findings.len(), 4, "one CFG001 per materialized knob");
     assert!(findings.iter().all(|f| f["rule"] == "CFG001"));
     assert_json_snapshot!("doctor_fresh_repo", v, {
         ".data.toolchain.rustc" => "[version]",
@@ -250,7 +250,7 @@ fn config_sync_adds_missing_knobs_once() {
     assert_eq!(first["already"], false);
     assert_eq!(
         first["data"]["added"],
-        serde_json::json!(["check.fail_on", "tickets.ref"])
+        serde_json::json!(["check.fail_on", "tickets.ref", "tickets.ref_mode"])
     );
     let text = std::fs::read_to_string(dir.path().join("frob.toml")).expect("read");
     assert!(text.starts_with("# mine\n"));
@@ -275,7 +275,27 @@ fn in_process_root_matches_the_binary_contract() {
 #[test]
 fn every_verb_is_in_the_command_inventory() {
     let verbs: Vec<_> = gob_cli::all_commands().map(|m| m.verb).collect();
-    for v in ["doctor", "init", "config show", "config sync", "schema"] {
+    for v in [
+        "doctor",
+        "init",
+        "config show",
+        "config sync",
+        "schema",
+        "ticket new",
+        "ticket show",
+        "ticket list",
+        "ticket update",
+        "ticket link",
+        "ticket unlink",
+        "ticket comment",
+        "ticket close",
+        "ticket drop",
+        "ticket reopen",
+        "ticket doable",
+        "ticket brief",
+        "ticket doctor",
+        "merge-driver",
+    ] {
         assert!(verbs.contains(&v), "{v} missing from {verbs:?}");
     }
 }
