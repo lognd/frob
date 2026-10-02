@@ -16,6 +16,9 @@ every unit of work and turns unaccounted-for change into a failed check;
 and **crunk**, the design-system linter. The sections below still describe
 the v1 Python implementation until the rewrite replaces it.
 
+Self-hosting status: this repository's tickets and gates are already run by
+frob v2 built from this tree (`frob check` in CI); see CONTRIBUTING.md.
+
 ## Highlights
 
 - **Obligation graph.** Every symbol's identity, tests, docs, and tickets
