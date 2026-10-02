@@ -2,7 +2,8 @@
 id = "01M3Z712GP8XV2WEAS1VHQ7FD4"
 title = "G01: full .grmb language specification"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
