@@ -1,0 +1,154 @@
+kind = "evidence"
+at = "2026-10-02T22:45:26Z"
+actor = "lognd"
+rev = 1
+provider = "nextest"
+ref = "-p frob-ack -p frob-check -p frob-cli -p frob-land -p frob-lease -p frob-tests -p frob-worktree -p gob-cache -p gob-check -p gob-dev -p gob-diagnostics -p gob-directives -p gob-exec -p gob-ir -p gob-lock -p gob-symbols -E '(package(=frob-ack) & (test(=acked_signature_change_fires_drift003_and_ack_clears_it) | test(=changed_public_signature_with_unacked_dependents_fires_affect001) | test(=code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet) | test(=doc_to_missing_heading_fires_drift002_with_nearest_heading) | test(=evaluate_matches_check_and_is_served_from_cache_on_repeat) | test(=lock_and_symbols_agree_on_the_digest_scheme) | test(=outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr) | test(=path_target_acks_every_symbol_and_all_reacks_tracked) | test(=reack_of_unchanged_state_is_a_no_op) | test(=scheme_one_lock_under_version_two_is_all_reattest) | test(=unknown_target_and_empty_request_are_errors) | test(=verbs_ack_why_and_affects_work_end_to_end) | test(=version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it))) | (package(=frob-check) & (test(=a_branch_touching_an_out_of_scope_file_still_fires_scope001) | test(=a_changed_side_input_misses_the_cache) | test(=a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_does_not) | test(=a_failing_tool_stage_yields_tool001_outside_the_budget) | test(=a_frob_accept_suppresses_a_tool_finding_like_a_native_one) | test(=a_missing_tool_binary_fails_under_required_and_passes_under_never) | test(=a_non_required_unresolved_finding_passes_under_required_and_fails_under_all) | test(=a_tool_outside_its_version_range_yields_one_non_required_unresolved) | test(=actionlint_findings_map_to_ci014_and_configured_labels_are_dropped) | test(=an_annotation_required_unresolved_finding_is_marked_required) | test(=an_optional_missing_tool_is_unresolved_but_not_required) | test(=bare_marker_fires_and_second_run_hits_the_cache_with_identical_output) | test(=base_advancing_does_not_leak_into_scope001) | test(=cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language) | test(=editing_a_file_invalidates_only_its_entries) | test(=fail_on_maps_severity_to_the_exit_code) | test(=fix_is_refused_without_a_ticket_when_the_knob_requires_scope) | test(=fix_rewrites_the_file_and_the_next_run_is_clean) | test(=fixture_a_matches_the_recorded_findings) | test(=fixture_b_matches_the_recorded_findings) | test(=only_filters_by_family_and_rejects_unknown_names) | test(=perf001_fires_only_when_enforced_and_over_budget) | test(=telemetry_line_is_appended_when_enabled) | test(=the_ledger_directory_is_exempt_from_scope001) | test(=ticket_restricts_per_file_rules_to_its_scope) | test(=ticket_without_a_ledger_is_an_error) | test(=uncommitted_out_of_scope_edits_still_fire_scope001) | test(=unparseable_output_is_a_tool001_error) | test(=warm_run_on_this_repository_is_under_two_seconds) | test(=zizmor_findings_carry_ci_ids_and_real_spans))) | (package(=frob-cli) & (test(=in_process_root_matches_the_binary_contract))) | (package(=frob-land) & (test(=an_unleased_ticket_and_another_worktree_are_refused) | test(=conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean) | test(=dirty_worktree_refuses_and_lists_paths) | test(=dry_run_plan_is_deterministic_and_changes_nothing) | test(=happy_path_lands_closes_and_cleans_up) | test(=landing_from_inside_the_worktree_defaults_to_its_ticket) | test(=lock_contention_refuses_retryably_naming_the_holder) | test(=missing_evidence_refuses_unless_bypassed_with_a_reason) | test(=red_check_refuses_with_exit_3_and_moves_nothing))) | (package(=frob-lease) & (test(=verbs_list_leases_and_contention))) | (package(=frob-tests) & (test(=attribute_scan_recognises_tests_outside_a_tests_module) | test(=flags_targets_that_resolve_to_no_test_or_no_symbol))) | (package(=frob-worktree) & (test(=another_holder_is_refused_and_can_steal_with_a_reason) | test(=cli_work_twice_reports_already_and_other_actor_gets_exit_3) | test(=concurrent_work_on_overlapping_tickets_grants_exactly_one) | test(=doable_hides_tickets_overlapping_a_live_lease) | test(=start_leases_the_current_checkout_and_requeue_releases) | test(=unworkable_tickets_are_refused) | test(=work_creates_worktree_and_is_idempotent_for_the_holder) | test(=worktree_dir_knob_moves_the_worktree))) | (package(=gob-cache) & (test(=tests::findings_miss_when_any_key_part_changes) | test(=tests::null_cache_when_dir_is_a_file) | test(=tests::persists_across_reopen))) | (package(=gob-check) & (test(=a_foreign_product_gets_findings_caches_and_subject_counts) | test(=a_must_measure_rule_with_zero_subjects_is_a_required_unresolved) | test(=only_accepts_this_products_rules_and_rejects_the_others) | test(=zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out))) | (package(=gob-dev) & (test(=committed_pages_have_no_orphans_on_disk) | test(=imports_maps_and_verifies) | test(=output_is_deterministic_and_check_passes) | test(=refuses_a_non_empty_target) | test(=renders_the_id_map) | test(=renders_the_migration_report) | test(=renders_the_summary_table) | test(=ulids_keep_creation_order))) | (package(=gob-diagnostics) & (test(=required_reason_serializes_tagged_and_summary_counts_required))) | (package(=gob-directives) & (test(=binds_to_adjacent_fn_and_doc_comment_form) | test(=binds_to_fn_two_lines_later) | test(=block_comment_lines_are_scanned_individually) | test(=dsl001_suggests_close_verb_and_points_at_it) | test(=dsl002_names_the_remedy_and_has_no_fix) | test(=enclosing_symbol_when_nothing_follows) | test(=file_level_when_no_symbols) | test(=inner_doc_binds_to_container_not_next_item) | test(=innermost_enclosing_wins) | test(=markdown_before_first_heading_is_file) | test(=markdown_binds_to_preceding_heading) | test(=optionals_may_be_absent) | test(=parse001_points_at_the_exact_token) | test(=parses_every_mode) | test(=record_span_covers_directive_text) | test(=tests_inside_module_tests_reorients) | test(=tests_outside_a_test_item_does_not_reorient) | test(=tests_reorients_to_target_inside_test_item) | test(=tests_with_bad_target_in_test_item_is_parse001) | test(=three_lines_away_is_not_following) | test(=toml_hash_comment_is_file_bound) | test(=typed_args_round_trip) | test(=typed_errors) | test(=unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown))) | (package(=gob-exec) & (test(=captured_output_is_redacted_and_env_added) | test(=concurrency_is_bounded_by_jobs) | test(=spawn_counter_counts_only_real_spawns) | test(=timeout_kills_group_within_a_second) | test(=timeout_leaves_no_grandchild) | test(=unlisted_program_is_not_allowed))) | (package(=gob-ir) & (test(=golden_digest_is_stable_across_runs) | test(=malformed_programs_are_errors) | test(=occurrences_literals_and_free_variables_of_subterms) | test(=opaque_indirect_reads_scope_lexically_and_payload_is_exact) | test(=p0_requires_exact_on_both_sides) | test(=p_minus_bounds_table) | test(=p_plus_bounds_table) | test(=pc_reach_table) | test(=pn_max_and_min_thresholds) | test(=relation_closure_is_a_kleene_least_fixpoint))) | (package(=gob-lock) & (test(=diff_reports_added_removed_and_changed_facets) | test(=empty_lock_is_just_the_header) | test(=file_name_is_product_dot_lock) | test(=flow_and_five_facet_symbol_entries_round_trip_in_stable_text) | test(=missing_file_is_empty_and_garbage_is_an_error) | test(=plan_acks_flows_by_key) | test(=plan_records_changes_skips_unchanged_and_rejects_empty) | test(=plan_refuses_to_migrate_without_all_and_reason_then_reattests_and_drops) | test(=save_load_round_trips_and_is_sorted_and_stable) | test(=scheme_one_file_under_version_two_is_all_reattest) | test(=version_one_file_loads_and_every_entry_needs_reattest))) | (package(=gob-symbols) & (test(=g19_unknown_language_is_one_opaque_f0_unit) | test(=markdown_corpus_covers_every_claimed_operator) | test(=rust_corpus_covers_every_claimed_operator)))'"
+digest = "11c7cf2b486767127ad787b83bd98e20b2c013d886b4ea5040ee248ce52e43df"
+status = "measured"
+captured_at = "2026-10-02T22:45:26Z"
+passed = true
+exit_code = 0
+tests = ["lock_and_symbols_agree_on_the_digest_scheme", "unknown_target_and_empty_request_are_errors", "doc_to_missing_heading_fires_drift002_with_nearest_heading", "reack_of_unchanged_state_is_a_no_op", "outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr", "path_target_acks_every_symbol_and_all_reacks_tracked", "version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it", "changed_public_signature_with_unacked_dependents_fires_affect001", "scheme_one_lock_under_version_two_is_all_reattest", "evaluate_matches_check_and_is_served_from_cache_on_repeat", "verbs_ack_why_and_affects_work_end_to_end", "acked_signature_change_fires_drift003_and_ack_clears_it", "code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet", "in_process_root_matches_the_binary_contract", "fixture_b_matches_the_recorded_findings", "fixture_a_matches_the_recorded_findings", "a_failing_tool_stage_yields_tool001_outside_the_budget", "fix_is_refused_without_a_ticket_when_the_knob_requires_scope", "a_changed_side_input_misses_the_cache", "an_annotation_required_unresolved_finding_is_marked_required", "bare_marker_fires_and_second_run_hits_the_cache_with_identical_output", "a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_does_not", "a_non_required_unresolved_finding_passes_under_required_and_fails_under_all", "a_branch_touching_an_out_of_scope_file_still_fires_scope001", "cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language", "editing_a_file_invalidates_only_its_entries", "fail_on_maps_severity_to_the_exit_code", "base_advancing_does_not_leak_into_scope001", "ticket_without_a_ledger_is_an_error", "only_filters_by_family_and_rejects_unknown_names", "a_missing_tool_binary_fails_under_required_and_passes_under_never", "fix_rewrites_the_file_and_the_next_run_is_clean", "telemetry_line_is_appended_when_enabled", "perf001_fires_only_when_enforced_and_over_budget", "the_ledger_directory_is_exempt_from_scope001", "uncommitted_out_of_scope_edits_still_fire_scope001", "ticket_restricts_per_file_rules_to_its_scope", "verbs_list_leases_and_contention", "attribute_scan_recognises_tests_outside_a_tests_module", "flags_targets_that_resolve_to_no_test_or_no_symbol", "a_frob_accept_suppresses_a_tool_finding_like_a_native_one", "a_tool_outside_its_version_range_yields_one_non_required_unresolved", "unparseable_output_is_a_tool001_error", "actionlint_findings_map_to_ci014_and_configured_labels_are_dropped", "zizmor_findings_carry_ci_ids_and_real_spans", "an_optional_missing_tool_is_unresolved_but_not_required", "tests::null_cache_when_dir_is_a_file", "tests::findings_miss_when_any_key_part_changes", "tests::persists_across_reopen", "a_foreign_product_gets_findings_caches_and_subject_counts", "a_must_measure_rule_with_zero_subjects_is_a_required_unresolved", "only_accepts_this_products_rules_and_rejects_the_others", "zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out", "required_reason_serializes_tagged_and_summary_counts_required", "refuses_a_non_empty_target", "renders_the_id_map", "imports_maps_and_verifies", "renders_the_summary_table", "renders_the_migration_report", "ulids_keep_creation_order", "optionals_may_be_absent", "parses_every_mode", "typed_errors", "committed_pages_have_no_orphans_on_disk", "output_is_deterministic_and_check_passes", "dirty_worktree_refuses_and_lists_paths", "conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean", "dry_run_plan_is_deterministic_and_changes_nothing", "an_unleased_ticket_and_another_worktree_are_refused", "red_check_refuses_with_exit_3_and_moves_nothing", "landing_from_inside_the_worktree_defaults_to_its_ticket", "happy_path_lands_closes_and_cleans_up", "lock_contention_refuses_retryably_naming_the_holder", "missing_evidence_refuses_unless_bypassed_with_a_reason", "binds_to_fn_two_lines_later", "binds_to_adjacent_fn_and_doc_comment_form", "block_comment_lines_are_scanned_individually", "dsl002_names_the_remedy_and_has_no_fix", "dsl001_suggests_close_verb_and_points_at_it", "file_level_when_no_symbols", "innermost_enclosing_wins", "inner_doc_binds_to_container_not_next_item", "enclosing_symbol_when_nothing_follows", "markdown_binds_to_preceding_heading", "parse001_points_at_the_exact_token", "markdown_before_first_heading_is_file", "record_span_covers_directive_text", "tests_inside_module_tests_reorients", "tests_outside_a_test_item_does_not_reorient", "three_lines_away_is_not_following", "tests_reorients_to_target_inside_test_item", "tests_with_bad_target_in_test_item_is_parse001", "unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown", "toml_hash_comment_is_file_bound", "typed_args_round_trip", "malformed_programs_are_errors", "p0_requires_exact_on_both_sides", "pc_reach_table", "p_plus_bounds_table", "p_minus_bounds_table", "pn_max_and_min_thresholds", "relation_closure_is_a_kleene_least_fixpoint", "cli_work_twice_reports_already_and_other_actor_gets_exit_3", "another_holder_is_refused_and_can_steal_with_a_reason", "concurrent_work_on_overlapping_tickets_grants_exactly_one", "doable_hides_tickets_overlapping_a_live_lease", "start_leases_the_current_checkout_and_requeue_releases", "work_creates_worktree_and_is_idempotent_for_the_holder", "worktree_dir_knob_moves_the_worktree", "unworkable_tickets_are_refused", "occurrences_literals_and_free_variables_of_subterms", "golden_digest_is_stable_across_runs", "diff_reports_added_removed_and_changed_facets", "file_name_is_product_dot_lock", "flow_and_five_facet_symbol_entries_round_trip_in_stable_text", "empty_lock_is_just_the_header", "plan_acks_flows_by_key", "plan_records_changes_skips_unchanged_and_rejects_empty", "plan_refuses_to_migrate_without_all_and_reason_then_reattests_and_drops", "missing_file_is_empty_and_garbage_is_an_error", "save_load_round_trips_and_is_sorted_and_stable", "scheme_one_file_under_version_two_is_all_reattest", "version_one_file_loads_and_every_entry_needs_reattest", "g19_unknown_language_is_one_opaque_f0_unit", "rust_corpus_covers_every_claimed_operator", "markdown_corpus_covers_every_claimed_operator", "unlisted_program_is_not_allowed", "captured_output_is_redacted_and_env_added", "spawn_counter_counts_only_real_spawns", "timeout_kills_group_within_a_second", "timeout_leaves_no_grandchild", "concurrency_is_bounded_by_jobs", "warm_run_on_this_repository_is_under_two_seconds"]
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+────────────
+ Nextest run ID 4bd0a40a-3b16-4054-acfc-1c25c3d549d4 with nextest profile: default
+    Starting 133 tests across 52 binaries (201 tests skipped)
+        PASS [   0.008s] (  1/133) frob-ack::ack lock_and_symbols_agree_on_the_digest_scheme
+        PASS [   0.157s] (  2/133) frob-ack::ack unknown_target_and_empty_request_are_errors
+        PASS [   0.177s] (  3/133) frob-ack::ack doc_to_missing_heading_fires_drift002_with_nearest_heading
+        PASS [   0.177s] (  4/133) frob-ack::ack reack_of_unchanged_state_is_a_no_op
+        PASS [   0.188s] (  5/133) frob-ack::ack outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr
+        PASS [   0.196s] (  6/133) frob-ack::ack path_target_acks_every_symbol_and_all_reacks_tracked
+        PASS [   0.192s] (  7/133) frob-ack::ack version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it
+        PASS [   0.206s] (  8/133) frob-ack::ack changed_public_signature_with_unacked_dependents_fires_affect001
+        PASS [   0.213s] (  9/133) frob-ack::ack scheme_one_lock_under_version_two_is_all_reattest
+        PASS [   0.218s] ( 10/133) frob-ack::ack evaluate_matches_check_and_is_served_from_cache_on_repeat
+        PASS [   0.220s] ( 11/133) frob-ack::ack verbs_ack_why_and_affects_work_end_to_end
+        PASS [   0.226s] ( 12/133) frob-ack::ack acked_signature_change_fires_drift003_and_ack_clears_it
+        PASS [   0.096s] ( 13/133) frob-check::check a_failing_tool_stage_yields_tool001_outside_the_budget
+        PASS [   0.297s] ( 14/133) frob-ack::ack code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet
+        PASS [   0.009s] ( 15/133) frob-check::check fix_is_refused_without_a_ticket_when_the_knob_requires_scope
+        PASS [   0.130s] ( 16/133) frob-check::check a_changed_side_input_misses_the_cache
+        PASS [   0.102s] ( 17/133) frob-check::check an_annotation_required_unresolved_finding_is_marked_required
+        PASS [   0.138s] ( 18/133) frob-check::check bare_marker_fires_and_second_run_hits_the_cache_with_identical_output
+        PASS [   0.179s] ( 19/133) frob-check::check a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_does_not
+        PASS [   0.176s] ( 20/133) frob-check::check a_non_required_unresolved_finding_passes_under_required_and_fails_under_all
+        PASS [   0.242s] ( 21/133) frob-check::check a_branch_touching_an_out_of_scope_file_still_fires_scope001
+        PASS [   0.186s] ( 22/133) frob-check::check cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language
+        PASS [   0.209s] ( 23/133) frob-check::check editing_a_file_invalidates_only_its_entries
+        PASS [   0.153s] ( 24/133) frob-check::check fail_on_maps_severity_to_the_exit_code
+        PASS [   0.222s] ( 25/133) frob-check::check base_advancing_does_not_leak_into_scope001
+        PASS [   0.055s] ( 26/133) frob-check::check ticket_without_a_ledger_is_an_error
+        PASS [   0.161s] ( 27/133) frob-check::check only_filters_by_family_and_rejects_unknown_names
+        PASS [   0.314s] ( 28/133) frob-check::check a_missing_tool_binary_fails_under_required_and_passes_under_never
+        PASS [   0.208s] ( 29/133) frob-check::check fix_rewrites_the_file_and_the_next_run_is_clean
+        PASS [   0.173s] ( 30/133) frob-check::check telemetry_line_is_appended_when_enabled
+        PASS [   0.111s] ( 31/133) frob-check::tool_bind a_frob_accept_suppresses_a_tool_finding_like_a_native_one
+        PASS [   0.103s] ( 32/133) frob-check::tool_bind a_tool_outside_its_version_range_yields_one_non_required_unresolved
+        PASS [   0.301s] ( 33/133) frob-check::check perf001_fires_only_when_enforced_and_over_budget
+        PASS [   0.092s] ( 34/133) frob-check::tool_bind unparseable_output_is_a_tool001_error
+        PASS [   0.267s] ( 35/133) frob-check::check the_ledger_directory_is_exempt_from_scope001
+        PASS [   0.056s] ( 36/133) frob-cli::cli in_process_root_matches_the_binary_contract
+        PASS [   0.122s] ( 37/133) frob-check::tool_bind actionlint_findings_map_to_ci014_and_configured_labels_are_dropped
+        PASS [   0.094s] ( 38/133) frob-check::tool_bind zizmor_findings_carry_ci_ids_and_real_spans
+        PASS [   0.262s] ( 39/133) frob-check::check uncommitted_out_of_scope_edits_still_fire_scope001
+        PASS [   0.235s] ( 40/133) frob-check::equivalence fixture_b_matches_the_recorded_findings
+        PASS [   0.250s] ( 41/133) frob-check::equivalence fixture_a_matches_the_recorded_findings
+        PASS [   0.328s] ( 42/133) frob-check::check ticket_restricts_per_file_rules_to_its_scope
+        PASS [   0.030s] ( 43/133) frob-lease::lease verbs_list_leases_and_contention
+        PASS [   0.007s] ( 44/133) frob-tests::rule attribute_scan_recognises_tests_outside_a_tests_module
+        PASS [   0.008s] ( 45/133) frob-tests::rule flags_targets_that_resolve_to_no_test_or_no_symbol
+        PASS [   0.257s] ( 46/133) frob-check::tool_bind an_optional_missing_tool_is_unresolved_but_not_required
+        PASS [   0.263s] ( 47/133) frob-land::land dirty_worktree_refuses_and_lists_paths
+        PASS [   0.347s] ( 48/133) frob-land::land conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean
+        PASS [   0.395s] ( 49/133) frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   0.310s] ( 50/133) frob-worktree::work cli_work_twice_reports_already_and_other_actor_gets_exit_3
+        PASS [   0.473s] ( 51/133) frob-land::land an_unleased_ticket_and_another_worktree_are_refused
+        PASS [   0.398s] ( 52/133) frob-worktree::work another_holder_is_refused_and_can_steal_with_a_reason
+        PASS [   0.269s] ( 53/133) frob-worktree::work concurrent_work_on_overlapping_tickets_grants_exactly_one
+        PASS [   0.488s] ( 54/133) frob-land::land red_check_refuses_with_exit_3_and_moves_nothing
+        PASS [   0.009s] ( 55/133) gob-cache tests::null_cache_when_dir_is_a_file
+        PASS [   0.055s] ( 56/133) gob-cache tests::findings_miss_when_any_key_part_changes
+        PASS [   0.259s] ( 57/133) frob-worktree::work doable_hides_tickets_overlapping_a_live_lease
+        PASS [   0.046s] ( 58/133) gob-cache tests::persists_across_reopen
+        PASS [   0.218s] ( 59/133) frob-worktree::work start_leases_the_current_checkout_and_requeue_releases
+        PASS [   0.201s] ( 60/133) frob-worktree::work work_creates_worktree_and_is_idempotent_for_the_holder
+        PASS [   0.072s] ( 61/133) gob-check::pipeline a_foreign_product_gets_findings_caches_and_subject_counts
+        PASS [   0.630s] ( 62/133) frob-land::land landing_from_inside_the_worktree_defaults_to_its_ticket
+        PASS [   0.012s] ( 63/133) gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.072s] ( 64/133) gob-check::pipeline a_must_measure_rule_with_zero_subjects_is_a_required_unresolved
+        PASS [   0.075s] ( 65/133) gob-check::pipeline only_accepts_this_products_rules_and_rejects_the_others
+        PASS [   0.014s] ( 66/133) gob-dev::import_v1 refuses_a_non_empty_target
+        PASS [   0.019s] ( 67/133) gob-dev::import_v1 renders_the_id_map
+        PASS [   0.030s] ( 68/133) gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.079s] ( 69/133) gob-check::pipeline zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out
+        PASS [   0.015s] ( 70/133) gob-dev::import_v1 renders_the_summary_table
+        PASS [   0.020s] ( 71/133) gob-dev::import_v1 renders_the_migration_report
+        PASS [   0.006s] ( 72/133) gob-directives::derive optionals_may_be_absent
+        PASS [   0.007s] ( 73/133) gob-diagnostics::contract required_reason_serializes_tagged_and_summary_counts_required
+        PASS [   0.016s] ( 74/133) gob-dev::import_v1 ulids_keep_creation_order
+        PASS [   0.007s] ( 75/133) gob-directives::derive parses_every_mode
+        PASS [   0.008s] ( 76/133) gob-directives::derive typed_errors
+        PASS [   0.008s] ( 77/133) gob-directives::scan binds_to_fn_two_lines_later
+        PASS [   0.009s] ( 78/133) gob-directives::scan binds_to_adjacent_fn_and_doc_comment_form
+        PASS [   0.006s] ( 79/133) gob-directives::scan block_comment_lines_are_scanned_individually
+        PASS [   0.706s] ( 80/133) frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   0.007s] ( 81/133) gob-directives::scan dsl002_names_the_remedy_and_has_no_fix
+        PASS [   0.192s] ( 82/133) frob-worktree::work worktree_dir_knob_moves_the_worktree
+        PASS [   0.010s] ( 83/133) gob-directives::scan dsl001_suggests_close_verb_and_points_at_it
+        PASS [   0.674s] ( 84/133) frob-land::land lock_contention_refuses_retryably_naming_the_holder
+        PASS [   0.007s] ( 85/133) gob-directives::scan file_level_when_no_symbols
+        PASS [   0.006s] ( 86/133) gob-directives::scan innermost_enclosing_wins
+        PASS [   0.060s] ( 87/133) gob-dev::generate output_is_deterministic_and_check_passes
+        PASS [   0.007s] ( 88/133) gob-directives::scan inner_doc_binds_to_container_not_next_item
+        PASS [   0.672s] ( 89/133) frob-land::land missing_evidence_refuses_unless_bypassed_with_a_reason
+        PASS [   0.011s] ( 90/133) gob-directives::scan enclosing_symbol_when_nothing_follows
+        PASS [   0.007s] ( 91/133) gob-directives::scan markdown_binds_to_preceding_heading
+        PASS [   0.006s] ( 92/133) gob-directives::scan parse001_points_at_the_exact_token
+        PASS [   0.007s] ( 93/133) gob-directives::scan markdown_before_first_heading_is_file
+        PASS [   0.007s] ( 94/133) gob-directives::scan record_span_covers_directive_text
+        PASS [   0.006s] ( 95/133) gob-directives::scan tests_inside_module_tests_reorients
+        PASS [   0.006s] ( 96/133) gob-directives::scan tests_outside_a_test_item_does_not_reorient
+        PASS [   0.006s] ( 97/133) gob-directives::scan three_lines_away_is_not_following
+        PASS [   0.007s] ( 98/133) gob-directives::scan tests_reorients_to_target_inside_test_item
+        PASS [   0.010s] ( 99/133) gob-directives::scan tests_with_bad_target_in_test_item_is_parse001
+        PASS [   0.007s] (100/133) gob-directives::scan unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown
+        PASS [   0.008s] (101/133) gob-directives::scan toml_hash_comment_is_file_bound
+        PASS [   0.008s] (102/133) gob-directives::scan typed_args_round_trip
+        PASS [   0.005s] (103/133) gob-exec::runner unlisted_program_is_not_allowed
+        PASS [   0.006s] (104/133) gob-ir::eval malformed_programs_are_errors
+        PASS [   0.007s] (105/133) gob-ir::eval p0_requires_exact_on_both_sides
+        PASS [   0.005s] (106/133) gob-ir::eval pc_reach_table
+        PASS [   0.008s] (107/133) gob-ir::eval p_plus_bounds_table
+        PASS [   0.009s] (108/133) gob-ir::eval p_minus_bounds_table
+        PASS [   0.007s] (109/133) gob-ir::eval pn_max_and_min_thresholds
+        PASS [   0.005s] (110/133) gob-ir::eval relation_closure_is_a_kleene_least_fixpoint
+        PASS [   0.287s] (111/133) frob-worktree::work unworkable_tickets_are_refused
+        PASS [   0.006s] (112/133) gob-ir::queries occurrences_literals_and_free_variables_of_subterms
+        PASS [   0.006s] (113/133) gob-lock::lock diff_reports_added_removed_and_changed_facets
+        PASS [   0.008s] (114/133) gob-ir::properties golden_digest_is_stable_across_runs
+        PASS [   0.005s] (115/133) gob-lock::lock file_name_is_product_dot_lock
+        PASS [   0.005s] (116/133) gob-lock::lock flow_and_five_facet_symbol_entries_round_trip_in_stable_text
+        PASS [   0.007s] (117/133) gob-lock::lock empty_lock_is_just_the_header
+        PASS [   0.007s] (118/133) gob-lock::lock plan_acks_flows_by_key
+        PASS [   0.007s] (119/133) gob-lock::lock plan_records_changes_skips_unchanged_and_rejects_empty
+        PASS [   0.005s] (120/133) gob-lock::lock plan_refuses_to_migrate_without_all_and_reason_then_reattests_and_drops
+        PASS [   0.008s] (121/133) gob-lock::lock missing_file_is_empty_and_garbage_is_an_error
+        PASS [   0.035s] (122/133) gob-exec::runner captured_output_is_redacted_and_env_added
+        PASS [   0.008s] (123/133) gob-lock::lock save_load_round_trips_and_is_sorted_and_stable
+        PASS [   0.008s] (124/133) gob-lock::lock scheme_one_file_under_version_two_is_all_reattest
+        PASS [   0.007s] (125/133) gob-lock::lock version_one_file_loads_and_every_entry_needs_reattest
+        PASS [   0.007s] (126/133) gob-symbols::gaps g19_unknown_language_is_one_opaque_f0_unit
+        PASS [   0.055s] (127/133) gob-symbols::corpus rust_corpus_covers_every_claimed_operator
+        PASS [   0.057s] (128/133) gob-symbols::corpus markdown_corpus_covers_every_claimed_operator
+        PASS [   0.112s] (129/133) gob-exec::runner spawn_counter_counts_only_real_spawns
+        PASS [   0.229s] (130/133) gob-exec::runner timeout_kills_group_within_a_second
+        PASS [   0.427s] (131/133) gob-exec::runner timeout_leaves_no_grandchild
+        PASS [   0.435s] (132/133) gob-exec::runner concurrency_is_bounded_by_jobs
+        PASS [   5.066s] (133/133) frob-check::perf warm_run_on_this_repository_is_under_two_seconds
+────────────
+     Summary [   5.507s] 133 tests run: 133 passed, 201 skipped
+"""
+size = 13373
