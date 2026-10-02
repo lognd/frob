@@ -2,7 +2,7 @@
 id: T-0013
 title: 'gob-symbols: symrefs, three-facet digests, imports and call graph for Rust
   and markdown'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -27,25 +27,30 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0013
+branch: t-0013
 scope:
 - crates/gob-symbols/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-symbols exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a Rust file, when extracted, then every public item has a symref, a
     kind and three digests, and renaming a parameter changes sig but not body
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-symbols exit=0 sha256=e3b0c44298fc
 - text: Given fn a calls fn b in the same crate, when affects(b) is queried, then
     a is returned
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-symbols exit=0 sha256=e3b0c44298fc
 - text: Given a markdown file with headings, when extracted, then each heading is
     path#slug with GitHub-style slugging
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-symbols exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-symbols
 anchor: false
