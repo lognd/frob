@@ -2,7 +2,8 @@
 id = "01M3ZEH4DGBBTG8SK0T9B7XE2P"
 title = "grmb-spec corrections from the G08 implementation"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
