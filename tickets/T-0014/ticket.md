@@ -1,5 +1,5 @@
 ---
-id: T-draft-dff8a953
+id: T-0014
 title: 'gob-directives: Directive derive, frob: namespace parser, binding rules, PARSE
   and DSL rules'
 state: queued
