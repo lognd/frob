@@ -1,5 +1,5 @@
 ---
-id: T-draft-8c239d7d
+id: T-0016
 title: 'gob-dev: cargo dev gen for rules, directives, config reference pages and schemas;
   GEN001 check mode'
 state: queued
