@@ -36,8 +36,9 @@ scope:
 - CONTRIBUTING.md
 - notes/coordinator.md
 - .gitignore
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: self-host switch imports every v1 ticket into the v2 ledger;
+  tickets/** is the deliverable
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
