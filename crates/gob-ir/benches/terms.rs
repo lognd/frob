@@ -60,7 +60,7 @@ fn bench(c: &mut Criterion) {
         });
     });
     c.bench_function("graph_digest_10k", |b| {
-        b.iter(|| black_box(model.graph_digest()))
+        b.iter(|| black_box(model.graph_digest()));
     });
     c.bench_function("free_vars_root", |b| {
         b.iter(|| black_box(model.term().free_vars(model.term().root())));
