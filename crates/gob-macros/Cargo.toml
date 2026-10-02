@@ -1,0 +1,26 @@
+[package]
+name = "gob-macros"
+version = "0.0.0"
+description = "Proc macros (derive Rule) for the frob/grimble/crunk goblins."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+darling = "0.20"
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }
+
+[dev-dependencies]
+gob-rules = { path = "../gob-rules" }
+trybuild = "1"
+
+[lints]
+workspace = true

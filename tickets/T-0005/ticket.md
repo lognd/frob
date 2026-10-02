@@ -1,7 +1,7 @@
 ---
 id: T-0005
 title: 'gob-rules + gob-macros: Rule derive, inventory registry, Finding, Severity'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0005
+branch: t-0005
 scope:
 - crates/gob-rules/**
 - crates/gob-macros/**
@@ -34,17 +34,22 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-rules -p gob-macros exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: 'Given a struct with #[derive(Rule)] and complete attributes, when the binary
     starts, then the registry lists it by id and slug with the doc comment as explanation'
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-rules -p gob-macros exit=0 sha256=e3b0c44298fc
 - text: Given two rules declaring the same id, when the registry is built, then it
     fails naming both
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-rules -p gob-macros exit=0 sha256=e3b0c44298fc
 - text: Given a reason string under the configured minimum or matching a banned pattern,
     when checked, then the reason checker rejects it with the pattern name
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-rules -p gob-macros exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-rules
 anchor: false

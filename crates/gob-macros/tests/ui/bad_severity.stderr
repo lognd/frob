@@ -1,0 +1,7 @@
+error: invalid severity `Fatal`; expected one of: Error, Warn, Advisory, Unresolved
+ --> tests/ui/bad_severity.rs:4:10
+  |
+4 | #[derive(Rule)]
+  |          ^^^^
+  |
+  = note: this error originates in the derive macro `Rule` (in Nightly builds, run with -Z macro-backtrace for more info)
