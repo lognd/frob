@@ -79,6 +79,17 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 5. Cargo.lock is an append-shared registry file (frob.toml
    `[tickets] registry_files`), exempt from leases.
 
+### Resource rules (learned 2026-10-03 after a disk-full event)
+
+- Every worktree built its own target/ (15-19 GB each); 24 worktrees
+  filled the disk. Implementers now build with
+  `CARGO_TARGET_DIR=/home/logan/projects/frob-v2-wt/.target` (shared;
+  cargo's lock serializes builds, which also caps memory). Delete a
+  worktree's own target/ if one appears.
+- At most two implementers building at once.
+- Two Claude Code crashes (one Bun bus error) happened while long
+  background shells ran; keep shell steps short and in the foreground.
+
 ### v1 land quirks learned on T-0003 (apply to every land)
 
 - Run `frob ticket land T-#### --worktree ../frob-v2-wt/t-####` from the
@@ -103,6 +114,11 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
   be named in the done-report text (file:RULE) or the land refuses.
 
 ## Status log (newest first)
+
+- 2026-10-03 (later): T-0031 and T-0022 landed (25/31 done, 320 tests).
+  v1's post-land sweep filed a draft about its own Python-era gates
+  over Rust files; dropped with reason. Disk filled by per-worktree
+  target dirs; cleaned (147 GB). T-0023 worktree created.
 
 - 2026-10-03: landed T-0014 T-0016 T-0018 T-0030 T-0021 T-0019 T-0020
   (23/31 done, 292 tests). Verb wiring was split out as T-0031 so
