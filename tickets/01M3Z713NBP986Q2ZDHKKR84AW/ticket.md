@@ -2,7 +2,8 @@
 id = "01M3Z713NBP986Q2ZDHKKR84AW"
 title = "G06: gob-check pipeline crate; exceptions into gob-rules; polarity and subjects_examined"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
