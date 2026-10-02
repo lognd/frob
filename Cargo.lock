@@ -2180,6 +2180,7 @@ dependencies = [
  "blake3",
  "criterion",
  "ignore",
+ "proptest",
  "tempfile",
  "thiserror",
  "tracing",

@@ -12,6 +12,16 @@ use std::sync::Mutex;
 use ignore::overrides::OverrideBuilder;
 use ignore::{WalkBuilder, WalkState};
 
+pub mod owner;
+mod select;
+pub mod selector;
+mod specificity;
+
+pub use owner::{Candidate, EntityName, MatchStatus, Owner, Ownership};
+pub use select::{PathMatch, owner_of_path, select_files, unseen_files};
+pub use selector::{Glob, Selector, wildcard_match};
+pub use specificity::Specificity;
+
 /// Errors raised before or during a walk.
 #[derive(Debug, thiserror::Error)]
 pub enum WalkError {
@@ -64,6 +74,16 @@ pub enum LanguageHint {
 }
 
 impl LanguageHint {
+    /// The language tag used by `lang(...)` predicates (`rust`, `markdown`, `toml`, or the extension).
+    pub fn tag(&self) -> &str {
+        match self {
+            Self::Rust => "rust",
+            Self::Markdown => "markdown",
+            Self::Toml => "toml",
+            Self::Other(ext) => ext,
+        }
+    }
+
     /// Guesses the language of `path` from its extension alone.
     pub fn from_path(path: &str) -> Self {
         let ext = Path::new(path)
