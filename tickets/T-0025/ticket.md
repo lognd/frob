@@ -44,6 +44,7 @@ scope:
 - clippy.toml
 - deny.toml
 - .cargo/**
+- .config/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: self-host switch imports every v1 ticket into the v2 ledger;
   tickets/** is the deliverable
@@ -95,6 +96,12 @@ scope_changes:
 - op: add
   glob: .cargo/**
   reason: T-0025 self-host switch must touch .cargo/** (directive/comment cleanup
+    and v2 migration)
+  actor: logan
+  at: '2026-10-02'
+- op: add
+  glob: .config/**
+  reason: T-0025 self-host switch must touch .config/** (directive/comment cleanup
     and v2 migration)
   actor: logan
   at: '2026-10-02'
