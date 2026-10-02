@@ -2,7 +2,8 @@
 id = "01M3Z71393N041MWHC3SF903MG"
 title = "gob-directives: [directives] namespaces as a ConfigTable and milestone-2 claim verbs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
