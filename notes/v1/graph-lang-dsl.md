@@ -216,6 +216,7 @@ present in the repo is WARN if the ticket is open, ERROR if the ticket does not 
 
 ### 2.4 Test-runner registry [src+doc: testing/_runners.py, frob.toml]
 
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 User-declared in frob.toml as repeated [[test.runner]] tables: language, command, all_command,
 cwd (default "."), timeout_s (default 900), collector ("", perf, v8, jfr; picks a perf
 hot-graph profiler adapter). EXACTLY ONE placeholder must appear in command: {ids} (pytest
@@ -703,6 +704,7 @@ How a directive in one language refers to a symbol in another TODAY:
 | FFI002 | ctypes/cffi call site | demands a same-line frob:callee-raises | text regex |
 | frob:uses-contract | symbol -> symbol | symref string | works cross-language textually, but digest/sig semantics differ per language grammar |
 | frob:used-by | file -> consumer file | file-level, REF003 verifies back-reference | file granularity |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | Test selection | symref -> runner | language of the symref's file picks the [[test.runner]]; rust routed by cwd | python-centric id conversion helpers |
 
 Gaps (v1 did not solve):

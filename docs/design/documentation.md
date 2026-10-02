@@ -52,6 +52,7 @@ This table is the one path table; every other file links here.
 | directives, errors, languages (shared by all products) | `docs/reference/directives.md`, `docs/reference/errors.md`, `docs/reference/languages.md` | the respective derives and the adapter matrix | `cargo dev gen` |
 | capabilities | `docs/grimble/reference/capabilities.md` | `Capability` derive | `cargo dev gen` |
 | ticket and response schemas | `schema/ticket.schema.json`, `schema/*-response.json` | ticket model and `--json` response types | `cargo dev gen schema` |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | ADR index | `docs/decisions/README.md` | ADR frontmatter | `cargo dev gen adr-index` |
 | web types | `web/src/api.ts` | response schemas | `cargo dev gen ts` |
 | editor grammar | `editors/grimble.tmLanguage.json` | grimble keyword table | `cargo dev gen editors` |

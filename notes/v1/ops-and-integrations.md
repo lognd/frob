@@ -636,7 +636,9 @@ whereis`, `frob check --census`, waive audit, and `frob run` (named commands tha
 
 Every `*_schema` table points to a `module:symbol` known-key set; PROFILESCHEMA001 et al report UNRESOLVED (not clean)
 if the declaration is missing or broken, and since T-3273 several default to frob's own set when undeclared. A
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 project's scaffolded frob.toml carries only: check_base, [profile], [testing], [[test.runner]], [gates.severity],
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 [tickets], [[refs.entrypoint]].
 
 | Table / key | Keys (known set) | Meaning |
@@ -644,18 +646,24 @@ project's scaffolded frob.toml carries only: check_base, [profile], [testing], [
 | top-level scalars | check_base, min_frob_version | diff base branch; floor that triggers stale-binary warning |
 | [profile] | profile, override_ratchet | rapid or standard (fortress reserved); ratchet override |
 | [testing] | min_unit_cases, min_integration, unit_branch_cov, module_line_cov, system_line_cov, pair_integration | TEST floors |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | [[test.runner]] | language, command, all_command, cwd, collector, timeout_s | per-language runner |
 | [[native]] | name, build_cmd, language | compiled extension modules |
 | [graph] | exclude | glob list read by every walker |
 | [arch] | max_function_lines, max_class_methods, max_local_imports, max_nesting_depth, max_file_lines, plus god-module / LCOM4 / mixed-concern thresholds (10 keys) | structural limits |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | [arch.layering.layers] / [arch.layering.allow] | free-form layer map | DIP layering contract |
 | [dup] | enforce, threshold, region_kernel, native_rungs | clone detection |
 | [gates] | dstack_threshold | misc gate threshold |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | [gates.docs] | comment_run_max, docstring_max | doc-volume caps |
 | [gates.severity] | rule -> error/warn/advisory/... | per-rule override |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | [gates.ratchet] | rules (e.g. ARCH104, DOCARCH002) | pool-baselined ratchet rules |
 | [tickets] | default_milestone, registry_files | ticket defaults |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | [refs] / [[refs.entrypoint]] | path (glob ok), reason | REF001/002 exceptions (37 entries in frob's own) |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | [[docblocks.commands]] | prog, parser, config, forwarded | doc-block command checks |
 | [vet], [vet.allow] | see section 3 | dependency policy |
 | [fuzz] | enforce, budget_s, max_reject_rate | fuzzing |
