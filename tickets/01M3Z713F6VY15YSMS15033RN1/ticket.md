@@ -2,7 +2,8 @@
 id = "01M3Z713F6VY15YSMS15033RN1"
 title = "gob-symbols over U: Rust and markdown adapters produce U terms with status edges"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
