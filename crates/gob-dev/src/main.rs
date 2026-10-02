@@ -81,7 +81,10 @@ fn main() -> Result<(), Failed> {
             report_md.as_deref(),
         ),
         Task::Gen { kind, check, root } => {
-            let workspace = workspace_root();
+            let workspace = match workspace_root() {
+                Ok(w) => w,
+                Err(e) => return Err(Failed(format!("error: {e}"))),
+            };
             let root = root.unwrap_or_else(|| workspace.clone());
             let mode = if check { Mode::Check } else { Mode::Write };
             let files = generate(kind, &workspace.join("crates"));
