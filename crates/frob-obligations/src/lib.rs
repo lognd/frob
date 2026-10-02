@@ -79,7 +79,7 @@ use gob_text::{FileId, FileInterner};
 
 pub use collect::{CollectError, Collected, collect};
 pub use config::{ForbidImport, InvariantsConfig};
-pub use exc::Resolved;
+pub use gob_rules::Resolved;
 pub use rules::{
     Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Inv001, Inv002, Ref001,
     Todo001, Todo002,

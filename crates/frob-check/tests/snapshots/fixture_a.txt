@@ -1,0 +1,13 @@
+Error DOC002 README.md@42-53 681e0a75ae6f21005ce6c312d586ad406f3dcacb6bd2c7c8775595f6fd3e0478 | link target `src/gone.rs` does not exist
+Error DOC002 README.md@68-84 c420930dad582e0bc48c80ee15847b26d5edfd1b202e34260b4c5cbf02bb5122 | link anchor `#nowhere` matches no heading of `NOTES.md`
+Warn INV001 invariants/never-orphan.md@0-0 1f5a733f98a42fae760fadb8e541648cf68c62002a3b95f722cfd3ea5d64ef66 | invariant `never-orphan` has no `frob:invariant never-orphan` directive in code
+Error INV002 src/inner/mod.rs@11-35 ace8e0fbdf6d20d99b90dbc84d48a84a541356bd2ba59c32c0a74b7b3d928e6f | `src/inner/mod.rs` imports `crate::outer::thing`, forbidden by [invariants] (crate::outer): inner never imports outer
+Warn COV001 src/inner/mod.rs@49-105 9b8d16dd23690d8f405239fc3afb93c7bfc26997bd26ee3583c9d8e1e42354f9 | public function `src/inner/mod.rs::spawn` is reached by no test; add one or bind it with `frob:tests`
+Error TODO001 src/lib.rs@16-20 6bd980f359eaff656d242d5032af4c80e559d262ceb6dd11731399cc142ab47a | bare `TODO` in a comment; own it with a `frob:todo <ulid>` directive on this or the previous line
+Warn COV001 src/lib.rs@44-68 d86abdec38f5632addf6e676d2447fb42c1ee50962d67a93065aeec7911119fc | public function `src/lib.rs::undocumented` is reached by no test; add one or bind it with `frob:tests`
+Warn DOC001 src/lib.rs@44-68 1cde9366560544a7e0dfcdedbab6f2d5ed4d757fc03351702a97fbfa7d22e90a | public function `src/lib.rs::undocumented` has no doc comment
+Error EXC001 src/lib.rs@73-124 e00f37481dbcacb71e33739c47146c874f0b63867eb1ce67d0e8cefd3eca44fc | `frob:accept COV001` reason rejected: reason matches banned pattern `temporary`
+Warn EXC005 src/lib.rs@73-124 727318fb5112ce0f9b40c2108e0aafcd0923840e25ad700d823885025e0b084b | `frob:accept COV001` is unattested: `src/lib.rs::accepted` has no entry in frob.lock; run `frob ack src/lib.rs::accepted`
+Error TEST001 src/lib.rs@169-194 0c0cb614184c9d8d1728c79da6ff7988c05239a43232fcfc5f5c534e03cdf0da | `frob:tests tests::missing` names no test function in the graph; fix the symref or remove the directive
+suppressed COV001 src/lib.rs@144-164 by Accept | temporary hack for now
+exit Negative
