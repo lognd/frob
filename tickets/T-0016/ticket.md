@@ -2,7 +2,7 @@
 id: T-0016
 title: 'gob-dev: cargo dev gen for rules, directives, config reference pages and schemas;
   GEN001 check mode'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -29,8 +29,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0016
+branch: t-0016
 scope:
 - crates/gob-dev/**
 - docs/reference/**
@@ -40,14 +40,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-dev exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a new rule derived in any crate, when cargo dev gen rules runs, then
     docs/reference/rules/<ID>.md appears with the doc comment explanation
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-dev exit=0 sha256=e3b0c44298fc
 - text: Given a stale generated file, when cargo dev gen all --check runs, then it
     exits 1 with a diff and CI fails
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-dev exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-dev
 anchor: false

@@ -1696,6 +1696,19 @@ name = "gob-dev"
 version = "0.0.0"
 dependencies = [
  "clap",
+ "frob-cli",
+ "gob-cli",
+ "gob-config",
+ "gob-diagnostics",
+ "gob-directives",
+ "gob-log",
+ "gob-mdtest",
+ "gob-rules",
+ "serde_json",
+ "similar",
+ "tempfile",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
