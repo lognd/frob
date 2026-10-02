@@ -6,6 +6,7 @@ use gob_text::{FileId, Span, TextRange};
 
 use crate::id::RuleId;
 use crate::meta::{FixKind, Severity};
+use crate::required::RequiredReason;
 
 /// Stable identity of a finding: blake3 over rule, anchor and normalized message.
 ///
@@ -103,6 +104,8 @@ pub struct Finding {
     pub fingerprint: Fingerprint,
     /// Optional repair.
     pub fix: Option<Fix>,
+    /// Why this Unresolved finding fails the gate (`cli.md` section 2); `None` when not required.
+    pub required: Option<RequiredReason>,
 }
 
 impl Finding {
@@ -123,7 +126,15 @@ impl Finding {
             message,
             fingerprint,
             fix: None,
+            required: None,
         }
+    }
+
+    /// Mark the finding required for `reason`, so the Unresolved gate fails on it.
+    #[must_use]
+    pub fn with_required(mut self, reason: RequiredReason) -> Self {
+        self.required = Some(reason);
+        self
     }
 
     /// Attach a fix.

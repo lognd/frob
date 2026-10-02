@@ -383,7 +383,7 @@ mod tests {
         }
     }
 
-    // frob:tests crates/frob-check/src/tool_parse.rs::parse
+    // frob:tests crates/gob-check/src/tool_parse.rs::parse
     #[test]
     fn zizmor_output_parses_with_byte_spans() {
         let found = parse(ToolParser::ZizmorJsonV1, ZIZMOR).expect("parse");
@@ -421,7 +421,7 @@ mod tests {
         assert!(parse(ToolParser::ActionlintJson, "[").is_err());
     }
 
-    // frob:tests crates/frob-check/src/tool_parse.rs::classify
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
     #[test]
     fn zizmor_ids_map_to_ci_ids_and_the_rest_is_tool002() {
         let st = stage(ToolParser::ZizmorJsonV1);
@@ -484,7 +484,7 @@ mod tests {
         );
     }
 
-    // frob:tests crates/frob-check/src/tool_parse.rs::check_version
+    // frob:tests crates/gob-check/src/tool_parse.rs::check_version
     #[test]
     fn version_range_is_inclusive_and_numeric() {
         let mut st = stage(ToolParser::ZizmorJsonV1);

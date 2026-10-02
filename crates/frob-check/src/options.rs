@@ -1,12 +1,12 @@
-//! What a check run was asked to do.
+//! What a `frob check` run was asked to do: the generic options plus frob's own.
 
 use std::sync::Arc;
 
 use frob_lease::LeaseConfig;
 use frob_ledger::LedgerConfig;
+use gob_check::{FailOn, FileCheck, RunOptions};
 
-use crate::config::FailOn;
-use crate::filecheck::FileCheck;
+use crate::product::Frob;
 
 /// Inputs of [`crate::run`] besides the repository root; `Default` is a plain full check.
 #[derive(Clone, Default)]
@@ -26,9 +26,23 @@ pub struct CheckOptions {
     /// Lease settings (`[lease]`); loaded from `frob.toml` when absent.
     pub lease: Option<LeaseConfig>,
     /// Extra per-file checks run next to the built-in ones (tests, embedders).
-    pub extra_checks: Vec<Arc<dyn FileCheck>>,
+    pub extra_checks: Vec<Arc<dyn FileCheck<Frob>>>,
     /// Skip the `[[check.tool]]` stages (frob-land runs them itself).
     pub skip_tools: bool,
     /// Do not write `.frob/telemetry.jsonl` even when `[check] telemetry` is true.
     pub skip_telemetry: bool,
+}
+
+impl CheckOptions {
+    /// The product-neutral half of these options, as [`gob_check::run`] takes them.
+    pub(crate) fn run_options(&self) -> RunOptions {
+        RunOptions {
+            scope: self.ticket.clone(),
+            only: self.only.clone(),
+            fix: self.fix,
+            fail_on: self.fail_on,
+            skip_tools: self.skip_tools,
+            skip_telemetry: self.skip_telemetry,
+        }
+    }
 }

@@ -8,17 +8,30 @@ use gob_git::{GitError, RelPath, Repo, TreeRef};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 use gob_symbols::{CallEdge, SymbolGraph};
 
-use crate::error::CheckError;
-use crate::snapshot::Snapshot;
+use gob_check::{CheckError, ScopeView, Snapshot};
+
+use crate::product::Frob;
 
 /// A resolved `--ticket`: where its scope lies and the lease SCOPE001 compares against.
-pub(crate) struct TicketScope {
+pub struct TicketScope {
     /// The ticket handle with `~`.
     pub handle: String,
     /// The live lease, or one synthesized from the ticket scope.
     pub lease: Lease,
     /// Walked files in scope plus `ticket_hops` hops of dependents.
     pub files: BTreeSet<String>,
+    /// `[lease] shared_files`: paths every ticket may touch without a lease violation.
+    pub shared_files: Vec<String>,
+}
+
+impl ScopeView for TicketScope {
+    fn label(&self) -> &str {
+        &self.handle
+    }
+
+    fn files(&self) -> &BTreeSet<String> {
+        &self.files
+    }
 }
 
 /// Files whose symbols call into a symbol of the keyed file, from the call edges.
@@ -47,12 +60,13 @@ fn dependents(graph: &SymbolGraph) -> HashMap<String, BTreeSet<String>> {
 
 /// Resolve `reference` against the ledger and compute the files of the scoped run.
 pub(crate) fn resolve(
-    snap: &Snapshot,
+    snap: &Snapshot<Frob>,
     reference: &str,
     hops: u32,
     lease_cfg: LeaseConfig,
 ) -> Result<TicketScope, CheckError> {
-    let state = snap.ledger.as_ref().ok_or_else(|| {
+    let shared_files = lease_cfg.shared_files.clone();
+    let state = snap.inputs.ledger.as_ref().ok_or_else(|| {
         CheckError::NoLedger(
             "--ticket needs a git repository whose ledger holds tickets".to_owned(),
         )
@@ -84,7 +98,7 @@ pub(crate) fn resolve(
                 ticket: id,
                 holder: Holder {
                     actor: String::new(),
-                    worktree: snap.root.clone(),
+                    worktree: snap.core.root.clone(),
                 },
                 scope: globs.clone(),
                 acquired_at: now,
@@ -97,12 +111,13 @@ pub(crate) fn resolve(
     };
     let set = glob_set(&globs).map_err(|e| CheckError::Ticket(format!("{handle}: {e}")))?;
     let mut files: BTreeSet<String> = snap
+        .core
         .entries
         .iter()
         .filter(|e| set.is_match(e.path.as_str()))
         .map(|e| e.path.clone())
         .collect();
-    let deps = dependents(&snap.ack.graph);
+    let deps = dependents(&snap.inputs.ack.graph);
     let mut frontier = files.clone();
     for hop in 0..hops {
         let next: BTreeSet<String> = frontier
@@ -124,6 +139,7 @@ pub(crate) fn resolve(
         handle,
         lease,
         files,
+        shared_files,
     })
 }
 
@@ -170,16 +186,12 @@ fn branch_changes(repo: &Repo, base: &str, ledger_dir: &str) -> Result<Vec<RelPa
 }
 
 /// `SCOPE001` (diff against `base` versus the lease) and `TICK002` (referenced tickets on `base`).
-pub(crate) fn ticket_rules(
-    snap: &Snapshot,
-    scope: &TicketScope,
-    base: &str,
-    shared: &[String],
-) -> Vec<Finding> {
-    let Some(state) = &snap.ledger else {
+pub(crate) fn ticket_rules(snap: &Snapshot<Frob>, scope: &TicketScope, base: &str) -> Vec<Finding> {
+    let shared = &scope.shared_files;
+    let Some(state) = &snap.inputs.ledger else {
         return Vec::new();
     };
-    let repo = match Repo::discover(&snap.root) {
+    let repo = match Repo::discover(&snap.core.root) {
         Ok(r) => r,
         Err(err) => {
             let msg = format!("repository unreadable ({err}); SCOPE001 and TICK002 not evaluated");
@@ -213,11 +225,13 @@ pub(crate) fn ticket_rules(
     }
     let mut ids: BTreeSet<&str> = BTreeSet::new();
     for d in snap
+        .inputs
         .directives
         .iter()
         .filter(|d| d.namespace == "frob" && d.verb == "ticket")
     {
         let in_scope = snap
+            .inputs
             .ack
             .files
             .path(d.span.file)

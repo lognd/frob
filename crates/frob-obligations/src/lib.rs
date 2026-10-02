@@ -79,7 +79,7 @@ use gob_text::{FileId, FileInterner};
 
 pub use collect::{CollectError, Collected, collect};
 pub use config::{ForbidImport, InvariantsConfig};
-pub use exc::Resolved;
+pub use gob_rules::Resolved;
 pub use rules::{
     Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Inv001, Inv002, Ref001,
     Todo001, Todo002,
@@ -182,6 +182,11 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
     out
+}
+
+/// Test-capable source files `COV001` examined in `graph` (its subject count for `must_measure`).
+pub fn cov001_subjects(graph: &SymbolGraph) -> usize {
+    cov::test_capable_files(graph)
 }
 
 /// Suppress the findings of `raw` that an accept or defer covers and add the `EXC*` findings.

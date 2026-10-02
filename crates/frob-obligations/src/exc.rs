@@ -1,11 +1,12 @@
 //! Exceptions: `frob:accept` and `frob:defer` suppress findings; EXC001, EXC003, EXC005 and EXC007 police them.
 
-use std::ops::Range;
-
 use gob_directives::frob::{Accept, Defer};
 use gob_directives::{Binding, Directive, DirectiveRecord};
 use gob_lock::LockFile;
-use gob_rules::{Exception, ExceptionKind, Finding, ReasonPolicy, RuleId, check_reason};
+use gob_rules::{
+    BoundException, Exception, ExceptionCtx, ExceptionKind, Finding, ReasonPolicy, Resolved,
+    RuleId, apply_exceptions, check_reason,
+};
 use gob_symbols::{SymbolGraph, Symref};
 use gob_text::{FileInterner, Span};
 
@@ -15,39 +16,12 @@ use crate::util::finding;
 
 /// One parsed `frob:accept` or `frob:defer` with where it applies.
 struct Bound {
-    exception: Exception,
+    /// The exception and its binding, in the shape gob-rules matches.
+    inner: BoundException,
     /// Where the directive text sits.
     at: Span,
-    /// Repo-relative path the exception applies to.
-    path: String,
-    /// Byte range inside `path`; `None` means the whole file.
-    range: Option<Range<usize>>,
     /// The symref lock entries are keyed by (the file symref for file-bound).
     symref: Symref,
-}
-
-impl Bound {
-    /// True when `f` is of this exception's rule and lies inside its binding.
-    fn covers(&self, f: &Finding, files: &FileInterner) -> bool {
-        if f.rule != self.exception.rule {
-            return false;
-        }
-        let Some(span) = f.span else {
-            return false;
-        };
-        if files.path(span.file) != Some(self.path.as_str()) {
-            return false;
-        }
-        self.range.as_ref().is_none_or(|r| {
-            r.start <= to_usize(u32::from(span.range.start()))
-                && to_usize(u32::from(span.range.end())) <= r.end
-        })
-    }
-
-    /// Size of the bound region, for choosing the tightest cover.
-    fn width(&self) -> usize {
-        self.range.as_ref().map_or(usize::MAX, |r| r.end - r.start)
-    }
 }
 
 fn to_usize(n: u32) -> usize {
@@ -96,28 +70,22 @@ fn collect(
             Binding::File => (own.to_owned(), None, Symref::file(own)),
         };
         out.push(Bound {
-            exception: Exception {
-                kind,
-                rule,
-                reason: because,
-                ticket,
-                until,
+            inner: BoundException {
+                exception: Exception {
+                    kind,
+                    rule,
+                    reason: because,
+                    ticket,
+                    until,
+                },
+                path,
+                range,
             },
             at: d.span,
-            path,
-            range,
             symref,
         });
     }
     out
-}
-
-/// What applying exceptions decided.
-pub struct Resolved {
-    /// Findings left standing, plus the EXC findings.
-    pub findings: Vec<Finding>,
-    /// Suppressed findings with the exception that suppressed each.
-    pub suppressed: Vec<(Finding, Exception)>,
 }
 
 /// The EXC findings of one exception.
@@ -128,7 +96,7 @@ fn police(
     tickets: &Tickets<'_>,
     policy: &ReasonPolicy,
 ) -> Vec<Finding> {
-    let ex = &b.exception;
+    let ex = &b.inner.exception;
     let verb = if ex.kind == ExceptionKind::Accept {
         "accept"
     } else {
@@ -214,26 +182,12 @@ pub(crate) fn resolve(
 ) -> Resolved {
     let bound = collect(graph, directives, files);
     let policy = ReasonPolicy::default();
-    let mut findings = Vec::new();
-    let mut suppressed = Vec::new();
-    for f in raw {
-        let best = bound
-            .iter()
-            .filter(|b| b.covers(&f, files))
-            .min_by_key(|b| b.width());
-        match best {
-            Some(b) => {
-                tracing::debug!(rule = %f.rule, path = %b.path, "finding suppressed by exception");
-                suppressed.push((f, b.exception.clone()));
-            }
-            None => findings.push(f),
-        }
-    }
+    let exceptions: Vec<BoundException> = bound.iter().map(|b| b.inner.clone()).collect();
+    let mut resolved = apply_exceptions(raw, &exceptions, &ExceptionCtx { files });
     for b in &bound {
-        findings.extend(police(b, graph, lock, tickets, &policy));
+        resolved
+            .findings
+            .extend(police(b, graph, lock, tickets, &policy));
     }
-    Resolved {
-        findings,
-        suppressed,
-    }
+    resolved
 }

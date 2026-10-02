@@ -776,13 +776,11 @@ dependencies = [
  "frob-ledger",
  "frob-obligations",
  "frob-tests",
- "globset",
  "gob-cache",
+ "gob-check",
  "gob-cli",
- "gob-config",
  "gob-diagnostics",
  "gob-directives",
- "gob-exec",
  "gob-git",
  "gob-languages",
  "gob-lock",
@@ -790,13 +788,12 @@ dependencies = [
  "gob-symbols",
  "gob-text",
  "gob-walk",
- "jiff",
  "rayon",
  "schemars",
  "serde",
  "serde_json",
  "tempfile",
- "thiserror",
+ "toml",
  "tracing",
 ]
 
@@ -1933,6 +1930,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-check"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "gob-cache",
+ "gob-config",
+ "gob-diagnostics",
+ "gob-exec",
+ "gob-lock",
+ "gob-rules",
+ "gob-text",
+ "gob-walk",
+ "jiff",
+ "rayon",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "gob-cli"
 version = "0.0.0"
 dependencies = [
@@ -2140,9 +2161,11 @@ dependencies = [
  "gob-macros",
  "gob-text",
  "inventory",
+ "schemars",
  "serde",
  "serde_json",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

@@ -9,9 +9,6 @@ use gob_rules::Severity;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-/// The product whose `frob.toml` carries the tables.
-const PRODUCT: &str = "frob";
-
 /// Severity at which `frob check` fails (cli.md section 2, exit 1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
@@ -158,23 +155,23 @@ pub struct PerfTable {
 }
 
 impl CheckTable {
-    /// Load `[check]` from `<root>/frob.toml` (a missing file means defaults).
+    /// Load `[check]` from `<root>/<product>.toml` (a missing file means defaults).
     ///
     /// # Errors
     ///
     /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
-    pub fn load(root: &Path) -> Result<Self, ConfigError> {
-        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    pub fn load(root: &Path, product: &str) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, product)?.value)
     }
 }
 
 impl PerfTable {
-    /// Load `[perf]` from `<root>/frob.toml` (a missing file means defaults).
+    /// Load `[perf]` from `<root>/<product>.toml` (a missing file means defaults).
     ///
     /// # Errors
     ///
     /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
-    pub fn load(root: &Path) -> Result<Self, ConfigError> {
-        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    pub fn load(root: &Path, product: &str) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, product)?.value)
     }
 }

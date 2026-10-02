@@ -16,15 +16,19 @@ mod id;
 mod meta;
 mod reason;
 mod registry;
+mod required;
 
-pub use exception::{Exception, ExceptionKind};
+pub use exception::{
+    BoundException, Exception, ExceptionCtx, ExceptionKind, Resolved, apply_exceptions,
+};
 pub use finding::{Finding, Fingerprint, Fix, TextEdit};
 pub use gob_macros::Rule;
 pub use id::{ParseRuleIdError, RuleId};
 pub use inventory;
-pub use meta::{FixKind, RuleEntry, RuleMeta, Scope, Severity, Tier};
+pub use meta::{FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError};
+pub use required::RequiredReason;
 
 /// A declared rule; implemented by `#[derive(Rule)]`. Object safe.
 pub trait Rule {

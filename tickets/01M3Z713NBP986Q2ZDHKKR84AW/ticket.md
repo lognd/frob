@@ -2,16 +2,17 @@
 id = "01M3Z713NBP986Q2ZDHKKR84AW"
 title = "G06: gob-check pipeline crate; exceptions into gob-rules; polarity and subjects_examined"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T21:48:45Z"
+updated = "2026-10-02T22:29:26Z"
 idempotency_key = "m2-gobcheck"
 labels = ["milestone:2"]
-scope = ["crates/gob-check/**", "crates/gob-rules/**", "crates/gob-macros/**", "crates/frob-check/**", "crates/frob-obligations/**", "docs/reference/**"]
+scope = ["crates/gob-check/**", "crates/gob-rules/**", "crates/gob-macros/**", "crates/frob-check/**", "crates/frob-obligations/**", "docs/reference/**", "Cargo.lock", "crates/gob-dev/src/render/rules.rs", "crates/gob-diagnostics/tests/contract.rs"]
 
 [[links]]
 kind = "blocked-by"

@@ -13,8 +13,9 @@ use frob_tests::catalog::{is_test_file, is_test_fn};
 use frob_tests::reach::{Sources, called_names};
 use gob_directives::Binding;
 use gob_directives::DirectiveRecord;
+use gob_languages::Language;
 use gob_rules::Finding;
-use gob_symbols::{CallEdge, SymbolGraph, SymbolKind, SymbolRecord, Symref};
+use gob_symbols::{CallEdge, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target};
 use gob_text::{FileInterner, Span};
 
 use crate::rules::Cov001;
@@ -23,6 +24,18 @@ use crate::util::finding;
 /// True for functions and methods.
 fn is_callable(rec: &SymbolRecord) -> bool {
     matches!(rec.kind, SymbolKind::Function | SymbolKind::Method)
+}
+
+/// Number of test-capable source files (Rust) in `graph`: the subjects `COV001` examines.
+///
+/// Zero while the walk holds Rust files means the graph came up empty, so a
+/// clean `COV001` would be silence, not a pass.
+pub(crate) fn test_capable_files(graph: &SymbolGraph) -> usize {
+    graph
+        .records()
+        .filter(|r| matches!(r.symref.target(), Target::File))
+        .filter(|r| Language::detect(r.symref.path()) == Some(Language::Rust))
+        .count()
 }
 
 /// Forward call adjacency: graph edges plus unique-name edges found in function bodies.

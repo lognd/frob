@@ -6,13 +6,13 @@ use gob_walk::WalkError;
 /// Why [`crate::run`] could not produce a report.
 #[derive(Debug, thiserror::Error)]
 pub enum CheckError {
-    /// A `frob.toml` table failed to load.
+    /// A product config table (`frob.toml`, `grimble.toml`) failed to load.
     #[error("E-CHECK-CONFIG: {0}")]
     Config(#[from] ConfigError),
     /// The repository walk failed (bad exclude glob).
     #[error("E-CHECK-WALK: {0}")]
     Walk(#[from] WalkError),
-    /// `frob.lock` is malformed.
+    /// The product's lock file (`frob.lock`) is malformed.
     #[error("E-CHECK-LOCK: {0}")]
     Lock(#[from] gob_lock::LockError),
     /// `--only` named neither a rule family nor a rule id.

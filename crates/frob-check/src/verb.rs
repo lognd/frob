@@ -8,11 +8,10 @@ use gob_text::SourceText;
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::config::FailOn;
-use crate::error::CheckError;
+use gob_check::{CheckError, CheckReport, Counts, FailOn, FixOutcome, StageTime, Stats};
+
 use crate::options::CheckOptions;
-use crate::pipeline::run;
-use crate::report::{CheckReport, Counts, FixOutcome, StageTime, Stats};
+use crate::run;
 
 /// Adds the `check` verb to a product root.
 pub fn register(cli: Cli) -> Cli {
@@ -334,7 +333,7 @@ fn data_of(
             tools_ms: report.timing.tools_ms(),
         }),
         fix: report.fix.clone(),
-        ticket: report.ticket.clone(),
+        ticket: report.scope.clone(),
         fail_on: Some(fail_on_name(report.fail_on).to_owned()),
         required_unresolved: report.required_unresolved(),
         fail_on_unresolved: Some(report.fail_on_unresolved.name().to_owned()),

@@ -8,13 +8,12 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use gob_diagnostics::RequiredReason;
 use gob_exec::{ExecError, Limits, Outcome, Output, Program, Runner, Spec};
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RequiredReason, Rule, RuleId, Severity};
 use gob_text::{FileInterner, LineCol, LineIndex, Span, TextRange, TextSize};
 
 use crate::config::{ToolParser, ToolStage};
-use crate::report::{PendingMark, Timing};
+use crate::report::Timing;
 use crate::rules::Tool001;
 use crate::tool_parse::{
     RawFinding, RawRange, VersionVerdict, check_version, classify, default_version_args,
@@ -227,9 +226,9 @@ pub(crate) fn run_tools(
     stages: &[ToolStage],
     timing: &mut Timing,
     files: &mut FileInterner,
-) -> (Vec<Finding>, Vec<PendingMark>) {
+) -> Vec<Finding> {
     if stages.is_empty() {
-        return (Vec::new(), Vec::new());
+        return Vec::new();
     }
     let id: RuleId = Tool001
         .meta()
@@ -238,7 +237,6 @@ pub(crate) fn run_tools(
     let runner =
         Runner::new(Limits::default()).allow_tools(stages.iter().map(|s| s.command.clone()));
     let mut out = Vec::new();
-    let mut marks = Vec::new();
     for stage in stages {
         let started = Instant::now();
         let result = execute(&runner, root, stage, files);
@@ -268,14 +266,11 @@ pub(crate) fn run_tools(
             StageResult::Missing(p) if stage.fail_on_nonzero => {
                 tracing::warn!(stage = %stage.name, problem = %p, "tool binary missing");
                 let message = format!("tool stage `{}` ({}) {p}", stage.name, stage.command);
-                out.push(unresolved(message.clone()));
-                marks.push(PendingMark {
-                    rule: id.to_string(),
-                    message,
-                    reason: RequiredReason::SiblingMissing {
+                out.push(
+                    unresolved(message).with_required(RequiredReason::SiblingMissing {
                         product: stage.command.clone(),
-                    },
-                });
+                    }),
+                );
             }
             StageResult::Problem(p) if stage.fail_on_nonzero => {
                 tracing::warn!(stage = %stage.name, problem = %p, "tool stage failed");
@@ -292,14 +287,14 @@ pub(crate) fn run_tools(
             }
         }
     }
-    (out, marks)
+    out
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // frob:tests crates/frob-check/src/tools.rs::normalize
+    // frob:tests crates/gob-check/src/tools.rs::normalize
     #[test]
     fn printed_paths_become_repo_relative() {
         let root = Path::new("/r/repo");

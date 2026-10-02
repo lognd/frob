@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use frob_check::{CheckCtx, CheckOptions, FailOn, FileCheck, SharedCtx, run};
+use frob_check::{CheckCtx, CheckOptions, FailOn, FileCheck, Frob, SharedCtx, run};
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
@@ -180,7 +180,7 @@ struct Rewrite;
 
 static SIDE_INPUT: AtomicU32 = AtomicU32::new(0);
 
-impl FileCheck for Rewrite {
+impl FileCheck<Frob> for Rewrite {
     fn rules(&self) -> Vec<&'static RuleMeta> {
         vec![Fixt001.meta()]
     }
@@ -441,7 +441,7 @@ fn ticket_restricts_per_file_rules_to_its_scope() {
         scope.iter().any(|f| f.message.contains("src/b/lib.rs")),
         "SCOPE001 names src/b/lib.rs: {scope:?}"
     );
-    assert!(scoped.ticket.is_some());
+    assert!(scoped.scope.is_some());
 }
 
 #[test]
@@ -461,7 +461,7 @@ fn ticket_without_a_ledger_is_an_error() {
 /// Emits one Unresolved `FIXT001` per `*.txt` file; the message is the file text.
 struct Opaque;
 
-impl FileCheck for Opaque {
+impl FileCheck<Frob> for Opaque {
     fn rules(&self) -> Vec<&'static RuleMeta> {
         vec![Fixt001.meta()]
     }
@@ -660,4 +660,66 @@ fn uncommitted_out_of_scope_edits_still_fire_scope001() {
     let hits = scope001_paths(&r);
     assert_eq!(hits.len(), 1, "{hits:?}");
     assert!(hits[0].contains("src/d/lib.rs"), "{hits:?}");
+}
+
+/// Unresolved findings of `report` as (rule, reason) pairs.
+fn zero_subject_rules(report: &frob_check::CheckReport) -> Vec<String> {
+    report
+        .findings
+        .iter()
+        .filter(|f| f.required.is_some())
+        .map(|f| f.rule.to_string())
+        .collect()
+}
+
+// frob:tests crates/frob-check/src/product.rs::applicable
+#[test]
+fn a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_does_not() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "README.md", "# Plain\n");
+    let silent = run(dir.path(), &quiet()).expect("unconfigured");
+    assert!(
+        zero_subject_rules(&silent).is_empty(),
+        "no ledger expected, none missed"
+    );
+    assert_eq!(silent.exit_code(), ExitCode::Ok);
+
+    write(dir.path(), "frob.toml", "[tickets]\n");
+    let configured = run(dir.path(), &quiet()).expect("configured");
+    let mut rules = zero_subject_rules(&configured);
+    rules.sort();
+    assert_eq!(rules, ["REF001", "TODO002"]);
+    assert_eq!(configured.exit_code(), ExitCode::Negative);
+    assert_eq!(
+        configured.required.get(&configured.findings[0]),
+        Some(&RequiredReason::ZeroSubjects {
+            rule: configured.findings[0].rule.to_string()
+        })
+    );
+}
+
+// frob:tests crates/frob-check/src/product.rs::applicable
+#[test]
+fn cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "//! Only data.\npub const X: u8 = 1;\n",
+    );
+    let rust = run(dir.path(), &quiet()).expect("rust without functions");
+    assert!(
+        zero_subject_rules(&rust).is_empty(),
+        "the Rust file is a subject"
+    );
+    assert_eq!(rust.subjects_examined.get("COV001"), Some(&1));
+
+    let docs = tempfile::tempdir().expect("tempdir");
+    write(docs.path(), "README.md", "# Docs only\n");
+    let md = run(docs.path(), &quiet()).expect("markdown only");
+    assert!(
+        zero_subject_rules(&md).is_empty(),
+        "no test capability, no required silence"
+    );
+    assert_eq!(md.subjects_examined.get("COV001"), Some(&0));
 }

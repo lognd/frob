@@ -3,24 +3,21 @@
 use std::path::Path;
 use std::time::Instant;
 
-use frob_lease::LeaseConfig;
-use frob_obligations::apply_exceptions;
 use gob_cache::Cache;
-use gob_diagnostics::RequiredMarks;
 use gob_rules::{Finding, Fingerprint, Registry, Rule, RuleMeta, Severity};
 use gob_text::FileInterner;
 
 use crate::config::{CheckTable, PerfTable};
+use crate::core::walk_core;
 use crate::error::CheckError;
-use crate::filecheck::{FileCheck, builtin_checks, run_file_checks};
+use crate::filecheck::run_file_checks;
 use crate::fix;
-use crate::options::CheckOptions;
+use crate::options::RunOptions;
+use crate::product::{CollectCx, Collected, Product, ScopeView, Snapshot};
 use crate::repo::run_repo_rules;
-use crate::report::{CheckReport, Counts, FixOutcome, PendingMark, Stats, Timing};
-use crate::required::{MUST_MEASURE, build_marks, zero_subjects};
+use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
+use crate::required::{build_marks, zero_subjects};
 use crate::rules::Perf001;
-use crate::scope;
-use crate::snapshot::{self, Snapshot};
 use crate::telemetry;
 use crate::tools::run_tools;
 
@@ -29,13 +26,16 @@ fn matches_only(only: &[String], family: &str, id: &str) -> bool {
     only.is_empty() || only.iter().any(|o| o == family || o == id)
 }
 
-/// Normalize `--only` entries and reject names the registry does not know.
-fn validate_only(only: &[String]) -> Result<Vec<String>, CheckError> {
+/// Normalize `--only` entries and reject names the product's rules do not use.
+fn validate_only<P: Product>(product: &P, only: &[String]) -> Result<Vec<String>, CheckError> {
     let registry = Registry::global();
     only.iter()
         .map(|raw| {
             let name = raw.trim().to_ascii_uppercase();
-            let known = registry.iter().any(|m| m.family == name || m.id == name);
+            let known = registry
+                .iter()
+                .filter(|m| product.includes(m))
+                .any(|m| m.family == name || m.id == name);
             if known {
                 Ok(name)
             } else {
@@ -58,16 +58,17 @@ fn sort_findings(findings: &mut [Finding], files: &FileInterner) {
     });
 }
 
-/// Apply `frob:accept` and `frob:defer` to `raw`, then keep what `--only` selects.
-fn resolve_exceptions(
-    snap: &Snapshot,
+/// Apply the product's exceptions to `raw`, then keep what `--only` selects.
+fn resolve_exceptions<P: Product>(
+    product: &P,
+    snap: &Snapshot<P>,
     files: &FileInterner,
     raw: Vec<Finding>,
     only: &[String],
     timing: &mut Timing,
 ) -> (Vec<Finding>, Vec<(Finding, gob_rules::Exception)>) {
     let started = Instant::now();
-    let resolved = apply_exceptions(&snap.obligations(), files, raw);
+    let resolved = product.resolve_exceptions(snap, files, raw);
     timing.push("exceptions", started.elapsed(), true);
     let keep = |f: &Finding| matches_only(only, f.rule.family(), f.rule.as_str());
     let findings = resolved.findings.into_iter().filter(|f| keep(f)).collect();
@@ -82,37 +83,29 @@ fn resolve_exceptions(
 /// Run the `[[check.tool]]` stages unless skipped or filtered out by `--only`.
 fn tool_stages(
     root: &Path,
-    opts: &CheckOptions,
+    opts: &RunOptions,
     table: &CheckTable,
     only: &[String],
-    scope: Option<&scope::TicketScope>,
+    scope_files: Option<&std::collections::BTreeSet<String>>,
     timing: &mut Timing,
     files: &mut FileInterner,
-) -> (Vec<Finding>, Vec<PendingMark>) {
+) -> Vec<Finding> {
     let wanted = only.is_empty()
         || only
             .iter()
             .any(|o| o.starts_with("TOOL") || o.starts_with("CI"));
     if opts.skip_tools || !wanted {
-        return (Vec::new(), Vec::new());
+        return Vec::new();
     }
-    let (found, marks) = run_tools(root, &table.tool, timing, files);
-    // Spanless findings (a missing tool) always stand; located ones obey a `--ticket` scope.
-    let found = found
+    let found = run_tools(root, &table.tool, timing, files);
+    // Spanless findings (a missing tool) always stand; located ones obey a scope.
+    found
         .into_iter()
-        .filter(|f| match (scope, f.span) {
-            (Some(s), Some(span)) => files.path(span.file).is_some_and(|p| s.files.contains(p)),
+        .filter(|f| match (scope_files, f.span) {
+            (Some(s), Some(span)) => files.path(span.file).is_some_and(|p| s.contains(p)),
             _ => true,
         })
-        .collect();
-    let marks = marks
-        .into_iter()
-        .filter(|m| {
-            let family = m.rule.trim_end_matches(|c: char| c.is_ascii_digit());
-            matches_only(only, family, &m.rule)
-        })
-        .collect();
-    (found, marks)
+        .collect()
 }
 
 /// Give every finding the same fingerprint scheme: rule, file path (or none), message.
@@ -162,103 +155,132 @@ fn perf_finding(perf: &PerfTable, timing: &Timing, only: &[String]) -> Option<Fi
     ))
 }
 
-/// One full evaluation of the built-in rules (no tool stages, no fixes).
-fn pass(
+/// One full evaluation of the rules (no tool-less shortcuts, no fixes).
+#[allow(
+    clippy::too_many_lines,
+    reason = "the stage order of rules.md section 4 reads best as one function"
+)]
+fn pass<P: Product>(
+    product: &P,
     root: &Path,
-    opts: &CheckOptions,
+    opts: &RunOptions,
     table: &CheckTable,
     perf: &PerfTable,
     only: &[String],
 ) -> Result<CheckReport, CheckError> {
-    let mut timing = Timing::default();
-    let mut stats = Stats::default();
+    let mut tally = Tally::default();
     let mut warnings = Vec::new();
-    let cache = Cache::open(&root.join(".frob"));
-    let snap: Snapshot = snapshot::collect(root, table, &cache, opts, &mut timing, &mut stats)?;
-
-    let lease_cfg = match &opts.lease {
-        Some(c) => c.clone(),
-        None => LeaseConfig::load(root)?,
+    let cache = Cache::open(&root.join(product.state_dir()));
+    let core = walk_core(
+        root,
+        table,
+        &product.state_dir(),
+        &mut tally.timing,
+        &mut tally.stats,
+    )?;
+    let Collected {
+        shared,
+        inputs,
+        findings: collected,
+    } = product.collect(&mut CollectCx {
+        core: &core,
+        table,
+        cache: &cache,
+        timing: &mut tally.timing,
+        stats: &mut tally.stats,
+    })?;
+    let snap = Snapshot::<P> {
+        core,
+        shared,
+        inputs,
+        findings: collected,
     };
-    let scope = match &opts.ticket {
-        Some(reference) => Some(scope::resolve(
-            &snap,
-            reference,
-            table.ticket_hops,
-            lease_cfg.clone(),
-        )?),
+
+    let scope = match &opts.scope {
+        Some(reference) => Some(product.resolve_scope(&snap, table, reference)?),
         None => None,
     };
+    let scope_files = scope.as_ref().map(ScopeView::files);
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);
     let wanted_rule = |f: &Finding| matches_only(only, f.rule.family(), f.rule.as_str());
     let mut raw: Vec<Finding> = Vec::new();
 
     let started = Instant::now();
-    let mut checks: Vec<std::sync::Arc<dyn FileCheck>> = builtin_checks();
-    checks.extend(opts.extra_checks.iter().cloned());
+    let mut checks = product.file_checks();
     checks.retain(|c| c.rules().iter().any(|m| wanted(m)));
-    let paths: Vec<String> = match &scope {
-        Some(s) => s.files.iter().cloned().collect(),
-        None => snap.entries.iter().map(|e| e.path.clone()).collect(),
+    let paths: Vec<String> = match scope_files {
+        Some(files) => files.iter().cloned().collect(),
+        None => snap.core.entries.iter().map(|e| e.path.clone()).collect(),
     };
-    stats.files_checked = paths.len();
+    tally.stats.files_checked = paths.len();
     let stage = run_file_checks(&snap, &cache, &checks, &paths);
-    stats.file_hits = stage.hits;
-    stats.file_misses = stage.misses;
+    tally.stats.file_hits = stage.hits;
+    tally.stats.file_misses = stage.misses;
     raw.extend(stage.findings);
-    let in_scope = |f: &Finding| match (&scope, f.span) {
+    for (rule, n) in stage.subjects {
+        tally.subjects.insert(rule.to_owned(), n);
+    }
+    if scope_files.is_none() {
+        // A full run examined every file: a rule that examined none has a real zero. A scoped
+        // run may simply hold no file the rule applies to, so it records only positive counts.
+        for meta in checks.iter().flat_map(|c| c.rules()).filter(|m| wanted(m)) {
+            tally.subjects.entry(meta.id.to_owned()).or_insert(0);
+        }
+    }
+    let in_scope = |f: &Finding| match (scope_files, f.span) {
         (Some(s), Some(span)) => snap
-            .ack
+            .core
             .files
             .path(span.file)
-            .is_some_and(|p| s.files.contains(p)),
+            .is_some_and(|p| s.contains(p)),
         _ => true,
     };
-    raw.extend(snap.scan_findings.iter().filter(|f| in_scope(f)).cloned());
-    timing.push("file-rules", started.elapsed(), true);
+    raw.extend(snap.findings.iter().filter(|f| in_scope(f)).cloned());
+    tally.timing.push("file-rules", started.elapsed(), true);
 
-    let mut files = snap.ack.files.clone();
+    let mut files = snap.core.files.clone();
     raw.extend(run_repo_rules(
-        &snap,
-        &cache,
-        &mut files,
-        &wanted,
-        &mut stats,
-        &mut timing,
+        product, &snap, &cache, &mut files, &wanted, &mut tally,
     ));
 
     if let Some(s) = &scope {
         let started = Instant::now();
-        let base = opts.base.clone().unwrap_or_else(|| table.base.clone());
-        raw.extend(scope::ticket_rules(
-            &snap,
-            s,
-            &base,
-            &lease_cfg.shared_files,
-        ));
-        timing.push("ticket-rules", started.elapsed(), true);
+        let scoped = product.scoped_rules(&snap, s, table);
+        raw.extend(scoped.findings);
+        for (rule, n) in scoped.subjects {
+            tally.subjects.insert(rule.to_owned(), n);
+        }
+        tally.timing.push("scope-rules", started.elapsed(), true);
     }
 
-    let (zero_findings, mut pending) = zero_subjects(&snap, MUST_MEASURE);
-    raw.extend(zero_findings.into_iter().filter(|f| wanted_rule(f)));
+    let must_measure: Vec<&'static RuleMeta> = Registry::global()
+        .iter()
+        .filter(|m| m.must_measure && product.includes(m) && wanted(m))
+        .collect();
+    raw.extend(
+        zero_subjects(&must_measure, &tally.subjects, &|m| {
+            product.applicable(&snap, m)
+        })
+        .into_iter()
+        .filter(|f| wanted_rule(f)),
+    );
 
-    // Tool findings join the raw set so `frob:accept` applies to them like native ones.
-    let (found, marks) = tool_stages(
+    // Tool findings join the raw set so exceptions apply to them like native ones.
+    raw.extend(tool_stages(
         root,
         opts,
         table,
         only,
-        scope.as_ref(),
-        &mut timing,
+        scope_files,
+        &mut tally.timing,
         &mut files,
-    );
-    raw.extend(found);
-    pending.extend(marks);
+    ));
 
-    let (mut findings, suppressed) = resolve_exceptions(&snap, &files, raw, only, &mut timing);
+    let (mut findings, suppressed) =
+        resolve_exceptions(product, &snap, &files, raw, only, &mut tally.timing);
 
-    if let Some(f) = perf_finding(perf, &timing, only) {
+    if let Some(f) = perf_finding(perf, &tally.timing, only) {
         warnings.push("PERF001: time budget exceeded".to_owned());
         findings.push(f);
     }
@@ -267,38 +289,43 @@ fn pass(
         findings,
         suppressed,
         files,
-        timing,
-        stats,
+        timing: tally.timing,
+        stats: tally.stats,
         fix: None,
         warnings,
-        ticket: scope.map(|s| s.handle),
+        scope: scope.map(|s| s.label().to_owned()),
         fail_on: opts.fail_on.unwrap_or(table.fail_on),
         fail_on_unresolved: table.fail_on_unresolved,
-        required: RequiredMarks::new(),
-        pending,
+        required: gob_diagnostics::RequiredMarks::new(),
+        subjects_examined: tally.subjects,
     })
 }
 
-/// Run the whole check for the repository at `root`.
+/// Run the whole check of `product` for the repository at `root`.
 ///
-/// Collects inputs once, evaluates per-file rules (cached per file digest),
-/// repo rules (cached per inputs digest), applies exceptions, then runs the
-/// `[[check.tool]]` stages outside the time budget. With `opts.fix` the
-/// Deterministic fixes are written and the pipeline runs once more.
+/// Walks once, lets the product collect its inputs, evaluates per-file rules
+/// (cached per file digest) and repo rules (cached per inputs digest), applies
+/// the product's exceptions, then runs the `[[check.tool]]` stages outside the
+/// time budget. With `opts.fix` the Deterministic fixes are written and the
+/// pipeline runs once more.
 ///
 /// # Errors
 ///
-/// [`CheckError`] for a bad `frob.toml`, a failed walk, a malformed lock, an
-/// unknown `--only` name, an unresolvable `--ticket`, a refused `--fix` or a
-/// fix that cannot be written. Findings are never errors.
-pub fn run(root: &Path, opts: &CheckOptions) -> Result<CheckReport, CheckError> {
-    let table = CheckTable::load(root)?;
-    let perf = PerfTable::load(root)?;
-    if opts.fix && table.fix_requires_scope && opts.ticket.is_none() {
+/// [`CheckError`] for a bad config table, a failed walk, a failed product
+/// collection, an unknown `--only` name, an unresolvable scope, a refused
+/// `--fix` or a fix that cannot be written. Findings are never errors.
+pub fn run<P: Product>(
+    product: &P,
+    root: &Path,
+    opts: &RunOptions,
+) -> Result<CheckReport, CheckError> {
+    let table = CheckTable::load(root, product.name())?;
+    let perf = PerfTable::load(root, product.name())?;
+    if opts.fix && table.fix_requires_scope && opts.scope.is_none() {
         return Err(CheckError::FixNeedsScope);
     }
-    let only = validate_only(&opts.only)?;
-    let mut report = pass(root, opts, &table, &perf, &only)?;
+    let only = validate_only(product, &opts.only)?;
+    let mut report = pass(product, root, opts, &table, &perf, &only)?;
     if opts.fix {
         let applied = fix::apply(root, &report.findings, &report.files)?;
         if !applied.applied.is_empty() {
@@ -306,7 +333,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CheckReport, CheckError> 
                 fixes = applied.applied.len(),
                 "fixes applied; re-running once"
             );
-            report = pass(root, opts, &table, &perf, &only)?;
+            report = pass(product, root, opts, &table, &perf, &only)?;
         }
         report.fix = Some(FixOutcome {
             applied: applied.applied,
@@ -315,11 +342,12 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CheckReport, CheckError> 
         });
     }
     refingerprint(&mut report.findings, &report.files);
-    report.required = build_marks(&report.findings, &report.pending);
+    report.required = build_marks(&mut report.findings);
     sort_findings(&mut report.findings, &report.files);
     if table.telemetry && !opts.skip_telemetry {
         telemetry::append(
             root,
+            &product.state_dir(),
             &report.timing,
             &report.stats,
             Counts::of(&report.findings),
