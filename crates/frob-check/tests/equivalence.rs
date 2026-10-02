@@ -161,13 +161,13 @@ fn check_snapshot(name: &str, build: fn(&Path)) {
     assert_eq!(cold, want, "findings differ from {}", path.display());
 }
 
-// frob:tests crates/frob-check/src/pipeline.rs::run
+// frob:tests crates/frob-check/src/lib.rs::run
 #[test]
 fn fixture_a_matches_the_recorded_findings() {
     check_snapshot("fixture_a", fixture_a);
 }
 
-// frob:tests crates/frob-check/src/pipeline.rs::run
+// frob:tests crates/frob-check/src/lib.rs::run
 #[test]
 fn fixture_b_matches_the_recorded_findings() {
     check_snapshot("fixture_b", fixture_b);

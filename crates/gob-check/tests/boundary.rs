@@ -20,7 +20,7 @@ fn path_dependencies(manifest: &Path) -> Vec<(String, PathBuf)> {
         .collect()
 }
 
-// frob:tests crates/gob-check/src/lib.rs::run
+// frob:tests crates/gob-check/src/pipeline.rs::run
 #[test]
 fn no_frob_crate_is_a_direct_or_transitive_dependency() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
