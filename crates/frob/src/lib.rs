@@ -11,6 +11,7 @@ pub mod config;
 pub mod config_cmd;
 pub mod doctor;
 pub mod init;
+pub mod lease_cmd;
 pub mod ticket;
 mod workspace;
 
@@ -26,7 +27,8 @@ pub fn cli() -> Cli {
             .register::<doctor::Doctor>()
             .register::<init::Init>()
             .register::<config_cmd::ConfigShow>()
-            .register::<config_cmd::ConfigSync>(),
+            .register::<config_cmd::ConfigSync>()
+            .register::<lease_cmd::LeaseWiden>(),
     );
     let cli = frob_lease::register(cli);
     let cli = frob_worktree::register(cli);

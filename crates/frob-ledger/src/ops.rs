@@ -352,7 +352,31 @@ impl Ledger {
     /// [`LedgerError::LinkRejected`] for a parent cycle; plus lookup and store failures.
     pub fn update(&self, id: TicketId, patch: &Patch) -> Result<Applied> {
         let s = self.synced()?;
-        let (_, current) = Self::load(&s, id)?;
+        let (_, events) = self.plan_update(&s, id, patch)?;
+        if events.is_empty() {
+            return Self::already(&s, id);
+        }
+        drop(s);
+        self.commit_events("update", id, &events)
+    }
+
+    /// The scope globs ticket `id` would have after `patch`, without writing anything.
+    ///
+    /// Runs the same validation as [`Ledger::update`], so a patch that update
+    /// would refuse is refused here with the same error.
+    ///
+    /// # Errors
+    ///
+    /// The errors of [`Ledger::update`].
+    pub fn scope_after(&self, id: TicketId, patch: &Patch) -> Result<Vec<String>> {
+        let s = self.synced()?;
+        let (work, _) = self.plan_update(&s, id, patch)?;
+        Ok(work.front.scope)
+    }
+
+    /// Validate `patch` against ticket `id`: the ticket after it and the events it would write.
+    fn plan_update(&self, s: &Synced, id: TicketId, patch: &Patch) -> Result<(Ticket, Vec<Event>)> {
+        let (_, current) = Self::load(s, id)?;
         let actor = self.actor()?;
         let mut work = current;
         let mut events = Vec::new();
@@ -383,7 +407,7 @@ impl Ledger {
                 let parent: TicketId = p
                     .parse()
                     .map_err(|e: crate::id::ParseIdError| LedgerError::invalid(e.to_string()))?;
-                Self::require_exists(&s, parent)?;
+                Self::require_exists(s, parent)?;
                 let parent_of =
                     |t: TicketId| s.index.summary(t).ok().flatten().and_then(|x| x.parent);
                 check_parent(&parent_of, id, parent)?;
@@ -436,11 +460,7 @@ impl Ledger {
                 ));
             }
         }
-        if events.is_empty() {
-            return Self::already(&s, id);
-        }
-        drop(s);
-        self.commit_events("update", id, &events)
+        Ok((work, events))
     }
 
     /// Add the link `id --kind--> target`; an existing edge (either spelling) is `already`.

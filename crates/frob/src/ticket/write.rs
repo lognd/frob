@@ -254,9 +254,11 @@ impl Command for Update {
             let value = parse_text_value(name, &text).map_err(CliError::Usage)?;
             patch.sets.push((name.clone(), value));
         }
-        let applied = ledger.update(id, &patch).map_err(cli_err)?;
+        let (applied, warnings) = crate::lease_cmd::update_with_lease(ctx, &ledger, id, &patch)?;
         tracing::info!(ticket = %id, already = applied.already, "ticket update");
-        Ok(payload(&applied))
+        Ok(warnings
+            .into_iter()
+            .fold(payload(&applied), gob_cli::Payload::with_warning))
     }
 }
 

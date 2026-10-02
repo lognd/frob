@@ -9,7 +9,7 @@
 //! ([`overlap`]); files in `[lease] shared_files` are exempt. Leases are
 //! single-clone: other clones see only the ledger CAS and rule [`Scope001`].
 //!
-//! Entry points: [`LeaseStore`] (acquire, renew, release, steal, list,
+//! Entry points: [`LeaseStore`] (acquire, renew, rescope, release, steal, list,
 //! contention), [`LeaseGuard`] (the [`LeaseCheck`](frob_ledger::guards::LeaseCheck)
 //! for `ticket doable`), [`scope001`], and [`register`] for the `lease list` and
 //! `ticket contention` verbs.
