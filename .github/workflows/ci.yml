@@ -18,6 +18,9 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
+        with:
+          # frob reads the ledger ref and diffs against origin/experimental.
+          fetch-depth: 0
       - name: Install pinned Rust toolchain
         shell: bash
         run: |
@@ -36,6 +39,25 @@ jobs:
       - run: cargo nextest run --profile ci
       - name: Generated files are current (GEN001)
         run: cargo dev gen all --check
+      - name: Make the ledger ref resolvable
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # Pull requests check out a detached merge commit; frob needs the
+          # [tickets] ref (refs/heads/experimental) as a local branch.
+          if ! git rev-parse --verify -q refs/heads/experimental >/dev/null; then
+            git fetch --no-tags origin '+refs/heads/experimental:refs/remotes/origin/experimental'
+            git update-ref refs/heads/experimental refs/remotes/origin/experimental
+          fi
+      - name: frob doctor (self-hosted, frob v2 built from this tree)
+        if: runner.os == 'Linux'
+        run: cargo run -p frob-cli -- doctor
+      - name: frob check
+        if: runner.os == 'Linux'
+        run: cargo run -p frob-cli -- check
+      - name: frob test selection (dry run: CI holds no lease)
+        if: runner.os == 'Linux'
+        run: cargo run -p frob-cli -- test --base origin/experimental --dry-run
       - name: Docs
         env:
           RUSTDOCFLAGS: "-D warnings"
