@@ -1,6 +1,9 @@
 # Neatness: the NEAT rule family
 
-Status: DRAFT under T-0001, for owner review. Evidence:
+Status: DRAFT under T-0001; decision D59 is accepted (2026-10-04).
+Owner: grimble. The NEAT rules live in `grimble-lints` (boundaries.md
+section 2.5), their knobs under `[neat]` in `grimble.toml`, and frob
+only orchestrates the bound tool stages that feed them. Evidence:
 notes/research/neatness.md (Logan Smith's channel, 13 videos; Tony Van
 Eerd, Sean Parent, Robert Martin, Verse effect specifiers; adjacent
 sources; what clippy, ruff, eslint, golangci-lint, clang-tidy, PMD and
@@ -64,11 +67,18 @@ so under section 4.6 the adapter reads it or requires it:
   `panic`, `diverge`, optionally suffixed `total` (no panic, no
   divergence). Aliases: `frob:pure` = `none`, `frob:honest` = `honest`.
   Markers: `frob:core`, `frob:shell`, `frob:hook [kind]`,
-  `frob:dispatcher` (intentional), `frob:idempotent` (a claim that needs
-  bound evidence), `frob:trusted` (an unverified claim the owner owns).
-- External symbols get effect sets from a materialized `[neat.effects]`
-  table (clock, rng, env, fs, net, stdio, exit vocabularies per
-  language, with defaults generated for Rust, Python, TypeScript, Go).
+  `frob:dispatcher` (intentional), `frob:idempotent` (a claim discharged
+  only by a passing bound `frob:tests` of kind `idempotent`; unbound it
+  is unverified), `frob:trusted` (an unverified claim the owner owns).
+  The directives are in the `frob:` namespace and evaluated here
+  (code-model.md section 4 has the table and the namespace rule).
+- The atoms are the shared registry's (grimble-model.md 9.6), which is
+  hierarchical (`fs` covers `fs.read` and `fs.write`); there is one
+  callee-vocabulary table per language and external symbols get effect
+  sets from the `[neat.effects]` tables, which are views over it (clock,
+  rng, env, fs, net, stdio, exit vocabularies, with defaults generated
+  for Rust, Python, TypeScript, Go), so grimble's capability detectors
+  and NEAT never disagree about what `std::fs::write` is.
 
 The adapter's `effects(unit)` capability returns Bounds{lo, hi}: lo is
 what the body provably does (direct calls to vocabulary symbols, reads
@@ -110,15 +120,17 @@ threshold is a materialized knob under `[neat]`.
 
 Where an existing linter implements a rule better per language (clippy
 too_many_arguments and cognitive_complexity, ruff PLR0913 and C901,
-eslint max-params and complexity, golangci gocognit and funlen), frob
-binds that tool's finding through a tool stage under the NEAT id rather
-than re-implementing it; the universal implementation is for languages
+eslint max-params and complexity, golangci gocognit and funlen), frob's
+`[[check.tool]]` stage binds that tool's finding under the NEAT id
+(parser and id map owned by frob-check, `source_rule` kept on the
+finding; rules.md section 4) rather than re-implementing it; the universal implementation is for languages
 without such a tool. Rule pages say which applies.
 
 ## 5. Decided and open
 
-Decided (proposed decision-log rows): the four principles and the
-annotation vocabulary above; NEAT never penalizes small functions; CQS
+Decided (decision-log row D59, accepted 2026-10-04): grimble owns the
+family (D4 of the 2026-10-04 consistency pass; README D63), the four
+principles and the annotation vocabulary above; NEAT never penalizes small functions; CQS
 off by default (Smith's `remove_if` is honest, Meyer's rule disagrees);
 unverified effect claims report Unresolved; thresholds materialized.
 

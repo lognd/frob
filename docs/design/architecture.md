@@ -7,7 +7,9 @@ Inputs: notes/rust-ecosystem.md, notes/v1/ops-and-integrations.md
 ## 1. Shape
 
 Three binaries (`frob`, `grimble`, `crunk`) from one Cargo workspace,
-strict downward dependencies, about 57 crates in four groups. The
+strict downward dependencies, about 65 crates in four groups (D1 said
+about 57 before D56-D60 added gob-check, gob-pattern, grimble-ci and
+the gob-ir layering; boundaries.md section 4 has the count). The
 authoritative capability-to-crate map is boundaries.md; the shape:
 
 ```
@@ -16,10 +18,12 @@ crates/
                text config languages symbols directives rules macros
                diagnostics fix walk cache git exec cli log lock serve
                mdtest dev; milestone 2 or later (D36): db (salsa), ir
+               (the universal model, below symbols), check (shared
+               pipeline), pattern (ast-grep-shaped engine)
   frob-*       ledger pm lease worktree evidence tests obligations ack land
                release fleet explore check gh hook serve
   grimble-*    model kernel bind capabilities lints arch security vet packs
-               check serve
+               ci check serve
   crunk-*      values spec ingest tailwind rules tokens query gallery adapters
   frob, grimble, crunk     thin binaries
 ```
@@ -30,16 +34,23 @@ by a repo-internal rule over Cargo metadata and by the dependency graph:
 `gob-*` depends only on `gob-*`; product crates depend on `gob-*` and
 their own product; products never depend on each other, with the one
 stated exception that the `frob` binary with feature `bundle` links
-`grimble-check` and crunk's check crate to run them in-process
+`grimble-check` (which drives the shared `gob-check` pipeline) and crunk's check crate to run them in-process
 (boundaries.md section 6). Within the substrate the real order is:
 `gob-text` and `gob-macros` at the bottom (neither depends on another
-workspace crate); then `gob-config`, `gob-languages` and
-`gob-directives` (text only); `gob-symbols` (languages); `gob-ir`
-(symbols; Milestone 2 or later (D36)); `gob-rules` (text, config,
-directives, symbols); then `gob-walk`, `gob-cache`, `gob-git`,
-`gob-exec`, `gob-log`, `gob-lock`, `gob-diagnostics`, `gob-fix`; and
+workspace crate); then `gob-config`, `gob-walk`, `gob-cache` and
+`gob-languages` (text); `gob-ir` (the universal model: terms, scope
+graph, canonical facet stream, queries, Kleene evaluator; depends on
+`gob-text` and `gob-languages` only; Milestone 2 or later (D36));
+`gob-rules` (macros, text and, from milestone 2, the answer lattice
+from `gob-ir`); `gob-symbols` (the adapters that produce U terms;
+languages, ir, cache, walk); `gob-directives` (languages, rules,
+symbols); then `gob-git`, `gob-exec`, `gob-log`, `gob-lock`,
+`gob-diagnostics`, `gob-fix`, `gob-pattern`, `gob-check`; and
 `gob-serve`, `gob-mdtest` and `gob-db` (salsa, Milestone 2 or later
-(D36)) on top.
+(D36)) on top. The full chain is `gob-languages` < `gob-ir` <
+`gob-symbols` < `gob-directives` < the frob and grimble crates; frob
+links `gob-ir` (D56, superseding the D31 claim that frob builds
+without it).
 
 ## 2. Data flow of one invocation
 
@@ -57,7 +68,10 @@ directives, symbols); then `gob-walk`, `gob-cache`, `gob-git`,
    salsa `Db` (`gob-db`, Milestone 2 or later (D36)).
 3. Results that are expensive and stable are persisted to the SQLite
    file of this worktree (`.frob/cache.sqlite`): parse artifacts keyed by
-   (content blake3, adapter id, schema version); per-file findings keyed
+   (content blake3, adapter id, grammar version, schema version, and
+   from milestone 2 a digest of the `[compute]` config; the scope graph
+   is a repo-scope artifact keyed by the graph digest, code-model.md
+   section 8); per-file findings keyed
    by (file digest, rule id, rule version, side-input digest); repo-scope
    findings keyed additionally by a graph digest. Persistence happens
    from the command layer after queries return, never inside a query;
@@ -99,7 +113,7 @@ crate measures the fresh-process case.
 | ticket events (comments are events) | `tickets/<ulid>/events/<ulid>.toml` | yes |
 | non-ticket events (budget raises, audits, reviews of exceptions) | `events/<ulid>.toml` at the repo root | yes |
 | acks | `frob.lock`, `grimble.lock` (one lock file per product, `gob-lock`) | yes |
-| exceptions | `exceptions.toml` (one array per product: `[[frob.exception]]`, `[[grimble.exception]]`, `[[crunk.exception]]`, plus attestation entries) | yes |
+| exceptions | `exceptions.toml` (one array per product: `[[frob.exception]]`, `[[grimble.exception]]`, `[[crunk.exception]]`; the accept digest lives in the lock, exceptions.md section 2) | yes |
 | ratchet pools | `frob-ratchet.lock.json`, `grimble-ratchet.lock.json` | yes |
 | quarantine (Milestone 2 or later (D36)) | `frob-quarantine.json` | yes |
 | design model | `design/*.grmb` (grimble) | yes |
@@ -216,6 +230,8 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[evidence] timeout_secs` (M1) | frob.toml | no | 1800 | frob-evidence |
 | `[evidence] nextest_profile` (M1) | frob.toml | no | empty (nextest's own default) | frob-evidence |
 | `[invariants] forbid_imports` (M1) | frob.toml | no | empty (entries of `from`, `to`, `reason`) | frob-obligations |
+| `[check] fail_on_unresolved` | frob.toml | yes | `"required"` (`"never"` or `"all"`; the one gate mechanism, cli.md section 2; today gob-diagnostics skips Unresolved, Milestone 2 item 1) | frob (config), gob-diagnostics |
+| `[check] require_siblings` | frob.toml | yes | true (a configured sibling that is absent or incompatible is a required Unresolved) | frob-check |
 | `[check] strictness` | frob.toml | yes | `"warn-new-rules"` | frob-check |
 | `[check] ticket_hops` | frob.toml | yes | 1 | frob-check |
 | `[check] new_rule_warn_releases` | frob.toml | yes | 1 | gob-rules |
@@ -230,6 +246,23 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[tickets.custom_fields]` | frob.toml | no (registry) | none | frob-ledger |
 | `[[component]]`, labels, `[[triage.rule]]`, `[[query]]`, `[[agent]]` | frob.toml | no (registries) | none | frob-ledger |
 | `[directives] namespaces` | frob.toml | yes | `["frob"]`; not yet a ConfigTable (Milestone 2) | gob-directives |
+| `[compute] public_signatures` | frob.toml (the one home; read by every product, see below) | yes | `"warn-unresolved"` (`"required"` makes an absent annotation a required Unresolved) | gob-ir |
+| `[compute] effects` | frob.toml | yes | `"warn-unresolved"` | gob-ir |
+| `[compute] dynamic_calls` | frob.toml | yes | `"warn-unresolved"` | gob-ir |
+| `[compute] expansion_steps` | frob.toml | yes | 1000 (the macro and template expansion step budget) | gob-ir |
+| `[compute] normalization` | frob.toml | yes | `"warn-unresolved"` | gob-ir |
+| `[compute] notebook_order` | frob.toml | yes | `"warn-unresolved"` | gob-ir |
+| `[neat] max_params` | grimble.toml | yes | 5 | grimble-lints |
+| `[neat] max_depth` | grimble.toml | yes | 3 | grimble-lints |
+| `[neat] raw_loop_statements` | grimble.toml | yes | 3 | grimble-lints |
+| `[neat] hook_statements` | grimble.toml | yes | 3 | grimble-lints |
+| `[neat] require_effects` | grimble.toml | yes | false (candidate to default on for the public surface of this repository, neatness.md section 5) | grimble-lints |
+| `[neat.effects]` vocabulary tables (clock, rng, env, fs, net, stdio, exit per language) | grimble.toml | no (registry; defaults generated for Rust, Python, TypeScript, Go from the gob-ir vocabulary) | generated | grimble-lints |
+| `[ci] allow_tag_pins_for` | grimble.toml | yes | empty (verified publishers allowed to tag-pin) | grimble-ci |
+| `[ci] max_timeout` | grimble.toml | yes | 30 (minutes; `timeout-minutes` ceiling) | grimble-ci |
+| `[ci] contexts` | grimble.toml | yes | the attacker-controlled context set of cicd.md section 5 | grimble-ci |
+| `[ci] registries` | grimble.toml | no (registry) | the publish-step vocabulary of cicd.md section 5 | grimble-ci |
+| `[ci] max_age_days` | grimble.toml | yes | 365 | grimble-ci |
 | `[pm] strict`, `stories_required` | frob.toml | yes | false, true | frob-pm |
 | `[pm] max_story_points`, `max_chore_points` | frob.toml | yes | 8, 2 | frob-pm |
 | `[pm] max_objective_share` | frob.toml | yes | 0.4 | frob-pm |
@@ -252,6 +285,14 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[grimble] strict`, `modeled`, `packs` | grimble.toml | yes, yes, no | false, empty, empty | grimble-check |
 | `[[policy]]`, `rules/*.grl.toml` (code) | grimble.toml and next to it | no | none | grimble-lints |
 | crunk tables | crunk.toml | per notes/crunk.md section 4 | per crunk | crunk crates |
+
+`[compute]` is a substrate table with one home: `frob.toml`, read
+identically by every product (a standalone grimble with no `frob.toml`
+reads the same table from `grimble.toml`; when both files exist,
+declaring it in `grimble.toml` is a CFG finding). Sibling `--json`
+carries the compute-config digest and frob treats a mismatch as an
+incompatible sibling (a required Unresolved, cli.md section 2), so two
+products never build different U terms for one file.
 
 The `[tickets]` and `[git]` tables are validated in the `frob` binary;
 frob-ledger reads just the keys it needs and ignores the rest, because
@@ -305,7 +346,7 @@ construction rather than by later retrofits.
 
 | Layer | Mechanism | Used for |
 |---|---|---|
-| data parallelism | `rayon` (work-stealing pool, `par_iter`, `par_bridge`), one global pool sized by `[perf] threads` defaulting to physical cores | file discovery and hashing, parsing, IR building, digests, per-file rules, dup rungs, ticket index rebuild, capability detectors |
+| data parallelism | `rayon` (work-stealing pool, `par_iter`, `par_bridge`), one global pool sized by `[perf] threads` defaulting to physical cores | file discovery and hashing, parsing, U term building, digests, per-file rules, dup rungs, ticket index rebuild, capability detectors |
 | query parallelism (Milestone 2 or later (D36)) | salsa parallel queries on cloned database handles, one handle per request or rayon task, so independent derived queries share memos; see the concurrency model below | graph assembly, per-file findings, affects walks |
 | graph algorithms | `petgraph` on immutable snapshots; SCC, closure, and reachability run per connected component in parallel | call graph closure, cycles, grimble kernel |
 | external jobs | `gob-exec` bounded job pool (`[perf] jobs`), with per-job timeout, memory cap via cgroup where available, and output caps | test runners, ruff/clippy/tsc, Tailwind helper |

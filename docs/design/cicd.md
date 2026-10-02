@@ -1,6 +1,8 @@
 # CI/CD and deployment languages
 
-Status: DRAFT under T-0001, for owner review. Evidence:
+Status: DRAFT under T-0001; decision D60 is accepted (2026-10-04).
+Owner: grimble (family CI and DK in the crate `grimble-ci`, boundaries.md
+section 2.5). Evidence:
 notes/research/cicd-survey.md (1069 repositories: 249 curated developer
 tools plus 820 top-starred per language; 9890 GitHub Actions workflows,
 23425 jobs, 764 Dockerfiles, 389 Dependabot configs; zizmor and
@@ -48,26 +50,27 @@ construction and say so.
 
 ## 3. Decision: bind the security tools, own the policy and consistency rules
 
-frob does not rebuild zizmor, actionlint, hadolint, checkov, tflint,
-kube-linter or ansible-lint. Their checks overlap the structural
+The design goblin does not rebuild zizmor, actionlint, hadolint,
+checkov, tflint, kube-linter or ansible-lint. Their checks overlap the structural
 security rules almost entirely and parity would be a treadmill against
-GitHub's schema. frob binds them through `[[check.tool]]` stages with
-JSON parsers (zizmor `--format json-v1`, actionlint `-format '{{json
+GitHub's schema. frob orchestrates them through `[[check.tool]]` stages
+with JSON parsers (zizmor `--format json-v1`, actionlint `-format '{{json
 .}}'`) so their findings carry frob ids, exceptions, evidence and
 Unresolved semantics. Two bindings are mandatory lessons from the
 corpus: actionlint's `runner-label` noise needs the repository's custom
 labels passed in, and a tool that lags the GitHub schema returns
 Unresolved, not a violation.
 
-frob owns what those tools cannot see: presence and policy rules that a
+grimble owns (family CI and DK) what those tools cannot see: presence and policy rules that a
 repository decides (which permissions, which timeouts, publish only from
 tags, OIDC required) and cross-file consistency between CI and the
 repository (the toolchain pinned in CI equals rust-toolchain.toml; the
 lint command in CI equals the one frob runs; a workflow that publishes a
 crate exists for every publishable crate; Dependabot covers every
 ecosystem present). These are joins over the universal model between
-the workflow language and the manifests, which is exactly the
-cross-language structure frob exists for.
+the workflow language and the manifests (CI012 reads the manifests
+through the F2 manifest adapter, grimble-model.md 9.8), which is
+exactly the cross-language structure the universal model exists for.
 
 ## 4. CI/CD files as languages in the universal model
 
@@ -84,7 +87,7 @@ the adapter models as an external, May-status scope); `run:` bodies are
 `region(kind=embedded, lang=shell)` and shell is a language with
 string-code opaqueness (universal-model.md 4.6). Reusable workflows and
 composite actions are units in other artifacts; `secrets: inherit` is a
-flow edge frob can see.
+flow edge the model can see.
 
 Dockerfile: one `unit` per stage (`FROM ... AS name`), `FROM` is
 `apply(kind=instantiate)` to an image identity (Must when digest-pinned,
@@ -97,54 +100,63 @@ Must inside a module, May across providers until schemas are loaded;
 both need an external binary or provider schema for anything beyond
 F2, which is why they are bound rather than owned.
 
-Fidelity targets: GitHub Actions F4 (own adapter), Dockerfile F3 (own
-adapter, small grammar), Terraform and Helm F1 through tree-sitter with
+Fidelity targets: GitHub Actions F3 first (a CST-preserving YAML
+reader with the `gha-expr` and shell islands as regions; the survey,
+section 9.4) and F4 once comments and pin comments bind to targets,
+Dockerfile F3 (own adapter, small grammar), Terraform and Helm F1 through tree-sitter with
 bound tools for the rest.
 
 ## 5. The CI and DK rule families
 
 Each rule names its threat, a decidable predicate over the U encoding
-in section 4, its polarity, the measured violation rate in the corpus,
-and its false-positive risk (full table in the research note, section
-8). Severities default to Warn; a repository promotes them through
-`[gates.severity]`. Every threshold and list is a materialized knob
-under `[ci]`.
+in section 4, its polarity (universal-model.md 4.2), a default severity
+and who implements it. Corpus rates are in the research note
+(notes/research/cicd-survey.md section 9.3, the numbering authority:
+ids are permanent, D32). A repository overrides severity with
+`[rules.<id>] severity` (there is no separate severity table). Every
+threshold and list is a materialized knob under `[ci]` in
+`grimble.toml`. The survey's severity "note" is Advisory here.
 
-| Id | Rule | Owner | Corpus | Notes |
+| Id | Rule and predicate | Polarity | Default | Implemented by |
 |---|---|---|---|---|
-| CI001 | pinned-ref: every external `uses:` is a commit SHA (local and same-repo refs exempt) | bind zizmor `unpinned-uses`; frob fallback | 76.5 percent violate | knob `allow_tag_pins_for` for verified publishers |
-| CI002 | permissions-declared: top-level `permissions` present in every workflow | frob | 78 percent violate | P- |
-| CI003 | no-top-level-write: top-level grants are read-only; writes are job-level | frob (zizmor overlaps) | | |
-| CI004 | concurrency-on-pr: `pull_request` workflows declare `concurrency` with cancel | frob | 45 percent violate | cost rule, Advisory by default |
-| CI005 | job-timeout: every job has `timeout-minutes` (knob `max_timeout`) | frob | 75 percent of jobs | |
-| CI006 | no-pull_request_target-head-checkout | bind zizmor `dangerous-triggers` | 26 repos | Error by default |
-| CI007 | no-event-interpolation-in-run: no `${{ github.event.* }}` or other attacker-controlled contexts in `run:` | bind zizmor `template-injection` | 280 repos on the broad list | knob `contexts` |
-| CI008 | publish-only-from-tag: steps that publish to a registry run only on tag or release triggers | frob | | registry step vocabulary knob |
-| CI009 | publish-via-oidc: PyPI and crates.io publishing uses trusted publishing, no long-lived token | frob | 28 to 32 percent of publishers violate | |
-| CI010 | checkout-no-persist: `persist-credentials: false` where the token is not needed later | bind zizmor `artipacked` | 85.8 percent | Advisory |
-| CI011 | pull_request_target-least-token | frob | | |
-| CI012 | ci-repo-consistency: toolchain, lint and test commands, publishable crates, Dependabot ecosystems match the repository | frob (unique) | | the cross-language join |
-| CI013 | no-secrets-inherit to third-party reusable workflows | frob | | |
-| CI014 | gha-syntax-and-schema | bind actionlint | | Unresolved on schema lag |
-| CI015 | action-currency: pinned SHA behind the latest release beyond `max_age_days` | frob via Dependabot or Renovate presence; direct check needs network and is Unresolved offline | | |
-| DK001 | non-root USER in the final stage | frob | | |
-| DK002 | no `latest` tag in FROM | frob | | |
-| DK003 | digest-pinned base images | frob | | |
-| DK004 | no pipe-to-shell (`curl ... | sh`) in RUN | frob | | shell region scan, May |
+| CI001 | pinned-ref: no external `uses:` whose ref is not a 40-hex SHA unless the owner is in `allow_tag_pins_for` | P+ | Warn | bind zizmor `unpinned-uses`; grimble fallback |
+| CI002 | permissions-declared: a workflow with no top-level `permissions` and not every job declaring `permissions` | P- | Warn | grimble |
+| CI003 | no-top-level-write: top-level `permissions` contains a `write` scope or `write-all` | P+ | Warn | grimble (zizmor overlaps) |
+| CI004 | concurrency-on-pr: a push or pull_request workflow with no `concurrency` at workflow or job level | P- | Advisory | grimble |
+| CI005 | job-timeout: a job (not a reusable-workflow call) without `timeout-minutes`, or above `max_timeout` | P- | Advisory | grimble |
+| CI006 | no-prt-head-checkout: a `pull_request_target` or `workflow_run` workflow with a checkout whose ref or repository names the PR head | P+ | Error | bind zizmor `dangerous-triggers`; grimble fallback |
+| CI007 | no-event-interpolation-in-run: a `run:` text containing an expression whose context is in the `contexts` set (title, body, head ref, commit message and similar); a lexical scan of the opaque shell payload (universal-model.md 2.2) | P+ | Error (narrow set), Advisory (broad) | bind zizmor `template-injection` |
+| CI008 | publish-only-from-tag: a registry publish step in a workflow triggered by pull_request, pull_request_target or an untagged push | P+ | Warn | grimble (`registries` vocabulary) |
+| CI009 | publish-via-oidc: a publish job for a trusted-publishing registry that uses a token-named secret and lacks `id-token: write` | P+ | Advisory (Warn in strict) | grimble |
+| CI010 | checkout-no-persist: `actions/checkout` without `persist-credentials: false` in a workflow that uploads artifacts or runs third-party code | P+ | Advisory | bind zizmor `artipacked` |
+| CI011 | prt-least-token: a `pull_request_target` workflow without explicit read-only `permissions` | P- | Error | grimble |
+| CI012 | ci-repo-consistency: toolchain pin file versus workflow toolchain, `rust-version` versus the matrix, Dependabot ecosystems versus manifests, CODEOWNERS covering `.github/**`, frob verbs versus workflow commands | P0 | Warn | grimble (the unique join, through the F2 manifest adapter) |
+| CI013 | no-secrets-inherit: a job calling an external reusable workflow with `secrets: inherit` | P+ | Advisory | bind zizmor `secrets-inherit` |
+| CI014 | gha-syntax-and-schema: any actionlint finding other than an unknown runner label when labels are not configured | P+ | Warn | bind actionlint; Unresolved on schema lag |
+| CI015 | action-currency: an external action from an archived repository or on an end-of-life Node runtime (an offline table; "pin behind the latest release" is covered by Dependabot or Renovate presence under CI012, and an opt-in online check is `frob audit --online`, open question 3) | P+ | Advisory | bind zizmor `archived-uses` and actionlint |
+| DK001 | docker-non-root: the final stage has no `USER` other than root or 0 | P- | Advisory | grimble or hadolint DL3002 |
+| DK002 | docker-base-pinned: an external `FROM` without an `@sha256:` digest | P+ | Off (opt-in; needs automation) | grimble |
+| DK003 | docker-no-latest: an external `FROM` with no tag or `:latest` | P+ | Warn | grimble or hadolint DL3006 and DL3007 |
+| DK004 | docker-no-pipe-to-shell: a `RUN` text in which `curl` or `wget` output is piped to `sh` or `bash`; a lexical scan of the opaque shell payload; allowlist by URL host | P+ | Advisory | grimble or hadolint |
 
 Terraform, Helm, Kubernetes and Ansible: bind checkov, tflint,
-kube-linter and ansible-lint; frob owns nothing there until a
+kube-linter and ansible-lint; nothing is owned there until a
 repository in the fleet needs it.
 
 ## 6. Where this lands
 
-CI and DK are frob families (work accounting of the repository's own
-automation), not grimble families; grimble may later lint architecture
-constraints over the CI graph (which jobs may deploy where) as a data
-pack. The GitHub Actions and Dockerfile adapters are milestone-2
-tickets after gob-ir; the tool bindings for zizmor and actionlint can
-land earlier as `[[check.tool]]` entries with JSON parsers, which this
-repository should adopt for its own CI first.
+CI and DK are grimble families (D4 of the 2026-10-04 consistency pass,
+README D63): the placement test of boundaries.md holds because these
+rules make sense in a repository with no tickets, docs policy or release
+process. They are implemented in a new crate `grimble-ci`; NEAT stays in
+`grimble-lints`. The GitHub Actions and Dockerfile adapters live in
+gob-languages behind features `actions` and `dockerfile`, with
+gob-symbols adapters producing the U terms. frob orchestrates through
+the sibling contract (grimble-model.md 9.5) and through `[[check.tool]]`
+stages. The adapters are milestone-2 tickets after gob-ir (build-test-ci.md,
+Milestone 2 item 7); this repository adopts zizmor and actionlint
+through frob's `[[check.tool]]` stage first, before the adapters exist,
+with their JSON parsers and id maps in frob-check.
 
 ## 7. Open questions for the owner
 

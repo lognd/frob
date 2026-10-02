@@ -52,15 +52,17 @@ This table is the one path table; every other file links here.
 | CLI reference | `docs/reference/cli/<product>.md` (plus `docs/reference/cli/any.md` for the verbs shared by every product, such as `schema`) | clap derive doc comments | `cargo dev gen cli` |
 | man pages, completions (Milestone 2 or later (D36)) | `man/`, `completions/` | clap derive doc comments | `cargo dev gen cli` |
 | config reference and schema | `docs/reference/config.md`, `docs/schemas/config.json` | `ConfigTable` derive and schemars | `cargo dev gen config` |
-| rule pages | `docs/reference/rules/<ID>.md` (each embeds the rule's mdtest fire and clean examples) | `Rule` derive doc comment (must contain a Remedy section or it does not compile) | `cargo dev gen rules` |
+| rule pages | `docs/reference/rules/<ID>.md` (each embeds the rule's mdtest fire and clean examples; rows for severity, tier, scope, polarity and needs) | `Rule` derive doc comment (must contain a Remedy section or it does not compile) | `cargo dev gen rules` |
 | directives (shared by all products) | `docs/reference/directives.md`, `docs/schemas/directives.json` | the `Directive` derive | `cargo dev gen directives` |
 | envelope schema | `docs/schemas/envelope.json` | `gob-diagnostics` types | `cargo dev gen schemas` |
 <!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
-| errors, languages (Milestone 2 or later (D36)) | `docs/reference/errors.md`, `docs/reference/languages.md` | the error codes and the adapter matrix | `cargo dev gen` |
+| errors, languages and fidelity (Milestone 2 or later (D36)) | `docs/reference/errors.md`, `docs/reference/languages.md` | the error codes, the adapter matrix and the `frob doctor --languages` fidelity report (level, capability precision, NotApplicable rules per language) | `cargo dev gen` |
 <!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | capabilities | `docs/grimble/reference/capabilities.md` | `Capability` derive | `cargo dev gen` |
 <!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
-| ticket and per-verb response schemas (Milestone 2 or later (D36)) | `docs/schemas/ticket.json`, `docs/schemas/*-response.json` | ticket model and `--json` response types | `cargo dev gen schemas` |
+| ticket and per-verb response schemas (the `TicketSchema` derive is landed; the generated pages are Milestone 2 or later (D36)) | `docs/schemas/ticket.json`, `docs/schemas/*-response.json` | ticket model and `--json` response types | `cargo dev gen schemas` |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
+| sibling contract schema (Milestone 2 or later (D36)) | `docs/schemas/sibling.json`, `docs/schemas/grimble-graph.json` | the sibling `--json` types (grimble-model.md 9.5, 9.3) | `cargo dev gen schemas` |
 <!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | ADR index | `docs/decisions/README.md` | ADR frontmatter | `cargo dev gen adr-index` |
 | web types | `web/src/api.ts` | response schemas | `cargo dev gen ts` |

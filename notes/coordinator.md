@@ -115,6 +115,20 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 
 ## Status log (newest first)
 
+- 2026-10-04 (review pause, closing): owner asked for (1) a survey of
+  paradigms and a universal model with coverage proofs, (2) loud
+  failure on anything incomputable, (3) a neatness lint family from
+  Logan Smith's channel and his references plus the ruff PR 29076
+  dispatcher example, (4) a CI/CD survey of about 1000 repos. Delivered
+  universal-model.md, neatness.md, cicd.md, grimble-model.md section 9,
+  four research notes, two reviews, D56-D60. A consistency review (12 H
+  / 24 M / 9 L) is being applied by a fixer with decisions D1-D11 (see
+  notes/review/design-consistency-resolution.md). Owner: resume
+  implementation once integrated and reviewed. Next: cutover (merge
+  experimental into t-0025 keeping the v2 ledger, re-import the final
+  v1 ledger, verify, merge), then file milestone 2 with the v2 binary
+  in the order of build-test-ci.md "Milestone 2".
+
 - 2026-10-04: T-0035 landed (29 done). T-0025 (self-host switch) is
   complete on branch t-0025 and NOT merged: the cutover must re-import
   T-0035/T-0036 and merge by hand after the owner review. Design work

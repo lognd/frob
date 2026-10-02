@@ -68,7 +68,7 @@ through the same runner.
 | Other spawn class | Why | Bound |
 |---|---|---|
 | test runners and evidence providers | they are the thing being run | one per selected runner, within `[perf] jobs` |
-| `[[check.tool]]` entries (ruff, clippy, tsc, cargo doc, mdbook, lychee, typos, markdownlint) | opt-in external linters and doc gates | one per configured tool, concurrent, outside the 2 s check budget |
+| `[[check.tool]]` entries (ruff, clippy, tsc, cargo doc, mdbook, lychee, typos, markdownlint, zizmor, actionlint, hadolint) | opt-in external linters and doc gates | one per configured tool, concurrent, outside the 2 s check budget |
 | sibling `grimble check --json` and `crunk check --json` when not linked in | the orchestrated check | at most 1 per sibling per check |
 | `grimble vet --hook`, invoked by `frob hook pre-tool` | the install guard | 1 per guarded call |
 | out-of-process helpers (crunk's Tailwind runtime, playwright gallery) | stay out of process | one per crunk run |

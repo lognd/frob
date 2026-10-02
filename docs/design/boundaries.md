@@ -21,7 +21,10 @@ question lives; if it answers none, it is substrate.
 Decision rule for a rule id: if it still makes sense in a repository
 with no tickets, no docs policy and no release process, it is grimble.
 If it joins against tickets, docs, acks, tests, or release state, it is
-frob. If it needs a `crunk.toml`, it is crunk.
+frob. If it needs a `crunk.toml`, it is crunk. By this test the NEAT,
+CI and DK families (code neatness, and rules over the repository's own
+automation files) are grimble; frob only orchestrates the bound tool
+stages that feed them (section 2.5).
 
 All three are standalone binaries with their own config file
 (`frob.toml`, `grimble.toml`, `crunk.toml`), their own `check`, and
@@ -32,8 +35,10 @@ invoking the sibling binary's `--json` when installed separately (one of
 the allowed spawns), and merges findings into one report. A sibling whose
 config file exists but whose check is unavailable (not installed, or its
 `--json` carries a different `schema_version`) yields one Unresolved
-finding per missing product, so a check never silently omits a family.
-grimble and crunk never call frob.
+finding per missing product, marked `required`: under the default
+`[check] fail_on_unresolved = "required"` it fails the gate with exit 1
+(cli.md section 2 is the one definition), so a check never silently
+omits a family. grimble and crunk never call frob.
 
 ## 2. Capability map
 
@@ -46,42 +51,44 @@ Every capability named in the other design files and the v1 inventories.
 | gob-text | TextSize, TextRange (own newtypes; `ruff_text_size` rejected as an unstable internal crate), LineIndex, spans | every finding has a span |
 | gob-db | salsa database trait, File inputs, system abstraction; Milestone 2 or later (D36) | incremental core for all three |
 | gob-config | TOML loading, layering (Combine), `ConfigTable` derive, schema emit, located errors, missing-knob detection | three config files, one loader |
-| gob-languages | tree-sitter grammars (feature-gated), Language enum, extension dispatch | crunk needs CSS/TS, grimble needs all, frob needs comment extraction |
-| gob-symbols | parse query, normalized code model, container model, symbol addresses, three-facet digests, imports with confidence, call graph, public-API graph, effect-site extraction, explore views | the code-intelligence substrate; frob (xref, drift, affects, touched-set tests, semver), grimble (everything), crunk (TS module graph) |
-| gob-ir | structural IR (`IrNode`, `IrKind`, `ir_map`) only; Milestone 2 or later (D36) | universal rules and capability detectors |
+| gob-languages | tree-sitter grammars (feature-gated, including `actions` and `dockerfile`), the open Language registry, extension dispatch, location sorts | crunk needs CSS/TS, grimble needs all, frob needs comment extraction |
+| gob-symbols | the adapters that produce U terms for Rust and markdown (and, with their gob-languages features, GitHub Actions and Dockerfile): parse query, container model, symbol addresses, facet digests (scheme per universal-model.md 7.1), imports with Must/May/Unknown edges, call graph, public-API graph, effect-site extraction, explore views | the code-intelligence substrate; frob (xref, drift, affects, touched-set tests, semver), grimble (everything), crunk (TS module graph) |
+| gob-ir | the universal model U (universal-model.md): terms, scope graph with Must/May/Unknown, canonical facet stream, query interface, Kleene evaluator and answer lattice, atom registry and callee vocabularies; below gob-symbols, linked by frob and grimble; Milestone 2 or later (D36) | universal rules, capability detectors, digests, polarity; one model for every product |
 | gob-directives | comment/markdown directive parser with a namespace parameter (`frob:`, `grimble:`, `crunk:`), `Directive` derive, exception grammar (accept, defer, hotfix), PARSE and DSL findings | one DSL, three namespaces |
-| gob-rules | Rule trait, RuleMeta, Severity, Finding, exception parsing, matching and reason checking (EXC), ratchet pool, inventory registry, family namespaces | one registry across products so `frob check` can merge |
-| gob-macros | `Rule`, `Directive`, `Capability`, `Command`, `ConfigTable`, `TicketField`, `message_formats` | proc macros, tiny, stable |
+| gob-rules | Rule trait, RuleMeta (with polarity and needs), Severity, Finding (with `subjects_examined`, `source_rule`, `location`), exception parsing, matching and reason checking (EXC), ratchet pool, inventory registry, family namespaces; today exception application still lives in frob-obligations (`apply_exceptions`) and ticket G06 moves it here | one registry across products so `frob check` can merge |
+| gob-macros | `Rule`, `Directive`, `Capability`, `Command`, `ConfigTable`, `TicketSchema`, `message_formats` | proc macros, tiny, stable |
 | gob-diagnostics | renderers: text with remedy, JSON envelope, GitHub annotations, SARIF and JUnit (Milestone 2 or later (D36)); the exit-code contract of cli.md section 2, shared by all three binaries | one output contract |
 | gob-fix | Edit, Fix with tiers A/B/C, overlap resolution, dry-run diff, atomic write, fix journal | frob gates, grimble lints, crunk token rewrites all fix |
 | gob-walk | file discovery over `ignore`, globset, selectors (`path::qual` globs) | scope leases, owns selectors, crunk globs |
 | gob-cache | SQLite store per worktree keyed by content, parser identity, schema version; findings table; `busy_timeout`, best-effort writes, WAL readers | parse artifacts, findings, ticket index, crunk cache |
 | gob-git | gix repository handle, snapshot of HEAD/status/diff/worktrees, ledger commit and CAS ref writes (git-io.md); every spawn goes through gob-exec | frob (ledger, land), grimble and crunk (diff-scoped checks) |
 | gob-exec | the only crate that references `std::process`: bounded job pool, timeouts, env scrubbing, output caps with redaction, spawn registry and counter | test runners, external linters, Tailwind helper, git fallbacks, siblings |
-| gob-lock | lock file format and ack mechanics, one file per product (`frob.lock`, `grimble.lock`), the shared `ack` implementation | frob acks, grimble drift acks |
+| gob-lock | lock file format (typed entries, `digest_scheme`), ack mechanics and the ack planner, one file per product (`frob.lock`, `grimble.lock`), the shared `ack` implementation | frob acks, grimble drift acks |
 | gob-cli | clap conventions: global flags, `--json/--text/--schema`, did-you-mean, completions, help generation, `schema` | identical surface in three binaries |
 | gob-log | tracing subscriber setup, telemetry record, redaction, `--timing` span tree | one observability story |
 | gob-serve | MCP and HTTP transport plumbing on tokio (rmcp setup, JSON envelope over HTTP, SSE, token and Origin checks) | tools and routes stay per product |
 | gob-mdtest | markdown corpus harness over datatest-stable | rule tests in every product |
+| gob-check | the product-neutral check pipeline: snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble-model.md 9.7) | `frob check` and `grimble check` run one pipeline |
+| gob-pattern | the pattern engine for declarative rules: ast-grep shape at grammar level and over U roles (milestone 2, ticket G17, blocked by the `Doc`-over-U spike of rules.md section 3) | GPOL and NEAT-style rule files in every product |
 | gob-dev | the `cargo dev` binary (never shipped): `cargo dev gen` for every product (rule docs, CLI docs, schemas, config docs, TS types; it calls frob-release for the changelog), repo-internal rules (PROC, dependency layering) | one generator |
 
 ### 2.2 frob (project management and work accounting)
 
 | Crate | Capabilities |
 |---|---|
-| frob-ledger | ticket files, ULID ids and handle resolution, `TicketField` schema, events, comments, links with topology, custom fields, index, query language, merge driver, `migrate` from v1 |
+| frob-ledger | ticket files, ULID ids and handle resolution, `TicketSchema` schema, events, comments, links with topology, custom fields, index, query language, merge driver, `migrate` from v1 |
 | frob-pm | types and hierarchy requirements, structured stories, definitions of ready/done, cycles, velocity, capacity checks, forecasts (Monte Carlo, Little's law), flow metrics, WIP limits, `stats`, PM rule family; Milestone 2 or later (D36) |
 | frob-lease | scope leases in `.git/frob/leases` taken under one lock file, overlap on glob intersection or resolved file sets (symbol sets and append mode: Milestone 2 or later (D36)), TTL and heartbeat, steal, doable, wave, contention |
 | frob-worktree | `work`: worktree create or reuse (path convention in cli.md section 3), merge of main, start; `worktree sweep` and `remove`, reconcile |
 | frob-evidence | evidence providers (pytest, cargo test, ctest, vitest, junit, command), verdicts, acceptance binding, repro-at-parent, done-report composition |
 | frob-tests | touched-set selection from the gob-symbols graph and the diff, runner templates per language, coverage stamp |
-| frob-obligations | the accounting rule families of section 2.5 (DRIFT through NARR and POL), and the ticket-bound exception exits EXC005 and EXC007 with the close guard |
-| frob-ack | `frob.lock` entries (format and mechanics from gob-lock), acks with reasons, stale and dangling detection, rename candidates, `why` and `affects` views |
+| frob-obligations | the accounting rule families of section 2.5 (DRIFT through NARR and POL), and the ticket-bound exception exits EXC003 and EXC007 with the close guard (EXC005, the accept digest check, is emitted here too in milestone 1) |
+| frob-ack | `frob.lock` symbol entries (format, mechanics and, from ticket G05, the ack planner in gob-lock), acks with reasons, stale and dangling detection, rename candidates, `why` and `affects` views |
 | frob-land | the land transaction, CAS publish, passenger detection, deletion filter, LAND-PROOF, the land lock and `--wait <secs>` (no jobs) |
 | frob-release | release objects, version authority, changelog fragments and `frob release changelog` compilation, semver from the gob-symbols public-API graph, stamp, publish |
 | frob-fleet | fleet manifest, cross-repo status and routing; Milestone 2 or later (D36) |
 | frob-explore | outline, map, xref, docs search, graph query (thin views over gob-symbols; also exposed by grimble, see 3.3) |
-| frob-check | orchestration of frob's families plus sibling products, selection, `--ticket` scoping, tool-output parsers for `[[check.tool]]`, `status` |
+| frob-check | orchestration of frob's families plus sibling products over gob-check, selection, `--ticket` scoping, tool-output parsers and id maps for `[[check.tool]]`, `status` |
 | frob-gh | GitHub over HTTPS: PR for a land, CI status, releases, issue import (Milestone 2 or later (D36)) |
 | frob-hook | `frob hook <event>` guards for agent harnesses; `pre-tool` invokes `grimble vet --hook` as a sibling spawn |
 | frob-serve | MCP tools and the HTTP API on `gob-serve`; embeds the GUI SPA (gui.md); Milestone 2 or later (D36) |
@@ -96,8 +103,9 @@ Every grimble crate is Milestone 2 or later (D36).
 | grimble-model | `.grmb` parser with spans, multi-file modules, typed attrs, selectors (`owns`, `surface`, `at`), flows with producer/consumer/contract, boundaries, claims, V-model, exceptions (the four kinds), JSON export, v1 strata import (`grimble migrate`) |
 | grimble-kernel | label closure, SCC longest-path age, demand and capacity, V-model closure, claim verdicts with witnesses, assumes with expiry |
 | grimble-bind | model-to-symbol resolution, ambiguity, FOREIGN, the `binds` cross-language edge with per-`via` signature comparison, contract fingerprints, drift findings (SYS family), shrink, `grimble ack` on gob-lock |
-| grimble-capabilities | capability atoms (`Capability` derive), per-language detectors over the IR, the node x capability matrix with `excuses`, CAP family |
-| grimble-lints | universal rules over the IR (sort in loop, network in retry loop, secret literal, ...), language-specific structural rules (tree-sitter queries or ast-grep patterns), callee vocabularies, GPOL user policy over code |
+| grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble-model.md 9.6) with `excuses`, CAP family |
+| grimble-lints | universal rules over U (sort in loop, network in retry loop, secret literal, ...), the NEAT family (neatness.md), language-specific structural rules (tree-sitter queries or ast-grep patterns), GPOL user policy over code; callee vocabularies are views over the gob-ir registry |
+| grimble-ci | the CI and DK families (cicd.md) over the GitHub Actions and Dockerfile adapters, CI012 consistency joins through the F2 manifest adapter (grimble-model.md 9.8) |
 | grimble-arch | metrics core (size, nesting, LCOM, coupling), layering contracts, CYCLE, DEAD, LARGE, dup rungs R1-R5 |
 | grimble-security | SEC and PII structural patterns, secrets, CVE fingerprints as a data pack |
 | grimble-vet | dependency vetting: lockfile allowlist, advisories (OSV, RustSec), typosquat, install-script and capability scan of dependencies, delta-only mode, `vet --hook` pre-install mode that `frob hook pre-tool` invokes |
@@ -135,8 +143,9 @@ namespaces families by product so a foreign family is never unknown.
 | NARR | frob | frob-obligations | ticket narrative in comments (documentation.md section 4) |
 | POL | frob | frob-obligations | user policy over tickets and docs; `[[policy]]` in frob.toml |
 | PM | frob | frob-pm | pm-enforcement.md |
-| EXC001-004, EXC006, EXC008-012 | the product whose rule is excepted | gob-rules | reason checker, staleness, date expiry, budgets |
-| EXC005, EXC007 | frob | frob-obligations | ticket-bound exits, evaluated by frob only from sibling `--json` (3.2) |
+| EXC001-002, EXC004, EXC006, EXC008-013, EXC016-017 | the product whose rule is excepted | gob-rules | reason checker, staleness, date expiry, budgets (EXC001 and EXC005 are emitted from frob-obligations in milestone 1, D45) |
+| EXC003, EXC007, EXC014, EXC015 | frob | frob-obligations | ticket-bound exits, evaluated by frob only from sibling `--json` (3.2) |
+| EXC005 | frob | frob-obligations | `accept` digest check against `frob.lock` (D45) |
 | CFG | each product | gob-config detects, each product's check crate emits | CFG001, missing materialized knob |
 | PARSE, DSL | the product whose file or directive is malformed | gob-directives | one id each, parametric |
 | SYS, BIND | grimble | grimble-bind | model drift and cross-language edges |
@@ -144,6 +153,8 @@ namespaces families by product so a foreign family is never unknown.
 | CYCLE, ARCH, LARGE, DEAD, DUP | grimble | grimble-arch | structure metrics |
 | SEC, PII | grimble | grimble-security | structural security patterns |
 | VET | grimble | grimble-vet | dependency vetting |
+| NEAT | grimble | grimble-lints | neatness (neatness.md); NEAT001-NEAT037; knobs in `grimble.toml` `[neat]`; tool-bound NEAT findings arrive through frob's `[[check.tool]]` stages |
+| CI, DK | grimble | grimble-ci | CI001-CI015 and DK001-DK004 (cicd.md); knobs in `grimble.toml` `[ci]`; adapters in gob-languages (features `actions`, `dockerfile`) and gob-symbols; CI012 reads manifests through the F2 manifest adapter; frob adopts zizmor and actionlint through `[[check.tool]]` before the adapters exist |
 | GPOL | grimble | grimble-lints | user policy over code; `rules/*.grl.toml` next to grimble.toml and `[[policy]]` in grimble.toml |
 | COLOR, SPACE, TYPE, RADIUS, SIZE, LAYER, CONTRAST, ORG, TW, BP | crunk | crunk-rules | notes/crunk.md section 4 |
 | GALLERY | crunk | crunk-gallery | gallery checks |
@@ -196,7 +207,7 @@ the product whose rule is excepted. Exceptions whose exit names a ticket
 grimble and crunk parse such an exception, treat `ticket=` as opaque and
 emit it in their `--json`; frob's orchestrated check reads that JSON to
 decide EXPIRED and to block closing a ticket a defer still points at.
-Standalone grimble or crunk reports such an exception as Unresolved-exit.
+Standalone grimble or crunk reports such an exception as UnresolvedExit (an exception state, not the Unresolved severity).
 The `.grmb` language uses the same four kinds (grimble-model.md section
 2). Ack mechanics live in gob-lock: `frob.lock` for frob and
 `grimble.lock` for grimble, each with its own `ack` verb. The audit view
@@ -230,7 +241,7 @@ lives in gob-symbols so frob does not depend on grimble.
 
 ### 3.7 Policy rules written by users
 
-Policy over code (tree-sitter queries, IR patterns) is grimble: `GPOL`
+Policy over code (tree-sitter queries, patterns over U) is grimble: `GPOL`
 rules in `rules/*.grl.toml` next to `grimble.toml`. Policy over tickets
 and docs (for example "every security ticket needs a threat field") is
 frob: `POL` rules under `[[policy]]` in `frob.toml`. Both compile into
@@ -245,8 +256,8 @@ by `frob hook pre-tool` as a sibling spawn.
 ### 3.9 grimble data that frob consumes
 
 frob reads grimble entities and `binds` edges only through
-`grimble --json` (checked `schema_version`, Unresolved when grimble is
-absent). `binds` directives are the `grimble:` namespace and are
+`grimble --json` (checked `schema_version`; a configured grimble that is
+absent is a required Unresolved, cli.md section 2). `binds` directives are the `grimble:` namespace and are
 resolved in grimble-bind; frob never parses them. A ticket `implements`
 link to a `design:` entity, and frob's evidence reach across a `binds`
 edge, therefore use the exported entity and edge lists. The capability
@@ -262,16 +273,16 @@ census is `grimble check --census capabilities`.
 | frob-pm as its own product (planning without enforcement) | no | planning that cannot be checked is Jira; the value is the join with leases, evidence, and landing |
 | the GUI as its own binary | no | stateless over frob's handlers; it ships inside frob-serve |
 | server runtime (MCP, HTTP) shared as gob-serve | yes, small | transport plumbing (rmcp setup, JSON envelope over HTTP, SSE) is identical; tools and routes stay per product |
-| the former single syntax crate split into gob-symbols (identity, digests, imports, call graph, public-API graph) and gob-ir (structural IR only) | yes | frob needs imports and the call graph (AFFECT, COV private-reach, touched-set tests, INV forbidden-import, semver), so they live with symbols; only IR code stays out of frob's build |
+| the former single syntax crate split into gob-symbols (identity, digests, imports, call graph, public-API graph) and gob-ir (the universal model) | yes, revised by D56 | frob needs imports and the call graph (AFFECT, COV private-reach, touched-set tests, INV forbidden-import, semver), so they live in gob-symbols; gob-ir sits below gob-symbols (the adapters produce U terms) and frob links it from milestone 2 for digests, polarity and the CI adapters, so the earlier claim that gob-ir stays out of frob's build no longer holds |
 | gob-languages per language family crates | yes (already in code-model.md) | feature-gated grammar crates keep C builds local |
 | gob-git split into read snapshot and write transaction | no | one crate, two modules; the spawn registry must see both |
 | ack mechanics inside frob-ack only | no | grimble needs drift acks; they move to gob-lock with one file per product |
 
-Net: additions are gob-serve, gob-ir (split out of the former
-syntax crate), gob-lock and grimble-serve; gob-db (salsa) is a milestone-2
-crate. No new products. Three binaries, about 20 substrate crates, 16
-frob crates, 11 grimble crates, 10 crunk crates. Each crate builds and
-tests alone.
+Net: additions are gob-serve, gob-ir (the universal model, below
+gob-symbols), gob-lock, gob-check, gob-pattern, grimble-serve and
+grimble-ci; gob-db (salsa) is a milestone-2 crate. No new products.
+Three binaries, 24 substrate crates (gob-dev included), 16 frob crates,
+12 grimble crates, 10 crunk crates. Each crate builds and tests alone.
 
 ## 5. Naming
 
@@ -288,7 +299,10 @@ tests alone.
 
 ## 6. Dependency rules (enforced by a repo-internal rule over Cargo metadata)
 
-- `gob-*` depends only on `gob-*`.
+- `gob-*` depends only on `gob-*`. Substrate order from milestone 2:
+  gob-text and gob-macros at the bottom, then gob-languages, then
+  gob-ir, then gob-symbols, then gob-directives; gob-rules uses the
+  answer lattice from gob-ir.
 - `frob-*`, `grimble-*`, `crunk-*` depend on `gob-*` and on their own
   product's crates; never on another product's crates.
 - The one exception: the `frob` binary with feature `bundle` also
@@ -297,8 +311,10 @@ tests alone.
   pin the bundled grimble and crunk crate versions in lockstep; a build
   without `bundle` (for example crates.io `frob-cli`) behaves the same
   except that a configured sibling it cannot run is an Unresolved
-  finding, never a silent omission; and sibling `--json` output carries
-  `schema_version`, which frob checks and refuses on mismatch.
+  finding (required under the default `[check] fail_on_unresolved`,
+  exit 1; cli.md section 2), never a silent omission; and sibling
+  `--json` output carries `schema_version`, which frob checks, treating
+  a mismatch as an incompatible sibling (the same required Unresolved).
 - Only `gob-exec` references `std::process`; gob-git and every other
   crate spawn through it.
 - Only `gob-serve`, `frob-serve`, `grimble-serve` and `frob-gh` use

@@ -14,11 +14,16 @@ tickets were kept open forever; self-citing follow_up blocked lands).
 An exception suppresses one rule at one site. What differs is how it
 ends. The kind is mandatory and determines the exit condition the tool
 can evaluate without human judgement; there is no kind whose exit is
-"someone remembers".
+"someone remembers". Which findings each kind may park: an Unresolved
+finding (universal-model.md 4.2) can be parked only by `defer` (with a
+ticket) or `baseline`, never by `accept`, because accepting a loud
+"could not examine" would silence the failure without supplying the
+declaration that fixes it; an `accept` that names an Unresolved finding
+is EXC016.
 
 | Kind | Meaning | Exit condition (evaluated by the tool) | Must carry |
 |---|---|---|---|
-| `accept` | this rule does not apply here by design; permanent | never expires, but is re-validated: becomes STALE when a fresh full evaluation finds no matching finding, and REATTEST when the bound symbol's body digest differs from the attested digest stored in `exceptions.toml` by the accept verb | `because` naming an ADR, a style anchor, or a one-sentence reason; for Error-severity rules a `review` event by a second identity or by an owner listed in `[exceptions] owners` (an audit trail, not an authorization control: the actor is a label, so a determined caller can set any label; real approval control is the host's review and branch protection) |
+| `accept` | this rule does not apply here by design; permanent | never expires, but is re-validated: becomes STALE when a fresh full evaluation finds no matching finding, and REATTEST when the bound symbol's body digest differs from the attested digest the accept verb recorded as a lock entry in `frob.lock` (D45; the one REATTEST source) | `because` naming an ADR, a style anchor, or a one-sentence reason; for Error-severity rules a `review` event by a second identity or by an owner listed in `[exceptions] owners` (an audit trail, not an authorization control: the actor is a label, so a determined caller can set any label; real approval control is the host's review and branch protection) |
 | `defer` | real debt, to be paid by a ticket | the named ticket reaches a terminal state (then the defer goes red until removed), or an optional earlier `until` date or metric target | an open ticket of type bug, task or chore; a reason |
 | `hotfix` | a quick solution that must be revisited | hard expiry at `[exceptions] hotfix_days` (default 14), no extension; converting to `defer` requires a ticket; `land --hotfix` files the follow-up ticket itself | reason; the auto-filed ticket id |
 | `baseline` | mass legacy findings admitted when a rule is introduced or tightened | a baselined key disappears when its finding disappears; the pool can only shrink; a key may be removed with a reason, never added after creation | the rule id, creation reason, and the pool file |
@@ -36,7 +41,8 @@ frob knows tickets (D28). grimble and crunk parse the exception, treat
 `ticket=` as an opaque string and emit it in their `--json`; frob's
 orchestrated check reads that JSON to decide EXPIRED and to enforce the
 close guard. A standalone grimble or crunk reports such an exception as
-Unresolved-exit: parsed, valid, not evaluable here. Date-based and
+UnresolvedExit (an exception state, not the Unresolved severity of
+universal-model.md 4.1): parsed, valid, not evaluable here. Date-based and
 digest-based exits are evaluated by each product itself. The budget per
 component uses frob's component registry, so budgets are frob's too.
 
@@ -66,9 +72,11 @@ live in `exceptions.toml` at the repo root (tracked), with one array
 per product (`[[frob.exception]]`, `[[grimble.exception]]`,
 `[[crunk.exception]]`; each product reads only its own), one table per
 exception with the same fields plus `scope = "crates/x/**"`. The same
-file holds the attestation of every `accept` (`[[frob.attest]]`: the
-exception id, `attested_digest`, `attested_at`), written by the accept
-verb; REATTEST compares the live digest with it. The baseline pool is
+file holds only exception records; the attestation of every `accept`
+(the attested body digest and time) is written by the accept verb as a
+`symbol` entry in `frob.lock` (gob-lock, D45), and REATTEST compares the
+live digest with it, so there is one source of truth for the digest. The
+baseline pool is
 `<product>-ratchet.lock.json` as before. grimble and crunk use the same
 primitive through `gob-rules` with their own namespaces
 (`grimble:accept`, `crunk:defer`).
@@ -102,7 +110,12 @@ RETIRED, is the `--fix` for EXC rules), `budget` (section 4).
 STALE is decided only from a fresh full evaluation of that rule over
 that file in the current run: never from a cached memo, never after an
 `--only` run that skipped the rule, and never after a rule version bump
-or a deleted `.frob/` (unknown is not stale). `exceptions prune`
+or a deleted `.frob/` (unknown is not stale). A site where the rule's
+outcome in this run was Unresolved (an opaque subject, a `hole` such as
+a parse error, a May edge) is not stale either: it is unprovable, so the
+rule outcome must carry its Unresolved sites and neither EXC013 nor
+`exceptions prune` may treat an accept there as matching nothing.
+`exceptions prune`
 performs that evaluation itself before removing anything. A baseline
 key is a fingerprint (rule id, symref or file path, hash of the
 normalized message), never a line number.
@@ -165,8 +178,10 @@ Milestone 2 or later (D36), designed and not yet implemented:
 | EXC013 | exception is STALE (a fresh full evaluation finds no match; Warn, the fix is `prune`) | gob-rules |
 | EXC014 | `defer` EXPIRED by date or metric target (`until=`) | frob-obligations (ticket-bound, frob only) |
 | EXC015 | `defer` names a ticket not of an allowed type, or names itself | frob-obligations (ticket-bound, frob only) |
+| EXC016 | `accept` names a rule at a site where the finding is Unresolved (park it with `defer` or `baseline`) | gob-rules |
+| EXC017 | a native suppression (`#[allow(...)]`, `# zizmor: ignore[...]`, `// eslint-disable`) of a rule bound through a `[[check.tool]]` stage with no matching frob exception | gob-rules |
 
-Severity defaults: EXC005 is Warn in milestone 1; from Milestone 2 EXC004
+Severity defaults: EXC016 is Error and EXC017 is Warn; EXC005 is Warn in milestone 1; from Milestone 2 EXC004
 is Warn for `[exceptions] reattest_warn_days` (default 14) then Error,
 measured from the commit date of the change that made the digest differ
 (found through the symbol history; nothing extra is stored); EXC013 is
