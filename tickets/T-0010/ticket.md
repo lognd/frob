@@ -1,5 +1,5 @@
 ---
-id: T-draft-74acb3a1
+id: T-0010
 title: 'gob-git: gix reads, ledger commit from a ref tree, CAS ref update'
 state: queued
 kind: feature
