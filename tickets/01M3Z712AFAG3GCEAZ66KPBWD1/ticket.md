@@ -2,7 +2,8 @@
 id = "01M3Z712AFAG3GCEAZ66KPBWD1"
 title = "Unresolved gate: fail_on_unresolved knob, required marks, exit 1"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
