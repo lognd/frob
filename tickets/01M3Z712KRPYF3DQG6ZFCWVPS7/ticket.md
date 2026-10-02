@@ -2,13 +2,13 @@
 id = "01M3Z712KRPYF3DQG6ZFCWVPS7"
 title = "G02: binding semantics over U"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-02T21:06:23Z"
+updated = "2026-10-02T21:19:42Z"
 idempotency_key = "m2-binding"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]

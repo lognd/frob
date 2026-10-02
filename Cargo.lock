@@ -2055,6 +2055,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-ir"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "criterion",
+ "gob-rules",
+ "gob-text",
+ "inventory",
+ "proptest",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "gob-languages"
 version = "0.0.0"
 dependencies = [

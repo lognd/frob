@@ -2,13 +2,14 @@
 id = "01M3Z712DPZN71ZQDS6PXY6QQV"
 title = "gob-ir: U terms, scope graph with status, canonical facet stream, queries, Kleene evaluator"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-02T21:06:43Z"
+updated = "2026-10-02T21:35:11Z"
 idempotency_key = "m2-ir"
 labels = ["milestone:2"]
 scope = ["crates/gob-ir/**"]
