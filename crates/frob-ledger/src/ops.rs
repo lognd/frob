@@ -18,7 +18,7 @@ use crate::links::{Edge, check_add, check_parent};
 use crate::model::{
     Category, CommentSubtype, Link, LinkKind, LinkOp, Outcome, Points, Priority, Ticket, TicketType,
 };
-use crate::schema::{get_field, set_field};
+use crate::schema::{FieldKind, field, get_field, set_field};
 
 /// A request to create a ticket.
 #[derive(Debug, Clone)]
@@ -87,7 +87,7 @@ impl NewTicket {
     }
 }
 
-/// A patch for `update`: field sets plus label edits.
+/// A patch for `update`: field sets, list edits and explicit clears.
 #[derive(Debug, Clone, Default)]
 pub struct Patch {
     /// `(field, new value)`; `None` unsets an optional field.
@@ -96,6 +96,12 @@ pub struct Patch {
     pub add_labels: Vec<String>,
     /// Labels to remove.
     pub remove_labels: Vec<String>,
+    /// Scope globs to add (no-op when present).
+    pub add_scope: Vec<String>,
+    /// Scope globs to remove (no-op when absent).
+    pub remove_scope: Vec<String>,
+    /// List fields to empty; the only way to empty a list.
+    pub clears: Vec<String>,
     /// Reason recorded on the events (required when changing `flavour`).
     pub reason: Option<String>,
 }
@@ -352,6 +358,11 @@ impl Ledger {
         let mut events = Vec::new();
         for (name, new) in &patch.sets {
             let old = get_field(&work, name);
+            if is_list_field(name) && new.as_ref().is_none_or(is_empty_list) {
+                return Err(LedgerError::invalid(format!(
+                    "refusing to empty list field `{name}` with --set; use --clear {name} to empty it"
+                )));
+            }
             if old == *new {
                 continue;
             }
@@ -388,26 +399,39 @@ impl Ledger {
                 }),
             ));
         }
-        if !patch.add_labels.is_empty() || !patch.remove_labels.is_empty() {
-            let mut labels = work.front.labels.clone();
-            labels.retain(|l| !patch.remove_labels.contains(l));
-            for l in &patch.add_labels {
-                if !labels.contains(l) {
-                    labels.push(l.clone());
-                }
+        for name in &patch.clears {
+            if !is_list_field(name) {
+                return Err(LedgerError::invalid(format!(
+                    "--clear applies to list fields only, and `{name}` is not one"
+                )));
             }
-            if labels != work.front.labels {
-                let old = get_field(&work, "labels");
-                let new = (!labels.is_empty()).then(|| {
-                    toml::Value::Array(labels.iter().cloned().map(toml::Value::String).collect())
-                });
+            let old = get_field(&work, name);
+            if old.is_none() {
+                continue;
+            }
+            set_field(&mut work, name, None).map_err(LedgerError::invalid)?;
+            tracing::info!(ticket = %id, field = %name, "list field cleared");
+            events.push(Event::new(
+                &actor,
+                EventBody::Field(FieldChange {
+                    field: name.clone(),
+                    old,
+                    new: None,
+                    reason: patch.reason.clone(),
+                }),
+            ));
+        }
+        let edits = [
+            ("labels", &patch.add_labels, &patch.remove_labels),
+            ("scope", &patch.add_scope, &patch.remove_scope),
+        ];
+        for (name, add, remove) in edits {
+            if let Some(change) = edit_list(&mut work, name, add, remove)? {
                 events.push(Event::new(
                     &actor,
                     EventBody::Field(FieldChange {
-                        field: "labels".to_owned(),
-                        old,
-                        new,
                         reason: patch.reason.clone(),
+                        ..change
                     }),
                 ));
             }
@@ -704,4 +728,48 @@ fn dedup(mut v: Vec<String>) -> Vec<String> {
     let mut seen = BTreeSet::new();
     v.retain(|s| seen.insert(s.clone()));
     v
+}
+
+/// Whether `name` is a settable list field (scope, labels, aliases).
+fn is_list_field(name: &str) -> bool {
+    field(name).is_some_and(|d| d.settable && matches!(d.kind, FieldKind::List))
+}
+
+/// Whether a TOML value is an empty array.
+fn is_empty_list(v: &toml::Value) -> bool {
+    v.as_array().is_some_and(Vec::is_empty)
+}
+
+/// Add and remove entries of list field `name` on `work`; the field change when the list differs.
+fn edit_list(
+    work: &mut Ticket,
+    name: &str,
+    add: &[String],
+    remove: &[String],
+) -> Result<Option<FieldChange>> {
+    if add.is_empty() && remove.is_empty() {
+        return Ok(None);
+    }
+    let old = get_field(work, name);
+    let mut list = match &old {
+        Some(toml::Value::Array(a)) => a.clone(),
+        _ => Vec::new(),
+    };
+    list.retain(|v| v.as_str().is_none_or(|x| !remove.iter().any(|r| r == x)));
+    for a in add {
+        if !list.iter().any(|v| v.as_str() == Some(a.as_str())) {
+            list.push(toml::Value::String(a.clone()));
+        }
+    }
+    let new = (!list.is_empty()).then_some(toml::Value::Array(list));
+    if new == old {
+        return Ok(None);
+    }
+    set_field(work, name, new.as_ref()).map_err(LedgerError::invalid)?;
+    Ok(Some(FieldChange {
+        field: name.to_owned(),
+        old,
+        new,
+        reason: None,
+    }))
 }

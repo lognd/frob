@@ -172,6 +172,9 @@ pub struct Update {
     sets: Vec<(String, String)>,
     add_labels: Vec<String>,
     remove_labels: Vec<String>,
+    add_scope: Vec<String>,
+    remove_scope: Vec<String>,
+    clears: Vec<String>,
     reason: Option<String>,
 }
 
@@ -182,13 +185,22 @@ impl Command for Update {
         cmd.arg(ticket_arg())
             .arg(many_flag(
                 "set",
-                "FIELD=VALUE to set (repeatable; empty value unsets); lists are comma separated",
+                "FIELD=VALUE to set (repeatable; empty value unsets a scalar, lists need --clear); lists are comma separated",
             ))
             .arg(text_flag("title", "New title"))
             .arg(choice_flag("priority", Priority::NAMES, "New priority"))
             .arg(text_flag("points", "New story points"))
             .arg(many_flag("add-label", "Label to add (repeatable)"))
             .arg(many_flag("remove-label", "Label to remove (repeatable)"))
+            .arg(many_flag("add-scope", "Scope glob to add (repeatable)"))
+            .arg(many_flag(
+                "remove-scope",
+                "Scope glob to remove (repeatable)",
+            ))
+            .arg(many_flag(
+                "clear",
+                "List field to empty (repeatable); the only way to empty a list",
+            ))
             .arg(text_flag("reason", "Why (required when changing flavour)"))
     }
 
@@ -214,6 +226,9 @@ impl Command for Update {
             sets,
             add_labels: get_many(m, "add-label"),
             remove_labels: get_many(m, "remove-label"),
+            add_scope: get_many(m, "add-scope"),
+            remove_scope: get_many(m, "remove-scope"),
+            clears: get_many(m, "clear"),
             reason: get(m, "reason"),
         })
     }
@@ -224,6 +239,9 @@ impl Command for Update {
         let mut patch = Patch {
             add_labels: self.add_labels.clone(),
             remove_labels: self.remove_labels.clone(),
+            add_scope: self.add_scope.clone(),
+            remove_scope: self.remove_scope.clone(),
+            clears: self.clears.clone(),
             reason: self.reason.clone(),
             ..Patch::default()
         };
