@@ -1,5 +1,5 @@
 ---
-id: T-draft-8279a6a3
+id: T-0028
 title: 'TicketField derive: generate ticket frontmatter serde, schema and docs table
   from one declaration'
 state: queued
