@@ -1,0 +1,299 @@
+# Architecture: workspace, data flow, errors, logging
+
+Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Inputs: notes/rust-ecosystem.md, notes/v1/ops-and-integrations.md
+(telemetry), notes/v1/gates-and-rules.md.
+
+## 1. Shape
+
+Three binaries (`frob`, `grimble`, `crunk`) from one Cargo workspace,
+strict downward dependencies, about 57 crates in four groups. The
+authoritative capability-to-crate map is boundaries.md; the shape:
+
+```
+crates/
+  gob-*        substrate, depends only on gob-*:
+               text config languages symbols directives rules macros
+               diagnostics fix walk cache git exec cli log lock serve
+               mdtest dev; milestone 2 or later (D36): db (salsa), ir
+  frob-*       ledger pm lease worktree evidence tests obligations ack land
+               release fleet explore check gh hook serve
+  grimble-*    model kernel bind capabilities lints arch security vet packs
+               check serve
+  crunk-*      values spec ingest tailwind rules tokens query gallery adapters
+  frob, grimble, crunk     thin binaries
+```
+
+`gob-dev` is the one substrate crate that is a binary: the `cargo dev`
+generator (ruff's ruff_dev pattern), never shipped. Layering, enforced
+by a repo-internal rule over Cargo metadata and by the dependency graph:
+`gob-*` depends only on `gob-*`; product crates depend on `gob-*` and
+their own product; products never depend on each other, with the one
+stated exception that the `frob` binary with feature `bundle` links
+`grimble-check` and crunk's check crate to run them in-process
+(boundaries.md section 6). Within the substrate the real order is:
+`gob-text` and `gob-macros` at the bottom (neither depends on another
+workspace crate); then `gob-config`, `gob-languages` and
+`gob-directives` (text only); `gob-symbols` (languages); `gob-ir`
+(symbols; Milestone 2 or later (D36)); `gob-rules` (text, config,
+directives, symbols); then `gob-walk`, `gob-cache`, `gob-git`,
+`gob-exec`, `gob-log`, `gob-lock`, `gob-diagnostics`, `gob-fix`; and
+`gob-serve`, `gob-mdtest` and `gob-db` (salsa, Milestone 2 or later
+(D36)) on top.
+
+## 2. Data flow of one invocation
+
+1. `main` builds `Cli` (clap derive via `gob-cli`), installs tracing,
+   opens the repository once through `gob-git` (gix, no subprocess),
+   opens `.frob/cache.db`, records invocation start (telemetry spans the WHOLE
+   process this time; v1 timed only dispatch and missed test and graph
+   entirely).
+2. The command handler asks the snapshot layer for what it needs.
+   Inputs are files (content by blake3), config, git facts (HEAD, diff
+   vs base), ticket files. Derived data: parse artifacts, symbols,
+   directives, imports and call graph, ticket index, snapshot joins, and
+   rule findings. Milestone 1 computes these with plain rayon functions
+   over per-file memo tables; from milestone 2 the same keys back a
+   salsa `Db` (`gob-db`, Milestone 2 or later (D36)).
+3. Results that are expensive and stable are persisted to the SQLite
+   file of this worktree (`.frob/cache.db`): parse artifacts keyed by
+   (content blake3, adapter id, schema version); per-file findings keyed
+   by (file digest, rule id, rule version, side-input digest); repo-scope
+   findings keyed additionally by a graph digest. Persistence happens
+   from the command layer after queries return, never inside a query;
+   writes are best-effort with a `busy_timeout`, and a failed write is a
+   logged cache miss, never an error. A long-lived `frob serve` keeps
+   the same data warm in memory (Milestone 2 or later (D36)).
+4. Render through `gob-diagnostics`; every finding carries a remedy
+   string generated from the rule's `fix_title` or `remedy` doc section.
+5. Exit code per the table in cli.md section 2: 0 ok (domain state such
+   as "findings exist" is not a failure), 1 negative domain answer when
+   requested, 2 usage, 3 refused by a guard with remedy and
+   `retryable`, 4 internal error.
+
+Performance budget (from v1 telemetry: `ticket show` median 2.7s,
+`check` median 220s, half of all invocations were land status polls):
+
+| Operation | v2 target |
+|---|---|
+| any read-only ticket verb | < 50 ms |
+| any ticket mutation | < 100 ms |
+| warm scoped check | < 1 s |
+| warm full check, 100k lines | < 2 s |
+| cold full parse, 100k lines | parse-bound, parallel |
+| land, excluding tests | < 5 s |
+
+"Warm" means a fresh process with a populated per-worktree `.frob/`
+cache; it does not mean a daemon. External tool stages (`[[check.tool]]`)
+and the documentation gates are outside the 2 s budget and are reported
+as separate stages in `--timing`. `ticket close` and `land` run
+evidence, measurers and checks and are outside the 100 ms mutation
+budget; they obey the timeout contract of cli.md section 3. The bench
+crate measures the fresh-process case.
+
+## 3. Storage
+
+| Artifact | Location | Tracked |
+|---|---|---|
+| tickets | `tickets/<ulid>/ticket.md` (TOML frontmatter + markdown) | yes |
+| ticket events (comments are events) | `tickets/<ulid>/events/<ulid>.toml` | yes |
+| non-ticket events (budget raises, audits, reviews of exceptions) | `events/<ulid>.toml` at the repo root | yes |
+| acks | `frob.lock`, `grimble.lock` (one lock file per product, `gob-lock`) | yes |
+| exceptions | `exceptions.toml` (one array per product: `[[frob.exception]]`, `[[grimble.exception]]`, `[[crunk.exception]]`, plus attestation entries) | yes |
+| ratchet pools | `frob-ratchet.lock.json`, `grimble-ratchet.lock.json` | yes |
+| quarantine (Milestone 2 or later (D36)) | `frob-quarantine.json` | yes |
+| design model | `design/*.grmb` (grimble) | yes |
+| invariants, decisions | `invariants/INV-*.md`, `docs/decisions/*.md` | yes |
+| config | `frob.toml`, `grimble.toml`, `crunk.toml` (one per product) | yes |
+| leases | `.git/frob/leases/<ulid>.toml` plus `.git/frob/lease.lock`; single clone, shared by its worktrees | no |
+| local evidence artifacts | `.git/frob/artifacts/` (non-authoritative; a missing blob reads as Unmeasured) | no |
+| cache, index, telemetry | `.frob/` per worktree | no, delete-safe |
+
+Nothing authoritative under `.frob/`. Deleting it costs one cold parse.
+The deliberate non-git state is exactly: leases (loss means locks
+vanish; no data is lost), local evidence artifacts (loss degrades
+verdicts to Unmeasured, which is never a finding on a terminal ticket),
+and the per-worktree cache. Plan tokens are digests recomputed at apply
+and stored nowhere; there is no job store in milestone 1.
+
+## 4. Errors
+
+Library crates return `Result<T, E>` with per-crate error sets. The
+house idiom is typani's ErrorSet; in Rust that is `error_set!` (crate
+`error_set`), trialled first in `frob-ledger` (decided 2026-10-02;
+notes/rust-ecosystem.md flags its miette interop as unverified); if its miette interop
+disappoints, fall back to `thiserror` enums with a shared `Code` trait.
+Rules for every crate:
+
+- Every error variant has a stable code (`E-LEDGER-NOTFOUND`) and a
+  remedy string; `gob-diagnostics` renders both. Codes are collected by
+  `cargo dev gen` into the generated errors page (documentation.md
+  section 3).
+- Panics are programmer bugs. `unwrap` is denied by clippy config
+  outside tests; `expect` requires a message naming the invariant.
+- No defensive handling of impossible states: unreachable arms use
+  `unreachable!("why")` and are covered by a test if reachable.
+- Guards (refusals such as "dirty root", "lease held") are not errors;
+  they are a `Refusal` type with exit code 3 and a remedy, so agents can
+  distinguish "retry after X" from "bug".
+
+## 5. Logging and telemetry
+
+`tracing` everywhere. `main` installs a subscriber with: a human layer
+to stderr honoring `-v/-vv` and `FROB_LOG` (env-filter), a JSON layer
+appended to `.frob/log.jsonl` when `[telemetry] file = true`, and a span
+per command and per rule. Every state change (ticket transition, lease
+take, ack, land step, cache write) is an `info!` event with structured
+fields; every boundary (git call, subprocess, network) is a span with
+duration; every error path logs at the point of origin once. `frob
+--timing` prints the span tree for the invocation. Telemetry records
+`(command, args shape, duration from process start, exit, repo hash)`
+per invocation in `.frob/telemetry.jsonl`; `frob stats` mines it.
+
+Redaction: `gob-log` owns one redactor (token-shaped strings, URLs with
+credentials, values of environment variables named like secrets).
+`gob-exec` applies it to every captured command output before that
+output is stored as evidence or logged, and telemetry applies it to
+the args shape. A TICK rule scans `tickets/**/events/*.toml` for the
+same patterns so a transcript that bypassed capture is still caught.
+
+No `println!` outside the renderer crate; clippy `print_stdout` denied
+elsewhere.
+
+## 6. Configuration
+
+Each product has one config file (`frob.toml`, `grimble.toml`,
+`crunk.toml`), each one serde model with `deny_unknown_fields` (kills
+the eleven v1 `*SCHEMA001` gates), loaded by `gob-config`. Each table is a struct with
+`#[derive(ConfigTable)]` which emits the JSON schema fragment and the
+generated config reference page (documentation.md section 3) from doc
+comments (uv's OptionsMetadata pattern). Layering: workspace file, then per-crate or per-dir
+`frob.toml` overrides (Combine derive), then CLI flags. `frob config
+show --effective` prints the merged result with provenance.
+
+Config inventory. This table is the one place that lists every knob;
+"materialized" means `frob init` writes it with its default and CFG001
+flags its absence. Defaults are the initial values proposed by this
+design.
+
+| Key | Product file | Materialized | Default | Owning crate |
+|---|---|---|---|---|
+| `[check] strictness` | frob.toml | yes | `"warn-new-rules"` | frob-check |
+| `[check] fail_on` | frob.toml | yes | `"none"` (`error` for CI via `--fail-on`) | gob-diagnostics |
+| `[check] ticket_hops` | frob.toml | yes | 1 | frob-check |
+| `[check] new_rule_warn_releases` | frob.toml | yes | 1 | gob-rules |
+| `[[check.tool]]` | frob.toml | no (opt-in list) | none | frob-check |
+| `[land] verify` | frob.toml | yes | `"sync"` (`"ci"` is Milestone 2 or later (D36)) | frob-land |
+| `[land] push` | frob.toml | yes | false | frob-land |
+| `[git] run_hooks` | frob.toml | yes | false | gob-git |
+| `[tickets] ref` | frob.toml | yes | `"trunk"` (or `"branch"`) | frob-ledger |
+| `[tickets] cas_retries` | frob.toml | yes | 5 | gob-git |
+| `[tickets] handle_min_len` | frob.toml | yes | 7 | frob-ledger |
+| `[tickets] prefix` | frob.toml | no (display only) | empty | frob-ledger |
+| `[tickets] inline_evidence_max_bytes` | frob.toml | yes | 16384 | frob-evidence |
+| `[tickets] mega_glob_files` | frob.toml | yes | 500 | frob-lease |
+| `[tickets.lease] ttl_minutes` | frob.toml | yes | 120 | frob-lease |
+| `[tickets.guards] close` | frob.toml | yes | has_evidence, no_open_blockers, children_terminal, lease_free | frob-ledger |
+| `[tickets.archive] done_after_days` | frob.toml | yes | 0 (off) | frob-ledger |
+| `[tickets.custom_fields]` | frob.toml | no (registry) | none | frob-ledger |
+| `[[component]]`, labels, `[[triage.rule]]`, `[[query]]`, `[[agent]]` | frob.toml | no (registries) | none | frob-ledger |
+| `[evidence] store` | frob.toml | yes | `"dir:.git/frob/artifacts"` | frob-evidence |
+| `[directives] namespaces` | frob.toml | yes | `["frob"]` | gob-directives |
+| `[pm] strict`, `stories_required` | frob.toml | yes | false, true | frob-pm |
+| `[pm] max_story_points`, `max_chore_points` | frob.toml | yes | 8, 2 | frob-pm |
+| `[pm] max_objective_share` | frob.toml | yes | 0.4 | frob-pm |
+| `[pm] max_age_days` | frob.toml | yes | 60 | frob-pm |
+| `[pm] capacity_k`, `capacity_points`, `min_history` | frob.toml | yes | 0.5, unset, 3 | frob-pm |
+| `[pm] max_duplicate_objective_text` | frob.toml | yes | 3 | frob-pm |
+| `[pm] measurer_timeout_secs` | frob.toml | yes | 600 | frob-pm |
+| `[pm.wip] in_progress_per_identity` | frob.toml | yes | 0 (off) | frob-pm |
+| `[pm.ready]`, `[pm.done]`, `[pm.personas]`, `[pm.attributes]`, `[pm.metrics]` | frob.toml | yes (ready, done), no (registries) | pm-enforcement.md | frob-pm |
+| `[exceptions] hotfix_days` | frob.toml | yes | 14 | gob-rules |
+| `[exceptions] max_defers_per_component`, `max_defer_age_days`, `max_hotfixes_open` | frob.toml | yes | 25, 90, 5 | gob-rules |
+| `[exceptions] max_accepts_per_rule_per_file`, `max_duplicate_reasons` | frob.toml | yes | 3, 3 | gob-rules |
+| `[exceptions] reattest_warn_days` | frob.toml | yes | 14 | gob-rules |
+| `[exceptions] owners` | frob.toml | yes | the identity running `frob init` | gob-rules |
+| `[rules.<id>]` severity overrides | each product file | no (only when it differs) | rule default | gob-rules |
+| `[[policy]]` (tickets, docs) | frob.toml | no | none | frob-obligations |
+| `[perf] threads`, `jobs` | frob.toml | no (performance only) | physical cores | gob-exec |
+| `[telemetry] file` | frob.toml | no (logging only) | true | gob-log |
+| `[notify] webhook` (Milestone 2 or later (D36)) | frob.toml | no | unset | frob-serve |
+| `[grimble] strict`, `modeled`, `packs` | grimble.toml | yes, yes, no | false, empty, empty | grimble-check |
+| `[[policy]]`, `rules/*.grl.toml` (code) | grimble.toml and next to it | no | none | grimble-lints |
+| crunk tables | crunk.toml | per notes/crunk.md section 4 | per crunk | crunk crates |
+
+Environment variables never change an enforcement outcome. Only two
+exist: `FROB_LOG` (log filter) and `FROB_AGENT` (actor label, also
+`--actor`). Every other behaviour switch is a flag or a knob above.
+
+No invisible variables (owner rule, 2026-10-02): a knob that changes
+enforcement (PM thresholds, exception budgets, strictness flags,
+capacity formula constants, hotfix days) is declared with
+`#[config(materialize)]` on the `ConfigTable` derive. `frob init` writes
+every such knob with its default value and its doc comment into the
+config file; `frob config sync` adds knobs introduced by an upgrade;
+CFG001 is an Error when a materialized knob is absent, so a reader of
+`frob.toml` sees every value that governs the repo. Knobs that only
+tune performance (thread counts, cache sizes) are not materialized.
+
+## 7. Agent-facing surface
+
+- Every verb has `--json` with a schema generated from the response
+  type; schemas live under `schema/` and are drift-checked.
+- `frob serve` (MCP via rmcp, HTTP for the GUI in gui.md) exposes the
+  same handlers with a warm db; the tool list is generated from the
+  same `#[derive(Command)]` metadata so CLI and MCP cannot drift.
+  grimble exposes its own `serve --mcp` (crate `grimble-serve`); crunk
+  has no MCP server.
+- Exit code 3 refusals carry a machine-readable `retry_after_ms` hint
+  when retrying later can succeed (cli.md section 2).
+- The v1 hook fleet (eight python processes per Bash call) is replaced
+  by one `frob hook <event>` subcommand reading the hook JSON on stdin,
+  so a hook is one process start of a small binary (git-io.md section 5).
+
+## 8. Key dependencies (pinned in the workspace)
+
+clap 4, salsa 0.28 (milestone 2), tree-sitter 0.27, rusqlite (bundled), gix (reads
+and ledger writes; git CLI only per git-io.md), rayon, blake3, serde/toml/toml_edit, jiff, ulid,
+ignore/globset, pulldown-cmark, miette (bin only) or annotate-snippets,
+tracing, inventory, schemars, rmcp (serve crates only), insta, rstest,
+datatest-stable, trybuild, cargo-nextest. Full table with versions and
+alternatives: notes/rust-ecosystem.md section 2.
+
+## 9. Parallelism from day one
+
+Rust has no GIL, so the v1 thread-pool versus process-pool split
+disappears; the design still has to make heavy work parallel by
+construction rather than by later retrofits.
+
+| Layer | Mechanism | Used for |
+|---|---|---|
+| data parallelism | `rayon` (work-stealing pool, `par_iter`, `par_bridge`), one global pool sized by `[perf] threads` defaulting to physical cores | file discovery and hashing, parsing, IR building, digests, per-file rules, dup rungs, ticket index rebuild, capability detectors |
+| query parallelism (Milestone 2 or later (D36)) | salsa parallel queries on cloned database handles, one handle per request or rayon task, so independent derived queries share memos; see the concurrency model below | graph assembly, per-file findings, affects walks |
+| graph algorithms | `petgraph` on immutable snapshots; SCC, closure, and reachability run per connected component in parallel | call graph closure, cycles, grimble kernel |
+| external jobs | `gob-exec` bounded job pool (`[perf] jobs`), with per-job timeout, memory cap via cgroup where available, and output caps | test runners, ruff/clippy/tsc, Tailwind helper |
+| async IO | `tokio` only in `gob-serve`, `frob-serve`, `grimble-serve`, `frob-gh`; the core stays sync | server transports, HTTP |
+| shared state | immutable snapshots passed by `Arc`; `dashmap` only in caches; no locks of our own around derived state (v1's deadlock class); salsa itself may block a thread that waits on a query in flight elsewhere | caches, interned ids |
+| SQLite | one file per worktree (`.frob/cache.db`); within a process one writer connection behind a channel, many readers in WAL mode; across processes `busy_timeout` and best-effort writes | persisted artifacts and findings |
+
+Rules for every crate: expensive loops are `par_iter` unless the item
+count is bounded and small; a rule's `check` is pure over the snapshot
+so the pipeline can schedule it anywhere; nothing holds a lock across a
+parse. Memory admission from v1 is kept in spirit: the pool size is
+reduced when `MemAvailable` divided by a per-task estimate is lower
+than the core count, logged once, never a refusal.
+
+Concurrency model (salsa, Milestone 2 or later (D36)). Each request
+or rayon task works on a cloned database handle. Setting an input
+cancels in-flight queries on every other handle, so the server catches
+the cancellation and retries the request, and the file watcher debounces
+input writes (default 200 ms) so a busy editor cannot starve a long
+`check`. Queries are pure: persistence is done by the command layer
+after the queries return. A spike ticket validating salsa `par_map` on
+rayon and the cancellation behaviour is a precondition for committing
+to `gob-db`; until then milestone 1 uses plain parallel functions.
+
+Verification: `frob --timing` reports per-stage wall time and the
+parallel speedup; a benchmark crate (`criterion`) tracks cold and warm
+check on a fixture repo of 100k lines, run in CI on a schedule, with a
+regression threshold.

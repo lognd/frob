@@ -1,0 +1,111 @@
+# Product split: three goblins, one workspace
+
+Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction 2026-10-01: make the
+responsibilities of frob and crunk unmistakable; rename strata (v1 name) into its
+own goblin-named tool; decide whether the structural linter and the
+design model belong together.
+
+## 1. The split
+
+| Product | One-line job | Owns | Never does |
+|---|---|---|---|
+| frob (ticket goblin) | accounts for WORK: tickets, scope leases, worktrees, evidence, landing, releases, the obligation gates that tie code to tickets, docs, and tests | tickets/, frob.lock acks, frob-ratchet, invariants/, decisions/, land, release, fleet, MCP for agents | parse CSS semantics, judge architecture, lint code style |
+| grimble (the design goblin) | judges STRUCTURE: the architecture model (what v1 called strata), symbol binding, capability matrix, universal and language-specific structural lints, cycles, dup, dead code, arch metrics, security patterns | design/*.grmb, `grimble.lock`, packs/, rule packs for code structure | know what a ticket is (it parses `ticket=` in an exception as an opaque string), land anything |
+| crunk (front-end design-system goblin) | judges front-end DESIGN TOKENS: palette, scales, organization, Tailwind, contrast, token export, gallery | crunk.toml, tokens, CSS/TSX ingest, gallery | know what a ticket is (same opaque `ticket=` rule), model architecture |
+
+The line between frob and the design goblin: frob asks "is this change
+accounted for?" (ticket, doc, test, ack, scope); the design goblin asks
+"is this code shaped the way the design says?" (binding, flows,
+capabilities, cycles, patterns). frob consumes the design goblin's
+findings as one more gate family and lets tickets link to its
+entities, in both cases only through `grimble --json`; the design goblin
+has no idea tickets exist.
+
+The line between the design goblin and crunk: the design goblin models
+systems and code structure in any language; crunk models a visual
+design system and front-end files. crunk's TS/CSS parsing comes from
+`gob-*` crates, but its rules are about colors, scales, and buckets,
+not architecture. They never overlap because crunk rules take a
+DesignSpec as input and design-goblin rules take an architecture model
+and a code graph.
+
+## 2. Do the structural linter and the design model belong together?
+
+Yes, one tool. Reasons:
+
+- They share every input: the code graph (symbols, IR, imports, calls,
+  effect sites) and the rule framework. Splitting them means two tools
+  parsing the same tree.
+- Half of the structural lints are only meaningful against the model:
+  undeclared flow, capability exceeded, surface drift, layering.
+  The other half (sort in loop, mutable default, cycles, dup) are the
+  same rule shape with no model input. One registry, one `check`.
+- A user adopting the tool starts with the model-free lints and grows
+  into the model; one binary makes that a config change, not a second
+  install.
+
+So: the design goblin = architecture model + binding + all structural
+rules. The model language keeps a name of its own inside the tool (the
+file format), the way `Cargo.toml` is a format inside cargo.
+
+## 3. Naming (decided 2026-10-01)
+
+The design goblin is **grimble** (owner: reminiscent of "grumble", what
+you do when you realize you started with a bad design). Binary
+`grimble`, crates `crates/grimble-*`, model files `design/*.grmb`, the
+model language is called grimble too; "strata" survives only as the v1
+name in notes/ and the migration map. Availability checked 2026-10-01:
+free on crates.io and PyPI. Alternatives considered: gnarl (PyPI taken),
+snag and skulk (both taken), krenk (free, too close to crunk).
+
+## 4. What moves where (relative to the earlier files)
+
+| Earlier location | Now |
+|---|---|
+| code-model.md sections 5 (IR), 6 (binds), 7 (capabilities) | grimble (`grimble-lints`, `grimble-bind`, `grimble-capabilities`), with `gob-symbols` and `gob-ir` providing symbols and IR to all three |
+| rules.md families CYCLE ARCH LARGE DEAD DUP SEC PII SYS CAP BIND GPOL | grimble |
+| rules.md families DRIFT AFFECT COV TODO SCOPE PRE QUEUE INV TEST TDD DOC DOCENUM NEGEXIST REF TICK MILE DEPR REL VERSION REG DEC NARR POL PM, and the ticket-bound exits of EXC | frob (the authoritative table is boundaries.md section 2.5) |
+| grimble-model.md | grimble's model |
+| `frob check` | runs frob's gates and, when grimble or crunk is installed, runs their checks in-process (feature `bundle`) or via their `--json` and merges findings into one report through the shared `gob-rules` registry |
+| v1 `vet` | grimble (`grimble-vet`): the capability model applied to dependencies |
+| v1 `explore` verbs | both frob and grimble, as views over `gob-symbols` |
+
+The shared registry means a waiver syntax, a severity model, a ratchet
+pool, and a renderer serve all three products; `frob check` is the one
+command an agent runs, and it reports `grimble` and `crunk` findings under
+their own family prefixes.
+
+The full capability-to-crate map, the placement test, and the splits
+considered are in boundaries.md.
+
+## 5. Name reservation (checked 2026-10-02)
+
+| Name | crates.io | PyPI | Action |
+|---|---|---|---|
+| frob | taken by an unrelated 2022 crate (`panicbit/frob`, 0.1.2) | ours already | decided 2026-10-02: the Rust crate publishes as `frob-cli` (binary name stays `frob`, like `ruff_cli`); PyPI `frob` keeps shipping the wheel that bundles the binary; a transfer request for `frob` may be sent in parallel |
+| grimble | reserved 2026-10-02 | reserved 2026-10-02 | done |
+| crunk | reserved 2026-10-02 | ours already | done |
+| gob-* | `gob` itself is taken; `gob-rules`, `gob-macros` reserved 2026-10-02; `gob-symbols`, `gob-ir` reserved at first publish | prefixed names free | crates.io receives the full crate set at release in lockstep versions (monorepo.md section 4, D35); names are reserved at first publish |
+| frob-cli | reserved 2026-10-02 | not needed | done |
+
+How to reserve: publish a minimal placeholder crate (version 0.0.0,
+a README stating the intent, `description` and `repository` set) with
+`cargo publish` after `cargo login` with a crates.io API token; crates.io
+discourages squatting but accepts placeholders with a real project
+behind them. On PyPI, upload a 0.0.0 sdist with `uv publish` (token
+from the PyPI account) for `grimble`; PyPI has no reservation API.
+Also create the GitHub repository names if separate repos are ever
+wanted, and the `grimble` name on docs sites is automatic. The owner
+holds the tokens, so this is a `! cargo login` / `! uv publish` step in
+the terminal, not something the agent does.
+
+## 6. Install story
+
+Three binaries from one workspace, released independently
+(`frob-v*`, `grimble-v*`, `crunk-v*`). frob discovers sibling binaries on
+PATH or links their crates in-process when built with the `bundle`
+feature (the default `uv tool install frob` wheel bundles all three so
+agents get one install; a build without `bundle`, such as crates.io
+`frob-cli`, reports a configured but missing sibling as an Unresolved
+finding rather than omitting it silently, and refuses a sibling whose
+`--json` has another `schema_version`; boundaries.md section 6).

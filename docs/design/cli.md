@@ -1,0 +1,194 @@
+# CLI contract and verb surface
+
+Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Inputs: notes/v1/cli-surface.md (51 verbs, 243
+parser nodes), notes/v1/agent-usage.md (36,610 agent calls over 34
+days; 30,467 process calls over 13 days).
+
+## 1. What the usage data says
+
+- Concentration: 14 verbs are 79 percent of agent calls (check, land,
+  show, evidence, scope, new, done-report, work, body, start, metadata
+  setters, promote). 20 verbs cover 99 percent. Six ticket verbs and
+  nine top-level verbs were never used.
+- Exit codes are overloaded: `check` exits 1 on 98 percent of calls and
+  `verify status` on 88 percent, meaning "findings exist" or "not
+  ready", not "tool failed". Agents cannot tell the two apart.
+- Half of failures are blind retries with identical arguments; `work`
+  on an already-started ticket errors instead of returning the lease.
+- Draft ids cost 958 promote calls at 62 percent failure, 59 hand
+  repairs, and 100 "exists only on this branch" refusals.
+- Half of all process invocations were `land --status` polls (v2 has no
+  land status to poll: `land` is synchronous, section 3).
+- Metadata ceremony: 3,149 one-field setter calls at 5 to 13 s each.
+- `--json` on 3 percent of calls; agents scraped text with grep, tail,
+  sed. The most common line agents saw was an informational notice
+  prefixed "ERROR:".
+- 8 percent of agent calls were `--help`; 2,642 usage dumps.
+
+## 2. Output contract
+
+Every verb, every time:
+
+```json
+{"ok": true, "verb": "ticket.update", "result": {...}, "warnings": [],
+ "already": false, "next": ["frob ticket start ~6C0D1E2"], "elapsed_ms": 12}
+{"ok": false, "verb": "ticket.start", "code": "E-LEASE-HELD",
+ "message": "...", "remedy": "frob ticket start ~6C0D1E2 --wait 60",
+ "retryable": true, "retry_after_ms": 4000, "holder": {...}}
+```
+
+- Default output is JSON when stdout is not a TTY; text when it is.
+  `--json` and `--text` force. Text rendering is a view over the same
+  envelope, so nothing exists in text that is absent from JSON.
+- Exit codes are one table. Agents branch on the code, not on prose.
+  `retryable` means exactly one thing: the same argv may succeed later
+  without any other action by the caller.
+
+| Code | Class | `retryable` | When | Examples |
+|---|---|---|---|---|
+| 0 | ok | not present | the verb did what was asked; domain states that are answers are not failures | `check` with findings and no `--fail-on`; an idempotent repeat (`already: true`); `cycle assign` within capacity; `forecast` below `min_history` (reported as Unresolved with the sample count) |
+| 1 | domain negative | false | the caller asked for the verb's yes/no answer as an exit code and the answer is no | `check --fail-on error` (or `[check] fail_on`) with a finding at or above the level; `test` when a selected test fails |
+| 2 | usage | false | bad flags, unknown verb, input that fails its schema | `E-USAGE` with did-you-mean |
+| 3 | guard, clears by waiting | true | a guard that clears without caller action; `retry_after_ms` is set | `E-LEASE-HELD` (holder named), land lock held, ledger CAS lost after `[tickets] cas_retries`, `E-WAIT-TIMEOUT` (a `--wait <secs>` expired before the lock freed) |
+| 3 | guard, needs action | false | a guard that needs the caller to change something; `remedy` is the exact command | `ticket close` with missing evidence (`E-CLOSE-EVIDENCE`), dirty root, empty scope, `cycle assign` over capacity (remedy `--over-commit --reason`), `land` whose check failed (`E-LAND-CHECK`), stale plan token (`E-PLAN-STALE`), sibling `--json` schema mismatch |
+| 4 | internal error | false | a bug, with a report path in the envelope | `E-INTERNAL` |
+
+- There is no "job failed" class in milestone 1: `land` is synchronous
+  (D25), so a failed check inside `land` is a guard that needs action.
+- The environment never changes the exit contract. The earlier CI
+  environment switch is gone: set `[check] fail_on` in `frob.toml`
+  (materialized, architecture.md section 6) or pass `--fail-on <severity>`.
+- `frob check` merges sibling findings under this same contract; crunk
+  and grimble adopt it (crunk's v1 0/1/2 contract maps onto it: exit 1
+  only through `--fail-on`).
+- `--schema` on any verb prints the JSON schema of its inputs and
+  outputs; `frob schema` dumps all. Generated from the handler types.
+- Every error names the exact corrected command in `remedy`.
+- No prefix abbreviation of flags (clap `infer_long_args = false`);
+  did-you-mean on unknown verbs and flags.
+
+## 3. Verb semantics
+
+- Idempotent mutations: repeating a request that already holds returns
+  `ok: true, already: true` and exit 0. `work` and `start` are
+  idempotent only for the same holder (actor plus worktree path): the
+  holder gets the existing lease and worktree back; any other caller
+  gets exit 3 `E-LEASE-HELD` naming the holder. `new` creates a distinct
+  ticket unless the call carries `--idempotency-key K` (stored on the
+  created event; the same key returns the same ticket) or is an
+  identical full request (same type, title, body, scope and links);
+  two tickets with the same title and different bodies are two tickets.
+- Worktrees: `frob work <ticket>` creates `../<repo-dir>-wt/<full-ulid>`
+  on branch `frob/<full-ulid>`, records that path in the lease, and on
+  a repeat by the holder reuses the worktree found through the lease
+  (or, if the lease is gone, through the branch name).
+- Batching: `ticket update <id> --set priority=high --set points=3
+  --add-label x --link blocks:01J9QKX3M8Z4T7N2V5B6C0D1E2` is one commit,
+  one lock. `frob batch` (Milestone 2 or later (D36)) reads JSON lines
+  of verb calls from stdin, accepts only ledger-only verbs (`ticket
+  new|update|link|unlink|comment|body|accept`), and is all or nothing:
+  one lock, one commit, and any failing line aborts and writes nothing.
+  Verbs with side effects outside the ledger (`work`, `start`, `land`,
+  `check --fix`) are refused inside a batch.
+- Preview: `--dry-run` on every mutating verb returns the planned
+  changes in the same envelope in milliseconds and a `plan` token. A
+  plan token is the BLAKE3 digest of the request, the inputs it read
+  and the planned diff; it is stored nowhere. `--apply <plan>`
+  recomputes the digest and refuses with `E-PLAN-STALE` (exit 3, needs
+  action) if any input changed.
+- Waiting: `land` is synchronous and prints LAND-PROOF; there are no
+  job records and no job verbs in milestone 1 (D25). `--wait <secs>` on
+  `land` and on lease-taking verbs bounds lock acquisition only; when it
+  expires the verb exits 3 `E-WAIT-TIMEOUT` with `retryable: true`. If
+  jobs ever exist they arrive with the daemon and a job store under
+  `.git/frob/jobs/`. No polling loops.
+- `check --ticket <id>` adds the ticket's scope-and-lease context and
+  narrows per-file rules to the ticket's files plus `[check]
+  ticket_hops` hops of dependents (rules.md section 4 is the single
+  definition).
+- Reads never take locks or commit; they are served from the index.
+
+## 4. Verb surface
+
+One table is the source of truth: every verb, the product that ships
+it, the crate that owns the handler, whether a repeat of the same
+request is safe, the exit codes it can return (table in section 2), and
+the milestone that builds it (D36). Verbs marked 2 are designed here and
+described in their own files, and are Milestone 2 or later (D36).
+
+| Verb | Product | Crate | Idempotent | Exit codes | M |
+|---|---|---|---|---|---|
+| `init` | frob | frob (bin) | yes, adds only missing knobs | 0 2 4 | 1 |
+| `doctor [--languages]` | frob | frob (bin) | yes; `--fix` installs the merge driver | 0 2 4 | 1 |
+| `config show --effective` | frob | gob-config | yes, read-only | 0 2 4 | 1 |
+| `config sync` | frob | gob-config | yes | 0 2 4 | 2 |
+| `schema` | frob | gob-cli | yes, read-only | 0 2 4 | 1 |
+| `stats` | frob | frob-pm | yes, read-only | 0 2 4 | 2 |
+| `clean` | frob | gob-cache | yes | 0 2 4 | 2 |
+| `status` | frob | frob-check | yes, read-only | 0 2 4 | 2 |
+| `migrate tickets\|directives\|config\|exceptions` | frob | frob-ledger | yes, skips what is imported | 0 2 3 4 | 2 |
+| `exceptions list` | frob | frob-obligations | yes, read-only | 0 2 4 | 1 |
+| `exceptions audit\|convert\|prune\|budget` | frob | frob-obligations | yes | 0 2 3 4 | 2 |
+| `narrative move` | frob | frob-obligations | yes | 0 2 3 4 | 2 |
+| `rule test` (also `grimble rule test`) | frob, grimble | gob-rules | yes, read-only | 0 1 2 4 | 2 |
+| `batch` | frob | frob-ledger | yes, all or nothing | 0 2 3 4 | 2 |
+| `ticket new` | frob | frob-ledger | only with `--idempotency-key` or an identical request | 0 2 3 4 | 1 |
+| `ticket show\|list\|brief\|log [--since]` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
+| `ticket doable\|contention` | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
+| `ticket wave` | frob | frob-lease | yes, read-only | 0 2 4 | 2 |
+| `ticket query\|board` | frob | frob-ledger | yes, read-only | 0 2 4 | 2 |
+| `ticket update\|link\|unlink\|comment\|body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 |
+| `ticket attach\|component\|triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
+| `ticket evidence`, `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 1 |
+| `ticket evidence fetch` | frob | frob-evidence | yes | 0 2 3 4 | 2 |
+| `ticket start\|requeue` | frob | frob-lease | `start` only for the same holder; others get 3 | 0 2 3 4 | 1 |
+| `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
+| `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
+| `ticket reconcile\|doctor` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
+| `merge-driver` (hidden, git invokes it) | frob | frob-ledger | yes, pure union and re-fold | git contract: 0 merged, 1 conflict | 1 |
+| `cycle new\|assign\|plan\|close\|velocity`, `forecast` | frob | frob-pm | yes | 0 2 3 4 | 2 |
+| `work <ticket>` | frob | frob-worktree | only for the same holder; others get 3 | 0 2 3 4 | 1 |
+| `worktree sweep\|remove` | frob | frob-worktree | yes | 0 2 3 4 | 2 |
+| `land <ticket> [--wait <secs>] [--dry-run]` | frob | frob-land | yes, a landed ticket returns `already` | 0 2 3 4 | 1 |
+| `check [--ticket] [--fix] [--fail-on]` | frob | frob-check | yes | 0 1 2 3 4 | 1 |
+| `fix` | frob | frob-check | yes | 0 2 3 4 | 1 |
+| `ack` | frob | frob-ack | yes | 0 2 3 4 | 1 |
+| `test [--base]` | frob | frob-tests | yes | 0 1 2 4 | 1 |
+| `coverage` | frob | frob-tests | yes | 0 2 4 | 2 |
+| `graph why\|affects` | frob | frob-ack | yes, read-only | 0 2 4 | 1 |
+| `graph query`, `explore outline\|map\|xref\|docs` | frob | frob-explore | yes, read-only | 0 2 4 | 2 |
+| `release new\|stamp\|sync\|publish\|status\|forecast\|changelog` | frob | frob-release | yes | 0 2 3 4 | 2 |
+| `serve [--mcp\|--http]`, `tui` | frob | frob-serve | not applicable | 0 2 4 | 2 |
+| `hook <event>` | frob | frob-hook | yes | 0 3 4 | 2 |
+| `fleet status\|route` | frob | frob-fleet | yes, read-only | 0 2 4 | 2 |
+| `git -- ...` | frob | gob-exec | explicit passthrough | 0 2 4 | 2 |
+| `frob2 compare --against frob` | frob | frob (bin) | yes, transitional (migration.md) | 0 2 4 | 2 |
+| `grimble check\|status\|graph\|shrink\|init\|packs` | grimble | grimble-check | yes | 0 1 2 3 4 | 2 |
+| `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 |
+| `grimble vet [--hook]` | grimble | grimble-vet | yes | 0 1 2 4 | 2 |
+| `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 |
+| `grimble migrate` | grimble | grimble-model | yes | 0 2 3 4 | 2 |
+| `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 |
+| crunk verbs (notes/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 |
+
+`frob check` merges sibling findings when they are installed or linked
+(products.md section 1, boundaries.md section 1). `status` exists in
+two products with different meaning: `frob status` is work and
+exceptions, `grimble status` is model drift. `migrate` in frob is only
+the v1 importer; there are no v2-to-v2 migration verbs.
+
+Removed from frob relative to v1: promote, renumber, sweep-async (no
+detached background land exists, D25), `job` and `land --status` (land
+is synchronous), plan, fail, board-as-separate, epic, flow, all
+deprecated aliases, parse, refactor, mutate, perf, deploy, natives,
+process, claude, sync-skills, exports, whereis, ci, the quality/design/
+ops groups, `waive audit` and `pool` (replaced by `exceptions`). v1's
+`sys`, `cycle`, `dup`, `arch`, `bind` live in grimble; `vet` too
+(boundaries.md section 2.3).
+
+## 5. Human ergonomics kept
+
+Color and tables on a TTY, `-v` for the span tree, shell completions,
+man pages, `frob <verb> --help` generated from the same metadata as
+the generated CLI reference (documentation.md section 3), and tickets
+accepted by full ULID or by `~handle` (goals.md).
