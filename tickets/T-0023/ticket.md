@@ -2,7 +2,7 @@
 id: T-0023
 title: 'frob-check: orchestration, --ticket scoping, --fix tier A, persisted findings,
   timing budget'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -29,15 +29,23 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0023
+branch: t-0023
 scope:
 - crates/frob-check/**
 - crates/frob/**
+- crates/gob-dev/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: crates/gob-dev/**
+  reason: rule page generator must emit a v1 DOC004 waiver before embedded corpus
+    examples so lands pass during the transition
+  actor: logan
+  at: '2026-10-02'
 body_changes:
 - mode: set
   reason: avoid a DOC006 config pointer in the body
@@ -45,14 +53,18 @@ body_changes:
   at: '2026-10-02'
   old_length: 934
   new_length: 946
+evidence:
+- cmd:cargo nextest run --profile ci -p frob-check -p frob-cli exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given this repository with a warm cache, when frob check runs in a fresh process,
     then it finishes under 2 s and reports the timing breakdown
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-check -p frob-cli exit=0 sha256=e3b0c44298fc
 - text: Given a Deterministic fix available, when frob check --fix runs, then the
     file is rewritten and a second run reports no finding
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-check -p frob-cli exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-check
 anchor: false
