@@ -2,13 +2,14 @@
 id = "01M3WYJ80SRC0JBM9T7DFTJSB7"
 title = "Self-host switch: v2 frob.toml, import this repo's v1 tickets, CI runs frob v2 check"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3WYJ802ZVWE6E3050EVRCSV"
 reporter = "agent"
 created = "2026-10-02T00:00:00Z"
-updated = "2026-10-02T21:03:10Z"
+updated = "2026-10-02T21:03:11Z"
 aliases = ["T-0025"]
 labels = ["milestone:2.0.0", "component:selfhost"]
 scope = ["frob.toml", "tickets/**", "crates/gob-dev/**", ".github/**", "CONTRIBUTING.md", "notes/coordinator.md", ".gitignore", "notes/**", "docs/design/**", "docs/reference/**", "rustfmt.toml", "rust-toolchain.toml", "clippy.toml", "deny.toml", ".cargo/**", ".config/**", "crates/frob-ack/tests/**", "crates/frob-obligations/tests/**", "Cargo.toml", "README.md", "docs/migration/**"]
