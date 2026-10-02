@@ -11,6 +11,7 @@
 )]
 
 pub mod files;
+pub mod import_v1;
 pub mod out;
 pub mod render;
 
