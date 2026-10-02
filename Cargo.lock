@@ -786,6 +786,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "frob-evidence"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "frob-ledger",
+ "gob-cli",
+ "gob-config",
+ "gob-exec",
+ "gob-git",
+ "gob-log",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "frob-lease"
 version = "0.0.0"
 dependencies = [
@@ -825,6 +845,30 @@ dependencies = [
  "toml",
  "tracing",
  "ulid",
+]
+
+[[package]]
+name = "frob-tests"
+version = "0.0.0"
+dependencies = [
+ "frob-evidence",
+ "frob-ledger",
+ "gob-cache",
+ "gob-cli",
+ "gob-directives",
+ "gob-exec",
+ "gob-git",
+ "gob-languages",
+ "gob-rules",
+ "gob-symbols",
+ "gob-walk",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
 ]
 
 [[package]]
