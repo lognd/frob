@@ -1,7 +1,7 @@
 ---
 id: T-0007
 title: 'gob-log: tracing setup, FROB_LOG, redaction'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,22 +25,26 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0007
+branch: t-0007
 scope:
 - crates/gob-log/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-log exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given FROB_LOG=gob_git=debug, when init runs, then only gob_git debug events
     are emitted
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-log exit=0 sha256=e3b0c44298fc
 - text: Given a transcript containing a GitHub token and an AWS key, when redacted,
     then both are masked and the rest is unchanged
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-log exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-log
 anchor: false

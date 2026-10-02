@@ -1,0 +1,23 @@
+[package]
+name = "gob-log"
+version = "0.0.0"
+description = "Tracing setup, FROB_LOG filtering and secret redaction for the frob/grimble/crunk goblins."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[features]
+# Exposes the `testing` capture helper to dependent crates' tests.
+test-util = []
+
+[dependencies]
+regex = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+
+[lints]
+workspace = true
