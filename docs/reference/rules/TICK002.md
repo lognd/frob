@@ -10,6 +10,8 @@
 | tier | universal |
 | scope | repo |
 | fix | manual |
+| polarity | P+ |
+| must_measure | true |
 | version | 1 |
 | since | 2.0.0 |
 
