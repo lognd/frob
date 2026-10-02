@@ -4,7 +4,7 @@
 //! modules: [`doctor`], [`init`], [`config_cmd`] (`config show`, `config
 //! sync`), [`ticket`] (`ticket ...` and the hidden `merge-driver`) and the
 //! built-in `schema` from `gob-cli`; the lease, worktree, evidence, tests and
-//! ack and check verbs come from their sibling crates' `register`. Config knobs are the
+//! ack, check and land verbs come from their sibling crates' `register`. Config knobs are the
 //! `ConfigTable` structs in [`config`].
 
 pub mod config;
@@ -33,5 +33,6 @@ pub fn cli() -> Cli {
     let cli = frob_evidence::register(cli);
     let cli = frob_tests::register(cli);
     let cli = frob_ack::register(cli);
-    frob_check::register(cli)
+    let cli = frob_check::register(cli);
+    frob_land::register(cli)
 }

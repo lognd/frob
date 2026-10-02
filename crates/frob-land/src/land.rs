@@ -1,0 +1,767 @@
+//! The land transaction: preconditions, then the locked publish (tickets.md section 10, D25).
+//!
+//! Order: resolve and vet the lease, check the worktree is the holder's and
+//! clean, merge the base into the ticket branch (refusing on conflicts), run
+//! the ticket-scoped check and the close guards, then under the land lock
+//! fast-forward the base branch, write the `land` event, close the ticket,
+//! release the lease and remove the worktree. A dry run stops after the
+//! preconditions and prints the plan.
+//!
+//! The base branch is advanced by spawning git through `gob-exec`:
+//! `git merge --ff-only <oid>` in the checkout that has the base checked out
+//! (git then updates that index and worktree itself), or
+//! `git update-ref <ref> <new> <old>` (compare-and-swap) when no checkout
+//! has it. `gob-git` has no ref-update or worktree-removal API yet.
+
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+
+use frob_check::CheckOptions;
+use frob_evidence::{EvidenceGuard, Workspace};
+use frob_lease::{Lease, LeaseStore};
+use frob_ledger::guards::{CloseContext, CloseGuard, default_close_guards};
+use frob_ledger::model::Category;
+use frob_ledger::ops::TicketView;
+use frob_ledger::{Ledger, RefMode, TicketId};
+use gob_diagnostics::{ExitCode, Refusal, RefusalClass};
+use gob_git::{MergeOutcome, Oid, Repo, StatusOptions};
+
+use crate::error::{LandError, needs_action};
+use crate::events::{LandEvent, append_land};
+use crate::git::git;
+use crate::lock::LandLock;
+use crate::plan::{LandOptions, LandOutcome, PlanInputs, digest, steps};
+
+/// How many dirty paths a refusal message lists before summarising.
+const LIST_CAP: usize = 10;
+
+/// Land the ticket named by `opts` from the repository containing `root`.
+///
+/// # Errors
+///
+/// A [`LandError::Refused`] per failed precondition (`E-LAND-NOT-LEASED`,
+/// `E-LAND-WRONG-WORKTREE`, `E-LAND-DIRTY`, `E-LAND-CONFLICT`,
+/// `E-LAND-CHECK-RED`, the evidence guard's code, `E-LAND-LOCKED`,
+/// `E-LAND-STALE`), plus ledger, lease, git and I/O failures.
+pub fn land(root: &Path, opts: &LandOptions) -> Result<LandOutcome, LandError> {
+    let repo = Repo::discover(root).map_err(|e| LandError::Config(e.to_string()))?;
+    let cwd_root = work_dir(&repo)?;
+    let here = Workspace::open(&cwd_root)?;
+    let (leases, _) = frob_lease::open_store(&cwd_root)?;
+    let id = resolve(&here.ledger, &leases, &cwd_root, opts.handle.as_deref())?;
+    let view = here.ledger.show(id)?;
+    let handle = view.summary.handle.clone();
+    let base = frob_worktree::work::base_branch(&here.ledger);
+    tracing::info!(ticket = %id, handle = %handle, base = %base, dry_run = opts.dry_run, "land started");
+
+    if view.summary.category == Category::Done {
+        tracing::info!(ticket = %id, "ticket already done; land is a no-op");
+        return Ok(LandOutcome {
+            already: true,
+            outcome: view.ticket.front.outcome,
+            ..empty_outcome(id, &handle, &base, opts)
+        });
+    }
+    let ready = prepare(repo, &cwd_root, here, &leases, &view, &base, opts)?;
+    if opts.dry_run {
+        return ready.planned(opts);
+    }
+    ready.publish(&leases, opts)
+}
+
+/// Everything the preconditions established, ready to plan or publish.
+struct Ready {
+    repo: Repo,
+    wt: Repo,
+    wt_path: PathBuf,
+    primary: PathBuf,
+    id: TicketId,
+    handle: String,
+    base: String,
+    branch: String,
+    base_merged: bool,
+    site: Workspace,
+    evidence: EvidenceGuard,
+    out: LandOutcome,
+}
+
+/// Check every precondition (merging the base into the ticket branch unless dry-running).
+fn prepare(
+    repo: Repo,
+    cwd_root: &Path,
+    here: Workspace,
+    leases: &LeaseStore,
+    view: &TicketView,
+    base: &str,
+    opts: &LandOptions,
+) -> Result<Ready, LandError> {
+    let id = view.ticket.front.id;
+    let handle = view.summary.handle.clone();
+    let lease = held_lease(leases, &here.ledger, view, id, &handle)?;
+    let wt_path = lease.holder.worktree.clone();
+    let primary = primary_root(&repo)?;
+    check_worktree(&repo, cwd_root, &wt_path, &handle)?;
+    let wt = Repo::discover(&wt_path).map_err(|e| LandError::Config(e.to_string()))?;
+    let branch = ticket_branch(&wt, base, &wt_path, &handle)?;
+    ensure_clean(&wt, &wt_path)?;
+
+    let base_oid = wt.rev_parse(base).map_err(|_| {
+        needs_action(
+            "E-LAND-NO-BASE",
+            format!("base branch `{base}` does not exist"),
+            "set [tickets] ref to an existing branch in frob.toml",
+        )
+    })?;
+    let mut base_merge = None;
+    let mut base_merged = wt.merge_base(base, &branch)? == Some(base_oid);
+    if !base_merged && !opts.dry_run {
+        base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
+        base_merged = true;
+    } else if base_merged {
+        base_merge = Some("up-to-date".to_owned());
+    }
+    let mut warnings = Vec::new();
+    if base_merged {
+        verify_check(&wt_path, &here.ledger, &handle, base)?;
+    } else {
+        // A dry run leaves the base unmerged, so the ticket-scoped diff would
+        // include the base's own changes; the real land merges first.
+        warnings.push(format!(
+            "check skipped: {base} is not merged into {branch} yet and a dry run does not merge it"
+        ));
+    }
+
+    let site = if here.ledger.config().mode == RefMode::Branch {
+        Workspace::open(&wt_path)?
+    } else if primary == cwd_root {
+        here
+    } else {
+        Workspace::open(&primary)?
+    };
+    let mut evidence = EvidenceGuard::for_ticket(&site.ledger, &site.store, id)?;
+    if let Some(reason) = &opts.no_evidence_reason {
+        evidence = evidence.allow_bypass(reason.clone());
+    }
+    run_guards(view, &handle, &evidence, opts)?;
+    let out = LandOutcome {
+        branch: Some(branch.clone()),
+        worktree: Some(wt_path.clone()),
+        base_merge,
+        warnings,
+        ..empty_outcome(id, &handle, base, opts)
+    };
+    Ok(Ready {
+        repo,
+        wt,
+        wt_path,
+        primary,
+        id,
+        handle,
+        base: base.to_owned(),
+        branch,
+        base_merged,
+        site,
+        evidence,
+        out,
+    })
+}
+
+impl Ready {
+    /// The dry-run result: the ordered plan and its digest, nothing changed.
+    fn planned(mut self, opts: &LandOptions) -> Result<LandOutcome, LandError> {
+        let head = self.wt.rev_parse(&self.branch)?.to_string();
+        let base_oid = self.wt.rev_parse(&self.base)?.to_string();
+        self.out.plan = steps(&PlanInputs {
+            id: self.id,
+            handle: &self.handle,
+            base: &self.base,
+            branch: &self.branch,
+            worktree: &self.wt_path,
+            base_merged: self.base_merged,
+            outcome: opts.outcome,
+            push: opts.push,
+            keep_worktree: opts.keep_worktree,
+        });
+        self.out.digest = Some(digest(self.id, &head, &base_oid));
+        tracing::info!(ticket = %self.id, "land dry run planned");
+        Ok(self.out)
+    }
+
+    /// Take the lock, advance the base, record and close, release the lease and clean up.
+    fn publish(
+        mut self,
+        leases: &LeaseStore,
+        opts: &LandOptions,
+    ) -> Result<LandOutcome, LandError> {
+        let on_branch = self.site.ledger.config().mode == RefMode::Branch;
+        let actor = self.site.ledger.actor()?;
+        let _lock = LandLock::acquire(
+            self.repo.common_dir(),
+            Duration::from_secs(opts.wait_secs),
+            &format!(
+                "{actor} landing {} (pid {})",
+                self.handle,
+                std::process::id()
+            ),
+        )?;
+        let ctx = Publish {
+            repo: &self.repo,
+            wt: &self.wt,
+            primary: &self.primary,
+            base: &self.base,
+            branch: &self.branch,
+            handle: &self.handle,
+            ledger_dir: &self.site.ledger.config().dir,
+        };
+        let site = &self.site;
+        let (id, base, branch, evidence) = (self.id, &self.base, &self.branch, &self.evidence);
+        let oid = ctx.advance(on_branch, || {
+            ledger_step(&site.ledger, id, evidence, opts, base, branch, false)
+        })?;
+        self.out.commit = Some(oid.to_string());
+        if opts.push {
+            self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
+        }
+        if !on_branch {
+            ledger_step(
+                &self.site.ledger,
+                self.id,
+                &self.evidence,
+                opts,
+                &self.base,
+                &self.branch,
+                self.out.pushed,
+            )?;
+        }
+        self.out.closed = true;
+        self.out.outcome = Some(opts.outcome);
+        release(leases, self.id, &actor, &mut self.out.warnings);
+        if !opts.keep_worktree && self.wt_path != self.primary {
+            self.out.worktree_removed = remove_worktree(
+                &self.repo,
+                &self.primary,
+                &self.wt_path,
+                &self.branch,
+                &self.base,
+                &mut self.out.warnings,
+            );
+        }
+        tracing::info!(ticket = %self.id, commit = %oid, pushed = self.out.pushed, "land complete");
+        Ok(self.out)
+    }
+}
+
+/// A blank outcome for `id`; callers fill in what they did.
+fn empty_outcome(id: TicketId, handle: &str, base: &str, opts: &LandOptions) -> LandOutcome {
+    LandOutcome {
+        id,
+        handle: handle.to_owned(),
+        already: false,
+        dry_run: opts.dry_run,
+        base: base.to_owned(),
+        branch: None,
+        worktree: None,
+        commit: None,
+        base_merge: None,
+        pushed: false,
+        closed: false,
+        outcome: None,
+        worktree_removed: false,
+        digest: None,
+        plan: Vec::new(),
+        warnings: Vec::new(),
+    }
+}
+
+/// The work tree root of `repo`.
+fn work_dir(repo: &Repo) -> Result<PathBuf, LandError> {
+    repo.work_dir()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| LandError::Config("not inside a git work tree".to_owned()))
+}
+
+/// The primary checkout: the first entry of the worktree list.
+fn primary_root(repo: &Repo) -> Result<PathBuf, LandError> {
+    Ok(repo
+        .list_worktrees()?
+        .into_iter()
+        .next()
+        .map(|w| w.path)
+        .unwrap_or(work_dir(repo)?))
+}
+
+/// `path` resolved through symlinks when it exists, so equal places compare equal.
+fn canon(path: &Path) -> PathBuf {
+    std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+}
+
+/// The ticket to land: the given reference, else the one leased by `cwd_root`.
+fn resolve(
+    ledger: &Ledger,
+    leases: &LeaseStore,
+    cwd_root: &Path,
+    handle: Option<&str>,
+) -> Result<TicketId, LandError> {
+    if let Some(h) = handle {
+        return Ok(ledger.resolve(h)?);
+    }
+    let here = canon(cwd_root);
+    leases
+        .live_snapshot()?
+        .into_iter()
+        .find(|l| canon(&l.holder.worktree) == here)
+        .map(|l| l.ticket)
+        .ok_or_else(|| {
+            needs_action(
+                "E-LAND-NOT-LEASED",
+                format!("no ticket is leased by {}", cwd_root.display()),
+                "frob land <ticket>",
+            )
+        })
+}
+
+/// The live lease of an in-progress ticket held by this actor.
+fn held_lease(
+    leases: &LeaseStore,
+    ledger: &Ledger,
+    view: &TicketView,
+    id: TicketId,
+    handle: &str,
+) -> Result<Lease, LandError> {
+    let not_leased =
+        |why: String| needs_action("E-LAND-NOT-LEASED", why, format!("frob work {handle}"));
+    if view.summary.category != Category::InProgress {
+        return Err(not_leased(format!(
+            "{handle} is {}, not in progress",
+            view.summary.category
+        )));
+    }
+    let Some(lease) = leases.live_lease(id)? else {
+        return Err(not_leased(format!("{handle} has no live lease")));
+    };
+    let actor = ledger.actor()?;
+    if lease.holder.actor != actor {
+        return Err(not_leased(format!(
+            "{handle} is leased by {}, not {actor}",
+            lease.holder
+        )));
+    }
+    Ok(lease)
+}
+
+/// Refuse landing a worktree other than the holder's: from another linked worktree, or a vanished one.
+fn check_worktree(
+    repo: &Repo,
+    cwd_root: &Path,
+    wt_path: &Path,
+    handle: &str,
+) -> Result<(), LandError> {
+    let wrong = |why: String| {
+        needs_action(
+            "E-LAND-WRONG-WORKTREE",
+            why,
+            format!("cd {} && frob land {handle}", wt_path.display()),
+        )
+    };
+    if !wt_path.join(".git").exists() {
+        return Err(wrong(format!(
+            "the leased worktree {} does not exist",
+            wt_path.display()
+        )));
+    }
+    if repo.is_linked_worktree() && canon(cwd_root) != canon(wt_path) {
+        return Err(wrong(format!(
+            "{handle} is leased to {}, not this worktree ({})",
+            wt_path.display(),
+            cwd_root.display()
+        )));
+    }
+    Ok(())
+}
+
+/// The branch checked out in the holder's worktree; it must not be the base.
+fn ticket_branch(wt: &Repo, base: &str, wt_path: &Path, handle: &str) -> Result<String, LandError> {
+    let wrong =
+        |why: String| needs_action("E-LAND-WRONG-WORKTREE", why, format!("frob work {handle}"));
+    match wt.current_branch()? {
+        None => Err(wrong(format!("{} has a detached HEAD", wt_path.display()))),
+        Some(b) if b == base => Err(wrong(format!(
+            "{} is on the base branch {base}; there is nothing to land",
+            wt_path.display()
+        ))),
+        Some(b) => Ok(b),
+    }
+}
+
+/// Refuse a worktree with uncommitted changes, listing the paths (`.frob/` is frob's own state).
+fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
+    let mut dirty: Vec<String> = wt
+        .status(&StatusOptions::default())?
+        .into_iter()
+        .map(|e| e.path)
+        .filter(|p| !p.starts_with(".frob/"))
+        .collect();
+    dirty.dedup();
+    if dirty.is_empty() {
+        return Ok(());
+    }
+    let more = dirty.len().saturating_sub(LIST_CAP);
+    let mut listed = dirty
+        .iter()
+        .take(LIST_CAP)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join(", ");
+    if more > 0 {
+        listed = format!("{listed} and {more} more");
+    }
+    Err(needs_action(
+        "E-LAND-DIRTY",
+        format!("{} has uncommitted changes: {listed}", wt_path.display()),
+        format!(
+            "git -C {} add -A && git -C {} commit -m <message>",
+            wt_path.display(),
+            wt_path.display()
+        ),
+    ))
+}
+
+/// Merge `base` into the ticket branch inside its worktree; conflicts are listed and the merge aborted.
+fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<String, LandError> {
+    match wt.merge_branch(wt_path, base)? {
+        MergeOutcome::UpToDate => Ok("up-to-date".to_owned()),
+        MergeOutcome::FastForward => {
+            tracing::info!(base, "base fast-forwarded into the ticket branch");
+            Ok("fast-forward".to_owned())
+        }
+        MergeOutcome::Merged => {
+            tracing::info!(base, "base merged into the ticket branch");
+            Ok("merged".to_owned())
+        }
+        MergeOutcome::Conflicts(paths) => {
+            let abort = git(wt, wt_path, &["merge", "--abort"])?;
+            tracing::warn!(
+                count = paths.len(),
+                aborted = abort.ok(),
+                "base merge conflicted"
+            );
+            Err(needs_action(
+                "E-LAND-CONFLICT",
+                format!("merging {base} conflicts in: {}", paths.join(", ")),
+                format!(
+                    "git -C {} merge {base}, resolve, commit, then frob land {handle}",
+                    wt_path.display()
+                ),
+            ))
+        }
+    }
+}
+
+/// Run the ticket-scoped check in the worktree; any finding at the configured `fail_on` refuses.
+fn verify_check(
+    wt_path: &Path,
+    ledger: &Ledger,
+    handle: &str,
+    base: &str,
+) -> Result<(), LandError> {
+    let report = frob_check::run(
+        wt_path,
+        &CheckOptions {
+            ticket: Some(handle.to_owned()),
+            base: Some(base.to_owned()),
+            ledger: Some(ledger.config().clone()),
+            skip_telemetry: true,
+            ..CheckOptions::default()
+        },
+    )?;
+    if report.exit_code() == ExitCode::Ok {
+        tracing::info!(findings = report.findings.len(), "land check green");
+        return Ok(());
+    }
+    let listed: Vec<String> = report
+        .findings
+        .iter()
+        .take(LIST_CAP)
+        .map(|f| {
+            let at = f
+                .span
+                .as_ref()
+                .and_then(|s| report.files.path(s.file))
+                .unwrap_or("-");
+            format!("{} {at}: {}", f.rule, f.message)
+        })
+        .collect();
+    Err(LandError::Refused(
+        Refusal::new(
+            "E-LAND-CHECK-RED",
+            RefusalClass::GuardNeedsAction,
+            format!(
+                "frob check --ticket {handle} has {} finding(s) at or above fail_on ({:?}): {}",
+                report.findings.len(),
+                report.fail_on,
+                listed.join("; ")
+            ),
+        )
+        .with_remedy(format!("frob check --ticket {handle}")),
+    ))
+}
+
+/// Evaluate the same close guards `ticket close` applies, before anything moves.
+fn run_guards(
+    view: &TicketView,
+    handle: &str,
+    evidence: &EvidenceGuard,
+    opts: &LandOptions,
+) -> Result<(), LandError> {
+    let defaults = default_close_guards();
+    let mut guards: Vec<&dyn CloseGuard> = defaults.iter().map(|g| &**g).collect();
+    guards.push(evidence);
+    let cx = CloseContext {
+        ticket: &view.ticket,
+        handle,
+        outcome: Some(opts.outcome),
+    };
+    for g in guards {
+        if let Err(f) = g.check(&cx) {
+            tracing::info!(guard = g.name(), code = %f.code, "land close guard refused");
+            let r = Refusal::new(f.code, RefusalClass::GuardNeedsAction, f.message);
+            return Err(LandError::Refused(match f.remedy {
+                Some(c) => r.with_remedy(c),
+                None => r,
+            }));
+        }
+    }
+    Ok(())
+}
+
+/// The pieces of the locked publish.
+struct Publish<'a> {
+    repo: &'a Repo,
+    wt: &'a Repo,
+    primary: &'a Path,
+    base: &'a str,
+    branch: &'a str,
+    handle: &'a str,
+    ledger_dir: &'a str,
+}
+
+impl Publish<'_> {
+    /// Fast-forward the base branch to the ticket branch tip; `before` runs first in `branch` ref mode.
+    ///
+    /// In branch ref mode the ledger commits ride on the ticket branch, so
+    /// they are written before the tip is read; in trunk mode `before` is not
+    /// called (the caller writes them after the base has moved).
+    fn advance(
+        &self,
+        ledger_on_branch: bool,
+        before: impl FnOnce() -> Result<(), LandError>,
+    ) -> Result<Oid, LandError> {
+        let base_oid = self.wt.rev_parse(self.base)?;
+        if self.wt.merge_base(self.base, self.branch)? != Some(base_oid) {
+            return Err(LandError::Refused(
+                Refusal::new(
+                    "E-LAND-STALE",
+                    RefusalClass::GuardRetryByWaiting,
+                    format!("{} moved while landing", self.base),
+                )
+                .with_remedy(format!("frob land {}", self.handle)),
+            ));
+        }
+        if ledger_on_branch {
+            before()?;
+        }
+        let checked_out = self
+            .repo
+            .list_worktrees()?
+            .into_iter()
+            .find(|w| w.branch.as_deref() == Some(self.base));
+        if let Some(w) = &checked_out {
+            self.resync_ledger_dir(&w.path)?;
+        }
+        let head = self.wt.rev_parse(self.branch)?;
+        if head == base_oid {
+            tracing::info!(base = self.base, "base already at the ticket tip");
+            return Ok(head);
+        }
+        let hex = head.to_string();
+        let run = if let Some(w) = &checked_out {
+            tracing::info!(base = self.base, at = %w.path.display(), "fast-forwarding the checked-out base");
+            git(self.repo, &w.path, &["merge", "--ff-only", &hex])?
+        } else {
+            tracing::info!(
+                base = self.base,
+                "updating the base ref by compare-and-swap"
+            );
+            let full = format!("refs/heads/{}", self.base);
+            git(
+                self.repo,
+                self.primary,
+                &[
+                    "update-ref",
+                    "-m",
+                    "frob land",
+                    &full,
+                    &hex,
+                    &base_oid.to_string(),
+                ],
+            )?
+        };
+        if !run.ok() {
+            return Err(LandError::Refused(
+                Refusal::new(
+                    "E-LAND-ADVANCE",
+                    RefusalClass::GuardNeedsAction,
+                    format!(
+                        "could not advance {} to {}: {}",
+                        self.base, self.branch, run.text
+                    ),
+                )
+                .with_remedy(format!(
+                    "commit or stash local changes in the checkout of {}, then frob land {}",
+                    self.base, self.handle
+                )),
+            ));
+        }
+        Ok(head)
+    }
+}
+
+impl Publish<'_> {
+    /// Reset the ledger directory of the checkout holding the base to its `HEAD`.
+    ///
+    /// Ledger commits made from another worktree (evidence, `work`) move the
+    /// base ref without touching this checkout's index, which would then look
+    /// stale to the fast-forward and to the next ledger commit. The ledger
+    /// directory is frob-owned, so restoring it from `HEAD` loses nothing.
+    fn resync_ledger_dir(&self, checkout: &Path) -> Result<(), LandError> {
+        let run = git(
+            self.repo,
+            checkout,
+            &[
+                "restore",
+                "--source=HEAD",
+                "--staged",
+                "--worktree",
+                "--",
+                self.ledger_dir,
+            ],
+        )?;
+        if run.ok() {
+            tracing::info!(dir = self.ledger_dir, at = %checkout.display(), "ledger directory resynced");
+        } else {
+            tracing::debug!(output = %run.text, "ledger directory resync skipped");
+        }
+        Ok(())
+    }
+}
+
+/// Record the `land` event, close the ticket through the guards and audit an evidence bypass.
+fn ledger_step(
+    ledger: &Ledger,
+    id: TicketId,
+    evidence: &EvidenceGuard,
+    opts: &LandOptions,
+    base: &str,
+    branch: &str,
+    pushed: bool,
+) -> Result<(), LandError> {
+    let commit = ledger
+        .repo()
+        .rev_parse(&format!("refs/heads/{branch}"))
+        .or_else(|_| ledger.repo().rev_parse(base))?
+        .to_string();
+    let base_ref = format!("refs/heads/{base}");
+    append_land(
+        ledger,
+        id,
+        &LandEvent {
+            base_ref: &base_ref,
+            commit: &commit,
+            branch,
+            pushed,
+        },
+    )?;
+    let defaults = default_close_guards();
+    let mut guards: Vec<&dyn CloseGuard> = defaults.iter().map(|g| &**g).collect();
+    guards.push(evidence);
+    let applied = ledger.close(
+        id,
+        Some(opts.outcome),
+        opts.no_evidence_reason.clone(),
+        &guards,
+    )?;
+    if !applied.already {
+        let recorded = evidence.record_bypass(ledger, id)?;
+        tracing::info!(ticket = %id, bypass = recorded.is_some(), "land closed the ticket");
+    }
+    Ok(())
+}
+
+/// Push `base` to `origin`; a failure is a warning because the local land is done.
+fn push_base(repo: &Repo, base: &str, warnings: &mut Vec<String>) -> bool {
+    match repo.push("origin", base) {
+        Ok(()) => {
+            tracing::info!(base, "base pushed");
+            true
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "push failed after landing");
+            warnings.push(format!(
+                "landed locally but the push failed: {e}; run `git push origin {base}`"
+            ));
+            false
+        }
+    }
+}
+
+/// Release the lease after landing; a failure is a warning.
+fn release(leases: &LeaseStore, id: TicketId, actor: &str, warnings: &mut Vec<String>) {
+    match leases.release(id, Some(actor)) {
+        Ok(_) => tracing::info!(ticket = %id, "lease released by land"),
+        Err(e) => {
+            tracing::warn!(error = %e, "lease release failed after landing");
+            warnings.push(format!("the lease was not released: {e}"));
+        }
+    }
+}
+
+/// Remove the worktree and its (now merged) branch; failures are warnings because the land is done.
+fn remove_worktree(
+    repo: &Repo,
+    primary: &Path,
+    wt_path: &Path,
+    branch: &str,
+    base: &str,
+    warnings: &mut Vec<String>,
+) -> bool {
+    let path = wt_path.to_string_lossy();
+    let merged = repo
+        .rev_parse(branch)
+        .is_ok_and(|b| repo.merge_base(base, branch).ok().flatten() == Some(b));
+    let mut cleanup: Vec<(&str, Vec<&str>)> = vec![(
+        "worktree remove",
+        vec!["worktree", "remove", "--force", &path],
+    )];
+    if merged {
+        cleanup.push(("branch delete", vec!["branch", "-D", branch]));
+    } else {
+        warnings.push(format!(
+            "{branch} is not contained in {base}; the branch was kept"
+        ));
+    }
+    let mut ok = true;
+    for (label, args) in cleanup {
+        match git(repo, primary, &args) {
+            Ok(r) if r.ok() => tracing::info!(label, "land cleanup step done"),
+            Ok(r) => {
+                ok = false;
+                warnings.push(format!("{label} failed: {}", r.text));
+            }
+            Err(e) => {
+                ok = false;
+                warnings.push(format!("{label} failed: {e}"));
+            }
+        }
+    }
+    ok
+}

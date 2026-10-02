@@ -1,7 +1,7 @@
 ---
 id: T-0024
 title: 'frob-land: synchronous land with preconditions, dry-run, close on land'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -43,15 +43,19 @@ scope_changes:
     verb
   actor: logan
   at: '2026-10-02'
+evidence:
+- cmd:cargo nextest run --profile ci -p frob-land -p frob-cli exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a worked ticket with green check and evidence, when frob land runs,
     then the base branch contains the work, the ticket is done with an outcome, the
     lease is gone, and the ledger commit is on the ledger ref
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-land -p frob-cli exit=0 sha256=e3b0c44298fc
 - text: Given a red check, when frob land runs, then exit is 3, the remedy names frob
     check --ticket, and nothing moved
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-land -p frob-cli exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-land
 anchor: false

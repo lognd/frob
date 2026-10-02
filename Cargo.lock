@@ -808,6 +808,7 @@ dependencies = [
  "frob-ack",
  "frob-check",
  "frob-evidence",
+ "frob-land",
  "frob-lease",
  "frob-ledger",
  "frob-tests",
@@ -838,6 +839,29 @@ dependencies = [
  "gob-exec",
  "gob-git",
  "gob-log",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
+name = "frob-land"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "frob-check",
+ "frob-evidence",
+ "frob-lease",
+ "frob-ledger",
+ "frob-worktree",
+ "gob-cli",
+ "gob-diagnostics",
+ "gob-exec",
+ "gob-git",
  "schemars",
  "serde",
  "serde_json",

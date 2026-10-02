@@ -12,6 +12,7 @@
 | `graph affects` | yes | no | 0 ok, 2 usage, 4 internal | List the transitive dependents of a symbol, grouped by file. |
 | `graph why` | yes | no | 0 ok, 2 usage, 4 internal | Explain the bindings and acks that make a finding fire for a symbol. |
 | `init` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Write frob.toml knobs, ignore .frob/, and install the ledger merge driver; safe to repeat. |
+| `land` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Land a leased ticket branch onto the base branch, close the ticket and clean up. |
 | `lease list` | yes | no | 0 ok, 3 refused, 4 internal | List the live scope leases of this clone. |
 | `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |
 | `requeue` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Release a ticket's lease and move it back to todo. |
