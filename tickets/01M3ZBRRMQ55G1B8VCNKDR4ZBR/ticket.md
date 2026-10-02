@@ -8,10 +8,10 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T22:29:14Z"
-updated = "2026-10-02T22:52:29Z"
+updated = "2026-10-02T22:58:52Z"
 idempotency_key = "m2-lease-refresh"
 labels = ["milestone:2"]
-scope = ["crates/frob-lease/**", "crates/frob-ledger/**", "crates/frob/**"]
+scope = ["crates/frob-lease/**", "crates/frob-ledger/**", "crates/frob/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "Given a held lease, when the holder widens the ticket scope, then the lease file contains the new globs and SCOPE001 no longer fires for them"
