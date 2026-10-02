@@ -1,0 +1,30 @@
+[package]
+name = "gob-languages"
+version = "0.0.0"
+description = "Feature-gated tree-sitter grammars, bounded parsing and cached queries for the goblins."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[features]
+default = ["rust", "markdown", "toml"]
+rust = ["dep:tree-sitter-rust"]
+markdown = ["dep:tree-sitter-md"]
+toml = ["dep:tree-sitter-toml-ng"]
+
+[dependencies]
+gob-text = { path = "../gob-text" }
+thiserror = "2"
+tracing = "0.1"
+tree-sitter = "=0.27.0"
+# Grammar crates are pinned exactly: the pin is part of the cache identity
+# (see `grammar::GRAMMAR_PINS` and the test that checks it against this file).
+tree-sitter-rust = { version = "=0.24.2", optional = true }
+tree-sitter-md = { version = "=0.5.3", optional = true }
+tree-sitter-toml-ng = { version = "=0.7.0", optional = true }
+
+[lints]
+workspace = true

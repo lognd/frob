@@ -1,7 +1,7 @@
 ---
 id: T-0012
 title: 'gob-languages: tree-sitter rust, markdown, toml behind features'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,22 +25,26 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0012
+branch: t-0012
 scope:
 - crates/gob-languages/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-languages exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a Rust file over the size cap, when parsed, then the result is Unresolved
     with the cap named and no panic
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-languages exit=0 sha256=e3b0c44298fc
 - text: Given the same text, when parsed twice, then the grammar identity is identical
     and changes when the grammar crate version changes
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-languages exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-languages
 anchor: false
