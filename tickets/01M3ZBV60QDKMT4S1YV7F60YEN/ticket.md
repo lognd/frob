@@ -2,7 +2,8 @@
 id = "01M3ZBV60QDKMT4S1YV7F60YEN"
 title = "G06 follow-ups: one RequiredReason, one Polarity, rule pages show polarity, TICK002 must_measure"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
