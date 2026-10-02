@@ -2,7 +2,8 @@
 id = "01M3Z712SX9DEEAF4K8ER867TX"
 title = "G04: data packs and registry drift-lock specification"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
