@@ -193,12 +193,14 @@ impl Inputs {
             h.update(r.symref.to_string().as_bytes());
             h.update(r.digests.body.as_bytes());
             h.update(r.digests.doc.as_bytes());
+            h.update(r.digests.attr.as_bytes());
+            h.update(r.digests.contract.as_bytes());
         }
         for d in &self.docs {
             h.update(format!("{}|{}|{}\n", d.file, d.symbol, d.target).as_bytes());
         }
-        // The lock renders deterministically; a render failure only weakens the key.
-        h.update(self.lock.to_toml().unwrap_or_default().as_bytes());
+        // The lock's Debug form is deterministic (sorted maps) and covers header, entries and flows.
+        h.update(format!("{:?}", self.lock).as_bytes());
         h.finalize().to_hex().to_string()
     }
 }

@@ -19,7 +19,7 @@ const LISTED_DEPENDENTS: usize = 5;
 ///
 /// The symbol bound by a `frob:doc path#slug` directive has a lock entry
 /// (an ack). The finding fires when that entry no longer matches: the sig,
-/// body or doc facet of the symbol changed (the code changed under the doc),
+/// body, doc or attr facet of the symbol changed (the code changed under the doc),
 /// or the digest of the named markdown section changed (the doc changed
 /// under the code). The message names the facet. Re-read the pair and run
 /// `frob ack <symref> --reason ...` to record the new state.
@@ -71,6 +71,27 @@ pub struct Drift002;
 )]
 pub struct Drift003;
 
+/// A lock entry was recorded under another file version or digest scheme and must be re-attested.
+///
+/// Fires once per entry (symbol or flow) when `frob.lock` predates this build's format
+/// version or digest scheme. The digests are not comparable across schemes, so no drift
+/// rule judges such an entry and nothing is silently accepted; `frob ack --all --reason ...`
+/// re-records every entry under the current scheme.
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "DRIFT004",
+    slug = "reattest-required",
+    family = "DRIFT",
+    severity = Warn,
+    tier = Universal,
+    scope = Repo,
+    polarity = P0,
+    must_measure = false,
+    fix = Manual,
+    version = 1
+)]
+pub struct Drift004;
+
 /// A public symbol changed its signature and its dependents were not re-acked.
 ///
 /// Predicate: the symbol is in the public API graph, has a lock entry whose
@@ -108,7 +129,12 @@ pub(crate) struct Raw {
 }
 
 impl Raw {
-    fn new(meta: &'static RuleMeta, span: Option<Span>, message: String, anchor: &Symref) -> Self {
+    fn new(
+        meta: &'static RuleMeta,
+        span: Option<Span>,
+        message: String,
+        anchor: &impl ToString,
+    ) -> Self {
         Self {
             meta,
             severity: meta.severity,
@@ -129,11 +155,12 @@ impl Raw {
 
 type RuleFn = fn(&Inputs) -> Vec<Raw>;
 
-fn rules() -> [(&'static RuleMeta, RuleFn); 4] {
+fn rules() -> [(&'static RuleMeta, RuleFn); 5] {
     [
         (Drift001.meta(), drift001),
         (Drift002.meta(), drift002),
         (Drift003.meta(), drift003),
+        (Drift004.meta(), drift004),
         (Affect001.meta(), affect001),
     ]
 }
@@ -145,6 +172,9 @@ fn hex(d: gob_symbols::FacetDigest) -> String {
 fn drift001(inputs: &Inputs) -> Vec<Raw> {
     let meta = Drift001.meta();
     let mut out = Vec::new();
+    if inputs.lock.is_stale() {
+        return out;
+    }
     for d in &inputs.docs {
         let key = d.symbol.to_string();
         let Some(entry) = inputs.lock.entries.get(&key) else {
@@ -171,6 +201,9 @@ fn drift001(inputs: &Inputs) -> Vec<Raw> {
             }
             if hex(cur.doc) != entry.doc {
                 say("doc", "the doc comment changed".to_owned());
+            }
+            if hex(cur.attr) != entry.attr {
+                say("attr", "the attributes changed under the doc".to_owned());
             }
         }
         if let (Some(rec), Some(was)) = (inputs.graph.get(&d.target), entry.target_digest(&target))
@@ -227,6 +260,9 @@ fn drift003(inputs: &Inputs) -> Vec<Raw> {
     let meta = Drift003.meta();
     let covered: HashSet<String> = inputs.docs.iter().map(|d| d.symbol.to_string()).collect();
     let mut out = Vec::new();
+    if inputs.lock.is_stale() {
+        return out;
+    }
     for (key, entry) in &inputs.lock.entries {
         if covered.contains(key) {
             continue;
@@ -269,9 +305,33 @@ fn acked_after(entry: &LockEntry, dependent: &LockEntry) -> bool {
     matches!((parse(&dependent.acked_at), parse(&entry.acked_at)), (Some(d), Some(e)) if d > e)
 }
 
+fn drift004(inputs: &Inputs) -> Vec<Raw> {
+    let meta = Drift004.meta();
+    inputs
+        .lock
+        .reattest()
+        .into_iter()
+        .map(|r| {
+            Raw::new(
+                meta,
+                None,
+                format!(
+                    "lock entry `{}` was recorded under {}; its digests are not comparable, so it is not trusted; re-attest with `frob ack --all --reason ...`",
+                    r.key,
+                    r.why()
+                ),
+                &r.key,
+            )
+        })
+        .collect()
+}
+
 fn affect001(inputs: &Inputs) -> Vec<Raw> {
     let meta = Affect001.meta();
     let mut out = Vec::new();
+    if inputs.lock.is_stale() {
+        return out;
+    }
     for rec in inputs.graph.public_api() {
         let Some(entry) = inputs.lock.entries.get(&rec.symref.to_string()) else {
             continue;

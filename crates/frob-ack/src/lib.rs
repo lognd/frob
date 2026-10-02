@@ -8,7 +8,7 @@
 //!   `frob:doc` directives from gob-directives, and `frob.lock`).
 //! - [`ack`]: resolve symrefs or paths, record their current digests in
 //!   `frob.lock` ([`gob_lock`]) and commit the file on the current branch.
-//! - Rules [`Drift001`], [`Drift002`], [`Drift003`], [`Affect001`], run by
+//! - Rules [`Drift001`], [`Drift002`], [`Drift003`], [`Drift004`], [`Affect001`], run by
 //!   [`evaluate`] (cached per repo in the gob-cache `repo_rule` table) or
 //!   [`check`] (uncached).
 //! - Verbs [`Ack`], [`GraphWhy`], [`GraphAffects`], added to a product root
@@ -16,8 +16,8 @@
 //!
 //! # Semantics
 //!
-//! An ack records the digests of a symbol at a point in time (the sig, body
-//! and doc facets) and, for each `frob:doc path#slug` directive bound to the
+//! An ack records the digests of a symbol at a point in time (the five facets sig,
+//! body, doc, attr and contract) and, for each `frob:doc path#slug` directive bound to the
 //! symbol, the digest of the named markdown section. Drift is the bound
 //! target changing afterwards, in either direction: the code changed under
 //! the doc, or the doc changed under the code.
@@ -29,8 +29,9 @@ mod inputs;
 mod repo_rule;
 mod rules;
 
-pub use ack::{AckOutcome, Plan, ack, plan_ack};
+pub use ack::{AckOutcome, ack, plan_ack};
 pub use cmd::{Ack, AckData, GraphAffects, GraphWhy, register};
 pub use error::AckError;
+pub use gob_lock::Plan;
 pub use inputs::{DocDirective, Inputs, PRODUCT, section_digest};
-pub use rules::{Affect001, Drift001, Drift002, Drift003, check, evaluate};
+pub use rules::{Affect001, Drift001, Drift002, Drift003, Drift004, check, evaluate};

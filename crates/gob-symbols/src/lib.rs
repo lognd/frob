@@ -59,6 +59,8 @@ pub use adapter::{
     Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
     ParseStatus, Precision,
 };
+/// The facet digest scheme these digests are computed under (recorded in every lock file).
+pub use gob_ir::DIGEST_SCHEME;
 pub use graph::{
     CallEdge, EdgeKind, FileInfo, GapReason, ReachSet, ResolveError, Status, StatusEdge,
     SymbolGraph,

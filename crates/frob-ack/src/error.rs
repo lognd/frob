@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use gob_cli::{CliError, Refusal, RefusalClass};
 use gob_git::GitError;
-use gob_lock::LockError;
+use gob_lock::{LockError, PlanError};
 use gob_symbols::ResolveError;
 
 /// Why collecting inputs, acking or querying failed.
@@ -27,12 +27,12 @@ pub enum AckError {
         /// Why it did not resolve.
         source: ResolveError,
     },
+    /// The ack could not be planned: empty selection, or a stale lock not yet migrated.
+    #[error(transparent)]
+    Plan(#[from] PlanError),
     /// The checkout has no branch to commit `frob.lock` on.
     #[error("E-ACK-DETACHED: HEAD is detached; check out a branch before acking")]
     DetachedHead,
-    /// The request names nothing to acknowledge.
-    #[error("E-ACK-EMPTY: name a symref or path, or pass --all")]
-    NothingToAck,
     /// A file could not be read.
     #[error("E-ACK-IO: read {path}: {source}")]
     Io {
@@ -46,7 +46,7 @@ pub enum AckError {
 impl From<AckError> for CliError {
     fn from(e: AckError) -> Self {
         match &e {
-            AckError::Resolve { .. } | AckError::NothingToAck => Self::Usage(e.to_string()),
+            AckError::Resolve { .. } | AckError::Plan(_) => Self::Usage(e.to_string()),
             AckError::DetachedHead => Refusal::new(
                 "E-ACK-DETACHED",
                 RefusalClass::GuardNeedsAction,

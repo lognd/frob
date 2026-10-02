@@ -1,13 +1,19 @@
 //! The ack lock file shared by every product (D28): `frob.lock`,
 //! `grimble.lock`.
 //!
-//! A [`LockFile`] maps a symref string to the [`LockEntry`] recorded when a
-//! human acknowledged it: the three facet digests (hex), who and when, an
-//! optional reason, and for documentation bindings the digest of each bound
-//! doc section ([`LockTarget`]). The file is TOML, keys sorted, so two saves
-//! of the same content are byte-identical and diffs stay small. This crate
-//! knows nothing about git, symbols or products beyond [`file_name`]: callers
-//! decide what to acknowledge and how to commit the bytes.
+//! A [`LockFile`] has a format `version` and a `digest_scheme` (the gob-ir
+//! facet scheme the digests were computed under), then typed entries:
+//! `[[symbol]]` ([`LockEntry`]: identity, symref, the five facet digests,
+//! who, when, reason, bound doc sections as [`LockTarget`]) and `[[flow]]`
+//! ([`FlowEntry`]: flow key, producer and consumer identity with Contract
+//! digest). The file is TOML, entries sorted, so two saves of the same content
+//! are byte-identical and diffs stay small.
+//!
+//! A file of another version or scheme loads, but [`LockFile::reattest`] lists
+//! every entry: nothing is silently accepted, and only [`plan`] with `all` and a
+//! reason rewrites the header. [`plan`] is the product-neutral ack planner.
+//! This crate knows nothing about git, symbols or products beyond
+//! [`file_name`]: callers decide what to acknowledge and commit the bytes.
 //!
 //! ```
 //! use gob_lock::{LockEntry, LockFile};
@@ -19,6 +25,11 @@
 
 mod diff;
 mod file;
+mod plan;
 
 pub use diff::{Facet, LockDiff, diff};
-pub use file::{LOCK_VERSION, LockEntry, LockError, LockFile, LockTarget, file_name};
+pub use file::{
+    DIGEST_SCHEME, EntryKind, FlowEnd, FlowEntry, LOCK_VERSION, LockEntry, LockError, LockFile,
+    LockTarget, Reattest, file_name,
+};
+pub use plan::{Current, CurrentFlow, CurrentSymbol, FacetSet, Plan, PlanError, PlanOptions, plan};

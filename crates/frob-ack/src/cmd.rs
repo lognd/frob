@@ -212,6 +212,7 @@ fn changed_facets(inputs: &Inputs, rec: &SymbolRecord) -> Vec<String> {
         ("sig", d.sig.to_string(), &e.sig),
         ("body", d.body.to_string(), &e.body),
         ("doc", d.doc.to_string(), &e.doc),
+        ("attr", d.attr.to_string(), &e.attr),
     ] {
         if &now != was {
             out.push(name.to_owned());

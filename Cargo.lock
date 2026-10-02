@@ -2108,6 +2108,7 @@ dependencies = [
 name = "gob-lock"
 version = "0.0.0"
 dependencies = [
+ "gob-ir",
  "serde",
  "tempfile",
  "thiserror",
