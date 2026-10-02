@@ -1,0 +1,22 @@
+[package]
+name = "gob-lock"
+version = "0.0.0"
+description = "Product-parametric ack lock file (frob.lock): sorted TOML entries, atomic save and diff."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+toml = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

@@ -2,7 +2,7 @@
 id: T-0021
 title: 'frob-ack: frob.lock via gob-lock, ack verb, graph why and affects, DRIFT and
   AFFECT rules'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -28,8 +28,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0021
+branch: t-0021
 scope:
 - crates/gob-lock/**
 - crates/frob-ack/**
@@ -43,14 +43,18 @@ scope_changes:
   reason: verb wiring moves to T-0030 so the three crates run in parallel
   actor: logan
   at: '2026-10-02'
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-lock -p frob-ack exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given an acked symbol whose signature changes, when check runs, then DRIFT003
     fires and frob ack clears it
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-lock -p frob-ack exit=0 sha256=e3b0c44298fc
 - text: Given a frob:doc directive pointing at a missing heading, when check runs,
     then DRIFT002 fires with the nearest heading
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-lock -p frob-ack exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-ack
 anchor: false

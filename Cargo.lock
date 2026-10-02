@@ -739,6 +739,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
+name = "frob-ack"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "gob-cache",
+ "gob-cli",
+ "gob-directives",
+ "gob-exec",
+ "gob-git",
+ "gob-languages",
+ "gob-lock",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "jiff",
+ "schemars",
+ "serde",
+ "serde_json",
+ "strsim",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "frob-cli"
 version = "0.0.0"
 dependencies = [
@@ -1854,6 +1880,17 @@ dependencies = [
  "tree-sitter-md",
  "tree-sitter-rust",
  "tree-sitter-toml-ng",
+]
+
+[[package]]
+name = "gob-lock"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
 ]
 
 [[package]]
