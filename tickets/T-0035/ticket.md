@@ -1,7 +1,7 @@
 ---
 id: T-0035
 title: gob-git commit_paths leaves other checkouts holding the ref with a stale index
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-10-02'
@@ -39,12 +39,15 @@ scope_changes:
   reason: the git restore workaround lived in land.rs, not git.rs
   actor: logan
   at: '2026-10-02'
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-git -p frob-land exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a primary with main checked out and a linked worktree, when commit_paths
     on refs/heads/main runs from the worktree, then the primary's index and tickets/
     files match the new tip and a following commit_paths from the primary succeeds
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-git -p frob-land exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-git
 anchor: false

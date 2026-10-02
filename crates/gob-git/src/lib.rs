@@ -18,7 +18,7 @@ mod status;
 
 pub use error::GitError;
 pub use fallback::MergeOutcome;
-pub use ledger::{CommitOptions, CommitOutcome};
+pub use ledger::{CommitOptions, CommitOutcome, UnsyncedCheckout};
 pub use read::{Head, Repo, WorktreeInfo};
 pub use relpath::RelPath;
 pub use spawn::SpawnClass;

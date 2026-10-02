@@ -435,3 +435,81 @@ fn real_edit_still_refused_under_autocrlf() {
         .unwrap_err();
     assert!(matches!(err, GitError::LocalEdits { .. }), "{err}");
 }
+
+/// Primary on main plus a linked worktree on `feature`.
+fn primary_and_linked() -> (tempfile::TempDir, Repo, tempfile::TempDir, Repo) {
+    let (dir, repo) = fixture();
+    repo.commit_paths(MAIN, &[change("tickets/a.md", "one\n")], "a", &opts())
+        .unwrap();
+    let wt_dir = tempfile::tempdir().unwrap();
+    let wt = wt_dir.path().join("wt");
+    repo.worktree_add(&wt, "feature", "main").unwrap();
+    let linked = Repo::discover(&wt).unwrap();
+    (dir, repo, wt_dir, linked)
+}
+
+#[test]
+fn commit_from_linked_worktree_syncs_primary_checkout() {
+    if !have_git() {
+        eprintln!("skipped: git binary absent");
+        return;
+    }
+    let (dir, repo, _wt_dir, linked) = primary_and_linked();
+    let out = linked
+        .commit_paths(
+            MAIN,
+            &[
+                change("tickets/a.md", "two\n"),
+                change("tickets/b.md", "new\n"),
+            ],
+            "update",
+            &opts(),
+        )
+        .unwrap();
+    assert!(out.unsynced.is_empty());
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("tickets/a.md")).unwrap(),
+        "two\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("tickets/b.md")).unwrap(),
+        "new\n"
+    );
+    let primary = Repo::discover(dir.path()).unwrap();
+    assert!(
+        primary
+            .status(&StatusOptions::default())
+            .unwrap()
+            .is_empty()
+    );
+    let again = repo
+        .commit_paths(MAIN, &[change("tickets/a.md", "three\n")], "again", &opts())
+        .unwrap();
+    assert!(again.unsynced.is_empty());
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("tickets/a.md")).unwrap(),
+        "three\n"
+    );
+}
+
+#[test]
+fn primary_with_local_edit_is_reported_and_keeps_it() {
+    if !have_git() {
+        eprintln!("skipped: git binary absent");
+        return;
+    }
+    let (dir, repo, _wt_dir, linked) = primary_and_linked();
+    let before = repo.rev_parse(MAIN).unwrap();
+    std::fs::write(dir.path().join("tickets/a.md"), "mine\n").unwrap();
+    let out = linked
+        .commit_paths(MAIN, &[change("tickets/a.md", "two\n")], "update", &opts())
+        .unwrap();
+    assert_ne!(out.oid, before);
+    assert_eq!(repo.rev_parse(MAIN).unwrap(), out.oid);
+    assert_eq!(out.unsynced.len(), 1);
+    assert_eq!(out.unsynced[0].paths_with_local_edits, ["tickets/a.md"]);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("tickets/a.md")).unwrap(),
+        "mine\n"
+    );
+}

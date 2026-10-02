@@ -36,6 +36,17 @@ pub struct CommitOutcome {
     pub oid: Oid,
     /// How many compare-and-swap attempts were lost before this one won.
     pub retries: u32,
+    /// Other checkouts of the ref that were left stale because of local edits.
+    pub unsynced: Vec<UnsyncedCheckout>,
+}
+
+/// A checkout of the updated ref that could not be synced to the new tip.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnsyncedCheckout {
+    /// Worktree root of the skipped checkout.
+    pub path: std::path::PathBuf,
+    /// Changed paths whose local edits blocked the sync (they were left untouched).
+    pub paths_with_local_edits: Vec<String>,
 }
 
 /// One planned change: blob id and bytes, or deletion.
@@ -70,6 +81,9 @@ impl Repo {
     /// `opts.cas_retries` times. When `HEAD` of this checkout is symbolic to
     /// `ref_name`, the index entries and worktree files for exactly the
     /// changed paths are then updated (via gix index editing; no `git` spawn).
+    /// Every other worktree with `ref_name` checked out is synced the same way
+    /// under its own `index.lock`; those blocked by local edits are reported in
+    /// [`CommitOutcome::unsynced`] and the commit stands.
     ///
     /// # Errors
     /// [`GitError::CasExhausted`] when every attempt lost the race,
@@ -107,14 +121,21 @@ impl Repo {
                 None => Oid::empty_tree(self.gix.object_hash()),
             };
             if checked_out && attempt == 0 {
-                self.check_local_edits(&planned, base_tree)?;
+                let blocked = self.check_local_edits(&planned, base_tree)?;
+                if let Some(path) = blocked.into_iter().next() {
+                    return Err(GitError::LocalEdits { path });
+                }
             }
             let new_tree = self.build_tree(base_tree, &planned)?;
             if new_tree == base_tree
                 && let Some(t) = tip
             {
                 info!(ref_name = %full, tip = %t, "no tree change; ledger commit skipped");
-                return Ok(CommitOutcome { oid: t, retries });
+                return Ok(CommitOutcome {
+                    oid: t,
+                    retries,
+                    unsynced: Vec::new(),
+                });
             }
             let commit = gix::objs::Commit {
                 tree: new_tree,
@@ -133,9 +154,11 @@ impl Repo {
                     if checked_out {
                         self.sync_checkout(&planned, base_tree)?;
                     }
+                    let unsynced = self.sync_other_checkouts(&full, &planned, base_tree);
                     return Ok(CommitOutcome {
                         oid: new_id,
                         retries,
+                        unsynced,
                     });
                 }
                 Err(CasError::Lost(why)) => {
@@ -255,8 +278,13 @@ impl Repo {
         }
     }
 
-    /// Refuse when a path has staged or on-disk edits that differ from both old and new content.
-    fn check_local_edits(&self, planned: &[Planned<'_>], base_tree: Oid) -> Result<(), GitError> {
+    /// List the paths whose staged or on-disk content differs from both old and new content.
+    fn check_local_edits(
+        &self,
+        planned: &[Planned<'_>],
+        base_tree: Oid,
+    ) -> Result<Vec<String>, GitError> {
+        let mut blocked = Vec::new();
         let root = self.work_dir().expect("checked_out implies a worktree");
         let tree = self.gix.find_tree(base_tree).map_err(odb_err)?;
         let fresh = self.fresh_gix()?;
@@ -291,16 +319,78 @@ impl Repo {
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
                 Err(e) => return Err(GitError::io(format!("reading {}", p.path), e)),
             };
-            for state in [staged, disk] {
-                if state != old && state != new {
-                    warn!(path = %p.path, "local edits block ledger checkout update");
-                    return Err(GitError::LocalEdits {
-                        path: p.path.to_string(),
-                    });
-                }
+            if [staged, disk].iter().any(|s| *s != old && *s != new) {
+                warn!(path = %p.path, "local edits block ledger checkout update");
+                blocked.push(p.path.to_string());
             }
         }
-        Ok(())
+        Ok(blocked)
+    }
+
+    /// Sync every other worktree that has `full` checked out; report those blocked by local edits.
+    ///
+    /// Failures here never undo the commit: they are logged and, where a checkout
+    /// is known to be stale, reported in the returned list.
+    fn sync_other_checkouts(
+        &self,
+        full: &str,
+        planned: &[Planned<'_>],
+        old_tree: Oid,
+    ) -> Vec<UnsyncedCheckout> {
+        let mut unsynced = Vec::new();
+        let worktrees = match self.list_worktrees() {
+            Ok(w) => w,
+            Err(e) => {
+                warn!(error = %e, "could not list worktrees; other checkouts not synced");
+                return unsynced;
+            }
+        };
+        let me = self.work_dir().and_then(|p| std::fs::canonicalize(p).ok());
+        let short = full.strip_prefix("refs/heads/");
+        for w in worktrees {
+            if w.branch.as_deref() != short || short.is_none() {
+                continue;
+            }
+            let Ok(canon) = std::fs::canonicalize(&w.path) else {
+                debug!(path = %w.path.display(), "worktree directory missing; skipped");
+                continue;
+            };
+            if Some(&canon) == me.as_ref() {
+                continue;
+            }
+            match self.sync_one_other(&w.path, planned, old_tree) {
+                Ok(None) => info!(path = %w.path.display(), "checkout synced to new tip"),
+                Ok(Some(paths)) => {
+                    warn!(path = %w.path.display(), ?paths, "checkout left stale: local edits");
+                    unsynced.push(UnsyncedCheckout {
+                        path: w.path,
+                        paths_with_local_edits: paths,
+                    });
+                }
+                Err(e) => warn!(path = %w.path.display(), error = %e, "checkout sync failed"),
+            }
+        }
+        unsynced
+    }
+
+    /// Sync the checkout at `path`; `Some(paths)` when local edits blocked it.
+    fn sync_one_other(
+        &self,
+        path: &Path,
+        planned: &[Planned<'_>],
+        old_tree: Oid,
+    ) -> Result<Option<Vec<String>>, GitError> {
+        let gix = gix::open(path).map_err(odb_err)?;
+        let other = Repo {
+            gix,
+            runner: self.runner.clone(),
+        };
+        let blocked = other.check_local_edits(planned, old_tree)?;
+        if !blocked.is_empty() {
+            return Ok(Some(blocked));
+        }
+        other.sync_checkout(planned, old_tree)?;
+        Ok(None)
     }
 
     /// Write files and stage entries for exactly the changed paths; nothing else in the index moves.
