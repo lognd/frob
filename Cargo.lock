@@ -2137,9 +2137,11 @@ dependencies = [
  "gob-macros",
  "gob-text",
  "inventory",
+ "schemars",
  "serde",
  "serde_json",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

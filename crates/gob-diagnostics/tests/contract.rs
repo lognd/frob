@@ -301,6 +301,8 @@ fn slug_resolves_from_registry() {
         tier: Tier::Universal,
         scope: Scope::File,
         fix: FixKind::Manual,
+        polarity: gob_rules::Polarity::Pplus,
+        must_measure: false,
         version: 1,
         since: "0.0.0",
         module: "t",

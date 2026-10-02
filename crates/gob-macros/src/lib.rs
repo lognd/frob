@@ -70,6 +70,10 @@ struct RuleArgs {
     tier: Choice,
     scope: Choice,
     fix: Choice,
+    #[darling(default)]
+    polarity: Option<Choice>,
+    #[darling(default)]
+    must_measure: bool,
     version: u32,
     #[darling(default = "default_since")]
     since: String,
@@ -174,6 +178,11 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
             .pick("fix", &["Manual", "Deterministic", "VerifyCommit", "FixIt"]),
     );
 
+    let polarity = match &args.polarity {
+        Some(c) => errors.handle(c.pick("polarity", &["Pplus", "Pminus", "P0", "Pn", "Pc"])),
+        None => Some(syn::Ident::new("Pplus", proc_macro2::Span::call_site())),
+    };
+
     if !args.generics.params.is_empty() {
         errors.push(darling::Error::custom(
             "#[derive(Rule)] does not support generic types",
@@ -191,6 +200,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
         ));
     }
     errors.finish()?;
+    let polarity = polarity.unwrap_or_else(|| unreachable!("finish() errs when a pick failed"));
     let (severity, tier, scope, fix) = (
         severity.unwrap_or_else(|| unreachable!("finish() errs when a pick failed")),
         tier.unwrap_or_else(|| unreachable!("finish() errs when a pick failed")),
@@ -206,6 +216,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
         product,
         version,
         since,
+        must_measure,
         ..
     } = args;
     Ok(quote! {
@@ -222,6 +233,8 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
                 tier: ::gob_rules::Tier::#tier,
                 scope: ::gob_rules::Scope::#scope,
                 fix: ::gob_rules::FixKind::#fix,
+                polarity: ::gob_rules::Polarity::#polarity,
+                must_measure: #must_measure,
                 version: #version,
                 since: #since,
                 module: ::core::module_path!(),
@@ -243,7 +256,11 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
 /// Derive `gob_rules::Rule` plus an `inventory` registration for the type.
 ///
 /// Attributes: `#[rule(id, slug, family, severity, tier, scope, fix, version)]`
-/// with optional `product` (default "frob") and `since` (default "2.0.0").
+/// with optional `product` (default "frob"), `since` (default "2.0.0"),
+/// `polarity = Pplus | Pminus | P0 | Pn | Pc` and `must_measure = true`.
+/// `polarity` defaults to `Pplus` and `must_measure` to false, so a rule that
+/// does not declare them is read as a presence rule that may examine nothing;
+/// declare both explicitly on every new rule (`rules.md` section 2).
 /// The explanation comes from the item's `///` doc comment.
 #[proc_macro_derive(Rule, attributes(rule))]
 pub fn derive_rule(input: TokenStream) -> TokenStream {

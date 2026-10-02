@@ -1,7 +1,7 @@
 //! End-to-end proof of `#[derive(Rule)]`, the registry and the reason checker.
 
 use gob_rules::{
-    FixKind, ReasonPolicy, ReasonRejected, Registry, RegistryError, Rule, RuleMeta, Scope,
+    FixKind, Polarity, ReasonPolicy, ReasonRejected, Registry, RegistryError, Rule, RuleMeta, Scope,
     Severity, Tier, check_reason,
 };
 
@@ -20,6 +20,21 @@ struct DemoRule;
 #[rule(id = "DEM002", slug = "demo-two", family = "DEM", severity = Warn,
     tier = Universal, scope = Repo, fix = FixIt, version = 3)]
 struct DemoTwo;
+
+/// Declares polarity and must_measure explicitly.
+#[derive(Rule)]
+#[rule(id = "DEM003", slug = "demo-three", family = "DEM", severity = Warn,
+    tier = Universal, scope = Repo, fix = Manual, polarity = Pminus, must_measure = true, version = 1)]
+struct DemoThree;
+
+#[test]
+fn polarity_defaults_to_pplus_and_must_measure_to_false() {
+    assert_eq!(DemoRule.meta().polarity, Polarity::Pplus);
+    assert!(!DemoRule.meta().must_measure);
+    assert_eq!(DemoThree.meta().polarity, Polarity::Pminus);
+    assert!(DemoThree.meta().must_measure);
+    assert_eq!(Polarity::Pminus.symbol(), "P-");
+}
 
 #[test]
 fn registry_lists_derived_rules_by_id_and_slug() {

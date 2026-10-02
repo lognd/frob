@@ -225,6 +225,8 @@ mod tests {
         tier: Tier::Lang,
         scope: Scope::Repo,
         fix: FixKind::VerifyCommit,
+        polarity: gob_rules::Polarity::Pplus,
+        must_measure: false,
         version: 3,
         since: "2.0.0",
         module: "x",
