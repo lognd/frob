@@ -41,6 +41,7 @@ scope:
 - docs/reference/**
 - rustfmt.toml
 - rust-toolchain.toml
+- clippy.toml
 scope_breadth_ack: true
 scope_breadth_ack_reason: self-host switch imports every v1 ticket into the v2 ledger;
   tickets/** is the deliverable
@@ -75,6 +76,12 @@ scope_changes:
   glob: rust-toolchain.toml
   reason: T-0025 self-host switch must touch rust-toolchain.toml (directive/comment
     cleanup and v2 migration)
+  actor: logan
+  at: '2026-10-02'
+- op: add
+  glob: clippy.toml
+  reason: T-0025 self-host switch must touch clippy.toml (directive/comment cleanup
+    and v2 migration)
   actor: logan
   at: '2026-10-02'
 designated_repro_test: null
