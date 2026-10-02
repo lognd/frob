@@ -2,13 +2,13 @@
 id = "01M3Z713F6VY15YSMS15033RN1"
 title = "gob-symbols over U: Rust and markdown adapters produce U terms with status edges"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T21:06:24Z"
+updated = "2026-10-02T21:35:13Z"
 idempotency_key = "m2-symbols"
 labels = ["milestone:2"]
 scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob/**"]
