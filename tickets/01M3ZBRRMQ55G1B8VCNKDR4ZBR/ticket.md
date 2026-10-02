@@ -2,13 +2,13 @@
 id = "01M3ZBRRMQ55G1B8VCNKDR4ZBR"
 title = "Changing a ticket's scope does not refresh the holder's lease"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T22:29:14Z"
-updated = "2026-10-02T22:29:14Z"
+updated = "2026-10-02T22:52:29Z"
 idempotency_key = "m2-lease-refresh"
 labels = ["milestone:2"]
 scope = ["crates/frob-lease/**", "crates/frob-ledger/**", "crates/frob/**"]
