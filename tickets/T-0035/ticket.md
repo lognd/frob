@@ -1,7 +1,7 @@
 ---
 id: T-0035
 title: gob-git commit_paths leaves other checkouts holding the ref with a stale index
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-10-02'
@@ -23,15 +23,22 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0035
+branch: t-0035
 scope:
 - crates/gob-git/**
 - crates/frob-land/src/git.rs
+- crates/frob-land/src/land.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: crates/frob-land/src/land.rs
+  reason: the git restore workaround lived in land.rs, not git.rs
+  actor: logan
+  at: '2026-10-02'
 designated_repro_test: null
 acceptance:
 - text: Given a primary with main checked out and a linked worktree, when commit_paths
