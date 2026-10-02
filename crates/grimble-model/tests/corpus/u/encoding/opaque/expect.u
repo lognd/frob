@@ -1,7 +1,7 @@
 === bad.grmb
 lang_param="grimble=\"?\""
 decl:unit kind=module role=declaration @0..11 symref=bad.grmb
-  any:opaque reason=not-utf8 bytes=0 @0..11
+  any:opaque reason=not-utf8 bytes=11 @0..11
 --- refs
 --- directives
 

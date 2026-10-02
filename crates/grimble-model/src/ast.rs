@@ -650,6 +650,8 @@ pub struct ParsedFile {
     pub path: String,
     /// The source text (empty for an opaque file).
     pub text: String,
+    /// The raw bytes of an opaque file (the `opaque` payload); empty otherwise.
+    pub raw: Vec<u8>,
     /// Size of the file in bytes.
     pub size: usize,
     /// How the file was read.

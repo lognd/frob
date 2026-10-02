@@ -73,6 +73,7 @@ pub fn parse_file(path: &str, bytes: &[u8]) -> ParsedFile {
     let mut file = ParsedFile {
         path: path.to_owned(),
         text: String::new(),
+        raw: Vec::new(),
         size: bytes.len(),
         status: FileStatus::Parsed,
         version: None,
@@ -89,6 +90,7 @@ pub fn parse_file(path: &str, bytes: &[u8]) -> ParsedFile {
         Err((reason, msg)) => {
             tracing::warn!(path, reason, "grmb file is opaque");
             file.status = FileStatus::Opaque(reason);
+            file.raw = bytes.to_vec();
             file.diags
                 .push(Diagnostic::new("MDL000", Span::new(0, bytes.len()), msg));
             return file;

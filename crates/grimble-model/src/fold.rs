@@ -425,12 +425,14 @@ impl Folder<'_> {
                 .push(attr("grimble-version", v.span, vec![lit("string", &v.value, v.span)]));
         }
         match &f.status {
-            FileStatus::Opaque(reason) | FileStatus::Refused(reason) => {
-                root.children.push(T::new(
-                    Operator::opaque(reason, f.text.as_bytes()),
-                    whole,
-                    vec![],
-                ));
+            FileStatus::Opaque(reason) => {
+                root.children
+                    .push(T::new(Operator::opaque(reason, &f.raw), whole, vec![]));
+                return root;
+            }
+            FileStatus::Refused(reason) => {
+                root.children
+                    .push(T::new(Operator::opaque(reason, f.text.as_bytes()), whole, vec![]));
                 return root;
             }
             FileStatus::Parsed => {}

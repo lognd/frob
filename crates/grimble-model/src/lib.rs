@@ -4,6 +4,7 @@
 mod atoms;
 pub mod adapter;
 pub mod ast;
+pub mod binding;
 pub mod directive;
 pub mod dump;
 pub mod fmt;
