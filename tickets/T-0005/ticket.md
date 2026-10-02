@@ -1,5 +1,5 @@
 ---
-id: T-draft-487fd333
+id: T-0005
 title: 'gob-rules + gob-macros: Rule derive, inventory registry, Finding, Severity'
 state: queued
 kind: feature
