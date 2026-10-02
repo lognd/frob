@@ -1,5 +1,5 @@
 ---
-id: T-draft-b4828775
+id: T-0022
 title: 'frob-obligations: COV, TODO, DOC, REF, INV rule subset'
 state: queued
 kind: feature
