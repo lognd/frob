@@ -1,13 +1,41 @@
-check_base = "experimental"
+# frob v2 configuration for this repository (materialized by `frob init`,
+# then tuned). Run `frob config show --effective` to see every resolved knob.
+
+[check]
+# Ref the diff of a `--ticket` run is taken against.
+base = "experimental"
+# Lowest severity that makes `frob check` exit 1; `none` never fails.
+fail_on = "error"
+# Paths no rule inspects: build output and frob's own local state.
+exclude = ["target/", ".frob/"]
+
+# External tool stages, run after the built-in rules.
+[[check.tool]]
+name = "cargo"
+command = "cargo"
+args = ["fmt", "--all", "--check"]
+
+[[check.tool]]
+name = "cargo"
+command = "cargo"
+args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+
+[[check.tool]]
+name = "cargo"
+command = "cargo"
+args = ["dev", "gen", "all", "--check"]
+
+[git]
+# Compare-and-swap retries when moving a ledger ref.
+cas_retries = 5
+
+[lease]
+# Append-shared files nearly every crate ticket touches; exempt from overlap checks.
+shared_files = ["Cargo.lock"]
 
 [tickets]
-# Append-shared files nearly every crate ticket touches; exempt from whole-file leases.
-registry_files = ["Cargo.lock"]
-
-[graph]
-# v1 frob indexes nothing useful here; the design and notes cite planned paths.
-exclude = ["docs/design/", "notes/"]
-
-[gates.severity]
-# Design docs and v1 notes reference planned paths and config tables on purpose.
-DOC006 = "warn"
+# Ref holding the ledger. This is `experimental` while the Rust rewrite lives
+# on that branch; it becomes `refs/heads/main` at the merge to main.
+ref = "refs/heads/experimental"
+# `trunk` commits to `ref`; `branch` commits to the checked-out branch.
+ref_mode = "trunk"
