@@ -2,13 +2,13 @@
 id = "01M3Z712GP8XV2WEAS1VHQ7FD4"
 title = "G01: full .grmb language specification"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-02T21:06:23Z"
+updated = "2026-10-02T21:06:44Z"
 idempotency_key = "m2-grmbspec"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]
