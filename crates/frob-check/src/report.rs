@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use gob_diagnostics::{ExitCode, fail_on};
+use gob_diagnostics::{ExitCode, RequiredMarks, RequiredReason, UnresolvedPolicy, fail_on};
 use gob_rules::{Exception, Finding, Severity};
 use gob_text::FileInterner;
 use schemars::JsonSchema;
@@ -156,14 +156,41 @@ pub struct CheckReport {
     pub ticket: Option<String>,
     /// The failing threshold in force (`[check] fail_on` or the override).
     pub fail_on: FailOn,
+    /// The Unresolved gate in force (`[check] fail_on_unresolved`).
+    pub fail_on_unresolved: UnresolvedPolicy,
+    /// Required reasons of the Unresolved findings that carry one.
+    pub required: RequiredMarks,
+    /// Marks awaiting the final fingerprints.
+    pub(crate) pending: Vec<PendingMark>,
+}
+
+/// A required mark waiting for the final fingerprints, matched by rule and message.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PendingMark {
+    /// Rule id of the finding.
+    pub rule: String,
+    /// Exact message of the finding.
+    pub message: String,
+    /// Why it is required.
+    pub reason: RequiredReason,
 }
 
 impl CheckReport {
-    /// `Negative` when a finding reaches the `fail_on` threshold, else `Ok` (cli.md exit table).
+    /// `Negative` when a finding reaches `fail_on` or an Unresolved one fails `fail_on_unresolved`.
     pub fn exit_code(&self) -> ExitCode {
-        match self.fail_on.threshold() {
-            Some(t) => fail_on(&self.findings, t),
-            None => ExitCode::Ok,
-        }
+        fail_on(
+            &self.findings,
+            self.fail_on.threshold(),
+            self.fail_on_unresolved,
+            &self.required,
+        )
+    }
+
+    /// Unresolved findings that carry a required reason.
+    pub fn required_unresolved(&self) -> usize {
+        self.findings
+            .iter()
+            .filter(|f| f.severity == Severity::Unresolved && self.required.get(f).is_some())
+            .count()
     }
 }

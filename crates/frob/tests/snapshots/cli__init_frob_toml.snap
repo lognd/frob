@@ -5,6 +5,8 @@ expression: toml1
 [check]
 # Lowest severity that makes `frob check` exit 1; `none` never fails.
 fail_on = "error"
+# Which Unresolved findings fail the gate: `required`, `never` or `all`.
+fail_on_unresolved = "required"
 
 [git]
 # Compare-and-swap retries when moving a ledger ref.

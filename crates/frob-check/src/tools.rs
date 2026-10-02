@@ -2,11 +2,12 @@
 
 use std::time::{Duration, Instant};
 
-use gob_exec::{Limits, Outcome, Program, Runner, Spec};
+use gob_diagnostics::RequiredReason;
+use gob_exec::{ExecError, Limits, Outcome, Program, Runner, Spec};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::config::ToolStage;
-use crate::report::Timing;
+use crate::report::{PendingMark, Timing};
 use crate::rules::Tool001;
 
 /// Trailing characters of a tool's output quoted in the finding.
@@ -23,9 +24,9 @@ pub(crate) fn run_tools(
     root: &std::path::Path,
     stages: &[ToolStage],
     timing: &mut Timing,
-) -> Vec<Finding> {
+) -> (Vec<Finding>, Vec<PendingMark>) {
     if stages.is_empty() {
-        return Vec::new();
+        return (Vec::new(), Vec::new());
     }
     let id: RuleId = Tool001
         .meta()
@@ -34,6 +35,7 @@ pub(crate) fn run_tools(
     let runner =
         Runner::new(Limits::default()).allow_tools(stages.iter().map(|s| s.command.clone()));
     let mut out = Vec::new();
+    let mut marks = Vec::new();
     for stage in stages {
         let started = Instant::now();
         let spec = Spec {
@@ -46,6 +48,7 @@ pub(crate) fn run_tools(
             timeout: Duration::from_secs(stage.timeout_secs),
             capture: true,
         };
+        let mut missing = false;
         let problem = match runner.run(&spec) {
             Ok(o) => match o.status {
                 Outcome::Exited(0) => None,
@@ -56,10 +59,31 @@ pub(crate) fn run_tools(
                 Outcome::Signaled => Some("was terminated by a signal".to_owned()),
                 Outcome::TimedOut => Some(format!("timed out after {}s", stage.timeout_secs)),
             },
-            Err(err) => Some(format!("could not run: {err}")),
+            Err(err) => {
+                missing = matches!(err, ExecError::NotFound { .. });
+                Some(format!("could not run: {err}"))
+            }
         };
         timing.push(format!("tool:{}", stage.name), started.elapsed(), false);
         match problem {
+            Some(p) if stage.fail_on_nonzero && missing => {
+                tracing::warn!(stage = %stage.name, problem = %p, "tool binary missing");
+                let message = format!("tool stage `{}` ({}) {p}", stage.name, stage.command);
+                out.push(Finding::new(
+                    id.clone(),
+                    Severity::Unresolved,
+                    None,
+                    message.clone(),
+                    &stage.name,
+                ));
+                marks.push(PendingMark {
+                    rule: id.to_string(),
+                    message,
+                    reason: RequiredReason::SiblingMissing {
+                        product: stage.command.clone(),
+                    },
+                });
+            }
             Some(p) if stage.fail_on_nonzero => {
                 tracing::warn!(stage = %stage.name, problem = %p, "tool stage failed");
                 out.push(Finding::new(
@@ -76,5 +100,5 @@ pub(crate) fn run_tools(
             None => tracing::info!(stage = %stage.name, "tool stage passed"),
         }
     }
-    out
+    (out, marks)
 }

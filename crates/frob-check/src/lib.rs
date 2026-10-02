@@ -45,6 +45,7 @@ mod options;
 mod pipeline;
 mod repo;
 mod report;
+mod required;
 mod rules;
 mod scope;
 mod snapshot;

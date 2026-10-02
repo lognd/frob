@@ -74,6 +74,17 @@
           "description": "Human-readable message.",
           "type": "string"
         },
+        "required": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequiredReason"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Why this Unresolved finding fails the gate under `required`, if it does."
+        },
         "rule": {
           "description": "Rule id such as `COV006`.",
           "type": "string"
@@ -97,6 +108,70 @@
         "fingerprint"
       ],
       "type": "object"
+    },
+    "RequiredReason": {
+      "description": "Why an Unresolved finding is required, so the gate fails on it (exit 1).",
+      "oneOf": [
+        {
+          "description": "A configured sibling product is absent or incompatible.",
+          "properties": {
+            "kind": {
+              "const": "sibling_missing",
+              "type": "string"
+            },
+            "product": {
+              "description": "The product or program that could not be used.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "product"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An opaque needs an `annotation-required` declaration.",
+          "properties": {
+            "code": {
+              "description": "The annotation code the declaration must carry.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "annotation_required",
+              "type": "string"
+            },
+            "public_surface": {
+              "description": "True when the opaque sits on the public surface.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "code",
+            "public_surface"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A `must_measure` rule examined zero subjects.",
+          "properties": {
+            "kind": {
+              "const": "zero_subjects",
+              "type": "string"
+            },
+            "rule": {
+              "description": "The rule id that measured nothing.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "rule"
+          ],
+          "type": "object"
+        }
+      ]
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",

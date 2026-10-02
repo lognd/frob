@@ -14,7 +14,7 @@ expression: v
     },
     "config": {
       "error": null,
-      "missing_knobs": 4,
+      "missing_knobs": 5,
       "path": "[path]",
       "present": false
     },
@@ -46,6 +46,19 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `check.fail_on` in frob.toml (default \"error\"); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "2e80b8222364328d03366557ff5bcd18d7e68b444c4312546c64d52c2e64f173",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `check.fail_on_unresolved` in frob.toml (default \"required\"); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
       "rule": "CFG001",
       "severity": "error",
       "slug": "missing-materialized-knob"
@@ -57,6 +70,7 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `git.cas_retries` in frob.toml (default 5); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
       "rule": "CFG001",
       "severity": "error",
       "slug": "missing-materialized-knob"
@@ -68,6 +82,7 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `tickets.ref` in frob.toml (default \"refs/heads/main\"); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
       "rule": "CFG001",
       "severity": "error",
       "slug": "missing-materialized-knob"
@@ -79,6 +94,7 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `tickets.ref_mode` in frob.toml (default \"trunk\"); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
       "rule": "CFG001",
       "severity": "error",
       "slug": "missing-materialized-knob"

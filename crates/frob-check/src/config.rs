@@ -3,6 +3,7 @@
 use std::path::Path;
 
 use gob_config::{ConfigError, ConfigTable};
+use gob_diagnostics::UnresolvedPolicy;
 use gob_rules::Severity;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -81,6 +82,9 @@ pub struct CheckTable {
     /// Lowest severity that makes `frob check` exit 1; `none` never fails.
     #[config(default = FailOn::Error, enforcement)]
     pub fail_on: FailOn,
+    /// Which Unresolved findings fail the gate: `required`, `never` or `all`.
+    #[config(default = UnresolvedPolicy::Required, enforcement)]
+    pub fail_on_unresolved: UnresolvedPolicy,
     /// Glob patterns of paths no rule inspects.
     #[config(default = Vec::new())]
     pub exclude: Vec<String>,

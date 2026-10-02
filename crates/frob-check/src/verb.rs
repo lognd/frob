@@ -66,6 +66,10 @@ pub struct CheckData {
     pub ticket: Option<String>,
     /// The failing threshold in force.
     pub fail_on: Option<String>,
+    /// Unresolved findings carrying a required reason.
+    pub required_unresolved: usize,
+    /// The Unresolved gate in force (`required`, `never` or `all`).
+    pub fail_on_unresolved: Option<String>,
     /// Non-fatal notes.
     pub notes: Vec<String>,
     /// The rule page, present with `--explain`.
@@ -84,6 +88,8 @@ impl CheckData {
             fix: None,
             ticket: None,
             fail_on: None,
+            required_unresolved: 0,
+            fail_on_unresolved: None,
             notes: Vec::new(),
             explain: None,
         }
@@ -138,6 +144,14 @@ fn sources_of(root: &std::path::Path, report: &CheckReport) -> MemorySources {
 }
 
 fn line_of(record: &FindingRecord) -> String {
+    let line = base_line(record);
+    match &record.required {
+        Some(reason) => format!("{line} [required: {reason}]"),
+        None => line,
+    }
+}
+
+fn base_line(record: &FindingRecord) -> String {
     match (&record.file, record.line, record.column) {
         (Some(file), Some(line), Some(col)) => format!(
             "{file}:{line}:{col}: {} {} {}",
@@ -274,11 +288,14 @@ impl Command for Check {
         if report.exit_code() == ExitCode::Negative {
             let c = data.counts;
             return Err(CliError::Negative(format!(
-                "{} error(s), {} warning(s), {} advisory at or above `{}`:\n{}",
+                "{} error(s), {} warning(s), {} advisory at or above `{}`; {} unresolved ({} required, gate `{}`):\n{}",
                 c.error,
                 c.warn,
                 c.advisory,
                 fail_on_name(report.fail_on),
+                c.unresolved,
+                data.required_unresolved,
+                report.fail_on_unresolved.name(),
                 data.lines.join("\n")
             )));
         }
@@ -300,7 +317,10 @@ fn data_of(
     let records: Vec<FindingRecord> = report
         .findings
         .iter()
-        .map(|f: &Finding| FindingRecord::from_finding(f, &sources, registry))
+        .map(|f: &Finding| {
+            FindingRecord::from_finding(f, &sources, registry)
+                .with_required(report.required.get(f).cloned())
+        })
         .collect();
     CheckData {
         counts: Counts::of(&report.findings),
@@ -316,6 +336,8 @@ fn data_of(
         fix: report.fix.clone(),
         ticket: report.ticket.clone(),
         fail_on: Some(fail_on_name(report.fail_on).to_owned()),
+        required_unresolved: report.required_unresolved(),
+        fail_on_unresolved: Some(report.fail_on_unresolved.name().to_owned()),
         notes: Vec::new(),
         explain: None,
     }

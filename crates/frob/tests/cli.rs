@@ -46,7 +46,7 @@ fn doctor_piped_is_json_envelope_even_with_cfg001() {
     assert_eq!(v["ok"], true);
     assert_eq!(v["verb"], "doctor");
     let findings = v["findings"].as_array().expect("findings");
-    assert_eq!(findings.len(), 4, "one CFG001 per materialized knob");
+    assert_eq!(findings.len(), 5, "one CFG001 per materialized knob");
     assert!(findings.iter().all(|f| f["rule"] == "CFG001"));
     assert_json_snapshot!("doctor_fresh_repo", v, {
         ".data.toolchain.rustc" => "[version]",
@@ -250,7 +250,12 @@ fn config_sync_adds_missing_knobs_once() {
     assert_eq!(first["already"], false);
     assert_eq!(
         first["data"]["added"],
-        serde_json::json!(["check.fail_on", "tickets.ref", "tickets.ref_mode"])
+        serde_json::json!([
+            "check.fail_on",
+            "check.fail_on_unresolved",
+            "tickets.ref",
+            "tickets.ref_mode"
+        ])
     );
     let text = std::fs::read_to_string(dir.path().join("frob.toml")).expect("read");
     assert!(text.starts_with("# mine\n"));

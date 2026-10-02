@@ -6,6 +6,7 @@ use std::time::Instant;
 use frob_lease::LeaseConfig;
 use frob_obligations::apply_exceptions;
 use gob_cache::Cache;
+use gob_diagnostics::RequiredMarks;
 use gob_rules::{Finding, Fingerprint, Registry, Rule, RuleMeta, Severity};
 use gob_text::FileInterner;
 
@@ -16,6 +17,7 @@ use crate::fix;
 use crate::options::CheckOptions;
 use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Stats, Timing};
+use crate::required::{MUST_MEASURE, build_marks, zero_subjects};
 use crate::rules::Perf001;
 use crate::scope;
 use crate::snapshot::{self, Snapshot};
@@ -132,6 +134,7 @@ fn pass(
     };
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);
+    let wanted_rule = |f: &Finding| matches_only(only, f.rule.family(), f.rule.as_str());
     let mut raw: Vec<Finding> = Vec::new();
 
     let started = Instant::now();
@@ -180,6 +183,9 @@ fn pass(
         timing.push("ticket-rules", started.elapsed(), true);
     }
 
+    let (zero_findings, pending) = zero_subjects(&snap, MUST_MEASURE);
+    raw.extend(zero_findings.into_iter().filter(|f| wanted_rule(f)));
+
     let started = Instant::now();
     let resolved = apply_exceptions(&snap.obligations(), &files, raw);
     timing.push("exceptions", started.elapsed(), true);
@@ -206,6 +212,9 @@ fn pass(
         warnings,
         ticket: scope.map(|s| s.handle),
         fail_on: opts.fail_on.unwrap_or(table.fail_on),
+        fail_on_unresolved: table.fail_on_unresolved,
+        required: RequiredMarks::new(),
+        pending,
     })
 }
 
@@ -245,11 +254,12 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CheckReport, CheckError> 
         });
     }
     if !opts.skip_tools && matches_only(&only, "TOOL", "TOOL001") {
-        report
-            .findings
-            .extend(run_tools(root, &table.tool, &mut report.timing));
+        let (found, pending) = run_tools(root, &table.tool, &mut report.timing);
+        report.findings.extend(found);
+        report.pending.extend(pending);
     }
     refingerprint(&mut report.findings, &report.files);
+    report.required = build_marks(&report.findings, &report.pending);
     sort_findings(&mut report.findings, &report.files);
     if table.telemetry && !opts.skip_telemetry {
         telemetry::append(

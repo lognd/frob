@@ -8,7 +8,7 @@ use frob_check::{CheckCtx, CheckOptions, FailOn, FileCheck, SharedCtx, run};
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
-use gob_diagnostics::ExitCode;
+use gob_diagnostics::{ExitCode, RequiredReason};
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_rules::{Finding, Fix, FixKind, Rule, RuleMeta, TextEdit};
 use gob_text::{FileId, TextRange, TextSize};
@@ -456,4 +456,118 @@ fn ticket_without_a_ledger_is_an_error() {
     )
     .expect_err("no ledger");
     assert!(err.to_string().contains("E-CHECK-NO-LEDGER"));
+}
+
+/// Emits one Unresolved `FIXT001` per `*.txt` file; the message is the file text.
+struct Opaque;
+
+impl FileCheck for Opaque {
+    fn rules(&self) -> Vec<&'static RuleMeta> {
+        vec![Fixt001.meta()]
+    }
+
+    fn applies(&self, _ctx: &SharedCtx<'_>, path: &str) -> bool {
+        Path::new(path).extension().is_some_and(|e| e == "txt")
+    }
+
+    fn check(&self, _ctx: &CheckCtx<'_>, _file: FileId, path: &str, text: &str) -> Vec<Finding> {
+        let id = Fixt001.meta().rule_id().expect("valid id");
+        vec![Finding::new(
+            id,
+            gob_rules::Severity::Unresolved,
+            None,
+            text.trim(),
+            path,
+        )]
+    }
+}
+
+fn opaque_options() -> CheckOptions {
+    CheckOptions {
+        extra_checks: vec![Arc::new(Opaque)],
+        ..quiet()
+    }
+}
+
+fn tool_options() -> CheckOptions {
+    CheckOptions {
+        skip_tools: false,
+        only: vec!["TOOL".to_owned()],
+        ..quiet()
+    }
+}
+
+const MISSING_TOOL: &str = "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-no-such-binary\"\n";
+
+#[test]
+fn a_missing_tool_binary_fails_under_required_and_passes_under_never() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "frob.toml", MISSING_TOOL);
+    let report = run(dir.path(), &tool_options()).expect("required");
+    assert_eq!(rules_of(&report.findings), ["TOOL001"]);
+    assert_eq!(report.findings[0].severity, gob_rules::Severity::Unresolved);
+    assert_eq!(
+        report.required.get(&report.findings[0]),
+        Some(&RequiredReason::SiblingMissing {
+            product: "frob-no-such-binary".to_owned()
+        })
+    );
+    assert_eq!(report.required_unresolved(), 1);
+    assert_eq!(report.exit_code(), ExitCode::Negative);
+
+    write(
+        dir.path(),
+        "frob.toml",
+        &format!("[check]\nfail_on_unresolved = \"never\"\n\n{MISSING_TOOL}"),
+    );
+    let never = run(dir.path(), &tool_options()).expect("never");
+    assert_eq!(never.findings.len(), 1, "still reported");
+    assert_eq!(never.exit_code(), ExitCode::Ok);
+
+    write(
+        dir.path(),
+        "frob.toml",
+        &format!("[check]\nfail_on_unresolved = \"all\"\n\n{MISSING_TOOL}"),
+    );
+    assert_eq!(
+        run(dir.path(), &tool_options()).expect("all").exit_code(),
+        ExitCode::Negative
+    );
+}
+
+#[test]
+fn a_non_required_unresolved_finding_passes_under_required_and_fails_under_all() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "notes.txt", "sample too small\n");
+    let report = run(dir.path(), &opaque_options()).expect("required");
+    assert_eq!(report.findings.len(), 1);
+    assert!(report.required.is_empty());
+    assert_eq!(report.exit_code(), ExitCode::Ok);
+
+    write(
+        dir.path(),
+        "frob.toml",
+        "[check]\nfail_on_unresolved = \"all\"\n",
+    );
+    let all = run(dir.path(), &opaque_options()).expect("all");
+    assert_eq!(all.exit_code(), ExitCode::Negative);
+}
+
+#[test]
+fn an_annotation_required_unresolved_finding_is_marked_required() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "notes.txt",
+        "annotation-required: opaque-fn on a public item\n",
+    );
+    let report = run(dir.path(), &opaque_options()).expect("run");
+    assert_eq!(
+        report.required.get(&report.findings[0]),
+        Some(&RequiredReason::AnnotationRequired {
+            code: "opaque-fn".to_owned(),
+            public_surface: true
+        })
+    );
+    assert_eq!(report.exit_code(), ExitCode::Negative);
 }
