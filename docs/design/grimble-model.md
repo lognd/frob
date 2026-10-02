@@ -159,14 +159,17 @@ one resolved edge and an undeclared flow is caught.
 
 ## 5. Data packs
 
-Threat obligations (capability -> obligation discharged by a claim at a
-rung), reliability markers (one "marker plus evidence" rule shape, not
-51 REL ids), compliance views, CVE fingerprints, and PII categories ship
-as TOML packs under `packs/` and are enabled per repo in `grimble.toml`
-(`[grimble] packs = ["threat", "reliability"]`). Milestone 2 or later
-(D36). A pack contributes
-capability atoms, detectors, obligations, and rule parameters; it never
-contributes grammar.
+Threat obligations, reliability markers, compliance views, CVE
+fingerprints, PII categories and every other optional vocabulary ship as
+data packs, never as grammar; milestone 2 or later (D36). A pack
+contributes capability atoms, detectors, callee vocabularies, inference
+rules, claim templates, node kinds and (decision pending) lattice
+extensions. packs.md (G04) is the definition: the pack format and its
+JSON Schema, where packs live (built-in as inventory entries of the
+shared registry crate, repository `packs/`, external by URL and digest),
+the drift-lock `grimble.packs.lock`, materialization, how detectors
+become matrix cells, and the three built-in packs `core-effects`,
+`ci-github` and `rust-ecosystem`. This file does not repeat it.
 
 ## 6. Registry drift-lock
 
