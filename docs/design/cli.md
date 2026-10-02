@@ -62,11 +62,11 @@ Every verb, every time:
 
 | Code | Class | `retryable` | When | Examples |
 |---|---|---|---|---|
-| 0 | ok | not present | the verb did what was asked; domain states that are answers are not failures | `check` with findings and no `--fail-on`; an idempotent repeat (`already: true`); `cycle assign` within capacity; `forecast` below `min_history` (reported as Unresolved with the sample count) |
-| 1 | domain negative | false | the caller asked for the verb's yes/no answer as an exit code and the answer is no | `check --fail-on error` (or `[check] fail_on`) with a finding at or above the level; `test` when a selected test fails |
+| 0 | ok | not present | the verb did what was asked; domain states that are answers are not failures | `check` with findings and no `--fail-on` (and no required Unresolved, see below); an idempotent repeat (`already: true`); `cycle assign` within capacity; `forecast` below `min_history` (reported as Unresolved with the sample count) |
+| 1 | domain negative | false | the caller asked for the verb's yes/no answer as an exit code and the answer is no | `check --fail-on error` (or `[check] fail_on`) with a finding at or above the level; `check` with a required Unresolved finding under `[check] fail_on_unresolved`; `test` when a selected test fails |
 | 2 | usage | false | bad flags, unknown verb, input that fails its schema | `E-USAGE` with did-you-mean |
 | 3 | guard, clears by waiting | true | a guard that clears without caller action; `retry_after_ms` is set | `E-LEASE-HELD` (holder named), land lock held, ledger CAS lost after `[git] cas_retries`, `E-WAIT-TIMEOUT` (a `--wait <secs>` expired before the lock freed) |
-| 3 | guard, needs action | false | a guard that needs the caller to change something; `remedy` is the exact command | `ticket close` with missing evidence (`E-CLOSE-EVIDENCE`), dirty root, empty scope, `cycle assign` over capacity (remedy `--over-commit --reason`), `land` whose check failed (`E-LAND-CHECK`), stale plan token (`E-PLAN-STALE`), sibling `--json` schema mismatch |
+| 3 | guard, needs action | false | a guard that needs the caller to change something; `remedy` is the exact command | `ticket close` with missing evidence (`E-CLOSE-EVIDENCE`), dirty root, empty scope, `cycle assign` over capacity (remedy `--over-commit --reason`), `land` whose check failed (`E-LAND-CHECK`), stale plan token (`E-PLAN-STALE`) |
 | 4 | internal error | false | a bug, with a report path in the envelope | `E-INTERNAL` |
 
 - There is no "job failed" class in milestone 1: `land` is synchronous
@@ -74,6 +74,29 @@ Every verb, every time:
 - The environment never changes the exit contract. The earlier CI
   environment switch is gone: set `[check] fail_on` in `frob.toml`
   (materialized, architecture.md section 6) or pass `--fail-on <severity>`.
+- Unresolved and the gate (the one mechanism; rules.md section 4 step 8,
+  products.md, boundaries.md, grimble-model.md 9.5 and universal-model.md
+  4.2 refer here). `Unresolved` is a finding severity orthogonal to the
+  `Error | Warn | Advisory` threshold: `--fail-on` and `[check] fail_on`
+  never count it. A materialized knob `[check] fail_on_unresolved =
+  "required" | "never" | "all"` (default `"required"`) adds a second
+  test to the gate: under `"required"`, a finding that is Unresolved and
+  marked `required` fails the gate with exit 1 (a negative domain
+  answer), never exit 3, which stays reserved for refusals; `"all"`
+  fails on any Unresolved and `"never"` on none. The required
+  Unresolved findings are exactly three: (a) a configured sibling
+  product that is absent or incompatible (not installed, `--json` with
+  another `schema_version`, or a different `[compute]` digest;
+  `[check] require_siblings`, default true, is what makes a configured
+  sibling required); (b) an `annotation-required` opaque on the public
+  surface when `[compute]` requires the declaration (universal-model.md
+  4.6); (c) a rule flagged `must_measure` that examined zero subjects.
+  Every other Unresolved is reported, counted in the summary, and does
+  not fail under `"required"`. The `required` mark travels on the
+  finding record and in sibling JSON, so frob applies it to a sibling's
+  findings without re-deriving it. Landed state: `gob-diagnostics`
+  (`exit.rs`) skips Unresolved today; changing it is the first item of
+  build-test-ci.md Milestone 2.
 - `frob check` merges sibling findings under this same contract; crunk
   and grimble adopt it (crunk's v1 0/1/2 contract maps onto it: exit 1
   only through `--fail-on`).
@@ -151,7 +174,10 @@ described in their own files, and are Milestone 2 or later (D36).
 | Verb | Product | Crate | Idempotent | Exit codes | M |
 |---|---|---|---|---|---|
 | `init` | frob | frob (bin) | yes, adds only missing knobs | 0 2 4 | 1 |
-| `doctor [--languages]` | frob | frob (bin) | yes; `--fix` installs the merge driver | 0 2 4 | 1 |
+| `doctor` | frob | frob (bin) | yes; `--fix` installs the merge driver | 0 2 4 | 1 |
+| `doctor --languages` | frob | frob (bin) | yes, read-only; prints per-language fidelity level, capability precision and the rules that are NotApplicable once per language (universal-model.md 3.3, 4.2) | 0 2 4 | 2 |
+| `init --ci` (open question, cicd.md section 7) | frob | frob (bin) | yes, adds only missing files | 0 2 4 | 2 |
+| `audit --online` (open question, cicd.md section 7: the online action-currency and advisory check) | frob | frob-check | yes, read-only | 0 2 3 4 | 2 |
 | `config show --effective` | frob | gob-config | yes, read-only | 0 2 4 | 1 |
 | `config sync` | frob | gob-config | yes | 0 2 4 | 2 |
 | `schema` | frob | gob-cli | yes, read-only | 0 2 4 | 1 |
@@ -196,8 +222,11 @@ described in their own files, and are Milestone 2 or later (D36).
 | `git -- ...` | frob | gob-exec | explicit passthrough | 0 2 4 | 2 |
 | `frob2 compare --against frob` | frob | frob (bin) | yes, transitional (migration.md) | 0 2 4 | 2 |
 | `grimble check\|status\|graph\|shrink\|init\|packs` | grimble | grimble-check | yes | 0 1 2 3 4 | 2 |
+| `grimble doctor [--languages]` | grimble | grimble-check | yes, read-only | 0 2 4 | 2 |
+| `grimble fmt` | grimble | grimble-model (the alpha-normal printer) | yes | 0 2 4 | 2 |
+| `grimble exceptions list` | grimble | grimble-check over gob-rules | yes, read-only | 0 2 4 | 2 |
 | `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 |
-| `grimble vet [--hook]` | grimble | grimble-vet | yes | 0 1 2 4 | 2 |
+| `grimble vet [--hook]` | grimble | grimble-vet | yes | 0 1 2 4 | 2 (after the G01-G19 cut; build-test-ci.md Milestone 2 item 8) |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 |
 | `grimble migrate` | grimble | grimble-model | yes | 0 2 3 4 | 2 |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 |

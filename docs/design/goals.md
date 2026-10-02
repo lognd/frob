@@ -125,7 +125,7 @@ Stated by the user on 2026-10-01; this constrains `code-model.md`
 and `rules.md`.
 
 Milestone 1 (D36) implements the symbol grammar and the language-specific
-tier; the structural IR and the universal rules over it are Milestone 2
+tier; the universal structural model and the universal rules over it are Milestone 2
 or later (D36).
 
 - One symbol address grammar for every supported language. A grimble
@@ -134,8 +134,8 @@ or later (D36).
   patterns, never only to file globs.
 - Patterns span languages. "Sort inside a loop", "network call inside a
   retry loop", "secret in a string literal" are ONE rule each, written
-  once against a normalized structural IR, and executed per language by
-  a grammar adapter. Language-specific structural lints (a Python
+  once against the universal structural model (universal-model.md), and
+  executed per language by an adapter. Language-specific structural lints (a Python
   mutable default argument, a Rust `unwrap` in a library crate) are
   declared in the same rule framework but target one grammar.
 - Capability binding keeps the v1 matrix idea: every grimble node
@@ -143,6 +143,6 @@ or later (D36).
   excluded explicitly with a reason, never silently. The matrix is
   generated from rule metadata plus the model, so adding a capability
   kind or a language does not require touching every node by hand.
-- Scaling rule: adding a language is one adapter crate (grammar, symbol
-  extractor, IR mapping) and zero changes to universal rules; adding a
+- Scaling rule: adding a language is one adapter (parse, rho, bind, cap)
+  plus a fidelity corpus, and zero changes to universal rules; adding a
   universal rule is one Rust item and zero changes to adapters.

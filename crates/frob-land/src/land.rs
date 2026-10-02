@@ -207,7 +207,6 @@ impl Ready {
             base: &self.base,
             branch: &self.branch,
             handle: &self.handle,
-            ledger_dir: &self.site.ledger.config().dir,
         };
         let site = &self.site;
         let (id, base, branch, evidence) = (self.id, &self.base, &self.branch, &self.evidence);
@@ -538,7 +537,6 @@ struct Publish<'a> {
     base: &'a str,
     branch: &'a str,
     handle: &'a str,
-    ledger_dir: &'a str,
 }
 
 impl Publish<'_> {
@@ -571,9 +569,6 @@ impl Publish<'_> {
             .list_worktrees()?
             .into_iter()
             .find(|w| w.branch.as_deref() == Some(self.base));
-        if let Some(w) = &checked_out {
-            self.resync_ledger_dir(&w.path)?;
-        }
         let head = self.wt.rev_parse(self.branch)?;
         if head == base_oid {
             tracing::info!(base = self.base, "base already at the ticket tip");
@@ -619,35 +614,6 @@ impl Publish<'_> {
             ));
         }
         Ok(head)
-    }
-}
-
-impl Publish<'_> {
-    /// Reset the ledger directory of the checkout holding the base to its `HEAD`.
-    ///
-    /// Ledger commits made from another worktree (evidence, `work`) move the
-    /// base ref without touching this checkout's index, which would then look
-    /// stale to the fast-forward and to the next ledger commit. The ledger
-    /// directory is frob-owned, so restoring it from `HEAD` loses nothing.
-    fn resync_ledger_dir(&self, checkout: &Path) -> Result<(), LandError> {
-        let run = git(
-            self.repo,
-            checkout,
-            &[
-                "restore",
-                "--source=HEAD",
-                "--staged",
-                "--worktree",
-                "--",
-                self.ledger_dir,
-            ],
-        )?;
-        if run.ok() {
-            tracing::info!(dir = self.ledger_dir, at = %checkout.display(), "ledger directory resynced");
-        } else {
-            tracing::debug!(output = %run.text, "ledger directory resync skipped");
-        }
-        Ok(())
     }
 }
 

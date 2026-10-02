@@ -22,7 +22,60 @@ Status: the crates under `crates/` are `frob` (the binary, package
 `gob-cli`, `gob-config`, `gob-dev`, `gob-diagnostics`, `gob-directives`,
 `gob-exec`, `gob-git`, `gob-languages`, `gob-lock`, `gob-log`,
 `gob-macros`, `gob-mdtest`, `gob-rules`, `gob-symbols`, `gob-text` and
-`gob-walk`. `frob-check`, `frob-land` and the self-host switch remain.
+`gob-walk`, plus `frob-check` and `frob-land`, which have landed (the
+exact set is `ls crates/`). The self-host switch remains: `frob check`
+and `frob land` run green on this repository only once it is made, and
+until then the v1 `frob:waive DOC006` comments in the design files and
+the `frob:waive DOC004` lines that gob-dev emits into generated rule
+pages still fail DSL001; the switch converts both to `frob:accept ...
+because="..."` (gob-dev emits the new form).
+
+Milestone 1 carried no digest or lock decisions beyond scheme 1 (code-model.md
+section 2); this repository's `frob.lock` is empty today.
+
+## Milestone 2
+
+The single authoritative statement of milestone-2 order (D36 deferrals
+included); monorepo.md section 5, universal-model.md section 8,
+grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
+
+1. The gob-diagnostics Unresolved gate fix (cli.md section 2): the
+   landed `exit.rs` skips Unresolved findings; it gains the
+   `[check] fail_on_unresolved` test, the `required` mark on the finding
+   record and the three required cases. A ticket changes it before any
+   sibling can be configured.
+2. gob-ir: U terms, scope graph with status, canonical facet stream,
+   queries, Kleene evaluator and answer lattice, the atom registry and
+   callee vocabularies; the Rust and markdown adapters re-expressed over
+   U in gob-symbols (universal-model.md section 8; gaps G1-G4 and
+   G10-G19).
+3. The digest scheme and typed lock (G05): canonical facet streams,
+   facets Sig, Body, Doc, Attr and Contract, `digest_scheme` in
+   gob-lock, typed `symbol | flow` entries, the ack planner moved to
+   gob-lock. Open question 5 of universal-model.md (G9) is closed first.
+   Consumer `frob.lock` import (migration.md) waits for this item; this
+   repository's own `frob.lock` is regenerated at this point.
+4. gob-check extraction (G06): the product-neutral pipeline, exception
+   application moved to gob-rules, rule `polarity` and
+   `subjects_examined`.
+5. The grimble cut G01-G19 (notes/review/grimble-review.md section 5,
+   critical path T-IR, G01, G02, G07, G08, G09, G11, G14): G01 .grmb
+   specification, G02 binding semantics over U, G03 sibling JSON
+   contract, G04 packs and drift-lock, G05 and G06 above, G07 selectors,
+   G08 grimble-model parser and U adapter, G09 binary skeleton, G10
+   grimble-arch (CYCLE, LARGE, DEAD), G11 and G12 grimble-bind, G13 frob
+   orchestration of the sibling stage, G14 grimble-capabilities with the
+   cell set of grimble-model.md 9.6, G15 shrink, G16 kernel port, G17
+   gob-pattern and GPOL (blocked by the ast-grep `Doc`-over-U spike,
+   rules.md section 3), G18 `grimble migrate`, G19 grimble-serve.
+6. The first ten NEAT rules (neatness.md section 4), then
+   `[neat] require_effects` for this repository's public surface.
+7. The GitHub Actions and Dockerfile adapters and the CI and DK rules in
+   grimble-ci (cicd.md); the zizmor and actionlint `[[check.tool]]`
+   stages with parsers and id maps in frob-check land earlier and are
+   adopted by this repository first.
+8. PM enforcement (PM026 included) and the remaining D36 deferrals
+   (grimble-vet, packs, SARIF, salsa, GUI, daemon, jobs, crunk).
 
 ## 1. Build locality
 
@@ -49,7 +102,7 @@ Status: the crates under `crates/` are `frob` (the binary, package
 | proc macros | trybuild compile-pass and compile-fail cases | `gob-macros/tests` |
 | CLI end to end | assert_cmd + assert_fs against a fixture repo; snapbox transcripts for `--help` | `crates/{frob,grimble,crunk}/tests` |
 | property | proptest for ids, merge driver, lease overlap | ledger, lease |
-| language conformance | per-adapter fixture dir with expected symbols, digests, IR, imports; the capability matrix test | `gob-languages`, `gob-symbols`, `gob-ir` |
+| language conformance | per-adapter fixture dir with expected symbols, digests, U terms, imports; the capability matrix test | `gob-languages`, `gob-symbols`, `gob-ir` |
 | rule docs executable | every rule's doc example runs as an mdtest (ty lint_docs pattern) | generated |
 | self-hosting | `frob check` on this repo in CI, zero errors (milestone 1: frob only; sibling merging is Milestone 2 or later (D36)) | workflow |
 
@@ -95,11 +148,16 @@ Jobs, all on PR and main:
 | spawn budget | snapshot test of subprocess counts per CLI scenario (git-io.md section 7) | in test linux |
 | bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (architecture.md section 9) | 10 min |
 | deny | cargo-deny advisories, licenses, bans; cargo-shear | 1 min |
+| workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (cicd.md section 6; adopted before the CI adapters exist) | 1 min |
 | release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (monorepo.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |
 
-Every third-party action pinned by SHA, every toolchain version pinned
-in one `env:` block (v1 lesson: unpinned actions drifted). The budget for a green PR run is
-15 minutes wall, against v1's 123.
+Target: every third-party action pinned by SHA, every toolchain version
+pinned in one `env:` block (v1 lesson: unpinned actions drifted). The
+current `.github/workflows/ci.yml` does not meet it yet (it uses tag
+refs such as `actions/checkout@v4`, no `permissions` and no
+`timeout-minutes`); pinning, permissions and timeouts are a ticket, and
+the zizmor and actionlint stages below keep it honest once adopted. The
+budget for a green PR run is 15 minutes wall, against v1's 123.
 
 ## 5. Developer loop
 
@@ -120,6 +178,10 @@ by living in a `tests/` directory (a heuristic that over-approximates
 helpers in `tests/`; a helper only adds a filter that matches nothing).
 Selection walks the reach of the touched symbols through the call graph
 and adds a backstop: a test calling a touched function by a unique name
-is selected even when the edge is Ambiguous. `frob test` runs the
+is selected even when the edge is Ambiguous. Selection is a lower bound:
+when an Unknown edge leaves a touched symbol, the run reports one
+Unresolved ("selection incomplete: N unresolved call sites") and widens
+to the file's crate instead of recording Passed over an incomplete set
+(code-model.md section 6). `frob test` runs the
 selection through nextest and records evidence on the lease-holding
 ticket; TEST001 is owned by frob-tests.

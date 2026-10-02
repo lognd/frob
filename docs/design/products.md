@@ -10,7 +10,7 @@ design model belong together.
 | Product | One-line job | Owns | Never does |
 |---|---|---|---|
 | frob (ticket goblin) | accounts for WORK: tickets, scope leases, worktrees, evidence, landing, releases, the obligation gates that tie code to tickets, docs, and tests | tickets/, frob.lock acks, frob-ratchet, invariants/, decisions/, land, release, fleet, MCP for agents | parse CSS semantics, judge architecture, lint code style |
-| grimble (the design goblin) | judges STRUCTURE: the architecture model (what v1 called strata), symbol binding, capability matrix, universal and language-specific structural lints, cycles, dup, dead code, arch metrics, security patterns | design/*.grmb, `grimble.lock`, packs/, rule packs for code structure | know what a ticket is (it parses `ticket=` in an exception as an opaque string), land anything |
+| grimble (the design goblin) | judges STRUCTURE: the architecture model (what v1 called strata), symbol binding, capability matrix, universal and language-specific structural lints, neatness (NEAT), CI and Dockerfile policy (CI, DK), cycles, dup, dead code, arch metrics, security patterns | design/*.grmb, `grimble.lock`, packs/, rule packs for code structure | know what a ticket is (it parses `ticket=` in an exception as an opaque string), land anything |
 | crunk (front-end design-system goblin) | judges front-end DESIGN TOKENS: palette, scales, organization, Tailwind, contrast, token export, gallery | crunk.toml, tokens, CSS/TSX ingest, gallery | know what a ticket is (same opaque `ticket=` rule), model architecture |
 
 The line between frob and the design goblin: frob asks "is this change
@@ -33,7 +33,7 @@ and a code graph.
 
 Yes, one tool. Reasons:
 
-- They share every input: the code graph (symbols, IR, imports, calls,
+- They share every input: the code graph (symbols, U terms, imports, calls,
   effect sites) and the rule framework. Splitting them means two tools
   parsing the same tree.
 - Half of the structural lints are only meaningful against the model:
@@ -62,7 +62,7 @@ snag and skulk (both taken), krenk (free, too close to crunk).
 
 | Earlier location | Now |
 |---|---|
-| code-model.md sections 5 (IR), 6 (binds), 7 (capabilities) | grimble (`grimble-lints`, `grimble-bind`, `grimble-capabilities`), with `gob-symbols` and `gob-ir` providing symbols and IR to all three |
+| code-model.md sections 5 (IR), 6 (binds), 7 (capabilities) | grimble (`grimble-lints`, `grimble-bind`, `grimble-capabilities`), with `gob-ir` (the universal model, D56) and `gob-symbols` (its adapters) providing U terms and symbols to all three |
 | rules.md families CYCLE ARCH LARGE DEAD DUP SEC PII SYS CAP BIND GPOL | grimble |
 | rules.md families DRIFT AFFECT COV TODO SCOPE PRE QUEUE INV TEST TDD DOC DOCENUM NEGEXIST REF TICK MILE DEPR REL VERSION REG DEC NARR POL PM, and the ticket-bound exits of EXC | frob (the authoritative table is boundaries.md section 2.5) |
 | grimble-model.md | grimble's model |
@@ -107,5 +107,8 @@ PATH or links their crates in-process when built with the `bundle`
 feature (the default `uv tool install frob` wheel bundles all three so
 agents get one install; a build without `bundle`, such as crates.io
 `frob-cli`, reports a configured but missing sibling as an Unresolved
-finding rather than omitting it silently, and refuses a sibling whose
-`--json` has another `schema_version`; boundaries.md section 6).
+finding rather than omitting it silently, and treats a sibling whose
+`--json` has another `schema_version` the same way; both are required
+Unresolved findings that fail the gate with exit 1 under the default
+`[check] fail_on_unresolved = "required"`, cli.md section 2;
+boundaries.md section 6).

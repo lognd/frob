@@ -167,7 +167,7 @@ rule applies when the remote catches up.
 
 ## 3. Data model
 
-Fields are declared once in Rust with `#[derive(TicketField)]` which
+Fields are declared once in Rust with `#[derive(TicketSchema)]` which
 generates the frontmatter schema, the `ticket update` validation, the
 `--json` schema, and the docs table. Unknown keys are an error (not a
 v1-style warn) unless declared under `[tickets.custom_fields]`.

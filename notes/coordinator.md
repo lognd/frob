@@ -108,25 +108,42 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
   a touched file name; config-pointer messages all contain "Cargo.toml",
   so any DOC006 anywhere blocks any land touching Cargo.toml. Planned
   paths and config tables in docs/notes carry inline
-  a v1 DOC006 waive comment on the line above. Ticket
+  `<!-- frob:waive DOC006 reason="..." -->` on the line above. Ticket
   bodies must not contain `[section.key]` TOML pointers.
 - A removed `frob:waive` comment in a deleted or rewritten v1 file must
   be named in the done-report text (file:RULE) or the land refuses.
 
 ## Status log (newest first)
 
-- 2026-10-02 (self-host): T-0025 switches this repository to frob v2.
-  From the commit that merges it, `frob` v2 built from this tree checks
-  the repo (`frob check`, `frob doctor`, `frob test`, CI runs them) and the
-  ledger in `tickets/` is the v2 format: ULID ids with `~handles`, one event
-  file per change, every v1 id kept as an alias (`frob ticket show T-0003`
-  resolves). The v1 ledger lives in git history before the import commit
-  `chore(tickets): import the v1 ledger into the frob v2 format (T-0025)`;
-  `docs/migration/v1-import.md` lists what the import dropped. Future
-  tickets are filed with the v2 binary (`frob ticket new`), not the v1
-  tool, and `[tickets] ref` stays `refs/heads/experimental` until the
-  merge to main. The v1 ground rules above (installed v1 frob, `frob
-  ticket work`, DOC006 quirks) are historical from this point.
+- 2026-10-04 (review pause, closing): owner asked for (1) a survey of
+  paradigms and a universal model with coverage proofs, (2) loud
+  failure on anything incomputable, (3) a neatness lint family from
+  Logan Smith's channel and his references plus the ruff PR 29076
+  dispatcher example, (4) a CI/CD survey of about 1000 repos. Delivered
+  universal-model.md, neatness.md, cicd.md, grimble-model.md section 9,
+  four research notes, two reviews, D56-D60. A consistency review (12 H
+  / 24 M / 9 L) is being applied by a fixer with decisions D1-D11 (see
+  notes/review/design-consistency-resolution.md). Owner: resume
+  implementation once integrated and reviewed. Next: cutover (merge
+  experimental into t-0025 keeping the v2 ledger, re-import the final
+  v1 ledger, verify, merge), then file milestone 2 with the v2 binary
+  in the order of build-test-ci.md "Milestone 2".
+
+- 2026-10-04: T-0035 landed (29 done). T-0025 (self-host switch) is
+  complete on branch t-0025 and NOT merged: the cutover must re-import
+  T-0035/T-0036 and merge by hand after the owner review. Design work
+  during the pause: docs/design/universal-model.md (DRAFT) with three
+  research notes and a reading list under notes/research/. The research
+  notes lack web verification; `[verify]` tags mark uncertain citations.
+
+- 2026-10-03 (night): OWNER PAUSE. After T-0035 and T-0025 land, no new
+  dispatches. The owner reviews (1) what has been done and (2) the
+  design docs afresh, with one stated concern: the IR (code-model.md
+  section 5, gob-ir, milestone 2) must support esoteric languages, not
+  only tree-sitter-shaped ones. T-0036 stays queued. Review entry
+  points: this file; docs/design/README.md decision log D1-D55;
+  notes/audit-resolution.md; per-ticket done-reports under tickets/;
+  `frob check --timing --text` and `frob doctor` from the v2 binary.
 
 - 2026-10-03 (evening): landed T-0028 (TicketSchema derive on a mirror
   struct), T-0029 (design reconciled, D38-D55), T-0023 (frob-check;
