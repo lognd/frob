@@ -26,6 +26,20 @@ Materialized: yes.
 | `fail_on` | `FailOn` | `"error"` | yes | Lowest severity that makes `frob check` exit 1; `none` never fails. |
 | `size_cap` | `u64` | `4194304` | no | Files larger than this many bytes are skipped. |
 
+## `[evidence]`
+
+How evidence is captured and where large blobs go.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `allowed_tools` | `Vec<String>` | `["cargo", "git"]` | no | Programs the `command` provider may run (the first word of the command must be listed). |
+| `inline_max_bytes` | `u64` | `16384` | no | Transcripts up to this many bytes are stored inline in the event file. |
+| `nextest_profile` | `String` | `""` | no | Value for `cargo nextest run --profile`; empty leaves nextest's own default. |
+| `store` | `String` | `"dir:.git/frob/artifacts"` | no | Blob store: `dir:<path>` (relative paths start at the repository root, `.git/` at the common dir) or an `https://` URL (recorded only). |
+| `timeout_secs` | `u64` | `1800` | no | Wall-clock limit in seconds for one provider process. |
+
 ## `[git]`
 
 Settings of in-process git access.
@@ -36,6 +50,19 @@ Materialized: yes.
 |---|---|---|---|---|
 | `cas_retries` | `u32` | `5` | yes | Compare-and-swap retries when moving a ledger ref. |
 
+## `[lease]`
+
+Knobs of the lease store (tickets.md section 6, decision D26).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `lock_timeout_ms` | `u64` | `5000` | no | Milliseconds to wait for the lease lock before refusing with a timeout. |
+| `shared_files` | `Vec<String>` | `[]` | no | Append-shared files (such as `Cargo.lock`) exempt from overlap checks. |
+| `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
+| `wip_per_holder` | `u32` | `0` | no | Most live leases one holder may own; 0 turns the limit off. |
+
 ## `[tickets]`
 
 Where the ticket ledger lives.
@@ -44,5 +71,19 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `actor` | `String` | `""` | no | Actor recorded on events; empty means git `user.name`. |
 | `dir` | `String` | `"tickets"` | no | Directory of ticket files, relative to the repository root. |
+| `handle_min_len` | `u32` | `7` | no | Shortest ticket handle shown (`~` plus this many id characters). |
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |
+| `ref_mode` | `RefModeKnob` | `"trunk"` | yes | `trunk` commits to `ref`; `branch` commits to the checked-out branch. |
+| `registry_files` | `Vec<String>` | `[]` | no | Compatibility alias read from v1 `frob.toml`: append-shared files that extend `[lease] shared_files` (for example `Cargo.lock`). |
+
+## `[worktree]`
+
+Where `frob work` creates worktrees.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `dir` | `String` | `"../{repo}-wt"` | no | Parent directory of ticket worktrees; relative paths resolve against the primary checkout and `{repo}` stands for its directory name. |

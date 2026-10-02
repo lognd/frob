@@ -6,7 +6,7 @@ use frob_ledger::model::{
 };
 use frob_ledger::ops::{NewTicket, Patch};
 use frob_ledger::schema::parse_text_value;
-use gob_cli::clap::{Arg, ArgMatches};
+use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome};
 
 use super::{
@@ -471,6 +471,7 @@ pub struct Close {
     ticket: String,
     outcome: Option<Outcome>,
     reason: Option<String>,
+    no_evidence: bool,
 }
 
 impl Command for Close {
@@ -485,8 +486,14 @@ impl Command for Close {
             ))
             .arg(text_flag(
                 "reason",
-                "Free-text reason recorded on the event",
+                "Free-text reason recorded on the event; required with --no-evidence",
             ))
+            .arg(
+                Arg::new("no-evidence")
+                    .long("no-evidence")
+                    .action(ArgAction::SetTrue)
+                    .help("Close without measured evidence; needs --reason and is audited"),
+            )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -494,17 +501,37 @@ impl Command for Close {
             ticket: get(m, "ticket").unwrap_or_default(),
             outcome: get_parsed(m, "outcome")?,
             reason: get(m, "reason"),
+            no_evidence: m.get_flag("no-evidence"),
         })
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<ChangeData> {
+        if self.no_evidence && self.reason.as_deref().is_none_or(|r| r.trim().is_empty()) {
+            return Err(CliError::Usage(
+                "--no-evidence needs --reason <text> saying why no evidence is recorded".to_owned(),
+            ));
+        }
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
+        let ws = frob_evidence::Workspace::open(&ctx.cwd).map_err(CliError::internal)?;
+        let mut evidence = frob_evidence::EvidenceGuard::for_ticket(&ledger, &ws.store, id)
+            .map_err(CliError::internal)?;
+        if self.no_evidence {
+            evidence = evidence.allow_bypass(self.reason.clone().unwrap_or_default());
+        }
         let guards = default_close_guards();
-        let refs: Vec<&dyn frob_ledger::guards::CloseGuard> = guards.iter().map(|g| &**g).collect();
+        let mut refs: Vec<&dyn frob_ledger::guards::CloseGuard> =
+            guards.iter().map(|g| &**g).collect();
+        refs.push(&evidence);
         let applied = ledger
             .close(id, self.outcome, self.reason.clone(), &refs)
             .map_err(cli_err)?;
+        if !applied.already {
+            let recorded = evidence
+                .record_bypass(&ledger, id)
+                .map_err(CliError::internal)?;
+            tracing::info!(ticket = %id, bypass = recorded.is_some(), "evidence bypass audited");
+        }
         tracing::info!(ticket = %id, already = applied.already, "ticket close");
         Ok(payload(&applied))
     }

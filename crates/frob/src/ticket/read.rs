@@ -2,7 +2,7 @@
 
 use frob_ledger::TicketId;
 use frob_ledger::event::{Event, EventBody};
-use frob_ledger::guards::NoLeases;
+use frob_ledger::guards::{LeaseCheck, NoLeases};
 use frob_ledger::index::{ListFilter, Summary};
 use frob_ledger::model::{Category, TicketType};
 use frob_ledger::ops::TicketView;
@@ -12,6 +12,7 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use super::{choice_flag, cli_err, get, get_parsed, open, resolve, text_flag, ticket_arg};
+use crate::config::FrobConfig;
 
 /// One event as shown by `show --events`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -221,13 +222,50 @@ impl Command for Doable {
 
     fn run(&self, ctx: &Context) -> CliOutcome<ListData> {
         let ledger = open(ctx)?;
-        // frob-lease (T-0019) replaces NoLeases with the real overlap check.
-        let mut tickets = ledger.doable(&NoLeases).map_err(cli_err)?;
+        let (leases, warning) = lease_check(ctx);
+        let mut tickets = ledger.doable(&*leases).map_err(cli_err)?;
         if let Some(n) = self.limit {
             tickets.truncate(n);
         }
-        Ok(Payload::new(ListData::of(tickets)))
+        let payload = Payload::new(ListData::of(tickets));
+        Ok(match warning {
+            Some(w) => payload.with_warning(w),
+            None => payload,
+        })
     }
+}
+
+/// The live-lease check for `doable`, or `NoLeases` plus a warning when it cannot be built.
+///
+/// `[tickets] registry_files` is folded into `[lease] shared_files` here (the
+/// compatibility alias), so both spellings exempt the same files.
+fn lease_check(ctx: &Context) -> (Box<dyn LeaseCheck>, Option<String>) {
+    match build_lease_guard(&ctx.cwd) {
+        Ok(g) => (Box::new(g), None),
+        Err(msg) => {
+            tracing::warn!(error = %msg, "lease check unavailable; showing every ticket");
+            (
+                Box::new(NoLeases),
+                Some(format!(
+                    "lease check skipped, scope overlaps not hidden: {msg}"
+                )),
+            )
+        }
+    }
+}
+
+/// Snapshot live leases with the alias-merged `[lease]` config.
+fn build_lease_guard(cwd: &std::path::Path) -> Result<frob_lease::LeaseGuard, String> {
+    let repo = gob_git::Repo::discover(cwd).map_err(|e| e.to_string())?;
+    let root = repo
+        .work_dir()
+        .map(std::path::Path::to_path_buf)
+        .ok_or_else(|| format!("{} is not inside a git work tree", cwd.display()))?;
+    let cfg = FrobConfig::load(&root)
+        .map_err(|e| e.to_string())?
+        .lease_config();
+    let store = frob_lease::LeaseStore::open(&repo, cfg).map_err(|e| e.to_string())?;
+    frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string())
 }
 
 /// Output of `ticket brief`.

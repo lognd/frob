@@ -113,7 +113,7 @@ fn code(out: &Output) -> i32 {
 #[test]
 fn new_update_close_makes_three_commits_and_frontmatter_equals_the_fold() {
     let repo = Repo::new(false);
-    let id = repo.id_of(&["ticket", "new", "--title", "Lifecycle", "--type", "task"]);
+    let id = repo.id_of(&["ticket", "new", "--title", "Lifecycle", "--type", "chore"]);
     repo.ok(&[
         "ticket",
         "update",
@@ -207,7 +207,7 @@ fn new_with_the_same_key_returns_already() {
 #[test]
 fn links_blocked_doable_and_repeat_semantics() {
     let repo = Repo::new(false);
-    let blocker = repo.id_of(&["ticket", "new", "--title", "blocker"]);
+    let blocker = repo.id_of(&["ticket", "new", "--title", "blocker", "--type", "chore"]);
     let waiting = repo.id_of(&[
         "ticket",
         "new",

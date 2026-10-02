@@ -3,7 +3,8 @@
 //! [`cli`] assembles the root; `main` only runs it. Verbs live in their own
 //! modules: [`doctor`], [`init`], [`config_cmd`] (`config show`, `config
 //! sync`), [`ticket`] (`ticket ...` and the hidden `merge-driver`) and the
-//! built-in `schema` from `gob-cli`. Config knobs are the
+//! built-in `schema` from `gob-cli`; the lease, worktree, evidence, tests and
+//! ack verbs come from their sibling crates' `register`. Config knobs are the
 //! `ConfigTable` structs in [`config`].
 
 pub mod config;
@@ -20,11 +21,16 @@ pub const PRODUCT: &str = "frob";
 
 /// The fully registered `frob` command-line root.
 pub fn cli() -> Cli {
-    ticket::register(
+    let cli = ticket::register(
         Cli::new(PRODUCT, env!("CARGO_PKG_VERSION"))
             .register::<doctor::Doctor>()
             .register::<init::Init>()
             .register::<config_cmd::ConfigShow>()
             .register::<config_cmd::ConfigSync>(),
-    )
+    );
+    let cli = frob_lease::register(cli);
+    let cli = frob_worktree::register(cli);
+    let cli = frob_evidence::register(cli);
+    let cli = frob_tests::register(cli);
+    frob_ack::register(cli)
 }

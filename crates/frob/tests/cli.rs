@@ -295,6 +295,16 @@ fn every_verb_is_in_the_command_inventory() {
         "ticket brief",
         "ticket doctor",
         "merge-driver",
+        "lease list",
+        "ticket contention",
+        "work",
+        "start",
+        "requeue",
+        "ticket evidence",
+        "test",
+        "ack",
+        "graph why",
+        "graph affects",
     ] {
         assert!(verbs.contains(&v), "{v} missing from {verbs:?}");
     }

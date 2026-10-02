@@ -769,7 +769,12 @@ name = "frob-cli"
 version = "0.0.0"
 dependencies = [
  "assert_cmd",
+ "frob-ack",
+ "frob-evidence",
+ "frob-lease",
  "frob-ledger",
+ "frob-tests",
+ "frob-worktree",
  "gob-cache",
  "gob-cli",
  "gob-config",

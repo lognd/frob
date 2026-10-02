@@ -4,7 +4,31 @@
 
 | Verb | Idempotent | Dry run | Exits | Summary |
 |---|---|---|---|---|
+| `ack` | no | yes | 0 ok, 2 usage, 3 refused, 4 internal | Acknowledge symbols: record their digests in frob.lock and commit it on the current branch. |
 | `config show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print every config table merged (defaults, then frob.toml) with provenance. |
 | `config sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Add every knob a materialized table is missing to `frob.toml`; comments are kept. |
 | `doctor` | yes | no | 0 ok, 3 refused | Report toolchain, git, cache, config and ledger health; never fails on findings. |
+| `graph affects` | yes | no | 0 ok, 2 usage, 4 internal | List the transitive dependents of a symbol, grouped by file. |
+| `graph why` | yes | no | 0 ok, 2 usage, 4 internal | Explain the bindings and acks that make a finding fire for a symbol. |
 | `init` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Write frob.toml knobs, ignore .frob/, and install the ledger merge driver; safe to repeat. |
+| `lease list` | yes | no | 0 ok, 3 refused, 4 internal | List the live scope leases of this clone. |
+| `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |
+| `requeue` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Release a ticket's lease and move it back to todo. |
+| `start` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket for this checkout (no new worktree) and move it to in-progress. |
+| `test` | no | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run only the tests that reach the files changed against a base, and record the evidence. |
+| `ticket brief` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print a ticket as markdown: title, body, acceptance, scope, links, last events. |
+| `ticket close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket with an outcome once every close guard passes; repeating is a no-op. |
+| `ticket comment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a comment (note, decision, question or answer) to a ticket. |
+| `ticket contention` | yes | no | 0 ok, 3 refused, 4 internal | Print the files claimed by more than one live lease, ranked by holder count. |
+| `ticket doable` | yes | no | 0 ok, 2 usage, 4 internal | List tickets that can be started: todo, no open blocker, scope not leased. |
+| `ticket doctor` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-fold every ticket and report frontmatter drift, dangling links and event-order problems. |
+| `ticket drop` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Drop a ticket: close it as wont-fix with a required reason. |
+| `ticket evidence` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Capture, list or fetch the evidence of a ticket: `ticket evidence add\|list\|fetch <ticket>`. |
+| `ticket link` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a typed link between two tickets; repeating it is a no-op. |
+| `ticket list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List tickets from the index, filtered by category, type, parent, label or blocked. |
+| `ticket new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a ticket; with `--idempotency-key` a repeat returns the first ticket. |
+| `ticket reopen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Reopen a done ticket into todo with a required reason. |
+| `ticket show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one ticket from the index; `--events` adds its timeline. |
+| `ticket unlink` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove a typed link between two tickets; removing a missing link is a no-op. |
+| `ticket update` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Patch fields of a ticket: `--set key=value`, dedicated flags, label edits. |
+| `work` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket, create its worktree and branch, and move it to in-progress. |

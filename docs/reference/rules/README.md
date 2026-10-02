@@ -2,11 +2,25 @@
 
 # Rules
 
+## AFFECT
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [AFFECT001](AFFECT001.md) | dependents-not-updated | warn | manual | A public symbol changed its signature and its dependents were not re-acked. |
+
 ## CFG
 
 | Rule | Slug | Severity | Fix | Summary |
 |---|---|---|---|---|
 | [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | A materialized config knob is missing from the product config file. |
+
+## DRIFT
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [DRIFT001](DRIFT001.md) | doc-binding-drift | error | manual | A `frob:doc` binding went stale: the code changed under the doc, or the doc under the code. |
+| [DRIFT002](DRIFT002.md) | dangling-doc-target | error | manual | A `frob:doc` directive names a markdown section that does not exist. |
+| [DRIFT003](DRIFT003.md) | stale-ack | warn | manual | A symbol was acked, its signature changed, and no `frob:doc` directive covers it. |
 
 ## DSL
 
@@ -20,3 +34,23 @@
 | Rule | Slug | Severity | Fix | Summary |
 |---|---|---|---|---|
 | [PARSE001](PARSE001.md) | malformed-directive | error | manual | A `frob:` directive is malformed: unterminated quote, bad key, missing or invalid argument. |
+
+## SCOPE
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [SCOPE001](SCOPE001.md) | path-outside-lease | error | manual | A changed path lies outside the globs of the ticket's scope lease. |
+
+## TEST
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [TEST001](TEST001.md) | tests-target-missing | error | manual | A `frob:tests` directive whose target resolves to no test (or, inside a test, to no symbol). |
+
+## TICK
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | A ticket's frontmatter differs from the fold of its events. |
+| [TICK002](TICK002.md) | ticket-not-on-base | error | manual | A ticket id is referenced but absent from the base ref. |
+| [TICK003](TICK003.md) | dangling-link | error | manual | A link or parent names a ticket that does not exist. |

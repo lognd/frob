@@ -44,6 +44,48 @@
       },
       "type": "object"
     },
+    "evidence": {
+      "additionalProperties": false,
+      "description": "How evidence is captured and where large blobs go.",
+      "properties": {
+        "allowed_tools": {
+          "default": [
+            "cargo",
+            "git"
+          ],
+          "description": "Programs the `command` provider may run (the first word of the command must be listed).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "inline_max_bytes": {
+          "default": 16384,
+          "description": "Transcripts up to this many bytes are stored inline in the event file.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "nextest_profile": {
+          "default": "",
+          "description": "Value for `cargo nextest run --profile`; empty leaves nextest's own default.",
+          "type": "string"
+        },
+        "store": {
+          "default": "dir:.git/frob/artifacts",
+          "description": "Blob store: `dir:<path>` (relative paths start at the repository root, `.git/` at the common dir) or an `https://` URL (recorded only).",
+          "type": "string"
+        },
+        "timeout_secs": {
+          "default": 1800,
+          "description": "Wall-clock limit in seconds for one provider process.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "git": {
       "additionalProperties": false,
       "description": "Settings of in-process git access.",
@@ -58,18 +100,91 @@
       },
       "type": "object"
     },
+    "lease": {
+      "additionalProperties": false,
+      "description": "Knobs of the lease store (tickets.md section 6, decision D26).",
+      "properties": {
+        "lock_timeout_ms": {
+          "default": 5000,
+          "description": "Milliseconds to wait for the lease lock before refusing with a timeout.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "shared_files": {
+          "default": [],
+          "description": "Append-shared files (such as `Cargo.lock`) exempt from overlap checks.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ttl_secs": {
+          "default": 7200,
+          "description": "Seconds a lease stays live after its last renewal (default two hours).",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "wip_per_holder": {
+          "default": 0,
+          "description": "Most live leases one holder may own; 0 turns the limit off.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "tickets": {
       "additionalProperties": false,
       "description": "Where the ticket ledger lives.",
       "properties": {
+        "actor": {
+          "default": "",
+          "description": "Actor recorded on events; empty means git `user.name`.",
+          "type": "string"
+        },
         "dir": {
           "default": "tickets",
           "description": "Directory of ticket files, relative to the repository root.",
           "type": "string"
         },
+        "handle_min_len": {
+          "default": 7,
+          "description": "Shortest ticket handle shown (`~` plus this many id characters).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "ref": {
           "default": "refs/heads/main",
           "description": "Ref holding the ledger; the ledger merge driver and `doctor` resolve it.",
+          "type": "string"
+        },
+        "ref_mode": {
+          "$ref": "#/$defs/RefModeKnob",
+          "default": "trunk",
+          "description": "`trunk` commits to `ref`; `branch` commits to the checked-out branch."
+        },
+        "registry_files": {
+          "default": [],
+          "description": "Compatibility alias read from v1 `frob.toml`: append-shared files that\nextend `[lease] shared_files` (for example `Cargo.lock`).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "worktree": {
+      "additionalProperties": false,
+      "description": "Where `frob work` creates worktrees.",
+      "properties": {
+        "dir": {
+          "default": "../{repo}-wt",
+          "description": "Parent directory of ticket worktrees; relative paths resolve against the\nprimary checkout and `{repo}` stands for its directory name.",
           "type": "string"
         }
       },

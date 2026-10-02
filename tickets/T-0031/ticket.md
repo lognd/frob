@@ -2,7 +2,7 @@
 id: T-0031
 title: Wire frob-lease, frob-evidence, frob-tests and frob-ack verbs into the frob
   binary
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -28,8 +28,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0031
+branch: t-0031
 scope:
 - crates/frob/**
 - docs/reference/**
@@ -38,15 +38,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p frob-cli exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given the frob binary, when frob --schema work, frob --schema test, frob --schema
     ack and frob ticket evidence --schema run, then each prints a schema and exits
     0
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-cli exit=0 sha256=e3b0c44298fc
 - text: Given a code-type ticket without measured evidence, when ticket close runs,
     then exit is 3 with the frob test remedy
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-cli exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-bin
 anchor: false
