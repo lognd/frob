@@ -15,8 +15,12 @@ use grimble_model::model::{ModelFiles, load_roots};
 use grimble_model::parse::parse_file;
 
 fn corpus(path: &str) -> Vec<u8> {
-    std::fs::read(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/corpus").join(path))
-        .expect("corpus file")
+    std::fs::read(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/corpus")
+            .join(path),
+    )
+    .expect("corpus file")
 }
 
 fn root_of(path: &str) -> grimble_model::model::LoadedRoot {
@@ -46,8 +50,15 @@ fn specificity_is_a_total_order_and_ties_are_unknown() {
     let broad = owner_of_path("src/x/y.rs", &inputs, false);
     assert_eq!(broad.owner, Owner::Must(EntityName::from("broad")));
     let tie = owner_of_path("lib/a.rs", &inputs, false);
-    let want: BTreeSet<EntityName> = ["tie_a", "tie_b"].into_iter().map(EntityName::from).collect();
-    assert_eq!(tie.owner, Owner::Unknown(want), "a tie is never broken arbitrarily");
+    let want: BTreeSet<EntityName> = ["tie_a", "tie_b"]
+        .into_iter()
+        .map(EntityName::from)
+        .collect();
+    assert_eq!(
+        tie.owner,
+        Owner::Unknown(want),
+        "a tie is never broken arbitrarily"
+    );
 }
 
 #[test]
@@ -58,16 +69,25 @@ fn owner_distinguishes_owned_foreign_and_unknown() {
         owner_of_path("crates/b/src/lib.rs", &inputs, false).owner,
         Owner::Must(EntityName::from("other"))
     );
-    assert_eq!(owner_of_path("docs/readme.md", &inputs, false).owner, Owner::Foreign);
+    assert_eq!(
+        owner_of_path("docs/readme.md", &inputs, false).owner,
+        Owner::Foreign
+    );
     assert!(
-        matches!(owner_of_path("docs/readme.md", &inputs, true).owner, Owner::Unknown(_)),
+        matches!(
+            owner_of_path("docs/readme.md", &inputs, true).owner,
+            Owner::Unknown(_)
+        ),
         "an unseen remainder makes the answer Unknown, never FOREIGN"
     );
     let binds = explicit_binds(&root);
     assert_eq!(binds.len(), 1);
     assert_eq!(binds[0].entity, "node/explicit");
     assert_eq!(binds[0].symref, "crates/b/src/lib.rs::g");
-    assert!(!binds[0].manual, "`via` is optional; rank 1 beats the owns of `other` (applied by G10)");
+    assert!(
+        !binds[0].manual,
+        "`via` is optional; rank 1 beats the owns of `other` (applied by G10)"
+    );
 }
 
 #[test]
@@ -82,7 +102,12 @@ fn literal_selectors_are_must_and_holes_add_a_hidden_placeholder() {
     assert_eq!(sel.matches[0].status, Status::Must);
     assert!(sel.hidden.is_empty());
     let nodes = Selector::parse("kind(node) & lang(grmb)").expect("selector");
-    assert_eq!(select(&nodes, &folded.term, &folded.scopes, &files).matches.len(), 1);
+    assert_eq!(
+        select(&nodes, &folded.term, &folded.scopes, &files)
+            .matches
+            .len(),
+        1
+    );
 
     let holey = b"grimble = \"2\";\nmodule m;\nnode cli : trusted {\n  owns ;\n}\n";
     let parsed = parse_file("model.grmb", holey);

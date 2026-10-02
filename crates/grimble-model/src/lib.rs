@@ -1,9 +1,8 @@
 //! The .grmb language: lexer, parser, formatter, U adapter and the MDL rules.
-#![allow(missing_docs)]
 
-mod atoms;
 pub mod adapter;
 pub mod ast;
+mod atoms;
 pub mod binding;
 pub mod directive;
 pub mod dump;

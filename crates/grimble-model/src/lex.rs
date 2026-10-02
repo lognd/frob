@@ -278,9 +278,11 @@ impl Lexer<'_> {
         }
         let span = Span::new(start, self.pos);
         if !closed {
-            self.out
-                .diags
-                .push(Diagnostic::new("MDL000", span, "unterminated block comment"));
+            self.out.diags.push(Diagnostic::new(
+                "MDL000",
+                span,
+                "unterminated block comment",
+            ));
         }
         self.out.comments.push(Comment {
             kind: CommentKind::Block,
@@ -332,7 +334,6 @@ impl Lexer<'_> {
             self.digits();
         }
         let number = self.src[start..self.pos].to_owned();
-        let after_number = self.pos;
         let mut look = self.pos;
         while matches!(self.bytes.get(look), Some(b' ' | b'\t')) {
             look += 1;
@@ -350,7 +351,10 @@ impl Lexer<'_> {
             return;
         }
         if self.bytes.get(look) == Some(&b'/')
-            && self.bytes.get(look + 1).is_some_and(u8::is_ascii_alphabetic)
+            && self
+                .bytes
+                .get(look + 1)
+                .is_some_and(u8::is_ascii_alphabetic)
         {
             look += 1;
             while self.bytes.get(look).is_some_and(u8::is_ascii_alphabetic) {
@@ -359,7 +363,6 @@ impl Lexer<'_> {
         }
         let unit = self.src[unit_start..look].to_owned();
         self.pos = look;
-        let _ = after_number;
         self.push(Tok::Quantity { number, unit }, start);
     }
 
@@ -367,10 +370,7 @@ impl Lexer<'_> {
         let start = self.pos;
         self.pos += 1;
         let mut value = String::new();
-        loop {
-            let Some(rest) = self.src.get(self.pos..) else {
-                break;
-            };
+        while let Some(rest) = self.src.get(self.pos..) {
             let Some(c) = rest.chars().next() else {
                 let span = Span::new(start, self.pos);
                 self.error(span, "unterminated string");
@@ -389,7 +389,7 @@ impl Lexer<'_> {
                     return;
                 }
                 '\\' => {
-                    if let Some(ch) = self.escape(start) {
+                    if let Some(ch) = self.escape() {
                         value.push(ch);
                     }
                 }
@@ -400,7 +400,7 @@ impl Lexer<'_> {
         self.error(span, "unterminated string");
     }
 
-    fn escape(&mut self, string_start: usize) -> Option<char> {
+    fn escape(&mut self) -> Option<char> {
         let esc_start = self.pos - 1;
         let c = self.src.get(self.pos..)?.chars().next()?;
         self.pos += c.len_utf8();
@@ -434,7 +434,6 @@ impl Lexer<'_> {
                 ch
             }
             _ => {
-                let _ = string_start;
                 self.out.diags.push(Diagnostic::new(
                     "MDL000",
                     Span::new(esc_start, self.pos),

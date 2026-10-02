@@ -60,7 +60,12 @@ pub fn explicit_binds(root: &LoadedRoot) -> Vec<ExplicitBind> {
             let mut parts = d.hit.args.split_whitespace();
             let Some(symref) = parts.next() else { continue };
             let manual = parts.any(|p| p == "via=\"manual\"");
-            let entity = d.anchor.splitn(3, '/').take(2).collect::<Vec<_>>().join("/");
+            let entity = d
+                .anchor
+                .splitn(3, '/')
+                .take(2)
+                .collect::<Vec<_>>()
+                .join("/");
             out.push(ExplicitBind {
                 anchor: d.anchor.clone(),
                 entity,

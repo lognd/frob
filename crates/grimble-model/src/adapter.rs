@@ -75,11 +75,7 @@ fn file_symbols(input: &FileInput<'_>, status: ParseStatus) -> FileSymbols {
 /// # Errors
 ///
 /// [`FoldError`] only when the fold builds an ill-formed term (a bug).
-pub fn fold_text(
-    text: &[u8],
-    input: &FileInput<'_>,
-    mount: &str,
-) -> Result<Folded, FoldError> {
+pub fn fold_text(text: &[u8], input: &FileInput<'_>, mount: &str) -> Result<Folded, FoldError> {
     let parsed = parse_file(input.path, text);
     let status = status_of(&parsed);
     let folded = fold_file(&parsed, mount)?;
@@ -96,8 +92,14 @@ fn failed(input: &FileInput<'_>, why: &str) -> Result<Folded, FoldError> {
     let fid = files.intern(input.path);
     let mut b = TermBuilder::new(input.path, LANG);
     let loc = Location::text(fid, 0, input.size);
-    let hole = b.node(NodeSpec::new(Operator::hole("parse-failed"), loc.clone()), &[])?;
-    let root = b.node(NodeSpec::new(Operator::unit("module", "declaration"), loc), &[hole])?;
+    let hole = b.node(
+        NodeSpec::new(Operator::hole("parse-failed"), loc.clone()),
+        &[],
+    )?;
+    let root = b.node(
+        NodeSpec::new(Operator::unit("module", "declaration"), loc),
+        &[hole],
+    )?;
     let term = b.finish(root)?;
     let scopes = ScopeGraph::from_term(&term);
     tracing::warn!(path = input.path, why, "grmb file folded as one hole");
@@ -156,9 +158,7 @@ impl Adapter for GrmbAdapter {
             ConcreteTree::Leaf => {
                 let text = PENDING.with(|p| p.borrow_mut().take());
                 match text {
-                    Some(t) if t.len() == input.size as usize => {
-                        fold_text(t.as_bytes(), input, "")
-                    }
+                    Some(t) if t.len() == input.size as usize => fold_text(t.as_bytes(), input, ""),
                     _ => failed(input, "no text was parked by parse"),
                 }
             }

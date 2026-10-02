@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use gob_walk::Selector;
 
 use crate::ast::{
-    Atom, Attachments, Clause, ClauseKind, ClaimWhat, Direction, Entity, EntityKind, Evidence,
+    Atom, Attachments, ClaimWhat, Clause, ClauseKind, Direction, Entity, EntityKind, Evidence,
     ExcKind, Exception, Excuses, FileStatus, Header, Ident, Include, Item, KeyVal, Link, LinkKind,
     May, ModuleDecl, ModuleKind, Namespace, ParsedFile, QuantKey, Quantity, RefPath, Sel, Spanned,
     TopException, Value, VersionHeader, Versioning,
@@ -36,6 +36,13 @@ struct Target {
     head_end: usize,
     end: usize,
     close: Option<usize>,
+}
+
+fn fail<T>(span: Span, message: impl Into<String>) -> PResult<T> {
+    Err(ParseErr {
+        span,
+        message: message.into(),
+    })
 }
 
 struct Parser<'a> {
@@ -190,16 +197,9 @@ impl Parser<'_> {
         hit
     }
 
-    fn err<T>(&self, span: Span, message: impl Into<String>) -> PResult<T> {
-        Err(ParseErr {
-            span,
-            message: message.into(),
-        })
-    }
-
     fn unexpected<T>(&self, expected: &str) -> PResult<T> {
         let t = self.peek();
-        self.err(
+        fail(
             t.span,
             format!("unexpected {}, expected {expected}", t.tok.describe()),
         )
@@ -243,7 +243,10 @@ impl Parser<'_> {
             self.diags.push(Diagnostic::new(
                 "MDL000",
                 id.span,
-                format!("`{}` is a reserved word and cannot be used as {what}", id.text),
+                format!(
+                    "`{}` is a reserved word and cannot be used as {what}",
+                    id.text
+                ),
             ));
         }
         Ok(id)
@@ -354,7 +357,7 @@ impl Parser<'_> {
                 while !self.at_p(Punct::RBracket) {
                     let item = self.value()?;
                     if matches!(item.value, Value::List(_)) {
-                        return self.err(item.span, "lists do not nest");
+                        return fail(item.span, "lists do not nest");
                     }
                     items.push(item.value);
                     if !self.eat_p(Punct::Comma) {
@@ -383,7 +386,7 @@ impl Parser<'_> {
             let key = self.any_ident("an attribute key")?;
             if !self.at_p(Punct::Eq) {
                 if key.text == "because" {
-                    return self.err(
+                    return fail(
                         key.span.to(self.peek().span),
                         "a bare `because \"...\"` is not accepted; write `because=\"...\"`",
                     );
@@ -400,8 +403,8 @@ impl Parser<'_> {
     /// Slices a selector from the token stream (up to the `;` at depth 0) and parses it.
     fn selector(&mut self) -> PResult<Sel> {
         let first = self.peek().clone();
-        if matches!(first.tok, Tok::P(Punct::Semi) | Tok::Eof | Tok::P(Punct::RBrace)) {
-            return self.err(first.span, "expected a selector");
+        if matches!(first.tok, Tok::P(Punct::Semi | Punct::RBrace) | Tok::Eof) {
+            return fail(first.span, "expected a selector");
         }
         let mut depth = 0usize;
         let mut last = first.span;
@@ -432,7 +435,14 @@ impl Parser<'_> {
         Ok(Sel { text, span, parsed })
     }
 
-    fn register(&mut self, id: usize, start: usize, head_end: usize, end: usize, close: Option<usize>) {
+    fn register(
+        &mut self,
+        id: usize,
+        start: usize,
+        head_end: usize,
+        end: usize,
+        close: Option<usize>,
+    ) {
         self.targets.push(Target {
             id,
             start,
@@ -585,13 +595,13 @@ impl Parser<'_> {
             "namespace" => self.namespace().map(Item::Namespace),
             "extend" => self.extend().map(Item::Entity),
             "accept" | "defer" | "hotfix" => self.top_exception().map(Item::Exception),
-            "baseline" => self.err(
+            "baseline" => fail(
                 start,
                 "`baseline` is never written in a .grmb file; pools live in the ratchet lock",
             ),
             w => match EntityKind::from_keyword(w) {
                 Some(k) => self.entity(k).map(Item::Entity),
-                None => self.err(start, format!("unexpected `{w}`, expected an item")),
+                None => fail(start, format!("unexpected `{w}`, expected an item")),
             },
         };
         match r {
@@ -600,10 +610,19 @@ impl Parser<'_> {
         }
     }
 
-    fn item_hole(&mut self, start_pos: usize, start: Span, in_block: bool, e: Option<ParseErr>) -> Item {
+    fn item_hole(
+        &mut self,
+        start_pos: usize,
+        start: Span,
+        in_block: bool,
+        e: Option<ParseErr>,
+    ) -> Item {
         let e = e.unwrap_or_else(|| ParseErr {
             span: start,
-            message: format!("unexpected {}, expected an item", self.peek().tok.describe()),
+            message: format!(
+                "unexpected {}, expected an item",
+                self.peek().tok.describe()
+            ),
         });
         self.hole_diag(&e);
         if self.pos == start_pos {
@@ -663,7 +682,13 @@ impl Parser<'_> {
         let close = self.expect_p(Punct::RBrace)?;
         let id = self.id();
         let span = start.to(close.span);
-        self.register(id, span.start, open.span.end, span.end, Some(close.span.start));
+        self.register(
+            id,
+            span.start,
+            open.span.end,
+            span.end,
+            Some(close.span.start),
+        );
         Ok(Namespace {
             id,
             name,
@@ -812,7 +837,7 @@ impl Parser<'_> {
         let start = self.bump().span;
         let kw = self.any_ident("an entity kind keyword")?;
         let Some(kind) = EntityKind::from_keyword(&kw.text) else {
-            return self.err(kw.span, format!("`{}` is not an entity kind", kw.text));
+            return fail(kw.span, format!("`{}` is not an entity kind", kw.text));
         };
         let target = self.ref_path("an entity name")?;
         let open = self.expect_p(Punct::LBrace)?;
@@ -821,7 +846,13 @@ impl Parser<'_> {
         let close = self.expect_p(Punct::RBrace)?;
         let id = self.id();
         let span = start.to(close.span);
-        self.register(id, span.start, open.span.end, span.end, Some(close.span.start));
+        self.register(
+            id,
+            span.start,
+            open.span.end,
+            span.end,
+            Some(close.span.start),
+        );
         let last = target.segments.last().cloned().unwrap_or_default();
         Ok(Entity {
             id,
@@ -879,6 +910,10 @@ impl Parser<'_> {
         Ok(Clause { id, kind, span })
     }
 
+    #[allow(
+        clippy::too_many_lines,
+        reason = "a flat dispatch with one arm per clause keyword (grmb-spec 4)"
+    )]
     fn clause_kind(&mut self, word: &str, start: Span) -> PResult<ClauseKind> {
         if let Some(kind) = LinkKind::ALL.into_iter().find(|k| k.keyword() == word) {
             self.bump();
@@ -986,13 +1021,13 @@ impl Parser<'_> {
             "version" => ClauseKind::Version(self.string("a version string")?),
             "digest" => ClauseKind::Digest(self.string("a digest string")?),
             "baseline" => {
-                return self.err(
+                return fail(
                     start,
                     "`baseline` is never written in a .grmb file; pools live in the ratchet lock",
                 );
             }
             other => {
-                return self.err(start, format!("unexpected `{other}`, expected a clause"));
+                return fail(start, format!("unexpected `{other}`, expected a clause"));
             }
         })
     }
@@ -1039,9 +1074,39 @@ impl Parser<'_> {
 /// True for a rule token `[A-Z]+[0-9]+`.
 pub fn is_rule_token(s: &str) -> bool {
     let letters = s.bytes().take_while(u8::is_ascii_uppercase).count();
-    letters > 0
-        && letters < s.len()
-        && s.bytes().skip(letters).all(|b| b.is_ascii_digit())
+    letters > 0 && letters < s.len() && s.bytes().skip(letters).all(|b| b.is_ascii_digit())
+}
+
+/// Rule 2 of grmb-spec 8.1: the item whose `;` or opening `{` ends closest before `c` on its line.
+fn trailing_target(targets: &[Target], c: &Comment, src: &str) -> Option<usize> {
+    let mut best: Option<(usize, usize)> = None;
+    for t in targets {
+        for anchor in [t.end, t.head_end] {
+            let same_line = src
+                .get(anchor..c.span.start)
+                .is_some_and(|gap| !gap.contains('\n'));
+            if anchor <= c.span.start && same_line && best.is_none_or(|(a, _)| anchor > a) {
+                best = Some((anchor, t.id));
+            }
+        }
+    }
+    best.map(|(_, id)| id)
+}
+
+/// Rules 1 and 3 of grmb-spec 8.1: the outermost item starting at the next token, or the
+/// entity whose closing `}` is the next token.
+fn leading_target(targets: &[Target], next: &Token) -> Option<usize> {
+    targets
+        .iter()
+        .filter(|t| t.start == next.span.start)
+        .max_by_key(|t| t.end)
+        .map(|t| t.id)
+        .or_else(|| {
+            (next.tok == Tok::P(Punct::RBrace))
+                .then(|| targets.iter().find(|t| t.close == Some(next.span.start)))
+                .flatten()
+                .map(|t| t.id)
+        })
 }
 
 /// Binds comments to targets by the rules of grmb-spec 8.1.
@@ -1049,44 +1114,15 @@ fn attach(targets: &[Target], toks: &[Token], comments: &[Comment], src: &str) -
     let mut out = Attachments::default();
     let mut by: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
     for (ci, c) in comments.iter().enumerate() {
-        let doc = c.kind == CommentKind::Doc;
-        let mut bound: Option<usize> = None;
-        // Rule 2: trailing on the same line after an item's `;` or opening `{`.
-        if !doc {
-            let mut best: Option<(usize, usize)> = None;
-            for t in targets {
-                for anchor in [t.end, t.head_end] {
-                    if anchor <= c.span.start
-                        && src
-                            .get(anchor..c.span.start)
-                            .is_some_and(|gap| !gap.contains('\n'))
-                    {
-                        let better = best.is_none_or(|(a, _)| anchor > a);
-                        if better {
-                            best = Some((anchor, t.id));
-                        }
-                    }
-                }
-            }
-            bound = best.map(|(_, id)| id);
-        }
-        // Rule 1: the first item whose first token follows (outermost wins).
-        let next = toks.iter().find(|t| t.span.start >= c.span.end);
+        let mut bound = if c.kind == CommentKind::Doc {
+            None
+        } else {
+            trailing_target(targets, c, src)
+        };
         if bound.is_none()
-            && let Some(n) = next
+            && let Some(next) = toks.iter().find(|t| t.span.start >= c.span.end)
         {
-            bound = targets
-                .iter()
-                .filter(|t| t.start == n.span.start)
-                .max_by_key(|t| t.end)
-                .map(|t| t.id);
-            // Rule 3: a comment before a closing `}` binds to the enclosing entity.
-            if bound.is_none() && n.tok == Tok::P(Punct::RBrace) {
-                bound = targets
-                    .iter()
-                    .find(|t| t.close == Some(n.span.start))
-                    .map(|t| t.id);
-            }
+            bound = leading_target(targets, next);
         }
         // Inside a statement: the innermost enclosing target.
         if bound.is_none() {
@@ -1122,7 +1158,9 @@ mod tests {
 
     #[test]
     fn syntax_error_becomes_hole_and_parsing_continues() {
-        let f = parse("grimble = \"2\";\nmodule m;\nnode a : trusted { owns ; label X; owns \"y\"; }\nnode b : trusted {}\n");
+        let f = parse(
+            "grimble = \"2\";\nmodule m;\nnode a : trusted { owns ; label X; owns \"y\"; }\nnode b : trusted {}\n",
+        );
         assert_eq!(f.holes, 1);
         let Item::Entity(e) = &f.items[0] else {
             panic!("entity");
@@ -1167,6 +1205,9 @@ mod tests {
                 .collect::<Vec<_>>()
         };
         assert_eq!(texts(e.id), ["// lead", "// trail", "// closer"]);
-        assert_eq!(texts(e.clauses[0].id), ["// before clause", "// after clause"]);
+        assert_eq!(
+            texts(e.clauses[0].id),
+            ["// before clause", "// after clause"]
+        );
     }
 }

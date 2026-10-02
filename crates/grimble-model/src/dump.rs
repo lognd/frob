@@ -40,7 +40,12 @@ fn node(term: &Term, id: NodeId, depth: usize, out: &mut String) {
         let _ = write!(out, " binders={:?}", n.binders());
     }
     if let Some(span) = n.location().span() {
-        let _ = write!(out, " @{}..{}", u32::from(span.range.start()), u32::from(span.range.end()));
+        let _ = write!(
+            out,
+            " @{}..{}",
+            u32::from(span.range.start()),
+            u32::from(span.range.end())
+        );
     }
     if let Some(AttrValue::Str(a)) = n.attrs().get("grmb.anchor") {
         let _ = write!(out, " anchor={a}");
@@ -79,7 +84,10 @@ pub fn dump_refs(term: &Term, scopes: &ScopeGraph) -> String {
             Resolution::Must(d) => format!("Must {}", scopes.decl(d).name),
             Resolution::May(ds) => format!(
                 "May {}",
-                ds.iter().map(|d| scopes.decl(*d).name.clone()).collect::<Vec<_>>().join("|")
+                ds.iter()
+                    .map(|d| scopes.decl(*d).name.clone())
+                    .collect::<Vec<_>>()
+                    .join("|")
             ),
             Resolution::Unknown => "Unknown".to_owned(),
         };

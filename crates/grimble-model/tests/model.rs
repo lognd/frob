@@ -2,13 +2,13 @@
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 
+use gob_languages::ParseLimits;
+use gob_symbols::{Adapter, Capability, Fidelity, FileInput, ParseStatus, Precision};
 use grimble_model::adapter::{GrmbAdapter, fold_text};
 use grimble_model::fold::fold_file;
 use grimble_model::model::{ModelFiles, load_roots};
 use grimble_model::parse::parse_file;
 use grimble_model::rules::check_model;
-use gob_languages::ParseLimits;
-use gob_symbols::{Adapter, Capability, Fidelity, FileInput, ParseStatus, Precision};
 
 const H: &str = "grimble = \"2\";\nmodule m;\n";
 const P: &str = "grimble = \"2\";\npart of m;\n";
@@ -27,17 +27,27 @@ fn duplicate_entities_are_reported_independent_of_include_order() {
     let a = format!("{P}node dup : trusted {{\n}}\n");
     let b = format!("{P}node dup : trusted {{\n}}\n");
     let ab = ModelFiles::new()
-        .with_file("root.grmb", format!("{H}include \"a.grmb\";\ninclude \"b.grmb\";\n"))
+        .with_file(
+            "root.grmb",
+            format!("{H}include \"a.grmb\";\ninclude \"b.grmb\";\n"),
+        )
         .with_file("a.grmb", a.clone())
         .with_file("b.grmb", b.clone());
     let ba = ModelFiles::new()
-        .with_file("root.grmb", format!("{H}include \"b.grmb\";\ninclude \"a.grmb\";\n"))
+        .with_file(
+            "root.grmb",
+            format!("{H}include \"b.grmb\";\ninclude \"a.grmb\";\n"),
+        )
         .with_file("a.grmb", a)
         .with_file("b.grmb", b);
     let first = messages(&ab);
     assert_eq!(first.len(), 1, "{first:?}");
     assert_eq!(first[0].0, "MDL001");
-    assert_eq!(first, messages(&ba), "the first in (path, byte) order is kept whatever the include order");
+    assert_eq!(
+        first,
+        messages(&ba),
+        "the first in (path, byte) order is kept whatever the include order"
+    );
 }
 
 #[test]
@@ -69,7 +79,12 @@ fn an_extension_is_one_identity_with_two_parts() {
         .filter(|u| u.symref.to_string() == "m.grmb::cli")
         .collect();
     assert_eq!(cli.len(), 2, "declaration and extension parts");
-    let decls: Vec<_> = f.scopes.decls().iter().filter(|d| d.name == "cli").collect();
+    let decls: Vec<_> = f
+        .scopes
+        .decls()
+        .iter()
+        .filter(|d| d.name == "cli")
+        .collect();
     assert_eq!(decls.len(), 1, "one declaration, two nodes");
     assert_eq!(decls[0].nodes.len(), 2);
 }
@@ -131,7 +146,10 @@ fn the_adapter_is_f4_and_folds_through_the_gob_symbols_contract() {
     };
     let tree = a.parse(&text, &tiny);
     let folded = a.fold(&tree, &input).expect("fold");
-    assert!(matches!(folded.file.parse_status, ParseStatus::Failed { .. }));
+    assert!(matches!(
+        folded.file.parse_status,
+        ParseStatus::Failed { .. }
+    ));
 }
 
 #[test]
@@ -142,6 +160,12 @@ fn the_registry_knows_the_mdl_family() {
         assert!(reg.by_id(&id).is_some(), "{id} is registered");
     }
     assert!(reg.verify_unique().is_ok());
-    assert_eq!(reg.by_id("MDL015").map(|m| m.severity), Some(gob_rules::Severity::Advisory));
-    assert_eq!(reg.by_id("MDL005").map(|m| m.severity), Some(gob_rules::Severity::Warn));
+    assert_eq!(
+        reg.by_id("MDL015").map(|m| m.severity),
+        Some(gob_rules::Severity::Advisory)
+    );
+    assert_eq!(
+        reg.by_id("MDL005").map(|m| m.severity),
+        Some(gob_rules::Severity::Warn)
+    );
 }

@@ -1,8 +1,8 @@
 //! `grimble fmt`: the alpha-normal printer (grmb-spec 9.3).
 
-use crate::ast::{
-    Entity, EntityKind, FileStatus, Header, Item, ModuleKind, ParsedFile,
-};
+use std::fmt::Write as _;
+
+use crate::ast::{Entity, EntityKind, FileStatus, Header, Item, ModuleKind, ParsedFile};
 use crate::lex::CommentKind;
 use crate::span::Span;
 use crate::text::{clause_sort_key, clause_text, exception_text, quote};
@@ -66,7 +66,10 @@ fn item_rank(i: &Item) -> (u8, u8, String, bool, String) {
             0,
             inc.path.value.clone(),
             false,
-            inc.mount.as_ref().map(crate::ast::RefPath::written).unwrap_or_default(),
+            inc.mount
+                .as_ref()
+                .map(crate::ast::RefPath::written)
+                .unwrap_or_default(),
         ),
         Item::Namespace(n) => (2, 0, n.name.text.clone(), false, String::new()),
         Item::Entity(e) => {
@@ -79,9 +82,21 @@ fn item_rank(i: &Item) -> (u8, u8, String, bool, String) {
                 EntityKind::Vmodel => (3, 4),
                 EntityKind::Boundary => (3, 5),
             };
-            (kind.0, kind.1, e.target.written(), e.extension, String::new())
+            (
+                kind.0,
+                kind.1,
+                e.target.written(),
+                e.extension,
+                String::new(),
+            )
         }
-        Item::Exception(t) => (4, 0, t.exception.rule.text.clone(), false, exception_text(&t.exception)),
+        Item::Exception(t) => (
+            4,
+            0,
+            t.exception.rule.text.clone(),
+            false,
+            exception_text(&t.exception),
+        ),
         Item::Hole { .. } => (5, 0, String::new(), false, String::new()),
     }
 }
@@ -203,7 +218,7 @@ impl Printer<'_> {
                 self.comments(self.f.attachments.of(inc.id), indent);
                 let mut t = format!("include {}", quote(&inc.path.value));
                 if let Some(m) = &inc.mount {
-                    t.push_str(&format!(" as {}", m.written()));
+                    let _ = write!(t, " as {}", m.written());
                 }
                 t.push(';');
                 self.line(indent, &t);
@@ -256,7 +271,7 @@ impl Printer<'_> {
                     to.text
                 );
                 if let Some(w) = when {
-                    t.push_str(&format!(" when {}", quote(&w.value)));
+                    let _ = write!(t, " when {}", quote(&w.value));
                 }
                 t
             }
@@ -311,7 +326,10 @@ mod tests {
 
     #[test]
     fn a_hole_is_never_formatted_away() {
-        let f = parse_file("t.grmb", b"grimble = \"2\";\nmodule m;\nnode a : trusted { owns ; }\n");
+        let f = parse_file(
+            "t.grmb",
+            b"grimble = \"2\";\nmodule m;\nnode a : trusted { owns ; }\n",
+        );
         assert!(matches!(format_file(&f), Err(FmtError::Damaged { .. })));
     }
 
@@ -321,8 +339,13 @@ mod tests {
             .map(|i| format!("\"crates/some-long-crate-name-{i}/src/**\""))
             .collect::<Vec<_>>()
             .join(" | ");
-        let out = fmt(&format!("grimble = \"2\";\nmodule m;\nnode a : trusted {{ owns {long}; }}\n"));
-        assert!(out.lines().all(|l| l.chars().count() <= WRAP_COLUMN), "{out}");
+        let out = fmt(&format!(
+            "grimble = \"2\";\nmodule m;\nnode a : trusted {{ owns {long}; }}\n"
+        ));
+        assert!(
+            out.lines().all(|l| l.chars().count() <= WRAP_COLUMN),
+            "{out}"
+        );
         assert_eq!(fmt(&out), out);
     }
 }

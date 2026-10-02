@@ -126,17 +126,18 @@ fn check_args(ns: &str, verb: &str, args: &str) -> Option<(&'static str, String)
             Some(t) if is_full_ulid(t) => None,
             Some(t) if looks_like_ticket_ref(t) => Some((
                 "DSL002",
-                format!("`{ns}:{verb}` carries abbreviated ticket id `{t}`; only full ULIDs persist"),
+                format!(
+                    "`{ns}:{verb}` carries abbreviated ticket id `{t}`; only full ULIDs persist"
+                ),
             )),
             Some(t) => Some((
                 "PARSE001",
                 format!("`{ns}:{verb}`: `{t}` is not a ticket id"),
             )),
         },
-        ("frob", "doc" | "tests") | ("grimble", "binds") if first.is_none() => Some((
-            "PARSE001",
-            format!("`{ns}:{verb}` needs an argument"),
-        )),
+        ("frob", "doc" | "tests") | ("grimble", "binds") if first.is_none() => {
+            Some(("PARSE001", format!("`{ns}:{verb}` needs an argument")))
+        }
         _ => None,
     }
 }
@@ -166,12 +167,16 @@ pub fn scan(comments: &[Comment]) -> Vec<DirectiveHit> {
             } else if !is_word(verb, true) {
                 Some((
                     "PARSE001",
-                    format!("malformed verb `{verb}`; expected lowercase letters, digits, `_` and `-`"),
+                    format!(
+                        "malformed verb `{verb}`; expected lowercase letters, digits, `_` and `-`"
+                    ),
                 ))
             } else if MDL013_VERBS.contains(&(ns, verb)) {
                 Some((
                     "MDL013",
-                    format!("`{ns}:{verb}` is not accepted in a .grmb comment; use the clause form (grmb-spec 7 and 8.2)"),
+                    format!(
+                        "`{ns}:{verb}` is not accepted in a .grmb comment; use the clause form (grmb-spec 7 and 8.2)"
+                    ),
                 ))
             } else if !known_verb(ns, verb) {
                 Some(("DSL001", format!("unknown directive `{ns}:{verb}`")))
@@ -199,7 +204,9 @@ mod tests {
 
     #[test]
     fn finds_line_and_block_directives() {
-        let l = lex("// frob:doc docs/x.md#a\n/* hello\n * grimble:binds a.rs::f\n */\n// prose frob:doc x\n");
+        let l = lex(
+            "// frob:doc docs/x.md#a\n/* hello\n * grimble:binds a.rs::f\n */\n// prose frob:doc x\n",
+        );
         let hits = scan(&l.comments);
         assert_eq!(hits.len(), 2);
         assert_eq!(hits[0].qualified(), "frob:doc");

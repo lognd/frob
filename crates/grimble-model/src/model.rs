@@ -108,7 +108,11 @@ pub struct LoadedRoot {
 }
 
 /// Collects every include with the namespace chain enclosing it.
-fn includes<'a>(items: &'a [Item], ns: &mut Vec<String>, out: &mut Vec<(&'a Include, Vec<String>)>) {
+fn includes<'a>(
+    items: &'a [Item],
+    ns: &mut Vec<String>,
+    out: &mut Vec<(&'a Include, Vec<String>)>,
+) {
     for item in items {
         match item {
             Item::Include(i) => out.push((i, ns.clone())),
@@ -129,9 +133,13 @@ fn has_glob_meta(s: &str) -> bool {
 /// Joins `rel` onto the directory of `from` and normalizes; `Err` when it leaves the repository.
 fn normalize(from: &str, rel: &str) -> Result<String, String> {
     if rel.starts_with('/') || rel.contains('\\') {
-        return Err(format!("include path `{rel}` must be a relative POSIX path"));
+        return Err(format!(
+            "include path `{rel}` must be a relative POSIX path"
+        ));
     }
-    let mut parts: Vec<&str> = from.rsplit_once('/').map_or(vec![], |(d, _)| d.split('/').collect());
+    let mut parts: Vec<&str> = from
+        .rsplit_once('/')
+        .map_or(vec![], |(d, _)| d.split('/').collect());
     for seg in rel.split('/') {
         match seg {
             "" | "." => {}
@@ -210,7 +218,12 @@ impl Loader<'_> {
                     .cloned()
                     .collect(),
                 Err(e) => {
-                    self.diag(from_idx, "MDL002", inc.path.span, format!("include glob: {}", e.message));
+                    self.diag(
+                        from_idx,
+                        "MDL002",
+                        inc.path.span,
+                        format!("include glob: {}", e.message),
+                    );
                     return;
                 }
             }
@@ -256,7 +269,10 @@ impl Loader<'_> {
                     from_idx,
                     "MDL003",
                     span,
-                    format!("include cycle {}; the include is skipped", cycle.join(" -> ")),
+                    format!(
+                        "include cycle {}; the include is skipped",
+                        cycle.join(" -> ")
+                    ),
                 );
                 continue;
             }
@@ -468,7 +484,14 @@ impl<'a> Index<'a> {
             } else {
                 f.mount.split('.').map(str::to_owned).collect()
             };
-            walk_items(fi, &f.parsed.items, &mut ctx, &mut entities, &mut extensions, &mut top_exceptions);
+            walk_items(
+                fi,
+                &f.parsed.items,
+                &mut ctx,
+                &mut entities,
+                &mut extensions,
+                &mut top_exceptions,
+            );
         }
         let mut claims: BTreeMap<String, Vec<NameDecl>> = BTreeMap::new();
         for (ri, rec) in entities.iter().enumerate() {

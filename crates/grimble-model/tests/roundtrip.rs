@@ -9,7 +9,12 @@ use grimble_model::parse::parse_file;
 use proptest::prelude::*;
 
 fn sp() -> impl Strategy<Value = String> {
-    prop_oneof![Just(" ".to_owned()), Just("\n    ".to_owned()), Just("   ".to_owned()), Just("\t".to_owned())]
+    prop_oneof![
+        Just(" ".to_owned()),
+        Just("\n    ".to_owned()),
+        Just("   ".to_owned()),
+        Just("\t".to_owned())
+    ]
 }
 
 fn glob() -> impl Strategy<Value = String> {
@@ -38,20 +43,23 @@ fn leaf() -> impl Strategy<Value = String> {
 }
 
 fn selector() -> impl Strategy<Value = String> {
-    leaf().prop_recursive(3, 12, 3, |inner| {
-        prop_oneof![
-            (inner.clone(), inner.clone(), sp()).prop_map(|(a, b, s)| format!("({a}{s}&{s}{b})")),
-            (inner.clone(), inner.clone(), sp()).prop_map(|(a, b, s)| format!("({a}{s}|{s}{b})")),
-            inner.prop_map(|a| format!("!{a}")),
-        ]
-    })
-    .prop_map(|s| {
-        // The outer parentheses of a generated group are optional.
-        s.strip_prefix('(')
-            .and_then(|t| t.strip_suffix(')'))
-            .filter(|t| !t.contains('(') || t.matches('(').count() == t.matches(')').count())
-            .map_or(s.clone(), str::to_owned)
-    })
+    leaf()
+        .prop_recursive(3, 12, 3, |inner| {
+            prop_oneof![
+                (inner.clone(), inner.clone(), sp())
+                    .prop_map(|(a, b, s)| format!("({a}{s}&{s}{b})")),
+                (inner.clone(), inner.clone(), sp())
+                    .prop_map(|(a, b, s)| format!("({a}{s}|{s}{b})")),
+                inner.prop_map(|a| format!("!{a}")),
+            ]
+        })
+        .prop_map(|s| {
+            // The outer parentheses of a generated group are optional.
+            s.strip_prefix('(')
+                .and_then(|t| t.strip_suffix(')'))
+                .filter(|t| !t.contains('(') || t.matches('(').count() == t.matches(')').count())
+                .map_or(s.clone(), str::to_owned)
+        })
 }
 
 fn comment() -> impl Strategy<Value = String> {
@@ -87,9 +95,13 @@ fn node_clause() -> impl Strategy<Value = String> {
 
 fn clause_block(clause: BoxedStrategy<String>) -> impl Strategy<Value = String> {
     prop::collection::vec((comment(), clause, sp()), 0..6).prop_map(|cs| {
-        cs.into_iter()
-            .map(|(c, t, s)| format!("{c}{t}{s}"))
-            .collect::<String>()
+        let mut out = String::new();
+        for (c, t, s) in cs {
+            out.push_str(&c);
+            out.push_str(&t);
+            out.push_str(&s);
+        }
+        out
     })
 }
 
@@ -140,7 +152,10 @@ fn other_entity(i: usize) -> BoxedStrategy<String> {
         )
         .prop_map(move |b| format!("vmodel v{i} {{ {b} }}"))
         .boxed(),
-        4 => Just(format!("boundary b{i} endorse f0 : foreign -> trusted when \"ok\";")).boxed(),
+        4 => Just(format!(
+            "boundary b{i} endorse f0 : foreign -> trusted when \"ok\";"
+        ))
+        .boxed(),
         _ => Just(format!(
             "pack p{i} {{ ref \"grimble/p{i}\"; version \"1.0.0\"; }}"
         ))

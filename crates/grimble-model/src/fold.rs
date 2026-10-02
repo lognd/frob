@@ -86,7 +86,13 @@ impl T {
 
     fn key(&self) -> String {
         let kids: Vec<String> = self.children.iter().map(T::key).collect();
-        format!("{:?}|{:?}|{:?}|[{}]", self.op, self.name, self.binders, kids.join(","))
+        format!(
+            "{:?}|{:?}|{:?}|[{}]",
+            self.op,
+            self.name,
+            self.binders,
+            kids.join(",")
+        )
     }
 
     fn is_unordered_group(&self) -> bool {
@@ -143,7 +149,11 @@ fn expr_t(n: &Node) -> T {
     let span = Span::new(n.span.start, n.span.end);
     match &n.expr {
         Expr::Glob(g) => lit("glob", &g.text(), span),
-        Expr::Lang(l) => apply("pred", span, vec![reference("lang", span), lit("ident", l, span)]),
+        Expr::Lang(l) => apply(
+            "pred",
+            span,
+            vec![reference("lang", span), lit("ident", l, span)],
+        ),
         Expr::Kind(ks) => {
             let mut kids = vec![reference("kind", span)];
             kids.extend(ks.iter().map(|k| lit("ident", k, span)));
@@ -187,7 +197,10 @@ fn kv_attr(kv: &KeyVal) -> T {
         Value::List(items) => group(
             GroupOrder::Sequence,
             kv.value.span,
-            items.iter().map(|v| lit(value_kind(v), &lit_lexeme(v), kv.value.span)).collect(),
+            items
+                .iter()
+                .map(|v| lit(value_kind(v), &lit_lexeme(v), kv.value.span))
+                .collect(),
         ),
         v => lit(value_kind(v), &lit_lexeme(v), kv.value.span),
     };
@@ -271,7 +284,9 @@ pub fn fold_file(file: &ParsedFile, mount: &str) -> Result<FoldedFile, TermError
     let mut directives = Vec::new();
     for hit in &fo.hits {
         let target_id = fo.target_of(hit);
-        let anchor = target_id.and_then(|t| fo.anchors.get(&t).cloned()).unwrap_or_else(|| "file".to_owned());
+        let anchor = target_id
+            .and_then(|t| fo.anchors.get(&t).cloned())
+            .unwrap_or_else(|| "file".to_owned());
         let node = target_id.and_then(|t| ids.get(&t).copied()).unwrap_or(root);
         directives.push(BoundDirective {
             hit: hit.clone(),
@@ -310,7 +325,11 @@ fn lower(
     let clamp = |n: usize| u32::try_from(n).unwrap_or(u32::MAX);
     let mut spec = NodeSpec::new(
         t.op.clone(),
-        Location::text(fid, clamp(t.span.start), clamp(t.span.end.max(t.span.start))),
+        Location::text(
+            fid,
+            clamp(t.span.start),
+            clamp(t.span.end.max(t.span.start)),
+        ),
     )
     .lang_param(lang_param);
     if let Some(n) = &t.name {
@@ -353,7 +372,12 @@ fn add_builtin_scope(term: &Term, g: &mut ScopeGraph) {
     for n in names {
         g.declare(builtin, &n, None, DeclKind::Other, Status::Must, None);
     }
-    g.add_edge(root_scope, Label::Custom("builtin".to_owned()), builtin, Status::Must);
+    g.add_edge(
+        root_scope,
+        Label::Custom("builtin".to_owned()),
+        builtin,
+        Status::Must,
+    );
 }
 
 impl Folder<'_> {
@@ -421,8 +445,11 @@ impl Folder<'_> {
         let mut root = T::new(Operator::unit("module", "declaration"), whole, vec![])
             .with(reserved::ATTRS_PROVIDED, true);
         if let Some(v) = &f.version {
-            root.children
-                .push(attr("grimble-version", v.span, vec![lit("string", &v.value, v.span)]));
+            root.children.push(attr(
+                "grimble-version",
+                v.span,
+                vec![lit("string", &v.value, v.span)],
+            ));
         }
         match &f.status {
             FileStatus::Opaque(reason) => {
@@ -431,14 +458,22 @@ impl Folder<'_> {
                 return root;
             }
             FileStatus::Refused(reason) => {
-                root.children
-                    .push(T::new(Operator::opaque(reason, f.text.as_bytes()), whole, vec![]));
+                root.children.push(T::new(
+                    Operator::opaque(reason, f.text.as_bytes()),
+                    whole,
+                    vec![],
+                ));
                 return root;
             }
             FileStatus::Parsed => {}
         }
         if let Some(m) = &f.module {
-            let mut n = attr("module", m.span, vec![lit("ident", &m.name.text, m.name.span)]).tagged(m.id);
+            let mut n = attr(
+                "module",
+                m.span,
+                vec![lit("ident", &m.name.text, m.name.span)],
+            )
+            .tagged(m.id);
             n.children.extend(self.attachments(Some(m.id)));
             self.anchors.insert(m.id, "file/module".to_owned());
             root.children.push(n);
@@ -476,7 +511,8 @@ impl Folder<'_> {
                         None => ap,
                     }
                     .tagged(inc.id);
-                    self.anchors.insert(inc.id, format!("include/{}", inc.path.value));
+                    self.anchors
+                        .insert(inc.id, format!("include/{}", inc.path.value));
                     node.children.extend(self.attachments(Some(inc.id)));
                     out.push(node);
                 }
@@ -500,7 +536,8 @@ impl Folder<'_> {
                 Item::Entity(e) => out.push(self.entity(e, ns)),
                 Item::Exception(t) => {
                     let mut a = exception_t(&t.exception, t.span).tagged(t.id);
-                    self.anchors.insert(t.id, format!("exception/{}", t.exception.rule.text));
+                    self.anchors
+                        .insert(t.id, format!("exception/{}", t.exception.rule.text));
                     a.children.extend(self.attachments(Some(t.id)));
                     extra.push(a);
                 }
@@ -524,12 +561,16 @@ impl Folder<'_> {
         let kw = e.kind.keyword();
         let anchor = format!("{kw}/{full}");
         self.anchors.insert(e.id, anchor.clone());
-        let role = if e.extension { "extension" } else { "declaration" };
+        let role = if e.extension {
+            "extension"
+        } else {
+            "declaration"
+        };
         let mut unit = T::new(Operator::unit(kw, role), e.span, vec![])
             .named(&unit_name)
             .with("grmb.anchor", anchor.clone())
             .tagged(e.id);
-        self.header_nodes(e, &mut unit);
+        Self::header_nodes(e, &mut unit);
         let mut clauses: Vec<&Clause> = e.clauses.iter().collect();
         clauses.sort_by_cached_key(|c| clause_sort_key(c));
         let mut counters: BTreeMap<&'static str, usize> = BTreeMap::new();
@@ -551,7 +592,7 @@ impl Folder<'_> {
             let clause_anchor = format!("{anchor}/{key}[{n}]");
             *n += 1;
             self.anchors.insert(c.id, clause_anchor.clone());
-            let (mut node, place) = self.clause(e.kind, c);
+            let (mut node, place) = Self::clause(e.kind, c);
             node = node.with("grmb.anchor", clause_anchor).tagged(c.id);
             if matches!(node.op, Operator::Universal(gob_ir::Universal::Hole { .. })) {
                 // Holes take no children; hoist their comments to the entity.
@@ -573,19 +614,21 @@ impl Folder<'_> {
         unit
     }
 
-    fn header_nodes(&self, e: &Entity, unit: &mut T) {
+    fn header_nodes(e: &Entity, unit: &mut T) {
         match &e.header {
             Header::Node { trust: Some(t) } => {
-                unit.children.push(
-                    attr("trust", t.span, vec![reference(&t.text, t.span)]).sig(),
-                );
+                unit.children
+                    .push(attr("trust", t.span, vec![reference(&t.text, t.span)]).sig());
             }
             Header::Flow { from, to } => {
                 unit.children.push(
                     apply(
                         "connect",
                         from.span.to(to.span),
-                        vec![reference(&from.written(), from.span), reference(&to.written(), to.span)],
+                        vec![
+                            reference(&from.written(), from.span),
+                            reference(&to.written(), to.span),
+                        ],
                     )
                     .sig(),
                 );
@@ -615,11 +658,19 @@ impl Folder<'_> {
         }
     }
 
-    fn clause(&self, entity: EntityKind, c: &Clause) -> (T, Place) {
+    #[allow(
+        clippy::too_many_lines,
+        reason = "a flat dispatch with one arm per clause kind (grmb-spec 9.2)"
+    )]
+    fn clause(entity: EntityKind, c: &Clause) -> (T, Place) {
         let sp = c.span;
-        let sel_attr = |name: &str, s: &Sel, place: Place| (attr(name, sp, vec![select_t(s)]), place);
+        let sel_attr =
+            |name: &str, s: &Sel, place: Place| (attr(name, sp, vec![select_t(s)]), place);
         match &c.kind {
-            ClauseKind::Alias(i) => (attr("alias", sp, vec![lit("ident", &i.text, i.span)]), Place::Body),
+            ClauseKind::Alias(i) => (
+                attr("alias", sp, vec![lit("ident", &i.text, i.span)]),
+                Place::Body,
+            ),
             ClauseKind::RenamedFrom(i) => (
                 attr("renamed_from", sp, vec![lit("ident", &i.text, i.span)]),
                 Place::Body,
@@ -631,12 +682,18 @@ impl Folder<'_> {
                         Value::List(items) => group(
                             GroupOrder::Sequence,
                             v.span,
-                            items.iter().map(|x| lit(value_kind(x), &lit_lexeme(x), v.span)).collect(),
+                            items
+                                .iter()
+                                .map(|x| lit(value_kind(x), &lit_lexeme(x), v.span))
+                                .collect(),
                         ),
                         x => lit(value_kind(x), &lit_lexeme(x), v.span),
                     },
                 };
-                (attr(&format!("attr:{}", key.text), sp, vec![payload]), Place::Attr)
+                (
+                    attr(&format!("attr:{}", key.text), sp, vec![payload]),
+                    Place::Attr,
+                )
             }
             ClauseKind::Exception(e) => (exception_t(e, sp), Place::Attr),
             ClauseKind::Kind(i) => {
@@ -647,7 +704,10 @@ impl Folder<'_> {
                     (n, Place::Body)
                 }
             }
-            ClauseKind::Clearance(i) => (attr("clearance", sp, vec![reference(&i.text, i.span)]), Place::Body),
+            ClauseKind::Clearance(i) => (
+                attr("clearance", sp, vec![reference(&i.text, i.span)]),
+                Place::Body,
+            ),
             ClauseKind::Owns(s) => sel_attr("owns", s, Place::Body),
             ClauseKind::Surface(s) => sel_attr("surface", s, Place::Body),
             ClauseKind::May(m) => {
@@ -655,7 +715,10 @@ impl Folder<'_> {
                     reference(&m.atom.written(), m.atom.span),
                     unordered(
                         sp,
-                        m.args.iter().map(|a| lit("string", &a.value, a.span)).collect(),
+                        m.args
+                            .iter()
+                            .map(|a| lit("string", &a.value, a.span))
+                            .collect(),
                     ),
                 ];
                 if let Some(at) = &m.at {
@@ -673,12 +736,23 @@ impl Folder<'_> {
                 Place::Sig,
             ),
             ClauseKind::Quantity(k, q) => (
-                attr(k.keyword(), sp, vec![lit("quantity", &quantity_text(q), q.span)]),
+                attr(
+                    k.keyword(),
+                    sp,
+                    vec![lit("quantity", &quantity_text(q), q.span)],
+                ),
                 Place::Body,
             ),
-            ClauseKind::Fanout(n) => (attr("fanout", sp, vec![lit("number", &n.value, n.span)]), Place::Body),
+            ClauseKind::Fanout(n) => (
+                attr("fanout", sp, vec![lit("number", &n.value, n.span)]),
+                Place::Body,
+            ),
             ClauseKind::Growth(q) => (
-                attr("growth", sp, vec![lit("quantity", &quantity_text(q), q.span)]),
+                attr(
+                    "growth",
+                    sp,
+                    vec![lit("quantity", &quantity_text(q), q.span)],
+                ),
                 Place::Body,
             ),
             ClauseKind::Transport(atoms) => (
@@ -687,12 +761,18 @@ impl Folder<'_> {
                     sp,
                     vec![unordered(
                         sp,
-                        atoms.iter().map(|a| reference(&a.written(), a.span)).collect(),
+                        atoms
+                            .iter()
+                            .map(|a| reference(&a.written(), a.span))
+                            .collect(),
                     )],
                 ),
                 Place::Body,
             ),
-            ClauseKind::Condition(i) => (attr("condition", sp, vec![lit("ident", &i.text, i.span)]), Place::Body),
+            ClauseKind::Condition(i) => (
+                attr("condition", sp, vec![lit("ident", &i.text, i.span)]),
+                Place::Body,
+            ),
             ClauseKind::Producer(s) => sel_attr("producer", s, Place::Sig),
             ClauseKind::Consumer(s) => sel_attr("consumer", s, Place::Sig),
             ClauseKind::Contract(r) => (
@@ -701,13 +781,24 @@ impl Folder<'_> {
             ),
             ClauseKind::Shape(s) => sel_attr("shape", s, Place::Sig),
             ClauseKind::Versioning(v) => (
-                attr("versioning", sp, vec![unordered(sp, v.attrs.iter().map(kv_attr).collect())]),
+                attr(
+                    "versioning",
+                    sp,
+                    vec![unordered(sp, v.attrs.iter().map(kv_attr).collect())],
+                ),
                 Place::Sig,
             ),
             ClauseKind::What(w) => (what_t(w, sp), Place::Body),
-            ClauseKind::Proof(i) => (attr("proof", sp, vec![lit("ident", &i.text, i.span)]), Place::Body),
+            ClauseKind::Proof(i) => (
+                attr("proof", sp, vec![lit("ident", &i.text, i.span)]),
+                Place::Body,
+            ),
             ClauseKind::Assumed(kvs) => (
-                attr("assumed", sp, vec![unordered(sp, kvs.iter().map(kv_attr).collect())]),
+                attr(
+                    "assumed",
+                    sp,
+                    vec![unordered(sp, kvs.iter().map(kv_attr).collect())],
+                ),
                 Place::Body,
             ),
             ClauseKind::Evidence(Evidence::Tests(s)) => sel_attr("evidence", s, Place::Body),
@@ -716,7 +807,11 @@ impl Folder<'_> {
                 Place::Body,
             ),
             ClauseKind::Level(i) => (
-                attr("level", sp, vec![lit("ident", canonical_level(&i.text), i.span)]),
+                attr(
+                    "level",
+                    sp,
+                    vec![lit("ident", canonical_level(&i.text), i.span)],
+                ),
                 Place::Sig,
             ),
             ClauseKind::Ref(s) => {
@@ -731,13 +826,26 @@ impl Folder<'_> {
             ClauseKind::Link(l) => {
                 let mut kids = vec![reference(&l.target.written(), l.target.span)];
                 if let Some(b) = &l.because {
-                    kids.push(attr("because", b.span, vec![lit("string", &b.value, b.span)]));
+                    kids.push(attr(
+                        "because",
+                        b.span,
+                        vec![lit("string", &b.value, b.span)],
+                    ));
                 }
                 (apply(l.kind.keyword(), sp, kids), Place::Body)
             }
-            ClauseKind::Version(s) => (attr("version", sp, vec![lit("string", &s.value, s.span)]), Place::Body),
-            ClauseKind::Digest(s) => (attr("digest", sp, vec![lit("string", &s.value, s.span)]), Place::Body),
-            ClauseKind::Hole(_) => (T::new(Operator::hole("parse-error"), sp, vec![]), Place::Body),
+            ClauseKind::Version(s) => (
+                attr("version", sp, vec![lit("string", &s.value, s.span)]),
+                Place::Body,
+            ),
+            ClauseKind::Digest(s) => (
+                attr("digest", sp, vec![lit("string", &s.value, s.span)]),
+                Place::Body,
+            ),
+            ClauseKind::Hole(_) => (
+                T::new(Operator::hole("parse-error"), sp, vec![]),
+                Place::Body,
+            ),
         }
     }
 }
@@ -747,12 +855,18 @@ fn what_t(w: &ClaimWhat, sp: Span) -> T {
         ClaimWhat::Noflow(a, b) => apply(
             "noflow",
             sp,
-            vec![reference(&a.written(), a.span), reference(&b.written(), b.span)],
+            vec![
+                reference(&a.written(), a.span),
+                reference(&b.written(), b.span),
+            ],
         ),
         ClaimWhat::Reach(a, b) => apply(
             "reach",
             sp,
-            vec![reference(&a.written(), a.span), reference(&b.written(), b.span)],
+            vec![
+                reference(&a.written(), a.span),
+                reference(&b.written(), b.span),
+            ],
         ),
         ClaimWhat::Bound {
             metric,

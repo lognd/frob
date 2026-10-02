@@ -51,6 +51,9 @@ mod tests {
 
     #[test]
     fn identity_comes_from_the_crate_version() {
-        assert_eq!(grammar_identity(), format!("grmb:hand-written@{VERSION}:no-tree-sitter"));
+        assert_eq!(
+            grammar_identity(),
+            format!("grmb:hand-written@{VERSION}:no-tree-sitter")
+        );
     }
 }
