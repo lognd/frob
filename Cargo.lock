@@ -2212,6 +2212,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble"
+version = "0.0.0"
+dependencies = [
+ "assert_cmd",
+ "gob-check",
+ "gob-cli",
+ "gob-config",
+ "gob-rules",
+ "gob-symbols",
+ "grimble-check",
+ "grimble-model",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "toml",
+ "tracing",
+]
+
+[[package]]
+name = "grimble-check"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "gob-check",
+ "gob-config",
+ "gob-diagnostics",
+ "gob-ir",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "grimble-model",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "grimble-model"
 version = "0.0.0"
 dependencies = [
