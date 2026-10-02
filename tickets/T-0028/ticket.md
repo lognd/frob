@@ -2,7 +2,7 @@
 id: T-0028
 title: 'TicketField derive: generate ticket frontmatter serde, schema and docs table
   from one declaration'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -27,15 +27,22 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0028
+branch: t-0028
 scope:
 - crates/gob-macros/**
 - crates/frob-ledger/src/schema.rs
+- crates/frob-ledger/Cargo.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: crates/frob-ledger/Cargo.toml
+  reason: frob-ledger gains gob-macros and inventory dependencies for the derive
+  actor: logan
+  at: '2026-10-02'
 designated_repro_test: null
 acceptance:
 - text: Given the frontmatter struct with the derive, when cargo dev gen runs, then
