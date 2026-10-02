@@ -2,7 +2,8 @@
 id = "01M3ZEH3S0PG61C2AEBM691F69"
 title = "gob-symbols: adapter registry, ConcreteTree::Source and entity kinds so non-tree-sitter adapters register"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
