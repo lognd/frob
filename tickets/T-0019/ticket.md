@@ -30,11 +30,16 @@ branch: null
 scope:
 - crates/frob-lease/**
 - crates/frob-worktree/**
-- crates/frob/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: crates/frob/**
+  reason: verb wiring moves to T-0030 so the three crates run in parallel
+  actor: logan
+  at: '2026-10-02'
 designated_repro_test: null
 acceptance:
 - text: Given two tickets with overlapping globs and no files yet, when both run work
