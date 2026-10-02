@@ -46,6 +46,7 @@
 | [DRIFT001](DRIFT001.md) | doc-binding-drift | error | manual | A `frob:doc` binding went stale: the code changed under the doc, or the doc under the code. |
 | [DRIFT002](DRIFT002.md) | dangling-doc-target | error | manual | A `frob:doc` directive names a markdown section that does not exist. |
 | [DRIFT003](DRIFT003.md) | stale-ack | warn | manual | A symbol was acked, its signature changed, and no `frob:doc` directive covers it. |
+| [DRIFT004](DRIFT004.md) | reattest-required | warn | manual | A lock entry was recorded under another file version or digest scheme and must be re-attested. |
 
 ## DSL
 
