@@ -1,0 +1,5 @@
+error: enforcement field `cas_retries` needs `#[config(default = ...)]`: a materialized knob must have a written default
+ --> tests/ui/config_enforcement_no_default.rs:9:18
+  |
+9 |     cas_retries: u32,
+  |                  ^^^

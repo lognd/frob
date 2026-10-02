@@ -1,7 +1,7 @@
 ---
 id: T-0006
 title: 'gob-config: ConfigTable derive, layered load, materialized knobs, CFG001'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0006
+branch: t-0006
 scope:
 - crates/gob-config/**
 - crates/gob-macros/**
@@ -34,17 +34,22 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-config -p gob-macros exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a frob.toml missing a materialized knob, when check runs, then CFG001
     names the key, the default, and the fix command
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-config -p gob-macros exit=0 sha256=e3b0c44298fc
 - text: Given a frob.toml with comments, when materialize adds knobs, then existing
     comments and order are preserved (snapshot)
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-config -p gob-macros exit=0 sha256=e3b0c44298fc
 - text: Given an unknown key, when loaded, then the error names the key and the nearest
     valid key
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-config -p gob-macros exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-config
 anchor: false

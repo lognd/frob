@@ -1,0 +1,17 @@
+---
+source: crates/gob-config/tests/config.rs
+expression: text
+---
+# project config
+[zeta]
+keep = true # trailing
+
+[tickets]
+# my own note
+ref = "branch"
+# Compare-and-swap retries when updating the ledger.
+cas_retries = 5
+
+[tickets.lease]
+# Minutes before a lease expires.
+ttl_minutes = 120

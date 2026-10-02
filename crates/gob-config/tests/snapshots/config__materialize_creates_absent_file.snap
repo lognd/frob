@@ -1,0 +1,13 @@
+---
+source: crates/gob-config/tests/config.rs
+expression: "std::fs::read_to_string(dir.path().join(\"frob.toml\")).unwrap()"
+---
+[tickets]
+# Compare-and-swap retries when updating the ledger.
+cas_retries = 5
+# Where tickets live: `trunk` or `branch`.
+ref = "trunk"
+
+[tickets.lease]
+# Minutes before a lease expires.
+ttl_minutes = 120

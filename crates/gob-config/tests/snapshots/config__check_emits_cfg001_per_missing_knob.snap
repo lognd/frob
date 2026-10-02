@@ -1,0 +1,8 @@
+---
+source: crates/gob-config/tests/config.rs
+expression: messages
+---
+[
+    "missing materialized knob `tickets.ref` in frob.toml (default \"trunk\"); run `frob init` (or `frob config sync`) to write it",
+    "missing materialized knob `tickets.lease.ttl_minutes` in frob.toml (default 120); run `frob init` (or `frob config sync`) to write it",
+]

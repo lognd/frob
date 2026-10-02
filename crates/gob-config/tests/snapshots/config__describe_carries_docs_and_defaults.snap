@@ -1,0 +1,46 @@
+---
+source: crates/gob-config/tests/config.rs
+expression: "Tickets::describe()"
+---
+TableDescription {
+    table: "tickets",
+    doc: "Ticket settings.",
+    materialize: true,
+    fields: [
+        FieldDescription {
+            key: "cas_retries",
+            doc: "Compare-and-swap retries when updating the ledger.",
+            default_toml: "5",
+            enforcement: true,
+            type_name: "u32",
+            schema: Object {
+                "format": String("uint32"),
+                "minimum": Number(0),
+                "type": String("integer"),
+            },
+        },
+        FieldDescription {
+            key: "ref",
+            doc: "Where tickets live: `trunk` or `branch`.",
+            default_toml: "\"trunk\"",
+            enforcement: true,
+            type_name: "String",
+            schema: Object {
+                "type": String("string"),
+            },
+        },
+        FieldDescription {
+            key: "labels",
+            doc: "Free-form labels.",
+            default_toml: "[]",
+            enforcement: false,
+            type_name: "Vec<String>",
+            schema: Object {
+                "items": Object {
+                    "type": String("string"),
+                },
+                "type": String("array"),
+            },
+        },
+    ],
+}

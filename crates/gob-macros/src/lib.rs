@@ -1,10 +1,13 @@
-//! Proc macros for the goblins; currently `#[derive(Rule)]`.
+//! Proc macros for the goblins: `#[derive(Rule)]` and `#[derive(ConfigTable)]`.
 //!
 //! Do not depend on this crate directly: use `gob_rules::Rule`, which
-//! re-exports the derive together with the runtime it expands against.
+//! re-exports the derive together with the runtime it expands against
+//! (likewise `gob_config::ConfigTable`).
 
 // The darling derive output trips this pedantic lint; nothing we can edit.
 #![allow(clippy::needless_continue)]
+
+mod config_table;
 
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
@@ -97,7 +100,7 @@ fn valid_slug(slug: &str) -> bool {
 }
 
 /// Collect `///` lines (trimmed of one leading space) from forwarded attrs.
-fn doc_lines(attrs: &[syn::Attribute]) -> Vec<String> {
+pub(crate) fn doc_lines(attrs: &[syn::Attribute]) -> Vec<String> {
     attrs
         .iter()
         .filter_map(|a| match &a.meta {
@@ -224,6 +227,20 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
 pub fn derive_rule(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match expand(&input) {
+        Ok(ts) => ts.into(),
+        Err(e) => e.write_errors().into(),
+    }
+}
+
+/// Derive `gob_config::ConfigTable`, `Default`, `Deserialize` and an inventory entry.
+///
+/// Struct attribute `#[config(table = "tickets", materialize)]`; field attribute
+/// `#[config(default = <expr>, enforcement)]`. `///` docs become the generated
+/// documentation. An `enforcement` field must declare a default.
+#[proc_macro_derive(ConfigTable, attributes(config))]
+pub fn derive_config_table(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    match config_table::expand(&input) {
         Ok(ts) => ts.into(),
         Err(e) => e.write_errors().into(),
     }

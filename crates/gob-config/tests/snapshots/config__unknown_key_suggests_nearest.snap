@@ -1,0 +1,5 @@
+---
+source: crates/gob-config/tests/config.rs
+expression: err.to_string()
+---
+unknown key `cas_retrys` in [tickets]; did you mean `cas_retries`?

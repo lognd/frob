@@ -1,0 +1,9 @@
+---
+source: crates/gob-config/tests/config.rs
+expression: loaded.value
+---
+Tickets {
+    cas_retries: 5,
+    ref: "trunk",
+    labels: [],
+}

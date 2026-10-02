@@ -1,0 +1,52 @@
+---
+source: crates/gob-config/tests/config.rs
+expression: "schema(&[&t, &l])"
+---
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "tickets": {
+      "additionalProperties": false,
+      "description": "Ticket settings.",
+      "properties": {
+        "cas_retries": {
+          "default": 5,
+          "description": "Compare-and-swap retries when updating the ledger.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "labels": {
+          "default": [],
+          "description": "Free-form labels.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "lease": {
+          "additionalProperties": false,
+          "description": "Lease settings.",
+          "properties": {
+            "ttl_minutes": {
+              "default": 120,
+              "description": "Minutes before a lease expires.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "ref": {
+          "default": "trunk",
+          "description": "Where tickets live: `trunk` or `branch`.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "type": "object"
+}
