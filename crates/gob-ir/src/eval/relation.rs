@@ -12,9 +12,19 @@ use crate::term::NodeId;
 /// its weakest edge and alternatives are as certain as their strongest.
 ///
 /// ```
-/// use gob_ir::{Relation, Truth};
-/// # use gob_ir::NodeId;
-/// let _ = (Relation::new(), Truth::Yes);
+/// use gob_ir::{Location, NodeSpec, Operator, Relation, TermBuilder, Truth};
+/// use gob_text::FileInterner;
+///
+/// let mut files = FileInterner::new();
+/// let f = files.intern("a.rs");
+/// let mut b = TermBuilder::new("a.rs", "rust");
+/// let x = b.node(NodeSpec::new(Operator::lit("int", "1"), Location::text(f, 0, 1)), &[]).unwrap();
+/// let y = b.node(NodeSpec::new(Operator::lit("int", "2"), Location::text(f, 1, 2)), &[]).unwrap();
+/// let mut r = Relation::new();
+/// r.insert(x, y, Truth::Unknown);
+/// assert_eq!(r.get(x, y), Truth::Unknown);
+/// assert_eq!(r.get(y, x), Truth::No);
+/// assert_eq!(r.closure().get(x, y), Truth::Unknown);
 /// ```
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Relation {
