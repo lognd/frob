@@ -1,0 +1,29 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @markdown (unit "section" "impl" name="links" (group "sequence" (lit "heading" "Links")) (markdown.paragraph (lit "inline" "See [setup](#setup), [the guide](docs/guide.md#install) and [site](https://example.com).") (apply "link" (ref "#setup") (lit "text" "setup")) (apply "link" (ref "docs/guide.md#install") (lit "text" "the guide")) (apply "link" (ref "https://example.com") (lit "text" "site")))) (unit "section" "impl" name="setup" (group "sequence" (lit "heading" "Setup")) (markdown.paragraph (lit "inline" "Back to [top](#links).") (apply "link" (ref "#links") (lit "text" "top"))) (apply "link" (ref "docs/guide.md") (lit "text" "[ref]"))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S1:Must
+D0 S1 Unit "links" Must
+D1 S1 Unit "setup" Must
+R0 S2 unknown "#setup"
+R1 S2 unknown "docs/guide.md#install"
+R2 S2 unknown "https://example.com"
+R3 S3 unknown "#links"
+R4 S3 unknown "docs/guide.md"
+
+== file ==
+fidelity F4 status Complete
+== symbols ==
+tests/corpus/markdown/ops/ref.md#links Heading Public parent=
+tests/corpus/markdown/ops/ref.md#setup Heading Public parent=tests/corpus/markdown/ops/ref.md#links
+== edges ==
+Links tests/corpus/markdown/ops/ref.md#links -> tests/corpus/markdown/ops/ref.md#setup Must None Some("#setup")
+Links tests/corpus/markdown/ops/ref.md#links -> tests/corpus/markdown/ops/docs/guide.md#install Must None Some("docs/guide.md#install")
+Links tests/corpus/markdown/ops/ref.md#setup -> tests/corpus/markdown/ops/ref.md#links Must None Some("#links")
+Links tests/corpus/markdown/ops/ref.md#setup -> tests/corpus/markdown/ops/docs/guide.md Must None Some("docs/guide.md")

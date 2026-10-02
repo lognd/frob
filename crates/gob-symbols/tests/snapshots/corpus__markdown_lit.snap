@@ -1,0 +1,17 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @markdown (unit "section" "impl" name="code" (group "sequence" (lit "heading" "Code")) (markdown.paragraph (lit "inline" "Prose with extra spaces across lines.")) (markdown.fenced_code_block (lit "fenced_code_block_delimiter" "```") (lit "info_string" "rust") (lit "code_fence_content" "fn   keep()   {}\n") (lit "fenced_code_block_delimiter" "```")) (markdown.list (markdown.list_item (lit "list_marker_minus" "- ") (markdown.paragraph (lit "inline" "one"))) (markdown.list_item (lit "list_marker_minus" "- ") (markdown.paragraph (lit "inline" "two"))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+D0 S1 Unit "code" Must
+
+== file ==
+fidelity F4 status Complete
+== symbols ==
+tests/corpus/markdown/ops/lit.md#code Heading Public parent=
+== edges ==

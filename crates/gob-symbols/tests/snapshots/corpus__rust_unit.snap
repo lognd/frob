@@ -1,0 +1,62 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Units with roles: items, impl members, variants, bodiless declarations.")) (unit "module" "impl" name="shapes" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "mod" "mod")) (unit "struct" "impl" name="Point" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "struct" "struct")) (rust.field_declaration_list (lit "{" "{") (rust.field_declaration (rust.visibility_modifier (lit "pub" "pub")) (lit "field_identifier" "x") (lit ":" ":") (lit "primitive_type" "i32")) (lit "," ",") (lit "}" "}"))) (unit "enum" "impl" name="Color" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "enum" "enum")) (unit "variant" "impl" name="Red" (group "sequence")) (unit "variant" "impl" name="Green" (group "sequence" (lit "=" "=")) (lit "integer_literal" "2"))) (unit "trait" "impl" name="Shape" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "trait" "trait")) (unit "method" "sig" name="area" \1 (group "sequence" (lit "fn" "fn") (lit "self_parameter" "&self") (lit "->" "->") (lit "primitive_type" "i32") (lit ";" ";"))) (unit "method" "impl" name="name" \1 (group "sequence" (lit "fn" "fn") (lit "self_parameter" "&self") (lit "->" "->") (rust.reference_type (lit "&" "&") (lit "primitive_type" "str"))) (group "sequence" (rust.string_literal (lit "\"" "\"") (lit "string_content" "shape") (lit "\"" "\""))))) (unit "impl" "impl" name="Point" q="impl" (group "sequence" (lit "impl" "impl") (lit "type_identifier" "Point")) (unit "method" "impl" name="new" \1 (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (lit "primitive_type" "i32")) (lit "->" "->") (lit "type_identifier" "Point")) (group "sequence" (rust.struct_expression (lit "type_identifier" "Point") (rust.field_initializer_list (lit "{" "{") (rust.shorthand_field_initializer (ref #0)) (lit "}" "}")))))) (unit "impl" "impl" name="Point" q="Shape" (group "sequence" (lit "impl" "impl") (lit "type_identifier" "Shape") (lit "for" "for") (lit "type_identifier" "Point")) (unit "method" "impl" name="area" \1 (group "sequence" (lit "fn" "fn") (lit "self_parameter" "&self") (lit "->" "->") (lit "primitive_type" "i32")) (group "sequence" (rust.field_expression (ref #0) (lit "." ".") (lit "field_identifier" "x")))))) (unit "const" "impl" name="LIMIT" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "const" "const") (lit ":" ":") (lit "primitive_type" "u32") (lit "=" "=") (lit ";" ";")) (lit "integer_literal" "3")) (unit "type" "impl" name="Alias" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "type" "type") (lit "=" "=") (lit "primitive_type" "u32") (lit ";" ";"))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+S4 lexical>S2:Must
+S5 lexical>S4:Must
+S6 lexical>S4:Must
+S7 lexical>S2:Must
+S8 lexical>S7:Must
+S9 lexical>S7:Must
+S10 lexical>S2:Must
+S11 lexical>S10:Must
+S12 lexical>S2:Must
+S13 lexical>S12:Must
+S14 lexical>S1:Must
+S15 lexical>S1:Must
+D0 S1 Unit "shapes" Must
+D1 S2 Unit "Point" Must
+D2 S2 Unit "Color" Must
+D3 S4 Unit "Red" Must
+D4 S4 Unit "Green" Must
+D5 S2 Unit "Shape" Must
+D6 S7 Unit "area" Must
+D7 S8 Binder "_" Must
+D8 S7 Unit "name" Must
+D9 S9 Binder "_" Must
+D10 S2 Unit "Point" Must
+D11 S10 Unit "new" Must
+D12 S11 Binder "_" Must
+D13 S2 Unit "Point" Must
+D14 S12 Unit "area" Must
+D15 S13 Binder "_" Must
+D16 S1 Unit "LIMIT" Must
+D17 S1 Unit "Alias" Must
+R0 S11 must D12
+R1 S13 must D15
+
+== file ==
+fidelity F3 status Complete
+== symbols ==
+tests/corpus/rust/ops/unit.rs::shapes Module Public parent=
+tests/corpus/rust/ops/unit.rs::shapes.Point Struct Public parent=tests/corpus/rust/ops/unit.rs::shapes
+tests/corpus/rust/ops/unit.rs::shapes.Color Enum Public parent=tests/corpus/rust/ops/unit.rs::shapes
+tests/corpus/rust/ops/unit.rs::shapes.Color.Red Variant Public parent=tests/corpus/rust/ops/unit.rs::shapes.Color
+tests/corpus/rust/ops/unit.rs::shapes.Color.Green Variant Public parent=tests/corpus/rust/ops/unit.rs::shapes.Color
+tests/corpus/rust/ops/unit.rs::shapes.Shape Trait Public parent=tests/corpus/rust/ops/unit.rs::shapes
+tests/corpus/rust/ops/unit.rs::shapes.Shape.area Method Public parent=tests/corpus/rust/ops/unit.rs::shapes.Shape
+tests/corpus/rust/ops/unit.rs::shapes.Shape.name Method Public parent=tests/corpus/rust/ops/unit.rs::shapes.Shape
+tests/corpus/rust/ops/unit.rs::shapes.Point[impl] Impl Public parent=tests/corpus/rust/ops/unit.rs::shapes
+tests/corpus/rust/ops/unit.rs::shapes.Point.new Method Public parent=tests/corpus/rust/ops/unit.rs::shapes.Point[impl]
+tests/corpus/rust/ops/unit.rs::shapes.Point[Shape] Impl Public parent=tests/corpus/rust/ops/unit.rs::shapes
+tests/corpus/rust/ops/unit.rs::shapes.Point.area Method Public parent=tests/corpus/rust/ops/unit.rs::shapes.Point[Shape]
+tests/corpus/rust/ops/unit.rs::LIMIT Const Public parent=
+tests/corpus/rust/ops/unit.rs::Alias TypeAlias Public parent=
+== edges ==

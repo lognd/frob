@@ -1,0 +1,36 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Binders: let, for, if let, while let and match arms scope over what they cover.")) (unit "function" "impl" name="run" \1 (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.generic_type (lit "type_identifier" "Vec") (rust.type_arguments (lit "<" "<") (rust.generic_type (lit "type_identifier" "Option") (rust.type_arguments (lit "<" "<") (lit "primitive_type" "u32") (lit ">" ">"))) (lit ">" ">")))) (lit "->" "->") (lit "primitive_type" "u32")) (group "sequence" (bind "let" "" \1 (group "sequence" (rust.expression_statement (bind "for" "" \1 (group "sequence" (rust.expression_statement (bind "if-let" "" \1 (group "sequence" (rust.expression_statement (rust.compound_assignment_expr (ref #1) (lit "+=" "+=") (ref #3)) (lit ";" ";"))) (group "sequence" (lit "pattern" "Some ( _ )") (ref #2)))) (rust.expression_statement (group "sequence" (ref #2) (group "sequence" (bind "pattern" "" \1 (group "sequence" (rust.binary_expression (ref #3) (lit ">" ">") (lit "integer_literal" "1")) (rust.compound_assignment_expr (ref #1) (lit "+=" "+=") (ref #3))) (lit "pattern" "Some ( _ )")) (bind "pattern" "" (group "sequence" (group "sequence")) (lit "pattern" "")))))) (group "sequence" (lit "pattern" "_") (ref #0)))) (ref #1)) (group "sequence" (lit "pattern" "_") (lit "integer_literal" "0"))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+S4 lexical>S3:Must
+S5 lexical>S4:Must
+S6 lexical>S4:Must
+S7 lexical>S4:Must
+D0 S1 Unit "run" Must
+D1 S2 Binder "_" Must
+D2 S3 Binder "_" Must
+D3 S4 Binder "_" Must
+D4 S5 Binder "_" Must
+D5 S6 Binder "_" Must
+R0 S5 must D2
+R1 S5 must D4
+R2 S4 must D3
+R3 S4 must D3
+R4 S6 must D5
+R5 S6 must D2
+R6 S6 must D5
+R7 S3 must D1
+R8 S3 must D2
+
+== file ==
+fidelity F3 status Complete
+== symbols ==
+tests/corpus/rust/ops/bind.rs::run Function Public parent=
+== edges ==

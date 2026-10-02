@@ -1,0 +1,19 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Regions: unsafe blocks are boundaries rules care about.")) (unit "function" "impl" name="raw" \1 (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.pointer_type (lit "*" "*") (lit "const" "const") (lit "primitive_type" "u8"))) (lit "->" "->") (lit "primitive_type" "u8")) (group "sequence" (rust.expression_statement (region "unsafe" (lit "unsafe" "unsafe") (group "sequence" (rust.unary_expression (lit "*" "*") (ref #0))))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+D0 S1 Unit "raw" Must
+D1 S2 Binder "_" Must
+R0 S2 must D1
+
+== file ==
+fidelity F3 status Complete
+== symbols ==
+tests/corpus/rust/ops/region.rs::raw Function Public parent=
+== edges ==

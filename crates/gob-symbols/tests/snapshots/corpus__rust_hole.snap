@@ -1,0 +1,24 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Holes: syntax errors become hole nodes; the rest of the file still folds.")) (unit "function" "impl" name="fine" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn")) (group "sequence")) (unit "function" "impl" name="broken" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn")) (group "sequence" (rust.let_declaration (lit "let" "let") (hole "parse-error") (ref "call") (hole "parse-error") (lit ";" ";")))) (unit "function" "impl" name="after" (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn")) (group "sequence")))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S1:Must
+S4 lexical>S1:Must
+D0 S1 Unit "fine" Must
+D1 S1 Unit "broken" Must
+D2 S1 Unit "after" Must
+R0 S3 unknown "call"
+
+== file ==
+fidelity F3 status Partial { holes: 2 }
+== symbols ==
+tests/corpus/rust/ops/hole.rs::fine Function Public parent=
+tests/corpus/rust/ops/hole.rs::broken Function Public parent=
+tests/corpus/rust/ops/hole.rs::after Function Public parent=
+== edges ==

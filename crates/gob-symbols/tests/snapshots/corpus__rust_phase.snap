@@ -1,0 +1,23 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Phases: macro invocations keep their tokens and their calls (capped at May).")) (unit "function" "impl" name="shout" \1 (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.reference_type (lit "&" "&") (lit "primitive_type" "str")))) (group "sequence" (rust.expression_statement (phase "macro" (group "sequence" (lit "identifier" "println") (lit "!" "!") (lit "(" "(") (lit "\"" "\"") (lit "string_content" "{}") (lit "\"" "\"") (lit "," ",") (lit "identifier" "greet") (lit "(" "(") (lit "identifier" "name") (lit ")" ")") (lit ")" ")"))) (lit ";" ";")))) (unit "function" "impl" name="greet" \1 (group "sequence" (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.reference_type (lit "&" "&") (lit "primitive_type" "str"))) (lit "->" "->") (lit "type_identifier" "String")) (group "sequence" (phase "macro" (group "sequence" (lit "identifier" "format") (lit "!" "!") (lit "(" "(") (lit "\"" "\"") (lit "string_content" "hi {name}") (lit "\"" "\"") (lit ")" ")"))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S1:Must
+D0 S1 Unit "shout" Must
+D1 S2 Binder "_" Must
+D2 S1 Unit "greet" Must
+D3 S3 Binder "_" Must
+
+== file ==
+fidelity F3 status Complete
+== symbols ==
+tests/corpus/rust/ops/phase.rs::shout Function Public parent=
+tests/corpus/rust/ops/phase.rs::greet Function Private parent=
+== edges ==
+Calls tests/corpus/rust/ops/phase.rs::shout -> tests/corpus/rust/ops/phase.rs::greet May None None

@@ -1,0 +1,17 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Comments are trivia attached to their parent and excluded from digests.")) (unit "function" "impl" name="commented" (comment "// before the item") (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn") (lit "->" "->") (lit "primitive_type" "u32")) (group "sequence" (comment "// inside the body") (rust.binary_expression (lit "integer_literal" "1") (comment "/* inline */") (lit "+" "+") (lit "integer_literal" "2")))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+D0 S1 Unit "commented" Must
+
+== file ==
+fidelity F3 status Complete
+== symbols ==
+tests/corpus/rust/ops/comment.rs::commented Function Public parent=
+== edges ==

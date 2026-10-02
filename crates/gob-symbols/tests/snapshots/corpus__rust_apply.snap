@@ -1,0 +1,48 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Application: free call, path call, method call, constructor, dynamic call.")) (unit "function" "impl" name="go" \2 (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.generic_type (lit "type_identifier" "Vec") (rust.type_arguments (lit "<" "<") (lit "primitive_type" "u32") (lit ">" ">")))) (rust.parameter (lit "pattern" "_") (rust.function_type (lit "fn" "fn") (rust.parameters (lit "(" "(") (lit "primitive_type" "u32") (lit ")" ")")) (lit "->" "->") (lit "primitive_type" "u32"))) (lit "->" "->") (rust.generic_type (lit "type_identifier" "Option") (rust.type_arguments (lit "<" "<") (lit "primitive_type" "u32") (lit ">" ">")))) (group "sequence" (bind "let" "" \1 (group "sequence" (bind "let" "" \1 (group "sequence" (bind "let" "" \1 (group "sequence" (bind "let" "" \1 (group "sequence" (bind "let" "" (group "sequence" (bind "let" "" (group "sequence" (ref #5)) (group "sequence" (lit "pattern" "_") (ref #3)))) (group "sequence" (lit "pattern" "_") (apply "call" (ref #1) (ref #2))))) (group "sequence" (lit "pattern" "_") (apply "construct" (ref "Some") (ref #4))))) (group "sequence" (lit "pattern" "_") (apply "method" (ref ".len") (ref #0))))) (group "sequence" (lit "pattern" "_") (apply "call" (ref "Builder::new"))))) (group "sequence" (lit "pattern" "_") (apply "call" (ref "helper") (lit "integer_literal" "1")))))) (unit "function" "impl" name="helper" \1 (group "sequence" (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (lit "primitive_type" "u32")) (lit "->" "->") (lit "primitive_type" "u32")) (group "sequence" (ref #0))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+S4 lexical>S3:Must
+S5 lexical>S4:Must
+S6 lexical>S5:Must
+S7 lexical>S6:Must
+S8 lexical>S7:Must
+S9 lexical>S1:Must
+D0 S1 Unit "go" Must
+D1 S2 Binder "_" Must
+D2 S2 Binder "_" Must
+D3 S3 Binder "_" Must
+D4 S4 Binder "_" Must
+D5 S5 Binder "_" Must
+D6 S6 Binder "_" Must
+D7 S1 Unit "helper" Must
+D8 S9 Binder "_" Must
+R0 S8 must D6
+R1 S7 must D4
+R2 S6 must D2
+R3 S6 must D3
+R4 S5 unknown "Some"
+R5 S5 must D5
+R6 S4 unknown ".len"
+R7 S4 must D1
+R8 S3 unknown "Builder::new"
+R9 S2 must D7
+R10 S9 must D8
+
+== file ==
+fidelity F3 status Complete
+== symbols ==
+tests/corpus/rust/ops/apply.rs::go Function Public parent=
+tests/corpus/rust/ops/apply.rs::helper Function Private parent=
+== edges ==
+Calls tests/corpus/rust/ops/apply.rs::go -> tests/corpus/rust/ops/apply.rs::helper Must None None
+Calls tests/corpus/rust/ops/apply.rs::go -> ? Unknown Some(Unbound) Some("new")
+Calls tests/corpus/rust/ops/apply.rs::go -> ? Unknown Some(Unbound) Some("len")
+Calls tests/corpus/rust/ops/apply.rs::go -> ? Unknown Some(LocalValue) Some("f")
