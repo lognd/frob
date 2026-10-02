@@ -2182,6 +2182,7 @@ dependencies = [
  "gob-text",
  "gob-walk",
  "insta",
+ "inventory",
  "petgraph",
  "postcard",
  "rayon",

@@ -1,22 +1,21 @@
 //! The F4 adapter `A_grmb` for gob-symbols (grmb-spec 9, universal-model.md 3.1).
 //!
-//! `gob_symbols::ConcreteTree` can only carry a tree-sitter tree, an unparsed reason or
-//! the adapter-less leaf, and `Adapter::fold` receives no source text, so a hand-written
-//! parser has nowhere to put its result. [`GrmbAdapter::parse`] therefore parks the text
-//! of the file it was just given on the calling thread and [`GrmbAdapter::fold`] takes it
-//! back; the gob-symbols pipeline always calls the two back to back on one thread. The
-//! robust fix is a `ConcreteTree::Source` variant in gob-symbols (decision-log proposal in
-//! the G08 report); [`fold_text`] is the direct, thread-free entry point.
+//! [`GrmbAdapter::parse`] returns the text as [`ConcreteTree::Source`] (the parser is
+//! hand-written, so there is no tree-sitter tree) and [`GrmbAdapter::fold`] parses and
+//! folds it; [`fold_text`] is the direct entry point. The adapter registers itself with
+//! gob-symbols through [`gob_symbols::AdapterEntry`], so any binary linking this crate
+//! sees `grmb` at F4 in [`gob_symbols::fidelity_report`].
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+// frob:ticket 01M3ZEH3S0PG61C2AEBM691F69
 
-use std::cell::RefCell;
+use std::sync::Arc;
 
 use gob_ir::{Location, NodeSpec, Operator, ScopeGraph, TermBuilder};
 use gob_languages::ParseLimits;
 use gob_symbols::{
-    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FileSymbols, FoldError,
-    Folded, ParseStatus, Precision,
+    Adapter, AdapterEntry, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput,
+    FileSymbols, FoldError, Folded, ParseStatus, Precision, model_symbols,
 };
 use gob_text::FileInterner;
 
@@ -26,10 +25,6 @@ use crate::parse::parse_file;
 
 /// Bump when the encoding of grmb-spec 9.2 changes for the same input; part of the cache key.
 pub const ADAPTER_VERSION: u32 = 1;
-
-thread_local! {
-    static PENDING: RefCell<Option<String>> = const { RefCell::new(None) };
-}
 
 /// The grimble-model grammar identity: the hand-written parser has no grammar crate, so it
 /// is the crate version plus the language major it reads.
@@ -57,8 +52,15 @@ fn status_of(f: &crate::ast::ParsedFile) -> ParseStatus {
     }
 }
 
-fn file_symbols(input: &FileInput<'_>, status: ParseStatus) -> FileSymbols {
+fn file_symbols(
+    input: &FileInput<'_>,
+    status: ParseStatus,
+    term: Option<&gob_ir::Term>,
+) -> FileSymbols {
+    let (symbols, extras) = term.map_or_else(Default::default, |t| model_symbols(t, input.path));
     FileSymbols {
+        symbols,
+        extras,
         path: input.path.to_owned(),
         file_digest: input.digest.to_owned(),
         size: input.size,
@@ -80,10 +82,11 @@ pub fn fold_text(text: &[u8], input: &FileInput<'_>, mount: &str) -> Result<Fold
     let status = status_of(&parsed);
     let folded = fold_file(&parsed, mount)?;
     tracing::debug!(path = input.path, ?status, "grmb adapter fold");
+    let file = file_symbols(input, status, Some(&folded.term));
     Ok(Folded {
         term: folded.term,
         scopes: folded.scopes,
-        file: file_symbols(input, status),
+        file,
     })
 }
 
@@ -111,6 +114,7 @@ fn failed(input: &FileInput<'_>, why: &str) -> Result<Folded, FoldError> {
             ParseStatus::Failed {
                 reason: why.to_owned(),
             },
+            None,
         ),
     })
 }
@@ -147,21 +151,23 @@ impl Adapter for GrmbAdapter {
                 cap: limits.max_bytes,
             });
         }
-        PENDING.with(|p| *p.borrow_mut() = Some(text.to_owned()));
-        ConcreteTree::Leaf
+        ConcreteTree::Source(Arc::from(text))
     }
 
     fn fold(&self, tree: &ConcreteTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
         match tree {
             ConcreteTree::Unparsed(r) => failed(input, &r.to_string()),
             ConcreteTree::Parsed(_) => failed(input, "not a grmb tree"),
-            ConcreteTree::Leaf => {
-                let text = PENDING.with(|p| p.borrow_mut().take());
-                match text {
-                    Some(t) if t.len() == input.size as usize => fold_text(t.as_bytes(), input, ""),
-                    _ => failed(input, "no text was parked by parse"),
-                }
-            }
+            ConcreteTree::Leaf => failed(input, "no source text"),
+            ConcreteTree::Source(text) => fold_text(text.as_bytes(), input, ""),
         }
+    }
+}
+
+inventory::submit! {
+    AdapterEntry {
+        language_name: LANG,
+        extensions: &["grmb"],
+        construct: || Box::new(GrmbAdapter),
     }
 }

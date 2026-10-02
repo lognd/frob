@@ -8,6 +8,10 @@ fail_on = "error"
 # Which Unresolved findings fail the gate: `required`, `never` or `all`.
 fail_on_unresolved = "required"
 
+[directives]
+# Comment namespaces the scanner reads; comments in any other are ignored.
+namespaces = ["frob", "grimble", "crunk"]
+
 [git]
 # Compare-and-swap retries when moving a ledger ref.
 cas_retries = 5

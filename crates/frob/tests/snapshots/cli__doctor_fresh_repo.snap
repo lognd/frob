@@ -14,7 +14,7 @@ expression: v
     },
     "config": {
       "error": null,
-      "missing_knobs": 5,
+      "missing_knobs": 6,
       "path": "[path]",
       "present": false
     },
@@ -58,6 +58,18 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `check.fail_on_unresolved` in frob.toml (default \"required\"); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "418124b6acb2eb8b6889855bbe5e8ce4c64b1d9a28271be352b524953521bef3",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `directives.namespaces` in frob.toml (default [\"frob\", \"grimble\", \"crunk\"]); run `frob init` (or `frob config sync`) to write it",
       "required": null,
       "rule": "CFG001",
       "severity": "error",

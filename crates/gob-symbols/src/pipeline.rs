@@ -7,24 +7,18 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use gob_cache::{ArtifactKey, Cache};
 use gob_languages::ParseLimits;
-use gob_walk::{FileEntry, LanguageHint};
+use gob_walk::FileEntry;
 use rayon::prelude::*;
 
 use crate::adapter::{Adapter, Fidelity, FileInput, Folded, ParseStatus};
 use crate::fold::{base_file, opaque_file};
 use crate::graph::SymbolGraph;
-use crate::markdown::MarkdownAdapter;
 use crate::model::FileSymbols;
-use crate::opaque::OpaqueAdapter;
-use crate::rust::RustAdapter;
+use crate::registry::adapter_for;
 
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
 pub const EXTRACTOR_VERSION: u32 = 2;
-
-static RUST: RustAdapter = RustAdapter;
-static MARKDOWN: MarkdownAdapter = MarkdownAdapter;
-static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Counters from one [`build_graph_with_stats`] run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -37,25 +31,6 @@ pub struct BuildStats {
     pub skipped: usize,
     /// Files no adapter claims, folded as one opaque unit each (G19).
     pub opaque: usize,
-}
-
-/// Every real adapter (F1 and above), in a stable order.
-pub fn adapters() -> [&'static dyn Adapter; 2] {
-    [&RUST, &MARKDOWN]
-}
-
-/// The F0 adapter used for files no real adapter claims.
-pub fn opaque_adapter() -> &'static dyn Adapter {
-    &OPAQUE
-}
-
-/// The adapter claiming `hint`, or `None` for an adapter-less language.
-pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
-    match hint {
-        LanguageHint::Rust => Some(&RUST),
-        LanguageHint::Markdown => Some(&MARKDOWN),
-        _ => None,
-    }
 }
 
 fn input_of<'a>(entry: &'a FileEntry, digest: &'a str, text_len: usize) -> FileInput<'a> {
