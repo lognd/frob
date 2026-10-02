@@ -1,7 +1,7 @@
 ---
 id: T-0015
 title: 'gob-mdtest: markdown corpus runner with firing and non-firing controls'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,22 +25,26 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0015
+branch: t-0015
 scope:
 - crates/gob-mdtest/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-mdtest exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a corpus file with a fire block lacking a clean block for the same rule,
     when run, then the corpus fails naming the rule
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-mdtest exit=0 sha256=e3b0c44298fc
 - text: Given a block expecting RULE at line 3 and the runner reports it at line 4,
     when run, then the failure shows both
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-mdtest exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-mdtest
 anchor: false

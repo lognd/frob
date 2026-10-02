@@ -574,6 +574,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-mdtest"
+version = "0.0.0"
+dependencies = [
+ "gob-rules",
+ "gob-text",
+ "thiserror",
+ "tracing",
+ "walkdir",
+]
+
+[[package]]
 name = "gob-rules"
 version = "0.0.0"
 dependencies = [
