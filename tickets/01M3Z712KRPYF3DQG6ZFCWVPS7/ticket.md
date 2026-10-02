@@ -2,7 +2,8 @@
 id = "01M3Z712KRPYF3DQG6ZFCWVPS7"
 title = "G02: binding semantics over U"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
