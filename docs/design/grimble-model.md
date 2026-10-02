@@ -135,6 +135,10 @@ into these; rules.md section 3):
 | SYS008 | SYS-RENAMED | P0 | bound symbol vanished, same-digest symbol appeared elsewhere (suggest, never edit) |
 | SYS009 | SYS-SURFACE | P+ | public symbol outside `surface` |
 
+The ids, polarities and conditions of this table are superseded by
+binding.md section 6 (SYS001-SYS012; its 11.3 maps the old ids to the
+new ones). CAP001-003 are unchanged.
+
 grimble has its own `ack` verb and `grimble.lock`; it never reads
 `frob.lock`, and frob never reads `grimble.lock`.
 
@@ -211,17 +215,18 @@ before any grimble crate is built.
 A model is a set of entities E (nodes, flows, contracts, claims,
 V-model links) declared in .grmb files. The code is a U term with
 identities I (universal-model.md 2.2). Binding is a relation
-B subset of E x I x {Must, May, Unknown} produced by four sources in
-this precedence: explicit `grimble:binds` directives in code (Must);
-`owns` selectors in the model resolved through gob-walk and the
-scope graph (Must for literal paths, May for globs that match units
-with Unknown edges); inference from names and attributes declared by
-data packs (May); and nothing (Unknown, reported as SYS-EMPTY-SELECTOR
-for a selector that matches nothing, never as clean). The twelve v1 mechanisms map onto these four sources
-in notes/review/grimble-review.md section 2; none survives as its own
-mechanism. "Human symref canonical, SCIP derived" stands: the symref is
-the human-facing name of an identity, SCIP occurrences are one more
-inference source at May.
+B subset of E x I x {Must, May, Unknown}, produced by four ranked
+sources: explicit `grimble:binds` directives (Must), model selectors
+resolved through gob-walk and the scope graph (Must or May), pack
+inference (May) and nothing (Unknown). binding.md (G02) is the
+definition: the relation with roles and provenance, the precise
+semantics and precedence of the four sources, the merge and conflict
+rules, how SCIP and LSP occurrences enter, what each of the twelve v1
+mechanisms became, identity and rename over commits, and the rules
+SYS001-SYS012 as predicates over B with their polarity and Unresolved
+conditions. "Human symref canonical, SCIP derived" stands: the symref
+is the human-facing name of an identity and SCIP occurrences are one
+more inference source at May (binding.md section 3).
 
 ### 9.2 Identity, rename and the lock
 

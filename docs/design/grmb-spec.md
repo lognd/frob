@@ -304,7 +304,7 @@ node cli : trusted {
 | owns | `owns SELECTOR;` | selector (section 6) | list, none allowed (a node that owns nothing is legal: an external system) | the set of code identities this node owns |
 | may | `may ATOM [ "(" ARGS ")" ] [ at SELECTOR ];` | grant | list | capability grant. ARGS is a comma list of strings constraining the atom (host names, env names, paths); the grant applies at SELECTOR, default the node's whole `owns` set. This replaces v1's `of CONSTRAINT` and the colon form `net.connect:host` |
 | excuses | `excuses ATOM because="..."` | excuse | list | matrix cell `excused`: the atom is explicitly excluded with a reason; `because` required |
-| surface | `surface SELECTOR;` | selector | list (union) | the intended public API; SYS009 compares it with observed public symbols |
+| surface | `surface SELECTOR;` | selector | list (union) | the intended public API; SYS014 (reserved by binding.md 11.3) compares it with observed public symbols |
 | attrs | `attr` | typed value | list | markers and magnitudes (`attr timeout = 30 s;`, `attr idempotency_key;`) |
 
 A node without a `trust` is MDL008. Capability atoms are resolved against
@@ -333,7 +333,7 @@ flow f_walk : gob -> frob {
 | growth | `growth Q;` | rate of ratio per time (`15 %/d`) | no | growth of the flow's rate over time; see open question 8 |
 | transport | `transport ATOM, ATOM;` | list of atoms | no | in-process, http, ipc, ffi, file; pack-extensible |
 | condition | `condition on_ok;` or `condition on_err;` | ident | no | v1 `on Ok/Err` |
-| producer | `producer SELECTOR;` | selector | no (SYS005 reports absence of symbols) | the code unit(s) that emit; may be any language |
+| producer | `producer SELECTOR;` | selector | no (SYS004 or SYS009 report absence of symbols, binding.md 6.4 and 6.9) | the code unit(s) that emit; may be any language |
 | consumer | `consumer SELECTOR;` | selector | no | the code unit(s) that read |
 | contract | `contract NAME;` | ref to a `contract` entity | no | the agreed data shape (4.3) |
 
@@ -354,7 +354,7 @@ contract walk_result {
 | Field | Clause | Type | Required | Meaning |
 |---|---|---|---|---|
 | name | `contract NAME` | name | yes | |
-| shape | `shape SELECTOR;` | selector | yes | the language-neutral shape: ONE unit whose Contract facet (universal-model.md 7.1) is the shape. A selector that does not resolve to exactly one identity is a `SYS-CONTRACT-AMBIGUOUS` finding id reserved for G02; here only the grammar is fixed |
+| shape | `shape SELECTOR;` | selector | yes | the language-neutral shape: ONE unit whose Contract facet (universal-model.md 7.1) is the shape. A selector that does not resolve to exactly one identity is SYS003 kind `ambiguous-singleton` (binding.md 2.5 item 4, G02); here only the grammar is fixed |
 | versioning | `versioning scheme=S current="V" compat=C;` | attrs | no | `scheme` one of `semver`, `date`, `integer`, `none`; `current` a string in that scheme; `compat` one of `backward`, `forward`, `full`, `none`. Informational for SYS006: skew is detected from digests, versioning says what skew is allowed to be |
 
 Contracts exist as entities (not as an inline selector in the flow)
@@ -645,7 +645,7 @@ literal path would be, and degrades to May only along an Unknown or May
 fact; the rule above is the same statement made total.
 
 Polarity consequences (the framework applies universal-model.md 4.2; this
-is the instance): `selector matches nothing` (SYS001) is P-: it fires
+is the instance): `selector matches nothing` (SYS004) is P-: it fires
 only when `hi` is empty, so a selector over a file with an `opaque`
 region or a macro is never reported as matching nothing; ownership
 claims in SYS002 and SYS003 use the P+ reading of 6.5.
@@ -950,7 +950,7 @@ and surface sets and are queried, not stored in B.
 | 1 | `grimble:binds` directives (in code or in .grmb, 8.2) | `(e, i)` for the named entity and symref | Must |
 | 2 | model selectors (`owns`, `producer`, ...) through `sel` (6.4) | `(e, i)` for every identity in `lo` (Must) and `hi \ lo` (May) | Must or May |
 | 3 | pack inference from names and attributes (declared by a data pack) | `(e, i)` | May |
-| 4 | nothing | the residual `(e, hidden(r), Unknown)`; an empty selector is reported (MDL005, SYS001), never clean | Unknown |
+| 4 | nothing | the residual `(e, hidden(r), Unknown)`; an empty selector is reported (MDL005, SYS004), never clean | Unknown |
 
 Conflict rules, applied per identity i and per binding KIND (ownership,
 producer, consumer, shape, evidence):
@@ -961,7 +961,8 @@ producer, consumer, shape, evidence):
    `grimble explain`, not a finding).
 2. WITHIN RANK 2, MOST SPECIFIC WINS by the total order of 6.5; a tie is
    SYS002 and the owner is Unknown. Within rank 1, two entities bound to
-   the same identity for ownership is SYS002 too (explicit contradiction).
+   the same identity for ownership is SYS003 (explicit contradiction; binding.md
+   2.1 and 2.5 refine this rule, see the note after the conflict rules).
 3. WITHIN RANK 3, a tie yields no owner (May on both) and no finding;
    inference never creates SYS002.
 4. STATUS COMBINES by maximum over sources of the same rank and entity
@@ -977,6 +978,12 @@ producer, consumer, shape, evidence):
 Rules over B are stated with polarity over the `(lo, hi)` of `B(e)` in
 G02; this file fixes only the relation, the sources and the conflict
 rules.
+
+G02 (binding.md) landed after this section and refines it: the relation gains
+a role, rank 1 against a different Must at rank 2 is the finding SYS003
+`directive-selector` (rule 1 above kept it advisory), two rank 1 nodes on one
+identity are SYS003 (rule 2), and the owner function has the possible-worlds
+reading of binding.md 2.2. Where they differ, binding.md wins (its 11.3).
 
 ## 11. Well-formedness rules (MDL)
 
@@ -1060,7 +1067,7 @@ test the U adapter hold the expected U term and scope graph per construct
 | `selector/status.grmb` | Must for literal, May under an unexpanded phase and an Unknown attribute, hidden placeholder in `hi` |
 | `selector/specificity.grmb` | the total order, including the `src/**` against `src/*/mod.rs` example, ties give SYS002 |
 | `selector/owner.grmb` | `owner` with explicit bind, owns, inference, FOREIGN and Unknown |
-| `selector/empty.grmb` | MDL005 versus SYS001 versus MDL010 |
+| `selector/empty.grmb` | MDL005 versus SYS004 versus MDL010 |
 | `exception/kinds.grmb` | accept, defer, hotfix clauses; top-level `on`; baseline rejected |
 | `exception/targets.grmb` | position rules and MDL013 |
 | `u/encoding/` | one directory per row of 9.2: expected term, sorts, locations and the scope graph |
@@ -1189,7 +1196,7 @@ Why the rules accept it:
 - `grimble check` reports zero Errors and MDL005 Warn for the three
   selectors that name crates not yet created (`crates/grimble-*/**` twice
   and `crates/grimble-model/src/**`); these are warnings by design and
-  disappear when G08 creates the crates. SYS001 is suppressed for them.
+  disappear when G08 creates the crates. SYS004 is suppressed for them.
 - Capability atoms `fs.read`, `fs.write`, `exec`, `net.listen` and
   `net.connect` are registry atoms (grimble-model.md 9.6).
 - Binding: `owner` of `crates/gob-walk/src/lib.rs::walk` is `gob` at
@@ -1255,8 +1262,9 @@ sections:
 13. 9.1 "May for globs that match units with Unknown edges": kept and made
     total (6.4): a glob is Must where a literal is, May along a May or
     Unknown fact; the placeholder in `hi` is the Unknown.
-14. SYS001 "selector matches zero symbols": kept as the unit-level rule;
-    MDL005 is the new file-level warning and suppresses SYS001 for the
+14. SYS001 "selector matches zero symbols" (renumbered SYS004 by binding.md
+    11.3): kept as the unit-level rule;
+    MDL005 is the new file-level warning and suppresses SYS004 for the
     same selector.
 15. The directive table row `grimble:node N`, `grimble:channel F`,
     `grimble:boundary B`, `grimble:effect`: code-side only; written in a
