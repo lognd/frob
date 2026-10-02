@@ -1,5 +1,5 @@
 ---
-id: T-draft-04876800
+id: T-0008
 title: 'gob-diagnostics: envelope, exit-code table, text and JSON renderers'
 state: queued
 kind: feature
