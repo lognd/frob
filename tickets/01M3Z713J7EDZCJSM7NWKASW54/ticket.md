@@ -2,7 +2,8 @@
 id = "01M3Z713J7EDZCJSM7NWKASW54"
 title = "G05: digest scheme, typed lock entries and ack planner in gob-lock"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
