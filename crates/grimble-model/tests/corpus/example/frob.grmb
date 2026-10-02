@@ -1,0 +1,65 @@
+grimble = "2";
+module frob;
+
+include "vmodel.grmb";
+
+/// The ticket goblin: accounts for work. Never links grimble (D28).
+node frob : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/frob/**";
+  owns "crates/frob-*/**";
+  may fs.read at "crates/frob*/**";
+  may fs.write at "crates/frob-ledger/**";
+  may exec at "crates/gob-exec/**";
+  excuses net.listen because="a CLI never serves; frob serve is milestone 2";
+}
+
+/// The design goblin. Crates are created by G08 onward.
+node grimble : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/grimble-*/**";
+  may fs.read at "crates/grimble-*/**";
+}
+
+/// The shared substrate: no product knowledge.
+node gob : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/gob-*/**";
+  may fs.read at "crates/gob-walk/**";
+  may exec at "crates/gob-exec/**";
+  may net.connect("github.com") at "crates/gob-git/**";
+}
+
+flow f_walk : gob -> frob {
+  label Internal;
+  rate 100 req/s;
+  producer "crates/gob-walk/src/lib.rs::walk";
+  consumer "crates/frob-check/src/snapshot.rs";
+  contract walk_result;
+}
+
+flow f_symref : gob -> grimble {
+  label Internal;
+  producer "crates/gob-symbols/src/symref.rs::Symref.parse";
+  consumer "crates/grimble-model/src/**";
+  contract symref;
+}
+
+contract walk_result {
+  shape "crates/gob-walk/src/lib.rs::WalkResult";
+  versioning scheme=semver current="0.1.0" compat=backward;
+}
+
+contract symref {
+  shape "crates/gob-symbols/src/symref.rs::Symref";
+  versioning scheme=none;
+}
+
+claim no_frob_to_grimble {
+  noflow frob -> grimble;
+  proof L2;
+  evidence tests "crates/frob/tests/wiring.rs";
+}
