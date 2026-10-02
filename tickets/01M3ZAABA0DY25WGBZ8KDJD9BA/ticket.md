@@ -2,7 +2,8 @@
 id = "01M3ZAABA0DY25WGBZ8KDJD9BA"
 title = "Design follow-ups from G03 and G04: sibling rename, packs keys, SIB and PACK registration, config rows"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
