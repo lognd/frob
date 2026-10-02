@@ -21,7 +21,7 @@ struct DemoRule;
     tier = Universal, scope = Repo, fix = FixIt, version = 3)]
 struct DemoTwo;
 
-/// Declares polarity and must_measure explicitly.
+/// Declares polarity and `must_measure` explicitly.
 #[derive(Rule)]
 #[rule(id = "DEM003", slug = "demo-three", family = "DEM", severity = Warn,
     tier = Universal, scope = Repo, fix = Manual, polarity = Pminus, must_measure = true, version = 1)]

@@ -700,7 +700,7 @@ fn a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_doe
 
 // frob:tests crates/frob-check/src/product.rs::applicable
 #[test]
-fn cov001_measures_only_where_a_test_capable_language_is_present() {
+fn cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language() {
     let dir = tempfile::tempdir().expect("tempdir");
     write(
         dir.path(),
@@ -708,11 +708,11 @@ fn cov001_measures_only_where_a_test_capable_language_is_present() {
         "//! Only data.\npub const X: u8 = 1;\n",
     );
     let rust = run(dir.path(), &quiet()).expect("rust without functions");
-    assert_eq!(
-        zero_subject_rules(&rust),
-        ["COV001"],
-        "a Rust graph with no functions is vacuous"
+    assert!(
+        zero_subject_rules(&rust).is_empty(),
+        "the Rust file is a subject"
     );
+    assert_eq!(rust.subjects_examined.get("COV001"), Some(&1));
 
     let docs = tempfile::tempdir().expect("tempdir");
     write(docs.path(), "README.md", "# Docs only\n");
@@ -721,4 +721,5 @@ fn cov001_measures_only_where_a_test_capable_language_is_present() {
         zero_subject_rules(&md).is_empty(),
         "no test capability, no required silence"
     );
+    assert_eq!(md.subjects_examined.get("COV001"), Some(&0));
 }
