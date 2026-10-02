@@ -3,7 +3,8 @@
 
 use gob_diagnostics::{
     ColorChoice, Envelope, ExitCode, FindingRecord, MemorySources, Refusal, RefusalClass, Report,
-    TextOptions, envelope_schema, fail_on, render_json, render_text,
+    RequiredMarks, RequiredReason, TextOptions, UnresolvedPolicy, envelope_schema, fail_on,
+    render_json, render_text, render_text_marked,
 };
 use gob_rules::{Finding, Fix, FixKind, Registry, Severity};
 use gob_text::{FileId, FileInterner, SourceText, Span, TextRange};
@@ -135,18 +136,116 @@ fn json_refusal_snapshot() {
 #[test]
 fn fail_on_threshold() {
     let fx = fixture();
-    assert_eq!(fail_on(&fx.findings, Severity::Error), ExitCode::Negative);
-    assert_eq!(fail_on(&fx.findings[..1], Severity::Error), ExitCode::Ok);
+    let none = RequiredMarks::new();
+    let gate = |f: &[Finding], t: Severity| fail_on(f, Some(t), UnresolvedPolicy::Required, &none);
+    assert_eq!(gate(&fx.findings, Severity::Error), ExitCode::Negative);
+    assert_eq!(gate(&fx.findings[..1], Severity::Error), ExitCode::Ok);
+    assert_eq!(gate(&fx.findings[..1], Severity::Warn), ExitCode::Negative);
+    assert_eq!(gate(&[], Severity::Advisory), ExitCode::Ok);
+    // Unresolved never fails through the severity threshold.
+    assert_eq!(gate(&fx.findings[3..], Severity::Unresolved), ExitCode::Ok);
+}
+
+fn reasons() -> Vec<RequiredReason> {
+    vec![
+        RequiredReason::SiblingMissing {
+            product: "crunk".into(),
+        },
+        RequiredReason::AnnotationRequired {
+            code: "opaque-fn".into(),
+            public_surface: true,
+        },
+        RequiredReason::ZeroSubjects {
+            rule: "COV001".into(),
+        },
+    ]
+}
+
+#[test]
+fn unresolved_policy_matrix() {
+    let fx = fixture();
+    let unresolved = &fx.findings[3..];
+    let unmarked = RequiredMarks::new();
+    for reason in reasons() {
+        let mut marked = RequiredMarks::new();
+        marked.insert(&unresolved[0], reason.clone());
+        for (policy, with_mark, without) in [
+            (UnresolvedPolicy::Required, ExitCode::Negative, ExitCode::Ok),
+            (UnresolvedPolicy::Never, ExitCode::Ok, ExitCode::Ok),
+            (
+                UnresolvedPolicy::All,
+                ExitCode::Negative,
+                ExitCode::Negative,
+            ),
+        ] {
+            assert_eq!(
+                fail_on(unresolved, None, policy, &marked),
+                with_mark,
+                "{policy:?} {reason}"
+            );
+            assert_eq!(
+                fail_on(unresolved, None, policy, &unmarked),
+                without,
+                "{policy:?} unmarked"
+            );
+        }
+    }
+}
+
+#[test]
+fn unresolved_policy_composes_with_the_threshold() {
+    let fx = fixture();
+    let none = RequiredMarks::new();
+    // An Error fails even under `never`; the threshold disabled and a pass otherwise.
     assert_eq!(
-        fail_on(&fx.findings[..1], Severity::Warn),
+        fail_on(
+            &fx.findings,
+            Some(Severity::Error),
+            UnresolvedPolicy::Never,
+            &none
+        ),
         ExitCode::Negative
     );
-    assert_eq!(fail_on(&[], Severity::Advisory), ExitCode::Ok);
-    // Unresolved never fails on its own, even at the lowest threshold.
     assert_eq!(
-        fail_on(&fx.findings[3..], Severity::Unresolved),
+        fail_on(&fx.findings[..3], None, UnresolvedPolicy::All, &none),
         ExitCode::Ok
     );
+    // A mark on a non-Unresolved finding does not matter.
+    let mut marks = RequiredMarks::new();
+    marks.insert(&fx.findings[0], reasons().remove(0));
+    assert_eq!(
+        fail_on(&fx.findings[..1], None, UnresolvedPolicy::Required, &marks),
+        ExitCode::Ok
+    );
+}
+
+#[test]
+fn required_reason_serializes_tagged_and_summary_counts_required() {
+    let fx = fixture();
+    let reason = RequiredReason::SiblingMissing {
+        product: "crunk".into(),
+    };
+    let rec = FindingRecord::from_finding(&fx.findings[3], &fx.sources, Registry::global())
+        .with_required(Some(reason.clone()));
+    let json = serde_json::to_value(&rec).unwrap();
+    assert_eq!(
+        json["required"],
+        serde_json::json!({"kind": "sibling_missing", "product": "crunk"})
+    );
+    let mut marks = RequiredMarks::new();
+    marks.insert(&fx.findings[3], reason);
+    let report = Report {
+        findings: &fx.findings,
+        sources: &fx.sources,
+    };
+    let opts = TextOptions {
+        color: ColorChoice::Never,
+        snippets: false,
+    };
+    let out = render_text_marked(&report, &opts, &marks);
+    assert!(out.contains("required: sibling-missing: crunk"), "{out}");
+    assert!(out.contains("1 unresolved (1 required)"), "{out}");
+    assert!(render_text(&report, &opts).contains("1 unresolved (0 required)"));
 }
 
 #[test]

@@ -2,6 +2,8 @@
 
 use gob_rules::{Finding, Severity};
 
+use crate::required::{RequiredMarks, UnresolvedPolicy};
+
 /// The one exit-code table (cli.md section 2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ExitCode {
@@ -30,17 +32,38 @@ impl From<ExitCode> for i32 {
     }
 }
 
-/// `Negative` only if a finding at or above `threshold` exists, else `Ok`.
+/// `Negative` when a finding reaches `threshold`, or an Unresolved one fails `policy`.
 ///
-/// `Unresolved` is the lowest severity and never fails on its own: a
-/// threshold of `Unresolved` is treated as "no gate" for unresolved findings.
-pub fn fail_on(findings: &[Finding], threshold: Severity) -> ExitCode {
-    let failing = findings
-        .iter()
-        .filter(|f| f.severity != Severity::Unresolved && f.severity >= threshold)
-        .count();
-    tracing::debug!(failing, ?threshold, "fail_on evaluated");
-    if failing > 0 {
+/// `threshold` gates Error, Warn and Advisory only (`None` disables it).
+/// Unresolved fails under `All`, or under `Required` when `marks` carries a
+/// reason for it; the result is never `Refused` (cli.md section 2).
+pub fn fail_on(
+    findings: &[Finding],
+    threshold: Option<Severity>,
+    policy: UnresolvedPolicy,
+    marks: &RequiredMarks,
+) -> ExitCode {
+    let by_severity = |f: &&Finding| {
+        f.severity != Severity::Unresolved && threshold.is_some_and(|t| f.severity >= t)
+    };
+    let by_policy = |f: &&Finding| {
+        f.severity == Severity::Unresolved
+            && match policy {
+                UnresolvedPolicy::All => true,
+                UnresolvedPolicy::Never => false,
+                UnresolvedPolicy::Required => marks.get(f).is_some(),
+            }
+    };
+    let failing = findings.iter().filter(by_severity).count();
+    let unresolved_failing = findings.iter().filter(by_policy).count();
+    tracing::debug!(
+        failing,
+        unresolved_failing,
+        ?threshold,
+        policy = policy.name(),
+        "fail_on evaluated"
+    );
+    if failing + unresolved_failing > 0 {
         ExitCode::Negative
     } else {
         ExitCode::Ok

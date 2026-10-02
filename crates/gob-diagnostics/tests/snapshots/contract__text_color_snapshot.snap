@@ -13,4 +13,4 @@ src/b.rs
 (no location)
   <ESC>[1m<ESC>[35munresolved[TOOL001]<ESC>[0m: tool missing
 
-1 errors, 1 warnings, 1 advisory, 1 unresolved
+1 errors, 1 warnings, 1 advisory, 1 unresolved (0 required)

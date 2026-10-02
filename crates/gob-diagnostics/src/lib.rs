@@ -9,6 +9,7 @@ mod envelope;
 mod exit;
 mod record;
 mod refusal;
+mod required;
 mod source;
 mod text;
 
@@ -16,5 +17,8 @@ pub use envelope::{Envelope, EnvelopeError, SCHEMA_VERSION, envelope_schema, ren
 pub use exit::{ExitCode, fail_on};
 pub use record::FindingRecord;
 pub use refusal::{Refusal, RefusalClass};
+pub use required::{RequiredMarks, RequiredReason, UnresolvedPolicy};
 pub use source::{MemorySources, SourceProvider};
-pub use text::{ColorChoice, Report, TextOptions, is_tty, render_text, severity_label};
+pub use text::{
+    ColorChoice, Report, TextOptions, is_tty, render_text, render_text_marked, severity_label,
+};

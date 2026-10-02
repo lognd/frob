@@ -4,6 +4,7 @@ use gob_rules::{Finding, Registry};
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::required::RequiredReason;
 use crate::source::SourceProvider;
 use crate::text::severity_label;
 
@@ -28,6 +29,8 @@ pub struct FindingRecord {
     pub fingerprint: String,
     /// Title of the attached fix, if any.
     pub fix: Option<String>,
+    /// Why this Unresolved finding fails the gate under `required`, if it does.
+    pub required: Option<RequiredReason>,
 }
 
 impl FindingRecord {
@@ -62,6 +65,14 @@ impl FindingRecord {
             message: finding.message.clone(),
             fingerprint: finding.fingerprint.to_hex(),
             fix: finding.fix.as_ref().map(|f| f.title.clone()),
+            required: None,
         }
+    }
+
+    /// This record carrying `required` as its mark.
+    #[must_use]
+    pub fn with_required(mut self, required: Option<RequiredReason>) -> Self {
+        self.required = required;
+        self
     }
 }
