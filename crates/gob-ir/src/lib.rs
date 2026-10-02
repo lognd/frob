@@ -65,6 +65,7 @@ mod print;
 mod query;
 pub mod registry;
 mod scope;
+mod select;
 mod symref;
 mod term;
 
@@ -83,6 +84,9 @@ pub use registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};
 pub use scope::{
     Decl, DeclId, DeclKind, Edge, Label, MayDefine, OpaqueHint, RefId, Reference, Resolution,
     ScopeGraph, ScopeId, Status,
+};
+pub use select::{
+    Hidden, HiddenReason, UnitMatch, UnitSelection, owner_of_unit, select, select_units,
 };
 pub use symref::{Anchor, Identity, IdentityDelta, Segment, Symref, SymrefError};
 pub use term::{Node, NodeId, NodeSpec, Term, TermBuilder, TermError};

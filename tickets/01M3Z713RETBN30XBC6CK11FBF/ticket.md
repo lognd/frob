@@ -2,13 +2,14 @@
 id = "01M3Z713RETBN30XBC6CK11FBF"
 title = "G07: selectors and select/owner queries in gob-walk"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T22:18:36Z"
+updated = "2026-10-02T22:38:02Z"
 idempotency_key = "m2-selectors"
 labels = ["milestone:2"]
 scope = ["crates/gob-walk/**", "crates/gob-ir/**"]
