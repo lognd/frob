@@ -38,6 +38,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: avoid a DOC006 config pointer in the body
+  actor: logan
+  at: '2026-10-02'
+  old_length: 934
+  new_length: 946
 designated_repro_test: null
 acceptance:
 - text: Given this repository with a warm cache, when frob check runs in a fresh process,
@@ -52,4 +59,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Implement crates/frob-check per rules.md section 4 (pipeline, post-D27 step 8) and D30. frob check [--ticket <id>] [--only FAMILY] [--fix] [--fail-on severity] [--json] [--explain ID]: walk (gob-walk) -> parse -> symbols -> directives -> per-file rules in parallel with rayon, consulting the findings cache first -> repo rules keyed by graph digest -> exception evaluation -> render. --ticket limits files to the lease scope plus [check] ticket_hops dependents (knob). --fix applies Deterministic fixes and reports the rest. [[check.tool]] stages run external tools through gob-exec after the built-in rules and are timed separately (outside the 2 s budget). Emit a timing breakdown with -v and a telemetry line to .frob/telemetry.jsonl (knob). Bench: criterion harness running the full check on this repository, asserting a warm fresh-process run under 2 s on the CI profile (soft gate: record, fail only when [perf] enforce = true).
+Implement crates/frob-check per rules.md section 4 (pipeline, post-D27 step 8) and D30. frob check [--ticket <id>] [--only FAMILY] [--fix] [--fail-on severity] [--json] [--explain ID]: walk (gob-walk) -> parse -> symbols -> directives -> per-file rules in parallel with rayon, consulting the findings cache first -> repo rules keyed by graph digest -> exception evaluation -> render. --ticket limits files to the lease scope plus [check] ticket_hops dependents (knob). --fix applies Deterministic fixes and reports the rest. check.tool array-of-tables stages run external tools through gob-exec after the built-in rules and are timed separately (outside the 2 s budget). Emit a timing breakdown with -v and a telemetry line to .frob/telemetry.jsonl (knob). Bench: criterion harness running the full check on this repository, asserting a warm fresh-process run under 2 s on the CI profile (soft gate: record, fail only when [perf] enforce = true).
