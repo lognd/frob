@@ -2,13 +2,13 @@
 id = "01M3ZBV60QDKMT4S1YV7F60YEN"
 title = "G06 follow-ups: one RequiredReason, one Polarity, rule pages show polarity, TICK002 must_measure"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T22:30:33Z"
-updated = "2026-10-02T22:30:33Z"
+updated = "2026-10-02T23:01:09Z"
 idempotency_key = "m2-g06-followups"
 labels = ["milestone:2"]
 scope = ["crates/gob-diagnostics/**", "crates/gob-check/**", "crates/gob-ir/**", "crates/gob-dev/**", "crates/frob-ledger/**", "docs/reference/**", "docs/schemas/**"]
