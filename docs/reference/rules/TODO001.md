@@ -25,7 +25,6 @@ File a ticket and add the directive.
 
 ### TODO001 bare work markers / Fires on a bare marker in a block comment #1 (line 6) (fire)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* TODO tidy this */ // error: TODO001
 fn a() {}
@@ -33,7 +32,6 @@ fn a() {}
 
 ### TODO001 bare work markers / Fires on each marker word #2 (line 13) (fire)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 // FIXME later // error: TODO001
 // XXX revisit // error: TODO001
@@ -43,7 +41,6 @@ fn a() {}
 
 ### TODO001 bare work markers / Fires in a markdown comment #3 (line 22) (fire)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```markdown
 # Title
 
@@ -52,7 +49,6 @@ fn a() {}
 
 ### TODO001 bare work markers / Clean when a todo directive sits on the previous line #4 (line 30) (clean)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2 tidy */
 /* TODO tidy this */
@@ -61,7 +57,6 @@ fn a() {}
 
 ### TODO001 bare work markers / Clean when the id follows the marker in parentheses #5 (line 38) (clean)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 // TODO(01J9QKX3M8Z4T7N2V5B6C0D1E2): tidy this
 fn a() {}
@@ -69,7 +64,6 @@ fn a() {}
 
 ### TODO001 bare work markers / Clean for lowercase words and strings #6 (line 45) (clean)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 // todo is fine in lowercase, and so is TODO001 as a rule id
 fn a() -> &'static str { "TODO inside a string" }
@@ -77,7 +71,6 @@ fn a() -> &'static str { "TODO inside a string" }
 
 ### TODO001 bare work markers / Clean inside a fenced block of markdown #7 (line 52) (clean)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ````markdown
 # Title
 

@@ -23,7 +23,6 @@ remove the marker, or re-point it at a live ticket.
 
 ### TODO002 todo owned by a terminal ticket / Fires when the ticket is done #1 (line 6) (fire)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob:todo {{DONE}} finish it */ // warn: TODO002
 fn a() {}
@@ -31,7 +30,6 @@ fn a() {}
 
 ### TODO002 todo owned by a terminal ticket / Clean when the ticket is open #2 (line 13) (clean)
 
-<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob:todo {{OPEN}} finish it */
 fn a() {}

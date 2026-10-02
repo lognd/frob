@@ -85,7 +85,6 @@ waivers port. Ids are `FAMILYNNN` in every product, with an optional
 slug alias (`SYS003` and `SYS-UNDECLARED-FLOW`); ids inside a family are
 renumbered only where v1 ids were duplicates or collapsed, and the v1 to
 v2 id map is many-to-one where a family collapsed (SYS's 51 ids become a
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 few parametric ones). The map ships in `docs/migration/rule-ids.md` and
 `frob migrate exceptions` rewrites waivers. The authoritative
 family-to-crate table is boundaries.md section 2.5; this table gives

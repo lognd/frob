@@ -108,7 +108,7 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
   a touched file name; config-pointer messages all contain "Cargo.toml",
   so any DOC006 anywhere blocks any land touching Cargo.toml. Planned
   paths and config tables in docs/notes carry inline
-  `<!-- frob:waive DOC006 reason="..." -->` on the line above. Ticket
+  a v1 DOC006 waive comment on the line above. Ticket
   bodies must not contain `[section.key]` TOML pointers.
 - A removed `frob:waive` comment in a deleted or rewritten v1 file must
   be named in the done-report text (file:RULE) or the land refuses.

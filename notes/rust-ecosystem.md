@@ -662,7 +662,6 @@ print_stdout = "warn"      # frob logs via tracing, never print
 print_stderr = "warn"
 dbg_macro = "warn"
 
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 [profile.dev]
 opt-level = 1                  # ruff does this; measure, drop to 0 if edit-compile suffers
 debug = "line-tables-only"
@@ -670,12 +669,10 @@ lto = "off"                    # avoid implicit local thin-LTO at opt-level >= 1
 split-debuginfo = "unpacked"   # zed; faster relinks on Linux
 codegen-units = 16
 
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 [profile.dev.build-override]   # build.rs + proc macros (zed pattern)
 opt-level = 3
 debug = 0
 
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 [profile.dev.package]
 salsa = { opt-level = 3 }
 tree-sitter = { opt-level = 3 }
@@ -687,20 +684,17 @@ proc-macro2 = { opt-level = 3 }
 rusqlite = { opt-level = 3 }
 libsqlite3-sys = { opt-level = 3 }
 
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 [profile.fast-test]
 inherits = "dev"
 debug = 0
 strip = "debuginfo"
 
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 [profile.release]
 lto = "fat"
 codegen-units = 1
 panic = "abort"
 strip = true
 
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 [profile.profiling]
 inherits = "release"
 debug = "full"
@@ -714,7 +708,6 @@ codegen-units = 16
 [alias]
 dev = "run --package frob-dev --"
 
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
@@ -741,7 +734,6 @@ link time dominates an incremental rebuild.
 
 ### 5.4 Feature gating of grammars
 
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 `frob-languages/Cargo.toml` (ast-grep pattern,
 crates/language/Cargo.toml in ast-grep/ast-grep):
 

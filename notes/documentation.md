@@ -81,7 +81,6 @@ lib docs, and `include_str!` needs no extra tool in CI.
 | rust-analyzer | mdbook (`docs/book`), was `docs/dev/*.md` | `contributing/{architecture,style,syntax,guide,debugging,testing,setup,lsp-extensions}.md` | `*_generated.md` for assists, configuration, diagnostics, features via `cargo xtask codegen` / sourcegen tests | `contributing/architecture.md` (the canonical ARCHITECTURE.md) | https://rust-analyzer.github.io/book/contributing/architecture.html ; https://github.com/rust-lang/rust-analyzer/tree/master/docs/book/src/contributing |
 | rustc | mdbook rustc-dev-guide, separate repo synced in | everything | none | whole book is architecture | https://rustc-dev-guide.rust-lang.org/ |
 | tokio | docs.rs only (no site for API); tokio.rs is a tutorial site | tutorial on tokio.rs | API on docs.rs with feature badges | module-level `//!` essays (e.g. `runtime`, `sync`) | https://docs.rs/tokio |
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | bevy | docs.rs + dev-docs.bevy.org (every main commit), bevy.org book | Bevy Book, examples README generated from `Cargo.toml` metadata | `examples/README.md`, release notes and migration guides compiled from fragments | `docs/` folder in repo + CONTRIBUTING | https://bevy.org/learn/contribute/helping-out/writing-docs/ |
 
 Key ruff detail (verified in `generate_all.rs`): a single `Mode` enum
@@ -258,7 +257,6 @@ Product crates: thin `main.rs`, everything documented in the lib.
 | `reference/cli.md` | clap derive doc comments | `cargo xtask gen cli` (custom walker, ruff style; also emits man pages via clap_mangen and completions) |
 | `reference/config.md` + `schema.json` | config struct derive (`OptionsMetadata`-like) + schemars | `cargo xtask gen config` |
 | `reference/rules/<ID>.md` + rules index | rule derive + doc comment | `cargo xtask gen rules` |
-<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | `decisions/README.md` | ADR front matter | `cargo xtask gen adr-index` |
 | `CHANGELOG.md` | `changelog.d/` fragments | `cargo xtask changelog --version X` at release |
 | tutorial, howto, explanation, architecture, style, ADR bodies | humans | none; linted only |
