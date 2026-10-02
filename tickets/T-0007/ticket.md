@@ -1,5 +1,5 @@
 ---
-id: T-draft-53e52228
+id: T-0007
 title: 'gob-log: tracing setup, FROB_LOG, redaction'
 state: queued
 kind: feature
