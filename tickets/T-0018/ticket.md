@@ -32,11 +32,17 @@ branch: null
 scope:
 - crates/frob-ledger/**
 - crates/frob/**
-- crates/gob-macros/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: crates/gob-macros/**
+  reason: TicketField derive split into a follow-up so the ledger and directives tickets
+    can run in parallel
+  actor: logan
+  at: '2026-10-02'
 designated_repro_test: null
 acceptance:
 - text: Given a temp repo, when ticket new then update then close run, then events
