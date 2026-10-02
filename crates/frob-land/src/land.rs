@@ -198,12 +198,7 @@ impl Ready {
         let _lock = LandLock::acquire(
             self.repo.common_dir(),
             Duration::from_secs(opts.wait_secs),
-            &format!(
-                "{actor} landing {} (pid {})",
-                self.handle,
-                // frob:accept PROC001 because="reads this process's own id for the lock owner text; nothing is spawned"
-                std::process::id()
-            ),
+            &format!("{actor} landing {}", self.handle),
         )?;
         let ctx = Publish {
             repo: &self.repo,
