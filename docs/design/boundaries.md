@@ -43,7 +43,7 @@ Every capability named in the other design files and the v1 inventories.
 
 | Crate | Owns | Why shared |
 |---|---|---|
-| gob-text | TextSize, TextRange, LineIndex, spans | every finding has a span |
+| gob-text | TextSize, TextRange (own newtypes; `ruff_text_size` rejected as an unstable internal crate), LineIndex, spans | every finding has a span |
 | gob-db | salsa database trait, File inputs, system abstraction; Milestone 2 or later (D36) | incremental core for all three |
 | gob-config | TOML loading, layering (Combine), `ConfigTable` derive, schema emit, located errors, missing-knob detection | three config files, one loader |
 | gob-languages | tree-sitter grammars (feature-gated), Language enum, extension dispatch | crunk needs CSS/TS, grimble needs all, frob needs comment extraction |

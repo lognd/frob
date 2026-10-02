@@ -43,7 +43,7 @@ directory, write a tree equal to the tip's tree with only that
 directory replaced, commit, and update the ref by compare-and-swap. The
 tree is never built from any index, so staged user changes cannot enter
 a ledger commit. If the CAS loses, re-read the tip, rebuild and retry up
-to `[tickets] cas_retries` times. When a checkout has the ledger ref
+to `[git] cas_retries` times. When a checkout has the ledger ref
 checked out, its index entries and worktree files for `tickets/` are
 updated to match (refused with a remedy if those paths have local
 edits). No `git add`, no `git commit`, no hooks unless the repo asks for
@@ -76,9 +76,19 @@ through the same runner.
 
 Every spawn goes through one `gob-exec` runner that logs the argv,
 duration, and exit under an `exec.spawn` span, so `frob --timing` shows
-the count. A repo-internal rule (PROC001, in gob-dev) fails the build if
-any crate other than `gob-exec` references `std::process`; `gob-git`
-spawns through `gob-exec` too.
+the count. A repo-internal rule (PROC001, in gob-exec) fails the build if
+any crate outside its allow list references `std::process`; the allow
+list is `gob-exec`, `gob-git` and `frob` (the binary, whose `main` calls
+the process-exit function); `gob-git` spawns through `gob-exec`.
+`gob-exec` programs: `Program::Hook` carries the hook path, `Sibling`
+resolves next to `current_exe` first, and tool names are open by default
+(`Runner::allow_tools` restricts them).
+`gob-git` as built (gix 0.87.1): `commit_paths` takes `index.lock` when
+the ref is checked out; the local-edits check runs the on-disk bytes
+through gix's filter pipeline (core.autocrlf and `.gitattributes` safe)
+before comparing; `merge_branch` decides "up to date" in gix and
+otherwise spawns one `git merge`; a name without `refs/` resolves as
+`refs/heads/<name>`.
 
 Measured target: a typical ticket verb spawns zero processes; `land`
 spawns at most two git processes (merge fallback, hooks); `check` spawns

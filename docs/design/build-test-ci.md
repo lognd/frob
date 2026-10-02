@@ -16,6 +16,14 @@ Windows packaging, benches and release are Milestone 2 or later (D36)
 unless they say otherwise. The crate cut, with the verbs and rules each
 crate brings, is the table at the end of notes/audit-design.md.
 
+Status: the crates under `crates/` are `frob` (the binary, package
+`frob-cli`), `frob-ack`, `frob-evidence`, `frob-lease`, `frob-ledger`,
+`frob-obligations`, `frob-tests`, `frob-worktree`, `gob-cache`,
+`gob-cli`, `gob-config`, `gob-dev`, `gob-diagnostics`, `gob-directives`,
+`gob-exec`, `gob-git`, `gob-languages`, `gob-lock`, `gob-log`,
+`gob-macros`, `gob-mdtest`, `gob-rules`, `gob-symbols`, `gob-text` and
+`gob-walk`. `frob-check`, `frob-land` and the self-host switch remain.
+
 ## 1. Build locality
 
 - Proc-macro crate (`gob-macros`) tiny and stable; grammar C builds
@@ -36,7 +44,7 @@ crate brings, is the table at the end of notes/audit-design.md.
 | Kind | Tool | Where |
 |---|---|---|
 | unit | plain `#[test]`, rstest for parametrization | each crate |
-| markdown corpora | `gob-mdtest` on datatest-stable: a fenced in-memory repo, then expected findings or expected symbols/edges | `crates/*/tests/md/*.md` |
+| markdown corpora | `gob-mdtest`: a fenced in-memory repo, then expected findings or expected symbols/edges; the `mdtest!` macro generates one nextest case per corpus directory (reporting every file in it); a fenced block without `expect=` is documentation, not a test | `crates/*/tests/md/*.md` |
 | snapshots | insta for rendered output, `--json` payloads, generated docs | each crate |
 | proc macros | trybuild compile-pass and compile-fail cases | `gob-macros/tests` |
 | CLI end to end | assert_cmd + assert_fs against a fixture repo; snapbox transcripts for `--help` | `crates/{frob,grimble,crunk}/tests` |
@@ -105,3 +113,13 @@ frob test --base main           # touched tests via frob's own selection
 `frob` in this checkout is the workspace binary via `cargo run -q --`
 alias `cargo frob`; a stale global install is detected (version
 mismatch warning) as in v1 but never blocks.
+
+Test selection as built (frob-tests): a test is detected by an attribute
+scan (`#[test]` and its relatives), by items inside a `tests` module, or
+by living in a `tests/` directory (a heuristic that over-approximates
+helpers in `tests/`; a helper only adds a filter that matches nothing).
+Selection walks the reach of the touched symbols through the call graph
+and adds a backstop: a test calling a touched function by a unique name
+is selected even when the edge is Ambiguous. `frob test` runs the
+selection through nextest and records evidence on the lease-holding
+ticket; TEST001 is owned by frob-tests.

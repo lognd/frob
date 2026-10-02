@@ -85,6 +85,7 @@ waivers port. Ids are `FAMILYNNN` in every product, with an optional
 slug alias (`SYS003` and `SYS-UNDECLARED-FLOW`); ids inside a family are
 renumbered only where v1 ids were duplicates or collapsed, and the v1 to
 v2 id map is many-to-one where a family collapsed (SYS's 51 ids become a
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 few parametric ones). The map ships in `docs/migration/rule-ids.md` and
 `frob migrate exceptions` rewrites waivers. The authoritative
 family-to-crate table is boundaries.md section 2.5; this table gives
@@ -173,7 +174,7 @@ frob check [--files F..] [--ticket ID] [--base REF] [--only FAMILY..]
 ```
 
 1. Load config (`frob.toml`, deny unknown fields), open the worktree's
-   `.frob/cache.db`.
+   `.frob/cache.sqlite`.
 2. Discover tracked files (`ignore` crate honoring .gitignore), stat,
    digest changed ones (blake3, rayon).
 3. Build the snapshot: parse artifacts, symbols, edges, resolved graph,
@@ -282,8 +283,11 @@ gob-directives         PARSE DSL (emitted under the parsing product's namespace)
 frob-obligations       DRIFT AFFECT COV TODO SCOPE PRE QUEUE TICK MILE
                        CROSSTICKET DEPR DOC DOCENUM NEGEXIST REF TEST TDD INV
                        REL VERSION REG DEC NARR POL(tickets, docs) and the
-                       ticket-bound exits EXC005 EXC007
-gob-rules              EXC family except the ticket-bound exits
+                       ticket-bound exits EXC003 EXC007 (milestone 1 also
+                       emits EXC001 and EXC005 here; exceptions.md section 6;
+                       TEST001 is owned by frob-tests, and COV003 is
+                       registered as a never-emitted alias of it)
+gob-rules              EXC family except the ticket-bound exits (Milestone 2)
 frob-pm                PM family (pm-enforcement.md)
 grimble-bind           SYS family (model drift) and BIND
 grimble-capabilities   CAP family

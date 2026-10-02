@@ -42,9 +42,11 @@ Changes from v1:
 - One container model for all grammars: `namespace | type | impl |
   module | function`. Containers always push with "."; v1's Rust
   trait-impl `::` leak and the C++ namespace-free-function METHOD quirk
-  are defined away. Trait impls address as `T.method` and, when
-  ambiguous between traits, `T[Trait].method` (bracket is opaque, same
-  parser path as parametrized tests).
+  are defined away. Impl members address as `Type.method` and, on a
+  collision between impls, `Type[Trait].method` (bracket is opaque, same
+  parser path as parametrized tests); the impl block itself is
+  `Type[impl]` (inherent) or `Type[Trait]`. Every file also has a
+  file-level Module node.
 - Symbol kinds: `function | method | type | class | const | module |
   field | variant | macro`. v1 collapsed to five; `field`, `variant`,
   `macro`, `module` are added because grimble and rules need them.
@@ -55,12 +57,19 @@ Changes from v1:
   layer needs to know the language of a target; the adapter that parsed
   the file owns that.
 
-Digests: three facets `sig | body | doc`, each the BLAKE3 of leaf
-tokens joined with NUL after LF normalization (v1 semantics, faster
-hash). `frob.lock` keeps v1's shape (entries sorted by ref,facet; append-
+Digests: three facets `sig | body | doc`, each the BLAKE3 of the
+facet's whitespace-collapsed text (milestone 1; not NUL-joined leaf
+tokens, so a reformat does not change a digest while a token change
+does). Markdown anchors come from ATX headings only; setext headings
+are not extracted yet (a known gap). `frob.lock` keeps v1's shape (entries sorted by ref,facet; append-
 only ack_log with old/new digest, reason, actor, date; mandatory non-
 boilerplate reason). Locking is endpoint-only; body is always acked
-alongside sig except for kinds with no body.
+alongside sig except for kinds with no body. As built (milestone 1,
+`gob-lock` and `frob-ack`): a lock entry carries a `targets` vector (the
+endpoints the ack covers); `frob ack` commits `frob.lock` on the current
+branch; DRIFT001 reports one finding per drifted facet; AFFECT001 fires
+when a symbol is public (in the public-API graph), its signature changed
+since its lock entry, and at least one dependent lacks a later ack.
 
 Normalized signature model (new): `Sig { name, params: [(name, Type,
 default?)], ret: Type, visibility, async, generics }` where `Type` is a
@@ -123,7 +132,10 @@ with ERROR nodes is a conformance failure).
 ## 4. The directive DSL
 
 Grammar unchanged: `frob:<verb> <target> [key="value" ...]` in any
-comment; markdown HTML-comment form binding to the preceding heading;
+comment, where the directive must start a comment line (text before it
+on the same comment line makes it prose); markdown HTML-comment form
+binding to the preceding heading (markdown comments and inner doc
+comments, `//!`, bind to the enclosing section or file);
 backslash continuation; `frob:quote(...)` escape; never silently drop a
 malformed line.
 
@@ -138,15 +150,15 @@ validators, regex tail checks, and at least eight independent
 /// Park one rule's finding at this site until a ticket pays it.
 struct Defer {
     #[target] rule: RuleId,
-    #[attr(required)] reason: Text,
+    #[attr(required)] because: Text,
     #[attr(required)] ticket: TicketRef,   // opaque to every product but frob (D28)
     #[attr] until: Option<Until>,          // date | metric target
 }
 ```
 
 `accept` is declared the same way with `because` (an ADR, a style anchor
-or one sentence) instead of `ticket`; `hotfix` carries `reason` and
-`ticket`; `baseline` is declared in its pool file, never inline.
+or one sentence) and no `ticket`; all four exception verbs spell the
+reason `because=`; `hotfix` carries `because` and `ticket`; `baseline` is declared in its pool file, never inline.
 
 The derive generates: the parser arm, typed attribute validation and its
 error messages, the JSON schema, the generated directives page row
@@ -172,7 +184,10 @@ verbs stay `frob:ticket`, `frob:doc`, `frob:tests`, and crunk has
 product's namespace. Ticket ids in `frob:ticket`, `frob:todo` and
 `ticket=` are full ULIDs: a fixer expands a `~handle`, a TICK rule flags
 an abbreviation, and v1 `T-0042` aliases resolve until `frob migrate
-directives` rewrites them. Milestone 1 (D36) parses the `frob:`
+directives` rewrites them. In milestone 1 the parser's DSL002 flags any
+abbreviated id, including a v1 `T-####`, with the remedy `frob ticket
+expand`. The `[directives] namespaces` knob is not yet a `ConfigTable`
+(Milestone 2 note); milestone 1 hard-codes the `frob` namespace. Milestone 1 (D36) parses the `frob:`
 namespace only; `grimble:` and `crunk:` are Milestone 2 or later (D36).
 Dropped unless a consumer commits: protocol/transition/requires/acquire/
 release/escapes (typestate DSL), scaffold managed-block markers (dropped
@@ -282,7 +297,7 @@ grimble-model.md section 4. Milestone 2 or later (D36).
 
 - Parse artifacts (symbols, comments, IR, imports) keyed by
   `(blake3(file), adapter_id, grammar_version, schema_version)` in the
-  SQLite file of the worktree (`.frob/cache.db`) through `gob-cache`
+  SQLite file of the worktree (`.frob/cache.sqlite`) through `gob-cache`
   (`rusqlite` bundled, WAL readers, `busy_timeout`). The adapter_id is
   the crate version plus a build hash, so a stale parser cannot yield a
   fresh key.

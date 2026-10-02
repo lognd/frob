@@ -1,0 +1,24 @@
+## Done report
+
+Design set reconciled with the milestone-1 code: decision-log rows D38-D55 added for cache file names, config tables and defaults, envelope and format flags, exit classes, dependency pins, symref forms, directive and exception semantics (because= on all four verbs; EXC ids as built with displaced designs renumbered EXC013-EXC015), ledger events and merge driver, leases and worktrees, evidence and test selection, ack rules, generated doc paths and GEN001, mdtest, gob-exec, gob-git, gob-config and milestone status. Twelve files under docs/design changed; grep for stale forms is clean except the deliberate grimble excuses syntax and one v1 waive comment.
+
+### Changed
+```
+ docs/design/README.md        | 21 +++++++++++-
+ docs/design/architecture.md  | 69 ++++++++++++++++++++++++++++---------
+ docs/design/boundaries.md    |  2 +-
+ docs/design/build-test-ci.md | 20 ++++++++++-
+ docs/design/cli.md           | 68 +++++++++++++++++++++++++++----------
+ docs/design/code-model.md    | 41 +++++++++++++++-------
+ docs/design/documentation.md | 23 ++++++++-----
+ docs/design/exceptions.md    | 48 ++++++++++++++++++--------
+ docs/design/git-io.md        | 18 +++++++---
+ docs/design/monorepo.md      |  5 ++-
+ docs/design/rules.md         |  9 +++--
+ docs/design/tickets.md       | 81 ++++++++++++++++++++++++++++++--------------
+ tickets/T-0029/ticket.md     |  6 ++--
+ 13 files changed, 302 insertions(+), 109 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)

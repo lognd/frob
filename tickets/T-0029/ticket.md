@@ -1,7 +1,7 @@
 ---
 id: T-0029
 title: Reconcile design docs with milestone-1 implementation decisions
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-10-02'
@@ -23,19 +23,24 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0029
+branch: t-0029
 scope:
 - docs/design/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:git diff --stat experimental -- docs/design exit=0 sha256=27ac5a90911a
+- cmd:git diff --stat experimental -- docs/design exit=0 sha256=9dd511125cf2
 designated_repro_test: null
 acceptance:
 - text: Given the design set after the change, when grepped for each item in the body,
     then the text matches the landed code and the README log has one row per decision
-  evidence: []
+  evidence:
+  - cmd:git diff --stat experimental -- docs/design exit=0 sha256=27ac5a90911a
+  - cmd:git diff --stat experimental -- docs/design exit=0 sha256=9dd511125cf2
 threat: null
 component: docs
 anchor: false

@@ -15,6 +15,7 @@ generate what it can and keep the rest honest.
 | deferred work | `// TODO(<ulid>): text` with the full ULID (the existing TODO001 contract) | bare TODO/FIXME |
 | incident narrative, history, what was tried, measurements | the ticket body and events, the PR description, the commit body with a `Refs:` trailer | any source comment |
 | a decision with alternatives and consequences | `docs/decisions/<date>-<slug>.md` (MADR, trimmed; section 5) | comments, tickets |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | architecture: codemap, boundaries, invariants | `docs/architecture.md` (matklad style: name symbols, not line numbers; "Architecture Invariant:" sentences) | scattered module docs |
 | rules, CLI, config, schemas, directives, capabilities, errors, languages | generated reference pages from derives (section 3) | hand-written tables |
 | tutorials, how-tos, explanations | written markdown per product in the Diataxis split | generated pages |
@@ -29,7 +30,9 @@ docs/
   style.md                 code and comment rules, each with a Rationale line
   decisions/               ADRs; README.md index generated
   design/                  this set (explanation quadrant, cross-product)
-  frob/ grimble/ crunk/    tutorial.md, howto/, explanation/, reference/ (GENERATED)
+  reference/               GENERATED (section 3): cli/, rules/, config.md, directives.md
+  schemas/                 GENERATED JSON schemas
+  frob/ grimble/ crunk/    tutorial.md, howto/, explanation/ (written)
 CHANGELOG.md               compiled, never hand-edited between releases
 changelog.d/               fragments
 crates/<crate>/README.md   crate overview, pulled in by #![doc = include_str!("../README.md")]
@@ -46,21 +49,30 @@ This table is the one path table; every other file links here.
 
 | Page | Path | Source of truth | Generator |
 |---|---|---|---|
-| CLI reference, man pages, completions | `docs/<product>/reference/cli/*.md`, `man/`, `completions/` | clap derive doc comments | `cargo dev gen cli` |
-| config reference and schema | `docs/<product>/reference/config.md`, `schema/<product>.schema.json` | `ConfigTable` derive and schemars | `cargo dev gen config` |
-| rule pages and index | `docs/<product>/reference/rules/<ID>.md`, `docs/<product>/reference/rules/README.md` | `Rule` derive doc comment (must contain a Remedy section or it does not compile) | `cargo dev gen rules` |
-| directives, errors, languages (shared by all products) | `docs/reference/directives.md`, `docs/reference/errors.md`, `docs/reference/languages.md` | the respective derives and the adapter matrix | `cargo dev gen` |
+| CLI reference | `docs/reference/cli/<product>.md` (plus `docs/reference/cli/any.md` for the verbs shared by every product, such as `schema`) | clap derive doc comments | `cargo dev gen cli` |
+| man pages, completions (Milestone 2 or later (D36)) | `man/`, `completions/` | clap derive doc comments | `cargo dev gen cli` |
+| config reference and schema | `docs/reference/config.md`, `docs/schemas/config.json` | `ConfigTable` derive and schemars | `cargo dev gen config` |
+| rule pages | `docs/reference/rules/<ID>.md` (each embeds the rule's mdtest fire and clean examples) | `Rule` derive doc comment (must contain a Remedy section or it does not compile) | `cargo dev gen rules` |
+| directives (shared by all products) | `docs/reference/directives.md`, `docs/schemas/directives.json` | the `Directive` derive | `cargo dev gen directives` |
+| envelope schema | `docs/schemas/envelope.json` | `gob-diagnostics` types | `cargo dev gen schemas` |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
+| errors, languages (Milestone 2 or later (D36)) | `docs/reference/errors.md`, `docs/reference/languages.md` | the error codes and the adapter matrix | `cargo dev gen` |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | capabilities | `docs/grimble/reference/capabilities.md` | `Capability` derive | `cargo dev gen` |
-| ticket and response schemas | `schema/ticket.schema.json`, `schema/*-response.json` | ticket model and `--json` response types | `cargo dev gen schema` |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
+| ticket and per-verb response schemas (Milestone 2 or later (D36)) | `docs/schemas/ticket.json`, `docs/schemas/*-response.json` | ticket model and `--json` response types | `cargo dev gen schemas` |
 <!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | ADR index | `docs/decisions/README.md` | ADR frontmatter | `cargo dev gen adr-index` |
 | web types | `web/src/api.ts` | response schemas | `cargo dev gen ts` |
 | editor grammar | `editors/grimble.tmLanguage.json` | grimble keyword table | `cargo dev gen editors` |
 | `CHANGELOG.md` | `CHANGELOG.md` | fragments | `frob release changelog --version X` (frob-release; `cargo dev gen` calls it) |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | tutorial, howto, explanation, architecture, style, ADR bodies | `docs/<product>/...`, `docs/architecture.md`, `docs/style.md`, `docs/decisions/*.md` | humans | none; linted and drift-checked only |
 
-One `Mode { Write, Check }` across generators; `cargo dev gen --check`
-is the gate. `cargo dev` exists only in this workspace (gob-dev), so the
+One `Mode { Write, Check }` across generators; `cargo dev gen all
+--check` is the gate (in CI it is the GEN001 stage; `--check` prints
+unified diffs and exits 1 on drift). `gob-dev` exits 1 on its own
+internal errors because it may not use `std::process`. `cargo dev` exists only in this workspace (gob-dev), so the
 gate is a `[[check.tool]]` stage in this repo's `frob.toml`, whose
 output maps to GEN001; it is repo-local, not a built-in rule that
 consumer repos inherit. It runs in `frob check` so drift fails locally
@@ -77,6 +89,7 @@ comment nodes in every language, excepted only with an `accept` and a reason):
 | NARR001 | a `//`-style comment block mentions more than one ticket id, or exceeds 6 lines without being rustdoc or an `// Invariant:` block |
 | NARR002 | history words in a comment (`used to`, `previously`, `regression`, `incident`, `hotfix`, `as of 20xx`, `see discussion`) |
 | NARR003 | a ticket id inside rustdoc (`///`, `//!`) or a docstring |
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 | NARR004 | a comment longer than 3 lines containing `because` or `rationale` that does not reference `docs/decisions/` or `docs/style.md#` |
 | NARR005 | a `frob:ticket` directive block followed by prose on adjacent comment lines (the directive binds; the story goes to the ticket) |
 
@@ -107,6 +120,7 @@ worktrees never collide; the generated index assigns display numbers
 (`ADR-0007`) that are never reused and never persisted outside the
 index. Required when a
 change touches an "Architecture Invariant" sentence in
+<!-- frob:waive DOC006 reason="design note: names a planned file or config table that does not exist yet" -->
 `docs/architecture.md`; the existing doc-drift mechanism (`frob:doc`
 anchors and `frob ack`) binds those sections to the `gob-*` crate
 roots, and a rule (DEC004) refuses a land that changes a bound crate

@@ -25,7 +25,8 @@ on top of it.
   directives, links, commit trailers, changelog fragments and directory
   names all carry it. The human handle is the unique suffix of the
   ULID's random part (the last 16 characters), shown as `~xxxxxxx` with
-  a minimum of 7 characters (`[tickets] handle_min_len`), lengthened
+  a minimum of 7 characters (`[tickets] handle_min_len`; the minimum
+  governs display, and input accepts any unique suffix), lengthened
   only when two tickets collide, and accepted by every verb
   (`frob ticket show ~6C0D1E2`). A handle is never persisted: a fixer
   expands handles to full ids on write, and a TICK rule flags an
@@ -36,7 +37,8 @@ on top of it.
   on input and never persisted, so directives and commit messages carry
   only the full ULID. ULIDs sort by creation time, which is what humans
   used counters for. `aliases` hold v1 ids (`frob:T-0042`,
-  migration.md).
+  migration.md); `ticket new --alias` sets them, and an alias resolves
+  like a handle (an ambiguous one is `E-TICKET-AMBIGUOUS`).
 - Why not counters assigned at land (the ecosystem note's suggestion):
   it keeps two names per ticket alive and brings back promote and
   rewrite-every-reference. Time-ordered ids are enough; the handle
@@ -78,15 +80,24 @@ into per-ticket timelines, cycle times, velocity, and flow metrics in
 one pass; `frob ticket show --events` prints the timeline. Counts stay
 small: a busy ticket has tens of events, each a few hundred bytes.
 
-Every kind that any file refers to is in this table:
+Every kind that any file refers to is in this table. Milestone 1 code
+(frob-ledger `EventBody`) interprets `create`, `field`, `transition`,
+`comment`, `link` and `exception`; every `rev`-1 file carries a `rev`
+key, the revision of the event file format (not of the ticket), and a
+kind a reader does not know folds to no change. `evidence` events are
+written by frob-evidence, which re-folds the ticket itself, until
+frob-ledger gains `EventBody::Evidence` (Milestone 2 note); the guard
+bypass is an `evidence-bypass` event written the same way.
 
 | Kind | Subject | Required fields | Producer verb | Consumers |
 |---|---|---|---|---|
+| `create` | ticket | the initial field values (title, type, body, scope, links, idempotency key, aliases) | new | fold (the birth event; a ticket whose first event is not `create` fails doctor) |
 | `transition` | ticket | from, to, reason | start, requeue, review, close, drop, reopen, land, triage | cycle time, velocity, flow, close guard |
 | `field` | ticket | field, old, new; reason when the field is `flavour` (PM028) or a driver is resolved (PM021) | update, body | fold, doctor, PM rules |
 | `comment` | ticket | subtype (note, decision, question, answer, evidence), body | comment | brief, blocked-on-question view |
 | `link` | ticket | op (add, remove), link type, target | link, unlink | graph, doctor |
 | `evidence` | ticket | evidence id, verdict, measured value, commit, store URI or inline text | evidence | close guard, done-report |
+| `evidence-bypass` | ticket | reason | `ticket close --no-evidence --reason` | audit, doctor |
 | `lease` | ticket | op (take, renew, release, steal), holder, scope | start, work, requeue, close | contention, wave |
 | `review` | ticket or exception | subject, verdict, reviewer | review, `exceptions` review of an accept | EXC012, cycle report |
 | `exception` | ticket | kind (accept, defer, hotfix), rule, site | check --fix, land --hotfix | ticket page, close guard |
@@ -108,16 +119,18 @@ Acks are not events: they live in the ack log of the product lock file.
   so concurrent work on one ticket merges with no conflict on events.
   The only conflict surface is `ticket.md` frontmatter, which is a
   cache of the events. The merge driver (`frob merge-driver`, a hidden
-  verb that git invokes) takes the union of both sides' event files and
-  re-folds the frontmatter; it never picks a last writer. `frob init`
+  verb that git invokes) takes the union of the event files found on
+  disk and in every merge head, and re-folds the frontmatter; it never
+  picks a last writer. `frob init`
   and `frob doctor --fix` install the `.gitattributes` line
   (`tickets/*/ticket.md merge=frob-ledger`) and `git config
   merge.frob-ledger.driver`, and `doctor` verifies both because git
   config is not cloned. A hosting provider's merge button never runs
   the driver, so a TICK rule re-folds every ticket in CI and fails when
   a frontmatter disagrees with its events. No custom splice.
-- Index: SQLite under `.frob/` of each worktree, rebuilt from the ledger
-  files keyed by content hash and ledger tree id; every query verb
+- Index: SQLite under `.frob/tickets.sqlite` of each worktree, rebuilt
+  from the ledger files keyed by content hash and the id of the tickets
+  subtree (not the whole tree, so unrelated commits do not invalidate it); every query verb
   reads the index; thousands of tickets load in tens of milliseconds.
   v1's `doable` took over 120s at 1,245 tickets.
 - Writer story: ledger commits advance the configured ledger ref
@@ -126,13 +139,16 @@ Acks are not events: they live in the ack log of the product lock file.
   ticket files, and builds the commit tree from the ledger ref's current
   tree plus the changed ticket directory, never from any index, so a
   user's staged changes can never enter a ledger commit. The ref is
-  updated by compare-and-swap with up to `[tickets] cas_retries`
+  updated by compare-and-swap with up to `[git] cas_retries`
   retries (re-read the tip, rebuild the tree, retry); exhausting them
   is exit 3 retryable. When some checkout has the ledger ref checked
   out, frob updates that checkout's index and worktree for `tickets/`
   only, and refuses with a remedy if those paths have local edits.
-  `[tickets] ref = "branch"` puts ledger commits on the current branch
-  instead, for protected-trunk and fork flows. No mirror step, no
+  `[tickets] ref_mode = "branch"` puts ledger commits on the current
+  branch instead, for protected-trunk and fork flows (`ref_mode =
+  "trunk"`, the default, commits to `[tickets] ref`, default
+  `refs/heads/main`). A reconcile commit is made when concurrent event
+  writes leave the frontmatter behind the fold. No mirror step, no
   overlay. In the default mode a land carries no ledger diff because the
   ledger was never branch-local.
 
@@ -145,7 +161,7 @@ otherwise `frob ticket doctor` lists unpushed ledger commits). The TICK
 rule flags a ticket referenced in code or a trailer that is absent from
 the base ref (`origin/<trunk>`), so a dangling reference fails locally
 and in CI. Where trunk is branch-protected or the work is a fork,
-`ref = "branch"` keeps the ticket commits in the PR itself. An offline
+`ref_mode = "branch"` keeps the ticket commits in the PR itself. An offline
 clone keeps working: ledger commits queue locally and the CAS retry
 rule applies when the remote catches up.
 
@@ -177,7 +193,7 @@ a release object (section 7), not a ticket type. A story has
 fields that pm-enforcement.md requires (section 2 and 2a there). Each type
 declares its evidence policy (bug needs a repro that fails at parent,
 docs accepts command evidence), its land commit type, and whether it can
-be worked directly (epics cannot).
+be worked directly (epics cannot, and `doable` excludes them).
 
 One canonical table, declared once with inverses and topology
 constraints; every other file uses these spellings.
@@ -190,7 +206,7 @@ constraints; every other file uses these spellings.
 | `duplicates` | `duplicated-by` | one-way; target is not itself a duplicate; source takes outcome `duplicate` |
 | `causes` | `caused-by` | acyclic |
 | `splits` | `split-from` | single origin |
-| `discovered-from` | `spawned` | provenance (agents spawn follow-ups constantly); acyclic |
+| `discovered-from` | `spawned` | provenance (agents spawn follow-ups constantly); acyclic; `spawned` is a link kind in its own right in code |
 | `enabler-for` | `enabled-by` | target is a story or quality objective |
 | `supersedes` | `superseded-by` | acyclic |
 | `implements` | none stored | target is an invariant or a grimble entity; a grimble entity is validated only through `grimble --json`, and is Unresolved when grimble is absent |
@@ -221,7 +237,7 @@ the integrity guards on `done`. Post-actions (`release_lease`,
 `attempt` event plus a `requeue` back to `ready`.
 
 - Scope is a write lease taken at `start`, stored in
-  `.git/frob/leases/<id>.toml` (single clone: shared by its worktrees,
+  `<common_dir>/frob/leases/<id>.toml` (single clone: shared by its worktrees,
   invisible to other clones and machines; cross-clone safety is the
   ledger CAS plus the SCOPE rule at land). The holder is the actor plus
   the worktree path; an agent harness sets `FROB_AGENT` so parallel
@@ -229,21 +245,28 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   for the same holder; any other caller gets exit 3 `E-LEASE-HELD`
   naming the holder.
 - Acquisition is atomic: read all leases, compute overlap, write the
-  new lease, all under one lock file (`.git/frob/lease.lock`) in the git
-  common dir; `--steal` takes the same lock.
-- TTL is the materialized knob `[tickets.lease] ttl_minutes` (default
-  120). The heartbeat is renewed by any frob verb run from that
+  new lease, all under one lock file (`<common_dir>/frob/leases.lock`,
+  an flock) in the git common dir; `--steal` takes the same lock and is
+  allowed only for the same ticket (it never takes another ticket's
+  lease), recording the previous holder in the lease history.
+- TTL is the knob `[lease] ttl_secs` (default 7200); the lock wait is
+  `[lease] lock_timeout_ms` (default 5000), and append-shared files such
+  as `Cargo.lock` are exempt from overlap through `[lease] shared_files`
+  (`[tickets] registry_files` is a compatibility alias folded into it). The heartbeat is renewed by any frob verb run from that
   worktree and, when it exists, by the daemon, so a 40-minute build
   with no frob call stays inside the TTL; a stale lease can be taken
   with `--steal` and a reason. Leases release automatically on every
   terminal transition and on `requeue`.
-- Overlap is glob intersection OR resolved-set intersection: two
+- Overlap is glob intersection OR resolved-set intersection (in code, a
+  conservative intersection test over the glob text, with the resolved
+  file set as a backstop): two
   tickets scoped to `src/newmod/**` overlap even though no file exists
   yet (v1's glob-overlap proof is kept), and a glob that is disjoint
   from another's text but resolves to a shared file also overlaps.
   `doable` excludes overlaps; `wave --agents N` partitions;
   `contention` names the hot files. The per-identity WIP limit is
-  `[pm.wip] in_progress_per_identity`, off by default.
+  `[pm.wip] in_progress_per_identity`, off by default; the milestone-1
+  limit is `[lease] wip_per_holder` (0 turns it off).
 - Edits outside any symbol (imports, module headers) belong to the
   file-level scope: a symbol-level entry claims only symbol bodies, so
   such edits need a file-level entry or conflict with any symbol-level
@@ -256,7 +279,7 @@ the integrity guards on `done`. Post-actions (`release_lease`,
 - New: symbol-level scope entries (`src/x.rs::Parser.*`) so two tickets
   can share a file; overlap is then per symbol via the code graph.
   Milestone 2 or later (D36).
-- Mega-glob refusal stays, with the threshold in `[tickets]
+- Mega-glob refusal stays (not built in milestone 1; Milestone 2 or later (D36)), with the threshold in `[tickets]
   mega_glob_files`, and the ack is one flag with a reason.
 
 ## 7. Jira mapping and pinch points
@@ -340,20 +363,28 @@ measurer, the verdict, the measured value, the commit, and for a blob
 its BLAKE3 hash, size, media type, and a URI. The URI points at an
 artifact store the repo configures: `[evidence] store =
 "dir:.git/frob/artifacts"` (local, outside `.frob/` and non-authoritative,
-for solo work) or any https URL; milestone 1 supports exactly those two.
+for solo work) or any https URL; milestone 1 supports exactly those two (an https
+store is record-only: the URI is written to the event, nothing is
+uploaded).
 `gh-artifact:`, `gh-release:` and `s3:`/`gcs:` stores are Milestone 2 or
 later (D36); they need a client and credentials that no milestone-1
 crate owns, and GitHub run artifacts expire (90 days by default). `frob
 ticket evidence fetch <id>` retrieves and verifies the hash; a missing
 or expired blob degrades the verdict to Unmeasured with the URI shown,
 never to Failed, and Unmeasured on a terminal ticket is not a finding.
-Text under `[tickets] inline_evidence_max_bytes` (default 16 KiB; a
+Text under `[evidence] inline_max_bytes` (default 16 KiB; a
 command transcript, a JSON measurement) may be stored inline in the
 event file after `gob-log` redaction (architecture.md section 5); a
 TICK rule scans events for unredacted secret patterns. The GUI renders blobs through
 the same fetch. Changed: evidence providers are a trait
 (`pytest`, `cargo test`, `ctest`, `vitest`, `junit`, `command`) so
-Rust-only or docs-only repos close tickets natively; evidence verdicts
+Rust-only or docs-only repos close tickets natively (milestone 1 ships
+`nextest`, `command` and `file` providers; the `command` provider may
+run only programs in `[evidence] allowed_tools`); the close guard
+requires a Measured record for the code-changing types task, bug,
+security, story, incident and invariant, and `ticket close
+--no-evidence --reason` bypasses it with an audited `evidence-bypass`
+event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
 
 ## 10. Landing
@@ -380,7 +411,7 @@ REL003 (documentation.md section 6).
 ```
 frob ticket new|show|list|query|board|doable|wave|contention|brief|log
 frob ticket update|link|unlink|comment|accept|evidence|attach|body
-frob ticket evidence fetch | done-report
+frob ticket evidence [add|fetch] | done-report   # two-word path, action positional (cli.md section 2)
 frob ticket triage accept|decline|snooze|duplicate
 frob ticket start|requeue|review|close|drop|reopen
 frob ticket component ... | reconcile | doctor

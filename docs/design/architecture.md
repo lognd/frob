@@ -45,7 +45,7 @@ directives, symbols); then `gob-walk`, `gob-cache`, `gob-git`,
 
 1. `main` builds `Cli` (clap derive via `gob-cli`), installs tracing,
    opens the repository once through `gob-git` (gix, no subprocess),
-   opens `.frob/cache.db`, records invocation start (telemetry spans the WHOLE
+   opens `.frob/cache.sqlite`, records invocation start (telemetry spans the WHOLE
    process this time; v1 timed only dispatch and missed test and graph
    entirely).
 2. The command handler asks the snapshot layer for what it needs.
@@ -56,7 +56,7 @@ directives, symbols); then `gob-walk`, `gob-cache`, `gob-git`,
    over per-file memo tables; from milestone 2 the same keys back a
    salsa `Db` (`gob-db`, Milestone 2 or later (D36)).
 3. Results that are expensive and stable are persisted to the SQLite
-   file of this worktree (`.frob/cache.db`): parse artifacts keyed by
+   file of this worktree (`.frob/cache.sqlite`): parse artifacts keyed by
    (content blake3, adapter id, schema version); per-file findings keyed
    by (file digest, rule id, rule version, side-input digest); repo-scope
    findings keyed additionally by a graph digest. Persistence happens
@@ -105,9 +105,9 @@ crate measures the fresh-process case.
 | design model | `design/*.grmb` (grimble) | yes |
 | invariants, decisions | `invariants/INV-*.md`, `docs/decisions/*.md` | yes |
 | config | `frob.toml`, `grimble.toml`, `crunk.toml` (one per product) | yes |
-| leases | `.git/frob/leases/<ulid>.toml` plus `.git/frob/lease.lock`; single clone, shared by its worktrees | no |
+| leases | `<common_dir>/frob/leases/<ulid>.toml` plus one `<common_dir>/frob/leases.lock`; single clone, shared by its worktrees | no |
 | local evidence artifacts | `.git/frob/artifacts/` (non-authoritative; a missing blob reads as Unmeasured) | no |
-| cache, index, telemetry | `.frob/` per worktree | no, delete-safe |
+| cache, index, telemetry | `.frob/` per worktree: `cache.sqlite` (gob-cache), `tickets.sqlite` (frob-ledger index, keyed by the tickets subtree id, not the whole tree) | no, delete-safe |
 
 Nothing authoritative under `.frob/`. Deleting it costs one cold parse.
 The deliberate non-git state is exactly: leases (loss means locks
@@ -123,6 +123,9 @@ house idiom is typani's ErrorSet; in Rust that is `error_set!` (crate
 `error_set`), trialled first in `frob-ledger` (decided 2026-10-02;
 notes/rust-ecosystem.md flags its miette interop as unverified); if its miette interop
 disappoints, fall back to `thiserror` enums with a shared `Code` trait.
+Trial outcome (milestone 1): `error_set` is kept in `frob-ledger`; the
+other crates written so far (for example `gob-exec`) use `thiserror`
+enums.
 Rules for every crate:
 
 - Every error variant has a stable code (`E-LEDGER-NOTFOUND`) and a
@@ -167,7 +170,12 @@ Each product has one config file (`frob.toml`, `grimble.toml`,
 the eleven v1 `*SCHEMA001` gates), loaded by `gob-config`. Each table is a struct with
 `#[derive(ConfigTable)]` which emits the JSON schema fragment and the
 generated config reference page (documentation.md section 3) from doc
-comments (uv's OptionsMetadata pattern). Layering: workspace file, then per-crate or per-dir
+comments (uv's OptionsMetadata pattern). As built (`gob-config`): the derive-registered inventory stores each
+table's describe function rather than a value; `load` layers defaults,
+file and overrides with per-key provenance and rejects unknown keys with
+a did-you-mean; table paths may be dotted (`tickets.lease`); `check`
+returns a `Result` so an unreadable file is not silently clean; and each
+`FieldDescription` carries a per-field JSON schema. Layering: workspace file, then per-crate or per-dir
 `frob.toml` overrides (Combine derive), then CLI flags. `frob config
 show --effective` prints the merged result with provenance.
 
@@ -176,29 +184,52 @@ Config inventory. This table is the one place that lists every knob;
 flags its absence. Defaults are the initial values proposed by this
 design.
 
+In code, "materialized" is carried by the `enforcement` marker on a field (only enforcement fields are written by `frob init`); `materialize` on a table is a declaration that its enforcement fields are written.
+
+Rows marked (M1) exist in code at milestone 1 and match the `ConfigTable`
+structs of crates/frob/src/config.rs and the sibling crates' `config.rs`
+files exactly (the generated docs/reference/config.md is the live copy);
+the other rows are the design for Milestone 2 or later (D36) and are not
+yet read by any crate. Every table is under `deny_unknown_fields`.
+
 | Key | Product file | Materialized | Default | Owning crate |
 |---|---|---|---|---|
+| `[tickets] ref` (M1) | frob.toml | yes | `"refs/heads/main"` | frob (config), frob-ledger |
+| `[tickets] ref_mode` (M1) | frob.toml | yes | `"trunk"` (or `"branch"`) | frob (config), frob-ledger |
+| `[tickets] dir` (M1) | frob.toml | no | `"tickets"` | frob (config), frob-ledger |
+| `[tickets] handle_min_len` (M1) | frob.toml | no | 7 | frob (config), frob-ledger |
+| `[tickets] actor` (M1) | frob.toml | no | empty (git `user.name`) | frob (config), frob-ledger |
+| `[tickets] registry_files` (M1) | frob.toml | no | empty; a compatibility alias folded into `[lease] shared_files` | frob (config) |
+| `[check] fail_on` (M1) | frob.toml | yes | `"error"` (`"none"` never fails) | frob (config), gob-diagnostics |
+| `[check] exclude` (M1) | frob.toml | no | empty | frob (config) |
+| `[check] size_cap` (M1) | frob.toml | no | 4194304 bytes | frob (config) |
+| `[git] cas_retries` (M1) | frob.toml | yes | 5 | frob (config), gob-git |
+| `[cache] busy_timeout_ms` (M1) | frob.toml | no (performance only) | 500 | frob (config), gob-cache |
+| `[lease] ttl_secs` (M1) | frob.toml | no | 7200 | frob-lease |
+| `[lease] lock_timeout_ms` (M1) | frob.toml | no | 5000 | frob-lease |
+| `[lease] shared_files` (M1) | frob.toml | no | empty (append-shared files such as `Cargo.lock`) | frob-lease |
+| `[lease] wip_per_holder` (M1) | frob.toml | no | 0 (off) | frob-lease |
+| `[worktree] dir` (M1) | frob.toml | no | `"../{repo}-wt"` | frob-worktree |
+| `[evidence] allowed_tools` (M1) | frob.toml | no | `["cargo", "git"]` | frob-evidence |
+| `[evidence] inline_max_bytes` (M1) | frob.toml | no | 16384 | frob-evidence |
+| `[evidence] store` (M1) | frob.toml | no | `"dir:.git/frob/artifacts"` | frob-evidence |
+| `[evidence] timeout_secs` (M1) | frob.toml | no | 1800 | frob-evidence |
+| `[evidence] nextest_profile` (M1) | frob.toml | no | empty (nextest's own default) | frob-evidence |
+| `[invariants] forbid_imports` (M1) | frob.toml | no | empty (entries of `from`, `to`, `reason`) | frob-obligations |
 | `[check] strictness` | frob.toml | yes | `"warn-new-rules"` | frob-check |
-| `[check] fail_on` | frob.toml | yes | `"none"` (`error` for CI via `--fail-on`) | gob-diagnostics |
 | `[check] ticket_hops` | frob.toml | yes | 1 | frob-check |
 | `[check] new_rule_warn_releases` | frob.toml | yes | 1 | gob-rules |
 | `[[check.tool]]` | frob.toml | no (opt-in list) | none | frob-check |
 | `[land] verify` | frob.toml | yes | `"sync"` (`"ci"` is Milestone 2 or later (D36)) | frob-land |
 | `[land] push` | frob.toml | yes | false | frob-land |
 | `[git] run_hooks` | frob.toml | yes | false | gob-git |
-| `[tickets] ref` | frob.toml | yes | `"trunk"` (or `"branch"`) | frob-ledger |
-| `[tickets] cas_retries` | frob.toml | yes | 5 | gob-git |
-| `[tickets] handle_min_len` | frob.toml | yes | 7 | frob-ledger |
 | `[tickets] prefix` | frob.toml | no (display only) | empty | frob-ledger |
-| `[tickets] inline_evidence_max_bytes` | frob.toml | yes | 16384 | frob-evidence |
 | `[tickets] mega_glob_files` | frob.toml | yes | 500 | frob-lease |
-| `[tickets.lease] ttl_minutes` | frob.toml | yes | 120 | frob-lease |
 | `[tickets.guards] close` | frob.toml | yes | has_evidence, no_open_blockers, children_terminal, lease_free | frob-ledger |
 | `[tickets.archive] done_after_days` | frob.toml | yes | 0 (off) | frob-ledger |
 | `[tickets.custom_fields]` | frob.toml | no (registry) | none | frob-ledger |
 | `[[component]]`, labels, `[[triage.rule]]`, `[[query]]`, `[[agent]]` | frob.toml | no (registries) | none | frob-ledger |
-| `[evidence] store` | frob.toml | yes | `"dir:.git/frob/artifacts"` | frob-evidence |
-| `[directives] namespaces` | frob.toml | yes | `["frob"]` | gob-directives |
+| `[directives] namespaces` | frob.toml | yes | `["frob"]`; not yet a ConfigTable (Milestone 2) | gob-directives |
 | `[pm] strict`, `stories_required` | frob.toml | yes | false, true | frob-pm |
 | `[pm] max_story_points`, `max_chore_points` | frob.toml | yes | 8, 2 | frob-pm |
 | `[pm] max_objective_share` | frob.toml | yes | 0.4 | frob-pm |
@@ -222,6 +253,11 @@ design.
 | `[[policy]]`, `rules/*.grl.toml` (code) | grimble.toml and next to it | no | none | grimble-lints |
 | crunk tables | crunk.toml | per notes/crunk.md section 4 | per crunk | crunk crates |
 
+The `[tickets]` and `[git]` tables are validated in the `frob` binary;
+frob-ledger reads just the keys it needs and ignores the rest, because
+the binary depends on the crate. The ledger reads the `[tickets]` keys
+without the alias folding that `[lease] shared_files` receives.
+
 Environment variables never change an enforcement outcome. Only two
 exist: `FROB_LOG` (log filter) and `FROB_AGENT` (actor label, also
 `--actor`). Every other behaviour switch is a flag or a knob above.
@@ -229,7 +265,8 @@ exist: `FROB_LOG` (log filter) and `FROB_AGENT` (actor label, also
 No invisible variables (owner rule, 2026-10-02): a knob that changes
 enforcement (PM thresholds, exception budgets, strictness flags,
 capacity formula constants, hotfix days) is declared with
-`#[config(materialize)]` on the `ConfigTable` derive. `frob init` writes
+the `enforcement` marker on a field of a `#[config(materialize)]`
+table (`ConfigTable` derive). `frob init` writes
 every such knob with its default value and its doc comment into the
 config file; `frob config sync` adds knobs introduced by an upgrade;
 CFG001 is an Error when a materialized knob is absent, so a reader of
@@ -253,7 +290,7 @@ tune performance (thread counts, cache sizes) are not materialized.
 
 ## 8. Key dependencies (pinned in the workspace)
 
-clap 4, salsa 0.28 (milestone 2), tree-sitter 0.27, rusqlite (bundled), gix (reads
+clap 4, salsa 0.28 (milestone 2), tree-sitter 0.27.0 (grammars tree-sitter-rust 0.24.2, tree-sitter-md 0.5.3, tree-sitter-toml-ng 0.7.0, pinned exactly; ast-grep-core 0.45.3 is compatible), rusqlite (bundled), gix 0.87.1 (0.88 does not resolve; reads
 and ledger writes; git CLI only per git-io.md), rayon, blake3, serde/toml/toml_edit, jiff, ulid,
 ignore/globset, pulldown-cmark, miette (bin only) or annotate-snippets,
 tracing, inventory, schemars, rmcp (serve crates only), insta, rstest,
@@ -274,7 +311,7 @@ construction rather than by later retrofits.
 | external jobs | `gob-exec` bounded job pool (`[perf] jobs`), with per-job timeout, memory cap via cgroup where available, and output caps | test runners, ruff/clippy/tsc, Tailwind helper |
 | async IO | `tokio` only in `gob-serve`, `frob-serve`, `grimble-serve`, `frob-gh`; the core stays sync | server transports, HTTP |
 | shared state | immutable snapshots passed by `Arc`; `dashmap` only in caches; no locks of our own around derived state (v1's deadlock class); salsa itself may block a thread that waits on a query in flight elsewhere | caches, interned ids |
-| SQLite | one file per worktree (`.frob/cache.db`); within a process one writer connection behind a channel, many readers in WAL mode; across processes `busy_timeout` and best-effort writes | persisted artifacts and findings |
+| SQLite | one file per worktree (`.frob/cache.sqlite`); within a process one writer connection behind a channel, many readers in WAL mode; across processes `busy_timeout` and best-effort writes | persisted artifacts and findings |
 
 Rules for every crate: expensive loops are `par_iter` unless the item
 count is bounded and small; a rule's `check` is pure over the snapshot

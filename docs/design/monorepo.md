@@ -86,7 +86,10 @@ crunk are not second-class citizens in their own code.
 Milestone 1 (D36): frob checks and lands in this repository with the
 Rust, markdown and TOML adapters only; the crate cut is the table at the
 end of notes/audit-design.md. Steps 2 to 4 below, and everything about
-grimble and crunk, are Milestone 2 or later (D36).
+grimble and crunk, are Milestone 2 or later (D36). Status: the `frob`
+binary and 24 substrate and product crates exist under `crates/` (the
+list is in build-test-ci.md, Milestone 1); `frob-check`, `frob-land` and
+the self-host switch remain, and step 1 is complete only when they land.
 
 1. frob v2 core and binary reach self-hosting (frob checks this repo).
 2. grimble is split out of the initial frob tree into `grimble-*`

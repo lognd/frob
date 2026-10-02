@@ -41,8 +41,11 @@ digest-based exits are evaluated by each product itself. The budget per
 component uses frob's component registry, so budgets are frob's too.
 
 Milestone 1 (D36) implements `accept` and `defer` only, with EXC001,
-EXC003, EXC005 and EXC007; `hotfix`, `baseline`, budgets, the audit and
-`convert` are Milestone 2 or later (D36).
+EXC003, EXC005 and EXC007 (section 6 gives their meaning as built);
+`hotfix`, `baseline`, budgets, the audit and `convert` are Milestone 2
+or later (D36). A flagged exception still suppresses its finding; the
+EXC finding is what fails the gate. The optional `until=` is parsed but
+not evaluated yet.
 
 ## 2. Syntax
 
@@ -51,9 +54,12 @@ Inline, one line, machine-read, exempt from the NARR narrative rules
 
 ```
 # frob:accept COV006 because="docs/decisions/2026-10-02-dispatch-tables.md"
-# grimble:defer ARCH001 ticket=01J9QKX3M8Z4T7N2V5B6C0D1E2 reason="split after the parser lands"
-# grimble:hotfix SEC002 reason="rotate key, see incident ticket" ticket=01J9QMA7R2K5W8Y1H3F6G9P4S0
+# grimble:defer ARCH001 ticket=01J9QKX3M8Z4T7N2V5B6C0D1E2 because="split after the parser lands"
+# grimble:hotfix SEC002 because="rotate key, see incident ticket" ticket=01J9QMA7R2K5W8Y1H3F6G9P4S0
 ```
+
+All four exception verbs spell the reason `because=` (the milestone-1
+parser accepts only that spelling).
 
 File- or package-scoped exceptions and anything longer than one line
 live in `exceptions.toml` at the repo root (tracked), with one array
@@ -133,26 +139,38 @@ resolve to a document anchor or carry a `review` event. A reason that merely res
 
 ## 6. Rules (family EXC, replacing the twelve v1 waiver rules, the three v1 debt rules, and parts of WIRE and REL001)
 
+Milestone 1 ids, as implemented in `frob-obligations` (these four
+numbers are authoritative; the design numbering that followed the
+earlier draft is re-spelled below):
+
+| Id | Fires when | Severity | Crate |
+|---|---|---|---|
+| EXC001 | exception with a bad reason (empty, boilerplate, restates the rule id, repeated words, under the minimum length) | Error | frob-obligations |
+| EXC003 | `defer` names a ticket that has reached a terminal state | Error | frob-obligations (ticket-bound, frob only) |
+| EXC005 | `accept` whose bound symbol body digest differs from the digest in `frob.lock` (REATTEST) | Warn | frob-obligations |
+| EXC007 | `defer` names a ticket that does not exist | Error | frob-obligations (ticket-bound, frob only) |
+
+Milestone 2 or later (D36), designed and not yet implemented:
+
 | Id | Fires when | Crate |
 |---|---|---|
-| EXC001 | exception without a reason, or with a boilerplate reason | gob-rules |
 | EXC002 | exception names a rule that can never match at this site (wrong scope) | gob-rules |
-| EXC003 | exception is STALE (a fresh full evaluation finds no match) | gob-rules |
-| EXC004 | `accept` needs REATTEST (bound symbol digest differs from the attested one) | gob-rules |
-| EXC005 | `defer` EXPIRED (ticket terminal, date passed, or metric met) | frob-obligations (ticket-bound, frob only) |
+| EXC004 | `accept` REATTEST escalates to Error after `[exceptions] reattest_warn_days` | gob-rules |
 | EXC006 | `hotfix` EXPIRED | gob-rules |
-| EXC007 | `defer` names a ticket that is not open and not of an allowed type, or names itself | frob-obligations (ticket-bound, frob only) |
 | EXC008 | exception on a rule declared `waivable = false` | gob-rules |
 | EXC009 | over-broad scope (package exception on a rule that is not package-scoped) | gob-rules |
 | EXC010 | defer older than the age budget | gob-rules |
 | EXC011 | accept density exceeded | gob-rules |
 | EXC012 | `accept` on an Error rule without a document anchor or review | gob-rules |
+| EXC013 | exception is STALE (a fresh full evaluation finds no match; Warn, the fix is `prune`) | gob-rules |
+| EXC014 | `defer` EXPIRED by date or metric target (`until=`) | frob-obligations (ticket-bound, frob only) |
+| EXC015 | `defer` names a ticket not of an allowed type, or names itself | frob-obligations (ticket-bound, frob only) |
 
-Severity defaults: EXC003 Warn (the fix is `prune`), EXC004 Warn for
-`[exceptions] reattest_warn_days` (default 14) then Error, measured from
-the commit date of the change that made the digest differ (found
-through the symbol history; nothing extra is stored), everything else
-Error. Release (`frob release
+Severity defaults: EXC005 is Warn in milestone 1; from Milestone 2 EXC004
+is Warn for `[exceptions] reattest_warn_days` (default 14) then Error,
+measured from the commit date of the change that made the digest differ
+(found through the symbol history; nothing extra is stored); EXC013 is
+Warn; everything else Error. Release (`frob release
 stamp`) refuses while any EXPIRED exception exists; it does not refuse
 on open `defer` (v1's REL001 refused on any debt, which pushed people
 toward permanent waivers instead of honest defers).

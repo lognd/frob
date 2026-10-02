@@ -30,17 +30,33 @@ days; 30,467 process calls over 13 days).
 Every verb, every time:
 
 ```json
-{"ok": true, "verb": "ticket.update", "result": {...}, "warnings": [],
- "already": false, "next": ["frob ticket start ~6C0D1E2"], "elapsed_ms": 12}
-{"ok": false, "verb": "ticket.start", "code": "E-LEASE-HELD",
- "message": "...", "remedy": "frob ticket start ~6C0D1E2 --wait 60",
- "retryable": true, "retry_after_ms": 4000, "holder": {...}}
+{"verb": "ticket.update", "already": false, "ok": true, "data": {...},
+ "findings": [], "warnings": [], "error": null, "schema_version": 1}
+{"verb": "ticket.start", "already": false, "ok": false, "data": null,
+ "findings": [], "warnings": [],
+ "error": {"code": "E-LEASE-HELD", "message": "...",
+           "remedy": "frob ticket start ~6C0D1E2 --wait 60",
+           "retryable": true},
+ "schema_version": 1}
 ```
 
-- Default output is JSON when stdout is not a TTY; text when it is.
-  `--json` and `--text` force. Text rendering is a view over the same
-  envelope, so nothing exists in text that is absent from JSON.
-- Exit codes are one table. Agents branch on the code, not on prose.
+- The envelope is `gob_diagnostics::Envelope` (`ok`, `data`,
+  `findings`, `warnings`, `error`, `schema_version`); `gob-cli` wraps it
+  with two fields in front, `verb` (the dotted verb path) and `already`.
+  The fields `next`, `elapsed_ms`, `retry_after_ms` and `holder` shown
+  in earlier drafts are not modelled yet; frob-lease adds the holder and
+  retry hint, and `next` and `elapsed_ms` are Milestone 2 or later (D36).
+- Output is chosen by `--format json|text|auto`; `auto` (the default) is
+  JSON when stdout is not a TTY and text when it is. `--json` and
+  `--text` are aliases of `--format json` and `--format text`. Text
+  rendering is a view over the same envelope, so nothing exists in text
+  that is absent from JSON.
+- Exit codes are one table, implemented as `gob_diagnostics::RefusalClass`
+  (`DomainNegative` 1, `UsageError` 2, `GuardRetryByWaiting` 3 with
+  `retryable`, `GuardNeedsAction` 3, `Timeout` 3 with `retryable`,
+  `Internal` 4); `ExitCode` converts to `i32` because the crate may not
+  name `std::process`, and the `frob` binary builds the process exit.
+  Agents branch on the code, not on prose.
   `retryable` means exactly one thing: the same argv may succeed later
   without any other action by the caller.
 
@@ -49,7 +65,7 @@ Every verb, every time:
 | 0 | ok | not present | the verb did what was asked; domain states that are answers are not failures | `check` with findings and no `--fail-on`; an idempotent repeat (`already: true`); `cycle assign` within capacity; `forecast` below `min_history` (reported as Unresolved with the sample count) |
 | 1 | domain negative | false | the caller asked for the verb's yes/no answer as an exit code and the answer is no | `check --fail-on error` (or `[check] fail_on`) with a finding at or above the level; `test` when a selected test fails |
 | 2 | usage | false | bad flags, unknown verb, input that fails its schema | `E-USAGE` with did-you-mean |
-| 3 | guard, clears by waiting | true | a guard that clears without caller action; `retry_after_ms` is set | `E-LEASE-HELD` (holder named), land lock held, ledger CAS lost after `[tickets] cas_retries`, `E-WAIT-TIMEOUT` (a `--wait <secs>` expired before the lock freed) |
+| 3 | guard, clears by waiting | true | a guard that clears without caller action; `retry_after_ms` is set | `E-LEASE-HELD` (holder named), land lock held, ledger CAS lost after `[git] cas_retries`, `E-WAIT-TIMEOUT` (a `--wait <secs>` expired before the lock freed) |
 | 3 | guard, needs action | false | a guard that needs the caller to change something; `remedy` is the exact command | `ticket close` with missing evidence (`E-CLOSE-EVIDENCE`), dirty root, empty scope, `cycle assign` over capacity (remedy `--over-commit --reason`), `land` whose check failed (`E-LAND-CHECK`), stale plan token (`E-PLAN-STALE`), sibling `--json` schema mismatch |
 | 4 | internal error | false | a bug, with a report path in the envelope | `E-INTERNAL` |
 
@@ -61,11 +77,23 @@ Every verb, every time:
 - `frob check` merges sibling findings under this same contract; crunk
   and grimble adopt it (crunk's v1 0/1/2 contract maps onto it: exit 1
   only through `--fail-on`).
-- `--schema` on any verb prints the JSON schema of its inputs and
-  outputs; `frob schema` dumps all. Generated from the handler types.
+- `--schema` on any verb prints the bare JSON schema of that verb's
+  data payload (not of the envelope or its inputs) and exits; `frob
+  schema` dumps all. Generated from the handler types. Known limitation
+  (Milestone 2 note): `--schema` does not waive a verb's required
+  positionals, so clap still demands them before the schema is printed.
 - Every error names the exact corrected command in `remedy`.
 - No prefix abbreviation of flags (clap `infer_long_args = false`);
   did-you-mean on unknown verbs and flags.
+- A verb path is at most two words (`ticket show`, `graph why`): the
+  `gob-cli` command tree has one group level. A longer designed path
+  collapses to two words with the last word an action positional, so
+  `ticket evidence add` and `ticket evidence fetch` are the verb `ticket
+  evidence` with an action argument. Known limitation; a deeper tree is
+  a Milestone 2 note.
+- `--dry-run` is a per-verb opt-in declared in the verb's metadata
+  (`#[derive(Command)]`), not a global flag; a verb that does not opt in
+  rejects it as a usage error.
 
 ## 3. Verb semantics
 
@@ -78,10 +106,14 @@ Every verb, every time:
   created event; the same key returns the same ticket) or is an
   identical full request (same type, title, body, scope and links);
   two tickets with the same title and different bodies are two tickets.
-- Worktrees: `frob work <ticket>` creates `../<repo-dir>-wt/<full-ulid>`
-  on branch `frob/<full-ulid>`, records that path in the lease, and on
-  a repeat by the holder reuses the worktree found through the lease
-  (or, if the lease is gone, through the branch name).
+- Worktrees: `frob work <ticket>` creates `../<repo>-wt/<handle>` (the
+  parent is `[worktree] dir`, default `../{repo}-wt`; `<handle>` is the
+  `~handle` without the `~`, which git refs forbid) on branch
+  `ticket/<handle>`, records that path in the lease, and on a repeat by
+  the holder reuses the worktree found through the lease (or, if the
+  lease is gone, through the branch name). `frob ticket start` takes the
+  lease for the current checkout and records that checkout's root as the
+  holder path.
 - Batching: `ticket update <id> --set priority=high --set points=3
   --add-label x --link blocks:01J9QKX3M8Z4T7N2V5B6C0D1E2` is one commit,
   one lock. `frob batch` (Milestone 2 or later (D36)) reads JSON lines
@@ -90,7 +122,7 @@ Every verb, every time:
   one lock, one commit, and any failing line aborts and writes nothing.
   Verbs with side effects outside the ledger (`work`, `start`, `land`,
   `check --fix`) are refused inside a batch.
-- Preview: `--dry-run` on every mutating verb returns the planned
+- Preview: `--dry-run` on the mutating verbs that opt in returns the planned
   changes in the same envelope in milliseconds and a `plan` token. A
   plan token is the BLAKE3 digest of the request, the inputs it read
   and the planned diff; it is stored nowhere. `--apply <plan>`
@@ -140,7 +172,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket update\|link\|unlink\|comment\|body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 |
 | `ticket attach\|component\|triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
 | `ticket evidence`, `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 1 |
-| `ticket evidence fetch` | frob | frob-evidence | yes | 0 2 3 4 | 2 |
+| `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 |
 | `ticket start\|requeue` | frob | frob-lease | `start` only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
 | `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
