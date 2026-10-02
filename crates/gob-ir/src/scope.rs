@@ -103,6 +103,8 @@ pub struct Decl {
     pub status: Status,
     /// The term nodes that make up the declaration (several for a multi-part unit).
     pub nodes: Vec<NodeId>,
+    /// A later binder of the same name in the same abstractor hides this one.
+    pub shadowed: bool,
 }
 
 /// A use of a name in a scope.
@@ -272,6 +274,14 @@ impl ScopeGraph {
             id
         } else {
             let id = DeclId(crate::idx32(self.decls.len()));
+            if kind == DeclKind::Binder {
+                for &prev in &self.scopes[scope.index()].decls {
+                    let d = &mut self.decls[prev.index()];
+                    if d.kind == DeclKind::Binder && d.name == name {
+                        d.shadowed = true;
+                    }
+                }
+            }
             self.decls.push(Decl {
                 name: name.to_owned(),
                 qualifier: qualifier.map(str::to_owned),
@@ -279,6 +289,7 @@ impl ScopeGraph {
                 scope,
                 status,
                 nodes: Vec::new(),
+                shadowed: false,
             });
             self.scopes[scope.index()].decls.push(id);
             self.decl_index.insert(key, id);
@@ -403,7 +414,7 @@ impl ScopeGraph {
         let mut stop = false;
         for &d in &sc.decls {
             let decl = &self.decls[d.index()];
-            if decl.name != name {
+            if decl.name != name || decl.shadowed {
                 continue;
             }
             let st = path.meet(decl.status);

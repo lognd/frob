@@ -320,6 +320,29 @@ impl Term {
         self.print_with(id, PrintOpts::ALPHA)
     }
 
+    /// Binder names in scope at `id`'s own position (outermost first), so facet streams use
+    /// absolute de Bruijn levels and outer renames do not disturb inner digests.
+    fn env_at(&self, id: NodeId) -> Vec<&str> {
+        let mut chain = Vec::new();
+        let mut child = id;
+        while let Some(p) = self.parent(child) {
+            let idx = self
+                .children(p)
+                .iter()
+                .position(|&c| c == child)
+                .expect("child of its parent");
+            if self.node(p).op.binds_over(idx) {
+                chain.push(p);
+            }
+            child = p;
+        }
+        chain
+            .iter()
+            .rev()
+            .flat_map(|&p| self.node(p).binders.iter().map(String::as_str))
+            .collect()
+    }
+
     fn has_hole(&self, id: NodeId) -> bool {
         let n = self.node(id);
         n.op.is_hole() || n.children.iter().any(|&c| self.has_hole(c))
@@ -377,6 +400,7 @@ impl Term {
                 }
             }
         }
+        p.env.extend(self.env_at(unit));
         p.env.extend(node.binders.iter().map(String::as_str));
         for c in selected {
             p.out.push(' ');
