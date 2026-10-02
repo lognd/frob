@@ -1,5 +1,5 @@
 ---
-id: T-draft-5ee94399
+id: T-0027
 title: gob-git test delete_via_none_and_local_edit_refusal fails in the primary checkout
 state: queued
 kind: bug
