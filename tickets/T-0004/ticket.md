@@ -1,7 +1,7 @@
 ---
 id: T-0004
 title: 'gob-text: spans, line index, source text'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,22 +25,26 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0004
+branch: t-0004
 scope:
 - crates/gob-text/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-text exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given any UTF-8 text and a byte offset inside it, when converted to line/column
     and back, then the original offset is returned
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-text exit=0 sha256=e3b0c44298fc
 - text: Given a span on a line, when rendered, then the snippet shows the line and
     a caret under the span
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-text exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-text
 anchor: false
