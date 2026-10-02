@@ -62,7 +62,8 @@ breach scenarios, hosts, Kerberos, `refine`, `entity/architecture`,
 - Files are UTF-8 without a byte-order mark. Invalid UTF-8, a BOM or a
   NUL byte makes the whole file `opaque(reason=not-utf8)` in U (section
   9) and one MDL000 finding; nothing else is read from it.
-- Line terminators are LF or CRLF; a bare CR is MDL000. `grimble fmt`
+- Line terminators are LF or CRLF; a bare CR (one not followed by LF) makes the whole file
+  `opaque(reason=binary)` and one MDL000 finding, as for invalid UTF-8. `grimble fmt`
   writes LF and exactly one final newline.
 - Tabs and spaces are whitespace. Whitespace separates tokens and is
   otherwise insignificant.
@@ -251,7 +252,9 @@ grimble = "2";
   file module unit, 8.1). The value is the LANGUAGE major version as a
   string. Missing header or a major this binary does not read is MDL007
   and the file is refused whole (never parsed on a guess).
-- All files of one model must carry the same value (MDL007).
+- All files of one model must carry the same value (MDL007). While only
+  major 2 is read every other value is an unsupported major, so the
+  mismatched-majors case is unreachable until a second major exists.
 - Within a major version, additions only make previously invalid text
   valid; an older binary then reports MDL000 at the new construct. A
   change that would alter the meaning of valid text bumps the major.
@@ -331,7 +334,7 @@ flow f_walk : gob -> frob {
 | rate, age, size | `rate Q;` `age Q;` `size Q;` | quantity of the matching dimension | no | demand, staleness bound, payload size |
 | fanout | `fanout N;` | number | no | |
 | growth | `growth Q;` | rate of ratio per time (`15 %/d`) | no | growth of the flow's rate over time; see open question 8 |
-| transport | `transport ATOM, ATOM;` | list of atoms | no | in-process, http, ipc, ffi, file; pack-extensible |
+| transport | `transport ATOM, ATOM;` | list of atoms | no | the atoms `in_process`, `http`, `ipc`, `ffi`, `file` (`in-process` is not lexable as an atom, 2.2); pack-extensible |
 | condition | `condition on_ok;` or `condition on_err;` | ident | no | v1 `on Ok/Err` |
 | producer | `producer SELECTOR;` | selector | no (SYS004 or SYS009 report absence of symbols, binding.md 6.4 and 6.9) | the code unit(s) that emit; may be any language |
 | consumer | `consumer SELECTOR;` | selector | no | the code unit(s) that read |
@@ -422,7 +425,9 @@ and printed canonical by the formatter.
 
 Construction errors are model-load errors (MDL014): a link whose
 endpoints are of the wrong kind, a `verifies` between unpaired levels,
-a missing `ref` or `runnable`, a duplicate link. The five structural
+a missing `ref` or `runnable`, a duplicate link. A link target that
+resolves to nothing is MDL006; one that resolves to an entity that is not
+a vmodel is MDL014. The five structural
 closure rules (orphan requirement, unjustified design, untested artifact,
 orphan test, trace cycle) and milestone known gaps belong to the kernel
 (G03); their rule ids are open question 4.
@@ -508,8 +513,8 @@ MDL001.
 A `ref` inside an item with enclosing prefix `P1.P2` resolves by looking
 up, in order, `P1.P2.R`, `P1.R`, then `R` at the root; the first hit
 wins. A leading `::` skips the search and anchors at the root
-(`::cli`). A hit that is not the nearest possible but shadows a
-different entity at an outer level is MDL015 Advisory (shadowing is
+(`::cli`). A hit whose resolved entity shadows a different entity of the
+same name at an outer level is MDL015 Advisory (shadowing is
 legal and reported). No hit is MDL006. References are Must edges in the
 scope graph (section 9).
 
@@ -539,7 +544,7 @@ A rename is a new identity whose Body facet equals a vanished one
 `renamed_from old_name;` in the renamed entity; the ack planner then
 migrates lock entries from the old identity to the new one instead of
 reporting a rename, and MDL012 Warn fires for every reference that
-still uses the old name until it is edited (and for the clause itself
+still uses the old name until it is edited (and, deferred to G12 because it needs lock data, for the clause itself
 once no lock entry or reference mentions it, so it gets removed).
 `alias` is for names that are meant to stay (a v1 id, a name used by
 generated documents).
@@ -816,11 +821,33 @@ The artifact is the repo-relative path of the file.
 Language tag `grmb`; language parameter `grimble="2"` (the edition) on
 every node. S = sort of the produced node.
 
+Placement inside an entity unit (this fixes which facet a clause lands
+in; the facet table below is derived from it, and gob-ir classifies a
+child by this placement alone):
+
+- Sig parts are direct children of the unit marked `ir.facet = "sig"`:
+  the trust attr, the flow `connect` apply, the boundary `endorse` or
+  `declassify` apply, the vmodel `kind` and `level` attrs, and the
+  `label`, `producer`, `consumer`, `contract`, `shape` and `versioning`
+  clauses.
+- Body parts are every other clause (`owns`, `surface`, `may`,
+  `excuses`, `clearance`, the other flow fields, claim and vmodel
+  clauses, links, pack clauses, `alias`, `renamed_from`), all inside one
+  `group(unordered)` child of the unit. `attr(name=owns)` and its
+  siblings therefore sit in that group, not directly under the unit.
+- Attr parts are the `attr K` clauses and the exception clauses
+  (`accept`, `defer`, `hotfix`), left as direct children of the unit;
+  gob-ir classifies every `attr` child that is not `doc` and not a sig
+  part as Attr.
+- Doc is the `attr(name=doc)` child; comments are trivia.
+- The Contract facet is not a separate placement: it is the Sig parts
+  with names erased.
+
 | Construct | U term | Sort | Notes |
 |---|---|---|---|
 | file | `unit(kind=module)` with body `group(unordered)(items)` | decl | the file-level Module unit every file has |
 | `grimble = "2";` | `attr(name=grimble-version)(file unit; lit(string, "2"))` | decl | also the language parameter |
-| `module X;` / `part of X;` | `attr(name=module)(file unit; lit(ident, X))` | decl | the model name |
+| `module X;` / `part of X;` | `attr(name=module)(file unit; lit(ident, X))` | decl | the model name; a pack's `module` and `part of` attrs use the same `attr(name=module)` (D73) |
 | `include "p" ...;` | `apply(kind=include)(ref("p"))` | exp | Must edge to the included file's module unit; a glob gives May edges to each match (Must when exactly one); unresolved is an Unknown edge and MDL002 |
 | `... as P` | `bind(kind=mount, mode=prefix)(P . scope; rhs=apply(include))` | exp | P binds the prefix over the included file's entities (the one non-unit binder) |
 | `namespace N { }` | `unit(kind=namespace)` | decl | containment only |
@@ -853,12 +880,12 @@ every node. S = sort of the produced node.
 | `pack` clauses | `attr(name=ref\|version\|digest)(unit; lit(string))` | decl | |
 | `attr K = V` | `attr(name=attr:K)(unit; lit or group(ordered)(lit...))` | decl | a bracketed list is `group(ordered)`; a bare marker has an empty `group(unordered)` payload |
 | `alias`, `renamed_from` | `attr(name=alias\|renamed_from)(unit; lit(ident))` | decl | the name is also an alias declaration in the scope graph |
-| `accept\|defer\|hotfix RULE ...` | `attr(name=accept\|defer\|hotfix)(unit; group(unordered)(ref(RULE); attr(because); attr(ticket); attr(until)))` | decl | `ref(RULE)` is a Must edge to the rule registry; top-level `on REF` makes the attr's target the resolved unit and adds a Must edge |
+| `accept\|defer\|hotfix RULE ...` | `attr(name=accept\|defer\|hotfix)(unit; group(unordered)(ref(RULE); attr(because); attr(ticket); attr(until)))` | decl | `ref(RULE)` is a Must edge to the rule registry; a top-level `accept ... on REF` hangs on the file unit (a direct child of it, outside the item group) with a `ref(on)` payload child, which is the Must edge to the resolved unit (D71) |
 | selector `"glob"` | `lit(glob, lexeme)` | exp | the lexeme is the unescaped string |
 | selector `lang(l)`, `kind(..)`, `attr(..)` | `apply(kind=pred)(ref(lang\|kind\|attr); lit...)` | exp | `ref` resolves into the predicate registry (Must) |
 | selector `a & b`, `a \| b`, `!a` | `apply(kind=and\|or\|not)(group(unordered)(operands))` | exp | operands unordered: `a & b` and `b & a` have one digest |
-| `//` `/* */` | `comment(text)` | trivia | attached to the item per 8.1 |
-| `///` | `attr(name=doc)(unit or attr; lit(prose))` | decl | the Doc facet |
+| `//` `/* */` | `comment(text)` | trivia | attached to the item per 8.1; comments never merge or drop (D72) |
+| `///` | `attr(name=doc)(unit or attr; lit(prose))` | decl | the Doc facet; a `///` comment is never trivia and never a `comment` node (D72) |
 | directive in a comment | `attr(name="<ns>:<verb>")(target; payload)` | decl | exactly as for code units (code-model.md section 4) |
 | syntax error | `hole(kind=parse-error)` | any | resynchronizes at the next `;` or at the `}` closing the current block; the rest of the file still parses |
 | not UTF-8, or a file the lexer cannot start | `opaque(reason=not-utf8\|binary, payload)` | any | the whole file; all queries Unknown on it |
@@ -877,11 +904,11 @@ stream; trivia and directives excluded, literals exact):
 
 | Facet | Content for a .grmb entity |
 |---|---|
-| Sig | kind, full name, trust or `: A -> B` endpoints, `level` and `kind` of a vmodel, boundary direction and endpoints |
-| Body | every other clause except `attr` and exception clauses, in canonical order |
+| Sig | kind, full name, plus the sig parts of the placement above: trust, flow endpoints `: A -> B`, boundary direction and endpoints, `level` and `kind` of a vmodel, and for flow and contract entities `label`, `producer`, `consumer`, `contract`, `shape`, `versioning` (D74: a superset of the list the first draft gave) |
+| Body | every clause that is not a sig part and not an `attr K` or exception clause, in canonical order |
 | Doc | the `///` text |
-| Attr | `attr` clauses and the exception clauses |
-| Contract | on a `contract` entity: `shape` and `versioning`; on a `flow`: the canonical `(from, to, label, producer, consumer, contract)`; absent elsewhere |
+| Attr | `attr K` clauses and the exception clauses |
+| Contract | the Sig parts with names erased: on a `contract` entity `shape` and `versioning`; on a `flow` the canonical `(from, to, label, producer, consumer, contract)`; on other entities whatever sig parts they have (trust, vmodel `kind` and `level`, the boundary apply) |
 
 ### 9.3 What `grimble fmt` guarantees
 
@@ -893,14 +920,16 @@ parse then print, defined on the canonical facet stream.
    `fmt(x)` equals that of `x`. Reformatting never changes a digest
    (universal-model.md 7.1); a semantic edit always does.
 3. Canonical order: items of a file in the order module/part, includes
-   (by path), packs, namespaces and entities by (kind order node, flow,
-   contract, claim, vmodel, boundary; then name); clauses of an entity
+   (by path), packs, namespaces, entities by (kind order node, flow,
+   contract, claim, vmodel, boundary; then name, a declaration before
+   its `extend`), then top-level exceptions (D70); clauses of an entity
    in a fixed order (kind, clearance, owns, may, excuses, surface,
    producer, consumer, contract, flow fields, what, proof, assumed,
    evidence, links, attrs by key, exceptions by (kind, rule), aliases);
    operands of `&` and `|` sorted by their printed form; list-valued
    clauses sorted by printed form and de-duplicated (a duplicate is
-   MDL017 Advisory before printing).
+   MDL017 Advisory before printing); a duplicate is removed only when
+   it carries no comments or docs (D72).
 4. Canonical spelling: one space around `:`, `->`, `=`; quantities as
    `N unit` with `%` attached; level and unit aliases replaced by the
    canonical names; keywords lowercase; strings with minimal escapes;
@@ -1003,16 +1032,16 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL003 | MDL-INCLUDE-CYCLE | Error | the include graph has a cycle (the offending include is skipped) |
 | MDL004 | MDL-UNKNOWN-PACK | Error | pack not in `packs/`, not enabled in `grimble.toml`, or version or digest differs from the pin |
 | MDL005 | MDL-SELECTOR-NO-FILE | Warn | a selector's PATH matches no file in the walk. A WARNING by design: a model may legitimately describe code that does not exist yet. It suppresses SYS001 for the same selector so one root cause is one finding; a selector whose file matches but whose units do not is SYS001 |
-| MDL006 | MDL-UNRESOLVED-REF | Error | a reference (flow endpoint, claim operand, link, exception target, `frob:tests` target) resolves to no entity, or to an entity of the wrong kind |
+| MDL006 | MDL-UNRESOLVED-REF | Error | a reference (flow endpoint, claim operand, link, exception target, `frob:tests` target) resolves to no entity, or to an entity of the wrong kind (except a V-model link target that is not a vmodel, which is MDL014) |
 | MDL007 | MDL-VERSION | Error | missing header, unsupported major, or files of one model with different majors |
 | MDL008 | MDL-FIELD | Error | a required field is missing (`trust`, flow `label`, contract `shape`, claim `what`, vmodel `kind` and `level`), a scalar clause appears twice, or an `extend` sets a scalar |
 | MDL009 | MDL-TYPE | Error | an ill-typed value: unit outside the table, comparing dimensions, a path with `..` or empty, a boundary pair on the wrong lattice, a malformed date |
 | MDL010 | MDL-SELECTOR-EMPTY-BY-CONSTRUCTION | Warn | a selector that cannot match anything whatever the repository holds (`lang(rust) & lang(python)`, `a & !a`) |
 | MDL011 | MDL-MODULE | Error | `part of` name differs from the root `module`, or two roots declare the same module name, or an included file declares `module` |
-| MDL012 | MDL-DEPRECATED-NAME | Warn | a reference by a `renamed_from` name, or a `renamed_from` clause that nothing needs any more |
+| MDL012 | MDL-DEPRECATED-NAME | Warn | a reference by a `renamed_from` name, or a `renamed_from` clause that nothing needs any more (this second half needs lock data and is deferred to G12; grimble-model reports only the reference half) |
 | MDL013 | MDL-EXCEPTION | Error | malformed exception clause: wrong attribute set for the kind, `on` inside a body, missing `on` at top level, unknown rule id, malformed `ticket` or `until`, a `grimble:accept` style directive in a .grmb comment |
-| MDL014 | MDL-VMODEL | Error | V-model construction error (wrong endpoint kinds, unpaired levels on `verifies`, missing `ref` or `runnable`, duplicate link) |
-| MDL015 | MDL-SHADOW | Advisory | a reference resolved to a nearer entity that shadows an outer one of the same name |
+| MDL014 | MDL-VMODEL | Error | V-model construction error (wrong endpoint kinds, including a link target that resolves to an entity that is not a vmodel; an unresolved link target is MDL006, including a link target that resolves to an entity that is not a vmodel; an unresolved link target is MDL006, unpaired levels on `verifies`, missing `ref` or `runnable`, duplicate link, `supersedes` without `because`) |
+| MDL015 | MDL-SHADOW | Advisory | the resolved entity shadows a different entity of the same name at an outer level |
 | MDL016 | MDL-UNKNOWN-ATOM | Error | a capability atom in no registry and no enabled pack |
 | MDL017 | MDL-DUPLICATE-CLAUSE | Advisory | a list clause repeated with identical content |
 
@@ -1040,7 +1069,7 @@ test the U adapter hold the expected U term and scope graph per construct
 | `lex/strings.grmb` | escapes, `\u{..}`, adjacent-string join in value position, no raw newline |
 | `lex/quantities.grmb` | the unit table, attached and separated units, MDL009 on unknown unit and cross-dimension compare |
 | `lex/dates.grmb` | date validity, `until=` and `review=` |
-| `lex/encoding/` | not-UTF-8, BOM, NUL, bare CR give `opaque` and MDL000; CRLF accepted |
+| `lex/encoding/` | not-UTF-8, BOM, NUL give `opaque(reason=not-utf8)` and a bare CR gives `opaque(reason=binary)`, each with MDL000; CRLF accepted |
 | `lex/comments.grmb` | line, block (nested) and doc comments; none in the token stream |
 | `directive/binding.grmb` | the four binding rules of 8.1 (next item, trailing, before `}`, file) |
 | `directive/verbs.grmb` | accepted verbs; `grimble:accept` and `grimble:node` in a .grmb comment are MDL013 |
@@ -1050,7 +1079,7 @@ test the U adapter hold the expected U term and scope graph per construct
 | `include/cycle/` | MDL003 and the rest of the model still loads |
 | `include/escape/` | path leaving the repository is MDL002 |
 | `include/mount/` | `as P` prefixes entities, resolution inside the mounted file, root-anchored `::` |
-| `version/header.grmb` | missing header, wrong major, mismatched majors (MDL007) |
+| `version/header/` | a directory (multi-file): missing header and unsupported major (MDL007); mismatched majors are unreachable while only major 2 is read, so that half is untested until a second major exists |
 | `entity/node.grmb` | every node clause and its U term; missing `trust` is MDL008 |
 | `entity/flow.grmb` | flow fields, producer in another language, cyclic flows accepted |
 | `entity/contract.grmb` | shape and versioning, shared contract |
@@ -1058,7 +1087,7 @@ test the U adapter hold the expected U term and scope graph per construct
 | `entity/vmodel.grmb` | levels and aliases, link kinds, MDL014 cases |
 | `entity/boundary.grmb` | endorse and declassify, lattice mismatch is MDL009 |
 | `entity/pack.grmb` | pin, digest mismatch and missing pack (MDL004), pack-qualified atom |
-| `scope/unique.grmb` | MDL001 independent of include order |
+| `scope/unique/` | a directory (multi-file): MDL001 independent of include order |
 | `scope/resolve.grmb` | nearest-first resolution, MDL006, shadow Advisory MDL015 |
 | `scope/rename.grmb` | `renamed_from` keeps identity, warns MDL012, `alias` does not |
 | `scope/extend.grmb` | additive `extend`, scalar `extend` is MDL008, extension is one identity |

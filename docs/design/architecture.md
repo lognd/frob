@@ -247,7 +247,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[tickets.archive] done_after_days` | frob.toml | yes | 0 (off) | frob-ledger |
 | `[tickets.custom_fields]` | frob.toml | no (registry) | none | frob-ledger |
 | `[[component]]`, labels, `[[triage.rule]]`, `[[query]]`, `[[agent]]` | frob.toml | no (registries) | none | frob-ledger |
-| `[directives] namespaces` | frob.toml | yes | `["frob"]`; not yet a ConfigTable (Milestone 2) | gob-directives |
+| `[directives] namespaces` | frob.toml | yes | `["frob", "grimble", "crunk"]` (a ConfigTable, gob-directives `DirectivesConfig`); frob-check, frob-ack and frob-obligations still scan with `ScanConfig::default()` (frob only) until grimble and crunk register verbs | gob-directives |
 | `[compute] public_signatures` | frob.toml (the one home; read by every product, see below) | yes | `"warn-unresolved"` (`"required"` makes an absent annotation a required Unresolved) | gob-ir |
 | `[compute] effects` | frob.toml | yes | `"warn-unresolved"` | gob-ir |
 | `[compute] dynamic_calls` | frob.toml | yes | `"warn-unresolved"` | gob-ir |
