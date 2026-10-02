@@ -1,7 +1,5 @@
 //! Self-tests: a toy rule MDT001 (and MDT002 as a warn) over the corpora.
 
-use std::path::Path;
-
 use gob_mdtest::{Case, Missing, Runner, run_dir, run_file};
 use gob_rules::{Finding, Severity};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
@@ -37,7 +35,7 @@ fn toy(case: &Case) -> Vec<Finding> {
 gob_mdtest::mdtest!(dir = "tests/mdtest", runner = toy);
 
 fn fail_path(name: &str) -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
+    gob_mdtest::manifest_dir(env!("CARGO_MANIFEST_DIR"))
         .join("tests/mdtest_fail")
         .join(name)
 }

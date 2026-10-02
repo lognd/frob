@@ -33,6 +33,18 @@ pub use run::{
     Case, CaseReport, FileReport, Missing, MissingControl, Report, Runner, run_dir, run_file,
 };
 
+/// Crate manifest directory: the run-time `CARGO_MANIFEST_DIR` cargo sets, else `compile_time`.
+///
+/// Shared target dirs reuse test binaries across worktrees, so the compile-time
+/// value may name a removed checkout.
+#[must_use]
+pub fn manifest_dir(compile_time: &str) -> std::path::PathBuf {
+    std::env::var_os("CARGO_MANIFEST_DIR").map_or_else(
+        || std::path::PathBuf::from(compile_time),
+        std::path::PathBuf::from,
+    )
+}
+
 /// Generate a `#[test]` running every markdown file under `dir` (relative to the crate).
 #[macro_export]
 macro_rules! mdtest {
@@ -42,7 +54,7 @@ macro_rules! mdtest {
     (name = $name:ident, dir = $dir:expr, runner = $runner:expr $(,)?) => {
         #[test]
         fn $name() {
-            let dir = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join($dir);
+            let dir = $crate::manifest_dir(env!("CARGO_MANIFEST_DIR")).join($dir);
             let report = $crate::run_dir(&dir, &$crate::Runner::new($runner));
             assert!(
                 !report.files.is_empty(),
