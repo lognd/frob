@@ -1,0 +1,7 @@
+error: a command needs a `///` doc comment (its summary)
+ --> tests/ui/command_no_doc.rs:3:10
+  |
+3 | #[derive(Command)]
+  |          ^^^^^^^
+  |
+  = note: this error originates in the derive macro `Command` (in Nightly builds, run with -Z macro-backtrace for more info)

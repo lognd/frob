@@ -9,7 +9,8 @@ use tracing::debug;
 use walkdir::WalkDir;
 
 /// Crates permitted to reference `std::process`.
-pub const ALLOWED_CRATES: [&str; 2] = ["gob-exec", "gob-git"];
+// `frob` is allowed only so its `main` can call the process-exit function.
+pub const ALLOWED_CRATES: [&str; 3] = ["gob-exec", "gob-git", "frob"];
 
 /// Substrings that count as a process reference.
 const NEEDLES: [&str; 2] = ["std::process", "process::Command"];

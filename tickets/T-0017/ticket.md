@@ -2,7 +2,7 @@
 id: T-0017
 title: 'gob-cli + frob binary: clap root, Command derive, global flags, frob doctor,
   frob init, frob config'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -27,8 +27,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0017
+branch: t-0017
 scope:
 - crates/gob-cli/**
 - crates/gob-macros/**
@@ -37,14 +37,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-cli -p frob-cli exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given stdout is a pipe, when frob doctor runs, then output is the JSON envelope
     and exit is 0
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-cli -p frob-cli exit=0 sha256=e3b0c44298fc
 - text: 'Given a repo without frob.toml, when frob init runs twice, then the second
     run reports already: true and changes nothing'
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-cli -p frob-cli exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-bin
 anchor: false

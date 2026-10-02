@@ -1,0 +1,7 @@
+error: invalid exit `exploded`; expected one of: ok, negative, usage, refused, internal
+ --> tests/ui/command_bad_exit.rs:4:10
+  |
+4 | #[derive(Command)]
+  |          ^^^^^^^
+  |
+  = note: this error originates in the derive macro `Command` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -1,12 +1,14 @@
-//! Proc macros for the goblins: `#[derive(Rule)]` and `#[derive(ConfigTable)]`.
+//! Proc macros for the goblins: `#[derive(Rule)]`, `#[derive(ConfigTable)]`
+//! and `#[derive(Command)]`.
 //!
 //! Do not depend on this crate directly: use `gob_rules::Rule`, which
 //! re-exports the derive together with the runtime it expands against
-//! (likewise `gob_config::ConfigTable`).
+//! (likewise `gob_config::ConfigTable` and `gob_cli::Command`).
 
 // The darling derive output trips this pedantic lint; nothing we can edit.
 #![allow(clippy::needless_continue)]
 
+mod command;
 mod config_table;
 
 use darling::{FromDeriveInput, FromMeta};
@@ -241,6 +243,20 @@ pub fn derive_rule(input: TokenStream) -> TokenStream {
 pub fn derive_config_table(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match config_table::expand(&input) {
+        Ok(ts) => ts.into(),
+        Err(e) => e.write_errors().into(),
+    }
+}
+
+/// Derive `gob_cli::Described` plus an `inventory` registration for a verb.
+///
+/// Attribute `#[command(verb = "doctor", product = "frob", idempotent = true,
+/// dry_run, exits(ok, refused))]`; `idempotent` and `dry_run` default to
+/// false. The summary comes from the first non-empty `///` doc line.
+#[proc_macro_derive(Command, attributes(command))]
+pub fn derive_command(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    match command::expand(&input) {
         Ok(ts) => ts.into(),
         Err(e) => e.write_errors().into(),
     }

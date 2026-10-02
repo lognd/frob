@@ -1,4 +1,4 @@
-//! Compile-fail tests for `#[derive(Rule)]` diagnostics.
+//! Compile-fail tests for the `Rule`, `ConfigTable` and `Command` derive diagnostics.
 
 #[test]
 fn ui() {

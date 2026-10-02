@@ -1,0 +1,214 @@
+//! Rendering and the single place that writes to stdout and stderr.
+
+use std::fmt::Write as _;
+use std::io::Write as _;
+
+use gob_diagnostics::{
+    ColorChoice, Envelope, EnvelopeError, ExitCode, FindingRecord, MemorySources, Report,
+    TextOptions, render_text,
+};
+use gob_rules::Registry;
+use serde::Serialize;
+use serde_json::Value;
+
+use crate::command::Erased;
+use crate::error::CliError;
+
+/// The finished result of one invocation, not yet written anywhere.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Execution {
+    pub exit: i32,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+impl Execution {
+    /// Stdout only, exit 0.
+    pub(crate) fn out(stdout: String) -> Self {
+        Self {
+            exit: ExitCode::Ok.code(),
+            stdout,
+            stderr: String::new(),
+        }
+    }
+}
+
+/// The envelope plus the verb name and `already` marker (cli.md section 2).
+#[derive(Serialize)]
+struct Wire<'a> {
+    verb: Option<&'a str>,
+    already: bool,
+    #[serde(flatten)]
+    envelope: Envelope<Value>,
+}
+
+fn to_json(wire: &Wire<'_>) -> String {
+    let mut out = serde_json::to_string(wire).unwrap_or_else(|e| {
+        unreachable!("string-keyed derived data serializes: {e}");
+    });
+    out.push('\n');
+    out
+}
+
+/// Render a successful verb.
+pub(crate) fn success(
+    verb: &str,
+    erased: Erased,
+    json: bool,
+    quiet: bool,
+    color: ColorChoice,
+) -> Execution {
+    let registry = Registry::global();
+    let sources = MemorySources::new();
+    if json {
+        let records = erased
+            .findings
+            .iter()
+            .map(|f| FindingRecord::from_finding(f, &sources, registry))
+            .collect();
+        let mut envelope = Envelope::success(erased.data, records);
+        envelope.warnings = erased.warnings;
+        let wire = Wire {
+            verb: Some(verb),
+            already: erased.already,
+            envelope,
+        };
+        return Execution::out(to_json(&wire));
+    }
+    if quiet {
+        tracing::debug!(verb, "quiet: text output suppressed");
+        return Execution::out(String::new());
+    }
+    let mut out = format!(
+        "{verb}: ok{}\n",
+        if erased.already { " (already)" } else { "" }
+    );
+    value_lines(&erased.data, 1, &mut out);
+    for w in &erased.warnings {
+        let _ = writeln!(out, "warning: {w}");
+    }
+    if !erased.findings.is_empty() {
+        out.push('\n');
+        let report = Report {
+            findings: &erased.findings,
+            sources: &sources,
+        };
+        out.push_str(&render_text(
+            &report,
+            &TextOptions {
+                color,
+                snippets: false,
+            },
+        ));
+    }
+    Execution::out(out)
+}
+
+/// Render a failure: JSON envelope on stdout, plain text on stderr.
+pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Execution {
+    let exit = err.exit_code().code();
+    let body = envelope_error(err);
+    if json {
+        let wire = Wire {
+            verb,
+            already: false,
+            envelope: Envelope::failure(body),
+        };
+        return Execution {
+            exit,
+            stdout: to_json(&wire),
+            stderr: String::new(),
+        };
+    }
+    let mut text = format!("error[{}]: {}\n", body.code, body.message);
+    if let Some(remedy) = &body.remedy {
+        let _ = writeln!(text, "  remedy: {remedy}");
+    }
+    Execution {
+        exit,
+        stdout: String::new(),
+        stderr: text,
+    }
+}
+
+/// The envelope error body for any [`CliError`].
+pub(crate) fn envelope_error(err: &CliError) -> EnvelopeError {
+    match err {
+        CliError::Refusal(r) => EnvelopeError::from(r),
+        CliError::Usage(m) => plain("E-USAGE", m.clone()),
+        CliError::Negative(m) => plain("E-NEGATIVE", m.clone()),
+        CliError::Internal(e) => plain("E-INTERNAL", e.to_string()),
+    }
+}
+
+fn plain(code: &str, message: String) -> EnvelopeError {
+    EnvelopeError {
+        code: code.to_owned(),
+        message,
+        remedy: None,
+        retryable: false,
+    }
+}
+
+/// Indented `key: value` lines for a JSON value (the text view of `data`).
+pub(crate) fn value_lines(value: &Value, depth: usize, out: &mut String) {
+    let pad = "  ".repeat(depth);
+    match value {
+        Value::Object(map) => {
+            for (k, v) in map {
+                if is_scalar(v) {
+                    let _ = writeln!(out, "{pad}{k}: {}", scalar(v));
+                } else {
+                    let _ = writeln!(out, "{pad}{k}:");
+                    value_lines(v, depth + 1, out);
+                }
+            }
+        }
+        Value::Array(items) => {
+            for v in items {
+                if is_scalar(v) {
+                    let _ = writeln!(out, "{pad}- {}", scalar(v));
+                } else {
+                    let _ = writeln!(out, "{pad}-");
+                    value_lines(v, depth + 1, out);
+                }
+            }
+        }
+        other => {
+            let _ = writeln!(out, "{pad}{}", scalar(other));
+        }
+    }
+}
+
+fn is_scalar(v: &Value) -> bool {
+    !matches!(v, Value::Object(_) | Value::Array(_))
+}
+
+fn scalar(v: &Value) -> String {
+    match v {
+        Value::String(s) => s.clone(),
+        Value::Null => "none".to_owned(),
+        other => other.to_string(),
+    }
+}
+
+/// The one function that writes to the process's stdout and stderr.
+///
+/// Broken pipes and other write failures are logged, never panics: the exit
+/// code is the contract, not the bytes.
+pub(crate) fn emit(exec: &Execution) {
+    let mut stdout = std::io::stdout().lock();
+    let mut stderr = std::io::stderr().lock();
+    if let Err(e) = stdout
+        .write_all(exec.stdout.as_bytes())
+        .and_then(|()| stdout.flush())
+    {
+        tracing::warn!(error = %e, "writing stdout failed");
+    }
+    if let Err(e) = stderr
+        .write_all(exec.stderr.as_bytes())
+        .and_then(|()| stderr.flush())
+    {
+        tracing::warn!(error = %e, "writing stderr failed");
+    }
+}

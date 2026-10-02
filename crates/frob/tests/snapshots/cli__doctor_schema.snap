@@ -1,0 +1,212 @@
+---
+source: crates/frob/tests/cli.rs
+expression: v
+---
+{
+  "$defs": {
+    "CacheInfo": {
+      "description": "Cache health.",
+      "properties": {
+        "artifacts": {
+          "description": "Rows in the artifacts table.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "dir": {
+          "description": "Cache directory.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "findings": {
+          "description": "Rows in the findings table.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "repo_rule": {
+          "description": "Rows in the repo-rule table.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "state": {
+          "description": "`ok`, `null-fallback` (could not open) or `skipped: <why>`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "artifacts",
+        "findings",
+        "repo_rule"
+      ],
+      "type": "object"
+    },
+    "ConfigInfo": {
+      "description": "Config materialization status.",
+      "properties": {
+        "error": {
+          "description": "Load error (unknown key, bad TOML), when any.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "missing_knobs": {
+          "description": "Materialized knobs absent from the file (each is a CFG001 finding).",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "path": {
+          "description": "The config file.",
+          "type": "string"
+        },
+        "present": {
+          "description": "True when it exists.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "present",
+        "missing_knobs"
+      ],
+      "type": "object"
+    },
+    "GitInfo": {
+      "description": "Git discovery result.",
+      "properties": {
+        "branch": {
+          "description": "Checked-out branch; absent when detached or not a repository.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "discovered": {
+          "description": "True when `cwd` is inside a repository.",
+          "type": "boolean"
+        },
+        "error": {
+          "description": "Why discovery or a read failed.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "head": {
+          "description": "`HEAD` commit id; absent on an unborn branch.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "linked_worktree": {
+          "description": "True when this checkout is a linked worktree.",
+          "type": "boolean"
+        },
+        "root": {
+          "description": "Work tree root.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "discovered",
+        "linked_worktree"
+      ],
+      "type": "object"
+    },
+    "LedgerInfo": {
+      "description": "Ledger ref reachability.",
+      "properties": {
+        "error": {
+          "description": "Why it does not resolve.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "oid": {
+          "description": "What it resolves to.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reachable": {
+          "description": "True when the ref resolves to an object.",
+          "type": "boolean"
+        },
+        "ref": {
+          "description": "The configured `[tickets] ref`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "reachable"
+      ],
+      "type": "object"
+    },
+    "Toolchain": {
+      "description": "Versions of the tools frob shells out to.",
+      "properties": {
+        "cargo": {
+          "description": "First line of `cargo --version`, when found.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rustc": {
+          "description": "First line of `rustc --version`, when found.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Output of `doctor`.",
+  "properties": {
+    "cache": {
+      "$ref": "#/$defs/CacheInfo",
+      "description": "Cache health."
+    },
+    "config": {
+      "$ref": "#/$defs/ConfigInfo",
+      "description": "Config status."
+    },
+    "git": {
+      "$ref": "#/$defs/GitInfo",
+      "description": "Git discovery."
+    },
+    "ledger": {
+      "$ref": "#/$defs/LedgerInfo",
+      "description": "Ledger ref."
+    },
+    "toolchain": {
+      "$ref": "#/$defs/Toolchain",
+      "description": "Tool versions."
+    }
+  },
+  "required": [
+    "toolchain",
+    "git",
+    "cache",
+    "config",
+    "ledger"
+  ],
+  "title": "DoctorData",
+  "type": "object"
+}

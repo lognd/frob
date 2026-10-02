@@ -1,0 +1,80 @@
+---
+source: crates/frob/tests/cli.rs
+expression: v
+---
+{
+  "already": false,
+  "data": {
+    "cache": {
+      "artifacts": 0,
+      "dir": "[path]",
+      "findings": 0,
+      "repo_rule": 0,
+      "state": "ok"
+    },
+    "config": {
+      "error": null,
+      "missing_knobs": 3,
+      "path": "[path]",
+      "present": false
+    },
+    "git": {
+      "branch": "[branch]",
+      "discovered": true,
+      "error": null,
+      "head": null,
+      "linked_worktree": false,
+      "root": "[path]"
+    },
+    "ledger": {
+      "error": "[error]",
+      "oid": null,
+      "reachable": false,
+      "ref": "refs/heads/main"
+    },
+    "toolchain": {
+      "cargo": "[version]",
+      "rustc": "[version]"
+    }
+  },
+  "error": null,
+  "findings": [
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "bf7aeffce159c7ab8136480aa9b4f952041bcda283ad105389da421a5c2aae39",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `check.fail_on` in frob.toml (default \"error\"); run `frob init` (or `frob config sync`) to write it",
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "90c99256550d2cfec71a691afc61cb57e0cfe624a6b8b0f3b6b4c5037c3318e2",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `git.cas_retries` in frob.toml (default 5); run `frob init` (or `frob config sync`) to write it",
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "c395b6952cfef068dbc326034997b7f329023e2eaff5ad11e2062e3977e1432d",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `tickets.ref` in frob.toml (default \"refs/heads/main\"); run `frob init` (or `frob config sync`) to write it",
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    }
+  ],
+  "ok": true,
+  "schema_version": 1,
+  "verb": "doctor",
+  "warnings": []
+}

@@ -1,0 +1,15 @@
+---
+source: crates/frob/tests/cli.rs
+expression: toml1
+---
+[check]
+# Lowest severity that makes `frob check` exit 1; `none` never fails.
+fail_on = "error"
+
+[git]
+# Compare-and-swap retries when moving a ledger ref.
+cas_retries = 5
+
+[tickets]
+# Ref holding the ledger; the ledger merge driver and `doctor` resolve it.
+ref = "refs/heads/main"

@@ -1,0 +1,87 @@
+//! Verb outcomes: the payload on success and [`CliError`] on failure.
+
+use gob_diagnostics::{ExitCode, Refusal};
+use gob_rules::Finding;
+
+/// Everything a successful verb returns besides process exit state.
+#[derive(Debug)]
+pub struct Payload<T> {
+    /// Verb-specific data, serialized as the envelope `data`.
+    pub data: T,
+    /// Findings the verb produced; reported, never turned into a failure here.
+    pub findings: Vec<Finding>,
+    /// Non-fatal notices.
+    pub warnings: Vec<String>,
+    /// True when the request already held and nothing changed (cli.md section 3).
+    pub already: bool,
+}
+
+impl<T> Payload<T> {
+    /// A payload with only data: no findings, no warnings, `already` false.
+    pub fn new(data: T) -> Self {
+        Self {
+            data,
+            findings: Vec::new(),
+            warnings: Vec::new(),
+            already: false,
+        }
+    }
+
+    /// Attach findings.
+    #[must_use]
+    pub fn with_findings(mut self, findings: Vec<Finding>) -> Self {
+        self.findings = findings;
+        self
+    }
+
+    /// Mark the request as already satisfied (or not).
+    #[must_use]
+    pub fn with_already(mut self, already: bool) -> Self {
+        self.already = already;
+        self
+    }
+
+    /// Add one warning.
+    #[must_use]
+    pub fn with_warning(mut self, warning: impl Into<String>) -> Self {
+        self.warnings.push(warning.into());
+        self
+    }
+}
+
+/// Why a verb did not succeed; fixes the exit code (cli.md section 2).
+#[derive(Debug, thiserror::Error)]
+pub enum CliError {
+    /// A guard refused (exit 3, or the code its class implies).
+    #[error(transparent)]
+    Refusal(#[from] Refusal),
+    /// Bad flags or input (exit 2).
+    #[error("usage: {0}")]
+    Usage(String),
+    /// The caller asked for a yes/no answer and it is no (exit 1).
+    #[error("negative: {0}")]
+    Negative(String),
+    /// A bug (exit 4).
+    #[error("internal: {0}")]
+    Internal(Box<dyn std::error::Error + Send + Sync>),
+}
+
+impl CliError {
+    /// Wrap any error as an internal failure.
+    pub fn internal(error: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> Self {
+        Self::Internal(error.into())
+    }
+
+    /// The process exit code for this error.
+    pub fn exit_code(&self) -> ExitCode {
+        match self {
+            Self::Refusal(r) => r.exit_code(),
+            Self::Usage(_) => ExitCode::Usage,
+            Self::Negative(_) => ExitCode::Negative,
+            Self::Internal(_) => ExitCode::Internal,
+        }
+    }
+}
+
+/// What every verb handler returns.
+pub type Outcome<T> = Result<Payload<T>, CliError>;
