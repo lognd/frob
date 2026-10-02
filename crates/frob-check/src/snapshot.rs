@@ -1,6 +1,6 @@
-//! Input collection, done once per run: walk, graph, directives, lock and ledger.
+//! frob's input collection, done once per run: graph, directives, lock and ledger (the walk is gob-check's).
 
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::BTreeSet;
 use std::path::Path;
 use std::time::Instant;
 
@@ -8,6 +8,7 @@ use frob_ack::{DocDirective, Inputs};
 use frob_ledger::{Ledger, LedgerConfig};
 use frob_obligations::{InvariantsConfig, ObligationInputs};
 use gob_cache::{ArtifactKey, Cache};
+use gob_check::{CollectCx, Collected};
 use gob_directives::frob::Doc;
 use gob_directives::{Binding, Directive, DirectiveRecord, ScanConfig, Scanner};
 use gob_languages::{Language, grammar_identity};
@@ -15,13 +16,13 @@ use gob_lock::{LockFile, file_name};
 use gob_rules::Finding;
 use gob_symbols::{EXTRACTOR_VERSION, Symref, Target, build_graph_with_stats, extract_file};
 use gob_text::{FileId, FileInterner};
-use gob_walk::{FileEntry, WalkConfig, walk};
+use gob_walk::FileEntry;
 use rayon::prelude::*;
 
-use crate::config::CheckTable;
-use crate::error::CheckError;
+use gob_check::CheckError;
+
 use crate::options::CheckOptions;
-use crate::report::{Stats, Timing};
+use crate::product::Frob;
 
 /// The product whose `frob.lock` and `.frob/` the check reads.
 pub(crate) const PRODUCT: &str = "frob";
@@ -29,48 +30,44 @@ pub(crate) const PRODUCT: &str = "frob";
 /// Substring that makes a file worth scanning for directives (cheap prefilter).
 const DIRECTIVE_MARKER: &str = "frob:";
 
-/// Read-only, thread-safe facts about the walked files.
-pub(crate) struct FileIndex {
-    /// Interned id per repo-relative path.
-    pub ids: HashMap<String, FileId>,
-    /// Hex content digest per path.
-    pub digests: HashMap<String, String>,
-    /// Every ancestor directory of a walked file (links to directories resolve).
-    pub dirs: HashSet<String>,
-}
-
 /// The ledger and the commit it was read at.
 pub(crate) struct LedgerState {
     /// The open ledger.
     pub ledger: Ledger,
     /// Ledger tip commit, hex; the side-input digest of ledger-reading rules.
     pub tip: String,
+    /// Tickets the ledger held at `tip`; the subjects of the ledger-reading `must_measure` rules.
+    pub tickets: usize,
 }
 
-/// Everything the rules read, built once.
-pub(crate) struct Snapshot {
-    /// Repository root.
-    pub root: std::path::PathBuf,
-    /// Walked files, sorted by path.
-    pub entries: Vec<FileEntry>,
-    /// Path lookups.
-    pub index: FileIndex,
-    /// Graph, lock, `frob:doc` directives and the shared interner (frob-ack's input bundle).
-    pub ack: Inputs,
-    /// Every well-formed directive, in file then source order.
-    pub directives: Vec<DirectiveRecord>,
-    /// PARSE001, DSL001 and DSL002 findings of the scan.
-    pub scan_findings: Vec<Finding>,
-    /// The ledger when the repository has one with tickets.
-    pub ledger: Option<LedgerState>,
-    /// `[invariants]`.
-    pub invariants: InvariantsConfig,
+/// Thread-safe facts frob's checks read while deciding applicability and cache keys.
+pub struct FrobShared {
+    /// Ledger tip commit (hex), or the empty string without a ledger.
+    pub ledger_tip: String,
     /// Files the obligation rules evaluate: graph file nodes plus files holding a directive.
     pub obligation_paths: BTreeSet<String>,
+    /// True when a ledger is open (the ledger-reading rules can run).
+    pub has_ledger: bool,
 }
 
-impl Snapshot {
-    /// The inputs of `frob-obligations`, borrowed from this snapshot.
+/// Everything frob's rules read besides the walk, built once per pass.
+pub struct FrobInputs {
+    /// Repository root.
+    pub(crate) root: std::path::PathBuf,
+    /// Graph, lock, `frob:doc` directives and the shared interner (frob-ack's input bundle).
+    pub(crate) ack: Inputs,
+    /// Every well-formed directive, in file then source order.
+    pub(crate) directives: Vec<DirectiveRecord>,
+    /// The ledger when the repository has one with tickets.
+    pub(crate) ledger: Option<LedgerState>,
+    /// `[invariants]`.
+    pub(crate) invariants: InvariantsConfig,
+    /// True when `frob.toml` carries a `[tickets]` table, so a ledger is expected.
+    pub(crate) tickets_configured: bool,
+}
+
+impl FrobInputs {
+    /// The inputs of `frob-obligations`, borrowed from these.
     pub(crate) fn obligations(&self) -> ObligationInputs<'_> {
         ObligationInputs {
             root: &self.root,
@@ -81,11 +78,6 @@ impl Snapshot {
             files: &self.ack.files,
             config: &self.invariants,
         }
-    }
-
-    /// The ledger tip, or the empty string without a ledger.
-    pub(crate) fn ledger_tip(&self) -> &str {
-        self.ledger.as_ref().map_or("", |l| l.tip.as_str())
     }
 }
 
@@ -112,7 +104,12 @@ fn open_ledger(root: &Path, cfg: LedgerConfig) -> Option<LedgerState> {
     match ledger.ticket_ids_at(&tip) {
         Ok(ids) if !ids.is_empty() => {
             tracing::info!(tickets = ids.len(), %tip, "ledger present");
-            Some(LedgerState { ledger, tip })
+            let tickets = ids.len();
+            Some(LedgerState {
+                ledger,
+                tip,
+                tickets,
+            })
         }
         Ok(_) => {
             tracing::info!(%tip, "ledger holds no tickets: ledger rules are skipped");
@@ -201,64 +198,34 @@ fn doc_directives(directives: &[DirectiveRecord], files: &FileInterner) -> Vec<D
     out
 }
 
-/// Collect every input of one run.
-///
-/// Stage times go to `timing`; graph cache counters to `stats`.
-pub(crate) fn collect(
-    root: &Path,
-    table: &CheckTable,
-    cache: &Cache,
-    opts: &CheckOptions,
-    timing: &mut Timing,
-    stats: &mut Stats,
-) -> Result<Snapshot, CheckError> {
-    let started = Instant::now();
-    let mut exclude = vec!["/.frob/".to_owned(), "/target/".to_owned()];
-    exclude.extend(table.exclude.iter().cloned());
-    let walked = walk(
-        root,
-        &WalkConfig {
-            exclude,
-            size_cap: table.size_cap,
-            ..WalkConfig::default()
-        },
-    )?;
-    for big in &walked.oversized {
-        tracing::info!(path = %big.path, size = big.size, "file over size_cap skipped");
-    }
-    let mut entries = walked.files;
-    entries.sort_by(|a, b| a.path.cmp(&b.path));
-    let mut files = FileInterner::new();
-    let mut index = FileIndex {
-        ids: HashMap::with_capacity(entries.len()),
-        digests: HashMap::with_capacity(entries.len()),
-        dirs: HashSet::new(),
-    };
-    for e in &entries {
-        index.ids.insert(e.path.clone(), files.intern(&e.path));
-        index.digests.insert(e.path.clone(), e.digest.to_string());
-        let mut dir = e.path.as_str();
-        while let Some((parent, _)) = dir.rsplit_once('/') {
-            if !index.dirs.insert(parent.to_owned()) {
-                break;
-            }
-            dir = parent;
-        }
-    }
-    stats.files = entries.len();
-    timing.push("walk", started.elapsed(), true);
+/// True when `<root>/frob.toml` has a `[tickets]` table (an unreadable file counts as absent).
+fn tickets_configured(root: &Path) -> bool {
+    std::fs::read_to_string(root.join("frob.toml"))
+        .ok()
+        .and_then(|t| t.parse::<toml::Table>().ok())
+        .is_some_and(|t| t.get("tickets").is_some_and(toml::Value::is_table))
+}
 
+/// Collect frob's inputs of one run on top of the walk in `cx`.
+///
+/// Stage times go to `cx.timing`; graph cache counters to `cx.stats`.
+pub(crate) fn collect(
+    cx: &mut CollectCx<'_>,
+    opts: &CheckOptions,
+) -> Result<Collected<Frob>, CheckError> {
+    let core = cx.core;
+    let (root, entries, files, index) = (&core.root, &core.entries, &core.files, &core.index);
     let started = Instant::now();
-    let (graph, built) = build_graph_with_stats(root, &entries, cache);
-    stats.graph_cached = built.cached;
-    stats.graph_extracted = built.extracted;
-    timing.push("graph", started.elapsed(), true);
+    let (graph, built) = build_graph_with_stats(root, entries, cx.cache);
+    cx.stats.graph_cached = built.cached;
+    cx.stats.graph_extracted = built.extracted;
+    cx.timing.push("graph", started.elapsed(), true);
 
     let started = Instant::now();
     let scanner = Scanner::new(&ScanConfig::default());
     let results: Vec<Scanned> = entries
         .par_iter()
-        .filter_map(|e| scan_one(root, cache, e, index.ids[&e.path], &scanner))
+        .filter_map(|e| scan_one(root, cx.cache, e, index.ids[&e.path], &scanner))
         .collect();
     let mut directives = Vec::new();
     let mut scan_findings = Vec::new();
@@ -267,8 +234,8 @@ pub(crate) fn collect(
         scan_findings.extend(s.findings);
     }
     let lock = LockFile::load(&root.join(file_name(PRODUCT)))?;
-    let docs = doc_directives(&directives, &files);
-    timing.push("directives", started.elapsed(), true);
+    let docs = doc_directives(&directives, files);
+    cx.timing.push("directives", started.elapsed(), true);
 
     let started = Instant::now();
     let ledger_cfg = opts.ledger.clone().unwrap_or_else(|| {
@@ -278,7 +245,7 @@ pub(crate) fn collect(
         })
     });
     let ledger = open_ledger(root, ledger_cfg);
-    timing.push("ledger", started.elapsed(), true);
+    cx.timing.push("ledger", started.elapsed(), true);
     let invariants = InvariantsConfig::load(root)?;
 
     let obligation_paths: BTreeSet<String> = graph
@@ -297,20 +264,26 @@ pub(crate) fn collect(
         directives = directives.len(),
         "inputs collected"
     );
-    Ok(Snapshot {
-        root: root.to_path_buf(),
-        entries,
-        index,
-        ack: Inputs {
-            graph,
-            lock,
-            docs,
-            files,
-        },
-        directives,
-        scan_findings,
-        ledger,
-        invariants,
+    let shared = FrobShared {
+        ledger_tip: ledger.as_ref().map_or_else(String::new, |l| l.tip.clone()),
         obligation_paths,
+        has_ledger: ledger.is_some(),
+    };
+    Ok(Collected {
+        shared,
+        inputs: FrobInputs {
+            root: root.clone(),
+            ack: Inputs {
+                graph,
+                lock,
+                docs,
+                files: files.clone(),
+            },
+            directives,
+            ledger,
+            invariants,
+            tickets_configured: tickets_configured(root),
+        },
+        findings: scan_findings,
     })
 }

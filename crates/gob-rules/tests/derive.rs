@@ -1,8 +1,8 @@
 //! End-to-end proof of `#[derive(Rule)]`, the registry and the reason checker.
 
 use gob_rules::{
-    FixKind, Polarity, ReasonPolicy, ReasonRejected, Registry, RegistryError, Rule, RuleMeta, Scope,
-    Severity, Tier, check_reason,
+    FixKind, Polarity, ReasonPolicy, ReasonRejected, Registry, RegistryError, Rule, RuleMeta,
+    Scope, Severity, Tier, check_reason,
 };
 
 /// Every public item needs a doc comment.

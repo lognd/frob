@@ -1,8 +1,9 @@
 //! The result of a check run: findings, timing, cache counters and the fix outcome.
 
+use std::collections::BTreeMap;
 use std::time::Duration;
 
-use gob_diagnostics::{ExitCode, RequiredMarks, RequiredReason, UnresolvedPolicy, fail_on};
+use gob_diagnostics::{ExitCode, RequiredMarks, UnresolvedPolicy, fail_on};
 use gob_rules::{Exception, Finding, Severity};
 use gob_text::FileInterner;
 use schemars::JsonSchema;
@@ -29,8 +30,8 @@ pub struct Timing {
 }
 
 impl Timing {
-    /// Record a stage.
-    pub(crate) fn push(&mut self, name: impl Into<String>, took: Duration, budgeted: bool) {
+    /// Record a stage that took `took`; `budgeted` stages count against `[perf] budget_ms`.
+    pub fn push(&mut self, name: impl Into<String>, took: Duration, budgeted: bool) {
         let ms = u64::try_from(took.as_millis()).unwrap_or(u64::MAX);
         let name = name.into();
         tracing::debug!(stage = %name, ms, budgeted, "stage finished");
@@ -82,6 +83,17 @@ impl Stats {
     pub fn cached_hits(&self) -> usize {
         self.file_hits + self.repo_hits + self.graph_cached
     }
+}
+
+/// What one pass accumulates besides findings: timing, counters and subject counts.
+#[derive(Debug, Default)]
+pub(crate) struct Tally {
+    /// Stage timing.
+    pub timing: Timing,
+    /// Counters.
+    pub stats: Stats,
+    /// Subjects examined per evaluated rule id.
+    pub subjects: BTreeMap<String, usize>,
 }
 
 /// One Deterministic fix that was written to disk.
@@ -152,27 +164,16 @@ pub struct CheckReport {
     pub fix: Option<FixOutcome>,
     /// Non-fatal notes (an unresolvable base, a skipped stage).
     pub warnings: Vec<String>,
-    /// The ticket the run was scoped to, as resolved (`~handle`).
-    pub ticket: Option<String>,
+    /// The scope the run was limited to, as the product resolved it (frob: the ticket `~handle`).
+    pub scope: Option<String>,
     /// The failing threshold in force (`[check] fail_on` or the override).
     pub fail_on: FailOn,
     /// The Unresolved gate in force (`[check] fail_on_unresolved`).
     pub fail_on_unresolved: UnresolvedPolicy,
     /// Required reasons of the Unresolved findings that carry one.
     pub required: RequiredMarks,
-    /// Marks awaiting the final fingerprints.
-    pub(crate) pending: Vec<PendingMark>,
-}
-
-/// A required mark waiting for the final fingerprints, matched by rule and message.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct PendingMark {
-    /// Rule id of the finding.
-    pub rule: String,
-    /// Exact message of the finding.
-    pub message: String,
-    /// Why it is required.
-    pub reason: RequiredReason,
+    /// Subjects each evaluated rule examined (`rules.md` section 2); rules not evaluated are absent.
+    pub subjects_examined: BTreeMap<String, usize>,
 }
 
 impl CheckReport {

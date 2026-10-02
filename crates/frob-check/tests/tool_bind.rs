@@ -6,8 +6,8 @@ use frob_check::{CheckOptions, CheckReport, run};
 use gob_diagnostics::ExitCode;
 use gob_rules::Severity;
 
-const ZIZMOR: &str = include_str!("fixtures/zizmor-json-v1.json");
-const ACTIONLINT: &str = include_str!("fixtures/actionlint.json");
+const ZIZMOR: &str = include_str!("../../gob-check/tests/fixtures/zizmor-json-v1.json");
+const ACTIONLINT: &str = include_str!("../../gob-check/tests/fixtures/actionlint.json");
 
 fn write(root: &Path, path: &str, text: &str) {
     let full = root.join(path);
@@ -89,7 +89,7 @@ fn zizmor_findings_carry_ci_ids_and_real_spans() {
     assert_eq!(tool002.severity, Severity::Advisory);
 }
 
-// frob:tests crates/frob-check/src/pipeline.rs::resolve_exceptions
+// frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
 #[test]
 fn a_frob_accept_suppresses_a_tool_finding_like_a_native_one() {
     // The directive scanner reads Rust, Markdown and TOML comments (no YAML yet), so the

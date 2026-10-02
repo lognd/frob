@@ -184,6 +184,11 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     out
 }
 
+/// Functions and methods `COV001` examined in `graph` (its subject count for `must_measure`).
+pub fn cov001_subjects(graph: &SymbolGraph) -> usize {
+    cov::callables(graph)
+}
+
 /// Suppress the findings of `raw` that an accept or defer covers and add the `EXC*` findings.
 ///
 /// `raw` may hold findings of any product's rules: an exception matches by

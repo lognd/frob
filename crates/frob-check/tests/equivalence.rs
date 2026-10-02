@@ -57,7 +57,11 @@ fn fixture_a(root: &Path) {
         "# Fixture\n\nSee [code](src/lib.rs), [gone](src/gone.rs) and [anchor](NOTES.md#nowhere).\n",
     );
     write(root, "NOTES.md", "# Notes\n\n## Real heading\n\nText.\n");
-    write(root, "invariants/never-orphan.md", "# Never orphan\n\nBody.\n");
+    write(
+        root,
+        "invariants/never-orphan.md",
+        "# Never orphan\n\nBody.\n",
+    );
 }
 
 /// Fixture B: a tested and an untested public function, a test reaching through a helper,

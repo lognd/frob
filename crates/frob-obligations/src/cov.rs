@@ -25,6 +25,11 @@ fn is_callable(rec: &SymbolRecord) -> bool {
     matches!(rec.kind, SymbolKind::Function | SymbolKind::Method)
 }
 
+/// Number of functions and methods in `graph`: the subjects `COV001` looks at.
+pub(crate) fn callables(graph: &SymbolGraph) -> usize {
+    graph.records().filter(|r| is_callable(r)).count()
+}
+
 /// Forward call adjacency: graph edges plus unique-name edges found in function bodies.
 fn adjacency(graph: &SymbolGraph, sources: &mut Sources) -> HashMap<Symref, Vec<Symref>> {
     let mut adj: HashMap<Symref, Vec<Symref>> = HashMap::new();

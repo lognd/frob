@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use frob_check::{CheckCtx, CheckOptions, FailOn, FileCheck, SharedCtx, run};
+use frob_check::{CheckCtx, CheckOptions, FailOn, FileCheck, Frob, SharedCtx, run};
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
@@ -180,7 +180,7 @@ struct Rewrite;
 
 static SIDE_INPUT: AtomicU32 = AtomicU32::new(0);
 
-impl FileCheck for Rewrite {
+impl FileCheck<Frob> for Rewrite {
     fn rules(&self) -> Vec<&'static RuleMeta> {
         vec![Fixt001.meta()]
     }
@@ -441,7 +441,7 @@ fn ticket_restricts_per_file_rules_to_its_scope() {
         scope.iter().any(|f| f.message.contains("src/b/lib.rs")),
         "SCOPE001 names src/b/lib.rs: {scope:?}"
     );
-    assert!(scoped.ticket.is_some());
+    assert!(scoped.scope.is_some());
 }
 
 #[test]
@@ -461,7 +461,7 @@ fn ticket_without_a_ledger_is_an_error() {
 /// Emits one Unresolved `FIXT001` per `*.txt` file; the message is the file text.
 struct Opaque;
 
-impl FileCheck for Opaque {
+impl FileCheck<Frob> for Opaque {
     fn rules(&self) -> Vec<&'static RuleMeta> {
         vec![Fixt001.meta()]
     }

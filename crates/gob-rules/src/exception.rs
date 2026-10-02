@@ -140,7 +140,13 @@ mod tests {
             files.intern(path),
             TextRange::new(TextSize::new(start), TextSize::new(end)),
         );
-        Finding::new("COV001".parse().unwrap(), Severity::Warn, Some(span), "m", path)
+        Finding::new(
+            "COV001".parse().unwrap(),
+            Severity::Warn,
+            Some(span),
+            "m",
+            path,
+        )
     }
 
     fn bound(path: &str, range: Option<Range<usize>>) -> BoundException {
@@ -167,7 +173,12 @@ mod tests {
         let spanless = Finding::new("COV001".parse().unwrap(), Severity::Warn, None, "m", "x");
         let ctx = ExceptionCtx { files: &files };
         let r = apply_exceptions(
-            vec![inside.clone(), outside.clone(), other_file.clone(), spanless.clone()],
+            vec![
+                inside.clone(),
+                outside.clone(),
+                other_file.clone(),
+                spanless.clone(),
+            ],
             &[bound("a.rs", Some(0..30))],
             &ctx,
         );

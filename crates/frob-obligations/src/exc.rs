@@ -4,8 +4,8 @@ use gob_directives::frob::{Accept, Defer};
 use gob_directives::{Binding, Directive, DirectiveRecord};
 use gob_lock::LockFile;
 use gob_rules::{
-    BoundException, Exception, ExceptionCtx, ExceptionKind, Finding, ReasonPolicy, Resolved, RuleId,
-    apply_exceptions, check_reason,
+    BoundException, Exception, ExceptionCtx, ExceptionKind, Finding, ReasonPolicy, Resolved,
+    RuleId, apply_exceptions, check_reason,
 };
 use gob_symbols::{SymbolGraph, Symref};
 use gob_text::{FileInterner, Span};
