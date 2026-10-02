@@ -1,0 +1,13 @@
+[package]
+name = "gob-text"
+version = "0.0.0"
+description = "Text primitives (spans, line index, edits) for the frob/grimble/crunk goblins."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

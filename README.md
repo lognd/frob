@@ -3,20 +3,18 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/frob/"><img src="https://img.shields.io/pypi/v/frob.svg" alt="PyPI version"></a>
-  <a href="https://pypi.org/project/frob/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0--only-blue.svg" alt="License: GPL-2.0-only"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://github.com/lognd/frob/actions/workflows/ci.yml"><img src="https://github.com/lognd/frob/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
 </p>
 
 # frob
 
-frob is the enforcement layer for agentic development: an obligation graph
-tracks every symbol's identity, a statically-checkable ticket queue tracks
-every unit of work, and a set of gates turn unaccounted-for change -- code
-with no ticket, a doc that drifted, a test that vanished -- into a `frob
-check` failure. Your editor or an agent's own tools navigate and edit code;
-frob accounts for it.
+frob is being rewritten in Rust as a monorepo of three products built on a
+shared substrate (`gob-*` crates): **frob**, the ticket goblin that tracks
+every unit of work and turns unaccounted-for change into a failed check;
+**grimble**, the design goblin that checks code against its declared design;
+and **crunk**, the design-system linter. The sections below still describe
+the v1 Python implementation until the rewrite replaces it.
 
 ## Highlights
 
@@ -40,29 +38,13 @@ frob accounts for it.
 
 ## Install
 
+The Rust rewrite is not yet published. Build from source with the pinned
+toolchain (see `rust-toolchain.toml`):
+
 ```bash
-uv tool install frob
+cargo build --workspace
+cargo dev --help
 ```
-
-<!-- frob:waive DOC004 reason="illustrative first-run example, output captured below in the README's own intro; not a claim tracked elsewhere" -->
-```bash
-frob doctor
-```
-
-```text
-frob version: 0.530.0
-
-  frob_core: available (version=unknown)
-  strata_core: available (version=unknown)
-
-all native extensions available
-```
-
-`frob doctor` is a good first command: it confirms the install and reports
-whether the two native acceleration extensions (`frob-core`, `frob-strata`)
-are present. Both are default dependencies of a plain install; if either is
-absent frob still runs, in pure-Python mode, and says so loudly rather than
-degrading silently -- see docs/guides/install.md.
 
 ## Quickstart
 
@@ -173,9 +155,6 @@ issue.
 
 ## More
 
-- docs/guides/install.md -- native extensions, the T-0133 degrade contract, editable dev installs
-- docs/guides/quickstart.md -- the loop above with real command output
-- `docs/guides/command-reference.md` -- the seven verb groups and the full command table
-- docs/modules/cli.md -- the CLI regrouping history and per-command tier ledger
-- docs/ -- per-command references and module design docs
+- docs/design/README.md -- the v2 design set and decision log
+- CONTRIBUTING.md -- how work is ticketed, checked and landed
 - CHANGELOG.md -- what shipped, grouped by area

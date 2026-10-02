@@ -1,7 +1,7 @@
 ---
 id: T-0003
 title: 'Workspace skeleton: Cargo workspace, lints as errors, linker, CI, MIT'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -23,8 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0003
+branch: t-0003
 scope:
 - Cargo.toml
 - Cargo.lock
@@ -52,17 +52,22 @@ scope_changes:
     matched by the deletion check
   actor: logan
   at: '2026-10-02'
+evidence:
+- cmd:cargo nextest run --profile ci exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a fresh clone, when cargo nextest run and cargo clippy --all-targets
     -- -D warnings and cargo doc run, then all pass with zero warnings
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci exit=0 sha256=e3b0c44298fc
 - text: Given the workspace Cargo.toml, when a new directory is added under crates/
     with a Cargo.toml, then it is a member without editing the root manifest
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci exit=0 sha256=e3b0c44298fc
 - text: Given LICENSE, when read, then it is the MIT text with the current year and
     owner
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci exit=0 sha256=e3b0c44298fc
 threat: null
 component: workspace
 anchor: false

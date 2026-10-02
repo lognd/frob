@@ -1,4 +1,4 @@
-# frob:used-by .github/workflows/release.yml
+# frob:used-by .github/workflows/ci.yml
 # Update mechanism for T-3922: GitHub Actions in .github/workflows/*.yml
 # are pinned to 40-hex commit SHAs (not mutable tags/branches) for
 # supply-chain safety. Dependabot's github-actions ecosystem understands

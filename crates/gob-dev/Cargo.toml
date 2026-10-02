@@ -1,0 +1,16 @@
+[package]
+name = "gob-dev"
+version = "0.0.0"
+description = "Developer task runner (`cargo dev`) for the frob monorepo."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+
+[lints]
+workspace = true

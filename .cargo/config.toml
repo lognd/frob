@@ -1,0 +1,16 @@
+# frob:ticket T-0003
+[alias]
+dev = "run -p gob-dev --"
+
+# Fast linking on Linux: clang driver delegating to mold.
+# To disable: delete this block, or override per invocation with
+#   CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="" cargo build
+# or point at lld instead by using "-C", "link-arg=-fuse-ld=lld".
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# Same fast-link setup for aarch64 Linux hosts (the primary dev machine).
+[target.aarch64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
