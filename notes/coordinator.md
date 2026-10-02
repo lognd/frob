@@ -115,6 +115,15 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 
 ## Status log (newest first)
 
+- 2026-10-03 (night): OWNER PAUSE. After T-0035 and T-0025 land, no new
+  dispatches. The owner reviews (1) what has been done and (2) the
+  design docs afresh, with one stated concern: the IR (code-model.md
+  section 5, gob-ir, milestone 2) must support esoteric languages, not
+  only tree-sitter-shaped ones. T-0036 stays queued. Review entry
+  points: this file; docs/design/README.md decision log D1-D55;
+  notes/audit-resolution.md; per-ticket done-reports under tickets/;
+  `frob check --timing --text` and `frob doctor` from the v2 binary.
+
 - 2026-10-03 (evening): landed T-0028 (TicketSchema derive on a mirror
   struct), T-0029 (design reconciled, D38-D55), T-0023 (frob-check;
   warm fresh-process run 0.66 s on this repo). 27 done; T-0032/T-0033
