@@ -370,7 +370,7 @@ impl<'a> Checker<'a> {
                                 root_module.as_deref().unwrap_or("?")
                             ),
                             &path,
-                        )
+                        );
                     }
                     (ModuleKind::PartOf, true) => self.emit(
                         "MDL011",
@@ -952,7 +952,7 @@ impl<'a> Checker<'a> {
                 }
             }
             ClauseKind::Attr { value: Some(v), .. } => {
-                self.value_dates(rec, &v.value, v.span, anchor)
+                self.value_dates(rec, &v.value, v.span, anchor);
             }
             ClauseKind::Version(s) => {
                 let ok = s.value.split('.').count() == 3
@@ -1049,7 +1049,7 @@ impl<'a> Checker<'a> {
                 };
                 match want {
                     Some(d) => {
-                        self.quantity(rec, limit, d, &format!("`bound {}`", metric.text), anchor)
+                        self.quantity(rec, limit, d, &format!("`bound {}`", metric.text), anchor);
                     }
                     None => self.emit(
                         "MDL009",

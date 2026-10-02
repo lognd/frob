@@ -1,5 +1,6 @@
 //! The MDL rule family declarations (grmb-spec 11), one `#[derive(Rule)]` struct each.
 
+#[rustfmt::skip]
 macro_rules! mdl_rule {
     ($name:ident, $id:literal, $slug:literal, $sev:ident, $summary:literal, $explain:literal) => {
         #[doc = $summary]
