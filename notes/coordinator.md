@@ -104,6 +104,17 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 
 ## Status log (newest first)
 
+- 2026-10-03: landed T-0014 T-0016 T-0018 T-0030 T-0021 T-0019 T-0020
+  (23/31 done, 292 tests). Verb wiring was split out as T-0031 so
+  lease, evidence/tests and ack crates ran in parallel; each exposes
+  register(Cli) -> Cli. T-0030 fixed LocalEdits under core.autocrlf via
+  gix's filter pipeline. Open design reconciliation items are listed in
+  T-0029 (add: [lease]/[worktree]/[evidence] table names, Defer because=
+  vs reason=, evidence events written outside frob-ledger pending an
+  EventBody::Evidence variant, gob-cli two-word verb limit, generated
+  doc paths). Dispatched T-0031 and T-0022; next T-0023, T-0024, T-0025,
+  T-0028, T-0029.
+
 - 2026-10-02 (night): landed T-0008 T-0015 T-0006 T-0010 T-0013 T-0027
   T-0017 (16/27 done, 146 tests). T-0027 fixed a real gix bug: shared
   index snapshot refreshed by mtime only; gob-git now opens a fresh
