@@ -1,0 +1,29 @@
++++
+id = "01M3Z714QT3QXEAJAK9JDDEB70"
+title = "G17: gob-pattern and GPOL rules (ast-grep Doc over U spike first)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 13
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-02T21:06:25Z"
+updated = "2026-10-02T21:06:25Z"
+idempotency_key = "m2-pattern"
+labels = ["milestone:2"]
+scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3Z712DPZN71ZQDS6PXY6QQV"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3Z713YNM5666B7YFEHPFVKD"
+
+[[acceptance]]
+text = "Given the no-print-in-lib example rule from rules.md, when run over a Rust and a Python fixture, then it fires in both from one rule file"
+bound = false
++++
+
+rules.md section 3: the spike that implements ast-grep-core's Doc trait over U terms or decides on the in-house matcher; then declarative rules/*.grl.toml with pattern, metavariables, all/any/not/inside/has, fix; language-specific and IR-level with language=*; GPOL id generation.
