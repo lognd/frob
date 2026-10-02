@@ -104,6 +104,16 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 
 ## Status log (newest first)
 
+- 2026-10-02 (night): landed T-0008 T-0015 T-0006 T-0010 T-0013 T-0027
+  T-0017 (16/27 done, 146 tests). T-0027 fixed a real gix bug: shared
+  index snapshot refreshed by mtime only; gob-git now opens a fresh
+  handle for status and local-edit checks. T-0028 (TicketField derive)
+  split from T-0018 so T-0014 and T-0018 run in parallel without a
+  gob-macros lease collision; T-0029 (design reconciliation) filed and
+  is done last. Both implementers dispatched. Coordinator rule from the
+  owner: no manual code or doc edits by the coordinator; route fixups
+  to agents.
+
 - 2026-10-02 (evening): landed T-0004 T-0007 T-0026 T-0009 T-0012 T-0005
   T-0011 (9/24 done, 66 tests). Land takes experimental's Cargo.lock, so
   the coordinator regenerates and commits the lock after every land; do
