@@ -1,7 +1,7 @@
 ---
 id: T-0026
 title: 'Repo hygiene: remove v1 GitHub templates and release workflow, add .gitattributes'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -23,8 +23,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0026
+branch: t-0026
 scope:
 - .github/**
 - .gitattributes
@@ -32,12 +32,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:git ls-files .github exit=0 sha256=d759994d2a40
 designated_repro_test: null
 acceptance:
 - text: Given a fresh clone, when a file is committed, then git prints no CRLF warning
-  evidence: []
+  evidence:
+  - cmd:git ls-files .github exit=0 sha256=d759994d2a40
 - text: Given .github, when read, then no template mentions Python, uv or pytest
-  evidence: []
+  evidence:
+  - cmd:git ls-files .github exit=0 sha256=d759994d2a40
 threat: null
 component: workspace
 anchor: false

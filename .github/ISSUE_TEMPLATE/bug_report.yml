@@ -1,30 +1,28 @@
 name: Bug report
-description: Report unexpected or incorrect behavior in frob
+description: Report unexpected or incorrect behavior
 title: "bug: "
 labels: ["bug"]
 body:
-  - type: markdown
+  - type: input
+    id: version
     attributes:
-      value: |
-        Thanks for taking the time to file a report. The more precise the
-        reproduction, the faster this can be fixed.
+      label: Version
+      description: 'Output of `frob --version`, or the commit hash.'
+    validations:
+      required: true
 
-  - type: textarea
-    id: what-happened
+  - type: input
+    id: os
     attributes:
-      label: What happened
-      description: A clear description of the incorrect or unexpected behavior.
+      label: OS
+      placeholder: "Ubuntu 24.04, macOS 15, Windows 11"
     validations:
       required: true
 
   - type: textarea
-    id: repro
+    id: command
     attributes:
-      label: Minimal reproduction
-      description: >
-        The exact command(s) you ran, and the smallest repository shape
-        that reproduces the issue. A small fixture repo or a short shell
-        transcript is ideal.
+      label: Command run
       render: shell
     validations:
       required: true
@@ -33,31 +31,20 @@ body:
     id: expected
     attributes:
       label: Expected behavior
-      description: What you expected to happen instead.
     validations:
       required: true
 
-  - type: input
-    id: version
+  - type: textarea
+    id: actual
     attributes:
-      label: frob version
-      description: 'Run: frob --version'
-      placeholder: "0.530.0"
+      label: Actual behavior
     validations:
       required: true
 
-  - type: input
-    id: environment
+  - type: textarea
+    id: repro
     attributes:
-      label: Python version and OS
-      placeholder: "Python 3.12.4, Ubuntu 22.04"
+      label: Minimal reproduction
+      description: The smallest repository shape or transcript that reproduces it.
     validations:
       required: true
-
-  - type: checkboxes
-    id: doctor-checked
-    attributes:
-      label: Sanity check
-      options:
-        - label: I ran `frob doctor` and it reported native extensions available
-          required: false

@@ -1,0 +1,18 @@
+## Done report
+
+Removed the v1 PyPI release workflow .github/workflows/release.yml (any frob:waive comments inside it go with it, e.g. .github/workflows/release.yml:BUG002), rewrote the issue and PR templates for the Rust workspace, confirmed dependabot has cargo and github-actions entries, added .gitattributes with LF normalization; renormalize changed no tracked files.
+
+### Changed
+```
+ .gitattributes                             |   9 +
+ .github/ISSUE_TEMPLATE/bug_report.yml      |  53 ++--
+ .github/ISSUE_TEMPLATE/feature_request.yml |  48 +---
+ .github/PULL_REQUEST_TEMPLATE.md           |  36 +--
+ .github/dependabot.yml                     |  13 +-
+ .github/workflows/release.yml              | 435 -----------------------------
+ tickets/T-0026/ticket.md                   |   6 +-
+ 7 files changed, 56 insertions(+), 544 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
