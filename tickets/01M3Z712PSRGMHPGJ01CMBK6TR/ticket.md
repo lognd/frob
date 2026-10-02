@@ -2,7 +2,8 @@
 id = "01M3Z712PSRGMHPGJ01CMBK6TR"
 title = "G03: sibling JSON contract and schema"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
