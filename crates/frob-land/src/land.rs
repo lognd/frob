@@ -201,6 +201,7 @@ impl Ready {
             &format!(
                 "{actor} landing {} (pid {})",
                 self.handle,
+                // frob:accept PROC001 because="reads this process's own id for the lock owner text; nothing is spawned"
                 std::process::id()
             ),
         )?;

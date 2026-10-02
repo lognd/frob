@@ -6,8 +6,9 @@
 base = "experimental"
 # Lowest severity that makes `frob check` exit 1; `none` never fails.
 fail_on = "error"
-# Paths no rule inspects: build output and frob's own local state.
-exclude = ["target/", ".frob/"]
+# Paths no rule inspects: build output, frob's own local state and the v1
+# changelog (a 2.7 MB history file full of v1 directives).
+exclude = ["target/", ".frob/", "CHANGELOG.md"]
 
 # External tool stages, run after the built-in rules.
 [[check.tool]]

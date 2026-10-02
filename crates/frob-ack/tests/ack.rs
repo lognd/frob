@@ -113,7 +113,7 @@ fn messages(findings: &[Finding], rule: &str) -> Vec<String> {
         .collect()
 }
 
-// frob:tests frob-ack::rules::Drift003
+// frob:tests crates/frob-ack/src/rules.rs::Drift003
 #[test]
 fn acked_signature_change_fires_drift003_and_ack_clears_it() {
     let fx = Fixture::new();
@@ -160,7 +160,7 @@ fn reack_of_unchanged_state_is_a_no_op() {
     assert_eq!(git(fx.root(), &["rev-parse", "main"]), head);
 }
 
-// frob:tests frob-ack::rules::Drift002
+// frob:tests crates/frob-ack/src/rules.rs::Drift002
 #[test]
 fn doc_to_missing_heading_fires_drift002_with_nearest_heading() {
     let fx = Fixture::new();
@@ -186,7 +186,7 @@ fn doc_to_missing_heading_fires_drift002_with_nearest_heading() {
     );
 }
 
-// frob:tests frob-ack::rules::Drift001
+// frob:tests crates/frob-ack/src/rules.rs::Drift001
 #[test]
 fn code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet() {
     let fx = Fixture::new();
@@ -222,7 +222,7 @@ fn code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet() 
     );
 }
 
-// frob:tests frob-ack::rules::Affect001
+// frob:tests crates/frob-ack/src/rules.rs::Affect001
 #[test]
 fn changed_public_signature_with_unacked_dependents_fires_affect001() {
     let fx = Fixture::new();

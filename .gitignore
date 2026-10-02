@@ -1,45 +1,8 @@
-.idea/
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-dist/
+# Build output
+target/
 build/
-.pytest_cache/
-.ruff_cache/
-.coverage
-.coverage.*
-coverage.xml
-htmlcov/
-uv.lock
-# `.claude/*` (glob), NOT `.claude/` (directory): git cannot re-include a
-# file whose PARENT DIRECTORY is excluded, so the directory form silently
-# defeats every negation below it.
-.claude/*
-# Agent and skill definitions are NOT versioned here. They are operator
-# configuration that lives at user scope (~/.claude/agents, ~/.claude/skills);
-# the repo copies drifted from the originals actually loaded at runtime and
-# were removed. Do not re-add un-ignore rules for them -- a project-scope copy
-# shadows the user-scope definition and the divergence is invisible.
-# Shared Claude config is REVIEWED CONFIG, not local state: hooks change
-# agent behaviour repo-wide, and one that exists only in someone's home
-# directory is an undocumented behaviour change no review ever saw.
-!.claude/hooks/
-!.claude/hooks/**
-!.claude/settings.json
-# ...but genuinely local/volatile state stays out.
-.claude/hooks/state/
-.claude/settings.local.json
-.claude/worktrees/
-.claude/scratch/
-.claude/scheduled_tasks.lock
-# frob:ticket T-3181: agent scratch captures -- working files, not
-# deliverables; nothing should ever reference one (REF001 enforces this).
-.claude-scratch/
-.frob/
-.serena/
-
-# C/C++ build artifacts
+dist/
+*.egg-info/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
@@ -47,35 +10,14 @@ CMakeCache.txt
 *.a
 *.so
 *.dylib
-
-# Rust build artifacts
-target/
-
-# Valgrind
 vgcore.*
+
+# frob local state
+.frob/
+FROBLEMS.md
 *.froblock
 
-# Secrets
-.env
-frob-core/target/
-# Playwright MCP session artifacts
-.playwright-mcp/
-
-# frob:managed-block BEGIN gitignore-standard (frob scaffold apply -- do not hand-edit within markers)
-# Build artifacts
-build/
-dist/
-*.egg-info/
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-*.o
-*.a
-*.so
-*.dylib
-target/
-
-# Python
+# Stray tool caches
 .venv/
 __pycache__/
 *.pyc
@@ -86,26 +28,13 @@ __pycache__/
 htmlcov/
 coverage.xml
 
-# frob local state
-.frob/
-FROBLEMS.md
+# Editor and agent scratch (operator configuration lives at user scope)
+.idea/
+.claude/
+.claude-scratch/
+.serena/
+.playwright-mcp/
+done-report-*.md
 
 # Secrets
 .env
-# frob:managed-block END gitignore-standard
-
-# Rapid-profile verification debt (T-1681) -- tracked deliberately
-!rapid-debt.jsonl
-
-# T-2721: waive-audit progress watermark -- tracked deliberately, same
-# posture as rapid-debt.jsonl above. Was `.frob/waive-audit-watermark.json`
-# (gitignored, per-checkout) until T-2721: an agent's audit pass ran inside
-# a disposable worktree and its progress was destroyed with it on cleanup,
-# defeating T-2467's whole periodic-incremental design. Tracked at the repo
-# root, outside `.frob/`, so it survives a worktree's removal and a `frob
-# ticket land`/git push actually carries it.
-!waive-audit-watermark.json
-
-# Stray agent done-report scratch files (T-2524): the canonical home is
-# tickets/<id>/done-report.md
-done-report-*.md

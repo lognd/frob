@@ -1,4 +1,3 @@
-# frob:ticket T-0003
 [workspace]
 # Glob membership: a new crates/<name>/Cargo.toml joins with no root edit.
 members = ["crates/*"]
