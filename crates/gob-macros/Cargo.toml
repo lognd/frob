@@ -1,7 +1,7 @@
 [package]
 name = "gob-macros"
 version = "0.0.0"
-description = "Proc macros (derive Rule, ConfigTable, Command) for the frob/grimble/crunk goblins."
+description = "Proc macros (derive Rule, ConfigTable, Command, Directive) for the frob/grimble/crunk goblins."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -21,6 +21,7 @@ syn = { version = "2", features = ["full"] }
 [dev-dependencies]
 gob-cli = { path = "../gob-cli" }
 gob-config = { path = "../gob-config" }
+gob-directives = { path = "../gob-directives" }
 gob-rules = { path = "../gob-rules" }
 trybuild = "1"
 

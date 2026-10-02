@@ -2,7 +2,7 @@
 id: T-0014
 title: 'gob-directives: Directive derive, frob: namespace parser, binding rules, PARSE
   and DSL rules'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -27,8 +27,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0014
+branch: t-0014
 scope:
 - crates/gob-directives/**
 - crates/gob-macros/**
@@ -36,17 +36,22 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-directives -p gob-macros exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a comment with frob:ticket followed by a fn two lines later, when scanned,
     then the directive binds to that fn
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-directives -p gob-macros exit=0 sha256=e3b0c44298fc
 - text: 'Given a frob: directive with an unknown verb, when scanned, then DSL001 fires
     with the span and a did-you-mean'
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-directives -p gob-macros exit=0 sha256=e3b0c44298fc
 - text: Given a 7-char ticket handle in a directive, when scanned, then DSL002 fires
     with the expansion fix
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-directives -p gob-macros exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-directives
 anchor: false

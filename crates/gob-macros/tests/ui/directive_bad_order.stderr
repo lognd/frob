@@ -1,0 +1,11 @@
+error: field `third`: `optional` needs an `Option<T>` field
+  --> tests/ui/directive_bad_order.rs:12:5
+   |
+12 |     third: String,
+   |     ^^^^^
+
+error: required positional `second` follows an optional one
+  --> tests/ui/directive_bad_order.rs:10:5
+   |
+10 |     second: String,
+   |     ^^^^^^

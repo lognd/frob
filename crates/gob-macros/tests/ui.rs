@@ -1,4 +1,4 @@
-//! Compile-fail tests for the `Rule`, `ConfigTable` and `Command` derive diagnostics.
+//! Compile-fail tests for the `Rule`, `ConfigTable`, `Command` and `Directive` derive diagnostics.
 
 #[test]
 fn ui() {

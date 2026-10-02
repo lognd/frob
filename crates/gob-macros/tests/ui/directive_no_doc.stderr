@@ -1,0 +1,7 @@
+error: a directive needs a `///` doc comment (its summary)
+ --> tests/ui/directive_no_doc.rs:3:10
+  |
+3 | #[derive(Directive)]
+  |          ^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `Directive` (in Nightly builds, run with -Z macro-backtrace for more info)

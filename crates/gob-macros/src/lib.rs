@@ -1,15 +1,17 @@
-//! Proc macros for the goblins: `#[derive(Rule)]`, `#[derive(ConfigTable)]`
-//! and `#[derive(Command)]`.
+//! Proc macros for the goblins: `#[derive(Rule)]`, `#[derive(ConfigTable)]`,
+//! `#[derive(Command)]` and `#[derive(Directive)]`.
 //!
 //! Do not depend on this crate directly: use `gob_rules::Rule`, which
 //! re-exports the derive together with the runtime it expands against
-//! (likewise `gob_config::ConfigTable` and `gob_cli::Command`).
+//! (likewise `gob_config::ConfigTable`, `gob_cli::Command` and
+//! `gob_directives::Directive`).
 
 // The darling derive output trips this pedantic lint; nothing we can edit.
 #![allow(clippy::needless_continue)]
 
 mod command;
 mod config_table;
+mod directive;
 
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
@@ -257,6 +259,22 @@ pub fn derive_config_table(input: TokenStream) -> TokenStream {
 pub fn derive_command(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match command::expand(&input) {
+        Ok(ts) => ts.into(),
+        Err(e) => e.write_errors().into(),
+    }
+}
+
+/// Derive `gob_directives::Directive`, a `DirectiveMeta` and an inventory entry.
+///
+/// Struct attribute `#[directive(namespace = "frob", verb = "ticket")]`; field
+/// attributes `#[arg(positional)]` (the default), `#[arg(key = "because")]`,
+/// `#[arg(list)]` (a `Vec<T>` taking the remaining positionals), plus
+/// `optional` (needs `Option<T>`) and `ticket_ref` (value is a ticket id).
+/// The summary comes from the first non-empty `///` doc line.
+#[proc_macro_derive(Directive, attributes(directive, arg))]
+pub fn derive_directive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    match directive::expand(&input) {
         Ok(ts) => ts.into(),
         Err(e) => e.write_errors().into(),
     }

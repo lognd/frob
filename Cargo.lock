@@ -1715,6 +1715,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-directives"
+version = "0.0.0"
+dependencies = [
+ "gob-languages",
+ "gob-macros",
+ "gob-mdtest",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "inventory",
+ "schemars",
+ "serde_json",
+ "strsim",
+ "thiserror",
+ "tracing",
+ "tree-sitter",
+]
+
+[[package]]
 name = "gob-exec"
 version = "0.0.0"
 dependencies = [
@@ -1767,6 +1787,7 @@ dependencies = [
  "darling",
  "gob-cli",
  "gob-config",
+ "gob-directives",
  "gob-rules",
  "proc-macro2",
  "quote",

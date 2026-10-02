@@ -1,0 +1,5 @@
+error: field `id`: `list` needs a `Vec<T>` field
+ --> tests/ui/directive_list_not_vec.rs:8:5
+  |
+8 |     id: String,
+  |     ^^

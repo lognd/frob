@@ -1,0 +1,7 @@
+error: Missing field `namespace`
+ --> tests/ui/directive_missing_namespace.rs:4:10
+  |
+4 | #[derive(Directive)]
+  |          ^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `Directive` (in Nightly builds, run with -Z macro-backtrace for more info)
