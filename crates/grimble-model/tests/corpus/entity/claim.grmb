@@ -1,0 +1,26 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+
+flow f : a -> b {
+  label Public;
+}
+claim c1 {
+  noflow a -> b;
+  proof L2;
+  evidence tests "crates/frob/tests/wiring.rs";
+}
+claim c2 {
+  reach a -> b;
+  proof L1;
+  evidence ref "docs/design/cli.md#x";
+}
+claim c3 {
+  bound age f <= 5 min;
+  proof L3;
+  assumed owner=logan review=2026-10-15 because="measured once";
+  evidence tests "crates/frob/tests/wiring.rs";
+}

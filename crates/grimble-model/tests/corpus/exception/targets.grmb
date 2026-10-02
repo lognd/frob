@@ -1,0 +1,12 @@
+grimble = "2";
+module m;
+
+node cli : trusted {
+  accept SYS004 on cli because="on inside a body";
+  accept NOPE999 because="unknown rule id";
+  defer SYS005 because="missing ticket";
+  defer SYS005 ticket="abc" because="short ticket";
+  hotfix SYS002 ticket="01J9QKX3M8Z4T7N2V5B6C0D1E2" because="x" until=2026-12-01;
+}
+accept SYS004 because="missing on";
+accept SYS004 on ghost because="unresolved target";

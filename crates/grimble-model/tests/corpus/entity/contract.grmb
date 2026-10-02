@@ -1,0 +1,19 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+
+contract shared {
+  shape "crates/gob-walk/src/lib.rs::WalkResult";
+  versioning scheme=semver current="0.1.0" compat=backward;
+}
+flow f1 : a -> b {
+  label Public;
+  contract shared;
+}
+flow f2 : b -> a {
+  label Public;
+  contract shared;
+}

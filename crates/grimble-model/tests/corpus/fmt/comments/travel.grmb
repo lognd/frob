@@ -1,0 +1,16 @@
+// file comment
+grimble = "2";
+module m;
+
+/* block above b */
+node b : trusted { // trailing b
+  // above owns
+  owns "z/**"; // after owns
+  /// doc of kind
+  kind component;
+  // closer b
+}
+
+// frob:doc docs/a.md#a
+node a : trusted {
+}

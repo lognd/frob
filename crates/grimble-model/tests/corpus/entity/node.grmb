@@ -1,0 +1,21 @@
+grimble = "2";
+module m;
+
+/// The command line.
+node cli : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/frob/**";
+  owns "crates/frob-check/src/lib.rs::run";
+  may fs.read at "crates/frob/**";
+  may net.connect("api.github.com") at "crates/frob-gh/src/lib.rs::GhClient.*";
+  excuses net.listen because="a CLI never serves";
+  surface kind(function) & attr(vis = "pub") & "crates/frob/**";
+  attr timeout = 30 s;
+  attr idempotency_key;
+  attr tags = ["a", "b"];
+  alias old_cli;
+}
+node no_trust {
+  owns "x/**";
+}

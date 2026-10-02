@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+
+/// Doc text.
+node n : trusted {
+  kind component;
+  owns "crates/a/**";
+  attr timeout = 30 s;
+  accept SYS004 because="by design";
+}

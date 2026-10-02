@@ -1,0 +1,2 @@
+# an explicit grimble:binds beats owns (rank 1); see tests/selectors.rs
+bind: - node/explicit grimble:binds

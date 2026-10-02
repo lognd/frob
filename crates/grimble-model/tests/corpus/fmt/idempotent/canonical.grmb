@@ -1,0 +1,11 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  kind component;
+  owns "a/**" | "b/**";
+}
+
+flow f : a -> a {
+  label Public;
+}

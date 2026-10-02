@@ -1,0 +1,31 @@
+=== facets.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..161 symref=facets.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..161
+    decl:unit kind=node role=declaration name=n @40..160 anchor=node/n symref=facets.grmb::n
+      decl:attr name=trust @49..56 facet=sig
+        use:ref "trusted" @49..56
+      exp:group unordered @40..160
+        decl:attr name=kind @61..76 anchor=node/n/kind[0]
+          exp:lit kind=ident "component" @66..75
+        decl:attr name=owns @79..98 anchor=node/n/owns[0]
+          exp:apply kind=select @84..97
+            exp:lit kind=glob "crates/a/**" @84..97
+      decl:attr name=attr:timeout @101..121 anchor=node/n/attr[0]
+        exp:lit kind=quantity "30 s" @116..120
+      decl:attr name=accept @124..158 anchor=node/n/accept[0]
+        exp:group unordered @124..158
+          decl:attr name=because @138..157
+            exp:lit kind=string "by design" @146..157
+          use:ref "SYS004" @131..137
+      decl:attr name=doc @26..39
+        exp:lit kind=prose "Doc text." @26..39
+--- refs
+ref "trusted" @49 -> Must trusted
+ref "SYS004" @131 -> Unknown
+--- directives
+

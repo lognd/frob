@@ -1,0 +1,17 @@
+grimble = "2";
+module m;
+// frob:doc docs/design/a.md#a
+// frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2
+// frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2
+// frob:invariant nothing here does io
+// frob:decision d1
+// frob:deprecated use b
+// frob:until 2026-12-01
+// grimble:binds crates/a/src/lib.rs::f via="manual"
+// frob:tests crates/a/tests/t.rs::t
+// frob:effects none
+// frob:pure
+// grimble:accept SYS004 because="use the clause form"
+// grimble:node cli
+node a : trusted {
+}

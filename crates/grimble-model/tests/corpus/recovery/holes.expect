@@ -1,0 +1,6 @@
+# resynchronization at `;` and `}`; every other node still parses; no node is missing a required field
+error: MDL000
+error: MDL000
+error: MDL000
+error: MDL000
+fmt: refuses

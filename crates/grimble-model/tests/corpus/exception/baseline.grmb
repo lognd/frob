@@ -1,0 +1,8 @@
+grimble = "2";
+module m;
+
+node cli : trusted {
+  baseline SYS004;
+}
+accept SYS004 on cli because "bare string";
+accept slug_alias on cli because="x";

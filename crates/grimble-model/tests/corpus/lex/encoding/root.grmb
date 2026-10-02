@@ -1,0 +1,7 @@
+grimble = "2";
+module m;
+include "bom.grmb";
+include "nul.grmb";
+include "latin1.grmb";
+include "barecr.grmb";
+include "crlf.grmb";

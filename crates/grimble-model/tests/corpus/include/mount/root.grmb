@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+include "api.grmb" as api;
+node cli : trusted {
+}
+flow h : cli -> api.handlers { label Public; }

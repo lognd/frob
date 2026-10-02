@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+node o : trusted {
+  owns "crates/a/**";
+  owns "crates/a/src/lib.rs::f";
+}

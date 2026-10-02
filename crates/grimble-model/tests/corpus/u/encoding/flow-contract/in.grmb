@@ -1,0 +1,13 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+contract c {
+  shape "x.rs::S";
+}
+flow f : a -> b {
+  label Public;
+  contract c;
+}

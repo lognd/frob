@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  defer SYS005 ticket="01J9QKX3M8Z4T7N2V5B6C0D1E2" because="producer lands next cycle" until=2026-12-01;
+}
+claim c {
+  noflow a -> a;
+  assumed owner=logan review=2028-02-29 because="measured";
+}

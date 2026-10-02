@@ -1,0 +1,8 @@
+grimble = "2";
+module m;
+/// Documents n.
+/// Second line.
+node n : trusted {
+  /// Documents the clause.
+  kind component;
+}

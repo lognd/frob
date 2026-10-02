@@ -1,0 +1,23 @@
+=== in.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..115 symref=in.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..115
+    decl:unit kind=contract role=declaration name=c @25..114 anchor=contract/c symref=in.grmb::c
+      decl:attr name=shape @40..56 anchor=contract/c/shape[0] facet=sig
+        exp:apply kind=select @46..55
+          exp:lit kind=glob "x.rs::S" @46..55
+      decl:attr name=versioning @59..112 anchor=contract/c/versioning[0] facet=sig
+        exp:group unordered @59..112
+          decl:attr name=compat @100..111
+            exp:lit kind=ident "full" @107..111
+          decl:attr name=current @84..99
+            exp:lit kind=string "1.0.0" @92..99
+          decl:attr name=scheme @70..83
+            exp:lit kind=ident "semver" @77..83
+--- refs
+--- directives
+

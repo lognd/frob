@@ -1,0 +1,6 @@
+# MDL005 (no file), MDL010 (empty by construction, three forms); `walk` supplies one unrelated file
+walk: crates/a/src/lib.rs
+warn: MDL005
+warn: MDL010
+warn: MDL010
+warn: MDL010

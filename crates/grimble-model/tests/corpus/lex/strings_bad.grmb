@@ -1,0 +1,8 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  attr s1 = "raw
+newline";
+  attr s2 = "bad \q escape";
+}

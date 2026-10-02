@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+node m1 : trusted {
+  may fs.read;
+  may net.connect("a.com", "b.com") at "crates/**";
+}

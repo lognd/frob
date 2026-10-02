@@ -1,0 +1,4 @@
+# `hidden` could live in the hole, so the unresolved reference is Unresolved, not Error
+error: MDL000
+unresolved: MDL006
+fmt: refuses

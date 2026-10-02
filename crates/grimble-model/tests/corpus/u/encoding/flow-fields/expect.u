@@ -1,0 +1,47 @@
+=== in.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..222 symref=in.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..222
+    decl:unit kind=flow role=declaration name=f @67..221 anchor=flow/f symref=in.grmb::f
+      exp:apply kind=connect @76..82 facet=sig
+        use:ref "a" @76..77
+        use:ref "b" @81..82
+      decl:attr name=label @87..102 anchor=flow/f/label[0] facet=sig
+        use:ref "Internal" @93..101
+      exp:group unordered @67..221
+        decl:attr name=age @123..133 anchor=flow/f/age[0]
+          exp:lit kind=quantity "5 min" @127..132
+        decl:attr name=condition @202..219 anchor=flow/f/condition[0]
+          exp:lit kind=ident "on_err" @212..218
+        decl:attr name=fanout @150..159 anchor=flow/f/fanout[0]
+          exp:lit kind=number "3" @157..158
+        decl:attr name=growth @162..176 anchor=flow/f/growth[0]
+          exp:lit kind=quantity "15%/d" @169..175
+        decl:attr name=rate @105..120 anchor=flow/f/rate[0]
+          exp:lit kind=quantity "100 req/s" @110..119
+        decl:attr name=size @136..147 anchor=flow/f/size[0]
+          exp:lit kind=quantity "4 KiB" @141..146
+        decl:attr name=transport @179..199 anchor=flow/f/transport[0]
+          exp:group unordered @179..199
+            use:ref "http" @189..193
+            use:ref "ipc" @195..198
+    decl:unit kind=node role=declaration name=a @25..45 anchor=node/a symref=in.grmb::a
+      decl:attr name=trust @34..41 facet=sig
+        use:ref "trusted" @34..41
+    decl:unit kind=node role=declaration name=b @46..66 anchor=node/b symref=in.grmb::b
+      decl:attr name=trust @55..62 facet=sig
+        use:ref "trusted" @55..62
+--- refs
+ref "a" @76 -> Must a
+ref "b" @81 -> Must b
+ref "Internal" @93 -> Must Internal
+ref "http" @189 -> Unknown
+ref "ipc" @195 -> Unknown
+ref "trusted" @34 -> Must trusted
+ref "trusted" @55 -> Must trusted
+--- directives
+

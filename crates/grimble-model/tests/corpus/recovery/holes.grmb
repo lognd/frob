@@ -1,0 +1,19 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  owns "a/**";
+  label ;
+  surface "s/**";
+  garbage garbage garbage;
+  kind component;
+}
+bogus item here;
+node b : trusted {
+  owns "b/**";
+}
+node c : trusted {
+  kind component
+}
+node d : trusted {
+}

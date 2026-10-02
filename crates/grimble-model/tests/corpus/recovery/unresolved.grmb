@@ -1,0 +1,11 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  owns "a/**";
+}
+flow f : a -> hidden {
+  label Public;
+}
+node broken : {
+}

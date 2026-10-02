@@ -1,0 +1,2 @@
+# fmt reaches a fixed point and keeps every digest; the duplicate owns is MDL017
+advisory: MDL017

@@ -23,6 +23,7 @@
 //! - [`parse`]: bounded parse ([`ParseLimits`]) returning a [`ParseResult`];
 //!   never panics, oversized or slow input becomes [`ParseResult::Unresolved`].
 //! - [`grammar_identity`]: cache-key component for a grammar.
+//! - [`grmb`]: `.grmb` detection and identity (hand-written parser, no grammar).
 //! - [`compiled_query`] / [`captures`]: queries compiled once, captures
 //!   reported with [`gob_text::TextRange`] spans.
 //!
@@ -39,6 +40,7 @@
 //! 5. Add a sample parse test and a query-capture test.
 
 mod grammar;
+pub mod grmb;
 mod language;
 mod parse;
 mod query;

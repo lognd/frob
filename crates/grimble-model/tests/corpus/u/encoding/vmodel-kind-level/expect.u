@@ -1,0 +1,20 @@
+=== in.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..87 symref=in.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..87
+    decl:unit kind=vmodel role=declaration name=t @25..86 anchor=vmodel/t symref=in.grmb::t
+      decl:attr name=kind @38..48 anchor=vmodel/t/kind[0] facet=sig
+        exp:lit kind=ident "test" @43..47
+      decl:attr name=level @51..62 anchor=vmodel/t/level[0] facet=sig
+        exp:lit kind=ident "component_unit_test" @57..61
+      exp:group unordered @25..86
+        decl:attr name=runnable @65..84 anchor=vmodel/t/runnable[0]
+          exp:apply kind=select @74..83
+            exp:lit kind=glob "t.rs::x" @74..83
+--- refs
+--- directives
+

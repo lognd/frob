@@ -1,0 +1,2 @@
+# statuses are decided by gob-walk and gob-ir over code terms; see tests/selectors.rs
+walk: crates/a/src/lib.rs

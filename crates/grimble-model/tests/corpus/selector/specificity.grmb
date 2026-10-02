@@ -1,0 +1,15 @@
+grimble = "2";
+module m;
+
+node broad : trusted {
+  owns "src/**";
+}
+node narrow : trusted {
+  owns "src/*/mod.rs";
+}
+node tie_a : trusted {
+  owns "lib/*.rs";
+}
+node tie_b : trusted {
+  owns "lib/?.rs";
+}

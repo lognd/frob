@@ -1,0 +1,2 @@
+# the cycle is refused; in_b is still loaded so the flow resolves
+error: MDL003

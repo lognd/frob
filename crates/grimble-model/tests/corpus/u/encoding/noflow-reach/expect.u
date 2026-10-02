@@ -1,0 +1,33 @@
+=== in.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..124 symref=in.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..124
+    decl:unit kind=claim role=declaration name=n @67..95 anchor=claim/n symref=in.grmb::n
+      exp:group unordered @67..95
+        exp:apply kind=noflow @79..93 anchor=claim/n/noflow[0]
+          use:ref "a" @86..87
+          use:ref "b" @91..92
+    decl:unit kind=claim role=declaration name=r @96..123 anchor=claim/r symref=in.grmb::r
+      exp:group unordered @96..123
+        exp:apply kind=reach @108..121 anchor=claim/r/reach[0]
+          use:ref "a" @114..115
+          use:ref "b" @119..120
+    decl:unit kind=node role=declaration name=a @25..45 anchor=node/a symref=in.grmb::a
+      decl:attr name=trust @34..41 facet=sig
+        use:ref "trusted" @34..41
+    decl:unit kind=node role=declaration name=b @46..66 anchor=node/b symref=in.grmb::b
+      decl:attr name=trust @55..62 facet=sig
+        use:ref "trusted" @55..62
+--- refs
+ref "a" @86 -> Must a
+ref "b" @91 -> Must b
+ref "a" @114 -> Must a
+ref "b" @119 -> Must b
+ref "trusted" @34 -> Must trusted
+ref "trusted" @55 -> Must trusted
+--- directives
+

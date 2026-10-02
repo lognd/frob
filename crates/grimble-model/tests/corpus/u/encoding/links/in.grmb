@@ -1,0 +1,13 @@
+grimble = "2";
+module m;
+vmodel r {
+  kind artifact;
+  level requirements;
+  ref "d.md#r";
+}
+vmodel t {
+  kind test;
+  level customer_test;
+  runnable "t.rs::x";
+  verifies r;
+}

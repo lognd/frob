@@ -1,0 +1,27 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+
+contract c1 {
+  shape "x.rs::S";
+}
+flow f1 : a -> b {
+  label Internal;
+  rate 100 req/s;
+  age 5 min;
+  size 4 KiB;
+  fanout 3;
+  growth 15 %/d;
+  transport http, ipc;
+  condition on_ok;
+  producer "tools/gen.py::main";
+  consumer "y.rs::g";
+  contract c1;
+  attr utility;
+}
+flow f2 : b -> a {
+  label Public;
+}

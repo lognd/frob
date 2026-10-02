@@ -1,0 +1,9 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  owns "crates/ghost/**";
+  owns "crates/a/**" & !"crates/a/**";
+  owns lang(rust) & lang(python);
+  owns kind(function) & kind(type);
+}

@@ -1,0 +1,13 @@
+grimble = "2";
+module m;
+
+claim c { noflow a -> b; proof L1; }
+vmodel v { kind artifact; level requirements; ref "d.md#r"; }
+flow f : a -> b { rate 5 req/s; label Public; producer "x.py::f"; contract k; }
+contract k { versioning scheme=none; shape "x.rs::S"; }
+node b : trusted { surface "s/**"; excuses net.listen because="x"; may fs.read at "b/**"; owns "b/**"; clearance Internal; kind store; attr z = 1; attr a = 2; alias al; }
+node a : trusted { owns "a/**" & lang(rust) | "q/**"; }
+include "z.grmb";
+include "a.grmb";
+pack p { version "1.0.0"; ref "grimble/p"; }
+namespace ns { node n : trusted {} }

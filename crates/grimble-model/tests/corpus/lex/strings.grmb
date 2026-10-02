@@ -1,0 +1,8 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  attr s1 = "plain";
+  attr s2 = "esc \"q\" \\ \n \t \u{41} \u{1f600}";
+  attr s3 = "ab" "cd";
+}

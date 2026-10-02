@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+node n : trusted {
+  alias legacy;
+  renamed_from old;
+}

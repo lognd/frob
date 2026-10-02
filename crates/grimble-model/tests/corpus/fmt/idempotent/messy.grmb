@@ -1,0 +1,2 @@
+grimble="2";module m;node b:trusted{owns "z"|"a";kind component;owns "a" | "z";}   node a:trusted{}
+flow f:a->b{label Public;rate 5 req/s;age 1min;}

@@ -1,0 +1,2 @@
+# the renamed_from reference warns; the alias does not
+warn: MDL012

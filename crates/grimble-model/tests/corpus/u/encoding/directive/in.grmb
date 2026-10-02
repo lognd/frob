@@ -1,0 +1,5 @@
+grimble = "2";
+module m;
+// frob:doc docs/design/a.md#n
+node n : trusted {
+}

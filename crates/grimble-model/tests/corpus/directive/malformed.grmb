@@ -1,0 +1,9 @@
+grimble = "2";
+module m;
+// frob:
+// frob:nope
+// frob:ticket abc
+// frob:ticket 01J9QKX3
+// frob:doc
+node a : trusted {
+}

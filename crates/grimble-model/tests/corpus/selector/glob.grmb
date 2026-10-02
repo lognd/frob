@@ -1,0 +1,14 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  owns "src/*.rs";
+  owns "src/**/mod.rs";
+  owns "src/?.rs";
+  owns "src/[a-c]*.rs";
+  owns "src/{a,b}/**";
+  owns "crates/frob/";
+  owns "src/lib.rs::Type[Trait].method";
+  owns "src/lib.rs::a.*.c";
+  owns "src/lib.rs::**";
+}

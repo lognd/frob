@@ -1,0 +1,12 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+claim n {
+  noflow a -> b;
+}
+claim r {
+  reach a -> b;
+}

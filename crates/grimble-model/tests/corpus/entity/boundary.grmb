@@ -1,0 +1,16 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+node b : trusted {
+}
+
+flow f : a -> b {
+  label Pii;
+}
+boundary b1 endorse f : foreign -> trusted when "checksum_verified";
+boundary b2 declassify f : Secret -> Public;
+boundary b4 declassify f : Pii -> Internal {
+  attr note = "scrubbed";
+}
+boundary b3 endorse f : Public -> Secret;

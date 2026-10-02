@@ -1,0 +1,6 @@
+# a hand-written baseline, a bare `because`, and a slug alias are MDL000
+rule: SYS004
+error: MDL000
+error: MDL000
+error: MDL000
+fmt: refuses
