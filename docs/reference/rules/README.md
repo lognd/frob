@@ -14,6 +14,20 @@
 |---|---|---|---|---|
 | [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | A materialized config knob is missing from the product config file. |
 
+## COV
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [COV001](COV001.md) | untested-public-function | warn | manual | A public function or method has no test that reaches it. |
+| [COV003](COV003.md) | tests-names-missing-test | error | manual | Alias of TEST001; never emitted by this crate. |
+
+## DOC
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [DOC001](DOC001.md) | undocumented-public-item | warn | manual | A public item has no doc comment. |
+| [DOC002](DOC002.md) | broken-markdown-link | error | manual | A markdown link points at a missing path or a missing heading. |
+
 ## DRIFT
 
 | Rule | Slug | Severity | Fix | Summary |
@@ -29,11 +43,45 @@
 | [DSL001](DSL001.md) | unknown-directive-verb | error | manual | A directive names a verb its namespace does not declare. |
 | [DSL002](DSL002.md) | abbreviated-ticket-id | error | deterministic | A directive carries an abbreviated ticket id instead of a full 26-char ULID. |
 
+## EXC
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [EXC001](EXC001.md) | exception-reason-rejected | error | manual | An accept or defer directive carries a reason the checker rejects. |
+| [EXC003](EXC003.md) | defer-ticket-terminal | error | manual | A defer directive names a ticket that is done or dropped. |
+| [EXC005](EXC005.md) | accept-not-attested | warn | manual | An accept directive's bound symbol changed since it was attested. |
+| [EXC007](EXC007.md) | defer-ticket-missing | error | manual | A defer directive names a ticket that does not exist. |
+
+## INV
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [INV001](INV001.md) | invariant-without-anchor | warn | manual | An invariants document has no `frob:invariant` directive in code. |
+| [INV002](INV002.md) | forbidden-import | error | manual | A file imports something the `[invariants]` table forbids. |
+
 ## PARSE
 
 | Rule | Slug | Severity | Fix | Summary |
 |---|---|---|---|---|
 | [PARSE001](PARSE001.md) | malformed-directive | error | manual | A `frob:` directive is malformed: unterminated quote, bad key, missing or invalid argument. |
+
+## PERF
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [PERF001](PERF001.md) | check-over-budget | warn | manual | The built-in stages of a check run took longer than the `[perf]` budget. |
+
+## PROC
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [PROC001](PROC001.md) | process-outside-exec | error | manual | A crate other than `gob-exec`, `gob-git` or the binary references `std::process`. |
+
+## REF
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [REF001](REF001.md) | dangling-ticket-ref | error | manual | A `frob:ticket` directive names a ticket that is not in the ledger. |
 
 ## SCOPE
 
@@ -54,3 +102,16 @@
 | [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | A ticket's frontmatter differs from the fold of its events. |
 | [TICK002](TICK002.md) | ticket-not-on-base | error | manual | A ticket id is referenced but absent from the base ref. |
 | [TICK003](TICK003.md) | dangling-link | error | manual | A link or parent names a ticket that does not exist. |
+
+## TODO
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [TODO001](TODO001.md) | bare-work-marker | error | manual | A comment carries an upper-case work marker with no owning ticket. |
+| [TODO002](TODO002.md) | todo-ticket-terminal | warn | manual | A `frob:todo` directive points at a ticket that is already done or dropped. |
+
+## TOOL
+
+| Rule | Slug | Severity | Fix | Summary |
+|---|---|---|---|---|
+| [TOOL001](TOOL001.md) | tool-stage-failed | error | manual | A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start. |

@@ -22,9 +22,14 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `base` | `String` | `"main"` | no | Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against. |
 | `exclude` | `Vec<String>` | `[]` | no | Glob patterns of paths no rule inspects. |
 | `fail_on` | `FailOn` | `"error"` | yes | Lowest severity that makes `frob check` exit 1; `none` never fails. |
+| `fix_requires_scope` | `bool` | `false` | no | Refuse `--fix` unless `--ticket` scopes the run. |
 | `size_cap` | `u64` | `4194304` | no | Files larger than this many bytes are skipped. |
+| `telemetry` | `bool` | `true` | no | Append one JSON line per run to `.frob/telemetry.jsonl`. |
+| `ticket_hops` | `u32` | `1` | no | Hops of dependents (callers, via the symbol graph) added to a `--ticket` run. |
+| `tool` | `Vec<ToolStage>` | `[]` | no | External tool stages run after the built-in rules, outside the time budget. |
 
 ## `[evidence]`
 
@@ -50,6 +55,16 @@ Materialized: yes.
 |---|---|---|---|---|
 | `cas_retries` | `u32` | `5` | yes | Compare-and-swap retries when moving a ledger ref. |
 
+## `[invariants]`
+
+Architecture invariants enforced over the import graph (INV002).
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `forbid_imports` | `Vec<ForbidImport>` | `[]` | no | Imports no file matching `from` may contain; each entry needs a `reason`. |
+
 ## `[lease]`
 
 Knobs of the lease store (tickets.md section 6, decision D26).
@@ -62,6 +77,17 @@ Materialized: yes.
 | `shared_files` | `Vec<String>` | `[]` | no | Append-shared files (such as `Cargo.lock`) exempt from overlap checks. |
 | `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
 | `wip_per_holder` | `u32` | `0` | no | Most live leases one holder may own; 0 turns the limit off. |
+
+## `[perf]`
+
+The time budget of the built-in rules.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `budget_ms` | `u64` | `2000` | no | Milliseconds the built-in stages of a warm run may take. |
+| `enforce` | `bool` | `false` | no | Turn an exceeded budget into a Warn finding (`PERF001`). |
 
 ## `[tickets]`
 

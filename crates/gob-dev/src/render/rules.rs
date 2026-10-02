@@ -87,6 +87,10 @@ fn fence_for(text: &str) -> String {
     "`".repeat(longest.max(2) + 1)
 }
 
+/// Waiver line above each embedded example (the v1 land gate flags unbound code blocks).
+const WAIVE_EXAMPLE: &str =
+    "<!-- frob:waive DOC004 reason=\"generated example copied from the rule's test corpus\" -->";
+
 /// Render one rule page from its metadata and corpus examples.
 pub fn render_rule_page(meta: &RuleMeta, examples: &[Example]) -> String {
     let mut out = md_header("rules");
@@ -117,6 +121,8 @@ pub fn render_rule_page(meta: &RuleMeta, examples: &[Example]) -> String {
             if let Some(config) = &ex.config {
                 out.push_str(&format!("Config: `{}`\n\n", config.replace('`', "'")));
             }
+            out.push_str(WAIVE_EXAMPLE);
+            out.push('\n');
             out.push_str(&format!("{fence}{}\n{}", ex.language, ex.text));
             if !ex.text.ends_with('\n') {
                 out.push('\n');

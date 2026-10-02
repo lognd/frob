@@ -5,6 +5,7 @@
 | Verb | Idempotent | Dry run | Exits | Summary |
 |---|---|---|---|---|
 | `ack` | no | yes | 0 ok, 2 usage, 3 refused, 4 internal | Acknowledge symbols: record their digests in frob.lock and commit it on the current branch. |
+| `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and report findings; exit 1 at or above `fail_on`. |
 | `config show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print every config table merged (defaults, then frob.toml) with provenance. |
 | `config sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Add every knob a materialized table is missing to `frob.toml`; comments are kept. |
 | `doctor` | yes | no | 0 ok, 3 refused | Report toolchain, git, cache, config and ledger health; never fails on findings. |

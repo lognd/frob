@@ -25,6 +25,7 @@ so it matches `<namespace>:<verb> <args>` with `key=value` or
 
 ### PARSE001 malformed directive / Rust: unterminated quote #1 (line 6) (fire)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob:accept COV006 because="oops */ // error: PARSE001
 fn a() {}
@@ -32,6 +33,7 @@ fn a() {}
 
 ### PARSE001 malformed directive / Rust: missing required argument #2 (line 13) (fire)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob:accept COV006 */ // error: PARSE001
 fn a() {}
@@ -39,6 +41,7 @@ fn a() {}
 
 ### PARSE001 malformed directive / Rust: unknown key #3 (line 20) (fire)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2 color=red */ // error: PARSE001
 fn a() {}
@@ -46,6 +49,7 @@ fn a() {}
 
 ### PARSE001 malformed directive / Rust: missing verb #4 (line 27) (fire)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob: hello */ // error: PARSE001
 fn a() {}
@@ -53,6 +57,7 @@ fn a() {}
 
 ### PARSE001 malformed directive / Rust: invalid rule id and non-ticket value #5 (line 34) (fire)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob:accept notarule because=x */ // error: PARSE001
 /* frob:ticket banana */ // error: PARSE001
@@ -61,6 +66,7 @@ fn a() {}
 
 ### PARSE001 malformed directive / Rust: text after a closing quote #6 (line 42) (fire)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 /* frob:invariant "name"x */ // error: PARSE001
 fn a() {}
@@ -68,6 +74,7 @@ fn a() {}
 
 ### PARSE001 malformed directive / Markdown: bad doc anchor #7 (line 49) (fire)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```markdown
 # Title
 
@@ -76,6 +83,7 @@ fn a() {}
 
 ### PARSE001 malformed directive / TOML: missing argument #8 (line 57) (fire)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```toml
 # frob:invariant
 key = 1
@@ -83,6 +91,7 @@ key = 1
 
 ### PARSE001 malformed directive / Clean: every milestone-1 verb written correctly #9 (line 64) (clean)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 // frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2
 fn a() {}
@@ -108,6 +117,7 @@ fn g() {}
 
 ### PARSE001 malformed directive / Clean: not directives #10 (line 89) (clean)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ```rust
 let s = "// frob:bogus";
 // grimble:binds anything at all
@@ -118,6 +128,7 @@ fn a() {}
 
 ### PARSE001 malformed directive / Clean: markdown fenced code is not scanned #11 (line 99) (clean)
 
+<!-- frob:waive DOC004 reason="generated example copied from the rule's test corpus" -->
 ````markdown
 # Title
 

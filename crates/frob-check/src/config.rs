@@ -1,0 +1,139 @@
+//! The `[check]` and `[perf]` config tables and the `[[check.tool]]` stage entries.
+
+use std::path::Path;
+
+use gob_config::{ConfigError, ConfigTable};
+use gob_rules::Severity;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+/// The product whose `frob.toml` carries the tables.
+const PRODUCT: &str = "frob";
+
+/// Severity at which `frob check` fails (cli.md section 2, exit 1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum FailOn {
+    /// Never fail on findings.
+    None,
+    /// Fail on advisory findings and above.
+    Advisory,
+    /// Fail on warnings and above.
+    Warn,
+    /// Fail on errors only.
+    Error,
+}
+
+impl FailOn {
+    /// The lowest failing severity, or `None` when findings never fail the run.
+    pub fn threshold(self) -> Option<Severity> {
+        match self {
+            Self::None => Option::None,
+            Self::Advisory => Some(Severity::Advisory),
+            Self::Warn => Some(Severity::Warn),
+            Self::Error => Some(Severity::Error),
+        }
+    }
+
+    /// Parse the `--fail-on` spelling (`error`, `warn`, `advisory`, `none`).
+    pub fn parse(text: &str) -> Option<Self> {
+        match text {
+            "none" => Some(Self::None),
+            "advisory" => Some(Self::Advisory),
+            "warn" => Some(Self::Warn),
+            "error" => Some(Self::Error),
+            _ => Option::None,
+        }
+    }
+}
+
+/// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ToolStage {
+    /// Stage name shown in findings and timing; also the allowlisted program name.
+    pub name: String,
+    /// The program, found on `PATH` (no path separators).
+    pub command: String,
+    /// Arguments passed without shell interpretation.
+    #[serde(default)]
+    pub args: Vec<String>,
+    /// Wall-clock limit in seconds before the tool is killed.
+    #[serde(default = "default_tool_timeout")]
+    pub timeout_secs: u64,
+    /// When true a nonzero exit (or a timeout) is an Error finding (`TOOL001`).
+    #[serde(default = "default_true")]
+    pub fail_on_nonzero: bool,
+}
+
+fn default_tool_timeout() -> u64 {
+    300
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// Settings of `frob check`.
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "check", materialize)]
+pub struct CheckTable {
+    /// Lowest severity that makes `frob check` exit 1; `none` never fails.
+    #[config(default = FailOn::Error, enforcement)]
+    pub fail_on: FailOn,
+    /// Glob patterns of paths no rule inspects.
+    #[config(default = Vec::new())]
+    pub exclude: Vec<String>,
+    /// Files larger than this many bytes are skipped.
+    #[config(default = 4_194_304)]
+    pub size_cap: u64,
+    /// Hops of dependents (callers, via the symbol graph) added to a `--ticket` run.
+    #[config(default = 1)]
+    pub ticket_hops: u32,
+    /// Append one JSON line per run to `.frob/telemetry.jsonl`.
+    #[config(default = true)]
+    pub telemetry: bool,
+    /// Refuse `--fix` unless `--ticket` scopes the run.
+    #[config(default = false)]
+    pub fix_requires_scope: bool,
+    /// Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against.
+    #[config(default = "main".to_owned())]
+    pub base: String,
+    /// External tool stages run after the built-in rules, outside the time budget.
+    #[config(default = Vec::new())]
+    pub tool: Vec<ToolStage>,
+}
+
+/// The time budget of the built-in rules.
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "perf")]
+pub struct PerfTable {
+    /// Turn an exceeded budget into a Warn finding (`PERF001`).
+    #[config(default = false)]
+    pub enforce: bool,
+    /// Milliseconds the built-in stages of a warm run may take.
+    #[config(default = 2000)]
+    pub budget_ms: u64,
+}
+
+impl CheckTable {
+    /// Load `[check]` from `<root>/frob.toml` (a missing file means defaults).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    }
+}
+
+impl PerfTable {
+    /// Load `[perf]` from `<root>/frob.toml` (a missing file means defaults).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    }
+}

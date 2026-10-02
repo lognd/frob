@@ -765,11 +765,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "frob-check"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "criterion",
+ "frob-ack",
+ "frob-evidence",
+ "frob-lease",
+ "frob-ledger",
+ "frob-obligations",
+ "frob-tests",
+ "globset",
+ "gob-cache",
+ "gob-cli",
+ "gob-config",
+ "gob-diagnostics",
+ "gob-directives",
+ "gob-exec",
+ "gob-git",
+ "gob-languages",
+ "gob-lock",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "jiff",
+ "rayon",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "frob-cli"
 version = "0.0.0"
 dependencies = [
  "assert_cmd",
  "frob-ack",
+ "frob-check",
  "frob-evidence",
  "frob-lease",
  "frob-ledger",

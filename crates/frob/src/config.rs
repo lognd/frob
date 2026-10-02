@@ -8,19 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::PRODUCT;
 
-/// Severity at which `frob check` fails (cli.md section 2, exit 1).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum FailOn {
-    /// Never fail on findings.
-    None,
-    /// Fail on advisory findings and above.
-    Advisory,
-    /// Fail on warnings and above.
-    Warn,
-    /// Fail on errors only.
-    Error,
-}
+/// `[check]` and `[perf]` are owned by `frob-check`; re-exported for callers of this crate.
+pub use frob_check::{CheckTable, FailOn, PerfTable};
 
 /// Where ledger commits go (`[tickets] ref_mode`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -66,21 +55,6 @@ pub struct TicketsTable {
     pub registry_files: Vec<String>,
 }
 
-/// Settings of `frob check`.
-#[derive(Debug, Clone, ConfigTable)]
-#[config(table = "check", materialize)]
-pub struct CheckTable {
-    /// Lowest severity that makes `frob check` exit 1; `none` never fails.
-    #[config(default = FailOn::Error, enforcement)]
-    pub fail_on: FailOn,
-    /// Glob patterns of paths no rule inspects.
-    #[config(default = Vec::new())]
-    pub exclude: Vec<String>,
-    /// Files larger than this many bytes are skipped.
-    #[config(default = 4_194_304)]
-    pub size_cap: u64,
-}
-
 /// Settings of the per-worktree cache.
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "cache")]
@@ -104,8 +78,10 @@ pub struct GitTable {
 pub struct FrobConfig {
     /// `[tickets]`.
     pub tickets: TicketsTable,
-    /// `[check]`.
+    /// `[check]`, owned by `frob-check`.
     pub check: CheckTable,
+    /// `[perf]`, owned by `frob-check`.
+    pub perf: PerfTable,
     /// `[cache]`.
     pub cache: CacheTable,
     /// `[git]`.
@@ -153,6 +129,7 @@ impl FrobConfig {
         let cfg = Self {
             tickets: gob_config::load::<TicketsTable>(root, PRODUCT)?.value,
             check: gob_config::load::<CheckTable>(root, PRODUCT)?.value,
+            perf: gob_config::load::<PerfTable>(root, PRODUCT)?.value,
             cache: gob_config::load::<CacheTable>(root, PRODUCT)?.value,
             git: gob_config::load::<GitTable>(root, PRODUCT)?.value,
             lease: gob_config::load::<frob_lease::LeaseConfig>(root, PRODUCT)?.value,

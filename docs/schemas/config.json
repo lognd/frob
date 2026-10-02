@@ -21,6 +21,11 @@
       "additionalProperties": false,
       "description": "Settings of `frob check`.",
       "properties": {
+        "base": {
+          "default": "main",
+          "description": "Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against.",
+          "type": "string"
+        },
         "exclude": {
           "default": [],
           "description": "Glob patterns of paths no rule inspects.",
@@ -34,12 +39,37 @@
           "default": "error",
           "description": "Lowest severity that makes `frob check` exit 1; `none` never fails."
         },
+        "fix_requires_scope": {
+          "default": false,
+          "description": "Refuse `--fix` unless `--ticket` scopes the run.",
+          "type": "boolean"
+        },
         "size_cap": {
           "default": 4194304,
           "description": "Files larger than this many bytes are skipped.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
+        },
+        "telemetry": {
+          "default": true,
+          "description": "Append one JSON line per run to `.frob/telemetry.jsonl`.",
+          "type": "boolean"
+        },
+        "ticket_hops": {
+          "default": 1,
+          "description": "Hops of dependents (callers, via the symbol graph) added to a `--ticket` run.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tool": {
+          "default": [],
+          "description": "External tool stages run after the built-in rules, outside the time budget.",
+          "items": {
+            "$ref": "#/$defs/ToolStage"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -100,6 +130,21 @@
       },
       "type": "object"
     },
+    "invariants": {
+      "additionalProperties": false,
+      "description": "Architecture invariants enforced over the import graph (INV002).",
+      "properties": {
+        "forbid_imports": {
+          "default": [],
+          "description": "Imports no file matching `from` may contain; each entry needs a `reason`.",
+          "items": {
+            "$ref": "#/$defs/ForbidImport"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "lease": {
       "additionalProperties": false,
       "description": "Knobs of the lease store (tickets.md section 6, decision D26).",
@@ -132,6 +177,25 @@
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "perf": {
+      "additionalProperties": false,
+      "description": "The time budget of the built-in rules.",
+      "properties": {
+        "budget_ms": {
+          "default": 2000,
+          "description": "Milliseconds the built-in stages of a warm run may take.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "enforce": {
+          "default": false,
+          "description": "Turn an exceeded budget into a Warn finding (`PERF001`).",
+          "type": "boolean"
         }
       },
       "type": "object"
