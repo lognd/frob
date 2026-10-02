@@ -2,7 +2,7 @@
 id: T-0028
 title: 'TicketField derive: generate ticket frontmatter serde, schema and docs table
   from one declaration'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -43,11 +43,14 @@ scope_changes:
   reason: frob-ledger gains gob-macros and inventory dependencies for the derive
   actor: logan
   at: '2026-10-02'
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-macros -p frob-ledger exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given the frontmatter struct with the derive, when cargo dev gen runs, then
     the ticket field reference page lists every field with its doc and default
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-macros -p frob-ledger exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-macros
 anchor: false

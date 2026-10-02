@@ -1,5 +1,5 @@
 //! Proc macros for the goblins: `#[derive(Rule)]`, `#[derive(ConfigTable)]`,
-//! `#[derive(Command)]` and `#[derive(Directive)]`.
+//! `#[derive(Command)]`, `#[derive(Directive)]` and `#[derive(TicketSchema)]`.
 //!
 //! Do not depend on this crate directly: use `gob_rules::Rule`, which
 //! re-exports the derive together with the runtime it expands against
@@ -12,6 +12,7 @@
 mod command;
 mod config_table;
 mod directive;
+mod ticket_schema;
 
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
@@ -101,6 +102,23 @@ fn valid_slug(slug: &str) -> bool {
         && slug
             .bytes()
             .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+}
+
+/// Derive `frob_ledger::schema::TicketSchema` for a frontmatter struct.
+///
+/// Struct attribute `#[ticket(crate = "path")]` overrides the runtime crate
+/// (default `::frob_ledger`). Field attributes: `required`, `settable`,
+/// `default = <expr>` (exclusive with `required`), `since = "x.y.z"`,
+/// `kind = "enum"|"list"|"scalar"|"table"` (default: list for `Vec`, else
+/// scalar) and `key = ".."` (the TOML key when it differs from the field
+/// name). Every field and the struct need a `///` doc comment.
+#[proc_macro_derive(TicketSchema, attributes(ticket))]
+pub fn derive_ticket_schema(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    match ticket_schema::expand(&input) {
+        Ok(ts) => ts.into(),
+        Err(e) => e.write_errors().into(),
+    }
 }
 
 /// Collect `///` lines (trimmed of one leading space) from forwarded attrs.

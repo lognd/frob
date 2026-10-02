@@ -1,0 +1,22 @@
+## Done report
+
+TicketSchema derive in gob-macros generating a static TicketSchemaDescription (key, doc, type, kind, required, settable, default, since), an inventory TicketSchemaEntry listed by frob_ledger::schema::all_schemas, and a runtime JSON schema; no serde generation so the frontmatter format is unchanged. The derive sits on a mirror struct FrontmatterSchema in schema.rs because the real Frontmatter lives in model.rs outside scope; a test asserts the mirror keys equal the serialized Frontmatter keys. FIELDS is now built from the generated description; public helper names unchanged. Follow-up at the self-host switch: move the derive onto Frontmatter and delete the mirror.
+
+### Changed
+```
+ Cargo.lock                                         |   3 +
+ crates/frob-ledger/Cargo.toml                      |   2 +
+ crates/frob-ledger/src/schema.rs                   | 541 +++++++++++++++------
+ crates/gob-macros/Cargo.toml                       |   1 +
+ crates/gob-macros/src/lib.rs                       |  20 +-
+ crates/gob-macros/src/ticket_schema.rs             | 199 ++++++++
+ crates/gob-macros/tests/ui/ticket_schema_no_doc.rs |  10 +
+ .../tests/ui/ticket_schema_no_doc.stderr           |   5 +
+ .../tests/ui/ticket_schema_required_default.rs     |  11 +
+ .../tests/ui/ticket_schema_required_default.stderr |   5 +
+ tickets/T-0028/ticket.md                           |  13 +-
+ 11 files changed, 661 insertions(+), 149 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)

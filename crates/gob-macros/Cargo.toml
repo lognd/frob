@@ -19,6 +19,7 @@ quote = "1"
 syn = { version = "2", features = ["full"] }
 
 [dev-dependencies]
+frob-ledger = { path = "../frob-ledger" }
 gob-cli = { path = "../gob-cli" }
 gob-config = { path = "../gob-config" }
 gob-directives = { path = "../gob-directives" }

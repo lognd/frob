@@ -839,7 +839,9 @@ dependencies = [
  "error_set",
  "gob-diagnostics",
  "gob-git",
+ "gob-macros",
  "gob-rules",
+ "inventory",
  "jiff",
  "rusqlite",
  "schemars",
@@ -2023,6 +2025,7 @@ name = "gob-macros"
 version = "0.0.0"
 dependencies = [
  "darling",
+ "frob-ledger",
  "gob-cli",
  "gob-config",
  "gob-directives",

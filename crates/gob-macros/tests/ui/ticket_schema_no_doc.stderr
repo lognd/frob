@@ -1,0 +1,5 @@
+error: field `title`: needs a `///` doc comment
+ --> tests/ui/ticket_schema_no_doc.rs:7:5
+  |
+7 |     title: String,
+  |     ^^^^^

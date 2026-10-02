@@ -13,7 +13,9 @@ publish.workspace = true
 error_set = "0.9"
 gob-diagnostics = { path = "../gob-diagnostics" }
 gob-git = { path = "../gob-git" }
+gob-macros = { path = "../gob-macros" }
 gob-rules = { path = "../gob-rules" }
+inventory = "0.3"
 jiff = "0.2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 schemars = "1"

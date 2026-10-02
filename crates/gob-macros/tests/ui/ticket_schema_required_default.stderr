@@ -1,0 +1,5 @@
+error: field `title`: `required` cannot be combined with `default`
+ --> tests/ui/ticket_schema_required_default.rs:8:5
+  |
+8 |     title: String,
+  |     ^^^^^
