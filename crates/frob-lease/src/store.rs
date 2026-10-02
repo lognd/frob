@@ -1,0 +1,481 @@
+//! The lease directory under the git common dir, guarded by one lock file.
+//!
+//! Layout: `<common_dir>/frob/leases/<ticket ulid>.toml` per lease and
+//! `<common_dir>/frob/leases.lock`. Every operation that reads, decides and
+//! writes (acquire, renew, release, steal, list with pruning) holds the lock
+//! for its whole duration, so two callers can never both pass the overlap
+//! check. The lock is an advisory `flock` on a file shared by all worktrees of
+//! one clone; leases are single-clone by design (decision D26).
+
+use std::collections::BTreeMap;
+use std::fs::{self, File, OpenOptions, TryLockError};
+use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
+
+use frob_ledger::TicketId;
+use frob_ledger::model::Stamp;
+use globset::GlobSet;
+use gob_git::Repo;
+use schemars::JsonSchema;
+use serde::Serialize;
+
+use crate::config::LeaseConfig;
+use crate::error::{LeaseError, SAME_TICKET};
+use crate::model::{Holder, Lease, StealRecord};
+use crate::overlap::{Resolver, glob_set, scopes_overlap};
+
+/// How often a blocked caller retries the lock.
+const LOCK_POLL: Duration = Duration::from_millis(5);
+
+/// The result of [`LeaseStore::acquire`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Acquired {
+    /// The lease now in force.
+    pub lease: Lease,
+    /// True when the same holder already held it with the same scope.
+    pub already: bool,
+}
+
+/// The result of [`LeaseStore::steal`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Stolen {
+    /// The lease after the takeover.
+    pub lease: Lease,
+    /// Who held it before, for the caller to log as an event.
+    pub previous: Holder,
+}
+
+/// A file declared by two or more live leases.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct Contended {
+    /// Repository-relative path.
+    pub file: String,
+    /// The tickets whose leases declare it.
+    pub tickets: Vec<TicketId>,
+}
+
+/// Proof that the lease lock is held; unlocks on drop.
+struct LockGuard(File);
+
+impl Drop for LockGuard {
+    fn drop(&mut self) {
+        if let Err(e) = self.0.unlock() {
+            tracing::warn!(error = %e, "lease lock release failed");
+        }
+    }
+}
+
+/// The lease store of one clone.
+#[derive(Debug)]
+pub struct LeaseStore {
+    dir: PathBuf,
+    lock_path: PathBuf,
+    cfg: LeaseConfig,
+    shared: GlobSet,
+    resolver: Resolver,
+    clock: fn() -> Stamp,
+}
+
+impl LeaseStore {
+    /// The store of `repo`: leases in its common dir, scopes resolved in its work tree.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::BadGlob`] when `[lease] shared_files` holds an invalid glob.
+    pub fn open(repo: &Repo, cfg: LeaseConfig) -> Result<Self, LeaseError> {
+        let root = repo
+            .work_dir()
+            .unwrap_or_else(|| repo.common_dir())
+            .to_path_buf();
+        Self::open_at(repo.common_dir(), root, cfg)
+    }
+
+    /// A store over an explicit common dir and work tree root.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::BadGlob`] when `[lease] shared_files` holds an invalid glob.
+    pub fn open_at(common_dir: &Path, root: PathBuf, cfg: LeaseConfig) -> Result<Self, LeaseError> {
+        let base = common_dir.join("frob");
+        let shared = glob_set(&cfg.shared_files)?;
+        tracing::debug!(dir = %base.display(), ttl_secs = cfg.ttl_secs, "lease store opened");
+        Ok(Self {
+            dir: base.join("leases"),
+            lock_path: base.join("leases.lock"),
+            cfg,
+            shared,
+            resolver: Resolver::new(root),
+            clock: Stamp::now,
+        })
+    }
+
+    /// Replace the clock (tests of TTL expiry).
+    #[must_use]
+    pub fn with_clock(mut self, clock: fn() -> Stamp) -> Self {
+        self.clock = clock;
+        self
+    }
+
+    /// The configuration in force.
+    pub fn config(&self) -> &LeaseConfig {
+        &self.cfg
+    }
+
+    /// The compiled `[lease] shared_files` patterns.
+    pub fn shared(&self) -> &GlobSet {
+        &self.shared
+    }
+
+    /// The resolver over this store's work tree.
+    pub fn resolver(&self) -> &Resolver {
+        &self.resolver
+    }
+
+    fn lease_path(&self, ticket: TicketId) -> PathBuf {
+        self.dir.join(format!("{ticket}.toml"))
+    }
+
+    fn lock(&self) -> Result<LockGuard, LeaseError> {
+        fs::create_dir_all(&self.dir)
+            .map_err(|e| LeaseError::io(format!("creating {}", self.dir.display()), e))?;
+        let file = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(&self.lock_path)
+            .map_err(|e| LeaseError::io(format!("opening {}", self.lock_path.display()), e))?;
+        let start = Instant::now();
+        let limit = Duration::from_millis(self.cfg.lock_timeout_ms);
+        loop {
+            match file.try_lock() {
+                Ok(()) => return Ok(LockGuard(file)),
+                Err(TryLockError::WouldBlock) => {
+                    if start.elapsed() >= limit {
+                        tracing::warn!(path = %self.lock_path.display(), "lease lock timed out");
+                        return Err(LeaseError::LockTimeout {
+                            path: self.lock_path.clone(),
+                            waited_ms: self.cfg.lock_timeout_ms,
+                        });
+                    }
+                    std::thread::sleep(LOCK_POLL);
+                }
+                Err(TryLockError::Error(e)) => {
+                    return Err(LeaseError::io(
+                        format!("locking {}", self.lock_path.display()),
+                        e,
+                    ));
+                }
+            }
+        }
+    }
+
+    /// Every lease file, live or expired, ordered by ticket.
+    fn read_all(&self) -> Result<Vec<Lease>, LeaseError> {
+        let entries = match fs::read_dir(&self.dir) {
+            Ok(e) => e,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(e) => return Err(LeaseError::io(format!("reading {}", self.dir.display()), e)),
+        };
+        let mut out = Vec::new();
+        for entry in entries {
+            let path = entry
+                .map_err(|e| LeaseError::io(format!("reading {}", self.dir.display()), e))?
+                .path();
+            if path.extension().is_some_and(|x| x == "toml") {
+                out.push(read_lease(&path)?);
+            }
+        }
+        out.sort_by_key(|l| l.ticket);
+        Ok(out)
+    }
+
+    /// Live leases, deleting expired ones (requires the lock).
+    fn live_pruned(&self, _lock: &LockGuard, now: Stamp) -> Result<Vec<Lease>, LeaseError> {
+        let mut live = Vec::new();
+        for lease in self.read_all()? {
+            if lease.is_live(now) {
+                live.push(lease);
+            } else {
+                let path = self.lease_path(lease.ticket);
+                tracing::info!(ticket = %lease.ticket, holder = %lease.holder, "lease expired and removed");
+                match fs::remove_file(&path) {
+                    Ok(()) => {}
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(e) => {
+                        return Err(LeaseError::io(format!("removing {}", path.display()), e));
+                    }
+                }
+            }
+        }
+        Ok(live)
+    }
+
+    fn write(&self, _lock: &LockGuard, lease: &Lease) -> Result<(), LeaseError> {
+        let path = self.lease_path(lease.ticket);
+        let text = toml::to_string_pretty(lease).map_err(|e| LeaseError::Format {
+            path: path.clone(),
+            message: e.to_string(),
+        })?;
+        let tmp = path.with_extension("toml.tmp");
+        fs::write(&tmp, text)
+            .map_err(|e| LeaseError::io(format!("writing {}", tmp.display()), e))?;
+        fs::rename(&tmp, &path)
+            .map_err(|e| LeaseError::io(format!("renaming to {}", path.display()), e))
+    }
+
+    /// Take (or re-take) the lease on `ticket` for `holder` over `scope`.
+    ///
+    /// Atomic under the lock file. The same holder asking again renews the
+    /// lease and gets `already: true` when the scope is unchanged. Another
+    /// holder of the ticket, or any live lease on another ticket whose scope
+    /// overlaps (see [`crate::overlap`]), refuses with [`LeaseError::Held`].
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::Held`], [`LeaseError::WipLimit`], [`LeaseError::LockTimeout`],
+    /// [`LeaseError::BadGlob`] and I/O or format failures.
+    pub fn acquire(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        scope: &[String],
+    ) -> Result<Acquired, LeaseError> {
+        let lock = self.lock()?;
+        let now = (self.clock)();
+        let live = self.live_pruned(&lock, now)?;
+        let existing = live.iter().find(|l| l.ticket == ticket);
+        if let Some(e) = existing.filter(|e| &e.holder != holder) {
+            tracing::info!(%ticket, holder = %e.holder, "acquire refused: ticket held");
+            return Err(LeaseError::Held {
+                holder: e.holder.clone(),
+                ticket,
+                since: e.acquired_at,
+                overlap: SAME_TICKET.to_owned(),
+            });
+        }
+        let limit = self.cfg.wip_per_holder;
+        if limit > 0 {
+            let count = live
+                .iter()
+                .filter(|l| l.ticket != ticket && &l.holder == holder)
+                .count();
+            if count >= limit as usize {
+                tracing::info!(%ticket, %holder, count, limit, "acquire refused: wip limit");
+                return Err(LeaseError::WipLimit {
+                    holder: holder.clone(),
+                    count,
+                    limit,
+                });
+            }
+        }
+        for other in live.iter().filter(|l| l.ticket != ticket) {
+            if let Some(overlap) =
+                scopes_overlap(scope, &other.scope, &self.shared, &self.resolver)?
+            {
+                tracing::info!(%ticket, other = %other.ticket, holder = %other.holder, %overlap, "acquire refused: overlap");
+                return Err(LeaseError::Held {
+                    holder: other.holder.clone(),
+                    ticket: other.ticket,
+                    since: other.acquired_at,
+                    overlap,
+                });
+            }
+        }
+        let lease = match existing {
+            Some(e) => Lease {
+                scope: scope.to_vec(),
+                renewed_at: now,
+                ttl_secs: self.cfg.ttl_secs,
+                ..e.clone()
+            },
+            None => Lease {
+                ticket,
+                holder: holder.clone(),
+                scope: scope.to_vec(),
+                acquired_at: now,
+                renewed_at: now,
+                ttl_secs: self.cfg.ttl_secs,
+                history: Vec::new(),
+            },
+        };
+        let already = existing.is_some_and(|e| e.scope == scope);
+        self.write(&lock, &lease)?;
+        tracing::info!(%ticket, %holder, already, scope = ?lease.scope, "lease acquired");
+        Ok(Acquired { lease, already })
+    }
+
+    /// Heartbeat: push the expiry of `holder`'s lease on `ticket` forward.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::NotHeld`] with no lease, [`LeaseError::Held`] for another holder, plus lock and I/O failures.
+    pub fn renew(&self, ticket: TicketId, holder: &Holder) -> Result<Lease, LeaseError> {
+        let lock = self.lock()?;
+        let now = (self.clock)();
+        let mut lease = self.find(ticket)?.ok_or(LeaseError::NotHeld { ticket })?;
+        if &lease.holder != holder {
+            return Err(held_by(&lease, SAME_TICKET));
+        }
+        lease.renewed_at = now;
+        lease.ttl_secs = self.cfg.ttl_secs;
+        self.write(&lock, &lease)?;
+        tracing::info!(%ticket, %holder, "lease renewed");
+        Ok(lease)
+    }
+
+    /// Release the lease on `ticket`; `None` when there was none.
+    ///
+    /// With `as_actor`, a live lease held by a different actor is refused
+    /// ([`LeaseError::Held`]); an expired one is removed regardless.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::Held`], lock and I/O failures.
+    pub fn release(
+        &self,
+        ticket: TicketId,
+        as_actor: Option<&str>,
+    ) -> Result<Option<Lease>, LeaseError> {
+        let _lock = self.lock()?;
+        let now = (self.clock)();
+        let Some(lease) = self.find(ticket)? else {
+            tracing::debug!(%ticket, "release: no lease");
+            return Ok(None);
+        };
+        if let Some(actor) = as_actor
+            && lease.is_live(now)
+            && lease.holder.actor != actor
+        {
+            return Err(held_by(&lease, SAME_TICKET));
+        }
+        let path = self.lease_path(ticket);
+        fs::remove_file(&path)
+            .map_err(|e| LeaseError::io(format!("removing {}", path.display()), e))?;
+        tracing::info!(%ticket, holder = %lease.holder, "lease released");
+        Ok(Some(lease))
+    }
+
+    /// Take over the lease on `ticket` for `by`, recording `reason` in its history.
+    ///
+    /// The scope stays as the previous holder declared it. The caller logs the
+    /// returned previous holder as a ledger event.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::NotHeld`] when the ticket has no lease (acquire instead), lock and I/O failures.
+    pub fn steal(&self, ticket: TicketId, by: &Holder, reason: &str) -> Result<Stolen, LeaseError> {
+        let lock = self.lock()?;
+        let now = (self.clock)();
+        let mut lease = self.find(ticket)?.ok_or(LeaseError::NotHeld { ticket })?;
+        let previous = lease.holder.clone();
+        if &previous != by {
+            lease.history.push(StealRecord {
+                at: now,
+                from: previous.clone(),
+                to: by.clone(),
+                reason: reason.to_owned(),
+            });
+            lease.holder = by.clone();
+            lease.acquired_at = now;
+        }
+        lease.renewed_at = now;
+        lease.ttl_secs = self.cfg.ttl_secs;
+        self.write(&lock, &lease)?;
+        tracing::info!(%ticket, from = %previous, to = %by, reason, "lease stolen");
+        Ok(Stolen { lease, previous })
+    }
+
+    /// Live leases ordered by ticket, removing expired ones on the way.
+    ///
+    /// # Errors
+    ///
+    /// Lock, I/O and format failures.
+    pub fn list(&self) -> Result<Vec<Lease>, LeaseError> {
+        let lock = self.lock()?;
+        let live = self.live_pruned(&lock, (self.clock)())?;
+        tracing::debug!(count = live.len(), "leases listed");
+        Ok(live)
+    }
+
+    /// Live leases without taking the lock or deleting anything (read-only snapshot).
+    ///
+    /// # Errors
+    ///
+    /// I/O and format failures.
+    pub fn live_snapshot(&self) -> Result<Vec<Lease>, LeaseError> {
+        let now = (self.clock)();
+        Ok(self
+            .read_all()?
+            .into_iter()
+            .filter(|l| l.is_live(now))
+            .collect())
+    }
+
+    /// The live lease on `ticket`, if any (read-only).
+    ///
+    /// # Errors
+    ///
+    /// I/O and format failures.
+    pub fn live_lease(&self, ticket: TicketId) -> Result<Option<Lease>, LeaseError> {
+        let now = (self.clock)();
+        Ok(self.find(ticket)?.filter(|l| l.is_live(now)))
+    }
+
+    fn find(&self, ticket: TicketId) -> Result<Option<Lease>, LeaseError> {
+        let path = self.lease_path(ticket);
+        match path.try_exists() {
+            Ok(true) => read_lease(&path).map(Some),
+            Ok(false) => Ok(None),
+            Err(e) => Err(LeaseError::io(format!("probing {}", path.display()), e)),
+        }
+    }
+
+    /// Files declared by two or more live leases, most contended first.
+    ///
+    /// Shared files are included: they are exempt from refusals, not from the report.
+    ///
+    /// # Errors
+    ///
+    /// Lock, I/O, glob and walk failures.
+    pub fn contention(&self) -> Result<Vec<Contended>, LeaseError> {
+        let live = self.list()?;
+        let none = GlobSet::empty();
+        let mut by_file: BTreeMap<String, Vec<TicketId>> = BTreeMap::new();
+        for lease in &live {
+            for file in self.resolver.resolve(&lease.scope, &none)? {
+                by_file.entry(file).or_default().push(lease.ticket);
+            }
+        }
+        let mut out: Vec<Contended> = by_file
+            .into_iter()
+            .filter(|(_, t)| t.len() > 1)
+            .map(|(file, tickets)| Contended { file, tickets })
+            .collect();
+        out.sort_by(|a, b| {
+            b.tickets
+                .len()
+                .cmp(&a.tickets.len())
+                .then(a.file.cmp(&b.file))
+        });
+        tracing::debug!(files = out.len(), "contention computed");
+        Ok(out)
+    }
+}
+
+fn held_by(lease: &Lease, overlap: &str) -> LeaseError {
+    LeaseError::Held {
+        holder: lease.holder.clone(),
+        ticket: lease.ticket,
+        since: lease.acquired_at,
+        overlap: overlap.to_owned(),
+    }
+}
+
+fn read_lease(path: &Path) -> Result<Lease, LeaseError> {
+    let text = fs::read_to_string(path)
+        .map_err(|e| LeaseError::io(format!("reading {}", path.display()), e))?;
+    toml::from_str(&text).map_err(|e| LeaseError::Format {
+        path: path.to_path_buf(),
+        message: e.to_string(),
+    })
+}

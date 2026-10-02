@@ -786,6 +786,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "frob-lease"
+version = "0.0.0"
+dependencies = [
+ "frob-ledger",
+ "globset",
+ "gob-cli",
+ "gob-config",
+ "gob-diagnostics",
+ "gob-git",
+ "gob-rules",
+ "gob-walk",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "frob-ledger"
 version = "0.0.0"
 dependencies = [
@@ -804,6 +825,26 @@ dependencies = [
  "toml",
  "tracing",
  "ulid",
+]
+
+[[package]]
+name = "frob-worktree"
+version = "0.0.0"
+dependencies = [
+ "frob-lease",
+ "frob-ledger",
+ "gob-cli",
+ "gob-config",
+ "gob-diagnostics",
+ "gob-exec",
+ "gob-git",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
 ]
 
 [[package]]

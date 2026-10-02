@@ -1,0 +1,55 @@
+//! Scope leases: who may write which files (tickets.md section 6, decision D26).
+//!
+//! A lease is `<common_dir>/frob/leases/<ticket ulid>.toml` holding the ticket,
+//! its [`Holder`] (actor plus worktree path), the scope globs, timestamps and
+//! TTL, and the history of takeovers. Every read-decide-write sequence runs
+//! under one lock file (`<common_dir>/frob/leases.lock`, see [`store`]), so two
+//! concurrent `work` calls on overlapping tickets produce exactly one lease.
+//! Overlap is glob-text intersection OR resolved-file-set intersection
+//! ([`overlap`]); files in `[lease] shared_files` are exempt. Leases are
+//! single-clone: other clones see only the ledger CAS and rule [`Scope001`].
+//!
+//! Entry points: [`LeaseStore`] (acquire, renew, release, steal, list,
+//! contention), [`LeaseGuard`] (the [`LeaseCheck`](frob_ledger::guards::LeaseCheck)
+//! for `ticket doable`), [`scope001`], and [`register`] for the `lease list` and
+//! `ticket contention` verbs.
+
+pub mod config;
+pub mod error;
+pub mod guard;
+pub mod model;
+pub mod overlap;
+pub mod rule;
+pub mod store;
+pub mod verbs;
+
+use std::path::{Path, PathBuf};
+
+pub use config::LeaseConfig;
+pub use error::LeaseError;
+pub use guard::LeaseGuard;
+pub use model::{Holder, Lease, StealRecord};
+pub use rule::{Scope001, scope001};
+pub use store::{Acquired, Contended, LeaseStore, Stolen};
+
+/// Open the lease store of the repository containing `cwd`, with `[lease]` from its `frob.toml`.
+///
+/// Returns the store and the work tree root.
+///
+/// # Errors
+///
+/// [`LeaseError::Repo`] when `cwd` is not inside a git work tree or the config is invalid.
+pub fn open_store(cwd: &Path) -> Result<(LeaseStore, PathBuf), LeaseError> {
+    let repo = gob_git::Repo::discover(cwd).map_err(|e| LeaseError::Repo(e.to_string()))?;
+    let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
+        LeaseError::Repo(format!("{} is not inside a git work tree", cwd.display()))
+    })?;
+    let cfg = LeaseConfig::load(&root).map_err(|e| LeaseError::Repo(e.to_string()))?;
+    Ok((LeaseStore::open(&repo, cfg)?, root))
+}
+
+/// Register `lease list` and `ticket contention` on a product root.
+pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
+    cli.register::<verbs::LeaseList>()
+        .register::<verbs::Contention>()
+}

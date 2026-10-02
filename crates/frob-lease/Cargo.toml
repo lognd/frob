@@ -1,0 +1,32 @@
+[package]
+name = "frob-lease"
+version = "0.0.0"
+description = "Locked scope leases for frob tickets: overlap analysis, TTL, steal, contention and SCOPE001."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+frob-ledger = { path = "../frob-ledger" }
+globset = "0.4"
+gob-cli = { path = "../gob-cli" }
+gob-config = { path = "../gob-config" }
+gob-diagnostics = { path = "../gob-diagnostics" }
+gob-git = { path = "../gob-git" }
+gob-rules = { path = "../gob-rules" }
+gob-walk = { path = "../gob-walk" }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+toml = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

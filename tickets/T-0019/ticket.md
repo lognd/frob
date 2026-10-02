@@ -1,7 +1,7 @@
 ---
 id: T-0019
 title: 'frob-lease + frob-worktree: locked scope leases and frob work'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0019
+branch: t-0019
 scope:
 - crates/frob-lease/**
 - crates/frob-worktree/**
@@ -40,14 +40,18 @@ scope_changes:
   reason: verb wiring moves to T-0030 so the three crates run in parallel
   actor: logan
   at: '2026-10-02'
+evidence:
+- cmd:cargo nextest run --profile ci -p frob-lease -p frob-worktree exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given two tickets with overlapping globs and no files yet, when both run work
     concurrently, then exactly one succeeds and the other gets exit 3 E-LEASE-HELD
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-lease -p frob-worktree exit=0 sha256=e3b0c44298fc
 - text: 'Given a held lease, when the same holder runs work again, then it returns
     already: true with the same worktree path'
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p frob-lease -p frob-worktree exit=0 sha256=e3b0c44298fc
 threat: null
 component: frob-lease
 anchor: false
