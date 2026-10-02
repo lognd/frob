@@ -1,5 +1,5 @@
 ---
-id: T-draft-7e228860
+id: T-0004
 title: 'gob-text: spans, line index, source text'
 state: queued
 kind: feature
