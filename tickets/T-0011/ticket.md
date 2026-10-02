@@ -1,7 +1,7 @@
 ---
 id: T-0011
 title: 'gob-walk + gob-cache: ignore-aware walk, SQLite artifact and findings cache'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -25,8 +25,8 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0011
+branch: t-0011
 scope:
 - crates/gob-walk/**
 - crates/gob-cache/**
@@ -34,14 +34,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:cargo nextest run --profile ci -p gob-walk -p gob-cache exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 acceptance:
 - text: Given a repo with .gitignore excluding target/, when walked, then no path
     under target/ appears and the order is stable across runs
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-walk -p gob-cache exit=0 sha256=e3b0c44298fc
 - text: Given a findings entry keyed by (digest, rule, version, side-input), when
     any key component changes, then the lookup misses
-  evidence: []
+  evidence:
+  - cmd:cargo nextest run --profile ci -p gob-walk -p gob-cache exit=0 sha256=e3b0c44298fc
 threat: null
 component: gob-cache
 anchor: false
