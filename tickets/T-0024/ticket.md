@@ -1,7 +1,7 @@
 ---
 id: T-0024
 title: 'frob-land: synchronous land with preconditions, dry-run, close on land'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-10-02'
@@ -26,15 +26,23 @@ tokens_cache_read: null
 usage: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-worktree: null
-branch: null
+worktree: /home/logan/projects/frob-v2-wt/t-0024
+branch: t-0024
 scope:
 - crates/frob-land/**
 - crates/frob/**
+- docs/reference/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/reference/**
+  reason: cargo dev gen all regenerates docs/reference/cli/frob.md for the new land
+    verb
+  actor: logan
+  at: '2026-10-02'
 designated_repro_test: null
 acceptance:
 - text: Given a worked ticket with green check and evidence, when frob land runs,
