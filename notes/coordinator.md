@@ -115,6 +115,18 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 
 ## Status log (newest first)
 
+- 2026-10-03 (evening): landed T-0028 (TicketSchema derive on a mirror
+  struct), T-0029 (design reconciled, D38-D55), T-0023 (frob-check;
+  warm fresh-process run 0.66 s on this repo). 27 done; T-0032/T-0033
+  are dropped v1 sweep drafts. `frob check` on this repo today: DSL001
+  for v1 frob:waive comments in notes, DSL002 for T-#### ids in config
+  comments, TEST001 symref forms in frob-ack tests, DOC002 corpus links,
+  198 COV001 warnings: the T-0025 cleanup list. Two more Claude Code
+  kills happened (one mid-agent); agents resume from transcripts with
+  SendMessage. Scope changes must run from the lease-holding worktree.
+  The gob-dev rule pages now carry a v1 DOC004 waiver above embedded
+  examples. T-0024 dispatched; T-0025 is the last M1 ticket.
+
 - 2026-10-03 (later): T-0031 and T-0022 landed (25/31 done, 320 tests).
   v1's post-land sweep filed a draft about its own Python-era gates
   over Rust files; dropped with reason. Disk filled by per-worktree
