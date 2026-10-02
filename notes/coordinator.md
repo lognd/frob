@@ -95,11 +95,15 @@ for history.
 
 ### Resource rules (learned 2026-10-03 after a disk-full event)
 
-- Every worktree built its own target/ (15-19 GB each); 24 worktrees
-  filled the disk. Implementers now build with
-  `CARGO_TARGET_DIR=/home/logan/projects/frob-v2-wt/.target` (shared;
-  cargo's lock serializes builds, which also caps memory). Delete a
-  worktree's own target/ if one appears.
+- Every worktree builds its own target/ (15-19 GB each). The disk event
+  came from 24 v1 worktrees that were never removed; `frob land` now
+  removes each worktree with its target/. A SHARED target dir was tried
+  and retired (2026-10-04): diverging worktrees reuse each other's
+  workspace-crate artifacts (phantom compile errors), and the landing
+  binary got overwritten by agent builds. The landing binary is
+  F=/home/logan/projects/frob-v2/target/debug/frob, built only in the
+  primary from experimental. /home/logan/projects/frob-v2-wt/.cargo/
+  config.toml caps jobs at 4 and sets no target-dir.
 - At most two implementers building at once.
 - Two Claude Code crashes (one Bun bus error) happened while long
   background shells ran; keep shell steps short and in the foreground.
