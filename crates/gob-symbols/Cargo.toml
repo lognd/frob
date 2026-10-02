@@ -14,6 +14,7 @@ workspace = true
 
 [dependencies]
 gob-cache = { path = "../gob-cache" }
+gob-ir = { path = "../gob-ir" }
 gob-languages = { path = "../gob-languages" }
 gob-text = { path = "../gob-text" }
 gob-walk = { path = "../gob-walk" }
@@ -28,6 +29,7 @@ tree-sitter = "=0.27.0"
 
 [dev-dependencies]
 criterion = { version = "0.5", default-features = false }
+insta = "1"
 tempfile = "3"
 
 [[bench]]

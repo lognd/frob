@@ -1,10 +1,13 @@
 //! Data model: kinds, visibility, facet digests, records and per-file output.
 
+// frob:ticket 01M3Z713F6VY15YSMS15033RN1
+
 use std::fmt;
 
 use gob_text::{TextRange, TextSize};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
+use crate::adapter::{Fidelity, ParseStatus};
 use crate::symref::Symref;
 
 /// A blake3 digest of a normalized facet.
@@ -88,24 +91,35 @@ pub enum Visibility {
     Private,
 }
 
-/// The three digest facets of a symbol.
+/// The facet digests of a symbol (digest scheme 2, universal-model.md 7.1).
+///
+/// A facet the unit lacks digests the empty string; a facet whose stream holds
+/// a parse hole digests the partial print and is listed in
+/// [`UnitExtras::unknown`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Digests {
-    /// Signature text with the body removed, whitespace collapsed.
+    /// Canonical signature stream, outer attributes included (G7).
     pub sig: FacetDigest,
-    /// Body text, whitespace collapsed.
+    /// Canonical body stream, trivia excluded (G8).
     pub body: FacetDigest,
-    /// Doc comment text.
+    /// Doc comment payload.
     pub doc: FacetDigest,
+    /// The attribute and decorator set (G7).
+    pub attr: FacetDigest,
+    /// Name-erased, language-neutral signature rendering.
+    pub contract: FacetDigest,
 }
 
 impl Digests {
-    /// Digests the three already-normalized facet texts.
+    /// Digests three already-normalized facet texts; `attr` and `contract` are empty.
     pub fn of_facets(sig: &str, body: &str, doc: &str) -> Self {
+        let empty = FacetDigest::of(b"");
         Self {
             sig: FacetDigest::of(sig.as_bytes()),
             body: FacetDigest::of(body.as_bytes()),
             doc: FacetDigest::of(doc.as_bytes()),
+            attr: empty,
+            contract: empty,
         }
     }
 }
@@ -169,6 +183,18 @@ impl ImportEdge {
     }
 }
 
+/// What the file's own scope graph says about a call's callee name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum LocalBinding {
+    /// Not bound locally; resolve against the crate.
+    #[default]
+    None,
+    /// A nested item (`fn` inside a body): static, resolved, no crate edge.
+    Item,
+    /// A parameter, `let` binding or closure: a dynamic call, Unknown target.
+    Value,
+}
+
 /// A call expression found in a function body, before resolution.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CallSite {
@@ -180,6 +206,65 @@ pub struct CallSite {
     pub qualifier: Option<String>,
     /// True for `x.name()` method-call syntax.
     pub method: bool,
+    /// The file-local binding of the callee name, from the scope graph.
+    pub local: LocalBinding,
+    /// True when the call sits in a macro argument (status capped at May).
+    pub in_macro: bool,
+}
+
+/// What a non-call reference site is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum RefKind {
+    /// A name used as a value (a function passed as an argument, G4).
+    Value,
+    /// A markdown link (`apply(kind=link)`); `name` is the raw destination.
+    Link,
+}
+
+/// A reference that is not a call (references are a superset of calls).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RefSite {
+    /// The symbol containing the reference.
+    pub from: Symref,
+    /// The simple name (`Value`) or the raw link destination (`Link`).
+    pub name: String,
+    /// Last path segment before the name, if the reference was a path.
+    pub qualifier: Option<String>,
+    /// What kind of reference this is.
+    pub kind: RefKind,
+}
+
+/// A `use` binding, kept with its local name (aliases, globs, `pub use`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UseBinding {
+    /// Repo-relative path of the importing file.
+    pub from_file: String,
+    /// The name the import binds locally (`c` in `use a::b as c`); `*` for globs.
+    pub local: String,
+    /// The normalized target path (`crate::a::b`, or an external path).
+    pub target: String,
+    /// True for `pub use` (a re-export, G10).
+    pub public: bool,
+    /// The innermost enclosing symbol, `None` at file level.
+    pub container: Option<Symref>,
+}
+
+impl UseBinding {
+    /// True when the target is inside the importing crate.
+    pub fn is_internal(&self) -> bool {
+        self.target == "crate" || self.target.starts_with("crate::")
+    }
+}
+
+/// Facts about one symbol that do not fit [`SymbolRecord`] (no new fields there).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnitExtras {
+    /// The symbol these facts belong to.
+    pub symref: Symref,
+    /// Facets whose stream holds a parse hole (no digest can be claimed).
+    pub unknown: Vec<String>,
+    /// Markdown: sig, own body and all nested sections (G9); `None` elsewhere.
+    pub subtree: Option<FacetDigest>,
 }
 
 /// The per-file extraction result (the cached payload).
@@ -199,4 +284,16 @@ pub struct FileSymbols {
     pub calls: Vec<CallSite>,
     /// True when no tree could be produced (never cached).
     pub degraded: bool,
+    /// The adapter language tag; empty for an adapter-less file.
+    pub language: String,
+    /// The fidelity this file was folded at (F0 for adapter-less files).
+    pub fidelity: Fidelity,
+    /// How completely the file parsed (G11).
+    pub parse_status: ParseStatus,
+    /// Non-call references in source order (G4).
+    pub refs: Vec<RefSite>,
+    /// `use` bindings with local names, aliases and `pub` flags (G10).
+    pub uses: Vec<UseBinding>,
+    /// Extra per-symbol facts, one per symbol.
+    pub extras: Vec<UnitExtras>,
 }

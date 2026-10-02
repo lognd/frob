@@ -1,86 +1,1056 @@
-//! Rust extraction: symbols, imports and call sites from a tree-sitter tree.
+//! The Rust adapter (fidelity F3): tree-sitter tree to a U term plus scope graph.
+//!
+//! # Mapping (rho)
+//!
+//! - The file is a `unit(file, impl)`; items are `unit(kind, role)` children with
+//!   role `impl` (a definition) or `sig` (a bodiless declaration). Impl members are
+//!   children of the impl unit (`Type[Trait].member`); enum variants children of
+//!   the enum. `mod`, `trait`, `struct`, `enum`, `const`, `static`, `type` and
+//!   `macro_rules!` are units too.
+//! - Every unit has children in four groups: `attr("doc")` (Doc facet), other
+//!   `attr` nodes (Attr facet), a `group` marked `ir.facet = "sig"` holding the
+//!   signature tokens and a copy of the outer attributes (G7), and the body.
+//! - Parameters are the binders of the function unit; `let`, `for`, `if let`,
+//!   `while let` and match arms are `bind` nodes whose scope is the code they
+//!   cover; closures are `anon(closure)`; nested `fn` items are `anon(fn)`.
+//! - Identifiers in expression position are `ref`s; calls are `apply(call)`
+//!   (`apply(method)` for method calls, `apply(construct)` for tuple
+//!   constructors); macro invocations are `phase(macro)` over their tokens;
+//!   `unsafe` blocks are `region(unsafe)`; `use` is the adapter operator `rust.use`;
+//!   syntax errors are `hole(parse-error)` nodes.
+//! - Everything else maps to the adapter operator `rust.<tree-sitter kind>` over
+//!   its children, with leaves as `lit`s: a token change always changes the
+//!   stream, reformatting and comments never do (G8).
+//! - Subtrees deeper than [`RustAdapter::MAX_DEPTH`] collapse into one `opaque(depth-limit)`
+//!   holding their tokens, because the gob-ir printer recurses over term depth.
 
-use std::collections::HashMap;
-use std::fmt::Write as _;
+// frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
-use gob_languages::ParsedTree;
+use std::collections::HashSet;
+
+use gob_ir::{
+    GroupOrder, NodeId, NodeSpec, Operator, Resolution, ScopeGraph, Sort, TermError, reserved,
+};
+use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
 use tree_sitter::Node;
 
+use crate::adapter::{
+    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
+    Precision,
+};
+use crate::fold::{Cx, base_file, failed_file, file_root_spec};
 use crate::model::{
-    CallSite, Digests, FileSymbols, ImportEdge, SymbolKind, SymbolRecord, Visibility, collapse_ws,
+    CallSite, ImportEdge, LocalBinding, RefKind, RefSite, UseBinding, Visibility, collapse_ws,
 };
 use crate::paths::crate_and_module;
+use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
+use crate::view::{self, ATTR_IMPLEMENTS, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming};
 
-/// Where the item being visited lives.
-#[derive(Clone)]
-struct Scope {
-    qual: Vec<String>,
-    parent: Option<usize>,
-    /// Inside an impl or trait: functions are methods.
-    member: bool,
-    /// Visibility inherited by members that carry no modifier (trait items,
-    /// enum variants) or `None` to read each item's own modifier.
-    inherit: Option<Visibility>,
-    implements: Option<String>,
-    /// True inside `impl` blocks (members without a modifier are not private
-    /// in the trait-impl case; the impl block visibility gates them later).
-    trait_impl: bool,
+/// Deepest term nesting before a subtree collapses into one opaque node.
+const MAX_DEPTH: usize = 160;
+
+type R<T> = Result<T, TermError>;
+
+/// The Rust adapter.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct RustAdapter;
+
+impl RustAdapter {
+    /// Deepest term nesting before a subtree collapses into one opaque node.
+    pub const MAX_DEPTH: usize = MAX_DEPTH;
 }
 
-struct Extractor<'a> {
-    text: &'a str,
-    path: &'a str,
-    module: Vec<String>,
-    out: FileSymbols,
-    parents: Vec<Option<usize>>,
-    raw_calls: Vec<(usize, CallSite)>,
-}
-
-/// Extracts everything from a parsed Rust file.
-pub fn extract(tree: &ParsedTree, path: &str, out: FileSymbols) -> FileSymbols {
-    let (_, module) = crate_and_module(path);
-    let mut ex = Extractor {
-        text: &tree.text,
-        path,
-        module,
-        out,
-        parents: Vec::new(),
-        raw_calls: Vec::new(),
-    };
-    let scope = Scope {
-        qual: Vec::new(),
-        parent: None,
-        member: false,
-        inherit: None,
-        implements: None,
-        trait_impl: false,
-    };
-    ex.items(tree.root(), &scope);
-    ex.finish()
-}
-
-fn node_text<'t>(text: &'t str, n: Node<'_>) -> &'t str {
-    &text[n.start_byte()..n.end_byte()]
-}
-
-impl Extractor<'_> {
-    fn t(&self, n: Node<'_>) -> &str {
-        node_text(self.text, n)
+impl Adapter for RustAdapter {
+    fn language(&self) -> &'static str {
+        "rust"
     }
 
-    fn items(&mut self, container: Node<'_>, scope: &Scope) {
-        let mut cursor = container.walk();
-        let children: Vec<Node<'_>> = container.named_children(&mut cursor).collect();
-        for node in children {
-            self.item(node, scope);
+    fn identity(&self) -> String {
+        format!(
+            "gob-symbols/v{EXTRACTOR_VERSION}/{}",
+            grammar_identity(Language::Rust)
+        )
+    }
+
+    fn fidelity(&self) -> Fidelity {
+        Fidelity::F3
+    }
+
+    fn capabilities(&self) -> CapabilityDecl {
+        CapabilityDecl::default()
+            .with(Capability::ResolveRef, Precision::LexicalImports)
+            .with(Capability::ApplyTargets, Precision::ByNameInCrate)
+            .with(Capability::Visibility, Precision::Keyword)
+            .with(Capability::Imports, Precision::Syntactic)
+            .with(Capability::TestItems, Precision::Syntactic)
+            .with(Capability::Order, Precision::Declared)
+    }
+
+    fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {
+        match parse(Language::Rust, text, limits) {
+            ParseResult::Parsed(t) => ConcreteTree::Parsed(t),
+            ParseResult::Unresolved(u) => ConcreteTree::Unparsed(u.reason),
         }
     }
 
+    fn fold(&self, tree: &ConcreteTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+        match tree {
+            ConcreteTree::Parsed(t) => fold_tree(&t.text, t.root(), input),
+            ConcreteTree::Unparsed(reason) => failed_file(input, "rust", *reason),
+            ConcreteTree::Leaf => failed_file(
+                input,
+                "rust",
+                gob_languages::UnresolvedReason::GrammarUnavailable,
+            ),
+        }
+    }
+}
+
+/// Where the item being visited lives.
+#[derive(Clone, Default)]
+struct Scope {
+    /// Inside an impl or trait: functions are methods.
+    member: bool,
+    /// Visibility inherited by members without a modifier (trait items, variants).
+    inherit: Option<Visibility>,
+    /// The trait text of the enclosing `impl Trait for Type`.
+    implements: Option<String>,
+    /// Inside a trait impl: members without a modifier are public.
+    trait_impl: bool,
+}
+
+/// Leading doc comments, attributes and plain comments waiting for their item.
+#[derive(Default)]
+struct Lead<'t> {
+    docs: Vec<Node<'t>>,
+    attrs: Vec<Node<'t>>,
+    comments: Vec<Node<'t>>,
+}
+
+enum SiteKind {
+    Call { method: bool, in_macro: bool },
+    Value,
+}
+
+struct Site {
+    kind: SiteKind,
+    caller: usize,
+    name: String,
+    qualifier: Option<String>,
+    node: Option<NodeId>,
+    item_local: bool,
+}
+
+struct PendingUse {
+    container: Option<usize>,
+    local: String,
+    target: String,
+    public: bool,
+}
+
+/// What a call's function expression is, read from the syntax alone.
+struct CallTarget {
+    name: String,
+    qualifier: Option<String>,
+    method: bool,
+    construct: bool,
+    dynamic: bool,
+}
+
+struct Fold<'a> {
+    cx: Cx<'a>,
+    path: &'a str,
+    module: Vec<String>,
+    /// Identifiers are references (expression context) rather than tokens.
+    expr: bool,
+    /// Depth of enclosing function bodies (uses inside are not file imports).
+    fn_depth: usize,
+    ord_nodes: Vec<Option<NodeId>>,
+    callers: Vec<usize>,
+    unit_stack: Vec<usize>,
+    locals: Vec<String>,
+    sites: Vec<Site>,
+    uses: Vec<PendingUse>,
+}
+
+fn text_of<'t>(text: &'t str, n: Node<'_>) -> &'t str {
+    &text[n.start_byte()..n.end_byte()]
+}
+
+fn children(n: Node<'_>) -> Vec<Node<'_>> {
+    let mut c = n.walk();
+    n.children(&mut c).collect()
+}
+
+fn is_comment(n: Node<'_>) -> bool {
+    matches!(n.kind(), "line_comment" | "block_comment")
+}
+
+fn upper_first(s: &str) -> bool {
+    s.chars().next().is_some_and(char::is_uppercase)
+}
+
+/// Removes `<...>` generic arguments (nesting-aware).
+fn strip_generics(s: &str) -> String {
+    let mut depth = 0u32;
+    let mut out = String::new();
+    for ch in s.chars() {
+        match ch {
+            '<' => depth += 1,
+            '>' => depth = depth.saturating_sub(1),
+            _ if depth == 0 => out.push(ch),
+            _ => {}
+        }
+    }
+    out
+}
+
+fn split_path(s: &str) -> Vec<String> {
+    strip_generics(s)
+        .split("::")
+        .map(|p| p.split_whitespace().collect::<String>())
+        .filter(|p| !p.is_empty())
+        .collect()
+}
+
+fn vis_text(v: Visibility) -> &'static str {
+    match v {
+        Visibility::Public => "public",
+        Visibility::Crate => "crate",
+        Visibility::Private => "private",
+    }
+}
+
+/// All leaf tokens of `n` in source order, comments skipped.
+fn leaves<'t>(n: Node<'t>) -> Vec<Node<'t>> {
+    let mut out = Vec::new();
+    let mut stack = vec![n];
+    while let Some(x) = stack.pop() {
+        if is_comment(x) {
+            continue;
+        }
+        if x.child_count() == 0 {
+            out.push(x);
+        } else {
+            let mut c = x.walk();
+            let kids: Vec<Node<'t>> = x.children(&mut c).collect();
+            stack.extend(kids.into_iter().rev());
+        }
+    }
+    out
+}
+
+fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+    let (_, module) = crate_and_module(input.path);
+    let mut f = Fold {
+        cx: Cx::new(input.path, "rust", text),
+        path: input.path,
+        module,
+        expr: false,
+        fn_depth: 0,
+        ord_nodes: Vec::new(),
+        callers: Vec::new(),
+        unit_stack: Vec::new(),
+        locals: Vec::new(),
+        sites: Vec::new(),
+        uses: Vec::new(),
+    };
+    let kids = f.container(root, &Scope::default(), true)?;
+    let root_id =
+        f.cx.add(file_root_spec(&f.cx, input.size as usize), &kids)?;
+    let Fold {
+        cx,
+        ord_nodes,
+        sites,
+        uses,
+        ..
+    } = f;
+    let term = cx.b.finish(root_id)?;
+    let scopes = ScopeGraph::from_term(&term);
+    let v = view::build(&term, input.path, Naming::Rust);
+    let mut file = base_file(input, "rust");
+    file.fidelity = Fidelity::F3;
+    file.parse_status = view::parse_status_of(&term);
+    let symref_of = |ord: usize| -> Option<Symref> {
+        ord_nodes
+            .get(ord)
+            .copied()
+            .flatten()
+            .and_then(|n| v.by_node.get(&n).cloned())
+    };
+    for u in uses {
+        file.imports.push(ImportEdge {
+            from_file: input.path.to_owned(),
+            target: u.target.clone(),
+        });
+        file.uses.push(UseBinding {
+            from_file: input.path.to_owned(),
+            local: u.local,
+            target: u.target,
+            public: u.public,
+            container: u.container.and_then(symref_of),
+        });
+    }
+    for s in sites {
+        let Some(caller) = symref_of(s.caller) else {
+            continue;
+        };
+        match s.kind {
+            SiteKind::Call { method, in_macro } => {
+                let local = local_binding(&scopes, s.node, s.item_local);
+                file.calls.push(CallSite {
+                    caller,
+                    callee: s.name,
+                    qualifier: s.qualifier,
+                    method,
+                    local,
+                    in_macro,
+                });
+            }
+            SiteKind::Value => file.refs.push(RefSite {
+                from: caller,
+                name: s.name,
+                qualifier: s.qualifier,
+                kind: RefKind::Value,
+            }),
+        }
+    }
+    file.symbols = v.symbols;
+    file.extras = v.extras;
+    tracing::debug!(
+        path = input.path,
+        symbols = file.symbols.len(),
+        calls = file.calls.len(),
+        refs = file.refs.len(),
+        status = ?file.parse_status,
+        "rust file folded"
+    );
+    Ok(Folded { term, scopes, file })
+}
+
+/// What the file's scope graph says about the callee reference at `node`.
+fn local_binding(scopes: &ScopeGraph, node: Option<NodeId>, item_local: bool) -> LocalBinding {
+    let Some(r) = node.and_then(|n| scopes.ref_at(n)) else {
+        return LocalBinding::None;
+    };
+    let is_binder = |d| scopes.decl(d).kind == gob_ir::DeclKind::Binder;
+    let bound = match scopes.resolve(r) {
+        Resolution::Must(d) => is_binder(d),
+        Resolution::May(ds) => ds.iter().all(|&d| is_binder(d)),
+        Resolution::Unknown => false,
+    };
+    match (bound, item_local) {
+        (false, _) => LocalBinding::None,
+        (true, true) => LocalBinding::Item,
+        (true, false) => LocalBinding::Value,
+    }
+}
+
+/// Kinds whose identifiers are tokens, not references.
+fn token_kind(kind: &str) -> bool {
+    (kind.contains("type") && kind != "type_cast_expression")
+        || matches!(
+            kind,
+            "where_clause"
+                | "trait_bounds"
+                | "attribute_item"
+                | "inner_attribute_item"
+                | "attribute"
+                | "lifetime"
+                | "visibility_modifier"
+                | "token_tree"
+                | "label"
+        )
+}
+
+impl<'a> Fold<'a> {
+    fn t(&self, n: Node<'_>) -> &'a str {
+        text_of(self.cx.text, n)
+    }
+
+    fn alloc(&mut self) -> usize {
+        self.ord_nodes.push(None);
+        self.ord_nodes.len() - 1
+    }
+
+    fn with_expr<T>(&mut self, on: bool, f: impl FnOnce(&mut Self) -> T) -> T {
+        let saved = std::mem::replace(&mut self.expr, on);
+        let out = f(self);
+        self.expr = saved;
+        out
+    }
+
+    // ---- generic translation ----
+
+    fn hole(&mut self, n: Node<'_>) -> R<NodeId> {
+        let kind = if n.is_missing() {
+            HOLE_MISSING
+        } else {
+            HOLE_PARSE_ERROR
+        };
+        tracing::debug!(path = self.path, kind, at = n.start_byte(), "rust hole");
+        self.cx.op(Operator::hole(kind), n, &[])
+    }
+
+    fn comment(&mut self, n: Node<'_>) -> R<NodeId> {
+        let text = self.t(n).to_owned();
+        self.cx.op(Operator::comment(&text), n, &[])
+    }
+
+    fn collapse(&mut self, nodes: &[Node<'_>]) -> R<NodeId> {
+        let mut toks: Vec<&str> = Vec::new();
+        for n in nodes {
+            for l in leaves(*n) {
+                toks.push(self.t(l));
+            }
+            self.scan_calls(*n);
+        }
+        let payload = toks.join(" ");
+        let (start, end) = nodes
+            .first()
+            .zip(nodes.last())
+            .map_or((0, 0), |(a, b)| (a.start_byte(), b.end_byte()));
+        tracing::debug!(
+            path = self.path,
+            start,
+            end,
+            "depth limit: subtree collapsed"
+        );
+        let spec = NodeSpec::new(
+            Operator::opaque("depth-limit", payload.as_bytes()),
+            self.cx.loc(start, end),
+        );
+        self.cx.add(spec, &[])
+    }
+
+    /// Records the calls inside a collapsed subtree (no term nodes exist for them).
+    fn scan_calls(&mut self, root: Node<'_>) {
+        let Some(&caller) = self.callers.last() else {
+            return;
+        };
+        let mut stack = vec![root];
+        while let Some(n) = stack.pop() {
+            if n.kind() == "call_expression"
+                && let Some(f) = n.child_by_field_name("function")
+            {
+                let t = self.call_target(f);
+                if !t.construct {
+                    self.sites.push(Site {
+                        kind: SiteKind::Call {
+                            method: t.method,
+                            in_macro: false,
+                        },
+                        caller,
+                        name: t.name,
+                        qualifier: t.qualifier,
+                        node: None,
+                        item_local: false,
+                    });
+                }
+            }
+            if n.kind() == "macro_invocation" {
+                self.scan_macro_calls(n, caller);
+            } else {
+                stack.extend(children(n));
+            }
+        }
+    }
+
+    fn tr(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        if depth > MAX_DEPTH {
+            return self.collapse(&[n]);
+        }
+        let kind = n.kind();
+        if is_comment(n) {
+            return self.comment(n);
+        }
+        if n.is_error() || n.is_missing() {
+            return self.hole(n);
+        }
+        match kind {
+            "identifier" if self.expr => self.ident_ref(n),
+            "self" if self.expr => self.cx.op(Operator::reference("self"), n, &[]),
+            "scoped_identifier" if self.expr => self.path_ref(n),
+            "call_expression" if self.expr => self.call(n, depth),
+            "macro_invocation" => self.macro_call(n),
+            "block" => self.block(n, depth),
+            "unsafe_block" => {
+                let kids = self.gen_children(n, depth)?;
+                self.cx.op(Operator::region("unsafe"), n, &kids)
+            }
+            "closure_expression" => self.closure(n, depth),
+            "match_expression" => self.match_expr(n, depth),
+            "for_expression" => self.for_expr(n, depth),
+            "if_expression" | "while_expression" => self.cond_expr(n, depth),
+            "let_condition" => self.let_condition(n, depth),
+            "use_declaration" => self.use_node(n),
+            "function_item" => self.nested_fn(n, depth),
+            _ if token_kind(kind) => self.with_expr(false, |s| s.generic(n, depth)),
+            _ => self.generic(n, depth),
+        }
+    }
+
+    fn generic(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        if n.child_count() == 0 {
+            return self.cx.lit(n.kind(), self.t(n), n);
+        }
+        let kids = self.gen_children(n, depth)?;
+        let op = Operator::adapter("rust", n.kind(), Sort::Exp);
+        self.cx.op(op, n, &kids)
+    }
+
+    fn gen_children(&mut self, n: Node<'_>, depth: usize) -> R<Vec<NodeId>> {
+        let mut out = Vec::new();
+        for c in children(n) {
+            out.push(self.tr(c, depth + 1)?);
+        }
+        Ok(out)
+    }
+
+    fn ident_ref(&mut self, n: Node<'_>) -> R<NodeId> {
+        let name = self.t(n);
+        let id = self.cx.op(Operator::reference(name), n, &[])?;
+        if !upper_first(name) {
+            self.value_site(name, None, id);
+        }
+        Ok(id)
+    }
+
+    fn path_ref(&mut self, n: Node<'_>) -> R<NodeId> {
+        let segs = split_path(self.t(n));
+        let text = segs.join("::");
+        let id = self.cx.op(Operator::reference(&text), n, &[])?;
+        if let Some((leaf, rest)) = segs.split_last()
+            && !upper_first(leaf)
+        {
+            self.value_site(leaf, rest.last().cloned(), id);
+        }
+        Ok(id)
+    }
+
+    fn value_site(&mut self, name: &str, qualifier: Option<String>, node: NodeId) {
+        let Some(&caller) = self.callers.last() else {
+            return;
+        };
+        let item_local = self.locals.iter().any(|l| l == name);
+        self.sites.push(Site {
+            kind: SiteKind::Value,
+            caller,
+            name: name.to_owned(),
+            qualifier,
+            node: Some(node),
+            item_local,
+        });
+    }
+
+    // ---- calls and macros ----
+
+    fn call_target(&self, f: Node<'_>) -> CallTarget {
+        let dynamic = || CallTarget {
+            name: String::new(),
+            qualifier: None,
+            method: false,
+            construct: false,
+            dynamic: true,
+        };
+        match f.kind() {
+            "identifier" => {
+                let name = self.t(f).to_owned();
+                CallTarget {
+                    construct: upper_first(&name),
+                    name,
+                    qualifier: None,
+                    method: false,
+                    dynamic: false,
+                }
+            }
+            "scoped_identifier" => {
+                let Some(leaf) = f.child_by_field_name("name").map(|n| self.t(n).to_owned()) else {
+                    return dynamic();
+                };
+                let qualifier = f.child_by_field_name("path").and_then(|p| {
+                    strip_generics(self.t(p))
+                        .rsplit("::")
+                        .next()
+                        .map(str::to_owned)
+                });
+                CallTarget {
+                    construct: upper_first(&leaf),
+                    name: leaf,
+                    qualifier,
+                    method: false,
+                    dynamic: false,
+                }
+            }
+            "field_expression" => match f.child_by_field_name("field") {
+                Some(n) => CallTarget {
+                    name: self.t(n).to_owned(),
+                    qualifier: None,
+                    method: true,
+                    construct: false,
+                    dynamic: false,
+                },
+                None => dynamic(),
+            },
+            "generic_function" => f
+                .child_by_field_name("function")
+                .map_or_else(dynamic, |inner| self.call_target(inner)),
+            _ => dynamic(),
+        }
+    }
+
+    fn call(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let Some(f) = n.child_by_field_name("function") else {
+            return self.generic(n, depth);
+        };
+        let (head_node, targs) = if f.kind() == "generic_function" {
+            (
+                f.child_by_field_name("function").unwrap_or(f),
+                f.child_by_field_name("type_arguments"),
+            )
+        } else {
+            (f, None)
+        };
+        let target = self.call_target(head_node);
+        let mut kids = Vec::new();
+        let kind = if target.construct {
+            "construct"
+        } else if target.method {
+            "method"
+        } else {
+            "call"
+        };
+        let head = if target.dynamic {
+            self.tr(head_node, depth + 1)?
+        } else if target.method {
+            let name = format!(".{}", target.name);
+            let field = head_node.child_by_field_name("field").unwrap_or(head_node);
+            self.cx.op(Operator::reference(&name), field, &[])?
+        } else if head_node.kind() == "scoped_identifier" {
+            let text = split_path(self.t(head_node)).join("::");
+            self.cx.op(Operator::reference(&text), head_node, &[])?
+        } else {
+            self.cx
+                .op(Operator::reference(self.t(head_node)), head_node, &[])?
+        };
+        kids.push(head);
+        if target.method
+            && let Some(recv) = head_node.child_by_field_name("value")
+        {
+            kids.push(self.tr(recv, depth + 1)?);
+        }
+        if let Some(t) = targs {
+            kids.push(self.tr(t, depth + 1)?);
+        }
+        if let Some(args) = n.child_by_field_name("arguments") {
+            for a in children(args) {
+                if a.is_named() {
+                    kids.push(self.tr(a, depth + 1)?);
+                }
+            }
+        }
+        if !target.construct
+            && let Some(&caller) = self.callers.last()
+        {
+            let item_local = self.locals.contains(&target.name);
+            self.sites.push(Site {
+                kind: SiteKind::Call {
+                    method: target.method,
+                    in_macro: false,
+                },
+                caller,
+                name: target.name,
+                qualifier: target.qualifier,
+                node: Some(head),
+                item_local,
+            });
+        }
+        self.cx.op(Operator::apply(kind), n, &kids)
+    }
+
+    fn macro_call(&mut self, n: Node<'_>) -> R<NodeId> {
+        let mut toks = Vec::new();
+        for l in leaves(n) {
+            toks.push(self.cx.lit(l.kind(), self.t(l), l)?);
+        }
+        let group = self
+            .cx
+            .op(Operator::group(GroupOrder::Sequence), n, &toks)?;
+        if let Some(&caller) = self.callers.last() {
+            self.scan_macro_calls(n, caller);
+        }
+        self.cx.op(Operator::phase("macro"), n, &[group])
+    }
+
+    /// Records `name(` call shapes inside a macro's token trees (status capped at May).
+    fn scan_macro_calls(&mut self, n: Node<'_>, caller: usize) {
+        let mut stack = vec![n];
+        while let Some(x) = stack.pop() {
+            let kids = children(x);
+            for (i, k) in kids.iter().enumerate() {
+                if k.kind() == "identifier"
+                    && let Some(next) = kids.get(i + 1)
+                    && next.kind() == "token_tree"
+                    && self.t(*next).starts_with('(')
+                {
+                    let prev = i.checked_sub(1).map(|j| self.t(kids[j]));
+                    let method = prev == Some(".");
+                    let qualifier =
+                        if prev == Some("::") && i >= 2 && kids[i - 2].kind() == "identifier" {
+                            Some(self.t(kids[i - 2]).to_owned())
+                        } else {
+                            None
+                        };
+                    let name = self.t(*k).to_owned();
+                    if !upper_first(&name) {
+                        self.sites.push(Site {
+                            kind: SiteKind::Call {
+                                method,
+                                in_macro: true,
+                            },
+                            caller,
+                            name,
+                            qualifier,
+                            node: None,
+                            item_local: false,
+                        });
+                    }
+                }
+                if k.kind() == "token_tree" {
+                    stack.push(*k);
+                }
+            }
+        }
+    }
+
+    // ---- patterns and binders ----
+
+    fn is_binder_leaf(&self, l: Node<'_>) -> bool {
+        match l.kind() {
+            "shorthand_field_identifier" => true,
+            "identifier" => {
+                let name = self.t(l);
+                !upper_first(name)
+                    && !l
+                        .parent()
+                        .is_some_and(|p| matches!(p.kind(), "scoped_identifier"))
+            }
+            _ => false,
+        }
+    }
+
+    /// The variables a pattern binds (deduplicated, in order) and its shape text.
+    fn pattern(&self, p: Node<'_>) -> (Vec<String>, String) {
+        let mut names: Vec<String> = Vec::new();
+        let mut shape: Vec<String> = Vec::new();
+        for l in leaves(p) {
+            if self.is_binder_leaf(l) {
+                let name = self.t(l).to_owned();
+                if !names.contains(&name) {
+                    names.push(name);
+                }
+                shape.push("_".to_owned());
+            } else {
+                shape.push(self.t(l).to_owned());
+            }
+        }
+        (names, shape.join(" "))
+    }
+
+    fn bind_node(
+        &mut self,
+        kind: &str,
+        n: Node<'_>,
+        binders: &[String],
+        scope: NodeId,
+        rhs: NodeId,
+    ) -> R<NodeId> {
+        let names: Vec<&str> = binders.iter().map(String::as_str).collect();
+        let spec = NodeSpec::new(Operator::bind(kind, ""), self.cx.node_loc(n)).binders(&names);
+        self.cx.add(spec, &[scope, rhs])
+    }
+
+    // ---- blocks and statements ----
+
+    fn block(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let kids: Vec<Node<'_>> = children(n)
+            .into_iter()
+            .filter(|c| !matches!(c.kind(), "{" | "}"))
+            .collect();
+        let saved = self.locals.len();
+        let nodes = self.with_expr(true, |s| s.seq(&kids, depth + 1))?;
+        self.locals.truncate(saved);
+        self.cx.op(Operator::group(GroupOrder::Sequence), n, &nodes)
+    }
+
+    fn seq(&mut self, kids: &[Node<'_>], depth: usize) -> R<Vec<NodeId>> {
+        let mut out = Vec::new();
+        for (i, k) in kids.iter().enumerate() {
+            match k.kind() {
+                "let_declaration" if !k.has_error() => {
+                    if depth > MAX_DEPTH {
+                        out.push(self.collapse(&kids[i..])?);
+                    } else {
+                        out.push(self.let_stmt(*k, &kids[i + 1..], depth)?);
+                    }
+                    return Ok(out);
+                }
+                "function_item"
+                    if !k.has_error()
+                        && let Some(name) = k.child_by_field_name("name") =>
+                {
+                    if depth > MAX_DEPTH {
+                        out.push(self.collapse(&kids[i..])?);
+                    } else {
+                        let name = self.t(name).to_owned();
+                        out.push(self.item_stmt(*k, &name, &kids[i + 1..], depth)?);
+                    }
+                    return Ok(out);
+                }
+                _ => out.push(self.tr(*k, depth)?),
+            }
+        }
+        Ok(out)
+    }
+
+    fn rest_group(&mut self, at: Node<'_>, rest: &[Node<'_>], depth: usize) -> R<NodeId> {
+        let nodes = self.seq(rest, depth + 1)?;
+        let (s, e) = rest
+            .first()
+            .zip(rest.last())
+            .map_or((at.end_byte(), at.end_byte()), |(a, b)| {
+                (a.start_byte(), b.end_byte())
+            });
+        let spec = NodeSpec::new(Operator::group(GroupOrder::Sequence), self.cx.loc(s, e));
+        self.cx.add(spec, &nodes)
+    }
+
+    fn let_stmt(&mut self, k: Node<'_>, rest: &[Node<'_>], depth: usize) -> R<NodeId> {
+        let (binders, shape) = k
+            .child_by_field_name("pattern")
+            .map_or((Vec::new(), String::new()), |p| self.pattern(p));
+        let mut rhs = vec![self.cx.lit("pattern", &shape, k)?];
+        for field in ["type", "value", "alternative"] {
+            if let Some(c) = k.child_by_field_name(field) {
+                rhs.push(self.tr(c, depth + 1)?);
+            }
+        }
+        let rhs = self.cx.op(Operator::group(GroupOrder::Sequence), k, &rhs)?;
+        let scope = self.rest_group(k, rest, depth)?;
+        self.bind_node("let", k, &binders, scope, rhs)
+    }
+
+    fn nested_fn_anon(&mut self, k: Node<'_>, depth: usize) -> R<NodeId> {
+        let name = k.child_by_field_name("name");
+        let ord_guard = self.callers.len();
+        let mut kids = Vec::new();
+        let saved_locals = self.locals.len();
+        for c in children(k) {
+            if Some(c.id()) == name.map(|n| n.id()) {
+                continue;
+            }
+            let is_body = k
+                .child_by_field_name("body")
+                .is_some_and(|b| b.id() == c.id());
+            let node = if is_body {
+                self.with_expr(true, |s| s.tr(c, depth + 1))?
+            } else {
+                self.with_expr(false, |s| s.tr(c, depth + 1))?
+            };
+            kids.push(node);
+        }
+        self.locals.truncate(saved_locals);
+        debug_assert_eq!(ord_guard, self.callers.len());
+        self.cx.op(Operator::anon("fn"), k, &kids)
+    }
+
+    fn nested_fn(&mut self, k: Node<'_>, depth: usize) -> R<NodeId> {
+        self.nested_fn_anon(k, depth)
+    }
+
+    fn item_stmt(&mut self, k: Node<'_>, name: &str, rest: &[Node<'_>], depth: usize) -> R<NodeId> {
+        let rhs = self.nested_fn_anon(k, depth + 1)?;
+        self.locals.push(name.to_owned());
+        let scope = self.rest_group(k, rest, depth)?;
+        self.bind_node("item", k, &[name.to_owned()], scope, rhs)
+    }
+
+    fn closure(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let mut binders: Vec<String> = Vec::new();
+        let mut kids = Vec::new();
+        for c in children(n) {
+            if c.kind() == "closure_parameters" {
+                for p in children(c).into_iter().filter(tree_sitter::Node::is_named) {
+                    let pat = if p.kind() == "parameter" {
+                        p.child_by_field_name("pattern").unwrap_or(p)
+                    } else {
+                        p
+                    };
+                    let (names, shape) = self.pattern(pat);
+                    for nm in names {
+                        if !binders.contains(&nm) {
+                            binders.push(nm);
+                        }
+                    }
+                    kids.push(self.cx.lit("pattern", &shape, p)?);
+                    if p.kind() == "parameter"
+                        && let Some(t) = p.child_by_field_name("type")
+                    {
+                        kids.push(self.tr(t, depth + 1)?);
+                    }
+                }
+            } else {
+                kids.push(self.tr(c, depth + 1)?);
+            }
+        }
+        let names: Vec<&str> = binders.iter().map(String::as_str).collect();
+        let spec = NodeSpec::new(Operator::anon("closure"), self.cx.node_loc(n)).binders(&names);
+        self.cx.add(spec, &kids)
+    }
+
+    fn match_expr(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let mut kids = Vec::new();
+        if let Some(v) = n.child_by_field_name("value") {
+            kids.push(self.tr(v, depth + 1)?);
+        }
+        if let Some(body) = n.child_by_field_name("body") {
+            let mut arms = Vec::new();
+            for c in children(body) {
+                match c.kind() {
+                    "match_arm" => arms.push(self.match_arm(c, depth + 2)?),
+                    "{" | "}" => {}
+                    _ => arms.push(self.tr(c, depth + 2)?),
+                }
+            }
+            kids.push(
+                self.cx
+                    .op(Operator::group(GroupOrder::Sequence), body, &arms)?,
+            );
+        }
+        self.cx.op(Operator::group(GroupOrder::Sequence), n, &kids)
+    }
+
+    fn match_arm(&mut self, arm: Node<'_>, depth: usize) -> R<NodeId> {
+        let mp = arm.child_by_field_name("pattern");
+        let cond = mp.and_then(|m| m.child_by_field_name("condition"));
+        let mut binders = Vec::new();
+        let mut shapes = Vec::new();
+        if let Some(m) = mp {
+            for c in children(m).into_iter().filter(tree_sitter::Node::is_named) {
+                if cond.is_some_and(|x| x.id() == c.id()) {
+                    continue;
+                }
+                let (names, shape) = self.pattern(c);
+                for nm in names {
+                    if !binders.contains(&nm) {
+                        binders.push(nm);
+                    }
+                }
+                shapes.push(shape);
+            }
+        }
+        let shape = self
+            .cx
+            .lit("pattern", &shapes.join(" | "), mp.unwrap_or(arm))?;
+        let mut scope_kids = Vec::new();
+        if let Some(c) = cond {
+            scope_kids.push(self.tr(c, depth + 1)?);
+        }
+        if let Some(v) = arm.child_by_field_name("value") {
+            scope_kids.push(self.tr(v, depth + 1)?);
+        }
+        let scope = self
+            .cx
+            .op(Operator::group(GroupOrder::Sequence), arm, &scope_kids)?;
+        self.bind_node("pattern", arm, &binders, scope, shape)
+    }
+
+    fn for_expr(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let (Some(p), Some(body)) = (
+            n.child_by_field_name("pattern"),
+            n.child_by_field_name("body"),
+        ) else {
+            return self.generic(n, depth);
+        };
+        let (binders, shape) = self.pattern(p);
+        let mut rhs = vec![self.cx.lit("pattern", &shape, p)?];
+        if let Some(v) = n.child_by_field_name("value") {
+            rhs.push(self.tr(v, depth + 1)?);
+        }
+        let rhs = self.cx.op(Operator::group(GroupOrder::Sequence), n, &rhs)?;
+        let scope = self.tr(body, depth + 1)?;
+        self.bind_node("for", n, &binders, scope, rhs)
+    }
+
+    /// Binders of every `let` condition in `cond` (not looking into blocks or closures).
+    fn cond_binders(&self, cond: Node<'_>) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        let mut stack = vec![cond];
+        while let Some(x) = stack.pop() {
+            match x.kind() {
+                "let_condition" => {
+                    if let Some(p) = x.child_by_field_name("pattern") {
+                        for nm in self.pattern(p).0 {
+                            if !out.contains(&nm) {
+                                out.push(nm);
+                            }
+                        }
+                    }
+                }
+                "block" | "closure_expression" => {}
+                _ => stack.extend(children(x)),
+            }
+        }
+        out
+    }
+
+    fn cond_expr(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let Some(cond) = n.child_by_field_name("condition") else {
+            return self.generic(n, depth);
+        };
+        let binders = self.cond_binders(cond);
+        let body = n
+            .child_by_field_name("consequence")
+            .or_else(|| n.child_by_field_name("body"));
+        let Some(body) = body.filter(|_| !binders.is_empty()) else {
+            return self.generic(n, depth);
+        };
+        let rhs = self.tr(cond, depth + 1)?;
+        let scope = self.tr(body, depth + 1)?;
+        let kind = if n.kind() == "if_expression" {
+            "if-let"
+        } else {
+            "while-let"
+        };
+        let bound = self.bind_node(kind, n, &binders, scope, rhs)?;
+        match n.child_by_field_name("alternative") {
+            Some(alt) => {
+                let alt = self.tr(alt, depth + 1)?;
+                self.cx
+                    .op(Operator::group(GroupOrder::Sequence), n, &[bound, alt])
+            }
+            None => Ok(bound),
+        }
+    }
+
+    fn let_condition(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let mut kids = Vec::new();
+        if let Some(p) = n.child_by_field_name("pattern") {
+            let shape = self.pattern(p).1;
+            kids.push(self.cx.lit("pattern", &shape, p)?);
+        }
+        if let Some(v) = n.child_by_field_name("value") {
+            kids.push(self.tr(v, depth + 1)?);
+        }
+        self.cx.op(Operator::group(GroupOrder::Sequence), n, &kids)
+    }
+
+    // ---- items ----
+
     fn visibility(&self, node: Node<'_>, scope: &Scope) -> Visibility {
-        let mut c = node.walk();
-        let modifier = node
-            .children(&mut c)
+        let modifier = children(node)
+            .into_iter()
             .find(|k| k.kind() == "visibility_modifier");
         match modifier {
             Some(m) => {
@@ -101,268 +1071,509 @@ impl Extractor<'_> {
         }
     }
 
-    /// Doc comment text for `node`: contiguous `///` or `/** */` siblings
-    /// directly above it (attributes in between are skipped).
-    fn doc(&self, node: Node<'_>) -> String {
+    fn doc_text(&self, docs: &[Node<'_>]) -> String {
         let mut lines: Vec<String> = Vec::new();
-        let mut cur = node.prev_sibling();
-        while let Some(p) = cur {
-            match p.kind() {
-                "attribute_item" => {}
-                "line_comment" => {
-                    let t = self.t(p).trim_end();
-                    if t.starts_with("///") && !t.starts_with("////") {
-                        lines.push(t[3..].trim().to_owned());
-                    } else {
-                        break;
-                    }
-                }
-                "block_comment" => {
-                    let t = self.t(p);
-                    if t.starts_with("/**") && !t.starts_with("/***") && t != "/**/" {
-                        let inner = t.trim_start_matches("/**").trim_end_matches("*/");
-                        lines.push(collapse_ws(inner));
-                    } else {
-                        break;
-                    }
-                }
-                _ => break,
+        for d in docs {
+            let t = self.t(*d);
+            if t.starts_with("/**") {
+                let inner = t.trim_start_matches("/**").trim_end_matches("*/");
+                lines.push(collapse_ws(inner));
+            } else if let Some(r) = t.trim_end().strip_prefix("///") {
+                lines.push(r.trim().to_owned());
+            } else if let Some(r) = t.trim_end().strip_prefix("//!") {
+                lines.push(r.trim().to_owned());
             }
-            cur = p.prev_sibling();
         }
-        lines.reverse();
         lines.join("\n")
     }
 
-    fn span_of(node: Node<'_>) -> gob_text::TextRange {
-        let clamp = |n: usize| gob_text::TextSize::new(u32::try_from(n).unwrap_or(u32::MAX));
-        gob_text::TextRange::new(clamp(node.start_byte()), clamp(node.end_byte()))
-    }
-
-    /// Appends a record from precomputed facet texts; returns its index.
-    #[allow(
-        clippy::too_many_arguments,
-        reason = "one record constructor, all inputs distinct"
-    )]
-    fn record(
-        &mut self,
-        node: Node<'_>,
-        segments: Vec<String>,
-        kind: SymbolKind,
-        visibility: Visibility,
-        facets: (&str, &str, &str),
-        scope: &Scope,
-        implements: Option<String>,
-    ) -> usize {
-        let symref = Symref::symbol(self.path, segments);
-        tracing::trace!(%symref, ?kind, "rust symbol");
-        self.out.symbols.push(SymbolRecord {
-            symref,
-            kind,
-            span: Self::span_of(node),
-            visibility,
-            digests: Digests::of_facets(facets.0, facets.1, facets.2),
-            parent: None,
-            implements,
-        });
-        self.parents.push(scope.parent);
-        self.out.symbols.len() - 1
-    }
-
-    /// Appends a record whose sig is the item text minus `body`.
-    #[allow(
-        clippy::too_many_arguments,
-        reason = "one record constructor, all inputs distinct"
-    )]
-    fn push(
-        &mut self,
-        node: Node<'_>,
-        segments: Vec<String>,
-        kind: SymbolKind,
-        visibility: Visibility,
-        body: Option<Node<'_>>,
-        scope: &Scope,
-        implements: Option<String>,
-    ) -> usize {
-        let (sig, body_text) = match body {
-            Some(b) => {
-                let head = &self.text[node.start_byte()..b.start_byte()];
-                let tail = &self.text[b.end_byte()..node.end_byte()];
-                (
-                    collapse_ws(&format!("{head} {tail}")),
-                    collapse_ws(self.t(b)),
-                )
+    fn attr_node(&mut self, item: Node<'_>) -> R<NodeId> {
+        let attr = children(item)
+            .into_iter()
+            .find(|c| c.kind() == "attribute")
+            .unwrap_or(item);
+        let kids = children(attr);
+        let (name, rest): (String, &[Node<'_>]) = match kids.split_first() {
+            Some((first, rest)) if first.is_named() => {
+                (split_path(self.t(*first)).join("::"), rest)
             }
-            None => (collapse_ws(self.t(node)), String::new()),
+            _ => (collapse_ws(self.t(attr)), &[]),
         };
-        let doc = self.doc(node);
-        self.record(
-            node,
-            segments,
-            kind,
-            visibility,
-            (&sig, &body_text, &doc),
-            scope,
-            implements,
+        let mut payload = Vec::new();
+        for r in rest {
+            for l in leaves(*r) {
+                payload.push(self.cx.lit(l.kind(), self.t(l), l)?);
+            }
+        }
+        self.cx.op(Operator::attr(&name), item, &payload)
+    }
+
+    fn doc_node(&mut self, docs: &[Node<'_>]) -> R<Option<NodeId>> {
+        let Some(first) = docs.first() else {
+            return Ok(None);
+        };
+        let text = self.doc_text(docs);
+        let payload = self.cx.lit("str", &text, *first)?;
+        Ok(Some(self.cx.op(
+            Operator::attr("doc"),
+            *first,
+            &[payload],
+        )?))
+    }
+
+    /// Builds a unit with its doc, attribute, comment, sig and body children.
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "one unit constructor, inputs distinct"
+    )]
+    fn make_unit(
+        &mut self,
+        ord: usize,
+        node: Node<'_>,
+        kind: &str,
+        role: &str,
+        name: &str,
+        qualifier: Option<&str>,
+        extra: (Option<Visibility>, Option<&str>, &[String]),
+        lead: &Lead<'_>,
+        sig: Vec<NodeId>,
+        body: Vec<NodeId>,
+    ) -> R<NodeId> {
+        let (vis, implements, binders) = extra;
+        let mut kids = Vec::new();
+        if let Some(d) = self.doc_node(&lead.docs)? {
+            kids.push(d);
+        }
+        for a in &lead.attrs {
+            kids.push(self.attr_node(*a)?);
+        }
+        for c in &lead.comments {
+            kids.push(self.comment(*c)?);
+        }
+        let mut sig_kids = Vec::new();
+        for a in &lead.attrs {
+            sig_kids.push(self.attr_node(*a)?);
+        }
+        sig_kids.extend(sig);
+        let sig_group = NodeSpec::new(
+            Operator::group(GroupOrder::Sequence),
+            self.cx.node_loc(node),
         )
+        .attr(reserved::FACET, "sig");
+        kids.push(self.cx.add(sig_group, &sig_kids)?);
+        kids.extend(body);
+        let names: Vec<&str> = binders.iter().map(String::as_str).collect();
+        let mut spec = NodeSpec::new(Operator::unit(kind, role), self.cx.node_loc(node))
+            .named(name)
+            .binders(&names);
+        if let Some(q) = qualifier {
+            spec = spec.attr(reserved::QUALIFIER, q);
+        }
+        if let Some(v) = vis {
+            spec = spec.attr(ATTR_VISIBILITY, vis_text(v));
+        }
+        if let Some(i) = implements {
+            spec = spec.attr(ATTR_IMPLEMENTS, i);
+        }
+        let id = self.cx.add(spec, &kids)?;
+        self.ord_nodes[ord] = Some(id);
+        tracing::trace!(path = self.path, kind, name, "rust unit");
+        Ok(id)
     }
 
-    fn qual_of(&self, idx: usize) -> Vec<String> {
-        self.out.symbols[idx].symref.segments().to_vec()
+    /// Token-mode translation of every child of `node` except those in `skip`.
+    fn sig_tokens(&mut self, node: Node<'_>, skip: &[Option<Node<'_>>]) -> R<Vec<NodeId>> {
+        let skip: HashSet<usize> = skip.iter().flatten().map(Node::id).collect();
+        let mut out = Vec::new();
+        for c in children(node) {
+            if skip.contains(&c.id()) {
+                continue;
+            }
+            out.push(self.with_expr(false, |s| s.tr(c, 1))?);
+        }
+        Ok(out)
     }
 
-    fn named(&self, node: Node<'_>) -> Option<String> {
+    fn container(&mut self, c: Node<'_>, scope: &Scope, inner_docs: bool) -> R<Vec<NodeId>> {
+        let mut out = Vec::new();
+        let mut lead = Lead::default();
+        let mut inner: Vec<Node<'_>> = Vec::new();
+        for k in children(c) {
+            if matches!(k.kind(), "{" | "}" | ",") {
+                continue;
+            }
+            match k.kind() {
+                "line_comment" | "block_comment" => {
+                    let t = self.t(k).trim_end();
+                    let outer = (t.starts_with("///") && !t.starts_with("////"))
+                        || (t.starts_with("/**") && !t.starts_with("/***") && t != "/**/");
+                    let inner_doc = t.starts_with("//!") || t.starts_with("/*!");
+                    if inner_doc && inner_docs {
+                        inner.push(k);
+                    } else if outer {
+                        lead.docs.push(k);
+                    } else {
+                        let orphaned = std::mem::take(&mut lead.docs);
+                        lead.comments.extend(orphaned);
+                        lead.comments.push(k);
+                    }
+                }
+                "attribute_item" => lead.attrs.push(k),
+                "inner_attribute_item" => out.push(self.with_expr(false, |s| s.attr_node(k))?),
+                _ => {
+                    let taken = std::mem::take(&mut lead);
+                    if let Some(id) = self.item(k, scope, &taken)? {
+                        out.push(id);
+                    } else {
+                        for a in &taken.attrs {
+                            out.push(self.with_expr(false, |s| s.tr(*a, 1))?);
+                        }
+                        for d in taken.docs.iter().chain(&taken.comments) {
+                            out.push(self.comment(*d)?);
+                        }
+                        out.push(self.tr(k, 1)?);
+                    }
+                }
+            }
+        }
+        for d in lead.docs.iter().chain(&lead.comments) {
+            out.push(self.comment(*d)?);
+        }
+        for a in &lead.attrs {
+            out.push(self.with_expr(false, |s| s.tr(*a, 1))?);
+        }
+        if let Some(d) = self.doc_node(&inner)? {
+            out.insert(0, d);
+        }
+        Ok(out)
+    }
+
+    fn name_of<'n>(&self, node: Node<'n>) -> Option<(Node<'n>, String)> {
         node.child_by_field_name("name")
-            .map(|n| self.t(n).to_owned())
+            .map(|n| (n, self.t(n).to_owned()))
     }
 
-    fn item(&mut self, node: Node<'_>, scope: &Scope) {
-        let kind = node.kind();
-        match kind {
-            "use_declaration" => self.use_decl(node),
-            "function_item" | "function_signature_item" => self.function(node, scope),
-            "struct_item" | "union_item" => {
-                self.simple(node, SymbolKind::Struct, scope);
+    fn item(&mut self, node: Node<'_>, scope: &Scope, lead: &Lead<'_>) -> R<Option<NodeId>> {
+        match node.kind() {
+            "function_item" | "function_signature_item" => self.function(node, scope, lead),
+            "struct_item" | "union_item" => self.simple(node, "struct", scope, lead),
+            "enum_item" => self.enum_item(node, scope, lead),
+            "trait_item" => self.trait_item(node, scope, lead),
+            "impl_item" => self.impl_item(node, scope, lead),
+            "mod_item" => self.mod_item(node, scope, lead),
+            "const_item" => self.value_item(node, "const", scope, lead),
+            "static_item" => self.value_item(node, "static", scope, lead),
+            "type_item" => self.simple(node, "type", scope, lead),
+            "macro_definition" => self.macro_def(node, lead),
+            "enum_variant" => self.variant(node, scope, lead),
+            "use_declaration" => {
+                let id = self.use_node(node)?;
+                Ok(Some(id))
             }
-            "enum_item" => self.enum_item(node, scope),
-            "trait_item" => self.trait_item(node, scope),
-            "impl_item" => self.impl_item(node, scope),
-            "mod_item" => self.mod_item(node, scope),
-            "const_item" => self.value_item(node, SymbolKind::Const, scope),
-            "static_item" => self.value_item(node, SymbolKind::Static, scope),
-            "type_item" => {
-                self.simple(node, SymbolKind::TypeAlias, scope);
-            }
-            "macro_definition" => self.macro_def(node, scope),
-            _ => {}
+            _ => Ok(None),
         }
     }
 
-    fn qual_with(scope: &Scope, name: &str) -> Vec<String> {
-        let mut q = scope.qual.clone();
-        q.push(name.to_owned());
-        q
-    }
-
-    fn simple(&mut self, node: Node<'_>, kind: SymbolKind, scope: &Scope) -> Option<usize> {
-        let name = self.named(node)?;
-        let vis = self.visibility(node, scope);
-        let body = node.child_by_field_name("body");
-        let q = Self::qual_with(scope, &name);
-        Some(self.push(node, q, kind, vis, body, scope, scope.implements.clone()))
-    }
-
-    fn function(&mut self, node: Node<'_>, scope: &Scope) {
-        let Some(name) = self.named(node) else { return };
-        let vis = self.visibility(node, scope);
-        let body = node.child_by_field_name("body");
-        let kind = if scope.member {
-            SymbolKind::Method
-        } else {
-            SymbolKind::Function
+    fn simple(
+        &mut self,
+        node: Node<'_>,
+        kind: &str,
+        scope: &Scope,
+        lead: &Lead<'_>,
+    ) -> R<Option<NodeId>> {
+        let Some((name_node, name)) = self.name_of(node) else {
+            return Ok(None);
         };
-        let q = Self::qual_with(scope, &name);
-        let sym = self.push(node, q, kind, vis, body, scope, scope.implements.clone());
-        if let Some(b) = body {
-            self.calls(b, sym);
+        let vis = self.visibility(node, scope);
+        let body = node.child_by_field_name("body");
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        let sig = self.sig_tokens(node, &[Some(name_node), body])?;
+        let body_nodes = match body {
+            Some(b) => vec![self.with_expr(false, |s| s.tr(b, 1))?],
+            None => Vec::new(),
+        };
+        self.unit_stack.pop();
+        let role = "impl";
+        let id = self.make_unit(
+            ord,
+            node,
+            kind,
+            role,
+            &name,
+            None,
+            (Some(vis), scope.implements.as_deref(), &[]),
+            lead,
+            sig,
+            body_nodes,
+        )?;
+        Ok(Some(id))
+    }
+
+    fn function(&mut self, node: Node<'_>, scope: &Scope, lead: &Lead<'_>) -> R<Option<NodeId>> {
+        let Some((name_node, name)) = self.name_of(node) else {
+            return Ok(None);
+        };
+        let vis = self.visibility(node, scope);
+        let body = node.child_by_field_name("body");
+        let params = node.child_by_field_name("parameters");
+        let kind = if scope.member { "method" } else { "function" };
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        self.callers.push(ord);
+        self.fn_depth += 1;
+        let mut binders: Vec<String> = Vec::new();
+        let mut sig = Vec::new();
+        for c in children(node) {
+            if c.id() == name_node.id() || body.is_some_and(|b| b.id() == c.id()) {
+                continue;
+            }
+            if params.is_some_and(|p| p.id() == c.id()) {
+                self.params(c, &mut binders, &mut sig)?;
+            } else {
+                sig.push(self.with_expr(false, |s| s.tr(c, 1))?);
+            }
         }
-    }
-
-    fn value_item(&mut self, node: Node<'_>, kind: SymbolKind, scope: &Scope) {
-        let Some(name) = self.named(node) else { return };
-        let vis = self.visibility(node, scope);
-        let body = node.child_by_field_name("value");
-        let q = Self::qual_with(scope, &name);
-        self.push(node, q, kind, vis, body, scope, scope.implements.clone());
-    }
-
-    fn macro_def(&mut self, node: Node<'_>, scope: &Scope) {
-        let Some(name_node) = node.child_by_field_name("name") else {
-            return;
+        let body_nodes = match body {
+            Some(b) => vec![self.with_expr(true, |s| s.tr(b, 1))?],
+            None => Vec::new(),
         };
-        let name = self.t(name_node).to_owned();
-        let sig = collapse_ws(&format!("macro_rules! {name}"));
-        let body = collapse_ws(&self.text[name_node.end_byte()..node.end_byte()]);
-        let doc = self.doc(node);
-        let vis = if self.has_macro_export(node) {
+        self.fn_depth -= 1;
+        self.callers.pop();
+        self.unit_stack.pop();
+        let role = if body.is_some() { "impl" } else { "sig" };
+        let id = self.make_unit(
+            ord,
+            node,
+            kind,
+            role,
+            &name,
+            None,
+            (Some(vis), scope.implements.as_deref(), &binders),
+            lead,
+            sig,
+            body_nodes,
+        )?;
+        Ok(Some(id))
+    }
+
+    fn params(
+        &mut self,
+        params: Node<'_>,
+        binders: &mut Vec<String>,
+        sig: &mut Vec<NodeId>,
+    ) -> R<()> {
+        for p in children(params)
+            .into_iter()
+            .filter(tree_sitter::Node::is_named)
+        {
+            match p.kind() {
+                "parameter" => {
+                    let pat = p.child_by_field_name("pattern");
+                    let (names, mut shape) =
+                        pat.map_or((Vec::new(), String::new()), |x| self.pattern(x));
+                    if children(p).iter().any(|c| c.kind() == "mutable_specifier") {
+                        shape.insert_str(0, "mut ");
+                    }
+                    for nm in names {
+                        if !binders.contains(&nm) {
+                            binders.push(nm);
+                        }
+                    }
+                    let mut kids = vec![self.cx.lit("pattern", &shape, pat.unwrap_or(p))?];
+                    if let Some(t) = p.child_by_field_name("type") {
+                        kids.push(self.with_expr(false, |s| s.tr(t, 2))?);
+                    }
+                    let op = Operator::adapter("rust", "parameter", Sort::Exp);
+                    sig.push(self.cx.op(op, p, &kids)?);
+                }
+                "self_parameter" => {
+                    if !binders.iter().any(|b| b == "self") {
+                        binders.push("self".to_owned());
+                    }
+                    let text = collapse_ws(self.t(p));
+                    sig.push(self.cx.lit("self_parameter", &text, p)?);
+                }
+                _ => sig.push(self.with_expr(false, |s| s.tr(p, 2))?),
+            }
+        }
+        Ok(())
+    }
+
+    fn value_item(
+        &mut self,
+        node: Node<'_>,
+        kind: &str,
+        scope: &Scope,
+        lead: &Lead<'_>,
+    ) -> R<Option<NodeId>> {
+        let Some((name_node, name)) = self.name_of(node) else {
+            return Ok(None);
+        };
+        let vis = self.visibility(node, scope);
+        let value = node.child_by_field_name("value");
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        self.callers.push(ord);
+        let sig = self.sig_tokens(node, &[Some(name_node), value])?;
+        let body = match value {
+            Some(v) => vec![self.with_expr(true, |s| s.tr(v, 1))?],
+            None => Vec::new(),
+        };
+        self.callers.pop();
+        self.unit_stack.pop();
+        let id = self.make_unit(
+            ord,
+            node,
+            kind,
+            "impl",
+            &name,
+            None,
+            (Some(vis), scope.implements.as_deref(), &[]),
+            lead,
+            sig,
+            body,
+        )?;
+        Ok(Some(id))
+    }
+
+    fn macro_def(&mut self, node: Node<'_>, lead: &Lead<'_>) -> R<Option<NodeId>> {
+        let Some((name_node, name)) = self.name_of(node) else {
+            return Ok(None);
+        };
+        let exported = lead
+            .attrs
+            .iter()
+            .any(|a| self.t(*a).contains("macro_export"));
+        let vis = if exported {
             Visibility::Public
         } else {
             Visibility::Private
         };
-        let q = Self::qual_with(scope, &name);
-        self.record(
-            node,
-            q,
-            SymbolKind::Macro,
-            vis,
-            (&sig, &body, &doc),
-            scope,
-            None,
-        );
-    }
-
-    fn has_macro_export(&self, node: Node<'_>) -> bool {
-        let mut cur = node.prev_sibling();
-        while let Some(p) = cur {
-            match p.kind() {
-                "attribute_item" => {
-                    if self.t(p).contains("macro_export") {
-                        return true;
-                    }
-                }
-                "line_comment" | "block_comment" => {}
-                _ => return false,
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        let sig = vec![self.cx.lit("keyword", "macro_rules!", name_node)?];
+        let mut body = Vec::new();
+        for c in children(node) {
+            if c.start_byte() > name_node.end_byte() {
+                body.push(self.with_expr(false, |s| s.tr(c, 1))?);
             }
-            cur = p.prev_sibling();
         }
-        false
+        self.unit_stack.pop();
+        let id = self.make_unit(
+            ord,
+            node,
+            "macro",
+            "impl",
+            &name,
+            None,
+            (Some(vis), None, &[]),
+            lead,
+            sig,
+            body,
+        )?;
+        Ok(Some(id))
     }
 
-    fn enum_item(&mut self, node: Node<'_>, scope: &Scope) {
-        let Some(sym) = self.simple(node, SymbolKind::Enum, scope) else {
-            return;
+    fn enum_item(&mut self, node: Node<'_>, scope: &Scope, lead: &Lead<'_>) -> R<Option<NodeId>> {
+        let Some((name_node, name)) = self.name_of(node) else {
+            return Ok(None);
         };
         let vis = self.visibility(node, scope);
-        let Some(body) = node.child_by_field_name("body") else {
-            return;
+        let body = node.child_by_field_name("body");
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        let sig = self.sig_tokens(node, &[Some(name_node), body])?;
+        let body_nodes = match body {
+            Some(b) => {
+                let inner = Scope {
+                    inherit: Some(vis),
+                    ..Scope::default()
+                };
+                self.container(b, &inner, false)?
+            }
+            None => Vec::new(),
         };
-        let inner = Scope {
-            qual: self.qual_of(sym),
-            parent: Some(sym),
-            member: false,
-            inherit: Some(vis),
-            implements: None,
-            trait_impl: false,
-        };
-        let mut c = body.walk();
-        let variants: Vec<Node<'_>> = body
-            .named_children(&mut c)
-            .filter(|n| n.kind() == "enum_variant")
-            .collect();
-        for v in variants {
-            let Some(name) = self.named(v) else { continue };
-            let q = Self::qual_with(&inner, &name);
-            let vbody = v.child_by_field_name("body");
-            self.push(v, q, SymbolKind::Variant, vis, vbody, &inner, None);
-        }
+        self.unit_stack.pop();
+        let id = self.make_unit(
+            ord,
+            node,
+            "enum",
+            "impl",
+            &name,
+            None,
+            (Some(vis), scope.implements.as_deref(), &[]),
+            lead,
+            sig,
+            body_nodes,
+        )?;
+        Ok(Some(id))
     }
 
-    fn trait_item(&mut self, node: Node<'_>, scope: &Scope) {
-        let Some(sym) = self.simple(node, SymbolKind::Trait, scope) else {
-            return;
+    fn variant(&mut self, node: Node<'_>, scope: &Scope, lead: &Lead<'_>) -> R<Option<NodeId>> {
+        let Some((name_node, name)) = self.name_of(node) else {
+            return Ok(None);
+        };
+        let vis = scope.inherit.unwrap_or(Visibility::Private);
+        let body = node.child_by_field_name("body");
+        let value = node.child_by_field_name("value");
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        let sig = self.sig_tokens(node, &[Some(name_node), body, value])?;
+        let mut body_nodes = Vec::new();
+        for part in [body, value].into_iter().flatten() {
+            body_nodes.push(self.with_expr(false, |s| s.tr(part, 1))?);
+        }
+        self.unit_stack.pop();
+        let id = self.make_unit(
+            ord,
+            node,
+            "variant",
+            "impl",
+            &name,
+            None,
+            (Some(vis), None, &[]),
+            lead,
+            sig,
+            body_nodes,
+        )?;
+        Ok(Some(id))
+    }
+
+    fn trait_item(&mut self, node: Node<'_>, scope: &Scope, lead: &Lead<'_>) -> R<Option<NodeId>> {
+        let Some((name_node, name)) = self.name_of(node) else {
+            return Ok(None);
         };
         let vis = self.visibility(node, scope);
-        if let Some(body) = node.child_by_field_name("body") {
-            let inner = Scope {
-                qual: self.qual_of(sym),
-                parent: Some(sym),
-                member: true,
-                inherit: Some(vis),
-                implements: None,
-                trait_impl: false,
-            };
-            self.items(body, &inner);
-        }
+        let body = node.child_by_field_name("body");
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        let sig = self.sig_tokens(node, &[Some(name_node), body])?;
+        let body_nodes = match body {
+            Some(b) => {
+                let inner = Scope {
+                    member: true,
+                    inherit: Some(vis),
+                    ..Scope::default()
+                };
+                self.container(b, &inner, false)?
+            }
+            None => Vec::new(),
+        };
+        self.unit_stack.pop();
+        let id = self.make_unit(
+            ord,
+            node,
+            "trait",
+            "impl",
+            &name,
+            None,
+            (Some(vis), scope.implements.as_deref(), &[]),
+            lead,
+            sig,
+            body_nodes,
+        )?;
+        Ok(Some(id))
     }
 
     fn type_name(&self, node: Node<'_>) -> String {
@@ -377,78 +1588,122 @@ impl Extractor<'_> {
         }
     }
 
-    fn impl_item(&mut self, node: Node<'_>, scope: &Scope) {
+    fn impl_item(&mut self, node: Node<'_>, scope: &Scope, lead: &Lead<'_>) -> R<Option<NodeId>> {
         let Some(ty) = node.child_by_field_name("type") else {
-            return;
+            return Ok(None);
         };
         let tname = self.type_name(ty);
         let tr: Option<String> = node
             .child_by_field_name("trait")
             .map(|n| self.t(n).split_whitespace().collect());
         let label = tr.clone().unwrap_or_else(|| "impl".to_owned());
-        let mut q = scope.qual.clone();
-        q.push(format!("{tname}[{label}]"));
-        // Visibility of the block is patched in `finish` from the target type.
-        let sym = self.push(
+        let body = node.child_by_field_name("body");
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        let sig = self.sig_tokens(node, &[body])?;
+        let body_nodes = match body {
+            Some(b) => {
+                let inner = Scope {
+                    member: true,
+                    inherit: None,
+                    implements: tr.clone(),
+                    trait_impl: tr.is_some(),
+                };
+                self.container(b, &inner, false)?
+            }
+            None => Vec::new(),
+        };
+        self.unit_stack.pop();
+        let _ = scope;
+        let id = self.make_unit(
+            ord,
             node,
-            q,
-            SymbolKind::Impl,
-            Visibility::Public,
-            node.child_by_field_name("body"),
-            scope,
-            tr.clone(),
-        );
-        if let Some(body) = node.child_by_field_name("body") {
-            let mut member_qual = scope.qual.clone();
-            member_qual.push(tname);
-            let inner = Scope {
-                qual: member_qual,
-                parent: Some(sym),
-                member: true,
-                inherit: None,
-                implements: tr.clone(),
-                trait_impl: tr.is_some(),
-            };
-            self.items(body, &inner);
-        }
+            "impl",
+            "impl",
+            &tname,
+            Some(&label),
+            (None, tr.as_deref(), &[]),
+            lead,
+            sig,
+            body_nodes,
+        )?;
+        Ok(Some(id))
     }
 
-    fn mod_item(&mut self, node: Node<'_>, scope: &Scope) {
-        let Some(sym) = self.simple(node, SymbolKind::Module, scope) else {
-            return;
+    fn mod_item(&mut self, node: Node<'_>, scope: &Scope, lead: &Lead<'_>) -> R<Option<NodeId>> {
+        let Some((name_node, name)) = self.name_of(node) else {
+            return Ok(None);
         };
-        if let Some(body) = node.child_by_field_name("body") {
-            let inner = Scope {
-                qual: self.qual_of(sym),
-                parent: Some(sym),
-                member: false,
-                inherit: None,
-                implements: None,
-                trait_impl: false,
-            };
-            self.items(body, &inner);
-        }
+        let vis = self.visibility(node, scope);
+        let body = node.child_by_field_name("body");
+        let ord = self.alloc();
+        self.unit_stack.push(ord);
+        let sig = self.sig_tokens(node, &[Some(name_node), body])?;
+        let body_nodes = match body {
+            Some(b) => self.container(b, &Scope::default(), true)?,
+            None => Vec::new(),
+        };
+        self.unit_stack.pop();
+        let role = if body.is_some() { "impl" } else { "sig" };
+        let id = self.make_unit(
+            ord,
+            node,
+            "module",
+            role,
+            &name,
+            None,
+            (Some(vis), scope.implements.as_deref(), &[]),
+            lead,
+            sig,
+            body_nodes,
+        )?;
+        Ok(Some(id))
     }
 
     // ---- imports ----
 
-    fn use_decl(&mut self, node: Node<'_>) {
-        let Some(arg) = node.child_by_field_name("argument") else {
-            return;
-        };
-        let mut paths = Vec::new();
-        self.flatten_use(arg, &[], &mut paths);
-        for p in paths {
-            let target = self.normalize_import(&p);
-            tracing::trace!(file = self.path, %target, "rust import");
-            self.out.imports.push(ImportEdge {
-                from_file: self.path.to_owned(),
-                target,
-            });
+    fn use_node(&mut self, node: Node<'_>) -> R<NodeId> {
+        let public = children(node)
+            .into_iter()
+            .find(|k| k.kind() == "visibility_modifier")
+            .is_some_and(|m| collapse_ws(self.t(m)) == "pub");
+        let mut kids = Vec::new();
+        if let Some(arg) = node.child_by_field_name("argument") {
+            let mut paths = Vec::new();
+            self.flatten_use(arg, &[], None, &mut paths);
+            let container = self.unit_stack.last().copied();
+            for (segs, alias) in paths {
+                let target = self.normalize_import(&segs);
+                let local = alias.unwrap_or_else(|| segs.last().cloned().unwrap_or_default());
+                kids.push(
+                    self.cx
+                        .lit("use-path", &format!("{target} as {local}"), arg)?,
+                );
+                if self.fn_depth == 0 {
+                    tracing::trace!(file = self.path, %target, "rust import");
+                    self.uses.push(PendingUse {
+                        container,
+                        local,
+                        target,
+                        public,
+                    });
+                }
+            }
         }
+        if public {
+            kids.push(self.cx.lit("visibility", "pub", node)?);
+        }
+        self.cx
+            .op(Operator::adapter("rust", "use", Sort::Exp), node, &kids)
     }
 
-    fn flatten_use(&self, node: Node<'_>, prefix: &[String], out: &mut Vec<Vec<String>>) {
+    fn flatten_use(
+        &self,
+        node: Node<'_>,
+        prefix: &[String],
+        alias: Option<String>,
+        out: &mut Vec<(Vec<String>, Option<String>)>,
+    ) {
         let with = |segs: Vec<String>| {
             let mut v = prefix.to_vec();
             v.extend(segs);
@@ -461,36 +1716,41 @@ impl Extractor<'_> {
                     pre.extend(split_path(self.t(p)));
                 }
                 if let Some(list) = node.child_by_field_name("list") {
-                    self.flatten_use(list, &pre, out);
+                    self.flatten_use(list, &pre, None, out);
                 }
             }
             "use_list" => {
-                let mut c = node.walk();
-                for ch in node.named_children(&mut c) {
-                    self.flatten_use(ch, prefix, out);
+                for ch in children(node)
+                    .into_iter()
+                    .filter(tree_sitter::Node::is_named)
+                {
+                    self.flatten_use(ch, prefix, None, out);
                 }
             }
             "use_as_clause" => {
+                let alias = node
+                    .child_by_field_name("alias")
+                    .map(|a| self.t(a).to_owned());
                 if let Some(p) = node.child_by_field_name("path") {
-                    self.flatten_use(p, prefix, out);
+                    self.flatten_use(p, prefix, alias, out);
                 }
             }
             "use_wildcard" => {
-                let mut segs = Vec::new();
-                let mut c = node.walk();
-                if let Some(p) = node.named_children(&mut c).next() {
-                    segs = split_path(self.t(p));
-                }
+                let mut segs = children(node)
+                    .into_iter()
+                    .find(tree_sitter::Node::is_named)
+                    .map(|p| split_path(self.t(p)))
+                    .unwrap_or_default();
                 segs.push("*".to_owned());
-                out.push(with(segs));
+                out.push((with(segs), Some("*".to_owned())));
             }
             "line_comment" | "block_comment" => {}
             _ => {
                 let segs = split_path(self.t(node));
                 if segs.len() == 1 && segs[0] == "self" && !prefix.is_empty() {
-                    out.push(prefix.to_vec());
+                    out.push((prefix.to_vec(), alias));
                 } else {
-                    out.push(with(segs));
+                    out.push((with(segs), alias));
                 }
             }
         }
@@ -520,163 +1780,4 @@ impl Extractor<'_> {
             _ => join(segs),
         }
     }
-
-    // ---- calls ----
-
-    fn calls(&mut self, body: Node<'_>, caller: usize) {
-        let mut stack = vec![body];
-        while let Some(n) = stack.pop() {
-            if n.kind() == "call_expression"
-                && let Some(f) = n.child_by_field_name("function")
-            {
-                self.call_target(f, caller);
-            }
-            let mut c = n.walk();
-            let kids: Vec<Node<'_>> = n.named_children(&mut c).collect();
-            // Reverse so the stack pops in source order.
-            stack.extend(kids.into_iter().rev());
-        }
-    }
-
-    fn call_target(&mut self, f: Node<'_>, caller: usize) {
-        let (name, qualifier, method) = match f.kind() {
-            "identifier" => (self.t(f).to_owned(), None, false),
-            "scoped_identifier" => {
-                let leaf = f.child_by_field_name("name").map(|n| self.t(n).to_owned());
-                let qual = f.child_by_field_name("path").and_then(|p| {
-                    strip_generics(self.t(p))
-                        .rsplit("::")
-                        .next()
-                        .map(str::to_owned)
-                });
-                match leaf {
-                    Some(n) => (n, qual, false),
-                    None => return,
-                }
-            }
-            "field_expression" => match f.child_by_field_name("field") {
-                Some(n) => (self.t(n).to_owned(), None, true),
-                None => return,
-            },
-            "generic_function" => {
-                if let Some(inner) = f.child_by_field_name("function") {
-                    self.call_target(inner, caller);
-                }
-                return;
-            }
-            _ => return,
-        };
-        self.raw_calls.push((
-            caller,
-            CallSite {
-                caller: Symref::file(self.path),
-                callee: name,
-                qualifier,
-                method,
-            },
-        ));
-    }
-
-    // ---- post-processing ----
-
-    fn finish(mut self) -> FileSymbols {
-        self.patch_impl_visibility();
-        self.disambiguate();
-        let refs: Vec<Symref> = self.out.symbols.iter().map(|s| s.symref.clone()).collect();
-        for (s, p) in self.out.symbols.iter_mut().zip(&self.parents) {
-            s.parent = p.map(|i| refs[i].clone());
-        }
-        for (idx, mut call) in self.raw_calls {
-            call.caller = refs[idx].clone();
-            self.out.calls.push(call);
-        }
-        self.out
-    }
-
-    /// Impl blocks and their members take the visibility of the target type
-    /// when it is defined in this file; otherwise the block is public.
-    fn patch_impl_visibility(&mut self) {
-        let types: HashMap<Vec<String>, Visibility> = self
-            .out
-            .symbols
-            .iter()
-            .filter(|s| {
-                matches!(
-                    s.kind,
-                    SymbolKind::Struct
-                        | SymbolKind::Enum
-                        | SymbolKind::TypeAlias
-                        | SymbolKind::Trait
-                )
-            })
-            .map(|s| (s.symref.segments().to_vec(), s.visibility))
-            .collect();
-        for s in &mut self.out.symbols {
-            if s.kind == SymbolKind::Impl {
-                let mut segs = s.symref.segments().to_vec();
-                if let Some(last) = segs.last_mut()
-                    && let Some((ty, _)) = last.split_once('[')
-                {
-                    *last = ty.to_owned();
-                }
-                s.visibility = types.get(&segs).copied().unwrap_or(Visibility::Public);
-            }
-        }
-    }
-
-    /// Makes symrefs unique within the file: colliding trait-impl members
-    /// become `Type[Trait].m`, remaining collisions get a `[dupN]` suffix.
-    fn disambiguate(&mut self) {
-        let mut counts: HashMap<Symref, usize> = HashMap::new();
-        for s in &self.out.symbols {
-            *counts.entry(s.symref.clone()).or_default() += 1;
-        }
-        for s in &mut self.out.symbols {
-            let n = s.symref.segments().len();
-            if counts[&s.symref] > 1
-                && s.kind != SymbolKind::Impl
-                && let Some(tr) = &s.implements
-                && n >= 2
-            {
-                let mut segs = s.symref.segments().to_vec();
-                segs[n - 2] = format!("{}[{tr}]", segs[n - 2]);
-                s.symref = s.symref.with_segments(segs);
-            }
-        }
-        let mut seen: HashMap<Symref, usize> = HashMap::new();
-        for s in &mut self.out.symbols {
-            let n = seen.entry(s.symref.clone()).or_default();
-            *n += 1;
-            if *n > 1 {
-                let mut segs = s.symref.segments().to_vec();
-                if let Some(last) = segs.last_mut() {
-                    let _ = write!(last, "[dup{n}]");
-                }
-                s.symref = s.symref.with_segments(segs);
-            }
-        }
-    }
-}
-
-fn split_path(s: &str) -> Vec<String> {
-    strip_generics(s)
-        .split("::")
-        .map(|p| p.split_whitespace().collect::<String>())
-        .filter(|p| !p.is_empty())
-        .collect()
-}
-
-/// Removes `<...>` generic arguments (nesting-aware).
-fn strip_generics(s: &str) -> String {
-    let mut depth = 0u32;
-    let mut out = String::new();
-    for ch in s.chars() {
-        match ch {
-            '<' => depth += 1,
-            '>' => depth = depth.saturating_sub(1),
-            _ if depth == 0 => out.push(ch),
-            _ => {}
-        }
-    }
-    out
 }
