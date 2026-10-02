@@ -362,3 +362,99 @@ fn verbs_list_leases_and_contention() {
         "{out}"
     );
 }
+
+#[test]
+fn rescope_widens_the_lease_file_and_scope001_stops_firing() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let t = TicketId::mint();
+    store
+        .acquire(t, &holder("a"), &scope(&["crates/x/**"]))
+        .expect("a");
+    let paths = [RelPath::new("crates/y/lib.rs").expect("relpath")];
+    let before = store.live_lease(t).expect("read").expect("lease");
+    assert_eq!(scope001(&paths, &before, &[]).len(), 1);
+    let wider = scope(&["crates/x/**", "crates/y/**"]);
+    let lease = store
+        .rescope(t, &holder("a"), &wider, store.config())
+        .expect("rescope");
+    assert_eq!(lease.scope, wider);
+    let reread = store_in(dir.path(), LeaseConfig::default())
+        .live_lease(t)
+        .expect("read")
+        .expect("lease");
+    assert_eq!(reread.scope, wider);
+    assert!(
+        reread
+            .history
+            .last()
+            .expect("history")
+            .reason
+            .starts_with("rescope:")
+    );
+    assert!(scope001(&paths, &reread, &[]).is_empty());
+}
+
+#[test]
+fn rescope_into_another_live_lease_is_refused_and_leaves_the_lease() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let (a, b) = (TicketId::mint(), TicketId::mint());
+    store
+        .acquire(a, &holder("alice"), &scope(&["crates/x/**"]))
+        .expect("a");
+    store
+        .acquire(b, &holder("bob"), &scope(&["crates/y/**"]))
+        .expect("b");
+    let err = store
+        .rescope(
+            a,
+            &holder("alice"),
+            &scope(&["crates/x/**", "crates/y/lib.rs"]),
+            store.config(),
+        )
+        .expect_err("overlap");
+    match err {
+        LeaseError::Held {
+            holder: h, ticket, ..
+        } => {
+            assert_eq!(h, holder("bob"));
+            assert_eq!(ticket, b);
+        }
+        other => panic!("{other:?}"),
+    }
+    let kept = store.live_lease(a).expect("read").expect("lease");
+    assert_eq!(kept.scope, scope(&["crates/x/**"]));
+}
+
+#[test]
+fn rescope_narrows_is_idempotent_and_refuses_non_holders() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let t = TicketId::mint();
+    store
+        .acquire(t, &holder("alice"), &scope(&["a/**", "b/**"]))
+        .expect("a");
+    let narrow = scope(&["a/**"]);
+    let lease = store
+        .rescope(t, &holder("alice"), &narrow, store.config())
+        .expect("narrow");
+    assert_eq!(lease.scope, narrow);
+    let again = store
+        .rescope(t, &holder("alice"), &narrow, store.config())
+        .expect("again");
+    assert_eq!(again.history.len(), lease.history.len());
+    assert!(matches!(
+        store.rescope(
+            t,
+            &holder("mallory"),
+            &scope(&["a/**", "z/**"]),
+            store.config()
+        ),
+        Err(LeaseError::Held { .. })
+    ));
+    assert!(matches!(
+        store.rescope(TicketId::mint(), &holder("alice"), &narrow, store.config()),
+        Err(LeaseError::NotHeld { .. })
+    ));
+}

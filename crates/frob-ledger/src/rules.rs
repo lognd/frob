@@ -44,6 +44,7 @@ pub struct Tick001;
     tier = Universal,
     scope = Repo,
     fix = Manual,
+    must_measure = true,
     version = 1
 )]
 pub struct Tick002;

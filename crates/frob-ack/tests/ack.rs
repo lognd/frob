@@ -77,6 +77,11 @@ impl Fixture {
         self.dir.path()
     }
 
+    fn commit_all(&self, message: &str) {
+        git(self.root(), &["add", "-A"]);
+        git(self.root(), &["commit", "-q", "-m", message]);
+    }
+
     fn edit(&self, file: &str, from: &str, to: &str) {
         let path = self.root().join(file);
         let text = std::fs::read_to_string(&path).unwrap();
@@ -336,4 +341,104 @@ fn verbs_ack_why_and_affects_work_end_to_end() {
     let (code, v) = run(&fx, &["ack", "--dry-run", "src/lib.rs::plain"]);
     assert_eq!(code, 0, "{v}");
     assert_eq!(v["data"]["dry_run"], true);
+}
+
+// frob:tests crates/frob-ack/src/rules.rs::Drift001
+#[test]
+fn outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr() {
+    let fx = Fixture::new();
+    fx.ack(&["src/lib.rs::greet"]);
+    fx.edit(
+        "src/lib.rs",
+        "pub fn greet(name: &str)",
+        "#[inline]\npub fn greet(name: &str)",
+    );
+    let found = fx.findings();
+    let msgs = messages(&found, "DRIFT001");
+    assert!(msgs.iter().any(|m| m.contains("attr facet")), "{found:?}");
+}
+
+const V1_LOCK: &str = r#"version = 1
+
+[entries."src/lib.rs::plain"]
+sig = "00"
+body = "00"
+doc = "00"
+acked_by = "Old <old@example.com>"
+acked_at = "2026-10-01T00:00:00Z"
+
+[entries."src/lib.rs::gone"]
+sig = "00"
+body = "00"
+doc = "00"
+acked_by = "Old <old@example.com>"
+acked_at = "2026-10-01T00:00:00Z"
+"#;
+
+// frob:tests crates/frob-ack/src/rules.rs::Drift004
+#[test]
+fn version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it() {
+    let fx = Fixture::new();
+    std::fs::write(fx.root().join("frob.lock"), V1_LOCK).unwrap();
+    fx.commit_all("old lock");
+    let found = fx.findings();
+    assert_eq!(ids(&found), ["DRIFT004", "DRIFT004"], "{found:?}");
+    let msgs = messages(&found, "DRIFT004");
+    assert!(msgs.iter().any(|m| m.contains("src/lib.rs::plain")));
+    assert!(
+        msgs.iter().all(|m| m.contains("file version 1")),
+        "{msgs:?}"
+    );
+
+    let t = vec!["src/lib.rs::plain".to_owned()];
+    assert!(ack(fx.root(), &t, false, Some("reviewed the contract")).is_err());
+    assert!(
+        ack(fx.root(), &[], true, None).is_err(),
+        "migration needs a reason"
+    );
+
+    let out = ack(
+        fx.root(),
+        &[],
+        true,
+        Some("re-attest under digest scheme 2"),
+    )
+    .unwrap();
+    assert_eq!(out.acked, ["src/lib.rs::greet", "src/lib.rs::plain"]);
+    assert_eq!(ids(&fx.findings()), Vec::<String>::new());
+    let text = std::fs::read_to_string(fx.root().join("frob.lock")).unwrap();
+    assert!(
+        text.starts_with("version = 2\ndigest_scheme = 2\n"),
+        "{text}"
+    );
+    assert!(
+        !text.contains("gone"),
+        "vanished entries are dropped: {text}"
+    );
+}
+
+// frob:tests crates/frob-ack/src/rules.rs::Drift004
+#[test]
+fn scheme_one_lock_under_version_two_is_all_reattest() {
+    let fx = Fixture::new();
+    fx.ack(&["src/lib.rs::plain"]);
+    let text = std::fs::read_to_string(fx.root().join("frob.lock")).unwrap();
+    std::fs::write(
+        fx.root().join("frob.lock"),
+        text.replace("digest_scheme = 2", "digest_scheme = 1"),
+    )
+    .unwrap();
+    fx.commit_all("scheme one lock");
+    let found = fx.findings();
+    assert_eq!(ids(&found), ["DRIFT004"], "{found:?}");
+    assert!(messages(&found, "DRIFT004")[0].contains("digest scheme 1"));
+    let out = ack(fx.root(), &[], true, Some("re-attest under scheme 2")).unwrap();
+    assert_eq!(out.acked, ["src/lib.rs::greet", "src/lib.rs::plain"]);
+    assert_eq!(ids(&fx.findings()), Vec::<String>::new());
+}
+
+#[test]
+fn lock_and_symbols_agree_on_the_digest_scheme() {
+    assert_eq!(gob_lock::DIGEST_SCHEME, gob_symbols::DIGEST_SCHEME);
+    assert_eq!(gob_symbols::DIGEST_SCHEME, 2);
 }

@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-lease/**", "crates/frob-ledger/**", "crates/frob/**"]
+new = ["crates/frob-lease/**", "crates/frob-ledger/**", "crates/frob/**", "docs/reference/**"]
+reason = "the lease widen verb changes the generated CLI reference"
+at = "2026-10-02T22:58:52Z"
+actor = "lognd"
+rev = 1

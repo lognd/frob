@@ -1,10 +1,9 @@
 //! Serializable projection of a `gob_rules::Finding`.
 
-use gob_rules::{Finding, Registry};
+use gob_rules::{Finding, Registry, RequiredReason};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::required::RequiredReason;
 use crate::source::SourceProvider;
 use crate::text::severity_label;
 
@@ -65,14 +64,7 @@ impl FindingRecord {
             message: finding.message.clone(),
             fingerprint: finding.fingerprint.to_hex(),
             fix: finding.fix.as_ref().map(|f| f.title.clone()),
-            required: None,
+            required: finding.required.clone(),
         }
-    }
-
-    /// This record carrying `required` as its mark.
-    #[must_use]
-    pub fn with_required(mut self, required: Option<RequiredReason>) -> Self {
-        self.required = required;
-        self
     }
 }

@@ -51,6 +51,8 @@ pub struct ShowData {
     /// The ticket with its links and children.
     #[serde(flatten)]
     pub view: TicketView,
+    /// Every frontmatter field by name (unset scalars null, empty lists `[]`), plus `body`.
+    pub fields: serde_json::Map<String, serde_json::Value>,
     /// The timeline, with `--events`.
     pub events: Option<Vec<EventView>>,
 }
@@ -103,7 +105,12 @@ impl Command for Show {
         } else {
             None
         };
-        Ok(Payload::new(ShowData { view, events }))
+        let fields = frob_ledger::schema::field_map(&view.ticket);
+        Ok(Payload::new(ShowData {
+            view,
+            fields,
+            events,
+        }))
     }
 }
 

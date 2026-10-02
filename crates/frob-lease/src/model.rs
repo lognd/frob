@@ -22,10 +22,12 @@ impl std::fmt::Display for Holder {
     }
 }
 
-/// One takeover of a lease, kept in the lease file as history.
+/// One takeover or rescope of a lease, kept in the lease file as history.
+///
+/// A rescope by the holder has `from == to` and a reason starting `rescope:`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct StealRecord {
-    /// When the lease was taken over.
+    /// When the lease changed.
     pub at: Stamp,
     /// The holder it was taken from.
     pub from: Holder,
@@ -50,7 +52,7 @@ pub struct Lease {
     pub renewed_at: Stamp,
     /// Seconds after `renewed_at` at which the lease expires.
     pub ttl_secs: u64,
-    /// Takeovers, oldest first.
+    /// Takeovers and rescopes, oldest first.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub history: Vec<StealRecord>,
 }

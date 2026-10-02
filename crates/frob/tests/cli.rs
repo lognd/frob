@@ -348,6 +348,7 @@ fn every_verb_is_in_the_command_inventory() {
         "ticket doctor",
         "merge-driver",
         "lease list",
+        "lease widen",
         "ticket contention",
         "work",
         "start",

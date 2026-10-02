@@ -414,6 +414,30 @@ fn want_list(name: &str, v: &toml::Value) -> Result<Vec<String>, String> {
     arr.iter().map(|x| want_text(name, x)).collect()
 }
 
+/// Every schema field of `t` as JSON, keyed by field name; unset scalars are `null`, empty lists `[]`.
+///
+/// Generated from [`FIELDS`] so a field added to the schema cannot be left out.
+pub fn field_map(t: &Ticket) -> serde_json::Map<String, serde_json::Value> {
+    let mut front = match serde_json::to_value(&t.front) {
+        Ok(serde_json::Value::Object(m)) => m,
+        _ => serde_json::Map::new(),
+    };
+    FIELDS
+        .iter()
+        .map(|d| {
+            let v = if d.name == "body" {
+                serde_json::Value::String(t.body.clone())
+            } else {
+                front.remove(d.name).unwrap_or(match d.kind {
+                    FieldKind::List | FieldKind::Objects => serde_json::Value::Array(Vec::new()),
+                    _ => serde_json::Value::Null,
+                })
+            };
+            (d.name.to_owned(), v)
+        })
+        .collect()
+}
+
 /// Set a settable field of `t` from a TOML value (`None` unsets an optional field).
 ///
 /// # Errors
@@ -511,6 +535,11 @@ pub fn parse_text_value(name: &str, text: &str) -> Result<Option<toml::Value>, S
         return Err(format!(
             "field `{name}` cannot be set with update; settable fields: {}",
             settable_names().join(", ")
+        ));
+    }
+    if text.is_empty() && matches!(desc.kind, FieldKind::List) {
+        return Err(format!(
+            "an empty value would empty list field `{name}`; use --clear {name} to empty it"
         ));
     }
     if text.is_empty() && desc.optional {

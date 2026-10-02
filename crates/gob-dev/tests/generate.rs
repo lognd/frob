@@ -99,3 +99,33 @@ fn committed_pages_have_no_orphans_on_disk() {
         );
     }
 }
+
+// frob:ticket 01M3ZBV60QDKMT4S1YV7F60YEN
+/// Neither a gate-side mark table nor a second polarity enum may exist outside gob-rules.
+#[test]
+fn one_required_reason_and_one_polarity() {
+    let needles = [
+        ["Required", "Marks"].concat(),
+        ["enum ", "Polarity"].concat(),
+    ];
+    let mut hits = Vec::new();
+    let mut stack = vec![crates_dir()];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).expect("read dir") {
+            let path = entry.expect("entry").path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|e| e == "rs")
+                && !path.starts_with(crates_dir().join("gob-rules"))
+                && let Ok(text) = std::fs::read_to_string(&path)
+            {
+                for n in &needles {
+                    if text.contains(n.as_str()) {
+                        hits.push(format!("{} in {}", n, path.display()));
+                    }
+                }
+            }
+        }
+    }
+    assert!(hits.is_empty(), "duplicates outside gob-rules: {hits:?}");
+}

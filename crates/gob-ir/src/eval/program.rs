@@ -19,20 +19,7 @@ use crate::operator::{Operator, Universal};
 use crate::query::Model;
 use crate::term::NodeId;
 
-/// Rule polarity: which bound a rule may fire on and certify clean on.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Polarity {
-    /// P+, presence: fires on `lo`, clean when `hi` is empty.
-    Pplus,
-    /// P-, absence: fires when `hi` holds no good thing, clean when `lo` does.
-    Pminus,
-    /// P0, equality: both sides must be `Exact`.
-    P0,
-    /// Pn, threshold: see [`ThresholdKind`].
-    Pn,
-    /// Pc, closure: fires on a path inside `lo` edges, clean without one inside `hi`.
-    Pc,
-}
+pub use gob_rules::Polarity;
 
 /// Whether a threshold is an upper bound (`lines > N`) or a lower bound (fewer than N tests).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,0 +1,86 @@
+kind = "evidence"
+at = "2026-10-02T22:44:30Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-lock -p frob-ack -p gob-symbols"
+digest = "4ceb2d8d73507719a0b6760f21cd93959f87407b06783bd43ceb1b9b15a8f83e"
+status = "measured"
+captured_at = "2026-10-02T22:44:30Z"
+accepts = [1, 2]
+passed = true
+exit_code = 0
+inline = """
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-symbols)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-directives)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-ack)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.28s
+────────────
+ Nextest run ID 58d9a163-1d0d-4401-ba62-a7f35c5d80cd with nextest profile: ci
+    Starting 62 tests across 9 binaries
+        PASS [   0.007s] ( 1/62) frob-ack::ack lock_and_symbols_agree_on_the_digest_scheme
+        PASS [   0.216s] ( 2/62) frob-ack::ack unknown_target_and_empty_request_are_errors
+        PASS [   0.219s] ( 3/62) frob-ack::ack reack_of_unchanged_state_is_a_no_op
+        PASS [   0.006s] ( 4/62) gob-lock::lock diff_reports_added_removed_and_changed_facets
+        PASS [   0.016s] ( 5/62) gob-lock::lock empty_lock_is_just_the_header
+        PASS [   0.240s] ( 6/62) frob-ack::ack version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it
+        PASS [   0.248s] ( 7/62) frob-ack::ack doc_to_missing_heading_fires_drift002_with_nearest_heading
+        PASS [   0.007s] ( 8/62) gob-lock::lock file_name_is_product_dot_lock
+        PASS [   0.257s] ( 9/62) frob-ack::ack outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr
+        PASS [   0.009s] (10/62) gob-lock::lock plan_acks_flows_by_key
+        PASS [   0.008s] (11/62) gob-lock::lock missing_file_is_empty_and_garbage_is_an_error
+        PASS [   0.009s] (12/62) gob-lock::lock flow_and_five_facet_symbol_entries_round_trip_in_stable_text
+        PASS [   0.263s] (13/62) frob-ack::ack path_target_acks_every_symbol_and_all_reacks_tracked
+        PASS [   0.006s] (14/62) gob-lock::lock plan_records_changes_skips_unchanged_and_rejects_empty
+        PASS [   0.006s] (15/62) gob-lock::lock plan_refuses_to_migrate_without_all_and_reason_then_reattests_and_drops
+        PASS [   0.006s] (16/62) gob-lock::lock scheme_one_file_under_version_two_is_all_reattest
+        PASS [   0.005s] (17/62) gob-symbols paths::tests::module_paths
+        PASS [   0.011s] (18/62) gob-lock::lock save_load_round_trips_and_is_sorted_and_stable
+        PASS [   0.007s] (19/62) gob-symbols markdown::tests::github_slugs
+        PASS [   0.273s] (20/62) frob-ack::ack scheme_one_lock_under_version_two_is_all_reattest
+        PASS [   0.010s] (21/62) gob-lock::lock version_one_file_loads_and_every_entry_needs_reattest
+        PASS [   0.007s] (22/62) gob-symbols symref::tests::bracket_dots_stay_in_segment
+        PASS [   0.008s] (23/62) gob-symbols symref::tests::round_trips
+        PASS [   0.010s] (24/62) gob-symbols symref::tests::rejects_malformed
+        PASS [   0.007s] (25/62) gob-symbols::gaps contract_digest_erases_names_but_sig_keeps_them
+        PASS [   0.283s] (26/62) frob-ack::ack changed_public_signature_with_unacked_dependents_fires_affect001
+        PASS [   0.283s] (27/62) frob-ack::ack acked_signature_change_fires_drift003_and_ack_clears_it
+        PASS [   0.011s] (28/62) gob-symbols::gaps g02_edges_carry_must_may_unknown_status
+        PASS [   0.016s] (29/62) gob-symbols::corpus rust_depth_limit_collapses_into_opaque_and_keeps_calls
+        PASS [   0.012s] (30/62) gob-symbols::gaps g01_unresolved_calls_poison_reach_instead_of_being_dropped
+        PASS [   0.009s] (31/62) gob-symbols::gaps g03_calls_of_function_values_are_unknown_not_dropped
+        PASS [   0.009s] (32/62) gob-symbols::gaps g04_function_passed_as_value_is_a_may_reference_edge
+        PASS [   0.010s] (33/62) gob-symbols::gaps g07_outer_attributes_are_in_sig_and_attr_digests
+        PASS [   0.006s] (34/62) gob-symbols::gaps g09_markdown_body_is_section_local_with_a_separate_subtree_digest
+        PASS [   0.299s] (35/62) frob-ack::ack evaluate_matches_check_and_is_served_from_cache_on_repeat
+        PASS [   0.009s] (36/62) gob-symbols::gaps g11_parse_errors_are_holes_and_parse_status_is_a_query
+        PASS [   0.010s] (37/62) gob-symbols::gaps g10_public_api_follows_pub_use_reexports
+        PASS [   0.011s] (38/62) gob-symbols::gaps g19_unknown_language_is_one_opaque_f0_unit
+        PASS [   0.016s] (39/62) gob-symbols::gaps g08_comments_in_a_body_do_not_change_the_body_digest
+        PASS [   0.009s] (40/62) gob-symbols::symbols affects_is_transitive_and_ambiguity_is_kept
+        PASS [   0.009s] (41/62) gob-symbols::gaps markdown_links_resolve_to_anchors_or_are_broken_unknown_edges
+        PASS [   0.009s] (42/62) gob-symbols::symbols caller_is_affected_by_callee
+        PASS [   0.014s] (43/62) gob-symbols::gaps imports_pick_the_callee_among_same_named_functions
+        PASS [   0.006s] (44/62) gob-symbols::symbols change_doc_changes_doc_only_and_whitespace_is_ignored
+        PASS [   0.311s] (45/62) frob-ack::ack verbs_ack_why_and_affects_work_end_to_end
+        PASS [   0.011s] (46/62) gob-symbols::symbols consistent_param_rename_is_alpha_equivalent_but_a_type_change_is_not
+        PASS [   0.012s] (47/62) gob-symbols::symbols edit_body_changes_body_only
+        PASS [   0.011s] (48/62) gob-symbols::symbols every_public_item_has_symref_kind_and_digests
+        PASS [   0.010s] (49/62) gob-symbols::symbols imports_link_files_in_the_graph
+        PASS [   0.014s] (50/62) gob-symbols::symbols graph_digest_tracks_structure
+        PASS [   0.016s] (51/62) gob-symbols::symbols corpus_matches_expected_symrefs
+        PASS [   0.009s] (52/62) gob-symbols::symbols markdown_slugs_dedupe_and_nest
+        PASS [   0.019s] (53/62) gob-symbols::symbols imports_are_flattened_and_classified
+        PASS [   0.012s] (54/62) gob-symbols::symbols qualified_calls_narrow_candidates
+        PASS [   0.016s] (55/62) gob-symbols::symbols public_api_hides_private_containers
+        PASS [   0.016s] (56/62) gob-symbols::symbols resolve_accepts_unique_suffixes_and_reports_ambiguity
+        PASS [   0.075s] (57/62) gob-symbols::corpus rust_corpus_covers_every_claimed_operator
+        PASS [   0.082s] (58/62) gob-symbols::corpus markdown_corpus_covers_every_claimed_operator
+        PASS [   0.068s] (59/62) gob-symbols::gaps g19_walked_files_without_an_adapter_are_counted_opaque
+        PASS [   0.057s] (60/62) gob-symbols::symbols second_build_extracts_nothing
+        PASS [   0.391s] (61/62) frob-ack::ack code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet
+        PASS [   1.280s] (62/62) frob-ack::workspace evaluate_over_this_workspace_is_fast_and_has_no_dangling_doc_target
+────────────
+     Summary [   1.498s] 62 tests run: 62 passed, 0 skipped
+"""
+size = 6623

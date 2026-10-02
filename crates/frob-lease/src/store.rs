@@ -323,6 +323,78 @@ impl LeaseStore {
         Ok(lease)
     }
 
+    /// Replace the scope of `holder`'s live lease on `ticket` with `new_scope`.
+    ///
+    /// Used when the ticket's scope changes while it is leased. Under the lock,
+    /// a scope that adds any glob is re-checked against every other live lease
+    /// (glob text and resolved files, shared files exempt) and refused with
+    /// [`LeaseError::Held`] naming the other holder on overlap; a pure narrowing
+    /// cannot conflict and skips the check. The change is appended to the
+    /// lease's `history` (a [`StealRecord`] with the same holder on both sides) and the lease is renewed. Asking for the scope
+    /// already in force changes nothing (idempotent).
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::NotHeld`] without a live lease, [`LeaseError::Held`] when
+    /// `holder` does not hold it or the new scope overlaps another lease,
+    /// [`LeaseError::BadGlob`], lock and I/O failures.
+    pub fn rescope(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        new_scope: &[String],
+        cfg: &LeaseConfig,
+    ) -> Result<Lease, LeaseError> {
+        let lock = self.lock()?;
+        let now = (self.clock)();
+        let live = self.live_pruned(&lock, now)?;
+        let mut lease = live
+            .iter()
+            .find(|l| l.ticket == ticket)
+            .cloned()
+            .ok_or(LeaseError::NotHeld { ticket })?;
+        if &lease.holder != holder {
+            tracing::info!(%ticket, holder = %lease.holder, caller = %holder, "rescope refused: not the holder");
+            return Err(held_by(&lease, SAME_TICKET));
+        }
+        if lease.scope == new_scope {
+            tracing::debug!(%ticket, "rescope: scope already in force");
+            return Ok(lease);
+        }
+        let widens = new_scope.iter().any(|g| !lease.scope.contains(g));
+        if widens {
+            for other in live.iter().filter(|l| l.ticket != ticket) {
+                if let Some(overlap) =
+                    scopes_overlap(new_scope, &other.scope, &self.shared, &self.resolver)?
+                {
+                    tracing::info!(%ticket, other = %other.ticket, holder = %other.holder, %overlap, "rescope refused: overlap");
+                    return Err(LeaseError::Held {
+                        holder: other.holder.clone(),
+                        ticket: other.ticket,
+                        since: other.acquired_at,
+                        overlap,
+                    });
+                }
+            }
+        }
+        lease.history.push(StealRecord {
+            at: now,
+            from: holder.clone(),
+            to: holder.clone(),
+            reason: format!(
+                "rescope: [{}] -> [{}]",
+                lease.scope.join(", "),
+                new_scope.join(", ")
+            ),
+        });
+        lease.scope = new_scope.to_vec();
+        lease.renewed_at = now;
+        lease.ttl_secs = cfg.ttl_secs;
+        self.write(&lock, &lease)?;
+        tracing::info!(%ticket, %holder, scope = ?lease.scope, widens, "lease rescoped");
+        Ok(lease)
+    }
+
     /// Release the lease on `ticket`; `None` when there was none.
     ///
     /// With `as_actor`, a live lease held by a different actor is refused

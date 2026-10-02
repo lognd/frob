@@ -8,7 +8,6 @@ use anstyle::{AnsiColor, Style};
 use gob_rules::{Finding, Registry, Severity};
 use gob_text::render_snippet;
 
-use crate::required::RequiredMarks;
 use crate::source::SourceProvider;
 
 /// Whether the renderer emits ANSI color; the caller decides (TTY, `NO_COLOR`).
@@ -68,17 +67,8 @@ struct Located<'a> {
     line: u32,
 }
 
-/// Render `report` as text; the summary line is always last.
+/// Render `report` as text, showing and counting each Unresolved finding's required reason.
 pub fn render_text(report: &Report<'_>, opts: &TextOptions) -> String {
-    render_text_marked(report, opts, &RequiredMarks::new())
-}
-
-/// Render `report` as text, showing and counting the `marks` on Unresolved findings.
-pub fn render_text_marked(
-    report: &Report<'_>,
-    opts: &TextOptions,
-    marks: &RequiredMarks,
-) -> String {
     let registry = Registry::global();
     let mut groups: BTreeMap<Option<String>, Vec<Located<'_>>> = BTreeMap::new();
     for f in report.findings {
@@ -109,11 +99,11 @@ pub fn render_text_marked(
         items.sort_by_key(|l| l.line);
         let _ = writeln!(out, "{}", path.as_deref().unwrap_or("(no location)"));
         for item in &items {
-            write_finding(&mut out, report, item, registry, *opts, marks);
+            write_finding(&mut out, report, item, registry, *opts);
         }
         out.push('\n');
     }
-    write_summary(&mut out, report.findings, marks);
+    write_summary(&mut out, report.findings);
     tracing::debug!(findings = report.findings.len(), "text rendered");
     match opts.color {
         ColorChoice::Always => out,
@@ -127,7 +117,6 @@ fn write_finding(
     item: &Located<'_>,
     registry: &Registry,
     opts: TextOptions,
-    marks: &RequiredMarks,
 ) {
     let f = item.finding;
     let st = style_for(f.severity);
@@ -161,7 +150,7 @@ fn write_finding(
         let _ = writeln!(out, "  {gutter} | {}", snip.line);
         let _ = writeln!(out, "  {pad} | {st}{}{st:#}", snip.caret_line);
     }
-    if let Some(reason) = marks.get(f) {
+    if let Some(reason) = f.required.as_ref() {
         let _ = writeln!(out, "  required: {reason}");
     }
     if let Some(fix) = &f.fix {
@@ -169,11 +158,11 @@ fn write_finding(
     }
 }
 
-fn write_summary(out: &mut String, findings: &[Finding], marks: &RequiredMarks) {
+fn write_summary(out: &mut String, findings: &[Finding]) {
     let n = |s: Severity| findings.iter().filter(|f| f.severity == s).count();
     let required = findings
         .iter()
-        .filter(|f| f.severity == Severity::Unresolved && marks.get(f).is_some())
+        .filter(|f| f.severity == Severity::Unresolved && f.required.is_some())
         .count();
     let _ = writeln!(
         out,

@@ -4,126 +4,127 @@
 
 ## AFFECT
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [AFFECT001](AFFECT001.md) | dependents-not-updated | warn | manual | A public symbol changed its signature and its dependents were not re-acked. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [AFFECT001](AFFECT001.md) | dependents-not-updated | warn | manual | P+ | false | A public symbol changed its signature and its dependents were not re-acked. |
 
 ## CFG
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | A materialized config knob is missing from the product config file. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | P+ | false | A materialized config knob is missing from the product config file. |
 
 ## CI
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [CI001](CI001.md) | pinned-ref | warn | manual | An external `uses:` reference is not pinned to a full commit SHA. |
-| [CI003](CI003.md) | no-top-level-write | warn | manual | A workflow or job grants a broader `GITHUB_TOKEN` scope than it needs. |
-| [CI006](CI006.md) | no-prt-head-checkout | error | manual | A dangerous trigger (`pull_request_target`, `workflow_run`) runs with untrusted pull request content. |
-| [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | A `run:` script interpolates an expression an attacker can influence. |
-| [CI010](CI010.md) | checkout-no-persist | advisory | manual | `actions/checkout` leaves credentials in the workspace. |
-| [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | actionlint rejects the workflow syntax, schema, expression or runner label. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CI001](CI001.md) | pinned-ref | warn | manual | P+ | false | An external `uses:` reference is not pinned to a full commit SHA. |
+| [CI003](CI003.md) | no-top-level-write | warn | manual | P+ | false | A workflow or job grants a broader `GITHUB_TOKEN` scope than it needs. |
+| [CI006](CI006.md) | no-prt-head-checkout | error | manual | P+ | false | A dangerous trigger (`pull_request_target`, `workflow_run`) runs with untrusted pull request content. |
+| [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | P+ | false | A `run:` script interpolates an expression an attacker can influence. |
+| [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
+| [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
 
 ## COV
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [COV001](COV001.md) | untested-public-function | warn | manual | A public function or method has no test that reaches it. |
-| [COV003](COV003.md) | tests-names-missing-test | error | manual | Alias of TEST001; never emitted by this crate. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [COV001](COV001.md) | untested-public-function | warn | manual | P- | true | A public function or method has no test that reaches it. |
+| [COV003](COV003.md) | tests-names-missing-test | error | manual | P- | false | Alias of TEST001; never emitted by this crate. |
 
 ## DOC
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [DOC001](DOC001.md) | undocumented-public-item | warn | manual | A public item has no doc comment. |
-| [DOC002](DOC002.md) | broken-markdown-link | error | manual | A markdown link points at a missing path or a missing heading. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [DOC001](DOC001.md) | undocumented-public-item | warn | manual | P- | false | A public item has no doc comment. |
+| [DOC002](DOC002.md) | broken-markdown-link | error | manual | P+ | false | A markdown link points at a missing path or a missing heading. |
 
 ## DRIFT
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [DRIFT001](DRIFT001.md) | doc-binding-drift | error | manual | A `frob:doc` binding went stale: the code changed under the doc, or the doc under the code. |
-| [DRIFT002](DRIFT002.md) | dangling-doc-target | error | manual | A `frob:doc` directive names a markdown section that does not exist. |
-| [DRIFT003](DRIFT003.md) | stale-ack | warn | manual | A symbol was acked, its signature changed, and no `frob:doc` directive covers it. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [DRIFT001](DRIFT001.md) | doc-binding-drift | error | manual | P+ | false | A `frob:doc` binding went stale: the code changed under the doc, or the doc under the code. |
+| [DRIFT002](DRIFT002.md) | dangling-doc-target | error | manual | P+ | false | A `frob:doc` directive names a markdown section that does not exist. |
+| [DRIFT003](DRIFT003.md) | stale-ack | warn | manual | P+ | false | A symbol was acked, its signature changed, and no `frob:doc` directive covers it. |
+| [DRIFT004](DRIFT004.md) | reattest-required | warn | manual | P0 | false | A lock entry was recorded under another file version or digest scheme and must be re-attested. |
 
 ## DSL
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [DSL001](DSL001.md) | unknown-directive-verb | error | manual | A directive names a verb its namespace does not declare. |
-| [DSL002](DSL002.md) | abbreviated-ticket-id | error | deterministic | A directive carries an abbreviated ticket id instead of a full 26-char ULID. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [DSL001](DSL001.md) | unknown-directive-verb | error | manual | P+ | false | A directive names a verb its namespace does not declare. |
+| [DSL002](DSL002.md) | abbreviated-ticket-id | error | deterministic | P+ | false | A directive carries an abbreviated ticket id instead of a full 26-char ULID. |
 
 ## EXC
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [EXC001](EXC001.md) | exception-reason-rejected | error | manual | An accept or defer directive carries a reason the checker rejects. |
-| [EXC003](EXC003.md) | defer-ticket-terminal | error | manual | A defer directive names a ticket that is done or dropped. |
-| [EXC005](EXC005.md) | accept-not-attested | warn | manual | An accept directive's bound symbol changed since it was attested. |
-| [EXC007](EXC007.md) | defer-ticket-missing | error | manual | A defer directive names a ticket that does not exist. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [EXC001](EXC001.md) | exception-reason-rejected | error | manual | P+ | false | An accept or defer directive carries a reason the checker rejects. |
+| [EXC003](EXC003.md) | defer-ticket-terminal | error | manual | P+ | false | A defer directive names a ticket that is done or dropped. |
+| [EXC005](EXC005.md) | accept-not-attested | warn | manual | P+ | false | An accept directive's bound symbol changed since it was attested. |
+| [EXC007](EXC007.md) | defer-ticket-missing | error | manual | P+ | false | A defer directive names a ticket that does not exist. |
 
 ## INV
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [INV001](INV001.md) | invariant-without-anchor | warn | manual | An invariants document has no `frob:invariant` directive in code. |
-| [INV002](INV002.md) | forbidden-import | error | manual | A file imports something the `[invariants]` table forbids. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [INV001](INV001.md) | invariant-without-anchor | warn | manual | P- | false | An invariants document has no `frob:invariant` directive in code. |
+| [INV002](INV002.md) | forbidden-import | error | manual | P+ | false | A file imports something the `[invariants]` table forbids. |
 
 ## PARSE
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [PARSE001](PARSE001.md) | malformed-directive | error | manual | A `frob:` directive is malformed: unterminated quote, bad key, missing or invalid argument. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PARSE001](PARSE001.md) | malformed-directive | error | manual | P+ | false | A `frob:` directive is malformed: unterminated quote, bad key, missing or invalid argument. |
 
 ## PERF
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [PERF001](PERF001.md) | check-over-budget | warn | manual | The built-in stages of a check run took longer than the `[perf]` budget. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PERF001](PERF001.md) | check-over-budget | warn | manual | P+ | false | The built-in stages of a check run took longer than the `[perf]` budget. |
 
 ## PROC
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [PROC001](PROC001.md) | process-outside-exec | error | manual | A crate other than `gob-exec`, `gob-git` or the binary references `std::process`. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PROC001](PROC001.md) | process-outside-exec | error | manual | P+ | false | A crate other than `gob-exec`, `gob-git` or the binary references `std::process`. |
 
 ## REF
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [REF001](REF001.md) | dangling-ticket-ref | error | manual | A `frob:ticket` directive names a ticket that is not in the ledger. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [REF001](REF001.md) | dangling-ticket-ref | error | manual | P+ | true | A `frob:ticket` directive names a ticket that is not in the ledger. |
 
 ## SCOPE
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [SCOPE001](SCOPE001.md) | path-outside-lease | error | manual | A changed path lies outside the globs of the ticket's scope lease. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [SCOPE001](SCOPE001.md) | path-outside-lease | error | manual | P+ | false | A changed path lies outside the globs of the ticket's scope lease. |
 
 ## TEST
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [TEST001](TEST001.md) | tests-target-missing | error | manual | A `frob:tests` directive whose target resolves to no test (or, inside a test, to no symbol). |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TEST001](TEST001.md) | tests-target-missing | error | manual | P+ | false | A `frob:tests` directive whose target resolves to no test (or, inside a test, to no symbol). |
 
 ## TICK
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | A ticket's frontmatter differs from the fold of its events. |
-| [TICK002](TICK002.md) | ticket-not-on-base | error | manual | A ticket id is referenced but absent from the base ref. |
-| [TICK003](TICK003.md) | dangling-link | error | manual | A link or parent names a ticket that does not exist. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | P+ | false | A ticket's frontmatter differs from the fold of its events. |
+| [TICK002](TICK002.md) | ticket-not-on-base | error | manual | P+ | true | A ticket id is referenced but absent from the base ref. |
+| [TICK003](TICK003.md) | dangling-link | error | manual | P+ | false | A link or parent names a ticket that does not exist. |
 
 ## TODO
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [TODO001](TODO001.md) | bare-work-marker | error | manual | A comment carries an upper-case work marker with no owning ticket. |
-| [TODO002](TODO002.md) | todo-ticket-terminal | warn | manual | A `frob:todo` directive points at a ticket that is already done or dropped. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TODO001](TODO001.md) | bare-work-marker | error | manual | P+ | false | A comment carries an upper-case work marker with no owning ticket. |
+| [TODO002](TODO002.md) | todo-ticket-terminal | warn | manual | P+ | true | A `frob:todo` directive points at a ticket that is already done or dropped. |
 
 ## TOOL
 
-| Rule | Slug | Severity | Fix | Summary |
-|---|---|---|---|---|
-| [TOOL001](TOOL001.md) | tool-stage-failed | error | manual | A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start. |
-| [TOOL002](TOOL002.md) | tool-finding-unmapped | advisory | manual | A bound tool reported a finding that no frob rule id covers. |
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TOOL001](TOOL001.md) | tool-stage-failed | error | manual | P+ | false | A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start. |
+| [TOOL002](TOOL002.md) | tool-finding-unmapped | advisory | manual | P+ | false | A bound tool reported a finding that no frob rule id covers. |

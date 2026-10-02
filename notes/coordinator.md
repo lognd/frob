@@ -108,6 +108,14 @@ for history.
 - Two Claude Code crashes (one Bun bus error) happened while long
   background shells ran; keep shell steps short and in the foreground.
 
+### Format-bump lands (decided 2026-10-04 on G05)
+
+A ticket that changes an on-disk format the landing binary reads (for
+example frob.lock version 2) is landed with a copy of the binary built
+in that ticket's worktree, because the old binary cannot read the new
+format; immediately afterwards the landing binary is rebuilt from
+experimental. Record such lands in the status log.
+
 ### v1 land quirks learned on T-0003 (apply to every land)
 
 - Run `frob ticket land T-#### --worktree ../frob-v2-wt/t-####` from the
@@ -132,6 +140,14 @@ for history.
   be named in the done-report text (file:RULE) or the land refuses.
 
 ## Status log (newest first)
+
+- 2026-10-04 (milestone 2): landed gate, grmb spec, gob-ir, tool
+  bindings, G02, G03, G04, follow-ups, gob-symbols over U, scope-diff
+  fix, manifest-dir fix, G06 gob-check, G07 selectors, G05 digest
+  scheme (format-bump land with its own binary). Shared target dir
+  retired. Tool gaps filed: ~V5F85PC (empty --set wipes scope; show
+  --json lacks scope), ~KDR4ZBR (scope change does not refresh lease;
+  lease edited by hand twice), ~YBM7WZC (land refusal lists warnings).
 
 - 2026-10-04 (cutover): design review integrated (D56-D64). Cutover
   done: experimental fast-forwarded to t-0025 (re-imported final v1

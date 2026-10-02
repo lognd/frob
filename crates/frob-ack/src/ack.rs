@@ -4,20 +4,11 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 use gob_git::{CommitOptions, RelPath, Repo};
-use gob_lock::{LockEntry, LockFile, LockTarget, file_name};
+use gob_lock::{Current, CurrentSymbol, FacetSet, LockTarget, Plan, PlanOptions, file_name};
 use gob_symbols::{SymbolRecord, Symref};
 
 use crate::error::AckError;
 use crate::inputs::{Inputs, PRODUCT, section_digest};
-
-/// What [`plan_ack`] decided: the lock to write and which symbols changed.
-#[derive(Debug, Clone)]
-pub struct Plan {
-    /// The lock after the ack.
-    pub lock: LockFile,
-    /// Symrefs whose entry was added or changed, sorted.
-    pub acked: Vec<String>,
-}
 
 /// What [`ack`] did.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,55 +51,39 @@ fn resolve_target<'g>(inputs: &'g Inputs, input: &str) -> Result<Vec<&'g SymbolR
         })
 }
 
-/// Symbols `--all` re-acks: every acked symbol still present and every `frob:doc` binding.
-fn tracked(inputs: &Inputs) -> Vec<&SymbolRecord> {
-    let from_lock = inputs
-        .lock
-        .entries
-        .keys()
-        .filter_map(|k| Symref::parse(k).ok())
-        .filter_map(|s| inputs.graph.get(&s));
-    let from_docs = inputs
+/// What `--all` adds beyond the lock's own entries: every symbol a `frob:doc` binding names.
+fn doc_bound(inputs: &Inputs) -> impl Iterator<Item = &SymbolRecord> {
+    inputs
         .docs
         .iter()
-        .filter_map(|d| inputs.graph.get(&d.symbol));
-    from_lock.chain(from_docs).collect()
+        .filter_map(|d| inputs.graph.get(&d.symbol))
 }
 
-fn entry_for(
-    inputs: &Inputs,
-    rec: &SymbolRecord,
-    actor: &str,
-    at: &str,
-    reason: Option<&str>,
-) -> LockEntry {
-    let mut targets: Vec<LockTarget> = inputs
+/// The ack-relevant state of `rec` now: facets and bound doc section digests.
+fn current_of(inputs: &Inputs, rec: &SymbolRecord) -> CurrentSymbol {
+    let d = &rec.digests;
+    let targets = inputs
         .docs
         .iter()
-        .filter(|d| d.symbol == rec.symref)
-        .filter_map(|d| {
-            inputs.graph.get(&d.target).map(|t| LockTarget {
-                target: d.target.to_string(),
+        .filter(|b| b.symbol == rec.symref)
+        .filter_map(|b| {
+            inputs.graph.get(&b.target).map(|t| LockTarget {
+                target: b.target.to_string(),
                 digest: section_digest(&t.digests).to_string(),
             })
         })
         .collect();
-    targets.sort_by(|a, b| a.target.cmp(&b.target));
-    targets.dedup_by(|a, b| a.target == b.target);
-    let mut e = LockEntry::new(
-        &rec.digests.sig.to_string(),
-        &rec.digests.body.to_string(),
-        &rec.digests.doc.to_string(),
-        actor,
-        at,
-    );
-    e.reason = reason.map(str::to_owned);
-    e.targets = targets;
-    e
-}
-
-fn same_facets(a: &LockEntry, b: &LockEntry) -> bool {
-    (&a.sig, &a.body, &a.doc, &a.targets) == (&b.sig, &b.body, &b.doc, &b.targets)
+    CurrentSymbol {
+        identity: None,
+        facets: FacetSet {
+            sig: d.sig.to_string(),
+            body: d.body.to_string(),
+            doc: d.doc.to_string(),
+            attr: d.attr.to_string(),
+            contract: d.contract.to_string(),
+        },
+        targets,
+    }
 }
 
 /// `Name <email>` from git config, else `unknown`.
@@ -119,10 +94,14 @@ fn actor_of(repo: Option<&Repo>) -> String {
 
 /// Works out the new lock for an ack without writing anything.
 ///
+/// Resolution (symrefs, paths, `--all` doc bindings) happens here; the decision is
+/// [`gob_lock::plan`].
+///
 /// # Errors
 ///
 /// [`AckError::Resolve`] for a target that matches no (or several) symbols,
-/// [`AckError::NothingToAck`] for an empty selection, plus input collection errors.
+/// [`AckError::Plan`] for an empty selection or a stale lock that `--all --reason` has not
+/// migrated, plus input collection errors.
 pub fn plan_ack(
     root: &Path,
     targets: &[String],
@@ -135,36 +114,34 @@ pub fn plan_ack(
         selected.extend(resolve_target(&inputs, t)?);
     }
     if all {
-        selected.extend(tracked(&inputs));
+        selected.extend(doc_bound(&inputs));
     }
-    let selected: BTreeSet<&Symref> = selected.iter().map(|r| &r.symref).collect();
-    if selected.is_empty() {
-        return Err(AckError::NothingToAck);
+    let mut current = Current::default();
+    let lock_known = inputs
+        .lock
+        .entries
+        .keys()
+        .filter_map(|k| Symref::parse(k).ok())
+        .filter_map(|s| inputs.graph.get(&s));
+    for rec in selected.iter().copied().chain(lock_known) {
+        current
+            .symbols
+            .insert(rec.symref.to_string(), current_of(&inputs, rec));
     }
+    let keys: Vec<String> = selected
+        .iter()
+        .map(|r| r.symref.to_string())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
     let repo = Repo::discover(root).ok();
-    let actor = actor_of(repo.as_ref());
-    let at = jiff::Timestamp::now().to_string();
-    let mut lock = inputs.lock.clone();
-    let mut acked = Vec::new();
-    for symref in selected {
-        let Some(rec) = inputs.graph.get(symref) else {
-            continue;
-        };
-        let fresh = entry_for(&inputs, rec, &actor, &at, reason);
-        let key = symref.to_string();
-        if lock
-            .entries
-            .get(&key)
-            .is_some_and(|old| same_facets(old, &fresh))
-        {
-            tracing::debug!(symref = %key, "already acked at these digests");
-            continue;
-        }
-        tracing::info!(symref = %key, "ack recorded");
-        lock.entries.insert(key.clone(), fresh);
-        acked.push(key);
-    }
-    Ok(Plan { lock, acked })
+    let options = PlanOptions {
+        actor: actor_of(repo.as_ref()),
+        at: jiff::Timestamp::now().to_string(),
+        reason: reason.map(str::to_owned),
+        all,
+    };
+    Ok(gob_lock::plan(&inputs.lock, &current, &keys, &options)?)
 }
 
 /// Acks `targets` (symrefs or paths) and/or everything tracked (`all`), then commits `frob.lock`

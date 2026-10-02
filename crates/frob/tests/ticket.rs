@@ -368,3 +368,74 @@ fn merge_driver_fails_with_exit_1_when_the_fold_fails() {
     let out = repo.frob(&["merge-driver", "base", "ours.md", "theirs", &path]);
     assert_eq!(code(&out), 1, "{}", String::from_utf8_lossy(&out.stdout));
 }
+
+fn scope_of(repo: &Repo, id: &str) -> Value {
+    repo.ok(&["ticket", "show", id])["data"]["fields"]["scope"].clone()
+}
+
+#[test]
+fn empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event() {
+    let repo = Repo::new(false);
+    let id = repo.id_of(&["ticket", "new", "--title", "t", "--scope", "a/**"]);
+    let bad = repo.frob(&["ticket", "update", &id, "--set", "scope="]);
+    assert_eq!(code(&bad), 2, "{}", String::from_utf8_lossy(&bad.stdout));
+    assert!(String::from_utf8_lossy(&bad.stdout).contains("--clear scope"));
+    assert_eq!(scope_of(&repo, &id), serde_json::json!(["a/**"]));
+    let cleared = repo.ok(&["ticket", "update", &id, "--clear", "scope"]);
+    assert_eq!(cleared["already"], false);
+    assert_eq!(scope_of(&repo, &id), serde_json::json!([]));
+    let events = repo.ok(&["ticket", "show", &id, "--events"]);
+    let fields: Vec<_> = events["data"]["events"]
+        .as_array()
+        .expect("events")
+        .iter()
+        .filter(|e| e["body"]["field"] == "scope")
+        .collect();
+    assert_eq!(fields.len(), 1, "{events}");
+    let again = repo.ok(&["ticket", "update", &id, "--clear", "scope"]);
+    assert_eq!(again["already"], true);
+    let not_list = repo.frob(&["ticket", "update", &id, "--clear", "title"]);
+    assert_eq!(code(&not_list), 2);
+}
+
+#[test]
+fn add_scope_and_remove_scope_round_trip_with_noop_semantics() {
+    let repo = Repo::new(false);
+    let id = repo.id_of(&["ticket", "new", "--title", "t", "--scope", "a/**"]);
+    repo.ok(&["ticket", "update", &id, "--add-scope", "b/**"]);
+    assert_eq!(scope_of(&repo, &id), serde_json::json!(["a/**", "b/**"]));
+    let dup = repo.ok(&["ticket", "update", &id, "--add-scope", "b/**"]);
+    assert_eq!(dup["already"], true);
+    repo.ok(&["ticket", "update", &id, "--remove-scope", "a/**"]);
+    assert_eq!(scope_of(&repo, &id), serde_json::json!(["b/**"]));
+    let absent = repo.ok(&["ticket", "update", &id, "--remove-scope", "zzz"]);
+    assert_eq!(absent["already"], true);
+    repo.ok(&["ticket", "update", &id, "--remove-scope", "b/**"]);
+    assert_eq!(scope_of(&repo, &id), serde_json::json!([]));
+}
+
+#[test]
+fn show_json_has_every_schema_field() {
+    let repo = Repo::new(false);
+    let bare = repo.id_of(&["ticket", "new", "--title", "bare"]);
+    let full = repo.id_of(&[
+        "ticket",
+        "new",
+        "--title",
+        "full",
+        "--scope",
+        "a/**",
+        "--acceptance",
+        "ok",
+    ]);
+    for id in [bare, full] {
+        let shown = repo.ok(&["ticket", "show", &id]);
+        let fields = shown["data"]["fields"].as_object().expect("fields");
+        for desc in frob_ledger::schema::all_schemas() {
+            for f in desc.fields {
+                assert!(fields.contains_key(f.key), "missing `{}` in {shown}", f.key);
+            }
+        }
+        assert!(fields["scope"].is_array());
+    }
+}

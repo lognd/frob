@@ -10,6 +10,8 @@
 | tier | universal |
 | scope | repo |
 | fix | manual |
+| polarity | P+ |
+| must_measure | false |
 | version | 1 |
 | since | 2.0.0 |
 
@@ -17,7 +19,7 @@ A `frob:doc` binding went stale: the code changed under the doc, or the doc unde
 
 The symbol bound by a `frob:doc path#slug` directive has a lock entry
 (an ack). The finding fires when that entry no longer matches: the sig,
-body or doc facet of the symbol changed (the code changed under the doc),
+body, doc or attr facet of the symbol changed (the code changed under the doc),
 or the digest of the named markdown section changed (the doc changed
 under the code). The message names the facet. Re-read the pair and run
 `frob ack <symref> --reason ...` to record the new state.

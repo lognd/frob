@@ -102,6 +102,8 @@ pub fn render_rule_page(meta: &RuleMeta, examples: &[Example]) -> String {
         ("tier", tier_name(meta.tier).to_owned()),
         ("scope", scope_name(meta.scope).to_owned()),
         ("fix", fix_name(meta.fix).to_owned()),
+        ("polarity", meta.polarity.symbol().to_owned()),
+        ("must_measure", meta.must_measure.to_string()),
         ("version", meta.version.to_string()),
         ("since", meta.since.to_owned()),
     ];
@@ -138,13 +140,15 @@ pub fn render_index(metas: &[&RuleMeta]) -> String {
     for (family, mut rules) in by_family {
         rules.sort_by_key(|m| m.id);
         out.push_str(&format!("\n## {family}\n\n"));
-        out.push_str("| Rule | Slug | Severity | Fix | Summary |\n|---|---|---|---|---|\n");
+        out.push_str("| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |\n|---|---|---|---|---|---|---|\n");
         for m in rules {
             out.push_str(&format!(
-                "| [{id}]({id}.md) | {} | {} | {} | {} |\n",
+                "| [{id}]({id}.md) | {} | {} | {} | {} | {} | {} |\n",
                 cell(m.slug),
                 severity_name(m.severity),
                 fix_name(m.fix),
+                m.polarity.symbol(),
+                m.must_measure,
                 cell(m.summary),
                 id = m.id,
             ));
@@ -246,11 +250,23 @@ mod tests {
         assert!(page.contains("# FAKE001: fake-rule"));
         assert!(page.contains("| severity (default) | warn |"));
         assert!(page.contains("| fix | verify-commit |"));
+        assert!(page.contains("| polarity | P+ |"));
+        assert!(page.contains("| must_measure | false |"));
         assert!(page.contains("| version | 3 |"));
         assert!(page.contains("A fake rule.\n\nFix it."));
         assert!(page.contains("### Case / A #1 (fire)"));
         assert!(page.contains("```rust\nfn a() {}\n```"));
         assert!(page.is_ascii());
+    }
+
+    #[test]
+    fn index_row_shows_polarity_and_must_measure() {
+        let index = render_index(&[&FAKE]);
+        assert!(index.contains("| Polarity | Must measure |"));
+        assert!(
+            index.contains("| verify-commit | P+ | false | A fake \\| rule. |"),
+            "{index}"
+        );
     }
 
     #[test]

@@ -1,6 +1,9 @@
 //! Round trip, atomic save, missing file and diff behavior of `gob-lock`.
 
-use gob_lock::{Facet, LockEntry, LockFile, LockTarget, diff, file_name};
+use gob_lock::{
+    Current, CurrentFlow, CurrentSymbol, EntryKind, Facet, FacetSet, FlowEnd, FlowEntry, LockEntry,
+    LockFile, LockTarget, PlanError, PlanOptions, diff, file_name, plan,
+};
 
 fn entry(sig: &str) -> LockEntry {
     LockEntry::new(sig, "b", "d", "Me <me@example.com>", "2026-10-02T00:00:00Z")
@@ -61,4 +64,231 @@ fn diff_reports_added_removed_and_changed_facets() {
     assert_eq!(d.removed, ["gone"]);
     assert_eq!(d.changed, [("a".to_owned(), vec![Facet::Sig])]);
     assert!(diff(&new, &new).is_empty());
+}
+
+const V1: &str = r#"version = 1
+
+[entries."a.rs::a"]
+sig = "11"
+body = "22"
+doc = "33"
+acked_by = "Me"
+acked_at = "2026-10-01T00:00:00Z"
+reason = "old"
+
+[[entries."a.rs::a".targets]]
+ref = "docs/a.md#intro"
+digest = "44"
+"#;
+
+// frob:tests crates/gob-lock/src/file.rs::LockFile
+#[test]
+fn version_one_file_loads_and_every_entry_needs_reattest() {
+    let lock = LockFile::from_toml(V1).unwrap();
+    assert_eq!((lock.version, lock.digest_scheme), (1, 1));
+    assert_eq!(lock.entries["a.rs::a"].targets.len(), 1);
+    assert!(lock.is_stale());
+    let r = lock.reattest();
+    assert_eq!(r.len(), 1);
+    assert_eq!(
+        (r[0].key.as_str(), r[0].kind),
+        ("a.rs::a", EntryKind::Symbol)
+    );
+    assert!(r[0].why().contains("file version 1"), "{}", r[0].why());
+    assert!(r[0].why().contains("digest scheme 1"), "{}", r[0].why());
+    assert!(
+        lock.to_toml().is_err(),
+        "an unmigrated lock is never rewritten as is"
+    );
+}
+
+// frob:tests crates/gob-lock/src/file.rs::LockFile
+#[test]
+fn scheme_one_file_under_version_two_is_all_reattest() {
+    let mut lock = LockFile::default();
+    lock.entries.insert("a".to_owned(), entry("1"));
+    lock.flows.insert("f".to_owned(), flow());
+    lock.digest_scheme = 1;
+    let back = LockFile::from_toml(&lock.to_toml().unwrap()).unwrap();
+    assert_eq!(back.digest_scheme, 1);
+    let keys: Vec<_> = back
+        .reattest()
+        .into_iter()
+        .map(|r| (r.key, r.kind))
+        .collect();
+    assert_eq!(
+        keys,
+        [
+            ("a".to_owned(), EntryKind::Symbol),
+            ("f".to_owned(), EntryKind::Flow)
+        ]
+    );
+    assert!(LockFile::default().reattest().is_empty());
+}
+
+fn flow() -> FlowEntry {
+    FlowEntry {
+        producer: FlowEnd {
+            identity: "web/api.ts::get".to_owned(),
+            contract: "aa".to_owned(),
+        },
+        consumer: FlowEnd {
+            identity: "src/client.rs::call".to_owned(),
+            contract: "aa".to_owned(),
+        },
+        acked_by: "Me".to_owned(),
+        acked_at: "2026-10-02T00:00:00Z".to_owned(),
+        reason: Some("contracts agree".to_owned()),
+    }
+}
+
+// frob:tests crates/gob-lock/src/file.rs::FlowEntry
+#[test]
+fn flow_and_five_facet_symbol_entries_round_trip_in_stable_text() {
+    let mut lock = LockFile::default();
+    lock.flows.insert("orders.get".to_owned(), flow());
+    let mut e = entry("1");
+    e.attr = "at".to_owned();
+    e.contract = "ct".to_owned();
+    e.identity = Some("stable:1".to_owned());
+    lock.entries.insert("a.rs::a".to_owned(), e);
+    let text = lock.to_toml().unwrap();
+    assert!(
+        text.starts_with("version = 2\ndigest_scheme = 2\n"),
+        "{text}"
+    );
+    assert!(text.contains("[[symbol]]") && text.contains("[[flow]]"));
+    assert!(text.contains("identity = \"stable:1\""));
+    let back = LockFile::from_toml(&text).unwrap();
+    assert_eq!(back, lock);
+    assert_eq!(back.to_toml().unwrap(), text);
+    assert!(back.reattest().is_empty());
+    let mut changed = back.clone();
+    changed
+        .flows
+        .get_mut("orders.get")
+        .unwrap()
+        .consumer
+        .contract = "bb".to_owned();
+    changed.entries.get_mut("a.rs::a").unwrap().attr = "zz".to_owned();
+    let d = diff(&back, &changed);
+    assert_eq!(d.flows_changed, ["orders.get"]);
+    assert_eq!(d.changed, [("a.rs::a".to_owned(), vec![Facet::Attr])]);
+}
+
+#[test]
+fn empty_lock_is_just_the_header() {
+    let text = LockFile::default().to_toml().unwrap();
+    assert_eq!(text, "version = 2\ndigest_scheme = 2\n");
+}
+
+fn facets(tag: &str) -> FacetSet {
+    FacetSet {
+        sig: format!("s{tag}"),
+        body: format!("b{tag}"),
+        doc: format!("d{tag}"),
+        attr: format!("a{tag}"),
+        contract: format!("c{tag}"),
+    }
+}
+
+fn current(items: &[(&str, &str)]) -> Current {
+    let mut c = Current::default();
+    for (k, tag) in items {
+        c.symbols.insert(
+            (*k).to_owned(),
+            CurrentSymbol {
+                identity: None,
+                facets: facets(tag),
+                targets: Vec::new(),
+            },
+        );
+    }
+    c
+}
+
+fn opts(all: bool, reason: Option<&str>) -> PlanOptions {
+    PlanOptions {
+        actor: "Me".to_owned(),
+        at: "2026-10-02T00:00:00Z".to_owned(),
+        reason: reason.map(str::to_owned),
+        all,
+    }
+}
+
+// frob:tests crates/gob-lock/src/plan.rs::plan
+#[test]
+fn plan_records_changes_skips_unchanged_and_rejects_empty() {
+    let cur = current(&[("a", "1"), ("b", "1")]);
+    let p = plan(
+        &LockFile::default(),
+        &cur,
+        &["a".to_owned()],
+        &opts(false, None),
+    )
+    .unwrap();
+    assert_eq!(p.acked, ["a"]);
+    assert_eq!(p.lock.entries["a"].attr, "a1");
+    let again = plan(&p.lock, &cur, &["a".to_owned()], &opts(false, None)).unwrap();
+    assert!(again.acked.is_empty());
+    let moved = current(&[("a", "2"), ("b", "1")]);
+    let all = plan(&p.lock, &moved, &[], &opts(true, None)).unwrap();
+    assert_eq!(all.acked, ["a"], "--all re-acks only tracked entries");
+    assert!(matches!(
+        plan(&LockFile::default(), &cur, &[], &opts(false, None)),
+        Err(PlanError::NothingToAck)
+    ));
+}
+
+// frob:tests crates/gob-lock/src/plan.rs::plan
+#[test]
+fn plan_refuses_to_migrate_without_all_and_reason_then_reattests_and_drops() {
+    let mut old = LockFile::from_toml(V1).unwrap();
+    old.entries.insert("gone".to_owned(), entry("9"));
+    let cur = current(&[("a.rs::a", "1")]);
+    for o in [opts(false, Some("r")), opts(true, None)] {
+        let e = plan(&old, &cur, &["a.rs::a".to_owned()], &o).unwrap_err();
+        assert!(
+            matches!(e, PlanError::MigrationRequired { entries: 2, .. }),
+            "{e}"
+        );
+    }
+    let p = plan(&old, &cur, &[], &opts(true, Some("scheme 2"))).unwrap();
+    assert_eq!(p.acked, ["a.rs::a"]);
+    assert_eq!(p.dropped, ["gone"]);
+    assert_eq!(p.reattested.len(), 1);
+    assert_eq!((p.lock.version, p.lock.digest_scheme), (2, 2));
+    assert!(p.lock.reattest().is_empty());
+    assert!(!p.lock.entries.contains_key("gone"));
+}
+
+// frob:tests crates/gob-lock/src/plan.rs::plan
+#[test]
+fn plan_acks_flows_by_key() {
+    let mut cur = Current::default();
+    let f = flow();
+    cur.flows.insert(
+        "orders.get".to_owned(),
+        CurrentFlow {
+            producer: f.producer.clone(),
+            consumer: f.consumer.clone(),
+        },
+    );
+    let p = plan(
+        &LockFile::default(),
+        &cur,
+        &["orders.get".to_owned()],
+        &opts(false, Some("x")),
+    )
+    .unwrap();
+    assert_eq!(p.acked, ["orders.get"]);
+    assert_eq!(p.lock.flows["orders.get"].producer, f.producer);
+    let again = plan(
+        &p.lock,
+        &cur,
+        &["orders.get".to_owned()],
+        &opts(false, None),
+    )
+    .unwrap();
+    assert!(again.acked.is_empty());
 }

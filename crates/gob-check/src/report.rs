@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use gob_diagnostics::{ExitCode, RequiredMarks, UnresolvedPolicy, fail_on};
+use gob_diagnostics::{ExitCode, UnresolvedPolicy, fail_on};
 use gob_rules::{Exception, Finding, Severity};
 use gob_text::FileInterner;
 use schemars::JsonSchema;
@@ -170,8 +170,6 @@ pub struct CheckReport {
     pub fail_on: FailOn,
     /// The Unresolved gate in force (`[check] fail_on_unresolved`).
     pub fail_on_unresolved: UnresolvedPolicy,
-    /// Required reasons of the Unresolved findings that carry one.
-    pub required: RequiredMarks,
     /// Subjects each evaluated rule examined (`rules.md` section 2); rules not evaluated are absent.
     pub subjects_examined: BTreeMap<String, usize>,
 }
@@ -183,7 +181,6 @@ impl CheckReport {
             &self.findings,
             self.fail_on.threshold(),
             self.fail_on_unresolved,
-            &self.required,
         )
     }
 
@@ -191,7 +188,7 @@ impl CheckReport {
     pub fn required_unresolved(&self) -> usize {
         self.findings
             .iter()
-            .filter(|f| f.severity == Severity::Unresolved && self.required.get(f).is_some())
+            .filter(|f| f.severity == Severity::Unresolved && f.required.is_some())
             .count()
     }
 }

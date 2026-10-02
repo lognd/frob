@@ -16,7 +16,7 @@ use crate::options::RunOptions;
 use crate::product::{CollectCx, Collected, Product, ScopeView, Snapshot};
 use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
-use crate::required::{build_marks, zero_subjects};
+use crate::required::{mark_annotations, zero_subjects};
 use crate::rules::Perf001;
 use crate::telemetry;
 use crate::tools::run_tools;
@@ -296,7 +296,6 @@ fn pass<P: Product>(
         scope: scope.map(|s| s.label().to_owned()),
         fail_on: opts.fail_on.unwrap_or(table.fail_on),
         fail_on_unresolved: table.fail_on_unresolved,
-        required: gob_diagnostics::RequiredMarks::new(),
         subjects_examined: tally.subjects,
     })
 }
@@ -342,7 +341,7 @@ pub fn run<P: Product>(
         });
     }
     refingerprint(&mut report.findings, &report.files);
-    report.required = build_marks(&mut report.findings);
+    mark_annotations(&mut report.findings);
     sort_findings(&mut report.findings, &report.files);
     if table.telemetry && !opts.skip_telemetry {
         telemetry::append(

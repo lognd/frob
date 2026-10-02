@@ -1,0 +1,97 @@
+kind = "evidence"
+at = "2026-10-02T22:51:59Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p frob-ledger -p frob-cli"
+digest = "71d5d0a2f3967b5296e732305f81bc34bd414148adcdcff5dd1ef664e6d70589"
+status = "measured"
+captured_at = "2026-10-02T22:51:59Z"
+accepts = [1, 2]
+passed = true
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+────────────
+ Nextest run ID a7f14f5b-a494-4d32-82a9-372a664c285a with nextest profile: ci
+    Starting 76 tests across 8 binaries
+        PASS [   0.013s] ( 1/76) frob-cli::cli every_verb_is_in_the_command_inventory
+        PASS [   0.015s] ( 2/76) frob-cli config::tests::registry_files_alias_extends_lease_shared_files_without_duplicates
+        PASS [   0.034s] ( 3/76) frob-cli::cli config_show_effective_reports_provenance
+        PASS [   0.034s] ( 4/76) frob-cli::cli dry_run_is_rejected_on_verbs_that_do_not_opt_in
+        PASS [   0.023s] ( 5/76) frob-cli::cli init_outside_a_repo_is_a_refusal
+        PASS [   0.039s] ( 6/76) frob-cli::cli config_show_rejects_unknown_keys_with_a_suggestion
+        PASS [   0.046s] ( 7/76) frob-cli::check_verb explain_prints_the_rule_page_and_unknown_is_usage
+        PASS [   0.052s] ( 8/76) frob-cli::cli config_sync_adds_missing_knobs_once
+        PASS [   0.074s] ( 9/76) frob-cli::cli in_process_root_matches_the_binary_contract
+        PASS [   0.039s] (10/76) frob-cli::cli schema_verb_dumps_envelope_and_config
+        PASS [   0.029s] (11/76) frob-cli::cli unknown_verb_exits_2_with_a_suggestion
+        PASS [   0.078s] (12/76) frob-cli::cli init_dry_run_writes_nothing
+        PASS [   0.104s] (13/76) frob-cli::cli doctor_outside_a_repo_still_succeeds
+        PASS [   0.110s] (14/76) frob-cli::cli schema_flag_prints_the_verb_schema
+        PASS [   0.159s] (15/76) frob-cli::cli text_format_goes_to_stdout_and_errors_to_stderr
+        PASS [   0.172s] (16/76) frob-cli::cli json_flag_is_an_alias_and_conflicts_with_text
+        PASS [   0.229s] (17/76) frob-cli::check_verb error_finding_exits_1_and_fail_on_none_exits_0
+        PASS [   0.259s] (18/76) frob-cli::cli doctor_piped_is_json_envelope_even_with_cfg001
+        PASS [   0.275s] (19/76) frob-cli::cli doctor_languages_prints_fidelity_precisions_and_f0_extensions
+        PASS [   0.186s] (20/76) frob-cli::ticket merge_driver_fails_with_exit_1_when_the_fold_fails
+        PASS [   0.325s] (21/76) frob-cli::cli init_twice_second_is_already_and_changes_nothing
+        PASS [   0.400s] (22/76) frob-cli::ticket ambiguous_handle_exits_3_listing_both_candidates
+        PASS [   0.273s] (23/76) frob-cli::ticket new_with_the_same_key_returns_already
+        PASS [   0.258s] (24/76) frob-cli::wiring close_of_a_task_without_evidence_is_refused_with_the_test_remedy
+        PASS [   0.454s] (25/76) frob-cli::ticket empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event
+        PASS [   0.012s] (26/76) frob-ledger doc::tests::empty_body_has_no_blank_tail
+        PASS [   0.010s] (27/76) frob-ledger doc::tests::missing_fence_is_malformed
+        PASS [   0.009s] (28/76) frob-ledger doc::tests::render_parse_round_trip
+        PASS [   0.009s] (29/76) frob-ledger event::tests::every_kind_round_trips
+        PASS [   0.015s] (30/76) frob-ledger event::tests::missing_envelope_is_malformed
+        PASS [   0.010s] (31/76) frob-ledger event::tests::unknown_kinds_parse_as_other
+        PASS [   0.007s] (32/76) frob-ledger fold::tests::concurrent_field_changes_are_reported
+        PASS [   0.017s] (33/76) frob-ledger fold::tests::bad_field_is_an_error
+        PASS [   0.007s] (34/76) frob-ledger fold::tests::fold_applies_creation_fields_and_transitions
+        PASS [   0.007s] (35/76) frob-ledger fold::tests::missing_or_duplicate_create_is_an_error
+        PASS [   0.009s] (36/76) frob-ledger id::tests::handles_lengthen_only_on_collision
+        PASS [   0.009s] (37/76) frob-ledger id::tests::minted_ids_increase
+        PASS [   0.008s] (38/76) frob-ledger id::tests::parse_is_case_insensitive_and_canonical
+        PASS [   0.383s] (39/76) frob-cli::ticket show_json_has_every_schema_field
+        PASS [   0.013s] (40/76) frob-ledger links::tests::both_spellings_normalize_alike
+        PASS [   0.018s] (41/76) frob-ledger links::tests::blocked_by_cycles_are_rejected_in_either_spelling
+        PASS [   0.007s] (42/76) frob-ledger links::tests::inverse_is_an_involution_and_forward_is_stable
+        PASS [   0.012s] (43/76) frob-ledger links::tests::enabler_needs_a_story_target
+        PASS [   0.558s] (44/76) frob-cli::ticket add_scope_and_remove_scope_round_trip_with_noop_semantics
+        PASS [   0.008s] (45/76) frob-ledger links::tests::single_origin_and_duplicate_rules
+        PASS [   0.013s] (46/76) frob-ledger links::tests::parent_chain_cycles_are_rejected
+        PASS [   0.011s] (47/76) frob-ledger model::tests::enums_round_trip_through_text
+        PASS [   0.009s] (48/76) frob-ledger model::tests::points_accept_fibonacci_only
+        PASS [   0.009s] (49/76) frob-ledger model::tests::stamp_renders_utc_seconds
+        PASS [   0.010s] (50/76) frob-ledger schema::tests::description_lists_every_field_with_doc_and_default
+        PASS [   0.007s] (51/76) frob-ledger schema::tests::docs_table_has_a_row_per_field
+        PASS [   0.169s] (52/76) frob-cli::wiring registry_files_alias_is_accepted_and_shared_tables_are_listed
+        PASS [   0.007s] (53/76) frob-ledger schema::tests::field_table_marks_settable_names
+        PASS [   0.008s] (54/76) frob-ledger schema::tests::json_schema_has_one_property_per_field
+        PASS [   0.007s] (55/76) frob-ledger schema::tests::mirror_keys_equal_serialized_frontmatter_keys
+        PASS [   0.008s] (56/76) frob-ledger schema::tests::registry_lists_the_schema
+        PASS [   0.458s] (57/76) frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   0.199s] (58/76) frob-cli::wiring sibling_verbs_print_schemas
+        PASS [   0.069s] (59/76) frob-ledger::ledger handles_resolve_and_ambiguous_suffixes_refuse
+        PASS [   0.432s] (60/76) frob-cli::wiring doable_hides_tickets_overlapping_a_live_lease_and_shows_them_otherwise
+        PASS [   0.013s] (61/76) frob-ledger::ledger merge_driver_unions_events_and_refolds
+        PASS [   0.114s] (62/76) frob-ledger::ledger branch_mode_commits_to_the_current_branch
+        PASS [   0.625s] (63/76) frob-cli::ticket merge_driver_unions_events_from_both_branches_and_refolds
+        PASS [   0.433s] (64/76) frob-cli::wiring no_evidence_with_a_reason_closes_and_records_a_bypass_event
+        PASS [   0.157s] (65/76) frob-ledger::ledger doctor_flags_and_fixes_a_stale_frontmatter
+        PASS [   0.184s] (66/76) frob-ledger::ledger alias_ambiguity_lists_both_candidates
+        PASS [   0.141s] (67/76) frob-ledger::ledger new_is_idempotent_on_the_key
+        PASS [   0.129s] (68/76) frob-ledger::ledger tick002_and_tick003
+        PASS [   0.808s] (69/76) frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        PASS [   0.128s] (70/76) frob-ledger::ledger trunk_mode_commits_to_trunk_even_on_another_branch
+        PASS [   0.241s] (71/76) frob-ledger::ledger index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise
+        PASS [   0.122s] (72/76) frob-ledger::ledger update_validates_and_repeats_are_already
+        PASS [   0.713s] (73/76) frob-cli::ticket update_set_comment_brief_and_parent
+        PASS [   0.327s] (74/76) frob-ledger::ledger concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent
+        PASS [   0.313s] (75/76) frob-ledger::ledger link_topology_is_enforced
+        PASS [   0.379s] (76/76) frob-ledger::ledger lifecycle_new_update_link_comment_close
+────────────
+     Summary [   1.060s] 76 tests run: 76 passed, 0 skipped
+"""
+size = 7550
