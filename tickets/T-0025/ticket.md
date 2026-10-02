@@ -1,5 +1,5 @@
 ---
-id: T-draft-be450054
+id: T-0025
 title: 'Self-host switch: v2 frob.toml, import this repo''s v1 tickets, CI runs frob
   v2 check'
 state: queued
