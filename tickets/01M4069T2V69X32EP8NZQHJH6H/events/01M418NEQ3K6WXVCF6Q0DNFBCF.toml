@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Coordinator, 2026-10-03: when cycle plan lands, restore the PM033 remedy to name it (crates/frob-pm/src/rules/replenish.rs says where); the remedies test rejected the verb path while it did not exist. Include that file in this ticket's scope."
+at = "2026-10-03T16:13:28Z"
+actor = "lognd"
+rev = 1
