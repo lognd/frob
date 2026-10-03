@@ -27,12 +27,28 @@ Materialized: yes.
 | `fail_on` | `FailOn` | `"error"` | yes | Lowest severity that makes `frob check` exit 1; `none` never fails. |
 | `fail_on_unresolved` | `UnresolvedPolicy` | `"required"` | yes | Which Unresolved findings fail the gate: `required`, `never` or `all`. |
 | `fix_requires_scope` | `bool` | `false` | no | Refuse `--fix` unless `--ticket` scopes the run. |
-| `require_siblings` | `bool` | `true` | no | When true an unusable configured sibling is a required Unresolved (`SIB001`). |
-| `sibling_timeout_secs` | `u64` | `120` | no | Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7). |
+| `output_cap_bytes` | `u64` | `67108864` | no | Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB). |
+| `require_siblings` | `bool` | `true` | yes | When true an unusable configured sibling is a required Unresolved (`SIB001`). |
+| `sibling_timeout_secs` | `u64` | `120` | yes | Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7). |
 | `size_cap` | `u64` | `4194304` | no | Files larger than this many bytes are skipped. |
 | `telemetry` | `bool` | `true` | no | Append one JSON line per run to `.frob/telemetry.jsonl`. |
 | `ticket_hops` | `u32` | `1` | no | Hops of dependents (callers, via the symbol graph) added to a `--ticket` run. |
 | `tool` | `Vec<ToolStage>` | `[]` | no | External tool stages run after the built-in rules, outside the time budget. |
+
+## `[compute]`
+
+The substrate `[compute]` knobs every product reads (architecture.md section 6).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `dynamic_calls` | `String` | `"warn-unresolved"` | yes | How a dynamic call is treated. |
+| `effects` | `String` | `"warn-unresolved"` | yes | How an undeclared effect is treated. |
+| `expansion_steps` | `u64` | `1000` | yes | The macro and template expansion step budget. |
+| `normalization` | `String` | `"warn-unresolved"` | yes | How an unnormalizable construct is treated. |
+| `notebook_order` | `String` | `"warn-unresolved"` | yes | How a notebook with an undeclared cell order is treated. |
+| `public_signatures` | `String` | `"warn-unresolved"` | yes | How an unannotated public signature is treated (`warn-unresolved` or `required`). |
 
 ## `[directives]`
 

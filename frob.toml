@@ -9,6 +9,12 @@ fail_on = "error"
 # Paths no rule inspects: build output, frob's own local state and the v1
 # changelog (a 2.7 MB history file full of v1 directives).
 exclude = ["target/", ".frob/", "CHANGELOG.md", "notes/", "crates/*/tests/corpus/**", "crates/*/tests/mdtest/**", "crates/*/tests/mdtest_fail/**", "crates/*/tests/fixtures/**"]
+# Which Unresolved findings fail the gate: `required`, `never` or `all`.
+fail_on_unresolved = "required"
+# Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
+sibling_timeout_secs = 120
+# When true an unusable configured sibling is a required Unresolved (`SIB001`).
+require_siblings = true
 
 # External tool stages, run after the built-in rules.
 [[check.tool]]
@@ -68,3 +74,21 @@ ref_mode = "trunk"
 [evidence]
 # Programs the `command` evidence provider may run; grimble runs bind as evidence.
 allowed_tools = ["cargo", "git", "grimble"]
+
+[compute]
+# How an unannotated public signature is treated (`warn-unresolved` or `required`).
+public_signatures = "warn-unresolved"
+# How an undeclared effect is treated.
+effects = "warn-unresolved"
+# How a dynamic call is treated.
+dynamic_calls = "warn-unresolved"
+# The macro and template expansion step budget.
+expansion_steps = 1000
+# How an unnormalizable construct is treated.
+normalization = "warn-unresolved"
+# How a notebook with an undeclared cell order is treated.
+notebook_order = "warn-unresolved"
+
+[directives]
+# Comment namespaces the scanner reads; comments in any other are ignored.
+namespaces = ["frob", "grimble", "crunk"]

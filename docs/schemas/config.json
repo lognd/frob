@@ -49,6 +49,13 @@
           "description": "Refuse `--fix` unless `--ticket` scopes the run.",
           "type": "boolean"
         },
+        "output_cap_bytes": {
+          "default": 67108864,
+          "description": "Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB).",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
         "require_siblings": {
           "default": true,
           "description": "When true an unusable configured sibling is a required Unresolved (`SIB001`).",
@@ -87,6 +94,45 @@
             "$ref": "#/$defs/ToolStage"
           },
           "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "compute": {
+      "additionalProperties": false,
+      "description": "The substrate `[compute]` knobs every product reads (architecture.md section 6).",
+      "properties": {
+        "dynamic_calls": {
+          "default": "warn-unresolved",
+          "description": "How a dynamic call is treated.",
+          "type": "string"
+        },
+        "effects": {
+          "default": "warn-unresolved",
+          "description": "How an undeclared effect is treated.",
+          "type": "string"
+        },
+        "expansion_steps": {
+          "default": 1000,
+          "description": "The macro and template expansion step budget.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "normalization": {
+          "default": "warn-unresolved",
+          "description": "How an unnormalizable construct is treated.",
+          "type": "string"
+        },
+        "notebook_order": {
+          "default": "warn-unresolved",
+          "description": "How a notebook with an undeclared cell order is treated.",
+          "type": "string"
+        },
+        "public_signatures": {
+          "default": "warn-unresolved",
+          "description": "How an unannotated public signature is treated (`warn-unresolved` or `required`).",
+          "type": "string"
         }
       },
       "type": "object"

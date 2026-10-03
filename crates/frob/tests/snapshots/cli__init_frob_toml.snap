@@ -7,6 +7,24 @@ expression: toml1
 fail_on = "error"
 # Which Unresolved findings fail the gate: `required`, `never` or `all`.
 fail_on_unresolved = "required"
+# Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
+sibling_timeout_secs = 120
+# When true an unusable configured sibling is a required Unresolved (`SIB001`).
+require_siblings = true
+
+[compute]
+# How an unannotated public signature is treated (`warn-unresolved` or `required`).
+public_signatures = "warn-unresolved"
+# How an undeclared effect is treated.
+effects = "warn-unresolved"
+# How a dynamic call is treated.
+dynamic_calls = "warn-unresolved"
+# The macro and template expansion step budget.
+expansion_steps = 1000
+# How an unnormalizable construct is treated.
+normalization = "warn-unresolved"
+# How a notebook with an undeclared cell order is treated.
+notebook_order = "warn-unresolved"
 
 [directives]
 # Comment namespaces the scanner reads; comments in any other are ignored.
