@@ -15,13 +15,14 @@ pub mod error;
 pub mod fragment;
 pub mod rel001;
 pub mod rel002;
+pub mod skeleton;
 pub mod status;
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 pub use config::ReleaseConfig;
-pub use error::{FragmentError, ReleaseError};
+pub use error::{FragmentError, ReleaseError, SkeletonError};
 pub use fragment::{Fragment, Kind, TicketResolver};
 
 /// What the command does with its result.

@@ -153,9 +153,12 @@ impl DoneGuard {
                  changelog.d/{}.<type>.md must exist",
                 cx.handle, cx.ticket.front.id
             ),
+            // frob:ticket 01M4069WHH6KXYWDAJD3TXB8SR
             remedy: Some(format!(
-                "write changelog.d/{}.added.md (or .changed, .fixed, ...); or remove changelog_fragment from [pm] done_requires",
-                cx.ticket.front.id
+                "run `frob ticket fragment {h}` in the ticket's worktree (writes changelog.d/<ULID>.<type>.md from the title; \
+                 add --type added|changed|fixed|removed|deprecated|security and --sentence \"<one user-facing sentence>\" to set them), \
+                 edit the sentence, and commit it; or remove changelog_fragment from [pm] done_requires",
+                h = cx.handle
             )),
         })
     }

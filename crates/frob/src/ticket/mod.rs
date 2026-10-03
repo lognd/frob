@@ -7,6 +7,7 @@
 //! brief), [`doctor_cmd`] and the hidden [`merge_cmd`].
 
 pub mod doctor_cmd;
+pub mod fragment_cmd;
 pub mod merge_cmd;
 pub mod read;
 pub mod write;
@@ -169,6 +170,7 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<read::List>()
         .register::<read::Doable>()
         .register::<read::Brief>()
+        .register::<fragment_cmd::Fragment>()
         .register::<doctor_cmd::TicketDoctor>()
         .register::<merge_cmd::MergeDriver>()
 }

@@ -153,7 +153,7 @@ fn join_lines(s: &str) -> String {
 }
 
 /// Validate one fragment's name and body.
-fn parse_one(
+pub(crate) fn parse_one(
     file: &str,
     body: &str,
     resolver: &dyn TicketResolver,

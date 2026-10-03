@@ -132,9 +132,14 @@ one or two user-facing sentences, first line prefixed with the product
 heading and deletes the fragments. Gate: a
 land that touches a product crate or a `gob-*` public item without a
 fragment is refused (REL003, the only rule for fragment presence;
-`[pm.done] changelog_fragment` evaluates it); `land` writes the fragment skeleton from
-the ticket title when none exists, so the agent edits a sentence
-rather than inventing a file. git-cliff and release-plz are not used:
+`[pm.done] changelog_fragment` evaluates it). `frob ticket fragment TICKET
+[--type T] [--sentence S] [--force]` writes the skeleton from the ticket title into
+the ticket's worktree and validates it with the compile's own validator, so the agent
+edits a sentence rather than inventing a file. The default type follows the ticket
+type: bug and incident `fixed`, security `security`, story and epic `added`, every
+other type (task, docs, chore) `changed`; `--type` overrides. `land` and `close`
+never write it: a refusal on `changelog_fragment` names the verb, because a sentence
+nobody read would defeat the point of the fragment. git-cliff and release-plz are not used:
 commit history is not the user-facing voice.
 
 ## 7. Rustdoc discipline

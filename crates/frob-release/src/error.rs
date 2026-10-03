@@ -139,3 +139,30 @@ fn lines(errs: &[FragmentError]) -> String {
         .collect::<Vec<_>>()
         .join("\n")
 }
+
+/// Why `frob ticket fragment` could not write a fragment; the message names the remedy.
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum SkeletonError {
+    /// A fragment for the ticket already exists and `--force` was not given.
+    #[error(
+        "changelog.d/{file} already exists; edit it, or pass --force to replace it with a fresh skeleton"
+    )]
+    Exists {
+        /// Name of the existing fragment inside changelog.d.
+        file: String,
+    },
+    /// The ULID is not a ticket in the ledger.
+    #[error(
+        "{ulid} is not a ticket in the ledger; a fragment is named after the ticket that shipped the change"
+    )]
+    UnknownTicket {
+        /// The ULID given.
+        ulid: String,
+    },
+    /// The generated or supplied text would not pass the changelog validator.
+    #[error("the fragment text is not valid: {0}; pass a corrected sentence with --sentence")]
+    Invalid(FragmentError),
+    /// Writing or removing a file failed.
+    #[error("changelog.d: {0}")]
+    Io(String),
+}
