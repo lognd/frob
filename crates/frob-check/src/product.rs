@@ -9,6 +9,7 @@ use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
 use frob_pm::rules::membership::Pm034;
+use frob_release::rel002::Rel002;
 use gob_check::{
     CheckError, CheckTable, CollectCx, Collected, External, FileCheck, Product, RepoGroup,
     ScopedFindings, Snapshot, Timing,
@@ -131,6 +132,12 @@ impl Product for Frob {
             RepoGroup::new("repo:pm", vec![Pm034.meta()], |s: &Snapshot<Self>, _| {
                 pm_findings(&s.inputs)
             }),
+            // frob:ticket 01M4069WNGJ8YR9DTTM9K9K8V5
+            RepoGroup::new(
+                "repo:release",
+                vec![Rel002.meta()],
+                |s: &Snapshot<Self>, _| frob_release::rel002::evaluate(&s.core.root).findings,
+            ),
             RepoGroup::new(
                 "repo:ledger",
                 vec![Tick001.meta(), Tick003.meta()],

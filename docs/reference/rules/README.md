@@ -101,6 +101,12 @@
 |---|---|---|---|---|---|---|
 | [REF001](REF001.md) | dangling-ticket-ref | error | manual | P+ | true | A `frob:ticket` directive names a ticket that is not in the ledger. |
 
+## REL
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P+ | false | Crates or the wheel whose version differs from the workspace version. |
+
 ## SCOPE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

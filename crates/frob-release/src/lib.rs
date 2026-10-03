@@ -9,6 +9,7 @@
 pub mod changelog;
 pub mod error;
 pub mod fragment;
+pub mod rel002;
 pub mod status;
 
 use std::fs;

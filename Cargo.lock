@@ -837,6 +837,7 @@ dependencies = [
  "frob-ledger",
  "frob-obligations",
  "frob-pm",
+ "frob-release",
  "frob-tests",
  "gob-cache",
  "gob-check",
@@ -1028,10 +1029,13 @@ name = "frob-release"
 version = "0.0.0"
 dependencies = [
  "blake3",
+ "gob-mdtest",
+ "gob-rules",
  "schemars",
  "serde",
  "tempfile",
  "thiserror",
+ "toml",
  "tracing",
  "ulid",
 ]
