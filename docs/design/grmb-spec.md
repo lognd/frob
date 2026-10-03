@@ -33,7 +33,7 @@ for three jobs and nothing else:
 
 Design stance, kept from v1 and the owner's direction: the grammar holds
 only what v1 consumers measurably used (node, flow, boundary, claims, the
-V-model, capability grants, excuses, exceptions). Everything else is a
+V-model, capability grants, matrix-build templates, exceptions). Everything else is a
 DATA PACK.
 
 What is a data pack. A pack is a versioned, digest-pinned bundle of
@@ -152,10 +152,10 @@ predicates noted below):
 ```
 accept age allocates alias as assumed at attr blocked_by bound boundary
 claim clearance condition consumer contract declassify decides defer
-digest endorse evidence excuses extend fanout flow growth hotfix include
+digest endorse evidence excuse extend fanout flow for growth hotfix include
 kind label latency level may module namespace node noflow of on owns pack part
 producer proof reach ref refines renamed_from rate runnable satisfies
-shape size supersedes surface tests transport utilization verifies
+shape size supersedes surface template tests transport utilization verifies
 version versioning vmodel when
 ```
 
@@ -236,7 +236,7 @@ include "design/api.grmb" as api;         // mount under the prefix api
 The semantics of a model does not depend on the order of items within a
 file, on the order of files in an include list, or on which file
 declares what. Merge is set union of entities plus additive `extend`
-clauses (4.7). Consequently `grimble fmt` may sort items, and a model
+clauses (4.9). Consequently `grimble fmt` may sort items, and a model
 split across files is the same model as one file with the same items.
 The only ordered things are comments (they travel with the item they are
 attached to) and the lexicographic expansion order of globs, which
@@ -267,9 +267,9 @@ grimble = "2";
 ## 4. Entities
 
 An ENTITY is a named, declared thing; it is a `unit` in U. There are
-seven kinds: `node`, `flow`, `contract`, `claim`, `vmodel`, `boundary`
-and `pack`. (grimble-model.md 9.3 lists six; `boundary` is kept as the
-seventh because D6 keeps it; section 14.) Every statement inside an
+eight kinds: `node`, `flow`, `contract`, `claim`, `vmodel`, `boundary`,
+`pack` and `template`. (grimble-model.md 9.3 lists six; `boundary` is kept
+because D6 keeps it and `template` is added by D75; section 14.) Every statement inside an
 entity body is a CLAUSE; a clause is an `attr` in U. A clause key may be
 repeated only where the table says "list".
 
@@ -292,7 +292,6 @@ node cli : trusted {
   owns "crates/frob-check/src/lib.rs::run";
   may fs.read at "crates/frob/**";
   may net.connect("api.github.com") at "crates/frob-gh/src/lib.rs::GhClient.*";
-  excuses net.listen because="a CLI never serves";
   surface kind(function) & attr(vis = "pub") & "crates/frob/**";
   attr timeout = 30 s;
 }
@@ -306,11 +305,14 @@ node cli : trusted {
 | clearance | `clearance LABEL;` | element of the label lattice | no, default `Secret` | maximum data label that may rest here; labels `Public` < `Internal` < `Pii` < `Secret` |
 | owns | `owns SELECTOR;` | selector (section 6) | list, none allowed (a node that owns nothing is legal: an external system) | the set of code identities this node owns |
 | may | `may ATOM [ "(" ARGS ")" ] [ at SELECTOR ];` | grant | list | capability grant. ARGS is a comma list of strings constraining the atom (host names, env names, paths); the grant applies at SELECTOR, default the node's whole `owns` set. This replaces v1's `of CONSTRAINT` and the colon form `net.connect:host` |
-| excuses | `excuses ATOM because="..."` | excuse | list | matrix cell `excused`: the atom is explicitly excluded with a reason; `because` required |
 | surface | `surface SELECTOR;` | selector | list (union) | the intended public API; SYS014 (reserved by binding.md 11.3) compares it with observed public symbols |
 | attrs | `attr` | typed value | list | markers and magnitudes (`attr timeout = 30 s;`, `attr idempotency_key;`) |
 
-A node without a `trust` is MDL008. Capability atoms are resolved against
+A node without a `trust` is MDL008. A node carries NO excuse clause:
+capabilities are denied by default (binding.md 7.2), so a node never
+needs to say "not this atom"; a not-granted atom is simply denied, and
+observed use of it is CAP001. A node-level `excuses ...` clause (the
+D5-era spelling) is MDL018 (4.8). Capability atoms are resolved against
 the one registry (grimble-model.md 9.6); an atom that is in no registry
 and no enabled pack is MDL016.
 
@@ -466,7 +468,88 @@ or whose version or digest differs from the pin is MDL004. Pins are
 exact so that a model and a pack move together and a version change is a
 visible edit of the model (no invisible variable).
 
-### 4.7 extend and namespace
+### 4.7 template (matrix-build templates, D75)
+
+A TEMPLATE is the only place an excuse can be written. It declares how
+capability atoms apply across languages and unit kinds in the grimble IR:
+"atom A does not apply to the units S selects, because R". It is not a
+claim about a node. It is a matrix-build declaration that shapes the
+capability matrix (binding.md 7.2) for every node whose code the
+selection reaches. Templates live in two places only: in packs (packs.md
+6.7, next to the atoms and detectors they qualify; a built-in pack
+may ship them) and in a `template` entity of a model file (this section),
+which is how a repository qualifies atoms for its own generated code. A
+`template` is never a clause of a `node`.
+
+```
+template gen_proto {
+  excuse net.listen
+    for kind(function) & lang(rust) & attr(generated_by = "protoc")
+    because="generated stubs declare a server trait but never bind a socket";
+  excuse fs.write
+    for "crates/*/src/gen/**" & lang(rust)
+    because="build-time generated code only writes under OUT_DIR, which build.script already covers";
+}
+```
+
+Grammar (EBNF, over the tokens of section 2):
+
+```
+template  = "template" name "{" { tclause } "}" ;
+tclause   = excuse | common ;                   (* common: alias, doc, exceptions *)
+excuse    = "excuse" atom "for" selector "because" "=" string ";" ;
+atom      = ident { "." ident } | ident "::" ident { "." ident } ;
+```
+
+`selector` is the grammar of 6.1 and nothing else; it selects UNITS, so
+the predicates `lang(L)`, `kind(k...)` and `attr(name [cmp value])` of
+6.3 decide the languages, unit kinds and attributes the excuse covers
+(`attr(generated_by = "protoc")` is how generated code is told apart; the
+attribute comes from the adapter or from a `grimble:` directive).
+
+| Field | Clause | Type | Required | Meaning |
+|---|---|---|---|---|
+| name | `template NAME` | name | yes | entity name (section 5); the reference the check output, the lock and exceptions use |
+| excuse | `excuse ATOM for SELECTOR because="..."` | excuse | list, at least one | the atom does not apply to the selected units; ATOM resolves against the registry (unknown is MDL016); an atom whose registry entry lists no detector for a selected language is still excusable |
+
+Rules.
+
+- `because` is mandatory and a string; a missing or empty reason is
+  MDL008. Reasons are judged by EXC rules, as for other reasons (7).
+- `for SELECTOR` is mandatory: there is no "excuse everywhere". The
+  selector has no `at` default; it never defaults to a node's `owns`
+  set, because an excuse is about code, not about an owner.
+- An excuse for A covers A and every descendant atom of A: `excuse
+  fs.write` covers `fs.write` and nothing broader; `excuse fs` covers
+  `fs.read` and `fs.write` (hierarchy, grimble-model.md 9.6). An excuse
+  with ARGS is not expressible: an excuse never narrows by argument.
+- An excuse never hides an observed use. If detectors observe the excused
+  atom in covered code, the result is CAP004 (binding.md 7.2), evaluated
+  before the excuse; an uncertain detection is Unresolved, never a pass.
+- An excuse that overlaps a grant `may A` of the model for the same atom
+  (or an ancestor or descendant) is SYS012 (binding.md 6.12): the model
+  both permits and declares not-applicable.
+- Every template excuse is listed and counted in `grimble check --json`
+  (sibling-contract.md): a `template_excuses` array of
+  `{template, atom, selector, because, source}` and a `template_excuses`
+  total in the summary, so a reviewer sees the full set at a glance.
+- Not-applicable is unchanged: it remains declared only by detector data
+  (packs.md 6.5), never by a template. A template excuse is `excused`, a
+  different cell.
+
+### 4.8 Removed: the node-level `excuses` clause (MDL018)
+
+Before D75 a node could write `excuses ATOM because="..."` and the matrix
+cell for that atom was `excused`. That clause is removed. Writing it on a
+`node` (or in an `extend node`) is MDL018 (Error). The remedy is one of:
+grant the atom (`may ATOM at SELECTOR`) if the node is meant to use it;
+leave it ungranted if the node is meant not to (capabilities are denied
+by default, so that is the whole statement); or, when the reasoning is
+about how the atom applies to a kind of code across languages (generated
+code, a language with no meaningful form of the atom), move it into a
+matrix-build template (4.7).
+
+### 4.9 extend and namespace
 
 ```
 extend node cli {            // same kind keyword as the target
@@ -479,7 +562,7 @@ namespace tools {            // names inside become tools.NAME
 
 `extend KIND REF { clauses }` adds clauses to an entity declared
 elsewhere in the model (for example in a fragment owned by another
-team). Only list clauses may be added (`owns`, `may`, `excuses`,
+team). Only list clauses may be added (`owns`, `may`,
 `surface`, `attr` with a new key, `alias`, exception clauses, `producer`
 or `consumer` on a flow, links on a vmodel). A scalar field (`trust`,
 `kind`, `clearance`, `label`, `shape`, `what`) in an `extend` is MDL008;
@@ -494,7 +577,7 @@ containment node, not an entity: it cannot have clauses.
 
 ### 5.1 One namespace per model
 
-All entities of all seven kinds, all packs and all namespaces share ONE
+All entities of all eight kinds, all packs and all namespaces share ONE
 flat-with-prefixes namespace per model. A flow and a node cannot share a
 name. Capability atoms, lattice elements, rule ids, units and metric
 names live in their own registries and never collide with entity names.
@@ -707,7 +790,7 @@ synthesized.
 
 ```
 node cli : trusted {
-  accept CAP003 because="docs/decisions/2026-10-02-bootstrap-path.md";
+  accept CAP001 because="docs/decisions/2026-10-02-bootstrap-path.md";
   defer SYS005 ticket="01J9QKX3M8Z4T7N2V5B6C0D1E2" because="producer lands next cycle" until=2026-12-01;
   hotfix SYS002 ticket="01J9QMA7R2K5W8Y1H3F6G9P4S0" because="split the tie before release";
 }
@@ -732,8 +815,8 @@ accept SYS004 on cli because="one-way import by design";   // top-level form
   .grmb comment it is MDL013 (use the clause). There is no
   `because "..."` (bare string) form: every attribute is `key=value`,
   matching the `because=` spelling of the shared directive parser; this
-  also changes `excuses ... because "..."` of grimble-model.md section 2
-  to `because="..."`.
+  also changes the `because "..."` of grimble-model.md section 2 to
+  `because="..."`.
 - Reasons are judged by EXC rules (reason quality, budgets, STALE,
   EXPIRED; exceptions.md section 6), not by MDL rules; MDL013 only
   checks structure (kind and attribute combination, position, known
@@ -831,7 +914,7 @@ child by this placement alone):
   `label`, `producer`, `consumer`, `contract`, `shape` and `versioning`
   clauses.
 - Body parts are every other clause (`owns`, `surface`, `may`,
-  `excuses`, `clearance`, the other flow fields, claim and vmodel
+  `clearance`, the other flow fields, claim and vmodel
   clauses, links, pack clauses, `alias`, `renamed_from`), all inside one
   `group(unordered)` child of the unit. `attr(name=owns)` and its
   siblings therefore sit in that group, not directly under the unit.
@@ -860,7 +943,8 @@ child by this placement alone):
 | `owns SEL` | `attr(name=owns)(unit; apply(kind=select)(...))` | decl | selector terms below; May edges from the `select` node to every unit it matches (6.4 status); the edges are the binding relation of section 10 |
 | `surface SEL` | `attr(name=surface)(unit; apply(kind=select))` | decl | |
 | `may A(args) at SEL` | `attr(name=may)(unit; apply(kind=grant)(ref(A); group(unordered)(lit(string)...); apply(kind=select)))` | decl | `ref(A)` is a Must edge to the registry atom (`ref(pack::A)` through the pack); unknown atom is an Unknown edge and MDL016 |
-| `excuses A because=".."` | `attr(name=excuses)(unit; ref(A))` with `attr(name=because)(that attr; lit(string))` | decl | an attr on an attr |
+| `template N { }` | `unit(kind=template, role=declaration)`, body `group(unordered)(excuse clauses)` | decl | one per entity; no `extend` of a template (a template is replaced whole) |
+| `excuse A for SEL because=".."` | `attr(name=excuse)(template unit; group(unordered)(ref(A); apply(kind=select); attr(name=because)(.; lit(string))))` | decl | `ref(A)` is a Must edge to the registry atom (unknown is an Unknown edge and MDL016); the `select` is the units the excuse covers (May edges, 6.4); a Body part of the template, listed in `check --json` |
 | flow `: A -> B` | `apply(kind=connect)(ref(A); ref(B))` in the flow body | exp | two Must edges to the nodes |
 | `label`, `rate`, `age`, `size`, `fanout`, `growth`, `condition`, `transport` | `attr(name=<key>)(unit; lit or ref)` | decl | quantities are `lit(quantity, "100 req/s")` |
 | `producer SEL` `consumer SEL` | `attr(name=producer\|consumer)(unit; apply(kind=select))` | decl | |
@@ -921,9 +1005,9 @@ parse then print, defined on the canonical facet stream.
    (universal-model.md 7.1); a semantic edit always does.
 3. Canonical order: items of a file in the order module/part, includes
    (by path), packs, namespaces, entities by (kind order node, flow,
-   contract, claim, vmodel, boundary; then name, a declaration before
+   contract, claim, vmodel, boundary, template; then name, a declaration before
    its `extend`), then top-level exceptions (D70); clauses of an entity
-   in a fixed order (kind, clearance, owns, may, excuses, surface,
+   in a fixed order (kind, clearance, owns, may, surface,
    producer, consumer, contract, flow fields, what, proof, assumed,
    evidence, links, attrs by key, exceptions by (kind, rule), aliases);
    operands of `&` and `|` sorted by their printed form; list-valued
@@ -1034,7 +1118,7 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL005 | MDL-SELECTOR-NO-FILE | Warn | a selector's PATH matches no file in the walk. A WARNING by design: a model may legitimately describe code that does not exist yet. It suppresses SYS001 for the same selector so one root cause is one finding; a selector whose file matches but whose units do not is SYS001 |
 | MDL006 | MDL-UNRESOLVED-REF | Error | a reference (flow endpoint, claim operand, link, exception target, `frob:tests` target) resolves to no entity, or to an entity of the wrong kind (except a V-model link target that is not a vmodel, which is MDL014) |
 | MDL007 | MDL-VERSION | Error | missing header, unsupported major, or files of one model with different majors |
-| MDL008 | MDL-FIELD | Error | a required field is missing (`trust`, flow `label`, contract `shape`, claim `what`, vmodel `kind` and `level`), a scalar clause appears twice, or an `extend` sets a scalar |
+| MDL008 | MDL-FIELD | Error | a required field is missing (`trust`, flow `label`, contract `shape`, claim `what`, vmodel `kind` and `level`, a template's `excuse` clause, an excuse's `for` or non-empty `because`), a scalar clause appears twice, or an `extend` sets a scalar |
 | MDL009 | MDL-TYPE | Error | an ill-typed value: unit outside the table, comparing dimensions, a path with `..` or empty, a boundary pair on the wrong lattice, a malformed date |
 | MDL010 | MDL-SELECTOR-EMPTY-BY-CONSTRUCTION | Warn | a selector that cannot match anything whatever the repository holds (`lang(rust) & lang(python)`, `a & !a`) |
 | MDL011 | MDL-MODULE | Error | `part of` name differs from the root `module`, or two roots declare the same module name, or an included file declares `module` |
@@ -1044,6 +1128,7 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL015 | MDL-SHADOW | Advisory | the resolved entity shadows a different entity of the same name at an outer level |
 | MDL016 | MDL-UNKNOWN-ATOM | Error | a capability atom in no registry and no enabled pack |
 | MDL017 | MDL-DUPLICATE-CLAUSE | Advisory | a list clause repeated with identical content |
+| MDL018 | MDL-NODE-EXCUSE | Error | an `excuses` clause on a `node` or in an `extend node` (removed by D75). Remedy: move the reasoning into a matrix-build template (4.7) or grant the atom with `may`; ungranted already means denied |
 
 Cyclic flows are allowed and are not an MDL rule: a cycle is a legal
 model and the kernel's age and demand computations handle it by SCC
@@ -1086,6 +1171,8 @@ test the U adapter hold the expected U term and scope graph per construct
 | `entity/claim.grmb` | the three claim forms, `assumed`, both evidence spellings give one relation |
 | `entity/vmodel.grmb` | levels and aliases, link kinds, MDL014 cases |
 | `entity/boundary.grmb` | endorse and declassify, lattice mismatch is MDL009 |
+| `entity/template.grmb` | the excuse grammar, selection over lang, kind and attr, missing `for` or `because` is MDL008, unknown atom is MDL016, `check --json` lists and counts each excuse |
+| `entity/node-excuse.grmb` | a node-level `excuses` clause is MDL018 and the file otherwise loads |
 | `entity/pack.grmb` | pin, digest mismatch and missing pack (MDL004), pack-qualified atom |
 | `scope/unique/` | a directory (multi-file): MDL001 independent of include order |
 | `scope/resolve.grmb` | nearest-first resolution, MDL006, shadow Advisory MDL015 |
@@ -1132,7 +1219,6 @@ node frob : trusted {
   may fs.read at "crates/frob*/**";
   may fs.write at "crates/frob-ledger/**";
   may exec at "crates/gob-exec/**";
-  excuses net.listen because="a CLI never serves; frob serve is milestone 2";
 }
 
 /// The design goblin. Crates are created by G08 onward.
@@ -1220,8 +1306,15 @@ Why the rules accept it:
 - MDL006: `walk_result`, `symref`, `frob`, `gob`, `grimble` and
   `req_gate_exit` all resolve. MDL014: `verifies` joins a test at
   `customer_test` to an artifact at `requirements`, a pair of 4.5.
-- The `excuses` is the one excuse; `net.listen` is excused on `frob` and
-  is otherwise unmentioned, so CAP003 would not fire for it.
+- No node carries an excuse (MDL018 would fire). `frob` is not granted
+  `net.listen`, and that is the whole statement: capabilities are denied
+  by default (binding.md 7.2), so an observed `net.listen` in
+  `crates/frob/**` is CAP001 and a blank cell is "denied", not
+  "unconsidered". The earlier draft wrote `excuses net.listen because=...`
+  here; it is rewritten as a grant decision (no grant) because the
+  reasoning ("a CLI never serves") is about this node, not about how an
+  atom applies to a kind of code. A template excuse (4.7) is the right
+  tool only for the latter, for example generated stubs.
 - `grimble check` reports zero Errors and MDL005 Warn for the three
   selectors that name crates not yet created (`crates/grimble-*/**` twice
   and `crates/grimble-model/src/**`); these are warnings by design and
@@ -1250,7 +1343,7 @@ sections:
 3. `may ATOM at SELECTOR of CONSTRAINT`: `of CONSTRAINT` and the colon
    atom argument (`net.connect:api.github.com`) are replaced by one form,
    `ATOM("arg", ...)`. v1's `exclusive` and `via` are gone.
-4. `excuses ATOM because "..."` and every exception: the bare string after
+4. `because "..."` of every exception: the bare string after
    `because` becomes `because="..."` (`key=value` everywhere, matching the
    shared directive parser). `defer ... ticket ID` becomes
    `ticket="ULID"`.
@@ -1261,7 +1354,7 @@ sections:
    `producer`, `consumer` and `contract` are three clauses. `contract`
    now names a `contract` ENTITY (new, 4.3) rather than a selector, so a
    shape is shared and versioned.
-7. `boundary`: kept (D6) and made the seventh entity kind; 9.3 listed six.
+7. `boundary`: kept (D6) and made the seventh entity kind; 9.3 listed six. D75 adds `template` as the eighth (4.7); the node-level `excuses` clause of grimble-model.md section 2 is removed (MDL018).
    The six-phase block remains dropped; the example's undeclared
    `f_install`, `foreign`/`trusted` levels and the other undeclared names
    of section 2 (`symbols`, `registry`, `vet`) are why that example was

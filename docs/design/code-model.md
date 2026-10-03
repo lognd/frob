@@ -228,7 +228,7 @@ uses-contract, invariant(+attrs), ticket, todo, deprecated, tests(kind),
 enforces, enumerates(members), until, decision. Replaced by the
 exception verbs: waive and debt become `accept`, `defer` and `hotfix`.
 Added: `binds` (section 6), `node`/`channel`/`boundary`/`effect`
-(grimble binding, grimble-model.md), `may`/`excuses` (capability
+(grimble binding, grimble-model.md), `may` (capability
 binding, section 7), and the milestone-2 claim verbs below. Namespace
 ownership: the parser in `gob-directives` is namespace-parametric and
 one registry holds every verb; a verb is namespaced by what it says,
@@ -349,17 +349,22 @@ vocabulary rows, attributes, pack-declared patterns, or declarative
 rule files per rules.md section 3) that attribute atoms to symbols. A
 grimble node binds to symbols (grimble-model.md) and declares
 `may fs.write;` for what it needs. The matrix is nodes x capabilities.
-The cell set (uses, undeclared, declared-unused, excused,
-not-applicable, unknown), the detector row schema, the registry and
+The cell set (uses, undeclared, declared-unused, denied,
+excused, not-applicable, unknown), the detector row schema, the registry and
 the Unresolved accounting are defined once in grimble-model.md 9.6;
 this section does not restate them.
 
-The v1 practice the user liked, waiving irrelevant capabilities with a
-reason, is kept as `excuses ATOM because="..."`. Scaling: a new atom
+Capabilities are denied by default (D75): a node's ungranted atom is
+denied and its observed use is CAP001; a blank cell means denied. The v1
+practice of waiving irrelevant capabilities with a reason is no longer a
+node clause; it survives only as a matrix-build template excuse (grmb-spec
+4.7, packs.md 6.7) that shapes how an atom applies to a kind of code, and
+an excuse never masks an observed use (CAP004). Scaling: a new atom
 needs one registry entry and detectors in the adapters that can
 observe it; until a detector exists the cell is `unknown` (reported,
-never clean), and once a detector ships its CAP003 is Advisory for one
-release, so nothing breaks repo-wide on day one; `grimble check --census
+never clean), and once a detector ships its first ungranted use is
+CAP001 at the pack's per-atom severity (a pack may ship a new atom at a
+lower severity for one release, packs.md 4.4); `grimble check --census
 capabilities` lists which cells changed. The finding ids and their
 conditions are the one table in grimble-model.md section 4. Milestone 2
 or later (D36).

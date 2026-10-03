@@ -103,7 +103,7 @@ Every grimble crate is Milestone 2 or later (D36).
 | grimble-model | `.grmb` parser with spans, multi-file modules, typed attrs, selectors (`owns`, `surface`, `at`), flows with producer/consumer/contract, boundaries, claims, V-model, exceptions (the four kinds), JSON export, v1 strata import (`grimble migrate`) |
 | grimble-kernel | label closure, SCC longest-path age, demand and capacity, V-model closure, claim verdicts with witnesses, assumes with expiry |
 | grimble-bind | model-to-symbol resolution, ambiguity, FOREIGN, the `binds` cross-language edge with per-`via` signature comparison, contract fingerprints, drift findings (SYS family), shrink, `grimble ack` on gob-lock |
-| grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble-model.md 9.6) with `excuses`, CAP family |
+| grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble-model.md 9.6) with matrix-build template excuses, CAP family: CAP001, CAP002, CAP004 (CAP003 retired, D75) and the matrix-build rule SYS012 (binding.md 6.12) |
 | grimble-lints | universal rules over U (sort in loop, network in retry loop, secret literal, ...), the NEAT family (neatness.md), language-specific structural rules (tree-sitter queries or ast-grep patterns), GPOL user policy over code; callee vocabularies are views over the gob-ir registry |
 | grimble-ci | the CI and DK families (cicd.md) over the GitHub Actions and Dockerfile adapters, CI012 consistency joins through the F2 manifest adapter (grimble-model.md 9.8) |
 | grimble-arch | metrics core (size, nesting, LCOM, coupling), layering contracts, CYCLE, DEAD, LARGE, dup rungs R1-R5 |
@@ -150,9 +150,9 @@ namespaces families by product so a foreign family is never unknown.
 | PARSE, DSL | the product whose file or directive is malformed | gob-directives | one id each, parametric |
 | SIB | frob | frob-check | SIB001-SIB099; `sibling-unavailable`, emitted by `sibling.rs` when a configured sibling cannot be used (sibling-contract.md section 6); required Unresolved under `[check] require_siblings` |
 | PACK | grimble | grimble-capabilities | PACK001-PACK099; PACK001-PACK008 of packs.md section 9; pack loading, the drift-lock and `grimble.packs.lock` |
-| MDL | grimble | grimble-model | MDL000-MDL099; MDL000-MDL017 of grmb-spec.md (.grmb well-formedness) |
+| MDL | grimble | grimble-model | MDL000-MDL099; MDL000-MDL018 of grmb-spec.md (.grmb well-formedness) |
 | SYS, BIND | grimble | grimble-bind | model drift and cross-language edges |
-| CAP | grimble | grimble-capabilities | capability matrix |
+| CAP | grimble | grimble-capabilities | capability matrix; CAP001, CAP002 and CAP004 (excused but used); CAP003 is retired (D75) and its id is never reused |
 | CYCLE, ARCH, LARGE, DEAD, DUP | grimble | grimble-arch | structure metrics |
 | SEC, PII | grimble | grimble-security | structural security patterns |
 | VET | grimble | grimble-vet | dependency vetting |

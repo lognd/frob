@@ -10,7 +10,7 @@ grimble's derive generates it).
 
 Inputs: grimble-model.md 9.3, 9.5, 9.6, 9.7; binding.md (SYS001-SYS012,
 the polarity and Unresolved conditions of 6.13, the capability matrix of
-section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-017);
+section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-018);
 cli.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
 three required reasons); universal-model.md 3.3 and 4 (fidelity, answer
 lattice, polarity); exceptions.md (kinds, opaque `ticket=`, the
@@ -116,8 +116,9 @@ property the conformance corpus pins).
 | `timing` | object | `elapsed_ms`, wall time of the run |
 | `packs` | array, optional | the data packs the run used: one `{name, version, digest}` per enabled pack, sorted by `name` (packs.md section 7); `digest` is `blake3:` plus 64 hex digits, the pack digest of packs.md 2.5 |
 | `packs_digest` | string, optional | `blake3:` plus 64 hex digits, the digest of the canonical JSON of the `packs` array (packs.md section 7); the side-input digest of the rules that read the registry |
+| `template_excuses` | array, optional | every matrix-build template excuse in force (D75; grmb-spec 4.7, packs.md 6.7): one `{template, atom, selector, because, source}` per excuse, `source` being `pack:NAME@VERSION` or `model:TEMPLATE`, sorted by `(template, atom)`; the summary count is its length. Emitted by grimble whenever it has a model or an enabled pack (an empty array when there are none) |
 
-The two `packs` keys are the only optional keys and they are additive
+The two `packs` keys and `template_excuses` are the only optional keys and they are additive
 (section 4): a product with no pack mechanism (crunk) omits both, grimble
 emits both whenever `grimble.toml` exists (an empty `packs` array and the
 digest of `[]` when no pack is enabled), and they appear together or not

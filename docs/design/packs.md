@@ -42,7 +42,7 @@ grimble words, not grammar. It may contribute:
 
 | Belongs in the kernel (crates, versioned with the binary) | Belongs in a pack (data) |
 |---|---|
-| the .grmb grammar, the keyword table, the seven entity kinds | an atom, a detector, a vocabulary name |
+| the .grmb grammar, the keyword table, the eight entity kinds | an atom, a detector, a vocabulary name |
 | the two builtin lattices, the answer lattice, the verdicts | extra trust elements or labels (11, Q1) |
 | the CAP, SYS, MDL, PACK rule predicates and their polarity | the default severity a CAP rule has for one atom |
 | the U operators, the 47 queries, the detector KINDS | which query, vocabulary or attribute a detector uses |
@@ -96,7 +96,7 @@ name     = "fs.write"
 doc      = "Creates, modifies, renames or removes files and directories."
 args     = "path"               # what `may fs.write("...")` constrains
 cwe      = ["CWE-73"]
-severity = { CAP001 = "error", CAP002 = "warn", CAP003 = "advisory" }
+severity = { CAP001 = "error", CAP002 = "warn" }
 
 [[vocab]]
 lang  = "rust"
@@ -118,7 +118,7 @@ Every table is closed (no keys beyond those listed).
 
 ```
 pack_file   = "format" "=" INT
-              pack_table { atom } { vocab } { detector }
+              pack_table { atom } { vocab } { detector } { template }
               { infer } { claim } { node_kind } [ lattice ] ;
 
 pack_table  = "[pack]" name version description licence [ provenance ] ;
@@ -133,8 +133,8 @@ atom        = "[[atom]]" "name" "=" ATOMNAME "doc" "=" STRING
               [ "args" "=" ( "none" | "path" | "host" | "name" | "string" ) ]
               [ "cwe" "=" LIST ] [ "severity" "=" SEVTABLE ] ;
 ATOMNAME    = IDENT { "." IDENT } ;              (* snake_case segments *)
-SEVTABLE    = "{" [ "CAP001" "=" SEV ] [ "," "CAP002" "=" SEV ]
-                  [ "," "CAP003" "=" SEV ] "}" ;
+SEVTABLE    = "{" [ "CAP001" "=" SEV ] [ "," "CAP002" "=" SEV ] "}" ;
+                                                 (* CAP003 retired (D75); CAP004 is a fixed Error *)
 SEV         = "error" | "warn" | "advisory" | "off" ;
 
 vocab       = "[[vocab]]" "lang" "=" LANG "class" "=" ATOMNAME
@@ -159,6 +159,10 @@ kind_fields = (* query *)     "q" "=" QID [ "args" "=" TABLE ]
             | (* none *)      "reason" "=" STRING
             | (* impossible *) "reason" "=" STRING ;      (* reason is mandatory *)
 QID         = "Q" DIGIT DIGIT ;                  (* a query of universal-model.md section 5 *)
+
+template    = "[[template]]" "name" "=" IDENT "atom" "=" ATOMNAME
+              "for" "=" SELECTOR_TEXT "reason" "=" STRING ;
+                                                 (* a matrix-build excuse, 6.7; the selector is grmb-spec 6.1 text *)
 
 infer       = "[[infer]]" "id" "=" IDENT "applies" "=" TABLE "role" "=" ROLE
               "from" "=" TABLE "status" "=" "may" "reason" "=" STRING ;
@@ -226,6 +230,11 @@ Notes on the grammar:
   the pack and not an omission; it has exactly the effect of no row and
   PACK003 does not fire for it (nothing is unavailable, nothing was
   declared available).
+- Matrix-build templates (`[[template]]`, D75) are excuses: "atom A does
+  not apply to the units this selector picks, because REASON" (6.7).
+  They are the pack-side twin of the `template` entity of grmb-spec 4.7;
+  both feed one effective template set. A template can never hide an
+  observed use (CAP004, binding.md 7.2).
 - Claim templates (`[[claim]]`) generate the obligation shape of v1's
   threat packs: "when a node holds atom A at scope S, a claim of rung R
   discharging OBLIGATION must exist". They carry no grammar. The three
@@ -287,8 +296,7 @@ document `$id` `https://frob.dev/schemas/pack/1`):
                              { "properties": { "kind": { "const": "none" } },       "required": ["reason"] },
                              { "properties": { "kind": { "const": "impossible" } }, "required": ["reason"] } ] },
     "severities": { "properties": { "CAP001": { "$ref": "#/$defs/sev" },
-                                    "CAP002": { "$ref": "#/$defs/sev" },
-                                    "CAP003": { "$ref": "#/$defs/sev" } } },
+                                    "CAP002": { "$ref": "#/$defs/sev" } } },
     "sev":    { "enum": ["error", "warn", "advisory", "off"] }
   }
 }
@@ -335,7 +343,7 @@ pack); every `query` Q-id exists and its `args` match the query's
 parameter names; every `attribute` detector lists at least one name;
 `impossible` and `none` carry a `reason`; a `(atom, lang)` has either
 `impossible` or real detectors, never both; every `[[infer]]`
-has `status = "may"`; every `severity` is in the enum; `atoms = "*"`
+has `status = "may"`; every `severity` is in the enum (a `CAP003` key is retired and is a schema failure); every `[[template]]` has a non-empty `reason`, a `for` selector that parses (grmb-spec 6.1) and an `atom` of THIS pack (a template excusing another pack's atom is PACK005, as for `impossible`); `atoms = "*"`
 matches at least one leaf atom; no two items in the file share a key.
 
 ## 3. Where packs live
@@ -452,7 +460,7 @@ lock    = "grimble.packs.lock"          # default; one lock per repository
 
 [packs.severity]                        # repository override, wins over the pack
 "unsafe"     = { CAP001 = "error" }
-"stdio.write" = { CAP003 = "off" }
+"stdio.write" = { CAP001 = "warn" }
 
 [neat.effects.rust]                     # repository vocabulary layer (neatness.md 3)
 "fs.write" = ["tempfile::NamedTempFile::persist"]
@@ -514,7 +522,7 @@ digest  = "blake3:6f1c...e90a"          # the PACK digest
 [pack.vocab_count]                      # names per vocabulary, for human diffs
 "rust/fs.write" = 11
 [pack.severity]                         # the pack-derived defaults, MATERIALIZED (5)
-"fs.write" = { CAP001 = "error", CAP002 = "warn", CAP003 = "advisory" }
+"fs.write" = { CAP001 = "error", CAP002 = "warn" }
 ```
 
 There is one `[[pack]]` per enabled pack, sorted by name. The lock is
@@ -564,11 +572,13 @@ silent:
   findings (a new detector can create CAP001 at a use it never saw
   before). They are not special-cased; the repository absorbs them with
   the normal ratchet pool (exceptions.md) or a model change. The
-  grace period that grimble-model.md section 4 gives CAP003 after a new
-  atom ships (Advisory for one release) is owned by the pack author: a
-  new atom ships with `CAP003 = "advisory"` in its `severity` and a
-  later pack version raises it, so the window is itself a visible,
-  locked pack change (and its `[pack.severity]` line in the lock).
+  grace period that the pre-D75 design gave CAP003 after a new atom
+  shipped is gone with CAP003 (capabilities are denied by default, so a
+  new atom's first observed use is CAP001 at its pack severity). A pack
+  author who wants a softer landing ships the new atom with a lower
+  `CAP001` in its `severity` and a later pack version raises it, so the
+  window is itself a visible, locked pack change (and its
+  `[pack.severity]` line in the lock).
 
 The whole point is that a finding set never changes without a
 diff: either the repository's inputs changed (grimble.toml, the model,
@@ -624,8 +634,8 @@ clauses of the named `pack` entities through the `grimble fmt` printer
 (a span-precise edit of two clauses, never any other text) and prints
 the resulting diff. Without the flag the verb rewrites only the lock and
 prints the model edit it would make (`MDL004` stays open until a human
-applies it). The edit is shrink-neutral (grants and excuses are never
-touched), it is a visible commit, and it is never run by a hook or by
+applies it). The edit is shrink-neutral (grants and template excuses are
+never touched), it is a visible commit, and it is never run by a hook or by
 `check`. This resolves the question in favour of a bounded, opt-in
 rewrite rather than refusing to edit the model: an update that required
 hand-editing digests in a .grmb file would be error-prone, and the flag
@@ -642,18 +652,18 @@ reader finds its effective value in git:
 |---|---|---|---|
 | which packs are on | `grimble.toml` `[packs] enabled` | `grimble init` | a repository edit |
 | which pack content is in force | `grimble.packs.lock` `[[pack]]` digests and items | `packs lock` and `update` | a lock edit, PACK001 until done |
-| per-atom default severity of CAP001, CAP002, CAP003 | the lock, `[pack.severity]` (the resolved triple per atom, after the pack's own defaults and before the repository override) | `packs lock` and `update` | a lock edit, PACK001 for the atom item |
+| per-atom default severity of CAP001, CAP002 | the lock, `[pack.severity]` (the resolved pair per atom, after the pack's own defaults and before the repository override) | `packs lock` and `update` | a lock edit, PACK001 for the atom item |
 | repository severity overrides | `grimble.toml` `[packs.severity]` | by hand or `grimble init --materialize` | a repository edit |
 | vocabulary names and their classes | the pack (digest in the lock) plus the repository layer `[neat.effects]`, `[ci] registries` | pack author, repository | PACK001, or a repository edit |
 | which detectors run per `(atom, lang)` | the lock (detector item keys) | `packs lock` and `update` | PACK001 |
 | inference | the entity's `attr infer = pack::rule;` in the model (binding.md 2.3), never ambient | the model author | a model edit |
-| grace period of a new atom (CAP003 Advisory) | the pack's per-atom `severity`, resolved into the lock `[pack.severity]` | pack author | a lock edit, PACK001 for the atom item |
+| landing severity of a new atom (a lower CAP001 for one release) | the pack's per-atom `severity`, resolved into the lock `[pack.severity]` | pack author | a lock edit, PACK001 for the atom item |
 | external pack identity | `grimble.toml` `[[packs.external]]` url and digest | by hand or `packs fetch --add` | a repository edit |
 
 `grimble config show --effective` prints, per atom, the effective
 severity with the layer that decided it (`repository`, `pack`, `rule`).
 There is no pack default that is read at run time and appears in no
-file: the lock carries the resolved severity triple precisely so that a
+file: the lock carries the resolved severity pair precisely so that a
 change to a pack's atom `severity` shows up as a one-line diff in
 `grimble.packs.lock` as well as a PACK001 finding.
 
@@ -700,7 +710,7 @@ Detectors are declared on leaf atoms. The cell of a parent atom `fs` is
 the join of its children: `uses` if any child cell is `uses`;
 `not-applicable` only if every child is; `unknown` if any child is
 unknown and none is `uses`. A grant `may fs` covers `fs.read` and
-`fs.write` (hierarchy, grimble-model.md 9.6) and an excuse `excuses fs`
+`fs.write` (hierarchy, grimble-model.md 9.6) and a template excuse for `fs`
 excludes both. If a pack puts a detector on a parent atom, it answers
 for each child that has no detector of its own at May precision (a hit
 is a use of the parent but cannot tell which child), which is why
@@ -712,7 +722,8 @@ built-in packs do not.
 |---|---|
 | `uses`, `undeclared` | a detector fired (Exact for typed, lexical flagged); grants decide which |
 | `declared-unused` | a grant, every real detector available and complete, Exact absence (CAP002) |
-| `excused` | a model clause `excuses ATOM because=...`; never from a pack |
+| `denied` (blank) | no grant covers the atom for the node (deny by default, binding.md 7.2); no finding unless a use is observed (CAP001) |
+| `excused` | a matrix-build template excuse (6.7): a `[[template]]` of an enabled pack or a `template` entity of the model (grmb-spec 4.7); a detected use in the covered code is CAP004, never a pass |
 | `not-applicable` | ONLY a pack's explicit `impossible` detector for that `(lang, atom)` (below), or binding.md 7.2 item 1 (a node that owns no code) |
 | `unknown` | no detector row, a `none` row, an unavailable detector, or a detector answer of Unknown; one summary Unresolved per node, never per cell |
 
@@ -777,6 +788,40 @@ the pack author had omitted the `css` row the CSS cell would also be
 `unknown`; adding a TypeScript nowhere declared never yields
 `not-applicable`. The fixture asserts the three cells.
 
+### 6.7 Template excuses in packs
+
+An excuse is a matrix-build declaration, not a statement about a node
+(D75; grmb-spec 4.7 gives the model-file twin). A pack author writes it
+beside the atoms and detectors it qualifies:
+
+```toml
+[[template]]
+name   = "generated-protobuf"
+atom   = "net.listen"
+for    = "lang(rust) & attr(generated_by = \"protoc\")"
+reason = "generated stubs declare a server trait but never bind a socket"
+```
+
+- `for` is a selector over UNITS (grmb-spec 6.1), so languages, unit
+  kinds and attributes decide what the excuse covers; `reason` is
+  mandatory and is part of the item digest, so editing it is PACK001.
+  The item key is `template:NAME`.
+- A pack may excuse only its OWN atoms (PACK005 otherwise), as for
+  `impossible`; a repository excuses any atom in a `template` entity of
+  its model. Both feed one effective set; the check output
+  (`grimble check --json`) lists and counts every excuse with its source
+  (`pack:NAME@VERSION` or `model:TEMPLATE`).
+- Built-in packs may ship templates. The three of milestone 2 ship none.
+- A template is not `impossible`: `impossible` says the capability
+  cannot exist in the language and is a detector fact (6.5,
+  not-applicable); a template says the atom is set aside for selected
+  code and the cell is `excused`. A detected use in excused code is
+  CAP004 (binding.md 7.2), evaluated before the excuse, so a template
+  can never mask a use. A template whose selection overlaps a model
+  grant of the same atom (or an ancestor or descendant) is SYS012
+  (binding.md 6.12).
+
+
 ## 7. The compute digest and the sibling contract
 
 `compute_digest` (sibling-contract.md 3.3) exists so that two products
@@ -802,7 +847,7 @@ section 4: new optional keys do not move the major):
   the `packs` array. It is the SIDE-INPUT digest of D30 (architecture.md,
   "findings are persisted per (file digest, rule id, rule version,
   side-input digest)") for every rule whose predicate reads the
-  registry: CAP001 to CAP003, the NEAT effects rules, CI008 and CI009,
+  registry: CAP001, CAP002, CAP004, the NEAT effects rules, CI008 and CI009,
   and the binding rank 3 rows. Adding a pack or changing a pack digest
   therefore invalidates exactly those cached findings and no others.
 - `fidelity[].capabilities` already carries atom ids pack-qualified with
@@ -833,34 +878,35 @@ CWE-668, CWE-918. 18 atoms (13 leaves, 5 parents), 37 vocabularies, 91
 detector items (39 in the three source languages, 52 `impossible`),
 146 lock items.
 
-Severity convention: `CAP001/CAP002/CAP003`. Effects that touch the
+Severity convention: `CAP001/CAP002` (CAP003 is retired; CAP004 is a fixed Error and is not configurable). Effects that touch the
 outside world or the host (`fs.*`, `net.*`, `env.write`, `process.spawn`,
-`unsafe`) are `error/warn/advisory`; incidental effects that nearly
+`unsafe`) are `error/warn`; incidental effects that nearly
 every node has (`env.read`, `clock`, `rng`, `stdio.*`, `exit`) are
-`warn/warn/off` so that a model need not list them on every node (CAP003
-would otherwise drown the matrix); the repository raises any of them with
-`[packs.severity]`.
+`warn/warn`: still denied by default, but an ungranted use of an
+incidental atom is a Warn, not an Error, so adoption is not a wall of
+Errors (the model lists them where they are used); the repository raises
+any of them with `[packs.severity]` (open question 11.10).
 
-| Atom | Parent | `args` | CAP001 | CAP002 | CAP003 | cwe | Meaning |
-|---|---|---|---|---|---|---|---|
-| `fs` | | none | | | | | any filesystem access (grouping atom) |
-| `fs.read` | `fs` | path | error | warn | advisory | CWE-22 | reads file content or directory listings or metadata |
-| `fs.write` | `fs` | path | error | warn | advisory | CWE-73 | creates, modifies, renames or removes files and directories |
-| `net` | | none | | | | | any network access (grouping atom) |
-| `net.connect` | `net` | host | error | warn | advisory | CWE-918 | opens an outbound connection or sends a request |
-| `net.listen` | `net` | host | error | warn | advisory | CWE-668 | binds a socket or starts a server |
-| `env` | | none | | | | | process environment (grouping atom) |
-| `env.read` | `env` | name | warn | warn | off | CWE-526 | reads environment variables, the working directory or the executable path |
-| `env.write` | `env` | name | error | warn | advisory | CWE-454 | sets or removes environment variables or changes the working directory |
-| `clock` | | none | warn | warn | off | | reads wall or monotonic time, or sleeps |
-| `rng` | | none | warn | warn | off | CWE-338 | draws randomness |
-| `stdio` | | none | | | | | standard streams (grouping atom) |
-| `stdio.read` | `stdio` | none | warn | warn | off | | reads standard input |
-| `stdio.write` | `stdio` | none | warn | warn | off | | writes standard output or error |
-| `exit` | | none | warn | warn | off | | terminates the process |
-| `process` | | none | | | | | process control (grouping atom) |
-| `process.spawn` | `process` | name | error | warn | advisory | CWE-78 | starts another program or a shell command (alias `exec`) |
-| `unsafe` | | none | error | warn | advisory | CWE-119 | bypasses the language's memory or type safety |
+| Atom | Parent | `args` | CAP001 | CAP002 | cwe | Meaning |
+|---|---|---|---|---|---|---|
+| `fs` | | none | | | | any filesystem access (grouping atom) |
+| `fs.read` | `fs` | path | error | warn | CWE-22 | reads file content or directory listings or metadata |
+| `fs.write` | `fs` | path | error | warn | CWE-73 | creates, modifies, renames or removes files and directories |
+| `net` | | none | | | | any network access (grouping atom) |
+| `net.connect` | `net` | host | error | warn | CWE-918 | opens an outbound connection or sends a request |
+| `net.listen` | `net` | host | error | warn | CWE-668 | binds a socket or starts a server |
+| `env` | | none | | | | process environment (grouping atom) |
+| `env.read` | `env` | name | warn | warn | CWE-526 | reads environment variables, the working directory or the executable path |
+| `env.write` | `env` | name | error | warn | CWE-454 | sets or removes environment variables or changes the working directory |
+| `clock` | | none | warn | warn | | reads wall or monotonic time, or sleeps |
+| `rng` | | none | warn | warn | CWE-338 | draws randomness |
+| `stdio` | | none | | | | standard streams (grouping atom) |
+| `stdio.read` | `stdio` | none | warn | warn | | reads standard input |
+| `stdio.write` | `stdio` | none | warn | warn | | writes standard output or error |
+| `exit` | | none | warn | warn | | terminates the process |
+| `process` | | none | | | | process control (grouping atom) |
+| `process.spawn` | `process` | name | error | warn | CWE-78 | starts another program or a shell command (alias `exec`) |
+| `unsafe` | | none | error | warn | CWE-119 | bypasses the language's memory or type safety |
 
 Detectors, Rust (13 rows, kind `callee` with a typed match unless noted;
 a trailing `!` is a macro call):
@@ -1111,7 +1157,7 @@ enabled = ["grimble/core-effects", "grimble/ci-github", "grimble/rust-ecosystem"
 
 [packs.severity]
 "unsafe"      = { CAP001 = "error" }       # already the default; kept as the repository's statement
-"stdio.write" = { CAP003 = "off" }
+"stdio.write" = { CAP001 = "off" }
 
 [neat.effects.rust]
 "fs.write" = ["gob_text::atomic_write"]    # a repository-internal chokepoint is an fs.write too
@@ -1134,7 +1180,6 @@ node exec : trusted {
   may process.spawn at "crates/gob-exec/**";
   may env.read at "crates/gob-exec/**";
   may unsafe at "crates/gob-exec/**";
-  excuses net because="spawns local programs only";
 }
 
 node git : trusted {
@@ -1144,7 +1189,6 @@ node git : trusted {
   may net.connect("github.com") at "crates/gob-git/**";
   may process.spawn at "crates/gob-git/**";
   may env.read at "crates/gob-git/**";
-  excuses net.listen because="a git client never serves";
 }
 ```
 
@@ -1162,32 +1206,37 @@ node):
 | Atom | node `exec` | node `git` |
 |---|---|---|
 | `fs.read` | uses | uses |
-| `fs.write` | blank (CAP003 Advisory) | uses |
-| `net.connect` | excused | uses |
-| `net.listen` | excused | excused |
+| `fs.write` | denied | uses |
+| `net.connect` | denied | uses |
+| `net.listen` | denied | denied |
 | `env.read` | uses | uses |
-| `env.write` | blank (CAP003 Advisory) | blank (CAP003 Advisory) |
-| `clock` | blank (CAP003 off) | blank (CAP003 off) |
-| `rng` | blank (CAP003 off) | blank (CAP003 off) |
-| `stdio.read` | blank (CAP003 off) | blank (CAP003 off) |
-| `stdio.write` | blank (CAP003 off) | blank (CAP003 off) |
-| `exit` | blank (CAP003 off) | blank (CAP003 off) |
+| `env.write` | denied | denied |
+| `clock` | denied | denied |
+| `rng` | denied | denied |
+| `stdio.read` | denied | denied |
+| `stdio.write` | denied | denied |
+| `exit` | denied | denied |
 | `process.spawn` | uses | uses |
-| `unsafe` | declared-unused (CAP002 Warn; Exact absence, so `grimble shrink` may remove the grant) | blank (CAP003 Advisory) |
-| `build.script` | blank (CAP003 Advisory) | blank (CAP003 Advisory) |
-| `macro.proc` | blank (CAP003 Advisory) | blank (CAP003 Advisory) |
-| `ffi.export` | blank (CAP003 Advisory) | blank (CAP003 Advisory) |
+| `unsafe` | declared-unused (CAP002 Warn; Exact absence, so `grimble shrink` may remove the grant) | denied |
+| `build.script` | denied | denied |
+| `macro.proc` | denied | denied |
+| `ffi.export` | denied | denied |
 | `ffi.import` | unknown (PACK003: the pattern detector of `ffi.import` is unavailable) | unknown (same) |
 | `ci.publish.*`, `ci.token.*`, `ci.deploy.*` | not-applicable | not-applicable |
 
 Summary: each node carries ONE Unresolved (`no-detector`, listing
 `ffi.import`) until gob-pattern ships; the `not-applicable` cells and the
-`excused` cells produce none. Adding `"stdio.write"` to the node would
-change nothing. If `crates/gob-exec/scripts/*.sh` existed, every
+`denied` cells produce none (no use was observed, so there is nothing
+to report: a blank cell is "denied", not "unconsidered"). The two nodes
+no longer say `excuses net` or `excuses net.listen`: not granting the
+atom is the whole statement, and a later `TcpListener::bind` in
+`gob-git` would be CAP001. Adding `"stdio.write"` to the node would
+change nothing until a use is observed. If `crates/gob-exec/scripts/*.sh` existed, every
 core-effects cell for the `shell` files would be `unknown` (no pack
 declares `shell`), and the node would carry the same single Unresolved
-until a repository pack adds shell detectors or `excuses` the atoms with a
-reason.
+until a repository pack adds shell detectors or a matrix-build template
+excuses the atoms for `lang(shell)` with a reason (6.7); even then a
+detected use is CAP004, never a pass.
 
 An update scenario: a later `core-effects` 1.1.0 adds `fs.read` names
 `std::fs::symlink_metadata` and a new atom `net.dns`. After upgrading
@@ -1265,6 +1314,12 @@ one pack-level finding for the version, and nothing else changes until
    their semantics (how an obligation is discharged at a rung, how the
    proof ladder `L1`..`L5` of grmb-spec open question 5 applies) belong
    to the threat-pack design that first uses them.
+10. Incidental atoms under deny-by-default (D75). `env.read`, `clock`,
+    `rng`, `stdio.*` and `exit` are used by nearly every node, and a
+    blank cell now means denied, so every node must grant them or carry
+    a CAP001 Warn. Options: a model-level default grant set, a pack
+    `default_grant` list, or accept the Warn. Left open; the pack
+    default is `warn` so adoption is not blocked.
 
 ## 12. Changes to other documents
 
