@@ -1,0 +1,19 @@
+kind = "create"
+title = "Lease waits are unfair: a waiting ticket can starve while new overlapping leases keep winning; add frob work --wait with a FIFO waiter queue"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 5
+scope = ["crates/frob-lease/**", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/**", "docs/design/tickets.md"]
+acceptance = ["Given a waiter queued on a path held by A, when B requests a new lease overlapping the waiter, then B is refused with E-LEASE-QUEUED and the waiter gets the lease when A releases", "Given two waiters on overlapping scopes, when holders release, then they are served in FIFO order and neither deadlocks", "Given a waiter whose process died, when its heartbeat expires, then it is reaped and no longer blocks new leases", "Given waiters, when ticket contention runs, then it lists each waiter with its age and blocker"]
+body = """
+Reported by goway (2026-10-03, FROB_FEEDBACK item 5): an agent polled frob work ~NKCC1DM for 90 minutes and never got its lease; other agents kept starting new tickets whose scope overlapped one of its paths, because nothing records or protects a waiter. v1's lesson (tickets.md 7) was that agents poll blindly; the design answer is --wait instead of polling, but work has no fair wait yet.
+
+Design (record it in tickets.md, the lease section):
+1. frob work TICKET --wait SECS enqueues a waiter record (ticket, scope, holder, enqueued-at) in the lease store under the same lock as acquisition, and blocks (no busy polling by the caller; inside, sleep with backoff and re-check under the lock) until its whole scope is free or SECS pass.
+2. Fairness: once a waiter exists, a new acquisition whose scope overlaps that waiter's scope is refused with E-LEASE-QUEUED naming the waiter and its age, so the waiter gets the paths as soon as the current holders release; acquisitions that do not overlap any waiter proceed. Waiters are served in FIFO order among overlapping waiters. A waiter older than [lease] waiter_ttl_secs or whose process is gone (heartbeat like leases) is dropped, so a crashed waiter never blocks others.
+3. Visibility: ticket contention and lease list show waiters with their age and what blocks them.
+4. Model the queue in the existing lease model tests (and the TLA+ or property style used for leases if one exists): no starvation for a waiter while holders release, no deadlock between two waiters, a dead waiter is reaped."""
+at = "2026-10-03T22:57:11Z"
+actor = "lognd"
+rev = 1
