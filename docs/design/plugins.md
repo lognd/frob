@@ -154,8 +154,9 @@ like the code it matches, every construct has an example, embedded
 fire/clean tests, and its own errors teach like rustc (diagnostics.md).
 The full language, grammar, static checks, ten existing rules rewritten
 as proof of expressiveness, and a five-minute newcomer walkthrough are
-specified in grl-spec.md (ticket ~4QBTKCK, decision D80). The sketch
-below is illustrative until that spec lands.
+specified in grl-spec.md (ticket ~4QBTKCK, decision D80); the sketch
+below predates it, and grl-spec.md section 12 has NEAT013 in the final
+syntax.
 
 ```text
 rule NEAT013 "ambient-source-call"

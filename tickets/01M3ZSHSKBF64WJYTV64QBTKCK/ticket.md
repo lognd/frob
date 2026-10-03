@@ -2,16 +2,17 @@
 id = "01M3ZSHSKBF64WJYTV64QBTKCK"
 title = "GRL language specification: one intuitive rule language for pattern and relational rules"
 type = "docs"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:30:05Z"
-updated = "2026-10-03T02:30:05Z"
+updated = "2026-10-03T03:21:24Z"
 idempotency_key = "m2-grl-spec"
 labels = ["milestone:2"]
-scope = ["docs/design/**"]
+scope = ["docs/design/**", "notes/research/rule-languages.md"]
 
 [[acceptance]]
 text = "Given grl-spec.md, when the ten existing built-in rules are expressed in GRL, then each rewrite is shorter than or equal in length to its description and compiles under the stated grammar"
