@@ -27,6 +27,7 @@ ulid = "1"
 
 [dev-dependencies]
 gob-mdtest = { path = "../gob-mdtest" }
+serde_yaml_ng = "0.10"
 tempfile = "3"
 
 [lints]

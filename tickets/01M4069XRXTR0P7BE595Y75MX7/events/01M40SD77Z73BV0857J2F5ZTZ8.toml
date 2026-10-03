@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Coordinator decision: no sdist for the PyPI frob package. The wheel bundles prebuilt binaries only; an sdist would have to carry the whole Cargo workspace for no real install path (users without a matching wheel install from crates.io or git). Acceptance 1 is therefore met by the five wheels; the sdist clause is withdrawn. releases.md 6 should say so (follow-up docs)."
+at = "2026-10-03T11:46:50Z"
+actor = "lognd"
+rev = 1
