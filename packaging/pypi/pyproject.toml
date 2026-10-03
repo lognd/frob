@@ -1,0 +1,45 @@
+# PyPI distribution `frob`: a maturin `bin` wheel that installs the `frob` and
+# `grimble` executables (no Python code). See README.md here and
+# docs/design/releases.md sections 5, 6 and 6a.
+[build-system]
+requires = ["maturin>=1.9,<2"]
+build-backend = "maturin"
+
+[project]
+name = "frob"
+# Static and lockstep with every crate: `frob release bump`/`cut` rewrites it and
+# REL002 compares it with [workspace.package] (crates/frob-release).
+version = "0.0.0"
+description = "The enforcement layer for agentic development: ticket queue, obligation graph and gates (frob), plus grimble (preview)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Logan Dapp" }]
+keywords = ["tickets", "agentic", "enforcement", "git", "ci"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Version Control :: Git",
+]
+
+[project.urls]
+Homepage = "https://github.com/lognd/frob"
+Repository = "https://github.com/lognd/frob"
+Changelog = "https://github.com/lognd/frob/blob/main/CHANGELOG.md"
+Issues = "https://github.com/lognd/frob/issues"
+
+[tool.maturin]
+# The frob binary comes from the frob-cli package; maturin builds its [[bin]].
+manifest-path = "../../crates/frob/Cargo.toml"
+bindings = "bin"
+strip = true
+# `grimble` is built by cargo and copied into data/scripts/ by build-wheel.sh;
+# maturin installs data/scripts/* next to `frob` on PATH.
+data = "data"
