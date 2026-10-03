@@ -2,7 +2,8 @@
 id = "01M41KS5P8EGFFGBQSMRFBAJ8P"
 title = "ticket doctor flags every early-closed cycle (E-PM-CONFLICT) and same-day cycles (E-PM-ALIAS) since state and alias suffix became derived"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
