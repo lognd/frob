@@ -214,7 +214,6 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[tickets] dir` (M1) | frob.toml | no | `"tickets"` | frob (config), frob-ledger |
 | `[tickets] handle_min_len` (M1) | frob.toml | no | 7 | frob (config), frob-ledger |
 | `[tickets] actor` (M1) | frob.toml | no | empty (git `user.name`) | frob (config), frob-ledger |
-| `[tickets] registry_files` (M1) | frob.toml | no | empty; a compatibility alias folded into `[lease] shared_files` | frob (config) |
 | `[check] fail_on` (M1) | frob.toml | yes | `"error"` (`"none"` never fails) | frob (config), gob-diagnostics |
 | `[check] exclude` (M1) | frob.toml | no | empty | frob (config) |
 | `[check] size_cap` (M1) | frob.toml | no | 4194304 bytes | frob (config) |

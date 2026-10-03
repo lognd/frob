@@ -49,10 +49,6 @@ pub struct TicketsTable {
     /// Actor recorded on events; empty means git `user.name`.
     #[config(default = String::new())]
     pub actor: String,
-    /// Compatibility alias read from v1 `frob.toml`: append-shared files that
-    /// extend `[lease] shared_files` (for example `Cargo.lock`).
-    #[config(default = Vec::new())]
-    pub registry_files: Vec<String>,
 }
 
 /// Settings of the per-worktree cache.
@@ -107,18 +103,6 @@ impl FrobConfig {
         }
     }
 
-    /// The lease settings with the `[tickets] registry_files` alias folded
-    /// into `shared_files` (duplicates dropped, file order kept).
-    pub fn lease_config(&self) -> frob_lease::LeaseConfig {
-        let mut cfg = self.lease.clone();
-        for f in &self.tickets.registry_files {
-            if !cfg.shared_files.contains(f) {
-                cfg.shared_files.push(f.clone());
-            }
-        }
-        cfg
-    }
-
     /// Load every table from `<root>/frob.toml` (a missing file is defaults).
     ///
     /// # Errors
@@ -138,18 +122,5 @@ impl FrobConfig {
         };
         tracing::debug!(root = %root.display(), "frob config loaded");
         Ok(cfg)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::FrobConfig;
-
-    #[test]
-    fn registry_files_alias_extends_lease_shared_files_without_duplicates() {
-        let mut cfg = FrobConfig::default();
-        cfg.lease.shared_files = vec!["Cargo.lock".to_owned()];
-        cfg.tickets.registry_files = vec!["Cargo.lock".to_owned(), "go.sum".to_owned()];
-        assert_eq!(cfg.lease_config().shared_files, ["Cargo.lock", "go.sum"]);
     }
 }

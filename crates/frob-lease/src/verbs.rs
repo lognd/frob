@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::error::{LeaseError, SAME_TICKET};
 use crate::model::Lease;
-use crate::open_store;
+use crate::open_store_from_file as open_store;
 use crate::store::Contended;
 
 impl From<LeaseError> for CliError {

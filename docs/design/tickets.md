@@ -287,7 +287,8 @@ the integrity guards on `done`. Post-actions (`release_lease`,
 - TTL is the knob `[lease] ttl_secs` (default 7200); the lock wait is
   `[lease] lock_timeout_ms` (default 5000), and append-shared files such
   as `Cargo.lock` are exempt from overlap through `[lease] shared_files`
-  (`[tickets] registry_files` is a compatibility alias folded into it). The heartbeat is renewed by any frob verb run from that
+  (every verb that opens the lease store passes the same config; the old
+  `[tickets] registry_files` alias is gone). The heartbeat is renewed by any frob verb run from that
   worktree and, when it exists, by the daemon, so a 40-minute build
   with no frob call stays inside the TTL; a stale lease can be taken
   with `--steal` and a reason. Leases release automatically on every

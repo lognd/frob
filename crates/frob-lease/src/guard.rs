@@ -29,13 +29,13 @@ impl LeaseGuard {
         Ok(Self { store, live })
     }
 
-    /// Open the repository containing `cwd`, load `[lease]` from its `frob.toml` and snapshot.
+    /// Open the repository containing `cwd` with the caller's `cfg` and snapshot.
     ///
     /// # Errors
     ///
-    /// [`LeaseError::Repo`] when `cwd` is not in a work tree or the config is invalid, plus [`LeaseGuard::new`] failures.
-    pub fn discover(cwd: &Path) -> Result<Self, LeaseError> {
-        Self::new(crate::open_store(cwd)?.0)
+    /// [`LeaseError::Repo`] when `cwd` is not in a work tree, plus [`LeaseGuard::new`] failures.
+    pub fn discover(cwd: &Path, cfg: crate::LeaseConfig) -> Result<Self, LeaseError> {
+        Self::new(crate::open_store(cwd, cfg)?.0)
     }
 }
 

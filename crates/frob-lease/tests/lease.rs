@@ -340,7 +340,7 @@ fn scope001_flags_outside_paths_only() {
 fn verbs_list_leases_and_contention() {
     let dir = tempfile::tempdir().expect("tempdir");
     gob_git::Repo::init(dir.path()).expect("init");
-    let (store, _) = frob_lease::open_store(dir.path()).expect("open");
+    let (store, _) = frob_lease::open_store(dir.path(), LeaseConfig::default()).expect("open");
     store
         .acquire(TicketId::mint(), &holder("a"), &scope(&["src/**"]))
         .expect("a");
@@ -457,4 +457,27 @@ fn rescope_narrows_is_idempotent_and_refuses_non_holders() {
         store.rescope(TicketId::mint(), &holder("alice"), &narrow, store.config()),
         Err(LeaseError::NotHeld { .. })
     ));
+}
+
+#[test]
+fn open_store_uses_the_callers_config_not_the_file() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    gob_git::Repo::init(dir.path()).expect("init");
+    std::fs::write(dir.path().join("frob.toml"), "[lease]\nshared_files = []\n").expect("toml");
+    let (store, _) = frob_lease::open_store(dir.path(), cfg(&["Cargo.lock"])).expect("open");
+    store
+        .acquire(
+            TicketId::mint(),
+            &holder("a"),
+            &scope(&["a/**", "Cargo.lock"]),
+        )
+        .expect("a");
+    store
+        .acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["b/**", "Cargo.lock"]),
+        )
+        .expect("b shares Cargo.lock");
+    assert!(store.contention().expect("contention").is_empty());
 }

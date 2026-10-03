@@ -411,7 +411,8 @@ fn doable_hides_tickets_overlapping_a_live_lease() {
     let b = Fixture::ticket(&ledger, "B", TicketType::Task, &["src/newmod/x.rs"]);
     let c = Fixture::ticket(&ledger, "C", TicketType::Task, &["docs/**"]);
     ws.start(&a.to_string(), &fx.root, None).expect("start a");
-    let guard = frob_lease::LeaseGuard::discover(&fx.root).expect("guard");
+    let guard = frob_lease::LeaseGuard::discover(&fx.root, frob_lease::LeaseConfig::default())
+        .expect("guard");
     let ids: Vec<TicketId> = ledger
         .doable(&guard)
         .expect("doable")
