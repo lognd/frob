@@ -67,13 +67,14 @@ mod tickets;
 mod todo;
 mod util;
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
 
 use frob_ledger::Ledger;
 use gob_directives::DirectiveRecord;
+use gob_languages::Language;
 use gob_lock::LockFile;
-use gob_rules::{Exception, Finding};
+use gob_rules::{Exception, Finding, Rule, RuleMeta};
 use gob_symbols::{SymbolGraph, Target};
 use gob_text::{FileId, FileInterner};
 
@@ -157,6 +158,65 @@ fn file_rules(
     out
 }
 
+/// The per-file rule metadata, in evaluation order.
+fn file_rule_metas() -> [&'static RuleMeta; 4] {
+    [Todo001.meta(), Doc001.meta(), Doc002.meta(), Ref001.meta()]
+}
+
+/// Keep the findings whose rule may examine `path`; add Unresolved ones for the rest.
+///
+/// The same `subject_status` the `frob check` pipeline applies, for the
+/// standalone [`evaluate`] path: `NotApplicable` rules drop their findings, an
+/// opaque text file is collected into `opaque` (one aggregated finding per
+/// rule), and a partial parse adds a caveat finding.
+fn gate_file(
+    inputs: &ObligationInputs<'_>,
+    file: FileId,
+    path: &str,
+    head: &[u8],
+    found: Vec<Finding>,
+    opaque: &mut BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)>,
+) -> Vec<Finding> {
+    let Some(info) = inputs.graph.file_info(path) else {
+        return found;
+    };
+    let binary = info.is_opaque() && gob_check::is_binary(path, head);
+    let scanned = Language::detect(path).is_some();
+    let mut out = Vec::new();
+    let mut examined: Vec<&'static str> = Vec::new();
+    for meta in file_rule_metas() {
+        match gob_check::subject_status_for(info, meta, binary, scanned) {
+            gob_check::SubjectStatus::Examine => {
+                examined.push(meta.id);
+                if let Some(why) = gob_check::hole_caveat(info, meta) {
+                    out.push(gob_check::unresolved_finding(meta, Some(file), path, &why));
+                }
+            }
+            gob_check::SubjectStatus::NotApplicable(why) => {
+                tracing::debug!(path, rule = meta.id, %why, "not applicable");
+            }
+            gob_check::SubjectStatus::Unresolved(why) => {
+                tracing::info!(path, rule = meta.id, %why, "unresolved subject");
+                if info.is_opaque() {
+                    opaque
+                        .entry(meta.id)
+                        .or_insert((meta, Vec::new()))
+                        .1
+                        .push(path.to_owned());
+                } else {
+                    out.push(gob_check::unresolved_finding(meta, Some(file), path, &why));
+                }
+            }
+        }
+    }
+    out.extend(
+        found
+            .into_iter()
+            .filter(|f| examined.contains(&f.rule.as_str())),
+    );
+    out
+}
+
 /// The per-file rules (`TODO001`, `DOC001`, `DOC002`, `REF001`) over one file.
 ///
 /// `file` is the id of `path` in the caller's interner and `text` its content.
@@ -233,14 +293,25 @@ pub fn evaluate(inputs: &ObligationInputs<'_>) -> Evaluation {
         .chain(by_path.keys().copied())
         .collect();
     let mut raw = Vec::new();
+    let mut opaque: BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)> = BTreeMap::new();
     for path in paths {
-        let Ok(text) = std::fs::read_to_string(inputs.root.join(path)) else {
+        let Ok(bytes) = std::fs::read(inputs.root.join(path)) else {
             tracing::warn!(path, "unreadable file skipped by per-file rules");
+            continue;
+        };
+        let Ok(text) = String::from_utf8(bytes.clone()) else {
+            tracing::debug!(path, "non-utf8 file skipped by per-file rules");
             continue;
         };
         let file = files.intern(path);
         let directives = by_path.get(path).map_or(&[][..], Vec::as_slice);
-        raw.extend(file_rules(inputs, &tickets, file, path, &text, directives));
+        let found = file_rules(inputs, &tickets, file, path, &text, directives);
+        let head = &bytes[..bytes.len().min(4096)];
+        raw.extend(gate_file(inputs, file, path, head, found, &mut opaque));
+    }
+    for (meta, files) in opaque.into_values() {
+        let names: Vec<&str> = files.iter().map(String::as_str).collect();
+        raw.push(gob_check::opaque_finding(meta, &names));
     }
     raw.extend(evaluate_repo(inputs, &mut files));
     let Resolved {

@@ -31,7 +31,6 @@ node cli : trusted {
   owns "crates/frob-check/src/lib.rs::run";
   may fs.read, fs.write at "crates/frob/**";
   may net.connect:api.github.com at "crates/frob-gh/src/lib.rs::GhClient.*";
-  excuses net.listen because "a CLI never serves";
   surface pub fn *, "Cli";                // intended public API, subset-checked
   attr timeout = 30 s;                    // typed attrs: number+unit | ident | string
 }
@@ -66,7 +65,7 @@ Changes from v1 grammar:
   symbols are FOREIGN.
 - `may` scopes are selectors (`at`), and argument constraints (`of`)
   are resolved from the call AST, not the first string on the line.
-- `excuses ATOM because "..."` is the explicit matrix exclusion.
+- Capabilities are denied by default (D75): a node has `may` grants and nothing else; an ungranted atom is denied and its observed use is CAP001. The v1-era node clause `excuses ATOM because "..."` is removed (MDL018); excuses exist only in matrix-build templates (grmb-spec 4.7, packs.md 6.7).
 - `surface` replaces `attr interface=[...]` lists.
 - `flow ... via producer/consumer/contract` gives flows symbol-level
   endpoints; cross-language flows need no special syntax.
@@ -108,7 +107,7 @@ attestations; neither side is ever auto-regenerated to match the other
 |---|---|---|
 | `owns SELECTOR` | node, store | set of symbols (code-model.md section 2 addresses) |
 | `may ATOM at SELECTOR of CONSTRAINT` | node | capability grant scoped to symbols |
-| `excuses ATOM because` | node | matrix cell `excused` |
+| `excuse ATOM for SELECTOR because` | matrix-build template (pack or `template` entity), never a node | matrix cell `excused`; a use in covered code is CAP004 |
 | `surface SELECTOR` | node | intended public symbols |
 | `flow via producer/consumer/contract` | flow | three symbols, any languages |
 | `vmodel ... ref / runnable` | vmodel | doc anchor or test symbol |
@@ -127,7 +126,8 @@ into these; rules.md section 3):
 | SYS003 | SYS-UNMODELED | P+ | symbol with effects or public visibility claimed by no node; evaluated only for selectors listed in `[grimble] modeled` in `grimble.toml` (opt-in, not a repo-wide Warn) |
 | CAP001 | CAP-EXCEEDS | P+ | observed capability at a symbol with no covering grant (the v1 SYS100); Error |
 | CAP002 | CAP-STALE | P- | grant never observed at its scope (fires iff `hi` lacks a use; shrink-only fix, tied to Exact absence); Warn |
-| CAP003 | CAP-UNEXCUSED | P- | capability atom applicable to the node's languages, neither granted nor excused (model completeness: absence of a grant or excuse); Advisory for one release after a new atom or detector ships, then Warn |
+| CAP003 | CAP-UNEXCUSED | retired | RETIRED by D75 (the id is never reused). It reported a blank matrix cell as missing model completeness; under deny-by-default a blank cell means "denied", which is a decision and not a gap, so there is nothing to report until a use is observed (CAP001) |
+| CAP004 | CAP-EXCUSED-USED | P+ | code covered by a matrix-build template excuse is observed using the excused atom (an excuse never masks an observed use; binding.md 7.2); Error. Uncertain detection (May or Unknown use, missing detector, F0 or F1 fidelity) is Unresolved, never a pass |
 | SYS004 | SYS-UNDECLARED-FLOW | P+ | import or call edge between two owners with no flow in that direction (v1 SYS003, now every language) |
 | SYS005 | SYS-UNIMPLEMENTED-FLOW | P- | flow declared, producer or consumer selector empty |
 | SYS006 | SYS-CONTRACT-SKEW | P0 | the `contract` facet digests (code-model.md section 2) of the contract symbol differ between the producer and consumer acks recorded with `grimble ack` in `grimble.lock` |
@@ -137,7 +137,7 @@ into these; rules.md section 3):
 
 The ids, polarities and conditions of this table are superseded by
 binding.md section 6 (SYS001-SYS012; its 11.3 maps the old ids to the
-new ones). CAP001-003 are unchanged.
+new ones). CAP001 and CAP002 are unchanged, CAP003 is retired and CAP004 is added (D75); SYS012 is redefined as a matrix-build check (binding.md 6.12).
 
 grimble has its own `ack` verb and `grimble.lock`; it never reads
 `frob.lock`, and frob never reads `grimble.lock`.
@@ -258,9 +258,9 @@ over collapsed text.
 ### 9.3 .grmb is a language with an adapter
 
 grimble-model owns a U adapter for .grmb at fidelity F4: entities are
-`unit` nodes (kinds node, flow, contract, claim, vmodel, pack), selector
+`unit` nodes (kinds node, flow, contract, claim, vmodel, pack, template), selector
 expressions are `apply(kind=select)` with May edges to the units they
-match, `excuses` and the four exception kinds are `attr` nodes, and
+match, and the four exception kinds are `attr` nodes (a matrix-build `template` is a unit of kind template whose `excuse` clauses are `attr` nodes), and
 directives (`frob:doc`, `frob:ticket`, `grimble:...`) bind to entities
 exactly as they bind to code units, so inside grimble every rule that
 works on code works on the model, and `grimble fmt` is the alpha-normal
@@ -306,9 +306,14 @@ mechanism to its own required Unresolved findings.
 
 ### 9.6 The capability matrix, one definition
 
-Cells are: uses (detector fired, Exact), undeclared (uses without a
-grant: CAP001), declared-unused (grant without a use: CAP002), excused
-(atom explicitly excluded with a reason, no grant), not-applicable (the
+Capabilities are denied by default (D75): a regular node's atom that is
+not granted is denied, a blank cell means "denied" and not "not yet
+considered", and an observed use without a grant is CAP001. Cells are:
+uses (detector fired, Exact), undeclared (uses without a grant: CAP001),
+declared-unused (a grant without a use: CAP002), denied (blank: no grant
+and no use; no finding), excused (a matrix-build template excuse covers
+the unit; shown as excused only when no use is observed, a use in
+excused code is shown as uses and raises CAP004), not-applicable (the
 atom's detector for this language declares the capability impossible,
 for example CSS has no network) and unknown (no detector for this atom
 in this language, or the detector answered Unknown). `n/a` is retired

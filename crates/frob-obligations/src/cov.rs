@@ -14,12 +14,14 @@ use frob_tests::reach::{Sources, called_names};
 use gob_directives::Binding;
 use gob_directives::DirectiveRecord;
 use gob_languages::Language;
-use gob_rules::Finding;
-use gob_symbols::{CallEdge, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target};
+use gob_rules::{Finding, Severity};
+use gob_symbols::{
+    CallEdge, EdgeKind, Status, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target,
+};
 use gob_text::{FileInterner, Span};
 
 use crate::rules::Cov001;
-use crate::util::finding;
+use crate::util::{finding, rule_id};
 
 /// True for functions and methods.
 fn is_callable(rec: &SymbolRecord) -> bool {
@@ -39,19 +41,23 @@ pub(crate) fn test_capable_files(graph: &SymbolGraph) -> usize {
 }
 
 /// Forward call adjacency: graph edges plus unique-name edges found in function bodies.
-fn adjacency(graph: &SymbolGraph, sources: &mut Sources) -> HashMap<Symref, Vec<Symref>> {
+fn adjacency(
+    graph: &SymbolGraph,
+    sources: &mut Sources,
+    include_ambiguous: bool,
+) -> HashMap<Symref, Vec<Symref>> {
     let mut adj: HashMap<Symref, Vec<Symref>> = HashMap::new();
     for edge in graph.call_edges() {
         match edge {
             CallEdge::Resolved { caller, callee } => {
                 adj.entry(caller.clone()).or_default().push(callee.clone());
             }
-            CallEdge::Ambiguous { caller, candidates } => {
+            CallEdge::Ambiguous { caller, candidates } if include_ambiguous => {
                 adj.entry(caller.clone())
                     .or_default()
                     .extend(candidates.iter().cloned());
             }
-            CallEdge::Unresolved { .. } => {}
+            CallEdge::Ambiguous { .. } | CallEdge::Unresolved { .. } => {}
         }
     }
     let callables: Vec<&SymbolRecord> = graph.records().filter(|r| is_callable(r)).collect();
@@ -84,6 +90,49 @@ fn adjacency(graph: &SymbolGraph, sources: &mut Sources) -> HashMap<Symref, Vec<
 }
 
 /// Symbols that `frob:tests` directives declare covered.
+/// Every symbol reachable from `tests` over `adj`, the tests included.
+fn reach_of(tests: &BTreeSet<Symref>, adj: &HashMap<Symref, Vec<Symref>>) -> HashSet<Symref> {
+    let mut reached: HashSet<Symref> = HashSet::new();
+    let mut queue: VecDeque<Symref> = tests.iter().cloned().collect();
+    while let Some(s) = queue.pop_front() {
+        if !reached.insert(s.clone()) {
+            continue;
+        }
+        queue.extend(adj.get(&s).into_iter().flatten().cloned());
+    }
+    reached
+}
+
+/// Callee names of the `Unknown` calls that poison the reach of any test (`ReachSet` poison).
+fn unknown_call_names(graph: &SymbolGraph, tests: &BTreeSet<Symref>) -> HashSet<String> {
+    let mut poisoned: HashSet<Symref> = HashSet::new();
+    for t in tests {
+        poisoned.extend(graph.reach_with_status(t, &[EdgeKind::Calls]).poisoned_by);
+    }
+    graph
+        .edges_with_status()
+        .iter()
+        .filter(|e| e.kind == EdgeKind::Calls && e.status == Status::Unknown)
+        .filter(|e| poisoned.contains(&e.from))
+        .filter_map(|e| e.name.clone())
+        .collect()
+}
+
+/// Why `rec` is neither covered nor provably uncovered: May-only reach or a poisoned reach naming it.
+fn unresolved_reach(
+    rec: &SymbolRecord,
+    maybe: &HashSet<Symref>,
+    unknown_names: &HashSet<String>,
+) -> Option<String> {
+    if maybe.contains(&rec.symref) {
+        return Some("it is reached only through ambiguous (May) calls".to_owned());
+    }
+    let name = rec.symref.name()?;
+    unknown_names
+        .contains(name)
+        .then(|| format!("a test reaches an unresolved call named `{name}`"))
+}
+
 fn declared(graph: &SymbolGraph, directives: &[DirectiveRecord]) -> HashSet<Symref> {
     let mut out = HashSet::new();
     for d in directives
@@ -124,15 +173,10 @@ pub(crate) fn cov001(
         })
         .map(|r| r.symref.clone())
         .collect();
-    let adj = adjacency(graph, &mut sources);
-    let mut reached: HashSet<Symref> = HashSet::new();
-    let mut queue: VecDeque<Symref> = tests.iter().cloned().collect();
-    while let Some(s) = queue.pop_front() {
-        if !reached.insert(s.clone()) {
-            continue;
-        }
-        queue.extend(adj.get(&s).into_iter().flatten().cloned());
-    }
+    let must = reach_of(&tests, &adjacency(graph, &mut sources, false));
+    let maybe = reach_of(&tests, &adjacency(graph, &mut sources, true));
+    let unknown_names = unknown_call_names(graph, &tests);
+    let reached = must;
     let covered = declared(graph, directives);
     tracing::debug!(
         tests = tests.len(),
@@ -141,6 +185,19 @@ pub(crate) fn cov001(
         "COV001 reach computed"
     );
     let mut out = Vec::new();
+    let partial = frob_ack::partial_parse_files(graph);
+    if let Some((first, _)) = partial.first() {
+        out.push(Finding::new(
+            rule_id(&Cov001),
+            Severity::Unresolved,
+            None,
+            format!(
+                "{} file(s) parsed partially (first `{first}`); callables inside a parse hole are unseen, so COV001 is undecided for them",
+                partial.len()
+            ),
+            "partial-parse",
+        ));
+    }
     for rec in graph.public_api() {
         if !is_callable(rec)
             || rec.implements.is_some()
@@ -152,12 +209,26 @@ pub(crate) fn cov001(
             continue;
         }
         let file = files.intern(rec.symref.path());
+        let kind = format!("{:?}", rec.kind).to_lowercase();
+        if let Some(why) = unresolved_reach(rec, &maybe, &unknown_names) {
+            tracing::info!(symref = %rec.symref, %why, "COV001 unresolved");
+            out.push(Finding::new(
+                rule_id(&Cov001),
+                Severity::Unresolved,
+                Some(Span::new(file, rec.span)),
+                format!(
+                    "public {kind} `{}`: cannot tell whether a test reaches it, {why}",
+                    rec.symref
+                ),
+                &rec.symref.to_string(),
+            ));
+            continue;
+        }
         out.push(finding(
             &Cov001,
             Some(Span::new(file, rec.span)),
             format!(
-                "public {} `{}` is reached by no test; add one or bind it with `frob:tests`",
-                format!("{:?}", rec.kind).to_lowercase(),
+                "public {kind} `{}` is reached by no test; add one or bind it with `frob:tests`",
                 rec.symref
             ),
             &rec.symref.to_string(),

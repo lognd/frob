@@ -61,6 +61,13 @@ pub struct TestVerb {
     all: bool,
 }
 
+/// The payload of `data` carrying `warnings`.
+fn with_warnings(data: TestData, warnings: Vec<String>) -> Payload<TestData> {
+    let mut payload = Payload::new(data);
+    payload.warnings = warnings;
+    payload
+}
+
 impl Command for TestVerb {
     type Data = TestData;
 
@@ -117,15 +124,20 @@ impl Command for TestVerb {
             executed: Vec::new(),
             evidence: None,
         };
+        let mut warnings: Vec<String> = data
+            .touched
+            .selection_findings()
+            .into_iter()
+            .map(|f| format!("unresolved {}: {}", f.rule, f.message))
+            .collect();
         if ctx.dry_run {
             tracing::info!(selected = data.selected.len(), "dry run: nothing executed");
-            return Ok(Payload::new(data));
+            return Ok(with_warnings(data, warnings));
         }
         if !self.all && data.selected.is_empty() {
             tracing::info!("no tests reach the touched set; nothing to run");
-            return Ok(
-                Payload::new(data).with_warning("no tests reach the touched set; nothing was run")
-            );
+            warnings.push("no tests reach the touched set; nothing was run".to_owned());
+            return Ok(with_warnings(data, warnings));
         }
         let opts = RunOptions {
             root: ws.root.clone(),
@@ -137,7 +149,6 @@ impl Command for TestVerb {
         data.ran = true;
         data.passed = Some(report.capture.passed);
         data.executed.clone_from(&report.capture.tests);
-        let mut warnings = Vec::new();
         match lease_ticket(repo.common_dir(), &ws.root) {
             Some(reference) => match ws.ledger.resolve(&reference) {
                 Ok(id) => {

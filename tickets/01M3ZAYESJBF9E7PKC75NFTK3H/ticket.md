@@ -2,11 +2,12 @@
 id = "01M3ZAYESJBF9E7PKC75NFTK3H"
 title = "rules consume FileInfo: opaque F0 and partial-parse files are Unresolved or NotApplicable"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-02T22:14:51Z"
-updated = "2026-10-02T23:40:07Z"
+updated = "2026-10-03T00:56:02Z"
 scope = ["crates/frob-obligations/**", "crates/frob-check/**", "crates/frob-tests/**", "crates/gob-check/**", "crates/frob-ack/**", "docs/reference/**", "Cargo.lock"]
 +++
 

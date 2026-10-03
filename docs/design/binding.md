@@ -13,7 +13,7 @@ renumbers.
 
 Inputs: grmb-spec.md (entities E, the selector grammar and the
 specificity order of 6.5, the relation B and its four ranks in section
-10, MDL001-017, open questions 1-12), grimble-model.md sections 4 and 9
+10, MDL001-018, open questions 1-12), grimble-model.md sections 4 and 9
 (drift findings, the four sources, identity and rename, partial
 languages, the cell set), universal-model.md 2.2, 2.6, 3, 4 and 7.1
 (identities, symrefs, fidelity, the answer lattice, polarity, Theorem 3,
@@ -666,7 +666,7 @@ section 4 and grmb-spec in places, and 11.3 gives the exact mapping and the
 two ids (SYS013, SYS014) reserved for the rules that no longer fit the
 twelve. Every rule is generated once with the `Rule` derive in
 `grimble-bind` (ownership and binding rules, G11; the drift rules SYS006-SYS008
-and the reserved ids G12; the exact split is the implementation tickets').
+and the reserved ids G12; SYS012 is a matrix-build rule owned by G14; the exact split is the implementation tickets').
 
 Every rule declares polarity (universal-model.md 4.2). A rule evaluated
 over a subject whose answer is Unknown reports Unresolved, never clean; a
@@ -692,7 +692,7 @@ Severity column: proposed defaults; Warn rules become Error under
 | SYS009 | SYS-FLOW-END-UNBOUND | P- | Warn | a flow end | no |
 | SYS010 | SYS-CLAIM-WITHOUT-EVIDENCE | P- | Warn | a claim above L1 | no |
 | SYS011 | SYS-VMODEL-LINK-BROKEN | P- | Error | a vmodel `ref` or `runnable` | no |
-| SYS012 | SYS-EXCUSE-GRANT | P+ | Error | a node and an atom | no |
+| SYS012 | SYS-EXCUSE-GRANT | P+ | Error | a template excuse and an atom | no |
 
 ### 6.1 SYS001 unowned (P-)
 
@@ -916,26 +916,41 @@ One rule with a `kind` attribute on each finding. All kinds fire from `lo`:
   (MDL014) and the five kernel closure rules (G03, G16).
 - Required mark: none.
 
-### 6.12 SYS012 excuse inconsistent with grants (P+)
+### 6.12 SYS012 template excuse contradicts a grant (P+)
 
-The ticket's title is "excuse without matching grant"; this section
-states the reading this file adopts and why, and flags the wording as an
-open question (11.2.1). The cell set of grimble-model.md 9.6 defines
-`excused` as "atom explicitly excluded with a reason, NO grant".
+D75 redefines this rule. It is a matrix-build check implemented in G14
+(grimble-capabilities), not in G11 with the other SYS rules; the id stays
+in this family because it was already allocated. Before D75 it checked a
+node-level `excuses` clause against that node's own grants. Node-level
+excuses no longer exist (grmb-spec 4.8, MDL018), so the rule now checks a
+matrix-build TEMPLATE excuse (grmb-spec 4.7, packs.md 6.7) against the
+grants of the model.
 
-- Subject: a node n and an `excuses A` clause of n.
-- Predicate: n also holds a grant `may A'` such that A' overlaps A in the
-  atom hierarchy (`A` equals A', is an ancestor of A' as `fs` of `fs.read`, or
-  a descendant). Both are exact facts of the model: no code is read and no
-  query can be Unknown (the atom must be known: an atom in no registry is
-  MDL016, and the clause is then not a subject).
-- Fires: both clauses are in `lo` (they are model facts, always Exact). The
-  finding names the excuse and the grant and which to remove.
-- Certified clean: no overlapping pair exists.
-- Unresolved: never, for a known atom.
-- Why this rule exists: a node cannot be both excluded from an atom and
-  granted it; leaving both would make the matrix cell ambiguous
-  (section 7) and let the excuse's reason hide a real grant.
+- Subject: a template excuse `excuse A for S` (from a `template` entity or
+  an enabled pack) and a grant `may A' at G` of some node n in the model.
+- Predicate: A' overlaps A in the atom hierarchy (`A` equals A', is an
+  ancestor of A' as `fs` of `fs.read`, or a descendant) AND the excuse
+  selection `S` overlaps the grant scope (the grant's `at` selector, by
+  default n's `owns` set): some unit is in both `sel(S)` and the grant
+  scope, or the overlap cannot be shown empty. All of these are facts of
+  the model and the pack: no code is read and no detector can be Unknown
+  (the atom must be known: an atom in no registry is MDL016 and the
+  excuse is then not a subject).
+- Fires: the excuse and the grant are both in `lo` (model facts, always
+  Exact). The finding names the template, the excuse, the node and the
+  grant and which to remove: the template says the atom does not apply to
+  that code, the grant says the node may use it, and both cannot hold.
+- Certified clean: no overlapping (excuse, grant) pair exists.
+- Unresolved: never, for a known atom. (An overlap that depends on an
+  attribute unknown at the adapter's fidelity is decided conservatively
+  as overlapping: the contradiction is reported, because the rule reads
+  model facts only and a possible overlap is itself a model defect.)
+- Why this rule exists: a template excuse and a grant for the same code
+  and atom would make the matrix cell ambiguous (section 7) and let the
+  excuse's reason hide a real grant. It is the model-side twin of CAP004,
+  which catches the same contradiction against OBSERVED use.
+- Not this rule: a use observed in excused code is CAP004 (grimble-model.md
+  section 4), not SYS012.
 - Required mark: none.
 
 ### 6.13 Summary of conditions
@@ -954,7 +969,8 @@ open question (11.2.1). The cell set of grimble-model.md 9.6 defines
 ## 7. The capability matrix as a view over B
 
 grimble-model.md 9.6 defines the cell set once: uses, undeclared,
-declared-unused, excused, not-applicable and unknown. This section defines
+declared-unused, denied (blank), excused (template only), not-applicable and
+unknown. This section defines
 the matrix as a VIEW over B: how a cell is computed from the bound identities,
 without storing it, so that the CAP rules (G14) and `grimble status` are one
 computation.
@@ -984,25 +1000,44 @@ The cell of `(n, a)` is computed, in this order:
 1. Row exemption. If `M(n) U Y(n) U H(n)` is empty (the node owns no code:
    an external system), every cell of the row is `not-applicable` with reason
    `no-code`, and the row is excluded from the summary Unresolved.
-2. Excused. If `excuses a'` holds in n with a' covering a: cell `excused`
-   (with the reason). A grant that overlaps is SYS012 and the cell is still
-   `excused` for display, with the SYS012 finding raised.
-3. Applicability. Partition `M(n) U Y(n)` by language. If `Det(L, a)` is
+2. Applicability. Partition `M(n) U Y(n)` by language. If `Det(L, a)` is
    NotApplicable for every language present: `not-applicable`. Identities of a
    language with NotApplicable leave the subject set for the rest.
-4. Unknown. If any remaining language has `None`, or any remaining identity
-   has `Use` Unknown, or `H(n)` is non-empty: the cell is `unknown` unless
-   a `lo` use already decides it (item 5).
-5. Uses. If some `i` in `M(n)` has `Use_lo(i, a)` non-empty: the cell is
-   `uses` when the use is covered by a grant at i (`i` in `Grants(n, a)`
-   Must), otherwise `undeclared` (CAP001 fires: P+ from `lo`).
+3. Observed uses, BEFORE any excuse. Let `E(n, a)` be the identities of the
+   remaining subject set covered by a template excuse for a' covering a
+   (grmb-spec 4.7, packs.md 6.7); it is empty when no template applies. If
+   some `i` in `M(n)` has `Use_lo(i, a)` non-empty:
+   - `i` not in `E(n, a)` and covered by a grant at i (`i` in `Grants(n, a)`
+     Must): the cell is `uses`.
+   - `i` not in `E(n, a)` and not covered by a grant: the cell is
+     `undeclared` (CAP001 fires: P+ from `lo`). Deny by default: an ungranted
+     atom is denied, so the observed use is the finding.
+   - `i` in `E(n, a)`: the cell is `uses` and CAP004 fires (P+ from `lo`,
+     Error) instead of CAP001 for that use (one root cause, one finding),
+     whether or not a grant also covers it. An excuse never masks an
+     observed use.
+4. Unknown and uncertain. If any remaining language has `None`, or any
+   remaining identity has `Use` Unknown, or `H(n)` is non-empty: the cell is
+   `unknown` unless a `lo` use already decided it (item 3). When the
+   uncertain identities are in `E(n, a)` (a May or Unknown use there, a
+   missing or unavailable detector, F0 or F1 fidelity, an opaque cone), CAP004
+   is Unresolved for them with the reason of the failed condition and the
+   cell is `unknown`, never `excused`: an excuse is not evidence of absence.
+5. Excused. If `E(n, a)` is non-empty and items 3 and 4 did not decide the
+   cell, the identities of `E(n, a)` leave the subject set for the rest of the
+   computation (their detection was complete and found no use). When every
+   remaining identity is in `E(n, a)` the cell is `excused` (with the
+   template name and reason). A template excuse that overlaps a grant `may A'`
+   is SYS012 (6.12) and does not change the cell.
 6. Declared-unused. If `Grants(n, a)` is non-empty and the whole grant scope
    is Must-owned, detector-covered (`Some`) and complete: `Use_hi` over the
    scope is empty: `declared-unused` (CAP002 fires: P-, Exact absence only,
    which is also the only case `grimble shrink` acts on).
-7. Otherwise, with no grant and no use: the cell is blank (nothing declared,
-   nothing observed); CAP003 reports a blank cell for an applicable atom that is
-   neither granted nor excused (P-: the good thing is a grant or an excuse).
+7. Otherwise, with no grant and no use: the cell is `denied` (shown blank).
+   Capabilities are denied by default (D75): a blank cell is a decision, not
+   "not yet considered", and it raises no finding. CAP003, which used to
+   report such a cell, is retired. The only finding on a denied atom is
+   CAP001 when a use is observed (item 3).
 
 Effect of May ownership. A use found at an identity in `Y(n)` is in `Use_hi`
 of n and not in `Use_lo`: it can prevent `declared-unused` (a use might
@@ -1021,10 +1056,12 @@ A detector row with `detector_kind = none` and `impossible = true` for
 `(language, atom)` declares the capability impossible there (CSS has no network;
 a Markdown file has no `exec`); the declaration carries a reason, is data
 in a pack or in gob-ir (G14, G04), and surfaces as the answer
-`detectors(lang, atom) = NotApplicable`. A model can only EXCUSE an atom,
-with a mandatory reason, which is reviewed, budgeted and counted; it cannot
-declare a measured cell not applicable, so a model can never hide an
-unmeasured cell by asserting impossibility. `not-applicable` is reported in
+`detectors(lang, atom) = NotApplicable`. A model cannot declare an
+atom not applicable and cannot excuse one on a node. Excuses exist only in
+matrix-build templates (grmb-spec 4.7, packs.md 6.7), each with a mandatory
+reason, listed and counted in `grimble check --json`, and an excuse never
+hides an observed use (CAP004, 7.2 item 3), so a model can never hide a
+measured or unmeasured cell by asserting impossibility or exemption. `not-applicable` is reported in
 the matrix and is never Unresolved.
 
 ### 7.4 Aggregation across languages
@@ -1270,6 +1307,30 @@ spans are parts with roles. Model: `node kb : trusted { owns "kb/**";
   non-recursive predicate renamed without touching its clauses has an equal
   Body and is paired at May by SYS008 (when its body is not trivial).
 
+### 9.5 Deny by default and an excuse that cannot hide a use (D75)
+
+Node `frob` (grmb-spec 13) has no grant for `net.listen` and no excuse; the
+model says nothing more. A Rust file under `crates/frob/**` calls
+`TcpListener::bind`. Cell `(frob, net.listen)`: item 3 of 7.2 finds
+`Use_lo` with no covering grant, so the cell is `undeclared` and CAP001
+fires. With the file clean the same cell is `denied` (blank) and nothing
+fires: deny by default makes the blank cell a decision, and CAP003 is
+retired.
+
+Now a model `template gen_proto` excuses `net.listen` for
+`lang(rust) & attr(generated_by = "protoc")` (grmb-spec 4.7). Three
+cases for a generated file `E(n, a)` covers:
+
+| Observed in the generated file | Cell | Finding |
+|---|---|---|
+| no use, typed detector complete | `excused` (template and reason shown) | none; the excuse is listed and counted in `check --json` |
+| `TcpListener::bind` (Must use) | `uses` | CAP004 Error; CAP001 is not also raised (one root cause) |
+| a call the detector reports May, or the file is F1 | `unknown` | CAP004 Unresolved with the reason (`may-use`, `fidelity`, `no-detector`), never a pass |
+
+If the model also granted `may net.listen at "crates/frob/gen/**"`, the
+template and the grant overlap: SYS012 fires on the model alone (6.12),
+before any code is read.
+
 ## 10. Conformance corpus outline for crates/grimble-bind/tests
 
 Location `crates/grimble-bind/tests/corpus/`, run by gob-mdtest (one case per
@@ -1320,9 +1381,12 @@ and the expected findings with reasons.
 | `rules/sys005-vacuous/` | modeled selector over an all-F1 language: required Unresolved `vacuous` |
 | `rules/sys006-matrix/` | the truth table of `S_p`, `S_c`, `S_live` (equal, one behind, both behind), Unknown on each side |
 | `rules/sys007-kinds/` | `facet`, `gone`, `scheme`; F0 and F1 Unresolved |
-| `rules/sys012-hierarchy/` | `fs` against `fs.read`; unknown atom is MDL016, not SYS012 |
-| `matrix/cells/` | each of the six cells, the May-owner effects (7.2), the `no-code` row |
-| `matrix/not-applicable/` | detector-declared NotApplicable versus a model `excuses` |
+| `rules/sys012-hierarchy/` | a template excuse for `fs` against a grant `may fs.read` with overlapping selection; disjoint selections are clean; unknown atom is MDL016, not SYS012 (G14) |
+| `rules/cap004/` | an excused atom observed in covered code: CAP004, no CAP001; a May or Unknown use, a missing detector and an F1 file give Unresolved, never a pass; a grant covering the same use still gives CAP004 |
+| `matrix/cells/` | each cell (uses, undeclared, declared-unused, denied, excused, not-applicable, unknown), the May-owner effects (7.2), the `no-code` row |
+| `matrix/not-applicable/` | detector-declared NotApplicable versus a template excuse; a node-level `excuses` is MDL018 |
+| `example/deny-default/` | 9.5: the three template cases and the CAP001 case |
+| `matrix/excuse-order/` | 7.2 order: an observed use in excused code is evaluated before the excuse, so the cell is never `excused` over a use |
 | `matrix/aggregate/` | Rust plus Python plus CSS node: the per-language breakdown and the one Unresolved per node |
 | `example/frob-repo/` | the model of grmb-spec 13 over a small copy of this repository: expected rows of 9.1 |
 | `example/ffi/` | 9.2 |
@@ -1377,11 +1441,14 @@ and the expected findings with reasons.
 
 ### 11.2 Raised by this design
 
-1. SYS012. The ticket title is "excuse without matching grant"; the cell
-   definition of grimble-model.md 9.6 makes the natural check "excuse WITH a
-   matching grant" (6.12). Which did the owner mean? G11 must not implement
-   SYS012 until this is answered. The alternative reading (an excuse for an
-   atom that no detector or grant could ever involve) is a CAP rule, not SYS.
+1. SYS012 (RESOLVED by D75, 2026-10-04). The ticket title "excuse without
+   matching grant" was ambiguous. The owner removed node-level excuses
+   (they exist only in matrix-build templates) and redefined SYS012 as the
+   check that a template excuse does not contradict a grant in the model
+   (6.12), implemented in G14. The alternative reading, an excuse that no
+   detector or grant could involve, is not a rule. The same decision made
+   a blank cell mean "denied" (deny by default), retired CAP003 and added
+   CAP004 (excused but used, 7.2 item 3).
 2. Rule ids. SYS001-SYS012 as the ticket gives them renumber grimble-model.md
    section 4 and grmb-spec (11.3); undeclared-flow and surface need ids
    (reserved SYS013 and SYS014 here). Is renumbering acceptable before any
@@ -1445,7 +1512,7 @@ This file's ids and rules win. The edits that accompany it:
 | SYS009 SYS-SURFACE | public symbol outside `surface` | SYS014 | reserved |
 | (none) | FOREIGN, decided in grimble-model.md section 8 | SYS001 | new |
 | (none) | conflicting bindings; `SYS-CONTRACT-AMBIGUOUS` | SYS003 | new |
-| (none) | claims without evidence, vmodel links, excuse | SYS010, SYS011, SYS012 | new |
+| (none) | claims without evidence, vmodel links, template excuse versus grant | SYS010, SYS011, SYS012 | new (SYS012 redefined by D75 as a matrix-build check, G14) |
 
 3. grmb-spec.md: the references to SYS001, SYS002, SYS005 and SYS009 in its
    text (MDL005, 4.1, 4.2, 4.3, 6.4, 6.5, 10.3, 13 and 14.1) follow the table

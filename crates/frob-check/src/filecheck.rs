@@ -104,7 +104,7 @@ impl FileCheck<Frob> for ObligationFileCheck {
     }
 
     fn applies(&self, ctx: &SharedCtx<'_, Frob>, path: &str) -> bool {
-        ctx.product.obligation_paths.contains(path)
+        ctx.product.obligation_paths.contains(path) || ctx.product.file_info.contains_key(path)
     }
 
     fn examines(&self, ctx: &SharedCtx<'_, Frob>, rule: &RuleMeta, _path: &str) -> bool {

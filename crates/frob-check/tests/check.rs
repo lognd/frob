@@ -227,6 +227,7 @@ impl FileCheck<Frob> for Rewrite {
 fn with_rewrite() -> CheckOptions {
     CheckOptions {
         extra_checks: vec![Arc::new(Rewrite)],
+        only: vec!["FIXT".to_owned()],
         ..quiet()
     }
 }
@@ -485,6 +486,7 @@ impl FileCheck<Frob> for Opaque {
 fn opaque_options() -> CheckOptions {
     CheckOptions {
         extra_checks: vec![Arc::new(Opaque)],
+        only: vec!["FIXT".to_owned()],
         ..quiet()
     }
 }

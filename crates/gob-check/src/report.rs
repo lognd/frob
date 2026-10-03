@@ -10,6 +10,7 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::config::FailOn;
+use crate::status::FidelityReport;
 
 /// Wall time of one named pipeline stage.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
@@ -94,6 +95,8 @@ pub(crate) struct Tally {
     pub stats: Stats,
     /// Subjects examined per evaluated rule id.
     pub subjects: BTreeMap<String, usize>,
+    /// Per-language fidelity accounting.
+    pub fidelity: FidelityReport,
 }
 
 /// One Deterministic fix that was written to disk.
@@ -172,6 +175,8 @@ pub struct CheckReport {
     pub fail_on_unresolved: UnresolvedPolicy,
     /// Subjects each evaluated rule examined (`rules.md` section 2); rules not evaluated are absent.
     pub subjects_examined: BTreeMap<String, usize>,
+    /// Files examined, `NotApplicable` and Unresolved per language (every checked file appears).
+    pub fidelity: FidelityReport,
 }
 
 impl CheckReport {

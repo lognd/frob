@@ -5,12 +5,16 @@ use std::path::Path;
 
 use gob_cache::Cache;
 use gob_git::{Repo, TreeRef};
-use gob_symbols::{Digests, FileSymbols, SymbolGraph, Symref, Target, build_graph, extract_file};
+use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_symbols::{
+    Digests, FileSymbols, SymbolGraph, Symref, Target, adapter_for_path, build_graph, extract_file,
+};
 use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk};
 use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::error::Result;
+use crate::rule::Test001;
 
 /// Changed files and changed symbols (the seeds of test selection).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, JsonSchema)]
@@ -20,6 +24,34 @@ pub struct TouchedSet {
     /// Symbols of the current graph that are new or whose signature or body digest changed.
     #[schemars(with = "Vec<String>")]
     pub symbols: Vec<Symref>,
+    /// Changed files no adapter reads (G18): test selection cannot say what they affect.
+    pub unresolved_files: Vec<String>,
+}
+
+impl TouchedSet {
+    /// One Unresolved `TEST001` finding when changed files have no adapter; empty otherwise.
+    ///
+    /// Silently ignoring such a file would select too few tests, so the
+    /// selection is reported undecided for them instead.
+    pub fn selection_findings(&self) -> Vec<Finding> {
+        let Some(first) = self.unresolved_files.first() else {
+            return Vec::new();
+        };
+        let id: RuleId = Test001
+            .meta()
+            .rule_id()
+            .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
+        vec![Finding::new(
+            id,
+            Severity::Unresolved,
+            None,
+            format!(
+                "test selection is undecided for {} changed file(s) with no adapter (first `{first}`)",
+                self.unresolved_files.len()
+            ),
+            "selection:no-adapter",
+        )]
+    }
 }
 
 /// Build the symbol graph of the work tree at `root` (no cache; the tree is the input).
@@ -89,6 +121,14 @@ pub fn touched_set(repo: &Repo, graph: &SymbolGraph, base: &str) -> Result<Touch
             }
         }
     }
+    let unresolved_files: Vec<String> = files
+        .iter()
+        .filter(|p| adapter_for_path(p).is_none())
+        .cloned()
+        .collect();
+    for p in &unresolved_files {
+        tracing::info!(path = %p, "changed file has no adapter: test selection unresolved");
+    }
     tracing::info!(
         base,
         files = files.len(),
@@ -98,5 +138,6 @@ pub fn touched_set(repo: &Repo, graph: &SymbolGraph, base: &str) -> Result<Touch
     Ok(TouchedSet {
         files,
         symbols: symbols.into_iter().collect(),
+        unresolved_files,
     })
 }

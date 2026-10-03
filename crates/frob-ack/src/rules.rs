@@ -6,7 +6,7 @@ use std::path::Path;
 use gob_cache::Cache;
 use gob_lock::LockEntry;
 use gob_rules::{Finding, Rule, RuleMeta, Severity};
-use gob_symbols::{SymbolKind, SymbolRecord, Symref, Target};
+use gob_symbols::{Status, SymbolKind, SymbolRecord, Symref, Target};
 use gob_text::{FileInterner, Span};
 
 use crate::inputs::{DocDirective, Inputs, section_digest};
@@ -326,11 +326,45 @@ fn drift004(inputs: &Inputs) -> Vec<Raw> {
         .collect()
 }
 
+/// True when some call edge of the graph names `name` without resolving to a target.
+fn unknown_callers(inputs: &Inputs, name: &str) -> bool {
+    inputs
+        .graph
+        .edges_with_status()
+        .iter()
+        .any(|e| e.status == Status::Unknown && e.name.as_deref() == Some(name))
+}
+
+/// The files that parsed with holes, with the hole count; symbols inside a hole are unseen.
+pub fn partial_parse_files(graph: &gob_symbols::SymbolGraph) -> Vec<(String, u32)> {
+    graph
+        .files()
+        .filter_map(|(p, i)| match i.parse_status {
+            gob_symbols::ParseStatus::Partial { holes } => Some((p.to_owned(), holes)),
+            _ => None,
+        })
+        .collect()
+}
+
 fn affect001(inputs: &Inputs) -> Vec<Raw> {
     let meta = Affect001.meta();
     let mut out = Vec::new();
     if inputs.lock.is_stale() {
         return out;
+    }
+    let partial = partial_parse_files(&inputs.graph);
+    if let Some((first, _)) = partial.first() {
+        let mut raw = Raw::new(
+            meta,
+            None,
+            format!(
+                "{} file(s) parsed partially (first `{first}`); public symbols inside a parse hole are unseen, so AFFECT001 is undecided for them",
+                partial.len()
+            ),
+            &"partial-parse",
+        );
+        raw.severity = Severity::Unresolved;
+        out.push(raw);
     }
     for rec in inputs.graph.public_api() {
         let Some(entry) = inputs.lock.entries.get(&rec.symref.to_string()) else {
@@ -340,21 +374,42 @@ fn affect001(inputs: &Inputs) -> Vec<Raw> {
             continue;
         }
         let own = containers(inputs, rec);
-        let stale: Vec<String> = inputs
-            .graph
-            .affects(&rec.symref)
-            .into_iter()
-            .filter(|d| !own.contains(d) && !matches!(d.target(), Target::File))
-            .filter(|d| {
-                !inputs
-                    .lock
-                    .entries
-                    .get(&d.to_string())
-                    .is_some_and(|e| acked_after(entry, e))
-            })
-            .map(|d| d.to_string())
-            .collect();
+        let (mut stale, mut maybe_stale): (Vec<String>, Vec<String>) = (Vec::new(), Vec::new());
+        for (d, status) in inputs.graph.affects_with_status(&rec.symref) {
+            let acked = inputs
+                .lock
+                .entries
+                .get(&d.to_string())
+                .is_some_and(|e| acked_after(entry, e));
+            if own.contains(&d) || matches!(d.target(), Target::File) || acked {
+                continue;
+            }
+            if status == Status::Must {
+                stale.push(d.to_string());
+            } else {
+                maybe_stale.push(d.to_string());
+            }
+        }
         if stale.is_empty() {
+            let unknown = rec
+                .symref
+                .name()
+                .is_some_and(|n| unknown_callers(inputs, n));
+            if !maybe_stale.is_empty() || unknown {
+                tracing::info!(symref = %rec.symref, maybe = maybe_stale.len(), unknown, "AFFECT001 unresolved");
+                let mut raw = Raw::new(
+                    meta,
+                    None,
+                    format!(
+                        "public `{}` changed its signature since its ack; its dependents cannot be decided ({} reached only through May edges, unresolved calls may name it)",
+                        rec.symref,
+                        maybe_stale.len()
+                    ),
+                    &rec.symref,
+                );
+                raw.severity = Severity::Unresolved;
+                out.push(raw);
+            }
             continue;
         }
         let shown: Vec<&str> = stale

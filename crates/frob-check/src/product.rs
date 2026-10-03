@@ -159,6 +159,14 @@ impl Product for Frob {
         apply_exceptions(&snap.inputs.obligations(), files, raw)
     }
 
+    fn file_info(&self, shared: &FrobShared, path: &str) -> Option<gob_symbols::FileInfo> {
+        shared.file_info.get(path).cloned()
+    }
+
+    fn scans_text(&self, path: &str) -> bool {
+        Language::detect(path).is_some()
+    }
+
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
         if LEDGER_RULES.contains(&meta.id) {
             snap.shared.has_ledger || snap.inputs.tickets_configured

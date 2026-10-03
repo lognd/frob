@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Owner decision 2026-10-04 (design ticket ~0NBQ45S): capabilities deny by default, CAP003 retired, excuses only in matrix-build templates, CAP004 excused-but-used (Error), SYS012 redefined as template-excuse versus grant and implemented here in G14, not in G11. Build the matrix from the updated binding.md 7.2 once ~0NBQ45S lands."
+at = "2026-10-03T01:02:13Z"
+actor = "lognd"
+rev = 1
