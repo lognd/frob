@@ -100,7 +100,7 @@ pins the frob version, so CI always decides it.
 ### 2.3 Moving an existing ledger onto the ticket branch
 
 Milestone 1 repositories (this one included) keep tickets at
-`tickets/<id>/` on the code branch. `frob tickets migrate --to-branch`
+`tickets/<id>/` on the code branch. `frob ticket migrate --to-branch`
 is a one-shot, verifiable move:
 
 1. Build the orphan branch from the current tree: each

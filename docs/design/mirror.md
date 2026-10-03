@@ -307,6 +307,60 @@ and in `frob mirror status`.
 - Transfer, conversion to a discussion, lock and pin are classified and
   reported, never acted on blindly.
 
+### 3.6a Operational details (closing the re-cut's gaps)
+
+- **Caps never move the cursor past an edit.** When the per-run
+  proposal cap or the one-proposal-per-(issue, field)-per-day cap is
+  reached, the issue's cursor stops before the first edit not yet
+  recorded; the next run (or the next day) re-reads from there. Repeated
+  edits of one field on one day are recorded the next day as one
+  `proposal-superseded` holding the latest value, with the intermediate
+  values counted. The read-time value is always captured, so the cap
+  delays authorship, never the latest value.
+- **The write journal** lives in the ticket's map shard on the ticket
+  branch: each entry is (issue, field, value digest, run id, time). An
+  entry stays until a later run confirms it by read-back and for 30
+  days after (so history entries can still be attributed), then it is
+  pruned.
+- **The writer lock** is a file `.mirror/lock` on the ticket branch
+  holding (run id, start, expiry), written by CAS; a run that finds an
+  unexpired lock of another run exits 0 with MIR001 `locked`; an expired
+  lock (default 60 minutes, `[mirror] lock_ttl_minutes`) is taken over
+  and the takeover is logged. GitHub's concurrency group is a second,
+  independent guard.
+- **The mirror's commits never trigger a run** because the mirror job
+  is never push-triggered (3.1), and the nudge workflow ignores pushes
+  whose author is a mirror bot id. Pushes with the App token do trigger
+  workflows on GitHub; GITHUB_TOKEN pushes do not; the nudge's actor
+  check covers both.
+- **TICK008 ledger-branch-workflow** (Error): a `.github/` tree on the
+  ticket branch other than the generated nudge workflow (byte-compared).
+  The nudge runs with GITHUB_TOKEN and the least permissions that let it
+  send `repository_dispatch`; which permission that is, is UNVERIFIED
+  and checked by the verification ticket below.
+- **Knobs** (all materialized under `[mirror]`): `behind_hours = 24`
+  (MIR001 when no successful run for that long), `budget_share = 0.5`,
+  `creates_per_run = 50`, `mutations_per_run = 300`, `sweep_per_run =
+  50`, `proposals_per_run = 100`, `proposal_ttl_days = 30`,
+  `contested_after = 3`, `commit_every = 25`, `lock_ttl_minutes = 60`.
+- **`frob mirror recreate <ticket>`** is a human verb: TTY only, never
+  with an agent marker, and it refuses unless the tracker answered 410
+  (deleted) for the issue; a 404 is refused with the blindness
+  explanation (the token may not see it).
+- **Reopened duplicates** are closed again by the next run's duplicate
+  scan, with one host-template comment the first time explaining that
+  the canonical issue is the lowest-numbered one.
+- **Neutralisation form** (3.6), ASCII only: user and team mentions,
+  issue and pull request references, cross-repository references and
+  closing-keyword phrases in mirrored text are rendered inside code spans
+  (`` `@name` ``, `` `fixes #12` ``), where GitHub neither notifies nor
+  links nor closes.
+- **Verifying the tracker facts.** The audit left 16 GitHub facts
+  UNVERIFIED (among them read-your-writes listing, the nudge's
+  permission, autolink limits); one ticket verifies each against the
+  live API in a sandbox repository before the first live run, and the
+  adapter's capabilities record cites the result.
+
 ### 3.7 Stated properties and assumptions
 
 Properties (formal statements and TLC results in
