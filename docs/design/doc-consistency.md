@@ -191,6 +191,65 @@ symbol; the claim is the doc's own list:
 - No ack is involved: the members are re-derived on every run (v1's
   insight: a list can match its last ack and still be wrong).
 
+#### 5.0.1 Claim shapes
+
+The markdown adapter (tree-sitter-md) parses headings, lists, list
+items, GFM pipe tables and inline code spans. Headings are extracted
+today (they are sections); tables, lists and code spans inside them are
+new extraction work for the prose query (universal-model.md Q11).
+
+| Shape | Selected by | Keys are | Everything else is |
+|---|---|---|---|
+| table | `as=table` (or auto) | one cell per row in the key column: the first column, or the column whose header is named by `column="Family"` | free prose (descriptions, other columns) |
+| list | `as=list` (or auto) | the first code span of each top-level item; else its leading bold text; else the item has no key and is SYNC014 Unresolved "put the member name in backticks" | nested items and the rest of the item text |
+| headings | `as=headings` | the text of each heading one level below the directive's section (code spans and emphasis stripped) | the body under each heading, including its subheadings |
+| section | `as=section` | the union of keys from every table, list or heading group in the directive's section and all its subsections | groupings: a doc may split members across subsections ("Families that read code", "Families that read tickets") |
+
+- **Extent.** The claim starts after the directive and ends at the next
+  heading of the same or higher level than the directive's section.
+  Auto-detection takes the first table, list or heading group in that
+  extent; when the extent holds more than one candidate block, auto is
+  ambiguous and the finding is Unresolved with "add as=..." (no
+  guessing). `frob rule why SYNC014 path:line` shows which block was
+  read and which keys it found.
+- **Key normalization.** Strip one code span, link syntax (the link
+  text is the key), emphasis, and trailing punctuation; compare
+  case-sensitively. Formatting otherwise does not matter to the check:
+  `` `DOC` ``, `[`DOC`](rules/DOC.md)` and `**DOC**` are the same key.
+  A cell or item holding two or more code spans is ambiguous and
+  Unresolved for that row ("one member per row").
+- **Member names.** A member may have several names: the identifier
+  (`Doc`), a serde or clap rename (`doc`), a display string (`DOC`).
+  By default a key matches any declared name of its member; `key=ident`,
+  `key=serde` or `key=display` pins one. A key matching two members is
+  Unresolved.
+- **Duplicates.** A key listed twice in one claim is a finding (in
+  `section` mode this is how a member filed under two subsections is
+  caught).
+- **Order.** `ordered` checks declaration order. Without it, order is
+  free, and the fix still keeps whatever order the block already has.
+- **Several docs.** Directives sharing `group=NAME` are checked
+  together: each is a subset, and their union must equal the members
+  ("every rule family is documented on some page").
+
+#### 5.0.2 Fixes written in the block's own shape
+
+- A missing member is inserted in the existing block's shape: a table
+  row with the same column count and `(describe this member)` in each
+  prose cell; a list item with the same bullet or number style and the
+  key in a code span if the siblings use one; a heading at the same
+  level with a placeholder paragraph.
+- Placement keeps the block sorted the way it already is. If the keys
+  are in declaration order, insert after the member's predecessor; if
+  they are alphabetical, insert alphabetically; otherwise append and
+  say so in the fix summary.
+- Removing a stale member removes its row, item, or heading with its
+  body (a heading's body is shown in the fix preview, because it may
+  hold prose worth keeping elsewhere; the fix is maybe-incorrect for
+  headings, machine for rows and items).
+- In `section` mode a missing member has no obvious subsection, so the
+  fix is has-placeholders and asks which group it belongs to.
+
 ### 5.1 Three values
 
 A fact whose source cannot be read (the CLI registry of a product not
