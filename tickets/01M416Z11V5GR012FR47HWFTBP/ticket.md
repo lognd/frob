@@ -2,11 +2,11 @@
 id = "01M416Z11V5GR012FR47HWFTBP"
 title = "frob-worktree WIP check should count via frob_pm::rules::wip::in_progress"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T15:43:45Z"
-updated = "2026-10-03T15:53:29Z"
+updated = "2026-10-03T15:53:43Z"
 scope = ["crates/frob-worktree/src/wip.rs", "crates/frob-pm/src/rules/wip.rs", "crates/frob-pm/tests/mdtest/pm013.md"]
 +++
 
