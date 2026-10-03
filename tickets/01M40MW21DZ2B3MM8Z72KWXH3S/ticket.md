@@ -2,7 +2,8 @@
 id = "01M40MW21DZ2B3MM8Z72KWXH3S"
 title = "grl-spec.md 3: interpolation only in message positions; braces literal elsewhere"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
