@@ -2,13 +2,13 @@
 id = "01M3ZP159QB9VT8D4MBB5XVMKR"
 title = "grimble model roots and hierarchy: declared entry, orphan files, includes mirror the directory tree"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T01:28:34Z"
-updated = "2026-10-03T01:28:34Z"
+updated = "2026-10-03T01:52:52Z"
 idempotency_key = "m2-model-roots"
 labels = ["milestone:2"]
 scope = ["docs/design/**", "crates/grimble-model/**", "crates/grimble-check/**", "crates/grimble/**", "grimble.toml", "docs/reference/**", "docs/schemas/**", "Cargo.lock"]
