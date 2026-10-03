@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T08:05:22Z"
+digest = "0d32d2e040a04648a1e607d8f03c72bdf956994ea86ada867fa4563d0fcf8f6a"
+exit_code = 0
+inline = """
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
+────────────
+ Nextest run ID ef621dc4-ea61-45f3-81af-440fda2878d5 with nextest profile: default
+    Starting 5 tests across 12 binaries (82 tests skipped)
+        PASS [   0.004s] (1/5) frob-release status::tests::open_tickets_group_by_category_in_workflow_order
+        PASS [   0.004s] (2/5) frob-release status::tests::an_unbound_criterion_is_one_typed_blocker
+        PASS [   0.004s] (3/5) frob-release status::tests::missing_milestone_and_bad_fragments_are_blockers_not_failures
+        PASS [   0.005s] (4/5) frob-release status::tests::all_bound_is_ready_with_preview_and_unresolved_lines
+        PASS [   0.194s] (5/5) frob-cli::release_status everything_ready_prints_ready_and_the_changelog_preview
+────────────
+     Summary [   0.194s] 5 tests run: 5 passed, 82 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-release -E 'test(everything_ready_prints_ready) | test(status::tests)'"
+size = 997
+status = "measured"
+tests = ["status::tests::open_tickets_group_by_category_in_workflow_order", "status::tests::an_unbound_criterion_is_one_typed_blocker", "status::tests::missing_milestone_and_bad_fragments_are_blockers_not_failures", "status::tests::all_bound_is_ready_with_preview_and_unresolved_lines", "everything_ready_prints_ready_and_the_changelog_preview"]
+at = "2026-10-03T08:05:22Z"
+actor = "lognd"
+rev = 1
