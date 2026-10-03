@@ -1,0 +1,2 @@
+finding SYS004 warn ~node/a/owns[1]
+row node/a owns src/lib.rs must 2

@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+
+node a : trusted { owns "src/**"; }
+node b : trusted { owns "other/**"; }
+node d : trusted { owns "design/**"; }

@@ -10,7 +10,7 @@
 //! | 4 | nothing: the hidden remainder, as rows with status `unknown` | [`relation`] |
 //!
 //! [`owner`] merges the ranks into the owner function of binding.md 2.6 and [`rules`] evaluates
-//! `SYS001`-`SYS005` and `SYS009`-`SYS012` ([`rule_defs`]). [`bind`] runs the whole pipeline.
+//! `SYS001`-`SYS005` and `SYS009`-`SYS011` ([`rule_defs`]). [`bind`] runs the whole pipeline.
 //!
 //! # Known limits, each a decision-log proposal
 //!
@@ -21,9 +21,7 @@
 //! - `SYS005` does not consult effects (no `effects` query exists) and `SYS010`/`SYS011`
 //!   recognise tests by path and qualified name (no `test_items` query exists).
 //! - `SYS001`, `SYS002` roll up per directory and per file.
-//! - `SYS012` implements the reading binding.md 6.12 chose (an excuse WITH an overlapping grant).
-//!   The ticket title reads the other way and binding.md 11.2.1 asks the owner; the owner has
-//!   not confirmed the reading.
+//! - `SYS012` is not here: it moved to the capability-matrix ticket (G14) by owner decision.
 //! - The `grimble:node`, `grimble:channel` and `grimble:boundary` sugar spellings are not
 //!   registered; only `grimble:binds` is.
 
@@ -45,12 +43,12 @@ use gob_walk::{FileEntry, Selector};
 use grimble_model::ModelFiles;
 use serde_json::Value;
 
-pub use rule_defs::{Sys001, Sys002, Sys003, Sys004, Sys005, Sys009, Sys010, Sys011, Sys012};
+pub use rule_defs::{Sys001, Sys002, Sys003, Sys004, Sys005, Sys009, Sys010, Sys011};
 pub use types::{BindFinding, REASON_PREFIX, Reason, Role, Row, Source, Status, reason_of_message};
 
 /// The rule ids this crate evaluates.
-pub const RULES: [&str; 9] = [
-    "SYS001", "SYS002", "SYS003", "SYS004", "SYS005", "SYS009", "SYS010", "SYS011", "SYS012",
+pub const RULES: [&str; 8] = [
+    "SYS001", "SYS002", "SYS003", "SYS004", "SYS005", "SYS009", "SYS010", "SYS011",
 ];
 
 /// What binding reads.

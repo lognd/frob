@@ -1,0 +1,11 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  owns "a/**";
+}
+node d : trusted { owns "design/**"; }
+contract c {
+  // grimble:binds a/lib.rs::Msg
+  shape "nowhere/**";
+}

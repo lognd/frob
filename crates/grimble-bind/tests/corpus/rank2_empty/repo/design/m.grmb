@@ -1,0 +1,9 @@
+grimble = "2";
+module m;
+
+node a : trusted {
+  owns "src/lib.rs";
+  owns "src/lib.rs::nothing";
+  owns "src/future/**";
+}
+node d : trusted { owns "design/**"; }

@@ -71,9 +71,11 @@ pub fn resolve_symref(code: &Code, text: &str) -> Resolution {
         };
     };
     let units = file.units();
+    // A markdown anchor `path#slug` is the unit `path::slug` of the markdown adapter.
+    let spelled = text.replacen('#', "::", 1);
     let exact: Vec<UnitHit> = units
         .iter()
-        .filter(|u| u.symref == text)
+        .filter(|u| u.symref == text || u.symref == spelled)
         .map(|u| UnitHit {
             symref: u.symref.clone(),
             kind: u.kind.clone(),

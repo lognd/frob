@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+
+node etl : trusted { owns "analysis.ipynb"; }
+node loaders : trusted { owns "analysis.ipynb::load"; }
+node d : trusted { owns "design/**"; }

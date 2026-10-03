@@ -107,13 +107,3 @@ sys_rule!(
     "A vmodel ref or runnable resolves to nothing.",
     "Fires when a `ref` or `runnable` of a vmodel matches no unit although its target file is in the walk; a runnable that selects no test unit fires too. Several matches are SYS003 ambiguous-singleton. Unresolved when the target hides units or the match is May only."
 );
-sys_rule!(
-    Sys012,
-    "SYS012",
-    "sys-excuse-grant",
-    Error,
-    Pplus,
-    false,
-    "A node excuses an atom it is also granted.",
-    "Reading chosen by binding.md 6.12 and NOT yet confirmed by the owner (binding.md 11.2.1: the ticket title says excuse without matching grant): fires when a node holds both `excuses A` and `may A'` with A and A' equal or one an ancestor of the other in the atom hierarchy. Both are model facts, so the rule is never Unresolved."
-);

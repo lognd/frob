@@ -1,4 +1,4 @@
-//! Evaluation of SYS001 to SYS005 and SYS009 to SYS012 over the relation and the owners.
+//! Evaluation of SYS001 to SYS005 and SYS009 to SYS011 over the relation and the owners.
 //!
 //! Every rule follows binding.md section 6: fire only from `lo` (P+) or from an empty `hi`
 //! (P-), certify clean only from the opposite bound, and report Unresolved with a reason code
@@ -607,6 +607,10 @@ fn modeled_unit(
     out: &mut Output,
 ) {
     let Some(folded) = &f.folded else { return };
+    if f.fidelity < Fidelity::F2 {
+        *acc.unknown_vis.entry(f.path.clone()).or_default() += 1;
+        return;
+    }
     let Some(rec) = folded
         .file
         .symbols
@@ -616,10 +620,6 @@ fn modeled_unit(
         return;
     };
     if !CODE_KINDS.contains(&rec.kind) {
-        return;
-    }
-    if f.fidelity < Fidelity::F2 {
-        *acc.unknown_vis.entry(f.path.clone()).or_default() += 1;
         return;
     }
     out.count("SYS005", 1);
@@ -851,42 +851,11 @@ fn sys011(cx: &Cx<'_>, out: &mut Output) {
     }
 }
 
-fn atoms_overlap(a: &str, b: &str) -> bool {
-    a == b
-        || b.strip_prefix(a).is_some_and(|r| r.starts_with('.'))
-        || a.strip_prefix(b).is_some_and(|r| r.starts_with('.'))
-}
-
-fn sys012(cx: &Cx<'_>, out: &mut Output) {
-    for e in cx
-        .model
-        .entities
-        .values()
-        .filter(|e| e.kind == EntityKind::Node)
-    {
-        for x in &e.excuses {
-            out.count("SYS012", 1);
-            for g in e.grants.iter().filter(|g| atoms_overlap(&x.atom, &g.atom)) {
-                out.fire(
-                    "SYS012",
-                    Severity::Error,
-                    format!(
-                        "{} excuses `{}` and is granted `{}`; remove one of the two",
-                        e.anchor, x.atom, g.atom
-                    ),
-                    &format!("{}|{}|{}", e.anchor, x.atom, g.atom),
-                    Some((x.file.as_str(), (x.span.start, x.span.end))),
-                );
-            }
-        }
-    }
-}
-
 /// Evaluate every binding rule.
 pub fn evaluate(cx: &Cx<'_>) -> Output {
     let mut out = Output::default();
     for rule in [
-        "SYS001", "SYS002", "SYS003", "SYS004", "SYS009", "SYS010", "SYS011", "SYS012",
+        "SYS001", "SYS002", "SYS003", "SYS004", "SYS009", "SYS010", "SYS011",
     ] {
         out.subjects.entry(rule).or_default();
     }
@@ -898,7 +867,6 @@ pub fn evaluate(cx: &Cx<'_>) -> Output {
     sys005(cx, &mut out);
     sys010(cx, &mut out);
     sys011(cx, &mut out);
-    sys012(cx, &mut out);
     tracing::info!(findings = out.findings.len(), "binding rules evaluated");
     out
 }

@@ -32,17 +32,6 @@ pub struct Clause {
     pub symref: Option<String>,
 }
 
-/// A `may` or `excuses` clause: only the atom matters to SYS012.
-#[derive(Clone, Debug)]
-pub struct AtomClause {
-    /// The atom as written (`fs.read`, `pack::net`).
-    pub atom: String,
-    /// The .grmb file.
-    pub file: String,
-    /// The clause span.
-    pub span: Span,
-}
-
 /// An entity of the model (binding.md 1.1, the set E).
 #[derive(Clone, Debug)]
 pub struct Entity {
@@ -66,10 +55,6 @@ pub struct Entity {
     pub assumed: bool,
     /// True when the entity asked for pack inference (`attr infer`).
     pub infer_requested: bool,
-    /// `may` grants.
-    pub grants: Vec<AtomClause>,
-    /// `excuses` clauses.
-    pub excuses: Vec<AtomClause>,
 }
 
 impl Entity {
@@ -162,16 +147,6 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
         ClauseKind::Proof(p) => ent.proof = parse_proof(&p.text),
         ClauseKind::Assumed(_) => ent.assumed = true,
         ClauseKind::Attr { key, .. } if key.text == "infer" => ent.infer_requested = true,
-        ClauseKind::May(m) => ent.grants.push(AtomClause {
-            atom: m.atom.written(),
-            file: file.to_owned(),
-            span: c.span,
-        }),
-        ClauseKind::Excuses(x) => ent.excuses.push(AtomClause {
-            atom: x.atom.written(),
-            file: file.to_owned(),
-            span: c.span,
-        }),
         _ => {}
     }
 }
@@ -200,8 +175,6 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 proof: None,
                 assumed: false,
                 infer_requested: false,
-                grants: Vec::new(),
-                excuses: Vec::new(),
             });
         if let Header::Flow { from, to } = &e.header {
             ent.ends = Some((node_anchor(&rec.ctx, from), node_anchor(&rec.ctx, to)));

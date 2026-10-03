@@ -1,0 +1,3 @@
+finding SYS009 warn ~consumer end of flow/half
+finding SYS004 warn ~flow/none is a flow without code
+finding SYS004 warn ~flow/bare is a flow without code

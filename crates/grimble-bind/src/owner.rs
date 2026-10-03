@@ -218,7 +218,7 @@ pub fn build(
                 file.path.clone(),
                 UnitOwner {
                     file: file.path.clone(),
-                    kind: "module".to_owned(),
+                    kind: "file".to_owned(),
                     merged: merge(&o, &rank1),
                 },
             );
@@ -273,4 +273,81 @@ fn rank1_of(rel: &Relation, symref: &str) -> BTreeSet<EntityName> {
                 .collect()
         })
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use gob_walk::owner::resolve_owner;
+
+    use super::*;
+
+    fn cand(e: &str, spec: [i32; 6], status: MatchStatus) -> Candidate {
+        Candidate {
+            entity: e.into(),
+            spec: Specificity::new(spec),
+            status,
+        }
+    }
+
+    const BROAD: [i32; 6] = [1, 1, -1, 0, 0, 0];
+    const NARROW: [i32; 6] = [1, 2, 0, -1, 0, 0];
+
+    fn none() -> BTreeSet<EntityName> {
+        BTreeSet::new()
+    }
+
+    // frob:tests crates/grimble-bind/src/owner.rs::merge
+    #[test]
+    fn a_may_in_the_top_tie_is_an_unresolved_tie() {
+        let o = resolve_owner(
+            vec![
+                cand("a", BROAD, MatchStatus::Must),
+                cand("b", BROAD, MatchStatus::May),
+            ],
+            false,
+        );
+        let m = merge(&o, &none());
+        assert!(matches!(m.owner, Owner::May(_)));
+        assert!(m.tie.is_some_and(|t| !t.fires));
+    }
+
+    // frob:tests crates/grimble-bind/src/owner.rs::merge
+    #[test]
+    fn a_must_tie_fires_and_a_directive_naming_one_node_resolves_it() {
+        let o = resolve_owner(
+            vec![
+                cand("a", BROAD, MatchStatus::Must),
+                cand("b", BROAD, MatchStatus::Must),
+            ],
+            false,
+        );
+        assert!(merge(&o, &none()).tie.is_some_and(|t| t.fires));
+        let m = merge(&o, &BTreeSet::from(["a".into()]));
+        assert_eq!(m.owner, Owner::Must("a".into()));
+        assert!(m.tie.is_none() && m.directive_selector.is_none());
+    }
+
+    // frob:tests crates/grimble-bind/src/owner.rs::merge
+    #[test]
+    fn possible_worlds_keeps_a_may_narrower_candidate_in_hi() {
+        let o = resolve_owner(
+            vec![
+                cand("etl", BROAD, MatchStatus::Must),
+                cand("loaders", NARROW, MatchStatus::May),
+            ],
+            false,
+        );
+        let m = merge(&o, &none());
+        assert!(matches!(m.owner, Owner::May(ref s) if s.len() == 2));
+        assert!(m.tie.is_none());
+    }
+
+    // frob:tests crates/grimble-bind/src/owner.rs::merge
+    #[test]
+    fn a_directive_against_a_may_selector_is_no_conflict() {
+        let o = resolve_owner(vec![cand("a", BROAD, MatchStatus::May)], false);
+        let m = merge(&o, &BTreeSet::from(["b".into()]));
+        assert_eq!(m.owner, Owner::Must("b".into()));
+        assert!(m.directive_selector.is_none() && m.directive_directive.is_none());
+    }
 }

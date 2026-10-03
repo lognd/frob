@@ -1,0 +1,10 @@
+# 9.1: no end-owner, no tie; the sibling flow names files that do not exist yet
+row node/gob owns crates/gob-walk/src/lib.rs::walk must 2
+row node/frob owns crates/frob-ledger/src/lib.rs must 2
+row node/frob owns crates/frob/src/main.rs::main must 2
+row flow/f_walk producer crates/gob-walk/src/lib.rs::walk must 2
+row flow/f_walk consumer crates/frob-check/src/snapshot.rs must 2
+row contract/walk_result shape crates/gob-walk/src/lib.rs::WalkResult must 2
+row claim/no_frob_to_grimble evidence crates/frob/tests/wiring.rs::wired must 2
+owner crates/gob-walk/src/lib.rs::walk must:node/gob
+owner crates/frob-ledger/src/lib.rs must:node/frob

@@ -1,0 +1,20 @@
+grimble = "2";
+module m;
+
+node a : trusted { owns "a/**"; }
+node b : trusted { owns "b/**"; }
+node ext : trusted { kind external; }
+node d : trusted { owns "design/**"; }
+
+flow ok : a -> b {
+  producer "a/lib.rs::send";
+  consumer "b/lib.rs::recv";
+}
+flow bad : a -> b {
+  producer "a/lib.rs::send";
+  consumer "a/lib.rs::send";
+}
+flow viaext : ext -> b {
+  producer "a/lib.rs::send";
+  consumer "b/lib.rs::recv";
+}

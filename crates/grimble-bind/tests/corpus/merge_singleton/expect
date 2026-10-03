@@ -1,0 +1,2 @@
+finding SYS003 error ~ambiguous-singleton: contract/two
+row contract/one shape src/lib.rs::Msg must 2

@@ -1,0 +1,2 @@
+finding SYS002 error ~owned equally by node/a and node/b
+owner src/lib.rs::run unknown:node/a,node/b

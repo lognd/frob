@@ -1,0 +1,8 @@
+finding SYS010 warn ~claim/bad
+finding SYS010 warn ~claim/empty
+finding SYS011 error ~vmodel/req_bad/ref[0]
+finding SYS011 error ~vmodel/t_bad/runnable[0]
+finding SYS011 error ~vmodel/t_nontest/runnable[0]
+row claim/good evidence tests/t.rs::it_works must 2
+row claim/docev evidence docs/spec.md::intro must 2
+subjects SYS010 4

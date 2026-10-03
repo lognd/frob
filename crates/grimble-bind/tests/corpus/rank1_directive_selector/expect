@@ -1,0 +1,5 @@
+finding SYS003 error ~directive-selector
+owner src/lib.rs::run must:node/b
+owner src/lib.rs::calm must:node/a
+row node/b owns src/lib.rs::run must 1
+row node/a owns src/lib.rs::run must 2

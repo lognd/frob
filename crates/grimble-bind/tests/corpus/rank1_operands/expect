@@ -1,0 +1,2 @@
+finding SYS003 error ~`design:node/nope` names no entity
+finding SYS003 error ~`src/lib.rs::missing` resolves to nothing

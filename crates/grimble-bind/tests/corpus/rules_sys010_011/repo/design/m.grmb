@@ -1,0 +1,19 @@
+grimble = "2";
+module m;
+
+node a : trusted { owns "src/**"; }
+node d : trusted { owns "design/**"; owns "docs/**"; owns "tests/**"; }
+
+claim good { noflow a -> d; proof L2; evidence tests "tests/t.rs"; }
+claim bad { noflow a -> d; proof L2; evidence tests "src/lib.rs::run"; }
+claim empty { noflow a -> d; proof L3; evidence tests "tests/t.rs::nothing"; }
+claim low { noflow a -> d; proof L1; }
+claim excused { noflow a -> d; proof L2; assumed owner="me" review=2030-01-01 because="x"; }
+claim docev { noflow a -> d; proof L2; evidence ref "docs/spec.md#intro"; }
+
+vmodel req_ok { kind artifact; level requirements; ref "docs/spec.md#intro"; }
+vmodel req_bad { kind artifact; level requirements; ref "docs/spec.md#missing"; }
+vmodel req_future { kind artifact; level requirements; ref "docs/nowhere.md#x"; }
+vmodel t_ok { kind test; level customer_test; runnable "tests/t.rs::it_works"; }
+vmodel t_bad { kind test; level customer_test; runnable "tests/t.rs::absent"; }
+vmodel t_nontest { kind test; level customer_test; runnable "src/lib.rs::run"; }

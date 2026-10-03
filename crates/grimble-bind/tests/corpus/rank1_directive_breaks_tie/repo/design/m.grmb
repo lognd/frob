@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+
+node a : trusted { owns "src/lib.rs::run"; }
+node b : trusted { owns "src/lib.rs::run"; }
+node d : trusted { owns "design/**"; }

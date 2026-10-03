@@ -1,0 +1,8 @@
+grimble = "2";
+part of frob;
+
+vmodel t_wiring {
+  kind test;
+  level customer_test;
+  runnable "crates/frob/tests/wiring.rs::wired";
+}

@@ -1,0 +1,35 @@
+grimble = "2";
+module frob;
+
+include "vmodel.grmb";
+
+node frob : trusted {
+  kind component;
+  owns "crates/frob/**";
+  owns "crates/frob-*/**";
+}
+node gob : trusted {
+  kind component;
+  owns "crates/gob-*/**";
+}
+node design : trusted { owns "design/**"; }
+
+flow f_walk : gob -> frob {
+  label Internal;
+  producer "crates/gob-walk/src/lib.rs::walk";
+  consumer "crates/frob-check/src/snapshot.rs";
+  contract walk_result;
+}
+flow f_sibling : gob -> frob {
+  label Internal;
+  producer "crates/grimble-check/src/sibling.rs::emit";
+  consumer "crates/frob-check/src/sibling.rs::read";
+}
+contract walk_result {
+  shape "crates/gob-walk/src/lib.rs::WalkResult";
+}
+claim no_frob_to_grimble {
+  noflow frob -> design;
+  proof L2;
+  evidence tests "crates/frob/tests/wiring.rs";
+}
