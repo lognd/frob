@@ -2,13 +2,13 @@
 id = "01M3ZSHSKBF64WJYTV64QBTKCK"
 title = "GRL language specification: one intuitive rule language for pattern and relational rules"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:30:05Z"
-updated = "2026-10-03T02:30:05Z"
+updated = "2026-10-03T03:12:12Z"
 idempotency_key = "m2-grl-spec"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]
