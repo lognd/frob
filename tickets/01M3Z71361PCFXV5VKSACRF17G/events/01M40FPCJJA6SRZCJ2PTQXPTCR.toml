@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T08:57:04Z"
+digest = "935c53dde8cc835937b5acb9ce992ce56157ca56ee9ca82ea3904a6364b70669"
+exit_code = 0
+inline = """
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/ACRF17G/crates/frob)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/ACRF17G/crates/frob-lease)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.61s
+────────────
+ Nextest run ID 58a0d818-3613-4afb-b28e-9931661bfb07 with nextest profile: default
+    Starting 2 tests across 1 binary (120 binaries skipped)
+        PASS [   0.246s] (1/2) frob-cli::shared_files work_refuses_the_second_lease_when_the_file_is_not_shared
+        PASS [   0.313s] (2/2) frob-cli::shared_files work_grants_two_leases_that_share_a_shared_file
+────────────
+     Summary [   0.313s] 2 tests run: 2 passed, 0 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-E binary(shared_files)"
+size = 736
+status = "measured"
+tests = ["work_refuses_the_second_lease_when_the_file_is_not_shared", "work_grants_two_leases_that_share_a_shared_file"]
+at = "2026-10-03T08:57:04Z"
+actor = "lognd"
+rev = 1
