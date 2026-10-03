@@ -8,7 +8,7 @@
 //! `evidence` event ([`events`]). Providers ([`provider`]) are `nextest`
 //! (verdict and executed test names through `gob-exec`), `command` (an
 //! allowlisted tool: exit code and transcript digest) and `file` (a hashed
-//! path); `attestation` is a person's statement ([`attestation`]). Transcripts are redacted with `gob_log::redact`; up to
+//! path); `attestation` is a person's statement ([`attestation`]). Transcripts are redacted with `gob_log::redact` and their absolute local paths rewritten to placeholders ([`scrub`]); up to
 //! `[evidence] inline_max_bytes` they live inline in the event, larger ones in
 //! the `dir:` store ([`store`], addressed by blake3, non-authoritative) with the
 //! event carrying the URI. A missing blob degrades a record to
@@ -30,6 +30,7 @@ pub mod events;
 pub mod guard;
 pub mod provider;
 pub mod record;
+pub mod scrub;
 pub mod store;
 pub mod verbs;
 pub mod workspace;

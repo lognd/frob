@@ -206,7 +206,7 @@ impl Workspace<'_> {
         let summary = format!(
             "lease: {} in {}; scope: {}; ttl {}s",
             holder.actor,
-            path.display(),
+            self.ledger_path(&path),
             lease.scope.join(", "),
             lease.ttl_secs
         );
@@ -224,7 +224,11 @@ impl Workspace<'_> {
         };
         if let Some(prev) = &stolen_from {
             let note = format!(
-                "lease stolen from {prev} by {holder}: {}",
+                "lease stolen from {} in {} by {} in {}: {}",
+                prev.actor,
+                self.ledger_path(&prev.worktree),
+                holder.actor,
+                self.ledger_path(&holder.worktree),
                 steal.unwrap_or_default()
             );
             self.ledger.comment(id, CommentSubtype::Note, &note)?;
@@ -393,6 +397,17 @@ impl Workspace<'_> {
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf)
     }
 
+    // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
+    /// `path` as a ledger event may record it: relative to the repository's parent directory, never absolute.
+    ///
+    /// A path outside that directory keeps only its last two components, so no
+    /// home directory or user name reaches a pushed ledger.
+    pub fn ledger_path(&self, path: &Path) -> String {
+        let primary = self.primary_root();
+        let base = primary.parent().unwrap_or(&primary);
+        ledger_relative(path, base)
+    }
+
     fn primary_root(&self) -> PathBuf {
         let repo = self.ledger.repo();
         repo.list_worktrees()
@@ -493,4 +508,24 @@ pub fn clean(path: &Path) -> PathBuf {
         }
     }
     out
+}
+
+/// `path` relative to `base` with `/` separators; outside `base`, its last two components.
+// frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
+fn ledger_relative(path: &Path, base: &Path) -> String {
+    let join = |p: &Path| {
+        p.components()
+            .filter_map(|c| match c {
+                Component::Normal(n) => Some(n.to_string_lossy().into_owned()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("/")
+    };
+    if let Ok(rel) = path.strip_prefix(base) {
+        return join(rel);
+    }
+    let names: Vec<String> = join(path).split('/').map(str::to_owned).collect();
+    let keep = names.len().saturating_sub(2);
+    names[keep..].join("/")
 }

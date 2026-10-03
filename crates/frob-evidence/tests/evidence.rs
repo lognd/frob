@@ -7,6 +7,7 @@ use frob_evidence::events;
 use frob_evidence::guard::{CODE_MISSING, EvidenceGuard};
 use frob_evidence::provider::{self, build_record, hash_file};
 use frob_evidence::record::{Provider, Status};
+use frob_evidence::scrub::PathScrub;
 use frob_evidence::store::{BlobStore, Fetched, Stored};
 use frob_evidence::{EvidenceTable, Workspace};
 use frob_ledger::model::{Outcome, TicketType};
@@ -187,7 +188,15 @@ fn a_missing_blob_is_unmeasured_not_failed() {
         failed_tests: vec![],
         transcript: "y".repeat(40),
     };
-    let rec = build_record(&st, Provider::Command, "git status", &cap, &[]).expect("record");
+    let rec = build_record(
+        &st,
+        &PathScrub::default(),
+        Provider::Command,
+        "git status",
+        &cap,
+        &[],
+    )
+    .expect("record");
     let uri = rec.uri.clone().expect("stored by uri");
     assert_eq!(rec.effective_status(&st), Status::Measured);
     std::fs::remove_file(dir.path().join(".git/frob/artifacts").join(&rec.digest)).expect("rm");
@@ -621,4 +630,47 @@ fn nextest_evidence_runs_the_provider_plain_and_writes_ascii() {
     let v = json(&out);
     let inline = v["data"]["record"]["inline"].as_str().unwrap_or_default();
     assert!(inline.is_ascii() && !inline.contains('\u{1b}'), "{inline}");
+}
+
+/// Captured text naming the worktree, repository and home directory is stored with placeholders and a digest over what is stored.
+#[test]
+fn captured_paths_become_placeholders_in_the_event_data() {
+    let dir = repo("base");
+    let st = store(dir.path(), 4096);
+    let scrub = PathScrub::with_home(
+        Path::new("/home/ann/projects/app"),
+        Path::new("/home/ann/projects/app-wt/T1"),
+        Some(Path::new("/home/ann")),
+    );
+    let cap = provider::Capture {
+        exit_code: Some(0),
+        passed: true,
+        measured: true,
+        tests: vec![],
+        failed_tests: vec![],
+        transcript:
+            "ok /home/ann/projects/app-wt/T1/crates/x /home/ann/projects/app/src /home/ann/.cargo"
+                .to_owned(),
+    };
+    let rec = build_record(
+        &st,
+        &scrub,
+        Provider::Command,
+        "ls /home/ann/projects/app",
+        &cap,
+        &[],
+    )
+    .expect("record");
+    let data = events::to_data(&rec).expect("data");
+    let text = toml::to_string(&data.record).expect("toml");
+    assert!(!text.contains("/home/ann"), "no absolute path: {text}");
+    assert!(text.contains("<worktree>/crates/x"), "{text}");
+    assert!(text.contains("<repo>/src"), "{text}");
+    assert!(text.contains("~/.cargo"), "{text}");
+    let inline = rec.inline.clone().expect("inline");
+    assert_eq!(
+        rec.digest,
+        frob_evidence::record::digest_hex(inline.as_bytes())
+    );
+    assert_eq!(rec.size, inline.len() as u64);
 }

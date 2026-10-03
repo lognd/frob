@@ -166,11 +166,12 @@ impl Command for TestVerb {
         match lease_ticket(repo.common_dir(), &ws.root) {
             Some(reference) => match ws.ledger.resolve(&reference) {
                 Ok(id) => {
-                    let reference_line = join_args(&report.args);
+                    // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
                     let record = build_record(
                         &ws.store,
+                        &ws.scrub(),
                         Provider::Nextest,
-                        &reference_line,
+                        &join_args(&report.args),
                         &report.capture,
                         &[],
                     )

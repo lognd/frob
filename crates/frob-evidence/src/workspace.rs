@@ -9,6 +9,7 @@ use gob_git::Repo;
 
 use crate::config::EvidenceTable;
 use crate::error::{EvidenceError, Result};
+use crate::scrub::PathScrub;
 use crate::store::BlobStore;
 
 /// Product name and config file stem.
@@ -60,6 +61,18 @@ impl Workspace {
     /// A runner whose `Tool` programs are limited to `[evidence] allowed_tools`.
     pub fn runner(&self) -> Runner {
         Runner::new(Limits::default()).allow_tools(self.evidence.allowed_tools.clone())
+    }
+
+    // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
+    /// The scrub that rewrites this repository's, worktree's and home's absolute paths in captured text.
+    pub fn scrub(&self) -> PathScrub {
+        let common = self.ledger.repo().common_dir();
+        let repo = if common.file_name().is_some_and(|n| n == ".git") {
+            common.parent().unwrap_or(&self.root)
+        } else {
+            &self.root
+        };
+        PathScrub::new(repo, &self.root)
     }
 
     /// The wall-clock limit of one provider process.

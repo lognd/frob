@@ -65,7 +65,25 @@ pub struct Tick002;
 )]
 pub struct Tick003;
 
-fn id_of<R: Rule>(rule: &R) -> RuleId {
+/// A committed ledger file holds an absolute home path.
+///
+/// `/home/<name>/`, `/Users/<name>/`, `/root/` and `C:\Users\<name>\` in a ledger file publish the local user name and
+/// directory layout of everyone who pushes. frob does not rewrite committed ledgers: edit the value in a new commit
+/// (`~/` or a path relative to the repository parent), or leave it if the repository is private.
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "TICK004",
+    slug = "absolute-home-path",
+    family = "TICK",
+    severity = Warn,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    version = 1
+)]
+pub struct Tick004;
+
+pub(crate) fn id_of<R: Rule>(rule: &R) -> RuleId {
     rule.meta()
         .rule_id()
         .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))

@@ -52,7 +52,7 @@
 //!
 //! [`guards::CloseGuard`] is the close-guard trait (the evidence guard arrives
 //! with `frob-evidence`), [`guards::LeaseCheck`] the lease hook `doable`
-//! consults (`frob-lease`). [`rules`] declares `TICK001` to `TICK003`;
+//! consults (`frob-lease`). [`rules`] declares `TICK001` to `TICK004` (`TICK004` is [`privacy`], a byte scan of committed ledger files);
 //! `frob-check` supplies the ticket ids [`rules::tick002`] checks.
 
 mod brief;
@@ -70,6 +70,7 @@ pub mod merge;
 pub mod model;
 pub mod objects;
 pub mod ops;
+pub mod privacy;
 pub mod rules;
 pub mod schema;
 

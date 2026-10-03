@@ -452,7 +452,11 @@ never to Failed, and Unmeasured on a terminal ticket is not a finding.
 Text under `[evidence] inline_max_bytes` (default 16 KiB; a
 command transcript, a JSON measurement) may be stored inline in the
 event file after `gob-log` redaction (architecture.md section 5); a
-TICK rule scans events for unredacted secret patterns. The GUI renders blobs through
+TICK rule scans events for unredacted secret patterns. Captured text also has the worktree root,
+repository root and home directory rewritten to `<worktree>`, `<repo>` and `~` before the digest is
+computed (the digest covers the stored, scrubbed text), and lease events record the worktree relative
+to the repository parent, so a pushed ledger never carries the local user name; `TICK004` reports
+committed ledger files that still hold an absolute home path and frob never rewrites them. The GUI renders blobs through
 the same fetch. Changed: evidence providers are a trait
 (`pytest`, `cargo test`, `ctest`, `vitest`, `junit`, `command`) so
 Rust-only or docs-only repos close tickets natively (milestone 1 ships

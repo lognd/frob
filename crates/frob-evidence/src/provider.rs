@@ -15,6 +15,7 @@ use gob_exec::{Outcome, Program, Runner, Spec};
 use crate::attestation::escape_non_ascii;
 use crate::error::{EvidenceError, Result};
 use crate::record::{EvidenceRecord, Provider, Status, digest_hex};
+use crate::scrub::PathScrub;
 use crate::store::{BlobStore, Stored};
 use crate::workspace::Workspace;
 
@@ -370,19 +371,23 @@ pub fn builtin_tool(tool: &str, builtins: &[PathBuf]) -> Option<PathBuf> {
     builtins.contains(&canon).then_some(canon)
 }
 
-/// Turn a capture into a record: redact, hash, store inline or by URI.
+/// Turn a capture into a record: redact, scrub local paths, hash, store inline or by URI.
+///
+/// The digest is over the scrubbed, escaped text, exactly what is stored and written to the event.
 ///
 /// # Errors
 ///
 /// [`EvidenceError::Io`] when the blob store cannot be written.
 pub fn build_record(
     store: &BlobStore,
+    scrub: &PathScrub,
     provider: Provider,
     reference: &str,
     capture: &Capture,
     accepts: &[usize],
 ) -> Result<EvidenceRecord> {
-    let redacted = escape_non_ascii(&gob_log::redact(&capture.transcript));
+    // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
+    let redacted = escape_non_ascii(&scrub.apply(&gob_log::redact(&capture.transcript)));
     let digest = digest_hex(redacted.as_bytes());
     let (uri, inline) = match store.put(&redacted)? {
         Stored::Inline(t) => (None, Some(t)),
@@ -390,7 +395,7 @@ pub fn build_record(
     };
     Ok(EvidenceRecord {
         provider,
-        reference: reference.to_owned(),
+        reference: scrub.apply(reference),
         digest,
         uri,
         status: if capture.measured {
@@ -478,7 +483,7 @@ pub fn capture(
                     filter: reference.to_owned(),
                 });
             }
-            build_record(&ws.store, provider, reference, &cap, accepts)
+            build_record(&ws.store, &ws.scrub(), provider, reference, &cap, accepts)
         }
         Provider::Command => {
             let argv = split_args(reference)?;
@@ -489,7 +494,7 @@ pub fn capture(
                 &argv,
                 ws.timeout(),
             )?;
-            build_record(&ws.store, provider, reference, &cap, accepts)
+            build_record(&ws.store, &ws.scrub(), provider, reference, &cap, accepts)
         }
     }
 }

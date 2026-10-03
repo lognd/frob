@@ -7,7 +7,7 @@ use frob_ack::{Affect001, Drift001, Drift002, Drift003};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::TicketId;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
-use frob_ledger::rules::{Tick001, Tick003};
+use frob_ledger::rules::{Tick001, Tick003, Tick004};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
@@ -66,18 +66,24 @@ impl Frob {
     }
 }
 
-/// `TICK001` and `TICK003` from the ledger doctor (read-only); empty without a ledger.
+/// `TICK001` and `TICK003` from the ledger doctor and `TICK004` from the home-path scan (read-only); empty without a ledger.
+// frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
     let Some(state) = &inputs.ledger else {
         return Vec::new();
     };
-    match state.ledger.doctor(false) {
+    let mut out = match state.ledger.doctor(false) {
         Ok(report) => report.findings,
         Err(err) => {
             tracing::warn!(%err, "ledger doctor failed; TICK001 and TICK003 not evaluated");
             Vec::new()
         }
+    };
+    match state.ledger.home_path_findings() {
+        Ok(found) => out.extend(found),
+        Err(err) => tracing::warn!(%err, "ledger home-path scan failed; TICK004 not evaluated"),
     }
+    out
 }
 
 /// Apply `[pm] strict` to a PM group's `findings`; an unreadable `[pm]` table means not strict, logged.
@@ -296,7 +302,7 @@ impl Product for Frob {
             ),
             RepoGroup::new(
                 "repo:ledger",
-                vec![Tick001.meta(), Tick003.meta()],
+                vec![Tick001.meta(), Tick003.meta(), Tick004.meta()],
                 |s: &Snapshot<Self>, _| ledger_findings(&s.inputs),
             ),
         ]

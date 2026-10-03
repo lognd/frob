@@ -225,6 +225,64 @@ fn another_holder_is_refused_and_can_steal_with_a_reason() {
     );
 }
 
+/// Lease and steal events record the worktree relative to the repository parent, never an absolute path.
+// frob:tests work_events_carry_no_absolute_path
+#[test]
+fn work_events_carry_no_absolute_path() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let alice = fx.ledger(Some("alice"));
+    let bob = fx.ledger(Some("bob"));
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws_a = Workspace {
+        ledger: &alice,
+        leases: &leases,
+        config: &cfg,
+    };
+    let ws_b = Workspace {
+        ledger: &bob,
+        leases: &leases,
+        config: &cfg,
+    };
+    let id = Fixture::ticket(&alice, "Do it", TicketType::Task, &["src/newmod/**"]);
+    let started = ws_a
+        .work(&id.to_string(), &WorkOptions::default())
+        .expect("work");
+    ws_b.work(
+        &id.to_string(),
+        &WorkOptions {
+            worktree: None,
+            steal: Some("alice is gone".to_owned()),
+        },
+    )
+    .expect("steal");
+    let tmp = fx
+        .root
+        .parent()
+        .expect("tmp parent")
+        .to_string_lossy()
+        .into_owned();
+    let text = format!("{:?}", bob.events(id).expect("events"));
+    assert!(!text.contains(&tmp), "no absolute path in events: {text}");
+    let name = started
+        .path
+        .file_name()
+        .expect("name")
+        .to_string_lossy()
+        .into_owned();
+    assert!(
+        text.contains(&format!("repo-wt/{name}")),
+        "the worktree is recorded relative to the repository parent: {text}"
+    );
+    assert_eq!(
+        started.lease.holder.worktree, started.path,
+        "the live lease registry keeps the absolute path"
+    );
+}
+
 #[test]
 fn concurrent_work_on_overlapping_tickets_grants_exactly_one() {
     if !git_available() {
