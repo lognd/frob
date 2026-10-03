@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T12:12:30Z"
+digest = "3a202c3dd3aabb9f3c06e308681cadc36218f3b590580ef64f66b777ec685b8f"
+exit_code = 0
+inline = """
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/4PT3KZB/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.94s
+────────────
+ Nextest run ID b5428e1e-9a89-435d-91b2-95fb5b6a2c93 with nextest profile: default
+    Starting 1 test across 7 binaries (69 tests skipped)
+        PASS [   0.055s] (1/1) frob-release ci::tests::red_names_every_failing_check_with_its_link
+────────────
+     Summary [   0.056s] 1 test run: 1 passed, 69 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(red_names_every_failing_check_with_its_link)'"
+size = 539
+status = "measured"
+tests = ["ci::tests::red_names_every_failing_check_with_its_link"]
+at = "2026-10-03T12:12:30Z"
+actor = "lognd"
+rev = 1
