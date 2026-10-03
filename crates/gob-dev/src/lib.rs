@@ -10,6 +10,7 @@
     reason = "page renderers build markdown with push_str(&format!(..)) for readability"
 )]
 
+pub mod ci;
 pub mod files;
 pub mod import_v1;
 pub mod out;

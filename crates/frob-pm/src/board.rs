@@ -21,7 +21,7 @@
 //!   never a stored category; an in-progress ticket stays in its column so the
 //!   count matches PM013);
 //! - **done**: tickets done within [`DONE_DAYS`], newest first, at most
-//!   [`DONE_SHOWN`] cards.
+//!   [`DEFAULT_SHOWN`] cards (`Input::show`).
 //!
 //! The expedite lane (open when `expedite_max` is above 0) holds every live
 //! expedite-class ticket that is not done, in-progress ones first. Epics are

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
-use gob_dev::{Kind, Mode, apply, generate, publish, workspace_root};
+use gob_dev::{Kind, Mode, apply, ci, generate, publish, workspace_root};
 
 /// Command-line interface of the developer task runner.
 #[derive(Debug, Parser)]
@@ -32,6 +32,18 @@ enum Task {
         /// Output root (defaults to the workspace root).
         #[arg(long)]
         root: Option<PathBuf>,
+    },
+    /// Run locally exactly the checks `.github/workflows/ci.yml` runs (all, or the named steps).
+    Ci {
+        /// Run only this step (repeatable); `ci.yml` runs one step per workflow step.
+        #[arg(long = "step")]
+        steps: Vec<String>,
+        /// Run every step even after a failure, then report them all.
+        #[arg(long)]
+        keep_going: bool,
+        /// Print the step names and exit.
+        #[arg(long)]
+        list: bool,
     },
     /// Publish the workspace crates to crates.io in dependency order; resumable.
     Publish {
@@ -87,6 +99,11 @@ fn main() -> Result<(), Failed> {
             report_md.as_deref(),
         ),
         Task::Publish { dry_run } => publish_crates(dry_run),
+        Task::Ci {
+            steps,
+            keep_going,
+            list,
+        } => ci_checks(&steps, keep_going, list),
         Task::Gen { kind, check, root } => {
             let workspace = match workspace_root() {
                 Ok(w) => w,
@@ -113,6 +130,40 @@ fn main() -> Result<(), Failed> {
                 }
             }
         }
+    }
+}
+
+/// Run the CI checks from the workspace root and print the step summary.
+fn ci_checks(names: &[String], keep_going: bool, list: bool) -> Result<(), Failed> {
+    let fail = |e: &dyn std::fmt::Display| {
+        tracing::error!(error = %e, "ci failed");
+        Failed(format!("error: {e}"))
+    };
+    let root = workspace_root().map_err(|e| fail(&e))?;
+    let selected =
+        ci::select(ci::steps(&root).map_err(|e| fail(&e))?, names).map_err(|e| fail(&e))?;
+    if list {
+        for step in &selected {
+            emit(step.name);
+        }
+        return Ok(());
+    }
+    let results = ci::run(
+        &root,
+        &selected,
+        &ci::ExecRunner,
+        keep_going,
+        ci::host_is_linux(),
+        &mut |line| emit(line),
+    );
+    let (lines, ok) = ci::summary(&results);
+    for line in &lines {
+        emit(line);
+    }
+    if ok {
+        Ok(())
+    } else {
+        Err(Failed("ci failed".to_owned()))
     }
 }
 

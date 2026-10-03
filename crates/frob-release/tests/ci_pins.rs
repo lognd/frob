@@ -68,10 +68,14 @@ fn ci_zizmor_pin_matches_frob_toml() {
     assert!(spec.contains('@') && !spec.ends_with('@'));
     assert!(strings(&tool["version_args"]).contains(&spec));
     let in_ci = ci_tokens("zizmor@");
-    assert!(!in_ci.is_empty(), "ci.yml no longer pins zizmor");
-    for t in in_ci {
-        assert_eq!(t, spec, "ci.yml zizmor pin differs from frob.toml");
-    }
+    // The pin lives only in frob.toml; ci.yml runs `cargo dev ci --step zizmor`, which reads it
+    // (gob-dev ci::tests::pins_come_from_frob_toml), so a hand-typed copy here is a second source.
+    // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
+    assert!(
+        in_ci.is_empty(),
+        "ci.yml carries its own zizmor pin {in_ci:?} (want {spec}); use cargo dev ci --step zizmor"
+    );
+    assert!(ci_code().contains("cargo dev ci --step zizmor"));
 }
 
 // frob:tests crates/frob-release/tests/ci_pins.rs::ci_actionlint_pin_matches_frob_toml
@@ -84,10 +88,12 @@ fn ci_actionlint_pin_matches_frob_toml() {
         .expect("frob.toml actionlint args carry a pinned spec");
     assert!(strings(&tool["version_args"]).contains(&spec));
     let in_ci = ci_tokens("actionlint-py");
-    assert!(!in_ci.is_empty(), "ci.yml no longer pins actionlint-py");
-    for t in in_ci {
-        assert_eq!(t, spec, "ci.yml actionlint-py pin differs from frob.toml");
-    }
+    // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
+    assert!(
+        in_ci.is_empty(),
+        "ci.yml carries its own actionlint pin {in_ci:?} (want {spec}); use cargo dev ci --step actionlint"
+    );
+    assert!(ci_code().contains("cargo dev ci --step actionlint"));
 }
 
 // frob:tests crates/frob-release/tests/ci_pins.rs::ci_rust_toolchain_comes_from_rust_toolchain_toml

@@ -34,8 +34,14 @@ Only the full ULID is ever written into a file or a directive.
    worktree and only inside the ticket's `scope`. If a file outside the
    scope needs a change, widen the scope with `frob ticket update`
    (recorded as an event) or file a new ticket; never edit silently.
-3. Build and test: `cargo fmt --all`, `cargo clippy --all-targets
-   --all-features -- -D warnings`, `cargo nextest run --profile ci`, and
+3. Build and test: run `cargo dev ci` before reporting; it runs locally
+   exactly the checks CI runs (rustfmt, clippy for the host and
+   `x86_64-pc-windows-gnu`, rustdoc with `-D warnings`, nextest
+   `--profile ci`, `cargo dev gen all --check`, the pinned zizmor and
+   actionlint, `frob doctor`, `frob check`, `frob test --dry-run`).
+   `--keep-going` runs every step, `--step <name>` one, `--list` names them.
+   The Windows clippy step needs `rustup target add
+   x86_64-pc-windows-gnu` and fails with that command otherwise. Run
    `cargo dev gen all` after any change to a rule, knob, directive or
    verb (generated pages under `docs/reference/` and `docs/schemas/`).
 4. Evidence: `frob test --base <base>` records a measurement for the
@@ -92,9 +98,12 @@ signature or doc drift is reported; `frob ack --help` lists the forms.
 ## What CI runs
 
 `.github/workflows/ci.yml` runs on every push and pull request: rustfmt,
-clippy (`-D warnings`), nextest, `cargo dev gen all --check`, and on
-Linux the self-hosted gates `frob doctor`, `frob check` and a dry run of
-`frob test --base origin/experimental`. A change that does not pass
+clippy (`-D warnings`, host and Windows target), rustdoc (`-D warnings`),
+nextest, `cargo dev gen all --check`, and on Linux the self-hosted gates
+`frob doctor`, `frob check` and a dry run of
+`frob test --base origin/experimental`. Each check is `cargo dev ci --step
+<name>`; the argv lives in `crates/gob-dev/src/ci.rs` and a parity test
+fails when the workflow and `cargo dev ci` disagree. A change that does not pass
 `frob check` is not merged.
 
 ## AI-assisted contributions
