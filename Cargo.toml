@@ -28,3 +28,8 @@ missing_panics_doc = "deny"
 # Allowed pedantic lints (one-line reason each):
 module_name_repetitions = "allow"  # crate-prefixed type names read better at call sites
 must_use_candidate = "allow"       # blanket #[must_use] on every getter is noise
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
