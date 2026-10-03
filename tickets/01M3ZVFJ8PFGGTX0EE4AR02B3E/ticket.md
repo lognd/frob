@@ -2,13 +2,13 @@
 id = "01M3ZVFJ8PFGGTX0EE4AR02B3E"
 title = "Plugin and pack security design from the pessimistic audit (D82)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T03:03:49Z"
-updated = "2026-10-03T03:03:49Z"
+updated = "2026-10-03T03:03:52Z"
 idempotency_key = "m2-plugin-security-design"
 labels = ["milestone:2", "security"]
 scope = ["docs/design/**", "notes/review/plugin-security-audit.md"]
