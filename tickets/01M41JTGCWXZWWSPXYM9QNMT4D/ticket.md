@@ -8,8 +8,8 @@ points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T19:10:59Z"
-updated = "2026-10-03T19:12:16Z"
-scope = ["crates/frob/src/ticket/**", "crates/frob-release/src/fragment.rs"]
+updated = "2026-10-03T19:12:58Z"
+scope = ["crates/frob/src/ticket/**", "crates/frob-release/src/fragment.rs", "crates/frob/tests/fragment.rs", "docs/design/documentation.md", "docs/reference/changelog.md"]
 
 [[acceptance]]
 text = "Given a bug ticket, when ticket fragment runs without --sentence, then it exits 2 asking for a sentence that describes the fix"
