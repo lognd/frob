@@ -2,13 +2,13 @@
 id = "01M3ZYQ4T92J0GKZFBG5MAFAAY"
 title = "Release track: scrumban flow wired to milestones, cycles and incremental releases (D83)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T04:00:23Z"
-updated = "2026-10-03T04:00:23Z"
+updated = "2026-10-03T04:00:24Z"
 idempotency_key = "m2-release-track-design"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]
