@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T13:34:07Z"
+updated = "2026-10-03T13:43:17Z"
 idempotency_key = "m2-rel-smoke-script"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/gob-dev/src/smoke.rs", "crates/gob-dev/tests/fixtures/smoke-repo/**", "packaging/smoke/**", "packaging/pypi/**", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/design/releases.md", "changelog.d/**"]
@@ -19,7 +19,7 @@ target = "01M4069XMEQQ5P082TMA389FFK"
 
 [[acceptance]]
 text = "Given a built wheel, when cargo dev smoke runs, then doctor and check succeed on the fixture repository"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a target on the exemption list, when smoke runs for it, then it reports skipped with the reason"
