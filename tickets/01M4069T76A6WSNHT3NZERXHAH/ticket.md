@@ -2,13 +2,13 @@
 id = "01M4069T76A6WSNHT3NZERXHAH"
 title = "Repository WIP limit: work and start refuse past [pm.wip] in_progress, naming holders"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:55Z"
-updated = "2026-10-03T06:12:55Z"
+updated = "2026-10-03T10:55:39Z"
 idempotency_key = "m2-rel-wip-repo"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-lease/**", "crates/frob-worktree/**", "frob.toml"]
