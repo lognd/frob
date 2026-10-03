@@ -47,6 +47,14 @@ error[SYS003]: unit claimed by two bindings that disagree
    = explain: grimble explain SYS003
 ```
 
+Security rules for all rendered text (security.md 2.10, D82): every
+text field carries an `origin` (`host`, `std`, `pack:NAME`, `source`,
+`tracker`, `ledger`) and non-host text is labelled; controls, bidi and
+invisible characters are always escaped; `remedy`, `help` and fix
+commands come only from host templates; first-occurrence teaching
+applies to std rules only; plugin fixes are at most `maybe-incorrect`
+unless the pack holds `fix.machine`, and never touch the control plane.
+
 Rules for the renderer (gob-diagnostics): primary span with a label;
 secondary spans in other files with `:::` headers; `note` for facts the
 user did not ask for but needs; `help` for the next action; `fix` lines
