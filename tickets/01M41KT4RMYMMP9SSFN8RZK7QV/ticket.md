@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T19:28:16Z"
-updated = "2026-10-03T19:40:15Z"
-scope = ["crates/frob-evidence/src/done.rs", "crates/frob/src/ticket/**", "crates/frob/tests/close_guards.rs", "crates/frob-evidence/src/guard.rs", "crates/frob-evidence/src/lib.rs", "docs/design/tickets.md"]
+updated = "2026-10-03T19:42:49Z"
+scope = ["crates/frob-evidence/src/done.rs", "crates/frob/src/ticket/**", "crates/frob/tests/close_guards.rs", "crates/frob-evidence/src/guard.rs", "crates/frob-evidence/src/lib.rs", "docs/design/tickets.md", "crates/frob-land/src/verb.rs", "crates/frob-land/src/plan.rs", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "Given an open bug with no evidence, when ticket close --outcome invalid --reason R runs, then it closes without --no-evidence or --no-changelog"
