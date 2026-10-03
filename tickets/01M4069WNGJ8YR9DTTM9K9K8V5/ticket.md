@@ -2,7 +2,8 @@
 id = "01M4069WNGJ8YR9DTTM9K9K8V5"
 title = "REL002 lockstep-version-mismatch (Error)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
