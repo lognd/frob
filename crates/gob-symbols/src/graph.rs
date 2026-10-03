@@ -208,6 +208,8 @@ struct Index {
     declared_types: HashSet<String>,
     /// Names of types with an `impl Deref` or `impl DerefMut`: methods may come from the target.
     deref_types: HashSet<String>,
+    /// Names of `Result`/`Option` aliases whose first parameter is not the Ok/Some type (`?` and `unwrap` cannot be trusted).
+    opaque_aliases: HashSet<String>,
     /// Names of `macro_rules!` macros declared anywhere (they may shadow a std macro of the same name).
     declared_macros: HashSet<String>,
     /// Names of module-level type aliases anywhere: a declared type of these says nothing about the callee.
@@ -216,19 +218,20 @@ struct Index {
 
 impl Index {
     /// The crate-relative paths at which `segs` is defined in crate `dir`, following `pub use` re-exports.
-    fn canonical_paths(&self, dir: &str, segs: &[String], depth: usize) -> Vec<String> {
+    fn canonical_paths(&self, dir: &str, segs: &[String], depth: usize) -> Vec<(String, String)> {
         const MAX_HOPS: usize = 8;
         let joined = segs.join("::");
+        // A module and a function may share a name (`mod ack` and `pub use ack::ack`): keep both.
+        let mut out = Vec::new();
         if self.by_item.contains_key(&(dir.to_owned(), joined.clone())) {
-            return vec![joined];
+            out.push((dir.to_owned(), joined));
         }
         let Some((last, parent)) = segs.split_last() else {
-            return Vec::new();
+            return out;
         };
         if depth >= MAX_HOPS {
-            return Vec::new();
+            return out;
         }
-        let mut out = Vec::new();
         let module = parent.join("::");
         for u in self
             .pubuses
@@ -236,19 +239,34 @@ impl Index {
             .into_iter()
             .flatten()
         {
-            let rel = rel_path(&u.target);
-            let next: Vec<String> = if let Some(glob) = rel.strip_suffix("::*") {
+            let internal = u.is_internal();
+            let path = if internal {
+                rel_path(&u.target)
+            } else {
+                u.target.as_str()
+            };
+            let next: Vec<String> = if let Some(glob) = path.strip_suffix("::*") {
                 glob.split("::")
                     .filter(|s| !s.is_empty())
                     .map(str::to_owned)
                     .chain(std::iter::once(last.clone()))
                     .collect()
             } else if u.local == *last {
-                rel.split("::").map(str::to_owned).collect()
+                path.split("::").map(str::to_owned).collect()
             } else {
                 continue;
             };
-            out.extend(self.canonical_paths(dir, &next, depth + 1));
+            if internal {
+                out.extend(self.canonical_paths(dir, &next, depth + 1));
+            } else if let Some((head, rest)) = next.split_first()
+                && let Some((_, other)) = self
+                    .externs
+                    .get(dir)
+                    .and_then(|ext| ext.iter().find(|(n, _)| n == head))
+            {
+                // A `pub use other_crate::Item;` re-export: follow it into the other crate.
+                out.extend(self.canonical_paths(other, rest, depth + 1));
+            }
         }
         out.sort();
         out.dedup();
@@ -289,13 +307,13 @@ impl Index {
                         u.target = format!("crate::{}{glob}", key.join("::"));
                     }
                 }
+                if u.public && u.container.is_none() {
+                    self.pubuses
+                        .entry((krate.clone(), module.join("::")))
+                        .or_default()
+                        .push(u.clone());
+                }
                 if u.is_internal() {
-                    if u.public && u.container.is_none() {
-                        self.pubuses
-                            .entry((krate.clone(), module.join("::")))
-                            .or_default()
-                            .push(u.clone());
-                    }
                     internal.push(u);
                 } else {
                     external.push(u);
@@ -590,6 +608,7 @@ impl SymbolGraph {
             deref_types: HashSet::new(),
             aliases: HashSet::new(),
             declared_macros: HashSet::new(),
+            opaque_aliases: HashSet::new(),
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
             let (krate, module) = crate_and_module(&f.path);
@@ -602,6 +621,7 @@ impl SymbolGraph {
                 }
                 idx.file_crate.insert(f.path.clone(), owner);
             }
+            idx.opaque_aliases.extend(f.opaque_aliases.iter().cloned());
             for d in &f.fields {
                 idx.fields
                     .entry((krate.clone(), d.owner.clone()))
@@ -726,6 +746,13 @@ impl SymbolGraph {
     /// resolves to exactly one Must target) and `?`/`unwrap` open a `Result` or `Option`. Aliases and
     /// anything unproven give `None`.
     fn receiver_ty(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<Ty> {
+        let ty = self.receiver_ty_raw(idx, caller, r)?;
+        let real = idx.real_type_name(&ty.file, &ty.head);
+        (!idx.aliases.contains(&real)).then_some(ty)
+    }
+
+    /// [`Self::receiver_ty`] without the final alias check (`Result` may be an alias that `?` still opens).
+    fn receiver_ty_raw(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<Ty> {
         let ty = match r {
             Receiver::SelfValue => Ty {
                 head: self.enclosing_impl_type(caller)?,
@@ -746,8 +773,9 @@ impl SymbolGraph {
             }
             Receiver::Ret(call) => self.ret_ty(idx, caller, call)?,
             Receiver::Unwrap(inner) => {
-                let t = self.receiver_ty(idx, caller, inner)?;
-                if !matches!(t.head.as_str(), "Result" | "Option") || idx.aliases.contains(&t.head)
+                let t = self.receiver_ty_raw(idx, caller, inner)?;
+                if !matches!(t.head.as_str(), "Result" | "Option")
+                    || idx.opaque_aliases.contains(&t.head)
                 {
                     return None;
                 }
@@ -759,7 +787,7 @@ impl SymbolGraph {
                 }
             }
             Receiver::Elem(inner, i) => {
-                let t = self.receiver_ty(idx, caller, inner)?;
+                let t = self.receiver_ty_raw(idx, caller, inner)?;
                 Ty {
                     head: t.tuple?.get(*i)?.clone()?,
                     arg: None,
@@ -769,8 +797,7 @@ impl SymbolGraph {
             }
             Receiver::Bound(_) | Receiver::Expr => return None,
         };
-        let real = idx.real_type_name(&ty.file, &ty.head);
-        (!idx.aliases.contains(&real)).then_some(ty)
+        Some(ty)
     }
 
     /// The declared return type of the one concrete callee that `call` resolves to.
@@ -1001,11 +1028,11 @@ impl SymbolGraph {
     ) -> Outcome {
         let (dir, rel) = home;
         let mut found: Vec<NodeIndex> = Vec::new();
-        for canon in idx.canonical_paths(dir, rel, 0) {
+        for (home_dir, canon) in idx.canonical_paths(dir, rel, 0) {
             let key = format!("{canon}::{name}");
             found.extend(
                 idx.by_item
-                    .get(&(dir.to_owned(), key))
+                    .get(&(home_dir, key))
                     .into_iter()
                     .flatten()
                     .copied()
@@ -1119,14 +1146,14 @@ impl SymbolGraph {
             };
             any_extern = true;
             let rel = &parent[1..];
-            let mut keys: Vec<String> = idx
+            let mut keys: Vec<(String, String)> = idx
                 .canonical_paths(&dir, rel, 0)
                 .into_iter()
-                .map(|c| {
+                .map(|(d, c)| {
                     if c.is_empty() {
-                        name.clone()
+                        (d, name.clone())
                     } else {
-                        format!("{c}::{name}")
+                        (d, format!("{c}::{name}"))
                     }
                 })
                 .collect();
@@ -1138,7 +1165,7 @@ impl SymbolGraph {
             for key in keys {
                 found.extend(
                     idx.by_item
-                        .get(&(dir.clone(), key))
+                        .get(&key)
                         .into_iter()
                         .flatten()
                         .copied()

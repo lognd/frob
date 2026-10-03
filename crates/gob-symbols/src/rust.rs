@@ -264,6 +264,13 @@ fn inside_macro(n: Node<'_>) -> bool {
     false
 }
 
+/// The first named child of `n` that is not a lifetime.
+fn first_named(n: Node<'_>) -> Option<Node<'_>> {
+    children(n)
+        .into_iter()
+        .find(|c| c.is_named() && !matches!(c.kind(), "lifetime" | "lifetime_parameter"))
+}
+
 /// Longest callee text kept for diagnostics.
 const MAX_CALL_TEXT: usize = 80;
 
@@ -300,6 +307,8 @@ struct Fold<'a> {
     fn_sig: Option<(SelfKind, usize, Option<RetType>)>,
     /// Struct fields with a concrete declared type.
     fields: Vec<FieldDecl>,
+    /// `Result`/`Option` aliases whose first parameter is not the Ok/Some type.
+    opaque_aliases: Vec<String>,
 }
 
 /// One-based source line of `n`.
@@ -393,6 +402,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         bounds: Vec::new(),
         fn_sig: None,
         fields: Vec::new(),
+        opaque_aliases: Vec::new(),
     };
     let kids = f.container(root, &Scope::default(), true)?;
     let root_id =
@@ -403,6 +413,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         sites,
         uses,
         fields,
+        opaque_aliases,
         ..
     } = f;
     let term = cx.b.finish(root_id)?;
@@ -465,6 +476,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     file.symbols = v.symbols;
     file.extras = v.extras;
     file.fields = fields;
+    file.opaque_aliases = opaque_aliases;
     tracing::debug!(
         path = input.path,
         symbols = file.symbols.len(),
@@ -2090,6 +2102,12 @@ impl<'a> Fold<'a> {
         if node.kind() == "struct_item" {
             self.struct_fields(node, &name);
         }
+        if kind == "type"
+            && matches!(name.as_str(), "Result" | "Option")
+            && !self.alias_keeps_first(node)
+        {
+            self.opaque_aliases.push(name.clone());
+        }
         let ord = self.alloc();
         self.unit_stack.push(ord);
         let sig = self.sig_tokens(node, &[Some(name_node), body])?;
@@ -2199,6 +2217,27 @@ impl<'a> Fold<'a> {
             }
         }
         (kind, arity, ret)
+    }
+
+    /// True when the `type` item `node` is `type X<T, ..> = Result<T, ..>` (or `Option<T>`): its first parameter is the Ok/Some type.
+    fn alias_keeps_first(&self, node: Node<'_>) -> bool {
+        let param = node
+            .child_by_field_name("type_parameters")
+            .and_then(first_named)
+            .and_then(|p| p.child_by_field_name("name").or(Some(p)))
+            .map(|p| self.t(p).to_owned());
+        let Some(rhs) = node.child_by_field_name("type") else {
+            return false;
+        };
+        let head = (rhs.kind() == "generic_type")
+            .then(|| rhs.child_by_field_name("type"))
+            .flatten()
+            .map(|h| self.t(h).rsplit("::").next().unwrap_or("").to_owned());
+        let arg = rhs
+            .child_by_field_name("type_arguments")
+            .and_then(first_named)
+            .map(|a| self.t(a).to_owned());
+        matches!(head.as_deref(), Some("Result" | "Option")) && param.is_some() && param == arg
     }
 
     /// Records the concrete-typed fields of the struct `node` named `owner` (the field type table).

@@ -446,4 +446,6 @@ pub struct FileSymbols {
     pub extras: Vec<UnitExtras>,
     /// Struct fields with a concrete declared type, in source order.
     pub fields: Vec<FieldDecl>,
+    /// Names of `Result`/`Option` type aliases here whose first parameter is not the Ok/Some type.
+    pub opaque_aliases: Vec<String>,
 }

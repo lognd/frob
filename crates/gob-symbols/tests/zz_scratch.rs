@@ -4,7 +4,7 @@ use gob_symbols::build_graph;
 use gob_walk::{WalkConfig, walk};
 use std::path::Path;
 #[test]
-#[ignore]
+#[ignore = "scratch"]
 fn scratch() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let walked = walk(&root, &WalkConfig::default()).unwrap();
