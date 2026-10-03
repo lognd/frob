@@ -2,9 +2,9 @@
 //!
 //! The board is built by [`frob_pm::board::build`] from the one WIP count
 //! (`frob_pm::rules::wip::read`, shared with `PM013` and `work`), so limits and
-//! over-limit marks always agree with them. Text mode puts the rendered rows in
-//! `lines` (the envelope prints them as a list) and leaves the structure out;
-//! `--json` carries the structure in `board`.
+//! over-limit marks always agree with them. Text mode hands the rendered rows
+//! to [`Payload::with_rendered`] (printed raw, no envelope header or indent)
+//! and leaves the structure out; `--json` carries the structure in `board`.
 
 // frob:ticket 01M4069W45P08YPC4YH4XZVMNC
 
@@ -29,8 +29,6 @@ use crate::workspace::{Located, config_refusal};
 
 /// Width used when stdout is not a terminal and `--width` is not given.
 pub const FALLBACK_WIDTH: usize = 100;
-/// Characters the generic text envelope puts before each list item (`    - `).
-const ENVELOPE_INDENT: usize = 6;
 
 /// Output of `board`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -38,9 +36,6 @@ pub struct BoardData {
     /// The board, in JSON mode.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub board: Option<Board>,
-    /// The rendered rows, in text mode.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub lines: Vec<String>,
 }
 
 /// Show the scrumban board: columns by category with WIP limits, the expedite lane and card ages.
@@ -162,25 +157,24 @@ impl Command for BoardVerb {
             "board built"
         );
 
-        let data = if ctx.json {
-            BoardData {
-                board: Some(board),
-                lines: Vec::new(),
-            }
+        let (data, rows) = if ctx.json {
+            (BoardData { board: Some(board) }, None)
         } else {
             let tty = std::io::stdout().is_terminal();
-            let width = resolve_width(self.width, std::env::var("COLUMNS").ok().as_deref(), tty)
-                .saturating_sub(ENVELOPE_INDENT);
+            let width = resolve_width(self.width, std::env::var("COLUMNS").ok().as_deref(), tty);
             let opts = RenderOptions {
                 width,
                 color: ctx.color == ColorChoice::Always,
             };
-            BoardData {
-                board: None,
-                lines: board::render(&board, &opts),
-            }
+            (
+                BoardData { board: None },
+                Some(board::render(&board, &opts)),
+            )
         };
         let mut payload = Payload::new(data);
+        if let Some(rows) = rows {
+            payload = payload.with_rendered(rows);
+        }
         for w in warnings {
             payload = payload.with_warning(w);
         }
