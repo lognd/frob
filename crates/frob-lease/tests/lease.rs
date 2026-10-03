@@ -596,7 +596,7 @@ fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replac
     assert!(
         LeaseConfig::default()
             .shared_files
-            .contains(&"Cargo.lock".to_owned())
+            .contains(&"**/Cargo.lock".to_owned())
     );
     let dir = tempfile::tempdir().expect("tempdir");
     let store = store_in(dir.path(), LeaseConfig::default());
@@ -614,6 +614,25 @@ fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replac
             &scope(&["b/**", "Cargo.lock"]),
         )
         .expect("b leases without E-LEASE-HELD");
+    for (i, nested) in ["crates/x/Cargo.lock", "packaging/pypi/uv.lock"]
+        .iter()
+        .enumerate()
+    {
+        store
+            .acquire(
+                TicketId::mint(),
+                &holder("n"),
+                &scope(&[&format!("n{i}a/**"), nested]),
+            )
+            .expect("nested a");
+        store
+            .acquire(
+                TicketId::mint(),
+                &holder("m"),
+                &scope(&[&format!("n{i}b/**"), nested]),
+            )
+            .expect("nested lockfile overlap leases cleanly");
+    }
 
     let parsed: LeaseConfig = toml::from_str("shared_files = []").expect("parse");
     assert!(parsed.shared_files.is_empty());

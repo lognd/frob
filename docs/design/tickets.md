@@ -297,7 +297,7 @@ the integrity guards on `done`. Post-actions (`release_lease`,
 - TTL is the knob `[lease] ttl_secs` (default 7200); the lock wait is
   `[lease] lock_timeout_ms` (default 5000), and append-shared files are
   exempt from overlap through `[lease] shared_files`, which when unset
-  defaults to the well-known generated lockfiles (`Cargo.lock`, `uv.lock`,
+  defaults to the well-known generated lockfiles in any directory (patterns `**/<name>`: `Cargo.lock`, `uv.lock`,
   `poetry.lock`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
   `go.sum`, `Gemfile.lock`, `composer.lock`, `flake.lock`); an explicit
   value, including `[]`, replaces that default, and an `E-LEASE-HELD` whose

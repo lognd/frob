@@ -21,17 +21,21 @@ pub const LOCKFILES: [&str; 10] = [
     "flake.lock",
 ];
 
-/// The default of `[lease] shared_files`: [`LOCKFILES`] as owned strings.
+/// The default of `[lease] shared_files`: `**/<lockfile>` for each of [`LOCKFILES`], so any directory matches.
 #[must_use]
 pub fn default_shared_files() -> Vec<String> {
-    LOCKFILES.iter().map(|s| (*s).to_owned()).collect()
+    LOCKFILES.iter().map(|n| format!("**/{n}")).collect()
 }
 
-/// True when `path` names a well-known lockfile (by file name, in any directory).
+/// True when `path` matches the default shared-file patterns (the very ones [`default_shared_files`] returns).
 #[must_use]
 pub fn is_lockfile(path: &str) -> bool {
-    let name = path.rsplit('/').next().unwrap_or(path);
-    LOCKFILES.contains(&name)
+    static SET: std::sync::OnceLock<globset::GlobSet> = std::sync::OnceLock::new();
+    SET.get_or_init(|| {
+        crate::overlap::glob_set(&default_shared_files())
+            .unwrap_or_else(|e| unreachable!("default lockfile patterns are valid globs: {e}"))
+    })
+    .is_match(path)
 }
 
 /// True when every file in an overlap description (`a, b` or `a and b`) is a lockfile.
