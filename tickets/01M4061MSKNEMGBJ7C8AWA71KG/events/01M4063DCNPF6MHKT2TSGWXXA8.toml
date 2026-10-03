@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Scope note from the coordinator: besides ticket evidence list, any per-criterion consumer (the criteria_evidenced close guard planned in pm-enforcement.md 3, ticket brief's [bound]/[unbound] markers, PM rules) must read evidence through Ledger::criteria_now / fold::remap_accepts, never the raw stored accepts, because acceptance edits record moved maps instead of rewriting evidence (~09P2DKX)."
+at = "2026-10-03T06:09:25Z"
+actor = "lognd"
+rev = 1

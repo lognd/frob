@@ -6,7 +6,7 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T06:08:27Z"
-updated = "2026-10-03T06:08:27Z"
+updated = "2026-10-03T06:09:25Z"
 scope = ["crates/frob-evidence/**"]
 
 [[acceptance]]
