@@ -2,16 +2,16 @@
 id = "01M3Z71450ZE377RBK3EG1XSWC"
 title = "G11: grimble-bind: ownership and SYS001-005, SYS009-012"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-02T21:06:25Z"
+updated = "2026-10-03T00:50:02Z"
 idempotency_key = "m2-bind"
 labels = ["milestone:2"]
-scope = ["crates/grimble-bind/**", "crates/gob-symbols/**"]
+scope = ["crates/grimble-bind/**", "crates/gob-symbols/**", "crates/grimble-check/**", "crates/gob-directives/**"]
 
 [[links]]
 kind = "blocked-by"

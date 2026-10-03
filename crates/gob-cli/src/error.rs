@@ -61,6 +61,19 @@ pub enum CliError {
     /// The caller asked for a yes/no answer and it is no (exit 1).
     #[error("negative: {0}")]
     Negative(String),
+    /// The run completed and its gate failed (exit 1) but its result is still the answer.
+    ///
+    /// JSON mode prints a success envelope (`ok` true, `data` kept) so a caller can read the
+    /// document on exit 1 (sibling-contract 2); text mode prints `message` on stderr.
+    #[error("gate failed: {message}")]
+    Gate {
+        /// One-paragraph summary of why the gate failed.
+        message: String,
+        /// The verb's data, serialized as the envelope `data`.
+        data: serde_json::Value,
+        /// Non-fatal notices.
+        warnings: Vec<String>,
+    },
     /// A bug (exit 4).
     #[error("internal: {0}")]
     Internal(Box<dyn std::error::Error + Send + Sync>),
@@ -77,7 +90,7 @@ impl CliError {
         match self {
             Self::Refusal(r) => r.exit_code(),
             Self::Usage(_) => ExitCode::Usage,
-            Self::Negative(_) => ExitCode::Negative,
+            Self::Negative(_) | Self::Gate { .. } => ExitCode::Negative,
             Self::Internal(_) => ExitCode::Internal,
         }
     }

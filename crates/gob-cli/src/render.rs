@@ -107,6 +107,20 @@ pub(crate) fn success(
 /// Render a failure: JSON envelope on stdout, plain text on stderr.
 pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Execution {
     let exit = err.exit_code().code();
+    if let (CliError::Gate { data, warnings, .. }, true) = (err, json) {
+        let mut envelope = Envelope::success(data.clone(), Vec::new());
+        envelope.warnings.clone_from(warnings);
+        let wire = Wire {
+            verb,
+            already: false,
+            envelope,
+        };
+        return Execution {
+            exit,
+            stdout: to_json(&wire),
+            stderr: String::new(),
+        };
+    }
     let body = envelope_error(err);
     if json {
         let wire = Wire {
@@ -136,7 +150,7 @@ pub(crate) fn envelope_error(err: &CliError) -> EnvelopeError {
     match err {
         CliError::Refusal(r) => EnvelopeError::from(r),
         CliError::Usage(m) => plain("E-USAGE", m.clone()),
-        CliError::Negative(m) => plain("E-NEGATIVE", m.clone()),
+        CliError::Negative(m) | CliError::Gate { message: m, .. } => plain("E-NEGATIVE", m.clone()),
         CliError::Internal(e) => plain("E-INTERNAL", e.to_string()),
     }
 }
@@ -210,5 +224,29 @@ pub(crate) fn emit(exec: &Execution) {
         .and_then(|()| stderr.flush())
     {
         tracing::warn!(error = %e, "writing stderr failed");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M3Z713YNM5666B7YFEHPFVKD
+    #[test]
+    fn a_gate_failure_keeps_its_data_in_json_and_exits_one() {
+        let err = CliError::Gate {
+            message: "1 error".to_owned(),
+            data: serde_json::json!({"answer": 42}),
+            warnings: vec!["w".to_owned()],
+        };
+        let exec = failure(Some("check"), &err, true);
+        assert_eq!(exec.exit, 1);
+        let v: Value = serde_json::from_str(&exec.stdout).unwrap();
+        assert_eq!(v["ok"], true);
+        assert_eq!(v["data"]["answer"], 42);
+        assert_eq!(v["warnings"][0], "w");
+        let text = failure(Some("check"), &err, false);
+        assert_eq!(text.exit, 1);
+        assert!(text.stderr.contains("1 error"));
     }
 }
