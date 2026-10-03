@@ -98,6 +98,30 @@ impl fmt::Display for Day {
     }
 }
 
+impl Day {
+    /// Today's date in the local time zone.
+    pub fn today() -> Self {
+        Self(jiff::Zoned::now().date())
+    }
+
+    /// This day shifted by `days` (negative goes back); `Err` when the result leaves the calendar.
+    ///
+    /// # Errors
+    ///
+    /// A message when the shifted date is out of range.
+    pub fn plus_days(self, days: i64) -> std::result::Result<Self, String> {
+        self.0
+            .checked_add(jiff::Span::new().days(days))
+            .map(Self)
+            .map_err(|e| format!("{self} plus {days} days is out of range: {e}"))
+    }
+
+    /// Whole days from this day to `later` (negative when `later` is earlier).
+    pub fn days_until(self, later: Self) -> i64 {
+        i64::from((later.0 - self.0).get_days())
+    }
+}
+
 impl FromStr for Day {
     type Err = String;
 

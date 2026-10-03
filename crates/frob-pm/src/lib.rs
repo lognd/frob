@@ -28,6 +28,7 @@
 //! this crate ignores `_milestones/` and `_cycles/` entirely.
 
 pub mod config;
+pub mod cycle;
 pub mod doctor;
 pub mod error;
 pub mod event;

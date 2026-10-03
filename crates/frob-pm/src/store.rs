@@ -307,6 +307,35 @@ impl<'a> PmStore<'a> {
         self.commit(kind, id, &[event])
     }
 
+    /// Append several already-validated event bodies to an existing object in one commit, in the order given.
+    ///
+    /// The fold of the history plus all of them must succeed or nothing is written.
+    ///
+    /// # Errors
+    ///
+    /// As [`PmStore::append`].
+    pub fn append_many(
+        self,
+        kind: ObjectKind,
+        id: ObjectId,
+        bodies: Vec<PmBody>,
+    ) -> Result<Applied> {
+        if bodies
+            .iter()
+            .any(|b| matches!(b, PmBody::Create(_) | PmBody::Other))
+        {
+            return Err(PmError::invalid(
+                "append takes interpreted, non-create event bodies",
+            ));
+        }
+        let actor = self.ledger.actor()?;
+        let events: Vec<PmEvent> = bodies
+            .into_iter()
+            .map(|b| PmEvent::new(&actor, b))
+            .collect();
+        self.commit(kind, id, &events)
+    }
+
     /// Change one frontmatter field (`new` of `None` unsets it); the previous value is recorded for conflict detection.
     ///
     /// # Errors

@@ -4,11 +4,12 @@
 //! modules: [`doctor`], [`init`], [`config_cmd`] (`config show`, `config
 //! sync`), [`ticket`] (`ticket ...` and the hidden `merge-driver`) and the
 //! built-in `schema` from `gob-cli`; the lease, worktree, evidence, tests and
-//! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`release_cmd`] holds `release changelog`. Config knobs are the
+//! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`cycle_cmd`] holds `cycle new/show/list/close`; [`release_cmd`] holds `release changelog`. Config knobs are the
 //! `ConfigTable` structs in [`config`].
 
 pub mod config;
 pub mod config_cmd;
+pub mod cycle_cmd;
 pub mod doctor;
 pub mod first_run;
 pub mod init;
@@ -35,6 +36,7 @@ pub fn cli() -> Cli {
             .register::<lease_cmd::LeaseWiden>(),
     );
     let cli = milestone_cmd::register(cli);
+    let cli = cycle_cmd::register(cli);
     let cli = release_cmd::register(cli);
     let cli = frob_lease::register(cli);
     let cli = frob_worktree::register(cli);
