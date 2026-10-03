@@ -32,11 +32,11 @@ target = "01M3WYJ80FD296GC3SAK8MNYRD"
 
 [[acceptance]]
 text = "Given a new rule derived in any crate, when cargo dev gen rules runs, then docs/reference/rules/<ID>.md appears with the doc comment explanation"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a stale generated file, when cargo dev gen all --check runs, then it exits 1 with a diff and CI fails"
-bound = false
+bound = true
 +++
 
 Implement crates/gob-dev per documentation.md sections 2 to 3 and build-test-ci.md section 3. The cargo dev binary (never shipped) with subcommands gen rules|directives|config|schemas|all [--check], writing docs/reference/rules/<ID>.md (meta table plus explanation plus mdtest examples), docs/reference/directives.md, docs/reference/config.md (from the gob-config inventory with defaults and materialization), docs/schemas/*.json (envelope, config, ticket). --check exits 1 with a unified diff if any generated file differs (this is the GEN001 repo-local tool stage; wire it into CI). Generated files carry a header comment naming the generator. Also gen cli later; leave a stub. Use the inventory registries so adding a rule needs no edit here.
