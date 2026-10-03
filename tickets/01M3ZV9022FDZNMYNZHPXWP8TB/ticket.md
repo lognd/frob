@@ -2,7 +2,8 @@
 id = "01M3ZV9022FDZNMYNZHPXWP8TB"
 title = "Navigation: slug follows the title; sub-epics flattened (close D81 open questions)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
