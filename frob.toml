@@ -64,3 +64,7 @@ shared_files = ["Cargo.lock"]
 ref = "refs/heads/experimental"
 # `trunk` commits to `ref`; `branch` commits to the checked-out branch.
 ref_mode = "trunk"
+
+[evidence]
+# Programs the `command` evidence provider may run; grimble runs bind as evidence.
+allowed_tools = ["cargo", "git", "grimble"]

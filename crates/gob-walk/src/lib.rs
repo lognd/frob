@@ -169,7 +169,22 @@ fn rel_path(root: &Path, path: &Path) -> String {
         .join("/")
 }
 
+/// Tool state directories no walk ever enters, whatever the config says.
+pub const STATE_DIRS: [&str; 3] = [".git", ".frob", ".grimble"];
+
+/// True for `.git` (file or directory, as in a linked worktree) and for `.frob/` and `.grimble/` directories.
+fn is_state_entry(e: &ignore::DirEntry) -> bool {
+    let name = e.file_name();
+    if name == ".git" {
+        return true;
+    }
+    e.file_type().is_some_and(|t| t.is_dir()) && STATE_DIRS.iter().any(|d| name == *d)
+}
+
 /// Walks `root` in parallel honoring ignore files and `config.exclude`.
+///
+/// The state directories [`STATE_DIRS`] (`.git/`, `.frob/`, `.grimble/`) are always
+/// skipped, with or without an exclude entry, so no product reports another's cache.
 ///
 /// # Errors
 /// Returns [`WalkError::BadGlob`] when an exclude glob does not compile.
@@ -194,7 +209,7 @@ pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
         .require_git(false)
         .follow_links(config.follow_links)
         .overrides(overrides)
-        .filter_entry(|e| e.file_name() != ".git");
+        .filter_entry(|e| !is_state_entry(e));
 
     let items: Mutex<Vec<Item>> = Mutex::new(Vec::new());
     let cap = config.size_cap;
@@ -299,6 +314,21 @@ mod tests {
         );
         assert_eq!(one.files[2].language, LanguageHint::Rust);
         assert_eq!(one.files[1].language, LanguageHint::Markdown);
+    }
+
+    // frob:tests crates/gob-walk/src/lib.rs::walk
+    #[test]
+    fn state_directories_are_never_walked_without_any_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        write(root, ".frob/cache/x.json", "x");
+        write(root, ".grimble/state.json", "x");
+        write(root, ".git/config", "x");
+        write(root, "crates/a/.frob/y", "x");
+        write(root, ".frobrc", "kept");
+        write(root, "src/a.rs", "a");
+        let found = walk(root, &WalkConfig::default()).unwrap();
+        assert_eq!(paths(&found), [".frobrc", "src/a.rs"]);
     }
 
     #[test]
