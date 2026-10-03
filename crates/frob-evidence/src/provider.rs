@@ -196,12 +196,12 @@ fn spec(program: Program, args: Vec<String>, cwd: &Path, timeout: Duration) -> S
 
 /// Environment that makes a provider print plain text: no color, no progress bar, no Unicode.
 ///
-/// nextest has no Unicode switch of its own; it falls back to ASCII when the locale is not UTF-8,
-/// so `LC_ALL=C` is what turns the box-drawing characters off.
+/// cargo-nextest 0.9.146 has no Unicode option (its summary rule is always U+2500), so
+/// `LC_ALL=C` only plains other tools and [`escape_non_ascii`] in [`build_record`] is what keeps nextest text ASCII.
+/// `NEXTEST_SHOW_PROGRESS` is left unset because nextest warns when it meets `NEXTEST_HIDE_PROGRESS_BAR` too.
 pub fn plain_env() -> Vec<(String, String)> {
     [
         ("NEXTEST_HIDE_PROGRESS_BAR", "1"),
-        ("NEXTEST_SHOW_PROGRESS", "none"),
         ("CARGO_TERM_COLOR", "never"),
         ("NO_COLOR", "1"),
         ("LC_ALL", "C"),
