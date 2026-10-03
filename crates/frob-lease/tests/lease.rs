@@ -459,6 +459,7 @@ fn rescope_narrows_is_idempotent_and_refuses_non_holders() {
     ));
 }
 
+// frob:tests crates/frob-lease/src/lib.rs::open_store
 #[test]
 fn open_store_uses_the_callers_config_not_the_file() {
     let dir = tempfile::tempdir().expect("tempdir");

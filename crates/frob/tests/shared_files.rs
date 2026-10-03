@@ -89,7 +89,7 @@ fn ticket(dir: &Path, glob: &str) -> String {
         .to_owned()
 }
 
-// frob:tests acceptance 1 of ~ACRF17G
+// frob:tests crates/frob-lease/src/lib.rs::open_store
 #[test]
 fn work_grants_two_leases_that_share_a_shared_file() {
     let wt = tempfile::tempdir().expect("wt");
