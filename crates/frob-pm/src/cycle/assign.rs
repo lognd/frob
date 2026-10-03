@@ -189,6 +189,7 @@ mod tests {
             tickets: Vec::new(),
             created: Stamp::now(),
             updated: Stamp::now(),
+            ordinal: 1,
         }
     }
 

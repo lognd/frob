@@ -1,5 +1,6 @@
 //! The cycle lifecycle as pure rules: `new` window and idempotency, `close` planning.
 // frob:ticket 01M4069RPPQE1ES1914K6V6Y0D
+// frob:ticket 01M40VQWCV38B2JCABYNNNA877
 
 use frob_ledger::TicketId;
 
@@ -134,7 +135,11 @@ pub fn plan_new(
     goal: &str,
     capacity_points: Option<u32>,
 ) -> Result<NewPlan, CycleError> {
-    if let Some(c) = existing.iter().find(|c| c.start == start && c.end == end) {
+    // A closed cycle never matches: its date range is free to reuse (the new alias gets a numeric suffix).
+    if let Some(c) = existing
+        .iter()
+        .find(|c| c.state != State::Closed && c.start == start && c.end == end)
+    {
         let mut fields = Vec::new();
         if c.goal != goal {
             fields.push("goal");
@@ -173,6 +178,56 @@ pub fn plan_new(
         });
     }
     Ok(NewPlan::Create)
+}
+
+/// The next cycle `cycle close --next-goal` creates, planned against the effective end being recorded.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NextPlan {
+    /// First day: the day after the effective end of the closing cycle.
+    pub start: Day,
+    /// Last day: `start + days - 1`.
+    pub end: Day,
+    /// Create it, or report that an identical open or planned cycle already exists.
+    pub plan: NewPlan,
+}
+
+/// Plan the cycle that follows `cycle` when it closes on `closed_on`, `days` long.
+///
+/// The overlap check sees `cycle` as closed with the effective end being recorded, so the cycle
+/// being closed never blocks its own successor.
+///
+/// # Errors
+///
+/// [`CycleError::BadWindow`] for a zero `days` or an out-of-range date; [`CycleError::Overlap`]
+/// when another open or planned cycle is in the way.
+pub fn plan_next(
+    cycle: &Cycle,
+    others: &[Cycle],
+    closed_on: Day,
+    goal: &str,
+    days: u32,
+) -> Result<NextPlan, CycleError> {
+    let effective = closed_on.max(cycle.start).min(cycle.end);
+    let start = effective.plus_days(1).map_err(|m| CycleError::BadWindow {
+        start: effective.to_string(),
+        end: "?".to_owned(),
+        reason: m,
+    })?;
+    let end = resolve_end(start, None, days)?;
+    let closing = Cycle {
+        state: State::Closed,
+        ended: (effective < cycle.end).then_some(effective),
+        ..cycle.clone()
+    };
+    let seen: Vec<Cycle> = others
+        .iter()
+        .filter(|c| c.id != cycle.id)
+        .cloned()
+        .chain(std::iter::once(closing))
+        .collect();
+    let plan = plan_new(&seen, start, end, goal, None)?;
+    tracing::debug!(cycle = %cycle.alias(), %start, %end, "next cycle planned for close");
+    Ok(NextPlan { start, end, plan })
 }
 
 /// The [`CycleError::Unknown`] for `input`, suggesting the closest aliases of `existing`.
@@ -361,6 +416,7 @@ mod tests {
             tickets: Vec::new(),
             created: Stamp::now(),
             updated: Stamp::now(),
+            ordinal: 1,
         }
     }
 
@@ -492,6 +548,34 @@ mod tests {
         assert!(matches!(
             plan_close(&c, &[], None, &todo, day("2026-10-06")),
             Err(CycleError::NoNextCycle { suggest_start, .. }) if suggest_start == day("2026-10-07")
+        ));
+    }
+
+    #[test]
+    fn a_closed_cycle_never_matches_a_repeat_so_its_dates_can_be_reused() {
+        // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::plan_new
+        let c = cycle("2026-10-05", "2026-10-06", State::Closed);
+        let again = plan_new(std::slice::from_ref(&c), c.start, c.end, "other", Some(2));
+        assert_eq!(again, Ok(NewPlan::Create));
+    }
+
+    #[test]
+    fn next_starts_the_day_after_the_effective_end_and_ignores_the_closing_cycle() {
+        // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::plan_next
+        let c = cycle("2026-10-05", "2026-10-11", State::Active);
+        let p = plan_next(&c, std::slice::from_ref(&c), day("2026-10-05"), "g2", 2).expect("plan");
+        assert_eq!((p.start, p.end), (day("2026-10-06"), day("2026-10-07")));
+        assert_eq!(p.plan, NewPlan::Create);
+        // Closing on the planned end starts after the planned end.
+        let p = plan_next(&c, &[], day("2026-10-20"), "g2", 3).expect("plan");
+        assert_eq!((p.start, p.end), (day("2026-10-12"), day("2026-10-14")));
+        // Another open cycle in the way is still refused.
+        let busy = cycle("2026-10-07", "2026-10-09", State::Planned);
+        let e = plan_next(&c, &[c.clone(), busy], day("2026-10-05"), "g2", 3);
+        assert!(matches!(e, Err(CycleError::Overlap { .. })));
+        assert!(matches!(
+            plan_next(&c, &[], day("2026-10-05"), "g2", 0),
+            Err(CycleError::BadWindow { .. })
         ));
     }
 

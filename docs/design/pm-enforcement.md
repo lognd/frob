@@ -154,7 +154,20 @@ Milestone 2 or later (D36).
   also takes the ticket out of that cycle's members while the target
   cycle gains it by a `member` event, so a closed cycle lists only what it
   finished. The target is the next open or planned cycle by start date, or
-  `--carry-to`; with none, close refuses and names `frob cycle new`.
+  `--carry-to`; with none, close refuses (E-CYCLE-NO-NEXT) and names `frob cycle new`
+  and `--next-goal`. `frob cycle close CYCLE --next-goal TEXT [--next-days N]
+  [--retro TEXT]` closes and, when unfinished members need a home and no next
+  cycle exists, creates one starting the day after the effective end
+  (`[pm] cycle_days` long unless `--next-days`) and carries them into it; its
+  overlap check sees the closing cycle as closed at the effective end, and the
+  ratio counts the carried tickets as committed. Write order, safe to retry:
+  create the next cycle, add each carried ticket to it, then one commit on
+  the closing cycle (carried, ratio, retro, transition); the cycle stays open
+  until the last step, and a retry finds the created cycle as the next one.
+  Cycles may share a date range once the earlier is closed: `cycle new`
+  idempotency matches only open or planned cycles, and the later cycle's alias
+  gets a numeric suffix (`2026-10-03..2026-10-04.2`; the first keeps the bare
+  alias, derived from creation order); handles, ULIDs and aliases resolve.
   Closing before the planned end records the close day (UTC, never before the
   start) as the cycle's effective end, in the `transition` event (`ended`);
   the fold sets `ended` on the cycle, and the overlap check, default-cycle

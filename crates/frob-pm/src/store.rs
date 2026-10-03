@@ -6,6 +6,7 @@
 //! commit through [`Ledger::commit_files`] holding the new event files and the
 //! re-folded frontmatter, so `fold(events) == frontmatter` after every commit.
 //! Nothing here touches a ticket: membership is an event on the object.
+// frob:ticket 01M40VQWCV38B2JCABYNNNA877
 
 use std::collections::BTreeMap;
 
@@ -210,7 +211,21 @@ impl<'a> PmStore<'a> {
         if events.is_empty() {
             return Ok(None);
         }
-        fold(kind, id, &events).map(Some)
+        let mut folded = fold(kind, id, &events)?;
+        self.number(&mut folded.object)?;
+        Ok(Some(folded))
+    }
+
+    /// Set a cycle's `ordinal` from its place among the cycles of the tip that share its date range.
+    fn number(self, object: &mut Object) -> Result<()> {
+        let Object::Cycle(c) = object else {
+            return Ok(());
+        };
+        let numbered = self.list(ObjectKind::Cycle)?;
+        if let Some(Object::Cycle(n)) = numbered.iter().find(|o| o.id() == c.id) {
+            c.ordinal = n.ordinal;
+        }
+        Ok(())
     }
 
     /// Every object of `kind` folded at the current tip, ordered by id; unreadable ones are skipped with a warning.
@@ -232,6 +247,7 @@ impl<'a> PmStore<'a> {
                 Err(e) => tracing::warn!(object = %id, error = %e, "skipping unreadable object"),
             }
         }
+        number_cycles(&mut out);
         Ok(out)
     }
 
@@ -280,7 +296,11 @@ impl<'a> PmStore<'a> {
         let event = PmEvent::new(&self.ledger.actor()?, PmBody::Create(Box::new(data)));
         let folded = fold(kind, id, std::slice::from_ref(&event))?;
         let alias = folded.object.alias();
-        if self.list(kind)?.iter().any(|o| o.alias() == alias) {
+        // A closed cycle never holds its date range: only open or planned cycles (and any milestone) block the alias.
+        let taken = |o: &Object| {
+            o.alias() == alias && !matches!(o, Object::Cycle(c) if c.state == State::Closed)
+        };
+        if self.list(kind)?.iter().any(taken) {
             return Err(PmError::invalid(format!(
                 "a {kind} `{alias}` already exists"
             )));
@@ -511,9 +531,10 @@ impl<'a> PmStore<'a> {
             folded.object.alias()
         );
         let commit = self.ledger.commit_files(&message, &changes)?.to_string();
-        let object = self
+        let mut object = self
             .reconcile(kind, id, MAX_RECONCILE)?
             .map_or(folded.object, |f| f.object);
+        self.number(&mut object)?;
         Ok(Applied {
             object,
             events: new.iter().map(|e| e.id).collect(),
@@ -575,5 +596,21 @@ impl<'a> PmStore<'a> {
             }
         }
         Ok(out)
+    }
+}
+
+/// Number every cycle of `objects` among those sharing its date range, earliest id first.
+///
+/// The first cycle of a range keeps the bare alias; later ones get `.2`, `.3`, and so on.
+fn number_cycles(objects: &mut [Object]) {
+    let mut seen: std::collections::HashMap<(Day, Day), u32> = std::collections::HashMap::new();
+    let mut order: Vec<usize> = (0..objects.len()).collect();
+    order.sort_by_key(|i| objects[*i].id());
+    for i in order {
+        if let Object::Cycle(c) = &mut objects[i] {
+            let n = seen.entry((c.start, c.end)).or_insert(0);
+            *n += 1;
+            c.ordinal = *n;
+        }
     }
 }
