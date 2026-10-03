@@ -1,0 +1,21 @@
+[package]
+name = "gob-plan"
+version = "0.0.0"
+description = "Plan format, GRL compiler and executor for the frob/grimble/crunk goblins (this milestone: the GRL lexer)."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+gob-text = { path = "../gob-text" }
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+proptest = "1"
+
+[lints]
+workspace = true

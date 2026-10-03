@@ -2224,6 +2224,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-plan"
+version = "0.0.0"
+dependencies = [
+ "gob-text",
+ "proptest",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "gob-rules"
 version = "0.0.0"
 dependencies = [

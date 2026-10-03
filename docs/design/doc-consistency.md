@@ -3,9 +3,12 @@
 Status: ACCEPTED as the design (D84, ticket ~2NAP90Y). Evidence:
 notes/research/docs-survey.md (1254 repositories; the exemplars ruff, uv,
 jj, clippy, rustc, rust-analyzer generate reference from code, mark it,
-and gate its freshness) and notes/research/docgen-survey.md (pending:
-prevalence of include, splice, doctest and fact-check techniques; section
-8 is updated when it lands). Builds on documentation.md (the generated
+and gate its freshness) and notes/research/docgen-survey.md (the same 1254 repositories: 43 percent
+have no doc-consistency mechanism at all; includes are common only with a
+site generator and use named anchors, almost never line ranges;
+marker-region tools appear in none; hand-copied duplicate paragraphs are
+in 85 percent of sampled docs sites; checks that prose mentions things
+that exist are bespoke and rare; section 9 records what was adopted). Builds on documentation.md (the generated
 path table, GEN001), navigation.md 3 (markers, the README region),
 code-model.md (directives, `frob:doc`, `describes`, `enumerates`), the
 DRIFT family and `frob ack`.
@@ -76,6 +79,46 @@ forms, and prefers the strongest that fits:
   staleness is a digest comparison, not a re-render.
 - `frob fix` (or `cargo dev gen docs` in this repository) re-renders
   every region; GEN001's check covers them.
+
+### 3.1.1 Existing include syntaxes are read, not replaced
+
+A repository that builds a docs site already has an include syntax:
+mdBook `{{#include path:anchor}}`, MkDocs snippets `--8<--`, Sphinx
+`literalinclude` and `include`, AsciiDoc `include::`, MDX imports. The
+survey found these in 45.7 percent of site-generator repositories and
+dedicated marker-region tools in none, so frob reads the existing
+directives as pointers and gives them the gate the site tools lack
+(only 6.8 percent of repositories run strict docs builds):
+
+- the source file exists; a named anchor exists exactly once in its
+  source, in a recognized comment form (mdBook `ANCHOR:` and
+  `ANCHOR_END:`, MkDocs `--8<-- [start:name]`, Sphinx `:start-after:`,
+  frob's `frob:region`); an empty region is an error (SYNC004);
+- line-range includes are allowed for these tools but reported as
+  Advisory SYNC007 "line ranges move; name the region" (the survey
+  counted 798 anchor includes against 13 line ranges in mdBook);
+- `frob:include` is for plain markdown read on GitHub or in a terminal,
+  where no site build expands includes, so the copy must be committed.
+
+### 3.1.2 A changed region flags the prose around it
+
+Transclusion keeps the quoted text current but not the explanation
+around it, and no surveyed tool notices that. For includes of a code
+region, frob records the region's digest in `frob.lock` against the
+including section, the same way code-doc bindings work: when the code
+region changes, the including section is flagged (SYNC001, "the code
+this section quotes changed: re-read the explanation") until it is
+acked. Includes of doc sections do not create this pair (a copied
+section has no separate explanation to go stale).
+
+### 3.1.3 Crate docs from the README
+
+`#![doc = include_str!("../README.md")]` single-sources a crate's README
+and its rustdoc front page (12.3 percent of Rust repositories with a
+`lib.rs`). Its known failure is relative links that work on GitHub and
+break on docs.rs; frob's generated README header (navigation.md 3.2)
+renders links that resolve in both places, and DOC002 checks them from
+both roots.
 
 ### 3.2 Generated summaries
 
@@ -250,6 +293,26 @@ new extraction work for the prose query (universal-model.md Q11).
 - In `section` mode a missing member has no obvious subsection, so the
   fix is has-placeholders and asks which group it belongs to.
 
+#### 5.0.3 Adopting fact checks in an existing repository: a ratchet
+
+Heuristic doc checks fail by noise (the survey's evidence: typos has 172
+false-positive issues; markdownlint MD051 and lychee have the same
+history). Two controls:
+
+- **Recognition is narrow** (section 5): only code spans whose first
+  token names something this repository owns.
+- **A shrink-only baseline**, copied from cpython's nit-picky check:
+  `frob sync baseline` writes the currently unresolved references to
+  `.frob-sync-baseline` (committed, generated, marked). A check fails on
+  any unresolved reference not in the baseline, and also when a
+  baseline entry now resolves (SYNC016 baseline-entry-resolved, machine
+  fix: remove it). The baseline can only shrink, so adoption never
+  starts with a wall of findings and never regresses.
+
+Facts are harvested from a generator's input (the config schema, the
+clap definitions, the rule registry), never from its rendered pages, so
+a stale generated page cannot make a stale mention look valid.
+
 ### 5.1 Three values
 
 A fact whose source cannot be read (the CLI registry of a product not
@@ -287,9 +350,27 @@ decision id in the new definition.
   (Advisory) fires when another doc defines the same term (a heading
   equal to the term, or a bold term followed by a colon or a dash),
   with the fix "link to the canonical definition, or include it".
-- **SYNC007 near-duplicate-section** (Advisory): two sections whose
-  normalized text shares more than `[sync] duplicate_threshold`
-  (default 0.8 by word shingles) and are neither an include nor a pair.
+- **SYNC007 near-duplicate-section** (Advisory): paragraphs of at least
+  100 characters and 15 words are normalized (lowercase, links to their
+  text, punctuation stripped) and hashed; two sections sharing more
+  than `[sync] duplicate_threshold` (default 0.8) of their paragraphs,
+  or two files sharing 80 percent, are reported unless they are an
+  include or a pair. Exact copies rank above diverged near-copies (same
+  start and end, different middle), whose precision was about 50
+  percent in the survey. The survey ran this over 7146 files in under a
+  minute in plain Python, so it is cheap enough for every check.
+- **Exempt classes:** versioned docs directories, translation
+  directories, and generated files (marker or declared generator
+  output).
+- **Agent-instruction mirrors** (`CLAUDE.md`, `AGENTS.md`, `.cursor/`,
+  `.claude/`, `.agents/` rules that copy one another, the newest mirror
+  class in the survey) are reported as their own class with the fix
+  "declare one canonical file and generate the others".
+- **Keep-in-sync comments.** 13.1 percent of repositories carry
+  comments like "keep in sync with X" or "also update Y" in code,
+  config or workflows, checked by nothing. SYNC017 keep-in-sync-comment
+  (Advisory) finds them and offers to turn each into a `frob:same-as`
+  pair, so the wish becomes a check.
   The finding offers both fixes: make one an include of the other
   (machine fix when one side is a strict superset), or pair them.
 - Generated text, includes and quoted blocks are excluded from both.
@@ -313,6 +394,8 @@ decision id in the new definition.
 | SYNC013 | dangling-path-mention | warn | P+ | manual |
 | SYNC014 | enumeration-mismatch | error | P+ | machine |
 | SYNC015 | planned-but-shipped | warn | P+ | machine |
+| SYNC016 | baseline-entry-resolved | error | P+ | machine |
+| SYNC017 | keep-in-sync-comment | advisory | P0 | maybe-incorrect |
 
 - **Engine:** `gob-docsync`, product-neutral (grimble and crunk
   document too): section addressing and digests (shared with
@@ -328,6 +411,14 @@ decision id in the new definition.
 - **Teaching:** each rule's explain page shows the ladder (section 2)
   so a reader learns to reach for an include before a pair.
 
+## 8a. Not built: spelling, prose style and external link checks
+
+Spell checkers, prose linters and external link checkers are adopted by
+single-digit percentages and are noisy; frob does not reimplement them.
+It provides the glue: they run as trusted tool stages (security.md 2.4)
+whose findings map into the envelope, and the section 5.0.3 ratchet
+applies to them too.
+
 ## 8. Self-application to this repository
 
 1. Generate the README decision log from per-doc front matter (3.2),
@@ -337,6 +428,18 @@ decision id in the new definition.
    caught it (SYNC006 for the reused REL001, SYNC007 for the plan-cache
    paragraphs, SYNC010 for knob defaults stated in prose), and the
    design set is fixed in the same tickets.
-3. The docgen survey's findings (notes/research/docgen-survey.md)
-   update this section and may adjust thresholds and the false-positive
-   rules of section 5.
+3. Docs in this repository that copy one another (the design docs'
+   repeated rule tables, the two layouts of the ticket ledger) are the
+   first SYNC007 corpus.
+
+## 9. What the docgen survey changed
+
+Adopted from notes/research/docgen-survey.md section 5: reading existing
+include syntaxes (3.1.1), named regions only (3.1.1), re-read pairs for
+quoted code (3.1.2), README single-sourcing (3.1.3), the shrink-only
+ratchet and harvesting from inputs (5.0.3), duplicate thresholds and
+classes (6), keep-in-sync comments (SYNC017), glue instead of new prose
+tools (8a). Not adopted: an explicit typed inline reference syntax for
+facts (for example a `cli-flag:` prefix inside code spans), because it
+makes rendered docs harder to read; narrow recognition plus the ratchet
+gives the same false-positive control.

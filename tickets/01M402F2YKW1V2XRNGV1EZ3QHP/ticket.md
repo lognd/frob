@@ -2,13 +2,13 @@
 id = "01M402F2YKW1V2XRNGV1EZ3QHP"
 title = "Repo-level rule results are cached by input digests only, not by the engine that produced them"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:05:54Z"
-updated = "2026-10-03T05:05:54Z"
+updated = "2026-10-03T05:23:21Z"
 idempotency_key = "m2-cache-key-engine-version"
 labels = ["milestone:2"]
 scope = ["crates/gob-cache/**", "crates/gob-check/**", "crates/frob-check/**"]
