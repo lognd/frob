@@ -7,7 +7,7 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T15:19:03Z"
-updated = "2026-10-03T18:38:54Z"
+updated = "2026-10-03T18:43:53Z"
 scope = ["crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/tests/**", "crates/frob-evidence/src/error.rs", "crates/frob/tests/attestation.rs"]
 
 [[acceptance]]
