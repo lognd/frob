@@ -226,6 +226,9 @@ pub struct Report {
 /// Categories in workflow order; groups are emitted in this order.
 const CATEGORY_ORDER: [&str; 3] = ["triage", "todo", "in-progress"];
 
+/// Repository-relative path and anchor of the guide's one-time setup section (the registry setup runbook).
+const REGISTRY_SETUP_GUIDE: &str = "docs/guides/release.md#one-time-setup";
+
 /// The fixed items the design lists as owner actions or later checks (`releases.md` 6a), with reasons; CI is added per report.
 #[must_use]
 pub fn unresolved_items() -> Vec<Unresolved> {
@@ -237,7 +240,9 @@ pub fn unresolved_items() -> Vec<Unresolved> {
         u("forecast", "no history yet"),
         u(
             "registry setup",
-            "owner action: trusted publishing on PyPI (frob) and crates.io, reserved crate names confirmed",
+            &format!(
+                "owner action: trusted publishing on PyPI (frob) and crates.io, reserved crate names confirmed; see {REGISTRY_SETUP_GUIDE}"
+            ),
         ),
     ]
 }
@@ -559,6 +564,34 @@ pub fn assess(input: &Input) -> Report {
 mod tests {
     use super::*;
     use crate::ci::{CiFailure, CiUnknown};
+
+    // frob:ticket 01M41EBQN0HT7956KPP0ZJET37
+    #[test]
+    fn registry_setup_names_an_existing_guide_section() {
+        let item = unresolved_items()
+            .into_iter()
+            .find(|i| i.item == "registry setup")
+            .expect("registry setup item");
+        let (path, anchor) = REGISTRY_SETUP_GUIDE.split_once('#').expect("anchor");
+        assert!(
+            item.reason.contains(REGISTRY_SETUP_GUIDE),
+            "{}",
+            item.reason
+        );
+        let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(path);
+        let text = std::fs::read_to_string(&file).expect("guide exists");
+        assert!(
+            text.lines().any(|l| l.starts_with('#')
+                && l.trim_start_matches('#')
+                    .trim()
+                    .to_lowercase()
+                    .replace(' ', "-")
+                    == anchor),
+            "no heading for anchor {anchor}"
+        );
+    }
 
     fn crit(n: usize, bound: bool) -> CriterionStatus {
         CriterionStatus {
