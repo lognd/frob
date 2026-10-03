@@ -465,13 +465,16 @@ deferred to a ticket. The deferred ticket id is a placeholder ULID, and
 digests and fingerprints are illustrative, and the one `packs` entry
 is `grimble/core-effects` with a made-up pack digest (its `packs_digest`
 is the real blake3 of the canonical `packs` array).
+The `compute_digest` shown is the real blake3 of the canonical JSON of the six
+default `[compute]` knobs (keys sorted bytewise, no whitespace), as
+`ComputeTable::digest` in `grimble-check` computes it.
 
 ```json
 {"verb":"check","already":false,"ok":true,"data":{
   "schema_version":"gob.sibling/1",
   "product":"grimble",
   "product_version":"0.1.0",
-  "compute_digest":"blake3:bfc07185ac7c28b2b19c162930e7e857b3f7943de75affc27c92a14ce55c44c2",
+  "compute_digest":"blake3:d2159af7d6267882f0176e553b7db75cd7ce68c9d1cd6dcc2b9a3a35a059f5eb",
   "compute":{"public_signatures":"warn-unresolved","effects":"warn-unresolved","dynamic_calls":"warn-unresolved","expansion_steps":1000,"normalization":"warn-unresolved","notebook_order":"warn-unresolved"},
   "invocation":{"verb":"check","root":".","ticket_scope":["crates/frob-check/src/sibling.rs"],"base":"main"},
   "fidelity":[
@@ -557,7 +560,7 @@ its own rules; it is validated by the same schema:
   "schema_version":"gob.sibling/1",
   "product":"crunk",
   "product_version":"0.1.0",
-  "compute_digest":"blake3:bfc07185ac7c28b2b19c162930e7e857b3f7943de75affc27c92a14ce55c44c2",
+  "compute_digest":"blake3:d2159af7d6267882f0176e553b7db75cd7ce68c9d1cd6dcc2b9a3a35a059f5eb",
   "compute":{"public_signatures":"warn-unresolved","effects":"warn-unresolved","dynamic_calls":"warn-unresolved","expansion_steps":1000,"normalization":"warn-unresolved","notebook_order":"warn-unresolved"},
   "invocation":{"verb":"check","root":".","ticket_scope":null,"base":null},
   "fidelity":[{"language":"css","adapter":"gob-languages/css","adapter_version":"0.1.0","level":"F2",

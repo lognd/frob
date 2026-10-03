@@ -2,13 +2,14 @@
 id = "01M3ZKK62R05XCKFDVCFRHX0KM"
 title = "Adopt grimble in this repository: grimble.toml, exclude test corpora, ignore .grimble/, fix the compute digest example"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T00:45:59Z"
-updated = "2026-10-03T00:45:59Z"
+updated = "2026-10-03T01:16:38Z"
 idempotency_key = "m2-grimble-adopt"
 labels = ["milestone:2"]
 scope = ["grimble.toml", "frob.toml", ".gitignore", "design/**", "docs/design/sibling-contract.md"]

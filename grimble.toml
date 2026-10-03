@@ -1,0 +1,31 @@
+[check]
+# Lowest severity that makes `frob check` exit 1; `none` never fails.
+fail_on = "error"
+# Paths no grimble stage walks: deliberately broken test corpora and fixtures.
+exclude = ["crates/*/tests/corpus/**", "crates/*/tests/mdtest/**", "crates/*/tests/mdtest_fail/**", "crates/*/tests/fixtures/**", "crates/*/tests/ui/**"]
+# Which Unresolved findings fail the gate: `required`, `never` or `all`.
+fail_on_unresolved = "required"
+
+[compute]
+# How an unannotated public signature is treated (`warn-unresolved` or `required`).
+public_signatures = "warn-unresolved"
+# How an undeclared effect is treated.
+effects = "warn-unresolved"
+# How a dynamic call is treated.
+dynamic_calls = "warn-unresolved"
+# The macro and template expansion step budget.
+expansion_steps = 1000
+# How an unnormalizable construct is treated.
+normalization = "warn-unresolved"
+# How a notebook with an undeclared cell order is treated.
+notebook_order = "warn-unresolved"
+
+[directives]
+# Comment namespaces the scanner reads; comments in any other are ignored.
+namespaces = ["frob", "grimble", "crunk"]
+
+[packs]
+# Enabled pack ids in load order.
+enabled = []
+# Path of the pack lock, relative to the repository root.
+lock = "grimble.packs.lock"

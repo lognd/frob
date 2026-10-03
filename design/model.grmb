@@ -1,0 +1,25 @@
+grimble = "2";
+module frob_repo;
+
+/// The ticket goblin.
+node frob : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/frob-*/**";
+  owns "crates/frob/**";
+}
+
+/// The shared substrate.
+node gob : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/gob-*/**";
+}
+
+/// The design goblin.
+node grimble : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/grimble-*/**";
+  owns "crates/grimble/**";
+}

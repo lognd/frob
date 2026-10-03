@@ -8,7 +8,7 @@ base = "experimental"
 fail_on = "error"
 # Paths no rule inspects: build output, frob's own local state and the v1
 # changelog (a 2.7 MB history file full of v1 directives).
-exclude = ["target/", ".frob/", "CHANGELOG.md", "notes/"]
+exclude = ["target/", ".frob/", "CHANGELOG.md", "notes/", "crates/*/tests/corpus/**", "crates/*/tests/mdtest/**", "crates/*/tests/mdtest_fail/**", "crates/*/tests/fixtures/**"]
 
 # External tool stages, run after the built-in rules.
 [[check.tool]]
