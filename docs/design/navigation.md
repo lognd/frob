@@ -50,20 +50,29 @@ the outermost epic ancestor. Sub-epics do not get directories: their
 tickets sit in the top epic's directory and the epic page groups them
 by sub-epic, so a reparent inside one epic never moves a file and paths
 stay shallow. The epic ticket itself is `<top-epic-slug>/EPIC.md`.
-Tickets with no epic live in `_unfiled/`, which the front door lists
-first so they get filed. Slugs are made from the title at creation and
-frozen; a title change does not move a file (the epic page shows the
-current title). Identity is the ULID in the frontmatter and the
-`.events/<ULID>/` directory, both unaffected by any move.
+Sub-epics are flattened by decision, not merely by default: there is
+no directory hierarchy below the top epic. Tickets with no epic live in
+`_unfiled/`, which the front door lists first so they get filed.
+
+The slug follows the ticket's current title (owner decision): a title
+change renames the file through the same reindex commit as a reparent,
+so a file name never disagrees with its title. Slug rules: the title
+transliterated to ASCII, lowercased, every run of other characters
+replaced by one `-`, trimmed, cut at 60 characters on a word boundary;
+an empty result becomes the handle without the `~`; two tickets in one
+directory with the same slug both get `-<handle>` appended, so the
+outcome does not depend on which was created first. Identity is the
+ULID in the frontmatter and the `.events/<ULID>/` directory, both
+unaffected by any move or rename.
 
 ### 2.2 Moves happen only in reindex commits
 
-A change of parent is two commits, written and pushed together by the
+A change of parent or title is two commits, written and pushed together by the
 same verb (or, with `[tickets] index_writer = "ci"`, the second by the
 CI job):
 
-1. The **decision commit**: the event (`field parent`) and the ticket's
-   refolded frontmatter. No file moves.
+1. The **decision commit**: the event (`field parent` or `field title`)
+   and the ticket's refolded frontmatter. No file moves.
 2. The **reindex commit**, made by `frob ticket reindex`: moves files to
    their computed paths and regenerates the generated pages. Message
    `tickets(reindex): after <event ULID>`, trailer
@@ -280,10 +289,12 @@ a time, with next and previous, and opens linked files in the pager.
 | `frob profile newcomer\|experienced` | verb | local presentation profile |
 | `frob tour` | verb | the repository tour in the terminal |
 
-## 7. Open questions
+## 7. Owner decisions (2026-10-04)
 
-1. Sub-epic directories: flattened into the top epic (proposed, fewer
-   moves) or nested?
-2. Should a title change ever re-slug a file (proposed: never; an
-   explicit `frob ticket reslug` could be added later and would be a
-   reindex commit too)?
+1. Sub-epics are flattened into the top epic's directory; no hierarchy
+   below it.
+2. A title change renames the file (section 2.1), through a reindex
+   commit like any other move. Freezing slugs was rejected: with ids as
+   the only references and the reindex proven pure by replay, a frozen
+   slug's only effect would be a file name that disagrees with its
+   title.

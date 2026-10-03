@@ -20,8 +20,9 @@ are specified after the documentation survey
   and it can be browsed on the web. Hidden custom refs were rejected:
   clones would silently lack the ledger.
 - Layout for humans, identity for machines: `README.md` (generated),
-  `<top-epic-slug>/<ticket-slug>.md` (slug frozen at creation; the file
-  moves only in a verifiable reindex commit when its top epic changes),
+  `<top-epic-slug>/<ticket-slug>.md` (the slug follows the title; the
+  file moves only in a verifiable reindex commit when its top epic or
+  title changes),
   `.events/<ULID>/` (event logs). The ULID stays canonical in each
   file's frontmatter; paths are presentation and never references.
   frob resolves ids through its index, never through paths. The full
