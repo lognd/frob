@@ -2,7 +2,8 @@
 id = "01M41B2PD4NAV8VACA13750GWB"
 title = "[pm] strict escalates PM001 and PM002 (and other PM warnings the design names) to Error"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 reporter = "lognd"
