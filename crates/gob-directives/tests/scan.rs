@@ -196,7 +196,7 @@ fn dsl002_names_the_remedy_and_has_no_fix() {
     let r = common::scan("src/a.rs", "// frob:ticket 3M8Z4T7\nfn a() {}\n");
     let f = &r.findings[0];
     assert_eq!(f.rule.as_str(), "DSL002");
-    assert!(f.message.contains("frob ticket expand"));
+    assert!(f.message.contains("frob ticket show"));
     assert!(f.fix.is_none());
     assert!(r.directives.is_empty());
 }

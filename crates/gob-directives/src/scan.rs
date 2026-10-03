@@ -350,7 +350,8 @@ fn check_ticket_refs<'m>(
                 &Dsl002::META,
                 span,
                 format!(
-                    "`{ns}:{verb}` carries abbreviated ticket id `{}`; only full 26-char ULIDs persist (D24), run `frob ticket expand`",
+                    // frob:ticket 01M40YQZF4422S88TN6992AN0Q
+                    "`{ns}:{verb}` carries abbreviated ticket id `{}`; only full 26-char ULIDs persist (D24), replace it with the full id from `frob ticket show <handle>`",
                     t.value
                 ),
             )
