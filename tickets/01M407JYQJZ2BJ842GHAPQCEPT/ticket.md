@@ -9,9 +9,9 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T06:35:23Z"
-updated = "2026-10-03T06:50:33Z"
+updated = "2026-10-03T15:28:26Z"
 idempotency_key = "m2-tool-stage-silent-failure"
-labels = ["milestone:2", "release:0.532.0"]
+labels = ["milestone:2"]
 scope = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/**", "frob.toml", ".github/workflows/**", "crates/gob-rules/src/required.rs", "crates/grimble-check/src/sibling.rs", "docs/design/rules.md", "docs/design/sibling-contract.md", "docs/schemas/envelope.json"]
 
 [[acceptance]]

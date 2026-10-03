@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/src/publish.rs", ".github/workflows/release.yml"]
+new = ["crates/gob-dev/src/publish.rs", ".github/workflows/release.yml", "crates/gob-dev/src/lib.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/Cargo.toml", "Cargo.lock", "crates/frob-release/tests/release_workflow.rs"]
+at = "2026-10-03T15:28:35Z"
+actor = "lognd"
+rev = 1

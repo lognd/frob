@@ -9,9 +9,9 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:56:06Z"
-updated = "2026-10-03T09:21:11Z"
+updated = "2026-10-03T15:28:17Z"
 idempotency_key = "m2-sys-empty-model"
-labels = ["milestone:2", "release:0.532.0"]
+labels = ["milestone:2"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**"]
 
 [[acceptance]]

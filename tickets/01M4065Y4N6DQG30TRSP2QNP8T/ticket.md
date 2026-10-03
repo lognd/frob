@@ -7,9 +7,9 @@ priority = "high"
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T06:10:48Z"
-updated = "2026-10-03T06:10:48Z"
+updated = "2026-10-03T15:28:17Z"
 idempotency_key = "m2-rel-epic"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 
 [[acceptance]]
 text = "Given every child ticket is done, when frob release status 0.532.0 runs, then every exit criterion is evidenced"

@@ -9,9 +9,9 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T07:08:01Z"
+updated = "2026-10-03T15:28:17Z"
 idempotency_key = "m2-rel-pm-crate"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/**", "Cargo.toml", "crates/frob-ledger/**"]
 
 [[links]]
