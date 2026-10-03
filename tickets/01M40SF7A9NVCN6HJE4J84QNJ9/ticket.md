@@ -2,13 +2,13 @@
 id = "01M40SF7A9NVCN6HJE4J84QNJ9"
 title = "Release workflow: pin rustup-init by hash in the manylinux container; record the no-sdist decision"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:47:55Z"
-updated = "2026-10-03T19:10:43Z"
+updated = "2026-10-03T19:10:57Z"
 idempotency_key = "m2-rel-pin-rustup-init"
 labels = ["milestone:2", "area:release", "area:security"]
 scope = [".github/workflows/release.yml", "packaging/pypi/**", "docs/design/releases.md", ".github/workflows/build-smoke.yml", "crates/frob-release/tests/release_workflow.rs", "changelog.d/01M413T4GRZDC843XFPG31XEZ3.fixed.md", "changelog.d/01M40YQZF4422S88TN6992AN0Q.fixed.md"]
