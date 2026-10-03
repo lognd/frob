@@ -2,7 +2,8 @@
 id = "01M415AC5KGV3FMV512VMHTBE7"
 title = "land --wait does not retry E-LAND-STALE when the base moves during the land"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
