@@ -2,13 +2,13 @@
 id = "01M4069TBHQ2YTFEEWHED96MPY"
 title = "PM013 WIP limit exceeded rule"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:55Z"
-updated = "2026-10-03T06:12:55Z"
+updated = "2026-10-03T15:27:57Z"
 idempotency_key = "m2-rel-pm013"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/rules/wip.rs", "docs/reference/rules/pm/**"]
