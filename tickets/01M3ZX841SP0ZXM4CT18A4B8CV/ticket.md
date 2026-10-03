@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T05:51:54Z"
+updated = "2026-10-03T05:51:55Z"
 idempotency_key = "m2-mirror-outbox"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/outbox.rs"]
@@ -16,10 +16,6 @@ scope = ["crates/frob-mirror/src/outbox.rs"]
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX83J29R620BVRAVK5Z6DZ"
-
-[[links]]
-kind = "blocked-by"
-target = "01M3ZX83XX6D2N7XDTVRVYV6TS"
 
 [[links]]
 kind = "blocked-by"
