@@ -15,10 +15,6 @@ scope = ["crates/frob-mirror/src/identity.rs"]
 
 [[links]]
 kind = "blocked-by"
-target = "01M3ZX83XX6D2N7XDTVRVYV6TS"
-
-[[links]]
-kind = "blocked-by"
 target = "01M4052R88Y0A9HQHDB86ERMEM"
 
 [[acceptance]]
