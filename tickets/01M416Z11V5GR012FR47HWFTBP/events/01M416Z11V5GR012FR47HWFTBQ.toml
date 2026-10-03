@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob-worktree WIP check should count via frob_pm::rules::wip::in_progress"
+type = "chore"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-worktree/src/wip.rs"]
+body = "found while working ~ED96MPY: the in-progress listing in frob-worktree wip::check duplicates frob_pm::rules::wip::in_progress; swap it in. Blocked on the ZQRNCXY lease over crates/frob-worktree/**."
+at = "2026-10-03T15:43:45Z"
+actor = "lognd"
+rev = 1
