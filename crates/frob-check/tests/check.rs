@@ -687,6 +687,42 @@ fn uncommitted_out_of_scope_edits_still_fire_scope001() {
     assert!(hits[0].contains("src/d/lib.rs"), "{hits:?}");
 }
 
+// frob:tests crates/frob-check/src/scope.rs::branch_changes
+#[test]
+fn untouched_symlinks_never_fire_scope001_and_a_retarget_does() {
+    let (dir, id) = ticket_fixture();
+    let root = dir.path();
+    let git = |args: &[&str]| {
+        let out = std::process::Command::new("git")
+            .current_dir(root)
+            .args(["-c", "user.name=T", "-c", "user.email=t@example.com"])
+            .args(args)
+            .output()
+            .expect("git runs");
+        assert!(out.status.success(), "git {args:?}: {out:?}");
+    };
+    git(&["config", "core.autocrlf", "true"]);
+    write(root, "280/L/hello_1.c", "int main(void) { return 0; }\n");
+    std::os::unix::fs::symlink("../../280/L/hello_1.c", root.join("link_file.c")).expect("link");
+    std::os::unix::fs::symlink("280/L", root.join("link_dir")).expect("link");
+    git(&["add", "-A"]);
+    git(&["commit", "-q", "-m", "tickets(land): ~X links on main"]);
+    git(&["checkout", "-q", "-b", "work"]);
+    write(root, "src/a/lib.rs", "pub fn a() {}\n");
+    git(&["add", "-A"]);
+    git(&["commit", "-q", "-m", "work"]);
+
+    let r = run(root, &ticket_opts(&id)).expect("run");
+    assert!(scope001_paths(&r).is_empty(), "{:?}", scope001_paths(&r));
+
+    std::fs::remove_file(root.join("link_file.c")).expect("rm");
+    std::os::unix::fs::symlink("src/a/lib.rs", root.join("link_file.c")).expect("relink");
+    let r = run(root, &ticket_opts(&id)).expect("run");
+    let hits = scope001_paths(&r);
+    assert_eq!(hits.len(), 1, "{hits:?}");
+    assert!(hits[0].contains("link_file.c"), "{hits:?}");
+}
+
 /// Unresolved findings of `report` as (rule, reason) pairs.
 fn zero_subject_rules(report: &frob_check::CheckReport) -> Vec<String> {
     report

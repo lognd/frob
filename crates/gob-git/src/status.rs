@@ -244,42 +244,132 @@ impl Repo {
             .collect())
     }
 
-    fn diff_to_worktree(&self, old: &gix::Tree<'_>) -> Result<Vec<ChangedPath>, GitError> {
-        let old_map = Self::flatten_tree(old)?;
+    /// The bytes git would store as the blob for worktree path `rel`, or `None` when it is absent.
+    ///
+    /// A symlink yields its target path string (never the followed content);
+    /// a regular file is run through the clean filters (`core.autocrlf`,
+    /// `core.eol`, `.gitattributes` text/eol, configured filters). Use this,
+    /// not raw file bytes, for any digest meant to match git's view.
+    ///
+    /// # Errors
+    /// [`GitError::Unsupported`] for a bare repository, [`GitError::Io`] on
+    /// unreadable files, [`GitError::Index`] when the filter pipeline fails.
+    pub fn worktree_content_as_git(&self, rel: &str) -> Result<Option<Vec<u8>>, GitError> {
+        use gix::filter::plumbing::pipeline::convert::ToGitOutcome;
+        use std::io::Read;
         let Some(root) = self.work_dir() else {
             return Err(GitError::Unsupported(
                 "bare repository has no worktree".into(),
             ));
         };
-        // Candidates: anything staged against the tree, plus anything the
-        // stat-aware status says moved on disk; then confirm by content hash.
-        let mut cands: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-        for c in diff_maps(&old_map, &self.index_map()?) {
-            cands.insert(c.path);
+        let full = root.join(rel);
+        let ctx = |e: std::io::Error| GitError::io(format!("reading {rel}"), e);
+        let meta = match std::fs::symlink_metadata(&full) {
+            Ok(m) => m,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(e) => return Err(ctx(e)),
+        };
+        if meta.file_type().is_symlink() {
+            let target = std::fs::read_link(&full).map_err(ctx)?;
+            trace!(rel, "symlink hashed as its target string");
+            return Ok(Some(gix::path::into_bstr(target).into_owned().into()));
         }
-        for e in self.status(&StatusOptions::default())? {
-            if !e.staged {
-                cands.insert(e.path);
+        if !meta.is_file() {
+            return Ok(None);
+        }
+        let fresh = self.fresh_gix()?;
+        let (mut pipeline, state) = fresh
+            .filter_pipeline(None)
+            .map_err(|e| GitError::Index(e.to_string()))?;
+        let file = std::fs::File::open(&full).map_err(ctx)?;
+        let outcome = pipeline
+            .convert_to_git(file, std::path::Path::new(rel), &state)
+            .map_err(|e| GitError::Index(e.to_string()))?;
+        let mut out = Vec::new();
+        match outcome {
+            ToGitOutcome::Unchanged(mut f) => f.read_to_end(&mut out).map_err(ctx)?,
+            ToGitOutcome::Buffer(b) => {
+                out.extend_from_slice(b);
+                b.len()
+            }
+            ToGitOutcome::Process(mut r) => r.read_to_end(&mut out).map_err(ctx)?,
+        };
+        Ok(Some(out))
+    }
+
+    /// Tree-to-worktree names computed by gix's own status machinery with `old` as the base tree.
+    ///
+    /// Symlinks are compared by target string, and `core.autocrlf` / attribute
+    /// filters apply exactly as in `git status`, so no path git would not
+    /// report is reported. Each candidate path is classified by whether it exists
+    /// in `old` and whether it exists on disk (renames are not tracked).
+    fn diff_to_worktree(&self, old: &gix::Tree<'_>) -> Result<Vec<ChangedPath>, GitError> {
+        use gix::status::index_worktree::Item as W;
+        use gix::status::plumbing::index_as_worktree::{Change, EntryStatus};
+        let st_err = |e: &dyn std::fmt::Display| GitError::Status(e.to_string());
+        if self.work_dir().is_none() {
+            return Err(GitError::Unsupported(
+                "bare repository has no worktree".into(),
+            ));
+        }
+        let fresh = self.fresh_gix()?;
+        let platform = fresh
+            .status(gix::progress::Discard)
+            .map_err(|e| st_err(&e))?
+            .head_tree(old.id)
+            .untracked_files(UntrackedFiles::Files)
+            .index_worktree_rewrites(None)
+            .tree_index_track_renames(gix::status::tree_index::TrackRenames::Disabled);
+        let iter = platform.into_iter(Vec::new()).map_err(|e| st_err(&e))?;
+        // path -> exists on disk now (last writer wins: the worktree side is authoritative).
+        let mut disk: BTreeMap<String, bool> = BTreeMap::new();
+        for item in iter {
+            let item = item.map_err(|e| st_err(&e))?;
+            match &item {
+                gix::status::Item::TreeIndex(change) => {
+                    use gix::diff::index::Change as C;
+                    let (loc, present) = match change {
+                        C::Deletion { location, .. } => (location, false),
+                        C::Addition { location, .. }
+                        | C::Modification { location, .. }
+                        | C::Rewrite { location, .. } => (location, true),
+                    };
+                    disk.entry(loc.to_str_lossy().into_owned())
+                        .or_insert(present);
+                }
+                gix::status::Item::IndexWorktree(W::Modification {
+                    rela_path, status, ..
+                }) => {
+                    let present = match status {
+                        EntryStatus::Change(Change::Removed) => false,
+                        EntryStatus::NeedsUpdate(_) => continue,
+                        _ => true,
+                    };
+                    disk.insert(rela_path.to_str_lossy().into_owned(), present);
+                }
+                gix::status::Item::IndexWorktree(W::DirectoryContents { entry, .. }) => {
+                    if entry.status == gix::dir::entry::Status::Untracked {
+                        disk.insert(entry.rela_path.to_str_lossy().into_owned(), true);
+                    }
+                }
+                gix::status::Item::IndexWorktree(W::Rewrite { dirwalk_entry, .. }) => {
+                    disk.insert(dirwalk_entry.rela_path.to_str_lossy().into_owned(), true);
+                }
             }
         }
         let mut out = Vec::new();
-        for path in cands {
-            let disk = std::fs::read(root.join(&path)).ok();
-            let old_entry = old_map.get(&path);
-            let kind = match (old_entry, disk) {
-                (None, None) => None,
-                (None, Some(_)) => Some(ChangeKind::Added),
-                (Some(_), None) => Some(ChangeKind::Deleted),
-                (Some((oid, _)), Some(bytes)) => {
-                    let h = gix::objs::compute_hash(
-                        self.gix.object_hash(),
-                        gix::object::Kind::Blob,
-                        &bytes,
-                    )
-                    .map_err(|e| GitError::Odb(e.to_string()))?;
-                    (h != *oid).then_some(ChangeKind::Modified)
-                }
+        for (path, on_disk) in disk {
+            let in_old = old
+                .lookup_entry_by_path(&path)
+                .map_err(odb_err)?
+                .is_some_and(|e| !e.mode().is_tree());
+            let kind = match (in_old, on_disk) {
+                (false, false) => None,
+                (false, true) => Some(ChangeKind::Added),
+                (true, false) => Some(ChangeKind::Deleted),
+                (true, true) => Some(ChangeKind::Modified),
             };
+            trace!(%path, in_old, on_disk, ?kind, "worktree candidate classified");
             if let Some(kind) = kind {
                 out.push(ChangedPath { path, kind });
             }

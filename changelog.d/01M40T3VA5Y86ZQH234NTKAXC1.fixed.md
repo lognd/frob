@@ -1,0 +1,1 @@
+frob: Fixed `frob check --ticket` reporting untouched symlinks as SCOPE001 changes: the worktree side of the branch diff now uses gix status (symlinks compared as links, core.autocrlf and filters applied as git does).
