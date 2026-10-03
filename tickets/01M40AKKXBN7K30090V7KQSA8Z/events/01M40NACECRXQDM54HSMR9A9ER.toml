@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T10:35:22Z"
+digest = "3a2f3404ab9b548bdedf0535801a9d8bb3c9bd3ca3d6f41f9dd7649fff063de5"
+exit_code = 0
+inline = """
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-evidence)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.17s
+────────────
+ Nextest run ID 8467b505-7566-470f-b5ba-5ec8e5c33e93 with nextest profile: default
+    Starting 4 tests across 19 binaries (132 tests skipped)
+        PASS [   0.127s] (1/4) frob-cli::attestation init_materializes_the_owner_as_the_attester
+        PASS [   0.129s] (2/4) frob-evidence::attestation an_attester_at_a_terminal_binds_a_ticket_criterion
+        PASS [   0.214s] (3/4) frob-cli::attestation an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it
+        PASS [   0.218s] (4/4) frob-cli::attestation an_attestation_on_a_ticket_criterion_binds_and_show_and_brief_label_it
+────────────
+     Summary [   0.219s] 4 tests run: 4 passed, 132 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-evidence -E 'test(=an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it) | test(=an_attester_at_a_terminal_binds_a_ticket_criterion) | test(=an_attestation_on_a_ticket_criterion_binds_and_show_and_brief_label_it) | test(=init_materializes_the_owner_as_the_attester)'"
+size = 1359
+status = "measured"
+tests = ["an_attester_at_a_terminal_binds_a_ticket_criterion", "init_materializes_the_owner_as_the_attester", "an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it", "an_attestation_on_a_ticket_criterion_binds_and_show_and_brief_label_it"]
+at = "2026-10-03T10:35:22Z"
+actor = "lognd"
+rev = 1
