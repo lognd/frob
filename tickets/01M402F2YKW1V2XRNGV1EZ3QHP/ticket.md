@@ -2,7 +2,8 @@
 id = "01M402F2YKW1V2XRNGV1EZ3QHP"
 title = "Repo-level rule results are cached by input digests only, not by the engine that produced them"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
