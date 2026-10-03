@@ -8,7 +8,7 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T16:35:57Z"
+updated = "2026-10-03T16:50:04Z"
 idempotency_key = "m2-rel-pm001-002"
 labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/rules/milestone.rs", "docs/reference/rules/pm/**", "crates/frob-pm/src/rules/mod.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/mdtest/pm001.md", "crates/frob-pm/tests/mdtest/pm002.md", "crates/frob-check/src/product.rs", "docs/reference/rules/PM001.md", "docs/reference/rules/PM002.md", "docs/reference/rules/README.md", "crates/frob-pm/src/rules/membership.rs"]
@@ -19,7 +19,7 @@ target = "01M4069R5RH6KRMMNQA76XZ8VG"
 
 [[acceptance]]
 text = "Given a milestone with no goal, when frob check runs, then PM001 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a milestone with no epics, when frob check runs, then PM002 fires"
