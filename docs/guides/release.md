@@ -64,7 +64,8 @@ uses trusted publishing, and a test in
 ### 4. crates.io: the first publish of each crate uses a token
 
 Every crate is `publish = false` today. Ticket ~AZS0RRT makes the shipped set
-publishable and adds the token fallback to the `crates` job. Until ~AZS0RRT
+publishable and adds the token fallback to the `crates` job (this guide owns the
+wording of the token steps below; they stay pending ~AZS0RRT). Until ~AZS0RRT
 lands, the `crates` job cannot publish a crate that does not exist yet: it only
 exchanges a trusted-publishing token, and crates.io cannot configure trusted
 publishing before a crate exists. Do not cut 0.532.0 until ~AZS0RRT is landed.
@@ -159,13 +160,17 @@ and does not block later releases.
 ### 5. Verify
 
 ```sh
+frob release notes --version 0.532.0 --text
 gh release view frob-v0.532.0
 uv tool install --force frob==0.532.0
 frob --version
 cargo search frob-cli
 ```
 
-Check also that PyPI shows 0.532.0 with five files, and that crates.io shows the
+`frob release notes` prints the CHANGELOG section of that version, which is
+what the `release` job uses as the GitHub release body (any lead `notice`
+fragment comes first); compare it with what `gh release view` shows. Check also
+that PyPI shows 0.532.0 with five files, and that crates.io shows the
 version for every published crate. (`cargo search frob-cli` is an example name;
 use any shipped crate.)
 
@@ -275,8 +280,9 @@ environment `pypi` or `crates-io`. A mismatch in any field is rejected.
   trusted publisher forms, the yank buttons) were written from the owner's
   steps and general knowledge, not exercised here.
 - `gh release delete` and `cargo yank` flags were not run.
-- `frob release notes` and `frob release forecast` do not exist yet and are not
-  used. The `release` job carries an interim notes pointer to `CHANGELOG.md`.
+- `frob release forecast` does not exist yet and is not used.
+- That the `release` job body equals the `frob release notes` output was read
+  from the workflow, not observed in a real run.
 - `frob release status` does not print a link to this guide yet.
 - No release has been cut with this workflow; the resume steps for the
   workflow jobs rely on the skip logic in `cargo dev publish` and the
