@@ -7,9 +7,9 @@ priority = "low"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T16:08:48Z"
-updated = "2026-10-03T18:32:23Z"
+updated = "2026-10-03T18:33:20Z"
 labels = ["area:release"]
-scope = [".github/workflows/release.yml", ".github/workflows/dev.yml", "crates/frob-release/tests/release_workflow.rs", "crates/frob-release/tests/dev_workflow.rs"]
+scope = [".github/workflows/release.yml", ".github/workflows/dev.yml", "crates/frob-release/tests/release_workflow.rs", "crates/frob-release/tests/dev_workflow.rs", ".github/workflows/build-smoke.yml", "docs/design/releases.md", "packaging/pypi/BUILDING.md"]
 
 [[acceptance]]
 text = "Given release.yml and dev.yml, when either runs, then plan, build and smoke come from one reusable workflow_call workflow"
