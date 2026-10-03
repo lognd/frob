@@ -16,7 +16,7 @@ scope = ["crates/gob-cli/**", "crates/gob-macros/**", "crates/frob-evidence/**",
 
 [[acceptance]]
 text = "Given frob work --schema with no ticket, when run, then a schema prints and exit is 0"
-bound = false
+bound = true
 +++
 
 D40 known limitations: --schema must not require positional arguments; verb paths may have three words so ticket evidence add|list|fetch become real subcommands; CommandMeta and the generated CLI reference follow.
