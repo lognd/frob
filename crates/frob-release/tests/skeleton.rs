@@ -10,7 +10,7 @@ fn resolver(ulid: &str) -> Option<String> {
     (ulid == A).then(|| "~3TXB8SR".to_owned())
 }
 
-fn req<'a>(root: &'a std::path::Path, kind: Kind, force: bool) -> Request<'a> {
+fn req(root: &std::path::Path, kind: Kind, force: bool) -> Request<'_> {
     Request {
         root,
         ulid: A,
