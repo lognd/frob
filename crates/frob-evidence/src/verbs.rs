@@ -6,6 +6,7 @@ use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::attestation::{self, Presence, Request};
 use crate::error::EvidenceError;
 use crate::events::{self, StoredEvidence};
 use crate::provider;
@@ -40,9 +41,7 @@ pub struct AddData {
 #[derive(Debug, Clone)]
 struct EvidenceAdd {
     ticket: String,
-    provider: Provider,
-    reference: String,
-    accepts: Vec<usize>,
+    args: CaptureArgs,
 }
 
 impl EvidenceAdd {
@@ -51,14 +50,18 @@ impl EvidenceAdd {
         let id = resolve(&ws, &self.ticket)?;
         let view = ws.ledger.show(id).map_err(cli)?;
         let criteria = view.ticket.front.acceptance.len();
-        if let Some(bad) = self.accepts.iter().find(|n| **n == 0 || **n > criteria) {
+        if let Some(bad) = self
+            .args
+            .accepts
+            .iter()
+            .find(|n| **n == 0 || **n > criteria)
+        {
             return Err(cli(EvidenceError::BadAccepts(format!(
                 "--accepts {bad} but {} has {criteria} acceptance criteria (1-based)",
                 view.summary.handle
             ))));
         }
-        let record =
-            provider::capture(&ws, self.provider, &self.reference, &self.accepts).map_err(cli)?;
+        let record = self.args.capture(&ws, &Presence::detect()).map_err(cli)?;
         let appended = events::append(&ws.ledger, id, &record).map_err(cli)?;
         let payload = Payload::new(AddData {
             id,
@@ -78,6 +81,11 @@ pub fn with_record_warnings<T>(mut payload: Payload<T>, record: &EvidenceRecord)
             "the measured process failed; this record does not satisfy the close guard",
         );
     }
+    if let Some(label) = record.attestation_label() {
+        payload = payload.with_warning(format!(
+            "this is an attestation, not a tool measurement: {label}"
+        ));
+    }
     if record.status == Status::Unmeasured {
         payload = payload.with_warning("the measurement could not be taken (timeout or signal)");
     }
@@ -91,6 +99,8 @@ pub struct Listed {
     pub index: usize,
     /// The status after checking the blob is still there.
     pub effective_status: Status,
+    /// `[attested by X: "statement"]` (escaped) when the record is an attestation, so it never reads as a measurement.
+    pub label: Option<String>,
     /// The event and record.
     #[serde(flatten)]
     pub stored: StoredEvidence,
@@ -122,6 +132,7 @@ impl EvidenceList {
             .map(|(i, stored)| Listed {
                 index: i + 1,
                 effective_status: stored.record.effective_status(&ws.store),
+                label: stored.record.attestation_label(),
                 stored,
             })
             .collect();
@@ -226,15 +237,28 @@ pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
             .required(true)
             .value_name("PROVIDER")
             .value_parser(PossibleValuesParser::new(Provider::NAMES))
-            .help("Measurer: nextest, command or file"),
+            .help("Measurer: nextest, command, file or attestation (a person's statement; needs a terminal and a listed attester)"),
     )
     .arg(
         Arg::new("ref")
             .long("ref")
-            .required(true)
             .value_name("REF")
             .allow_hyphen_values(true)
-            .help("Nextest filter args, the command line, or the file path"),
+            .help("Nextest filter args, the command line, or the file path (not for attestation)"),
+    )
+    .arg(
+        Arg::new("statement")
+            .long("statement")
+            .value_name("TEXT")
+            .allow_hyphen_values(true)
+            .help("Attestation only: the statement, taken whole"),
+    )
+    .arg(
+        Arg::new("fact")
+            .long("fact")
+            .value_name("FACT")
+            .action(ArgAction::Append)
+            .help("Attestation only: an https URL, commit id or ticket handle the statement rests on (repeatable)"),
     )
     .arg(
         Arg::new("accepts")
@@ -251,10 +275,14 @@ pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
 pub struct CaptureArgs {
     /// The measurer.
     pub provider: Provider,
-    /// Nextest filter args, the command line, or the file path.
+    /// Nextest filter args, the command line, or the file path (empty for an attestation).
     pub reference: String,
     /// 1-based criteria the evidence is offered for.
     pub accepts: Vec<usize>,
+    /// The attestation statement (attestation only).
+    pub statement: Option<String>,
+    /// The attestation facts (attestation only).
+    pub facts: Vec<String>,
 }
 
 impl CaptureArgs {
@@ -268,16 +296,60 @@ impl CaptureArgs {
             .ok_or_else(|| CliError::Usage("add needs --provider".to_owned()))?
             .parse::<Provider>()
             .map_err(|e| CliError::Usage(e.to_string()))?;
-        let reference =
-            flag(m, "ref").ok_or_else(|| CliError::Usage("add needs --ref".to_owned()))?;
+        let reference = flag(m, "ref");
+        let statement = flag(m, "statement");
+        let facts: Vec<String> = m
+            .get_many::<String>("fact")
+            .map(|v| v.cloned().collect())
+            .unwrap_or_default();
+        let attesting = provider == Provider::Attestation;
+        if attesting && reference.is_some() {
+            return Err(CliError::Usage(
+                "an attestation takes --statement and --fact, not --ref".to_owned(),
+            ));
+        }
+        if !attesting && (statement.is_some() || !facts.is_empty()) {
+            return Err(CliError::Usage(
+                "--statement and --fact belong to --provider attestation".to_owned(),
+            ));
+        }
+        if !attesting && reference.is_none() {
+            return Err(CliError::Usage("add needs --ref".to_owned()));
+        }
         Ok(Self {
             provider,
-            reference,
+            reference: reference.unwrap_or_default(),
             accepts: m
                 .get_many::<usize>("accepts")
                 .map(|v| v.copied().collect())
                 .unwrap_or_default(),
+            statement,
+            facts,
         })
+    }
+
+    /// Capture the evidence these flags ask for; an attestation also needs `presence` to show a person.
+    ///
+    /// # Errors
+    ///
+    /// Whatever the provider or [`attestation::attest`] refuses with.
+    pub fn capture(
+        &self,
+        ws: &Workspace,
+        presence: &Presence,
+    ) -> crate::error::Result<EvidenceRecord> {
+        if self.provider == Provider::Attestation {
+            return attestation::attest(
+                ws,
+                presence,
+                &Request {
+                    statement: self.statement.clone().unwrap_or_default(),
+                    facts: self.facts.clone(),
+                    accepts: self.accepts.clone(),
+                },
+            );
+        }
+        provider::capture(ws, self.provider, &self.reference, &self.accepts)
     }
 }
 
@@ -298,16 +370,9 @@ impl Command for AddVerb {
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let CaptureArgs {
-            provider,
-            reference,
-            accepts,
-        } = CaptureArgs::from_matches(m)?;
         Ok(Self(EvidenceAdd {
             ticket: flag(m, "ticket").unwrap_or_default(),
-            provider,
-            reference,
-            accepts,
+            args: CaptureArgs::from_matches(m)?,
         }))
     }
 

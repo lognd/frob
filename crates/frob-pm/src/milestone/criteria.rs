@@ -93,7 +93,68 @@ pub fn bindings(events: &[PmEvent], count: usize) -> Vec<Vec<Binding>> {
     bindings_of(&refs, count)
 }
 
+/// An evidence record that loses a criterion when criterion `position` is removed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LostEvidence {
+    /// The evidence event id.
+    pub event: EventId,
+    /// The provider that measured it.
+    pub provider: String,
+    /// What was measured (the record's `ref`).
+    pub reference: String,
+    /// The removed criterion it was offered for, numbered as before the removal.
+    pub lost: Vec<usize>,
+    /// Its criteria that survive, numbered as after the removal.
+    pub kept: Vec<usize>,
+}
+
+/// The records of `events` (any order) that lose a criterion when criterion `position` is removed now.
+pub fn lost_by_removal(events: &[PmEvent], position: usize) -> Vec<LostEvidence> {
+    let mut sorted = events.to_vec();
+    sort_events(&mut sorted);
+    let ordered: Vec<&PmEvent> = sorted.iter().collect();
+    let mut out = Vec::new();
+    for ev in &ordered {
+        let PmBody::Evidence(data) = &ev.body else {
+            continue;
+        };
+        let now: Vec<usize> = data
+            .accepts
+            .iter()
+            .filter_map(|n| remap(&ordered, ev, *n))
+            .collect();
+        if !now.contains(&position) {
+            continue;
+        }
+        out.push(LostEvidence {
+            event: ev.id,
+            provider: key(data, "provider"),
+            reference: key(data, "ref"),
+            lost: vec![position],
+            kept: now
+                .iter()
+                .filter(|n| **n != position)
+                .map(|n| if *n > position { n - 1 } else { *n })
+                .collect(),
+        });
+    }
+    out
+}
+
 impl PmStore<'_> {
+    /// The evidence of milestone `id` that would lose its criterion if criterion `position` were removed.
+    ///
+    /// # Errors
+    ///
+    /// Ledger read failures or a malformed event file.
+    pub fn lost_evidence(self, id: ObjectId, position: usize) -> Result<Vec<LostEvidence>> {
+        let Some(tip) = self.ledger.tip_hex()? else {
+            return Ok(Vec::new());
+        };
+        let events = self.read_events_at(&tip, ObjectKind::Milestone, id)?;
+        Ok(lost_by_removal(&events, position))
+    }
+
     /// The evidence binding each exit criterion of milestone `id` at the current tip.
     ///
     /// # Errors

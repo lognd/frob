@@ -39,6 +39,8 @@ pub struct CriterionView {
     pub bound: bool,
     /// `bound` or `unbound`, spelled for display.
     pub state: String,
+    /// True when any binding record is a person's attestation rather than a tool measurement.
+    pub attested: bool,
     /// The passing evidence records that bind it (empty when unbound).
     pub bound_by: Vec<BoundBy>,
 }
@@ -52,6 +54,10 @@ pub struct BoundBy {
     pub provider: String,
     /// What was measured (the record's `ref`).
     pub reference: String,
+    /// `[attested by X: "statement"]` (escaped, origin ledger) when a person attested; absent for a tool measurement.
+    pub label: Option<String>,
+    /// The attestation exactly as stored (JSON keeps exact strings; text renders use `label`).
+    pub attestation: Option<frob_evidence::record::Attestation>,
 }
 
 /// A milestone as every `milestone` verb reports it.
@@ -107,6 +113,7 @@ impl MilestoneView {
                 tracing::warn!(milestone = %m.id, error = %e, "criterion bindings unreadable");
                 vec![Vec::new(); m.criteria.len()]
             });
+        let attestations = attestations_of(ledger, m);
         Self {
             id: m.id.to_string(),
             handle: m.id.handle(),
@@ -124,12 +131,22 @@ impl MilestoneView {
                     text: c.text.clone(),
                     bound: c.bound,
                     state: if c.bound { "bound" } else { "unbound" }.to_owned(),
+                    attested: bindings[i]
+                        .iter()
+                        .any(|b| attestations.contains_key(&b.event.to_string())),
                     bound_by: std::mem::take(&mut bindings[i])
                         .into_iter()
-                        .map(|b| BoundBy {
-                            event: b.event.to_string(),
-                            provider: b.provider,
-                            reference: b.reference,
+                        .map(|b| {
+                            let attestation = attestations.get(&b.event.to_string()).cloned();
+                            BoundBy {
+                                event: b.event.to_string(),
+                                provider: b.provider,
+                                reference: b.reference,
+                                label: attestation
+                                    .as_ref()
+                                    .map(frob_evidence::record::Attestation::label),
+                                attestation,
+                            }
                         })
                         .collect(),
                 })
@@ -138,6 +155,32 @@ impl MilestoneView {
             updated: m.updated,
         }
     }
+}
+
+/// The attestations among the evidence events of milestone `m`, by event id.
+fn attestations_of(
+    ledger: &Ledger,
+    m: &Milestone,
+) -> std::collections::BTreeMap<String, frob_evidence::record::Attestation> {
+    let events = PmStore::new(ledger)
+        .evidence_events(m.id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(milestone = %m.id, error = %e, "evidence events unreadable");
+            Vec::new()
+        });
+    events
+        .into_iter()
+        .filter_map(|(ev, data)| {
+            let id = ev.id.to_string();
+            match frob_evidence::events::record_from_data(&id, &data) {
+                Ok(r) => r.attestation.map(|a| (id, a)),
+                Err(e) => {
+                    tracing::warn!(event = %id, error = %e, "evidence record unreadable");
+                    None
+                }
+            }
+        })
+        .collect()
 }
 
 /// Output of `milestone new`, `add` and `show`.

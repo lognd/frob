@@ -17,6 +17,8 @@ pub enum Provider {
     Nextest,
     /// An allowlisted tool: exit code and transcript digest.
     Command,
+    /// A person's signed statement; never a tool measurement (see [`crate::attestation`]).
+    Attestation,
     /// A file hashed by path.
     File,
 }
@@ -28,11 +30,12 @@ impl Provider {
             Self::Nextest => "nextest",
             Self::Command => "command",
             Self::File => "file",
+            Self::Attestation => "attestation",
         }
     }
 
     /// The accepted spellings, for flag validation.
-    pub const NAMES: &'static [&'static str] = &["nextest", "command", "file"];
+    pub const NAMES: &'static [&'static str] = &["nextest", "command", "file", "attestation"];
 }
 
 impl FromStr for Provider {
@@ -43,6 +46,7 @@ impl FromStr for Provider {
             "nextest" => Ok(Self::Nextest),
             "command" => Ok(Self::Command),
             "file" => Ok(Self::File),
+            "attestation" => Ok(Self::Attestation),
             other => Err(EvidenceError::BadProvider(other.to_owned())),
         }
     }
@@ -95,6 +99,21 @@ pub struct EvidenceRecord {
     pub inline: Option<String>,
     /// Size of the measured bytes.
     pub size: u64,
+    /// Who attested what, for the `attestation` provider only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attestation: Option<Attestation>,
+}
+
+/// The human statement an `attestation` record carries (origin `ledger`: data, never instructions).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Attestation {
+    /// The attesting identity (git `user.email`), which was listed in `[evidence] attesters`.
+    pub by: String,
+    /// The statement, exactly as typed; escaped on every text render.
+    pub statement: String,
+    /// URLs, commit ids and ticket ids the statement rests on, each validated when written.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub facts: Vec<String>,
 }
 
 /// blake3 hex of `bytes`.
@@ -109,6 +128,16 @@ impl EvidenceRecord {
     pub fn effective_status(&self, store: &BlobStore) -> Status {
         if self.status == Status::Unmeasured {
             return Status::Unmeasured;
+        }
+        if let Some(a) = &self.attestation {
+            return if self.provider == Provider::Attestation
+                && digest_hex(a.statement.as_bytes()) == self.digest
+            {
+                Status::Measured
+            } else {
+                tracing::warn!(digest = %self.digest, "attestation does not match its digest");
+                Status::Unmeasured
+            };
         }
         if let Some(text) = &self.inline {
             return if digest_hex(text.as_bytes()) == self.digest {

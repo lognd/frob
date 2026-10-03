@@ -423,6 +423,32 @@ security, story, incident and invariant, and `ticket close
 event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
 
+**Attestation** (~7KQSA8Z, release 0.532.0). Some criteria cannot be
+measured by a tool (two outside repositories managed for two cycles with
+no data loss). `--provider attestation --statement TEXT [--fact F]...`
+(ticket and milestone `evidence add`) records a person's statement: the
+text, the attesting identity (git `user.email`) and the facts it rests on
+(https URLs, commit ids and ticket handles or ULIDs; shape is checked and
+commits and tickets must exist). It is recorded as measured and passed
+only when the identity is listed in `[evidence] attesters` and the call
+comes from a TTY on stdin and stdout with no known agent marker in the
+environment (`CLAUDECODE`, `CLAUDE_CODE_ENTRYPOINT`, `CODEX_SANDBOX`,
+`CODEX_CI`, `GEMINI_CLI`, `CURSOR_AGENT`, `OPENCODE`, `FROB_AGENT`); the
+pattern of security.md 2.3 (no `--yes`; the refusal is exit 3 with the
+JSON `requires_human = true` and a prose remedy, never a command for an
+agent; nothing is written). The knob `[evidence] attesters` is
+materialized: `frob init` and `frob config sync` write the repository
+owner (git `user.email`) into it, and an empty list means nobody may
+attest (fail closed; the refusal says so). The statement is ledger data
+(origin `ledger`, security.md 2.10): JSON keeps it exact, every text
+render goes through `Attestation::label` which escapes it and shows
+`[attested by X: "statement"]`, so an attestation never reads as a tool
+measurement in `ticket show` and `brief`, `milestone show`, `milestone
+evidence list` and `release status`. Binding uses the ordinary rule
+(latest record per provider, ref and criterion), the ref being a digest
+key of the statement. The TTY check stops scripts and obedient agents,
+not a goal-seeking process running as the same user (security.md 2.3).
+
 ## 10. Landing
 
 Reduced to the transaction v1 kept proving it needed: validate (close

@@ -22,8 +22,45 @@ pub enum EvidenceError {
         /// The filter arguments as given in `--ref`.
         filter: String,
     },
+    /// An attestation was attempted without a person at a terminal.
+    #[error("E-ATTEST-NOT-HUMAN: an attestation is a person's statement; refused because {}", .reasons.join("; "))]
+    NotHuman {
+        /// Why presence failed: a stream is not a terminal, or an agent marker is set.
+        reasons: Vec<String>,
+    },
+    /// The attesting identity is not listed in `[evidence] attesters`.
+    #[error("{}", not_attester_message(.identity.as_ref(), .listed))]
+    NotAttester {
+        /// The identity found (git `user.email`), when there is one.
+        identity: Option<String>,
+        /// The identities `[evidence] attesters` lists.
+        listed: Vec<String>,
+    },
+    /// The statement is empty.
+    #[error("E-ATTEST-STATEMENT: an attestation needs a non-empty --statement")]
+    EmptyStatement,
+    /// A fact is not a URL, a commit id or a ticket id.
+    #[error(
+        "E-ATTEST-FACT: `{fact}` is not an https/http URL, a commit id (7 to 40 hex digits) or a ticket handle or ULID"
+    )]
+    BadFact {
+        /// The fact as given.
+        fact: String,
+    },
+    /// A commit or ticket named by a fact does not exist.
+    #[error(
+        "E-ATTEST-FACT-MISSING: {kind} `{fact}` does not exist in this repository; nothing was recorded"
+    )]
+    MissingFact {
+        /// `commit` or `ticket`.
+        kind: &'static str,
+        /// The fact as given.
+        fact: String,
+    },
     /// A provider name is not one of `nextest`, `command`, `file`.
-    #[error("E-EVIDENCE-PROVIDER: `{0}` is not a provider; expected nextest, command or file")]
+    #[error(
+        "E-EVIDENCE-PROVIDER: `{0}` is not a provider; expected nextest, command, file or attestation"
+    )]
     BadProvider(String),
     /// An acceptance index is zero or beyond the ticket's criteria.
     #[error("E-EVIDENCE-ACCEPTS: {0}")]
@@ -78,6 +115,36 @@ impl EvidenceError {
                     format!("add \"{tool}\" to [evidence] allowed_tools in frob.toml"),
                 ),
             ),
+            Self::NotHuman { .. } => Some(
+                Refusal::new("E-ATTEST-NOT-HUMAN", GuardNeedsAction, self.to_string())
+                    .with_remedy(
+                        "stop and tell the user which criterion needs an attestation; only a person at an interactive terminal can make it, and an agent never attests",
+                    )
+                    .requiring_human(),
+            ),
+            Self::NotAttester { .. } => Some(
+                Refusal::new("E-ATTEST-NOT-ATTESTER", GuardNeedsAction, self.to_string())
+                    .with_remedy(
+                        "the repository owner must list the attesting identity under [evidence] attesters in frob.toml; an agent must not edit that list",
+                    )
+                    .requiring_human(),
+            ),
+            Self::EmptyStatement => Some(
+                Refusal::new("E-ATTEST-STATEMENT", UsageError, self.to_string())
+                    .with_remedy("pass the statement text with --statement"),
+            ),
+            Self::BadFact { .. } => Some(
+                Refusal::new("E-ATTEST-FACT", UsageError, self.to_string())
+                    .with_remedy("pass each fact as an https URL, a commit id or a ~handle"),
+            ),
+            Self::MissingFact { kind, .. } => Some(
+                Refusal::new("E-ATTEST-FACT-MISSING", GuardNeedsAction, self.to_string())
+                    .with_remedy(if *kind == "commit" {
+                        "find the commit id with: git log --oneline"
+                    } else {
+                        "find the ticket handle with: frob ticket list"
+                    }),
+            ),
             Self::BadReference(_) | Self::BadProvider(_) | Self::BadAccepts(_) => {
                 Some(Refusal::new(code_of(&self), UsageError, self.to_string()))
             }
@@ -108,6 +175,19 @@ impl EvidenceError {
             None => CliError::internal(self),
         }
     }
+}
+
+fn not_attester_message(identity: Option<&String>, listed: &[String]) -> String {
+    let who = identity.map_or_else(
+        || "no git user.email is set".to_owned(),
+        |i| format!("`{i}` is not an attester"),
+    );
+    let list = if listed.is_empty() {
+        "[evidence] attesters is empty, so nobody may attest (frob init and frob config sync write the repository owner's git user.email there)".to_owned()
+    } else {
+        format!("[evidence] attesters lists {}", listed.join(", "))
+    };
+    format!("E-ATTEST-NOT-ATTESTER: {who}; {list}")
 }
 
 fn code_of(e: &EvidenceError) -> &'static str {

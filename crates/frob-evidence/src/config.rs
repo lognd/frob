@@ -7,7 +7,7 @@ pub const DEFAULT_STORE: &str = "dir:.git/frob/artifacts";
 
 /// How evidence is captured and where large blobs go.
 #[derive(Debug, Clone, ConfigTable)]
-#[config(table = "evidence")]
+#[config(table = "evidence", materialize)]
 pub struct EvidenceTable {
     /// Programs the `command` provider may run (the first word of the command must be listed).
     #[config(default = vec!["cargo".to_owned(), "git".to_owned()])]
@@ -21,6 +21,9 @@ pub struct EvidenceTable {
     /// Wall-clock limit in seconds for one provider process.
     #[config(default = 1800)]
     pub timeout_secs: u64,
+    /// Identities (git `user.email`) that may attest a criterion; `frob init` and `config sync` write the repository owner's email, and an empty list means nobody may.
+    #[config(default = Vec::<String>::new(), enforcement)]
+    pub attesters: Vec<String>,
     /// Value for `cargo nextest run --profile`; empty leaves nextest's own default.
     #[config(default = String::new())]
     pub nextest_profile: String,

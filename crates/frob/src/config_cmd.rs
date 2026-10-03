@@ -65,7 +65,7 @@ fn missing_knobs(
 }
 
 /// Supplies the repository-detected default for a missing dotted knob, or `None` to keep the static default; never called for a present knob.
-pub(crate) type Detect<'a> = &'a dyn Fn(&str) -> Result<Option<String>, CliError>;
+pub(crate) type Detect<'a> = &'a dyn Fn(&str) -> Result<Option<toml::Value>, CliError>;
 
 /// Write every missing materialized knob of all registered tables; `detect` (when given) replaces the static default of each absent knob it answers for.
 pub(crate) fn sync_config(
@@ -79,11 +79,11 @@ pub(crate) fn sync_config(
         let (missing, _) = missing_knobs(root, &refs)?;
         for key in &missing {
             let Some(value) = detect(key)? else { continue };
-            tracing::info!(key, value, "knob default detected from the repository");
+            tracing::info!(key, %value, "knob default detected from the repository");
             for d in &mut descs {
                 for f in &mut d.fields {
                     if format!("{}.{}", d.table, f.key) == *key {
-                        f.default_toml = toml::Value::String(value.clone()).to_string();
+                        f.default_toml = value.to_string();
                     }
                 }
             }

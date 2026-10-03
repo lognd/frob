@@ -315,6 +315,7 @@ fn facts(m: &Milestone, ledger: &Ledger) -> Result<MilestoneFacts, CliError> {
                     .map(|b| EvidenceRef {
                         provider: b.provider,
                         reference: b.reference,
+                        label: b.label,
                     })
                     .collect(),
             })

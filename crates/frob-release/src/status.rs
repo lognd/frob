@@ -48,6 +48,9 @@ pub struct EvidenceRef {
     pub provider: String,
     /// What was measured.
     pub reference: String,
+    /// `[attested by X: "statement"]` (escaped) when a person attested rather than a tool measured.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
 }
 
 /// One exit criterion as the report shows it.
@@ -330,7 +333,11 @@ fn glance(r: &Report, input: &Input) -> Vec<String> {
         let by: Vec<String> = c
             .evidence
             .iter()
-            .map(|e| format!("{}:{}", e.provider, e.reference))
+            .map(|e| {
+                e.label
+                    .clone()
+                    .unwrap_or_else(|| format!("{}:{}", e.provider, e.reference))
+            })
             .collect();
         let tail = if by.is_empty() {
             String::new()
@@ -421,6 +428,7 @@ mod tests {
                 vec![EvidenceRef {
                     provider: "cargo-test".to_owned(),
                     reference: "ws".to_owned(),
+                    label: None,
                 }]
             } else {
                 Vec::new()

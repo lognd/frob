@@ -71,6 +71,8 @@ pub struct Refusal {
     pub message: String,
     /// The exact corrected command, when one exists.
     pub remedy: Option<String>,
+    /// True when only a person at a terminal can act; `remedy` is then prose, not a command.
+    pub requires_human: bool,
 }
 
 impl Refusal {
@@ -81,6 +83,7 @@ impl Refusal {
             class,
             message: message.into(),
             remedy: None,
+            requires_human: false,
         };
         tracing::debug!(code = %r.code, ?class, "refusal built");
         r
@@ -90,6 +93,13 @@ impl Refusal {
     #[must_use]
     pub fn with_remedy(mut self, remedy: impl Into<String>) -> Self {
         self.remedy = Some(remedy.into());
+        self
+    }
+
+    /// Mark the remedy as a person's to carry out: an agent must stop and tell the user.
+    #[must_use]
+    pub const fn requiring_human(mut self) -> Self {
+        self.requires_human = true;
         self
     }
 
@@ -106,6 +116,7 @@ impl From<&Refusal> for EnvelopeError {
             message: r.message.clone(),
             remedy: r.remedy.clone(),
             retryable: r.class.retryable(),
+            requires_human: r.requires_human,
         }
     }
 }

@@ -138,6 +138,11 @@ pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Executi
     if let Some(remedy) = &body.remedy {
         let _ = writeln!(text, "  remedy: {remedy}");
     }
+    if body.requires_human {
+        text.push_str(
+            "  requires_human: a person must do this; an agent must stop and tell the user\n",
+        );
+    }
     Execution {
         exit,
         stdout: String::new(),
@@ -161,6 +166,7 @@ fn plain(code: &str, message: String) -> EnvelopeError {
         message,
         remedy: None,
         retryable: false,
+        requires_human: false,
     }
 }
 

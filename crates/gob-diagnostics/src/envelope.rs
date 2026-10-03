@@ -19,6 +19,9 @@ pub struct EnvelopeError {
     pub remedy: Option<String>,
     /// True when the same argv may succeed later with no caller action.
     pub retryable: bool,
+    /// True when `remedy` is prose for a person, never a command an agent may run (security.md 2.3).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub requires_human: bool,
 }
 
 /// The envelope wrapping every result; field order is the wire order.

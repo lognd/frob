@@ -1,0 +1,1 @@
+frob: Added the `attestation` evidence provider for ticket and milestone criteria that no tool can measure; only a listed `[evidence] attesters` identity at a terminal, with no agent marker, can attest, and every view labels it as an attestation. `milestone criterion remove` now reports the evidence it loses.

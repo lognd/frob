@@ -45,6 +45,98 @@ impl From<&Event> for EventView {
     }
 }
 
+/// One evidence record of a ticket as `show` and `brief` present it: an attestation is labelled, never a measurement.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct EvidenceView {
+    /// The evidence event id.
+    pub event: String,
+    /// `nextest`, `command`, `file` or `attestation`.
+    pub provider: String,
+    /// What was measured (for an attestation, a digest key of the statement).
+    pub reference: String,
+    /// The criteria it is offered for, numbered as they are now (removed ones dropped).
+    pub accepts: Vec<usize>,
+    /// The verdict, when there is one.
+    pub passed: Option<bool>,
+    /// `[attested by X: "statement"]` (escaped, origin ledger) when a person attested; absent for a tool measurement.
+    pub label: Option<String>,
+    /// The attestation exactly as stored; text renders use `label`.
+    pub attestation: Option<frob_evidence::record::Attestation>,
+}
+
+impl EvidenceView {
+    /// The one-line markdown form: attestations lead with their label, tool records with provider and verdict.
+    fn line(&self) -> String {
+        let at = if self.accepts.is_empty() {
+            "no criterion".to_owned()
+        } else {
+            format!(
+                "criterion {}",
+                self.accepts
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        };
+        if let (Some(label), Some(a)) = (&self.label, &self.attestation) {
+            let facts = if a.facts.is_empty() {
+                String::new()
+            } else {
+                let each: Vec<String> = a
+                    .facts
+                    .iter()
+                    .map(|f| frob_evidence::attestation::escape_line(f))
+                    .collect();
+                format!(" (facts: {})", each.join(", "))
+            };
+            return format!("- {at}: {label}{facts}");
+        }
+        let verdict = match self.passed {
+            Some(true) => "passed",
+            Some(false) => "failed",
+            None => "recorded",
+        };
+        format!(
+            "- {at}: {} {} {verdict}",
+            self.provider,
+            frob_evidence::attestation::escape_line(&self.reference)
+        )
+    }
+}
+
+/// The evidence records of ticket `id`, criteria renumbered to now, attestations labelled.
+fn evidence_views(
+    ledger: &frob_ledger::Ledger,
+    id: TicketId,
+) -> Result<Vec<EvidenceView>, CliError> {
+    let mut out = Vec::new();
+    for stored in
+        frob_evidence::events::list(ledger, id).map_err(frob_evidence::EvidenceError::into_cli)?
+    {
+        let event: frob_ledger::EventId = stored
+            .event
+            .parse()
+            .map_err(|e: frob_ledger::id::ParseIdError| CliError::internal(e))?;
+        let accepts = ledger
+            .criteria_now(id, event, &stored.record.accepts)
+            .map_err(cli_err)?
+            .into_iter()
+            .flatten()
+            .collect();
+        out.push(EvidenceView {
+            event: stored.event,
+            provider: stored.record.provider.as_str().to_owned(),
+            label: stored.record.attestation_label(),
+            reference: stored.record.reference,
+            accepts,
+            passed: stored.record.passed,
+            attestation: stored.record.attestation,
+        });
+    }
+    Ok(out)
+}
+
 /// Output of `ticket show`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct ShowData {
@@ -55,6 +147,8 @@ pub struct ShowData {
     pub fields: serde_json::Map<String, serde_json::Value>,
     /// The timeline, with `--events`.
     pub events: Option<Vec<EventView>>,
+    /// Evidence records, each attestation marked as one.
+    pub evidence: Vec<EvidenceView>,
 }
 
 /// Show one ticket from the index; `--events` adds its timeline.
@@ -106,10 +200,12 @@ impl Command for Show {
             None
         };
         let fields = frob_ledger::schema::field_map(&view.ticket);
+        let evidence = evidence_views(&ledger, id)?;
         Ok(Payload::new(ShowData {
             view,
             fields,
             events,
+            evidence,
         }))
     }
 }
@@ -312,7 +408,15 @@ impl Command for Brief {
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
         let view = ledger.show(id).map_err(cli_err)?;
-        let markdown = ledger.brief(id).map_err(cli_err)?;
+        let mut markdown = ledger.brief(id).map_err(cli_err)?;
+        let evidence = evidence_views(&ledger, id)?;
+        if !evidence.is_empty() {
+            markdown.push_str("\n## Evidence\n\n");
+            for e in &evidence {
+                markdown.push_str(&e.line());
+                markdown.push('\n');
+            }
+        }
         Ok(Payload::new(BriefData {
             id,
             handle: view.summary.handle,

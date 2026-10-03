@@ -6,9 +6,10 @@
 //! `allowed_tools` allowlist and measurement are identical; only the target
 //! differs (a milestone's `evidence` event instead of a ticket's).
 
+use frob_evidence::attestation::Presence;
 use frob_evidence::events::{self, StoredEvidence};
 use frob_evidence::verbs::{CaptureArgs, ListData, Listed, capture_args, with_record_warnings};
-use frob_evidence::{EvidenceError, EvidenceRecord, Workspace, provider};
+use frob_evidence::{EvidenceError, EvidenceRecord, Workspace};
 use frob_pm::{Milestone, PmStore};
 use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
@@ -102,6 +103,33 @@ impl Command for CriterionAdd {
     }
 }
 
+/// An evidence record whose exit criterion a removal took away.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct LostEvidence {
+    /// The evidence event id.
+    pub event: String,
+    /// The provider that measured it.
+    pub provider: String,
+    /// What was measured (the record's `ref`).
+    pub reference: String,
+    /// `[attested by X: "statement"]` (escaped) when the lost record was an attestation.
+    pub label: Option<String>,
+    /// The removed criterion it was offered for, numbered as before this removal.
+    pub lost: Vec<usize>,
+    /// Its criteria that survive, numbered as after this removal.
+    pub kept: Vec<usize>,
+}
+
+/// Output of `milestone criterion remove`: the milestone plus the evidence that lost its criterion.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct CriterionRemoveData {
+    /// The milestone after the removal, with the events and commit.
+    #[serde(flatten)]
+    pub change: MilestoneData,
+    /// Evidence that was offered for the removed criterion and now binds nothing there.
+    pub lost_evidence: Vec<LostEvidence>,
+}
+
 /// Remove the exit criterion at a 1-based position; evidence for later criteria follows its criterion.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
@@ -115,7 +143,7 @@ pub struct CriterionRemove {
 }
 
 impl Command for CriterionRemove {
-    type Data = MilestoneData;
+    type Data = CriterionRemoveData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
         cmd.arg(version_arg()).arg(
@@ -137,19 +165,76 @@ impl Command for CriterionRemove {
         })
     }
 
-    fn run(&self, ctx: &Context) -> Outcome<MilestoneData> {
+    fn run(&self, ctx: &Context) -> Outcome<CriterionRemoveData> {
         let ledger = open(ctx)?;
         let store = PmStore::new(&ledger);
         let m = find(store, &self.version)?;
         if self.position == 0 || self.position > m.criteria.len() {
             return Err(bad_position(&m, self.position));
         }
+        let lost = lost_evidence(store, &m, self.position)?;
         let a = store
             .remove_criterion(m.id, self.position)
             .map_err(pm_err)?;
-        tracing::info!(version = %m.version, position = self.position, "milestone criterion remove");
-        Ok(Payload::new(data(&m, &ledger, Some(a))))
+        tracing::info!(version = %m.version, position = self.position, lost = lost.len(), "milestone criterion remove");
+        let note = (!lost.is_empty()).then(|| {
+            let each: Vec<String> = lost
+                .iter()
+                .map(|l| {
+                    format!(
+                        "{} ({} {}) lost criteria {:?}",
+                        l.event,
+                        l.provider,
+                        l.label.as_deref().unwrap_or(&l.reference),
+                        l.lost
+                    )
+                })
+                .collect();
+            format!(
+                "evidence lost its exit criterion: {}; re-offer it with a new `milestone evidence add --accepts N`",
+                each.join("; ")
+            )
+        });
+        let out = Payload::new(CriterionRemoveData {
+            change: data(&m, &ledger, Some(a)),
+            lost_evidence: lost,
+        });
+        Ok(note.into_iter().fold(out, Payload::with_warning))
     }
+}
+
+/// The evidence of `m` that criterion `position` carries, as the report of a removal.
+fn lost_evidence(
+    store: PmStore<'_>,
+    m: &Milestone,
+    position: usize,
+) -> Result<Vec<LostEvidence>, CliError> {
+    let lost = store.lost_evidence(m.id, position).map_err(pm_err)?;
+    let records: std::collections::BTreeMap<String, EvidenceRecord> = store
+        .evidence_events(m.id)
+        .map_err(pm_err)?
+        .into_iter()
+        .filter_map(|(ev, d)| {
+            let id = ev.id.to_string();
+            events::record_from_data(&id, &d).ok().map(|r| (id, r))
+        })
+        .collect();
+    Ok(lost
+        .into_iter()
+        .map(|l| {
+            let event = l.event.to_string();
+            LostEvidence {
+                label: records
+                    .get(&event)
+                    .and_then(EvidenceRecord::attestation_label),
+                event,
+                provider: l.provider,
+                reference: l.reference,
+                lost: l.lost,
+                kept: l.kept,
+            }
+        })
+        .collect())
 }
 
 /// Output of `milestone evidence add`.
@@ -197,51 +282,58 @@ impl Command for EvidenceAdd {
 
     fn run(&self, ctx: &Context) -> Outcome<EvidenceAddData> {
         let ws = Workspace::open(&ctx.cwd).map_err(EvidenceError::into_cli)?;
-        let store = PmStore::new(&ws.ledger);
-        let m = find(store, &self.version)?;
-        if let Some(bad) = self
-            .args
-            .accepts
-            .iter()
-            .find(|n| **n == 0 || **n > m.criteria.len())
-        {
-            return Err(ev_err(EvidenceError::BadAccepts(format!(
-                "--accepts {bad} but milestone {} has {} exit criteria (1-based)",
-                m.version,
-                m.criteria.len()
-            ))));
-        }
-        let record = provider::capture(
-            &ws,
-            self.args.provider,
-            &self.args.reference,
-            &self.args.accepts,
-        )
-        .map_err(ev_err)?;
-        let applied = store
-            .add_evidence(m.id, events::to_data(&record).map_err(ev_err)?)
-            .map_err(pm_err)?;
-        let event = applied
-            .events
-            .first()
-            .map(ToString::to_string)
-            .ok_or_else(|| {
-                CliError::internal(EvidenceError::Malformed(
-                    "the evidence event was not written".to_owned(),
-                ))
-            })?;
-        let frob_pm::Object::Milestone(after) = applied.object else {
-            unreachable!("a milestone event folds to a milestone")
-        };
-        tracing::info!(version = %after.version, %event, "milestone evidence add");
-        let payload = Payload::new(EvidenceAddData {
-            milestone: MilestoneView::of(&after, &ws.ledger),
-            event,
-            commit: applied.commit,
-            record: record.clone(),
-        });
-        Ok(with_record_warnings(payload, &record))
+        add_evidence(&ws, &self.version, &self.args, &Presence::detect())
     }
+}
+
+/// Capture evidence for milestone `version` and append it; an attestation needs `presence` to show a person.
+///
+/// # Errors
+///
+/// A refusal for an unknown version, a bad `--accepts`, a failed attestation check or a ledger failure; nothing is written then.
+pub fn add_evidence(
+    ws: &Workspace,
+    version: &str,
+    args: &CaptureArgs,
+    presence: &Presence,
+) -> Outcome<EvidenceAddData> {
+    let store = PmStore::new(&ws.ledger);
+    let m = find(store, version)?;
+    if let Some(bad) = args
+        .accepts
+        .iter()
+        .find(|n| **n == 0 || **n > m.criteria.len())
+    {
+        return Err(ev_err(EvidenceError::BadAccepts(format!(
+            "--accepts {bad} but milestone {} has {} exit criteria (1-based)",
+            m.version,
+            m.criteria.len()
+        ))));
+    }
+    let record = args.capture(ws, presence).map_err(ev_err)?;
+    let applied = store
+        .add_evidence(m.id, events::to_data(&record).map_err(ev_err)?)
+        .map_err(pm_err)?;
+    let event = applied
+        .events
+        .first()
+        .map(ToString::to_string)
+        .ok_or_else(|| {
+            CliError::internal(EvidenceError::Malformed(
+                "the evidence event was not written".to_owned(),
+            ))
+        })?;
+    let frob_pm::Object::Milestone(after) = applied.object else {
+        unreachable!("a milestone event folds to a milestone")
+    };
+    tracing::info!(version = %after.version, %event, provider = record.provider.as_str(), "milestone evidence add");
+    let payload = Payload::new(EvidenceAddData {
+        milestone: MilestoneView::of(&after, &ws.ledger),
+        event,
+        commit: applied.commit,
+        record: record.clone(),
+    });
+    Ok(with_record_warnings(payload, &record))
 }
 
 /// List the evidence records of a milestone with their effective status.
@@ -284,6 +376,7 @@ impl Command for EvidenceList {
             records.push(Listed {
                 index: i + 1,
                 effective_status: record.effective_status(&ws.store),
+                label: record.attestation_label(),
                 stored: StoredEvidence {
                     event: ev.id.to_string(),
                     at: ev.at.to_string(),

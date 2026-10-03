@@ -11,6 +11,13 @@ use serde_json::Value;
 fn repo() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     gob_git::Repo::init(dir.path()).expect("git init");
+    // A fixed owner email: init writes it as `[evidence] attesters`, so snapshots must not depend on the machine's git config.
+    let status = std::process::Command::new("git")
+        .args(["config", "user.email", "test@example.com"])
+        .current_dir(dir.path())
+        .status()
+        .expect("git config");
+    assert!(status.success(), "git config user.email");
     dir
 }
 
@@ -46,7 +53,7 @@ fn doctor_piped_is_json_envelope_even_with_cfg001() {
     assert_eq!(v["ok"], true);
     assert_eq!(v["verb"], "doctor");
     let findings = v["findings"].as_array().expect("findings");
-    assert_eq!(findings.len(), 15, "one CFG001 per materialized knob");
+    assert_eq!(findings.len(), 16, "one CFG001 per materialized knob");
     assert!(findings.iter().all(|f| f["rule"] == "CFG001"));
     assert_json_snapshot!("doctor_fresh_repo", v, {
         ".data.toolchain.rustc" => "[version]",
@@ -310,6 +317,7 @@ fn config_sync_adds_missing_knobs_once() {
             "compute.normalization",
             "compute.notebook_order",
             "directives.namespaces",
+            "evidence.attesters",
             "tickets.ref",
             "tickets.ref_mode"
         ])

@@ -112,7 +112,7 @@ pub(crate) fn default_branch(repo: &Repo, root: &Path) -> Result<String, CliErro
     Ok(branch)
 }
 
-/// The detected default of the absent knob `key` (`tickets.ref`, `check.base`), or `None` for knobs without detection.
+/// The detected default of the absent knob `key` (`tickets.ref`, `check.base`, `evidence.attesters`), or `None` for knobs without detection.
 ///
 /// # Errors
 /// The refusal of the underlying detection (a detached `HEAD`).
@@ -120,11 +120,27 @@ pub(crate) fn detected_default(
     repo: &Repo,
     root: &Path,
     key: &str,
-) -> Result<Option<String>, CliError> {
+) -> Result<Option<toml::Value>, CliError> {
+    let text = |s: String| Some(toml::Value::String(s));
     match key {
-        "tickets.ref" => ledger_ref_of_current_branch(repo).map(Some),
-        "check.base" => default_branch(repo, root).map(Some),
+        "tickets.ref" => ledger_ref_of_current_branch(repo).map(text),
+        "check.base" => default_branch(repo, root).map(text),
+        "evidence.attesters" => Ok(owner_attesters(repo)),
         _ => Ok(None),
+    }
+}
+
+/// The repository owner as the one attester: git `user.email`, or `None` (the knob stays empty, so nobody may attest) when none is set.
+fn owner_attesters(repo: &Repo) -> Option<toml::Value> {
+    match repo.config_user() {
+        Some((_, email)) if !email.trim().is_empty() => {
+            tracing::info!(email, "repository owner detected as the attester");
+            Some(toml::Value::Array(vec![toml::Value::String(email)]))
+        }
+        _ => {
+            tracing::warn!("no git user.email; [evidence] attesters stays empty");
+            None
+        }
     }
 }
 

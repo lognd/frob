@@ -318,6 +318,7 @@ pub fn build_record(
         failed_tests: capture.failed_tests.clone(),
         inline,
         size: redacted.len() as u64,
+        attestation: None,
     })
 }
 
@@ -344,6 +345,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize]) -> Result<EvidenceR
         failed_tests: Vec::new(),
         inline: None,
         size: bytes.len() as u64,
+        attestation: None,
     })
 }
 
@@ -367,6 +369,9 @@ pub fn capture(
     );
     match provider {
         Provider::File => hash_file(&ws.root, reference, accepts),
+        Provider::Attestation => Err(EvidenceError::BadReference(
+            "an attestation is made with --statement through attestation::attest, never captured from a reference".to_owned(),
+        )),
         Provider::Nextest => {
             let args = split_args(reference)?;
             let cap = run_nextest(

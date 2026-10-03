@@ -562,6 +562,7 @@ fn evidence_events(
             failed_tests: Vec::new(),
             inline: None,
             size: 0,
+            attestation: None,
         };
         out.push(evidence_text(id, at, &record)?);
     }

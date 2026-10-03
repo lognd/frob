@@ -304,14 +304,12 @@ fn check_after_init_on_a_fresh_repository_passes() {
 #[test]
 fn usage_error_names_the_missing_arguments() {
     let repo = Fresh::new("main");
-    let out = Fresh::frob(
-        &repo.root,
-        &["ticket", "evidence", "add", "~X", "--accepts", "1"],
-    );
+    // `ticket evidence add` takes `--ref` only for non-attestation providers (checked after parsing), so two clap-required arguments come from `milestone new`.
+    let out = Fresh::frob(&repo.root, &["milestone", "new"]);
     let error = json(&out)["error"].clone();
     let msg = error["message"].as_str().expect("message").to_owned();
     assert!(
-        msg.contains("--provider") && msg.contains("--ref"),
+        msg.contains("--goal") && msg.contains("<VERSION>"),
         "usage error message is `{msg}`"
     );
     let remedy = error["remedy"].as_str().expect("remedy");

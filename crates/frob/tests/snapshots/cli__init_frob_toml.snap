@@ -32,6 +32,10 @@ notebook_order = "warn-unresolved"
 # Comment namespaces the scanner reads; comments in any other are ignored.
 namespaces = ["frob", "grimble", "crunk"]
 
+[evidence]
+# Identities (git `user.email`) that may attest a criterion; `frob init` and `config sync` write the repository owner's email, and an empty list means nobody may.
+attesters = ["test@example.com"]
+
 [git]
 # Compare-and-swap retries when moving a ledger ref.
 cas_retries = 5
