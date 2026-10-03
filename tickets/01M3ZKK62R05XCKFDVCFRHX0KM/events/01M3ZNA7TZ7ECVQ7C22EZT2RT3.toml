@@ -1,0 +1,10 @@
+kind = "evidence"
+at = "2026-10-03T01:16:03Z"
+actor = "lognd"
+rev = 1
+provider = "file"
+ref = "grimble.toml"
+digest = "24502a9bb42359f8c3a28fe358d01b82635ba1bf7510fa7654f3d4b996b8fbaf"
+status = "measured"
+captured_at = "2026-10-03T01:16:03Z"
+size = 1219
