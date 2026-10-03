@@ -1,0 +1,1 @@
+frob: The release workflow now installs rustup-init (a versioned download checked against its sha256) and maturin (--require-hashes) only from hash-pinned sources, and the no-sdist decision is recorded.

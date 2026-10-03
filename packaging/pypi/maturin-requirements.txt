@@ -1,0 +1,12 @@
+# maturin, pinned by version and sha256 for `uv pip install --require-hashes --no-deps`
+# (packaging/pypi/build-wheel.sh). Hashes: https://pypi.org/pypi/maturin/1.15.0/json
+# (urls[].digests.sha256), the wheels the release matrix can install: manylinux
+# x86_64 and aarch64 (the containers), macOS (arm64 universal2, x86_64) and Windows x86_64.
+# No sdist hash: a source build is never wanted. To bump, replace the version and every
+# hash from the new release's JSON in one change.
+maturin==1.15.0 \
+    --hash=sha256:653020a63525bb224e5ab0adf02e17a2e08bc86dbea7fc1399c9a56d7529b99e \
+    --hash=sha256:0ebf9767892725083138e671c34482c660317a2f3d6a29fc0e0f34e9d8c99136 \
+    --hash=sha256:cd35772633f489841132bc8e71d6fc7f842df30b9c05cd5cdf1ee1ddcb744cc7 \
+    --hash=sha256:c40b4eae7bf5ef1f4b1af8d623fe4105016f93578fb15b764e741d08ec3b92dd \
+    --hash=sha256:552c2be4afd43fe8d5c9f3ec8d4c4756d973b8dcbe94c14084390301f50243e1
