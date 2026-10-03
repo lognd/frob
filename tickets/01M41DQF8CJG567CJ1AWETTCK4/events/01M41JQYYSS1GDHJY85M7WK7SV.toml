@@ -1,0 +1,53 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T19:09:36Z"
+digest = "5606966bbb3e69eaecee40cbccd2a4dbf4cdebbefc11db86679a6187950ff3f7"
+exit_code = 0
+inline = '''
+   Compiling serde_json v1.0.151
+   Compiling aho-corasick v1.1.5
+   Compiling pest_generator v2.9.2
+   Compiling pest_derive v2.9.2
+   Compiling tree-sitter v0.27.0
+   Compiling regex-automata v0.4.18
+   Compiling insta v1.48.0
+   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/gob-symbols)
+   Compiling regex v1.13.1
+   Compiling error_set_impl v0.9.2
+   Compiling error_set v0.9.2
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-ledger)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/gob-directives)
+   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/gob-check)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-ack)
+   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/grimble-model)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-pm)
+   Compiling grimble-bind v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/grimble-bind)
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-release)
+   Compiling grimble-check v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/grimble-check)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-lease)
+   Compiling grimble v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/grimble)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/WETTCK4/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.88s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 24965cc6-837d-4d7d-8325-cc7fbb10946b with nextest profile: default
+    Starting 1 test across 24 binaries (195 tests skipped)
+        PASS [   6.036s] frob-cli::milestone pm001_fires_on_a_milestone_with_no_tickets
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   6.037s] 1 test run: 1 passed, 195 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(pm001_fires_on_a_milestone_with_no_tickets)'"
+size = 2732
+status = "measured"
+tests = ["pm001_fires_on_a_milestone_with_no_tickets"]
+at = "2026-10-03T19:09:36Z"
+actor = "lognd"
+rev = 1
