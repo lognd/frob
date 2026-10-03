@@ -28,11 +28,11 @@ target = "01M3WYJ80NQWKC2VVY6AFX52KA"
 
 [[acceptance]]
 text = "Given each rule's corpus, when the mdtests run, then every rule has a passing fire and clean case"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a frob:defer bound to a ticket that is done, when check runs, then EXC003 fires and the suppressed finding is shown"
-bound = false
+bound = true
 +++
 
 Implement crates/frob-obligations per rules.md section 2 families table for the M1 subset: COV001 public symbol with no test reaching it (via gob-symbols reach and nextest test list), COV003 frob:tests names a missing test (shared with TEST001, pick one owner and record it), TODO001 bare TODO/FIXME without frob:todo <ulid>, TODO002 frob:todo pointing at a terminal ticket, DOC001 public symbol without rustdoc (tree-sitter, complements the compiler lint for non-Rust later), DOC002 markdown link to a missing file or anchor inside the repo, REF001 frob:ticket pointing at a missing ticket, INV001 invariant file under invariants/ with no frob:invariant binding, INV002 forbidden import per [invariants] rules (uses gob-symbols imports). Each rule has an mdtest corpus with fire and clean cases via gob-mdtest. Exceptions: accept and defer directives from gob-directives suppress with EXC001 (bad reason), EXC003 (defer ticket terminal), EXC005 (accept stale: body digest changed since attested), EXC007 (defer ticket missing) evaluated here against the ledger.
