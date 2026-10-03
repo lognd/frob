@@ -45,6 +45,7 @@ mod comments;
 mod config;
 mod effects;
 pub mod frob;
+pub mod grimble;
 mod lex;
 mod meta;
 mod rules;

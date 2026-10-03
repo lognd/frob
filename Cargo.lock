@@ -2298,6 +2298,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble-bind"
+version = "0.0.0"
+dependencies = [
+ "gob-directives",
+ "gob-ir",
+ "gob-languages",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "grimble-model",
+ "rayon",
+ "serde_json",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
 name = "grimble-check"
 version = "0.0.0"
 dependencies = [

@@ -1,0 +1,29 @@
+[package]
+name = "grimble-bind"
+version = "0.0.0"
+description = "The binding relation B (entity, role, identity, status, source) from the four ranked sources, ownership, and the SYS binding rules."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-directives = { path = "../gob-directives" }
+gob-ir = { path = "../gob-ir" }
+gob-languages = { path = "../gob-languages" }
+gob-rules = { path = "../gob-rules" }
+gob-symbols = { path = "../gob-symbols" }
+gob-text = { path = "../gob-text" }
+gob-walk = { path = "../gob-walk" }
+grimble-model = { path = "../grimble-model" }
+rayon = "1"
+serde_json = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
