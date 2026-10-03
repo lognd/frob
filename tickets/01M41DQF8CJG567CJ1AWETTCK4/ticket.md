@@ -6,8 +6,8 @@ category = "in-progress"
 priority = "low"
 reporter = "lognd"
 created = "2026-10-03T17:41:57Z"
-updated = "2026-10-03T18:55:28Z"
-scope = ["crates/frob-check/src/snapshot.rs"]
+updated = "2026-10-03T18:55:54Z"
+scope = ["crates/frob-check/src/snapshot.rs", "crates/frob/tests/milestone.rs"]
 
 [[acceptance]]
 text = "Given a ledger with one milestone without exit criteria and no tickets, when frob check runs, then PM001 fires"
