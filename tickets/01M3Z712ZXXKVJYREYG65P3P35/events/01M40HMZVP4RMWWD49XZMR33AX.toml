@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-obligations/**", "crates/gob-languages/**"]
+new = ["crates/frob-obligations/**", "crates/gob-languages/**", "crates/gob-directives/src/comments.rs"]
+at = "2026-10-03T09:31:16Z"
+actor = "lognd"
+rev = 1

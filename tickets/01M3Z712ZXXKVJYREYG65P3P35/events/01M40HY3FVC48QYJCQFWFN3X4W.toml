@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T09:36:14Z"
+digest = "3ae330234a31dbe5e46b5d394674f56f226ed0b7adff29600ea01561dd13d6f0"
+exit_code = 4
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+────────────
+ Nextest run ID 183ccdeb-d0b2-42d7-a54c-00cfaaa0ef94 with nextest profile: default
+    Starting 0 tests across 123 binaries (940 tests skipped)
+────────────
+     Summary [   0.003s] 0 tests run: 0 passed, 940 skipped
+error: no tests to run
+(hint: use `--no-tests` to customize)
+"""
+passed = false
+provider = "nextest"
+ref = "binary(corpus) & package(frob-obligations)"
+size = 412
+status = "measured"
+at = "2026-10-03T09:36:14Z"
+actor = "lognd"
+rev = 1
