@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T17:09:40Z"
-updated = "2026-10-03T17:27:24Z"
+updated = "2026-10-03T17:30:50Z"
 scope = ["crates/frob-release/**", "docs/reference/changelog.md", "changelog.d/01M4069YE7SYCYT7YGT2FCV344.added.md", "changelog.d/01M4069YE7SYCYT7YGT2FCV344.notice.md", "docs/design/documentation.md", "docs/design/releases.md"]
 
 [[acceptance]]
