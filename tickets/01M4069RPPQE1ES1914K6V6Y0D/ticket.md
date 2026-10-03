@@ -2,13 +2,13 @@
 id = "01M4069RPPQE1ES1914K6V6Y0D"
 title = "frob cycle new and close (carry-over events, retro note, commitment ratio)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:54Z"
-updated = "2026-10-03T06:12:54Z"
+updated = "2026-10-03T11:07:23Z"
 idempotency_key = "m2-rel-cycle-new-close"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/cycle/lifecycle.rs", "crates/frob/src/cycle_cmd.rs"]
