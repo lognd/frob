@@ -2,13 +2,13 @@
 id = "01M41JTGCWXZWWSPXYM9QNMT4D"
 title = "ticket fragment: a bug ticket's title is not a usable default sentence; require --sentence for bugs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T19:10:59Z"
-updated = "2026-10-03T19:10:59Z"
+updated = "2026-10-03T19:12:16Z"
 scope = ["crates/frob/src/ticket/**", "crates/frob-release/src/fragment.rs"]
 
 [[acceptance]]
