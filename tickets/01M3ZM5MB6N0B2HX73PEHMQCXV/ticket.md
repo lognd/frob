@@ -2,13 +2,13 @@
 id = "01M3ZM5MB6N0B2HX73PEHMQCXV"
 title = "Call qualifiers in the symbol graph so COV001 poison does not flood on common names"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T00:56:04Z"
-updated = "2026-10-03T00:56:04Z"
+updated = "2026-10-03T01:39:52Z"
 idempotency_key = "m2-call-qualifiers"
 labels = ["milestone:2"]
 scope = ["crates/gob-symbols/**", "crates/frob-obligations/**"]
