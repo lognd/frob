@@ -2,13 +2,13 @@
 id = "01M407JYQJZ2BJ842GHAPQCEPT"
 title = "A tool stage that cannot run reports nothing: frob check passes while actionlint never ran"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T06:35:23Z"
-updated = "2026-10-03T06:35:23Z"
+updated = "2026-10-03T06:38:03Z"
 idempotency_key = "m2-tool-stage-silent-failure"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/**", "frob.toml", ".github/workflows/**"]
