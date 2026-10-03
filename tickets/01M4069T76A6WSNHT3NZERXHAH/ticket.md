@@ -2,7 +2,8 @@
 id = "01M4069T76A6WSNHT3NZERXHAH"
 title = "Repository WIP limit: work and start refuse past [pm.wip] in_progress, naming holders"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
