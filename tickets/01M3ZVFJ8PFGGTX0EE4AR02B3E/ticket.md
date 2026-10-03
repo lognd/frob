@@ -2,7 +2,8 @@
 id = "01M3ZVFJ8PFGGTX0EE4AR02B3E"
 title = "Plugin and pack security design from the pessimistic audit (D82)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
