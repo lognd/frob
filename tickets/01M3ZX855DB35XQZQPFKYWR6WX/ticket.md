@@ -1,14 +1,14 @@
 +++
 id = "01M3ZX855DB35XQZQPFKYWR6WX"
-title = "[mirror.identities] and tracker key stored as a ticket alias"
+title = "[mirror.identities] by tracker user id, [mirror] bot_ids, and tracker key as a ticket alias"
 type = "task"
 category = "todo"
-priority = "low"
+priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T03:34:44Z"
+updated = "2026-10-03T05:49:59Z"
 idempotency_key = "m2-mirror-identities"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/identity.rs"]
@@ -26,6 +26,6 @@ text = "Given a published ticket, when `frob ticket show <tracker-key>` runs, th
 bound = false
 +++
 
-Implements mirror.md sections 2.1 (people) and 3 (identity).
+Implements mirror.md sections 2.1 (people), 3.3 (own writes, bot ids) and 3.5 (identities by user id).
 
-Unmapped identities are left unassigned and noted; the tracker key becomes an alias so `frob ticket show PROJ-123` works.
+Identities are mapped by tracker user id, never login (logins can be released and claimed); [mirror] bot_ids lists the App identities by user id. Unmapped identities are left unassigned and noted; the tracker key becomes an alias so `frob ticket show PROJ-123` works.
