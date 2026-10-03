@@ -108,6 +108,17 @@ for history.
 - Two Claude Code crashes (one Bun bus error) happened while long
   background shells ran; keep shell steps short and in the foreground.
 
+### Disk-full prevention (decided 2026-10-04 after the third disk event)
+
+- A user-level PreToolUse hook (~/.claude/hooks/disk-guard.py, matcher
+  Bash|Agent) refuses builds, test runs, frob work/test/land/check,
+  uvx, worktree creation and agent dispatches when free space on / is
+  under 80 GB (DISK_GUARD_MIN_GB); cleanup and inspection always pass.
+- Worktree builds use line-tables-only debug info and no incremental
+  cache (/home/logan/projects/frob-v2-wt/.cargo/config.toml).
+- At most two building agents; delete a stopped worktree's target/
+  immediately; never recreate a shared target dir.
+
 ### Evidence covers the whole workspace (decided 2026-10-04)
 
 The land gate runs `frob check`, not the test suite, and per-package
@@ -149,6 +160,22 @@ experimental. Record such lands in the status log.
   be named in the done-report text (file:RULE) or the land refuses.
 
 ## Status log (newest first)
+
+- 2026-10-04 (disk event 3, hotfix): the disk filled again; the session
+  died with two agents running (G09 grimble binary ~EHPFVKD, agent
+  a9b427f4bd9c7e96e; FileInfo rules ~5NFTK3H, agent ad3e84f860845fc38).
+  Reclaimed ~130 GB (retired shared .target, primary incremental, both
+  worktrees' target/). 26 loose git objects are EMPTY (truncated writes);
+  the ONLY damaged ref is ticket/EHPFVKD (its tip commit object is empty).
+  experimental and all other branches read cleanly. The G09 worktree
+  files are intact and backed up to
+  /home/logan/frob-v2-recovery/EHPFVKD-20261002-2001 (tar + reflog).
+  NEXT SESSION: (1) repair: in the EHPFVKD worktree, reset the branch to
+  the newest readable commit from the saved reflog with `git reset
+  --soft` (keeps the files), re-commit the work, then delete the 26
+  empty objects (`find .git/objects -type f -size 0 -delete`) and
+  `git fsck --full` must be clean; (2) resume both agents with
+  SendMessage (their transcripts persist); (3) continue milestone 2.
 
 - 2026-10-04 (milestone 2): landed gate, grmb spec, gob-ir, tool
   bindings, G02, G03, G04, follow-ups, gob-symbols over U, scope-diff
