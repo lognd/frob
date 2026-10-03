@@ -2,7 +2,8 @@
 id = "01M41KS5VMKFTP1TN3J28XNB4W"
 title = "ticket update --remove-acceptance renumbers criteria and silently rebinds evidence to the wrong criterion"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "invalid"
 priority = "critical"
 points = 3
 reporter = "lognd"
