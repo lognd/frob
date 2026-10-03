@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:54Z"
-updated = "2026-10-03T11:18:57Z"
+updated = "2026-10-03T11:18:58Z"
 idempotency_key = "m2-rel-cycle-new-close"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/cycle/lifecycle.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/model.rs", "crates/frob-pm/src/lib.rs", "crates/frob-pm/src/cycle/mod.rs", "crates/frob/src/lib.rs", "crates/frob/tests/cycle.rs", "docs/reference/cli/frob.md", "docs/design/pm-enforcement.md", "crates/frob-pm/src/milestone/mod.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a member in-progress with a live lease, when close runs, then it exits 3 naming the ticket"
-bound = false
+bound = true
 +++
 
 `cycle new --start --end --goal [--capacity-points]` (end defaults from [pm] cycle_days) and `cycle close` per pm-enforcement.md 4: incomplete members carry to the next cycle with a cycle event (op carried), the commitment-versus-done ratio is recorded, close refuses while a member is in-progress with a live lease (E-CYCLE-LEASE).
