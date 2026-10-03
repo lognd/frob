@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T11:07:12Z"
+updated = "2026-10-03T11:31:36Z"
 idempotency_key = "m2-rel-wheel-bundle"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["packaging/pypi/**", "Cargo.toml"]
@@ -19,7 +19,7 @@ target = "01M4069WNGJ8YR9DTTM9K9K8V5"
 
 [[acceptance]]
 text = "Given the wheel built locally, when installed into a clean venv, then frob --version prints 0.532.0"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the wheel metadata, when inspected, then the name is frob and the linux tag is manylinux_2_28"
