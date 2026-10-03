@@ -2,13 +2,13 @@
 id = "01M403Q1W4PMWRM8GXPRS10WX7"
 title = "grimble check takes 17 s warm on this repository; the frob sibling stage dominates check time"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:27:43Z"
-updated = "2026-10-03T05:27:43Z"
+updated = "2026-10-03T05:40:09Z"
 idempotency_key = "m2-grimble-warm-17s"
 labels = ["milestone:2", "perf"]
 scope = ["crates/grimble/**", "crates/grimble-check/**", "crates/grimble-bind/**", "crates/grimble-model/**", "crates/gob-check/**"]
