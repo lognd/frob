@@ -38,6 +38,14 @@ fragments are all listed at once, each naming its file and the remedy, and exit
 through a temporary file and a rename, and the fragments are removed only after
 that succeeds.
 
+## Writing a fragment
+
+`frob ticket fragment TICKET [--type T] [--sentence S] [--force]` writes the file
+into the ticket's worktree. Without `--sentence` the text defaults to
+`frob: <ticket title>.`, except for `bug`, `security` and `incident` tickets: their
+titles describe the problem, so the verb exits 2 and shows
+`frob ticket fragment TICKET --sentence "<what changed for the user>"`.
+
 ## Section shape
 
 ```text

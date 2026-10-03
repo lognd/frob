@@ -51,7 +51,7 @@
 | `ticket evidence add` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Capture evidence with a provider and append it to a ticket: `ticket evidence add <ticket>`. |
 | `ticket evidence fetch` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Fetch one evidence blob, hash verified: `ticket evidence fetch <ticket> <index>`. |
 | `ticket evidence list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the evidence records of a ticket with their effective status: `ticket evidence list <ticket>`. |
-| `ticket fragment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Write `changelog.d/<ULID>.<type>.md` from the ticket title (or `--sentence`, since `--text` is the global output format); never commits. |
+| `ticket fragment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Write `changelog.d/<ULID>.<type>.md` from the ticket title (or `--sentence`, required for bug, security and incident; `--text` is the global output format); never commits. |
 | `ticket link` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a typed link between two tickets; repeating it is a no-op. |
 | `ticket list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List tickets from the index, filtered by category, type, parent, label or blocked. |
 | `ticket new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a ticket; with `--idempotency-key` a repeat returns the first ticket. |

@@ -90,7 +90,7 @@ fn ticket(dir: &Path, ty: &str) -> (String, String) {
 #[test]
 fn writes_a_valid_fragment_from_the_title_with_the_mapped_type() {
     let dir = repo();
-    for (ty, kind) in [("bug", "fixed"), ("story", "added"), ("docs", "changed")] {
+    for (ty, kind) in [("task", "changed"), ("story", "added"), ("docs", "changed")] {
         let (id, handle) = ticket(dir.path(), ty);
         let v = ok(dir.path(), &["ticket", "fragment", &handle]);
         assert_eq!(v["data"]["kind"], kind, "{ty}");
@@ -185,4 +185,42 @@ fn the_close_remedy_names_the_verb_and_the_guard_passes_after_writing() {
             "test",
         ],
     );
+}
+
+// frob:tests crates/frob/src/ticket/fragment_cmd.rs::Fragment.run
+#[test]
+fn bug_security_and_incident_tickets_require_a_sentence() {
+    let dir = repo();
+    for (ty, kind) in [
+        ("bug", "fixed"),
+        ("security", "security"),
+        ("incident", "fixed"),
+    ] {
+        let (id, handle) = ticket(dir.path(), ty);
+        let out = frob(dir.path(), &["ticket", "fragment", &handle]);
+        assert_eq!(code(&out), 2, "{ty}");
+        let msg = json(&out)["error"]["message"].as_str().unwrap().to_owned();
+        assert!(
+            msg.contains(&format!(
+                "frob ticket fragment {handle} --sentence \"<what changed for the user>\""
+            )),
+            "{msg}"
+        );
+        assert!(
+            !dir.path()
+                .join(format!("changelog.d/{id}.{kind}.md"))
+                .exists()
+        );
+        let v = ok(
+            dir.path(),
+            &[
+                "ticket",
+                "fragment",
+                &handle,
+                "--sentence",
+                "frob: Fixed it.",
+            ],
+        );
+        assert_eq!(v["data"]["kind"], kind, "{ty}");
+    }
 }

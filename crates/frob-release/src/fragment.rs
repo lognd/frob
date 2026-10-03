@@ -76,6 +76,16 @@ impl Kind {
     }
 }
 
+/// Whether a ticket of type `ticket_type` must be given an explicit changelog sentence.
+///
+/// bug, security and incident titles describe the problem, not the change, so defaulting the
+/// sentence from the title would read as a new defect; every other type keeps the title default.
+#[must_use]
+// frob:ticket 01M41JTGCWXZWWSPXYM9QNMT4D
+pub fn sentence_required(ticket_type: &str) -> bool {
+    matches!(ticket_type, "bug" | "security" | "incident")
+}
+
 /// A validated fragment.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Fragment {

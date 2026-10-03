@@ -139,11 +139,16 @@ with no ticket, empty or non-ASCII body, near-miss product prefix); under
 `check --ticket` also for the checked, still-open ticket that has no fragment
 file; not applicable when `changelog_fragment` is not in `[pm] done_requires`
 and there is no `changelog.d` directory. `frob ticket fragment TICKET
-[--type T] [--sentence S] [--force]` writes the skeleton from the ticket title into
+[--type T] [--sentence S] [--force]` writes the skeleton (from the ticket title, except as below) into
 the ticket's worktree and validates it with the compile's own validator, so the agent
 edits a sentence rather than inventing a file. The default type follows the ticket
 type: bug and incident `fixed`, security `security`, story and epic `added`, every
-other type (task, docs, chore) `changed`; `--type` overrides. `land` and `close`
+other type (task, docs, chore) `changed`; `--type` overrides. For bug, security and incident tickets the title describes the
+problem, not the change, so `--sentence` is required: without it the verb is a usage error
+(exit 2) whose message shows `frob ticket fragment TICKET --sentence "<what changed for
+the user>"`; every other type keeps the title default. One function
+(`frob_release::fragment::sentence_required`) decides; `land` and `close` never write a
+fragment, so the rule lives only in `ticket fragment`. `land` and `close`
 never write it: a refusal on `changelog_fragment` names the verb, because a sentence
 nobody read would defeat the point of the fragment. A change with no user-visible effect
 (a design document, an internal refactor, a test-only change) needs no fragment: `ticket

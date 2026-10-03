@@ -3,6 +3,7 @@
 
 use std::path::PathBuf;
 
+use frob_release::fragment::sentence_required;
 use frob_release::skeleton::{Request, default_kind, write};
 use frob_release::{Kind, SkeletonError};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
@@ -33,7 +34,7 @@ pub struct FragmentData {
     pub replaced: Vec<String>,
 }
 
-/// Write `changelog.d/<ULID>.<type>.md` from the ticket title (or `--sentence`, since `--text` is the global output format); never commits.
+/// Write `changelog.d/<ULID>.<type>.md` from the ticket title (or `--sentence`, required for bug, security and incident; `--text` is the global output format); never commits.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket fragment",
@@ -66,7 +67,7 @@ impl Command for Fragment {
             )
             .arg(text_flag(
                 "sentence",
-                "The user-facing sentence (default: `frob: <ticket title>.`)",
+                "The user-facing sentence (default: `frob: <ticket title>.`; required for bug, security and incident tickets, whose titles describe the problem)",
             ))
             .arg(
                 Arg::new("force")
@@ -90,6 +91,15 @@ impl Command for Fragment {
         let id = resolve(&ledger, &self.ticket)?;
         let view = ledger.show(id).map_err(cli_err)?;
         let front = &view.ticket.front;
+        // frob:ticket 01M41JTGCWXZWWSPXYM9QNMT4D
+        if self.text.is_none() && sentence_required(front.ty.as_str()) {
+            tracing::info!(ty = front.ty.as_str(), "ticket fragment needs --sentence");
+            return Err(CliError::Usage(format!(
+                "a {} ticket's title describes the problem, not the change; pass the sentence: frob ticket fragment {} --sentence \"<what changed for the user>\"",
+                front.ty.as_str(),
+                view.summary.handle
+            )));
+        }
         let kind = self
             .kind
             .as_deref()
