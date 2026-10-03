@@ -4,6 +4,7 @@ start = "2026-10-03"
 end = "2026-10-09"
 goal = "0.532.0: release track, cycles, release pipeline and clean adoption in a fresh repository"
 state = "planned"
+tickets = ["01M4069REJDB8FFVZFMJWAAVRY"]
 created = "2026-10-03T11:34:47Z"
-updated = "2026-10-03T11:34:47Z"
+updated = "2026-10-03T11:34:54Z"
 +++
