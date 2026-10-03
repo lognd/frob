@@ -118,7 +118,12 @@ part of the job's design:
   waiting.
 - **Artifact smoke:** each built artifact is installed into a clean
   environment and runs real commands (`frob doctor`, `frob check` on a
-  fixture repository). A target that cannot be executed on its runner
+  fixture repository). As built, wheels (`packaging/pypi/smoke.sh`) and
+  standalone archives (`packaging/smoke/archive-smoke.sh`) share
+  `packaging/smoke/fixture-loop.sh`: init, doctor, check, a ticket with
+  one criterion, work, edit, check, command-provider evidence, a changelog
+  fragment, land, then the ticket is closed done and `ticket doctor` is
+  clean. A target that cannot be executed on its runner
   is listed as an explicit, tested exemption, never faked (v1's
   `_SMOKE_EXEMPT_TARGETS`).
 - **Build matrix:** cargo-dist per binary (monorepo.md 4): linux

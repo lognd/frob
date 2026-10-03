@@ -11,7 +11,8 @@ maturin's `data` directory (`data/scripts/`, git-ignored, filled by the script).
 Needs `uv` and a Rust toolchain. On Linux it asks maturin for `manylinux_2_28`
 and fails if the host glibc is newer than that allows; either build in the
 manylinux container (below) or set `WHEEL_COMPAT=off` to accept the host tag
-(a local smoke wheel only, never published).
+(a local smoke wheel only, never published; `smoke.sh` then also skips the
+manylinux tag check).
 
 ## manylinux_2_28 in the container (what the release job must do)
 
@@ -53,3 +54,14 @@ run artifacts (`wheel-<target>`), nothing is published there.
 - `maturin sdist` is allowed but needs the whole workspace; build it from the
   repository root path `packaging/pypi` only after deciding to ship one.
 - Publish only in the protected release environment (`uv publish`), after smoke.
+
+## Smoke
+
+`packaging/pypi/smoke.sh WHEEL [VERSION]` installs the wheel into a clean venv, runs
+`frob --version` and `grimble --version`, then runs `packaging/smoke/fixture-loop.sh`:
+a throwaway git repository with a tiny crate and a markdown file goes through `frob init`,
+`doctor`, `check`, `ticket new` (one criterion), `work`, an edit, `check --ticket`, command
+provider evidence, a changelog fragment named with the ticket id, `land`, then asserts the
+ticket is closed done and `ticket doctor` is clean. It needs git and cargo, uses only the
+installed binaries, and is POSIX sh. Standalone archives run the same loop through
+`packaging/smoke/archive-smoke.sh ARCHIVE [VERSION]`.

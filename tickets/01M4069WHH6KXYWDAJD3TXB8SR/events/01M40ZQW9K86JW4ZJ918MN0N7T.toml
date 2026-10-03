@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "land writes the changelog fragment skeleton from the ticket title"
+new = "ticket fragment writes the changelog fragment skeleton from the ticket title"
+at = "2026-10-03T13:37:30Z"
+actor = "lognd"
+rev = 1

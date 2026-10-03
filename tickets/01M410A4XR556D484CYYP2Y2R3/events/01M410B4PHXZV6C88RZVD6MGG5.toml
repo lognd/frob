@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Coordinator design decision: no config needed. A ticket's own changelog fragment changelog.d/<its ULID>.<type>.md can never collide with another ticket's (the ULID is in the name), so (1) SCOPE001 treats the ticket's own fragment as in scope automatically, (2) lease overlap ignores changelog.d/<ULID>.* files belonging to the ticket, and an agent never needs a changelog.d/** glob in a lease (a lease on changelog.d/** should be refused or narrowed with a teaching message, since it blocks every other ticket's fragment). Scope: crates/frob-check/src/scope.rs, crates/frob-lease/**. Release 0.532.0 (every close requires a fragment now)."
+at = "2026-10-03T13:48:02Z"
+actor = "lognd"
+rev = 1

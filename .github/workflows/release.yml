@@ -78,24 +78,29 @@ jobs:
             os: ubuntu-latest
             dist_host: x86_64-unknown-linux-gnu
             dist_sha: eb52f9fae0d0506774e9f1801c1168f87fa2c87a45e2d64d3ae7c89401929946
+            smoke: true
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
             dist_host: aarch64-unknown-linux-gnu
             dist_sha: d29bcffeb3f8b0c517b4ce0dd2470926ed5cb0bb29d78c6bdd5f88d76ee14a6a
+            smoke: true
           - target: aarch64-apple-darwin
             os: macos-latest
             dist_host: aarch64-apple-darwin
             dist_sha: aa343b2ff78ec2981f17a65140250c5ad6062c74072163f68c5c2686d94763a7
+            smoke: true
           # Cross-built on the arm64 macos-latest runner; the Intel
           # image was retired and queued forever (v1 T-4470).
           - target: x86_64-apple-darwin
             os: macos-latest
             dist_host: aarch64-apple-darwin
             dist_sha: aa343b2ff78ec2981f17a65140250c5ad6062c74072163f68c5c2686d94763a7
+            smoke: false
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             dist_host: x86_64-pc-windows-msvc
             dist_sha: 26e845cabff12a92911ce960af73a86c8f9b2b2d9072b01dfe5b662acf044fa3
+            smoke: true
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -140,6 +145,28 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
         run: dist build --artifacts=local --target "$TARGET" --output-format=json > dist-manifest.json
+      - name: Smoke the archive (unpack, run the fixture repository loop)
+        if: matrix.smoke
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          case "$RUNNER_OS" in
+            Windows) archive=$(ls target/distrib/*.zip) ;;
+            *) archive=$(ls target/distrib/*.tar.xz) ;;
+          esac
+          packaging/smoke/archive-smoke.sh "$archive" "$VERSION"
+      - name: Cross-built archive is not executable here (explicit smoke exemption)
+        if: ${{ !matrix.smoke }}
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          archive=$(ls target/distrib/*.tar.xz)
+          case "$archive" in
+            *"$TARGET"*) echo "::notice::smoke exempt for $TARGET: archive built but not executed on this runner ($archive)" ;;
+            *) echo "archive $archive does not carry the $TARGET triple" >&2; exit 1 ;;
+          esac
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: archives-${{ matrix.target }}
@@ -153,7 +180,8 @@ jobs:
   # Linux wheels are built natively per architecture inside the pinned
   # manylinux_2_28 image (the image lacks the repository's clang and mold, so
   # the linker is overridden to gcc and RUSTFLAGS replaces the config's).
-  # Every wheel is smoked (install into a clean venv, run frob and grimble)
+  # Every wheel is smoked (install into a clean venv, run frob and grimble, then
+  # the fixture repository loop of packaging/smoke/fixture-loop.sh)
   # except the macOS x86_64 one: it is cross-built on the arm64 macos-latest
   # runner, which cannot execute it. That exemption is the matrix entry with
   # `smoke: false`; crates/frob-release/tests/release_workflow.rs pins the
@@ -247,7 +275,7 @@ jobs:
           args=(--out target/wheels)
           if [ "$CROSS" = "true" ]; then args+=(--target "$TARGET"); fi
           packaging/pypi/build-wheel.sh "${args[@]}"
-      - name: Smoke the wheel (install, run frob and grimble, frob doctor)
+      - name: Smoke the wheel (install, run frob and grimble, the fixture repository loop)
         if: matrix.smoke
         shell: bash
         env:
