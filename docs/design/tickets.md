@@ -213,7 +213,7 @@ v1-style warn) unless declared under `[tickets.custom_fields]`.
 
 Types replace v1's kind x tier conflation: `epic | story | task | bug |
 security | docs | invariant | incident | chore | custom`. A milestone is
-a release object (section 7), not a ticket type. A story has
+a release object (releases.md 1, 8), not a ticket type. A story has
 `flavour = user_story | quality_objective` and carries the structured
 fields that pm-enforcement.md requires (section 2 and 2a there). Each type
 declares its evidence policy (bug needs a repro that fails at parent,
