@@ -2,7 +2,8 @@
 id = "01M40PAJ47VC22S2EXC3A9XXRK"
 title = "pm-enforcement.md: align knob defaults with releases.md and the landed [pm] tables"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
