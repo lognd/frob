@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T19:27:44Z"
-updated = "2026-10-03T19:42:48Z"
+updated = "2026-10-03T19:42:50Z"
 scope = ["crates/frob-pm/src/cycle/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "crates/frob-pm/src/doctor.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/model.rs"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given two cycles created the same day with the same window, when ticket doctor runs, then their stored aliases differ and no E-PM-ALIAS is reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ledger that already holds duplicate cycle aliases, when ticket doctor --fix runs, then the duplicates get suffixes in creation order and a second doctor run is clean"
