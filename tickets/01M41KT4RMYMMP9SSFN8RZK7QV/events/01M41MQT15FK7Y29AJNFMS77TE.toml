@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T19:44:28Z"
+digest = "df49abb0f63fec725a8f089c929aeea0e712ad60609d84e905bbb63d12568c83"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 337f46cb-861d-42d2-a844-edd0bb3d046a with nextest profile: default
+    Starting 3 tests across 1 binary (14 tests skipped)
+        PASS [   0.987s] frob-cli::close_guards land_with_a_non_done_outcome_needs_a_reason
+        PASS [   1.126s] frob-cli::close_guards a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing
+        PASS [   1.625s] frob-cli::close_guards invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.627s] 3 tests run: 3 passed, 14 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test close_guards -E 'test(invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone) | test(a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing) | test(land_with_a_non_done_outcome_needs_a_reason)'"
+size = 787
+status = "measured"
+tests = ["land_with_a_non_done_outcome_needs_a_reason", "a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing", "invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone"]
+at = "2026-10-03T19:44:28Z"
+actor = "lognd"
+rev = 1
