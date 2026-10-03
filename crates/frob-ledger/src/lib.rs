@@ -68,6 +68,7 @@ pub mod ledger;
 pub mod links;
 pub mod merge;
 pub mod model;
+pub mod objects;
 pub mod ops;
 pub mod rules;
 pub mod schema;

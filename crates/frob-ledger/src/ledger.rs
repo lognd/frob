@@ -233,7 +233,7 @@ impl Ledger {
         Ok(self.repo.read_blob_at(rev, path)?)
     }
 
-    fn text(&self, rev: &str, path: &str) -> Result<Option<String>> {
+    pub(crate) fn text(&self, rev: &str, path: &str) -> Result<Option<String>> {
         self.blob(rev, path)?
             .map(|b| {
                 String::from_utf8(b).map_err(|_| LedgerError::malformed(path, "not valid UTF-8"))

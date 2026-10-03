@@ -145,7 +145,7 @@ pub fn remap_accepts(events: &[Event], since: EventId, accepts: &[usize]) -> Vec
 ///
 /// `status` must be `measured` and `passed` must not be `false`; a file-provider
 /// record has no `passed` and counts when measured, as the close guard reads it.
-fn evidence_passes(data: &crate::event::EvidenceData) -> bool {
+pub fn evidence_passes(data: &crate::event::EvidenceData) -> bool {
     let measured = data.record.get("status").and_then(toml::Value::as_str) == Some("measured");
     let failed = data.record.get("passed").and_then(toml::Value::as_bool) == Some(false);
     measured && !failed
