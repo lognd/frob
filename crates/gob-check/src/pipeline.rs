@@ -22,6 +22,18 @@ use crate::status::{FidelityReport, Need, need_of, opaque_finding};
 use crate::telemetry;
 use crate::tools::run_tools;
 
+/// The engine fingerprint scoping every cached rule result: binary identity plus `EXTRACTOR_VERSION`.
+///
+/// The rule's own version is already part of each per-file and repo-rule key,
+/// so a result is reused only by the same build, extractor and rule version.
+pub(crate) fn engine_fingerprint() -> String {
+    format!(
+        "{}/extractor-v{}",
+        gob_cache::default_engine(),
+        gob_symbols::EXTRACTOR_VERSION
+    )
+}
+
 /// Whether a rule survives the `--only` filter.
 fn matches_only(only: &[String], family: &str, id: &str) -> bool {
     only.is_empty() || only.iter().any(|o| o == family || o == id)
@@ -225,7 +237,7 @@ fn pass<P: Product>(
 ) -> Result<CheckReport, CheckError> {
     let mut tally = Tally::default();
     let mut warnings = Vec::new();
-    let cache = Cache::open(&root.join(product.state_dir()));
+    let cache = Cache::open(&root.join(product.state_dir())).with_engine(engine_fingerprint());
     let core = walk_core(
         root,
         table,

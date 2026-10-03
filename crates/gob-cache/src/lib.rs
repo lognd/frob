@@ -3,13 +3,15 @@
 //! Stores parse artifacts keyed by (content digest, producer identity),
 //! per-file findings keyed by (file digest, rule id, rule version,
 //! side-input digest) and repo-scope findings keyed by (graph digest, rule
-//! id). Payloads are opaque bytes; serialization is the caller's concern.
+//! id). Findings and repo-scope rows are additionally scoped by an engine
+//! fingerprint (see [`default_engine`] and [`Cache::with_engine`]): a result
+//! computed by another binary is a miss, never a stale hit. Payloads are opaque bytes; serialization is the caller's concern.
 //! Writes are best-effort: a failure is logged at warn and never surfaces.
 //! When the database cannot be opened the cache degrades to a null cache
 //! where every read misses and every write is a no-op.
 
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rusqlite::{Connection, OptionalExtension, params};
@@ -100,6 +102,43 @@ pub struct CacheStats {
 /// The cache handle; real or null, with one API.
 pub struct Cache {
     conn: Option<Mutex<Connection>>,
+    engine: String,
+}
+
+/// The default engine fingerprint of the running binary: crate version plus the executable's size and mtime.
+///
+/// A rebuilt binary (upgrade, worktree build, any source edit) differs in
+/// size or mtime, so results cached by another build are misses. Measured
+/// at runtime from the executable's metadata (no build script, so editing a
+/// low-level crate does not force a rebuild of everything above it); when
+/// the metadata is unreadable the fingerprint is `unknown` and still scoped
+/// by the crate version.
+pub fn default_engine() -> &'static str {
+    static ENGINE: OnceLock<String> = OnceLock::new();
+    ENGINE.get_or_init(|| {
+        let id = std::env::current_exe()
+            .and_then(std::fs::metadata)
+            .ok()
+            .map_or_else(
+                || "unknown".to_owned(),
+                |m| {
+                    let ns = m
+                        .modified()
+                        .ok()
+                        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                        .map_or(0, |d| d.as_nanos());
+                    format!("{}-{ns}", m.len())
+                },
+            );
+        let engine = format!("gob-cache/{}/exe:{id}", env!("CARGO_PKG_VERSION"));
+        tracing::debug!(%engine, "default engine fingerprint");
+        engine
+    })
+}
+
+/// Folds `engine` into a stored key so two engines never share a row.
+fn scoped(engine: &str, key: &str) -> String {
+    format!("{engine}|{key}")
 }
 
 fn now_secs() -> i64 {
@@ -148,6 +187,7 @@ impl Cache {
                 tracing::debug!(dir = %dir.display(), "cache opened");
                 Self {
                     conn: Some(Mutex::new(conn)),
+                    engine: default_engine().to_owned(),
                 }
             }
             Err(err) => {
@@ -159,7 +199,23 @@ impl Cache {
 
     /// Returns a cache whose reads all miss and whose writes are no-ops.
     pub fn null() -> Self {
-        Self { conn: None }
+        Self {
+            conn: None,
+            engine: default_engine().to_owned(),
+        }
+    }
+
+    /// Replaces the engine fingerprint that scopes findings and repo-rule rows.
+    #[must_use]
+    pub fn with_engine(mut self, engine: impl Into<String>) -> Self {
+        self.engine = engine.into();
+        tracing::debug!(engine = %self.engine, "cache engine set");
+        self
+    }
+
+    /// The engine fingerprint scoping findings and repo-rule rows.
+    pub fn engine(&self) -> &str {
+        &self.engine
     }
 
     /// True when this is the null fallback.
@@ -218,7 +274,7 @@ impl Cache {
                     key.file_digest,
                     key.rule_id,
                     key.rule_version,
-                    key.side_input_digest
+                    scoped(&self.engine, &key.side_input_digest)
                 ],
                 |r| r.get(0),
             )
@@ -237,7 +293,7 @@ impl Cache {
                     key.file_digest,
                     key.rule_id,
                     key.rule_version,
-                    key.side_input_digest,
+                    scoped(&self.engine, &key.side_input_digest),
                     payload
                 ],
             )
@@ -252,7 +308,7 @@ impl Cache {
         self.with("get_repo_rule", |c| {
             c.query_row(
                 "SELECT payload FROM repo_rule WHERE graph_digest = ?1 AND rule_id = ?2",
-                params![graph_digest, rule_id],
+                params![scoped(&self.engine, graph_digest), rule_id],
                 |r| r.get(0),
             )
             .optional()
@@ -266,7 +322,7 @@ impl Cache {
             c.execute(
                 "INSERT OR REPLACE INTO repo_rule(graph_digest, rule_id, payload)
                  VALUES (?1, ?2, ?3)",
-                params![graph_digest, rule_id, payload],
+                params![scoped(&self.engine, graph_digest), rule_id, payload],
             )
         });
         if done.is_some() {
@@ -361,6 +417,25 @@ mod tests {
             (s.null, s.artifacts, s.findings, s.repo_rule),
             (false, 1, 0, 1)
         );
+    }
+
+    #[test]
+    fn engines_never_share_findings_or_repo_rules() {
+        let dir = tempfile::tempdir().unwrap();
+        let a = Cache::open(dir.path()).with_engine("engine-a");
+        a.put_findings(&fkey(), b"from-a");
+        a.put_repo_rule("g", "R", b"from-a");
+        let b = Cache::open(dir.path()).with_engine("engine-b");
+        assert!(b.get_findings(&fkey()).is_none());
+        assert!(b.get_repo_rule("g", "R").is_none());
+        b.put_findings(&fkey(), b"from-b");
+        b.put_repo_rule("g", "R", b"from-b");
+        // The same fingerprint still hits, and each engine sees its own result.
+        let a2 = Cache::open(dir.path()).with_engine("engine-a");
+        assert_eq!(a2.get_findings(&fkey()).as_deref(), Some(&b"from-a"[..]));
+        assert_eq!(a2.get_repo_rule("g", "R").as_deref(), Some(&b"from-a"[..]));
+        assert_eq!(b.get_findings(&fkey()).as_deref(), Some(&b"from-b"[..]));
+        assert_eq!(b.get_repo_rule("g", "R").as_deref(), Some(&b"from-b"[..]));
     }
 
     #[test]

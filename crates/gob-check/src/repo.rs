@@ -187,3 +187,43 @@ pub(crate) fn run_repo_rules<P: Product>(
     }
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Runs `cached` for `PROC001` on a fresh interner; returns whether `compute` ran.
+    fn ran(cache: &Cache) -> bool {
+        let metas = [Proc001.meta()];
+        let mut computed = false;
+        let mut stats = Stats::default();
+        let mut files = FileInterner::default();
+        cached(
+            cache,
+            "inputs",
+            "repo:process",
+            &metas,
+            &mut files,
+            &mut stats,
+            |_| {
+                computed = true;
+                Vec::new()
+            },
+        );
+        computed
+    }
+
+    // frob:tests crates/gob-check/src/repo.rs::cached
+    #[test]
+    fn engines_never_share_a_cached_repo_group() {
+        let dir = tempfile::tempdir().unwrap();
+        let open = |e: &str| Cache::open(dir.path()).with_engine(e);
+        assert!(ran(&open("a")), "cold run computes");
+        assert!(!ran(&open("a")), "same engine hits");
+        assert!(
+            ran(&open("b")),
+            "another engine over the same inputs recomputes"
+        );
+        assert!(!ran(&open("b")));
+    }
+}
