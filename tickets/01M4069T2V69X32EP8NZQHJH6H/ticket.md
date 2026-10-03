@@ -2,13 +2,13 @@
 id = "01M4069T2V69X32EP8NZQHJH6H"
 title = "frob cycle plan fills a cycle from ready work in rank order"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:55Z"
-updated = "2026-10-03T16:13:29Z"
+updated = "2026-10-03T16:13:43Z"
 idempotency_key = "m2-rel-cycle-plan"
 labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/cycle/plan.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/rules/replenish.rs"]
