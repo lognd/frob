@@ -1,0 +1,18 @@
++++
+id = "01M41B2PD4NAV8VACA13750GWB"
+title = "[pm] strict escalates PM001 and PM002 (and other PM warnings the design names) to Error"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+reporter = "lognd"
+created = "2026-10-03T16:55:39Z"
+updated = "2026-10-03T16:55:39Z"
+scope = ["crates/frob-pm/src/config.rs", "crates/frob-pm/src/rules/**", "docs/reference/config.md", "docs/schemas/config.json"]
+
+[[acceptance]]
+text = "Given [pm] strict = true and a milestone without exit criteria, when frob check runs, then PM001 is an error"
+bound = false
++++
+
+~JWAAVRY shipped PM001/PM002 as Warn only because [pm] strict does not exist. Add the knob (default false) and apply it to the rules pm-enforcement.md marks as Error under strict.
