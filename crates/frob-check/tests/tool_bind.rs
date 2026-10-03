@@ -56,8 +56,8 @@ fn zizmor_findings_carry_ci_ids_and_real_spans() {
     let dir = tempfile::tempdir().expect("tempdir");
     write(dir.path(), ".github/workflows/ci.yml", &workflow(""));
     write(dir.path(), ".github/dependabot.yml", &workflow(""));
-    // Exit 1 with parseable output is how tools report findings; not a stage failure.
-    let toml = stage(dir.path(), ZIZMOR, 1, "zizmor-json-v1", "");
+    // Exit 11 with parseable output is how zizmor reports findings; not a stage failure.
+    let toml = stage(dir.path(), ZIZMOR, 11, "zizmor-json-v1", "");
     write(dir.path(), "frob.toml", &toml);
     let report = run(dir.path(), &options()).expect("run");
     let mut got = rules(&report);
@@ -212,11 +212,13 @@ fn an_optional_missing_tool_is_unresolved_but_not_required() {
 }
 
 #[test]
-fn unparseable_output_is_a_tool001_error() {
+fn unparseable_output_is_a_required_tool_failed() {
     let dir = tempfile::tempdir().expect("tempdir");
     let toml = stage(dir.path(), "not json", 0, "actionlint-json", "");
     write(dir.path(), "frob.toml", &toml);
     let report = run(dir.path(), &options()).expect("run");
     assert_eq!(rules(&report), ["TOOL001"]);
-    assert_eq!(report.findings[0].severity, Severity::Error);
+    assert_eq!(report.findings[0].severity, Severity::Unresolved);
+    assert!(report.findings[0].required.is_some());
+    assert_eq!(report.exit_code(), ExitCode::Negative);
 }

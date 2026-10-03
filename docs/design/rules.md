@@ -260,7 +260,15 @@ exceptions, severity overrides and the report treat it like any other
 finding. A tool's native suppression (`#[allow(clippy::...)]`,
 `# zizmor: ignore[...]`) hides the finding before frob sees it, so a
 meta-rule (EXC017, exceptions.md section 6) flags a native suppression
-of a bound rule that has no matching frob exception. Fix tiers:
+of a bound rule that has no matching frob exception. A tool stage that
+produces no evidence is never silent: an unresolvable program, a failed
+`version_args` probe, an exit status the parser does not declare normal
+(actionlint 0 and 1; zizmor 0 and 10-14) or output the parser cannot read
+is a `TOOL001` Unresolved with required reason `tool-failed`, naming the
+stage, the command, the status and an escaped, capped stderr excerpt, so
+the default `fail_on_unresolved = "required"` fails the gate. Only
+`optional = true` downgrades a missing binary to a non-required
+Unresolved. Fix tiers:
 A deterministic (rule provides `fix()`), B apply-verify-commit (runs
 bound tests), C fix-it only. `--fix` without `--ticket` requires
 `--fix-all`, as in v1.

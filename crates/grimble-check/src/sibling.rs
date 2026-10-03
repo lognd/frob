@@ -28,11 +28,12 @@ fn polarity_of(rule: &str) -> &'static str {
 
 /// Unresolved reason code of a finding: the required mark decides, else `fidelity`.
 fn reason_of(f: &Finding) -> Option<String> {
-    use gob_rules::RequiredReason::{AnnotationRequired, SiblingMissing, ZeroSubjects};
+    use gob_rules::RequiredReason::{AnnotationRequired, SiblingMissing, ToolFailed, ZeroSubjects};
     (f.severity == Severity::Unresolved).then(|| match &f.required {
         Some(ZeroSubjects { .. }) => "vacuous".to_owned(),
         Some(AnnotationRequired { .. }) => "annotation-required".to_owned(),
         Some(SiblingMissing { .. }) => "incompatible".to_owned(),
+        Some(ToolFailed { .. }) => "tool-failed".to_owned(),
         None => grimble_bind::reason_of_message(&f.message)
             .unwrap_or("fidelity")
             .to_owned(),

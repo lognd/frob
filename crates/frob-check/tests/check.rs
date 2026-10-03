@@ -501,6 +501,29 @@ fn tool_options() -> CheckOptions {
 
 const MISSING_TOOL: &str = "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-no-such-binary\"\n";
 
+const FAILING_ACTIONLINT: &str = "[[check.tool]]\nname = \"lint\"\ncommand = \"sh\"\nargs = [\"-c\", \"echo unsatisfiable pin >&2; exit 2\"]\nparser = \"actionlint-json\"\nversion_args = [\"-c\", \"echo 1.7.12\"]\n";
+
+// frob:tests crates/gob-check/src/tools.rs::run_tools
+#[test]
+fn a_failed_parsed_tool_fails_the_default_gate_with_its_stderr() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "frob.toml", FAILING_ACTIONLINT);
+    let report = run(dir.path(), &tool_options()).expect("default policy");
+    assert_eq!(rules_of(&report.findings), ["TOOL001"]);
+    assert_eq!(
+        report.findings[0].required,
+        Some(RequiredReason::ToolFailed {
+            stage: "lint".to_owned()
+        })
+    );
+    assert!(
+        report.findings[0].message.contains("unsatisfiable pin"),
+        "{}",
+        report.findings[0].message
+    );
+    assert_eq!(report.exit_code(), ExitCode::Negative);
+}
+
 #[test]
 fn a_missing_tool_binary_fails_under_required_and_passes_under_never() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -510,8 +533,8 @@ fn a_missing_tool_binary_fails_under_required_and_passes_under_never() {
     assert_eq!(report.findings[0].severity, gob_rules::Severity::Unresolved);
     assert_eq!(
         report.findings[0].required.as_ref(),
-        Some(&RequiredReason::SiblingMissing {
-            product: "frob-no-such-binary".to_owned()
+        Some(&RequiredReason::ToolFailed {
+            stage: "ghost".to_owned()
         })
     );
     assert_eq!(report.required_unresolved(), 1);

@@ -29,10 +29,64 @@ fn tail(text: &str) -> String {
     t.chars().skip(skip).collect()
 }
 
+/// Escape `text` for one line of a finding: control characters become visible escapes.
+fn escape(text: &str) -> String {
+    text.chars()
+        .flat_map(|c| {
+            if c.is_control() {
+                c.escape_default().collect::<Vec<_>>()
+            } else {
+                vec![c]
+            }
+        })
+        .collect()
+}
+
+/// The escaped, capped tail of a stream, or `(empty)`.
+fn excerpt(text: &str) -> String {
+    let t = tail(text);
+    if t.is_empty() {
+        "(empty)".to_owned()
+    } else {
+        escape(&t)
+    }
+}
+
+/// The command line of a stage invocation, for a finding.
+fn command_line(stage: &ToolStage, args: &[String]) -> String {
+    escape(
+        &std::iter::once(stage.command.as_str())
+            .chain(args.iter().map(String::as_str))
+            .collect::<Vec<_>>()
+            .join(" "),
+    )
+}
+
+/// The status of a finished run, for a finding.
+fn status_text(o: &Output) -> String {
+    match o.status {
+        Outcome::Exited(code) => format!("exit {code}"),
+        Outcome::Signaled => "terminated by a signal".to_owned(),
+        Outcome::TimedOut => "timed out".to_owned(),
+    }
+}
+
+/// The message of a `tool-failed` finding: stage, command, status and stderr excerpt.
+fn failure(stage: &ToolStage, args: &[String], what: &str, status: &str, stderr: &str) -> String {
+    format!(
+        "tool stage `{}` {what}: command `{}`; status: {status}; stderr: {}",
+        stage.name,
+        command_line(stage, args),
+        excerpt(stderr)
+    )
+}
+
 /// What running one stage produced.
 enum StageResult {
     /// The binary was not found.
     Missing(String),
+    /// The tool did not produce evidence (unresolvable, abnormal exit, unreadable output); carries the full message.
+    Failed(String),
     /// The stage failed for another reason.
     Problem(String),
     /// The tool's version is outside the configured range.
@@ -137,12 +191,12 @@ fn to_findings(
     out
 }
 
-/// The tool's version text, or `Err` only when its binary is missing.
+/// The tool's version text, or `Err` with the stage result when the probe fails.
 fn tool_version(
     runner: &Runner,
     root: &Path,
     stage: &ToolStage,
-) -> Result<Option<String>, ExecError> {
+) -> Result<Option<String>, StageResult> {
     let Some(args) = stage
         .version_args
         .clone()
@@ -150,13 +204,36 @@ fn tool_version(
     else {
         return Ok(None);
     };
-    match runner.run(&spec(root, stage, args)) {
-        Ok(o) => Ok(find_version(&format!("{}\n{}", o.stdout, o.stderr))),
-        Err(err @ ExecError::NotFound { .. }) => Err(err),
-        Err(err) => {
-            tracing::warn!(stage = %stage.name, %err, "could not read the tool version");
-            Ok(None)
+    match runner.run(&spec(root, stage, args.clone())) {
+        Ok(o) if o.status == Outcome::Exited(0) => {
+            Ok(find_version(&format!("{}\n{}", o.stdout, o.stderr)))
         }
+        Ok(o) => Err(StageResult::Failed(failure(
+            stage,
+            &args,
+            "version probe failed",
+            &status_text(&o),
+            &o.stderr,
+        ))),
+        Err(err @ ExecError::NotFound { .. }) => {
+            Err(StageResult::Missing(format!("could not run: {err}")))
+        }
+        Err(err) => Err(StageResult::Failed(failure(
+            stage,
+            &args,
+            &format!("version probe could not run ({err})"),
+            "not run",
+            "",
+        ))),
+    }
+}
+
+/// Exit codes a parsed tool uses to report findings rather than failure.
+fn normal_exits(parser: ToolParser) -> &'static [i32] {
+    match parser {
+        ToolParser::None => &[0],
+        ToolParser::ZizmorJsonV1 => &[0, 10, 11, 12, 13, 14],
+        ToolParser::ActionlintJson => &[0, 1],
     }
 }
 
@@ -179,9 +256,10 @@ fn execute(
     stage: &ToolStage,
     files: &mut FileInterner,
 ) -> StageResult {
-    if stage.parser != ToolParser::None {
+    let parsed = stage.parser != ToolParser::None;
+    if parsed {
         match tool_version(runner, root, stage) {
-            Err(err) => return StageResult::Missing(format!("could not run: {err}")),
+            Err(result) => return result,
             Ok(version) => {
                 tracing::info!(stage = %stage.name, version = version.as_deref().unwrap_or("unknown"), "tool version");
                 if let VersionVerdict::Lag(why) = check_version(stage, version.as_deref()) {
@@ -195,24 +273,53 @@ fn execute(
         Err(err @ ExecError::NotFound { .. }) => {
             return StageResult::Missing(format!("could not run: {err}"));
         }
+        Err(err) if parsed => {
+            return StageResult::Failed(failure(
+                stage,
+                &stage.args,
+                &format!("could not run ({err})"),
+                "not run",
+                "",
+            ));
+        }
         Err(err) => return StageResult::Problem(format!("could not run: {err}")),
     };
-    if stage.parser == ToolParser::None {
+    if !parsed {
         return abnormal(&output, stage)
             .map_or(StageResult::Done(Vec::new()), StageResult::Problem);
     }
-    // A parsed stage exits nonzero when it has findings; only unparseable output is a failure.
-    if matches!(output.status, Outcome::Signaled | Outcome::TimedOut) {
-        return StageResult::Problem(abnormal(&output, stage).unwrap_or_default());
+    // A parsed stage exits nonzero when it has findings; only an undeclared status or unreadable output is a failure.
+    let declared =
+        matches!(output.status, Outcome::Exited(c) if normal_exits(stage.parser).contains(&c));
+    if !declared {
+        return StageResult::Failed(failure(
+            stage,
+            &stage.args,
+            "exited abnormally",
+            &status_text(&output),
+            &output.stderr,
+        ));
+    }
+    if output.status != Outcome::Exited(0) && output.stdout.trim().is_empty() {
+        return StageResult::Failed(failure(
+            stage,
+            &stage.args,
+            "printed no output despite a findings exit",
+            &status_text(&output),
+            &output.stderr,
+        ));
     }
     match parse(stage.parser, &output.stdout) {
         Ok(raws) => {
             tracing::info!(stage = %stage.name, findings = raws.len(), "tool output parsed");
             StageResult::Done(to_findings(root, stage, &raws, files))
         }
-        Err(err) => StageResult::Problem(format!(
-            "{err}; {}",
-            abnormal(&output, stage).unwrap_or_else(|| "exited 0".to_owned())
+        Err(err) => StageResult::Failed(failure(
+            stage,
+            &stage.args,
+            &format!("printed output its parser cannot read ({err})"),
+            &status_text(&output),
+            &output.stderr,
         )),
     }
 }
@@ -263,12 +370,20 @@ pub(crate) fn run_tools(
                     stage.name, stage.command
                 )));
             }
-            StageResult::Missing(p) if stage.fail_on_nonzero => {
-                tracing::warn!(stage = %stage.name, problem = %p, "tool binary missing");
-                let message = format!("tool stage `{}` ({}) {p}", stage.name, stage.command);
+            StageResult::Failed(message) => {
+                tracing::warn!(stage = %stage.name, %message, "tool stage failed to produce evidence");
                 out.push(
-                    unresolved(message).with_required(RequiredReason::SiblingMissing {
-                        product: stage.command.clone(),
+                    unresolved(message).with_required(RequiredReason::ToolFailed {
+                        stage: stage.name.clone(),
+                    }),
+                );
+            }
+            StageResult::Missing(p) => {
+                tracing::warn!(stage = %stage.name, problem = %p, "tool binary missing");
+                let message = failure(stage, &stage.args, &p, "not run", "");
+                out.push(
+                    unresolved(message).with_required(RequiredReason::ToolFailed {
+                        stage: stage.name.clone(),
                     }),
                 );
             }
@@ -282,7 +397,7 @@ pub(crate) fn run_tools(
                     &stage.name,
                 ));
             }
-            StageResult::Missing(p) | StageResult::Problem(p) => {
+            StageResult::Problem(p) => {
                 tracing::info!(stage = %stage.name, problem = %p, "tool stage failed (not gating)");
             }
         }
@@ -301,5 +416,148 @@ mod tests {
         assert_eq!(normalize(root, "./.github/a.yml"), ".github/a.yml");
         assert_eq!(normalize(root, "/r/repo/.github/a.yml"), ".github/a.yml");
         assert_eq!(normalize(root, ".github\\a.yml"), ".github/a.yml");
+    }
+
+    fn sh_stage(name: &str, parser: ToolParser, script: &str, probe: &str) -> ToolStage {
+        ToolStage {
+            name: name.to_owned(),
+            command: "sh".to_owned(),
+            args: vec!["-c".to_owned(), script.to_owned()],
+            timeout_secs: 30,
+            fail_on_nonzero: true,
+            parser,
+            labels: Vec::new(),
+            id_map: std::collections::BTreeMap::new(),
+            min_version: Some("1.7.0".to_owned()),
+            max_version: Some("1.7.99".to_owned()),
+            version_args: Some(vec!["-c".to_owned(), probe.to_owned()]),
+            optional: false,
+        }
+    }
+
+    fn run_one(stage: &ToolStage) -> Vec<Finding> {
+        let mut timing = Timing::default();
+        let mut files = FileInterner::default();
+        run_tools(
+            Path::new("."),
+            std::slice::from_ref(stage),
+            &mut timing,
+            &mut files,
+        )
+    }
+
+    fn assert_tool_failed(found: &[Finding], needles: &[&str]) {
+        assert_eq!(found.len(), 1, "{found:?}");
+        let f = &found[0];
+        assert_eq!(f.severity, Severity::Unresolved);
+        assert_eq!(
+            f.required,
+            Some(RequiredReason::ToolFailed {
+                stage: "lint".to_owned()
+            })
+        );
+        for needle in needles {
+            assert!(f.message.contains(needle), "{needle} not in {}", f.message);
+        }
+    }
+
+    const VERSION_OK: &str = "echo actionlint 1.7.12";
+
+    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    #[test]
+    fn a_missing_binary_is_a_required_tool_failed() {
+        let mut stage = sh_stage("lint", ToolParser::ActionlintJson, "true", VERSION_OK);
+        stage.command = "frob-no-such-binary".to_owned();
+        assert_tool_failed(
+            &run_one(&stage),
+            &["`lint`", "frob-no-such-binary", "not found"],
+        );
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    #[test]
+    fn an_unresolvable_pin_fails_the_version_probe_loudly() {
+        let stage = sh_stage(
+            "lint",
+            ToolParser::ActionlintJson,
+            "echo '[]'",
+            "echo 'No solution found: actionlint-py==1.7.12' >&2; exit 2",
+        );
+        assert_tool_failed(
+            &run_one(&stage),
+            &[
+                "version probe failed",
+                "exit 2",
+                "No solution found: actionlint-py==1.7.12",
+            ],
+        );
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    #[test]
+    fn an_undeclared_exit_with_empty_output_names_status_and_stderr() {
+        let stage = sh_stage(
+            "lint",
+            ToolParser::ActionlintJson,
+            "echo boom >&2; exit 2",
+            VERSION_OK,
+        );
+        assert_tool_failed(
+            &run_one(&stage),
+            &[
+                "exited abnormally",
+                "exit 2",
+                "stderr: boom",
+                "command `sh -c",
+            ],
+        );
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    #[test]
+    fn a_findings_exit_with_no_output_is_a_failure() {
+        let stage = sh_stage("lint", ToolParser::ActionlintJson, "exit 1", VERSION_OK);
+        assert_tool_failed(
+            &run_one(&stage),
+            &["printed no output", "exit 1", "stderr: (empty)"],
+        );
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    #[test]
+    fn unparseable_output_is_a_failure() {
+        let stage = sh_stage(
+            "lint",
+            ToolParser::ActionlintJson,
+            "echo 'not json'",
+            VERSION_OK,
+        );
+        assert_tool_failed(&run_one(&stage), &["parser cannot read", "exit 0"]);
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    #[test]
+    fn a_clean_run_yields_no_finding() {
+        for script in ["echo null", "echo '[]'", "echo '[]'; exit 1"] {
+            let stage = sh_stage("lint", ToolParser::ActionlintJson, script, VERSION_OK);
+            assert!(run_one(&stage).is_empty(), "{script}");
+        }
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::excerpt
+    #[test]
+    fn stderr_is_escaped_and_capped() {
+        let stage = sh_stage(
+            "lint",
+            ToolParser::ActionlintJson,
+            "printf '\\033[31mred\\n' >&2; head -c 5000 /dev/zero | tr '\\0' x >&2; exit 2",
+            VERSION_OK,
+        );
+        let found = run_one(&stage);
+        let msg = &found[0].message;
+        assert!(!msg.contains('\u{1b}') && !msg.contains('\n'), "{msg:?}");
+        assert!(msg.len() < 900, "capped: {}", msg.len());
+        let esc = escape("\u{1b}[31mx\n");
+        assert_eq!(esc, "\\u{1b}[31mx\\n");
     }
 }

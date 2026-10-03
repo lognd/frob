@@ -170,6 +170,24 @@
             "rule"
           ],
           "type": "object"
+        },
+        {
+          "description": "A configured tool stage could not run, exited abnormally or printed unreadable output.",
+          "properties": {
+            "kind": {
+              "const": "tool_failed",
+              "type": "string"
+            },
+            "stage": {
+              "description": "The name of the tool stage that did not produce evidence.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "stage"
+          ],
+          "type": "object"
         }
       ]
     }
