@@ -294,3 +294,188 @@ fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archiv
     assert_eq!(notices.len(), 1);
     assert_eq!(notices[0]["if"].as_str(), Some("${{ !matrix.smoke }}"));
 }
+
+fn jobs(wf: &Value) -> Vec<(&str, &Value)> {
+    wf["jobs"]
+        .as_mapping()
+        .unwrap()
+        .iter()
+        .map(|(k, v)| (k.as_str().unwrap(), v))
+        .collect()
+}
+
+fn needs_of(job: &Value) -> BTreeSet<&str> {
+    match &job["needs"] {
+        Value::String(s) => BTreeSet::from([s.as_str()]),
+        Value::Sequence(seq) => seq.iter().map(|v| v.as_str().unwrap()).collect(),
+        _ => BTreeSet::new(),
+    }
+}
+
+/// A job publishes when it can write the repository or mint an OIDC token, or runs a publish command.
+fn publishes(job: &Value) -> bool {
+    let perms = job["permissions"].as_mapping().unwrap();
+    let writes = perms.iter().any(|(_, v)| v.as_str() == Some("write"));
+    let text = serde_yaml_ng::to_string(&job["steps"]).unwrap();
+    writes
+        || [
+            "gh release create",
+            "uv publish",
+            "cargo publish",
+            "cargo dev publish",
+            "gh-action-pypi-publish",
+        ]
+        .iter()
+        .any(|c| text.contains(c))
+}
+
+/// Binds acceptance criterion 1 of ~DH63PV1: a job without timeout-minutes fails the test, naming the job.
+// frob:ticket 01M4069Y1YR0XCN4BKDDH63PV1
+#[test]
+fn every_job_has_a_timeout_and_the_failure_names_the_job() {
+    let wf = workflow();
+    let missing: Vec<&str> = jobs(&wf)
+        .into_iter()
+        .filter(|(_, j)| j["timeout-minutes"].as_u64().is_none())
+        .map(|(n, _)| n)
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "jobs lacking timeout-minutes: {missing:?}"
+    );
+    // The same check against a mutated workflow must name the offender.
+    let mut broken = wf.clone();
+    broken["jobs"]["smoke"]
+        .as_mapping_mut()
+        .unwrap()
+        .remove("timeout-minutes");
+    let names: Vec<&str> = jobs(&broken)
+        .into_iter()
+        .filter(|(_, j)| j["timeout-minutes"].as_u64().is_none())
+        .map(|(n, _)| n)
+        .collect();
+    assert_eq!(names, ["smoke"]);
+}
+
+/// Binds acceptance criterion 2 of ~DH63PV1: every publishing job needs the artifact smoke job.
+// frob:ticket 01M4069Y1YR0XCN4BKDDH63PV1
+#[test]
+fn every_publishing_job_needs_smoke() {
+    let wf = workflow();
+    let mut publishers = 0;
+    for (name, job) in jobs(&wf) {
+        if publishes(job) {
+            publishers += 1;
+            assert!(
+                needs_of(job).contains("smoke"),
+                "publishing job {name:?} must list `smoke` in needs"
+            );
+        }
+    }
+    assert!(
+        publishers >= 1,
+        "the GitHub release job must be detected as publishing"
+    );
+    // A publishing job without the need is detected.
+    let mut broken = wf.clone();
+    broken["jobs"]["release"]["needs"] = Value::Sequence(vec!["plan".into(), "build".into()]);
+    assert!(!needs_of(&broken["jobs"]["release"]).contains("smoke"));
+    assert!(publishes(&broken["jobs"]["release"]));
+}
+
+#[test]
+fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption() {
+    let wf = workflow();
+    let job = &wf["jobs"]["smoke"];
+    assert_eq!(
+        needs_of(job),
+        BTreeSet::from(["plan", "build", "wheel"]),
+        "smoke runs after every artifact exists"
+    );
+    assert_eq!(job["permissions"].as_mapping().unwrap().len(), 1);
+    assert_eq!(job["permissions"]["contents"].as_str(), Some("read"));
+    let entries = job["strategy"]["matrix"]["include"].as_sequence().unwrap();
+    let targets: BTreeSet<&str> = entries.iter().map(|e| str_of(e, "target")).collect();
+    assert_eq!(targets, BTreeSet::from(WHEEL_TARGETS));
+    let exempt: BTreeSet<&str> = entries
+        .iter()
+        .filter(|e| {
+            assert!(e["smoke"].is_bool(), "smoke must be explicit: {e:?}");
+            e["smoke"].as_bool() == Some(false)
+        })
+        .map(|e| str_of(e, "target"))
+        .collect();
+    assert_eq!(exempt, BTreeSet::from(SMOKE_EXEMPT_TARGETS));
+    let steps = job["steps"].as_sequence().unwrap();
+    // No building here: the job only consumes the uploaded artifacts.
+    let text = serde_yaml_ng::to_string(steps).unwrap();
+    for banned in [
+        "cargo build",
+        "maturin",
+        "dist build",
+        "build-wheel.sh",
+        "rustup",
+    ] {
+        assert!(!text.contains(banned), "smoke must not build: {banned}");
+    }
+    let downloads: Vec<&str> = steps
+        .iter()
+        .filter(|s| {
+            s["uses"]
+                .as_str()
+                .is_some_and(|u| u.starts_with("actions/download-artifact@"))
+        })
+        .map(|s| s["with"]["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        downloads,
+        [
+            "wheel-${{ matrix.target }}",
+            "archives-${{ matrix.target }}"
+        ]
+    );
+    // Every runnable step is gated on matrix.smoke; the only other step is the exemption notice.
+    for s in steps {
+        let cond = s["if"].as_str().unwrap_or_default();
+        assert!(
+            cond == "matrix.smoke" || cond == "${{ !matrix.smoke }}",
+            "smoke step must be gated on the exemption flag: {s:?}"
+        );
+    }
+    assert_eq!(
+        smoke_steps(&wf, "smoke", "packaging/pypi/smoke.sh").len(),
+        1
+    );
+    assert_eq!(
+        smoke_steps(&wf, "smoke", "packaging/smoke/archive-smoke.sh").len(),
+        1
+    );
+}
+
+#[test]
+fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
+    let wf = workflow();
+    let on = wf["on"].as_mapping().unwrap();
+    assert_eq!(on.len(), 1, "only the push trigger");
+    let push = on["push"].as_mapping().unwrap();
+    assert_eq!(
+        push.len(),
+        1,
+        "push is filtered by tags alone (no branches)"
+    );
+    assert_eq!(
+        push["tags"].as_sequence().unwrap(),
+        &[Value::from("frob-v*")]
+    );
+    for (name, job) in jobs(&wf) {
+        for s in job["steps"].as_sequence().unwrap() {
+            if let Some(u) = s["uses"].as_str() {
+                let sha = u.split('@').nth(1).unwrap_or_default();
+                assert!(
+                    sha.len() == 40 && sha.chars().all(|c| c.is_ascii_hexdigit()),
+                    "job {name:?}: action {u} is not pinned to a commit SHA"
+                );
+            }
+        }
+    }
+}

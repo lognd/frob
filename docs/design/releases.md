@@ -123,7 +123,11 @@ part of the job's design:
   `packaging/smoke/fixture-loop.sh`: init, doctor, check, a ticket with
   one criterion, work, edit, check, command-provider evidence, a changelog
   fragment, land, then the ticket is closed done and `ticket doctor` is
-  clean. A target that cannot be executed on its runner
+  clean. The loop runs twice: on the build runner right after the build,
+  and again in the `smoke` job, a separate matrix job that downloads the
+  uploaded wheel and archive onto a fresh runner (so a runtime dependency
+  only the build machine has is caught); every publishing job needs
+  `smoke`. A target that cannot be executed on its runner
   is listed as an explicit, tested exemption, never faked (v1's
   `_SMOKE_EXEMPT_TARGETS`).
 - **Build matrix:** cargo-dist per binary (monorepo.md 4): linux
