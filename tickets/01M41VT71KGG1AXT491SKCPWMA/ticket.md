@@ -2,7 +2,8 @@
 id = "01M41VT71KGG1AXT491SKCPWMA"
 title = "Ledger scrub recognizes only the host's path style; a Unix path in a ledger scrubbed on Windows (or the reverse) is mishandled"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M41S1JXXN380WPE29ATR5EP7"
