@@ -209,56 +209,15 @@ fn apply_transition(
     Ok(())
 }
 
-/// Where criterion `n` (numbered when evidence `since` was written) sits after later removals; `None` when removed.
-fn remap(ordered: &[&PmEvent], since: &PmEvent, n: usize) -> Option<usize> {
-    let mut now = n;
-    for ev in ordered.iter().skip_while(|e| e.id != since.id).skip(1) {
-        if let PmBody::Criterion(CriterionData {
-            op: Op::Remove,
-            position: Some(p),
-            ..
-        }) = &ev.body
-        {
-            match now.cmp(p) {
-                std::cmp::Ordering::Equal => return None,
-                std::cmp::Ordering::Greater => now -= 1,
-                std::cmp::Ordering::Less => {}
-            }
-        }
-    }
-    Some(now)
-}
-
 /// Set each criterion's `bound` from the evidence offered for it, by the ticket rule.
 ///
-/// An evidence event counts for criterion N as numbered when it was written,
-/// carried through later removals (nothing if N was removed). Within one
-/// (provider, ref, criterion) the latest record in fold order decides, and it
-/// binds only when measured and not failed ([`frob_ledger::fold::evidence_passes`]);
-/// a criterion is bound when some (provider, ref) pair's latest record passes.
+/// The rule lives in [`crate::milestone::criteria`]; a criterion is bound when
+/// some (provider, ref) pair's latest record for it passes.
 fn bind_criteria(o: &mut Object, ordered: &[&PmEvent]) {
     let Object::Milestone(m) = o else { return };
-    let get = |data: &frob_ledger::event::EvidenceData, key: &str| {
-        data.record
-            .get(key)
-            .and_then(toml::Value::as_str)
-            .unwrap_or_default()
-            .to_owned()
-    };
-    let mut latest: std::collections::BTreeMap<(String, String, usize), bool> =
-        std::collections::BTreeMap::new();
-    for ev in ordered {
-        let PmBody::Evidence(data) = &ev.body else {
-            continue;
-        };
-        let passes = frob_ledger::fold::evidence_passes(data);
-        let key = (get(data, "provider"), get(data, "ref"));
-        for n in data.accepts.iter().filter_map(|n| remap(ordered, ev, *n)) {
-            latest.insert((key.0.clone(), key.1.clone(), n), passes);
-        }
-    }
-    for (i, c) in m.criteria.iter_mut().enumerate() {
-        c.bound = latest.iter().any(|((_, _, n), pass)| *n == i + 1 && *pass);
+    let bound = crate::milestone::criteria::bindings_of(ordered, m.criteria.len());
+    for (c, by) in m.criteria.iter_mut().zip(bound) {
+        c.bound = !by.is_empty();
     }
 }
 

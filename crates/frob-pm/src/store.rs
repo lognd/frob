@@ -369,6 +369,7 @@ impl<'a> PmStore<'a> {
                 op: Op::Add,
                 text: Some(text.to_owned()),
                 position: None,
+                moved: None,
             }),
         )
     }
@@ -379,6 +380,17 @@ impl<'a> PmStore<'a> {
     ///
     /// As [`PmStore::append`].
     pub fn remove_criterion(self, id: ObjectId, position: usize) -> Result<Applied> {
+        let count = match self.require(ObjectKind::Milestone, id)?.object {
+            Object::Milestone(m) => m.criteria.len(),
+            Object::Cycle(_) => 0,
+        };
+        let moved = (1..=count)
+            .map(|n| match n.cmp(&position) {
+                std::cmp::Ordering::Less => n,
+                std::cmp::Ordering::Equal => 0,
+                std::cmp::Ordering::Greater => n - 1,
+            })
+            .collect();
         self.append(
             ObjectKind::Milestone,
             id,
@@ -386,6 +398,7 @@ impl<'a> PmStore<'a> {
                 op: Op::Remove,
                 text: None,
                 position: Some(position),
+                moved: Some(moved),
             }),
         )
     }

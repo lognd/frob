@@ -254,3 +254,167 @@ fn text_view_shows_the_milestone() {
         "{text}"
     );
 }
+
+// frob:ticket 01M4069RACAQ8Z2C8APK0YKGNK
+
+/// A repo with milestone 0.532.0 holding criteria `a`, `b`, `c`.
+fn three() -> Repo {
+    let repo = Repo::new();
+    repo.ok(&[
+        "milestone",
+        "new",
+        "0.532.0",
+        "--goal",
+        "g",
+        "--criterion",
+        "a",
+        "--criterion",
+        "b",
+        "--criterion",
+        "c",
+    ]);
+    repo
+}
+
+/// Offer `provider`/`reference` for criteria `accepts`; returns the raw output.
+fn offer(repo: &Repo, provider: &str, reference: &str, accepts: &[&str]) -> Output {
+    let mut args = vec![
+        "milestone",
+        "evidence",
+        "add",
+        "0.532.0",
+        "--provider",
+        provider,
+        "--ref",
+        reference,
+    ];
+    for n in accepts {
+        args.push("--accepts");
+        args.push(n);
+    }
+    repo.frob(&args)
+}
+
+/// The `state` of each criterion of 0.532.0 as `milestone show` prints it.
+fn states(repo: &Repo) -> Vec<String> {
+    repo.ok(&["milestone", "show", "0.532.0"])["data"]["milestone"]["criteria"]
+        .as_array()
+        .expect("criteria")
+        .iter()
+        .map(|c| c["state"].as_str().expect("state").to_owned())
+        .collect()
+}
+
+// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
+#[test]
+fn a_passing_measured_record_binds_and_show_names_the_evidence() {
+    let repo = three();
+    assert_eq!(states(&repo), ["unbound", "unbound", "unbound"]);
+    std::fs::write(repo.dir.path().join("proof.txt"), "proof").expect("write");
+    let out = offer(&repo, "file", "proof.txt", &["2"]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
+    let v = json(&out);
+    let event = v["data"]["event"].as_str().expect("event").to_owned();
+    assert_eq!(states(&repo), ["unbound", "bound", "unbound"]);
+    let shown = repo.ok(&["milestone", "show", "0.532.0"]);
+    let c = &shown["data"]["milestone"]["criteria"][1];
+    assert_eq!(c["bound"], true);
+    assert_eq!(c["bound_by"][0]["event"], event);
+    assert_eq!(c["bound_by"][0]["provider"], "file");
+    let list = repo.ok(&["milestone", "evidence", "list", "0.532.0"]);
+    assert_eq!(list["data"]["count"], 1);
+    assert_eq!(list["data"]["records"][0]["event"], event);
+    assert_eq!(list["data"]["records"][0]["effective_status"], "measured");
+}
+
+// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
+#[test]
+fn a_failing_record_does_not_bind_and_warns() {
+    let repo = three();
+    let out = offer(
+        &repo,
+        "command",
+        "git rev-parse --verify refs/tags/nope",
+        &["1"],
+    );
+    assert_eq!(code(&out), 0);
+    let v = json(&out);
+    assert_eq!(v["data"]["record"]["passed"], false);
+    assert!(
+        !v["warnings"].as_array().expect("warnings").is_empty(),
+        "{v}"
+    );
+    assert_eq!(states(&repo), ["unbound", "unbound", "unbound"]);
+}
+
+// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
+#[test]
+fn the_latest_record_per_provider_ref_criterion_decides() {
+    let repo = three();
+    let probe = "git rev-parse --verify refs/tags/probe";
+    offer(&repo, "command", probe, &["1"]);
+    assert_eq!(states(&repo)[0], "unbound");
+    git(repo.dir.path(), &["tag", "probe"]);
+    offer(&repo, "command", probe, &["1"]);
+    assert_eq!(states(&repo)[0], "bound");
+    git(repo.dir.path(), &["tag", "-d", "probe"]);
+    offer(&repo, "command", probe, &["1"]);
+    assert_eq!(states(&repo)[0], "unbound", "a later failure supersedes");
+}
+
+// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
+#[test]
+fn removing_a_criterion_remaps_bound_evidence() {
+    let repo = three();
+    std::fs::write(repo.dir.path().join("p.txt"), "p").expect("write");
+    offer(&repo, "file", "p.txt", &["3"]);
+    assert_eq!(states(&repo), ["unbound", "unbound", "bound"]);
+    let removed = repo.ok(&["milestone", "criterion", "remove", "0.532.0", "1"]);
+    let texts: Vec<&str> = removed["data"]["milestone"]["criteria"]
+        .as_array()
+        .expect("criteria")
+        .iter()
+        .map(|c| c["text"].as_str().expect("text"))
+        .collect();
+    assert_eq!(texts, ["b", "c"]);
+    assert_eq!(states(&repo), ["unbound", "bound"], "evidence follows c");
+    repo.ok(&["milestone", "criterion", "remove", "0.532.0", "2"]);
+    assert_eq!(
+        states(&repo),
+        ["unbound"],
+        "a removed criterion binds nothing"
+    );
+    let out = repo.frob(&["milestone", "criterion", "remove", "0.532.0", "9"]);
+    assert_eq!(code(&out), 2, "{}", String::from_utf8_lossy(&out.stdout));
+    assert_eq!(json(&out)["error"]["code"], "E-MILESTONE-CRITERION");
+}
+
+// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
+#[test]
+fn the_ticket_allowlist_and_accepts_range_apply() {
+    let repo = three();
+    let out = offer(&repo, "command", "rm -rf /", &["1"]);
+    assert_ne!(code(&out), 0);
+    assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-TOOL");
+    let out = offer(&repo, "command", "git --version", &["4"]);
+    assert_ne!(code(&out), 0);
+    assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-ACCEPTS");
+    let out = offer(&repo, "command", "git --version", &["0"]);
+    assert_ne!(code(&out), 0);
+    assert_eq!(
+        repo.ok(&["milestone", "evidence", "list", "0.532.0"])["data"]["count"],
+        0
+    );
+}
+
+// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
+#[test]
+fn criterion_add_is_idempotent_and_starts_unbound() {
+    let repo = three();
+    let v = repo.ok(&["milestone", "criterion", "add", "0.532.0", "d"]);
+    assert_eq!(v["already"], false);
+    assert_eq!(states(&repo).len(), 4);
+    let again = repo.ok(&["milestone", "criterion", "add", "0.532.0", "d"]);
+    assert_eq!(again["already"], true);
+    assert_eq!(states(&repo).len(), 4);
+}

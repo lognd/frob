@@ -60,24 +60,28 @@ impl EvidenceAdd {
         let record =
             provider::capture(&ws, self.provider, &self.reference, &self.accepts).map_err(cli)?;
         let appended = events::append(&ws.ledger, id, &record).map_err(cli)?;
-        let mut payload = Payload::new(AddData {
+        let payload = Payload::new(AddData {
             id,
             handle: view.summary.handle,
             event: appended.event.to_string(),
             commit: appended.commit.to_string(),
             record: record.clone(),
         });
-        if record.passed == Some(false) {
-            payload = payload.with_warning(
-                "the measured process failed; this record does not satisfy the close guard",
-            );
-        }
-        if record.status == Status::Unmeasured {
-            payload =
-                payload.with_warning("the measurement could not be taken (timeout or signal)");
-        }
-        Ok(payload)
+        Ok(with_record_warnings(payload, &record))
     }
+}
+
+/// Attach the warnings a non-binding `record` deserves, for any evidence target.
+pub fn with_record_warnings<T>(mut payload: Payload<T>, record: &EvidenceRecord) -> Payload<T> {
+    if record.passed == Some(false) {
+        payload = payload.with_warning(
+            "the measured process failed; this record does not satisfy the close guard",
+        );
+    }
+    if record.status == Status::Unmeasured {
+        payload = payload.with_warning("the measurement could not be taken (timeout or signal)");
+    }
+    payload
 }
 
 /// One row of `ticket evidence list`.
@@ -214,6 +218,68 @@ fn ticket_arg() -> Arg {
         .help("Full ULID, ~handle or alias of the ticket")
 }
 
+/// The `--provider`, `--ref` and `--accepts` flags every evidence-capturing verb shares.
+pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+    cmd.arg(
+        Arg::new("provider")
+            .long("provider")
+            .required(true)
+            .value_name("PROVIDER")
+            .value_parser(PossibleValuesParser::new(Provider::NAMES))
+            .help("Measurer: nextest, command or file"),
+    )
+    .arg(
+        Arg::new("ref")
+            .long("ref")
+            .required(true)
+            .value_name("REF")
+            .help("Nextest filter args, the command line, or the file path"),
+    )
+    .arg(
+        Arg::new("accepts")
+            .long("accepts")
+            .value_name("N")
+            .value_parser(gob_cli::clap::value_parser!(usize))
+            .action(ArgAction::Append)
+            .help("1-based acceptance criterion this evidence is offered for (repeatable)"),
+    )
+}
+
+/// The parsed capture flags of [`capture_args`].
+#[derive(Debug, Clone)]
+pub struct CaptureArgs {
+    /// The measurer.
+    pub provider: Provider,
+    /// Nextest filter args, the command line, or the file path.
+    pub reference: String,
+    /// 1-based criteria the evidence is offered for.
+    pub accepts: Vec<usize>,
+}
+
+impl CaptureArgs {
+    /// Read the flags of [`capture_args`] from `m`.
+    ///
+    /// # Errors
+    ///
+    /// [`CliError::Usage`] when a required flag is missing or the provider is unknown.
+    pub fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let provider = flag(m, "provider")
+            .ok_or_else(|| CliError::Usage("add needs --provider".to_owned()))?
+            .parse::<Provider>()
+            .map_err(|e| CliError::Usage(e.to_string()))?;
+        let reference =
+            flag(m, "ref").ok_or_else(|| CliError::Usage("add needs --ref".to_owned()))?;
+        Ok(Self {
+            provider,
+            reference,
+            accepts: m
+                .get_many::<usize>("accepts")
+                .map(|v| v.copied().collect())
+                .unwrap_or_default(),
+        })
+    }
+}
+
 /// Capture evidence with a provider and append it to a ticket: `ticket evidence add <ticket>`.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
@@ -227,47 +293,20 @@ impl Command for AddVerb {
     type Data = AddData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(
-                Arg::new("provider")
-                    .long("provider")
-                    .required(true)
-                    .value_name("PROVIDER")
-                    .value_parser(PossibleValuesParser::new(Provider::NAMES))
-                    .help("Measurer: nextest, command or file"),
-            )
-            .arg(
-                Arg::new("ref")
-                    .long("ref")
-                    .required(true)
-                    .value_name("REF")
-                    .help("Nextest filter args, the command line, or the file path"),
-            )
-            .arg(
-                Arg::new("accepts")
-                    .long("accepts")
-                    .value_name("N")
-                    .value_parser(gob_cli::clap::value_parser!(usize))
-                    .action(ArgAction::Append)
-                    .help("1-based acceptance criterion this evidence is offered for (repeatable)"),
-            )
+        capture_args(cmd.arg(ticket_arg()))
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let provider = flag(m, "provider")
-            .ok_or_else(|| CliError::Usage("add needs --provider".to_owned()))?
-            .parse::<Provider>()
-            .map_err(|e| CliError::Usage(e.to_string()))?;
-        let reference =
-            flag(m, "ref").ok_or_else(|| CliError::Usage("add needs --ref".to_owned()))?;
+        let CaptureArgs {
+            provider,
+            reference,
+            accepts,
+        } = CaptureArgs::from_matches(m)?;
         Ok(Self(EvidenceAdd {
             ticket: flag(m, "ticket").unwrap_or_default(),
             provider,
             reference,
-            accepts: m
-                .get_many::<usize>("accepts")
-                .map(|v| v.copied().collect())
-                .unwrap_or_default(),
+            accepts,
         }))
     }
 

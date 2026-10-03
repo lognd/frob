@@ -531,3 +531,47 @@ fn spellings_ordering_and_store_accessors() {
             .all(|w| w[0].order_key() <= w[1].order_key())
     );
 }
+
+// frob:ticket 01M4069RACAQ8Z2C8APK0YKGNK
+// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
+#[test]
+fn bindings_name_the_deciding_event_and_removal_records_the_moved_map() {
+    let (_dir, ledger) = fixture();
+    let pm = PmStore::new(&ledger);
+    let id = pm
+        .create(milestone("0.532.0", &["a", "b", "c"]))
+        .expect("create")
+        .object
+        .id();
+    let first = pm
+        .add_evidence(id, evidence("t", &[3], false))
+        .expect("fail")
+        .events[0];
+    assert!(
+        pm.criterion_bindings(id, 3).expect("b")[2].is_empty(),
+        "a failing record binds nothing"
+    );
+    let second = pm
+        .add_evidence(id, evidence("t", &[3], true))
+        .expect("pass")
+        .events[0];
+    let b = pm.criterion_bindings(id, 3).expect("b");
+    assert_eq!(b[2].len(), 1);
+    assert_eq!(b[2][0].event, second);
+    assert_ne!(b[2][0].event, first);
+    pm.remove_criterion(id, 2).expect("rm");
+    let b = pm.criterion_bindings(id, 2).expect("b");
+    assert_eq!(b[1][0].event, second, "c is now criterion 2");
+    let events = pm.evidence_events(id).expect("events");
+    assert_eq!(events.len(), 2);
+    let tip = ledger.tip_hex().expect("tip").expect("some");
+    let moved = pm
+        .read_events_at(&tip, ObjectKind::Milestone, id)
+        .expect("read")
+        .into_iter()
+        .find_map(|e| match e.body {
+            frob_pm::event::PmBody::Criterion(c) => c.moved,
+            _ => None,
+        });
+    assert_eq!(moved, Some(vec![1, 0, 2]));
+}

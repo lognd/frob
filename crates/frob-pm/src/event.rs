@@ -79,6 +79,9 @@ pub struct CriterionData {
     /// Remove only: the 1-based position in the list as it stood before this event.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub position: Option<usize>,
+    /// Remove only: for each criterion before this event, its 1-based position after, or 0 when removed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub moved: Option<Vec<usize>>,
 }
 
 /// A state change.

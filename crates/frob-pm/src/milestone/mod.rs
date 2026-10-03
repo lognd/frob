@@ -3,6 +3,8 @@
 //! Pure functions over folded [`Milestone`]s so the CLI layer only maps their
 //! typed [`MilestoneError`] to a refusal; nothing here touches the ledger.
 
+pub mod criteria;
+
 use crate::model::{Day, Milestone};
 
 /// A milestone request that cannot be honoured, each with the fix the caller needs.

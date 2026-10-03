@@ -13,6 +13,7 @@ pub mod doctor;
 pub mod init;
 pub mod lease_cmd;
 pub mod milestone_cmd;
+pub mod milestone_evidence_cmd;
 pub mod ticket;
 mod workspace;
 

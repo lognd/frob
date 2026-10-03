@@ -37,6 +37,21 @@ pub struct CriterionView {
     pub text: String,
     /// True when passing evidence is bound to it.
     pub bound: bool,
+    /// `bound` or `unbound`, spelled for display.
+    pub state: String,
+    /// The passing evidence records that bind it (empty when unbound).
+    pub bound_by: Vec<BoundBy>,
+}
+
+/// One passing evidence record binding a criterion.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct BoundBy {
+    /// The evidence event id.
+    pub event: String,
+    /// The provider that measured it.
+    pub provider: String,
+    /// What was measured (the record's `ref`).
+    pub reference: String,
 }
 
 /// A milestone as every `milestone` verb reports it.
@@ -66,7 +81,7 @@ pub struct MilestoneView {
 
 impl MilestoneView {
     /// View `m`, looking each member epic up in `ledger` for its handle and title.
-    fn of(m: &Milestone, ledger: &Ledger) -> Self {
+    pub(crate) fn of(m: &Milestone, ledger: &Ledger) -> Self {
         let epics = m
             .epics
             .iter()
@@ -86,6 +101,12 @@ impl MilestoneView {
                 }
             })
             .collect();
+        let mut bindings = PmStore::new(ledger)
+            .criterion_bindings(m.id, m.criteria.len())
+            .unwrap_or_else(|e| {
+                tracing::warn!(milestone = %m.id, error = %e, "criterion bindings unreadable");
+                vec![Vec::new(); m.criteria.len()]
+            });
         Self {
             id: m.id.to_string(),
             handle: m.id.handle(),
@@ -102,6 +123,15 @@ impl MilestoneView {
                     position: i + 1,
                     text: c.text.clone(),
                     bound: c.bound,
+                    state: if c.bound { "bound" } else { "unbound" }.to_owned(),
+                    bound_by: std::mem::take(&mut bindings[i])
+                        .into_iter()
+                        .map(|b| BoundBy {
+                            event: b.event.to_string(),
+                            provider: b.provider,
+                            reference: b.reference,
+                        })
+                        .collect(),
                 })
                 .collect(),
             created: m.created,
@@ -159,7 +189,7 @@ fn refusal(e: &MilestoneError) -> CliError {
 }
 
 /// Map a `frob-pm` failure to the CLI error: a refusal when the caller can fix it, else internal.
-fn pm_err(e: PmError) -> CliError {
+pub(crate) fn pm_err(e: PmError) -> CliError {
     use RefusalClass::{GuardNeedsAction, UsageError};
     match e {
         PmError::Ledger(l) => cli_err(l),
@@ -174,7 +204,7 @@ fn pm_err(e: PmError) -> CliError {
 }
 
 /// Every milestone folded at the current tip.
-fn milestones(store: PmStore<'_>) -> Result<Vec<Milestone>, CliError> {
+pub(crate) fn milestones(store: PmStore<'_>) -> Result<Vec<Milestone>, CliError> {
     Ok(store
         .list(ObjectKind::Milestone)
         .map_err(pm_err)?
@@ -187,7 +217,7 @@ fn milestones(store: PmStore<'_>) -> Result<Vec<Milestone>, CliError> {
 }
 
 /// Resolve `reference` (version, `~handle` or ULID) to a milestone, suggesting versions when none match.
-fn find(store: PmStore<'_>, reference: &str) -> Result<Milestone, CliError> {
+pub(crate) fn find(store: PmStore<'_>, reference: &str) -> Result<Milestone, CliError> {
     match store.resolve(ObjectKind::Milestone, reference) {
         Ok(frob_pm::Object::Milestone(m)) => Ok(m),
         Ok(frob_pm::Object::Cycle(_)) => unreachable!("resolve of a milestone returns a milestone"),
@@ -200,7 +230,7 @@ fn find(store: PmStore<'_>, reference: &str) -> Result<Milestone, CliError> {
 }
 
 /// The positional `VERSION` argument.
-fn version_arg() -> Arg {
+pub(crate) fn version_arg() -> Arg {
     Arg::new("version")
         .required(true)
         .value_name("VERSION")
@@ -439,7 +469,8 @@ impl Command for MilestoneList {
 
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
-    cli.register::<MilestoneNew>()
+    crate::milestone_evidence_cmd::register(cli)
+        .register::<MilestoneNew>()
         .register::<MilestoneAdd>()
         .register::<MilestoneShow>()
         .register::<MilestoneList>()

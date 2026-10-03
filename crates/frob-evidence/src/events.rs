@@ -40,7 +40,13 @@ pub struct Appended {
 }
 
 /// Split a record into the ledger's `accepts` plus the record's remaining keys.
-fn to_data(record: &EvidenceRecord) -> Result<EvidenceData> {
+///
+/// Public so any evidence target (a ticket, a milestone) writes the one record format.
+///
+/// # Errors
+///
+/// [`EvidenceError::Malformed`] when the record cannot be rendered as TOML.
+pub fn to_data(record: &EvidenceRecord) -> Result<EvidenceData> {
     let mut table = toml::Table::try_from(record)
         .map_err(|e| EvidenceError::Malformed(format!("rendering the record: {e}")))?;
     table.remove("accepts");
@@ -52,6 +58,15 @@ fn to_data(record: &EvidenceRecord) -> Result<EvidenceData> {
 
 /// Rebuild the record an `evidence` event carries.
 fn to_record(event: &Event, data: &EvidenceData) -> Result<EvidenceRecord> {
+    record_from_data(&event.id.to_string(), data)
+}
+
+/// Rebuild the record of evidence `data` carried by event `event` (named in errors only).
+///
+/// # Errors
+///
+/// [`EvidenceError::Malformed`] when the data does not parse as a record.
+pub fn record_from_data(event: &str, data: &EvidenceData) -> Result<EvidenceRecord> {
     let mut table = data.record.clone();
     if !data.accepts.is_empty() {
         let accepts = data
@@ -59,12 +74,12 @@ fn to_record(event: &Event, data: &EvidenceData) -> Result<EvidenceRecord> {
             .iter()
             .map(|n| i64::try_from(*n).map(toml::Value::Integer))
             .collect::<std::result::Result<Vec<_>, _>>()
-            .map_err(|e| EvidenceError::Malformed(format!("event {}: {e}", event.id)))?;
+            .map_err(|e| EvidenceError::Malformed(format!("event {event}: {e}")))?;
         table.insert("accepts".to_owned(), toml::Value::Array(accepts));
     }
     table
         .try_into()
-        .map_err(|e: toml::de::Error| EvidenceError::Malformed(format!("event {}: {e}", event.id)))
+        .map_err(|e: toml::de::Error| EvidenceError::Malformed(format!("event {event}: {e}")))
 }
 
 fn appended(applied: &Applied, what: &str) -> Result<Appended> {

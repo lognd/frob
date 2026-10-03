@@ -17,6 +17,10 @@
 | `lease widen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-read the ticket scope (optionally adding globs to it) and rescope the caller's lease to match. |
 | `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |
 | `milestone add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an epic to a milestone; a repeat returns `already`, a non-epic is refused. |
+| `milestone criterion add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an exit criterion to a milestone; an identical criterion already there returns `already`. |
+| `milestone criterion remove` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove the exit criterion at a 1-based position; evidence for later criteria follows its criterion. |
+| `milestone evidence add` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Capture evidence with a provider and offer it for milestone exit criteria. |
+| `milestone evidence list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the evidence records of a milestone with their effective status. |
 | `milestone list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every milestone, oldest first. |
 | `milestone new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a milestone; an identical repeat returns `already`, a different one is refused. |
 | `milestone show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one milestone with its member epics and exit criteria. |
