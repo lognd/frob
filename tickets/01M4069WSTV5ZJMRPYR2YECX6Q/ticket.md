@@ -2,7 +2,8 @@
 id = "01M4069WSTV5ZJMRPYR2YECX6Q"
 title = "frob release status [VERSION]: readiness report that never fails"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
