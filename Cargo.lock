@@ -903,6 +903,7 @@ dependencies = [
  "blake3",
  "frob-ledger",
  "frob-pm",
+ "frob-release",
  "gob-cli",
  "gob-config",
  "gob-exec",

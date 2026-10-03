@@ -239,6 +239,7 @@ fn the_running_frob_is_an_allowed_command_tool_without_listing_it() {
 
 #[test]
 fn a_missing_fragment_refuses_with_the_remedy_and_a_present_one_closes() {
+    // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
     let dir = repo(&["changelog_fragment"]);
     let id = chore(dir.path(), &[]);
     let out = close(dir.path(), &id, &[]);
@@ -251,6 +252,40 @@ fn a_missing_fragment_refuses_with_the_remedy_and_a_present_one_closes() {
     std::fs::write(
         dir.path().join(format!("changelog.d/{id}.added.md")),
         "Added a thing.\n",
+    )
+    .expect("fragment");
+    ok(dir.path(), &["ticket", "close", &id, "--outcome", "done"]);
+}
+
+#[test]
+fn an_invalid_fragment_refuses_close_with_the_validation_message() {
+    // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
+    let dir = repo(&["changelog_fragment"]);
+    let id = chore(dir.path(), &[]);
+    std::fs::create_dir_all(dir.path().join("changelog.d")).expect("mkdir");
+    let bad_type = dir.path().join(format!("changelog.d/{id}.improved.md"));
+    std::fs::write(&bad_type, "frob: Improved a thing.\n").expect("fragment");
+    let out = close(dir.path(), &id, &[]);
+    assert_eq!(code(&out), 3);
+    assert_eq!(json(&out)["error"]["code"], "E-DONE-CHANGELOG-FRAGMENT");
+    let text = refusal_text(&out);
+    assert!(text.contains("unknown type `improved`"), "{text}");
+    std::fs::remove_file(&bad_type).expect("remove");
+    std::fs::write(
+        dir.path().join(format!("changelog.d/{id}.changed.md")),
+        "\n",
+    )
+    .expect("fragment");
+    let out = close(dir.path(), &id, &[]);
+    assert_eq!(code(&out), 3);
+    assert!(
+        refusal_text(&out).contains("empty fragment"),
+        "{}",
+        refusal_text(&out)
+    );
+    std::fs::write(
+        dir.path().join(format!("changelog.d/{id}.changed.md")),
+        "frob: Changed a thing.\n",
     )
     .expect("fragment");
     ok(dir.path(), &["ticket", "close", &id, "--outcome", "done"]);

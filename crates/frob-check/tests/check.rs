@@ -952,3 +952,57 @@ fn a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment() {
     );
     assert!(hits[0].contains(OTHER_ULID), "{hits:?}");
 }
+
+/// `check --ticket` findings of rule `rule` for the ticket of `ticket_fixture`.
+fn ticket_rule_messages(dir: &Path, id: &str, rule: &str) -> Vec<String> {
+    let r = run(
+        dir,
+        &CheckOptions {
+            ticket: Some(id.to_owned()),
+            ..quiet()
+        },
+    )
+    .expect("scoped run");
+    r.findings
+        .iter()
+        .filter(|f| f.rule.as_str() == rule)
+        .map(|f| f.message.clone())
+        .collect()
+}
+
+#[test]
+fn rel003_ticket_without_a_fragment_reports_with_the_remedy() {
+    // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
+    // frob:tests crates/frob-release/src/rel003.rs::missing
+    let (dir, id) = ticket_fixture();
+    let msgs = ticket_rule_messages(dir.path(), &id, "REL003");
+    assert_eq!(msgs.len(), 1, "{msgs:?}");
+    assert!(msgs[0].contains("frob ticket fragment"), "{}", msgs[0]);
+    assert!(msgs[0].contains(&id), "{}", msgs[0]);
+}
+
+#[test]
+fn rel003_invalid_fragment_reports_the_validation_message_and_valid_is_clean() {
+    // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
+    // frob:tests crates/frob-release/src/rel003.rs::evaluate
+    let (dir, id) = ticket_fixture();
+    write(
+        dir.path(),
+        &format!("changelog.d/{id}.improved.md"),
+        "frob: x.\n",
+    );
+    let msgs = ticket_rule_messages(dir.path(), &id, "REL003");
+    assert_eq!(msgs.len(), 1, "{msgs:?}");
+    assert!(msgs[0].contains("unknown type `improved`"), "{}", msgs[0]);
+    std::fs::remove_file(dir.path().join(format!("changelog.d/{id}.improved.md"))).unwrap();
+    write(dir.path(), &format!("changelog.d/{id}.fixed.md"), "\n");
+    let msgs = ticket_rule_messages(dir.path(), &id, "REL003");
+    assert_eq!(msgs.len(), 1, "{msgs:?}");
+    std::fs::remove_file(dir.path().join(format!("changelog.d/{id}.fixed.md"))).unwrap();
+    write(
+        dir.path(),
+        &format!("changelog.d/{id}.changed.md"),
+        "frob: Changed.\n",
+    );
+    assert!(ticket_rule_messages(dir.path(), &id, "REL003").is_empty());
+}
