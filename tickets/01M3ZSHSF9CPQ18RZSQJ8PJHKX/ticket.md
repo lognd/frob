@@ -2,7 +2,8 @@
 id = "01M3ZSHSF9CPQ18RZSQJ8PJHKX"
 title = "Record owner decisions on mirror, diagnostics and plugins (D76, D78, D79 accepted with changes)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
