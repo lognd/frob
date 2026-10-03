@@ -2,13 +2,14 @@
 id = "01M3ZX8BCYDHK4B3TY1J7ZYSVZ"
 title = "Mirror: reconcile tracker edits deterministically instead of blocking (MIR002 redefined)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T03:34:50Z"
-updated = "2026-10-03T03:37:47Z"
+updated = "2026-10-03T03:37:48Z"
 idempotency_key = "m2-mirror-reconcile"
 labels = ["milestone:2", "area:mirror"]
 scope = ["docs/design/**"]
