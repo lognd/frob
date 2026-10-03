@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Smoke a built frob wheel: check its metadata (name frob, platform tag, optional version),
 # install it into a clean venv with uv and run the shipped executables.
-# Usage: smoke.sh WHEEL [EXPECTED_VERSION]   (the artifact smoke ticket NWXQPMM builds on this)
+# Usage: smoke.sh WHEEL [EXPECTED_VERSION]   (the repository loop is packaging/smoke/fixture-loop.sh, ~NWXQPMM)
 set -euo pipefail
 
 wheel="$(realpath "${1:?usage: smoke.sh WHEEL [EXPECTED_VERSION]}")"
@@ -21,7 +21,7 @@ meta="$(dist_info METADATA)"
 tag="$(dist_info WHEEL | sed -n 's/^Tag: //p' | tr -d '\r')"
 echo "smoke: wheel $(basename "$wheel") tag=$tag" >&2
 tr -d '\r' <<<"$meta" | grep -qx 'Name: frob' || { echo "smoke: metadata name is not frob" >&2; exit 1; }
-if [[ "$(uname -s)" == Linux && "$tag" != *manylinux_2_28* ]]; then
+if [[ "$(uname -s)" == Linux && "${WHEEL_COMPAT:-}" != off && "$tag" != *manylinux_2_28* ]]; then
     echo "smoke: linux tag is not manylinux_2_28 ($tag)" >&2; exit 1
 fi
 
@@ -31,6 +31,6 @@ got="$("$bin/frob" --version | tr -d '\r')"; echo "$got"
 if [[ -n "$want" && "$got" != "frob $want" ]]; then
     echo "smoke: expected 'frob $want', got '$got'" >&2; exit 1
 fi
-git init -q "$work/repo"
-(cd "$work/repo" && "$bin/frob" doctor >/dev/null)
+# The shared fixture-repository loop (init through land) with the installed binaries.
+"$(dirname "$0")/../smoke/fixture-loop.sh" "$bin" "$want"
 echo "smoke: ok"

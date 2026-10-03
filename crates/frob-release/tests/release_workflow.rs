@@ -1,6 +1,7 @@
 //! Invariants of the `wheel` job in `.github/workflows/release.yml`: five targets, pinned
 //! images and maturin, timeouts, minimal permissions, and the explicit smoke exemption.
 // frob:ticket 01M4069XRXTR0P7BE595Y75MX7
+// frob:ticket 01M4069XXM8A47Y1F88NWXQPMM
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -207,4 +208,89 @@ fn retired_runner_and_manylinux_auto_never_appear() {
             && !text.contains("manylinux: auto")
             && !text.contains("manylinux_auto")
     );
+}
+
+fn repo_file(rel: &str) -> String {
+    fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(rel),
+    )
+    .unwrap_or_else(|e| panic!("{rel}: {e}"))
+}
+
+fn smoke_steps<'a>(wf: &'a Value, job: &str, script: &str) -> Vec<&'a Value> {
+    wf["jobs"][job]["steps"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .filter(|s| s["run"].as_str().is_some_and(|r| r.contains(script)))
+        .collect()
+}
+
+/// Binds acceptance criterion 2 of ~NWXQPMM: an exempt target reports an explicit skip, never a fake run.
+// frob:ticket 01M4069XXM8A47Y1F88NWXQPMM
+#[test]
+fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive() {
+    let wf = workflow();
+    // Wheel jobs: smoke.sh delegates to the shared loop; archive jobs call archive-smoke.sh, which does too.
+    assert!(repo_file("packaging/pypi/smoke.sh").contains("smoke/fixture-loop.sh"));
+    assert!(repo_file("packaging/smoke/archive-smoke.sh").contains("fixture-loop.sh"));
+    let loop_script = repo_file("packaging/smoke/fixture-loop.sh");
+    for verb in [
+        "init",
+        "doctor",
+        "check",
+        "ticket new",
+        "work \"$handle\"",
+        "evidence add",
+        "--provider command",
+        "land",
+        "ticket show",
+        "ticket doctor",
+    ] {
+        assert!(loop_script.contains(verb), "fixture loop lacks `{verb}`");
+    }
+    assert!(
+        loop_script.contains("changelog.d/$id."),
+        "fragment is named by the ticket id"
+    );
+    assert!(loop_script.is_ascii(), "fixture loop must be ASCII");
+
+    let wheel = smoke_steps(&wf, "wheel", "packaging/pypi/smoke.sh");
+    assert_eq!(wheel.len(), 1);
+    let archive = smoke_steps(&wf, "build", "packaging/smoke/archive-smoke.sh");
+    assert_eq!(archive.len(), 1, "exactly one archive smoke step");
+    assert_eq!(archive[0]["if"].as_str(), Some("matrix.smoke"));
+
+    let build_matrix = wf["jobs"]["build"]["strategy"]["matrix"]["include"]
+        .as_sequence()
+        .unwrap();
+    let targets: BTreeSet<&str> = build_matrix.iter().map(|e| str_of(e, "target")).collect();
+    assert_eq!(targets, BTreeSet::from(WHEEL_TARGETS));
+    let exempt: BTreeSet<&str> = build_matrix
+        .iter()
+        .filter(|e| {
+            assert!(
+                e["smoke"].is_bool(),
+                "smoke must be an explicit boolean: {e:?}"
+            );
+            e["smoke"].as_bool() == Some(false)
+        })
+        .map(|e| str_of(e, "target"))
+        .collect();
+    assert_eq!(exempt, BTreeSet::from(SMOKE_EXEMPT_TARGETS));
+    // The exemption reports skipped with its reason (a notice), gated on the negation.
+    let notices: Vec<&Value> = wf["jobs"]["build"]["steps"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .filter(|s| {
+            s["run"]
+                .as_str()
+                .is_some_and(|r| r.contains("smoke exempt for"))
+        })
+        .collect();
+    assert_eq!(notices.len(), 1);
+    assert_eq!(notices[0]["if"].as_str(), Some("${{ !matrix.smoke }}"));
 }
