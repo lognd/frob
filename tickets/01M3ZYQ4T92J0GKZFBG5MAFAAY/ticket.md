@@ -2,7 +2,8 @@
 id = "01M3ZYQ4T92J0GKZFBG5MAFAAY"
 title = "Release track: scrumban flow wired to milestones, cycles and incremental releases (D83)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
