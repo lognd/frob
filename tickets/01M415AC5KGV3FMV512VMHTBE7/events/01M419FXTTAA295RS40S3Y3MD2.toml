@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T16:27:56Z"
+digest = "56ae407e7bfbc4ed72dd962a6530e06c182d0ba21a9cc66188f35843b8e05361"
+exit_code = 0
+inline = '''
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/VMHTBE7/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8780d05c-10ce-4aa1-a121-c7003cc56519 with nextest profile: default
+    Starting 1 test across 2 binaries (15 tests skipped)
+        PASS [   0.376s] frob-land::land wait_retries_a_base_that_moved_once_with_ledger_only_commits
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.377s] 1 test run: 1 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(wait_retries_a_base_that_moved_once_with_ledger_only_commits)'"
+size = 656
+status = "measured"
+tests = ["wait_retries_a_base_that_moved_once_with_ledger_only_commits"]
+at = "2026-10-03T16:27:56Z"
+actor = "lognd"
+rev = 1

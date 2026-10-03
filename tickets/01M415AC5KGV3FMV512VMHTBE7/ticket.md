@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T15:14:59Z"
-updated = "2026-10-03T16:12:26Z"
+updated = "2026-10-03T16:27:56Z"
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]
 text = "Given --wait and a base that moves once during the land with ledger-only commits, when land runs, then it lands without a manual retry and reports attempts 2"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given --wait and a base that keeps moving past the budget, when land runs, then it fails with E-LAND-STALE naming the attempt count"
