@@ -11,7 +11,7 @@ created = "2026-10-03T06:12:53Z"
 updated = "2026-10-03T10:43:47Z"
 idempotency_key = "m2-rel-pm-knobs"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-pm/src/config.rs", "crates/frob/src/init.rs", "docs/reference/config/**", "crates/frob-pm/Cargo.toml"]
+scope = ["crates/frob-pm/src/config.rs", "crates/frob/src/init.rs", "docs/reference/config/**", "crates/frob-pm/Cargo.toml", "crates/frob-pm/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
