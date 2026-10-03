@@ -1,0 +1,19 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T19:25:18Z"
+digest = "3ef2bd5975aaddecc0db18840964f3b66afcb5155bed413c4c085a37c9d20ad6"
+exit_code = 101
+inline = """
+error: package ID specification `frob` did not match any packages
+
+help: a package with a similar name exists: `glob`
+error: command `/home/logan/.rustup/toolchains/1.98.0-aarch64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package frob --test fragment` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p frob --test fragment"
+size = 332
+status = "measured"
+at = "2026-10-03T19:25:18Z"
+actor = "lognd"
+rev = 1

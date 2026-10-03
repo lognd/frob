@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal refactor: one ledger-path classifier; no user-visible change"
+at = "2026-10-03T19:23:44Z"
+actor = "lognd"
+rev = 1

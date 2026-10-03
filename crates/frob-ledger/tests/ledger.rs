@@ -849,3 +849,19 @@ fn only_measured_passing_evidence_binds_and_the_latest_per_reference_decides() {
     );
     assert!(ledger.doctor(false).expect("doctor").is_clean());
 }
+
+// frob:tests crates/frob-ledger/src/ledger.rs::LedgerConfig.is_ledger_path
+#[test]
+fn is_ledger_path_matches_only_paths_under_the_ledger_directory() {
+    let cfg = LedgerConfig::default();
+    assert!(cfg.is_ledger_path("tickets/ABC/ticket.toml"));
+    assert!(!cfg.is_ledger_path("tickets"));
+    assert!(!cfg.is_ledger_path("tickets-extra/x"));
+    assert!(!cfg.is_ledger_path("src/tickets/x"));
+    let slash = LedgerConfig {
+        dir: "led/".to_owned(),
+        ..LedgerConfig::default()
+    };
+    assert!(slash.is_ledger_path("led/x"));
+    assert!(!slash.is_ledger_path("ledx/x"));
+}

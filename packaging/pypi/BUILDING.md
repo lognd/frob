@@ -20,7 +20,9 @@ manylinux tag check).
       -e CARGO_TARGET_DIR=/work/target/m28 \
       -e CARGO_TARGET_<TRIPLE>_LINKER=gcc -e RUSTFLAGS="-C debuginfo=0" \
       quay.io/pypa/manylinux_2_28_<arch> bash -c \
-      'curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal;
+      'curl -sSfo /tmp/rustup-init https://static.rust-lang.org/rustup/archive/<ver>/<triple>/rustup-init;
+       echo "<sha256>  /tmp/rustup-init" | sha256sum -c -;
+       chmod +x /tmp/rustup-init; /tmp/rustup-init -y --profile minimal;
        export PATH=$HOME/.cargo/bin:/opt/python/cp312-cp312/bin:$PATH;
        pip install uv; packaging/pypi/build-wheel.sh --out /work/target/m28/wheels'
 
@@ -43,17 +45,25 @@ run artifacts (`wheel-<target>`), nothing is published there.
   (`smoke: false`; pinned by `crates/frob-release/tests/release_workflow.rs`).
 - Windows x86_64: `windows-latest`, Git Bash; `build-wheel.sh` and `smoke.sh` use the
   venv's `Scripts/` directory there.
-- maturin is pinned exactly (`MATURIN_VERSION` in the workflow, passed through to
-  `build-wheel.sh`); no hash pin. Every other smoked wheel runs
+- maturin is pinned by version and sha256 in `maturin-requirements.txt`, which
+  `build-wheel.sh` installs with `uv pip install --require-hashes --no-deps`.
+- rustup-init in the containers is `RUSTUP_INIT_VERSION` downloaded from
+  `static.rust-lang.org/rustup/archive/<ver>/<triple>/rustup-init` and verified against
+  the matrix's `rustup_sha` (the published `rustup-init.sha256` of that version and
+  triple) before it runs. To bump either pin, fetch the new hashes (rustup: the `.sha256`
+  next to the binary; maturin: PyPI JSON `urls[].digests.sha256`) and change them with the
+  version in one commit; `release_workflow.rs` fails on a missing check.
+- Every other smoked wheel runs
   `smoke.sh WHEEL VERSION` on its build runner.
-- No sdist is built (see the last bullet).
+- No sdist is built, by decision: the wheel bundles prebuilt binaries, an sdist would need
+  the whole workspace, and source ships through crates.io and git (releases.md 6).
 
 ## Still to decide / other tickets
 
 - Build the wheel from the tagged commit; the version is the static
   `[project] version` that `frob release cut` rewrites (REL002 checks it).
-- `maturin sdist` is allowed but needs the whole workspace; build it from the
-  repository root path `packaging/pypi` only after deciding to ship one.
+- No sdist (decided, releases.md 6): `maturin sdist` would need the whole workspace and
+  would add an unsmoked source-build path; revisit only by changing that decision.
 - Publish only in the protected `pypi` environment (the `pypi` job, pypa/gh-action-pypi-publish via trusted publishing), after smoke (the `smoke` job
   re-runs `smoke.sh` on a fresh runner against the downloaded wheel; publishing jobs need it).
 

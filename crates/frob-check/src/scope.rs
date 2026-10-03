@@ -3,6 +3,7 @@
 use std::collections::{BTreeSet, HashMap};
 
 use frob_lease::{Holder, Lease, LeaseConfig, LeaseStore, overlap::glob_set, scope001};
+use frob_ledger::LedgerConfig;
 use frob_ledger::model::Stamp;
 use gob_git::{GitError, RelPath, Repo, TreeRef};
 use gob_rules::{Finding, Rule, RuleId, Severity};
@@ -163,7 +164,11 @@ const BOOKKEEPING_LOCKS: [&str; 2] = ["frob.lock", "grimble.lock"];
 /// directory is written by frob's own ledger commits, so it is exempt; so are
 /// the root lock files (`frob.lock` by `frob ack`, `grimble.lock`), whose
 /// content stays under the drift rules.
-fn branch_changes(repo: &Repo, base: &str, ledger_dir: &str) -> Result<Vec<RelPath>, GitError> {
+fn branch_changes(
+    repo: &Repo,
+    base: &str,
+    ledger: &LedgerConfig,
+) -> Result<Vec<RelPath>, GitError> {
     let from = if let Some(mb) = repo.merge_base(base, "HEAD")? {
         tracing::debug!(base, merge_base = %mb, "SCOPE001 diffs from the merge base");
         TreeRef::Oid(mb)
@@ -174,12 +179,11 @@ fn branch_changes(repo: &Repo, base: &str, ledger_dir: &str) -> Result<Vec<RelPa
         );
         TreeRef::Ref(base.to_owned())
     };
-    let prefix = format!("{}/", ledger_dir.trim_end_matches('/'));
     let paths = repo
         .diff_names(&from, &TreeRef::WorkTree)?
         .into_iter()
         .filter(|c| {
-            let ledger = c.path.starts_with(&prefix);
+            let ledger = ledger.is_ledger_path(&c.path);
             if ledger {
                 tracing::trace!(path = %c.path, "ledger path exempt from SCOPE001");
             }
@@ -233,7 +237,7 @@ pub(crate) fn ticket_rules(
         ];
     }
     let mut out = Vec::new();
-    match branch_changes(&repo, base, &state.ledger.config().dir) {
+    match branch_changes(&repo, base, state.ledger.config()) {
         Ok(paths) => {
             out.extend(scope001(&paths, &scope.lease, shared));
             tracing::debug!(paths = paths.len(), "ticket diff set recorded");

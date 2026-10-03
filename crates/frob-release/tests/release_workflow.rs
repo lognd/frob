@@ -158,15 +158,151 @@ fn macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross() {
     }
 }
 
+/// Text of the hash-pinned maturin requirements file `build-wheel.sh` installs from.
+fn maturin_requirements() -> String {
+    fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packaging/pypi/maturin-requirements.txt"),
+    )
+    .unwrap()
+}
+
+/// The `X.Y.Z` of the `maturin==X.Y.Z` line of the requirements file.
+fn maturin_pin() -> String {
+    let text = maturin_requirements();
+    let line = code_only(&text)
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("maturin=="))
+        .expect("maturin-requirements.txt must pin `maturin==X.Y.Z`")
+        .to_string();
+    line.trim_end_matches('\\').trim().to_string()
+}
+
+fn is_sha256(h: &str) -> bool {
+    h.len() == 64 && h.chars().all(|c| c.is_ascii_hexdigit())
+}
+
+/// Violations of "maturin is installed only from the hashed requirements file".
+fn maturin_unhashed(requirements: &str, build_wheel: &str, shared_code: &str) -> Vec<String> {
+    let mut bad = Vec::new();
+    let code = code_only(requirements);
+    let hashes: Vec<&str> = code
+        .split_whitespace()
+        .filter_map(|w| w.strip_prefix("--hash=sha256:"))
+        .collect();
+    if hashes.is_empty() || !hashes.iter().all(|h| is_sha256(h)) {
+        bad.push("maturin-requirements.txt lacks valid --hash=sha256: entries".to_string());
+    }
+    let install: Vec<&str> = build_wheel
+        .lines()
+        .filter(|l| !l.trim_start().starts_with('#') && l.contains("pip install"))
+        .collect();
+    if install.is_empty() {
+        bad.push("build-wheel.sh no longer installs maturin".to_string());
+    }
+    for l in install {
+        if !(l.contains("--require-hashes")
+            && l.contains("-r ")
+            && l.contains("maturin-requirements.txt"))
+        {
+            bad.push(format!(
+                "build-wheel.sh installs without --require-hashes: {l}"
+            ));
+        }
+    }
+    // The workflow must never install maturin itself, nor pass a version around.
+    for l in shared_code.lines() {
+        if l.contains("maturin") && (l.contains("pip install") || l.contains("MATURIN_VERSION")) {
+            bad.push(format!("build-smoke.yml installs maturin unhashed: {l}"));
+        }
+    }
+    bad
+}
+
+/// Violations of "rustup-init is downloaded versioned and checked before it runs".
+fn rustup_unhashed(shared_code: &str) -> Vec<String> {
+    let mut bad = Vec::new();
+    if shared_code.contains("sh.rustup.rs") {
+        bad.push("rustup is piped from sh.rustup.rs".to_string());
+    }
+    let lines: Vec<&str> = shared_code.lines().collect();
+    let fetch = lines
+        .iter()
+        .position(|l| l.contains("rustup-init") && l.contains("static.rust-lang.org"));
+    let check = lines
+        .iter()
+        .position(|l| l.contains("sha256sum -c") && l.contains("RUSTUP_INIT_SHA"));
+    let run = lines.iter().position(|l| {
+        l.trim_start().starts_with("/tmp/rustup-init") || l.contains("; /tmp/rustup-init")
+    });
+    match (fetch, check, run) {
+        (Some(f), Some(c), Some(r)) if f <= c && c < r => {}
+        // The url is on the continuation line of the curl; accept fetch just before the check.
+        (None, ..) => {
+            if !lines.iter().any(|l| {
+                l.contains(
+                    "static.rust-lang.org/rustup/archive/$RUSTUP_INIT_VERSION/$TARGET/rustup-init",
+                )
+            }) {
+                bad.push("rustup-init is not fetched from the versioned static URL".to_string());
+            }
+        }
+        _ => bad.push("rustup-init is not sha256-checked before it runs".to_string()),
+    }
+    bad
+}
+
+#[test]
+fn maturin_is_installed_only_from_a_hash_pinned_requirements_file() {
+    let _ = maturin_pin();
+    let bad = maturin_unhashed(
+        &maturin_requirements(),
+        &fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packaging/pypi/build-wheel.sh"),
+        )
+        .unwrap(),
+        &code_only(&shared_text()),
+    );
+    assert!(bad.is_empty(), "{bad:#?}");
+}
+
+#[test]
+fn rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs() {
+    let wf = shared();
+    let text = code_only(&shared_text());
+    let bad = rustup_unhashed(&text);
+    assert!(bad.is_empty(), "{bad:#?}");
+    let ver = wf["env"]["RUSTUP_INIT_VERSION"].as_str().unwrap();
+    assert!(ver.split('.').all(|p| p.parse::<u32>().is_ok()), "{ver}");
+    for e in matrix(&wf) {
+        let (target, sha) = (str_of(e, "target"), str_of(e, "rustup_sha"));
+        if target.contains("linux") {
+            assert!(is_sha256(sha), "{target}: rustup_sha is not a sha256");
+        } else {
+            assert_eq!(sha, "", "{target}: only containers fetch rustup-init");
+        }
+    }
+}
+
+#[test]
+fn the_unhashed_install_checks_reject_a_stripped_pin() {
+    let reqs = "maturin==1.0.0 \\\n    --hash=sha256:0000000000000000000000000000000000000000000000000000000000000000\n";
+    let good_sh = "uv pip install -q --require-hashes --no-deps -r maturin-requirements.txt\n";
+    assert!(maturin_unhashed(reqs, good_sh, "").is_empty());
+    assert!(!maturin_unhashed("maturin==1.0.0\n", good_sh, "").is_empty());
+    assert!(!maturin_unhashed(reqs, "uv pip install maturin\n", "").is_empty());
+    assert!(!maturin_unhashed(reqs, good_sh, "run: pip install maturin==1\n").is_empty());
+    let ok = "curl -o /tmp/rustup-init \\\n  \"https://static.rust-lang.org/rustup/archive/$RUSTUP_INIT_VERSION/$TARGET/rustup-init\"\necho \"$RUSTUP_INIT_SHA  /tmp/rustup-init\" | sha256sum -c -\n/tmp/rustup-init -y\n";
+    assert!(rustup_unhashed(ok).is_empty());
+    assert!(!rustup_unhashed(&ok.replace("sha256sum -c -", "cat")).is_empty());
+    assert!(!rustup_unhashed("curl https://sh.rustup.rs | sh\n").is_empty());
+}
+
 #[test]
 fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions() {
     let wf = shared();
-    let pin = wf["env"]["MATURIN_VERSION"].as_str().unwrap();
-    let ver = pin
-        .strip_prefix("==")
-        .expect("MATURIN_VERSION must be `==X.Y.Z`");
+    let ver = maturin_pin();
     assert_eq!(ver.split('.').count(), 3);
-    assert!(ver.split('.').all(|p| p.parse::<u32>().is_ok()), "{pin}");
+    assert!(ver.split('.').all(|p| p.parse::<u32>().is_ok()), "{ver}");
     assert!(
         wf["env"]["UV_VERSION"]
             .as_str()

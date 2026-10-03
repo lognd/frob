@@ -172,6 +172,19 @@ part of the job's design:
   x86_64 and aarch64, macOS arm64 and x86_64 (cross), windows x86_64.
   The PyPI wheel bundles the binaries (`frob` bundles all three,
   products.md).
+- **Pinned installers:** inside the manylinux containers rustup-init is
+  downloaded from its versioned static URL
+  (`static.rust-lang.org/rustup/archive/<version>/<triple>/rustup-init`)
+  and checked against a per-architecture sha256 before it runs, never
+  piped from `sh.rustup.rs`; maturin is installed with `uv pip install
+  --require-hashes` from `packaging/pypi/maturin-requirements.txt`
+  (exact version, wheel hashes from PyPI). A test fails if either loses
+  its hash check.
+- **No sdist:** the release ships no PyPI source distribution. The wheel
+  bundles prebuilt binaries and an sdist would need the whole workspace
+  (maturin builds `frob-cli` from the repository, not from
+  `packaging/pypi` alone); source ships through crates.io and git, and a
+  source install of the wheel would be an unsmoked, unhashed build path.
 - **Publishing:** crates.io in dependency order and in lockstep. A
   partial publish resumes from the first unpublished crate, never
   re-bumps. Registry tokens live only in the release environment, and
