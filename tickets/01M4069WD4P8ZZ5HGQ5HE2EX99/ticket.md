@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:57Z"
-updated = "2026-10-03T14:07:48Z"
+updated = "2026-10-03T14:17:31Z"
 idempotency_key = "m2-rel-rel003"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-release/src/rel003.rs", "crates/frob-ledger/src/guards.rs", "docs/reference/rules/rel/**", "crates/frob-release/src/*.rs", "crates/frob-release/tests/*.rs", "crates/frob-release/tests/mdtest/rel003.md", "crates/frob-check/src/product.rs", "crates/frob-check/tests/*.rs", "crates/frob-evidence/**", "docs/reference/rules/*.md", "docs/design/tickets.md", "docs/design/documentation.md", "Cargo.lock"]
@@ -19,7 +19,7 @@ target = "01M4069W8ECWEPBH6YPAR7X0X0"
 
 [[acceptance]]
 text = "Given a diff touching crates/frob with no fragment, when close runs, then it exits 3 with REL003"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a docs-only diff, when close runs, then it passes"
