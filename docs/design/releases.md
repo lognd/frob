@@ -165,7 +165,17 @@ part of the job's design:
   is cut over.
 - **CI status in `release status`.** Read through the hosting API (`gh`
   for GitHub) for the tip commit; without network or a token the line is
-  Unresolved, never assumed green.
+  Unresolved, never assumed green. The commit is the base-branch tip a
+  cut would release (the report names its sha); owner and repository come
+  from the `origin` remote, and `gh api` reads its check runs and combined
+  status. All completed and succeeded or skipped (at least one) is green and
+  adds nothing; any failure, cancellation or timeout is a blocker naming the
+  checks and links; unfinished checks are a blocker ("CI still running");
+  no checks, `gh` missing or unauthenticated, no network or a non-GitHub
+  origin is an Unresolved line with the exact reason and remedy and, because
+  `[release] require_ci` defaults to true, also a blocker (false reports it
+  as Unresolved only). `release cut` runs the same gate, so a red tip cannot
+  be cut without `--override`.
 - **Owner actions before the first publish.** Configure trusted
   publishing on PyPI (`frob`) and crates.io where available (otherwise a
   token in the release environment); confirm ownership of the reserved

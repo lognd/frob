@@ -10,6 +10,8 @@
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::ci::{CiFacts, CiState};
+
 /// Why a release is not ready; one per problem, so the count in the verdict is honest.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
@@ -28,6 +30,12 @@ pub enum BlockerKind {
     InvalidFragment,
     /// The changelog cannot be compiled for another reason (version present, edited section).
     Changelog,
+    /// A check on the base-branch tip failed, was cancelled or timed out.
+    CiRed,
+    /// Checks on the base-branch tip are still running.
+    CiPending,
+    /// CI could not be read and `[release] require_ci` is true.
+    CiUnknown,
 }
 
 /// One reason the release is not ready.
@@ -130,6 +138,8 @@ pub struct Input {
     pub open_tickets: Vec<OpenTicket>,
     /// The changelog dry-run result.
     pub changelog: ChangelogFacts,
+    /// What CI said about the base-branch tip.
+    pub ci: CiFacts,
 }
 
 /// Fragment validity as the report shows it.
@@ -152,6 +162,19 @@ pub struct Unresolved {
     pub reason: String,
 }
 
+/// CI on the commit a cut would release, as the report shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct CiReport {
+    /// The base-branch tip inspected; absent when the branch did not resolve.
+    pub sha: Option<String>,
+    /// `green`, `red`, `pending` or `unknown`.
+    pub state: String,
+    /// One line: what was found, with the failing names and links, or the reason and the remedy.
+    pub detail: String,
+    /// `[release] require_ci`: whether unknown blocks.
+    pub required: bool,
+}
+
 /// The readiness report for one release.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Report {
@@ -159,6 +182,8 @@ pub struct Report {
     pub at_a_glance: Vec<String>,
     /// Every reason the release is not ready.
     pub blockers: Vec<Blocker>,
+    /// CI on the tip commit a cut would release.
+    pub ci: CiReport,
     /// The changelog section a cut would write; absent without fragments.
     pub changelog_preview: Option<String>,
     /// Exit criteria with their binding state.
@@ -184,7 +209,7 @@ pub struct Report {
 /// Categories in workflow order; groups are emitted in this order.
 const CATEGORY_ORDER: [&str; 3] = ["triage", "todo", "in-progress"];
 
-/// The items the design lists as owner actions or later checks (`releases.md` 6a), with reasons.
+/// The fixed items the design lists as owner actions or later checks (`releases.md` 6a), with reasons; CI is added per report.
 #[must_use]
 pub fn unresolved_items() -> Vec<Unresolved> {
     let u = |item: &str, reason: &str| Unresolved {
@@ -192,13 +217,25 @@ pub fn unresolved_items() -> Vec<Unresolved> {
         reason: reason.to_owned(),
     };
     vec![
-        u("CI status on the tip", "not checked yet (~4PT3KZB)"),
         u("forecast", "no history yet"),
         u(
             "registry setup",
             "owner action: trusted publishing on PyPI (frob) and crates.io, reserved crate names confirmed",
         ),
     ]
+}
+
+/// The fixed items plus, when CI could not be read, its line with the exact reason and remedy.
+fn unresolved_of(input: &Input) -> Vec<Unresolved> {
+    let mut items = Vec::new();
+    if let CiState::Unknown(u) = &input.ci.state {
+        items.push(Unresolved {
+            item: format!("CI status on {}", short(input.ci.sha.as_deref())),
+            reason: format!("{}; {}", u.reason, u.remedy),
+        });
+    }
+    items.extend(unresolved_items());
+    items
 }
 
 fn group(tickets: &[OpenTicket]) -> Vec<CategoryGroup> {
@@ -272,6 +309,7 @@ fn blockers_of(input: &Input) -> Vec<Blocker> {
             format!("{} is {}: {}", t.handle, t.category, t.title),
         ));
     }
+    out.extend(ci_blocker(&input.ci));
     match &input.changelog {
         ChangelogFacts::Valid { .. } => {}
         ChangelogFacts::InvalidFragments(errs) => {
@@ -284,6 +322,78 @@ fn blockers_of(input: &Input) -> Vec<Blocker> {
         }
     }
     out
+}
+
+/// `abc1234` for a sha, `the base branch tip` when it did not resolve.
+fn short(sha: Option<&str>) -> String {
+    sha.map_or_else(
+        || "the base branch tip".to_owned(),
+        |s| format!("commit {}", &s[..s.len().min(12)]),
+    )
+}
+
+/// Red and pending always block; unknown blocks only under `require_ci`; green adds nothing.
+fn ci_blocker(ci: &CiFacts) -> Option<Blocker> {
+    let at = short(ci.sha.as_deref());
+    let subject = ci.sha.clone().unwrap_or_else(|| "base".to_owned());
+    match &ci.state {
+        CiState::Green { .. } => None,
+        CiState::Red { failures } => {
+            let list: Vec<String> = failures
+                .iter()
+                .map(|f| match &f.url {
+                    Some(u) => format!("{} ({}) {u}", f.name, f.conclusion),
+                    None => format!("{} ({})", f.name, f.conclusion),
+                })
+                .collect();
+            Some(blocker(
+                BlockerKind::CiRed,
+                subject,
+                format!(
+                    "CI is red on {at}: {}; fix it and push, then rerun",
+                    list.join("; ")
+                ),
+            ))
+        }
+        CiState::Pending { running } => Some(blocker(
+            BlockerKind::CiPending,
+            subject,
+            format!(
+                "CI still running on {at}: {}; rerun when it finishes",
+                running.join(", ")
+            ),
+        )),
+        CiState::Unknown(u) => ci.require.then(|| {
+            blocker(
+                BlockerKind::CiUnknown,
+                subject,
+                format!("CI status of {at} is unknown: {}; {}", u.reason, u.remedy),
+            )
+        }),
+    }
+}
+
+/// The CI part of the report.
+fn ci_report(ci: &CiFacts) -> CiReport {
+    let at = short(ci.sha.as_deref());
+    let (state, detail) = match &ci.state {
+        CiState::Green { checks } => (
+            "green",
+            format!("all {checks} check(s) on {at} succeeded or were skipped"),
+        ),
+        CiState::Red { .. } => ("red", ci_blocker(ci).map(|b| b.detail).unwrap_or_default()),
+        CiState::Pending { .. } => (
+            "pending",
+            ci_blocker(ci).map(|b| b.detail).unwrap_or_default(),
+        ),
+        CiState::Unknown(u) => ("unknown", format!("{}; {}", u.reason, u.remedy)),
+    };
+    CiReport {
+        sha: ci.sha.clone(),
+        state: state.to_owned(),
+        detail,
+        required: ci.require,
+    }
 }
 
 fn fragments_of(c: &ChangelogFacts) -> (FragmentsStatus, Option<String>) {
@@ -358,6 +468,7 @@ fn glance(r: &Report, input: &Input) -> Vec<String> {
     for f in &r.pm034 {
         l.push(format!("  {f}"));
     }
+    l.push(format!("CI: {} ({})", r.ci.state, r.ci.detail));
     l.push(format!("fragments: {}", r.fragments.state));
     for e in &r.fragments.errors {
         l.push(format!("  {e}"));
@@ -391,6 +502,7 @@ pub fn assess(input: &Input) -> Report {
     let mut report = Report {
         at_a_glance: Vec::new(),
         blockers,
+        ci: ci_report(&input.ci),
         changelog_preview,
         criteria: input
             .milestone
@@ -406,7 +518,7 @@ pub fn assess(input: &Input) -> Report {
             .map(|m| m.pm034.clone())
             .unwrap_or_default(),
         ready,
-        unresolved: unresolved_items(),
+        unresolved: unresolved_of(input),
         verdict,
         version: input.version.clone(),
     };
@@ -418,6 +530,7 @@ pub fn assess(input: &Input) -> Report {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ci::{CiFailure, CiUnknown};
 
     fn crit(n: usize, bound: bool) -> CriterionStatus {
         CriterionStatus {
@@ -436,6 +549,21 @@ mod tests {
         }
     }
 
+    fn ci(state: CiState, require: bool) -> CiFacts {
+        CiFacts {
+            sha: Some("0123456789abcdef".to_owned()),
+            state,
+            require,
+        }
+    }
+
+    fn unknown() -> CiState {
+        CiState::Unknown(CiUnknown {
+            reason: "gh is not installed".to_owned(),
+            remedy: "install gh".to_owned(),
+        })
+    }
+
     fn input(criteria: Vec<CriterionStatus>) -> Input {
         Input {
             version: "0.532.0".to_owned(),
@@ -452,6 +580,7 @@ mod tests {
                 fragments: vec!["a.added.md".to_owned()],
                 section: Some("## 0.532.0\n".to_owned()),
             },
+            ci: ci(CiState::Green { checks: 3 }, true),
         }
     }
 
@@ -462,7 +591,8 @@ mod tests {
         assert!(r.ready && r.blockers.is_empty());
         assert_eq!(r.verdict, "READY");
         assert!(r.changelog_preview.is_some());
-        assert_eq!(r.unresolved.len(), 3);
+        assert_eq!(r.unresolved.len(), 2, "green CI adds no unresolved line");
+        assert_eq!(r.ci.state, "green");
         assert!(r.at_a_glance[0].ends_with("READY"));
     }
 
@@ -506,5 +636,73 @@ mod tests {
         );
         assert_eq!(r.fragments.state, "invalid");
         assert!(r.changelog_preview.is_none());
+    }
+
+    #[test]
+    fn red_ci_is_one_blocker_naming_checks_and_links() {
+        // frob:tests crates/frob-release/src/status.rs::assess
+        let mut i = input(vec![crit(1, true)]);
+        i.ci = ci(
+            CiState::Red {
+                failures: vec![CiFailure {
+                    name: "lint".to_owned(),
+                    conclusion: "failure".to_owned(),
+                    url: Some("https://x/1".to_owned()),
+                }],
+            },
+            false,
+        );
+        let r = assess(&i);
+        assert_eq!(r.verdict, "NOT READY: 1 blocker");
+        assert_eq!(r.blockers[0].kind, BlockerKind::CiRed);
+        assert!(r.blockers[0].detail.contains("lint (failure) https://x/1"));
+        assert!(r.blockers[0].detail.contains("0123456789ab"));
+        assert_eq!(r.ci.state, "red");
+    }
+
+    #[test]
+    fn pending_ci_blocks_even_when_not_required() {
+        // frob:tests crates/frob-release/src/status.rs::assess
+        let mut i = input(vec![crit(1, true)]);
+        i.ci = ci(
+            CiState::Pending {
+                running: vec!["test".to_owned()],
+            },
+            false,
+        );
+        let r = assess(&i);
+        assert_eq!(r.blockers[0].kind, BlockerKind::CiPending);
+        assert!(r.blockers[0].detail.contains("CI still running"));
+    }
+
+    #[test]
+    fn unknown_ci_blocks_when_required_and_only_warns_when_not() {
+        // frob:tests crates/frob-release/src/status.rs::assess
+        let mut i = input(vec![crit(1, true)]);
+        i.ci = ci(unknown(), true);
+        let r = assess(&i);
+        assert_eq!(r.blockers[0].kind, BlockerKind::CiUnknown);
+        assert!(
+            r.unresolved[0]
+                .reason
+                .contains("gh is not installed; install gh")
+        );
+        assert!(
+            r.unresolved[0]
+                .item
+                .starts_with("CI status on commit 0123456789ab")
+        );
+
+        i.ci = ci(unknown(), false);
+        let r = assess(&i);
+        assert!(
+            r.ready,
+            "unknown is a warning only when require_ci is false"
+        );
+        assert_eq!(r.ci.state, "unknown");
+        assert!(
+            r.unresolved[0].reason.contains("install gh"),
+            "still Unresolved"
+        );
     }
 }

@@ -391,6 +391,18 @@
       },
       "type": "object"
     },
+    "release": {
+      "additionalProperties": false,
+      "description": "Release policy knobs read by `frob release status` and the `release cut` readiness gate.",
+      "properties": {
+        "require_ci": {
+          "default": true,
+          "description": "When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "tickets": {
       "additionalProperties": false,
       "description": "Where the ticket ledger lives.",

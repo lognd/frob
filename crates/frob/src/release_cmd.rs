@@ -17,6 +17,7 @@ use frob_pm::model::Milestone;
 use frob_pm::model::{ObjectKind, State};
 use frob_pm::rules::membership::{CLAIM_PREFIX, claimants, pm034};
 use frob_release::bump::{BumpError, BumpOptions, BumpReport, LockState};
+use frob_release::ci::{CiFacts, CiState, CiUnknown, check_tip};
 use frob_release::cut::{CutError, CutLedger, CutPlan};
 use frob_release::status::{
     ChangelogFacts, EvidenceRef, Input, MilestoneFacts, OpenTicket, Report, assess,
@@ -24,6 +25,7 @@ use frob_release::status::{
 use frob_release::{Mode, Options, ReleaseError};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_exec::{Limits, Program, Runner};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -234,13 +236,52 @@ fn report_for(
     milestone: Option<&Milestone>,
     version: String,
 ) -> Result<Report, CliError> {
+    let cfg = FrobConfig::load(root).map_err(|e| config_refusal(&e))?;
     let input = Input {
         milestone: milestone.map(|m| facts(m, ledger)).transpose()?,
         open_tickets: open_tickets(ledger, milestone, &version)?,
         changelog: changelog_facts(root, ledger, &version),
+        ci: ci_facts(
+            root,
+            &frob_worktree::work::base_branch(ledger),
+            cfg.release.require_ci,
+        ),
         version,
     };
     Ok(assess(&input))
+}
+
+// frob:ticket 01M4069WYA9D1EGVEBC4PT3KZB
+/// CI on the tip of the `base` branch (the commit a cut would release), read through `gh`; never fails, unknown is a state.
+fn ci_facts(root: &std::path::Path, base: &str, require: bool) -> CiFacts {
+    let repo = gob_git::Repo::discover(root);
+    let sha = repo
+        .as_ref()
+        .ok()
+        .and_then(|r| r.rev_parse(&format!("refs/heads/{base}")).ok())
+        .map(|o| o.to_string());
+    let state = if let (Ok(r), Some(sha)) = (&repo, &sha) {
+        check_tip(
+            &Runner::new(Limits::default()),
+            &Program::Tool {
+                name: "gh".to_owned(),
+            },
+            root,
+            r.remote_url("origin").as_deref(),
+            sha,
+        )
+    } else {
+        tracing::warn!(base, "base branch tip did not resolve; CI not checked");
+        CiState::Unknown(CiUnknown {
+            reason: format!("the base branch `{base}` does not resolve to a commit"),
+            remedy: format!("create or fetch `{base}` (`[tickets] ref` names it)"),
+        })
+    };
+    CiFacts {
+        sha,
+        state,
+        require,
+    }
 }
 
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
