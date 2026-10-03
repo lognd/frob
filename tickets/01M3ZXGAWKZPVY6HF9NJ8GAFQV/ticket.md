@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:39:12Z"
-updated = "2026-10-03T05:50:00Z"
+updated = "2026-10-03T05:51:56Z"
 idempotency_key = "m2-ticket-proposals-verbs"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/ticket/proposals_cmd.rs", "crates/frob-check/src/proposals_summary.rs"]
@@ -16,10 +16,6 @@ scope = ["crates/frob/src/ticket/proposals_cmd.rs", "crates/frob-check/src/propo
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX7YW7S3BJ72FPRQ85F72V"
-
-[[links]]
-kind = "blocked-by"
-target = "01M3ZXGAS3HJR9NYAMKWYGETZK"
 
 [[acceptance]]
 text = "Given a pending proposal, when accepted, then the ticket field changes through a recorded event and the proposal is closed"
