@@ -53,7 +53,7 @@ run artifacts (`wheel-<target>`), nothing is published there.
   `[project] version` that `frob release cut` rewrites (REL002 checks it).
 - `maturin sdist` is allowed but needs the whole workspace; build it from the
   repository root path `packaging/pypi` only after deciding to ship one.
-- Publish only in the protected release environment (`uv publish`), after smoke (the `smoke` job
+- Publish only in the protected `pypi` environment (the `pypi` job, pypa/gh-action-pypi-publish via trusted publishing), after smoke (the `smoke` job
   re-runs `smoke.sh` on a fresh runner against the downloaded wheel; publishing jobs need it).
 
 ## Smoke

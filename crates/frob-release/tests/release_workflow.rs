@@ -172,7 +172,7 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
 }
 
 #[test]
-fn wheels_are_uploaded_as_artifacts_and_nothing_publishes_to_an_index() {
+fn wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes() {
     let wf = workflow();
     let steps = wf["jobs"]["wheel"]["steps"].as_sequence().unwrap();
     let upload = steps
@@ -185,17 +185,22 @@ fn wheels_are_uploaded_as_artifacts_and_nothing_publishes_to_an_index() {
         .expect("wheel job uploads an artifact");
     assert_eq!(upload["with"]["if-no-files-found"].as_str(), Some("error"));
     let text = workflow_text();
+    // The wheel job itself never publishes; only the `pypi` job does.
+    let wheel_text = serde_yaml_ng::to_string(&wf["jobs"]["wheel"]).unwrap();
     for banned in [
         "uv publish",
         "twine",
         "maturin publish",
-        "pypa/gh-action-pypi-publish",
+        "gh-action-pypi-publish",
         "cargo publish",
     ] {
         assert!(
-            !text.contains(banned),
-            "release.yml must not publish yet: {banned}"
+            !wheel_text.contains(banned),
+            "wheel job must not publish: {banned}"
         );
+    }
+    for banned in ["uv publish", "twine", "maturin publish", "cargo publish"] {
+        assert!(!text.contains(banned), "unexpected publisher: {banned}");
     }
 }
 
@@ -521,4 +526,63 @@ fn crates_job_publishes_through_trusted_publishing_in_the_crates_io_environment_
         !text.contains("secrets."),
         "no stored secret: crates.io uses trusted publishing"
     );
+}
+
+/// Binds both criteria of ~DR38G0G: the `pypi` job follows smoke, and only it and `crates` mint OIDC tokens.
+// frob:ticket 01M4069YA9PXDNNCV86DR38G0G
+#[test]
+fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_only_other_id_token() {
+    let wf = workflow();
+    let job = &wf["jobs"]["pypi"];
+    assert!(
+        publishes(job),
+        "the pypi job must be detected as publishing"
+    );
+    assert!(needs_of(job).is_superset(&BTreeSet::from(["plan", "wheel", "smoke", "crates"])));
+    assert_eq!(job["environment"].as_str(), Some("pypi"));
+    let perms = job["permissions"].as_mapping().unwrap();
+    assert_eq!(perms.len(), 1, "id-token only: {perms:?}");
+    assert_eq!(job["permissions"]["id-token"].as_str(), Some("write"));
+    // id-token: write is granted to no job other than crates and pypi.
+    let minters: BTreeSet<&str> = jobs(&wf)
+        .into_iter()
+        .filter(|(_, j)| j["permissions"]["id-token"].as_str() == Some("write"))
+        .map(|(n, _)| n)
+        .collect();
+    assert_eq!(minters, BTreeSet::from(["crates", "pypi"]));
+    // No build, no checkout: it downloads the wheel artifacts and publishes them.
+    let steps = job["steps"].as_sequence().unwrap();
+    let text = serde_yaml_ng::to_string(steps).unwrap();
+    for banned in [
+        "cargo build",
+        "maturin",
+        "dist build",
+        "build-wheel.sh",
+        "rustup",
+        "actions/checkout",
+        "secrets.",
+        "password",
+    ] {
+        assert!(!text.contains(banned), "pypi job must not use {banned}");
+    }
+    let downloads: Vec<&Value> = steps
+        .iter()
+        .filter(|s| {
+            s["uses"]
+                .as_str()
+                .is_some_and(|u| u.starts_with("actions/download-artifact@"))
+        })
+        .collect();
+    assert_eq!(downloads.len(), 1);
+    assert_eq!(downloads[0]["with"]["pattern"].as_str(), Some("wheel-*"));
+    let publish = steps
+        .iter()
+        .find(|s| {
+            s["uses"]
+                .as_str()
+                .is_some_and(|u| u.starts_with("pypa/gh-action-pypi-publish@"))
+        })
+        .expect("the publish step");
+    assert_eq!(publish["with"]["packages-dir"].as_str(), Some("dist"));
+    assert_eq!(downloads[0]["with"]["path"].as_str(), Some("dist"));
 }
