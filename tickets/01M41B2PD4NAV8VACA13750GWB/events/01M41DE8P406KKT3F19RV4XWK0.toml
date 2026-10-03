@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T17:36:56Z"
+digest = "fc02825f2797981559b58fb27d5da4db4c4c3b8c3d416e811466e80743d60977"
+exit_code = 0
+inline = '''
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-pm)
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-release)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-lease)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-tests)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-worktree)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/3750GWB/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 44.61s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e1665bab-5610-40cc-92ea-12031fabe0ad with nextest profile: default
+    Starting 2 tests across 28 binaries (243 tests skipped)
+        PASS [   0.009s] frob-pm rules::tests::strict_escalates_listed_rules_only
+        PASS [   8.694s] frob-cli::milestone pm_strict_escalates_pm001_to_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   8.696s] 2 tests run: 2 passed, 243 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-pm -E 'test(pm_strict_escalates_pm001_to_error) | test(strict_escalates_listed_rules_only)'"
+size = 1555
+status = "measured"
+tests = ["rules::tests::strict_escalates_listed_rules_only", "pm_strict_escalates_pm001_to_error"]
+at = "2026-10-03T17:36:56Z"
+actor = "lognd"
+rev = 1
