@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T10:49:12Z"
+digest = "5da1e66511a91a0cb979c025f69dd10ca4e0d37e224d83cf7461030e10a4d555"
+exit_code = 0
+inline = """
+   Compiling gob-plan v0.0.0 (/home/logan/projects/frob-v2-wt/MVY3DFK/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.27s
+────────────
+ Nextest run ID 588d4eb9-ab01-4d13-b8ea-93b76e9a9506 with nextest profile: default
+    Starting 2 tests across 2 binaries (33 tests skipped)
+        PASS [   0.006s] (1/2) gob-plan grl::parse::tests::ci002_verbatim_spec_text_parses_with_a_literal_brace_glob
+        PASS [   0.082s] (2/2) gob-plan grl::parse::tests::spec_rules_parse_without_error_and_match_snapshots
+────────────
+     Summary [   0.083s] 2 tests run: 2 passed, 33 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-plan ci002_verbatim spec_rules_parse"
+size = 661
+status = "measured"
+tests = ["grl::parse::tests::ci002_verbatim_spec_text_parses_with_a_literal_brace_glob", "grl::parse::tests::spec_rules_parse_without_error_and_match_snapshots"]
+at = "2026-10-03T10:49:12Z"
+actor = "lognd"
+rev = 1

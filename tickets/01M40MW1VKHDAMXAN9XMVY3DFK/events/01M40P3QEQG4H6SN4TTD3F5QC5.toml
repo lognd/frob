@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T10:49:13Z"
+digest = "2ba5cbc7eb4f0bae6a813430b620d602580be3d01a50cb6ebceefe10c4e74ff6"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+────────────
+ Nextest run ID ffd1912f-5822-45cc-9188-b4dc8c4b8cad with nextest profile: default
+    Starting 2 tests across 2 binaries (33 tests skipped)
+        PASS [   0.007s] (1/2) gob-plan grl::parse::tests::regex_string_quantifiers_and_knob_defaults_keep_braces_literally
+        PASS [   0.007s] (2/2) gob-plan grl::parse::tests::report_message_braces_interpolate_and_escapes_are_literal
+────────────
+     Summary [   0.013s] 2 tests run: 2 passed, 33 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-plan report_message_braces regex_string_quantifiers"
+size = 588
+status = "measured"
+tests = ["grl::parse::tests::regex_string_quantifiers_and_knob_defaults_keep_braces_literally", "grl::parse::tests::report_message_braces_interpolate_and_escapes_are_literal"]
+at = "2026-10-03T10:49:13Z"
+actor = "lognd"
+rev = 1
