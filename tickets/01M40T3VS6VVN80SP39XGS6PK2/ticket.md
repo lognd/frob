@@ -8,10 +8,10 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:59:12Z"
-updated = "2026-10-03T12:37:19Z"
+updated = "2026-10-03T12:37:23Z"
 idempotency_key = "m2-rel-proc001-repo-local"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-check/**", "crates/frob-obligations/**", "frob.toml", "docs/reference/rules/**", "crates/gob-exec/src/proc001.rs", "crates/gob-exec/tests/proc001_self.rs", "crates/gob-check/**", "changelog.d/01M40T3VS6VVN80SP39XGS6PK2.fixed.md", "docs/reference/config.md"]
+scope = ["crates/frob-check/**", "crates/frob-obligations/**", "frob.toml", "docs/reference/rules/**", "crates/gob-exec/src/proc001.rs", "crates/gob-exec/tests/proc001_self.rs", "crates/gob-check/**", "changelog.d/01M40T3VS6VVN80SP39XGS6PK2.fixed.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given a consumer repository using std::process::ExitCode and Command, when frob check runs, then no PROC001 finding appears"
