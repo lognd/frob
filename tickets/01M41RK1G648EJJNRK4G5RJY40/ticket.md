@@ -9,7 +9,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T20:51:46Z"
-updated = "2026-10-03T21:29:04Z"
+updated = "2026-10-03T21:29:15Z"
 scope = ["crates/frob/src/init.rs", "crates/gob-trust/src/**", "crates/gob-cli/tests/root.rs", "crates/gob-trust/tests/trust.rs", "crates/frob-tests/tests/selection.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/close_guards.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/pm_wiring.rs", "crates/frob-land/src/land.rs", "crates/frob/tests/common/mod.rs", "crates/frob/tests/cli.rs", "crates/gob-exec/src/cmdline.rs", "crates/gob-exec/src/lib.rs", "crates/gob-exec/Cargo.toml", "crates/gob-exec/tests/cmdline.rs"]
 
 [[acceptance]]

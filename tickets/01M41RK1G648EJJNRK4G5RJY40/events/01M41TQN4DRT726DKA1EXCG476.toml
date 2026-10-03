@@ -1,0 +1,5 @@
+kind = "evidence-bypass"
+reason = "criterion 1 (windows-latest green) is provable only by CI; verified on the push that follows this land"
+at = "2026-10-03T21:29:15Z"
+actor = "lognd"
+rev = 1
