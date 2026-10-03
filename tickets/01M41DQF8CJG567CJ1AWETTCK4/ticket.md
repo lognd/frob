@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "low"
 reporter = "lognd"
 created = "2026-10-03T17:41:57Z"
-updated = "2026-10-03T19:09:36Z"
+updated = "2026-10-03T19:11:52Z"
 scope = ["crates/frob-check/src/snapshot.rs", "crates/frob/tests/milestone.rs"]
 
 [[acceptance]]
