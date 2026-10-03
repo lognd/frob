@@ -100,15 +100,48 @@ impl<F: Fn(&str) -> Option<String>> TicketResolver for F {
     }
 }
 
-/// Split a body into its product and one-line text; an unknown prefix stays in the text.
-fn split_product(body: &str) -> (&'static str, String) {
+/// Split a body into its product and one-line text.
+///
+/// A leading `word:` naming a product is the prefix. A word within edit distance 2 of a
+/// product (but not equal) is a probable typo and is refused with a did-you-mean; any other
+/// word and colon (for example `Note:`) is ordinary text and files under the first product.
+fn split_product(file: &str, body: &str) -> Result<(&'static str, String), FragmentError> {
     let first = body.trim_start();
     if let Some((head, rest)) = first.split_once(':')
-        && let Some(p) = PRODUCTS.iter().find(|p| **p == head.trim())
+        && !head.is_empty()
+        && head.bytes().all(|b| b.is_ascii_alphabetic())
     {
-        return (p, join_lines(rest));
+        let word = head.to_ascii_lowercase();
+        if let Some(p) = PRODUCTS.iter().find(|p| **p == word) {
+            return Ok((p, join_lines(rest)));
+        }
+        if let Some(p) = PRODUCTS.iter().find(|p| edit_distance(p, &word) <= 2) {
+            return Err(FragmentError::UnknownProduct {
+                file: file.to_owned(),
+                got: head.to_owned(),
+                suggestion: (*p).to_owned(),
+            });
+        }
     }
-    (PRODUCTS[0], join_lines(first))
+    Ok((PRODUCTS[0], join_lines(first)))
+}
+
+/// Levenshtein distance between two ASCII words.
+fn edit_distance(a: &str, b: &str) -> usize {
+    let (a, b) = (a.as_bytes(), b.as_bytes());
+    let mut prev: Vec<usize> = (0..=b.len()).collect();
+    for (i, ca) in a.iter().enumerate() {
+        let mut cur = vec![i + 1];
+        for (j, cb) in b.iter().enumerate() {
+            cur.push(
+                (prev[j] + usize::from(ca != cb))
+                    .min(prev[j + 1] + 1)
+                    .min(cur[j] + 1),
+            );
+        }
+        prev = cur;
+    }
+    prev[b.len()]
 }
 
 fn join_lines(s: &str) -> String {
@@ -157,7 +190,7 @@ fn parse_one(
             at,
         });
     }
-    let (product, text) = split_product(body);
+    let (product, text) = split_product(file, body)?;
     if text.is_empty() {
         return Err(FragmentError::Empty {
             file: file.to_owned(),

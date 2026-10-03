@@ -122,7 +122,7 @@ fn compiles_fragments_grouped_by_product_and_type_and_removes_them() {
     let text = std::fs::read_to_string(repo.dir.path().join("CHANGELOG.md")).expect("changelog");
     assert!(text.contains("## 0.532.0 - 2026-10-03"), "{text}");
     assert!(text.contains("### frob") && text.contains("### gob"));
-    assert!(text.contains(&format!("tickets/{a}/ticket.md")));
+    assert!(text.contains(&a) && !text.contains("tickets/"));
     assert!(!fa.exists() && !fb.exists());
     repo.ok(&["release", "changelog", "--version", "0.532.0", "--check"]);
 }

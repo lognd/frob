@@ -34,11 +34,8 @@ pub fn render_section(version: &str, date: &str, fragments: &[Fragment]) -> Stri
             group.sort_by(|a, b| a.ulid.cmp(&b.ulid));
             let _ = write!(out, "#### {}\n\n", kind.title());
             for f in group {
-                let _ = writeln!(
-                    out,
-                    "- {} ([{}](tickets/{}/ticket.md))",
-                    f.text, f.handle, f.ulid
-                );
+                // Reference by handle and ULID in plain text, never a path (navigation.md 1).
+                let _ = writeln!(out, "- {} ({}, {})", f.text, f.handle, f.ulid);
             }
             out.push('\n');
         }

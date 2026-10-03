@@ -224,3 +224,27 @@ fn bad_version_and_non_ascii_are_refused() {
         .to_string();
     assert!(err.contains("non-ASCII"), "{err}");
 }
+
+#[test]
+fn near_miss_product_prefix_is_refused_with_a_suggestion_but_plain_words_pass() {
+    // frob:tests crates/frob-release/src/fragment.rs::read_all
+    let d = tempfile::tempdir().unwrap();
+    frag(d.path(), &format!("{A}.added.md"), "grimbel: typo\n");
+    let err = run(d.path(), &opts(Mode::Check), &resolver)
+        .unwrap_err()
+        .to_string();
+    assert!(err.contains(&format!("changelog.d/{A}.added.md")), "{err}");
+    assert!(err.contains("did you mean `grimble:`?"), "{err}");
+    frag(
+        d.path(),
+        &format!("{A}.added.md"),
+        "Note: this is plain text\n",
+    );
+    let out = run(d.path(), &opts(Mode::DryRun), &resolver).unwrap();
+    let s = out.section.unwrap();
+    assert!(
+        s.contains("### frob") && s.contains("Note: this is plain text"),
+        "{s}"
+    );
+    assert!(!s.contains("](") && !s.contains("tickets/"), "{s}");
+}

@@ -38,6 +38,18 @@ pub enum FragmentError {
         /// The ULID that did not resolve.
         ulid: String,
     },
+    /// The body starts with `word:` that is a near-miss of a product name.
+    #[error(
+        "changelog.d/{file}: unknown product prefix `{got}:`, did you mean `{suggestion}:`? (products: frob, gob, grimble, crunk; to keep the text, reword it so it does not start with a word and colon)"
+    )]
+    UnknownProduct {
+        /// File name inside changelog.d.
+        file: String,
+        /// The prefix word found.
+        got: String,
+        /// The nearest product.
+        suggestion: String,
+    },
     /// The body has no text.
     #[error(
         "changelog.d/{file}: empty fragment; write one or two user-facing sentences, optionally prefixed `frob:`"

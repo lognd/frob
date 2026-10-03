@@ -10,12 +10,13 @@ releases; the frob v1 history lives in [CHANGELOG-v1.md](../../CHANGELOG-v1.md).
 `changelog.d/<ulid>.<type>.md`
 
 - `<ulid>` is the ULID of the ticket that shipped the change; it must resolve to a
-  ticket in the ledger (the entry links to it by handle).
+  ticket in the ledger (the entry cites its handle and full ULID in plain text, never a path).
 - `<type>` is one of `added`, `changed`, `fixed`, `removed`, `deprecated`,
   `security`; this is also the rendering order.
 - The body is one or two user-facing sentences, ASCII only. A first-line prefix
   names the product: `frob:`, `gob:`, `grimble:` or `crunk:`. Without a prefix the
-  entry belongs to `frob`.
+  entry belongs to `frob`. A prefix that is a near-miss of a product (`grimbel:`)
+  is refused with a did-you-mean; other leading words such as `Note:` are text.
 
 ## The command
 
@@ -41,7 +42,7 @@ that succeeds.
 
 #### Added
 
-- Added a thing. ([~PAR7X0X0](tickets/<ULID>/ticket.md))
+- Added a thing. (~R8CA0D, 01M4069QWSJEH5KW8K0YR8CA0D)
 
 <!-- frob-section: 0.532.0 blake3:<hash> -->
 ```
