@@ -1,20 +1,23 @@
 //! The repository WIP limit (`[pm.wip] in_progress`): who holds the slots and when `work` and `start` must refuse.
 //!
-//! Only in-progress tickets with a live lease count. An in-progress ticket whose
+//! Only in-progress tickets with a live lease count, and expedite tickets
+//! count in their own lane, not against the repository limit. An in-progress ticket whose
 //! lease expired is stale: it is named in the refusal (with a requeue hint) but
 //! never occupies a slot. The decision is a pure function over those two lists
 //! so it can be tested without a repository. The expedite lane of
 //! `releases.md` section 2 is the one exception: an expedite ticket may exceed
-//! the repository limit, at most `[pm.classes] expedite_max` at a time.
+//! the repository limit, at most `[pm.classes] expedite_max` at a time. What
+//! counts is defined once in `frob_pm::rules::wip::count`, shared with `PM013`.
 
 // frob:ticket 01M4069T76A6WSNHT3NZERXHAH
 // frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
+// frob:ticket 01M416Z11V5GR012FR47HWFTBP
 
+use std::collections::BTreeSet;
 use std::fmt::Write;
 
 use frob_lease::Lease;
-use frob_ledger::index::ListFilter;
-use frob_ledger::model::Category;
+use frob_ledger::index::Summary;
 use frob_ledger::model::Class;
 use frob_ledger::model::Stamp;
 use frob_ledger::{Ledger, TicketId};
@@ -155,34 +158,35 @@ pub fn check(
         tracing::debug!(%id, "repository wip limit off");
         return Ok(());
     }
-    let filter = ListFilter {
-        category: Some(Category::InProgress),
-        ..ListFilter::default()
-    };
     let live = leases.live_snapshot()?;
-    let mut holdings = Vec::new();
-    let mut stale = Vec::new();
-    for s in ledger.list(&filter)? {
-        if s.id == id {
-            continue;
-        }
-        match live.iter().find(|l| l.ticket == s.id) {
-            Some(lease) => holdings.push(Holding {
-                handle: s.handle,
-                title: s.title,
-                lease: lease.clone(),
-                class: s.class,
-            }),
-            None => stale.push(Stale {
-                handle: s.handle,
-                title: s.title,
-                since: s.updated,
-            }),
-        }
+    let live_ids: BTreeSet<TicketId> = live.iter().map(|l| l.ticket).collect();
+    let mut wip = frob_pm::rules::wip::read(ledger, Some(&live_ids), limits.expedite_max)?;
+    for list in [&mut wip.standard, &mut wip.expedite, &mut wip.stale] {
+        list.retain(|s| s.id != id);
     }
-    tracing::debug!(%id, %class, repo = limits.repo, holders = holdings.len(), stale = stale.len(), "repository wip counted");
+    let holding = |s: Summary| {
+        let lease = live.iter().find(|l| l.ticket == s.id)?.clone();
+        Some(Holding {
+            handle: s.handle,
+            title: s.title,
+            lease,
+            class: s.class,
+        })
+    };
+    let holdings: Vec<Holding> = wip.standard.into_iter().filter_map(holding).collect();
+    let expedite: Vec<Holding> = wip.expedite.into_iter().filter_map(holding).collect();
+    let stale: Vec<Stale> = wip
+        .stale
+        .into_iter()
+        .map(|s| Stale {
+            handle: s.handle,
+            title: s.title,
+            since: s.updated,
+        })
+        .collect();
+    tracing::debug!(%id, %class, repo = limits.repo, holders = holdings.len(), expedite = expedite.len(), stale = stale.len(), "repository wip counted");
     if lane {
-        if let Some(r) = expedite_refusal(limits.expedite_max, &holdings, handle) {
+        if let Some(r) = expedite_refusal(limits.expedite_max, &expedite, handle) {
             tracing::info!(%id, max = limits.expedite_max, "work refused: expedite lane full");
             return Err(WorktreeError::Refused(r));
         }
