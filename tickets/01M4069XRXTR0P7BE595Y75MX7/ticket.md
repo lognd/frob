@@ -2,7 +2,8 @@
 id = "01M4069XRXTR0P7BE595Y75MX7"
 title = "Release workflow wheel matrix: manylinux 2_28, macOS x86_64 cross-built on macos-latest"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
