@@ -2,7 +2,8 @@
 id = "01M41FDWMMZTSHZETC48C6Y5DZ"
 title = "Lease overlap treats any two wildcard globs with a shared literal prefix as overlapping (crates/*/Cargo.toml vs crates/x/tests/**)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
