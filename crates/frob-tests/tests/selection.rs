@@ -140,6 +140,8 @@ fn only_tests_reaching_the_changed_function_are_selected() {
     let graph = build_repo_graph(dir.path()).expect("graph");
     let touched = touched_set(&repo, &graph, &base).expect("touched");
     assert_eq!(touched.files, ["alpha/src/lib.rs"]);
+    assert!(touched.unresolved_files.is_empty());
+    assert!(touched.selection_findings().is_empty());
     let symbols: Vec<String> = touched.symbols.iter().map(ToString::to_string).collect();
     assert_eq!(
         symbols,
@@ -156,6 +158,27 @@ fn only_tests_reaching_the_changed_function_are_selected() {
         ],
         "triples and unrelated must not be selected"
     );
+}
+
+// frob:tests crates/frob-tests/src/touched.rs::selection_findings
+#[test]
+fn a_changed_file_with_no_adapter_is_unresolved_not_ignored() {
+    let (dir, base) = fixture();
+    write(dir.path(), "tools/gen.py", "print(1)\n");
+    write(dir.path(), "README.md", "# Notes\n");
+    let repo = Repo::discover(dir.path()).expect("repo");
+    let graph = build_repo_graph(dir.path()).expect("graph");
+    let touched = touched_set(&repo, &graph, &base).expect("touched");
+    assert_eq!(
+        touched.unresolved_files,
+        ["tools/gen.py"],
+        "markdown has an adapter"
+    );
+    let findings = touched.selection_findings();
+    assert_eq!(findings.len(), 1);
+    assert_eq!(findings[0].rule.as_str(), "TEST001");
+    assert_eq!(findings[0].severity, gob_rules::Severity::Unresolved);
+    assert!(findings[0].message.contains("tools/gen.py"));
 }
 
 #[test]

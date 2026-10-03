@@ -68,6 +68,7 @@ pub fn need_of(id: &str) -> Option<RuleNeed> {
         "TODO001" | "REF001" | "TEST001" | "INV001" | "DRIFT001" | "DRIFT002" | "DRIFT003"
         | "DRIFT004" => RuleNeed::text(Fidelity::F1),
         "DOC001" | "INV002" => RuleNeed::capability(Fidelity::F1, true),
+        "DOC002" => RuleNeed::capability(Fidelity::F1, false),
         "COV001" | "AFFECT001" => RuleNeed::capability(Fidelity::F2, true),
         _ => return None,
     })

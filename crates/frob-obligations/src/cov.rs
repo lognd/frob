@@ -67,6 +67,18 @@ fn adjacency(
             by_name.entry(n).or_default().push(&r.symref);
         }
     }
+    let mut unresolved_by_caller: HashMap<&Symref, HashSet<&str>> = HashMap::new();
+    for e in graph.edges_with_status() {
+        if e.kind == EdgeKind::Calls
+            && e.status == Status::Unknown
+            && let Some(name) = e.name.as_deref()
+        {
+            unresolved_by_caller
+                .entry(&e.from)
+                .or_default()
+                .insert(name);
+        }
+    }
     for r in &callables {
         let Some(text) = sources.get(r.symref.path()) else {
             continue;
@@ -77,7 +89,12 @@ fn adjacency(
             continue;
         };
         for name in called_names(body) {
-            if let Some([only]) = by_name.get(name.as_str()).map(Vec::as_slice)
+            // A name the graph left unresolved at this caller is a guess, not a proof.
+            let guessed = unresolved_by_caller
+                .get(&r.symref)
+                .is_some_and(|n| n.contains(name.as_str()));
+            if (include_ambiguous || !guessed)
+                && let Some([only]) = by_name.get(name.as_str()).map(Vec::as_slice)
                 && **only != r.symref
             {
                 adj.entry(r.symref.clone())
