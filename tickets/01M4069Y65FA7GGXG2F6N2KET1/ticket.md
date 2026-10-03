@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T15:28:35Z"
+updated = "2026-10-03T15:40:37Z"
 idempotency_key = "m2-rel-publish-crates"
 labels = ["milestone:2", "area:release"]
 scope = ["crates/gob-dev/src/publish.rs", ".github/workflows/release.yml", "crates/gob-dev/src/lib.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/Cargo.toml", "Cargo.lock", "crates/frob-release/tests/release_workflow.rs"]
@@ -19,7 +19,7 @@ target = "01M4069Y1YR0XCN4BKDDH63PV1"
 
 [[acceptance]]
 text = "Given a registry holding the first three crates at the version, when publish runs, then it starts at the fourth in dependency order"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given --dry-run, when publish runs, then it prints the order and publishes nothing"
