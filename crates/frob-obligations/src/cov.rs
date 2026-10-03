@@ -116,7 +116,7 @@ struct Poison {
     how: String,
 }
 
-/// `file:line: \`text\`` for the call site of `e`.
+/// The `file:line: text` call site of `e`, the text in backticks.
 fn site_of(e: &StatusEdge) -> String {
     format!(
         "{}:{}: `{}`",
@@ -207,11 +207,13 @@ fn may_sites<'g>(
         .filter(|e| e.kind == EdgeKind::Calls && e.to.is_some())
     {
         calls_from.entry(&e.from).or_default().push(e);
-        if let (Some(to), true) = (&e.to, e.status == Status::May && must.contains(&e.from)) {
-            if !must.contains(to) && !out.contains_key(to) && e.line.is_some() {
-                out.insert(to, e);
-                queue.push_back((to, e));
-            }
+        if let (Some(to), true) = (&e.to, e.status == Status::May && must.contains(&e.from))
+            && !must.contains(to)
+            && !out.contains_key(to)
+            && e.line.is_some()
+        {
+            out.insert(to, e);
+            queue.push_back((to, e));
         }
     }
     while let Some((n, label)) = queue.pop_front() {

@@ -743,9 +743,13 @@ impl<'a> Fold<'a> {
                 }
                 let leaf = self.t(f.child_by_field_name("name")?);
                 let path = f.child_by_field_name("path")?;
-                (matches!(leaf, "new" | "default") && path.kind() == "identifier")
-                    .then(|| self.plain_type(path))
-                    .flatten()
+                let name = self.t(path);
+                (matches!(leaf, "new" | "default")
+                    && path.kind() == "identifier"
+                    && upper_first(name)
+                    && !DEREF_WRAPPERS.contains(&name)
+                    && !self.generics.iter().any(|g| g == name))
+                .then(|| name.to_owned())
             }
             _ => None,
         }

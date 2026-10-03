@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 
 use gob_cache::Cache;
 use gob_symbols::{
-    CallEdge, EdgeKind, FileSymbols, ResolveError, SymbolGraph, SymbolKind, Symref, Visibility,
-    build_graph_with_stats, extract_file,
+    Admit, CallEdge, CallQualifier, EdgeKind, FileSymbols, ResolveError, SymbolGraph, SymbolKind,
+    Symref, Visibility, build_graph_with_stats, extract_file,
 };
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
@@ -206,7 +206,7 @@ fn caller_is_affected_by_callee() {
 fn affects_is_transitive_and_ambiguity_is_kept() {
     let src = "fn top() { mid(); }\nfn mid() { leaf(); }\nfn leaf() {}\n\
                struct A; struct B;\nimpl A { fn go(&self) {} }\nimpl B { fn go(&self) {} }\n\
-               fn user(a: A) { a.go(); println!(); other(); }\n";
+               fn user() { let a = make(); a.go(); println!(); other(); }\n";
     let g = graph_of(&[("c/src/lib.rs", src)]);
     let leaf = Symref::parse("c/src/lib.rs::leaf").unwrap();
     let hit: Vec<String> = g.affects(&leaf).iter().map(ToString::to_string).collect();
@@ -340,4 +340,181 @@ fn second_build_extracts_nothing() {
     );
     assert_eq!(g1.graph_digest(), g2.graph_digest());
     assert!(g2.resolve("README.md#hi").is_ok());
+}
+
+/// The qualifier recorded on the unresolved call of `name` in `src` (one such call expected).
+fn unresolved_qualifier(src: &str, name: &str) -> Option<CallQualifier> {
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    let hits: Vec<Option<CallQualifier>> = g
+        .call_edges()
+        .iter()
+        .filter_map(|e| match e {
+            CallEdge::Unresolved {
+                name: n, qualifier, ..
+            } if n == name => Some(qualifier.clone()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(hits.len(), 1, "unresolved `{name}` calls: {hits:?}");
+    hits.into_iter().next().flatten()
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files
+#[test]
+fn unresolved_path_calls_record_their_qualifier() {
+    let q = |src: &str, name: &str| unresolved_qualifier(src, name);
+    assert_eq!(
+        q("fn f() { let _ = Vec::new(); }", "new"),
+        Some(CallQualifier::Path("Vec".to_owned()))
+    );
+    assert_eq!(
+        q("fn f() { other::helper(); }", "helper"),
+        Some(CallQualifier::Path("other".to_owned()))
+    );
+    assert_eq!(
+        q(
+            "struct S;\nimpl S { fn f() { Self::missing(); } }",
+            "missing"
+        ),
+        Some(CallQualifier::Path("S".to_owned()))
+    );
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files
+#[test]
+fn unresolved_calls_with_no_usable_qualifier_record_none() {
+    assert_eq!(
+        unresolved_qualifier("fn f() { external(); }", "external"),
+        None
+    );
+    assert_eq!(
+        unresolved_qualifier("fn f() { crate::gone(); }", "gone"),
+        None
+    );
+    assert_eq!(
+        unresolved_qualifier("fn f<T: Dflt>() { let _ = T::make(); }", "make"),
+        None,
+        "a generic parameter names no concrete type"
+    );
+    assert_eq!(
+        unresolved_qualifier(
+            "type Alias = Vec<u8>;\nfn f() { let _ = Alias::with_capacity(1); }",
+            "with_capacity"
+        ),
+        None,
+        "a type alias may stand for any type"
+    );
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files
+#[test]
+fn unresolved_method_calls_record_the_receiver_kind() {
+    let q = |src: &str, name: &str| unresolved_qualifier(src, name);
+    assert_eq!(
+        q(
+            "struct S;\nimpl S { fn f(&self) { self.absent(); } }",
+            "absent"
+        ),
+        Some(CallQualifier::SelfType("S".to_owned()))
+    );
+    assert_eq!(
+        q("struct P;\nfn f(p: &mut P) { p.absent(); }", "absent"),
+        Some(CallQualifier::Typed("P".to_owned()))
+    );
+    assert_eq!(
+        q(
+            "struct P;\nfn f() { let p = P::new(); p.absent(); }",
+            "absent"
+        ),
+        Some(CallQualifier::Typed("P".to_owned()))
+    );
+    assert_eq!(
+        q("fn f() { make().absent(); }", "absent"),
+        Some(CallQualifier::Receiver)
+    );
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files
+#[test]
+fn receiver_types_are_dropped_when_shadowed_wrapped_or_generic() {
+    let q = |src: &str, name: &str| unresolved_qualifier(src, name);
+    assert_eq!(
+        q(
+            "struct P;\nfn f() { let p = P::new(); { let p = other(); p.absent(); } }",
+            "absent"
+        ),
+        Some(CallQualifier::Receiver),
+        "an inner untyped binding shadows the typed one"
+    );
+    assert_eq!(
+        q("struct P;\nfn f(p: Box<P>) { p.absent(); }", "absent"),
+        Some(CallQualifier::Receiver),
+        "a deref wrapper hides the real receiver type"
+    );
+    assert_eq!(
+        q("fn f<T: Tr>(t: T) { t.absent(); }", "absent"),
+        Some(CallQualifier::Receiver),
+        "a generic parameter is not a concrete type"
+    );
+    assert_eq!(
+        q(
+            "struct P;\nfn f(p: P) { fn inner() { p.absent(); } }",
+            "absent"
+        ),
+        Some(CallQualifier::Receiver),
+        "a nested fn cannot see the outer locals"
+    );
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.resolve_site
+#[test]
+fn self_and_typed_receivers_resolve_to_their_own_method() {
+    let src = "struct A; struct B;\n\
+               impl A { fn go(&self) {} fn run(&self) { self.go(); } }\n\
+               impl B { fn go(&self) {} }\n\
+               fn user(b: B) { b.go(); }\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    let resolved: Vec<(String, String)> = g
+        .call_edges()
+        .iter()
+        .filter_map(|e| match e {
+            CallEdge::Resolved { caller, callee } => Some((caller.to_string(), callee.to_string())),
+            _ => None,
+        })
+        .collect();
+    assert!(resolved.contains(&(
+        "c/src/lib.rs::A.run".to_owned(),
+        "c/src/lib.rs::A.go".to_owned()
+    )));
+    assert!(resolved.contains(&(
+        "c/src/lib.rs::user".to_owned(),
+        "c/src/lib.rs::B.go".to_owned()
+    )));
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.admits
+#[test]
+fn admits_pins_the_named_type_and_rules_out_the_rest() {
+    let src = "struct A; struct B;\n\
+               impl A { fn new() {} fn go(&self) {} }\n\
+               impl B { fn new() {} }\n\
+               fn go() {}\n\
+               trait T { fn dflt(&self) {} }\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    let rec = |s: &str| {
+        g.get(&Symref::parse(&format!("c/src/lib.rs::{s}")).unwrap())
+            .unwrap()
+            .clone()
+    };
+    let path_a = CallQualifier::Path("A".to_owned());
+    assert_eq!(g.admits(&path_a, &rec("A.new")), Admit::Pinned);
+    assert_eq!(g.admits(&path_a, &rec("B.new")), Admit::No);
+    assert_eq!(g.admits(&path_a, &rec("T.dflt")), Admit::Maybe);
+    let recv = CallQualifier::Receiver;
+    assert_eq!(g.admits(&recv, &rec("A.go")), Admit::Maybe);
+    assert_eq!(
+        g.admits(&recv, &rec("go")),
+        Admit::No,
+        "a method call is never a free function"
+    );
 }

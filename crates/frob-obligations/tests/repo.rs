@@ -363,3 +363,106 @@ fn cov001_is_unresolved_when_a_test_reaches_an_unresolved_call_naming_the_item()
     let plain = by("::plain").expect("plain is uncovered");
     assert_eq!(plain.severity, Severity::Warn, "{}", plain.message);
 }
+
+/// The COV001 findings of a tree built from `files`.
+fn cov_findings(files: &[(&str, &str)]) -> Vec<Finding> {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(dir.path(), files);
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    ev.findings
+        .into_iter()
+        .filter(|f| f.rule.as_str() == "COV001")
+        .collect()
+}
+
+/// Severity of the COV001 finding whose message names `what`.
+fn severity_of(cov: &[Finding], what: &str) -> Option<Severity> {
+    cov.iter()
+        .find(|f| f.message.contains(what))
+        .map(|f| f.severity)
+}
+
+const TWO_TYPES: &str = "/// A.\npub struct A;\n\nimpl A {\n    /// Makes.\n    pub fn new() -> A { A }\n}\n\n/// B.\npub struct B;\n\nimpl B {\n    /// Makes.\n    pub fn new() -> B { B }\n}\n\n/// Free.\npub fn run() {}\n\n/// A method named run.\npub struct R;\n\nimpl R {\n    /// Runs.\n    pub fn run(&self) {}\n}\n";
+
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_external_path_call_does_not_poison_same_named_methods() {
+    let test = "\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() {\n        let _ = Vec::new();\n    }\n}\n";
+    let cov = cov_findings(&[("src/lib.rs", &format!("{TWO_TYPES}{test}"))]);
+    assert_eq!(severity_of(&cov, "A.new"), Some(Severity::Warn), "{cov:?}");
+    assert_eq!(severity_of(&cov, "B.new"), Some(Severity::Warn), "{cov:?}");
+}
+
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_path_qualifier_poisons_only_the_named_type() {
+    // The call is in another crate, so the graph cannot resolve it; its qualifier
+    // `A` still rules out `B.new`.
+    let test = "#[test]\nfn t() {\n    let _ = a_crate::A::new();\n}\n";
+    let cov = cov_findings(&[("a/src/lib.rs", TWO_TYPES), ("b/tests/it.rs", test)]);
+    let a = cov
+        .iter()
+        .find(|f| f.message.contains("A.new"))
+        .expect("A.new");
+    assert_eq!(a.severity, Severity::Unresolved, "{}", a.message);
+    assert!(
+        a.message.contains("b/tests/it.rs:3"),
+        "names file:line: {}",
+        a.message
+    );
+    assert!(
+        a.message.contains("a_crate::A::new(..)"),
+        "names the call: {}",
+        a.message
+    );
+    assert_eq!(severity_of(&cov, "B.new"), Some(Severity::Warn), "{cov:?}");
+}
+
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_unknown_receiver_poisons_methods_but_not_free_functions() {
+    let test =
+        "\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() {\n        make().run();\n    }\n}\n";
+    let cov = cov_findings(&[("src/lib.rs", &format!("{TWO_TYPES}{test}"))]);
+    assert_eq!(
+        severity_of(&cov, "R.run"),
+        Some(Severity::Unresolved),
+        "a method call on an unknown receiver may reach any method of that name: {cov:?}"
+    );
+    assert_eq!(
+        severity_of(&cov, "::run`"),
+        Some(Severity::Warn),
+        "a method call can never be the free function: {cov:?}"
+    );
+}
+
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_unknown_receiver_is_never_falsely_covered() {
+    let test = "\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() {\n        let r = R;\n        r.run();\n    }\n}\n";
+    let cov = cov_findings(&[("src/lib.rs", &format!("{TWO_TYPES}{test}"))]);
+    // `R` is a unit struct literal path, not `R::new()`: the receiver stays unknown,
+    // so the method is Unresolved (never a false Covered).
+    assert_eq!(
+        severity_of(&cov, "R.run"),
+        Some(Severity::Unresolved),
+        "{cov:?}"
+    );
+}
+
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_qualifierless_unknown_call_keeps_the_broad_match() {
+    let test = "\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() {\n        run();\n        mystery();\n    }\n}\n";
+    let src = TWO_TYPES.replace(
+        "pub fn run() {}",
+        "pub fn run() {}\n\n/// Other.\npub fn mystery_twin() {}",
+    );
+    let cov = cov_findings(&[("src/lib.rs", &format!("{src}{test}"))]);
+    assert_eq!(severity_of(&cov, "R.run"), Some(Severity::Warn), "{cov:?}");
+    assert_eq!(
+        severity_of(&cov, "mystery_twin"),
+        Some(Severity::Warn),
+        "{cov:?}"
+    );
+}

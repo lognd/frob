@@ -96,8 +96,7 @@ impl CrateDeps {
                     && let Some((name, rest)) = line.split_once('=')
                     && let Some(p) = quoted_value(rest, "path")
                 {
-                    s.workspace
-                        .insert(name.trim().to_owned(), join_rel("", p));
+                    s.workspace.insert(name.trim().to_owned(), join_rel("", p));
                 }
             }
         }
