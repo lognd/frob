@@ -226,7 +226,7 @@ fn another_holder_is_refused_and_can_steal_with_a_reason() {
 }
 
 /// Lease and steal events record the worktree relative to the repository parent, never an absolute path.
-// frob:tests work_events_carry_no_absolute_path
+// frob:tests crates/frob-worktree/src/work.rs::Workspace.ledger_path
 #[test]
 fn work_events_carry_no_absolute_path() {
     if !git_available() {

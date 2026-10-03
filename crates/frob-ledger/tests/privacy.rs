@@ -68,7 +68,7 @@ fn finding_names_file_and_remedy() {
 }
 
 /// The ledger walk reports the committed file that holds a home path and nothing for a clean ledger.
-// frob:tests Ledger::home_path_findings
+// frob:tests crates/frob-ledger/src/privacy.rs::Ledger.home_path_findings
 #[test]
 fn ledger_walk_reports_only_dirty_files() {
     let dir = tempfile::tempdir().expect("tempdir");
