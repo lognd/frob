@@ -6,7 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T07:03:08Z"
-updated = "2026-10-03T07:03:08Z"
+updated = "2026-10-03T07:08:03Z"
+labels = ["release:0.532.0"]
 scope = ["crates/frob/src/ticket/**", "crates/frob/src/init.rs"]
 +++
 
