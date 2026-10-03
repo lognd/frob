@@ -12,6 +12,7 @@ pub enum Binding {
     File,
 }
 
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 /// A directive's position, for binding.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Site {
@@ -21,6 +22,9 @@ pub(crate) struct Site {
     pub(crate) end: usize,
     /// When false, only the enclosing symbol or the file can be chosen.
     pub(crate) allow_following: bool,
+    /// True for languages whose comments are `#` lines (YAML, TOML): such lines
+    /// belong to the directive block like `//` lines do in Rust.
+    pub(crate) hash_comments: bool,
 }
 
 fn line_of(index: &LineIndex, offset: usize) -> Option<u32> {
@@ -42,6 +46,18 @@ fn bracket_delta(line: &str) -> i32 {
     })
 }
 
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+/// True when code precedes the comment on its own line (`on: # note`).
+///
+/// A trailing `#` comment describes its own line, so it never binds forward.
+fn is_trailing(index: &LineIndex, text: &str, line: u32, at: usize) -> bool {
+    let Some(start) = index.line_start(line) else {
+        return false;
+    };
+    let start = usize::try_from(u32::from(start)).unwrap_or(usize::MAX);
+    !text[start..at].trim_start().starts_with('#')
+}
+
 // frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
 /// The last line of the directive block that starts on `from`.
 ///
@@ -50,7 +66,7 @@ fn bracket_delta(line: &str) -> i32 {
 /// attributes (including multi-line ones). The returned line is the first
 /// line that ends the run (the item line, a blank line or other code); a
 /// symbol starting on or before it is "next" for every directive in the block.
-fn block_limit(index: &LineIndex, text: &str, from: u32) -> u32 {
+fn block_limit(index: &LineIndex, text: &str, from: u32, hash_comments: bool) -> u32 {
     let mut line = from;
     let mut open = 0i32;
     loop {
@@ -60,16 +76,17 @@ fn block_limit(index: &LineIndex, text: &str, from: u32) -> u32 {
         };
         let start = usize::try_from(u32::from(start)).unwrap_or(usize::MAX);
         let l = text[start..].lines().next().unwrap_or_default().trim();
+        let attribute = l.starts_with("#[") || l.starts_with("#![");
         let preamble = open > 0
             || l.starts_with("//")
             || l.starts_with("/*")
             || l.starts_with('*')
-            || l.starts_with("#[")
-            || l.starts_with("#![");
+            || attribute
+            || (hash_comments && l.starts_with('#'));
         if !preamble {
             return next;
         }
-        if open > 0 || l.starts_with('#') {
+        if open > 0 || attribute {
             open = (open + bracket_delta(l)).max(0);
         }
         line = next;
@@ -77,6 +94,7 @@ fn block_limit(index: &LineIndex, text: &str, from: u32) -> u32 {
 }
 
 // frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 /// The symbol a directive at `site` binds to, or `None` for the file.
 ///
 /// Order: the outermost symbol that starts after the directive within its
@@ -91,8 +109,9 @@ pub(crate) fn bind<'s>(
     site: Site,
 ) -> Option<&'s SymbolRecord> {
     let dline = line_of(index, site.start)?;
-    if site.allow_following {
-        let limit = block_limit(index, text, dline);
+    if site.allow_following && !(site.hash_comments && is_trailing(index, text, dline, site.start))
+    {
+        let limit = block_limit(index, text, dline, site.hash_comments);
         let next = symbols
             .iter()
             .filter(|s| {

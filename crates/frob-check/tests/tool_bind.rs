@@ -92,8 +92,7 @@ fn zizmor_findings_carry_ci_ids_and_real_spans() {
 // frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
 #[test]
 fn a_frob_accept_suppresses_a_tool_finding_like_a_native_one() {
-    // The directive scanner reads Rust, Markdown and TOML comments (no YAML yet), so the
-    // tool is pointed at a TOML file to exercise the exception path.
+    // The tool is pointed at a TOML file here; the YAML twin is below.
     let dir = tempfile::tempdir().expect("tempdir");
     write(
         dir.path(),
@@ -119,6 +118,79 @@ fn a_frob_accept_suppresses_a_tool_finding_like_a_native_one() {
     assert!(
         rules(&report).contains(&"CI010".to_owned()),
         "other rules still fire"
+    );
+}
+
+/// A workflow whose `first` key block covers zizmor fixture offsets 305..324 and whose
+/// `second` key starts after them; `above_first` and `above_second` sit above each key.
+fn keyed_workflow(above_first: &str, above_second: &str) -> String {
+    let mut text = format!("{above_first}first:\n");
+    while text.len() < 330 {
+        text.push_str("  filler: value\n");
+    }
+    text.push_str(above_second);
+    text.push_str("second:\n");
+    while text.len() < 450 {
+        text.push_str("  filler: value\n");
+    }
+    text
+}
+
+const ACCEPT_CI001: &str =
+    "# frob:accept CI001 because=\"actions are bumped by dependabot in one PR\"\n";
+
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
+#[test]
+fn a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        ".github/workflows/ci.yml",
+        &keyed_workflow(ACCEPT_CI001, ""),
+    );
+    write(dir.path(), ".github/dependabot.yml", &workflow(""));
+    let toml = stage(dir.path(), ZIZMOR, 11, "zizmor-json-v1", "");
+    write(dir.path(), "frob.toml", &toml);
+    let report = run(dir.path(), &options()).expect("run");
+    assert!(
+        !rules(&report).contains(&"CI001".to_owned()),
+        "{:?}",
+        report.findings
+    );
+    assert!(
+        report
+            .suppressed
+            .iter()
+            .any(|(f, _)| f.rule.as_str() == "CI001"),
+        "the accepted finding is listed as suppressed"
+    );
+}
+
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
+#[test]
+fn a_yaml_accept_above_another_key_does_not_suppress_the_finding() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        ".github/workflows/ci.yml",
+        &keyed_workflow("", ACCEPT_CI001),
+    );
+    write(dir.path(), ".github/dependabot.yml", &workflow(""));
+    let toml = stage(dir.path(), ZIZMOR, 11, "zizmor-json-v1", "");
+    write(dir.path(), "frob.toml", &toml);
+    let report = run(dir.path(), &options()).expect("run");
+    assert!(
+        rules(&report).contains(&"CI001".to_owned()),
+        "{:?}",
+        report.findings
+    );
+    assert!(
+        report
+            .suppressed
+            .iter()
+            .all(|(f, _)| f.rule.as_str() != "CI001")
     );
 }
 

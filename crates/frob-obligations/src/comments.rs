@@ -121,7 +121,8 @@ fn markdown_lines(text: &str) -> Vec<CommentLine<'_>> {
     out
 }
 
-/// `#` comments of a TOML file, ignoring `#` inside quotes (naive).
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+/// `#` comments of a TOML or YAML file, ignoring `#` inside quotes (naive).
 fn toml_lines(text: &str) -> Vec<CommentLine<'_>> {
     let mut out = Vec::new();
     let mut offset = 0;
@@ -143,12 +144,13 @@ fn toml_lines(text: &str) -> Vec<CommentLine<'_>> {
     out
 }
 
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 /// All comment lines of `text`.
 pub(crate) fn comment_lines(language: Language, text: &str) -> Vec<CommentLine<'_>> {
     let found = match language {
         Language::Rust => rust_lines(text),
         Language::Markdown => markdown_lines(text),
-        Language::Toml => toml_lines(text),
+        Language::Toml | Language::Yaml => toml_lines(text),
     };
     tracing::trace!(
         language = language.name(),

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-check", "crates/frob-obligations", "crates/gob-directives", "crates/gob-languages/src/language.rs", "crates/gob-languages/src/grammar.rs", "crates/gob-symbols/src/yaml.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lib.rs", ".github/workflows/dev.yml", "frob.lock", "docs/reference/fidelity.md"]
+new = ["crates/gob-languages/src/language.rs", "crates/gob-languages/src/grammar.rs", "crates/gob-symbols/src/yaml.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lib.rs", ".github/workflows/dev.yml", "frob.lock", "docs/reference/fidelity.md", "crates/frob-check/**", "crates/frob-obligations/**", "crates/gob-directives/**"]
+at = "2026-10-03T18:14:38Z"
+actor = "lognd"
+rev = 1

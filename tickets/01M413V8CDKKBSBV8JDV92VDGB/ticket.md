@@ -2,12 +2,12 @@
 id = "01M413V8CDKKBSBV8JDV92VDGB"
 title = "check --ticket leads with findings in the ticket's diff and summarises the rest as counts"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T14:49:15Z"
-updated = "2026-10-03T14:49:15Z"
+updated = "2026-10-03T18:18:32Z"
 scope = ["crates/frob-check/**", "crates/frob/src/check_cmd.rs"]
 
 [[acceptance]]

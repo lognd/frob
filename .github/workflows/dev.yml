@@ -8,10 +8,11 @@ name: dev
 # Safety: workflow_run runs with the base repository's token, so the plan job
 # refuses anything but a successful push-triggered ci run of this repository;
 # fork pull requests never reach a build and no secrets are read.
-# The zizmor ignore on `on:` is deliberate: see the plan job's `if` and the
+# The CI006 accept on `on:` is deliberate: see the plan job's `if` and the
 # tests that pin it; nothing from the triggering event is executed.
 
-on: # zizmor: ignore[dangerous-triggers]
+# frob:accept CI006 because="workflow_run gated by the plan job on a successful push run of this repository"
+on:
   workflow_run:
     workflows: [ci]
     types: [completed]
