@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T11:33:49Z"
+updated = "2026-10-03T11:35:42Z"
 idempotency_key = "m2-rel-wheel-matrix"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = [".github/workflows/release.yml"]
+scope = [".github/workflows/release.yml", "packaging/pypi/build-wheel.sh"]
 
 [[links]]
 kind = "blocked-by"
