@@ -2,7 +2,8 @@
 id = "01M40MW1VKHDAMXAN9XMVY3DFK"
 title = "GRL: braces are literal outside message strings (no escaping in globs)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
