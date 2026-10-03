@@ -11,7 +11,7 @@ use gob_symbols::{
     Digests, EXTRACTOR_VERSION, FacetDigest, SymbolGraph, Symref, build_graph, extract_file,
 };
 use gob_text::{FileInterner, Span, TextRange, TextSize};
-use gob_walk::{FileEntry, WalkConfig, walk};
+use gob_walk::{ContentReader, ContentSource, FileEntry, WalkConfig, walk};
 use serde::{Deserialize, Serialize};
 
 use crate::error::AckError;
@@ -54,8 +54,15 @@ fn cached_scan(
 }
 
 /// Scans one file for well-formed `frob:doc` directives (uncached).
-fn scan_file(root: &Path, entry: &FileEntry, lang: Language, scanner: &Scanner) -> Vec<Stored> {
-    let Ok(text) = std::fs::read_to_string(root.join(&entry.path)) else {
+///
+/// Offsets are into the git-normalized text, the same text the symbol graph was built from.
+fn scan_file(
+    reader: &mut ContentReader<'_, '_>,
+    entry: &FileEntry,
+    lang: Language,
+    scanner: &Scanner,
+) -> Vec<Stored> {
+    let Ok(text) = reader.read_text(&entry.path) else {
         tracing::debug!(path = %entry.path, "unreadable file not scanned for frob:doc");
         return Vec::new();
     };
@@ -142,29 +149,32 @@ impl Inputs {
         let scanner = Scanner::new(&ScanConfig::default());
         let mut files = FileInterner::new();
         let mut docs = Vec::new();
-        for entry in &walked.files {
-            let Some(lang) = Language::detect(&entry.path) else {
-                continue;
-            };
-            let key = ArtifactKey {
-                content_digest: entry.digest.to_string(),
-                producer_identity: format!(
-                    "frob-ack/doc/v{SCAN_VERSION}/{EXTRACTOR_VERSION}/{}",
-                    grammar_identity(lang)
-                ),
-            };
-            let found = cached_scan(&cache, &key, || scan_file(root, entry, lang, &scanner));
-            let file = files.intern(&entry.path);
-            docs.extend(found.into_iter().map(|s| DocDirective {
-                file: entry.path.clone(),
-                span: Span::new(
-                    file,
-                    TextRange::new(TextSize::new(s.start), TextSize::new(s.end)),
-                ),
-                symbol: s.symbol,
-                target: s.target,
-            }));
-        }
+        let source = ContentSource::locate(root);
+        source.with_reader(|reader| {
+            for entry in &walked.files {
+                let Some(lang) = Language::detect(&entry.path) else {
+                    continue;
+                };
+                let key = ArtifactKey {
+                    content_digest: entry.digest.to_string(),
+                    producer_identity: format!(
+                        "frob-ack/doc/v{SCAN_VERSION}/{EXTRACTOR_VERSION}/{}",
+                        grammar_identity(lang)
+                    ),
+                };
+                let found = cached_scan(&cache, &key, || scan_file(reader, entry, lang, &scanner));
+                let file = files.intern(&entry.path);
+                docs.extend(found.into_iter().map(|s| DocDirective {
+                    file: entry.path.clone(),
+                    span: Span::new(
+                        file,
+                        TextRange::new(TextSize::new(s.start), TextSize::new(s.end)),
+                    ),
+                    symbol: s.symbol,
+                    target: s.target,
+                }));
+            }
+        });
         let lock = LockFile::load(&root.join(file_name(PRODUCT)))?;
         tracing::info!(
             symbols = graph.node_count(),

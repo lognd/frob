@@ -135,7 +135,7 @@ fn symlink_replaced_by_regular_file_with_target_text_is_reported() {
 
 #[test]
 fn worktree_content_as_git_matches_what_git_would_store() {
-    // frob:tests crates/gob-git/src/status.rs::Repo.worktree_content_as_git
+    // frob:tests crates/gob-git/src/content.rs::Repo.worktree_content_as_git
     let (_t, dir) = fixture(true);
     std::fs::remove_file(dir.join("notes.txt")).unwrap();
     git(&dir, &["checkout", "--", "notes.txt"]);

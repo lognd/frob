@@ -1,0 +1,1 @@
+Digests and parsed text now follow git's clean conversion, so a core.autocrlf checkout with no content change no longer raises EXC005 or DRIFT001, symlinks hash as their target, and the ledger's local-edit check shares the same helper.
