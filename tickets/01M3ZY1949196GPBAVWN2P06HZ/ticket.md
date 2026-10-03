@@ -2,7 +2,8 @@
 id = "01M3ZY1949196GPBAVWN2P06HZ"
 title = "Trust review flow and hardened --follow from the trust UX audit"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
