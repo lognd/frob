@@ -2,7 +2,8 @@
 id = "01M40WS6200M99J09D5XGAS05X"
 title = "Close guards ignore [pm] done_requires: a ticket closed as done with no evidence"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
