@@ -25,7 +25,12 @@ invisible variables").
 ### 1.1 What a pack is
 
 A data pack is a versioned, digest-pinned TOML document that teaches
-grimble words, not grammar. It may contribute:
+grimble words, not grammar. (Consistency pass D85: in plugins.md terms
+this document is the tier-1 data file of a pack. A pack is a directory
+with `pack.toml` (plugins.md 2) that may hold data files like this one,
+GRL rules and WASM components; the semantic item and pack digests of 2.5
+are computed over its data items for drift reporting, and the tree
+digest of security.md 2.1 over the whole directory for trust.) It may contribute:
 
 - capability ATOMS (names, docs, default severities of the CAP rules);
 - DETECTORS: how each atom is recognized in each language, or an

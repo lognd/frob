@@ -97,7 +97,29 @@ When the frob version in the trailer is not available locally, TICK005
 reports Unresolved (reason `generator-version`) instead of guessing; CI
 pins the frob version, so CI always decides it.
 
-### 2.3 Why this is the least confusing option
+### 2.3 Moving an existing ledger onto the ticket branch
+
+Milestone 1 repositories (this one included) keep tickets at
+`tickets/<id>/` on the code branch. `frob tickets migrate --to-branch`
+is a one-shot, verifiable move:
+
+1. Build the orphan branch from the current tree: each
+   `tickets/<id>/ticket.md` becomes `<top-epic-slug>/<slug>.md`, each
+   `tickets/<id>/events/<ulid>.toml` becomes `.events/<id>/<ulid>.toml`,
+   then generate the README, indexes and guide. `--dry-run` prints the
+   mapping.
+2. Verify before anything else changes: for every ticket, the fold of
+   the branch copy equals the fold of the original (the doctor check on
+   both), and the event counts match; any difference aborts.
+3. Commit the branch, then one commit on the code branch that removes
+   `tickets/`, sets `[tickets] storage = "branch"` (materialized), and
+   adds the README region. Leases, evidence and land read the ledger
+   through frob-ledger, which reads the configured storage.
+4. Rollback is reverting that one code commit; the branch can be
+   deleted. The migration ticket is the first user of the reindex
+   replay check (TICK005), run on the initial branch commit.
+
+### 2.4 Why this is the least confusing option
 
 A newcomer opening `parser-rewrite/` sees every ticket of that epic and
 nothing else; no ticket says "I actually belong elsewhere". History
@@ -215,7 +237,7 @@ Two reader profiles, used in two places:
 
   | Behaviour | newcomer | experienced |
   |---|---|---|
-  | `[ui] teach` | `always` for the first five occurrences of each rule, then `first` | `first` |
+  | `[ui] teach` | `always` for the first five occurrences of each std rule (counts in `.frob/seen.toml`), then `first`; pack rules are never taught inline (security.md 2.10) | `first` |
   | after each verb | a one-line "next step" (`next: frob work ~X`) | none |
   | `frob ticket doable` | good-first tickets first, with their start notes | ranked by priority |
   | unknown verb or failure | the three most likely commands and the guide page | did-you-mean only |
