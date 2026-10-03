@@ -2,7 +2,8 @@
 id = "01M3ZFT5KZBX5H4FBJTCX0T4TP"
 title = "frob-check perf test fails under concurrent builds; make the budget a measured benchmark, not a unit test"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
