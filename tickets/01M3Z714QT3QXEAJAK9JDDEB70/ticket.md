@@ -8,7 +8,7 @@ points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-02T21:06:25Z"
+updated = "2026-10-03T03:34:59Z"
 idempotency_key = "m2-pattern"
 labels = ["milestone:2"]
 scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
@@ -20,6 +20,10 @@ target = "01M3Z712DPZN71ZQDS6PXY6QQV"
 [[links]]
 kind = "blocked-by"
 target = "01M3Z713YNM5666B7YFEHPFVKD"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7DCQGFR0761QHY8NPAQE"
 
 [[acceptance]]
 text = "Given the no-print-in-lib example rule from rules.md, when run over a Rust and a Python fixture, then it fires in both from one rule file"
