@@ -78,11 +78,25 @@ in `[packs] enabled` and pinned in `grimble.packs.lock` (packs.md 4). This
 replaces pytest's entry-point auto-discovery, whose import-time cost and
 surprise activation the survey measured.
 
-Directory-scoped packs, the conftest analogue: a repository pack may be
-scoped to a subtree (`scope = "services/payments/**"`). Scoped packs may
-only provide per-file hooks; a per-run hook in a scoped pack is a load
-error (PACK009), which removes pytest's conftest ordering confusion for
-repository-wide state.
+There are no directory-scoped packs (owner decision 2026-10-04): no
+pack file in a subdirectory changes what applies there. Rules that apply
+to part of a repository are activated per path from the one root
+configuration:
+
+```toml
+[[packs.enable]]
+name  = "react"
+paths = ["frontend/**"]
+```
+
+One file says what applies where, so a reviewer and a newcomer read one
+place. `grimble config --for <file>` prints the packs and rules in
+effect for that file and the config line each came from. Rejected
+because of locality-of-definition confusion: ESLint removed cascading
+config in its flat-config redesign for that reason, ruff never merges
+nested configs, and pytest's conftest lookup is a recurring source of
+"where does this come from" questions. A nested `grimble.toml` is a
+separate project (its own root, no merging), as in ruff.
 
 Rule ids stay FAMILYNNN. A pack owns the families it declares; two packs
 declaring one family is PACK004. The std packs own the existing families.
@@ -273,16 +287,40 @@ adapter, Rust and markdown become std adapter packs.
 
 ## 9. Trust and effects of plugins themselves
 
-Plugins are deny by default for their own effects: a tier-3 component
-gets no file system, network, environment, clock or process access unless
-its manifest declares the effect and the lock grants it. Grants are
-listed in `grimble check --json` and counted. Packs are pinned by content
-digest; a signature check (sigstore) is a later option. Tier 1 and 2
-content runs no code at all.
+Owner decision 2026-10-04: repository packs may run tier 3 (WASM) and
+may be granted any effect; nothing is banned. Safety comes from making
+every power declared, reviewed, pinned and approved per machine. A
+pessimistic security audit of this model (assuming people approve
+prompts without reading) is a separate ticket and may tighten it.
+
+1. **Pure by default.** A tier-3 component runs in wasmtime with no file
+   system, network, environment, clock or process access. A pack that
+   declares no effects needs no approval anywhere: it can only return
+   findings. Tier 1 and 2 content runs no code at all.
+2. **Declared and scoped.** Effects are listed in the pack manifest with
+   their scope: file read paths (globs inside the repository), network
+   hosts, environment variable names, subprocess names. An undeclared
+   effect is a trap, reported Unresolved.
+3. **Granted in configuration, pinned to code.** Grants live in
+   `grimble.toml` and are recorded in `grimble.packs.lock` against the
+   pack's content digest. Any change to the pack's code changes the
+   digest and drops its grants; the lock diff shows the change in review.
+4. **Trusted per machine.** A repository pack with any effect does not
+   run until `grimble trust` records (repository, pack digest, granted
+   effects) in a store outside the repository
+   (`$XDG_CONFIG_HOME/grimble/trust.toml`). An untrusted pack's rules
+   report Unresolved with reason `untrusted` and the exact command to
+   trust it. A clone or a pull request can never trust itself. CI trusts
+   with an explicit flag in its own configuration.
+5. **Hard limits always.** Memory caps and epoch time budgets (a breach
+   is Unresolved, reason `budget`); wasmtime versions vetted by
+   `frob vet`. Grants are listed and counted in `grimble check --json`.
+   Packs are pinned by content digest; signatures (sigstore) are a
+   later option.
 
 ## 10. Consequences
 
-- New crates: `gob-packs` (manifest, lock, loader, scoped packs, hook
+- New crates: `gob-packs` (manifest, lock, loader, path-scoped activation, trust store, hook
   registry; product-neutral so frob and crunk use it), `gob-plan` (plan
   format, GRL compiler, pattern compiler, executor; the gob-ir evaluator
   becomes its backend), `gob-wasm` (wasmtime host, feature-gated, per-file
@@ -301,17 +339,15 @@ content runs no code at all.
 
 ## 11. Owner decisions and open questions
 
-Decided 2026-10-04:
+Decided 2026-10-04 (all four questions are now decided):
 
 1. One rule language, GRL, for pattern and relational rules; no YAML
    form. GRL must be intuitive (grl-spec.md).
 2. Built-in rules are compiled in for performance and treated logically
    the same as plugin rules (section 6.1). frob's families stay tier-0
    Rust in milestone 2, registered as recorded exceptions in the std pack.
-
-Still open:
-
-3. Should repository packs be allowed tier 3 (WASM) at all in version 1,
-   or only external packs with a signature?
-4. Directory-scoped packs: keep them (the conftest idea) or defer to keep
-   version 1 smaller?
+3. Repository packs may run tier 3 with any granted effect under the
+   trust model of section 9 (owner decision 2026-10-04), subject to the
+   pessimistic security audit.
+4. No directory-scoped packs; path-scoped activation from the root
+   configuration instead (section 2, owner decision 2026-10-04).
