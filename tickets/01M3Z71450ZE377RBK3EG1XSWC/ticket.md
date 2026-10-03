@@ -2,7 +2,8 @@
 id = "01M3Z71450ZE377RBK3EG1XSWC"
 title = "G11: grimble-bind: ownership and SYS001-005, SYS009-012"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
