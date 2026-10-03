@@ -63,7 +63,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           uvx zizmor@1.30.1 --version
-          uvx --from actionlint-py==1.7.12 actionlint -version
+          uvx --from actionlint-py==1.7.12.25 actionlint -version
       - name: frob doctor (self-hosted, frob v2 built from this tree)
         if: runner.os == 'Linux'
         run: cargo run -p frob-cli -- doctor
