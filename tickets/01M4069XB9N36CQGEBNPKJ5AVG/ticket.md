@@ -2,13 +2,13 @@
 id = "01M4069XB9N36CQGEBNPKJ5AVG"
 title = "REL001 release-without-cut: tag not created by release cut (Error)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T06:12:58Z"
+updated = "2026-10-03T08:39:04Z"
 idempotency_key = "m2-rel-rel001"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-release/src/rel001.rs", "docs/reference/rules/rel/**"]
