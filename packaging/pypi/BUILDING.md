@@ -31,7 +31,8 @@ Measured 2026-10-03 on aarch64: about 3 minutes cold; wheel
 
 ## Release workflow wheel job (ticket 5Y75MX7)
 
-`.github/workflows/release.yml` job `wheel`, one matrix entry per target; wheels are
+`.github/workflows/build-smoke.yml` job `wheel` (the reusable workflow `release.yml` calls
+with `wheels: true`), one matrix entry per target; wheels are
 run artifacts (`wheel-<target>`), nothing is published there.
 
 - Linux x86_64 / aarch64: native runners (`ubuntu-latest`, `ubuntu-24.04-arm`), the

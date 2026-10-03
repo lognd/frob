@@ -1,5 +1,6 @@
 //! Invariants of `.github/workflows/dev.yml`, the dev channel: triggered only by a green ci run
-//! on the base branch, sha-pinned actions, timeouts and minimal permissions, add-then-prune asset
+//! on the base branch, build and smoke through the reusable `build-smoke.yml` shared with
+//! `release.yml`, sha-pinned actions, timeouts and minimal permissions, add-then-prune asset
 //! replacement, and no registry publishing.
 // frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
 
@@ -24,6 +25,14 @@ fn load(rel: &str) -> Value {
 
 fn dev() -> Value {
     load(".github/workflows/dev.yml")
+}
+
+/// The text without comment-only lines, for "never appears" checks that prose may mention.
+fn code_only(text: &str) -> String {
+    text.lines()
+        .filter(|l| !l.trim_start().starts_with('#'))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn jobs(wf: &Value) -> Vec<(&str, &Value)> {
@@ -84,26 +93,79 @@ fn triggers_only_after_ci_succeeds_on_the_base_branch() {
             .is_some_and(|i| i.contains("needs.plan.outputs.go == 'true'"));
         let downstream = job["needs"]
             .as_sequence()
-            .is_some_and(|n| n.iter().any(|v| v.as_str() == Some("build")));
+            .is_some_and(|n| n.iter().any(|v| v.as_str() == Some("artifacts")));
         assert!(gated || downstream, "job {name:?} is not gated on the plan");
     }
-    // Builds check out the tested sha, never a branch name or a fork ref.
-    let build = step_text(&wf["jobs"]["build"]);
-    assert!(build.contains("needs.plan.outputs.sha"));
+    // The build checks out the tested sha (the shared workflow's `ref` input), never a branch
+    // name or a fork ref.
+    assert_eq!(
+        wf["jobs"]["artifacts"]["with"]["ref"].as_str(),
+        Some("${{ needs.plan.outputs.sha }}")
+    );
+    assert_eq!(
+        wf["jobs"]["artifacts"]["needs"].as_str(),
+        Some("plan"),
+        "the build waits for the gate"
+    );
 }
 
-/// Binds acceptance criterion 1: the build is the release matrix and the assets name the sha.
+/// Binds acceptance criterion 1: build and smoke are the shared reusable workflow that release.yml
+/// also calls (one matrix, one dist pin), without wheels or secrets, and the assets name the sha.
 // frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
+// frob:ticket 01M418CX3WCN4WPW7XTZ2QPBZ2
 #[test]
-fn the_build_matrix_is_the_release_matrix_and_assets_name_the_sha() {
+fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
     let release = load(".github/workflows/release.yml");
     let wf = dev();
+    let shared_uses = "./.github/workflows/build-smoke.yml";
+    for (file, w) in [("release.yml", &release), ("dev.yml", &wf)] {
+        let call = &w["jobs"]["artifacts"];
+        assert_eq!(
+            call["uses"].as_str(),
+            Some(shared_uses),
+            "{file} must call it"
+        );
+        // No secrets cross the call (neither a map nor `inherit`), no duplicated pins.
+        assert!(
+            call["secrets"].is_null(),
+            "{file}: the build needs no secrets"
+        );
+        let text = code_only(&read(&format!(".github/workflows/{file}")));
+        assert!(
+            !text.contains("inherit"),
+            "{file}: secrets: inherit is forbidden"
+        );
+        assert!(
+            !text.contains("DIST_VERSION"),
+            "{file} must not carry its own dist pin"
+        );
+        // The called workflow's permissions are capped by the caller: read-only.
+        let perms = call["permissions"].as_mapping().unwrap();
+        assert_eq!(perms.len(), 1, "{file}");
+        assert_eq!(
+            call["permissions"]["contents"].as_str(),
+            Some("read"),
+            "{file}"
+        );
+        // Only the shared workflow owns a matrix.
+        assert!(
+            !text.contains("matrix:"),
+            "{file} must not duplicate the matrix"
+        );
+    }
+    // dev.yml builds archives only: no wheels.
     assert_eq!(
-        wf["jobs"]["build"]["strategy"], release["jobs"]["build"]["strategy"],
-        "dev build matrix drifted from release.yml"
+        wf["jobs"]["artifacts"]["with"]["wheels"].as_bool(),
+        Some(false)
     );
-    assert_eq!(wf["env"]["DIST_VERSION"], release["env"]["DIST_VERSION"]);
-    let smoke = step_text(&wf["jobs"]["build"]);
+    // The shared workflow offers exactly the inputs the callers use and builds the archives.
+    let shared = load(".github/workflows/build-smoke.yml");
+    let inputs = shared["on"]["workflow_call"]["inputs"]
+        .as_mapping()
+        .unwrap();
+    let names: BTreeSet<&str> = inputs.keys().map(|k| k.as_str().unwrap()).collect();
+    assert_eq!(names, BTreeSet::from(["ref", "tag", "wheels"]));
+    let smoke = step_text(&shared["jobs"]["build"]);
     assert!(smoke.contains("packaging/smoke/archive-smoke.sh"));
     let publish = step_text(&wf["jobs"]["publish"]);
     assert!(
@@ -115,7 +177,7 @@ fn the_build_matrix_is_the_release_matrix_and_assets_name_the_sha() {
         wf["jobs"]["publish"]["needs"]
             .as_sequence()
             .unwrap()
-            .contains(&Value::from("build"))
+            .contains(&Value::from("artifacts"))
     );
 }
 
@@ -130,8 +192,11 @@ fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permission
     );
     let mut writers = BTreeSet::new();
     for (name, job) in jobs(&wf) {
+        // A job-level `uses` is the shared workflow; its jobs carry their own timeouts, pins and
+        // permissions (pinned in release_workflow.rs) and a called job takes no timeout key.
+        let is_call = job["uses"].is_string();
         assert!(
-            job["timeout-minutes"].as_u64().is_some_and(|m| m > 0),
+            is_call || job["timeout-minutes"].as_u64().is_some_and(|m| m > 0),
             "job {name:?} lacks timeout-minutes"
         );
         let perms = job["permissions"]
@@ -147,7 +212,7 @@ fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permission
                 other => panic!("job {name:?}: permission {k:?} is {other}"),
             }
         }
-        for s in job["steps"].as_sequence().unwrap() {
+        for s in job["steps"].as_sequence().into_iter().flatten() {
             if let Some(u) = s["uses"].as_str() {
                 let sha = u.split('@').nth(1).unwrap_or_default();
                 assert!(

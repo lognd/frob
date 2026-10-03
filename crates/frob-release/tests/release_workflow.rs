@@ -1,5 +1,8 @@
-//! Invariants of the `wheel` job in `.github/workflows/release.yml`: five targets, pinned
-//! images and maturin, timeouts, minimal permissions, and the explicit smoke exemption.
+//! Invariants of the release pipeline. The plan, build, wheel and smoke jobs live in the
+//! reusable `.github/workflows/build-smoke.yml` (five targets, pinned images, dist and maturin,
+//! timeouts, minimal permissions, the explicit smoke exemption, no secrets); `release.yml`
+//! calls it as `artifacts` and its publishing jobs (tag-only trigger, SHA pins, crates token or
+//! OIDC order, notes source) each need that call.
 // frob:ticket 01M4069XRXTR0P7BE595Y75MX7
 // frob:ticket 01M4069XXM8A47Y1F88NWXQPMM
 
@@ -30,6 +33,29 @@ fn workflow() -> Value {
     serde_yaml_ng::from_str(&workflow_text()).unwrap()
 }
 
+/// Text of the reusable workflow that now holds plan, build, wheel and smoke.
+fn shared_text() -> String {
+    fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.github/workflows/build-smoke.yml"),
+    )
+    .unwrap()
+}
+
+fn shared() -> Value {
+    serde_yaml_ng::from_str(&shared_text()).unwrap()
+}
+
+/// The text without comment-only lines, for "never appears" checks that prose may mention.
+fn code_only(text: &str) -> String {
+    text.lines()
+        .filter(|l| !l.trim_start().starts_with('#'))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// The `uses:` path both callers must use: local, so caller and callee are the same ref.
+const SHARED_USES: &str = "./.github/workflows/build-smoke.yml";
+
 fn matrix(wf: &Value) -> Vec<&Value> {
     wf["jobs"]["wheel"]["strategy"]["matrix"]["include"]
         .as_sequence()
@@ -46,7 +72,7 @@ fn str_of<'a>(v: &'a Value, key: &str) -> &'a str {
 
 #[test]
 fn the_matrix_is_exactly_the_five_wheel_targets() {
-    let wf = workflow();
+    let wf = shared();
     let got: BTreeSet<&str> = matrix(&wf)
         .into_iter()
         .map(|e| str_of(e, "target"))
@@ -56,7 +82,7 @@ fn the_matrix_is_exactly_the_five_wheel_targets() {
 
 #[test]
 fn only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit() {
-    let wf = workflow();
+    let wf = shared();
     let exempt: BTreeSet<&str> = matrix(&wf)
         .into_iter()
         .filter(|e| e["smoke"].as_bool() == Some(false))
@@ -95,7 +121,7 @@ fn only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit() {
 
 #[test]
 fn linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively() {
-    let wf = workflow();
+    let wf = shared();
     for e in matrix(&wf) {
         let (target, image) = (str_of(e, "target"), str_of(e, "image"));
         if target.contains("linux") {
@@ -121,7 +147,7 @@ fn linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively
 
 #[test]
 fn macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross() {
-    let wf = workflow();
+    let wf = shared();
     for e in matrix(&wf) {
         let target = str_of(e, "target");
         let cross = e["cross"].as_bool().unwrap();
@@ -134,7 +160,7 @@ fn macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross() {
 
 #[test]
 fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions() {
-    let wf = workflow();
+    let wf = shared();
     let pin = wf["env"]["MATURIN_VERSION"].as_str().unwrap();
     let ver = pin
         .strip_prefix("==")
@@ -158,6 +184,16 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
             "job {name:?} lacks its own permissions"
         );
     }
+    // release.yml's own jobs: a timeout, or a call of the shared workflow (a call job takes
+    // no timeout; the shared jobs carry theirs above) that still states its permissions.
+    let release = workflow();
+    for (name, job) in jobs(&release) {
+        assert!(job["permissions"].is_mapping(), "release job {name:?}");
+        assert!(
+            job["timeout-minutes"].as_u64().is_some() || job["uses"].as_str() == Some(SHARED_USES),
+            "release job {name:?} lacks timeout-minutes"
+        );
+    }
     assert_eq!(
         wf["jobs"]["wheel"]["permissions"]["contents"].as_str(),
         Some("read")
@@ -173,7 +209,7 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
 
 #[test]
 fn wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes() {
-    let wf = workflow();
+    let wf = shared();
     let steps = wf["jobs"]["wheel"]["steps"].as_sequence().unwrap();
     let upload = steps
         .iter()
@@ -184,7 +220,7 @@ fn wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes() {
         })
         .expect("wheel job uploads an artifact");
     assert_eq!(upload["with"]["if-no-files-found"].as_str(), Some("error"));
-    let text = workflow_text();
+    let text = format!("{}{}", shared_text(), workflow_text());
     // The wheel job itself never publishes; only the `pypi` job does.
     let wheel_text = serde_yaml_ng::to_string(&wf["jobs"]["wheel"]).unwrap();
     for banned in [
@@ -206,7 +242,7 @@ fn wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes() {
 
 #[test]
 fn retired_runner_and_manylinux_auto_never_appear() {
-    let text = workflow_text();
+    let text = format!("{}{}", shared_text(), workflow_text());
     assert!(!text.contains("macos-13"));
     assert!(
         !text.contains("manylinux auto")
@@ -237,7 +273,7 @@ fn smoke_steps<'a>(wf: &'a Value, job: &str, script: &str) -> Vec<&'a Value> {
 // frob:ticket 01M4069XXM8A47Y1F88NWXQPMM
 #[test]
 fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive() {
-    let wf = workflow();
+    let wf = shared();
     // Wheel jobs: smoke.sh delegates to the shared loop; archive jobs call archive-smoke.sh, which does too.
     assert!(repo_file("packaging/pypi/smoke.sh").contains("smoke/fixture-loop.sh"));
     assert!(repo_file("packaging/smoke/archive-smoke.sh").contains("fixture-loop.sh"));
@@ -338,7 +374,7 @@ fn publishes(job: &Value) -> bool {
 // frob:ticket 01M4069Y1YR0XCN4BKDDH63PV1
 #[test]
 fn every_job_has_a_timeout_and_the_failure_names_the_job() {
-    let wf = workflow();
+    let wf = shared();
     let missing: Vec<&str> = jobs(&wf)
         .into_iter()
         .filter(|(_, j)| j["timeout-minutes"].as_u64().is_none())
@@ -362,18 +398,31 @@ fn every_job_has_a_timeout_and_the_failure_names_the_job() {
     assert_eq!(names, ["smoke"]);
 }
 
-/// Binds acceptance criterion 2 of ~DH63PV1: every publishing job needs the artifact smoke job.
+/// Binds acceptance criterion 2 of ~DH63PV1: every publishing job needs the artifact smoke job,
+/// now the `artifacts` call of the shared workflow whose `smoke` job follows build and wheel.
 // frob:ticket 01M4069Y1YR0XCN4BKDDH63PV1
 #[test]
 fn every_publishing_job_needs_smoke() {
     let wf = workflow();
+    // The call is unconditional and is the shared workflow, so passing it means smoke passed.
+    let call = &wf["jobs"]["artifacts"];
+    assert_eq!(call["uses"].as_str(), Some(SHARED_USES));
+    assert!(
+        call["if"].is_null(),
+        "the artifacts call must not be skippable"
+    );
+    let sh = shared();
+    assert_eq!(
+        needs_of(&sh["jobs"]["smoke"]),
+        BTreeSet::from(["plan", "build", "wheel"])
+    );
     let mut publishers = 0;
     for (name, job) in jobs(&wf) {
         if publishes(job) {
             publishers += 1;
             assert!(
-                needs_of(job).contains("smoke"),
-                "publishing job {name:?} must list `smoke` in needs"
+                needs_of(job).contains("artifacts"),
+                "publishing job {name:?} must list the `artifacts` call (plan, build, smoke) in needs"
             );
         }
     }
@@ -383,20 +432,31 @@ fn every_publishing_job_needs_smoke() {
     );
     // A publishing job without the need is detected.
     let mut broken = wf.clone();
-    broken["jobs"]["release"]["needs"] = Value::Sequence(vec!["plan".into(), "build".into()]);
-    assert!(!needs_of(&broken["jobs"]["release"]).contains("smoke"));
+    broken["jobs"]["release"]["needs"] = Value::Sequence(vec![]);
+    assert!(!needs_of(&broken["jobs"]["release"]).contains("artifacts"));
     assert!(publishes(&broken["jobs"]["release"]));
 }
 
 #[test]
 fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption() {
-    let wf = workflow();
+    let wf = shared();
     let job = &wf["jobs"]["smoke"];
     assert_eq!(
         needs_of(job),
         BTreeSet::from(["plan", "build", "wheel"]),
         "smoke runs after every artifact exists"
     );
+    // Wheels are optional (dev.yml builds none), so `wheel` may be skipped; a failed or
+    // cancelled need must still stop the smoke.
+    let cond = job["if"].as_str().unwrap();
+    for needle in [
+        "!cancelled()",
+        "!contains(needs.*.result, 'failure')",
+        "!contains(needs.*.result, 'cancelled')",
+    ] {
+        assert!(cond.contains(needle), "smoke `if` lacks {needle}: {cond}");
+    }
+    assert_eq!(wf["jobs"]["wheel"]["if"].as_str(), Some("inputs.wheels"));
     assert_eq!(job["permissions"].as_mapping().unwrap().len(), 1);
     assert_eq!(job["permissions"]["contents"].as_str(), Some("read"));
     let entries = job["strategy"]["matrix"]["include"].as_sequence().unwrap();
@@ -440,11 +500,20 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
         ]
     );
     // Every runnable step is gated on matrix.smoke; the only other step is the exemption notice.
+    // The wheel steps are additionally gated on the `wheels` input, and only they.
     for s in steps {
         let cond = s["if"].as_str().unwrap_or_default();
         assert!(
-            cond == "matrix.smoke" || cond == "${{ !matrix.smoke }}",
+            cond == "matrix.smoke"
+                || cond == "${{ !matrix.smoke }}"
+                || cond == "matrix.smoke && inputs.wheels",
             "smoke step must be gated on the exemption flag: {s:?}"
+        );
+        let about_wheels = serde_yaml_ng::to_string(s).unwrap().contains("wheel");
+        assert_eq!(
+            cond.contains("inputs.wheels"),
+            about_wheels,
+            "exactly the wheel steps are gated on the wheels input: {s:?}"
         );
     }
     assert_eq!(
@@ -472,7 +541,16 @@ fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
         push["tags"].as_sequence().unwrap(),
         &[Value::from("frob-v*")]
     );
-    for (name, job) in jobs(&wf) {
+    // Jobs of both files; a job-level `uses` is the local shared workflow (same ref, no pin).
+    let sh = shared();
+    for (name, job) in jobs(&wf).into_iter().chain(jobs(&sh)) {
+        if let Some(u) = job["uses"].as_str() {
+            assert_eq!(
+                u, SHARED_USES,
+                "job {name:?}: reusable workflow must be local"
+            );
+            continue;
+        }
         for s in job["steps"].as_sequence().unwrap() {
             if let Some(u) = s["uses"].as_str() {
                 let sha = u.split('@').nth(1).unwrap_or_default();
@@ -483,6 +561,10 @@ fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
             }
         }
     }
+    // The shared workflow is only ever called; it has no trigger of its own.
+    let sh_on = sh["on"].as_mapping().unwrap();
+    assert_eq!(sh_on.len(), 1);
+    assert!(sh_on.contains_key("workflow_call"));
 }
 
 /// Binds the `crates` job design of ~6N2KET1 and ~AZS0RRT: the `crates-io` environment after smoke, a registry token when the environment has one, OIDC otherwise.
@@ -496,7 +578,7 @@ fn crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke
         publishes(job),
         "the crates job must be detected as publishing"
     );
-    assert!(needs_of(job).is_superset(&BTreeSet::from(["plan", "smoke"])));
+    assert!(needs_of(job).contains("artifacts"));
     assert_eq!(job["environment"].as_str(), Some("crates-io"));
     let perms = job["permissions"].as_mapping().unwrap();
     assert_eq!(perms.len(), 2, "only contents and id-token: {perms:?}");
@@ -569,7 +651,7 @@ fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_onl
         publishes(job),
         "the pypi job must be detected as publishing"
     );
-    assert!(needs_of(job).is_superset(&BTreeSet::from(["plan", "wheel", "smoke", "crates"])));
+    assert!(needs_of(job).is_superset(&BTreeSet::from(["artifacts", "crates"])));
     assert_eq!(job["environment"].as_str(), Some("pypi"));
     let perms = job["permissions"].as_mapping().unwrap();
     assert_eq!(perms.len(), 1, "id-token only: {perms:?}");
@@ -650,4 +732,78 @@ fn release_notes_come_from_the_verb_output_not_generated_or_inline_text() {
     );
     assert!(!run.contains("--generate-notes"), "{run}");
     assert!(!run.contains("--notes \""), "{run}");
+}
+
+/// Binds the shared-workflow rules: no secrets in or through it, least privilege, one dist pin.
+// frob:ticket 01M418CX3WCN4WPW7XTZ2QPBZ2
+#[test]
+fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_pin() {
+    let sh = shared();
+    let text = shared_text();
+    // The build needs no secrets: none declared on workflow_call, none read, none inherited.
+    let call = sh["on"]["workflow_call"].as_mapping().unwrap();
+    assert!(
+        !call.contains_key("secrets"),
+        "workflow_call declares secrets"
+    );
+    assert!(
+        !code_only(&text).contains("secrets"),
+        "the shared workflow must not mention secrets"
+    );
+    assert!(sh["permissions"].as_mapping().unwrap().is_empty());
+    for (name, job) in jobs(&sh) {
+        let perms = job["permissions"].as_mapping().unwrap();
+        assert_eq!(perms.len(), 1, "job {name:?}: contents only");
+        assert_eq!(
+            job["permissions"]["contents"].as_str(),
+            Some("read"),
+            "{name}"
+        );
+        assert!(
+            job["environment"].is_null(),
+            "job {name:?} must not use an environment"
+        );
+        for s in job["steps"].as_sequence().unwrap() {
+            if s["uses"]
+                .as_str()
+                .is_some_and(|u| u.starts_with("actions/checkout@"))
+            {
+                assert_eq!(
+                    s["with"]["persist-credentials"].as_bool(),
+                    Some(false),
+                    "{name}"
+                );
+            }
+        }
+    }
+    // The caller passes nothing but plain inputs and holds only contents: read (the cap).
+    let release = workflow();
+    let call = &release["jobs"]["artifacts"];
+    assert!(
+        call["secrets"].is_null(),
+        "release.yml must not pass secrets"
+    );
+    assert!(
+        !code_only(&workflow_text()).contains("inherit"),
+        "secrets: inherit is forbidden"
+    );
+    assert_eq!(call["permissions"].as_mapping().unwrap().len(), 1);
+    assert_eq!(call["permissions"]["contents"].as_str(), Some("read"));
+    assert_eq!(call["with"]["wheels"].as_bool(), Some(true));
+    assert_eq!(call["with"]["tag"].as_str(), Some("${{ github.ref_name }}"));
+    // The dist version is pinned in the shared workflow alone.
+    assert!(sh["env"]["DIST_VERSION"].as_str().is_some());
+    assert!(!code_only(&workflow_text()).contains("DIST_VERSION"));
+    assert!(!code_only(&repo_file(".github/workflows/dev.yml")).contains("DIST_VERSION"));
+    // Inputs reach shell only through env, never interpolated into a `run`.
+    for (name, job) in jobs(&sh) {
+        for s in job["steps"].as_sequence().unwrap() {
+            if let Some(run) = s["run"].as_str() {
+                assert!(
+                    !run.contains("${{"),
+                    "job {name:?}: expression in run: {run}"
+                );
+            }
+        }
+    }
 }
