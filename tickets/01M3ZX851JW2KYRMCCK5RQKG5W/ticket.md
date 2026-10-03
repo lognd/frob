@@ -1,14 +1,14 @@
 +++
 id = "01M3ZX851JW2KYRMCCK5RQKG5W"
-title = "Authenticated issue markers and MIR003 spoofed-marker"
+title = "Marker v1: MAC over (repository node id, ULID, nonce), creation-revision-only trust, MIR003"
 type = "task"
 category = "todo"
 priority = "high"
-points = 3
+points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T03:34:44Z"
+updated = "2026-10-03T05:49:58Z"
 idempotency_key = "m2-mirror-markers"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/marker.rs"]
@@ -30,6 +30,6 @@ text = "Given a bot issue whose marker HMAC is wrong, when the mirror runs, then
 bound = false
 +++
 
-Implements security.md section 2.11; mirror.md section 3.1.
+Implements mirror.md section 3.3 (marker format, trust) and security.md section 2.11.
 
-The mirror adopts or updates an issue only if its author is the mirror's bot identity (by user id) and the marker carries an HMAC of the ULID under a CI-secret key; anything else carrying a marker is MIR003 (Advisory) and ignored.
+Format `frob:v1 kid=<id> ulid=<ULID> nonce=<n> mac=<...>`; the MAC covers (repository node id, ULID, nonce) under key kid from the keyring (m2-mirror2-keyring). A marker counts only in the bot-authored creation revision of the issue body (first revision, author a mirror bot id by user id); markers in later revisions change nothing. Any other issue carrying a marker is MIR003 (Advisory) and ignored; a marker under an unknown kid on a bot issue is MIR001 marker-key-unknown, never a recreate.

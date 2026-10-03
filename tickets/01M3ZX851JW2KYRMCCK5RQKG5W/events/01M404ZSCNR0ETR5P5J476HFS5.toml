@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "Authenticated issue markers and MIR003 spoofed-marker"
+new = "Marker v1: MAC over (repository node id, ULID, nonce), creation-revision-only trust, MIR003"
+at = "2026-10-03T05:49:58Z"
+actor = "lognd"
+rev = 1
