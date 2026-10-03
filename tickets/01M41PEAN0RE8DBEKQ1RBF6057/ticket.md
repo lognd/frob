@@ -7,7 +7,7 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T20:14:15Z"
-updated = "2026-10-03T20:27:19Z"
+updated = "2026-10-03T20:27:21Z"
 scope = [".github/workflows/ci.yml", "crates/gob-trust/src/key.rs", "crates/frob-release/tests/**", "crates/frob/tests/merge_driver_path.rs", "crates/frob/tests/release_cut.rs", "crates/frob/tests/release_status.rs", "crates/frob-check/tests/check.rs", "crates/gob-git/tests/symlinks.rs"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the workspace, when clippy runs for the Windows target with -D warnings, then it is clean, or the report states why it cannot run on this host"
-bound = false
+bound = true
 +++
 
 Run https://github.com/lognd/frob/actions/runs/37150145973 (2026-10-03): ubuntu tests passed, then two failures.
