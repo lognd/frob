@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T16:16:18Z"
-updated = "2026-10-03T16:47:45Z"
+updated = "2026-10-03T16:47:46Z"
 scope = ["crates/frob-lease/src/config.rs", "crates/frob-lease/src/store.rs", "crates/frob-lease/tests/**", "crates/frob-land/**", "docs/design/tickets.md", "crates/frob-lease/src/verbs.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given [lease] shared_files = [] set explicitly and the same overlap, when frob work runs, then E-LEASE-HELD names [lease] shared_files in the remedy"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two landed tickets that each changed Cargo.lock, when the second lands, then land regenerates the lockfile instead of failing on the conflict"
