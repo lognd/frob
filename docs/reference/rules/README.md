@@ -87,6 +87,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
+| [PM013](PM013.md) | wip-limit-exceeded | warn | manual | P+ | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
 | [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P+ | false | A ticket claims a milestone that its epic ancestry does not reach. |
 
 ## PROC

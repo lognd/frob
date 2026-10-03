@@ -9,6 +9,7 @@ use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
 use frob_pm::rules::membership::Pm034;
+use frob_pm::rules::wip::Pm013;
 use frob_release::rel001::Rel001;
 use frob_release::rel002::Rel002;
 use frob_release::rel003::Rel003;
@@ -77,6 +78,28 @@ fn pm_findings(inputs: &FrobInputs) -> Vec<Finding> {
     )
 }
 
+/// `PM013` findings for the `repo:wip` group; the limit is `[pm.wip] in_progress`, and the ledger index is the only input.
+// frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
+fn wip_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    let Some(state) = &inputs.ledger else {
+        return Vec::new();
+    };
+    let limit = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => cfg.wip.in_progress,
+        Err(err) => {
+            tracing::warn!(%err, "pm config unreadable; PM013 not evaluated");
+            return Vec::new();
+        }
+    };
+    frob_pm::rules::wip::evaluate(&state.ledger, limit).map_or_else(
+        |err| {
+            tracing::warn!(%err, "PM013 not evaluated");
+            Vec::new()
+        },
+        |e| e.findings,
+    )
+}
+
 impl Product for Frob {
     type Shared = FrobShared;
     type Inputs = FrobInputs;
@@ -133,6 +156,10 @@ impl Product for Frob {
             ),
             RepoGroup::new("repo:pm", vec![Pm034.meta()], |s: &Snapshot<Self>, _| {
                 pm_findings(&s.inputs)
+            }),
+            // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
+            RepoGroup::new("repo:wip", vec![Pm013.meta()], |s: &Snapshot<Self>, _| {
+                wip_findings(&s.inputs)
             }),
             // frob:ticket 01M4069WNGJ8YR9DTTM9K9K8V5
             RepoGroup::new(
