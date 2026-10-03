@@ -725,6 +725,7 @@ fn uncommitted_out_of_scope_edits_still_fire_scope001() {
 }
 
 // frob:tests crates/frob-check/src/scope.rs::branch_changes
+#[cfg(unix)]
 #[test]
 fn untouched_symlinks_never_fire_scope001_and_a_retarget_does() {
     let (dir, id) = ticket_fixture();

@@ -378,6 +378,7 @@ fn push_sends_the_branch_and_the_tags_to_origin() {
 }
 
 /// Run frob with `path` as the whole PATH (a fake or absent `gh`).
+#[cfg(unix)]
 fn run_with_path(repo: &Repo, path: &Path, args: &[&str]) -> Output {
     Command::cargo_bin("frob")
         .expect("frob binary")
@@ -389,6 +390,7 @@ fn run_with_path(repo: &Repo, path: &Path, args: &[&str]) -> Output {
         .expect("run frob")
 }
 
+#[cfg(unix)]
 /// A directory with a stub `gh` printing one failing check run (and an empty status).
 fn red_gh() -> tempfile::TempDir {
     use std::os::unix::fs::PermissionsExt;
@@ -400,6 +402,7 @@ fn red_gh() -> tempfile::TempDir {
     dir
 }
 
+#[cfg(unix)]
 #[test]
 fn a_red_or_unknown_ci_tip_refuses_the_cut_without_override() {
     // frob:tests crates/frob/src/release_cmd.rs::ReleaseCut.run

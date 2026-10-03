@@ -1,4 +1,5 @@
 //! `diff_names(merge_base, WorkTree)` must agree with `git status` on symlinks and line endings.
+#![cfg(unix)]
 
 use std::path::Path;
 use std::process::Command;
