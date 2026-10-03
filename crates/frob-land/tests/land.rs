@@ -268,6 +268,34 @@ fn red_check_refuses_with_exit_3_and_moves_nothing() {
     assert!(s.wt.exists() && fx.leases().live_lease(s.id).expect("lease").is_some());
 }
 
+/// One error among non-blocking findings: only the error is listed, the rest are counted.
+#[test]
+fn red_check_lists_only_blocking_findings_and_counts_the_rest() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add b", &["src/**"]);
+    Fixture::commit_in(
+        &s.wt,
+        "src/b.rs",
+        &format!("// {}: finish this\nfn b() {{}}\n", marker()),
+    );
+    Fixture::evidence(&s, "src/b.rs");
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("red check");
+    let msg = refusal(&err).message.clone();
+    assert!(msg.contains("has 1 blocking finding(s)"), "{msg}");
+    assert!(msg.contains("TODO001 src/b.rs"), "error is listed: {msg}");
+    let (listed, tail) = msg.split_once("; and ").expect("tail counts the rest");
+    assert_eq!(
+        listed.matches(" src/").count() + listed.matches(" -:").count(),
+        1,
+        "only the blocking finding is listed: {msg}"
+    );
+    assert!(tail.contains("non-blocking findings"), "{msg}");
+}
+
 #[test]
 fn dirty_worktree_refuses_and_lists_paths() {
     if !git_available() {
