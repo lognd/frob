@@ -160,8 +160,14 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
   `[A-Z]+[0-9]{3}`; kinds and relations are lowercase words from the
   catalog (section 6), multi-word relations are written with spaces
   (`resolves to`, `owned by`).
-- Strings: `"..."` with `\"`, `\\`, `\n`, and `{expr}` interpolation in
-  messages; triple-quoted `"""..."""` for blocks, with the common leading
+- Strings: `"..."` with `\"`, `\\` and `\n`. Interpolation `{expr}`
+  exists only in message positions: `report` and `note` text, `fix`
+  replacement text, `unresolved ... because` reasons and `explain`. There
+  `\{` and `\}` write literal braces. In every other position (globs,
+  paths, regexes written as strings, config values, knob defaults,
+  example inputs) braces are literal and need no escaping, so
+  `".github/workflows/*.{yml,yaml}"` is a glob with an alternation.
+  Triple-quoted `"""..."""` for blocks, with the common leading
   indentation removed.
 - Snippets: backticks, optionally tagged with a language:
   `` `print($$$ARGS)` ``, `` rust`$X.unwrap()` ``. The text is raw; only
