@@ -1,0 +1,16 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T15:28:40Z"
+digest = "1d66f2cda7987d8a1e8e0b48e335e7462cfe6db2df046a6d5852e0fee9ab12b2"
+exit_code = 2
+inline = """
+{"verb":null,"already":false,"ok":false,"data":null,"findings":[],"warnings":[],"error":{"code":"E-USAGE","message":"unexpected argument '--rule' found","remedy":"usage: frob check [OPTIONS]","retryable":false},"schema_version":1}
+"""
+passed = false
+provider = "command"
+ref = "/home/logan/projects/frob-v2/target/debug/frob check --rule PM034"
+size = 231
+status = "measured"
+at = "2026-10-03T15:28:40Z"
+actor = "lognd"
+rev = 1
