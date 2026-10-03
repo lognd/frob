@@ -8,7 +8,7 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T17:45:01Z"
+updated = "2026-10-03T17:50:54Z"
 idempotency_key = "m2-rel-release-guide"
 labels = ["milestone:2", "area:release"]
 scope = ["docs/guides/release.md"]
@@ -23,7 +23,7 @@ target = "01M4069YA9PXDNNCV86DR38G0G"
 
 [[acceptance]]
 text = "Given the guide, when followed on a dry run, then every command exists"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a partial publish, when the guide's resume steps are followed, then publish continues at the first unpublished crate"
