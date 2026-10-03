@@ -2,7 +2,8 @@
 id = "01M40SF7A9NVCN6HJE4J84QNJ9"
 title = "Release workflow: pin rustup-init by hash in the manylinux container; record the no-sdist decision"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
