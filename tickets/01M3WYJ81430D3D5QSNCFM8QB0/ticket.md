@@ -9,9 +9,9 @@ points = 3
 parent = "01M3WYJ802ZVWE6E3050EVRCSV"
 reporter = "agent"
 created = "2026-10-02T00:00:00Z"
-updated = "2026-10-03T06:37:08Z"
+updated = "2026-10-03T15:28:16Z"
 aliases = ["T-0036"]
-labels = ["milestone:2.0.0", "component:frob-ledger", "release:0.532.0"]
+labels = ["milestone:2.0.0", "component:frob-ledger"]
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/**", "crates/frob-land/src/**"]
 
 [[acceptance]]
