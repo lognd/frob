@@ -130,24 +130,6 @@ fn cases() -> Vec<Case> {
             ">=",
         ),
         case(
-            "interpolation in a knob value",
-            "knob d: string = \"a{b}\" \"x\"",
-            "`{...}` is not allowed in a knob value",
-            "{b}",
-        ),
-        case(
-            "interpolation in a glob",
-            "where p matches \"src/{a,b}/*\"",
-            "`{...}` is not allowed in a comparison, glob or path",
-            "{a,b}",
-        ),
-        case(
-            "interpolation in a shape path",
-            "find k: key(path = \"/a/{x}\")",
-            "`{...}` is not allowed in a field value (a path or glob)",
-            "{x}",
-        ),
-        case(
             "interpolation holding an expression",
             "report f \"{f.name + 1}\"",
             "an interpolation holds a field, knob or witness such as `{x.name}`, not this",
@@ -363,12 +345,10 @@ fn several_errors_in_one_file_are_all_reported() {
 
 #[test]
 fn every_error_has_a_help_line_or_is_self_explanatory() {
-    let p = parsed(&wrap("knob d: string = \"a{b}\" \"x\""));
+    let p = parsed(&wrap("report f \"{f.name + 1}\""));
     assert_eq!(
         p.errors[0].help().as_deref(),
-        Some(
-            "only report, note and fix messages interpolate; write `\\{` and `\\}` for literal braces"
-        )
+        Some("name a variable or knob field, for example `{f.name}` or `{knob.depth}`")
     );
     let p = parsed("find x: y\n");
     assert_eq!(

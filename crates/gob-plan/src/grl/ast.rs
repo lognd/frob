@@ -27,7 +27,7 @@ pub struct Word {
     pub span: Span,
 }
 
-/// A plain string literal: no interpolation, escapes decoded.
+/// A plain string literal: braces literal, `\"` `\\` and `\n` decoded, `\{` kept as written.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StrLit {
     /// The decoded text.

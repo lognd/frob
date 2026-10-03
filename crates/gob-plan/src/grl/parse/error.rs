@@ -76,12 +76,6 @@ pub enum ParseErrorKind {
         /// The allowed words, ready to print.
         choices: &'static str,
     },
-    /// Interpolation `{...}` in a string that is plain text.
-    #[error("`{{...}}` is not allowed in {place}")]
-    InterpolationNotAllowed {
-        /// Where the string is, for example "a glob".
-        place: &'static str,
-    },
     /// An interpolation holding more than a field, knob or witness.
     #[error("an interpolation holds a field, knob or witness such as `{{x.name}}`, not this")]
     BadInterpolation,
@@ -113,13 +107,9 @@ impl ParseErrorKind {
             ),
             Self::DuplicateExplain => Some("merge the two blocks into one".into()),
             Self::BadChoice { choices, .. } => Some(format!("write one of {choices}")),
-            Self::InterpolationNotAllowed { .. } => Some(
-                "only report, note and fix messages interpolate; write `\\{` and `\\}` for literal braces"
-                    .into(),
+            Self::BadInterpolation => Some(
+                "name a variable or knob field, for example `{f.name}` or `{knob.depth}`".into(),
             ),
-            Self::BadInterpolation => {
-                Some("name a variable or knob field, for example `{f.name}` or `{knob.depth}`".into())
-            }
             Self::EmptyAny => Some("write `any { a, b }`, or drop the `any`".into()),
             Self::TooDeep(_) => Some("split the condition into named `def`s".into()),
             Self::Expected { hint, .. } => hint.map(Into::into),

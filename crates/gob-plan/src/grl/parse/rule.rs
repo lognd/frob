@@ -111,7 +111,7 @@ impl Parser<'_> {
             text: id.clone(),
             span: *span,
         };
-        let slug = self.plain_str("the rule's slug in quotes after its id", "a rule slug")?;
+        let slug = self.plain_str("the rule's slug in quotes after its id")?;
         let open = self.expect(&TokenKind::LBrace, "`{` to open the rule body")?;
         Ok((id, slug, open))
     }
@@ -392,11 +392,8 @@ impl Parser<'_> {
         self.expect(&TokenKind::Colon, "`:` and the knob's type")?;
         let ty = self.type_ref()?;
         self.expect(&TokenKind::Eq, "`=` and the knob's default value")?;
-        let default = self.literal("a knob value")?;
-        let doc = self.plain_str(
-            "the knob's description in quotes after its value",
-            "a knob description",
-        )?;
+        let default = self.literal()?;
+        let doc = self.plain_str("the knob's description in quotes after its value")?;
         Ok(Knob {
             name,
             ty,
@@ -417,7 +414,7 @@ impl Parser<'_> {
             None
         };
         let name = if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Str(_))) {
-            Some(self.plain_str("the example's name", "an example name")?)
+            Some(self.plain_str("the example's name")?)
         } else {
             None
         };
@@ -508,7 +505,7 @@ impl Parser<'_> {
         self.bump();
         let node = match word {
             "file" => {
-                let path = self.plain_str("the file's path in quotes after `file`", "a path")?;
+                let path = self.plain_str("the file's path in quotes after `file`")?;
                 let text = self.block("the file's text as a triple-quoted block")?;
                 InputKind::File { path, text }
             }
@@ -517,12 +514,11 @@ impl Parser<'_> {
             "fixed" => {
                 InputKind::Fixed(self.block("the expected output as a triple-quoted block")?)
             }
-            "expect" => InputKind::Expect(self.plain_str(
-                "the expectation in quotes, such as \"line 3: warn\"",
-                "an expectation",
-            )?),
-            "diff" => InputKind::Diff(self.string_list("a path")?),
-            _ => InputKind::Lease(self.string_list("a glob")?),
+            "expect" => InputKind::Expect(
+                self.plain_str("the expectation in quotes, such as \"line 3: warn\"")?,
+            ),
+            "diff" => InputKind::Diff(self.string_list()?),
+            _ => InputKind::Lease(self.string_list()?),
         };
         Ok(Spanned {
             node,
@@ -530,12 +526,12 @@ impl Parser<'_> {
         })
     }
 
-    fn string_list(&mut self, place: &'static str) -> PResult<Vec<StrLit>> {
+    fn string_list(&mut self) -> PResult<Vec<StrLit>> {
         self.expect(&TokenKind::LBracket, "`[` and a list of strings")?;
         let mut items = Vec::new();
         if !self.is(&TokenKind::RBracket) {
             loop {
-                items.push(self.plain_str("a string", place)?);
+                items.push(self.plain_str("a string")?);
                 if self.eat(&TokenKind::Comma).is_none() {
                     break;
                 }

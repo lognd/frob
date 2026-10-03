@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T10:51:31Z"
+digest = "4d45319b3a017adf66314b6ce268c5e17dd03ca6c59323bcf0c7a8da97946574"
+exit_code = 0
+inline = """
+   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/H83JZSW/crates/gob-mdtest)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/H83JZSW/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.67s
+────────────
+ Nextest run ID 6160dc0f-47f0-4c45-8851-d8735ae1364f with nextest profile: default
+    Starting 1 test across 4 binaries (17 tests skipped)
+        PASS [   0.005s] (1/1) frob-pm::config unknown_pm_key_is_reported_with_did_you_mean
+────────────
+     Summary [   0.006s] 1 test run: 1 passed, 17 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E test(unknown_pm_key_is_reported)"
+size = 613
+status = "measured"
+tests = ["unknown_pm_key_is_reported_with_did_you_mean"]
+at = "2026-10-03T10:51:31Z"
+actor = "lognd"
+rev = 1

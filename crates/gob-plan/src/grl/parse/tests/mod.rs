@@ -36,19 +36,10 @@ fn fixture(name: &str) -> String {
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"))
 }
 
-/// The fixture rules: section 2 plus the ten rules of section 12 (CI002 with escaped glob braces).
+/// The fixture rules: section 2 plus the ten rules of section 12 (CI002 verbatim, with its literal brace glob).
 const FIXTURES: &[&str] = &[
-    "NOPE001",
-    "TODO001",
-    "DOC002",
-    "COV001",
-    "INV002",
-    "SCOPE001",
-    "SYS001",
-    "CAP001",
-    "NEAT013",
-    "NEAT031",
-    "CI002_escaped",
+    "NOPE001", "TODO001", "DOC002", "COV001", "INV002", "SCOPE001", "SYS001", "CAP001", "NEAT013",
+    "NEAT031", "CI002",
 ];
 
 fn slice(src: &str, span: gob_text::Span) -> &str {
@@ -153,20 +144,45 @@ fn spec_rules_parse_without_error_and_match_snapshots() {
     }
 }
 
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
 #[test]
-fn ci002_verbatim_spec_text_is_one_interpolation_error() {
+fn ci002_verbatim_spec_text_parses_with_a_literal_brace_glob() {
     let src = fixture("CI002");
-    let p = parsed(&src);
-    assert_eq!(p.errors.len(), 1, "{:#?}", p.errors);
-    let e = &p.errors[0];
-    assert_eq!(
-        e.to_string(),
-        "`{...}` is not allowed in a comparison, glob or path"
-    );
-    assert_eq!(slice(&src, e.span), "{yml,yaml}");
-    // Everything else about the rule still parsed.
+    let p = clean(&src);
     assert_eq!(p.file.rules.len(), 1);
     assert_eq!(p.file.rules[0].examples.len(), 2);
+    assert!(
+        format!("{:?}", p.file).contains(".github/workflows/*.{yml,yaml}\""),
+        "glob text must survive byte for byte"
+    );
+}
+
+/// Wrap a clause in a rule that otherwise parses clean and return the debug dump.
+fn dump_clause(clause: &str) -> String {
+    let src = format!(
+        "rule T001 \"t\" {{\n lang *\n severity warn\n {clause}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
+    );
+    let p = clean(&src);
+    format!("{:?}", p.file)
+}
+
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn report_message_braces_interpolate_and_escapes_are_literal() {
+    let d = dump_clause("find f: file\n report f \"hi {f.name} \\{not\\}\"");
+    assert!(d.contains("Interp {"), "{d}");
+    assert!(d.contains("hi "), "{d}");
+    assert!(d.contains(" {not}\""), "{d}");
+}
+
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn regex_string_quantifiers_and_knob_defaults_keep_braces_literally() {
+    let d = dump_clause("find f: file where f.path matches \"a{2,3}\\{x\\}\"");
+    assert!(d.contains(r#"Str("a{2,3}\\{x\\}")"#), "{d}");
+    let src = "rule T001 \"t\" {\n lang *\n severity warn\n knob g: glob = \"*.{a,b}\" \"d\"\n find f: file\n report f \"m\"\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}";
+    let p = clean(src);
+    assert!(format!("{:?}", p.file).contains(r#""*.{a,b}""#));
 }
 
 /// Every header, clause, example and explain has a non-empty span inside its rule that starts at its keyword.
