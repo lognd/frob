@@ -24,7 +24,7 @@ target = "01M3WYJ80JTE725WDR4N6A18DJ"
 
 [[acceptance]]
 text = "Given the frontmatter struct with the derive, when cargo dev gen runs, then the ticket field reference page lists every field with its doc and default"
-bound = false
+bound = true
 +++
 
 Split from T-0018. Add #[derive(TicketField)] (or a struct-level TicketSchema derive) to gob-macros that generates serde impls, a JSON schema and a FieldDescription inventory entry for the ticket frontmatter struct in frob-ledger, replacing the hand-written schema table T-0018 ships with. Keep the frontmatter format byte-identical.
