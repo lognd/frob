@@ -1,6 +1,6 @@
 +++
 id = "01M3ZXGAWKZPVY6HF9NJ8GAFQV"
-title = "frob ticket proposals list|accept|decline and the pending count in check"
+title = "frob ticket proposals list and decline, and the pending count in check"
 type = "task"
 category = "todo"
 priority = "medium"
@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:39:12Z"
-updated = "2026-10-03T03:39:12Z"
+updated = "2026-10-03T05:50:00Z"
 idempotency_key = "m2-ticket-proposals-verbs"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-ledger/**", "crates/frob/**"]
+scope = ["crates/frob/src/ticket/proposals_cmd.rs", "crates/frob-check/src/proposals_summary.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -30,4 +30,6 @@ text = "Given pending proposals, when frob check runs, then exit status is unaff
 bound = false
 +++
 
-mirror.md 3.1. list pending proposals; accept applies the change through the normal ticket verbs as an event authored by the accepter citing the tracker user, then the next mirror run re-publishes; decline records a reason. frob check shows a summary count (Advisory), never a failure. Text from the tracker carries origin=tracker and is escaped (security.md 2.10).
+Implements mirror.md section 3.5.
+
+List pending proposals (tracker item id, field, actor id, time, digest, capped escaped excerpt, origin tracker); decline records a reason and appends proposal-declined; frob check shows a summary count (Advisory), never a failure. Text from the tracker carries origin=tracker and is escaped (security.md 2.10). Accept with its guards is a separate ticket (m2-mirror2-accept-guards).
