@@ -11,7 +11,7 @@ created = "2026-10-02T21:06:25Z"
 updated = "2026-10-03T01:07:01Z"
 idempotency_key = "m2-bind"
 labels = ["milestone:2"]
-scope = ["crates/grimble-bind/**", "crates/gob-symbols/**", "crates/grimble-check/**", "crates/gob-directives/**", "docs/reference/**"]
+scope = ["crates/grimble-bind/**", "crates/gob-symbols/**", "crates/grimble-check/**", "crates/gob-directives/**", "docs/reference/**", "docs/schemas/**"]
 
 [[links]]
 kind = "blocked-by"
