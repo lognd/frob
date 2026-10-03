@@ -161,6 +161,14 @@ experimental. Record such lands in the status log.
 
 ## Status log (newest first)
 
+- 2026-10-04 (after compaction): freed another ~174 GB (324 -> 150 GB
+  used): v1 worktree build output, then all 135 v1 frob worktrees
+  removed with branches kept (3 with uncommitted state backed up to
+  ~/frob-v1-worktree-backup), uv cache cleared. Repaired ticket/EHPFVKD:
+  26 empty objects deleted, branch reset to 201ae0c6d with the lost
+  commit's files re-staged from disk, stale reflog expired; git fsck
+  --full is clean. Resumed the G09 and FileInfo agents.
+
 - 2026-10-04 (disk event 3, hotfix): the disk filled again; the session
   died with two agents running (G09 grimble binary ~EHPFVKD, agent
   a9b427f4bd9c7e96e; FileInfo rules ~5NFTK3H, agent ad3e84f860845fc38).
