@@ -2,13 +2,13 @@
 id = "01M3ZTNXM1HH9CEP3K11RH38WH"
 title = "Plugins: path-scoped activation instead of directory packs; repository pack trust model"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:49:49Z"
-updated = "2026-10-03T02:49:49Z"
+updated = "2026-10-03T02:49:51Z"
 idempotency_key = "m2-plugins-trust-noscoped"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]
