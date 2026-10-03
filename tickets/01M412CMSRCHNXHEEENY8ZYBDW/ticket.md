@@ -11,7 +11,7 @@ created = "2026-10-03T14:23:48Z"
 updated = "2026-10-03T14:33:05Z"
 idempotency_key = "m2-rel-no-changelog-exempt"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-evidence/src/done.rs", "crates/frob-release/src/rel003.rs", "crates/frob/src/ticket/**", "crates/frob-land/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/brief.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "crates/frob-release/src/status.rs", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release_status.rs", "crates/frob/tests/remedies.rs"]
+scope = ["crates/frob-evidence/src/done.rs", "crates/frob-release/src/rel003.rs", "crates/frob/src/ticket/**", "crates/frob-land/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/brief.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "crates/frob-release/src/status.rs", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release_status.rs", "crates/frob/tests/remedies.rs", "crates/frob/tests/check_verb.rs"]
 
 [[acceptance]]
 text = "Given a ticket with no fragment, when close runs with --no-changelog and a reason, then it closes and records a changelog-exempt event"

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-evidence/src/done.rs", "crates/frob-release/src/rel003.rs", "crates/frob/src/ticket/**", "crates/frob-land/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/brief.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "crates/frob-release/src/status.rs", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release_status.rs", "crates/frob/tests/remedies.rs"]
+new = ["crates/frob-evidence/src/done.rs", "crates/frob-release/src/rel003.rs", "crates/frob/src/ticket/**", "crates/frob-land/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/brief.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "crates/frob-release/src/status.rs", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release_status.rs", "crates/frob/tests/remedies.rs", "crates/frob/tests/check_verb.rs"]
+at = "2026-10-03T14:33:05Z"
+actor = "lognd"
+rev = 1
