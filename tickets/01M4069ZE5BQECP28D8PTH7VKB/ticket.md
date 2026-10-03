@@ -8,7 +8,7 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T15:28:26Z"
+updated = "2026-10-03T15:28:40Z"
 idempotency_key = "m2-rel-assemble"
 labels = ["milestone:2", "area:release"]
 scope = ["tickets/**"]
@@ -23,7 +23,7 @@ target = "01M4069RJJ4C73Z6GKKSV1E7PS"
 
 [[acceptance]]
 text = "Given the object, when frob release status 0.532.0 runs, then it lists the three exit criteria and the open tickets"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given PM034, when frob check runs, then it is silent for every member"

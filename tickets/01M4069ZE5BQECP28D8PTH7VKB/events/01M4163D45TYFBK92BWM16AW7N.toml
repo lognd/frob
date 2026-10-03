@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T15:28:40Z"
+digest = "ec3ea8af53f7884418c82c955f3247a315f5cfc6f3745beac545b7f5adda7d0d"
+exit_code = 0
+passed = true
+provider = "command"
+ref = "/home/logan/projects/frob-v2/target/debug/frob release status 0.532.0"
+size = 19820
+status = "measured"
+uri = "dir:.git/frob/artifacts/ec3ea8af53f7884418c82c955f3247a315f5cfc6f3745beac545b7f5adda7d0d"
+at = "2026-10-03T15:28:40Z"
+actor = "lognd"
+rev = 1
