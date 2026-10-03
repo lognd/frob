@@ -2,7 +2,8 @@
 id = "01M3Z713317XCD44H4T09E3K2T"
 title = "gob-cli: --schema without positionals and three-word verb paths"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
