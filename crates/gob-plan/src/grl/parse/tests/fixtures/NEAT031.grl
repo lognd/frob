@@ -1,0 +1,38 @@
+rule NEAT031 "dispatch-site-owns-logic" {
+  lang *
+  severity advisory
+  knob ratio: float = 0.7 "share of statements that are calls or guarded calls"
+
+  def peer_call(s) = s is call and some p: function where s resolves to p and p peer of s.unit
+  def guarded_call(s) = s is rust`if $C { $F($$$A) }` as roles and some k: call where k directly inside s and peer_call(k)
+
+  find d: function where not d has attr "frob:dispatcher"
+  where count(s: stmt directly inside d where peer_call(s) or guarded_call(s))
+        >= knob.ratio * count(s: stmt directly inside d)
+  find b: (branch | loop) where b in unit d and not guarded_call(b)
+  report b "{d.name} dispatches to peers; this {b.role} does more than guard a call"
+  note d "dispatcher by shape"
+
+  example fire python """
+    def run(ctx):
+        a(ctx)
+        if ctx.x:                   #~ advisory
+            y = ctx.x * 2
+            b(y)
+        c(ctx)
+  """
+  example clean python """
+    def run(ctx):
+        a(ctx)
+        if ctx.x: b(ctx)
+        c(ctx)
+  """
+  example notapplicable json """
+    {}
+  """
+  explain """
+    A function that mostly dispatches to its peers should not also own logic.
+    ## Remedy
+    Move the logic into the callee or a named predicate.
+  """
+}

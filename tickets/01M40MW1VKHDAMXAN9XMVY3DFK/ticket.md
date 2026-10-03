@@ -1,0 +1,25 @@
++++
+id = "01M40MW1VKHDAMXAN9XMVY3DFK"
+title = "GRL: braces are literal outside message strings (no escaping in globs)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+reporter = "lognd"
+created = "2026-10-03T10:27:33Z"
+updated = "2026-10-03T10:27:33Z"
+idempotency_key = "m2-grl-literal-braces"
+labels = ["milestone:2", "area:grl"]
+scope = ["crates/gob-plan/**"]
+
+[[acceptance]]
+text = "Given the verbatim CI002 rule from grl-spec.md 12, when parsed, then it parses with no error and the glob holds literal braces"
+bound = false
+
+[[acceptance]]
+text = 'Given a report message with {x.name}, when parsed, then it is an interpolation, and \{ in a message is a literal brace'
+bound = false
++++
+
+Found by the parser (~Y8NPAQE): the lexer splits every string into text and interpolation parts, so the spec's CI002 glob ".github/workflows/*.{yml,yaml}" is rejected as an interpolation, and the parser test pins the verbatim spec text as an error. Decision (grl-spec.md 3, updated by the coordinator): interpolation exists only in message positions (report, note, fix replacement text, unresolved because, explain); in every other string position (globs, paths, regexes given as strings, config values, knob defaults, example inputs) the parser rejoins the lexer's parts and braces are literal. Change the parser accordingly, make the verbatim CI002 fixture parse clean, drop CI002_escaped.grl, and keep \{ \} working as an escape in message strings only.

@@ -1,0 +1,137 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "NOPE001",
+        span: @5..12 
+      },
+      slug: StrLit {
+         value: "no-dbg",
+        span: @13..21 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            One(
+              Word {
+                 text: "rust",
+                span: @31..35 
+              }
+            )
+          ),
+          span: @26..35 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "d",
+                span: @44..45 
+              },
+              source: Shape(
+                Spanned {
+                   node: Snippet {
+                     snippet: Snippet {
+                       lang: None,
+                      ticks: 1,
+                      text: "dbg!($$$ARGS)",
+                      body: @48..61,
+                      metavars: [
+                        MetaVar {
+                           kind: Seq,
+                          name: Some(
+                            "ARGS"
+                          ),
+                          span: @53..60 
+                        }
+                      ],
+                      dollars: [] 
+                  },
+                  cast: None 
+                },
+                span: @47..62 
+              }
+            ),
+            rels: [],
+          filter: None,
+          span: @44..62 
+        }
+      ),
+      span: @39..62 
+    },
+    Spanned {
+       node: Report(
+        Report {
+           target: Word {
+             text: "d",
+            span: @72..73 
+          },
+          message: Message {
+             parts: [
+              Text {
+                 value: "remove dbg! before committing",
+                span: @75..104 
+              }
+            ],
+            span: @74..105 
+          },
+          when: None 
+        }
+      ),
+      span: @65..105 
+    }
+  ],
+  examples: [
+    Example {
+       expect: Expect {
+         kind: Fire,
+        span: @117..121 
+      },
+      lang: None,
+      name: None,
+      body: Source(
+        BlockLit {
+           value: "fn f(x: u32) -> u32 { dbg!(x) }        //~ warn",
+          body: @125..180,
+          span: @122..183 
+        }
+      ),
+      span: @109..183 
+    },
+    Example {
+       expect: Expect {
+         kind: Clean,
+        span: @194..199 
+      },
+      lang: None,
+      name: None,
+      body: Source(
+        BlockLit {
+           value: "fn f(x: u32) -> u32 { x }",
+          body: @203..236,
+          span: @200..239 
+        }
+      ),
+      span: @186..239 
+    }
+  ],
+  explain: Some(
+    Explain {
+       text: BlockLit {
+         value: "`dbg!` prints to stderr and is meant for local debugging only.\n\n## Remedy\nDelete the call, or log through `tracing` if the value matters.",
+        body: @254..407,
+        span: @251..410 
+      },
+      span: @243..410 
+    }
+  ),
+  span: @0..412 
+}
+] 
+}

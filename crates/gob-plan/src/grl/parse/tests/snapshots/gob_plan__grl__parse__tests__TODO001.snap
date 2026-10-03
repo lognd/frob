@@ -1,0 +1,366 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "TODO001",
+        span: @5..12 
+      },
+      slug: StrLit {
+         value: "bare-work-marker",
+        span: @13..31 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            Any {
+               quoted: false 
+            }
+          ),
+          span: @36..42 
+        },
+        Spanned {
+           node: Severity(
+            Error
+          ),
+          span: @45..59 
+        },
+        Spanned {
+           node: Knob(
+            Knob {
+               name: Word {
+                 text: "markers",
+                span: @67..74 
+              },
+              ty: Spanned {
+                 node: Regex,
+                span: @76..81 
+              },
+              default: Spanned {
+                 node: Regex(
+                  Regex {
+                     pattern: "\\b(TODO|FIXME|XXX|HACK)\\b",
+                    ignore_case: false,
+                    multi_line: false 
+                  }
+                ),
+                span: @84..111 
+              },
+              doc: StrLit {
+                 value: "words that need an owner",
+                span: @112..138 
+              } 
+            }
+          ),
+          span: @62..138 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "c",
+                span: @147..148 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "comment",
+                      span: @150..157 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @150..157 
+              }
+            ),
+            rels: [],
+          filter: Some(
+            Spanned {
+               node: RegexMatch {
+                 lhs: Spanned {
+                   node: Path(
+                    Path {
+                       segments: [
+                        Word {
+                           text: "c",
+                          span: @164..165 
+                        },
+                        Word {
+                           text: "text",
+                          span: @166..170 
+                        }
+                      ],
+                      span: @164..170 
+                    }
+                  ),
+                  span: @164..170 
+                },
+                rhs: Spanned {
+                   node: Knob(
+                    Word {
+                       text: "markers",
+                      span: @178..185 
+                    }
+                  ),
+                  span: @173..185 
+                } 
+              },
+              span: @164..185 
+            }
+          ),
+          span: @147..185 
+        }
+      ),
+      span: @142..185 
+    },
+    Spanned {
+       node: Where(
+        Spanned {
+           node: Not(
+            Spanned {
+               node: RegexMatch {
+                 lhs: Spanned {
+                   node: Path(
+                    Path {
+                       segments: [
+                        Word {
+                           text: "c",
+                          span: @198..199 
+                        },
+                        Word {
+                           text: "text",
+                          span: @200..204 
+                        }
+                      ],
+                      span: @198..204 
+                    }
+                  ),
+                  span: @198..204 
+                },
+                rhs: Spanned {
+                   node: Literal(
+                    Spanned {
+                       node: Regex(
+                        Regex {
+                           pattern: "\\b[A-Z]+\\([0-9A-Z]{26}\\)",
+                          ignore_case: false,
+                          multi_line: false 
+                        }
+                      ),
+                      span: @207..233 
+                    }
+                  ),
+                  span: @207..233 
+                } 
+              },
+              span: @198..233 
+            }
+          ),
+          span: @194..233 
+        }
+      ),
+      span: @188..233 
+    },
+    Spanned {
+       node: Quant {
+         quant: No,
+        binding: Binding {
+           name: Word {
+             text: "d",
+            span: @239..240 
+          },
+          source: Shape(
+            Spanned {
+               node: Kind {
+                 kind: Word {
+                   text: "directive",
+                  span: @242..251 
+                },
+                fields: [],
+              arg: Some(
+                StrLit {
+                   value: "todo",
+                  span: @252..258 
+                }
+              ) 
+            },
+            span: @242..258 
+          }
+        ),
+        rels: [],
+      filter: Some(
+        Spanned {
+           node: Rel {
+             subject: Spanned {
+               node: Path(
+                Path {
+                   segments: [
+                    Word {
+                       text: "d",
+                      span: @265..266 
+                    }
+                  ],
+                  span: @265..266 
+                }
+              ),
+              span: @265..266 
+            },
+            rel: Spanned {
+               node: Position {
+                 position: Adjoins,
+                object: Term(
+                  Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "c",
+                            span: @275..276 
+                          }
+                        ],
+                        span: @275..276 
+                      }
+                    ),
+                    span: @275..276 
+                  }
+                ) 
+              },
+              span: @267..276 
+            } 
+          },
+          span: @265..276 
+        }
+      ),
+      span: @239..276 
+    } 
+  },
+  span: @236..276 
+},
+Spanned {
+   node: Report(
+    Report {
+       target: Word {
+         text: "c",
+        span: @286..287 
+      },
+      message: Message {
+         parts: [
+          Text {
+             value: "bare work marker: file a ticket, then add `frob:todo <ulid>`",
+            span: @289..349 
+          }
+        ],
+        span: @288..350 
+      },
+      when: None 
+    }
+  ),
+  span: @279..350 
+}
+],
+examples: [
+  Example {
+     expect: Expect {
+       kind: Fire,
+      span: @362..366 
+    },
+    lang: Some(
+      Word {
+         text: "rust",
+        span: @367..371 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "/* TODO tidy this */           //~ error",
+        body: @375..423,
+        span: @372..426 
+      }
+    ),
+    span: @354..426 
+  },
+  Example {
+     expect: Expect {
+       kind: Clean,
+      span: @437..442 
+    },
+    lang: Some(
+      Word {
+         text: "rust",
+        span: @443..447 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "// frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2\n/* TODO tidy this */",
+        body: @451..523,
+        span: @448..526 
+      }
+    ),
+    span: @429..526 
+  },
+  Example {
+     expect: Expect {
+       kind: Clean,
+      span: @537..542 
+    },
+    lang: Some(
+      Word {
+         text: "rust",
+        span: @543..547 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "fn a() -> &'static str { \"TODO inside a string\" }",
+        body: @551..608,
+        span: @548..611 
+      }
+    ),
+    span: @529..611 
+  },
+  Example {
+     expect: Expect {
+       kind: NotApplicable,
+      span: @622..635 
+    },
+    lang: Some(
+      Word {
+         text: "json",
+        span: @636..640 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "{ \"note\": \"TODO\" }",
+        body: @644..670,
+        span: @641..673 
+      }
+    ),
+    span: @614..673 
+  }
+],
+explain: Some(
+  Explain {
+     text: BlockLit {
+       value: "A work marker with no ticket is work nobody owns.\n## Remedy\nFile a ticket and put `frob:todo <ulid>` on the marker's line or the line above.",
+      body: @687..843,
+      span: @684..846 
+    },
+    span: @676..846 
+  }
+),
+span: @0..848 
+}
+] 
+}

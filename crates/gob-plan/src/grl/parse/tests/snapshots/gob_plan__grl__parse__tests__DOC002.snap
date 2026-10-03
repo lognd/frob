@@ -1,0 +1,645 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "DOC002",
+        span: @5..11 
+      },
+      slug: StrLit {
+         value: "broken-markdown-link",
+        span: @12..34 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            One(
+              Word {
+                 text: "markdown",
+                span: @44..52 
+              }
+            )
+          ),
+          span: @39..52 
+        },
+        Spanned {
+           node: Severity(
+            Error
+          ),
+          span: @55..69 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "l",
+                span: @78..79 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "link",
+                      span: @81..85 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @81..85 
+              }
+            ),
+            rels: [],
+          filter: Some(
+            Spanned {
+               node: Is {
+                 subject: Spanned {
+                   node: Path(
+                    Path {
+                       segments: [
+                        Word {
+                           text: "l",
+                          span: @92..93 
+                        },
+                        Word {
+                           text: "target",
+                          span: @94..100 
+                        }
+                      ],
+                      span: @92..100 
+                    }
+                  ),
+                  span: @92..100 
+                },
+                test: Word {
+                   text: "relative",
+                  span: @104..112 
+                } 
+              },
+              span: @92..112 
+            }
+          ),
+          span: @78..112 
+        }
+      ),
+      span: @73..112 
+    },
+    Spanned {
+       node: Def(
+        Def {
+           name: Word {
+             text: "dest_exists",
+            span: @119..130 
+          },
+          params: [
+            Word {
+               text: "l",
+              span: @131..132 
+            }
+          ],
+          body: Spanned {
+             node: Quant {
+               quant: Some,
+              binding: Binding {
+                 name: Word {
+                   text: "f",
+                  span: @141..142 
+                },
+                source: Shape(
+                  Spanned {
+                     node: Kind {
+                       kind: Word {
+                         text: "file",
+                        span: @144..148 
+                      },
+                      fields: [],
+                    arg: None 
+                  },
+                  span: @144..148 
+                }
+              ),
+              rels: [],
+            filter: Some(
+              Spanned {
+                 node: Cmp {
+                   op: Eq,
+                  lhs: Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "f",
+                            span: @155..156 
+                          },
+                          Word {
+                             text: "path",
+                            span: @157..161 
+                          }
+                        ],
+                        span: @155..161 
+                      }
+                    ),
+                    span: @155..161 
+                  },
+                  rhs: Spanned {
+                     node: Call(
+                      Call {
+                         name: Word {
+                           text: "resolve",
+                          span: @165..172 
+                        },
+                        args: [
+                          Spanned {
+                             node: Path(
+                              Path {
+                                 segments: [
+                                  Word {
+                                     text: "l",
+                                    span: @173..174 
+                                  },
+                                  Word {
+                                     text: "target",
+                                    span: @175..181 
+                                  },
+                                  Word {
+                                     text: "path",
+                                    span: @182..186 
+                                  }
+                                ],
+                                span: @173..186 
+                              }
+                            ),
+                            span: @173..186 
+                          },
+                          Spanned {
+                             node: Path(
+                              Path {
+                                 segments: [
+                                  Word {
+                                     text: "l",
+                                    span: @188..189 
+                                  },
+                                  Word {
+                                     text: "file",
+                                    span: @190..194 
+                                  }
+                                ],
+                                span: @188..194 
+                              }
+                            ),
+                            span: @188..194 
+                          }
+                        ],
+                        span: @165..195 
+                      }
+                    ),
+                    span: @165..195 
+                  } 
+                },
+                span: @155..195 
+              }
+            ),
+            span: @141..195 
+          } 
+        },
+        span: @136..195 
+      } 
+    }
+  ),
+  span: @115..195 
+},
+Spanned {
+   node: Report(
+    Report {
+       target: Word {
+         text: "l",
+        span: @205..206 
+      },
+      message: Message {
+         parts: [
+          Text {
+             value: "link target ",
+            span: @208..220 
+          },
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "l",
+                  span: @221..222 
+                },
+                Word {
+                   text: "target",
+                  span: @223..229 
+                },
+                Word {
+                   text: "path",
+                  span: @230..234 
+                }
+              ],
+              span: @221..234 
+            },
+            span: @220..235 
+          },
+          Text {
+             value: " does not exist",
+            span: @235..250 
+          }
+        ],
+        span: @207..251 
+      },
+      when: Some(
+        Spanned {
+           node: Not(
+            Spanned {
+               node: DefCall(
+                Call {
+                   name: Word {
+                     text: "dest_exists",
+                    span: @261..272 
+                  },
+                  args: [
+                    Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "l",
+                              span: @273..274 
+                            }
+                          ],
+                          span: @273..274 
+                        }
+                      ),
+                      span: @273..274 
+                    }
+                  ],
+                  span: @261..275 
+                }
+              ),
+              span: @261..275 
+            }
+          ),
+          span: @257..275 
+        }
+      ) 
+    }
+  ),
+  span: @198..275 
+},
+Spanned {
+   node: Report(
+    Report {
+       target: Word {
+         text: "l",
+        span: @285..286 
+      },
+      message: Message {
+         parts: [
+          Text {
+             value: "no heading #",
+            span: @288..300 
+          },
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "l",
+                  span: @301..302 
+                },
+                Word {
+                   text: "target",
+                  span: @303..309 
+                },
+                Word {
+                   text: "anchor",
+                  span: @310..316 
+                }
+              ],
+              span: @301..316 
+            },
+            span: @300..317 
+          },
+          Text {
+             value: " in ",
+            span: @317..321 
+          },
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "l",
+                  span: @322..323 
+                },
+                Word {
+                   text: "target",
+                  span: @324..330 
+                },
+                Word {
+                   text: "path",
+                  span: @331..335 
+                }
+              ],
+              span: @322..335 
+            },
+            span: @321..336 
+          }
+        ],
+        span: @287..337 
+      },
+      when: Some(
+        Spanned {
+           node: And(
+            [
+              Spanned {
+                 node: Exists(
+                  Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "l",
+                            span: @354..355 
+                          },
+                          Word {
+                             text: "target",
+                            span: @356..362 
+                          },
+                          Word {
+                             text: "anchor",
+                            span: @363..369 
+                          }
+                        ],
+                        span: @354..369 
+                      }
+                    ),
+                    span: @354..369 
+                  }
+                ),
+                span: @347..369 
+              },
+              Spanned {
+                 node: Quant {
+                   quant: No,
+                  binding: Binding {
+                     name: Word {
+                       text: "h",
+                      span: @382..383 
+                    },
+                    source: Shape(
+                      Spanned {
+                         node: Kind {
+                           kind: Word {
+                             text: "heading",
+                            span: @385..392 
+                          },
+                          fields: [],
+                        arg: None 
+                      },
+                      span: @385..392 
+                    }
+                  ),
+                  rels: [],
+                filter: Some(
+                  Spanned {
+                     node: And(
+                      [
+                        Spanned {
+                           node: Cmp {
+                             op: Eq,
+                            lhs: Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "h",
+                                      span: @399..400 
+                                    },
+                                    Word {
+                                       text: "file",
+                                      span: @401..405 
+                                    },
+                                    Word {
+                                       text: "path",
+                                      span: @406..410 
+                                    }
+                                  ],
+                                  span: @399..410 
+                                }
+                              ),
+                              span: @399..410 
+                            },
+                            rhs: Spanned {
+                               node: Call(
+                                Call {
+                                   name: Word {
+                                     text: "resolve",
+                                    span: @414..421 
+                                  },
+                                  args: [
+                                    Spanned {
+                                       node: Path(
+                                        Path {
+                                           segments: [
+                                            Word {
+                                               text: "l",
+                                              span: @422..423 
+                                            },
+                                            Word {
+                                               text: "target",
+                                              span: @424..430 
+                                            },
+                                            Word {
+                                               text: "path",
+                                              span: @431..435 
+                                            }
+                                          ],
+                                          span: @422..435 
+                                        }
+                                      ),
+                                      span: @422..435 
+                                    },
+                                    Spanned {
+                                       node: Path(
+                                        Path {
+                                           segments: [
+                                            Word {
+                                               text: "l",
+                                              span: @437..438 
+                                            },
+                                            Word {
+                                               text: "file",
+                                              span: @439..443 
+                                            }
+                                          ],
+                                          span: @437..443 
+                                        }
+                                      ),
+                                      span: @437..443 
+                                    }
+                                  ],
+                                  span: @414..444 
+                                }
+                              ),
+                              span: @414..444 
+                            } 
+                          },
+                          span: @399..444 
+                        },
+                        Spanned {
+                           node: Cmp {
+                             op: Eq,
+                            lhs: Spanned {
+                               node: Call(
+                                Call {
+                                   name: Word {
+                                     text: "slug",
+                                    span: @449..453 
+                                  },
+                                  args: [
+                                    Spanned {
+                                       node: Path(
+                                        Path {
+                                           segments: [
+                                            Word {
+                                               text: "h",
+                                              span: @454..455 
+                                            },
+                                            Word {
+                                               text: "text",
+                                              span: @456..460 
+                                            }
+                                          ],
+                                          span: @454..460 
+                                        }
+                                      ),
+                                      span: @454..460 
+                                    }
+                                  ],
+                                  span: @449..461 
+                                }
+                              ),
+                              span: @449..461 
+                            },
+                            rhs: Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "l",
+                                      span: @465..466 
+                                    },
+                                    Word {
+                                       text: "target",
+                                      span: @467..473 
+                                    },
+                                    Word {
+                                       text: "anchor",
+                                      span: @474..480 
+                                    }
+                                  ],
+                                  span: @465..480 
+                                }
+                              ),
+                              span: @465..480 
+                            } 
+                          },
+                          span: @449..480 
+                        }
+                      ]
+                    ),
+                    span: @399..480 
+                  }
+                ),
+                span: @382..480 
+              } 
+            },
+            span: @379..480 
+          }
+        ]
+      ),
+      span: @347..480 
+    }
+  ) 
+}
+),
+span: @278..480 
+}
+],
+examples: [
+  Example {
+     expect: Expect {
+       kind: Fire,
+      span: @492..496 
+    },
+    lang: None,
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "See [gone](missing.md).        <!--~ error -->",
+        body: @500..554,
+        span: @497..557 
+      }
+    ),
+    span: @484..557 
+  },
+  Example {
+     expect: Expect {
+       kind: Clean,
+      span: @568..573 
+    },
+    lang: None,
+    name: None,
+    body: Inputs(
+      [
+        Spanned {
+           node: File {
+             path: StrLit {
+               value: "a.md",
+              span: @585..591 
+            },
+            text: BlockLit {
+               value: "See [b](b.md#intro).",
+              body: @595..627,
+              span: @592..630 
+            } 
+          },
+          span: @580..630 
+        },
+        Spanned {
+           node: File {
+             path: StrLit {
+               value: "b.md",
+              span: @640..646 
+            },
+            text: BlockLit {
+               value: "# Intro",
+              body: @650..669,
+              span: @647..672 
+            } 
+          },
+          span: @635..672 
+        }
+      ]
+    ),
+    span: @560..676 
+  }
+],
+explain: Some(
+  Explain {
+     text: BlockLit {
+       value: "A relative link must point at a file (and heading) that exists.\n## Remedy\nFix the path or anchor, or remove the link.",
+      body: @690..823,
+      span: @687..826 
+    },
+    span: @679..826 
+  }
+),
+span: @0..828 
+}
+] 
+}

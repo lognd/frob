@@ -1,0 +1,408 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "CI002",
+        span: @5..10 
+      },
+      slug: StrLit {
+         value: "permissions-declared",
+        span: @11..33 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            One(
+              Word {
+                 text: "yaml",
+                span: @43..47 
+              }
+            )
+          ),
+          span: @38..47 
+        },
+        Spanned {
+           node: Severity(
+            Warn
+          ),
+          span: @50..63 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "w",
+                span: @72..73 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "file",
+                      span: @75..79 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @75..79 
+              }
+            ),
+            rels: [],
+          filter: Some(
+            Spanned {
+               node: GlobMatch {
+                 lhs: Spanned {
+                   node: Path(
+                    Path {
+                       segments: [
+                        Word {
+                           text: "w",
+                          span: @86..87 
+                        },
+                        Word {
+                           text: "path",
+                          span: @88..92 
+                        }
+                      ],
+                      span: @86..92 
+                    }
+                  ),
+                  span: @86..92 
+                },
+                rhs: Spanned {
+                   node: Literal(
+                    Spanned {
+                       node: Str(
+                        ".github/workflows/*.{yml,yaml}"
+                      ),
+                      span: @101..135 
+                    }
+                  ),
+                  span: @101..135 
+                } 
+              },
+              span: @86..135 
+            }
+          ),
+          span: @72..135 
+        }
+      ),
+      span: @67..135 
+    },
+    Spanned {
+       node: Quant {
+         quant: No,
+        binding: Binding {
+           name: Word {
+             text: "k",
+            span: @141..142 
+          },
+          source: Shape(
+            Spanned {
+               node: Kind {
+                 kind: Word {
+                   text: "key",
+                  span: @144..147 
+                },
+                fields: [
+                  FieldEq {
+                     name: Word {
+                       text: "path",
+                      span: @148..152 
+                    },
+                    value: Spanned {
+                       node: Str(
+                        "/permissions"
+                      ),
+                      span: @155..169 
+                    },
+                    span: @148..169 
+                  }
+                ],
+                arg: None 
+              },
+              span: @144..170 
+            }
+          ),
+          rels: [
+            Spanned {
+               node: Containment {
+                 directly: false,
+                dir: Inside,
+                object: Term(
+                  Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "w",
+                            span: @178..179 
+                          }
+                        ],
+                        span: @178..179 
+                      }
+                    ),
+                    span: @178..179 
+                  }
+                ) 
+              },
+              span: @171..179 
+            }
+          ],
+          filter: None,
+          span: @141..179 
+        } 
+      },
+      span: @138..179 
+    },
+    Spanned {
+       node: Quant {
+         quant: Some,
+        binding: Binding {
+           name: Word {
+             text: "j",
+            span: @187..188 
+          },
+          source: Shape(
+            Spanned {
+               node: Kind {
+                 kind: Word {
+                   text: "key",
+                  span: @190..193 
+                },
+                fields: [
+                  FieldEq {
+                     name: Word {
+                       text: "path",
+                      span: @194..198 
+                    },
+                    value: Spanned {
+                       node: Str(
+                        "/jobs/*"
+                      ),
+                      span: @201..210 
+                    },
+                    span: @194..210 
+                  }
+                ],
+                arg: None 
+              },
+              span: @190..211 
+            }
+          ),
+          rels: [
+            Spanned {
+               node: Containment {
+                 directly: false,
+                dir: Inside,
+                object: Term(
+                  Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "w",
+                            span: @219..220 
+                          }
+                        ],
+                        span: @219..220 
+                      }
+                    ),
+                    span: @219..220 
+                  }
+                ) 
+              },
+              span: @212..220 
+            }
+          ],
+          filter: Some(
+            Spanned {
+               node: Quant {
+                 quant: No,
+                binding: Binding {
+                   name: Word {
+                     text: "p",
+                    span: @230..231 
+                  },
+                  source: Shape(
+                    Spanned {
+                       node: Kind {
+                         kind: Word {
+                           text: "key",
+                          span: @233..236 
+                        },
+                        fields: [
+                          FieldEq {
+                             name: Word {
+                               text: "name",
+                              span: @237..241 
+                            },
+                            value: Spanned {
+                               node: Str(
+                                "permissions"
+                              ),
+                              span: @244..257 
+                            },
+                            span: @237..257 
+                          }
+                        ],
+                        arg: None 
+                      },
+                      span: @233..258 
+                    }
+                  ),
+                  rels: [
+                    Spanned {
+                       node: Containment {
+                         directly: true,
+                        dir: Inside,
+                        object: Term(
+                          Spanned {
+                             node: Path(
+                              Path {
+                                 segments: [
+                                  Word {
+                                     text: "j",
+                                    span: @275..276 
+                                  }
+                                ],
+                                span: @275..276 
+                              }
+                            ),
+                            span: @275..276 
+                          }
+                        ) 
+                      },
+                      span: @259..276 
+                    }
+                  ],
+                  filter: None,
+                  span: @230..276 
+                } 
+              },
+              span: @227..276 
+            }
+          ),
+          span: @187..276 
+        } 
+      },
+      span: @182..276 
+    },
+    Spanned {
+       node: Report(
+        Report {
+           target: Word {
+             text: "w",
+            span: @286..287 
+          },
+          message: Message {
+             parts: [
+              Text {
+                 value: "workflow has no top-level permissions and job ",
+                span: @289..335 
+              },
+              Interp {
+                 path: Path {
+                   segments: [
+                    Word {
+                       text: "j",
+                      span: @336..337 
+                    },
+                    Word {
+                       text: "name",
+                      span: @338..342 
+                    }
+                  ],
+                  span: @336..342 
+                },
+                span: @335..343 
+              },
+              Text {
+                 value: " declares none",
+                span: @343..357 
+              }
+            ],
+            span: @288..358 
+          },
+          when: None 
+        }
+      ),
+      span: @279..358 
+    }
+  ],
+  examples: [
+    Example {
+       expect: Expect {
+         kind: Fire,
+        span: @370..374 
+      },
+      lang: None,
+      name: None,
+      body: Inputs(
+        [
+          Spanned {
+             node: File {
+               path: StrLit {
+                 value: ".github/workflows/ci.yml",
+                span: @382..408 
+              },
+              text: BlockLit {
+                 value: "name: ci                                 #~ warn\njobs:\n  build:\n    runs-on: ubuntu-latest",
+                body: @412..522,
+                span: @409..525 
+              } 
+            },
+            span: @377..525 
+          }
+        ]
+      ),
+      span: @362..527 
+    },
+    Example {
+       expect: Expect {
+         kind: Clean,
+        span: @538..543 
+      },
+      lang: None,
+      name: None,
+      body: Inputs(
+        [
+          Spanned {
+             node: File {
+               path: StrLit {
+                 value: ".github/workflows/ci.yml",
+                span: @551..577 
+              },
+              text: BlockLit {
+                 value: "name: ci\npermissions: { contents: read }\njobs:\n  build: { runs-on: ubuntu-latest }",
+                body: @581..683,
+                span: @578..686 
+              } 
+            },
+            span: @546..686 
+          }
+        ]
+      ),
+      span: @530..688 
+    }
+  ],
+  explain: Some(
+    Explain {
+       text: BlockLit {
+         value: "Without explicit permissions a workflow token gets the repository default,\noften write access.\n## Remedy\nAdd `permissions:` at the top level or to every job.",
+        body: @702..879,
+        span: @699..882 
+      },
+      span: @691..882 
+    }
+  ),
+  span: @0..884 
+}
+] 
+}

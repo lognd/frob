@@ -1,0 +1,27 @@
+rule SYS001 "unowned" {
+  lang *
+  polarity P-  severity warn  scope repo  rollup directory
+  needs model, config
+
+  find a: artifact where not a.path matches config.grimble.exclude
+  where some u: unit where u inside a and some n: node where u owned by n
+  report a "no node owns any part of {a.path}"
+
+  example fire python {
+    model """node app owns "src/app/**";"""
+    file "scripts/legacy.py" """
+      def f(): pass                  #~ warn
+    """
+  }
+  example clean python {
+    model """node app owns "src/app/**";"""
+    file "src/app/a.py" """
+      def f(): pass
+    """
+  }
+  explain """
+    Every file should belong to a design node.
+    ## Remedy
+    Add an `owns` selector to a node, or exclude the path in grimble.toml.
+  """
+}

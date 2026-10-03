@@ -1,0 +1,950 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "NEAT031",
+        span: @5..12 
+      },
+      slug: StrLit {
+         value: "dispatch-site-owns-logic",
+        span: @13..39 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            Any {
+               quoted: false 
+            }
+          ),
+          span: @44..50 
+        },
+        Spanned {
+           node: Severity(
+            Advisory
+          ),
+          span: @53..70 
+        },
+        Spanned {
+           node: Knob(
+            Knob {
+               name: Word {
+                 text: "ratio",
+                span: @78..83 
+              },
+              ty: Spanned {
+                 node: Float,
+                span: @85..90 
+              },
+              default: Spanned {
+                 node: Decimal(
+                  "0.7"
+                ),
+                span: @93..96 
+              },
+              doc: StrLit {
+                 value: "share of statements that are calls or guarded calls",
+                span: @97..150 
+              } 
+            }
+          ),
+          span: @73..150 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Def(
+            Def {
+               name: Word {
+                 text: "peer_call",
+                span: @158..167 
+              },
+              params: [
+                Word {
+                   text: "s",
+                  span: @168..169 
+                }
+              ],
+              body: Spanned {
+                 node: And(
+                  [
+                    Spanned {
+                       node: Is {
+                         subject: Spanned {
+                           node: Path(
+                            Path {
+                               segments: [
+                                Word {
+                                   text: "s",
+                                  span: @173..174 
+                                }
+                              ],
+                              span: @173..174 
+                            }
+                          ),
+                          span: @173..174 
+                        },
+                        test: Word {
+                           text: "call",
+                          span: @178..182 
+                        } 
+                      },
+                      span: @173..182 
+                    },
+                    Spanned {
+                       node: Quant {
+                         quant: Some,
+                        binding: Binding {
+                           name: Word {
+                             text: "p",
+                            span: @192..193 
+                          },
+                          source: Shape(
+                            Spanned {
+                               node: Kind {
+                                 kind: Word {
+                                   text: "function",
+                                  span: @195..203 
+                                },
+                                fields: [],
+                              arg: None 
+                            },
+                            span: @195..203 
+                          }
+                        ),
+                        rels: [],
+                      filter: Some(
+                        Spanned {
+                           node: And(
+                            [
+                              Spanned {
+                                 node: Rel {
+                                   subject: Spanned {
+                                     node: Path(
+                                      Path {
+                                         segments: [
+                                          Word {
+                                             text: "s",
+                                            span: @210..211 
+                                          }
+                                        ],
+                                        span: @210..211 
+                                      }
+                                    ),
+                                    span: @210..211 
+                                  },
+                                  rel: Spanned {
+                                     node: Verb {
+                                       certainty: None,
+                                      verb: Word {
+                                         text: "resolves to",
+                                        span: @212..223 
+                                      },
+                                      object: Term(
+                                        Spanned {
+                                           node: Path(
+                                            Path {
+                                               segments: [
+                                                Word {
+                                                   text: "p",
+                                                  span: @224..225 
+                                                }
+                                              ],
+                                              span: @224..225 
+                                            }
+                                          ),
+                                          span: @224..225 
+                                        }
+                                      ) 
+                                    },
+                                    span: @212..225 
+                                  } 
+                                },
+                                span: @210..225 
+                              },
+                              Spanned {
+                                 node: Rel {
+                                   subject: Spanned {
+                                     node: Path(
+                                      Path {
+                                         segments: [
+                                          Word {
+                                             text: "p",
+                                            span: @230..231 
+                                          }
+                                        ],
+                                        span: @230..231 
+                                      }
+                                    ),
+                                    span: @230..231 
+                                  },
+                                  rel: Spanned {
+                                     node: Verb {
+                                       certainty: None,
+                                      verb: Word {
+                                         text: "peer of",
+                                        span: @232..239 
+                                      },
+                                      object: Term(
+                                        Spanned {
+                                           node: Path(
+                                            Path {
+                                               segments: [
+                                                Word {
+                                                   text: "s",
+                                                  span: @240..241 
+                                                },
+                                                Word {
+                                                   text: "unit",
+                                                  span: @242..246 
+                                                }
+                                              ],
+                                              span: @240..246 
+                                            }
+                                          ),
+                                          span: @240..246 
+                                        }
+                                      ) 
+                                    },
+                                    span: @232..246 
+                                  } 
+                                },
+                                span: @230..246 
+                              }
+                            ]
+                          ),
+                          span: @210..246 
+                        }
+                      ),
+                      span: @192..246 
+                    } 
+                  },
+                  span: @187..246 
+                }
+              ]
+            ),
+            span: @173..246 
+          } 
+        }
+      ),
+      span: @154..246 
+    },
+    Spanned {
+       node: Def(
+        Def {
+           name: Word {
+             text: "guarded_call",
+            span: @253..265 
+          },
+          params: [
+            Word {
+               text: "s",
+              span: @266..267 
+            }
+          ],
+          body: Spanned {
+             node: And(
+              [
+                Spanned {
+                   node: IsSnippet {
+                     subject: Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "s",
+                              span: @271..272 
+                            }
+                          ],
+                          span: @271..272 
+                        }
+                      ),
+                      span: @271..272 
+                    },
+                    snippet: Snippet {
+                       lang: Some(
+                        SnippetLang {
+                           name: "rust",
+                          span: @276..280 
+                        }
+                      ),
+                      ticks: 1,
+                      text: "if $C { $F($$$A) }",
+                      body: @281..299,
+                      metavars: [
+                        MetaVar {
+                           kind: One,
+                          name: Some(
+                            "C"
+                          ),
+                          span: @284..286 
+                        },
+                        MetaVar {
+                           kind: One,
+                          name: Some(
+                            "F"
+                          ),
+                          span: @289..291 
+                        },
+                        MetaVar {
+                           kind: Seq,
+                          name: Some(
+                            "A"
+                          ),
+                          span: @292..296 
+                        }
+                      ],
+                      dollars: [] 
+                  },
+                  roles: true 
+                },
+                span: @271..309 
+              },
+              Spanned {
+                 node: Quant {
+                   quant: Some,
+                  binding: Binding {
+                     name: Word {
+                       text: "k",
+                      span: @319..320 
+                    },
+                    source: Shape(
+                      Spanned {
+                         node: Kind {
+                           kind: Word {
+                             text: "call",
+                            span: @322..326 
+                          },
+                          fields: [],
+                        arg: None 
+                      },
+                      span: @322..326 
+                    }
+                  ),
+                  rels: [],
+                filter: Some(
+                  Spanned {
+                     node: And(
+                      [
+                        Spanned {
+                           node: Rel {
+                             subject: Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "k",
+                                      span: @333..334 
+                                    }
+                                  ],
+                                  span: @333..334 
+                                }
+                              ),
+                              span: @333..334 
+                            },
+                            rel: Spanned {
+                               node: Containment {
+                                 directly: true,
+                                dir: Inside,
+                                object: Term(
+                                  Spanned {
+                                     node: Path(
+                                      Path {
+                                         segments: [
+                                          Word {
+                                             text: "s",
+                                            span: @351..352 
+                                          }
+                                        ],
+                                        span: @351..352 
+                                      }
+                                    ),
+                                    span: @351..352 
+                                  }
+                                ) 
+                              },
+                              span: @335..352 
+                            } 
+                          },
+                          span: @333..352 
+                        },
+                        Spanned {
+                           node: DefCall(
+                            Call {
+                               name: Word {
+                                 text: "peer_call",
+                                span: @357..366 
+                              },
+                              args: [
+                                Spanned {
+                                   node: Path(
+                                    Path {
+                                       segments: [
+                                        Word {
+                                           text: "k",
+                                          span: @367..368 
+                                        }
+                                      ],
+                                      span: @367..368 
+                                    }
+                                  ),
+                                  span: @367..368 
+                                }
+                              ],
+                              span: @357..369 
+                            }
+                          ),
+                          span: @357..369 
+                        }
+                      ]
+                    ),
+                    span: @333..369 
+                  }
+                ),
+                span: @319..369 
+              } 
+            },
+            span: @314..369 
+          }
+        ]
+      ),
+      span: @271..369 
+    } 
+  }
+),
+span: @249..369 
+},
+Spanned {
+   node: Find(
+    Binding {
+       name: Word {
+         text: "d",
+        span: @378..379 
+      },
+      source: Shape(
+        Spanned {
+           node: Kind {
+             kind: Word {
+               text: "function",
+              span: @381..389 
+            },
+            fields: [],
+          arg: None 
+        },
+        span: @381..389 
+      }
+    ),
+    rels: [],
+  filter: Some(
+    Spanned {
+       node: Not(
+        Spanned {
+           node: HasAttr {
+             subject: Spanned {
+               node: Path(
+                Path {
+                   segments: [
+                    Word {
+                       text: "d",
+                      span: @400..401 
+                    }
+                  ],
+                  span: @400..401 
+                }
+              ),
+              span: @400..401 
+            },
+            attr: StrLit {
+               value: "frob:dispatcher",
+              span: @411..428 
+            } 
+          },
+          span: @400..428 
+        }
+      ),
+      span: @396..428 
+    }
+  ),
+  span: @378..428 
+}
+),
+span: @373..428 
+},
+Spanned {
+   node: Where(
+    Spanned {
+       node: Cmp {
+         op: Ge,
+        lhs: Spanned {
+           node: Count(
+            Binding {
+               name: Word {
+                 text: "s",
+                span: @443..444 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "stmt",
+                      span: @446..450 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @446..450 
+              }
+            ),
+            rels: [
+              Spanned {
+                 node: Containment {
+                   directly: true,
+                  dir: Inside,
+                  object: Term(
+                    Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "d",
+                              span: @467..468 
+                            }
+                          ],
+                          span: @467..468 
+                        }
+                      ),
+                      span: @467..468 
+                    }
+                  ) 
+                },
+                span: @451..468 
+              }
+            ],
+            filter: Some(
+              Spanned {
+                 node: Or(
+                  [
+                    Spanned {
+                       node: DefCall(
+                        Call {
+                           name: Word {
+                             text: "peer_call",
+                            span: @475..484 
+                          },
+                          args: [
+                            Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "s",
+                                      span: @485..486 
+                                    }
+                                  ],
+                                  span: @485..486 
+                                }
+                              ),
+                              span: @485..486 
+                            }
+                          ],
+                          span: @475..487 
+                        }
+                      ),
+                      span: @475..487 
+                    },
+                    Spanned {
+                       node: DefCall(
+                        Call {
+                           name: Word {
+                             text: "guarded_call",
+                            span: @491..503 
+                          },
+                          args: [
+                            Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "s",
+                                      span: @504..505 
+                                    }
+                                  ],
+                                  span: @504..505 
+                                }
+                              ),
+                              span: @504..505 
+                            }
+                          ],
+                          span: @491..506 
+                        }
+                      ),
+                      span: @491..506 
+                    }
+                  ]
+                ),
+                span: @475..506 
+              }
+            ),
+            span: @443..506 
+          }
+        ),
+        span: @437..507 
+      },
+      rhs: Spanned {
+         node: Binary {
+           op: Mul,
+          lhs: Spanned {
+             node: Knob(
+              Word {
+                 text: "ratio",
+                span: @524..529 
+              }
+            ),
+            span: @519..529 
+          },
+          rhs: Spanned {
+             node: Count(
+              Binding {
+                 name: Word {
+                   text: "s",
+                  span: @538..539 
+                },
+                source: Shape(
+                  Spanned {
+                     node: Kind {
+                       kind: Word {
+                         text: "stmt",
+                        span: @541..545 
+                      },
+                      fields: [],
+                    arg: None 
+                  },
+                  span: @541..545 
+                }
+              ),
+              rels: [
+                Spanned {
+                   node: Containment {
+                     directly: true,
+                    dir: Inside,
+                    object: Term(
+                      Spanned {
+                         node: Path(
+                          Path {
+                             segments: [
+                              Word {
+                                 text: "d",
+                                span: @562..563 
+                              }
+                            ],
+                            span: @562..563 
+                          }
+                        ),
+                        span: @562..563 
+                      }
+                    ) 
+                  },
+                  span: @546..563 
+                }
+              ],
+              filter: None,
+              span: @538..563 
+            }
+          ),
+          span: @532..564 
+        } 
+      },
+      span: @519..564 
+    } 
+  },
+  span: @437..564 
+}
+),
+span: @431..564 
+},
+Spanned {
+   node: Find(
+    Binding {
+       name: Word {
+         text: "b",
+        span: @572..573 
+      },
+      source: Shape(
+        Spanned {
+           node: Alt(
+            [
+              Spanned {
+                 node: Kind {
+                   kind: Word {
+                     text: "branch",
+                    span: @576..582 
+                  },
+                  fields: [],
+                arg: None 
+              },
+              span: @576..582 
+            },
+            Spanned {
+               node: Kind {
+                 kind: Word {
+                   text: "loop",
+                  span: @585..589 
+                },
+                fields: [],
+              arg: None 
+            },
+            span: @585..589 
+          }
+        ]
+      ),
+      span: @575..590 
+    }
+  ),
+  rels: [],
+filter: Some(
+  Spanned {
+     node: And(
+      [
+        Spanned {
+           node: Rel {
+             subject: Spanned {
+               node: Path(
+                Path {
+                   segments: [
+                    Word {
+                       text: "b",
+                      span: @597..598 
+                    }
+                  ],
+                  span: @597..598 
+                }
+              ),
+              span: @597..598 
+            },
+            rel: Spanned {
+               node: InUnit {
+                 object: Term(
+                  Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "d",
+                            span: @607..608 
+                          }
+                        ],
+                        span: @607..608 
+                      }
+                    ),
+                    span: @607..608 
+                  }
+                ) 
+              },
+              span: @599..608 
+            } 
+          },
+          span: @597..608 
+        },
+        Spanned {
+           node: Not(
+            Spanned {
+               node: DefCall(
+                Call {
+                   name: Word {
+                     text: "guarded_call",
+                    span: @617..629 
+                  },
+                  args: [
+                    Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "b",
+                              span: @630..631 
+                            }
+                          ],
+                          span: @630..631 
+                        }
+                      ),
+                      span: @630..631 
+                    }
+                  ],
+                  span: @617..632 
+                }
+              ),
+              span: @617..632 
+            }
+          ),
+          span: @613..632 
+        }
+      ]
+    ),
+    span: @597..632 
+  }
+),
+span: @572..632 
+}
+),
+span: @567..632 
+},
+Spanned {
+   node: Report(
+    Report {
+       target: Word {
+         text: "b",
+        span: @642..643 
+      },
+      message: Message {
+         parts: [
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "d",
+                  span: @646..647 
+                },
+                Word {
+                   text: "name",
+                  span: @648..652 
+                }
+              ],
+              span: @646..652 
+            },
+            span: @645..653 
+          },
+          Text {
+             value: " dispatches to peers; this ",
+            span: @653..680 
+          },
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "b",
+                  span: @681..682 
+                },
+                Word {
+                   text: "role",
+                  span: @683..687 
+                }
+              ],
+              span: @681..687 
+            },
+            span: @680..688 
+          },
+          Text {
+             value: " does more than guard a call",
+            span: @688..716 
+          }
+        ],
+        span: @644..717 
+      },
+      when: None 
+    }
+  ),
+  span: @635..717 
+},
+Spanned {
+   node: Note(
+    Note {
+       target: Word {
+         text: "d",
+        span: @725..726 
+      },
+      message: Message {
+         parts: [
+          Text {
+             value: "dispatcher by shape",
+            span: @728..747 
+          }
+        ],
+        span: @727..748 
+      } 
+    }
+  ),
+  span: @720..748 
+}
+],
+examples: [
+  Example {
+     expect: Expect {
+       kind: Fire,
+      span: @760..764 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @765..771 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "def run(ctx):\n    a(ctx)\n    if ctx.x:                   #~ advisory\n        y = ctx.x * 2\n        b(y)\n    c(ctx)",
+        body: @775..917,
+        span: @772..920 
+      }
+    ),
+    span: @752..920 
+  },
+  Example {
+     expect: Expect {
+       kind: Clean,
+      span: @931..936 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @937..943 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "def run(ctx):\n    a(ctx)\n    if ctx.x: b(ctx)\n    c(ctx)",
+        body: @947..1023,
+        span: @944..1026 
+      }
+    ),
+    span: @923..1026 
+  },
+  Example {
+     expect: Expect {
+       kind: NotApplicable,
+      span: @1037..1050 
+    },
+    lang: Some(
+      Word {
+         text: "json",
+        span: @1051..1055 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "{}",
+        body: @1059..1069,
+        span: @1056..1072 
+      }
+    ),
+    span: @1029..1072 
+  }
+],
+explain: Some(
+  Explain {
+     text: BlockLit {
+       value: "A function that mostly dispatches to its peers should not also own logic.\n## Remedy\nMove the logic into the callee or a named predicate.",
+      body: @1086..1238,
+      span: @1083..1241 
+    },
+    span: @1075..1241 
+  }
+),
+span: @0..1243 
+}
+] 
+}

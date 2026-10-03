@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T10:35:24Z"
+digest = "9b270bff38a981a4c3a161558d784370563e3fc802d04539b4fe1990cfde0de0"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+────────────
+ Nextest run ID 9128fb2e-6d23-464f-a17c-83df04139592 with nextest profile: default
+    Starting 1 test across 16 binaries (111 tests skipped)
+        PASS [   0.335s] (1/1) frob-cli::attestation removing_a_criterion_reports_the_evidence_it_loses
+────────────
+     Summary [   0.335s] 1 test run: 1 passed, 111 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=removing_a_criterion_reports_the_evidence_it_loses)'"
+size = 452
+status = "measured"
+tests = ["removing_a_criterion_reports_the_evidence_it_loses"]
+at = "2026-10-03T10:35:24Z"
+actor = "lognd"
+rev = 1

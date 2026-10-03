@@ -1,0 +1,438 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "SYS001",
+        span: @5..11 
+      },
+      slug: StrLit {
+         value: "unowned",
+        span: @12..21 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            Any {
+               quoted: false 
+            }
+          ),
+          span: @26..32 
+        },
+        Spanned {
+           node: Polarity(
+            Pminus
+          ),
+          span: @35..46 
+        },
+        Spanned {
+           node: Severity(
+            Warn
+          ),
+          span: @48..61 
+        },
+        Spanned {
+           node: Scope(
+            Repo
+          ),
+          span: @63..73 
+        },
+        Spanned {
+           node: Rollup(
+            Directory
+          ),
+          span: @75..91 
+        },
+        Spanned {
+           node: Needs(
+            [
+              Word {
+                 text: "model",
+                span: @100..105 
+              },
+              Word {
+                 text: "config",
+                span: @107..113 
+              }
+            ]
+          ),
+          span: @94..113 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "a",
+                span: @122..123 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "artifact",
+                      span: @125..133 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @125..133 
+              }
+            ),
+            rels: [],
+          filter: Some(
+            Spanned {
+               node: Not(
+                Spanned {
+                   node: GlobMatch {
+                     lhs: Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "a",
+                              span: @144..145 
+                            },
+                            Word {
+                               text: "path",
+                              span: @146..150 
+                            }
+                          ],
+                          span: @144..150 
+                        }
+                      ),
+                      span: @144..150 
+                    },
+                    rhs: Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "config",
+                              span: @159..165 
+                            },
+                            Word {
+                               text: "grimble",
+                              span: @166..173 
+                            },
+                            Word {
+                               text: "exclude",
+                              span: @174..181 
+                            }
+                          ],
+                          span: @159..181 
+                        }
+                      ),
+                      span: @159..181 
+                    } 
+                  },
+                  span: @144..181 
+                }
+              ),
+              span: @140..181 
+            }
+          ),
+          span: @122..181 
+        }
+      ),
+      span: @117..181 
+    },
+    Spanned {
+       node: Where(
+        Spanned {
+           node: Quant {
+             quant: Some,
+            binding: Binding {
+               name: Word {
+                 text: "u",
+                span: @195..196 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "unit",
+                      span: @198..202 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @198..202 
+              }
+            ),
+            rels: [],
+          filter: Some(
+            Spanned {
+               node: And(
+                [
+                  Spanned {
+                     node: Rel {
+                       subject: Spanned {
+                         node: Path(
+                          Path {
+                             segments: [
+                              Word {
+                                 text: "u",
+                                span: @209..210 
+                              }
+                            ],
+                            span: @209..210 
+                          }
+                        ),
+                        span: @209..210 
+                      },
+                      rel: Spanned {
+                         node: Containment {
+                           directly: false,
+                          dir: Inside,
+                          object: Term(
+                            Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "a",
+                                      span: @218..219 
+                                    }
+                                  ],
+                                  span: @218..219 
+                                }
+                              ),
+                              span: @218..219 
+                            }
+                          ) 
+                        },
+                        span: @211..219 
+                      } 
+                    },
+                    span: @209..219 
+                  },
+                  Spanned {
+                     node: Quant {
+                       quant: Some,
+                      binding: Binding {
+                         name: Word {
+                           text: "n",
+                          span: @229..230 
+                        },
+                        source: Shape(
+                          Spanned {
+                             node: Kind {
+                               kind: Word {
+                                 text: "node",
+                                span: @232..236 
+                              },
+                              fields: [],
+                            arg: None 
+                          },
+                          span: @232..236 
+                        }
+                      ),
+                      rels: [],
+                    filter: Some(
+                      Spanned {
+                         node: Rel {
+                           subject: Spanned {
+                             node: Path(
+                              Path {
+                                 segments: [
+                                  Word {
+                                     text: "u",
+                                    span: @243..244 
+                                  }
+                                ],
+                                span: @243..244 
+                              }
+                            ),
+                            span: @243..244 
+                          },
+                          rel: Spanned {
+                             node: Verb {
+                               certainty: None,
+                              verb: Word {
+                                 text: "owned by",
+                                span: @245..253 
+                              },
+                              object: Term(
+                                Spanned {
+                                   node: Path(
+                                    Path {
+                                       segments: [
+                                        Word {
+                                           text: "n",
+                                          span: @254..255 
+                                        }
+                                      ],
+                                      span: @254..255 
+                                    }
+                                  ),
+                                  span: @254..255 
+                                }
+                              ) 
+                            },
+                            span: @245..255 
+                          } 
+                        },
+                        span: @243..255 
+                      }
+                    ),
+                    span: @229..255 
+                  } 
+                },
+                span: @224..255 
+              }
+            ]
+          ),
+          span: @209..255 
+        }
+      ),
+      span: @195..255 
+    } 
+  },
+  span: @190..255 
+}
+),
+span: @184..255 
+},
+Spanned {
+   node: Report(
+    Report {
+       target: Word {
+         text: "a",
+        span: @265..266 
+      },
+      message: Message {
+         parts: [
+          Text {
+             value: "no node owns any part of ",
+            span: @268..293 
+          },
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "a",
+                  span: @294..295 
+                },
+                Word {
+                   text: "path",
+                  span: @296..300 
+                }
+              ],
+              span: @294..300 
+            },
+            span: @293..301 
+          }
+        ],
+        span: @267..302 
+      },
+      when: None 
+    }
+  ),
+  span: @258..302 
+}
+],
+examples: [
+  Example {
+     expect: Expect {
+       kind: Fire,
+      span: @314..318 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @319..325 
+      }
+    ),
+    name: None,
+    body: Inputs(
+      [
+        Spanned {
+           node: Model(
+            BlockLit {
+               value: "node app owns \"src/app/**\";",
+              body: @341..368,
+              span: @338..371 
+            }
+          ),
+          span: @332..371 
+        },
+        Spanned {
+           node: File {
+             path: StrLit {
+               value: "scripts/legacy.py",
+              span: @381..400 
+            },
+            text: BlockLit {
+               value: "def f(): pass                  #~ warn",
+              body: @404..454,
+              span: @401..457 
+            } 
+          },
+          span: @376..457 
+        }
+      ]
+    ),
+    span: @306..461 
+  },
+  Example {
+     expect: Expect {
+       kind: Clean,
+      span: @472..477 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @478..484 
+      }
+    ),
+    name: None,
+    body: Inputs(
+      [
+        Spanned {
+           node: Model(
+            BlockLit {
+               value: "node app owns \"src/app/**\";",
+              body: @500..527,
+              span: @497..530 
+            }
+          ),
+          span: @491..530 
+        },
+        Spanned {
+           node: File {
+             path: StrLit {
+               value: "src/app/a.py",
+              span: @540..554 
+            },
+            text: BlockLit {
+               value: "def f(): pass",
+              body: @558..583,
+              span: @555..586 
+            } 
+          },
+          span: @535..586 
+        }
+      ]
+    ),
+    span: @464..590 
+  }
+],
+explain: Some(
+  Explain {
+     text: BlockLit {
+       value: "Every file should belong to a design node.\n## Remedy\nAdd an `owns` selector to a node, or exclude the path in grimble.toml.",
+      body: @604..743,
+      span: @601..746 
+    },
+    span: @593..746 
+  }
+),
+span: @0..748 
+}
+] 
+}
