@@ -222,9 +222,9 @@ fn unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown() {
         namespaces: vec!["grimble".into()],
         product: "grimble".into(),
     };
-    let r = common::scan_with(&cfg, "src/a.rs", "// grimble:binds a\n");
+    let r = common::scan_with(&cfg, "src/a.rs", "// grimble:bind a\n");
     assert_eq!(r.findings[0].rule.as_str(), "DSL001");
-    assert!(r.findings[0].message.contains("declares no verbs"));
+    assert!(r.findings[0].message.contains("grimble:binds"));
 }
 
 #[test]
@@ -271,7 +271,8 @@ fn registry_lists_every_verb_with_schemas() {
             "frob:tests",
             "frob:ticket",
             "frob:todo",
-            "frob:trusted"
+            "frob:trusted",
+            "grimble:binds"
         ]
         .map(String::from)
     );
@@ -384,4 +385,18 @@ fn claim_verbs_are_registered_and_documented() {
     ] {
         assert!(verbs.contains(&v), "{v} missing from the registry");
     }
+}
+
+// frob:tests crates/gob-directives/src/grimble.rs::Binds
+#[test]
+fn grimble_binds_is_registered_and_read_only_when_the_namespace_is_honoured() {
+    use gob_directives::grimble::Binds;
+    let meta = all_directives()
+        .find(|m| m.namespace == "grimble" && m.verb == "binds")
+        .expect("grimble:binds is registered");
+    assert_eq!(meta.qualified(), "grimble:binds");
+    let _ = std::any::type_name::<Binds>();
+    // The default scanner honours only `frob`, so a grimble directive is ignored.
+    let r = common::scan("src/a.rs", "// grimble:binds design:node/a\nfn f() {}\n");
+    assert!(r.directives.is_empty() && r.findings.is_empty());
 }

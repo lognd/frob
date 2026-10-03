@@ -1,4 +1,4 @@
-//! The `grimble.toml` tables owned by grimble: `[compute]` and `[packs]`.
+//! The `grimble.toml` tables owned by grimble: `[compute]`, `[packs]` and `[grimble]`.
 //!
 //! `[check]` and `[perf]` belong to `gob-check`. The pack tables are accepted and
 //! validated here (packs.md 3.6) but no pack is loaded yet; a run that enables one says so.
@@ -143,3 +143,26 @@ impl PacksTable {
 
 /// The warning printed when packs are requested but not loaded.
 pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build does not load packs yet; PACK rules and pack atoms are not evaluated";
+
+/// The `[grimble]` table: binding policy (binding.md 6).
+#[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
+#[config(table = "grimble")]
+pub struct GrimbleTable {
+    /// Selectors whose public units must have an owner (SYS005); empty turns the rule off.
+    #[config(default = Vec::new())]
+    pub modeled: Vec<String>,
+    /// Warn rules SYS001 and SYS005 become Errors.
+    #[config(default = false)]
+    pub strict: bool,
+}
+
+impl GrimbleTable {
+    /// Load `[grimble]` from `<root>/grimble.toml` (a missing file means defaults).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    }
+}

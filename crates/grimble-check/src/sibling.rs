@@ -2,8 +2,7 @@
 //!
 //! [`sibling_document`] builds exactly the shape of `docs/schemas/sibling.json` from one
 //! [`GrimbleRun`]. Fields grimble cannot fill yet are emitted in their schema-legal empty
-//! form and listed in the crate docs: `bindings` is empty until G11 owns the binding
-//! relation, entity digests are null, `anchor`/`entity` on a finding are null because
+//! form and listed in the crate docs: entity digests are null, `anchor`/`entity` on a finding are null because
 //! `check_model` does not expose them, and `not_applicable_rules` is empty until CAP lands.
 
 use std::collections::BTreeMap;
@@ -28,13 +27,15 @@ fn polarity_of(rule: &str) -> &'static str {
 }
 
 /// Unresolved reason code of a finding: the required mark decides, else `fidelity`.
-fn reason_of(f: &Finding) -> Option<&'static str> {
+fn reason_of(f: &Finding) -> Option<String> {
     use gob_rules::RequiredReason::{AnnotationRequired, SiblingMissing, ZeroSubjects};
-    (f.severity == Severity::Unresolved).then_some(match &f.required {
-        Some(ZeroSubjects { .. }) => "vacuous",
-        Some(AnnotationRequired { .. }) => "annotation-required",
-        Some(SiblingMissing { .. }) => "incompatible",
-        None => "fidelity",
+    (f.severity == Severity::Unresolved).then(|| match &f.required {
+        Some(ZeroSubjects { .. }) => "vacuous".to_owned(),
+        Some(AnnotationRequired { .. }) => "annotation-required".to_owned(),
+        Some(SiblingMissing { .. }) => "incompatible".to_owned(),
+        None => grimble_bind::reason_of_message(&f.message)
+            .unwrap_or("fidelity")
+            .to_owned(),
     })
 }
 
@@ -187,7 +188,7 @@ pub fn sibling_document(run: &GrimbleRun) -> Value {
         "suppressed": suppressed,
         "exceptions": exceptions_json(run),
         "entities": run.view.entities_json(),
-        "bindings": Vec::<Value>::new(),
+        "bindings": run.bindings,
         "timing": {"elapsed_ms": run.elapsed_ms},
     });
     if run.has_config {

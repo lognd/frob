@@ -132,3 +132,13 @@ Own an unverified claim about this unit; it is never counted as verified.
 | Argument | Form | Type | Required | Summary |
 |---|---|---|---|---|
 | because | `because=<v>` | string | yes | Why the owner vouches for the claim without proof. |
+
+## `grimble:binds`
+
+Bind the unit this comment attaches to: to a model entity (`design:node/N`) or to a symref.
+
+| Argument | Form | Type | Required | Summary |
+|---|---|---|---|---|
+| target | `<target>` | string | yes | The entity (`design:node/cli`) or symref (`crates/a/src/lib.rs::f`) bound to. |
+| role | `role=<v>` | string | no | For a flow: `producer` or `consumer`; for a vmodel: `runnable` or `ref`. |
+| via | `via=<v>` | string | no | For a symref operand: the binding mechanism (`manual`, `pyo3`, ...). |

@@ -6,7 +6,8 @@
 //!
 //! - inputs: the `.grmb` model files found by the walk ([`GrimbleInputs`]) and the entities,
 //!   exceptions and file status derived from them ([`ModelView`]);
-//! - rules: the MDL family through one repo group; SYS, CAP, CYCLE/LARGE/DEAD, PACK, GPOL, NEAT,
+//! - rules: the MDL family through one repo group, SYS001-005 and SYS009-011 through another
+//!   (`grimble-bind`, which also fills the document's `bindings`); CAP, CYCLE/LARGE/DEAD, PACK, GPOL, NEAT,
 //!   CI and DK register their own groups as their tickets land;
 //! - exceptions: `accept`, `defer` and `hotfix` clauses in the model, applied through
 //!   `gob-rules` (an `accept` never parks an Unresolved finding, EXC016);
@@ -18,7 +19,6 @@
 //!
 //! | Field | Why | Filled by |
 //! |---|---|---|
-//! | `bindings` | the binding relation B is G11's | G11 (`grimble-bind`) |
 //! | entity `body_digest`, `doc_digest` | the U facet digests are not yet joined to model entities | G11 |
 //! | finding `anchor`, `entity`, `remedy` | `check_model` returns findings without them | a `grimble-model` change |
 //! | `fidelity[].not_applicable_rules` | no CAP rule exists | the CAP rules |
@@ -42,7 +42,9 @@ use std::time::Instant;
 
 pub use gob_check::{CheckError, CheckReport, FailOn};
 pub use model_view::ModelView;
-pub use product::{Grimble, GrimbleInputs, GrimbleShared, MODEL_EXTENSION, model_rules};
+pub use product::{
+    Grimble, GrimbleInputs, GrimbleShared, MODEL_EXTENSION, binding_rules, model_rules,
+};
 pub use sibling::{SCHEMA_VERSION, exceptions_json, sibling_document};
 
 use config::{ComputeTable, PRODUCT, PacksTable};
@@ -84,6 +86,8 @@ pub struct GrimbleRun {
     pub ticket_scope: Option<Vec<String>>,
     /// Echo of `--base`.
     pub base: Option<String>,
+    /// The rows of the binding relation B, as sibling `bindings` items.
+    pub bindings: Vec<serde_json::Value>,
     /// Wall time of the run in milliseconds.
     pub elapsed_ms: u64,
     /// Non-fatal notes: pipeline warnings plus the packs notice.
@@ -134,6 +138,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         has_config: root.join(format!("{PRODUCT}.toml")).is_file(),
         ticket_scope: opts.ticket_scope.clone(),
         base: opts.base.clone(),
+        bindings: trace.bindings,
         elapsed_ms,
         warnings,
     })

@@ -247,6 +247,29 @@
       ],
       "title": "frob:trusted",
       "type": "object"
+    },
+    "grimble:binds": {
+      "additionalProperties": false,
+      "description": "Bind the unit this comment attaches to: to a model entity (`design:node/N`) or to a symref.",
+      "properties": {
+        "role": {
+          "description": "For a flow: `producer` or `consumer`; for a vmodel: `runnable` or `ref`.",
+          "type": "string"
+        },
+        "target": {
+          "description": "The entity (`design:node/cli`) or symref (`crates/a/src/lib.rs::f`) bound to.",
+          "type": "string"
+        },
+        "via": {
+          "description": "For a symref operand: the binding mechanism (`manual`, `pyo3`, ...).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target"
+      ],
+      "title": "grimble:binds",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -301,6 +324,9 @@
     },
     {
       "$ref": "#/$defs/frob:trusted"
+    },
+    {
+      "$ref": "#/$defs/grimble:binds"
     }
   ],
   "title": "frob directives"

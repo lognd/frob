@@ -19,6 +19,7 @@ gob-rules = { path = "../gob-rules" }
 gob-symbols = { path = "../gob-symbols" }
 gob-text = { path = "../gob-text" }
 gob-walk = { path = "../gob-walk" }
+grimble-bind = { path = "../grimble-bind" }
 grimble-model = { path = "../grimble-model" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

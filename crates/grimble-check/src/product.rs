@@ -14,7 +14,7 @@ use gob_rules::{
 use gob_text::{FileInterner, Span};
 use grimble_model::{ModelFiles, check_model, rules::file_table};
 
-use crate::config::PRODUCT;
+use crate::config::{GrimbleTable, PRODUCT};
 use crate::fidelity::language_tag;
 use crate::model_view::ModelView;
 
@@ -34,6 +34,8 @@ pub struct GrimbleInputs {
     pub model: ModelFiles,
     /// Entities, exceptions and file status derived from them.
     pub view: Arc<ModelView>,
+    /// The binding relation B and the SYS findings (grimble-bind).
+    pub binding: grimble_bind::Binding,
 }
 
 /// What a run leaves behind for the document builder: the model view and which exception parked which finding.
@@ -45,6 +47,8 @@ pub(crate) struct Trace {
     pub languages: BTreeMap<String, usize>,
     /// Finding key (see [`park_key`]) to the id of the exception that suppressed it.
     pub parks: BTreeMap<String, String>,
+    /// The rows of B as sibling `bindings` items.
+    pub bindings: Vec<serde_json::Value>,
 }
 
 /// The grimble product driving the shared check pipeline.
@@ -75,6 +79,14 @@ pub fn model_rules() -> Vec<&'static RuleMeta> {
         .collect();
     metas.extend(DIRECTIVE_RULES.iter().filter_map(|id| registry.by_id(id)));
     metas
+}
+
+/// The binding rules (the SYS family `grimble-bind` evaluates).
+pub fn binding_rules() -> Vec<&'static RuleMeta> {
+    Registry::global()
+        .iter()
+        .filter(|m| m.product == PRODUCT && grimble_bind::RULES.contains(&m.id))
+        .collect()
 }
 
 /// Key under which a suppressed finding is remembered: rule, file, offset and message.
@@ -136,16 +148,31 @@ impl Product for Grimble {
         let started = std::time::Instant::now();
         let view = Arc::new(ModelView::build(&model));
         cx.timing.push("model", started.elapsed(), true);
+        let table = GrimbleTable::load(&cx.core.root)?;
+        let started = std::time::Instant::now();
+        let binding = grimble_bind::bind(&grimble_bind::BindInput {
+            root: &cx.core.root,
+            entries: &cx.core.entries,
+            model: &model,
+            modeled: &table.modeled,
+            strict: table.strict,
+        });
+        cx.timing.push("binding", started.elapsed(), true);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));
             trace.languages = languages;
+            trace.bindings = binding.bindings_json();
         }
         Ok(Collected {
             shared: GrimbleShared {
                 model_files: model.files.len(),
             },
-            inputs: GrimbleInputs { model, view },
+            inputs: GrimbleInputs {
+                model,
+                view,
+                binding,
+            },
             findings: Vec::new(),
         })
     }
@@ -171,6 +198,27 @@ impl Product for Grimble {
                     return Vec::new();
                 }
                 ids.iter().map(|id| (*id, s.shared.model_files)).collect()
+            }),
+            RepoGroup::new(
+                "repo:binding",
+                binding_rules(),
+                |s: &Snapshot<Self>, files: &mut FileInterner| {
+                    s.inputs
+                        .binding
+                        .findings
+                        .iter()
+                        .cloned()
+                        .filter_map(|f| f.into_finding(files))
+                        .collect()
+                },
+            )
+            .counting(|s| {
+                s.inputs
+                    .binding
+                    .subjects
+                    .iter()
+                    .map(|(rule, n)| (*rule, *n))
+                    .collect()
             }),
         ]
     }

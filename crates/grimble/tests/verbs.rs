@@ -143,7 +143,7 @@ fn an_accept_clause_parks_its_finding_and_is_listed() {
     write(
         dir.path(),
         "design/m.grmb",
-        "grimble = \"2\";\nmodule m;\nnode cli : trusted {\n  kind component;\n  owns \"nowhere/**\";\n  accept MDL005 because=\"planned crate\";\n}\n",
+        "grimble = \"2\";\nmodule m;\nnode cli : trusted {\n  kind component;\n  owns \"nowhere/**\";\n  owns \"design/**\";\n  owns \"grimble.toml\";\n  accept MDL005 because=\"planned crate\";\n}\n",
     );
     let (code, env, _) = grimble(dir.path(), &["check", "--json"]);
     assert_eq!(code, 0, "{env}");

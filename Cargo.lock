@@ -2328,6 +2328,7 @@ dependencies = [
  "gob-symbols",
  "gob-text",
  "gob-walk",
+ "grimble-bind",
  "grimble-model",
  "schemars",
  "serde",
