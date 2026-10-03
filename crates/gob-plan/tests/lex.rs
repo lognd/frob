@@ -24,7 +24,7 @@ fn id(s: &str) -> TokenKind {
     TokenKind::Ident(s.into())
 }
 
-// frob:tests gob_plan::grl::lex
+// frob:tests crates/gob-plan/src/grl/lexer.rs::lex
 #[test]
 fn acceptance_one_comment_snippets_block_regex() {
     let src = "# a comment\n\
@@ -66,7 +66,7 @@ fn acceptance_one_comment_snippets_block_regex() {
     assert_eq!(&src[t.span.range.to_usize_range()], "`dbg!($$$ARGS)`");
 }
 
-// frob:tests gob_plan::grl::lex
+// frob:tests crates/gob-plan/src/grl/lexer.rs::lex
 #[test]
 fn acceptance_two_non_ascii_name_is_a_located_error() {
     let src = "find caf\u{e9}: function";
@@ -86,7 +86,7 @@ fn acceptance_two_non_ascii_name_is_a_located_error() {
     ));
 }
 
-// frob:tests gob_plan::grl::lex
+// frob:tests crates/gob-plan/src/grl/lexer.rs::lex
 #[test]
 fn every_token_kind() {
     use TokenKind as T;
