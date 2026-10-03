@@ -1,5 +1,6 @@
 //! What a `frob check` run was asked to do: the generic options plus frob's own.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use frob_lease::LeaseConfig;
@@ -29,6 +30,9 @@ pub struct CheckOptions {
     pub extra_checks: Vec<Arc<dyn FileCheck<Frob>>>,
     /// Skip the `[[check.tool]]` stages (frob-land runs them itself).
     pub skip_tools: bool,
+    /// Run this executable for a sibling product instead of resolving it next to frob or on `PATH`
+    /// (`(product, path)` pairs; tests and embedders).
+    pub sibling_programs: Vec<(String, PathBuf)>,
     /// Do not write `.frob/telemetry.jsonl` even when `[check] telemetry` is true.
     pub skip_telemetry: bool,
 }

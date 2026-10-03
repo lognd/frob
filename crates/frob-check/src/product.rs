@@ -9,8 +9,8 @@ use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
 use gob_check::{
-    CheckError, CheckTable, CollectCx, Collected, FileCheck, Product, RepoGroup, ScopedFindings,
-    Snapshot,
+    CheckError, CheckTable, CollectCx, Collected, External, FileCheck, Product, RepoGroup,
+    ScopedFindings, Snapshot, Timing,
 };
 use gob_languages::Language;
 use gob_rules::{Finding, Resolved, Rule, RuleMeta};
@@ -19,6 +19,7 @@ use gob_text::FileInterner;
 use crate::filecheck::builtin_checks;
 use crate::options::CheckOptions;
 use crate::scope::{self, TicketScope};
+use crate::sibling::Siblings;
 use crate::snapshot::{self, FrobInputs, FrobShared};
 
 /// Rules that read the ticket ledger: without one they examine nothing.
@@ -27,12 +28,16 @@ const LEDGER_RULES: [&str; 3] = ["REF001", "TODO002", "TICK002"];
 /// frob driving the shared check pipeline, with the options of one `frob check` run.
 pub struct Frob {
     opts: CheckOptions,
+    siblings: Siblings,
 }
 
 impl Frob {
     /// The product for a run with `opts`.
     pub fn new(opts: CheckOptions) -> Self {
-        Self { opts }
+        Self {
+            opts,
+            siblings: Siblings::default(),
+        }
     }
 }
 
@@ -157,6 +162,27 @@ impl Product for Frob {
         raw: Vec<Finding>,
     ) -> Resolved {
         apply_exceptions(&snap.inputs.obligations(), files, raw)
+    }
+
+    fn start_external(
+        &self,
+        snap: &Snapshot<Self>,
+        table: &CheckTable,
+        scope_files: Option<&std::collections::BTreeSet<String>>,
+    ) {
+        let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
+        self.siblings
+            .start(&snap.core.root, table, &base, scope_files, &self.opts);
+    }
+
+    fn join_external(
+        &self,
+        snap: &Snapshot<Self>,
+        files: &mut FileInterner,
+        timing: &mut Timing,
+    ) -> External {
+        let ledger = snap.inputs.ledger.as_ref().map(|l| &l.ledger);
+        self.siblings.join(&snap.core.root, ledger, files, timing)
     }
 
     fn file_info(&self, shared: &FrobShared, path: &str) -> Option<gob_symbols::FileInfo> {

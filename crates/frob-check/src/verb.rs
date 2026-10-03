@@ -319,7 +319,11 @@ fn data_of(
     let records: Vec<FindingRecord> = report
         .findings
         .iter()
-        .map(|f: &Finding| FindingRecord::from_finding(f, &sources, registry))
+        .map(|f: &Finding| {
+            let mut record = FindingRecord::from_finding(f, &sources, registry);
+            record.fingerprint = report.fingerprint_of(f);
+            record
+        })
         .collect();
     CheckData {
         counts: Counts::of(&report.findings),

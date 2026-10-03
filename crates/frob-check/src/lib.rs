@@ -34,6 +34,7 @@ mod filecheck;
 mod options;
 mod product;
 mod scope;
+mod sibling;
 mod snapshot;
 mod verb;
 
@@ -47,6 +48,7 @@ pub use gob_check::{
 pub use options::CheckOptions;
 pub use product::Frob;
 pub use scope::TicketScope;
+pub use sibling::{ACCEPTED_SIBLING_MAJORS, Sib001};
 pub use snapshot::{FrobInputs, FrobShared};
 pub use verb::{Check, CheckData, Explained, TimingView, register};
 

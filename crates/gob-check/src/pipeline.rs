@@ -118,7 +118,10 @@ fn refingerprint(
     files: &FileInterner,
     kept: &std::collections::HashMap<gob_rules::Fingerprint, String>,
 ) {
-    for f in findings.iter_mut().filter(|f| !kept.contains_key(&f.fingerprint)) {
+    for f in findings
+        .iter_mut()
+        .filter(|f| !kept.contains_key(&f.fingerprint))
+    {
         let anchor = f
             .span
             .and_then(|s| files.path(s.file))

@@ -22,6 +22,7 @@ gob-cache = { path = "../gob-cache" }
 gob-cli = { path = "../gob-cli" }
 gob-diagnostics = { path = "../gob-diagnostics" }
 gob-directives = { path = "../gob-directives" }
+gob-exec = { path = "../gob-exec" }
 gob-git = { path = "../gob-git" }
 gob-languages = { path = "../gob-languages" }
 gob-lock = { path = "../gob-lock" }
@@ -32,13 +33,18 @@ gob-walk = { path = "../gob-walk" }
 rayon = "1"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]
 criterion = { version = "0.5", default-features = false }
-serde_json = "1"
 tempfile = "3"
+
+[[bin]]
+name = "fake-sibling"
+path = "tests/support/fake_sibling.rs"
+test = false
 
 [[bench]]
 name = "full_check"
