@@ -295,8 +295,17 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   allowed only for the same ticket (it never takes another ticket's
   lease), recording the previous holder in the lease history.
 - TTL is the knob `[lease] ttl_secs` (default 7200); the lock wait is
-  `[lease] lock_timeout_ms` (default 5000), and append-shared files such
-  as `Cargo.lock` are exempt from overlap through `[lease] shared_files`
+  `[lease] lock_timeout_ms` (default 5000), and append-shared files are
+  exempt from overlap through `[lease] shared_files`, which when unset
+  defaults to the well-known generated lockfiles (`Cargo.lock`, `uv.lock`,
+  `poetry.lock`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
+  `go.sum`, `Gemfile.lock`, `composer.lock`, `flake.lock`); an explicit
+  value, including `[]`, replaces that default, and an `E-LEASE-HELD` whose
+  overlap is only lockfiles names the key in its remedy. At land, a base
+  merge whose conflicts are all shared lockfiles takes the base side and
+  regenerates `Cargo.lock` with `cargo metadata --offline` (it keeps locked
+  versions, unlike `cargo update --workspace`), committing the result in
+  the merge commit; any other lockfile refuses with `E-LAND-LOCKFILE`
   (every verb that opens the lease store passes the same config; the old
   `[tickets] registry_files` alias is gone). A ticket's own changelog
   fragment `changelog.d/<its ULID>.<type>.md` needs no lease: it is

@@ -107,7 +107,7 @@ pub struct LandOutcome {
     pub worktree: Option<PathBuf>,
     /// The commit the base branch was advanced to.
     pub commit: Option<String>,
-    /// How merging the base into the ticket branch went: `up-to-date`, `fast-forward` or `merged`.
+    /// How merging the base into the ticket branch went: `up-to-date`, `fast-forward`, `merged` or `merged (lockfile regenerated)`.
     pub base_merge: Option<String>,
     /// True when the base branch was pushed.
     pub pushed: bool,

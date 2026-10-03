@@ -31,6 +31,7 @@ use crate::error::{LandError, needs_action};
 use crate::events::{LandEvent, append_land};
 use crate::git::git;
 use crate::lock::LandLock;
+use crate::lockfile;
 use crate::plan::{LandOptions, LandOutcome, PlanInputs, RetryPolicy, digest, steps};
 
 /// Stable code of the refusal when the base moved during the land.
@@ -480,6 +481,14 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
         MergeOutcome::Merged => {
             tracing::info!(base, "base merged into the ticket branch");
             Ok("merged".to_owned())
+        }
+        // frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4
+        MergeOutcome::Conflicts(paths) if lockfile::all_shared(wt_path, &paths)? => {
+            tracing::info!(
+                count = paths.len(),
+                "base merge conflicts only in shared lockfiles"
+            );
+            lockfile::resolve(wt, wt_path, base, &paths)
         }
         MergeOutcome::Conflicts(paths) => {
             let abort = git(wt, wt_path, &["merge", "--abort"])?;

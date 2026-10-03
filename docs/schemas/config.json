@@ -255,8 +255,19 @@
           "type": "integer"
         },
         "shared_files": {
-          "default": [],
-          "description": "Append-shared files (such as `Cargo.lock`) exempt from overlap checks.",
+          "default": [
+            "Cargo.lock",
+            "uv.lock",
+            "poetry.lock",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+            "go.sum",
+            "Gemfile.lock",
+            "composer.lock",
+            "flake.lock"
+          ],
+          "description": "Append-shared files exempt from overlap checks; unset means the well-known lockfiles (`Cargo.lock`, `uv.lock`, ...), an explicit list (even `[]`) replaces them.",
           "items": {
             "type": "string"
           },

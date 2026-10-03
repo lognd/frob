@@ -32,26 +32,36 @@ impl GitRun {
 
 /// Run `git <args>` in `cwd` through `repo`'s runner.
 pub(crate) fn git(repo: &Repo, cwd: &Path, args: &[&str]) -> Result<GitRun, LandError> {
+    spawn(repo, cwd, Program::Git, args)
+}
+
+/// Run `cargo <args>` in `cwd` through `repo`'s runner (frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4).
+pub(crate) fn cargo(repo: &Repo, cwd: &Path, args: &[&str]) -> Result<GitRun, LandError> {
+    spawn(repo, cwd, Program::Cargo, args)
+}
+
+fn spawn(repo: &Repo, cwd: &Path, program: Program, args: &[&str]) -> Result<GitRun, LandError> {
+    let name = format!("{program:?}");
     let spec = Spec {
-        program: Program::Git,
+        program,
         args: args.iter().map(|s| (*s).to_owned()).collect(),
         cwd: Some(cwd.to_path_buf()),
         env: Vec::new(),
         timeout: TIMEOUT,
         capture: true,
     };
-    tracing::info!(args = %args.join(" "), cwd = %cwd.display(), "land git spawn");
+    tracing::info!(program = %name, args = %args.join(" "), cwd = %cwd.display(), "land spawn");
     let out = repo
         .runner()
         .run(&spec)
-        .map_err(|e| LandError::Config(format!("git {}: {e}", args.join(" "))))?;
+        .map_err(|e| LandError::Config(format!("{name} {}: {e}", args.join(" "))))?;
     match out.status {
         Outcome::Exited(code) => Ok(GitRun {
             code,
             text: format!("{}{}", out.stdout, out.stderr).trim().to_owned(),
         }),
         other => Err(LandError::Config(format!(
-            "git {}: {other:?}: {}",
+            "{name} {}: {other:?}: {}",
             args.join(" "),
             out.stderr
         ))),

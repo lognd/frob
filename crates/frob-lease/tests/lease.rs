@@ -589,3 +589,85 @@ fn the_expedite_lane_defaults_to_one_and_is_configurable() {
     assert_eq!(store.expedite_max(), 1);
     assert_eq!(store.with_expedite_max(3).expedite_max(), 3);
 }
+
+// frob:tests crates/frob-lease/src/config.rs::default_shared_files
+#[test]
+fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them() {
+    assert!(
+        LeaseConfig::default()
+            .shared_files
+            .contains(&"Cargo.lock".to_owned())
+    );
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    store
+        .acquire(
+            TicketId::mint(),
+            &holder("a"),
+            &scope(&["a/**", "Cargo.lock"]),
+        )
+        .expect("a");
+    store
+        .acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["b/**", "Cargo.lock"]),
+        )
+        .expect("b leases without E-LEASE-HELD");
+
+    let parsed: LeaseConfig = toml::from_str("shared_files = []").expect("parse");
+    assert!(parsed.shared_files.is_empty());
+    let unset: LeaseConfig = toml::from_str("ttl_secs = 1").expect("parse");
+    assert_eq!(
+        unset.shared_files,
+        frob_lease::config::default_shared_files()
+    );
+}
+
+// frob:tests crates/frob-lease/src/config.rs::overlap_is_lockfiles
+// frob:tests crates/frob-lease/src/config.rs::is_lockfile
+#[test]
+fn a_lockfile_only_overlap_names_shared_files_in_the_remedy() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), cfg(&[]));
+    store
+        .acquire(
+            TicketId::mint(),
+            &holder("a"),
+            &scope(&["a/**", "Cargo.lock"]),
+        )
+        .expect("a");
+    let err = store
+        .acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["b/**", "Cargo.lock"]),
+        )
+        .expect_err("held");
+    assert!(frob_lease::config::overlap_is_lockfiles(
+        "Cargo.lock, crates/x/uv.lock"
+    ));
+    assert!(frob_lease::config::overlap_is_lockfiles(
+        "Cargo.lock and Cargo.lock"
+    ));
+    assert!(!frob_lease::config::overlap_is_lockfiles(
+        "Cargo.lock, src/a.rs"
+    ));
+    assert!(frob_lease::config::is_lockfile("sub/go.sum"));
+    let cli = gob_cli::CliError::from(err);
+    let gob_cli::CliError::Refusal(r) = cli else {
+        panic!("not a refusal")
+    };
+    assert_eq!(r.code, "E-LEASE-HELD");
+    let remedy = r.remedy.expect("remedy");
+    assert!(remedy.contains("[lease] shared_files"), "{remedy}");
+
+    let store = store_in(dir.path(), cfg(&[]));
+    let err = store
+        .acquire(TicketId::mint(), &holder("c"), &scope(&["a/x.rs"]))
+        .expect_err("held on source");
+    let gob_cli::CliError::Refusal(r) = gob_cli::CliError::from(err) else {
+        panic!("not a refusal")
+    };
+    assert!(!r.remedy.expect("remedy").contains("shared_files"));
+}
