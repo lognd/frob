@@ -556,7 +556,7 @@ fn init_autocrlf_repo(root: &std::path::Path) {
     std::fs::write(config, text).expect("write git config");
 }
 
-// frob:tests crates/frob-obligations/src/exc.rs::Exc005
+// frob:tests crates/frob-obligations/src/rules.rs::Exc005
 #[test]
 fn crlf_checkout_under_autocrlf_keeps_an_accept_attested_but_a_real_edit_does_not() {
     let dir = tempfile::tempdir().expect("tempdir");

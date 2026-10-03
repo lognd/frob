@@ -34,15 +34,16 @@ fn crlf_checkout_digests_like_its_lf_twin_and_a_real_edit_differs() {
 }
 
 // frob:tests crates/gob-walk/src/content.rs::ContentReader.read
-#[cfg(unix)]
 #[test]
 fn symlink_reads_as_its_target_string_and_crlf_text_as_lf() {
     let dir = tempfile::tempdir().expect("tempdir");
     autocrlf_repo(dir.path());
     std::fs::write(dir.path().join("real.txt"), "one\r\ntwo\r\n").unwrap();
+    #[cfg(unix)]
     std::os::unix::fs::symlink("real.txt", dir.path().join("link")).unwrap();
     let source = ContentSource::locate(dir.path());
     source.with_reader(|r| {
+        #[cfg(unix)]
         assert_eq!(r.read("link").unwrap(), b"real.txt");
         assert_eq!(r.read_text("real.txt").unwrap(), "one\ntwo\n");
         assert_eq!(
