@@ -359,7 +359,7 @@ fn cargo_repo() -> tempfile::TempDir {
     )
     .expect("manifest");
     std::fs::create_dir(p.join("src")).expect("src");
-    std::fs::write(p.join("src/lib.rs"), "#[test]\nfn present() {}\n").expect("lib");
+    std::fs::write(p.join("src/lib.rs"), "#[test]\nfn present() {}\n#[test]\nfn alpha() {}\n#[test]\nfn beta() {}\n#[test]\nfn gamma() {}\n").expect("lib");
     std::fs::write(p.join(".gitignore"), "target/\n").expect("ignore");
     // An explicit profile keeps an outer `NEXTEST_PROFILE` (set when this test runs under nextest) out of the probe.
     std::fs::write(
@@ -425,4 +425,91 @@ fn a_filter_matching_no_test_refuses_and_records_nothing() {
         "1",
     ]);
     assert_eq!(code, 0, "{out}{err}");
+}
+
+/// Run `evidence add --provider nextest --ref <reference>` against a fresh cargo repo; returns (code, stdout, stderr, list count).
+fn add_nextest(reference: &str) -> (i32, String, String, u64) {
+    let dir = cargo_repo();
+    let ledger = ledger(dir.path());
+    let (_, handle) = ticket(&ledger, TicketType::Task);
+    drop(ledger);
+    let cli = cli();
+    let run = |args: &[&str]| gob_cli::run_for_test(&cli, args, dir.path());
+    let (code, out, err) = run(&[
+        "--json",
+        "ticket",
+        "evidence",
+        "add",
+        &handle,
+        "--provider",
+        "nextest",
+        "--ref",
+        reference,
+        "--accepts",
+        "1",
+    ]);
+    let (_, listed, _) = run(&["--json", "ticket", "evidence", "list", &handle]);
+    let count = json(&listed)["data"]["count"].as_u64().expect("count");
+    (code, out, err, count)
+}
+
+// frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
+#[test]
+fn a_union_filter_expression_runs_both_tests_and_records_a_measured_pass() {
+    // frob:tests crates/frob-evidence/src/provider.rs::split_args
+    let (code, out, err, count) = add_nextest("-p probe -E 'test(=alpha) | test(=beta)'");
+    assert_eq!(code, 0, "{out}{err}");
+    assert_eq!(count, 1);
+    let v = json(&out);
+    let rec = &v["data"]["record"];
+    let tests = rec["tests"].as_array().expect("tests");
+    let names: Vec<&str> = tests.iter().filter_map(|t| t.as_str()).collect();
+    assert_eq!(names.len(), 2, "{out}");
+    assert!(names.iter().any(|n| n.ends_with("alpha")), "{out}");
+    assert!(names.iter().any(|n| n.ends_with("beta")), "{out}");
+    assert_eq!(rec["status"], "measured", "{out}");
+    assert_eq!(rec["passed"], true, "{out}");
+}
+
+// frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
+#[test]
+fn a_quoted_argument_with_spaces_survives_tokenization() {
+    // frob:tests crates/frob-evidence/src/provider.rs::split_args
+    // The expression has spaces and a `|`; if it were split, nextest would reject it as a usage error.
+    let (code, out, err, _) = add_nextest(r#"-E "test(=alpha)   |   test(=gamma)""#);
+    assert_eq!(code, 0, "{out}{err}");
+    assert_eq!(
+        json(&out)["data"]["record"]["tests"]
+            .as_array()
+            .expect("tests")
+            .len(),
+        2
+    );
+}
+
+// frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
+#[test]
+fn a_union_matching_nothing_still_refuses() {
+    // frob:tests crates/frob-evidence/src/provider.rs::capture
+    let (code, out, err, count) = add_nextest("-E 'test(=nope_a) | test(=nope_b)'");
+    assert_eq!(code, 2, "{out}{err}");
+    assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-NO-TESTS");
+    assert_eq!(count, 0);
+}
+
+// frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
+#[test]
+fn an_unterminated_quote_is_a_usage_error_and_records_nothing() {
+    // frob:tests crates/frob-evidence/src/provider.rs::split_args
+    let (code, out, err, count) = add_nextest("-E 'test(=alpha) | test(=beta)");
+    assert_eq!(code, 2, "{out}{err}");
+    let e = &json(&out)["error"];
+    assert!(
+        e["message"]
+            .as_str()
+            .expect("message")
+            .contains("unterminated quote"),
+        "{out}"
+    );
+    assert_eq!(count, 0);
 }

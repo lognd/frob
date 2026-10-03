@@ -244,7 +244,7 @@ pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
             .long("ref")
             .value_name("REF")
             .allow_hyphen_values(true)
-            .help("Nextest filter args, the command line, or the file path (not for attestation)"),
+            .help("Nextest filter args or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"),
     )
     .arg(
         Arg::new("statement")

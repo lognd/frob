@@ -423,6 +423,16 @@ security, story, incident and invariant, and `ticket close
 event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
 
+**`--ref` tokenization** (~XR3342F). For `nextest` the `--ref` string is
+the filter arguments and for `command` the command line; both are split
+by POSIX shell-words rules (single quotes literal, double quotes with
+`\` before `"`, `\`, `$`, backtick and newline only, unquoted backslash
+escapes) and passed to `gob-exec` as an argument vector, never to a
+shell, so `-p crate -E 'test(a) | test(b)'` reaches nextest as four
+arguments and `|` is not a pipe. An unterminated quote is a usage error
+that records nothing; a filter that matches no test is refused with
+`E-EVIDENCE-NO-TESTS`.
+
 **Attestation** (~7KQSA8Z, release 0.532.0). Some criteria cannot be
 measured by a tool (two outside repositories managed for two cycles with
 no data loss). `--provider attestation --statement TEXT [--fact F]...`

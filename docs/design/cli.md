@@ -172,6 +172,17 @@ Every verb, every time:
   narrows per-file rules to the ticket's files plus `[check]
   ticket_hops` hops of dependents (rules.md section 4 is the single
   definition).
+- `ticket evidence add --ref` (~XR3342F): the value is taken whole even
+  when it starts with `-`. For `nextest` it is the filter arguments for
+  `cargo nextest run`; for `command` it is the command line. Both are
+  tokenized with POSIX shell quoting and never reach a shell: whitespace
+  separates words, `'...'` is literal, `"..."` honours backslash only
+  before `"`, `\`, `$`, backtick and newline, and an unquoted backslash
+  escapes the next character. No expansion happens (`$`, `|`, `;`, `*`
+  and `#` are ordinary characters), and the words go to the tool as an
+  argument vector. An unterminated quote or a trailing backslash is a
+  usage error (exit 2, `E-EVIDENCE-REF`) and records nothing. `file`
+  takes the value as a path, untokenized.
 - Reads never take locks or commit; they are served from the index.
 
 ## 4. Verb surface
