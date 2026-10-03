@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Acceptance 1 (COV001 Unresolved below 40) not met: 284 -> 84. Landed for the improvement and carried forward by ~G5B3CFR (element and variant type inference), following the ~EHMQCXV precedent. A pre-existing soundness hole the agent found is filed as ~Z0XMZEG (high). Evidence was recorded without --accepts."
+at = "2026-10-03T03:08:08Z"
+actor = "lognd"
+rev = 1
