@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T11:20:24Z"
+digest = "5c7189066c4ba208f857c5acb039c32ac9ef2e01458d5b606f56be1c4e15aa79"
+exit_code = 0
+inline = """
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/K6V6Y0D/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.99s
+────────────
+ Nextest run ID e93ed6d8-4374-4235-a107-c47880a733f0 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   1.117s] (1/1) frob-cli::cycle close_carries_incomplete_members_and_records_the_ratio_and_retro
+────────────
+     Summary [   1.126s] 1 test run: 1 passed, 5 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test cycle -E 'test(close_carries_incomplete_members_and_records_the_ratio_and_retro)'"
+size = 536
+status = "measured"
+tests = ["close_carries_incomplete_members_and_records_the_ratio_and_retro"]
+at = "2026-10-03T11:20:24Z"
+actor = "lognd"
+rev = 1
