@@ -178,3 +178,48 @@ fn captured_output_is_redacted_and_env_added() {
     assert_eq!(out.stdout.trim(), "hello world");
     assert_eq!(out.stderr.trim(), "oops");
 }
+
+// frob:tests crates/gob-exec/src/runner.rs::Runner
+#[cfg(unix)]
+#[test]
+fn a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error() {
+    let spec = Spec {
+        program: Program::Tool { name: "sh".into() },
+        args: vec!["-c".into(), "yes aaaaaaaaaaaaaaaa".into()],
+        cwd: None,
+        env: vec![],
+        timeout: Duration::from_secs(30),
+        capture: true,
+    };
+    let started = Instant::now();
+    let err = Runner::new(Limits { jobs: 1 })
+        .output_cap(1024 * 1024)
+        .run(&spec)
+        .unwrap_err();
+    assert!(
+        matches!(err, ExecError::OutputCap { limit } if limit == 1024 * 1024),
+        "{err:?}"
+    );
+    assert!(
+        started.elapsed() < Duration::from_secs(10),
+        "killed promptly"
+    );
+}
+
+// frob:tests crates/gob-exec/src/runner.rs::Runner
+#[test]
+fn output_under_the_cap_is_returned_whole() {
+    let spec = Spec {
+        program: Program::Tool { name: "sh".into() },
+        args: vec!["-c".into(), "echo small".into()],
+        cwd: None,
+        env: vec![],
+        timeout: Duration::from_secs(5),
+        capture: true,
+    };
+    let out = Runner::new(Limits { jobs: 1 })
+        .output_cap(16)
+        .run(&spec)
+        .unwrap();
+    assert_eq!(out.stdout.trim(), "small");
+}

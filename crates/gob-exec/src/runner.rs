@@ -3,7 +3,8 @@
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -13,6 +14,9 @@ use crate::SpawnCount;
 use crate::counter::record;
 use crate::semaphore::Semaphore;
 use crate::{ExecError, Program};
+
+/// Default cap on captured output per stream: 64 MiB (a knob of the caller's config).
+pub const DEFAULT_OUTPUT_CAP: usize = 64 * 1024 * 1024;
 
 /// How often a running child is polled for exit.
 const POLL: Duration = Duration::from_millis(5);
@@ -82,6 +86,7 @@ pub struct Runner {
     sem: Semaphore,
     spawned: AtomicU64,
     tools: Option<Vec<String>>,
+    output_cap: usize,
 }
 
 impl Runner {
@@ -93,6 +98,7 @@ impl Runner {
             sem: Semaphore::new(jobs),
             spawned: AtomicU64::new(0),
             tools: None,
+            output_cap: DEFAULT_OUTPUT_CAP,
         }
     }
 
@@ -100,6 +106,13 @@ impl Runner {
     #[must_use]
     pub fn allow_tools(mut self, names: impl IntoIterator<Item = String>) -> Self {
         self.tools = Some(names.into_iter().collect());
+        self
+    }
+
+    /// Kill a child whose stdout or stderr passes `bytes` ([`DEFAULT_OUTPUT_CAP`] otherwise).
+    #[must_use]
+    pub fn output_cap(mut self, bytes: usize) -> Self {
+        self.output_cap = bytes;
         self
     }
 
@@ -113,6 +126,7 @@ impl Runner {
     /// # Errors
     /// [`ExecError::NotAllowed`] or [`ExecError::NotFound`] when the program
     /// cannot be used, [`ExecError::Spawn`] when the OS refuses to start it,
+    /// [`ExecError::OutputCap`] when it floods past the output cap (it is killed),
     /// and [`ExecError::Wait`] when supervising it fails.
     pub fn run(&self, spec: &Spec) -> Result<Output, ExecError> {
         let label = spec.program.label();
@@ -152,9 +166,15 @@ impl Runner {
         record(&self.spawned);
         debug!(exe = %exe.display(), args = ?spec.args, pid = child.id(), "spawned");
 
-        let out_t = child.stdout.take().map(drain);
-        let err_t = child.stderr.take().map(drain);
-        let status = supervise(&mut child, started, spec.timeout)?;
+        let exceeded = Arc::new(AtomicBool::new(false));
+        let cap = self.output_cap;
+        let out_t = child.stdout.take().map(|r| drain(r, cap, &exceeded));
+        let err_t = child.stderr.take().map(|r| drain(r, cap, &exceeded));
+        let status = supervise(&mut child, started, spec.timeout, &exceeded)?;
+        if exceeded.load(Ordering::Relaxed) {
+            warn!(program = %label, cap, "output cap exceeded; child killed");
+            return Err(ExecError::OutputCap { limit: cap });
+        }
         let duration = started.elapsed();
         let stdout = out_t.map(collect).unwrap_or_default();
         let stderr = err_t.map(collect).unwrap_or_default();
@@ -169,12 +189,32 @@ impl Runner {
     }
 }
 
-/// Read a pipe to the end on a helper thread.
-fn drain(mut r: impl Read + Send + 'static) -> thread::JoinHandle<Vec<u8>> {
+/// Read a pipe on a helper thread until its end or past `cap` bytes, which sets `exceeded`.
+fn drain(
+    mut r: impl Read + Send + 'static,
+    cap: usize,
+    exceeded: &Arc<AtomicBool>,
+) -> thread::JoinHandle<Vec<u8>> {
+    let exceeded = Arc::clone(exceeded);
     thread::spawn(move || {
         let mut buf = Vec::new();
-        if let Err(e) = r.read_to_end(&mut buf) {
-            warn!(error = %e, "reading child output failed");
+        let mut chunk = [0_u8; 64 * 1024];
+        loop {
+            match r.read(&mut chunk) {
+                Ok(0) => break,
+                Ok(n) => {
+                    buf.extend_from_slice(&chunk[..n]);
+                    if buf.len() > cap {
+                        exceeded.store(true, Ordering::Relaxed);
+                        break;
+                    }
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                Err(e) => {
+                    warn!(error = %e, "reading child output failed");
+                    break;
+                }
+            }
         }
         buf
     })
@@ -186,9 +226,19 @@ fn collect(h: thread::JoinHandle<Vec<u8>>) -> String {
     gob_log::redact(&String::from_utf8_lossy(&bytes)).into_owned()
 }
 
-/// Poll the child until exit or `timeout`, killing the group on timeout.
-fn supervise(child: &mut Child, started: Instant, timeout: Duration) -> Result<Outcome, ExecError> {
+/// Poll the child until exit, `timeout` or an exceeded output cap, killing the group on timeout.
+fn supervise(
+    child: &mut Child,
+    started: Instant,
+    timeout: Duration,
+    exceeded: &AtomicBool,
+) -> Result<Outcome, ExecError> {
     loop {
+        if exceeded.load(Ordering::Relaxed) {
+            kill_group(child);
+            child.wait().map_err(ExecError::Wait)?;
+            return Ok(Outcome::Signaled);
+        }
         if let Some(st) = child.try_wait().map_err(ExecError::Wait)? {
             return Ok(st.code().map_or(Outcome::Signaled, Outcome::Exited));
         }

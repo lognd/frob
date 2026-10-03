@@ -840,6 +840,7 @@ dependencies = [
  "gob-cache",
  "gob-check",
  "gob-cli",
+ "gob-config",
  "gob-diagnostics",
  "gob-directives",
  "gob-exec",

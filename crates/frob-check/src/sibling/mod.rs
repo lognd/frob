@@ -111,6 +111,13 @@ impl Siblings {
                     },
                     |(_, path)| Program::Hook { path: path.clone() },
                 );
+            let compute_digest = match gob_config::ComputeTable::load_for(root, product) {
+                Ok((table, _)) => Some(gob_config::compute_digest(&table)),
+                Err(e) => {
+                    tracing::error!(product, error = %e, "compute knobs unreadable; digest not compared");
+                    None
+                }
+            };
             let run = Run {
                 program,
                 root: root.to_path_buf(),
@@ -118,6 +125,8 @@ impl Siblings {
                 base: base.to_owned(),
                 scope: scope.map(|s| s.iter().cloned().collect()),
                 timeout: Duration::from_secs(table.sibling_timeout_secs),
+                compute_digest,
+                output_cap: usize::try_from(table.output_cap_bytes).unwrap_or(usize::MAX),
             };
             tracing::info!(
                 product,

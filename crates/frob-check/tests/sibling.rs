@@ -128,7 +128,9 @@ fn frob_applies_its_own_gate_to_the_merged_marks() {
 const FAILURES: &[(&str, &str, &str)] = &[
     ("incompatible", "", "incompatible"),
     ("badproduct", "", "incompatible"),
+    ("baddigest", "", "incompatible"),
     ("malformed", "", "malformed"),
+    ("flood", "[check]\noutput_cap_bytes = 100000\n", "malformed"),
     ("nomark", "", "malformed"),
     ("exit3", "", "failed"),
     ("failenv", "", "failed"),

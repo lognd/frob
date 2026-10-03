@@ -23,4 +23,10 @@ pub enum ExecError {
     /// Waiting on or reading from the child failed.
     #[error("failed to wait on child: {0}")]
     Wait(#[source] io::Error),
+    /// The child wrote more than the runner's output cap and was killed.
+    #[error("child output exceeded the {limit} byte cap and the child was killed")]
+    OutputCap {
+        /// The cap in bytes that was exceeded.
+        limit: usize,
+    },
 }
