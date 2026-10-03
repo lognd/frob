@@ -313,3 +313,116 @@ fn verbs_add_list_and_fetch_round_trip() {
     assert_eq!(code, 3, "{out}");
     assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-TOOL");
 }
+
+// frob:ticket 01M40K5J3B39TX30FC3PFY7RCD
+#[test]
+fn a_hyphen_led_ref_is_taken_whole() {
+    // frob:tests crates/frob-evidence/src/verbs.rs::capture_args
+    let dir = repo("base");
+    let ledger = ledger(dir.path());
+    let (_, handle) = ticket(&ledger, TicketType::Task);
+    drop(ledger);
+    let cli = cli();
+    let (code, out, err) = gob_cli::run_for_test(
+        &cli,
+        &[
+            "--json",
+            "ticket",
+            "evidence",
+            "add",
+            &handle,
+            "--provider",
+            "command",
+            "--ref",
+            "-p frob-cli -E 'test(x)'",
+        ],
+        dir.path(),
+    );
+    // Not a usage error about `-p`: the whole value reached the provider, which refused the tool `-p`.
+    assert_eq!(code, 3, "{out}{err}");
+    let e = &json(&out)["error"];
+    assert_eq!(e["code"], "E-EVIDENCE-TOOL");
+    assert!(e["message"].as_str().expect("message").contains("`-p`"));
+}
+
+/// A repository holding a one-test cargo package, so nextest has something to match against.
+fn cargo_repo() -> tempfile::TempDir {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let p = dir.path();
+    git(p, &["init", "-q"]);
+    git(p, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+    git(p, &["config", "user.name", "Test User"]);
+    git(p, &["config", "user.email", "test@example.com"]);
+    std::fs::write(
+        p.join("Cargo.toml"),
+        "[package]\nname = \"probe\"\nversion = \"0.0.0\"\nedition = \"2021\"\n\n[workspace]\n",
+    )
+    .expect("manifest");
+    std::fs::create_dir(p.join("src")).expect("src");
+    std::fs::write(p.join("src/lib.rs"), "#[test]\nfn present() {}\n").expect("lib");
+    std::fs::write(p.join(".gitignore"), "target/\n").expect("ignore");
+    // An explicit profile keeps an outer `NEXTEST_PROFILE` (set when this test runs under nextest) out of the probe.
+    std::fs::write(
+        p.join("frob.toml"),
+        "[evidence]\nnextest_profile = \"default\"\n",
+    )
+    .expect("frob.toml");
+    git(p, &["add", "-A"]);
+    git(p, &["commit", "-q", "-m", "base"]);
+    dir
+}
+
+// frob:ticket 01M40K5J3B39TX30FC3PFY7RCD
+#[test]
+fn a_filter_matching_no_test_refuses_and_records_nothing() {
+    // frob:tests crates/frob-evidence/src/provider.rs::capture
+    let dir = cargo_repo();
+    let ledger = ledger(dir.path());
+    let (_, handle) = ticket(&ledger, TicketType::Task);
+    drop(ledger);
+    let cli = cli();
+    let run = |args: &[&str]| gob_cli::run_for_test(&cli, args, dir.path());
+    let (code, out, err) = run(&[
+        "--json",
+        "ticket",
+        "evidence",
+        "add",
+        &handle,
+        "--provider",
+        "nextest",
+        "--ref",
+        "-E 'test(=no_such_test)'",
+    ]);
+    assert_eq!(code, 2, "{out}{err}");
+    let e = &json(&out)["error"];
+    assert_eq!(e["code"], "E-EVIDENCE-NO-TESTS");
+    let msg = e["message"].as_str().expect("message");
+    assert!(
+        msg.contains("matched no tests") && msg.contains("no_such_test"),
+        "{msg}"
+    );
+    assert!(
+        e["remedy"]
+            .as_str()
+            .expect("remedy")
+            .contains("cargo nextest list")
+    );
+    let (code, out, _) = run(&["--json", "ticket", "evidence", "list", &handle]);
+    assert_eq!(code, 0, "{out}");
+    assert_eq!(json(&out)["data"]["count"], 0);
+    // The same package with a matching filter still records a measured pass.
+    let (code, out, err) = run(&[
+        "--json",
+        "ticket",
+        "evidence",
+        "add",
+        &handle,
+        "--provider",
+        "nextest",
+        "--ref",
+        "-E 'test(=present)'",
+        "--accepts",
+        "1",
+    ]);
+    assert_eq!(code, 0, "{out}{err}");
+}

@@ -234,6 +234,13 @@ pub fn run_nextest(
     })
 }
 
+/// True when a nextest run executed no test because its filter matched none.
+///
+/// nextest exits 4 (or says "no tests to run") then; a build failure also runs no test but is a real failed measurement.
+pub fn matched_no_tests(cap: &Capture) -> bool {
+    cap.tests.is_empty() && (cap.exit_code == Some(4) || cap.transcript.contains("no tests to run"))
+}
+
 /// Run an allowlisted tool (`argv[0]` must be in `allowed`) and capture exit code and transcript.
 ///
 /// # Errors
@@ -369,6 +376,15 @@ pub fn capture(
                 &ws.evidence.nextest_profile,
                 ws.timeout(),
             )?;
+            if matched_no_tests(&cap) {
+                tracing::warn!(
+                    filter = reference,
+                    "nextest filter matched no tests; refusing to record"
+                );
+                return Err(EvidenceError::NoTestsMatched {
+                    filter: reference.to_owned(),
+                });
+            }
             build_record(&ws.store, provider, reference, &cap, accepts)
         }
         Provider::Command => {
@@ -399,6 +415,27 @@ mod tests {
         assert!(split_args("a 'b").is_err());
         assert!(split_args("   ").unwrap().is_empty());
         assert_eq!(split_args("a '' b").unwrap(), ["a", "", "b"]);
+    }
+
+    #[test]
+    fn zero_matched_tests_is_told_apart_from_a_failed_build() {
+        let cap = |code, text: &str| Capture {
+            exit_code: Some(code),
+            passed: false,
+            measured: true,
+            tests: Vec::new(),
+            failed_tests: Vec::new(),
+            transcript: text.to_owned(),
+        };
+        assert!(matched_no_tests(&cap(4, "")));
+        assert!(matched_no_tests(&cap(1, "error: no tests to run")));
+        assert!(!matched_no_tests(&cap(
+            101,
+            "error[E0425]: cannot find value"
+        )));
+        let mut ran = cap(4, "");
+        ran.tests.push("t".to_owned());
+        assert!(!matched_no_tests(&ran));
     }
 
     #[test]

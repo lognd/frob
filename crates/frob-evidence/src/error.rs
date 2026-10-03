@@ -14,6 +14,14 @@ pub enum EvidenceError {
     /// The `command` or `nextest` reference was empty or could not be split.
     #[error("E-EVIDENCE-REF: {0}")]
     BadReference(String),
+    /// A nextest filter matched no test, so there is nothing to measure.
+    #[error(
+        "E-EVIDENCE-NO-TESTS: the nextest filter `{filter}` matched no tests; nothing was recorded"
+    )]
+    NoTestsMatched {
+        /// The filter arguments as given in `--ref`.
+        filter: String,
+    },
     /// A provider name is not one of `nextest`, `command`, `file`.
     #[error("E-EVIDENCE-PROVIDER: `{0}` is not a provider; expected nextest, command or file")]
     BadProvider(String),
@@ -73,6 +81,13 @@ impl EvidenceError {
             Self::BadReference(_) | Self::BadProvider(_) | Self::BadAccepts(_) => {
                 Some(Refusal::new(code_of(&self), UsageError, self.to_string()))
             }
+            Self::NoTestsMatched { filter } => Some(
+                Refusal::new("E-EVIDENCE-NO-TESTS", UsageError, self.to_string()).with_remedy(
+                    format!(
+                        "list the test names the filter can match with: cargo nextest list {filter}"
+                    ),
+                ),
+            ),
             Self::BadIndex(_) => Some(
                 Refusal::new("E-EVIDENCE-INDEX", GuardNeedsAction, self.to_string())
                     .with_remedy("frob ticket evidence list <ticket>"),

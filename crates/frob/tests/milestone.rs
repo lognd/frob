@@ -431,3 +431,14 @@ fn criterion_add_is_idempotent_and_starts_unbound() {
     assert_eq!(again["already"], true);
     assert_eq!(states(&repo).len(), 4);
 }
+
+// frob:ticket 01M40K5J3B39TX30FC3PFY7RCD
+#[test]
+fn a_hyphen_led_ref_is_taken_whole_by_milestone_evidence_add() {
+    // frob:tests crates/frob-evidence/src/verbs.rs::capture_args
+    let repo = three();
+    let out = offer(&repo, "command", "-p frob-cli -E 'test(x)'", &["1"]);
+    // The value reached the provider (which refused the tool `-p`) instead of failing in clap.
+    assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
+    assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-TOOL");
+}

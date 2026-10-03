@@ -233,6 +233,7 @@ pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
             .long("ref")
             .required(true)
             .value_name("REF")
+            .allow_hyphen_values(true)
             .help("Nextest filter args, the command line, or the file path"),
     )
     .arg(
