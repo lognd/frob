@@ -38,15 +38,15 @@ impl Opened {
         let ledger_cfg = ledger_config(&root).map_err(WorktreeError::Config)?;
         let config =
             WorktreeConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
-        let wip = PmConfig::load(&root)
-            .map_err(|e| WorktreeError::Config(e.to_string()))?
-            .wip;
+        let pm = PmConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
+        let wip = pm.wip;
         let (leases, _) = frob_lease::open_store_from_file(&root)?;
         Ok(Self {
             ledger: Ledger::open(repo, ledger_cfg),
             leases: leases
                 .with_holder_limit(wip.in_progress_per_identity)
-                .with_repo_limit(wip.in_progress),
+                .with_repo_limit(wip.in_progress)
+                .with_expedite_max(pm.classes.expedite_max),
             config,
         })
     }

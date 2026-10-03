@@ -12,8 +12,8 @@ use serde::{Deserialize, Serialize};
 use crate::error::{LedgerError, Result};
 use crate::id::{EventId, TicketId};
 use crate::model::{
-    Category, CommentSubtype, ExceptionKind, Link, LinkKind, LinkOp, Outcome, Points, Priority,
-    Stamp, TicketType,
+    Category, Class, CommentSubtype, ExceptionKind, Link, LinkKind, LinkOp, Outcome, Points,
+    Priority, Stamp, TicketType,
 };
 
 /// Revision of the event file format written by this crate (`rev` in every file).
@@ -32,6 +32,12 @@ pub struct CreateData {
     pub category: Category,
     /// Priority.
     pub priority: Priority,
+    /// Class of service; absent means `standard`.
+    #[serde(default, skip_serializing_if = "Class::is_standard")]
+    pub class: Class,
+    /// Due date.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub due: Option<Stamp>,
     /// Free-form flavour.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub flavour: Option<String>,
@@ -376,6 +382,8 @@ mod tests {
             ty: TicketType::Task,
             category: Category::Todo,
             priority: Priority::Medium,
+            class: crate::model::Class::Standard,
+            due: None,
             flavour: None,
             points: Some(Points::new(3).expect("points")),
             parent: None,
@@ -461,6 +469,25 @@ mod tests {
             let back = Event::parse(ev.id, &text).expect("parse");
             assert_eq!(back, ev, "{text}");
         }
+    }
+
+    // frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
+    #[test]
+    fn create_without_a_class_is_standard_and_standard_is_never_written() {
+        let old = "kind = \"create\"\ntitle = \"Old\"\ntype = \"task\"\ncategory = \"todo\"\npriority = \"medium\"\nat = \"2026-10-02T14:03:11Z\"\nactor = \"a\"\nrev = 1\n";
+        let ev = Event::parse(EventId::mint(), old).expect("parse an event written before classes");
+        let EventBody::Create(c) = &ev.body else {
+            panic!("not a create: {:?}", ev.body)
+        };
+        assert_eq!(c.class, Class::Standard);
+        let text = ev.to_toml().expect("render");
+        assert!(!text.contains("class"), "{text}");
+        let mut hot = create();
+        hot.class = Class::Expedite;
+        let text = Event::new("a", EventBody::Create(Box::new(hot)))
+            .to_toml()
+            .expect("render");
+        assert!(text.contains("class = \"expedite\""), "{text}");
     }
 
     #[test]

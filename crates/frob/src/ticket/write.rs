@@ -2,7 +2,7 @@
 
 use frob_ledger::guards::default_close_guards;
 use frob_ledger::model::{
-    Category, CommentSubtype, LinkKind, Outcome, Points, Priority, TicketType,
+    Category, Class, CommentSubtype, LinkKind, Outcome, Points, Priority, TicketType,
 };
 use frob_ledger::ops::{NewTicket, Patch};
 use frob_ledger::schema::parse_text_value;
@@ -33,6 +33,7 @@ struct NewRequest {
     ty: TicketType,
     category: Category,
     priority: Priority,
+    class: Class,
     points: Option<Points>,
     parent: Option<String>,
     blocked_by: Vec<String>,
@@ -63,6 +64,11 @@ impl Command for New {
                 "priority",
                 Priority::NAMES,
                 "Priority (default medium)",
+            ))
+            .arg(choice_flag(
+                "class",
+                Class::NAMES,
+                "Class of service (default standard)",
             ))
             .arg(choice_flag(
                 "category",
@@ -107,6 +113,7 @@ impl Command for New {
                 ty: get_parsed(m, "type")?.unwrap_or(TicketType::Task),
                 category: get_parsed(m, "category")?.unwrap_or(Category::Todo),
                 priority: get_parsed(m, "priority")?.unwrap_or(Priority::Medium),
+                class: get_parsed(m, "class")?.unwrap_or_default(),
                 points,
                 parent: get(m, "parent"),
                 blocked_by: get_many(m, "blocked-by"),
@@ -131,6 +138,7 @@ impl Command for New {
         let mut req = NewTicket::new(r.title.clone(), r.ty);
         req.category = r.category;
         req.priority = r.priority;
+        req.class = r.class;
         req.points = r.points;
         req.parent = r
             .parent
@@ -272,6 +280,7 @@ impl Command for Update {
             ))
             .arg(text_flag("title", "New title"))
             .arg(choice_flag("priority", Priority::NAMES, "New priority"))
+            .arg(choice_flag("class", Class::NAMES, "New class of service"))
             .arg(text_flag("points", "New story points"))
             .arg(many_flag("add-label", "Label to add (repeatable)"))
             .arg(many_flag("remove-label", "Label to remove (repeatable)"))
@@ -316,6 +325,7 @@ impl Command for Update {
         for (flag, field) in [
             ("title", "title"),
             ("priority", "priority"),
+            ("class", "class"),
             ("points", "points"),
         ] {
             if let Some(v) = get(m, flag) {

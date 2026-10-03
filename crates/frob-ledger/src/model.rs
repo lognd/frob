@@ -140,6 +140,37 @@ string_enum!(
 );
 
 string_enum!(
+    /// Class of service: how a ticket is treated by the WIP limit and by ordering.
+    Class {
+        /// A critical fix: may exceed the repository WIP limit, at most `expedite_max` at a time.
+        Expedite => "expedite",
+        /// Ranked by its due date.
+        FixedDate => "fixed-date",
+        /// The default.
+        Standard => "standard",
+        /// Chores and debt, capped as a share of each cycle's points.
+        Intangible => "intangible",
+    }
+);
+
+impl Class {
+    /// True for the default class, which is never written to a file.
+    pub const fn is_standard(&self) -> bool {
+        matches!(self, Self::Standard)
+    }
+}
+
+#[allow(
+    clippy::derivable_impls,
+    reason = "string_enum! cannot mark a #[default] variant"
+)]
+impl Default for Class {
+    fn default() -> Self {
+        Self::Standard
+    }
+}
+
+string_enum!(
     /// Subtype of a `comment` event.
     CommentSubtype {
         /// A plain note.
@@ -390,6 +421,12 @@ pub struct Frontmatter {
     pub outcome: Option<Outcome>,
     /// Priority.
     pub priority: Priority,
+    /// Class of service; absent in a file means `standard`.
+    #[serde(default, skip_serializing_if = "Class::is_standard")]
+    pub class: Class,
+    /// Due date, ordering fixed-date tickets.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub due: Option<Stamp>,
     /// Story points.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub points: Option<Points>,

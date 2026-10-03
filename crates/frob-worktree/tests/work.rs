@@ -1,12 +1,13 @@
 //! `work`, `start` and `requeue` end to end in temporary repositories (system git required).
 // frob:ticket 01M4069T76A6WSNHT3NZERXHAH
+// frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::index::ListFilter;
-use frob_ledger::model::{Category, TicketType};
+use frob_ledger::model::{Category, Class, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
 use frob_worktree::{WorkOptions, Workspace, WorktreeConfig, WorktreeError};
@@ -641,4 +642,76 @@ fn cli_work_past_the_repository_limit_exits_3_with_the_wip_code() {
     );
     let (code, out, _) = gob_cli::run_for_test(&cli, &["start", &b.to_string()], &fx.root);
     assert_eq!(code, 3, "start obeys the limit: {out}");
+}
+
+fn classed_ticket(ledger: &Ledger, title: &str, class: Class, scope: &str) -> TicketId {
+    let mut req = NewTicket::new(title, TicketType::Task);
+    req.class = class;
+    req.scope = vec![scope.to_owned()];
+    ledger.new_ticket(req).expect("new").ticket.front.id
+}
+
+// frob:tests crates/frob-worktree/src/wip.rs::check
+#[test]
+fn expedite_is_granted_as_the_single_exception_when_the_limit_is_reached() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    std::fs::write(fx.root.join("frob.toml"), "[pm.wip]\nin_progress = 2\n").expect("config");
+    let ledger = fx.ledger(None);
+    let a = classed_ticket(&ledger, "Std A", Class::Standard, "a/**");
+    let b = classed_ticket(&ledger, "Std B", Class::Standard, "b/**");
+    let std_c = classed_ticket(&ledger, "Std C", Class::Standard, "c/**");
+    let hot = classed_ticket(&ledger, "Hotfix", Class::Expedite, "hot/**");
+    drop(ledger);
+    let cli = frob_worktree::register(gob_cli::Cli::new("frob", "0.0.0"));
+    for t in [a, b] {
+        let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &t.to_string()], &fx.root);
+        assert_eq!(code, 0, "{out}{err}");
+    }
+    let (code, out, _) = gob_cli::run_for_test(&cli, &["work", &std_c.to_string()], &fx.root);
+    assert_eq!(code, 3, "a standard ticket is refused at the limit: {out}");
+    assert_eq!(json(&out)["error"]["code"], "E-WIP-REPO");
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &hot.to_string()], &fx.root);
+    assert_eq!(code, 0, "expedite exceeds the limit by one: {out}{err}");
+    let ledger = fx.ledger(None);
+    assert_eq!(category(&ledger, hot), Category::InProgress);
+    let (code, out, _) = gob_cli::run_for_test(&cli, &["work", &std_c.to_string()], &fx.root);
+    assert_eq!(code, 3, "the exception does not open the floodgates: {out}");
+}
+
+// frob:tests crates/frob-worktree/src/wip.rs::expedite_refusal
+#[test]
+fn a_second_expedite_exits_3_while_one_is_running() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    std::fs::write(fx.root.join("frob.toml"), "[pm.wip]\nin_progress = 5\n").expect("config");
+    let ledger = fx.ledger(None);
+    let one = classed_ticket(&ledger, "Hotfix one", Class::Expedite, "h1/**");
+    let two = classed_ticket(&ledger, "Hotfix two", Class::Expedite, "h2/**");
+    drop(ledger);
+    let cli = frob_worktree::register(gob_cli::Cli::new("frob", "0.0.0"));
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &one.to_string()], &fx.root);
+    assert_eq!(code, 0, "{out}{err}");
+    let (code, out, _) = gob_cli::run_for_test(&cli, &["work", &two.to_string()], &fx.root);
+    assert_eq!(code, 3, "{out}");
+    let v = json(&out);
+    assert_eq!(v["error"]["code"], "E-WIP-EXPEDITE");
+    assert!(
+        v["error"]["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("Hotfix one")),
+        "{out}"
+    );
+    // raising the lane lets it through
+    std::fs::write(
+        fx.root.join("frob.toml"),
+        "[pm.wip]\nin_progress = 5\n[pm.classes]\nexpedite_max = 2\n",
+    )
+    .expect("config");
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &two.to_string()], &fx.root);
+    assert_eq!(code, 0, "{out}{err}");
 }

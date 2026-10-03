@@ -643,6 +643,8 @@ fn create_data(
         ty,
         category: Category::Todo,
         priority,
+        class: frob_ledger::model::Class::Standard,
+        due: None,
         flavour,
         points,
         parent,

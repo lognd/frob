@@ -126,6 +126,15 @@ any (provider, reference) pair's latest record for it passes.
 | `triage` | ticket | action (accept, decline, snooze, duplicate), until | ticket triage | inbox |
 | `cost` | ticket | tokens in, out, cache, cost, wall seconds | harness hook, land | stats, forecasts |
 
+The class of service is the field `class` (and `due`): `create` and
+`field` events carry it, an event or file without it folds to
+`standard`, and `standard` is never written, so a ledger that does not
+use classes is byte-identical to one written before them. A binary older
+than the field rejects the unknown key in a ticket or `create` event that
+carries a non-standard class (their schemas deny unknown keys), so set a
+class only once every writer runs a binary that knows it. The SQLite index
+format moved to 2 (a cache; it is rebuilt on first open).
+
 Acceptance edits are `field` events on `acceptance` written by `frob
 ticket update --add-acceptance TEXT`, `--remove-acceptance N` and
 `--clear-acceptance` (one event per command; `--set acceptance=` is
@@ -211,9 +220,9 @@ v1-style warn) unless declared under `[tickets.custom_fields]`.
 | Group | Fields |
 |---|---|
 | identity | id, aliases (v1 ids namespaced by source repo, migration.md), title, type, created, reporter, assignee (optional), owner_team (optional) |
-| classification | priority (low, medium, high or critical), component (registry, monorepo.md), labels, area |
+| classification | priority (low, medium, high or critical), class of service (expedite, fixed-date, standard or intangible; default standard), component (registry, monorepo.md), labels, area |
 | hierarchy | parent, children (derived), links (typed, section 4) |
-| planning | cycle (object; membership is an event), milestone (a release object, never a ticket type), points, due, rank (fractional, LexoRank-style) |
+| planning | cycle (object; membership is an event), milestone (a release object, never a ticket type), points, due (RFC 3339; orders fixed-date tickets), rank (fractional, LexoRank-style) |
 | state | status (category plus status name, section 5), outcome (done, wont-do, duplicate, cannot-reproduce, absorbed), blocked (derived from open blockers) |
 | scope | scope (globs), scope_mode (exclusive, append, none), scope_ack reason, evidence_scope |
 | acceptance | criteria list with bound evidence ids |
@@ -312,7 +321,11 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   was removed so there is one knob), and `work` and `start` also refuse
   with `E-WIP-REPO` past the repository limit `[pm.wip] in_progress`,
   naming every holder; expired leases do not count and are reported as
-  stale.
+  stale. An `expedite` ticket (class of service) is the one exception: it
+  skips the repository limit while fewer than `[pm.classes] expedite_max`
+  (default 1) expedite tickets hold a live lease, and past that it is
+  refused with `E-WIP-EXPEDITE` (exit 3); an `expedite_max` of 0 closes the
+  lane. Standard tickets still count every live holder, expedite included.
 - Edits outside any symbol (imports, module headers) belong to the
   file-level scope: a symbol-level entry claims only symbol bodies, so
   such edits need a file-level entry or conflict with any symbol-level
@@ -346,6 +359,7 @@ Milestone 2 or later (D36).
 | statuses, categories, transitions, conditions, validators, post-functions | categories fixed (`triage`, `todo`, `in-progress`, `done`, plus derived `blocked`); display names free; guards are predicates on `close` and `land`, not a transition graph; policy change is a commit | "transition not found", admin-only workflow edits, saved JQL breaking on rename (3) |
 | resolution | mandatory `outcome` written atomically with the terminal status: done, wont-do, duplicate, cannot-reproduce, absorbed | Done-without-resolution, "Unresolved" counted as resolved (9) |
 | priority | `low`, `medium`, `high`, `critical` enum | - |
+| class of service | `class` enum: `expedite`, `fixed-date`, `standard`, `intangible`; `ticket new --class`, `ticket update --class`; `doable` lists expedite first, then fixed-date by `due`, then the rest | - |
 | components | registry in config, each with path globs and optional owner; double as the product selector in the monorepo | free-text drift |
 | versions / fix version | milestone = release object (never a ticket type) with state, date, notes, derived from git tags where present | release cut outside tickets |
 | labels | declared in config; unknown label is a write error | typo-prone free text (19) |

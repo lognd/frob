@@ -89,6 +89,8 @@ mod tests {
                 category: Category::Todo,
                 outcome: None,
                 priority: Priority::High,
+                class: crate::model::Class::Standard,
+                due: None,
                 points: None,
                 parent: None,
                 reporter: "logan".into(),

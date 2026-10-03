@@ -13,7 +13,7 @@ pub use schemars::Schema as SchemaDocument;
 
 use crate::id::TicketId;
 use crate::model::{
-    Acceptance, Category, Link, Outcome, Points, Priority, Stamp, Ticket, TicketType,
+    Acceptance, Category, Class, Link, Outcome, Points, Priority, Stamp, Ticket, TicketType,
 };
 
 /// How a field's value is typed and parsed.
@@ -245,6 +245,12 @@ pub struct FrontmatterSchema {
     /// low, medium, high or critical
     #[ticket(required, settable, kind = "enum")]
     priority: Priority,
+    /// expedite, fixed-date, standard or intangible; absent means standard
+    #[ticket(settable, kind = "enum", default = "standard", since = "0.532.0")]
+    class: Class,
+    /// Due date (RFC 3339); orders fixed-date tickets
+    #[ticket(settable, since = "0.532.0")]
+    due: Option<Stamp>,
     /// Story points: 1, 2, 3, 5, 8 or 13
     #[ticket(settable)]
     points: Option<Points>,
@@ -318,6 +324,7 @@ fn field_kind(f: &TicketFieldDescription) -> FieldKind {
             "Category" => Category::NAMES,
             "Outcome" => Outcome::NAMES,
             "Priority" => Priority::NAMES,
+            "Class" => Class::NAMES,
             other => unreachable!("enum field of unknown type {other}"),
         }),
         TicketFieldKind::Scalar => match f.inner_type() {
@@ -387,6 +394,8 @@ pub fn get_field(t: &Ticket, name: &str) -> Option<toml::Value> {
         "type" => Some(toml::Value::String(fm.ty.to_string())),
         "flavour" => opt_text(fm.flavour.as_ref()),
         "priority" => Some(toml::Value::String(fm.priority.to_string())),
+        "class" => (!fm.class.is_standard()).then(|| toml::Value::String(fm.class.to_string())),
+        "due" => fm.due.map(|d| toml::Value::String(d.to_string())),
         "points" => fm.points.map(|p| toml::Value::Integer(i64::from(p.get()))),
         "parent" => fm.parent.map(|p| toml::Value::String(p.to_string())),
         "assignee" => opt_text(fm.assignee.as_ref()),
@@ -458,6 +467,9 @@ pub fn field_map(t: &Ticket) -> serde_json::Map<String, serde_json::Value> {
                 serde_json::Value::String(t.body.clone())
             } else {
                 front.remove(d.name).unwrap_or(match d.kind {
+                    FieldKind::Choice(_) if d.name == "class" => {
+                        serde_json::Value::String(Class::Standard.to_string())
+                    }
                     FieldKind::List | FieldKind::Objects => serde_json::Value::Array(Vec::new()),
                     _ => serde_json::Value::Null,
                 })
@@ -499,6 +511,14 @@ pub fn set_field(t: &mut Ticket, name: &str, value: Option<&toml::Value>) -> Res
                 .parse()
                 .map_err(|e: crate::model::ParseEnumError| e.to_string())?;
         }
+        "class" => {
+            fm.class = want_text(name, v)?
+                .parse()
+                .map_err(|e: crate::model::ParseEnumError| e.to_string())?;
+        }
+        "due" => {
+            fm.due = Some(want_text(name, v)?.parse::<Stamp>()?);
+        }
         "points" => {
             let n = v
                 .as_integer()
@@ -531,6 +551,8 @@ fn unset(t: &mut Ticket, name: &str) {
     let fm = &mut t.front;
     match name {
         "flavour" => fm.flavour = None,
+        "class" => fm.class = Class::Standard,
+        "due" => fm.due = None,
         "points" => fm.points = None,
         "parent" => fm.parent = None,
         "assignee" => fm.assignee = None,
@@ -603,7 +625,8 @@ pub fn parse_text_value(name: &str, text: &str) -> Result<Option<toml::Value>, S
                 .map(str::to_owned)
                 .collect::<Vec<_>>(),
         ),
-        FieldKind::Instant | FieldKind::Objects => {
+        FieldKind::Instant => toml::Value::String(text.parse::<Stamp>()?.to_string()),
+        FieldKind::Objects => {
             return Err(format!("field `{name}` cannot be set with update"));
         }
     };
@@ -630,6 +653,8 @@ mod tests {
             category: Category::NAMES[0].parse().expect("category"),
             outcome: Some(Outcome::NAMES[0].parse().expect("outcome")),
             priority: Priority::NAMES[0].parse().expect("priority"),
+            class: crate::model::Class::Expedite,
+            due: Some("2026-10-02T14:03:11Z".parse().expect("stamp")),
             points: Some(Points::new(1).expect("points")),
             parent: Some(id),
             reporter: "r".into(),
@@ -672,7 +697,7 @@ mod tests {
         let d = FrontmatterSchema::describe();
         assert_eq!(d.name, "FrontmatterSchema");
         assert!(!d.doc.is_empty());
-        assert_eq!(d.fields.len(), 23);
+        assert_eq!(d.fields.len(), 25);
         assert!(d.fields.iter().all(|f| !f.doc.is_empty()));
         let labels = d.fields.iter().find(|f| f.key == "labels").expect("labels");
         assert_eq!(labels.default_toml, Some("[]"));
@@ -706,7 +731,7 @@ mod tests {
     #[test]
     fn docs_table_has_a_row_per_field() {
         let table = FrontmatterSchema::describe().docs_table();
-        assert_eq!(table.lines().count(), 2 + 23);
+        assert_eq!(table.lines().count(), 2 + 25);
     }
 
     #[test]

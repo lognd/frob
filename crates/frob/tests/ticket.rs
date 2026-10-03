@@ -616,3 +616,72 @@ fn set_acceptance_is_refused_naming_the_dedicated_flags_and_schema_works() {
     let schema = repo.ok(&["ticket", "update", "--schema"]);
     assert!(schema.to_string().contains("lost_evidence"), "{schema}");
 }
+
+// frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
+#[test]
+fn class_defaults_to_standard_and_new_and_update_set_it() {
+    let repo = Repo::new(false);
+    let plain = repo.id_of(&["ticket", "new", "--title", "plain"]);
+    let shown = repo.ok(&["ticket", "show", &plain]);
+    assert_eq!(shown["data"]["fields"]["class"], "standard");
+    assert_eq!(shown["data"]["summary"]["class"], "standard");
+    let hot = repo.id_of(&["ticket", "new", "--title", "hot", "--class", "expedite"]);
+    let shown = repo.ok(&["ticket", "show", &hot]);
+    assert_eq!(shown["data"]["fields"]["class"], "expedite");
+    assert_eq!(shown["data"]["summary"]["class"], "expedite");
+    let changed = repo.ok(&["ticket", "update", &plain, "--class", "fixed-date"]);
+    assert_eq!(changed["data"]["class"], "fixed-date");
+    repo.ok(&[
+        "ticket",
+        "update",
+        &plain,
+        "--set",
+        "due=2026-12-01T00:00:00Z",
+    ]);
+    let listed = repo.ok(&["ticket", "list"]);
+    let rows = listed["data"]["tickets"].as_array().expect("tickets");
+    let row = rows
+        .iter()
+        .find(|r| r["id"] == plain.as_str())
+        .expect("row");
+    assert_eq!(row["class"], "fixed-date");
+    assert_eq!(row["due"], "2026-12-01T00:00:00Z");
+    let bad = repo.frob(&["ticket", "update", &plain, "--class", "urgent"]);
+    assert_eq!(code(&bad), 2);
+    // unsetting returns to the default
+    repo.ok(&["ticket", "update", &plain, "--set", "class="]);
+    let shown = repo.ok(&["ticket", "show", &plain]);
+    assert_eq!(shown["data"]["fields"]["class"], "standard");
+    assert_eq!(repo.ok(&["ticket", "doctor"])["data"]["ok"], true);
+}
+
+// frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
+#[test]
+fn doable_lists_expedite_first_then_fixed_date_by_due() {
+    let repo = Repo::new(false);
+    let std_one = repo.id_of(&["ticket", "new", "--title", "std"]);
+    let late = repo.id_of(&["ticket", "new", "--title", "late", "--class", "fixed-date"]);
+    let soon = repo.id_of(&["ticket", "new", "--title", "soon", "--class", "fixed-date"]);
+    let hot = repo.id_of(&["ticket", "new", "--title", "hot", "--class", "expedite"]);
+    repo.ok(&[
+        "ticket",
+        "update",
+        &late,
+        "--set",
+        "due=2026-12-01T00:00:00Z",
+    ]);
+    repo.ok(&[
+        "ticket",
+        "update",
+        &soon,
+        "--set",
+        "due=2026-11-01T00:00:00Z",
+    ]);
+    let doable = repo.ok(&["ticket", "doable"]);
+    let rows = doable["data"]["tickets"].as_array().expect("tickets");
+    let ids: Vec<&str> = rows.iter().map(|r| r["id"].as_str().expect("id")).collect();
+    assert_eq!(
+        ids,
+        [hot.as_str(), soon.as_str(), late.as_str(), std_one.as_str()]
+    );
+}
