@@ -8,9 +8,9 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:57Z"
-updated = "2026-10-03T06:12:57Z"
+updated = "2026-10-03T15:28:21Z"
 idempotency_key = "m2-rel-board"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs"]
 
 [[links]]

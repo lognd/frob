@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/model.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-worktree/**"]
+new = ["crates/frob-ledger/src/model.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-worktree/**", "crates/frob-lease/src/store.rs", "crates/frob-lease/tests/lease.rs", "crates/frob-ledger/benches/ledger.rs", "crates/frob-ledger/src/doc.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/index.rs", "crates/frob-ledger/src/schema.rs", "crates/frob-ledger/tests/ledger.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/write.rs", "crates/frob/tests/ticket.rs", "crates/gob-dev/src/import_v1.rs", "docs/design/tickets.md"]
+at = "2026-10-03T15:41:25Z"
+actor = "lognd"
+rev = 1

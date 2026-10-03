@@ -9,9 +9,9 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T12:27:36Z"
-updated = "2026-10-03T13:19:22Z"
+updated = "2026-10-03T15:28:30Z"
 idempotency_key = "m2-rel-close-creates-next"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "docs/design/pm-enforcement.md", "changelog.d/01M40VQWCV38B2JCABYNNNA877.fixed.md"]
 
 [[acceptance]]
