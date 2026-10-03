@@ -6,6 +6,7 @@
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 // frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
+// frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -36,6 +37,8 @@ pub struct Cx<'a> {
     pub modeled: &'a [Selector],
     /// `[grimble] strict`: Warn rules become Error.
     pub strict: bool,
+    /// The ledger directory; with `changelog.d/`, `frob.lock` and `.frob/` it is frob-owned.
+    pub ledger_dir: &'a str,
 }
 
 /// The findings and subject counts of one evaluation.
@@ -191,6 +194,9 @@ fn sys001(cx: &Cx<'_>, out: &mut Output) {
     let mut unowned: BTreeMap<&str, Vec<String>> = BTreeMap::new();
     let mut soft: BTreeMap<(&str, &'static str), (Reason, Vec<String>)> = BTreeMap::new();
     for f in &cx.code.files {
+        if crate::frob_owned::is_frob_owned(&f.path, cx.ledger_dir) {
+            continue;
+        }
         out.count("SYS001", 1);
         let Some(fo) = cx.owners.files.get(&f.path) else {
             continue;

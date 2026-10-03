@@ -255,6 +255,7 @@ fn a_repository_with_no_model_entity_lists_the_ownership_rules_not_applicable() 
 }
 
 // frob:ticket 01M405B09EW2M0NDNTXKHXV2X7
+// frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 // frob:tests crates/grimble-check/src/sibling.rs::sibling_document
 #[test]
 fn ownership_rules_wired_to_no_subject_stay_zero_subject_rows() {
@@ -296,4 +297,42 @@ fn ownership_rules_wired_to_no_subject_stay_zero_subject_rows() {
         .find(|f| f["language"] == "grmb")
         .unwrap();
     assert!(!grmb["not_applicable_rules"].to_string().contains("SYS001"));
+}
+
+// frob:tests crates/grimble-check/src/config.rs::ledger_dir
+#[test]
+fn the_configured_ledger_dir_is_frob_owned_and_nothing_else_moves() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(dir.path(), "frob.toml", "[tickets]\ndir = \"work/items\"\n");
+    write(
+        dir.path(),
+        "design/m.grmb",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; }\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    write(dir.path(), "work/items/01ABC/ticket.md", "x\n");
+    write(dir.path(), "tickets/01ABC/ticket.md", "x\n");
+    let r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let doc = sibling_document(&r);
+    let anchors: Vec<String> = doc["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| f["rule"] == "SYS001")
+        .map(|f| f["message"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(anchors.len(), 2, "{anchors:?}");
+    assert!(
+        anchors.iter().any(|m| m.contains("`tickets/")),
+        "{anchors:?}"
+    );
+    assert!(
+        !anchors.iter().any(|m| m.contains("work/items")),
+        "{anchors:?}"
+    );
 }

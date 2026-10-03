@@ -8,6 +8,7 @@
 
 // frob:ticket 01M403Q1W4PMWRM8GXPRS10WX7
 // frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
+// frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -119,7 +120,7 @@ impl BindSummary {
     }
 }
 
-/// Digest of everything binding reads: each walked file, the lock file and the `[grimble]` knobs.
+/// Digest of everything binding reads: each walked file, the lock file, the `[grimble]` knobs and the frob ledger directory.
 pub fn digest(root: &Path, entries: &[FileEntry], table: &GrimbleTable) -> String {
     let mut h = blake3::Hasher::new();
     for e in entries {
@@ -138,8 +139,12 @@ pub fn digest(root: &Path, entries: &[FileEntry], table: &GrimbleTable) -> Strin
     }
     h.update(
         format!(
-            "\0{:?}|{:?}|{}|{}",
-            table.models, table.modeled, table.strict, table.rename_min_tokens
+            "\0{:?}|{:?}|{}|{}|{}",
+            table.models,
+            table.modeled,
+            table.strict,
+            table.rename_min_tokens,
+            crate::config::ledger_dir(root)
         )
         .as_bytes(),
     );

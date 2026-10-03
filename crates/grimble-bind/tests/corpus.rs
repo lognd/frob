@@ -54,6 +54,7 @@ fn bind_case(dir: &Path) -> Binding {
         modeled: &modeled,
         strict: dir.join("strict").exists(),
         rename_min_tokens: 12,
+        ledger_dir: "tickets",
     })
 }
 
