@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T16:16:18Z"
-updated = "2026-10-03T16:51:32Z"
+updated = "2026-10-03T16:51:33Z"
 scope = ["crates/frob-lease/src/config.rs", "crates/frob-lease/src/store.rs", "crates/frob-lease/tests/**", "crates/frob-land/**", "docs/design/tickets.md", "crates/frob-lease/src/verbs.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]

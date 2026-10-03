@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T16:51:33Z"
+digest = "281fe207ea49a2c47c9d8f4827ee90788a60925044661df910c9b4c5ec4116de"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 116981fd-e847-451a-a639-d6364ce4721a with nextest profile: default
+    Starting 1 test across 1 binary (21 tests skipped)
+        PASS [   0.013s] frob-lease::lease a_lockfile_only_overlap_names_shared_files_in_the_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease --test lease a_lockfile_only_overlap_names_shared_files_in_the_remedy"
+size = 563
+status = "measured"
+tests = ["a_lockfile_only_overlap_names_shared_files_in_the_remedy"]
+at = "2026-10-03T16:51:33Z"
+actor = "lognd"
+rev = 1
