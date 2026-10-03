@@ -2,13 +2,13 @@
 id = "01M40YQZF4422S88TN6992AN0Q"
 title = "Remedies name commands that do not exist (frob lease release); test every remedy against the CLI registry"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T13:20:05Z"
-updated = "2026-10-03T13:20:05Z"
+updated = "2026-10-03T13:51:36Z"
 idempotency_key = "m2-rel-remedy-commands-exist"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob/src/cycle_cmd.rs", "crates/frob/tests/remedies.rs"]
