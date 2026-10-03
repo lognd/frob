@@ -8,14 +8,10 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T06:12:59Z"
+updated = "2026-10-03T06:13:13Z"
 idempotency_key = "m2-rel-dist-config"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["dist-workspace.toml", ".github/workflows/release.yml", "Cargo.toml"]
-
-[[links]]
-kind = "blocked-by"
-target = "01M4069XB9N36CQGEBNPKJ5AVG"
 
 [[acceptance]]
 text = "Given a frob-v tag push, when the workflow runs, then it builds archives for the five targets with timeouts on every job"
