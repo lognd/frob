@@ -165,7 +165,12 @@ fn check_mode(path: &Path, meta: &fs::Metadata) -> Result<(), TrustError> {
     Ok(())
 }
 
+// frob:ticket 01M41PEAN0RE8DBEKQ1RBF6057
 #[cfg(not(unix))]
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "same signature as the unix variant, whose caller propagates the error with `?`"
+)]
 fn check_mode(_path: &Path, _meta: &fs::Metadata) -> Result<(), TrustError> {
     Ok(())
 }

@@ -1,5 +1,6 @@
 //! `frob init` and `frob doctor` pick and check the merge driver against `frob` on PATH.
 // frob:ticket 01M40SG11J388ZYWB7YJD0NPX1
+#![cfg(unix)]
 
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};

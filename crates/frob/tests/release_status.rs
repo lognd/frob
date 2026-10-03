@@ -62,6 +62,7 @@ impl Repo {
     }
 
     /// Run frob with `path` as the whole PATH (so a fake or absent `gh`).
+    #[cfg(unix)]
     fn run_with_path(&self, path: &Path, args: &[&str]) -> Output {
         Command::cargo_bin("frob")
             .expect("frob binary")
@@ -390,6 +391,7 @@ fn the_default_version_is_the_lowest_open_milestone() {
     assert_eq!(report(&v)["version"], "0.9.0");
 }
 
+#[cfg(unix)]
 /// A directory with a stub `gh`: prints `body` for check-runs and an empty status, or fails with `fail`.
 fn fake_gh(body: &str, fail: Option<(i32, &str)>) -> tempfile::TempDir {
     use std::os::unix::fs::PermissionsExt;
@@ -408,6 +410,7 @@ fn fake_gh(body: &str, fail: Option<(i32, &str)>) -> tempfile::TempDir {
     dir
 }
 
+#[cfg(unix)]
 /// A repo with a ready milestone and a GitHub origin, so only CI decides readiness.
 fn ci_repo(require: bool) -> Repo {
     let repo = Repo::new();
@@ -425,16 +428,21 @@ fn ci_repo(require: bool) -> Repo {
     repo
 }
 
+#[cfg(unix)]
 fn ci_status(repo: &Repo, gh: &Path) -> Value {
     let out = repo.run_with_path(gh, &["--json", "release", "status"]);
     assert_eq!(code(&out), 0, "status never fails");
     json(&out)
 }
 
+#[cfg(unix)]
 const RUNS_GREEN: &str = r#"{"check_runs":[{"name":"build","status":"completed","conclusion":"success","html_url":"https://x/1"},{"name":"docs","status":"completed","conclusion":"skipped","html_url":"https://x/2"}]}"#;
+#[cfg(unix)]
 const RUNS_RED: &str = r#"{"check_runs":[{"name":"build","status":"completed","conclusion":"success","html_url":"https://x/1"},{"name":"lint","status":"completed","conclusion":"failure","html_url":"https://x/lint"}]}"#;
+#[cfg(unix)]
 const RUNS_PENDING: &str = r#"{"check_runs":[{"name":"test","status":"in_progress","conclusion":null,"html_url":"https://x/3"}]}"#;
 
+#[cfg(unix)]
 #[test]
 fn green_ci_adds_nothing() {
     // frob:tests crates/frob/src/release_cmd.rs::ci_facts
@@ -448,6 +456,7 @@ fn green_ci_adds_nothing() {
     assert_eq!(r["verdict"], "READY");
 }
 
+#[cfg(unix)]
 #[test]
 fn red_ci_blocks_with_names_and_links_even_when_not_required() {
     // frob:tests crates/frob/src/release_cmd.rs::ci_facts
@@ -462,6 +471,7 @@ fn red_ci_blocks_with_names_and_links_even_when_not_required() {
     assert_eq!(report(&v)["verdict"], "NOT READY: 1 blocker");
 }
 
+#[cfg(unix)]
 #[test]
 fn pending_ci_blocks_as_still_running() {
     // frob:tests crates/frob/src/release_cmd.rs::ci_facts
@@ -477,6 +487,7 @@ fn pending_ci_blocks_as_still_running() {
     );
 }
 
+#[cfg(unix)]
 #[test]
 fn unknown_ci_blocks_by_default_and_only_warns_with_require_ci_false() {
     // frob:tests crates/frob/src/release_cmd.rs::ci_facts
@@ -521,6 +532,7 @@ fn unknown_ci_blocks_by_default_and_only_warns_with_require_ci_false() {
     drop(empty);
 }
 
+#[cfg(unix)]
 #[test]
 fn a_non_github_origin_is_unresolved_with_the_remedy() {
     // frob:tests crates/frob/src/release_cmd.rs::ci_facts
@@ -545,6 +557,7 @@ fn a_non_github_origin_is_unresolved_with_the_remedy() {
     assert!(unresolved.contains("require_ci = false"), "{unresolved}");
 }
 
+#[cfg(unix)]
 #[test]
 fn the_text_view_names_the_commit_inspected() {
     // frob:tests crates/frob/src/release_cmd.rs::ci_facts
@@ -558,6 +571,7 @@ fn the_text_view_names_the_commit_inspected() {
     assert!(text.contains("CI: red"), "{text}");
 }
 
+#[cfg(unix)]
 fn git_tip(dir: &Path) -> String {
     let spec = Spec {
         program: Program::Git,

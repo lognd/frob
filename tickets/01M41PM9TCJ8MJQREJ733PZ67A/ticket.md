@@ -2,25 +2,25 @@
 id = "01M41PM9TCJ8MJQREJ733PZ67A"
 title = "Ledger events commit absolute local paths (home directory, user name) into pushed repositories"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T20:17:30Z"
-updated = "2026-10-03T20:17:30Z"
-scope = ["crates/frob-worktree/src/work.rs", "crates/frob-lease/src/model.rs", "crates/frob-evidence/**", "crates/frob-obligations/**"]
+updated = "2026-10-03T20:44:41Z"
+scope = ["crates/frob-worktree/src/work.rs", "crates/frob-lease/src/model.rs", "crates/frob-evidence/**", "crates/frob-obligations/**", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/privacy.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/tests/privacy.rs", "crates/frob-check/src/product.rs", "crates/frob-tests/src/verb.rs", "docs/reference/rules/TICK004.md", "docs/reference/rules/README.md", "crates/frob-worktree/tests/work.rs", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "Given frob work in a worktree under the home directory, when the lease event is written, then it contains no absolute path, only the worktree relative to the repository parent"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a provider whose output contains the absolute worktree path and the home directory, when evidence is recorded, then the event contains placeholders and no absolute path"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a committed ledger file containing /home/name/, when frob check runs, then the new rule reports it with a remedy, and a clean ledger reports nothing"
-bound = false
+bound = true
 +++
 
 Reported by goway (2026-10-03, FROB_FEEDBACK item 4): frob work writes tickets/<id>/events/<ulid>.toml with reason = "lease: <actor> in /home/<user>/projects/<repo>-wt/<TICKET>; scope: ...; ttl ...". Ledger events are committed and pushed, so every public repository leaks the local user name and directory layout. This repository's pushed experimental branch has 246 ledger files with /home/logan paths (lease reasons, and evidence and test output that embed worktree paths such as /home/logan/projects/frob-v2-wt/7HWFTBP/crates/frob-pm).
