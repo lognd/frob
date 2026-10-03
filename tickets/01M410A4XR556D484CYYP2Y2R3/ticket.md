@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-03T13:47:29Z"
-updated = "2026-10-03T14:03:13Z"
+updated = "2026-10-03T14:05:30Z"
 labels = ["release:0.532.0"]
 scope = ["crates/frob-check/src/scope.rs", "crates/frob-lease/**", "crates/frob-check/tests/check.rs", "crates/frob-release/src/fragment.rs", "crates/frob-release/src/lib.rs", "Cargo.lock", "docs/reference/rules/SCOPE001.md", "docs/design/tickets.md"]
 +++
