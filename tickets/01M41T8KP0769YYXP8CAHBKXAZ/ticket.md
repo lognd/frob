@@ -2,12 +2,13 @@
 id = "01M41T8KP0769YYXP8CAHBKXAZ"
 title = "CI-only failures keep surprising lands: rustdoc broken link now; add cargo dev ci that runs exactly the CI checks locally"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T21:21:02Z"
-updated = "2026-10-03T22:04:00Z"
+updated = "2026-10-03T22:04:01Z"
 scope = ["crates/frob-pm/src/board.rs", "crates/gob-dev/**", ".github/workflows/ci.yml", "crates/frob-release/tests/ci_pins.rs", "CONTRIBUTING.md"]
 
 [[acceptance]]
