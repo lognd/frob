@@ -2,6 +2,7 @@
 
 use std::path::Path;
 
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 /// A language this crate can (feature permitting) parse.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Language {
@@ -11,11 +12,18 @@ pub enum Language {
     Markdown,
     /// TOML (`.toml`).
     Toml,
+    /// YAML (`.yml`, `.yaml`); comments and keys only, no tree-sitter grammar.
+    Yaml,
 }
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 3] = [Language::Rust, Language::Markdown, Language::Toml];
+    pub const ALL: [Language; 4] = [
+        Language::Rust,
+        Language::Markdown,
+        Language::Toml,
+        Language::Yaml,
+    ];
 
     /// Detects the language from the file extension (case-insensitive).
     pub fn detect(path: impl AsRef<Path>) -> Option<Language> {
@@ -24,6 +32,7 @@ impl Language {
             "rs" => Some(Language::Rust),
             "md" | "markdown" => Some(Language::Markdown),
             "toml" => Some(Language::Toml),
+            "yml" | "yaml" => Some(Language::Yaml),
             _ => None,
         };
         tracing::trace!(path = %path.as_ref().display(), ?found, "language detect");
@@ -36,6 +45,7 @@ impl Language {
             Language::Rust => "rust",
             Language::Markdown => "markdown",
             Language::Toml => "toml",
+            Language::Yaml => "yaml",
         }
     }
 }

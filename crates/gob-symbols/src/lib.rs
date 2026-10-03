@@ -59,6 +59,7 @@ mod rust;
 mod stdtypes;
 mod symref;
 mod view;
+mod yaml;
 
 pub use adapter::{
     Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,

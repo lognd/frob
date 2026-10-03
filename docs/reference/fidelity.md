@@ -7,11 +7,17 @@ sections 4.1, 4.2 and 4.6).
 | File state | Rule needs a capability (DOC001, DOC002, INV002, COV001) | Rule reads every text artifact (TODO001, REF001, TEST001, INV001, DRIFT*) |
 |---|---|---|
 | Opaque F0 (no adapter), text, comments scanned (TOML) | NotApplicable | examined |
+| YAML F1 (`.yml`, `.yaml`: block-mapping keys as nested units `path::outer.inner`), comments scanned | NotApplicable | examined |
 | Opaque F0, text, not scanned (for example `.py`, `.json`) | NotApplicable | one Unresolved per rule naming the file count |
 | Opaque F0, binary (NUL byte or known extension) | NotApplicable | NotApplicable |
 | Parse failed | Unresolved | Unresolved |
 | Partial parse (holes) | examined, plus an Unresolved for symbol rules | examined |
 | Fidelity below the rule's minimum (COV001 and AFFECT001 need F2) | Unresolved | Unresolved |
+
+A `#` directive comment in a YAML file binds to the key on the next line (stacked
+comments share it; a blank line ends the block; a trailing comment binds to its
+own line's key), so `frob:accept CI006` above `on:` suppresses a tool finding
+inside that key.
 
 `NotApplicable` is a query answer only: it is counted, never a finding. A rule
 outside the table is always examined. The minimum fidelity lives in

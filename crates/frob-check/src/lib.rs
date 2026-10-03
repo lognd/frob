@@ -71,5 +71,22 @@ pub type SharedCtx<'a> = gob_check::SharedCtx<'a, Frob>;
 /// unknown `--only` name, an unresolvable `--ticket`, a refused `--fix` or a
 /// fix that cannot be written. Findings are never errors.
 pub fn run(root: &Path, opts: &CheckOptions) -> Result<CheckReport, CheckError> {
-    gob_check::run(&Frob::new(opts.clone()), root, &opts.run_options())
+    run_with_diff(root, opts).map(|(report, _)| report)
+}
+
+// frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
+/// [`run`] plus the paths of the `--ticket` branch diff (what SCOPE001 judged), for the text view.
+///
+/// The set is `None` without `--ticket` or when the diff could not be computed.
+///
+/// # Errors
+///
+/// As [`run`].
+pub fn run_with_diff(
+    root: &Path,
+    opts: &CheckOptions,
+) -> Result<(CheckReport, Option<std::collections::BTreeSet<String>>), CheckError> {
+    let product = Frob::new(opts.clone());
+    let report = gob_check::run(&product, root, &opts.run_options())?;
+    Ok((report, product.diff_paths()))
 }

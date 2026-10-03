@@ -194,8 +194,16 @@ fn branch_changes(repo: &Repo, base: &str, ledger_dir: &str) -> Result<Vec<RelPa
     Ok(paths)
 }
 
+// frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
 /// `SCOPE001` (diff against `base` versus the lease) and `TICK002` (referenced tickets on `base`).
-pub(crate) fn ticket_rules(snap: &Snapshot<Frob>, scope: &TicketScope, base: &str) -> Vec<Finding> {
+///
+/// `diff` receives the paths of the branch diff (the set SCOPE001 judged) when it could be computed.
+pub(crate) fn ticket_rules(
+    snap: &Snapshot<Frob>,
+    scope: &TicketScope,
+    base: &str,
+    diff: &mut Option<BTreeSet<String>>,
+) -> Vec<Finding> {
     let shared = &scope.shared_files;
     let Some(state) = &snap.inputs.ledger else {
         return Vec::new();
@@ -226,7 +234,11 @@ pub(crate) fn ticket_rules(snap: &Snapshot<Frob>, scope: &TicketScope, base: &st
     }
     let mut out = Vec::new();
     match branch_changes(&repo, base, &state.ledger.config().dir) {
-        Ok(paths) => out.extend(scope001(&paths, &scope.lease, shared)),
+        Ok(paths) => {
+            out.extend(scope001(&paths, &scope.lease, shared));
+            tracing::debug!(paths = paths.len(), "ticket diff set recorded");
+            *diff = Some(paths.iter().map(|p| p.as_str().to_owned()).collect());
+        }
         Err(err) => out.push(unresolved(
             &frob_lease::Scope001,
             format!("diff against `{base}` failed ({err}); SCOPE001 not evaluated"),
