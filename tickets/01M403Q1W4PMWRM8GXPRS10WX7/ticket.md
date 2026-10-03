@@ -16,11 +16,11 @@ scope = ["crates/grimble/**", "crates/grimble-check/**", "crates/grimble-bind/**
 
 [[acceptance]]
 text = "Given a release build and a warm cache on this repository, when grimble check runs, then it finishes under 1 s"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a release build and a warm cache, when frob check runs, then the budgeted stages plus the sibling stage finish under 2 s"
-bound = false
+bound = true
 +++
 
 Measured 2026-10-03 with debug binaries: frob check warm 20 s, of which sibling:grimble 17.1 s (frob's own budgeted stages 2.8 s: graph 1.5 s, directives 1.0 s); grimble check alone 16.7 s, 513 MB peak, although .grimble/cache.sqlite exists. Measure release builds first (the 2 s warm budget is for release); then profile (cargo flamegraph or perf, samply) the warm grimble path, find what is recomputed on every run, and make the warm path hit its cache (per-file payloads, the model load, binding, the sibling document). Also report frob's graph and directives stages warm in release. Target: grimble warm under 1 s and frob check warm under the 2 s budget in release on this repository.
