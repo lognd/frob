@@ -7,12 +7,12 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T20:50:51Z"
-updated = "2026-10-03T20:53:25Z"
+updated = "2026-10-03T21:21:14Z"
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "docs/reference/rules/TICK004.md", "docs/design/tickets.md", "crates/frob/src/ticket/doctor_cmd.rs", "crates/frob/tests/ticket_scrub.rs", "docs/reference/rules/README.md"]
 
 [[acceptance]]
 text = "Given a ledger file containing an absolute home path, when frob check runs, then TICK004 is an error"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ledger with lease reasons and evidence transcripts holding absolute paths, when ticket doctor --fix runs, then one commit scrubs them, every ticket still folds with the same evidence binding, and TICK004 reports nothing"
