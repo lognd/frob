@@ -8,7 +8,7 @@ points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T21:06:24Z"
+updated = "2026-10-03T03:34:58Z"
 idempotency_key = "m2-arch"
 labels = ["milestone:2"]
 scope = ["crates/grimble-arch/**"]
@@ -16,6 +16,10 @@ scope = ["crates/grimble-arch/**"]
 [[links]]
 kind = "blocked-by"
 target = "01M3Z713YNM5666B7YFEHPFVKD"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
 
 [[acceptance]]
 text = "Given two crates importing each other, when grimble check runs, then CYCLE names both"
