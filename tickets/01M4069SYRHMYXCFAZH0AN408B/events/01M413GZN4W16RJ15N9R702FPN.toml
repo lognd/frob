@@ -1,11 +1,11 @@
 kind = "evidence"
 accepts = [1, 2]
 captured_at = "2026-10-03T14:43:39Z"
-digest = "dfdf9e53d657916532f15a6861f3e128c827fb902cae95f5d9d41accca5c041a"
+digest = "dec3d8b313f2e23c135f3890f87120a3ed26c86a4383d980378c962139e9de9a"
 exit_code = 0
 inline = """
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/0AN408B/crates/frob)
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/0AN408B/crates/frob-pm)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/0AN408B/crates/frob)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/0AN408B/crates/frob-pm)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 5.25s
 ────────────
  Nextest run ID c1148cd5-d3e3-4a00-b0fd-2055b4dcbf77 with nextest profile: default
@@ -26,7 +26,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-pm -p frob-cli -E 'test(velocity) or test(history_capacity) or test(carry_over)'"
-size = 1679
+size = 1637
 status = "measured"
 tests = ["cycle::velocity::tests::carry_over_counts_only_in_the_completing_cycle", "cycle::velocity::tests::capacity_is_set_unenforced_or_mean_minus_k_stddev", "cycle::velocity::tests::epics_and_out_of_window_work_never_count", "cycle::velocity::tests::history_capacity_matches_capacity_for_a_cycle_without_a_set_limit", "cycle::velocity::tests::an_early_close_truncates_the_window", "cycle::velocity::tests::velocity_over_three_closed_cycles_is_the_hand_computed_mean_and_stddev", "velocity_with_no_closed_cycles_says_so_and_exits_zero", "velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero", "velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once", "velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports"]
 at = "2026-10-03T14:43:39Z"

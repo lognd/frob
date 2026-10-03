@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1, 2]
 captured_at = "2026-10-03T07:56:21Z"
-digest = "6714f8bf2507aa262db9f1ad0c068d00c524bb4097818d504736e176a43acc3e"
+digest = "2372c62e8a02a30bb3620119dd01fab6750505a2ec6cf0f2dc8432e85dd4ab0e"
 exit_code = 0
 inline = """
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/SV1E7PS/crates/frob-pm)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/SV1E7PS/crates/frob-pm)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 1.19s
 ────────────
  Nextest run ID 750c661c-4b95-4522-91ea-fca56733584e with nextest profile: default
@@ -16,7 +16,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-pm -E 'binary(corpus)'"
-size = 490
+size = 469
 status = "measured"
 tests = ["mdtest_corpus"]
 at = "2026-10-03T07:56:21Z"

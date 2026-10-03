@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T12:02:47Z"
-digest = "0a23e00cfaa5f61d933a13480e8b6572bc935f74fae31c95c67990ad9c72f81e"
+digest = "d2579e98546efdaa9053240234fd994f96fd2f477a7206da697f1a1a3fffc8b1"
 exit_code = 0
 inline = """
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/JD0NPX1/crates/frob)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/JD0NPX1/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 1.19s
 ────────────
  Nextest run ID 4fec96fb-66b8-4a3a-b686-1f9d68961216 with nextest profile: default
@@ -19,7 +19,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli --test merge_driver_path -E 'test(init_writes_the_absolute_path_when_path_has_another_frob) | test(init_keeps_bare) | test(init_driver_command) | test(init_rerun_is_idempotent)'"
-size = 867
+size = 846
 status = "measured"
 tests = ["init_driver_command_flag_overrides", "init_keeps_bare_frob_when_path_is_the_running_binary", "init_writes_the_absolute_path_when_path_has_another_frob", "init_rerun_is_idempotent_and_fix_driver_rewrites_a_mismatch"]
 at = "2026-10-03T12:02:47Z"

@@ -1,7 +1,7 @@
 kind = "transition"
 from = "todo"
 to = "in-progress"
-reason = "lease: lognd in /home/logan/projects/frob-v2-wt/B5XVMKR; scope: docs/design/**, crates/grimble-model/**, crates/grimble-check/**, crates/grimble/**, grimble.toml, docs/reference/**, docs/schemas/**, Cargo.lock; ttl 7200s"
+reason = "lease: lognd in frob-v2-wt/B5XVMKR; scope: docs/design/**, crates/grimble-model/**, crates/grimble-check/**, crates/grimble/**, grimble.toml, docs/reference/**, docs/schemas/**, Cargo.lock; ttl 7200s"
 at = "2026-10-03T01:41:50Z"
 actor = "lognd"
 rev = 1

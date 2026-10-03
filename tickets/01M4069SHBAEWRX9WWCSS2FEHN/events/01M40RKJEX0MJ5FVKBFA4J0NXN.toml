@@ -1,15 +1,15 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T11:32:49Z"
-digest = "0ff800793cdd6e1706c67019e4ba44d133ff1539e6b19eed94ffef82a0f04043"
+digest = "6ceddb6ad084686642adc671074df6f6520f4751feea2fcce366ef648c7262f1"
 exit_code = 0
 inline = """
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/SS2FEHN/crates/frob-pm)
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/SS2FEHN/crates/frob-release)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/SS2FEHN/crates/frob-worktree)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/SS2FEHN/crates/frob-check)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/SS2FEHN/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/SS2FEHN/crates/frob)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/SS2FEHN/crates/frob-pm)
+   Compiling frob-release v0.0.0 (frob-v2-wt/SS2FEHN/crates/frob-release)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/SS2FEHN/crates/frob-worktree)
+   Compiling frob-check v0.0.0 (frob-v2-wt/SS2FEHN/crates/frob-check)
+   Compiling frob-land v0.0.0 (frob-v2-wt/SS2FEHN/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/SS2FEHN/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 4.11s
 ────────────
  Nextest run ID af692d8c-77e5-4826-940e-004fa9f55e1d with nextest profile: default
@@ -21,7 +21,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-E 'test(explicit_capacity_is_enforced_and_over_commit_records_the_reason)' -p frob-cli --test cycle"
-size = 995
+size = 869
 status = "measured"
 tests = ["explicit_capacity_is_enforced_and_over_commit_records_the_reason"]
 at = "2026-10-03T11:32:49Z"

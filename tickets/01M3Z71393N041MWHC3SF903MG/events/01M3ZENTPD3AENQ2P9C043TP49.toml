@@ -4,23 +4,23 @@ actor = "lognd"
 rev = 1
 provider = "command"
 ref = "cargo nextest run --profile ci -p gob-directives -p gob-macros"
-digest = "7074faa8c7c771433bfa9885286a73bb1940c7b88c10db7df9050ac948f721c4"
+digest = "0682ff81c79a32f86cfa6623178d5b4fa185a91ff6f49586ea10a2e674a45dfe"
 status = "measured"
 captured_at = "2026-10-02T23:20:03Z"
 accepts = [1]
 passed = true
 exit_code = 0
 inline = """
-   Compiling gob-macros v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-macros)
-   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-rules)
-   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-ir)
-   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-config)
-   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-mdtest)
-   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-diagnostics)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-symbols)
-   Compiling gob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-cli)
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-directives)
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/frob-ledger)
+   Compiling gob-macros v0.0.0 (frob-v2-wt/SF903MG/crates/gob-macros)
+   Compiling gob-rules v0.0.0 (frob-v2-wt/SF903MG/crates/gob-rules)
+   Compiling gob-ir v0.0.0 (frob-v2-wt/SF903MG/crates/gob-ir)
+   Compiling gob-config v0.0.0 (frob-v2-wt/SF903MG/crates/gob-config)
+   Compiling gob-mdtest v0.0.0 (frob-v2-wt/SF903MG/crates/gob-mdtest)
+   Compiling gob-diagnostics v0.0.0 (frob-v2-wt/SF903MG/crates/gob-diagnostics)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/SF903MG/crates/gob-symbols)
+   Compiling gob-cli v0.0.0 (frob-v2-wt/SF903MG/crates/gob-cli)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/SF903MG/crates/gob-directives)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/SF903MG/crates/frob-ledger)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 4.15s
 ────────────
  Nextest run ID 2ea0692d-a47b-45d9-b3ee-8731cb4272e1 with nextest profile: ci
@@ -78,4 +78,4 @@ inline = """
 ────────────
      Summary [   7.832s] 50 tests run: 50 passed, 0 skipped
 """
-size = 5645
+size = 5435

@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T09:56:24Z"
-digest = "d787103109726f63287138d902052ca76886f6981175e2f9c20606e43d32515f"
+digest = "33da50ff4cc514b74cfe26b7facdb784d3deef41f27e658f9c2840e7e1ea442a"
 exit_code = 0
 inline = """
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/ANDZXZ4/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s
 ────────────
  Nextest run ID db55cc71-0f55-4aa7-9a3f-9abceff55e31 with nextest profile: default
@@ -21,7 +21,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli -E binary(first_run)"
-size = 997
+size = 976
 status = "measured"
 tests = ["outside_a_git_repository_says_to_run_inside_one", "text_mode_names_init_on_stderr", "check_without_config_teaches_init_with_no_findings", "ticket_list_without_config_gives_the_same_diagnostic", "a_present_frob_toml_lets_check_run", "doctor_schema_and_help_work_without_config"]
 at = "2026-10-03T09:56:24Z"

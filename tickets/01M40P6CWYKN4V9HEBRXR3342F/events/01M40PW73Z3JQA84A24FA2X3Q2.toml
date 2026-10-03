@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T11:02:35Z"
-digest = "1a849d52ad089d47c8ed3dc4c289d971a9bad93ad2938a1562c899c183fe8677"
+digest = "a422d9d0e6b8d9f71900855c50bc89d227c8fa4464a95383751ff8ff02fd9bb2"
 exit_code = 0
 inline = """
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/XR3342F/crates/frob-evidence)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/XR3342F/crates/frob-evidence)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 11.32s
 ────────────
  Nextest run ID 5fbe209d-9b1c-40be-889c-3b33428aa0b3 with nextest profile: default
@@ -19,7 +19,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-evidence -E 'test(a_union_filter_expression_runs_both) | test(a_union_matching_nothing_still_refuses) | test(a_quoted_argument_with_spaces) | test(an_unterminated_quote)'"
-size = 885
+size = 864
 status = "measured"
 tests = ["an_unterminated_quote_is_a_usage_error_and_records_nothing", "a_union_matching_nothing_still_refuses", "a_quoted_argument_with_spaces_survives_tokenization", "a_union_filter_expression_runs_both_tests_and_records_a_measured_pass"]
 at = "2026-10-03T11:02:35Z"

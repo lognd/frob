@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [2]
 captured_at = "2026-10-03T18:11:25Z"
-digest = "66825e96e5da870c64b9575cb15d8fb222d9b03d49765161942f9c96321fa560"
+digest = "24b60a107918ddaf327dc6e2f298f0437a39d344d2d094abe5c5a7511031c715"
 exit_code = 0
 inline = '''
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/AZS0RRT/crates/frob-release)
+   Compiling frob-release v0.0.0 (frob-v2-wt/AZS0RRT/crates/frob-release)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 1.25s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID e050cfdb-e5bc-49ad-bab7-2ddce2061f73 with nextest profile: default
@@ -16,7 +16,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-release -E 'test(crates_job_uses_the_environment_token)'"
-size = 697
+size = 676
 status = "measured"
 tests = ["crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke"]
 at = "2026-10-03T18:11:25Z"

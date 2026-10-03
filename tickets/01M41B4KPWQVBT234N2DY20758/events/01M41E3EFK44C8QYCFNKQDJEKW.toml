@@ -1,11 +1,11 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T17:48:30Z"
-digest = "9bba60c6bc7c2f05ec8937399570fc6bb653d4cde81798102eefc9f97c77a134"
+digest = "ac53c888a92304a5854ab1901979daa9469a5d1b3cb6c01eca6dadd165f5c96d"
 exit_code = 0
 inline = '''
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/frob-pm)
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/frob-release)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/DY20758/crates/frob-pm)
+   Compiling frob-release v0.0.0 (frob-v2-wt/DY20758/crates/frob-release)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 8.31s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 5a922f9f-cf3c-42d6-a972-51e741880c97 with nextest profile: default
@@ -17,7 +17,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-release -E 'test(release_notes_come_from_the_verb_output_not_generated_or_inline_text)'"
-size = 773
+size = 731
 status = "measured"
 tests = ["release_notes_come_from_the_verb_output_not_generated_or_inline_text"]
 at = "2026-10-03T17:48:30Z"

@@ -1,7 +1,7 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T19:25:43Z"
-digest = "12dd7e9e81f3f9760b47889ac5130d89829b5d8eeb247274928dfebe6fa953fe"
+digest = "a8b2422c32dfbb048e413a5d1b421a4d3de00b14ea2ef2c2c05d28f5b4c5a392"
 exit_code = 0
 inline = '''
    Compiling serde_json v1.0.151
@@ -14,26 +14,26 @@ inline = '''
    Compiling error_set_impl v0.9.2
    Compiling tree-sitter v0.27.0
    Compiling error_set v0.9.2
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-ledger)
-   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/gob-languages)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/gob-symbols)
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-pm)
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/gob-directives)
-   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/gob-check)
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-release)
-   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-ack)
-   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/grimble-model)
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-evidence)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-lease)
-   Compiling grimble-bind v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/grimble-bind)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-worktree)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-tests)
-   Compiling grimble-check v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/grimble-check)
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-obligations)
-   Compiling grimble v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/grimble)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-check)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/9QNMT4D/crates/frob)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-ledger)
+   Compiling gob-languages v0.0.0 (frob-v2-wt/9QNMT4D/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/9QNMT4D/crates/gob-symbols)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-pm)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/9QNMT4D/crates/gob-directives)
+   Compiling gob-check v0.0.0 (frob-v2-wt/9QNMT4D/crates/gob-check)
+   Compiling frob-release v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-release)
+   Compiling frob-ack v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-ack)
+   Compiling grimble-model v0.0.0 (frob-v2-wt/9QNMT4D/crates/grimble-model)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-lease)
+   Compiling grimble-bind v0.0.0 (frob-v2-wt/9QNMT4D/crates/grimble-bind)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-tests)
+   Compiling grimble-check v0.0.0 (frob-v2-wt/9QNMT4D/crates/grimble-check)
+   Compiling frob-obligations v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-obligations)
+   Compiling grimble v0.0.0 (frob-v2-wt/9QNMT4D/crates/grimble)
+   Compiling frob-check v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-check)
+   Compiling frob-land v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/9QNMT4D/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 16.21s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 2e70a295-3206-4925-a6fd-622de229f1a0 with nextest profile: default
@@ -48,7 +48,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-cli -E 'binary(fragment)'"
-size = 3076
+size = 2656
 status = "measured"
 tests = ["type_and_text_flags_override_and_an_existing_fragment_is_refused_until_force", "the_close_remedy_names_the_verb_and_the_guard_passes_after_writing", "writes_a_valid_fragment_from_the_title_with_the_mapped_type", "bug_security_and_incident_tickets_require_a_sentence"]
 at = "2026-10-03T19:25:43Z"
