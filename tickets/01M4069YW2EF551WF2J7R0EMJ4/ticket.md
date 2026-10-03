@@ -2,7 +2,8 @@
 id = "01M4069YW2EF551WF2J7R0EMJ4"
 title = "frob init on a fresh repository: end-to-end loop test"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
