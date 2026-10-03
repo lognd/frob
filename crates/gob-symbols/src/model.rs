@@ -307,6 +307,9 @@ pub struct CallSite {
     /// The full qualifying path of a path call, generics stripped (`frob_ack::inputs` in `frob_ack::inputs::collect()`).
     #[serde(default)]
     pub qual_path: Vec<String>,
+    /// Trait bounds of a generic qualifier (`C::from_matches(..)` with `C: Command`); `opaque_qualifier` stays set.
+    #[serde(default)]
+    pub bound: Vec<String>,
     /// One-based source line of the call.
     #[serde(default)]
     pub line: u32,
@@ -343,6 +346,8 @@ pub struct CallRef {
     pub name: String,
     /// The full qualifying path (`Type` in `Type::open(..)`), empty for bare and method calls.
     pub path: Vec<String>,
+    /// Trait bounds of a generic qualifier (`C::new(..)` with `C: Command`): `path` is then just that generic.
+    pub bound: Vec<String>,
     /// For a method call, its receiver.
     pub recv: Option<Receiver>,
     /// Argument count, receiver excluded.

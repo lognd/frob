@@ -373,6 +373,7 @@ impl Index {
             head: first.ty.clone(),
             arg: None,
             tuple: None,
+            bound: None,
             file: file.clone(),
         })
     }
@@ -411,6 +412,8 @@ impl Index {
 /// A receiver type proven for a call.
 #[derive(Debug, Clone)]
 struct Ty {
+    /// The traits `Self` stands for, when `head` is `Self` returned through trait bounds.
+    bound: Option<Vec<String>>,
     /// The element types of a tuple value.
     tuple: Option<Vec<Option<String>>>,
     /// The type name as written (`written` in `use a::B as written`).
@@ -429,6 +432,8 @@ struct Query<'a> {
     qualifier: Option<&'a str>,
     /// All qualifying path segments.
     path: &'a [String],
+    /// Trait bounds of a generic qualifier (`C::new(..)` with `C: Command`).
+    bound: &'a [String],
     /// True for method-call syntax.
     method: bool,
     /// Argument count of a call, receiver excluded.
@@ -758,12 +763,14 @@ impl SymbolGraph {
                 head: self.enclosing_impl_type(caller)?,
                 arg: None,
                 tuple: None,
+                bound: None,
                 file: caller.path().to_owned(),
             },
             Receiver::Typed(t) => Ty {
                 head: t.clone(),
                 arg: None,
                 tuple: None,
+                bound: None,
                 file: caller.path().to_owned(),
             },
             Receiver::Field(base, field) => {
@@ -779,10 +786,13 @@ impl SymbolGraph {
                 {
                     return None;
                 }
+                let head = t.arg?;
+                let bound = t.bound.filter(|_| head == "Self");
                 Ty {
-                    head: t.arg?,
+                    head,
                     arg: None,
                     tuple: None,
+                    bound,
                     file: t.file,
                 }
             }
@@ -792,6 +802,7 @@ impl SymbolGraph {
                     head: t.tuple?.get(*i)?.clone()?,
                     arg: None,
                     tuple: None,
+                    bound: None,
                     file: t.file,
                 }
             }
@@ -806,31 +817,41 @@ impl SymbolGraph {
             name: &call.name,
             qualifier: call.path.last().map(String::as_str),
             path: &call.path,
+            bound: &call.bound,
             method: call.recv.is_some(),
             args: Some(call.args),
         };
-        let Outcome::Hit(nodes, Status::Must) =
-            self.resolve_site(idx, caller, &q, call.recv.as_ref(), LocalBinding::None)
-        else {
-            return None;
+        let outcome = self.resolve_site(idx, caller, &q, call.recv.as_ref(), LocalBinding::None);
+        let (n, bounds) = match outcome {
+            Outcome::Hit(nodes, Status::Must) => {
+                let [n] = nodes[..] else { return None };
+                if self.is_trait_member(n) {
+                    return None;
+                }
+                (n, None)
+            }
+            // A call through trait bounds: the trait's declaration says what comes back.
+            Outcome::Dispatch(decl, _) => {
+                let bounds = if call.bound.is_empty() {
+                    self.receiver_bounds(idx, caller, call.recv.as_ref())?
+                } else {
+                    call.bound.clone()
+                };
+                (decl, Some(bounds))
+            }
+            _ => return None,
         };
-        let [n] = nodes[..] else { return None };
-        if self.is_trait_member(n) {
-            return None;
-        }
         let rec = &self.graph[n];
         let ret = rec.signature.as_ref()?.ret.as_ref()?;
-        let sub = |s: &str| {
-            if s == "Self" {
-                self.enclosing_impl_type(&rec.symref)
-            } else {
-                Some(s.to_owned())
-            }
+        let sub = |s: &str| match (s, &bounds) {
+            ("Self", None) => self.enclosing_impl_type(&rec.symref),
+            _ => Some(s.to_owned()),
         };
         Some(Ty {
             tuple: ret.tuple.clone(),
             head: sub(&ret.head)?,
             arg: ret.arg.as_deref().and_then(sub),
+            bound: bounds,
             file: rec.symref.path().to_owned(),
         })
     }
@@ -863,6 +884,9 @@ impl SymbolGraph {
         let uses = idx.uses.get(file).map_or(&[][..], Vec::as_slice);
         if method {
             return self.resolve_method(idx, caller, q, receiver, named);
+        }
+        if !q.bound.is_empty() {
+            return self.resolve_bound_assoc(q, &named);
         }
         match qualifier {
             Some(qual) => {
@@ -899,7 +923,7 @@ impl SymbolGraph {
                 .checked_sub(2)
                 .map(|i| base_segment(&segs[i]).to_owned())
         };
-        if let Some(traits) = self.receiver_bounds(caller, receiver) {
+        if let Some(traits) = self.receiver_bounds(idx, caller, receiver) {
             return self.resolve_bound_method(&traits, &named, &fits, &parent_seg);
         }
         if let Some(ty) = receiver.and_then(|r| self.receiver_ty(idx, caller, r)) {
@@ -949,8 +973,25 @@ impl SymbolGraph {
         }
     }
 
+    /// `G::name(..)` where `G` is a generic bounded by traits: the trait's function (Must) and its implementations (May).
+    fn resolve_bound_assoc(&self, q: &Query<'_>, named: &[NodeIndex]) -> Outcome {
+        let fits = |n: NodeIndex| self.graph[n].kind == SymbolKind::Method;
+        let parent_seg = |n: NodeIndex| {
+            let segs = self.graph[n].symref.segments();
+            segs.len()
+                .checked_sub(2)
+                .map(|i| base_segment(&segs[i]).to_owned())
+        };
+        self.resolve_bound_method(q.bound, named, &fits, &parent_seg)
+    }
+
     /// The trait names bounding a receiver: its declared bounds, or the enclosing trait for `self` in a trait body.
-    fn receiver_bounds(&self, caller: &Symref, receiver: Option<&Receiver>) -> Option<Vec<String>> {
+    fn receiver_bounds(
+        &self,
+        idx: &Index,
+        caller: &Symref,
+        receiver: Option<&Receiver>,
+    ) -> Option<Vec<String>> {
         match receiver? {
             Receiver::Bound(t) => Some(t.clone()),
             Receiver::SelfValue => {
@@ -961,7 +1002,10 @@ impl SymbolGraph {
                 let segs = self.graph[parent].symref.segments();
                 segs.last().map(|t| vec![base_segment(t).to_owned()])
             }
-            _ => None,
+            r => {
+                let ty = self.receiver_ty_raw(idx, caller, r)?;
+                ty.bound.filter(|_| ty.head == "Self")
+            }
         }
     }
 
@@ -1330,6 +1374,7 @@ impl SymbolGraph {
                         name: &call.callee,
                         qualifier: call.qualifier.as_deref(),
                         path: &call.qual_path,
+                        bound: &call.bound,
                         method: call.method,
                         args: call.args,
                     },
@@ -1369,6 +1414,7 @@ impl SymbolGraph {
                 .receiver
                 .as_ref()
                 .and_then(|r| self.receiver_ty(idx, &call.caller, r))
+                .filter(|t| t.bound.is_none())
                 .map(|t| idx.real_type_name(&t.file, &t.head))
                 .filter(|t| !idx.deref_types.contains(t));
             return Some(match (&call.receiver, typed) {
@@ -1564,6 +1610,7 @@ impl SymbolGraph {
                 name: &r.name,
                 qualifier: r.qualifier.as_deref(),
                 path: &[],
+                bound: &[],
                 method: false,
                 args: None,
             },

@@ -675,3 +675,118 @@ fn return_types_type_chained_and_unwrapped_receivers() {
         );
     }
 }
+
+/// The (callee, status) of every call edge leaving a caller whose symref ends with `caller`.
+fn call_status(g: &SymbolGraph, caller: &str) -> Vec<(String, gob_symbols::Status)> {
+    g.edges_with_status()
+        .iter()
+        .filter(|e| e.kind == EdgeKind::Calls && e.from.to_string().ends_with(caller))
+        .filter_map(|e| e.to.as_ref().map(|t| (t.to_string(), e.status)))
+        .collect()
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.resolve_method
+#[test]
+fn trait_bound_receivers_dispatch_to_the_trait_and_never_to_inherent_methods() {
+    use gob_symbols::Status;
+    let src = "trait Tr { fn go(&self); }\n\
+               struct A; struct B;\n\
+               impl Tr for A { fn go(&self) {} }\n\
+               impl B { fn go(&self) {} }\n\
+               fn generic<T: Tr>(t: &T) { t.go(); }\n\
+               fn dynamic(t: &dyn Tr) { t.go(); }\n\
+               fn opaque(t: impl Tr) { t.go(); }\n\
+               fn clause<T>(t: T) where T: Tr { t.go(); }\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    for caller in ["generic", "dynamic", "opaque", "clause"] {
+        let calls = call_status(&g, &format!("lib.rs::{caller}"));
+        assert!(
+            calls.contains(&("c/src/lib.rs::Tr.go".to_owned(), Status::Must)),
+            "{caller}: Must to the trait method: {calls:?}"
+        );
+        assert!(
+            calls.contains(&("c/src/lib.rs::A.go".to_owned(), Status::May)),
+            "{caller}: May to the implementation: {calls:?}"
+        );
+        assert!(
+            !calls.iter().any(|(c, _)| c.ends_with("B.go")),
+            "{caller}: an inherent method cannot be called on a bound receiver: {calls:?}"
+        );
+    }
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.resolve_bound_assoc
+#[test]
+fn generic_path_calls_dispatch_through_the_bounds_and_type_the_result() {
+    use gob_symbols::Status;
+    let src = "trait Cmd { fn make() -> Self; fn run(&self); }\n\
+               struct Other; impl Other { fn run(&self) {} }\n\
+               fn go<C: Cmd>() { let c = C::make(); c.run(); }\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    let calls = call_status(&g, "lib.rs::go");
+    assert!(
+        calls.contains(&("c/src/lib.rs::Cmd.make".to_owned(), Status::Must)),
+        "{calls:?}"
+    );
+    assert!(
+        calls.contains(&("c/src/lib.rs::Cmd.run".to_owned(), Status::Must)),
+        "{calls:?}"
+    );
+    assert!(
+        !calls.iter().any(|(c, _)| c.ends_with("Other.run")),
+        "{calls:?}"
+    );
+}
+
+// frob:tests crates/gob-symbols/src/rust.rs::RustAdapter
+#[test]
+fn std_macro_arguments_resolve_like_ordinary_calls() {
+    use gob_symbols::Status;
+    let src = "struct S; impl S { fn ok(&self) -> bool { true } }\n\
+               fn helper() -> bool { true }\n\
+               fn t(s: S) { assert!(s.ok()); assert_eq!(helper(), true, \"{}\", s.ok()); }\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    let calls = call_status(&g, "lib.rs::t");
+    assert!(
+        calls.contains(&("c/src/lib.rs::S.ok".to_owned(), Status::Must)),
+        "{calls:?}"
+    );
+    assert!(
+        calls.contains(&("c/src/lib.rs::helper".to_owned(), Status::Must)),
+        "{calls:?}"
+    );
+}
+
+// frob:tests crates/gob-symbols/src/rust.rs::RustAdapter
+#[test]
+fn macro_arguments_stay_may_for_declared_macros_and_shadowed_names() {
+    use gob_symbols::Status;
+    // A repository macro named like a std one may rewrite its arguments.
+    let declared = "macro_rules! assert { ($e:expr) => {}; }\n\
+                    struct S; impl S { fn ok(&self) -> bool { true } }\n\
+                    fn t(s: S) { assert!(s.ok()); }\n";
+    let g = graph_of(&[("c/src/lib.rs", declared)]);
+    let calls = call_status(&g, "lib.rs::t");
+    assert_eq!(calls, [("c/src/lib.rs::S.ok".to_owned(), Status::May)]);
+    // A closure parameter shadows the typed outer variable inside the arguments.
+    let shadow = "struct S; impl S { fn ok(&self) -> bool { true } }\n\
+                  struct T; impl T { fn ok(&self) -> bool { true } }\n\
+                  fn t(x: S, v: Vec<T>) { assert!(v.iter().any(|x| x.ok())); }\n";
+    let g = graph_of(&[("c/src/lib.rs", shadow)]);
+    let calls = call_status(&g, "lib.rs::t");
+    assert!(
+        !calls
+            .iter()
+            .any(|(c, s)| c.ends_with("S.ok") && *s == Status::Must),
+        "the closure's `x` is not the outer `x: S`: {calls:?}"
+    );
+    // Arguments that are not plain expressions fall back to the token scan (May).
+    let odd = "struct S; impl S { fn ok(&self) -> bool { true } }\n\
+               fn t(s: S) { assert!(matches!(s.ok(), true | false)); }\n";
+    let g = graph_of(&[("c/src/lib.rs", odd)]);
+    assert!(
+        call_status(&g, "lib.rs::t")
+            .iter()
+            .all(|(_, s)| *s != Status::Must)
+    );
+}

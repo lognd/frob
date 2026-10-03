@@ -41,8 +41,8 @@ use crate::adapter::{
 };
 use crate::fold::{Cx, base_file, failed_file, file_root_spec};
 use crate::model::{
-    CallRef, CallSite, FieldDecl, ImportEdge, LocalBinding, Receiver, RefKind, RefSite, RetType,
-    SelfKind, UseBinding, Visibility, collapse_ws,
+    CallRef, CallSite, FieldDecl, FileSymbols, ImportEdge, LocalBinding, Receiver, RefKind,
+    RefSite, RetType, SelfKind, UseBinding, Visibility, collapse_ws,
 };
 use crate::paths::crate_and_module;
 use crate::pipeline::EXTRACTOR_VERSION;
@@ -155,6 +155,8 @@ struct Site {
     args: Option<usize>,
     /// The full qualifying path segments of a path call.
     qual_path: Vec<String>,
+    /// Trait bounds of a generic qualifier.
+    bound: Vec<String>,
     /// One-based source line.
     line: u32,
     /// The callee expression as written.
@@ -183,6 +185,8 @@ struct CallTarget {
     opaque: bool,
     /// The full qualifying path segments, generics stripped (`frob_ack::inputs`).
     path: Vec<String>,
+    /// Trait bounds of a generic qualifier (`C::from_matches` with `C: Command`).
+    bound: Vec<String>,
 }
 
 /// Wrapper types whose methods are reached by auto-deref: a declared type of these says nothing about the callee.
@@ -442,35 +446,9 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
             container: u.container.and_then(symref_of),
         });
     }
-    for s in sites {
-        let Some(caller) = symref_of(s.caller) else {
-            continue;
-        };
-        match s.kind {
-            SiteKind::Call { method, in_macro } => {
-                let local = local_binding(&scopes, s.node, s.item_local);
-                file.calls.push(CallSite {
-                    caller,
-                    callee: s.name,
-                    qualifier: s.qualifier,
-                    method,
-                    local,
-                    in_macro,
-                    receiver: s.receiver,
-                    opaque_qualifier: s.opaque,
-                    macro_exact: s.macro_exact,
-                    args: s.args,
-                    qual_path: s.qual_path,
-                    line: s.line,
-                    text: s.text,
-                });
-            }
-            SiteKind::Value => file.refs.push(RefSite {
-                from: caller,
-                name: s.name,
-                qualifier: s.qualifier,
-                kind: RefKind::Value,
-            }),
+    for site in sites {
+        if let Some(caller) = symref_of(site.caller) {
+            push_site(&mut file, &scopes, site, caller);
         }
     }
     file.symbols = v.symbols;
@@ -486,6 +464,37 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         "rust file folded"
     );
     Ok(Folded { term, scopes, file })
+}
+
+/// Files `site` (found in `caller`) as a call or a value reference of `file`.
+fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symref) {
+    match s.kind {
+        SiteKind::Call { method, in_macro } => {
+            let local = local_binding(scopes, s.node, s.item_local);
+            file.calls.push(CallSite {
+                caller,
+                callee: s.name,
+                qualifier: s.qualifier,
+                method,
+                local,
+                in_macro,
+                receiver: s.receiver,
+                opaque_qualifier: s.opaque,
+                macro_exact: s.macro_exact,
+                args: s.args,
+                qual_path: s.qual_path,
+                bound: s.bound,
+                line: s.line,
+                text: s.text,
+            });
+        }
+        SiteKind::Value => file.refs.push(RefSite {
+            from: caller,
+            name: s.name,
+            qualifier: s.qualifier,
+            kind: RefKind::Value,
+        }),
+    }
 }
 
 /// What the file's scope graph says about the callee reference at `node`.
@@ -610,6 +619,7 @@ impl<'a> Fold<'a> {
                         macro_exact: None,
                         args: Some(Self::arg_count(n)),
                         qual_path: t.path,
+                        bound: t.bound,
                         line: line_of(n),
                         text: call_text(self.t(f)),
                     });
@@ -712,6 +722,7 @@ impl<'a> Fold<'a> {
             macro_exact: None,
             args: None,
             qual_path: Vec::new(),
+            bound: Vec::new(),
             line: 0,
             text: String::new(),
         });
@@ -729,6 +740,7 @@ impl<'a> Fold<'a> {
             receiver: None,
             opaque: false,
             path: Vec::new(),
+            bound: Vec::new(),
         };
         match f.kind() {
             "identifier" => {
@@ -742,6 +754,7 @@ impl<'a> Fold<'a> {
                     receiver: None,
                     opaque: false,
                     path: Vec::new(),
+                    bound: Vec::new(),
                 }
             }
             "scoped_identifier" => {
@@ -769,6 +782,11 @@ impl<'a> Fold<'a> {
                 }) || qualifier
                     .as_ref()
                     .is_some_and(|q| self.generics.contains(q));
+                let bound_of: Vec<String> = qualifier
+                    .as_ref()
+                    .and_then(|q| self.bounds.iter().rev().find(|(n, _)| n == q))
+                    .map(|(_, b)| b.clone())
+                    .unwrap_or_default();
                 CallTarget {
                     construct: upper_first(&leaf),
                     name: leaf,
@@ -778,6 +796,7 @@ impl<'a> Fold<'a> {
                     receiver: None,
                     opaque,
                     path: path.map(|p| split_path(self.t(p))).unwrap_or_default(),
+                    bound: bound_of,
                 }
             }
             "field_expression" => match f.child_by_field_name("field") {
@@ -790,6 +809,7 @@ impl<'a> Fold<'a> {
                     receiver: Some(self.receiver_of(f.child_by_field_name("value"))),
                     opaque: false,
                     path: Vec::new(),
+                    bound: Vec::new(),
                 },
                 None => dynamic(),
             },
@@ -858,7 +878,7 @@ impl<'a> Fold<'a> {
         };
         let t = self.call_target(f);
         let args = Self::arg_count(v);
-        if t.dynamic || t.opaque || t.construct {
+        if t.dynamic || (t.opaque && t.bound.is_empty()) || t.construct {
             return Receiver::Expr;
         }
         if t.method {
@@ -879,6 +899,7 @@ impl<'a> Fold<'a> {
             return Receiver::Ret(Box::new(CallRef {
                 name: t.name,
                 path: Vec::new(),
+                bound: Vec::new(),
                 recv,
                 args,
             }));
@@ -891,6 +912,7 @@ impl<'a> Fold<'a> {
         Receiver::Ret(Box::new(CallRef {
             name: t.name,
             path: t.path,
+            bound: t.bound,
             recv: None,
             args,
         }))
@@ -1249,6 +1271,7 @@ impl<'a> Fold<'a> {
                 macro_exact: None,
                 args: Some(Self::arg_count(n)),
                 qual_path: target.path,
+                bound: target.bound,
                 line: line_of(n),
                 text: call_text(self.t(f)),
             });
@@ -1415,6 +1438,7 @@ impl<'a> Fold<'a> {
             macro_exact: Some(macro_name.to_owned()),
             args: Some(Self::arg_count(x)),
             qual_path: t.path,
+            bound: t.bound,
             line: line_of(x),
             text: call_text(self.t(f)),
         });
@@ -1485,6 +1509,7 @@ impl<'a> Fold<'a> {
                             macro_exact: None,
                             args: None,
                             qual_path: Vec::new(),
+                            bound: Vec::new(),
                         });
                     }
                 }

@@ -466,3 +466,71 @@ fn cov001_qualifierless_unknown_call_keeps_the_broad_match() {
         "{cov:?}"
     );
 }
+
+/// Writes a two-crate workspace: `a-lib` defines `Inputs::collect` twice over (inherent and trait),
+/// `b-app` tests it through `use a_lib::Inputs`.
+fn cross_crate_tree(a_inputs: &str, b_test: &str) -> Vec<Finding> {
+    cov_findings(&[
+        ("Cargo.toml", "[workspace]\nmembers = [\"crates/*\"]\n"),
+        ("crates/a/Cargo.toml", "[package]\nname = \"a-lib\"\n"),
+        (
+            "crates/b/Cargo.toml",
+            "[package]\nname = \"b-app\"\n\n[dependencies]\na-lib = { path = \"../a\" }\n",
+        ),
+        (
+            "crates/a/src/lib.rs",
+            "mod inputs;\npub use inputs::Inputs;\n",
+        ),
+        ("crates/a/src/inputs.rs", a_inputs),
+        ("crates/b/tests/t.rs", b_test),
+    ])
+}
+
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_covers_a_cross_crate_path_call_through_a_use_import() {
+    let a = "/// Inputs.\npub struct Inputs;\n\nimpl Inputs {\n    /// Collects.\n    pub fn collect() {}\n\n    /// Never called.\n    pub fn lonely() {}\n}\n";
+    let t = "use a_lib::Inputs;\n#[test]\nfn t() {\n    Inputs::collect();\n}\n";
+    let cov = cross_crate_tree(a, t);
+    assert_eq!(
+        severity_of(&cov, "Inputs.collect"),
+        None,
+        "covered: {cov:?}"
+    );
+    assert_eq!(
+        severity_of(&cov, "Inputs.lonely"),
+        Some(Severity::Warn),
+        "{cov:?}"
+    );
+}
+
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_never_covers_a_genuinely_ambiguous_cross_crate_call() {
+    // `Inputs::collect` names an inherent and a trait implementation: either may be
+    // the callee, so neither is claimed covered.
+    let a = "/// Inputs.\npub struct Inputs;\n\nimpl Inputs {\n    /// Inherent.\n    pub fn collect() {}\n}\n\n/// Collects.\npub trait Collect {\n    /// Declared.\n    fn collect();\n}\n\nimpl Collect for Inputs {\n    fn collect() {}\n}\n";
+    let t = "use a_lib::Inputs;\n#[test]\nfn t() {\n    Inputs::collect();\n}\n";
+    let cov = cross_crate_tree(a, t);
+    let inherent = severity_of(&cov, "Inputs.collect");
+    assert_eq!(inherent, Some(Severity::Unresolved), "inherent: {cov:?}");
+    let decl = severity_of(&cov, "Collect.collect");
+    assert_ne!(
+        decl, None,
+        "the trait method is not silently covered: {cov:?}"
+    );
+    // And a call with an unknown receiver never covers two same-named methods.
+    let two = "/// A.\npub struct A;\nimpl A {\n    /// Go.\n    pub fn go(&self) {}\n}\n\n/// B.\npub struct B;\nimpl B {\n    /// Go.\n    pub fn go(&self) {}\n}\n";
+    let t2 = "#[test]\nfn t() {\n    make().go();\n}\n";
+    let cov = cross_crate_tree(two, t2);
+    assert_eq!(
+        severity_of(&cov, "A.go"),
+        Some(Severity::Unresolved),
+        "{cov:?}"
+    );
+    assert_eq!(
+        severity_of(&cov, "B.go"),
+        Some(Severity::Unresolved),
+        "{cov:?}"
+    );
+}
