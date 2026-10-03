@@ -2,13 +2,13 @@
 id = "01M3ZVQAA1DNM1BJ5TZG5B3CFR"
 title = "gob-symbols: element and variant type inference to bring COV001 Unresolved below 40"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T03:08:03Z"
-updated = "2026-10-03T03:08:08Z"
+updated = "2026-10-03T03:25:17Z"
 idempotency_key = "m2-gobsym-element-types"
 labels = ["milestone:2"]
 scope = ["crates/gob-symbols/**", "crates/frob-obligations/**", "docs/reference/fidelity.md"]
