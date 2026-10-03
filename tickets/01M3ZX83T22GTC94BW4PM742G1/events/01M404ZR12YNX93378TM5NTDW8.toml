@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Body corrected: one managed label frob:managed instead of ULID plus label (mirror.md 3.6). Added acceptance: Given a projection with 'fixes #12' and '@user' in its text, when rendered through this renderer, then the neutralise ticket's output is what appears (integration check owned by m2-mirror2-neutralise). Existing acceptance stands."
+at = "2026-10-03T05:49:57Z"
+actor = "lognd"
+rev = 1

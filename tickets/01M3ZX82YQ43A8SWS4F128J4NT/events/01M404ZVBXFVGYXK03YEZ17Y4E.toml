@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. No scope change. The verb and steps are specified in navigation.md 2.3 (design consistency pass 2, item 6): build the orphan branch, verify folds, commit the branch, one revertible code commit that removes tickets/, sets [tickets] storage = branch and adds the README region; --dry-run prints the mapping; the reindex replay check TICK005 runs on the initial branch commit. Verb spelling in navigation.md is `frob tickets migrate --to-branch` against `frob ticket` elsewhere; settle at implementation."
+at = "2026-10-03T05:50:00Z"
+actor = "lognd"
+rev = 1

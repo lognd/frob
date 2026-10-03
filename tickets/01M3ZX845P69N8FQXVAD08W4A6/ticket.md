@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T03:34:43Z"
+updated = "2026-10-03T05:51:56Z"
 idempotency_key = "m2-mirror-push-verb"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/mirror_cmd.rs"]
@@ -16,6 +16,18 @@ scope = ["crates/frob/src/mirror_cmd.rs"]
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX841SP0ZXM4CT18A4B8CV"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052VBC2P0NJT399YVSCZ53"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052VPY02N0B9G461J6PKS1"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052W6Q1FAQK362YF6RCGW1"
 
 [[acceptance]]
 text = "Given pending events, when `frob mirror push --dry-run` runs, then the planned operations are printed and nothing is sent"
@@ -26,6 +38,6 @@ text = "Given `frob mirror push --full-resync`, when run, then every ticket is d
 bound = false
 +++
 
-Implements mirror.md section 3 (who runs it).
+Implements mirror.md sections 3.1 and 3.2.
 
-One writer; local pushes are opt-in; --dry-run previews the operations.
+The verb that performs a live run; local pushes are opt-in and use the person's own token. It takes the writer lock, honours the budget, and --dry-run prints the plan: work classes in order, calls and mutations budgeted, and nothing is sent.

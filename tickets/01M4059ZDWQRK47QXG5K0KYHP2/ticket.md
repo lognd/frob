@@ -1,0 +1,21 @@
++++
+id = "01M4059ZDWQRK47QXG5K0KYHP2"
+title = "Verify the audit's UNVERIFIED GitHub facts against the live API in a sandbox repository"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+reporter = "lognd"
+created = "2026-10-03T05:55:32Z"
+updated = "2026-10-03T05:55:32Z"
+idempotency_key = "m2-mirror2-verify-facts"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-gh/**", "crates/frob-mirror/**", "notes/review/mirror-audit.md"]
+
+[[acceptance]]
+text = "Given the sixteen UNVERIFIED facts, when the verification ticket closes, then each has a recorded request and response and a verdict in the capabilities record"
+bound = false
++++
+
+mirror.md 3.6a. notes/review/mirror-audit.md section 2 lists 16 UNVERIFIED facts (read-your-writes listing by creator, the nudge workflow's least permission for repository_dispatch, autolink limits, and others). In a throwaway sandbox repository, verify each with recorded requests (fixtures reused by the fake GitHub ~G3AS571), and record the results in the adapter's capabilities record and in the audit's fact table. Must run before the first live mirror run (block ~D08W4A6).

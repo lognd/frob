@@ -204,8 +204,10 @@ to wrap another pack's execution.
    decision.) A std GRL rule is compiled ahead of time at build time
    (`cargo dev gen rules`): GRL to Rust code against the executor's
    operator library, so the hot path has no plan interpretation. A disk
-   pack's GRL is compiled to plans on first load, cached under
-   `.grimble/cache/plans/<digest>`, and run by the plan executor built
+   pack's GRL is compiled to plans on first load, cached outside the
+   work tree under `$XDG_CACHE_HOME/grimble/plans/` keyed by the pack
+   tree digest and the engine fingerprint, MAC'd (security.md 2.2), and
+   run by the plan executor built
    from the same operator library. Speed differs; nothing else may.
    "Logically the same" is a list of obligations, each enforced:
 
@@ -312,6 +314,18 @@ full model is security.md (D82). In short:
 
 ## 10. Consequences
 
+- Crate homes (consistency pass D85): the GRL lexer, parser, catalog
+  checks, plan format, executor and codegen are all `gob-plan`; std
+  rule sources live in `packs/std/<family>/*.grl` and the generated Rust
+  in its own crate `gob-std` (a grimble node with no grants, so any
+  ambient effect in generated code is CAP001, security.md 2.8); the
+  `rule` verbs are a module of `gob-plan` that each product registers
+  through gob-cli's verb registry; the sandbox worker is
+  `gob-wasm::worker`; fix applicability lives in `gob-fix`
+  (boundaries.md). The ten GRL rewrites of grl-spec.md 12 are acceptance
+  fixtures registered in no registry while the Rust rules of those ids
+  exist; moving a family to GRL replaces its Rust rules in the same
+  ticket (PACK004 forbids two owners of one id).
 - New crates: `gob-packs` (manifest, lock, loader, path-scoped activation, trust store, hook
   registry; product-neutral so frob and crunk use it), `gob-plan` (plan
   format, GRL compiler, pattern compiler, executor; the gob-ir evaluator

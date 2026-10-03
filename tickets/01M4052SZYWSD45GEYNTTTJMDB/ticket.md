@@ -1,0 +1,35 @@
++++
+id = "01M4052SZYWSD45GEYNTTTJMDB"
+title = "Ledger: proposal event kinds, fold and the tickets.md 2a table"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+reporter = "lognd"
+created = "2026-10-03T05:51:37Z"
+updated = "2026-10-03T05:51:37Z"
+idempotency_key = "m2-mirror2-ledger-proposal-events"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/proposal.rs", "crates/frob-ledger/src/fold.rs", "docs/design/tickets.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX82TWWY2616S1Q5N48KNK"
+
+[[acceptance]]
+text = "Given a proposal followed by a superseding proposal from the same actor and field, when folded, then the latest is pending and the earlier one is superseded"
+bound = false
+
+[[acceptance]]
+text = "Given an accepted, declined or expired proposal, when a proposal with the same tracker event id is appended, then the fold keeps it closed"
+bound = false
+
+[[acceptance]]
+text = "Given the tickets.md 2a table, when `frob check` runs, then every new kind appears in it (doc-drift gate)"
+bound = false
++++
+
+Implements mirror.md section 3.5 (new event kinds) and tickets.md 2a.
+
+Add kinds proposal, proposal-superseded, proposal-accepted, proposal-declined and proposal-expired with their required fields (tracker item id, field, actor id, time, value digest, capped excerpt, origin tracker; supersedes), the fold that shows the latest pending proposal per (issue, field) and closes the others, and the rows in the tickets.md 2a table. An unknown reader folds them to no change.
