@@ -1,0 +1,1 @@
+frob 0.532.0 is the v2 Rust rewrite and replaces v1 on upgrade. To stay on v1 run uv tool install frob==0.531.0 (or pip install frob==0.531.0); docs/guides/upgrade-from-v1.md lists what changed, maps v1 commands to v2 and explains how far tickets can be imported.

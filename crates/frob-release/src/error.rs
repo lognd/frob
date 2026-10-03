@@ -50,6 +50,16 @@ pub enum FragmentError {
         /// The nearest product.
         suggestion: String,
     },
+    /// A second lead notice: a release section takes at most one.
+    #[error(
+        "changelog.d/{file}: a release section takes at most one `notice` fragment and `{first}` is already one; change this one to another type or delete it"
+    )]
+    SecondNotice {
+        /// File name inside changelog.d.
+        file: String,
+        /// The notice fragment that keeps the lead.
+        first: String,
+    },
     /// The body has no text.
     #[error(
         "changelog.d/{file}: empty fragment; write one or two user-facing sentences, optionally prefixed `frob:`"
@@ -87,6 +97,7 @@ impl FragmentError {
             | Self::UnknownType { file, .. }
             | Self::UnknownTicket { file, .. }
             | Self::UnknownProduct { file, .. }
+            | Self::SecondNotice { file, .. }
             | Self::Empty { file }
             | Self::NonAscii { file, .. }
             | Self::Unreadable { file, .. } => file,

@@ -56,7 +56,7 @@ pub fn split_adopted(text: &str) -> (&str, &str) {
     (text, "")
 }
 
-/// Render the section for `version`: with several products grouped under product headings (configured products first), then by type, entries by ULID, closed by its hash.
+/// Render the section for `version`: the lead notice first, then with several products grouped under product headings (configured products first), then by type, entries by ULID, closed by its hash.
 ///
 /// With one product there is no product heading and every fragment is listed.
 pub fn render_section(
@@ -66,6 +66,15 @@ pub fn render_section(
     products: &ProductTags,
 ) -> String {
     let mut out = format!("## {version} - {date}\n\n");
+    // The lead notice (at most one, enforced when fragments are read) sits above every group.
+    for n in fragments.iter().filter(|f| f.kind == Kind::Notice) {
+        let _ = write!(out, "{} ({}, {})\n\n", n.text, n.handle, n.ulid);
+    }
+    let fragments: Vec<Fragment> = fragments
+        .iter()
+        .filter(|f| f.kind != Kind::Notice)
+        .cloned()
+        .collect();
     let groups: Vec<(Option<&str>, Vec<&Fragment>)> = if products.is_multi() {
         let mut order: Vec<&str> = products.products().iter().map(String::as_str).collect();
         let extra: Vec<&str> = PRODUCTS
