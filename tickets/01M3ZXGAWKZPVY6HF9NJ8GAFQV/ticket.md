@@ -17,6 +17,10 @@ scope = ["crates/frob/src/ticket/proposals_cmd.rs", "crates/frob-check/src/propo
 kind = "blocked-by"
 target = "01M3ZX7YW7S3BJ72FPRQ85F72V"
 
+[[links]]
+kind = "blocked-by"
+target = "01M4052SZYWSD45GEYNTTTJMDB"
+
 [[acceptance]]
 text = "Given a pending proposal, when accepted, then the ticket field changes through a recorded event and the proposal is closed"
 bound = false
