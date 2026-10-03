@@ -141,7 +141,7 @@ fn proc001(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
 }
 
 /// The neutral repo groups every product gets: `PROC001`.
-fn builtin_groups<P: Product>() -> Vec<RepoGroup<P>> {
+pub(crate) fn builtin_groups<P: Product>() -> Vec<RepoGroup<P>> {
     vec![RepoGroup::new(
         "repo:process",
         vec![Proc001.meta()],

@@ -10,7 +10,7 @@ use gob_text::FileInterner;
 use crate::config::{CheckTable, PerfTable};
 use crate::core::walk_core;
 use crate::error::CheckError;
-use crate::filecheck::run_file_checks;
+use crate::filecheck::{opaque_binary, run_file_checks};
 use crate::fix;
 use crate::options::RunOptions;
 use crate::product::{CollectCx, Collected, Product, ScopeView, Snapshot};
@@ -18,6 +18,7 @@ use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
 use crate::rules::Perf001;
+use crate::status::{FidelityReport, Need, need_of, unresolved_finding};
 use crate::telemetry;
 use crate::tools::run_tools;
 
@@ -155,6 +156,46 @@ fn perf_finding(perf: &PerfTable, timing: &Timing, only: &[String]) -> Option<Fi
     ))
 }
 
+/// One Unresolved per repo rule that reads comments or directives while opaque text files exist.
+///
+/// A directive in an adapter-less file is never scanned, so an absence-style
+/// repo rule cannot claim the repository is clean; the finding names the count.
+fn opaque_repo_findings<P: Product>(
+    product: &P,
+    snap: &Snapshot<P>,
+    wanted: &dyn Fn(&RuleMeta) -> bool,
+    fidelity: &mut FidelityReport,
+) -> Vec<Finding> {
+    let mut opaque: Vec<&str> = Vec::new();
+    for e in &snap.core.entries {
+        let Some(info) = product.file_info(&snap.shared, &e.path) else {
+            continue;
+        };
+        if info.is_opaque() && !opaque_binary(&snap.core.root, &e.path, &info) {
+            opaque.push(&e.path);
+        }
+    }
+    let Some(first) = opaque.first() else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    let mut groups = product.repo_groups();
+    groups.extend(crate::repo::builtin_groups::<P>());
+    for meta in groups.iter().flat_map(|g| g.metas.iter()).filter(|m| wanted(m)) {
+        if need_of(meta.id).need != Need::EveryTextArtifact {
+            continue;
+        }
+        let why = format!(
+            "{} opaque text file(s) (no adapter, first `{first}`) were not read for comments or directives",
+            opaque.len()
+        );
+        tracing::info!(rule = meta.id, files = opaque.len(), "repo rule unresolved on opaque text");
+        fidelity.add_unresolved("opaque", meta.id, 1);
+        out.push(unresolved_finding(meta, None, "repository", &why));
+    }
+    out
+}
+
 /// One full evaluation of the rules (no tool-less shortcuts, no fixes).
 #[allow(
     clippy::too_many_lines,
@@ -214,10 +255,11 @@ fn pass<P: Product>(
         None => snap.core.entries.iter().map(|e| e.path.clone()).collect(),
     };
     tally.stats.files_checked = paths.len();
-    let stage = run_file_checks(&snap, &cache, &checks, &paths);
+    let stage = run_file_checks(product, &snap, &cache, &checks, &paths);
     tally.stats.file_hits = stage.hits;
     tally.stats.file_misses = stage.misses;
     raw.extend(stage.findings);
+    tally.fidelity = stage.fidelity;
     for (rule, n) in stage.subjects {
         tally.subjects.insert(rule.to_owned(), n);
     }
@@ -242,6 +284,13 @@ fn pass<P: Product>(
     let mut files = snap.core.files.clone();
     raw.extend(run_repo_rules(
         product, &snap, &cache, &mut files, &wanted, &mut tally,
+    ));
+
+    raw.extend(opaque_repo_findings(
+        product,
+        &snap,
+        &wanted,
+        &mut tally.fidelity,
     ));
 
     if let Some(s) = &scope {
@@ -297,6 +346,7 @@ fn pass<P: Product>(
         fail_on: opts.fail_on.unwrap_or(table.fail_on),
         fail_on_unresolved: table.fail_on_unresolved,
         subjects_examined: tally.subjects,
+        fidelity: tally.fidelity,
     })
 }
 

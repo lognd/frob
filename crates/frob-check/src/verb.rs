@@ -59,6 +59,8 @@ pub struct CheckData {
     pub stats: Option<Stats>,
     /// Stage timing, present with `--timing` or `-v`.
     pub timing: Option<TimingView>,
+    /// Per-language fidelity accounting (files examined, NotApplicable per family, Unresolved).
+    pub fidelity: Option<gob_check::FidelityReport>,
     /// What `--fix` did, present with `--fix`.
     pub fix: Option<FixOutcome>,
     /// The ticket the run was scoped to.
@@ -84,6 +86,7 @@ impl CheckData {
             findings: Vec::new(),
             stats: None,
             timing: None,
+            fidelity: None,
             fix: None,
             ticket: None,
             fail_on: None,
@@ -329,6 +332,7 @@ fn data_of(
             budget_ms: report.timing.budget_ms(),
             tools_ms: report.timing.tools_ms(),
         }),
+        fidelity: Some(report.fidelity.clone()),
         fix: report.fix.clone(),
         ticket: report.scope.clone(),
         fail_on: Some(fail_on_name(report.fail_on).to_owned()),

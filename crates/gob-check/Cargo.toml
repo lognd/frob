@@ -17,6 +17,7 @@ gob-diagnostics = { path = "../gob-diagnostics" }
 gob-exec = { path = "../gob-exec" }
 gob-lock = { path = "../gob-lock" }
 gob-rules = { path = "../gob-rules" }
+gob-symbols = { path = "../gob-symbols" }
 gob-text = { path = "../gob-text" }
 gob-walk = { path = "../gob-walk" }
 jiff = "0.2"

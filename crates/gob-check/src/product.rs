@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use gob_cache::Cache;
 use gob_rules::{Finding, Resolved, RuleMeta};
+use gob_symbols::FileInfo;
 use gob_text::FileInterner;
 
 use crate::config::CheckTable;
@@ -201,6 +202,14 @@ pub trait Product: Sized + Sync {
         files: &FileInterner,
         raw: Vec<Finding>,
     ) -> Resolved;
+
+    /// Fidelity and parse facts of a walked file; `None` when the product has no symbol graph.
+    ///
+    /// Products that return facts get the opaque and partial-parse accounting of
+    /// `subject_status`; the default keeps every file examined.
+    fn file_info(&self, _shared: &Self::Shared, _path: &str) -> Option<FileInfo> {
+        None
+    }
 
     /// Whether a `must_measure` rule has a non-empty scope in this repository.
     ///

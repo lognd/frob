@@ -1940,6 +1940,7 @@ dependencies = [
  "gob-exec",
  "gob-lock",
  "gob-rules",
+ "gob-symbols",
  "gob-text",
  "gob-walk",
  "jiff",

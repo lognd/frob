@@ -7,7 +7,7 @@
 //! `Sync`) and stored, empty results included. Every (rule, file) pair a check
 //! examines counts as one subject of that rule, cache hit or not.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -18,6 +18,9 @@ use rayon::prelude::*;
 
 use crate::core::{Core, FileIndex};
 use crate::product::{Product, Snapshot};
+use crate::status::{
+    FidelityReport, SubjectStatus, hole_caveat, is_binary, subject_status_for, unresolved_finding,
+};
 use crate::store;
 
 /// Thread-safe facts a check may use to decide applicability and its cache key.
@@ -114,6 +117,85 @@ pub(crate) struct FileStage {
     pub hits: usize,
     /// Computed results.
     pub misses: usize,
+    /// Per-language fidelity accounting of every checked file.
+    pub fidelity: FidelityReport,
+}
+
+/// What the status pass decided for the checked files.
+struct Accounting {
+    /// `(path, rule)` pairs the rule must not examine (NotApplicable or Unresolved).
+    blocked: HashMap<String, HashSet<&'static str>>,
+    /// Unresolved findings for blocked and caveated pairs.
+    findings: Vec<Finding>,
+    /// Per-language counts.
+    fidelity: FidelityReport,
+}
+
+/// True when `info` is opaque and the file at `root/path` looks binary.
+pub(crate) fn opaque_binary(root: &Path, path: &str, info: &gob_symbols::FileInfo) -> bool {
+    if !info.is_opaque() {
+        return false;
+    }
+    let mut head = vec![0u8; 4096];
+    let n = std::fs::File::open(root.join(path))
+        .and_then(|mut f| std::io::Read::read(&mut f, &mut head))
+        .unwrap_or(0);
+    is_binary(path, &head[..n])
+}
+
+/// Decide, for every checked file and file rule, examine / not applicable / unresolved.
+fn account<P: Product>(
+    product: &P,
+    snap: &Snapshot<P>,
+    metas: &[&'static RuleMeta],
+    paths: &[String],
+) -> Accounting {
+    let mut acc = Accounting {
+        blocked: HashMap::new(),
+        findings: Vec::new(),
+        fidelity: FidelityReport::default(),
+    };
+    for path in paths {
+        let Some(info) = product.file_info(&snap.shared, path) else {
+            continue;
+        };
+        let binary = opaque_binary(&snap.core.root, path, &info);
+        let file = snap.core.index.ids.get(path).copied();
+        let mut examined = false;
+        let mut unresolved: Vec<&str> = Vec::new();
+        let mut family_total: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
+        for meta in metas {
+            let entry = family_total.entry(meta.family).or_default();
+            entry.0 += 1;
+            match subject_status_for(&info, meta, binary) {
+                SubjectStatus::Examine => {
+                    examined = true;
+                    if let Some(why) = hole_caveat(&info, meta) {
+                        unresolved.push(meta.id);
+                        acc.findings.push(unresolved_finding(meta, file, path, &why));
+                    }
+                }
+                SubjectStatus::NotApplicable(why) => {
+                    entry.1 += 1;
+                    tracing::debug!(path, rule = meta.id, %why, "not applicable");
+                    acc.blocked.entry(path.clone()).or_default().insert(meta.id);
+                }
+                SubjectStatus::Unresolved(why) => {
+                    tracing::info!(path, rule = meta.id, %why, "unresolved subject");
+                    unresolved.push(meta.id);
+                    acc.blocked.entry(path.clone()).or_default().insert(meta.id);
+                    acc.findings.push(unresolved_finding(meta, file, path, &why));
+                }
+            }
+        }
+        let na: Vec<&str> = family_total
+            .iter()
+            .filter(|(_, (all, na))| all == na)
+            .map(|(f, _)| *f)
+            .collect();
+        acc.fidelity.record(&info, examined, &na, &unresolved);
+    }
+    acc
 }
 
 /// What the parallel lookup found for one (file, check) pair.
@@ -133,6 +215,7 @@ fn rule_of(f: &Finding) -> String {
 
 /// Run `checks` over `paths` with the findings cache.
 pub(crate) fn run_file_checks<P: Product>(
+    product: &P,
     snap: &Snapshot<P>,
     cache: &Cache,
     checks: &[Arc<dyn FileCheck<P>>],
@@ -145,6 +228,17 @@ pub(crate) fn run_file_checks<P: Product>(
     };
     let metas: Vec<Vec<&'static RuleMeta>> = checks.iter().map(|c| c.rules()).collect();
     let (root, index) = (&snap.core.root, &snap.core.index);
+    let all_metas: Vec<&'static RuleMeta> = {
+        let mut seen = BTreeSet::new();
+        metas
+            .iter()
+            .flatten()
+            .copied()
+            .filter(|m| seen.insert(m.id))
+            .collect()
+    };
+    let acc = account(product, snap, &all_metas, paths);
+    let blocked = &acc.blocked;
     let lookups: Vec<Lookup> = paths
         .par_iter()
         .flat_map_iter(|path| {
@@ -177,6 +271,7 @@ pub(crate) fn run_file_checks<P: Product>(
                 let examined: Vec<&'static str> = metas[ci]
                     .iter()
                     .filter(|m| check.examines(&shared, m, path))
+                    .filter(|m| !blocked.get(path).is_some_and(|b| b.contains(m.id)))
                     .map(|m| m.id)
                     .collect();
                 let hit = decode_all(cache, &keys, &index.ids);
@@ -203,6 +298,7 @@ pub(crate) fn run_file_checks<P: Product>(
         subjects: BTreeMap::new(),
         hits: 0,
         misses: 0,
+        fidelity: FidelityReport::default(),
     };
     for lookup in lookups {
         for rule in &lookup.examined {
@@ -238,6 +334,17 @@ pub(crate) fn run_file_checks<P: Product>(
         }
         stage.findings.extend(found);
     }
+    stage.findings.retain(|f| {
+        let Some(span) = f.span else { return true };
+        let Some(path) = snap.core.files.path(span.file) else {
+            return true;
+        };
+        !acc.blocked
+            .get(path)
+            .is_some_and(|b| b.contains(f.rule.as_str()))
+    });
+    stage.findings.extend(acc.findings);
+    stage.fidelity = acc.fidelity;
     stage
 }
 
