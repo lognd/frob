@@ -1,7 +1,7 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T17:43:54Z"
-digest = "e96f23944bdc6fce2442a8fce4a06d9eee8e69b1358c4807b28ffba495ba05db"
+digest = "73faa3a4d05cff555295173cc8faf8adb624e7cd098b3276a1155757067bda26"
 exit_code = 0
 inline = '''
    Compiling memchr v2.8.3
@@ -55,7 +55,7 @@ inline = '''
    Compiling matchers v0.2.0
    Compiling tracing-subscriber v0.3.23
    Compiling gix-discover v0.55.0
-   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/gob-rules)
+   Compiling gob-rules v0.0.0 (frob-v2-wt/DY20758/crates/gob-rules)
    Compiling gix-config v0.60.0
    Compiling gix-revision v0.49.1
    Compiling gix-worktree v0.56.0
@@ -67,24 +67,24 @@ inline = '''
    Compiling gix-refspec v0.45.1
    Compiling regex v1.13.1
    Compiling gix-odb v0.84.0
-   Compiling gob-log v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/gob-log)
+   Compiling gob-log v0.0.0 (frob-v2-wt/DY20758/crates/gob-log)
    Compiling gix-submodule v0.34.0
    Compiling gix-protocol v0.65.1
    Compiling gix-status v0.34.1
    Compiling gix-merge v0.20.1
    Compiling gix-worktree-state v0.34.1
-   Compiling gob-exec v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/gob-exec)
+   Compiling gob-exec v0.0.0 (frob-v2-wt/DY20758/crates/gob-exec)
    Compiling error_set_impl v0.9.2
-   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/gob-diagnostics)
-   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/gob-config)
+   Compiling gob-diagnostics v0.0.0 (frob-v2-wt/DY20758/crates/gob-diagnostics)
+   Compiling gob-config v0.0.0 (frob-v2-wt/DY20758/crates/gob-config)
    Compiling gix v0.87.1
-   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/gob-mdtest)
+   Compiling gob-mdtest v0.0.0 (frob-v2-wt/DY20758/crates/gob-mdtest)
    Compiling serde_yaml_ng v0.10.0
    Compiling error_set v0.9.2
-   Compiling gob-git v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/gob-git)
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/frob-ledger)
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/frob-pm)
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/DY20758/crates/frob-release)
+   Compiling gob-git v0.0.0 (frob-v2-wt/DY20758/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/DY20758/crates/frob-ledger)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/DY20758/crates/frob-pm)
+   Compiling frob-release v0.0.0 (frob-v2-wt/DY20758/crates/frob-release)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 38.96s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 5c259cf6-4766-49c8-a55a-8ae44b213f0d with nextest profile: default
@@ -96,7 +96,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-release -E 'test(release_notes_come_from_the_verb_output_not_generated_or_inline_text)'"
-size = 3786
+size = 3576
 status = "measured"
 tests = ["release_notes_come_from_the_verb_output_not_generated_or_inline_text"]
 at = "2026-10-03T17:43:54Z"

@@ -1,19 +1,19 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T16:50:39Z"
-digest = "630a0cc6de06660fd1461cabe6ce3abfb237c5c6b92cd71939e2777348b1c133"
+digest = "bb4eff9b769a23c8b5181865eec0aa98f31a0b7b9f6ca7d33acbc318daddf262"
 exit_code = 0
 inline = '''
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-pm)
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-release)
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-evidence)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-lease)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-worktree)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-tests)
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-obligations)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-check)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/4XZVMNC/crates/frob)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-pm)
+   Compiling frob-release v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-release)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-lease)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-check)
+   Compiling frob-land v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/4XZVMNC/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 20.34s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID f19a7577-8781-4b9c-8b28-5729822c9564 with nextest profile: default
@@ -27,7 +27,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-cli --test board -E 'test(text_board_at_a_fixed_width_and_clock) | test(text_mode_prints_ascii_rows_at_the_requested_width) | test(counts_and_limits_come_from_the_shared_wip_count)'"
-size = 1647
+size = 1437
 status = "measured"
 tests = ["counts_and_limits_come_from_the_shared_wip_count", "text_board_at_a_fixed_width_and_clock", "text_mode_prints_ascii_rows_at_the_requested_width"]
 at = "2026-10-03T16:50:39Z"

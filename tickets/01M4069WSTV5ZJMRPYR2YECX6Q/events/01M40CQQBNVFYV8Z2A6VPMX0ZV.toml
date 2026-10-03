@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [2]
 captured_at = "2026-10-03T08:05:22Z"
-digest = "0d32d2e040a04648a1e607d8f03c72bdf956994ea86ada867fa4563d0fcf8f6a"
+digest = "2a8d83f203f25561e5cd62d80c2f23ab510a45e2cefcfd4deb91b59f3060cc20"
 exit_code = 0
 inline = """
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-release)
+   Compiling frob-release v0.0.0 (frob-v2-wt/2YECX6Q/crates/frob-release)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
 ────────────
  Nextest run ID ef621dc4-ea61-45f3-81af-440fda2878d5 with nextest profile: default
@@ -20,7 +20,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli -p frob-release -E 'test(everything_ready_prints_ready) | test(status::tests)'"
-size = 997
+size = 976
 status = "measured"
 tests = ["status::tests::open_tickets_group_by_category_in_workflow_order", "status::tests::an_unbound_criterion_is_one_typed_blocker", "status::tests::missing_milestone_and_bad_fragments_are_blockers_not_failures", "status::tests::all_bound_is_ready_with_preview_and_unresolved_lines", "everything_ready_prints_ready_and_the_changelog_preview"]
 at = "2026-10-03T08:05:22Z"

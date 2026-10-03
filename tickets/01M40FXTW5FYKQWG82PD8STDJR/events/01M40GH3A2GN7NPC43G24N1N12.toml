@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T09:11:40Z"
-digest = "bf3fe5e1befe5ff5ed2a945372bce230dbf986cb16dfd2241375dec526c40d92"
+digest = "9016c8e7979d62fa5ae8d8ae8943d92b8085f0be77e1277dd298a6469388e9ff"
 exit_code = 0
 inline = """
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/D8STDJR/crates/frob)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/D8STDJR/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 1.82s
 ────────────
  Nextest run ID e8c2214c-b762-4a76-b4ed-fae29348c332 with nextest profile: default
@@ -16,7 +16,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli -E test(=init_on_trunk_points_the_ledger_at_trunk)"
-size = 522
+size = 501
 status = "measured"
 tests = ["init_on_trunk_points_the_ledger_at_trunk"]
 at = "2026-10-03T09:11:40Z"

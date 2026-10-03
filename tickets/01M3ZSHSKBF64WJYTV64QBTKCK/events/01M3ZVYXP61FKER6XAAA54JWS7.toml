@@ -1,7 +1,7 @@
 kind = "transition"
 from = "todo"
 to = "in-progress"
-reason = "lease: lognd in /home/logan/projects/frob-v2-wt/4QBTKCK; scope: docs/design/**; ttl 7200s"
+reason = "lease: lognd in frob-v2-wt/4QBTKCK; scope: docs/design/**; ttl 7200s"
 at = "2026-10-03T03:12:12Z"
 actor = "lognd"
 rev = 1

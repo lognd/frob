@@ -4,20 +4,20 @@ actor = "lognd"
 rev = 1
 provider = "nextest"
 ref = "-p gob-directives -E '(package(=gob-directives) & (test(=aliases_yield_the_same_claim_as_the_long_form) | test(=binds_to_adjacent_fn_and_doc_comment_form) | test(=binds_to_fn_two_lines_later) | test(=block_comment_lines_are_scanned_individually) | test(=claim_verbs_are_registered_and_documented) | test(=directives_config_defaults_and_scan_config) | test(=dsl001_suggests_close_verb_and_points_at_it) | test(=dsl001_suggests_the_new_claim_verbs) | test(=dsl002_names_the_remedy_and_has_no_fix) | test(=effect_set_errors_point_inside_the_token) | test(=effects::tests::atom_lists_combine_sort_and_dedupe) | test(=effects::tests::display_round_trips) | test(=effects::tests::errors_name_the_offending_token) | test(=effects::tests::levels_parse_alone_and_with_total) | test(=effects::tests::panic_and_diverge_parse_without_total) | test(=effects::tests::symref_errors_point_inside_the_parentheses) | test(=effects_record_carries_the_parsed_atom_set) | test(=enclosing_symbol_when_nothing_follows) | test(=file_level_when_no_symbols) | test(=inner_doc_binds_to_container_not_next_item) | test(=innermost_enclosing_wins) | test(=lex::tests::escapes) | test(=lex::tests::positionals_and_keys) | test(=markdown_before_first_heading_is_file) | test(=markdown_binds_to_preceding_heading) | test(=parse001_points_at_the_exact_token) | test(=record_span_covers_directive_text) | test(=registry_lists_every_verb_with_schemas) | test(=rules_are_registered_with_d32_identity) | test(=tests_inside_module_tests_reorients) | test(=tests_outside_a_test_item_does_not_reorient) | test(=tests_reorients_to_target_inside_test_item) | test(=tests_with_bad_target_in_test_item_is_parse001) | test(=three_lines_away_is_not_following) | test(=toml_hash_comment_is_file_bound) | test(=typed_args_round_trip) | test(=unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown)))'"
-digest = "6a29246db37193146b228df16bdb09d2b3ade2175fbea836814156acefd9328a"
+digest = "781480a949c8a9d214327c9edddc011c3e5a31466002f1d1694751da47c15023"
 status = "measured"
 captured_at = "2026-10-02T23:19:51Z"
 passed = true
 exit_code = 0
 tests = ["effects::tests::atom_lists_combine_sort_and_dedupe", "effects::tests::levels_parse_alone_and_with_total", "effects::tests::panic_and_diverge_parse_without_total", "effects::tests::symref_errors_point_inside_the_parentheses", "effects::tests::errors_name_the_offending_token", "lex::tests::positionals_and_keys", "effects::tests::display_round_trips", "lex::tests::escapes", "block_comment_lines_are_scanned_individually", "aliases_yield_the_same_claim_as_the_long_form", "binds_to_adjacent_fn_and_doc_comment_form", "directives_config_defaults_and_scan_config", "claim_verbs_are_registered_and_documented", "binds_to_fn_two_lines_later", "effect_set_errors_point_inside_the_token", "dsl001_suggests_close_verb_and_points_at_it", "dsl001_suggests_the_new_claim_verbs", "file_level_when_no_symbols", "inner_doc_binds_to_container_not_next_item", "effects_record_carries_the_parsed_atom_set", "dsl002_names_the_remedy_and_has_no_fix", "enclosing_symbol_when_nothing_follows", "innermost_enclosing_wins", "record_span_covers_directive_text", "parse001_points_at_the_exact_token", "registry_lists_every_verb_with_schemas", "markdown_before_first_heading_is_file", "rules_are_registered_with_d32_identity", "markdown_binds_to_preceding_heading", "tests_inside_module_tests_reorients", "toml_hash_comment_is_file_bound", "tests_outside_a_test_item_does_not_reorient", "tests_with_bad_target_in_test_item_is_parse001", "tests_reorients_to_target_inside_test_item", "three_lines_away_is_not_following", "unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown", "typed_args_round_trip"]
 inline = """
-   Compiling gob-macros v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-macros)
-   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-rules)
-   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-ir)
-   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-config)
-   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-mdtest)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-symbols)
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/SF903MG/crates/gob-directives)
+   Compiling gob-macros v0.0.0 (frob-v2-wt/SF903MG/crates/gob-macros)
+   Compiling gob-rules v0.0.0 (frob-v2-wt/SF903MG/crates/gob-rules)
+   Compiling gob-ir v0.0.0 (frob-v2-wt/SF903MG/crates/gob-ir)
+   Compiling gob-config v0.0.0 (frob-v2-wt/SF903MG/crates/gob-config)
+   Compiling gob-mdtest v0.0.0 (frob-v2-wt/SF903MG/crates/gob-mdtest)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/SF903MG/crates/gob-symbols)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/SF903MG/crates/gob-directives)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 2.38s
 ────────────
  Nextest run ID a71c2533-60a4-41f0-bbaf-241e043113f9 with nextest profile: default
@@ -62,4 +62,4 @@ inline = """
 ────────────
      Summary [   0.028s] 37 tests run: 37 passed, 12 skipped
 """
-size = 4413
+size = 4266

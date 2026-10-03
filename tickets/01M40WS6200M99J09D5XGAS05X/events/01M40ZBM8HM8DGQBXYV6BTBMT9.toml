@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T13:30:49Z"
-digest = "89cb453e0d94d3c4a9dca145c2829529d3f8dcb95eefd2c086f86c58ab981fd1"
+digest = "8efb5d5ccb981192a9a95f94cb6f7adf924a4a279148e5744cfe12c010917f95"
 exit_code = 0
 inline = """
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/XGAS05X/crates/frob-land)
+   Compiling frob-land v0.0.0 (frob-v2-wt/XGAS05X/crates/frob-land)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 0.63s
 ────────────
  Nextest run ID 521bfb53-1e84-49cb-8e9d-6949b8b5df2c with nextest profile: default
@@ -16,7 +16,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-land --test land -E 'test(~an_unbound_criterion)'"
-size = 560
+size = 539
 status = "measured"
 tests = ["an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing"]
 at = "2026-10-03T13:30:49Z"

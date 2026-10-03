@@ -1,15 +1,15 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T10:35:22Z"
-digest = "3a2f3404ab9b548bdedf0535801a9d8bb3c9bd3ca3d6f41f9dd7649fff063de5"
+digest = "c48e3241ce0423d729837f44499cae870ed673d8b3692734226056cf2f472561"
 exit_code = 0
 inline = """
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-evidence)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-tests)
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-obligations)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-check)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/7KQSA8Z/crates/frob)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/7KQSA8Z/crates/frob-evidence)
+   Compiling frob-tests v0.0.0 (frob-v2-wt/7KQSA8Z/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (frob-v2-wt/7KQSA8Z/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (frob-v2-wt/7KQSA8Z/crates/frob-check)
+   Compiling frob-land v0.0.0 (frob-v2-wt/7KQSA8Z/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/7KQSA8Z/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 5.17s
 ────────────
  Nextest run ID 8467b505-7566-470f-b5ba-5ec8e5c33e93 with nextest profile: default
@@ -24,7 +24,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli -p frob-evidence -E 'test(=an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it) | test(=an_attester_at_a_terminal_binds_a_ticket_criterion) | test(=an_attestation_on_a_ticket_criterion_binds_and_show_and_brief_label_it) | test(=init_materializes_the_owner_as_the_attester)'"
-size = 1359
+size = 1233
 status = "measured"
 tests = ["an_attester_at_a_terminal_binds_a_ticket_criterion", "init_materializes_the_owner_as_the_attester", "an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it", "an_attestation_on_a_ticket_criterion_binds_and_show_and_brief_label_it"]
 at = "2026-10-03T10:35:22Z"

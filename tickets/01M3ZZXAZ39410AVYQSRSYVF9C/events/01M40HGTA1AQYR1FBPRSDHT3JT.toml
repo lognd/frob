@@ -1,12 +1,12 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T09:28:59Z"
-digest = "a87187d1bc381bdb777e868b1c9d9386f8ee34cb45b5e2c834681bc350168024"
+digest = "e229f6c090fd95dd80f707f87e57a6140ec46b6ae90df84b8c2a1e0c27f1d25e"
 exit_code = 0
 inline = """
-   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/RSYVF9C/crates/gob-languages)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/RSYVF9C/crates/gob-symbols)
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/RSYVF9C/crates/gob-directives)
+   Compiling gob-languages v0.0.0 (frob-v2-wt/RSYVF9C/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/RSYVF9C/crates/gob-symbols)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/RSYVF9C/crates/gob-directives)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 2.88s
 ────────────
  Nextest run ID 3227bea1-3442-4e3a-b20a-3cf5a03a943f with nextest profile: default
@@ -27,7 +27,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p gob-directives -E test(markdown_)"
-size = 1657
+size = 1594
 status = "measured"
 tests = ["markdown_fenced_block_directive_still_text", "markdown_before_first_heading_is_file", "markdown_code_span_over_line_break_is_text", "markdown_escaped_backtick_does_not_open_a_span", "markdown_binds_to_preceding_heading", "markdown_inline_code_span_directive_is_text", "markdown_real_directive_beside_code_span_text_is_found", "markdown_comment_opening_a_line_is_an_html_block_not_span_content", "markdown_double_backtick_span_with_inner_backtick_is_text", "markdown_directive_right_after_code_span_counts"]
 at = "2026-10-03T09:28:59Z"

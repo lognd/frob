@@ -1,12 +1,12 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T19:07:10Z"
-digest = "3e4f94e872f36d3e95ece82e6e6fdbf7aeca0128496a84236f468fe8aa18715d"
+digest = "31eb9f7252b61cf954135849dec9d159ee0a6657359900352cfd33bf7699898e"
 exit_code = 0
 inline = '''
-   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/C06R6B7/crates/gob-diagnostics)
-   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/C06R6B7/crates/gob-check)
-   Compiling grimble-check v0.0.0 (/home/logan/projects/frob-v2-wt/C06R6B7/crates/grimble-check)
+   Compiling gob-diagnostics v0.0.0 (frob-v2-wt/C06R6B7/crates/gob-diagnostics)
+   Compiling gob-check v0.0.0 (frob-v2-wt/C06R6B7/crates/gob-check)
+   Compiling grimble-check v0.0.0 (frob-v2-wt/C06R6B7/crates/grimble-check)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 5.97s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 6d5a4739-12fe-46dc-80ca-d274f2cfab05 with nextest profile: default
@@ -18,7 +18,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p grimble-check -E 'test(the_configured_ledger_dir_is_frob_owned_and_nothing_else_moves)'"
-size = 863
+size = 800
 status = "measured"
 tests = ["the_configured_ledger_dir_is_frob_owned_and_nothing_else_moves"]
 at = "2026-10-03T19:07:10Z"

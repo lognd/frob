@@ -1,7 +1,7 @@
 kind = "evidence"
 accepts = [2]
 captured_at = "2026-10-03T20:01:38Z"
-digest = "b630ab1a0dbcf57655e798a6699f3504090f6fe590905c6584b894e8910045c7"
+digest = "2633e2c73c470e9f0b5ad1778e9a4be6858474b7c83f1112138ac79d2423098e"
 exit_code = 0
 inline = '''
    Compiling syn v3.0.6
@@ -51,29 +51,29 @@ inline = '''
    Compiling gix-protocol v0.65.1
    Compiling gix-worktree v0.56.0
    Compiling gix-odb v0.84.0
-   Compiling gob-log v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-log)
+   Compiling gob-log v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-log)
    Compiling gix-diff v0.67.1
    Compiling gix-dir v0.29.1
    Compiling gix-submodule v0.34.0
    Compiling gix-worktree-state v0.34.1
-   Compiling gob-exec v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-exec)
+   Compiling gob-exec v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-exec)
    Compiling schemars v1.2.2
    Compiling gix-merge v0.20.1
    Compiling gix-status v0.34.1
    Compiling cobs v0.3.0
    Compiling postcard v1.1.3
-   Compiling gob-cache v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-cache)
+   Compiling gob-cache v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-cache)
    Compiling gix v0.87.1
-   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-rules)
-   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-languages)
+   Compiling gob-rules v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-rules)
+   Compiling gob-languages v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-languages)
    Compiling proptest v1.11.0
-   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-config)
-   Compiling gob-git v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-git)
-   Compiling gob-walk v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-walk)
-   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-ir)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-symbols)
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-directives)
-   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/grimble-model)
+   Compiling gob-config v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-config)
+   Compiling gob-git v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-git)
+   Compiling gob-walk v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-walk)
+   Compiling gob-ir v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-ir)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-symbols)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/M4WWW00/crates/gob-directives)
+   Compiling grimble-model v0.0.0 (frob-v2-wt/M4WWW00/crates/grimble-model)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 15.41s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 58d8c628-1b72-4782-9240-d95a1b2ffbac with nextest profile: default
@@ -86,7 +86,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p grimble-model --test tracked_paths"
-size = 3607
+size = 3355
 status = "measured"
 tests = ["the_detector_catches_the_known_bad_shapes", "no_tracked_path_uses_a_windows_reserved_name_or_character"]
 at = "2026-10-03T20:01:38Z"

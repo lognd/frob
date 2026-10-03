@@ -1,7 +1,7 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T16:50:04Z"
-digest = "4351e89a94ae8e09bbcad2edd861b682844dd8845d3b8cc4e9352f7d6fe2322c"
+digest = "3431a62139e8c2f7c0beb831399a17554255eeb1e741340671747f0a3d52158a"
 exit_code = 0
 inline = '''
    Compiling memchr v2.8.3
@@ -55,7 +55,7 @@ inline = '''
    Compiling gix-revision v0.49.1
    Compiling gix-index v0.55.0
    Compiling gix-discover v0.55.0
-   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/gob-rules)
+   Compiling gob-rules v0.0.0 (frob-v2-wt/JWAAVRY/crates/gob-rules)
    Compiling gix-config v0.60.0
    Compiling gix-pack v0.74.2
    Compiling tracing-subscriber v0.3.23
@@ -66,23 +66,23 @@ inline = '''
    Compiling gix-shallow v0.13.0
    Compiling gix-refspec v0.45.1
    Compiling regex v1.13.1
-   Compiling gob-log v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/gob-log)
+   Compiling gob-log v0.0.0 (frob-v2-wt/JWAAVRY/crates/gob-log)
    Compiling gix-protocol v0.65.1
    Compiling gix-submodule v0.34.0
    Compiling gix-status v0.34.1
    Compiling gix-merge v0.20.1
    Compiling gix-odb v0.84.0
    Compiling gix-worktree-state v0.34.1
-   Compiling gob-exec v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/gob-exec)
+   Compiling gob-exec v0.0.0 (frob-v2-wt/JWAAVRY/crates/gob-exec)
    Compiling error_set_impl v0.9.2
-   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/gob-diagnostics)
-   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/gob-config)
+   Compiling gob-diagnostics v0.0.0 (frob-v2-wt/JWAAVRY/crates/gob-diagnostics)
+   Compiling gob-config v0.0.0 (frob-v2-wt/JWAAVRY/crates/gob-config)
    Compiling gix v0.87.1
    Compiling error_set v0.9.2
-   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/gob-mdtest)
-   Compiling gob-git v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/gob-git)
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/frob-ledger)
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/JWAAVRY/crates/frob-pm)
+   Compiling gob-mdtest v0.0.0 (frob-v2-wt/JWAAVRY/crates/gob-mdtest)
+   Compiling gob-git v0.0.0 (frob-v2-wt/JWAAVRY/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/JWAAVRY/crates/frob-ledger)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/JWAAVRY/crates/frob-pm)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 30.80s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 24fa6606-7f45-4c74-a33a-3de1002bfad8 with nextest profile: default
@@ -94,7 +94,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-pm --test corpus mdtest_corpus"
-size = 3561
+size = 3372
 status = "measured"
 tests = ["mdtest_corpus"]
 at = "2026-10-03T16:50:04Z"
