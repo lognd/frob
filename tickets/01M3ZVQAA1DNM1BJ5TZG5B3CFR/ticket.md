@@ -2,7 +2,8 @@
 id = "01M3ZVQAA1DNM1BJ5TZG5B3CFR"
 title = "gob-symbols: element and variant type inference to bring COV001 Unresolved below 40"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
