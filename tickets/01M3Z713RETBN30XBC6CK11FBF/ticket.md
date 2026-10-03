@@ -24,7 +24,7 @@ target = "01M3Z712GP8XV2WEAS1VHQ7FD4"
 
 [[acceptance]]
 text = "Given a selector crates/*/src/** lang=rust kind=fn, when resolved, then it returns the matching units with Must status and excludes markdown"
-bound = false
+bound = true
 +++
 
 grimble review and grmb-spec: selector grammar (paths, globs, language, kind, attribute predicates) resolved through gob-walk and the scope graph, with May status for globs over units with Unknown edges; owner(path) query; used by ownership and leases.
