@@ -266,9 +266,9 @@ fn init_points_the_ledger_ref_at_the_current_branch() {
     );
 }
 
-/// Gap: `frob check` before `frob init` runs the rules instead of saying what to run (diagnostics.md section 5); filed as ~ANDZXZ4.
+/// `frob check` before `frob init` refuses and names `frob init` (diagnostics.md section 5, ~ANDZXZ4).
+// frob:ticket 01M40FXV09GYGBH9YZZANDZXZ4
 #[test]
-#[should_panic(expected = "~ANDZXZ4")]
 fn check_before_init_says_to_run_init() {
     let repo = Fresh::new("main");
     let out = Fresh::run_in(&repo.root, &["--text", "check"]);

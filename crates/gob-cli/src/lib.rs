@@ -24,7 +24,7 @@ mod schema_cmd;
 extern crate self as gob_cli;
 
 pub use clap;
-pub use cli::{Cli, run_for_test};
+pub use cli::{Cli, Guard, run_for_test};
 pub use command::Command;
 pub use context::{ColorMode, Context, FormatChoice};
 pub use error::{CliError, Outcome, Payload};

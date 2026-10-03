@@ -22,6 +22,19 @@ fn tree() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let marker = ["TO", "DO"].concat();
     std::fs::write(dir.path().join("lib.rs"), format!("// {marker}: later\n")).expect("write");
+    // A configured repository: check refuses without frob.toml (~ANDZXZ4).
+    let init = gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
+        .run(&gob_exec::Spec {
+            program: gob_exec::Program::Git,
+            args: vec!["init".to_owned(), "-q".to_owned()],
+            cwd: Some(dir.path().to_path_buf()),
+            env: Vec::new(),
+            timeout: std::time::Duration::from_secs(30),
+            capture: true,
+        })
+        .expect("git init");
+    assert_eq!(init.status, gob_exec::Outcome::Exited(0));
+    std::fs::write(dir.path().join("frob.toml"), "").expect("frob.toml");
     dir
 }
 

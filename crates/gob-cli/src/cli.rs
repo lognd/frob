@@ -18,7 +18,12 @@ pub struct Cli {
     product: &'static str,
     version: &'static str,
     verbs: Vec<Registered>,
+    // frob:ticket 01M40FXV09GYGBH9YZZANDZXZ4
+    guard: Option<Guard>,
 }
+
+/// A product's precondition check, run after parsing and before a verb: `(verb path, context)`.
+pub type Guard = fn(&str, &Context) -> Result<(), CliError>;
 
 impl std::fmt::Debug for Cli {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -40,8 +45,16 @@ impl Cli {
             product,
             version,
             verbs: Vec::new(),
+            guard: None,
         }
         .register::<SchemaCmd>()
+    }
+
+    /// Run `guard` before every verb (not `--schema`); an `Err` stops the verb and is rendered.
+    #[must_use]
+    pub fn with_guard(mut self, guard: Guard) -> Self {
+        self.guard = Some(guard);
+        self
     }
 
     /// Register verb `C` under the path declared in its metadata.
@@ -179,6 +192,12 @@ impl Cli {
         }
         let span = tracing::info_span!("cli.verb", verb = %dotted);
         let _enter = span.enter();
+        if let Some(guard) = self.guard
+            && let Err(err) = guard(&path, &ctx)
+        {
+            tracing::debug!(error = %err, "guard refused the verb");
+            return render::failure(Some(&dotted), &err, ctx.json);
+        }
         match (verb.run)(leaf, &ctx) {
             Ok(erased) => {
                 tracing::debug!(

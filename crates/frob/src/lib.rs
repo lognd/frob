@@ -10,6 +10,7 @@
 pub mod config;
 pub mod config_cmd;
 pub mod doctor;
+pub mod first_run;
 pub mod init;
 pub mod lease_cmd;
 pub mod milestone_cmd;
@@ -41,5 +42,5 @@ pub fn cli() -> Cli {
     let cli = frob_tests::register(cli);
     let cli = frob_ack::register(cli);
     let cli = frob_check::register(cli);
-    frob_land::register(cli)
+    frob_land::register(cli).with_guard(first_run::require_config)
 }
