@@ -2,7 +2,7 @@
 id = "01M3ZZ14E0BZQ4K6XN9C28ECPV"
 title = "Version scheme: v2 continues 0.53X.0; 1.0.0 is the first stable release"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
