@@ -15,6 +15,10 @@ scope = ["crates/frob-ledger/**", "crates/frob/**"]
 
 [[links]]
 kind = "blocked-by"
+target = "01M3ZX7YW7S3BJ72FPRQ85F72V"
+
+[[links]]
+kind = "blocked-by"
 target = "01M3ZXGAS3HJR9NYAMKWYGETZK"
 
 [[acceptance]]
