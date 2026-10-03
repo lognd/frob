@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T09:47:09Z"
+updated = "2026-10-03T09:47:39Z"
 idempotency_key = "m2-rel-init-adopt"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob/src/init.rs", "crates/frob/tests/init_adopt.rs", "crates/frob/src/config_cmd.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/gob-check/src/config.rs", "crates/frob-check/src/product.rs", "crates/frob-check/tests/check.rs", "crates/frob/tests/snapshots/*", "crates/frob/tests/cli.rs", "docs/reference/config.md", "docs/design/cli.md", "docs/design/rules.md"]
@@ -31,7 +31,7 @@ target = "01M4069YW2EF551WF2J7R0EMJ4"
 
 [[acceptance]]
 text = "Given a repository on branch main with existing code, when frob init and frob check run, then base is main and check exits 0"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a repository on master, when init runs, then base is master"
