@@ -9,9 +9,9 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-03T09:37:47Z"
+updated = "2026-10-03T15:28:16Z"
 idempotency_key = "m2-doc002"
-labels = ["milestone:2", "release:0.532.0"]
+labels = ["milestone:2"]
 scope = ["crates/frob-obligations/**", "crates/gob-languages/**", "crates/gob-directives/src/comments.rs", "docs/reference/rules/DOC002.md"]
 
 [[acceptance]]
