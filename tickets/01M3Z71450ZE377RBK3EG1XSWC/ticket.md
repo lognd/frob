@@ -28,7 +28,7 @@ target = "01M3Z713YNM5666B7YFEHPFVKD"
 
 [[acceptance]]
 text = "Given a node whose owns selector matches no unit, when grimble check runs, then SYS-UNRESOLVED fires with the selector text and status Unknown"
-bound = false
+bound = true
 +++
 
 G02 semantics: build the binding relation from the four sources, ownership from selectors, SYS-UNRESOLVED and SYS-UNMODELED with opt-in modeled selectors, the F0/F1 Unresolved behaviour.
