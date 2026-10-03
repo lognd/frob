@@ -424,10 +424,9 @@ fn example_forms_parse() {
 }
 
 // frob:tests crates/gob-plan/src/grl/ast.rs::Source.span
-// frob:tests crates/gob-plan/src/grl/ast.rs::Object.span
 #[test]
-fn source_and_object_spans_cover_their_text() {
-    let src = wrap("find d: diff.changed\n  find t: tset where t inside tset");
+fn source_span_covers_its_text() {
+    let src = wrap("find d: diff.changed\n  find t: tset");
     let rule = rule_of(&src);
     let ClauseKind::Find(side) = &rule.clauses[0].node else {
         panic!("find");
@@ -437,11 +436,21 @@ fn source_and_object_spans_cover_their_text() {
         panic!("find");
     };
     assert_eq!(slice(&src, shape.source.span()), "tset");
-    let CondKind::Rel { rel, .. } = &shape.filter.as_ref().expect("filter").node else {
+}
+
+// frob:tests crates/gob-plan/src/grl/ast.rs::Object.span
+#[test]
+fn object_span_covers_its_text() {
+    let src = wrap("find t: tset where t inside tset");
+    let rule = rule_of(&src);
+    let ClauseKind::Find(b) = &rule.clauses[0].node else {
+        panic!("find");
+    };
+    let CondKind::Rel { rel, .. } = &b.filter.as_ref().expect("filter").node else {
         panic!("rel");
     };
     let RelKind::Containment { object, .. } = &rel.node else {
-        panic!("contain");
+        panic!("containment");
     };
     assert_eq!(slice(&src, object.span()), "tset");
 }
