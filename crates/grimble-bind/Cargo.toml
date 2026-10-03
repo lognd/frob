@@ -7,21 +7,20 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish.workspace = true
 
 [lints]
 workspace = true
 
 [dependencies]
-gob-directives = { path = "../gob-directives" }
-gob-ir = { path = "../gob-ir" }
-gob-languages = { path = "../gob-languages" }
-gob-lock = { path = "../gob-lock" }
-gob-rules = { path = "../gob-rules" }
-gob-symbols = { path = "../gob-symbols" }
-gob-text = { path = "../gob-text" }
-gob-walk = { path = "../gob-walk" }
-grimble-model = { path = "../grimble-model" }
+gob-directives = { version = "0.0.0", path = "../gob-directives" }
+gob-ir = { version = "0.0.0", path = "../gob-ir" }
+gob-languages = { version = "0.0.0", path = "../gob-languages" }
+gob-lock = { version = "0.0.0", path = "../gob-lock" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
+gob-text = { version = "0.0.0", path = "../gob-text" }
+gob-walk = { version = "0.0.0", path = "../gob-walk" }
+grimble-model = { version = "0.0.0", path = "../grimble-model" }
 rayon = "1"
 serde_json = "1"
 thiserror = "2"

@@ -160,6 +160,80 @@ fn refuse(e: ReleaseError) -> CliError {
         .into()
 }
 
+// frob:ticket 01M41B4KPWQVBT234N2DY20758
+/// One version's CHANGELOG section body, as release notes.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct NotesData {
+    /// The release version.
+    pub version: String,
+    /// The section body: no heading, no integrity marker, blank edges trimmed.
+    pub notes: String,
+}
+
+// frob:ticket 01M41B4KPWQVBT234N2DY20758
+/// Print one version's CHANGELOG section body for `gh release create --notes-file` (`--text` prints it raw).
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "release notes",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ReleaseNotes {
+    version: String,
+}
+
+impl Command for ReleaseNotes {
+    type Data = NotesData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(
+            Arg::new("version")
+                .long("version")
+                .required(true)
+                .value_name("X")
+                .help("Release version whose CHANGELOG section to print (for example 0.532.0)"),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            version: get(m, "version").unwrap_or_default(),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<NotesData> {
+        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let path = root.join("CHANGELOG.md");
+        let refuse_notes = |why: String| -> CliError {
+            tracing::info!(version = %self.version, "release notes refused");
+            Refusal::new(
+                "E-CHANGELOG-NO-SECTION",
+                RefusalClass::GuardNeedsAction,
+                why,
+            )
+            .with_remedy("frob release changelog --version <X>")
+            .into()
+        };
+        let text = std::fs::read_to_string(&path)
+            .map_err(|e| refuse_notes(format!("cannot read {}: {e}", path.display())))?;
+        let Some(notes) = frob_release::changelog::section_body(&text, &self.version) else {
+            return Err(refuse_notes(format!(
+                "CHANGELOG.md has no section for {}",
+                self.version
+            )));
+        };
+        tracing::info!(version = %self.version, bytes = notes.len(), "release notes");
+        // Text mode prints these rows raw, so `--text > notes.md` is exactly the section.
+        let rows = notes.lines().map(str::to_owned).collect();
+        Ok(Payload::new(NotesData {
+            version: self.version.clone(),
+            notes,
+        })
+        .with_rendered(rows))
+    }
+}
+
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
 /// What `release status` reports: a readiness report, or why there is nothing to report on.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -897,6 +971,7 @@ fn refuse_cut(e: &CutError, version: &str, base: &str) -> CliError {
 /// Register the `release` verbs on the root.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<ReleaseChangelog>()
+        .register::<ReleaseNotes>()
         .register::<ReleaseStatus>()
         .register::<ReleaseBump>()
         .register::<ReleaseCut>()

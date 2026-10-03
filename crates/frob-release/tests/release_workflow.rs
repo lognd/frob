@@ -485,10 +485,11 @@ fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
     }
 }
 
-/// Binds the `crates` job design of ~6N2KET1: OIDC in the `crates-io` environment, gated on smoke, no stored token.
+/// Binds the `crates` job design of ~6N2KET1 and ~AZS0RRT: the `crates-io` environment after smoke, a registry token when the environment has one, OIDC otherwise.
 // frob:ticket 01M4069Y65FA7GGXG2F6N2KET1
+// frob:ticket 01M4172YE3SZDG17J1CAZS0RRT
 #[test]
-fn crates_job_publishes_through_trusted_publishing_in_the_crates_io_environment_after_smoke() {
+fn crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke() {
     let wf = workflow();
     let job = &wf["jobs"]["crates"];
     assert!(
@@ -515,16 +516,46 @@ fn crates_job_publishes_through_trusted_publishing_in_the_crates_io_environment_
         .position(|s| s["run"].as_str() == Some("cargo dev publish"))
         .expect("the publish step");
     assert!(auth < publish, "token is minted before the publish");
-    assert!(
-        steps[publish]["env"]["CARGO_REGISTRY_TOKEN"]
-            .as_str()
-            .is_some_and(|t| t.contains("steps.auth.outputs.token")),
-        "the registry token comes from the OIDC exchange"
+    // The OIDC exchange runs only when no first-publish token is stored.
+    let mode = steps
+        .iter()
+        .find(|s| s["id"].as_str() == Some("mode"))
+        .expect("the token detection step");
+    assert_eq!(
+        mode["env"]["FIRST_PUBLISH_TOKEN"].as_str(),
+        Some("${{ secrets.CARGO_REGISTRY_TOKEN }}"),
+        "the detection step reads the environment secret"
     );
-    let text = workflow_text();
     assert!(
-        !text.contains("secrets."),
-        "no stored secret: crates.io uses trusted publishing"
+        steps[auth]["if"]
+            .as_str()
+            .is_some_and(|c| c.contains("steps.mode.outputs.token != 'true'")),
+        "OIDC is the fallback, skipped when a token is set"
+    );
+    let token = steps[publish]["env"]["CARGO_REGISTRY_TOKEN"]
+        .as_str()
+        .expect("the publish token env");
+    let secret_at = token.find("secrets.CARGO_REGISTRY_TOKEN");
+    let oidc_at = token.find("steps.auth.outputs.token");
+    assert!(
+        secret_at.is_some() && oidc_at.is_some() && secret_at < oidc_at,
+        "the stored token wins, the OIDC token is the fallback: {token}"
+    );
+    // The only secret the workflow names is that one environment secret.
+    let text = workflow_text();
+    assert_eq!(
+        text.matches("secrets.").count(),
+        text.matches("secrets.CARGO_REGISTRY_TOKEN").count(),
+        "no secret other than CARGO_REGISTRY_TOKEN"
+    );
+    assert!(
+        !wf["jobs"]
+            .as_mapping()
+            .unwrap()
+            .iter()
+            .filter(|(k, _)| k.as_str() != Some("crates"))
+            .any(|(_, j)| serde_yaml_ng::to_string(j).unwrap().contains("secrets.")),
+        "the token is exposed to the crates job only"
     );
 }
 
@@ -585,4 +616,38 @@ fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_onl
         .expect("the publish step");
     assert_eq!(publish["with"]["packages-dir"].as_str(), Some("dist"));
     assert_eq!(downloads[0]["with"]["path"].as_str(), Some("dist"));
+}
+
+#[test]
+fn release_notes_come_from_the_verb_output_not_generated_or_inline_text() {
+    // frob:ticket 01M41B4KPWQVBT234N2DY20758
+    let wf = workflow();
+    let steps = wf["jobs"]["release"]["steps"].as_sequence().unwrap();
+    assert!(
+        steps.iter().any(|s| s["uses"]
+            .as_str()
+            .is_some_and(|u| u.starts_with("actions/checkout@"))),
+        "the release job needs the checkout for CHANGELOG.md"
+    );
+    let run = steps
+        .iter()
+        .filter_map(|s| s["run"].as_str())
+        .find(|r| r.contains("gh release create"))
+        .expect("a step creates the release");
+    let notes = run
+        .find("release notes --version")
+        .expect("the verb is run");
+    let create = run.find("gh release create").unwrap();
+    assert!(notes < create, "the notes are produced before the release");
+    assert!(run.contains("--notes-file"), "{run}");
+    assert!(
+        run.contains("release notes --version \"$VERSION\" --text > notes.md"),
+        "the raw text view is the notes file: {run}"
+    );
+    assert!(
+        !run.contains("jq"),
+        "no JSON post-processing in shell: {run}"
+    );
+    assert!(!run.contains("--generate-notes"), "{run}");
+    assert!(!run.contains("--notes \""), "{run}");
 }

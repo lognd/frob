@@ -7,11 +7,10 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish.workspace = true
 
 [dependencies]
 gix = { version = "0.87", default-features = false, features = ["sha1", "max-performance-safe", "index", "status", "revision", "blob-diff", "worktree-mutation", "merge"] }
-gob-exec = { path = "../gob-exec" }
+gob-exec = { version = "0.0.0", path = "../gob-exec" }
 thiserror = "2"
 tracing = "0.1"
 

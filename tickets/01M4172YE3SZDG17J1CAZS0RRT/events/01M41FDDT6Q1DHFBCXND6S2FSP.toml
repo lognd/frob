@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T18:11:25Z"
+digest = "66825e96e5da870c64b9575cb15d8fb222d9b03d49765161942f9c96321fa560"
+exit_code = 0
+inline = '''
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/AZS0RRT/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e050cfdb-e5bc-49ad-bab7-2ddce2061f73 with nextest profile: default
+    Starting 1 test across 10 binaries (106 tests skipped)
+        PASS [   0.022s] frob-release::release_workflow crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 1 test run: 1 passed, 106 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(crates_job_uses_the_environment_token)'"
+size = 697
+status = "measured"
+tests = ["crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke"]
+at = "2026-10-03T18:11:25Z"
+actor = "lognd"
+rev = 1

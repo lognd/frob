@@ -9,7 +9,11 @@ license = "MIT"
 repository = "https://github.com/lognd/frob"
 rust-version = "1.98"
 authors = ["Logan Dapp"]
-publish = false
+# No workspace-wide `publish`: every crate sets it. The whole set ships to
+# crates.io in lockstep (docs/design/releases.md 6) except the dev-only crates,
+# which carry `publish = false` in their own manifest and are exactly:
+#   gob-dev     the `cargo dev` task runner
+#   gob-mdtest  the markdown corpus test harness
 
 [workspace.lints.rust]
 missing_docs = "deny"

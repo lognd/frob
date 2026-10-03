@@ -7,7 +7,6 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish = false
 
 [lib]
 name = "grimble"
@@ -18,17 +17,17 @@ name = "grimble"
 path = "src/main.rs"
 
 [dependencies]
-gob-check = { path = "../gob-check" }
-gob-cli = { path = "../gob-cli" }
-gob-config = { path = "../gob-config" }
-gob-git = { path = "../gob-git" }
-gob-lock = { path = "../gob-lock" }
-gob-rules = { path = "../gob-rules" }
-gob-symbols = { path = "../gob-symbols" }
-gob-walk = { path = "../gob-walk" }
-grimble-bind = { path = "../grimble-bind" }
-grimble-check = { path = "../grimble-check" }
-grimble-model = { path = "../grimble-model" }
+gob-check = { version = "0.0.0", path = "../gob-check" }
+gob-cli = { version = "0.0.0", path = "../gob-cli" }
+gob-config = { version = "0.0.0", path = "../gob-config" }
+gob-git = { version = "0.0.0", path = "../gob-git" }
+gob-lock = { version = "0.0.0", path = "../gob-lock" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
+gob-walk = { version = "0.0.0", path = "../gob-walk" }
+grimble-bind = { version = "0.0.0", path = "../grimble-bind" }
+grimble-check = { version = "0.0.0", path = "../grimble-check" }
+grimble-model = { version = "0.0.0", path = "../grimble-model" }
 jiff = "0.2"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

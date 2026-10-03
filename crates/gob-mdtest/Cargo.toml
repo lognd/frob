@@ -7,7 +7,7 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish.workspace = true
+publish = false
 
 [dependencies]
 gob-rules = { path = "../gob-rules" }

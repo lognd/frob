@@ -2,17 +2,17 @@
 id = "01M418CXCED7DEBX4WV2PM2R2K"
 title = "frob:accept CI006 in a YAML comment does not suppress the zizmor finding"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T16:08:48Z"
-updated = "2026-10-03T16:08:48Z"
+updated = "2026-10-03T18:14:47Z"
 labels = ["area:check"]
-scope = ["crates/frob-check", "crates/frob-obligations", "crates/gob-directives"]
+scope = ["crates/gob-languages/src/language.rs", "crates/gob-languages/src/grammar.rs", "crates/gob-symbols/src/yaml.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lib.rs", ".github/workflows/dev.yml", "frob.lock", "docs/reference/fidelity.md", "crates/frob-check/**", "crates/frob-obligations/**", "crates/gob-directives/**"]
 
 [[acceptance]]
 text = "Given a frob:accept CI006 comment directly above the on: key of a workflow, when frob check runs, then the CI006 finding is suppressed and the accept is listed"
-bound = false
+bound = true
 +++
 
 found while working ~NE8Z036.

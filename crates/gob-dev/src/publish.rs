@@ -71,7 +71,7 @@ pub struct Crate {
     pub name: String,
     /// Package version.
     pub version: String,
-    /// Names of publishable workspace crates this one depends on (any kind).
+    /// Names of publishable workspace crates this one needs first (dev-dependencies without a version excluded).
     pub deps: BTreeSet<String>,
 }
 
@@ -92,6 +92,24 @@ struct Package {
 struct Dependency {
     name: String,
     path: Option<String>,
+    /// `null` for a normal dependency, `"dev"` or `"build"` otherwise.
+    #[serde(default)]
+    kind: Option<String>,
+    /// Version requirement; `*` when the manifest gives only a path.
+    #[serde(default)]
+    req: Option<String>,
+}
+
+impl Dependency {
+    /// Whether the published crate needs this one on the index first.
+    ///
+    /// Cargo strips a path-only dev-dependency from the packaged manifest, so it
+    /// imposes no order (and may close a cycle, as `gob-macros` tests do).
+    fn orders_publish(&self) -> bool {
+        let stripped =
+            self.kind.as_deref() == Some("dev") && self.req.as_deref().is_none_or(|r| r == "*");
+        self.path.is_some() && !stripped
+    }
 }
 
 impl Package {
@@ -128,7 +146,9 @@ pub fn plan(metadata_json: &str) -> Result<Vec<Crate>, PublishError> {
             let deps = p
                 .dependencies
                 .iter()
-                .filter(|d| d.path.is_some() && names.contains(d.name.as_str()) && d.name != p.name)
+                .filter(|d| {
+                    d.orders_publish() && names.contains(d.name.as_str()) && d.name != p.name
+                })
                 .map(|d| d.name.clone())
                 .collect();
             (
@@ -543,6 +563,17 @@ mod tests {
         .unwrap();
         assert_eq!(names(&order), ["leaf", "mid", "zed"]);
         assert!(order[1].deps.contains("leaf") && !order[1].deps.contains("private"));
+    }
+
+    // frob:ticket 01M4172YE3SZDG17J1CAZS0RRT
+    #[test]
+    fn path_only_dev_dependencies_do_not_order_or_cycle_but_versioned_ones_do() {
+        let json = r#"{"packages":[
+            {"name":"a","version":"1","publish":null,"dependencies":[{"name":"b","path":"/x/b","kind":"dev","req":"*"}]},
+            {"name":"b","version":"1","publish":null,"dependencies":[{"name":"a","path":"/x/a","kind":null,"req":"^1"}]}]}"#;
+        assert_eq!(names(&plan(json).unwrap()), ["a", "b"]);
+        let versioned = json.replace(r#""kind":"dev","req":"*""#, r#""kind":"dev","req":"^1""#);
+        assert!(matches!(plan(&versioned), Err(PublishError::Cycle(_))));
     }
 
     #[test]

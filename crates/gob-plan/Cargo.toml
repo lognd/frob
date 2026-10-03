@@ -7,11 +7,10 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish.workspace = true
 
 [dependencies]
-gob-rules = { path = "../gob-rules" }
-gob-text = { path = "../gob-text" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-text = { version = "0.0.0", path = "../gob-text" }
 thiserror = "2"
 tracing = "0.1"
 

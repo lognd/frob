@@ -70,6 +70,7 @@ Incremental releases depend on main always being shippable:
 | `frob milestone evidence add VERSION --provider P --ref R [--accepts N]...` / `list VERSION` | captures a record with the same providers, allowlist and format as `ticket evidence add` and offers it for exit criteria; `milestone show` prints each criterion as `bound` or `unbound` with the binding evidence (latest record per provider, ref and criterion decides; only measured, passing records bind; `--provider attestation --statement T [--fact F]...` is a listed attester's statement for criteria no tool measures, shown as `attested`, security.md 2.3). `milestone criterion remove` reports the evidence that loses its criterion (`lost_evidence`, as `ticket update` does) |
 | `frob release status [VERSION]` | readiness: every exit criterion evidenced; no open ticket in the milestone's epics; CI green on the tip; fragments compile; GEN001 and the pack lock clean. It also prints what is left, the forecast for it (pm-enforcement.md 5) and the changelog preview. It never fails a check; it reports. |
 | `frob release cut VERSION` | requires status ready (or `--override --reason`, recorded as an event). Bumps the lockstep version of every crate (monorepo.md 4); compiles CHANGELOG.md from the fragments and removes them; commits on main through the land machinery (CAS, one commit); tags one tag per configured product (section 4a). Pushing the tag starts the release job. As built: `frob release cut VERSION [--override --reason TEXT] [--push]` refuses a dirty tree, a checkout off the base branch, an existing tag and a not-ready status (exit 3 with the remedy); the override reason is a `override` event on the milestone; the commit is `chore(release): cut VERSION`; tags are annotated, local unless `--push`, one per `[release] products` entry named by `[release] tag` (this repository: `frob-v` and `grimble-v` tags); the milestone gets a `cut` event (version, commit, tag names and oids; REL001 reads it) and moves to `released`. A failure after the commit resumes by re-running the same command (failure matrix in `crates/frob-release/src/cut.rs`). |
+| `frob release notes --version X` | prints the body of that version's CHANGELOG.md section (heading and integrity marker removed) as `data.notes`, and with `--text` the section alone, raw, with no envelope; the release job feeds it to `gh release create --notes-file` via `--text > notes.md` (the linux archive's own binary, no markdown parsed and no jq in shell) and does not use `--generate-notes`, so the compiled section is the whole release body. It reuses `changelog::split` and `heading_version`; a missing section is `E-CHANGELOG-NO-SECTION` |
 | `frob release bump VERSION [--dry-run] [--allow-downgrade]` | sets the one lockstep version: `[workspace.package] version` (added when absent), every member made to inherit it with `version.workspace = true` (one line to edit per release, no member can drift), the `version` of intra-workspace path dependencies, a static wheel `pyproject.toml` version, then `Cargo.lock` through an offline `cargo update --workspace`; format-preserving, idempotent (a repeat reports `already`), refuses a version below the current one without `--allow-downgrade`, and re-runs REL002 afterwards. `release cut` calls it |
 | `frob release forecast VERSION` | time to release: the forecast of the last blocking ticket plus the measured land-to-release lag |
 | `frob cycle new/plan/assign/close/velocity` | as pm-enforcement.md 4; `plan` fills to capacity from ready work in rank order, preferring the next milestone |
@@ -174,7 +175,18 @@ part of the job's design:
 - **Publishing:** crates.io in dependency order and in lockstep. A
   partial publish resumes from the first unpublished crate, never
   re-bumps. Registry tokens live only in the release environment, and
-  security.md's CI rules apply.
+  security.md's CI rules apply. Every crate publishes (`publish` is set
+  per crate, never workspace-wide) except the dev-only crates, which
+  carry `publish = false` and are exactly `gob-dev` (the `cargo dev`
+  runner) and `gob-mdtest` (the corpus test harness); `grimble` ships
+  as a preview in 0.532.0 with the `grimble-*` crates. The root `Cargo.toml` comment repeats this list. Every
+  path dependency on a shipped crate carries a `version`, which `frob
+  release bump` keeps in lockstep. The `crates` job publishes with the
+  `crates-io` environment's `CARGO_REGISTRY_TOKEN` secret when one is
+  set and through the OIDC action otherwise (crates.io cannot configure
+  trusted publishing for a crate that does not exist yet, so the first
+  publish needs the token; the owner then configures trusted publishing
+  per crate and deletes the secret).
 
 ## 6a. Details (closing the 0.532.0 planner's gaps)
 
@@ -234,8 +246,9 @@ part of the job's design:
   as Unresolved only). `release cut` runs the same gate, so a red tip cannot
   be cut without `--override`.
 - **Owner actions before the first publish.** Configure trusted
-  publishing on PyPI (`frob`) and crates.io where available (otherwise a
-  token in the release environment); confirm ownership of the reserved
+  publishing on PyPI (`frob`) and, once the first publish has created the
+  crates, on crates.io (the first publish uses a token in the release
+  environment); confirm ownership of the reserved
   crate names (products.md 5). These are human steps, listed by
   `frob release status` as Unresolved items until done.
 - **Rule numbers.** PM035 intangible-share (Warning) is new; PM014 keeps

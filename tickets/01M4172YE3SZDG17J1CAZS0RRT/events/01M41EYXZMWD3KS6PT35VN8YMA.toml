@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T18:03:30Z"
+digest = "c4ccd7fae0581d31ef9d668e466d20979398a47746c64ca39fc2af08c3bd9731"
+exit_code = 0
+inline = '''
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/AZS0RRT/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.99s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7faaace8-fa26-4f2e-94fa-77b9ce82344e with nextest profile: default
+    Starting 1 test across 10 binaries (106 tests skipped)
+        PASS [   0.013s] frob-release::release_workflow crates_job_publishes_through_trusted_publishing_in_the_crates_io_environment_after_smoke
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 106 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(crates_job_publishes_through_trusted_publishing)'"
+size = 708
+status = "measured"
+tests = ["crates_job_publishes_through_trusted_publishing_in_the_crates_io_environment_after_smoke"]
+at = "2026-10-03T18:03:30Z"
+actor = "lognd"
+rev = 1
