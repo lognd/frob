@@ -2,13 +2,14 @@
 id = "01M40T3WSDHBQ71K2F2FJT8C2Q"
 title = "frob ack writes frob.lock on the ticket branch, then SCOPE001 flags it outside the lease"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:59:13Z"
-updated = "2026-10-03T12:54:22Z"
+updated = "2026-10-03T12:54:23Z"
 idempotency_key = "m2-rel-locks-are-bookkeeping"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-check/**", "changelog.d/01M40T3WSDHBQ71K2F2FJT8C2Q.fixed.md"]
