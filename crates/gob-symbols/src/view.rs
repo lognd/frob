@@ -30,6 +30,8 @@ pub(crate) const ATTR_ARITY: &str = "arity";
 pub(crate) const ATTR_RET: &str = "ret";
 /// Unit attribute: the plain first generic argument of a function's declared return type.
 pub(crate) const ATTR_RET_ARG: &str = "ret_arg";
+/// Unit attribute: the element types of a tuple return type, comma-separated, `_` for an untyped element.
+pub(crate) const ATTR_RET_TUPLE: &str = "ret_tuple";
 /// Attribute key holding the slug of a markdown section's parent section.
 pub(crate) const ATTR_SECTION_PARENT: &str = "section.parent";
 /// Hole kind of a syntax error.
@@ -242,6 +244,11 @@ fn signature_of(term: &Term, n: NodeId) -> Option<MethodSig> {
     let ret = attrs.get_str(ATTR_RET).map(|head| RetType {
         head: head.to_owned(),
         arg: attrs.get_str(ATTR_RET_ARG).map(str::to_owned),
+        tuple: attrs.get_str(ATTR_RET_TUPLE).map(|t| {
+            t.split(',')
+                .map(|e| (e != "_").then(|| e.to_owned()))
+                .collect()
+        }),
     });
     Some(MethodSig {
         self_kind,

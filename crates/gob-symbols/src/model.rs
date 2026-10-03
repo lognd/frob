@@ -200,6 +200,8 @@ pub struct RetType {
     pub head: String,
     /// The plain first generic argument (`Foo` in `Result<Foo, E>`), when it is a plain type.
     pub arg: Option<String>,
+    /// For a tuple return type, the plain type of each element (`None` where it is not a plain type).
+    pub tuple: Option<Vec<Option<String>>>,
 }
 
 /// The calling shape of a function or method: its `self` kind, argument count and return type.
@@ -324,6 +326,8 @@ pub enum Receiver {
     Field(Box<Receiver>, String),
     /// The value of a call whose callee has a declared return type (`store_in(..)`, `Type::open(..)`, `x.term()`).
     Ret(Box<CallRef>),
+    /// Element `i` of a tuple-valued receiver (`let (a, b) = f()` binds `a` to element 0).
+    Elem(Box<Receiver>, usize),
     /// The success value of a `Result` or `Option` receiver (`e?`, `e.unwrap()`, `e.expect(..)`).
     Unwrap(Box<Receiver>),
     /// A value known only by its trait bounds (`&dyn A`, `impl A`, a generic `T: A + B`): trait names, sorted.

@@ -282,7 +282,9 @@ impl Index {
                     let rel = u.target.strip_suffix("::*").unwrap_or(&u.target);
                     let mut key = module.clone();
                     key.extend(rel.split("::").map(str::to_owned));
-                    if self.by_item.contains_key(&(krate.clone(), key.join("::"))) {
+                    let mut head = module.clone();
+                    head.extend(rel.split("::").next().map(str::to_owned));
+                    if self.by_item.contains_key(&(krate.clone(), head.join("::"))) {
                         let glob = if u.target.ends_with("::*") { "::*" } else { "" };
                         u.target = format!("crate::{}{glob}", key.join("::"));
                     }
@@ -352,6 +354,7 @@ impl Index {
         hits.next().is_none().then(|| Ty {
             head: first.ty.clone(),
             arg: None,
+            tuple: None,
             file: file.clone(),
         })
     }
@@ -390,6 +393,8 @@ impl Index {
 /// A receiver type proven for a call.
 #[derive(Debug, Clone)]
 struct Ty {
+    /// The element types of a tuple value.
+    tuple: Option<Vec<Option<String>>>,
     /// The type name as written (`written` in `use a::B as written`).
     head: String,
     /// The first generic argument, for `Result<T, _>` and `Option<T>`.
@@ -725,11 +730,13 @@ impl SymbolGraph {
             Receiver::SelfValue => Ty {
                 head: self.enclosing_impl_type(caller)?,
                 arg: None,
+                tuple: None,
                 file: caller.path().to_owned(),
             },
             Receiver::Typed(t) => Ty {
                 head: t.clone(),
                 arg: None,
+                tuple: None,
                 file: caller.path().to_owned(),
             },
             Receiver::Field(base, field) => {
@@ -747,6 +754,16 @@ impl SymbolGraph {
                 Ty {
                     head: t.arg?,
                     arg: None,
+                    tuple: None,
+                    file: t.file,
+                }
+            }
+            Receiver::Elem(inner, i) => {
+                let t = self.receiver_ty(idx, caller, inner)?;
+                Ty {
+                    head: t.tuple?.get(*i)?.clone()?,
+                    arg: None,
+                    tuple: None,
                     file: t.file,
                 }
             }
@@ -784,6 +801,7 @@ impl SymbolGraph {
             }
         };
         Some(Ty {
+            tuple: ret.tuple.clone(),
             head: sub(&ret.head)?,
             arg: ret.arg.as_deref().and_then(sub),
             file: rec.symref.path().to_owned(),

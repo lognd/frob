@@ -48,8 +48,8 @@ use crate::paths::crate_and_module;
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
 use crate::view::{
-    self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_RET, ATTR_RET_ARG, ATTR_SELF_KIND, ATTR_VISIBILITY,
-    HOLE_MISSING, HOLE_PARSE_ERROR, Naming,
+    self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_RET, ATTR_RET_ARG, ATTR_RET_TUPLE, ATTR_SELF_KIND,
+    ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming,
 };
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
@@ -889,6 +889,22 @@ impl<'a> Fold<'a> {
         if let Some(t) = self.value_type(v) {
             return Some(Receiver::Typed(t));
         }
+        match v.kind() {
+            "string_literal" | "raw_string_literal" => {
+                return Some(Receiver::Typed("str".to_owned()));
+            }
+            "macro_invocation" => {
+                let name = v
+                    .child_by_field_name("macro")
+                    .and_then(|m| self.t(m).rsplit("::").next());
+                return match name {
+                    Some("format") => Some(Receiver::Typed("String".to_owned())),
+                    Some("vec") => Some(Receiver::Typed("Vec".to_owned())),
+                    _ => None,
+                };
+            }
+            _ => {}
+        }
         match self.receiver_of(Some(v)) {
             Receiver::Expr => None,
             r => Some(r),
@@ -915,11 +931,28 @@ impl<'a> Fold<'a> {
                             .find(|c| c.is_named() && c.kind() != "lifetime")
                     })
                     .and_then(name);
-                Some(RetType { head, arg })
+                Some(RetType {
+                    head,
+                    arg,
+                    tuple: None,
+                })
+            }
+            "tuple_type" => {
+                let elems: Vec<Option<String>> = children(t)
+                    .into_iter()
+                    .filter(|c| c.is_named() && !is_comment(*c))
+                    .map(name)
+                    .collect();
+                (!elems.is_empty()).then(|| RetType {
+                    head: "(tuple)".to_owned(),
+                    arg: None,
+                    tuple: Some(elems),
+                })
             }
             _ => Some(RetType {
                 head: name(t)?,
                 arg: None,
+                tuple: None,
             }),
         }
     }
@@ -938,7 +971,7 @@ impl<'a> Fold<'a> {
     fn plain_type(&self, t: Node<'_>) -> Option<String> {
         let name = match t.kind() {
             "reference_type" => return self.plain_type(t.child_by_field_name("type")?),
-            "type_identifier" => self.t(t).to_owned(),
+            "type_identifier" | "primitive_type" => self.t(t).to_owned(),
             "scoped_type_identifier" => {
                 // `module::Type` names a type; `Self::Item`, `T::Output` name associated types.
                 let path = t.child_by_field_name("path")?;
@@ -1022,8 +1055,8 @@ impl<'a> Fold<'a> {
         };
         if let Some(tp) = node.child_by_field_name("type_parameters") {
             for c in children(tp) {
-                if c.kind() == "constrained_type_parameter"
-                    && let Some(l) = c.child_by_field_name("left")
+                if c.kind() == "type_parameter"
+                    && let Some(l) = c.child_by_field_name("name")
                 {
                     add(self.t(l), c.child_by_field_name("bounds"));
                 }
@@ -1082,6 +1115,35 @@ impl<'a> Fold<'a> {
     fn leave_generics(&mut self, marks: (usize, usize)) {
         self.generics.truncate(marks.0);
         self.bounds.truncate(marks.1);
+    }
+
+    /// Types the plain binders of the tuple pattern `p` as elements of `value` (slots from `env[at..]`).
+    fn tuple_binders(&self, at: usize, p: Node<'_>, value: &Receiver) {
+        for (i, c) in children(p)
+            .into_iter()
+            .filter(|c| c.is_named() && !is_comment(*c))
+            .enumerate()
+        {
+            let name = match c.kind() {
+                "identifier" => self.t(c).to_owned(),
+                "mut_pattern" => match children(c).into_iter().find(|x| x.kind() == "identifier") {
+                    Some(id) => self.t(id).to_owned(),
+                    None => continue,
+                },
+                _ => continue,
+            };
+            let mut env = self.env.borrow_mut();
+            if let Some(slot) = env.iter_mut().skip(at).find(|(n, _)| *n == name) {
+                slot.1 = Some(Receiver::Elem(Box::new(value.clone()), i));
+            }
+        }
+    }
+
+    /// The receiver that a declared type `t` stands for: a plain type, else its trait bounds.
+    fn typed_receiver(&self, t: Node<'_>) -> Option<Receiver> {
+        self.plain_type(t)
+            .map(Receiver::Typed)
+            .or_else(|| self.bound_receiver(t))
     }
 
     /// The receiver a parameter or `let` type stands for when it is only known by its trait bounds.
@@ -1546,7 +1608,11 @@ impl<'a> Fold<'a> {
             k.child_by_field_name("value")
                 .and_then(|v| self.value_receiver(v))
         });
-        self.type_binder(env_at, k.child_by_field_name("pattern"), ty);
+        let pat = k.child_by_field_name("pattern");
+        match (&ty, pat) {
+            (Some(r), Some(p)) if p.kind() == "tuple_pattern" => self.tuple_binders(env_at, p, r),
+            _ => self.type_binder(env_at, pat, ty),
+        }
         let rhs = self.cx.op(Operator::group(GroupOrder::Sequence), k, &rhs)?;
         let scope = self.rest_group(k, rest, depth)?;
         self.bind_node("let", k, &binders, scope, rhs)
@@ -1600,11 +1666,18 @@ impl<'a> Fold<'a> {
                     } else {
                         p
                     };
+                    let env_at = self.env.borrow().len();
                     let (names, shape) = self.pattern(pat);
                     for nm in names {
                         if !binders.contains(&nm) {
                             binders.push(nm);
                         }
+                    }
+                    if p.kind() == "parameter" {
+                        let ty = p
+                            .child_by_field_name("type")
+                            .and_then(|t| self.typed_receiver(t));
+                        self.type_binder(env_at, Some(pat), ty);
                     }
                     kids.push(self.cx.lit("pattern", &shape, p)?);
                     if p.kind() == "parameter"
@@ -1896,6 +1969,10 @@ impl<'a> Fold<'a> {
                 spec = spec.attr(ATTR_RET, r.head.as_str());
                 if let Some(a) = r.arg {
                     spec = spec.attr(ATTR_RET_ARG, a.as_str());
+                }
+                if let Some(t) = r.tuple {
+                    let joined: Vec<&str> = t.iter().map(|e| e.as_deref().unwrap_or("_")).collect();
+                    spec = spec.attr(ATTR_RET_TUPLE, joined.join(",").as_str());
                 }
             }
         }
