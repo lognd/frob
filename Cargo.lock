@@ -872,6 +872,7 @@ dependencies = [
  "frob-lease",
  "frob-ledger",
  "frob-pm",
+ "frob-release",
  "frob-tests",
  "frob-worktree",
  "gob-cache",
@@ -883,6 +884,7 @@ dependencies = [
  "gob-symbols",
  "gob-walk",
  "insta",
+ "jiff",
  "schemars",
  "serde",
  "serde_json",
@@ -1016,6 +1018,17 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+]
+
+[[package]]
+name = "frob-release"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "tempfile",
+ "thiserror",
+ "tracing",
+ "ulid",
 ]
 
 [[package]]

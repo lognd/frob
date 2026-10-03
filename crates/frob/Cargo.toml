@@ -36,9 +36,11 @@ frob-evidence = { path = "../frob-evidence" }
 frob-land = { path = "../frob-land" }
 frob-lease = { path = "../frob-lease" }
 frob-pm = { path = "../frob-pm" }
+frob-release = { path = "../frob-release" }
 frob-ledger = { path = "../frob-ledger" }
 frob-tests = { path = "../frob-tests" }
 frob-worktree = { path = "../frob-worktree" }
+jiff = "0.2"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
