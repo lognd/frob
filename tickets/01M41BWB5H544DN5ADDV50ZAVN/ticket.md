@@ -7,8 +7,8 @@ priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T17:09:40Z"
-updated = "2026-10-03T17:14:29Z"
-scope = ["crates/frob-release/**", "docs/reference/changelog.md"]
+updated = "2026-10-03T17:15:18Z"
+scope = ["crates/frob-release/**", "docs/reference/changelog.md", "changelog.d/01M4069YE7SYCYT7YGT2FCV344.added.md", "changelog.d/01M4069YE7SYCYT7YGT2FCV344.notice.md", "docs/design/documentation.md", "docs/design/releases.md"]
 
 [[acceptance]]
 text = "Given the changelog compile, when run, then the v2 notice leads the 0.532.0 section"
