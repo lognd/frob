@@ -11,11 +11,15 @@ publish.workspace = true
 
 [dependencies]
 blake3 = "1"
+gob-exec = { path = "../gob-exec" }
 gob-rules = { path = "../gob-rules" }
 schemars = "1"
+similar = "2"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
+semver = "1"
 toml = "1"
+toml_edit = "0.25"
 tracing = "0.1"
 ulid = "1"
 

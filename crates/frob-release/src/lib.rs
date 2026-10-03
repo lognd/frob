@@ -6,6 +6,7 @@
 //! write succeeded. Every compiled section ends with a BLAKE3 marker, so `--check` detects a
 //! hand edit of an older section without needing git history.
 
+pub mod bump;
 pub mod changelog;
 pub mod error;
 pub mod fragment;

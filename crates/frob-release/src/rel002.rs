@@ -71,21 +71,21 @@ pub enum ManifestError {
 }
 
 /// The workspace manifest facts REL002 needs.
-struct Workspace {
+pub(crate) struct Workspace {
     /// `[workspace.package] version`, when declared.
-    version: Option<String>,
+    pub(crate) version: Option<String>,
     /// Member directories relative to the root (`.` is the root package).
-    members: Vec<String>,
+    pub(crate) members: Vec<String>,
 }
 
 /// One member's effective version.
-struct Member {
+pub(crate) struct Member {
     /// Package name, or the directory when unnamed.
-    name: String,
+    pub(crate) name: String,
     /// Manifest path relative to the root, with `/` separators.
-    manifest: String,
+    pub(crate) manifest: String,
     /// Effective version.
-    version: String,
+    pub(crate) version: String,
 }
 
 fn rule_id() -> RuleId {
@@ -95,7 +95,7 @@ fn rule_id() -> RuleId {
         .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
 }
 
-fn read_table(path: &Path) -> Result<Table, ManifestError> {
+pub(crate) fn read_table(path: &Path) -> Result<Table, ManifestError> {
     let text = std::fs::read_to_string(path).map_err(|e| ManifestError::Read(e.to_string()))?;
     text.parse::<Table>()
         .map_err(|e| ManifestError::Parse(e.to_string().replace('\n', " ")))
@@ -159,7 +159,7 @@ fn expand(root: &Path, pattern: &str) -> Result<Vec<String>, ManifestError> {
     Ok(found)
 }
 
-fn workspace(root: &Path, table: &Table, out: &mut Evaluation) -> Option<Workspace> {
+pub(crate) fn workspace(root: &Path, table: &Table, out: &mut Evaluation) -> Option<Workspace> {
     let ws = table.get("workspace")?.as_table()?;
     let version = ws
         .get("package")
@@ -192,7 +192,7 @@ fn workspace(root: &Path, table: &Table, out: &mut Evaluation) -> Option<Workspa
     Some(Workspace { version, members })
 }
 
-fn member(
+pub(crate) fn member(
     root: &Path,
     dir: &str,
     ws_version: Option<&str>,
@@ -239,7 +239,7 @@ fn member(
 }
 
 /// The wheel metadata present under `root`, if any.
-fn wheel_path(root: &Path) -> Option<PathBuf> {
+pub(crate) fn wheel_path(root: &Path) -> Option<PathBuf> {
     WHEEL_METADATA
         .iter()
         .map(|p| root.join(p))
@@ -247,7 +247,7 @@ fn wheel_path(root: &Path) -> Option<PathBuf> {
 }
 
 /// What the wheel metadata says about the version.
-enum Wheel {
+pub(crate) enum Wheel {
     /// No `[project]` table: not a wheel definition.
     Absent,
     /// A static version string.
@@ -257,7 +257,7 @@ enum Wheel {
 }
 
 /// The wheel's version declaration.
-fn wheel_version(path: &Path) -> Result<Wheel, ManifestError> {
+pub(crate) fn wheel_version(path: &Path) -> Result<Wheel, ManifestError> {
     let table = read_table(path)?;
     let Some(project) = table.get("project").and_then(Value::as_table) else {
         return Ok(Wheel::Absent);

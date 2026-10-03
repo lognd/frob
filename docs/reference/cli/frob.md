@@ -24,6 +24,7 @@
 | `milestone list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every milestone, oldest first. |
 | `milestone new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a milestone; an identical repeat returns `already`, a different one is refused. |
 | `milestone show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one milestone with its member epics and exit criteria. |
+| `release bump` | yes | yes | 0 ok, 3 refused, 4 internal | Set one lockstep version on every crate, intra-workspace pin and the wheel; idempotent. |
 | `release changelog` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Compile changelog.d fragments into a new CHANGELOG.md section for a version. |
 | `release status` | yes | no | 0 ok, 3 refused, 4 internal | Report release readiness: criteria, open tickets, PM034, fragments, what is unresolved; never fails. |
 | `requeue` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Release a ticket's lease and move it back to todo. |

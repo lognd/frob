@@ -1,4 +1,4 @@
-//! `release changelog` and `release status` (documentation.md 6, releases.md 4).
+//! `release changelog`, `release status` and `release bump` (documentation.md 6, releases.md 4).
 //!
 //! A thin layer over `frob-release`: ticket ULIDs resolve against the ledger, a typed
 //! [`ReleaseError`] becomes an exit-3 refusal carrying its teaching message, and
@@ -14,6 +14,7 @@ use frob_ledger::{Ledger, TicketId};
 use frob_pm::PmStore;
 use frob_pm::model::Milestone;
 use frob_pm::rules::membership::{CLAIM_PREFIX, claimants, pm034};
+use frob_release::bump::{BumpError, BumpOptions, BumpReport, LockState};
 use frob_release::status::{
     ChangelogFacts, EvidenceRef, Input, MilestoneFacts, OpenTicket, Report, assess,
 };
@@ -379,8 +380,146 @@ fn changelog_facts(root: &std::path::Path, ledger: &Ledger, version: &str) -> Ch
     }
 }
 
+// frob:ticket 01M4069X2KPQ6RNV26SWSY4VA5
+/// One file a bump changed (or would change) with its unified diff.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct BumpFile {
+    /// Path relative to the repository root.
+    pub path: String,
+    /// Unified diff of the edit.
+    pub diff: String,
+}
+
+// frob:ticket 01M4069X2KPQ6RNV26SWSY4VA5
+/// What `release bump` did, or with `--dry-run` would do.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct BumpData {
+    /// The lockstep version set.
+    pub version: String,
+    /// The workspace version before, when it declared one.
+    pub previous: Option<String>,
+    /// True when nothing needed to change.
+    pub already: bool,
+    /// True when nothing was written because of `--dry-run`.
+    pub dry_run: bool,
+    /// Files changed (or that would be), excluding Cargo.lock.
+    pub files: Vec<BumpFile>,
+    /// `refreshed`, `unchanged`, `would-refresh`, `not-needed` or `absent`.
+    pub lock: String,
+    /// REL002 messages after the write; absent for a dry run, empty when clean.
+    pub rel002: Option<Vec<String>>,
+}
+
+impl From<BumpReport> for BumpData {
+    fn from(r: BumpReport) -> Self {
+        Self {
+            version: r.version,
+            previous: r.previous,
+            already: r.already,
+            dry_run: r.dry_run,
+            files: r
+                .files
+                .into_iter()
+                .map(|f| BumpFile {
+                    path: f.path,
+                    diff: f.diff,
+                })
+                .collect(),
+            lock: match r.lock {
+                LockState::Refreshed => "refreshed",
+                LockState::Unchanged => "unchanged",
+                LockState::WouldRefresh => "would-refresh",
+                LockState::NotNeeded => "not-needed",
+                LockState::Absent => "absent",
+            }
+            .to_owned(),
+            rel002: r.rel002,
+        }
+    }
+}
+
+// frob:ticket 01M4069X2KPQ6RNV26SWSY4VA5
+/// Set one lockstep version on every crate, intra-workspace pin and the wheel; idempotent.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "release bump",
+    product = "frob",
+    idempotent = true,
+    dry_run = true,
+    exits(ok, refused, internal)
+)]
+pub struct ReleaseBump {
+    version: String,
+    allow_downgrade: bool,
+}
+
+impl Command for ReleaseBump {
+    type Data = BumpData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(
+            Arg::new("version")
+                .value_name("VERSION")
+                .required(true)
+                .help("The lockstep version, semver (for example 0.532.0)"),
+        )
+        .arg(
+            Arg::new("allow-downgrade")
+                .long("allow-downgrade")
+                .action(ArgAction::SetTrue)
+                .help("Permit a version lower than the current workspace version"),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            version: get(m, "version").unwrap_or_default(),
+            allow_downgrade: m.get_flag("allow-downgrade"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<BumpData> {
+        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let opts = BumpOptions {
+            version: self.version.clone(),
+            dry_run: ctx.dry_run,
+            allow_downgrade: self.allow_downgrade,
+        };
+        let report = frob_release::bump::run(&root, &opts).map_err(refuse_bump)?;
+        tracing::info!(version = %self.version, already = report.already, dry_run = ctx.dry_run, "release bump");
+        let already = report.already;
+        Ok(Payload::new(BumpData::from(report)).with_already(already))
+    }
+}
+
+// frob:ticket 01M4069X2KPQ6RNV26SWSY4VA5
+/// Map a bump error to its CLI error: a refusal (exit 3) unless it is an I/O failure.
+fn refuse_bump(e: BumpError) -> CliError {
+    let (code, remedy) = match &e {
+        BumpError::Io { .. } => return CliError::internal(e),
+        BumpError::InvalidVersion(_) => ("E-BUMP-VERSION", "frob release bump --help"),
+        BumpError::Downgrade { .. } => (
+            "E-BUMP-DOWNGRADE",
+            "frob release bump <VERSION> --allow-downgrade",
+        ),
+        BumpError::NotWorkspace(_) => ("E-BUMP-NO-WORKSPACE", "cd <repository root>"),
+        BumpError::Unresolved(_) | BumpError::Shape { .. } => {
+            ("E-BUMP-MANIFEST", "fix the named manifest, then rerun")
+        }
+        BumpError::Cargo { .. } => (
+            "E-BUMP-LOCK",
+            "cargo fetch, then frob release bump <VERSION>",
+        ),
+    };
+    tracing::info!(code, "release bump refused");
+    Refusal::new(code, RefusalClass::GuardNeedsAction, e.to_string())
+        .with_remedy(remedy)
+        .into()
+}
+
 /// Register the `release` verbs on the root.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<ReleaseChangelog>()
         .register::<ReleaseStatus>()
+        .register::<ReleaseBump>()
 }
