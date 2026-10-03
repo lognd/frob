@@ -8,10 +8,10 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T12:45:47Z"
-updated = "2026-10-03T13:27:21Z"
+updated = "2026-10-03T13:31:25Z"
 idempotency_key = "m2-rel-done-requires-enforced"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-evidence/**", "crates/frob-ledger/src/guards*", "crates/frob-land/**", "crates/frob/src/ticket/**", "crates/frob/src/lib.rs", "crates/frob/tests/close_guards.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/wiring.rs", "crates/frob/tests/release_status.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/common/mod.rs", "changelog.d/01M40WS6200M99J09D5XGAS05X.fixed.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "crates/frob-pm/src/config.rs", "frob.toml", "crates/frob/tests/cycle.rs"]
+scope = ["crates/frob-evidence/**", "crates/frob-ledger/src/guards*", "crates/frob-land/**", "crates/frob/src/ticket/**", "crates/frob/src/lib.rs", "crates/frob/tests/close_guards.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/wiring.rs", "crates/frob/tests/release_status.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/common/mod.rs", "changelog.d/01M40WS6200M99J09D5XGAS05X.fixed.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "crates/frob-pm/src/config.rs", "frob.toml", "crates/frob/tests/cycle.rs", "crates/frob-pm/tests/config.rs", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given a chore with an unbound criterion, when land or close runs, then it is refused naming the criterion and the bypass"
