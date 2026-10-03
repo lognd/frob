@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T14:49:15Z"
-updated = "2026-10-03T18:36:16Z"
+updated = "2026-10-03T18:36:19Z"
 scope = ["crates/frob-check/**", "crates/frob/src/check_cmd.rs"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given --json, when check --ticket runs, then every finding is still present"
-bound = false
+bound = true
 +++
 
 Reported by mdcat (FROB_FEEDBACK item 3): on a fresh fork, check --ticket printed about 50 COV001/DOC001 warnings on untouched files plus 'opaque text file' unresolved notes, burying the one finding that mattered. In --ticket mode, text output lists findings on paths in the ticket's diff first, then one count line per rule for the rest (full list under -v and in JSON, which is unchanged). Also check why 2031 files count as opaque in mdcat (fixtures or build output walked?) and file a follow-up if the walk is wrong.
