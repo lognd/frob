@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T12:06:48Z"
-updated = "2026-10-03T12:27:16Z"
+updated = "2026-10-03T12:30:25Z"
 idempotency_key = "m2-rel-digest-git-normalized"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/gob-git/**", "crates/gob-lock/**", "crates/frob-ack/**", "crates/gob-text/**", "crates/frob-ledger/**"]
+scope = ["crates/gob-git/**", "crates/gob-lock/**", "crates/frob-ack/**", "crates/gob-text/**", "crates/frob-ledger/**", "crates/gob-walk/**"]
 
 [[links]]
 kind = "blocked-by"
