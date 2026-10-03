@@ -2,13 +2,13 @@
 id = "01M4069Y65FA7GGXG2F6N2KET1"
 title = "crates.io publish in dependency order, resumable (cargo dev publish and the job)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T06:12:59Z"
+updated = "2026-10-03T15:27:43Z"
 idempotency_key = "m2-rel-publish-crates"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/gob-dev/src/publish.rs", ".github/workflows/release.yml"]
