@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T13:15:38Z"
+digest = "9cb32411ec89fe196f12d1983297feebfdd602941bd2f9d3d59d6b3501f3a702"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+────────────
+ Nextest run ID 4c78b27f-4288-4e94-9f09-a6bb84d02e59 with nextest profile: default
+    Starting 1 test across 1 binary (19 tests skipped)
+        PASS [   1.892s] (1/1) frob-cli::cycle close_early_without_next_goal_refuses_and_the_remedy_names_it
+────────────
+     Summary [   1.893s] 1 test run: 1 passed, 19 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test cycle -E 'test(close_early_without_next_goal)'"
+size = 452
+status = "measured"
+tests = ["close_early_without_next_goal_refuses_and_the_remedy_names_it"]
+at = "2026-10-03T13:15:38Z"
+actor = "lognd"
+rev = 1
