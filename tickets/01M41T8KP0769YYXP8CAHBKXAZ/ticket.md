@@ -7,12 +7,12 @@ priority = "critical"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T21:21:02Z"
-updated = "2026-10-03T21:42:13Z"
+updated = "2026-10-03T21:44:13Z"
 scope = ["crates/frob-pm/src/board.rs", "crates/gob-dev/**", ".github/workflows/ci.yml", "crates/frob-release/tests/ci_pins.rs", "CONTRIBUTING.md"]
 
 [[acceptance]]
 text = "Given the workspace, when cargo dev ci runs, then it runs every Linux check ci.yml runs, with the same flags, and passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a check added to ci.yml but not to cargo dev ci (or with different flags), when the parity test runs, then it fails naming the check"
