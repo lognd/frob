@@ -2,7 +2,8 @@
 id = "01M40K5J3B39TX30FC3PFY7RCD"
 title = "ticket evidence add: a --ref value starting with a hyphen is parsed as a flag"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
