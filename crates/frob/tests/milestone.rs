@@ -469,3 +469,12 @@ fn pm_strict_escalates_pm001_to_error() {
     std::fs::write(&toml, text.replace("strict = false", "strict = true")).expect("write");
     assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("error"));
 }
+
+// frob:ticket 01M41DQF8CJG567CJ1AWETTCK4
+// frob:tests open_ledger
+#[test]
+fn pm001_fires_on_a_milestone_with_no_tickets() {
+    let repo = Repo::new();
+    repo.ok(&["milestone", "new", "0.1.0", "--goal", "g"]);
+    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("warning"));
+}

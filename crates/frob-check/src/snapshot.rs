@@ -42,6 +42,13 @@ pub(crate) struct LedgerState {
     pub milestones: usize,
 }
 
+impl LedgerState {
+    /// True when the ledger holds any ticket or milestone: the one predicate for ledger-rule applicability.
+    pub(crate) fn is_populated(&self) -> bool {
+        self.tickets > 0 || self.milestones > 0
+    }
+}
+
 /// Thread-safe facts frob's checks read while deciding applicability and cache keys.
 pub struct FrobShared {
     /// Ledger tip commit (hex), or the empty string without a ledger.
@@ -62,7 +69,7 @@ pub struct FrobInputs {
     pub(crate) ack: Inputs,
     /// Every well-formed directive, in file then source order.
     pub(crate) directives: Vec<DirectiveRecord>,
-    /// The ledger when the repository has one with tickets.
+    /// The ledger when the repository has one holding tickets or milestones.
     pub(crate) ledger: Option<LedgerState>,
     /// `[invariants]`.
     pub(crate) invariants: InvariantsConfig,
@@ -87,7 +94,7 @@ impl FrobInputs {
     }
 }
 
-/// Open the repository's ledger; `None` without a git work tree or without tickets.
+/// Open the repository's ledger; `None` without a git work tree or without tickets and milestones.
 fn open_ledger(root: &Path, cfg: LedgerConfig) -> Option<LedgerState> {
     let repo = match gob_git::Repo::discover(root) {
         Ok(r) if r.work_dir().is_some() => r,
@@ -107,33 +114,34 @@ fn open_ledger(root: &Path, cfg: LedgerConfig) -> Option<LedgerState> {
             return None;
         }
     };
-    match ledger.ticket_ids_at(&tip) {
-        Ok(ids) if !ids.is_empty() => {
-            tracing::info!(tickets = ids.len(), %tip, "ledger present");
-            let tickets = ids.len();
-            // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
-            let milestones = frob_pm::rules::membership::milestones(&ledger).map_or_else(
-                |err| {
-                    tracing::warn!(%err, "milestones unreadable: PM034 not evaluated");
-                    0
-                },
-                |m| m.len(),
-            );
-            Some(LedgerState {
-                ledger,
-                tip,
-                tickets,
-                milestones,
-            })
-        }
-        Ok(_) => {
-            tracing::info!(%tip, "ledger holds no tickets: ledger rules are skipped");
-            None
-        }
+    let tickets = match ledger.ticket_ids_at(&tip) {
+        Ok(ids) => ids.len(),
         Err(err) => {
             tracing::warn!(%err, "ledger unreadable: ledger rules are skipped");
-            None
+            return None;
         }
+    };
+    // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
+    // frob:ticket 01M41DQF8CJG567CJ1AWETTCK4
+    let milestones = frob_pm::rules::membership::milestones(&ledger).map_or_else(
+        |err| {
+            tracing::warn!(%err, "milestones unreadable: PM034 not evaluated");
+            0
+        },
+        |m| m.len(),
+    );
+    let state = LedgerState {
+        ledger,
+        tip,
+        tickets,
+        milestones,
+    };
+    if state.is_populated() {
+        tracing::info!(tickets, milestones, tip = %state.tip, "ledger present");
+        Some(state)
+    } else {
+        tracing::info!(tip = %state.tip, "ledger holds no tickets or milestones: ledger rules are skipped");
+        None
     }
 }
 
