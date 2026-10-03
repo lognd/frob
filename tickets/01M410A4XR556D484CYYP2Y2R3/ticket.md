@@ -1,12 +1,12 @@
 +++
 id = "01M410A4XR556D484CYYP2Y2R3"
-title = "lease: exempt changelog.d fragments from scope overlap (shared_files)"
+title = "A ticket's own changelog fragment is always in scope and never contends for a lease"
 type = "task"
 category = "todo"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-03T13:47:29Z"
-updated = "2026-10-03T13:48:02Z"
+updated = "2026-10-03T13:48:10Z"
 labels = ["release:0.532.0"]
 scope = ["crates/frob-check/src/scope.rs", "crates/frob-lease/**", "crates/frob-check/tests/check.rs"]
 +++
