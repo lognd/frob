@@ -9,9 +9,9 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:57Z"
-updated = "2026-10-03T07:46:03Z"
+updated = "2026-10-03T15:28:21Z"
 idempotency_key = "m2-rel-changelog-compile"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-release/**", "Cargo.toml", "changelog.d/.gitkeep", "docs/reference/changelog.md", "CHANGELOG.md", "CHANGELOG-v1.md", "crates/frob/src/release_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/Cargo.toml", "frob.toml", "docs/reference/cli/frob.md", "docs/reference/cli/any.md", "crates/frob/tests/release.rs", "crates/frob/tests/snapshots/**", "Cargo.lock"]
 
 [[links]]
