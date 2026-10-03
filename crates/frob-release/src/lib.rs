@@ -8,6 +8,7 @@
 
 pub mod bump;
 pub mod changelog;
+pub mod cut;
 pub mod error;
 pub mod fragment;
 pub mod rel002;

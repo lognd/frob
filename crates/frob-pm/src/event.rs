@@ -4,7 +4,8 @@
 //!
 //! Kinds: `create`, `field`, `member`, `criterion`, `transition` (releases.md
 //! section 6a) plus `evidence`, which binds exit criteria exactly as it binds
-//! ticket acceptance. Any other kind parses as [`PmBody::Other`] and folds to
+//! ticket acceptance, and `override` and `cut`, which `release cut` records on a
+//! milestone (they fold to no change; REL001 reads `cut`). Any other kind parses as [`PmBody::Other`] and folds to
 //! no change, so a newer ledger still folds here.
 
 use frob_ledger::EventId;
@@ -97,6 +98,40 @@ pub struct TransitionData {
     pub reason: Option<String>,
 }
 
+/// A release override: a cut proceeded although the milestone was not ready (releases.md section 4).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OverrideData {
+    /// The version being cut.
+    pub version: String,
+    /// Why the readiness gate was overridden.
+    pub reason: String,
+}
+
+/// One tag a cut created: its name, the tag object and the commit it points at.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TagRecord {
+    /// Tag name, for example `frob-v0.532.0`.
+    pub name: String,
+    /// Object id of the annotated tag.
+    pub object: String,
+    /// Commit id the tag points at.
+    pub commit: String,
+}
+
+/// A completed release cut: what `release cut` committed and tagged (REL001 reads this).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CutData {
+    /// The version cut.
+    pub version: String,
+    /// The one commit holding the version bump and the compiled changelog.
+    pub commit: String,
+    /// The per-binary tags created at that commit.
+    pub tags: Vec<TagRecord>,
+}
+
 /// The kind-specific part of an event; the `kind` key selects the variant.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
@@ -113,6 +148,10 @@ pub enum PmBody {
     Transition(TransitionData),
     /// A measurement offered for exit criteria; binds them in the fold.
     Evidence(EvidenceData),
+    /// A readiness override recorded by `release cut --override`; folds to no change.
+    Override(OverrideData),
+    /// A completed release cut; folds to no change (the `transition` to released is separate).
+    Cut(CutData),
     /// A kind this version does not interpret; it folds to no change.
     #[serde(other)]
     Other,
@@ -128,6 +167,8 @@ impl PmBody {
             Self::Criterion(_) => "criterion",
             Self::Transition(_) => "transition",
             Self::Evidence(_) => "evidence",
+            Self::Override(_) => "override",
+            Self::Cut(_) => "cut",
             Self::Other => "other",
         }
     }

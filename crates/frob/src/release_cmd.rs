@@ -1,4 +1,4 @@
-//! `release changelog`, `release status` and `release bump` (documentation.md 6, releases.md 4).
+//! `release changelog`, `release status`, `release bump` and `release cut` (documentation.md 6, releases.md 4).
 //!
 //! A thin layer over `frob-release`: ticket ULIDs resolve against the ledger, a typed
 //! [`ReleaseError`] becomes an exit-3 refusal carrying its teaching message, and
@@ -12,9 +12,12 @@ use frob_ledger::index::ListFilter;
 use frob_ledger::model::Category;
 use frob_ledger::{Ledger, TicketId};
 use frob_pm::PmStore;
+use frob_pm::event::{CutData, OverrideData, PmBody, PmEvent};
 use frob_pm::model::Milestone;
+use frob_pm::model::{ObjectKind, State};
 use frob_pm::rules::membership::{CLAIM_PREFIX, claimants, pm034};
 use frob_release::bump::{BumpError, BumpOptions, BumpReport, LockState};
+use frob_release::cut::{CutError, CutLedger, CutPlan};
 use frob_release::status::{
     ChangelogFacts, EvidenceRef, Input, MilestoneFacts, OpenTicket, Report, assess,
 };
@@ -214,19 +217,30 @@ impl Command for ReleaseStatus {
             .find(|m| m.version == version || m.id.handle() == version);
         let version = milestone.map_or(version, |m| m.version.clone());
         let ctx_dir = Located::discover(&ctx.cwd).into_repo()?.1;
-        let input = Input {
-            milestone: milestone.map(|m| facts(m, &ledger)).transpose()?,
-            open_tickets: open_tickets(&ledger, milestone, &version)?,
-            changelog: changelog_facts(&ctx_dir, &ledger, &version),
-            version,
-        };
-        let report = assess(&input);
+        let report = report_for(&ledger, &ctx_dir, milestone, version)?;
         Ok(Payload::new(StatusData {
             outcome: "report".to_owned(),
             message: None,
             report: Some(report),
         }))
     }
+}
+
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// The readiness report of `version` (its `milestone`, when one exists); shared by `release status` and `release cut`.
+fn report_for(
+    ledger: &Ledger,
+    root: &std::path::Path,
+    milestone: Option<&Milestone>,
+    version: String,
+) -> Result<Report, CliError> {
+    let input = Input {
+        milestone: milestone.map(|m| facts(m, ledger)).transpose()?,
+        open_tickets: open_tickets(ledger, milestone, &version)?,
+        changelog: changelog_facts(root, ledger, &version),
+        version,
+    };
+    Ok(assess(&input))
 }
 
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
@@ -517,9 +531,285 @@ fn refuse_bump(e: BumpError) -> CliError {
         .into()
 }
 
+// frob:ticket 01M4069X6S9RJWRXX3YBZ9EG10
+/// One tag a cut created.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct CutTag {
+    /// Tag name, for example `frob-v0.532.0`.
+    pub name: String,
+    /// Object id of the annotated tag.
+    pub object: String,
+}
+
+// frob:ticket 01M4069X6S9RJWRXX3YBZ9EG10
+/// What `release cut` did.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct CutReport {
+    /// The version cut.
+    pub version: String,
+    /// The milestone handle that was released.
+    pub milestone: String,
+    /// The one release commit on the base branch.
+    pub commit: String,
+    /// The tags at that commit; grimble is tagged as a preview binary.
+    pub tags: Vec<CutTag>,
+    /// True when an interrupted cut was finished instead of started.
+    pub resumed: bool,
+    /// True when the base branch and tags were pushed to origin.
+    pub pushed: bool,
+    /// Paths the release commit changed (empty when resumed).
+    pub files: Vec<String>,
+    /// The recorded override reason, when readiness was overridden.
+    pub override_reason: Option<String>,
+}
+
+// frob:ticket 01M4069X6S9RJWRXX3YBZ9EG10
+/// Cut a release: bump, compile CHANGELOG, one commit on the base branch, tags, ledger record.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "release cut",
+    product = "frob",
+    idempotent = false,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ReleaseCut {
+    version: String,
+    override_ready: bool,
+    reason: Option<String>,
+    push: bool,
+}
+
+impl Command for ReleaseCut {
+    type Data = CutReport;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(
+            Arg::new("version")
+                .value_name("VERSION")
+                .required(true)
+                .help("The release version, semver (for example 0.532.0); its milestone must exist"),
+        )
+        .arg(
+            Arg::new("override")
+                .long("override")
+                .action(ArgAction::SetTrue)
+                .help("Cut although release status is not READY; needs --reason, recorded on the milestone"),
+        )
+        .arg(text_flag("reason", "Why readiness is overridden (with --override)"))
+        .arg(
+            Arg::new("push")
+                .long("push")
+                .action(ArgAction::SetTrue)
+                .help("Push the base branch and the tags to origin (starts the release job); default is local only"),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            version: get(m, "version").unwrap_or_default(),
+            override_ready: m.get_flag("override"),
+            reason: get(m, "reason"),
+            push: m.get_flag("push"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<CutReport> {
+        if self.override_ready != self.reason.is_some() {
+            return Err(Refusal::new(
+                "E-CUT-REASON",
+                RefusalClass::UsageError,
+                "--override and --reason go together: an override must say why",
+            )
+            .with_remedy(format!(
+                "frob release cut {} --override --reason <text>",
+                self.version
+            ))
+            .into());
+        }
+        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let ledger = open(ctx)?;
+        let base = frob_worktree::work::base_branch(&ledger);
+        let all = milestones(PmStore::new(&ledger))?;
+        let Some(milestone) = all.into_iter().find(|m| m.version == self.version) else {
+            return Err(refuse_cut(
+                &CutError::NoMilestone(self.version.clone()),
+                &self.version,
+                &base,
+            ));
+        };
+        let handle = milestone.id.handle();
+        let plan = CutPlan {
+            root: &root,
+            version: self.version.clone(),
+            date: jiff::Zoned::now().date().to_string(),
+            base: base.clone(),
+            push: self.push,
+            stop_after: None,
+        };
+        let resolver = |ulid: &str| -> Option<String> {
+            let id: TicketId = ulid.parse().ok()?;
+            ledger.show(id).ok().map(|v| v.summary.handle)
+        };
+        let mut gate = MilestoneCut {
+            ledger: &ledger,
+            root: &root,
+            milestone,
+            override_reason: self.reason.clone(),
+        };
+        let out = frob_release::cut::cut(&plan, &resolver, &mut gate)
+            .map_err(|e| refuse_cut(&e, &self.version, &base))?;
+        Ok(Payload::new(CutReport {
+            version: out.version,
+            milestone: handle,
+            commit: out.commit.to_string(),
+            tags: out
+                .tags
+                .into_iter()
+                .map(|t| CutTag {
+                    name: t.name,
+                    object: t.object,
+                })
+                .collect(),
+            resumed: out.resumed,
+            pushed: out.pushed,
+            files: out.files,
+            override_reason: self.reason.clone(),
+        }))
+    }
+}
+
+// frob:ticket 01M4069X6S9RJWRXX3YBZ9EG10
+/// The milestone's event log as the cut's ledger: readiness gate, override and cut events, release transition.
+struct MilestoneCut<'a> {
+    ledger: &'a Ledger,
+    root: &'a std::path::Path,
+    milestone: Milestone,
+    override_reason: Option<String>,
+}
+
+impl MilestoneCut<'_> {
+    /// The milestone's events at the ledger tip.
+    fn events(&self) -> Result<Vec<PmEvent>, CutError> {
+        let store = PmStore::new(self.ledger);
+        let tip = self
+            .ledger
+            .tip_hex()
+            .map_err(|e| CutError::Ledger(e.to_string()))?
+            .ok_or_else(|| CutError::Ledger("the ledger has no commits".to_owned()))?;
+        store
+            .read_events_at(&tip, ObjectKind::Milestone, self.milestone.id)
+            .map_err(|e| CutError::Ledger(e.to_string()))
+    }
+
+    /// True when a `cut` event for this version exists.
+    fn has_cut_event(&self) -> Result<bool, CutError> {
+        Ok(self
+            .events()?
+            .iter()
+            .any(|e| matches!(&e.body, PmBody::Cut(d) if d.version == self.milestone.version)))
+    }
+
+    /// The milestone's current state.
+    fn state(&self) -> Result<State, CutError> {
+        match PmStore::new(self.ledger)
+            .get(ObjectKind::Milestone, self.milestone.id)
+            .map_err(|e| CutError::Ledger(e.to_string()))?
+            .map(|f| f.object)
+        {
+            Some(frob_pm::Object::Milestone(m)) => Ok(m.state),
+            _ => Err(CutError::Ledger("the milestone vanished".to_owned())),
+        }
+    }
+}
+
+impl CutLedger for MilestoneCut<'_> {
+    fn clear(&mut self) -> Result<(), CutError> {
+        let report = report_for(
+            self.ledger,
+            self.root,
+            Some(&self.milestone),
+            self.milestone.version.clone(),
+        )
+        .map_err(|e| CutError::Ledger(e.to_string()))?;
+        if report.ready {
+            return Ok(());
+        }
+        let Some(reason) = self.override_reason.clone() else {
+            let blockers: Vec<String> = report
+                .blockers
+                .iter()
+                .map(|b| format!("{}: {}", b.subject, b.detail))
+                .collect();
+            return Err(CutError::NotReady(format!(
+                "{}; {}",
+                report.verdict,
+                blockers.join("; ")
+            )));
+        };
+        tracing::warn!(version = %self.milestone.version, %reason, "release readiness overridden");
+        PmStore::new(self.ledger)
+            .append(
+                ObjectKind::Milestone,
+                self.milestone.id,
+                PmBody::Override(OverrideData {
+                    version: self.milestone.version.clone(),
+                    reason,
+                }),
+            )
+            .map_err(|e| CutError::Ledger(e.to_string()))?;
+        Ok(())
+    }
+
+    fn recorded(&self) -> Result<bool, CutError> {
+        Ok(self.has_cut_event()? && self.state()? == State::Released)
+    }
+
+    fn record(&mut self, data: &CutData) -> Result<(), CutError> {
+        let store = PmStore::new(self.ledger);
+        let ledger_err = |e: frob_pm::PmError| CutError::Ledger(e.to_string());
+        if !self.has_cut_event()? {
+            store
+                .append(
+                    ObjectKind::Milestone,
+                    self.milestone.id,
+                    PmBody::Cut(data.clone()),
+                )
+                .map_err(ledger_err)?;
+        }
+        if self.state()? != State::Released {
+            store
+                .transition(
+                    ObjectKind::Milestone,
+                    self.milestone.id,
+                    State::Released,
+                    Some(format!("release cut {}", data.version)),
+                )
+                .map_err(ledger_err)?;
+        }
+        tracing::info!(version = %data.version, commit = %data.commit, "cut recorded on the milestone");
+        Ok(())
+    }
+}
+
+// frob:ticket 01M4069X6S9RJWRXX3YBZ9EG10
+/// Map a cut error to its CLI error: a refusal (exit 3) with the remedy, else internal.
+fn refuse_cut(e: &CutError, version: &str, base: &str) -> CliError {
+    if !e.is_refusal() {
+        tracing::error!(%e, "release cut failed");
+        return CliError::internal(e.to_string());
+    }
+    let msg = e.to_string();
+    let code = msg.split(':').next().unwrap_or("E-CUT").to_owned();
+    tracing::info!(%code, "release cut refused");
+    Refusal::new(code, RefusalClass::GuardNeedsAction, msg)
+        .with_remedy(e.remedy(version, base))
+        .into()
+}
+
 /// Register the `release` verbs on the root.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<ReleaseChangelog>()
         .register::<ReleaseStatus>()
         .register::<ReleaseBump>()
+        .register::<ReleaseCut>()
 }

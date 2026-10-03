@@ -1029,7 +1029,9 @@ name = "frob-release"
 version = "0.0.0"
 dependencies = [
  "blake3",
+ "frob-pm",
  "gob-exec",
+ "gob-git",
  "gob-mdtest",
  "gob-rules",
  "schemars",

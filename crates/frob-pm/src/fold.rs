@@ -262,7 +262,11 @@ pub fn fold(kind: ObjectKind, id: ObjectId, events: &[PmEvent]) -> Result<Folded
     let mut updated = first.at;
     for ev in ordered.iter().skip(1) {
         let applied = match &ev.body {
-            PmBody::Create(_) | PmBody::Other | PmBody::Evidence(_) => Ok(()),
+            PmBody::Create(_)
+            | PmBody::Other
+            | PmBody::Evidence(_)
+            | PmBody::Override(_)
+            | PmBody::Cut(_) => Ok(()),
             PmBody::Field(f) => {
                 let current = get_field(&object, &f.field);
                 if f.old != current {
