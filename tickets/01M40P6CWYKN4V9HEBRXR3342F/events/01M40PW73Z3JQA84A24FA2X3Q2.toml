@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T11:02:35Z"
+digest = "1a849d52ad089d47c8ed3dc4c289d971a9bad93ad2938a1562c899c183fe8677"
+exit_code = 0
+inline = """
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/XR3342F/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.32s
+────────────
+ Nextest run ID 5fbe209d-9b1c-40be-889c-3b33428aa0b3 with nextest profile: default
+    Starting 4 tests across 3 binaries (25 tests skipped)
+        PASS [   3.431s] (1/4) frob-evidence::evidence an_unterminated_quote_is_a_usage_error_and_records_nothing
+        PASS [   4.214s] (2/4) frob-evidence::evidence a_union_matching_nothing_still_refuses
+        PASS [   4.289s] (3/4) frob-evidence::evidence a_quoted_argument_with_spaces_survives_tokenization
+        PASS [   4.398s] (4/4) frob-evidence::evidence a_union_filter_expression_runs_both_tests_and_records_a_measured_pass
+────────────
+     Summary [   4.399s] 4 tests run: 4 passed, 25 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(a_union_filter_expression_runs_both) | test(a_union_matching_nothing_still_refuses) | test(a_quoted_argument_with_spaces) | test(an_unterminated_quote)'"
+size = 885
+status = "measured"
+tests = ["an_unterminated_quote_is_a_usage_error_and_records_nothing", "a_union_matching_nothing_still_refuses", "a_quoted_argument_with_spaces_survives_tokenization", "a_union_filter_expression_runs_both_tests_and_records_a_measured_pass"]
+at = "2026-10-03T11:02:35Z"
+actor = "lognd"
+rev = 1
