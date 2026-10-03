@@ -1,0 +1,15 @@
+kind = "create"
+title = "tickets.md: evidence, evidence-bypass and land are first-class events; bound means measured passing evidence"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+idempotency_key = "m2-tickets-md-evidence-events"
+labels = ["milestone:2"]
+scope = ["docs/design/tickets.md"]
+acceptance = ["Given tickets.md 2a and 9, when read, then the three event kinds, Ledger::append and the binding rule are stated"]
+body = "Follow-up of ~CFM8QB0 (landed with its own binary, ledger repaired by doctor --fix: 74 reconcile commits, zero drift)."
+at = "2026-10-03T06:38:03Z"
+actor = "lognd"
+rev = 1
