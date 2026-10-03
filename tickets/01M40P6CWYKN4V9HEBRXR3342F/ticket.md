@@ -8,10 +8,10 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T10:50:40Z"
-updated = "2026-10-03T11:02:43Z"
+updated = "2026-10-03T11:03:41Z"
 idempotency_key = "m2-evidence-filter-union"
 labels = ["milestone:2", "release:0.532.0"]
-scope = ["crates/frob-evidence/**"]
+scope = ["crates/frob-evidence/**", "docs/design/cli.md"]
 
 [[acceptance]]
 text = "Given --ref with -E 'test(a) | test(b)' where both tests exist, when evidence add runs, then both run and a measured pass is recorded"
