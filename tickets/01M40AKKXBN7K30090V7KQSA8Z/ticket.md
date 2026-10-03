@@ -11,7 +11,7 @@ created = "2026-10-03T07:28:11Z"
 updated = "2026-10-03T10:19:19Z"
 idempotency_key = "m2-rel-attestation-evidence"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-evidence/**", "crates/frob/src/**", "crates/frob/tests/**", "crates/frob-pm/**", "crates/gob-diagnostics/**"]
+scope = ["crates/frob-evidence/**", "crates/frob/src/**", "crates/frob/tests/**", "crates/frob-pm/**", "crates/gob-diagnostics/**", "crates/gob-cli/src/**"]
 
 [[acceptance]]
 text = "Given an attester at a TTY, when they attest a milestone criterion with a statement and facts, then the criterion is bound and show marks it as attested"
