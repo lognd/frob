@@ -118,7 +118,7 @@ impl Parser<'_> {
                         self.expect(&TokenKind::RParen, "`,` or `)` after the field")?,
                     );
                 } else if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Str(_))) {
-                    let lit = self.plain_str("a string", "a kind argument")?;
+                    let lit = self.plain_str("a string")?;
                     span = cover(span, lit.span);
                     arg = Some(lit);
                 }
@@ -148,7 +148,7 @@ impl Parser<'_> {
     fn field_eq(&mut self) -> PResult<FieldEq> {
         let name = self.ident("a field name")?;
         self.expect(&TokenKind::Eq, "`=` after the field name")?;
-        let value = self.literal("a field value (a path or glob)")?;
+        let value = self.literal()?;
         Ok(FieldEq {
             span: cover(name.span, value.span),
             name,
@@ -326,7 +326,7 @@ impl Parser<'_> {
             "has" if self.word_nth(1) == Some("attr") && self.is_str_nth(2) => {
                 self.bump();
                 self.bump();
-                let attr = self.plain_str("an attribute name string", "an attribute name")?;
+                let attr = self.plain_str("an attribute name string")?;
                 Ok(binary(
                     start,
                     attr.span,
@@ -638,7 +638,7 @@ impl Parser<'_> {
             | TokenKind::Regex(_)
             | TokenKind::Minus
             | TokenKind::LBracket => {
-                let lit = self.literal("a comparison, glob or path")?;
+                let lit = self.literal()?;
                 Ok(Spanned {
                     span: lit.span,
                     node: TermKind::Literal(lit),

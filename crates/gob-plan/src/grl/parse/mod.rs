@@ -69,7 +69,7 @@ pub fn parse(file: FileId, text: &str) -> Parsed {
     }
 }
 
-/// Parse an already lexed token stream; `text` is only read for `{expr}` interpolations.
+/// Parse an already lexed token stream; `text` is read for `{expr}` interpolations and the source of plain strings.
 pub fn parse_tokens(file: FileId, text: &str, tokens: &[Token]) -> Parsed {
     let mut parser = Parser::new(file, text, tokens);
     let ast = parser.file();

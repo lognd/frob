@@ -12,31 +12,30 @@ use crate::grl::lexer::lex_range;
 use crate::grl::token::{StrPart, Token, TokenKind};
 
 impl Parser<'_> {
-    /// A plain string: interpolation is an error (recorded) and its text is dropped.
-    pub(super) fn plain_str(&mut self, what: &str, place: &'static str) -> PResult<StrLit> {
+    /// A non-message string: braces are literal, so the value is read back from the source.
+    pub(super) fn plain_str(&mut self, what: &str) -> PResult<StrLit> {
         let Some(Token {
-            kind: TokenKind::Str(parts),
+            kind: TokenKind::Str(_),
             span,
         }) = self.peek()
         else {
             return self.expected(what);
         };
         self.bump();
-        Ok(self.plain_from(parts, *span, place))
+        Ok(self.plain_from(*span))
     }
 
-    fn plain_from(&mut self, parts: &[StrPart], span: Span, place: &'static str) -> StrLit {
-        let mut value = String::new();
-        for part in parts {
-            match part {
-                StrPart::Text { value: v, .. } => value.push_str(v),
-                StrPart::Interp { expr } => {
-                    let braces = Self::braces(*expr);
-                    self.error(ParseErrorKind::InterpolationNotAllowed { place }, braces);
-                }
-            }
+    /// Rejoin a string token into one literal value (see [`decode_plain`]).
+    fn plain_from(&self, span: Span) -> StrLit {
+        let range = span.range.to_usize_range();
+        let inner = self
+            .text
+            .get(range.start + 1..range.end.saturating_sub(1))
+            .unwrap_or_default();
+        StrLit {
+            value: decode_plain(inner),
+            span,
         }
-        StrLit { value, span }
     }
 
     /// The range of an interpolation including its braces.
@@ -154,12 +153,12 @@ impl Parser<'_> {
         Ok(Path { segments, span })
     }
 
-    /// A knob or field literal; `place` names where strings may not interpolate.
-    pub(super) fn literal(&mut self, place: &'static str) -> PResult<Literal> {
-        self.nest(|p| p.literal_inner(place))
+    /// A knob or field literal; its strings are plain, so braces are literal.
+    pub(super) fn literal(&mut self) -> PResult<Literal> {
+        self.nest(Self::literal_inner)
     }
 
-    fn literal_inner(&mut self, place: &'static str) -> PResult<Literal> {
+    fn literal_inner(&mut self) -> PResult<Literal> {
         let Some(tok) = self.peek() else {
             return self.expected("a value (a number, string, regex, list or `true`/`false`)");
         };
@@ -174,21 +173,21 @@ impl Parser<'_> {
                 LiteralKind::Decimal(d.clone())
             }
             TokenKind::Minus => return self.negative(),
-            TokenKind::Str(parts) => {
+            TokenKind::Str(_) => {
                 self.bump();
-                LiteralKind::Str(self.plain_from(parts, span, place).value)
+                LiteralKind::Str(self.plain_from(span).value)
             }
             TokenKind::Regex(r) => {
                 self.bump();
                 LiteralKind::Regex(r.clone())
             }
-            TokenKind::LBracket => return self.list(place),
+            TokenKind::LBracket => return self.list(),
             TokenKind::Ident(w) if w == "true" || w == "false" => {
                 self.bump();
                 LiteralKind::Bool(w == "true")
             }
             TokenKind::Ident(_) if self.is_nth(1, &TokenKind::LParen) => {
-                return self.literal_call(place);
+                return self.literal_call();
             }
             _ => {
                 return self.expected("a value (a number, string, regex, list or `true`/`false`)");
@@ -215,13 +214,13 @@ impl Parser<'_> {
         })
     }
 
-    fn list(&mut self, place: &'static str) -> PResult<Literal> {
+    fn list(&mut self) -> PResult<Literal> {
         let open = self.here();
         self.bump();
         let mut items = Vec::new();
         if !self.is(&TokenKind::RBracket) {
             loop {
-                items.push(self.literal(place)?);
+                items.push(self.literal()?);
                 if self.eat(&TokenKind::Comma).is_none() {
                     break;
                 }
@@ -234,13 +233,13 @@ impl Parser<'_> {
         })
     }
 
-    fn literal_call(&mut self, place: &'static str) -> PResult<Literal> {
+    fn literal_call(&mut self) -> PResult<Literal> {
         let name = self.ident("a constructor name")?;
         self.bump();
         let mut args = Vec::new();
         if !self.is(&TokenKind::RParen) {
             loop {
-                args.push(self.literal(place)?);
+                args.push(self.literal()?);
                 if self.eat(&TokenKind::Comma).is_none() {
                     break;
                 }
@@ -303,4 +302,30 @@ impl Parser<'_> {
             span: word.span,
         })
     }
+}
+
+/// Decode the source text between a plain string's quotes.
+///
+/// Braces are literal and need no escaping. The escapes `\"`, `\\` and `\n`
+/// decode as in every string; a backslash before a brace is kept as written
+/// (`\{` stays two characters), so globs and regexes see their own escape.
+fn decode_plain(inner: &str) -> String {
+    let mut out = String::with_capacity(inner.len());
+    let mut chars = inner.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('"') => out.push('"'),
+            Some('\\') | None => out.push('\\'),
+            Some('n') => out.push('\n'),
+            Some(other) => {
+                out.push('\\');
+                out.push(other);
+            }
+        }
+    }
+    out
 }
