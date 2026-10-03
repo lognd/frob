@@ -651,12 +651,24 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
 }
 
 fn evidence(accepts: &[usize]) -> frob_ledger::event::EventBody {
+    record(accepts, "cargo test", "measured", Some(true))
+}
+
+fn record(
+    accepts: &[usize],
+    reference: &str,
+    status: &str,
+    passed: Option<bool>,
+) -> frob_ledger::event::EventBody {
     use frob_ledger::event::{EventBody, EvidenceData};
+    let passed = passed.map_or(String::new(), |p| format!("passed = {p}\n"));
     EventBody::Evidence(EvidenceData {
         accepts: accepts.to_vec(),
-        record: "provider = \"command\"\nref = \"cargo test\"\nstatus = \"measured\"\npassed = true\nsize = 0\n"
-            .parse()
-            .expect("table"),
+        record: format!(
+            "provider = \"command\"\nref = \"{reference}\"\nstatus = \"{status}\"\n{passed}size = 0\n"
+        )
+        .parse()
+        .expect("table"),
     })
 }
 
@@ -794,4 +806,42 @@ fn events_written_by_the_old_helpers_fold_and_round_trip() {
     assert!(!stored.front.acceptance[0].bound);
     stored.front.acceptance[0].bound = true;
     assert_eq!(folded, stored);
+}
+
+// frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
+#[test]
+fn only_measured_passing_evidence_binds_and_the_latest_per_reference_decides() {
+    let (_dir, ledger) = fixture(RefMode::Trunk);
+    let mut req = NewTicket::new("Verdicts", TicketType::Task);
+    req.acceptance = vec!["one".into()];
+    let id = ledger.new_ticket(req).expect("new").ticket.front.id;
+
+    ledger
+        .append(id, record(&[1], "a", "measured", Some(false)))
+        .expect("failing");
+    assert_eq!(bound(&ledger, id), [false], "failing does not bind");
+    ledger
+        .append(id, record(&[1], "b", "unmeasured", None))
+        .expect("unmeasured");
+    assert_eq!(bound(&ledger, id), [false], "unmeasured does not bind");
+    ledger
+        .append(id, record(&[1], "a", "measured", Some(true)))
+        .expect("pass after fail");
+    assert_eq!(bound(&ledger, id), [true], "passing after failing binds");
+    ledger
+        .append(id, record(&[1], "b", "measured", Some(true)))
+        .expect("other reference passes");
+    ledger
+        .append(id, record(&[1], "a", "measured", Some(false)))
+        .expect("fail after pass");
+    assert_eq!(bound(&ledger, id), [true], "another reference still passes");
+    ledger
+        .append(id, record(&[1], "b", "measured", Some(false)))
+        .expect("last fails too");
+    assert_eq!(
+        bound(&ledger, id),
+        [false],
+        "failing after passing unbinds when every reference's latest failed"
+    );
+    assert!(ledger.doctor(false).expect("doctor").is_clean());
 }

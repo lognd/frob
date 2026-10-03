@@ -141,27 +141,52 @@ pub fn remap_accepts(events: &[Event], since: EventId, accepts: &[usize]) -> Vec
     now
 }
 
+/// Whether an evidence record counts as a pass: measured and not a failing run.
+///
+/// `status` must be `measured` and `passed` must not be `false`; a file-provider
+/// record has no `passed` and counts when measured, as the close guard reads it.
+fn evidence_passes(data: &crate::event::EvidenceData) -> bool {
+    let measured = data.record.get("status").and_then(toml::Value::as_str) == Some("measured");
+    let failed = data.record.get("passed").and_then(toml::Value::as_bool) == Some(false);
+    measured && !failed
+}
+
 /// Set each criterion's `bound` from the evidence offered for it, through the remap.
 ///
-/// An evidence event bound to criterion N when it was written counts for
-/// whatever N became after later acceptance edits, and for nothing when N was removed.
+/// Rule: an evidence event offered for criterion N when it was written counts
+/// for whatever N became after later acceptance edits, and for nothing when N
+/// was removed. Within one (provider, reference, criterion) the latest record
+/// in fold order decides: it binds only when it is measured and passed, so a
+/// failing or unmeasured record never binds and supersedes an earlier pass of
+/// the same provider and reference. A criterion is bound when at least one
+/// (provider, reference) pair's latest record for it passes.
 fn bind_acceptance(t: &mut Ticket, events: &[Event]) {
-    let mut bound = vec![false; t.front.acceptance.len()];
-    for ev in events {
+    let mut ordered: Vec<&Event> = events.iter().collect();
+    ordered.sort_by_key(|e| e.order_key());
+    let text = |data: &crate::event::EvidenceData, key: &str| {
+        data.record
+            .get(key)
+            .and_then(toml::Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    let mut latest: std::collections::BTreeMap<(String, String, usize), bool> =
+        std::collections::BTreeMap::new();
+    for ev in ordered {
         let EventBody::Evidence(data) = &ev.body else {
             continue;
         };
+        let passes = evidence_passes(data);
+        let (provider, reference) = (text(data, "provider"), text(data, "ref"));
         for now in remap_accepts(events, ev.id, &data.accepts)
             .into_iter()
             .flatten()
         {
-            if let Some(slot) = now.checked_sub(1).and_then(|i| bound.get_mut(i)) {
-                *slot = true;
-            }
+            latest.insert((provider.clone(), reference.clone(), now), passes);
         }
     }
-    for (a, b) in t.front.acceptance.iter_mut().zip(bound) {
-        a.bound = b;
+    for (i, a) in t.front.acceptance.iter_mut().enumerate() {
+        a.bound = latest.iter().any(|((_, _, n), pass)| *n == i + 1 && *pass);
     }
 }
 
