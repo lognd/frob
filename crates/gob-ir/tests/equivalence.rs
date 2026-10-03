@@ -5,6 +5,7 @@
 //! implementation before the conversion (01M3Z8NVCBM9KXN5ZY97QWX8P1). Regenerate deliberately
 //! with `GOB_IR_WRITE_SNAPSHOT=1`.
 #![allow(clippy::many_single_char_names, reason = "terse generators")]
+#![allow(clippy::cast_possible_truncation, reason = "moduli below 50")]
 
 mod support;
 
@@ -122,9 +123,11 @@ fn fingerprint(term: Term) -> String {
 
 #[test]
 fn outputs_match_the_recursive_implementation() {
-    let got: String = (0..200u64)
-        .map(|seed| format!("{}\n", fingerprint(gen_term(seed))))
-        .collect();
+    let mut got = (0..200u64)
+        .map(|seed| fingerprint(gen_term(seed)))
+        .collect::<Vec<_>>()
+        .join("\n");
+    got.push('\n');
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/snapshots/equivalence.txt"
