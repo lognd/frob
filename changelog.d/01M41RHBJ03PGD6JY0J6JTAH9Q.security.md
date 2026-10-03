@@ -1,0 +1,1 @@
+TICK004 (an absolute home path in a committed ledger file) is now an error, and ticket doctor --fix scrubs those paths out of an existing ledger in one forward commit, recomputing evidence digests and recording an audit scrub event per ticket, without rewriting git history.

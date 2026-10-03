@@ -118,6 +118,7 @@ any (provider, reference) pair's latest record for it passes.
 | `evidence` | ticket | evidence id, verdict, measured value, commit, store URI or inline text | evidence | close guard, done-report |
 | `evidence-bypass` | ticket | reason | `ticket close --no-evidence --reason` | audit, doctor |
 | `changelog-exempt` | ticket | reason | `ticket close` and `land` with `--no-changelog --reason` | audit, REL003, show, brief, release status (folds to no change, so old binaries read it as an uninterpreted kind) |
+| `scrub` | ticket | reason, files rewritten, digests recomputed (file, old, new) | `ticket doctor --fix` (the `TICK004` repair) | audit only; the fold ignores it, `updated` included |
 | `lease` | ticket | op (take, renew, release, steal), holder, scope | start, work, requeue, close | contention, wave |
 | `review` | ticket or exception | subject, verdict, reviewer | review, `exceptions` review of an accept | EXC012, cycle report |
 | `exception` | ticket | kind (accept, defer, hotfix), rule, site | check --fix, land --hotfix | ticket page, close guard |
@@ -456,7 +457,22 @@ TICK rule scans events for unredacted secret patterns. Captured text also has th
 repository root and home directory rewritten to `<worktree>`, `<repo>` and `~` before the digest is
 computed (the digest covers the stored, scrubbed text), and lease events record the worktree relative
 to the repository parent, so a pushed ledger never carries the local user name; `TICK004` reports
-committed ledger files that still hold an absolute home path and frob never rewrites them. The GUI renders blobs through
+committed ledger files that still hold an absolute home path (an Error).
+
+`ticket doctor --fix` repairs a ledger written before that scrub existed, in place and in one forward commit
+(`tickets(scrub): ...`) through the same write path as every other repair; git history is never rewritten. Every ledger
+file below the tickets directory that holds an absolute home path is rewritten with the repair scrub: this checkout's
+worktree to `<worktree>`, the repository (the checkout and a local `origin`) to `<repo>`, sibling worktrees to the form
+relative to the repository parent (`app-wt/T1`), the home directory to `~`, and any other `/home/<name>`, `/Users/<name>`,
+`/root` or `C:\Users\<name>` root to `~other`. A file the rewrite cannot clear is reported (`scrub_unresolved`), never
+guessed at. Integrity: an `evidence` event whose `digest` covered its inline text (or an attestation statement) has the
+digest, and `size`, recomputed over the scrubbed text, so it still verifies and still binds the same criteria; a record
+whose digest did not match its text before is left as it was, so the repair never masks damage; a record that points at a
+`dir:` artifact keeps its digest because artifacts outside the ledger (`.git/frob/artifacts`) are local and untouched.
+Each ticket with a rewritten file gets one audit-only `scrub` event naming the files and the old and new digests
+(milestone and cycle files are rewritten the same way and named in the commit and the doctor output only), and
+`ticket.md` is re-checked against the fold of the scrubbed events and re-rendered from it if they differ. A second run
+finds nothing and commits nothing. The GUI renders blobs through
 the same fetch. Changed: evidence providers are a trait
 (`pytest`, `cargo test`, `ctest`, `vitest`, `junit`, `command`) so
 Rust-only or docs-only repos close tickets natively (milestone 1 ships
