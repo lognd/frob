@@ -7,6 +7,7 @@
 //! `capacity_points`, and is not enforced until `[pm] min_history` cycles have
 //! closed. Pure functions over [`DoneFact`]s, so `cycle velocity` reuses them.
 // frob:ticket 01M4069SHBAEWRX9WWCSS2FEHN
+// frob:ticket 01M4069SYRHMYXCFAZH0AN408B
 
 use frob_ledger::Ledger;
 use frob_ledger::event::EventBody;
@@ -102,12 +103,17 @@ pub struct Velocity {
     pub stddev: f64,
 }
 
-/// Velocity over the last `last` closed cycles of `cycles` (by start), from `facts`.
-pub fn velocity(cycles: &[Cycle], facts: &[DoneFact], last: usize) -> Velocity {
+/// The last `last` closed cycles of `cycles` by start, oldest first.
+pub fn recent_closed(cycles: &[Cycle], last: usize) -> Vec<&Cycle> {
     let mut closed: Vec<&Cycle> = cycles.iter().filter(|c| c.state == State::Closed).collect();
     closed.sort_by_key(|c| (c.start, c.end));
     let skip = closed.len().saturating_sub(last);
-    let per_cycle: Vec<(String, u32)> = closed[skip..]
+    closed.split_off(skip)
+}
+
+/// Velocity over the last `last` closed cycles of `cycles` (by start), from `facts`.
+pub fn velocity(cycles: &[Cycle], facts: &[DoneFact], last: usize) -> Velocity {
+    let per_cycle: Vec<(String, u32)> = recent_closed(cycles, last)
         .iter()
         .map(|c| (c.alias(), delivered(c, facts)))
         .collect();
@@ -198,6 +204,18 @@ pub fn capacity(
     if let Some(p) = cycle.capacity_points {
         return Capacity::Set(p);
     }
+    history_capacity(cycles, facts, min_history, k)
+}
+
+/// The capacity derived from closed-cycle history alone: what a cycle without `capacity_points` gets.
+///
+/// This is the single computation behind `cycle assign` and `cycle velocity`.
+pub fn history_capacity(
+    cycles: &[Cycle],
+    facts: &[DoneFact],
+    min_history: u32,
+    k: f64,
+) -> Capacity {
     let have = cycles.iter().filter(|c| c.state == State::Closed).count();
     let have_u32 = u32::try_from(have).unwrap_or(u32::MAX);
     if have_u32 < min_history {
@@ -311,5 +329,70 @@ mod tests {
         assert_eq!(delivered(&c, &facts), 3);
         let next = cycle("2026-10-07", "2026-10-08", State::Closed, None);
         assert_eq!(delivered(&next, &facts), 5);
+    }
+
+    #[test]
+    fn velocity_over_three_closed_cycles_is_the_hand_computed_mean_and_stddev() {
+        // frob:tests crates/frob-pm/src/cycle/velocity.rs::velocity
+        let cycles = [
+            cycle("2026-10-05", "2026-10-11", State::Closed, None),
+            cycle("2026-10-12", "2026-10-18", State::Closed, None),
+            cycle("2026-10-19", "2026-10-25", State::Closed, None),
+            cycle("2026-10-26", "2026-11-01", State::Planned, None),
+        ];
+        let facts = [
+            fact(TicketType::Task, 8, "2026-10-06"),
+            fact(TicketType::Story, 12, "2026-10-13"),
+            fact(TicketType::Bug, 6, "2026-10-20"),
+            fact(TicketType::Chore, 4, "2026-10-21"),
+            fact(TicketType::Epic, 40, "2026-10-21"),
+            fact(TicketType::Task, 9, "2026-10-28"),
+        ];
+        let v = velocity(&cycles, &facts, 6);
+        let points: Vec<u32> = v.per_cycle.iter().map(|(_, p)| *p).collect();
+        assert_eq!(points, [8, 12, 10]);
+        // mean 10; population variance (4 + 4 + 0) / 3.
+        assert!((v.mean - 10.0).abs() < 1e-9);
+        assert!((v.stddev - (8.0_f64 / 3.0).sqrt()).abs() < 1e-9);
+        let last_two = velocity(&cycles, &facts, 2);
+        assert_eq!(last_two.per_cycle.len(), 2);
+        assert!((last_two.mean - 11.0).abs() < 1e-9);
+        assert!((last_two.stddev - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn carry_over_counts_only_in_the_completing_cycle() {
+        // frob:tests crates/frob-pm/src/cycle/velocity.rs::velocity
+        let a = cycle("2026-10-05", "2026-10-11", State::Closed, None);
+        let b = cycle("2026-10-12", "2026-10-18", State::Closed, None);
+        // Carried from A to B, finished in B: one fact, counted once.
+        let facts = [fact(TicketType::Task, 5, "2026-10-14")];
+        let v = velocity(&[a, b], &facts, 6);
+        let points: Vec<u32> = v.per_cycle.iter().map(|(_, p)| *p).collect();
+        assert_eq!(points, [0, 5]);
+    }
+
+    #[test]
+    fn history_capacity_matches_capacity_for_a_cycle_without_a_set_limit() {
+        // frob:tests crates/frob-pm/src/cycle/velocity.rs::history_capacity
+        let open = cycle("2026-11-02", "2026-11-08", State::Planned, None);
+        let mut all = vec![
+            cycle("2026-10-05", "2026-10-11", State::Closed, None),
+            cycle("2026-10-12", "2026-10-18", State::Closed, None),
+        ];
+        let facts = [
+            fact(TicketType::Task, 8, "2026-10-06"),
+            fact(TicketType::Task, 4, "2026-10-13"),
+        ];
+        assert_eq!(
+            history_capacity(&all, &facts, 3, 0.5),
+            capacity(&open, &all, &facts, 3, 0.5)
+        );
+        all.push(cycle("2026-10-19", "2026-10-25", State::Closed, None));
+        all.push(open.clone());
+        assert_eq!(
+            history_capacity(&all, &facts, 3, 0.5),
+            capacity(&open, &all, &facts, 3, 0.5)
+        );
     }
 }

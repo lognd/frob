@@ -908,3 +908,88 @@ fn a_closed_cycle_does_not_block_the_same_dates_and_the_new_alias_is_suffixed() 
         format!("{bare}.3").as_str()
     );
 }
+
+#[test]
+fn velocity_with_no_closed_cycles_says_so_and_exits_zero() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleVelocity
+    let repo = Repo::new();
+    window(&repo, -1, 5, None);
+    let v = repo.ok(&["cycle", "velocity"]);
+    assert_eq!(v["data"]["cycles"].as_array().expect("cycles").len(), 0);
+    assert_eq!(v["data"]["samples"], 0);
+    assert!(
+        v["data"]["message"]
+            .as_str()
+            .expect("message")
+            .contains("no closed cycles")
+    );
+    assert!(v["data"]["capacity_limit"].is_null());
+    assert!(
+        v["data"]["capacity"]
+            .as_str()
+            .expect("capacity")
+            .starts_with("capacity not enforced yet: 0 of 3")
+    );
+}
+
+#[test]
+fn velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleVelocity
+    // frob:tests crates/frob-pm/src/cycle/velocity.rs::history_capacity
+    let repo = Repo::new();
+    let t1 = repo.done_ticket("8");
+    let t2 = repo.done_ticket("2");
+    for (i, (s, e)) in [(-3, 3), (-2, 4)].into_iter().enumerate() {
+        let c = window(&repo, s, e, None);
+        if i == 0 {
+            repo.assign(id(&c), &t1);
+            repo.assign(id(&c), &t2);
+        }
+        repo.ok(&["cycle", "close", id(&c)]);
+    }
+    // Fewer than min_history (3) closed cycles: samples shown, no capacity derived.
+    let v = repo.ok(&["cycle", "velocity", "--last", "5"]);
+    assert_eq!(v["data"]["samples"], 2);
+    assert_eq!(v["data"]["last"], 5);
+    assert!(v["data"]["capacity_limit"].is_null());
+    assert!(
+        v["data"]["capacity"]
+            .as_str()
+            .expect("capacity")
+            .contains("2 of 3")
+    );
+    let first = &v["data"]["cycles"][0];
+    assert_eq!(first["committed"], 10);
+    assert_eq!(first["done"], 10);
+    assert!((first["ratio"].as_f64().expect("ratio") - 1.0).abs() < 1e-9);
+    let third = window(&repo, -1, 5, None);
+    repo.ok(&["cycle", "close", id(&third)]);
+    let open = window(&repo, 10, 16, None);
+    let a = repo.ticket("todo", "1");
+    let assigned = repo.ok(&["cycle", "assign", &a, id(&open)]);
+    let v = repo.ok(&["cycle", "velocity"]);
+    assert_eq!(v["data"]["cycles"].as_array().expect("cycles").len(), 3);
+    assert!((v["data"]["mean"].as_f64().expect("mean") - 10.0).abs() < 1e-9);
+    assert!(v["data"]["stddev"].as_f64().expect("stddev").abs() < 1e-9);
+    assert_eq!(v["data"]["capacity"], assigned["data"]["capacity"]);
+    assert_eq!(
+        v["data"]["capacity_limit"],
+        assigned["data"]["capacity_limit"]
+    );
+    assert_eq!(v["data"]["capacity_limit"], 10);
+}
+
+#[test]
+fn velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleVelocity
+    let repo = Repo::new();
+    let a = utc_window(&repo, 0, 6);
+    utc_window(&repo, 7, 8);
+    repo.ok(&["cycle", "close", id(&a)]);
+    let v = repo.ok(&["cycle", "velocity"]);
+    let c = &v["data"]["cycles"][0];
+    assert_eq!(c["end"], utc(0), "effective end is the close day");
+    assert_ne!(c["end"], utc(6));
+    let out = repo.frob(&["cycle", "velocity", "--last", "0"]);
+    assert_eq!(code(&out), 2);
+}
