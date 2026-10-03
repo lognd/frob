@@ -2,13 +2,13 @@
 id = "01M4069Y1YR0XCN4BKDDH63PV1"
 title = "Release workflow artifact-smoke job and exemption test"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T06:12:59Z"
+updated = "2026-10-03T14:31:49Z"
 idempotency_key = "m2-rel-smoke-wiring"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = [".github/workflows/release.yml", "crates/frob/tests/release_workflow.rs"]
