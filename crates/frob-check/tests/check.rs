@@ -633,6 +633,30 @@ fn branched(files: &[(&str, &str)], on_main: &[(&str, &str)]) -> (tempfile::Temp
     (dir, id)
 }
 
+// frob:tests crates/frob-check/src/scope.rs::branch_changes
+#[test]
+fn lock_files_written_by_ack_are_not_scope001_but_other_edits_are() {
+    let (dir, id) = branched(
+        &[
+            ("frob.lock", "version = 2\ndigest_scheme = 2\n"),
+            ("grimble.lock", "# written by grimble\n"),
+            ("src/a/lib.rs", "pub fn a() {}\n"),
+            ("docs/hand-edit.md", "# edited by hand\n"),
+        ],
+        &[],
+    );
+    let report = run(dir.path(), &ticket_opts(&id)).expect("run");
+    let flagged = scope001_paths(&report);
+    assert!(
+        flagged.iter().any(|m| m.contains("docs/hand-edit.md")),
+        "a hand edit outside the lease still fires: {flagged:?}"
+    );
+    assert!(
+        !flagged.iter().any(|m| m.contains(".lock")),
+        "lock bookkeeping is exempt: {flagged:?}"
+    );
+}
+
 #[test]
 fn base_advancing_does_not_leak_into_scope001() {
     let (dir, id) = branched(

@@ -1,0 +1,1 @@
+frob: Fixed `frob ack` leaving `frob.lock` (and `grimble.lock`) reported by SCOPE001 as outside the ticket lease: both lock files are bookkeeping written by frob's own verbs and are now exempt, like the ledger directory.
