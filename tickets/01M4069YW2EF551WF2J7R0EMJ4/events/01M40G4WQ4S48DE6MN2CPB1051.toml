@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-03T09:05:00Z"
+digest = "776a3837727c65b44d8d5870e070d5ddd92c2c9477a6c1fb288bb55f9f3169d6"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+────────────
+ Nextest run ID a34b6cc8-2931-4a6a-92e0-28ae08f80fda with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.073s] (1/6) frob-cli::e2e_init_loop usage_error_names_the_missing_arguments
+        PASS [   0.097s] (2/6) frob-cli::e2e_init_loop init_points_the_ledger_ref_at_the_current_branch
+        PASS [   0.149s] (3/6) frob-cli::e2e_init_loop check_before_init_says_to_run_init
+        PASS [   0.224s] (4/6) frob-cli::e2e_init_loop check_after_init_on_a_fresh_repository_passes
+        PASS [   1.107s] (5/6) frob-cli::e2e_init_loop loop_on_main
+        PASS [   1.108s] (6/6) frob-cli::e2e_init_loop loop_on_trunk
+────────────
+     Summary [   1.109s] 6 tests run: 6 passed, 0 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test e2e_init_loop"
+size = 852
+status = "measured"
+tests = ["usage_error_names_the_missing_arguments", "init_points_the_ledger_ref_at_the_current_branch", "check_before_init_says_to_run_init", "check_after_init_on_a_fresh_repository_passes", "loop_on_main", "loop_on_trunk"]
+at = "2026-10-03T09:05:00Z"
+actor = "lognd"
+rev = 1
