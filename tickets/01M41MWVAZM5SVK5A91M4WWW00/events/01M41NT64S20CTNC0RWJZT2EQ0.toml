@@ -1,0 +1,5 @@
+kind = "evidence-bypass"
+reason = "criterion 1 (suite passes with no git identity) verified by the implementer's hermetic run, 1299/1299; env is not an allowed evidence tool; CI on the next push is the independent proof"
+at = "2026-10-03T20:03:15Z"
+actor = "lognd"
+rev = 1
