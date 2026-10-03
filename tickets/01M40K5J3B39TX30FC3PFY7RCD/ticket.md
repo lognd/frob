@@ -2,13 +2,13 @@
 id = "01M40K5J3B39TX30FC3PFY7RCD"
 title = "ticket evidence add: a --ref value starting with a hyphen is parsed as a flag"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T09:57:47Z"
-updated = "2026-10-03T09:57:47Z"
+updated = "2026-10-03T10:09:42Z"
 idempotency_key = "m2-evidence-ref-hyphen"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/frob-evidence/**", "crates/frob/src/milestone_evidence_cmd.rs", "crates/frob/tests/**"]
