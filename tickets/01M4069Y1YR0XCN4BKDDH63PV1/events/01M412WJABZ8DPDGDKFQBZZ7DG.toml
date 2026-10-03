@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = [".github/workflows/release.yml", "crates/frob/tests/release_workflow.rs"]
+new = [".github/workflows/release.yml", "crates/frob/tests/release_workflow.rs", "crates/frob-release/tests/release_workflow.rs"]
+at = "2026-10-03T14:32:30Z"
+actor = "lognd"
+rev = 1

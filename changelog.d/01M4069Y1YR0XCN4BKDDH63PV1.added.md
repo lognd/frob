@@ -1,0 +1,1 @@
+frob: Added a release workflow smoke job that installs each target's downloaded wheel and archive on a fresh runner (cross-built macOS x86_64 exempt); every publishing job needs it and a workflow test pins timeouts, SHA pins, tag-only triggers and the exemption list.
