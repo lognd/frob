@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T14:01:49Z"
+digest = "c99248fbad8ce8c80f28903934ddf45735c60aa4293acc3eafce97d3850b6fb8"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.66s
+────────────
+ Nextest run ID 4cbe86ad-2603-423a-bf51-bba5876c27c9 with nextest profile: default
+    Starting 1 test across 140 binaries (1136 tests skipped)
+        PASS [   0.166s] (1/1) frob-cli::remedies remedies_name_only_existing_commands_and_flags
+────────────
+     Summary [   0.171s] 1 test run: 1 passed, 1136 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "frob-cli::remedies remedies_name_only_existing_commands_and_flags"
+size = 448
+status = "measured"
+tests = ["remedies_name_only_existing_commands_and_flags"]
+at = "2026-10-03T14:01:49Z"
+actor = "lognd"
+rev = 1
