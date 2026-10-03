@@ -140,7 +140,7 @@ not interpreted.
 | a rule id | `[A-Z]+[0-9]{3}` in a code span or a table cell | the rule registry plus the planned-rules list (5.3) | SYNC011 unknown-rule-id (Error) |
 | a decision id | `D[0-9]+` | the generated decision log | SYNC012 unknown-decision (Error) |
 | a path | a code span that looks like a repository path (contains `/` and an existing top-level directory, or ends in a known extension) | the tree at HEAD | SYNC013 dangling-path-mention (Warning; DOC002 stays the rule for links) |
-| a list of members | a list or table under `frob:enumerates SYMREF` (the v1 verb) | the members of the enum, the fields of the struct, or the verbs of a CLI group | SYNC014 enumeration-mismatch (Error; fix machine: regenerate the list in source order) |
+| a list of members | the list or table following `frob:enumerates SYMREF` (5.0; no members attribute) | the members of the enum, the fields of the struct, the verbs of a CLI group, the keys of a config table, the rules of a family | SYNC014 enumeration-mismatch (Error; fix: remove extra rows (machine), add missing rows with placeholders (has-placeholders)) |
 | a ticket reference | full ULID or `~handle` | the ledger | REF001 (exists) |
 
 Rules for false positives: a span is checked only when its first token
@@ -149,6 +149,47 @@ rule family, a directory); anything else is not a fact. A doc can mark
 a deliberately historical or foreign mention with `frob:historical` on
 the span's line (for example "v1 had `frob ticket sprint migrate`"),
 which is counted in the summary and never checked.
+
+### 5.0 Enumerations without a second copy
+
+v1's `frob:enumerates` carried its own copy of the members in a
+`members="..."` attribute: one line, up to 5879 characters in v1's own
+docs, unreadable in a diff, and maintained by hand next to the readable
+list it duplicated. v2 removes the copy. The directive names only the
+symbol; the claim is the doc's own list:
+
+```markdown
+<!-- frob:enumerates crates/gob-rules/src/family.rs::Family -->
+| Family | What it checks |
+|---|---|
+| `DOC` | documentation coverage and links |
+| `DRIFT` | code and doc pairs |
+```
+
+- **The claim is the next list or table** after the directive: the
+  first column of a table, or the first code span of each list item.
+  Rows keep their hand-written descriptions; only the keys are checked.
+- **Modes:** `exact` (default: the keys equal the members), `subset`
+  (`frob:enumerates SYM subset`: every key is a member, for a doc that
+  discusses a few), and `ordered` (keys in declaration order). A
+  filter narrows the members compared: `where prefix=A11Y`.
+- **Fix (machine for removals, has-placeholders for additions):** a
+  missing member gets a new row in declaration order with the
+  description cell `(describe this member)`, which SYNC014 keeps
+  flagging until it is replaced; a key that is no longer a member has
+  its row removed.
+- **Members come from the source of truth:** enum variants, struct
+  fields, the verbs of a CLI group, the keys of a config table, the
+  rules of a family (registries are queried, not parsed from text). A
+  shape the extractor cannot resolve is Unresolved, never a pass (v1's
+  rule, kept).
+- **When nothing is hand-written per member, do not claim, generate.**
+  A list with no descriptions (v1's 5879-character case was a plain id
+  list) is an include region rendered from the symbol
+  (`frob:include crates/...::Sym#members`), which cannot drift and
+  needs no check. `enumerates` is for lists that carry prose per member.
+- No ack is involved: the members are re-derived on every run (v1's
+  insight: a list can match its last ack and still be wrong).
 
 ### 5.1 Three values
 
