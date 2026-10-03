@@ -2,7 +2,8 @@
 id = "01M4055D5YVN8CN4AP4VSQR4YW"
 title = "mirror.md: close the nine gaps found by the mirror re-cut"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
