@@ -24,7 +24,7 @@ target = "01M3Z712DPZN71ZQDS6PXY6QQV"
 
 [[acceptance]]
 text = "Given frob check before and after the extraction on this repository, when both run, then findings are identical and the new crate has no frob dependency"
-bound = false
+bound = true
 +++
 
 grimble-model.md 9.7 and rules.md: extract the product-neutral pipeline (walk, inputs, per-file and repo rules, caches, exception application, render) from frob-check into gob-check; exception matching into gob-rules; Rule derive gains polarity and must_measure, Finding gains subjects_examined and the required mark; frob-check becomes frob's driver; generated rule pages show polarity.
