@@ -2,14 +2,14 @@
 id = "01M4172YE3SZDG17J1CAZS0RRT"
 title = "Make the full crate set publishable and support a first-publish token in the crates job"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T15:45:53Z"
-updated = "2026-10-03T15:45:53Z"
-scope = ["Cargo.toml", "crates/*/Cargo.toml", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/guides/release.md"]
+updated = "2026-10-03T17:52:31Z"
+scope = ["Cargo.toml", "crates/*/Cargo.toml", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/design/releases.md"]
 
 [[acceptance]]
 text = "Given the workspace, when cargo dev publish --dry-run runs, then it plans every shipped crate in dependency order and excludes exactly the listed dev-only crates"
