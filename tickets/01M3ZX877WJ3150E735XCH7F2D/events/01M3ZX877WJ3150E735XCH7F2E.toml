@@ -1,0 +1,22 @@
+kind = "create"
+title = "docs/SUMMARY.md generated from docs/order.toml with a coverage check"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+idempotency_key = "m2-nav-summary"
+labels = ["milestone:2", "area:navigation"]
+scope = ["crates/gob-dev/src/render/summary.rs", "docs/order.toml"]
+acceptance = ["Given a docs page absent from SUMMARY.md and not excluded, when `cargo dev gen all --check` runs, then GEN001 reports it", "Given docs/order.toml, when generated, then SUMMARY.md follows its order and lists reference pages from the generators"]
+body = """
+Implements navigation.md section 3.2.
+
+Hand-written order file; reference sections are generated lists; every docs/**/*.md must appear in SUMMARY.md or be explicitly excluded."""
+at = "2026-10-03T03:34:46Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX85N2KZ39PG65MX0YT2P0"

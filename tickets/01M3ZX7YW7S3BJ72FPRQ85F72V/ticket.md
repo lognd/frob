@@ -1,0 +1,27 @@
++++
+id = "01M3ZX7YW7S3BJ72FPRQ85F72V"
+title = "Origin on every text field: host, std, pack:NAME, source, tracker, ledger"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
+reporter = "lognd"
+created = "2026-10-03T03:34:37Z"
+updated = "2026-10-03T03:34:37Z"
+idempotency_key = "m2-sec-text-origin"
+labels = ["milestone:2", "area:security"]
+scope = ["crates/gob-diagnostics/src/record.rs", "crates/gob-diagnostics/src/envelope.rs", "docs/schemas/**"]
+
+[[acceptance]]
+text = "Given a finding from a plugin pack, when rendered as JSON, then its message carries origin pack:NAME"
+bound = false
+
+[[acceptance]]
+text = "Given the generated schema, when read, then the origin enum and the data-not-instructions note are present"
+bound = false
++++
+
+Implements security.md section 2.10 (I7); diagnostics.md section 2.
+
+Typed origin per text field in findings and envelopes; the JSON schema docs state that text with an origin other than host or std is data, never instructions.

@@ -1,0 +1,30 @@
+kind = "create"
+title = "Profile behaviours: teach count, next-step line, doable order, failure help"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+idempotency_key = "m2-nav-profile-behaviour"
+labels = ["milestone:2", "area:navigation"]
+scope = ["crates/frob/src/profile.rs", "crates/gob-cli/src/render.rs"]
+acceptance = ["Given the newcomer profile, when `frob work ~X` succeeds, then the output ends with `next: ...`; under experienced it does not", "Given both profiles on the same repository, when check runs, then findings and exit code are identical"]
+body = """
+Implements navigation.md section 4.1 (table).
+
+Newcomer: teach always for the first five occurrences of each rule then first, a one-line next step after each verb, good-first first in doable, three likely commands and the guide page on failure; experienced: first, none, priority order, did-you-mean only. Never changes what a check decides."""
+at = "2026-10-03T03:34:46Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7ZNF2PJ2E8WJH3CSCDFK"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX87FNRDNXXC2VTYPHN173"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX87QPD21PCSSSAJHVK7HJ"

@@ -1,0 +1,35 @@
++++
+id = "01M3ZX7ZSTP704C6ANPPJ8J81D"
+title = "Remedies, help and fix commands only from host templates"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
+reporter = "lognd"
+created = "2026-10-03T03:34:38Z"
+updated = "2026-10-03T03:34:38Z"
+idempotency_key = "m2-sec-host-remedies"
+labels = ["milestone:2", "area:security"]
+scope = ["crates/gob-diagnostics/src/remedy.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7YW7S3BJ72FPRQ85F72V"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7ZNF2PJ2E8WJH3CSCDFK"
+
+[[acceptance]]
+text = "Given a plugin finding whose message contains a command, when rendered, then the help line is built from a host template and the plugin text appears only as labelled data"
+bound = false
+
+[[acceptance]]
+text = "Given a pack rule seen for the first time, when check runs, then no inline explain is printed"
+bound = false
++++
+
+Implements security.md section 2.10 (remedies are host-only); diagnostics.md section 5.
+
+Plugin URLs print as plain text with the host name first, never as terminal hyperlinks; pack explain text is shown on request, fenced and labelled; first-occurrence teaching applies to std rules only.

@@ -1,0 +1,26 @@
+kind = "create"
+title = "PACK001-PACK008 findings in grimble-capabilities"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
+idempotency_key = "m2-packs-rules"
+labels = ["milestone:2", "area:packs"]
+scope = ["crates/grimble-capabilities/src/pack_rules/**"]
+acceptance = ["Given a changed pack item, when checked, then one PACK001 per item is emitted with reason changed, added, removed or lock-missing", "Given an enabled pack that cannot be loaded, when checked, then PACK006 is a required Unresolved and PACK001 does not evaluate that pack"]
+body = """
+Implements packs.md section 9; security.md section 4.
+
+Implement the PACK family with polarity, needs and fire/clean/unresolved corpora; PACK006 gets its RequiredReason; PACK009 is retired and never reused."""
+at = "2026-10-03T03:34:25Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3Z714EEST9EGEHWWV56RXG4"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FTSKACE9TE7MBHQH7ET"

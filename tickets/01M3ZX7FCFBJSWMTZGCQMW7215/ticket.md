@@ -1,0 +1,43 @@
++++
+id = "01M3ZX7FCFBJSWMTZGCQMW7215"
+title = "rule test, rule check, rule catalog and rule fmt verbs in every product"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+reporter = "lognd"
+created = "2026-10-03T03:34:21Z"
+updated = "2026-10-03T03:34:21Z"
+idempotency_key = "m2-grl-verbs"
+labels = ["milestone:2", "area:grl"]
+scope = ["crates/gob-plan/src/verbs/**", "crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7DG5711ZSC4R0Y64C78A"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7DT0J6MRW68P60GAYD3N"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7EQ5NARR4Z2SAY4H23AQ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7F8WQQ8JKW7GVVB2EYG6"
+
+[[acceptance]]
+text = "Given rules/NOPE001.grl, when `rule test` runs, then it prints one line per example such as `NOPE001  fire   ok (1 finding on line 1)` and exits 0, and exits 1 when an example fails"
+bound = false
+
+[[acceptance]]
+text = "Given `rule check`, `rule catalog tset` and `rule fmt`, when run with --json, then each returns its documented envelope (compile errors with codes, the catalog entry or did-you-mean, the rewritten paths)"
+bound = false
++++
+
+Implements grl-spec.md section 11.
+
+Thin verbs over the library: test runs the examples, check compiles and prints cost class and prefilter, catalog prints a word or list, fmt rewrites to canonical layout. JSON envelope like every verb.

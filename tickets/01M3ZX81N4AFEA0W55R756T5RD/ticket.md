@@ -1,0 +1,31 @@
++++
+id = "01M3ZX81N4AFEA0W55R756T5RD"
+title = "check --teach [RULE] and teach reset [RULE]"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZX76ZV963F3AXRKJ8F744N"
+reporter = "lognd"
+created = "2026-10-03T03:34:40Z"
+updated = "2026-10-03T03:34:40Z"
+idempotency_key = "m2-diag-teach-flags"
+labels = ["milestone:2", "area:diagnostics"]
+scope = ["crates/frob/src/teach_cmd.rs", "crates/frob-check/src/options.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7ZNF2PJ2E8WJH3CSCDFK"
+
+[[acceptance]]
+text = "Given a run with two rules firing, when `check --teach SYS003` runs, then only SYS003 prints in full"
+bound = false
+
+[[acceptance]]
+text = "Given `teach reset`, when run, then seen.toml is emptied and the next check teaches again"
+bound = false
++++
+
+Implements diagnostics.md section 5.1.
+
+Every path back to a long explanation is one command: `check --teach` (alias --explain-all) prints full text for every finding, `--teach RULE` for one rule, `teach reset` and `teach reset RULE` edit seen.toml.

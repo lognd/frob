@@ -1,0 +1,22 @@
+kind = "create"
+title = "TICK006 move-outside-reindex"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+idempotency_key = "m2-nav-tick006"
+labels = ["milestone:2", "area:navigation"]
+scope = ["crates/frob-obligations/src/tick_moves.rs"]
+acceptance = ["Given a ledger commit without the trailer that renames a ticket file, when checked, then TICK006 fires", "Given a commit that only adds events and edits frontmatter, when checked, then it does not fire"]
+body = """
+Implements navigation.md section 2.2.
+
+A ledger commit without the trailer may not rename or delete a ticket file or touch an event file it did not add."""
+at = "2026-10-03T03:34:45Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX85S7ASFGT31GDYMRB5JX"

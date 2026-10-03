@@ -1,0 +1,31 @@
++++
+id = "01M3ZX7DG5711ZSC4R0Y64C78A"
+title = "GRL canonical formatter (rule fmt engine)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+reporter = "lognd"
+created = "2026-10-03T03:34:19Z"
+updated = "2026-10-03T03:34:19Z"
+idempotency_key = "m2-grl-fmt"
+labels = ["milestone:2", "area:grl"]
+scope = ["crates/gob-plan/src/grl/fmt.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7DCQGFR0761QHY8NPAQE"
+
+[[acceptance]]
+text = "Given any rule of grl-spec section 12, when formatted, then each clause is on its own line, examples come last and re-parsing the output yields the same AST"
+bound = false
+
+[[acceptance]]
+text = "Given already formatted source, when formatted again, then the bytes are identical"
+bound = false
++++
+
+Implements grl-spec.md section 11 (rule fmt).
+
+Print an AST in the canonical layout: one clause per line, examples last. Library only; the verb is wired in the verbs ticket.

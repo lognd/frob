@@ -1,0 +1,26 @@
+kind = "create"
+title = "The .grmb, Rust and markdown adapters become std adapter packs"
+type = "task"
+category = "todo"
+priority = "low"
+points = 3
+parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
+idempotency_key = "m2-packs-std-adapters"
+labels = ["milestone:2", "area:packs"]
+scope = ["crates/gob-packs/src/std/adapters.rs"]
+acceptance = ["Given the three adapters registered as std packs, when the language conformance suite runs, then results are unchanged", "Given `packs list`, when run, then the adapters appear with provenance builtin"]
+body = """
+Implements plugins.md section 8 (last sentence).
+
+Registration through the same pack API; behaviour must not change."""
+at = "2026-10-03T03:34:32Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZEH464EFCFAZ4XDKE89D5Z"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7T0WTQ93A8DWG8HJZ9MP"

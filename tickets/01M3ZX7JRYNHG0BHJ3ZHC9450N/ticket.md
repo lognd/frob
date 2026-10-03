@@ -1,0 +1,31 @@
++++
+id = "01M3ZX7JRYNHG0BHJ3ZHC9450N"
+title = "Tier-1 pack content: atoms, detectors, vocabularies and excuse templates into the registry"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
+reporter = "lognd"
+created = "2026-10-03T03:34:25Z"
+updated = "2026-10-03T03:34:25Z"
+idempotency_key = "m2-packs-tier1"
+labels = ["milestone:2", "area:packs"]
+scope = ["crates/gob-packs/src/tier1/**", "crates/gob-ir/src/registry.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FG2JNTHKVQ5R535DAVZ"
+
+[[acceptance]]
+text = "Given a pack with an atom, a vocabulary and a matrix-build excuse template, when loaded, then the registry answers for them identically to an inventory-registered atom"
+bound = false
+
+[[acceptance]]
+text = "Given two packs declaring the same atom, when loaded, then PACK004 names both packs"
+bound = false
++++
+
+Implements plugins.md sections 3 and 7; packs.md section 2.
+
+Parse atoms.toml and templates.toml, intern into the open atom and capability registry, one answer per (language, atom); G14 consumes this instead of hard-coded data.
