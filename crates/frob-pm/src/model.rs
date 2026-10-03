@@ -115,11 +115,6 @@ impl Day {
             .map(Self)
             .map_err(|e| format!("{self} plus {days} days is out of range: {e}"))
     }
-
-    /// Whole days from this day to `later` (negative when `later` is earlier).
-    pub fn days_until(self, later: Self) -> i64 {
-        i64::from((later.0 - self.0).get_days())
-    }
 }
 
 impl FromStr for Day {

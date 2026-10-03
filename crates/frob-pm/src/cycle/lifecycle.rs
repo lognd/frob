@@ -395,6 +395,19 @@ mod tests {
     }
 
     #[test]
+    fn unknown_reference_suggests_the_nearest_alias() {
+        let c = cycle("2026-10-05", "2026-10-11", State::Planned);
+        let e = unknown_cycle(std::slice::from_ref(&c), "2026-10-05..2026-10-12");
+        assert!(
+            matches!(e, CycleError::Unknown { ref suggestions, .. } if suggestions == &["2026-10-05..2026-10-11"])
+        );
+        let far = unknown_cycle(&[c], "zzz");
+        assert!(
+            matches!(far, CycleError::Unknown { ref suggestions, .. } if suggestions.is_empty())
+        );
+    }
+
+    #[test]
     fn same_window_is_already_or_a_conflict() {
         let c = cycle("2026-10-05", "2026-10-11", State::Planned);
         let again = plan_new(std::slice::from_ref(&c), c.start, c.end, "g", None);

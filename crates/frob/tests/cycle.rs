@@ -273,6 +273,7 @@ fn close_is_refused_while_a_member_is_in_progress_with_a_live_lease() {
 #[test]
 fn close_carries_incomplete_members_and_records_the_ratio_and_retro() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    // frob:tests crates/frob-pm/src/store.rs::PmStore.append_many
     let repo = Repo::new();
     let c = repo.new_cycle("2026-10-05", "first");
     let next = repo.new_cycle("2026-10-12", "second");
@@ -345,6 +346,7 @@ fn close_without_a_next_cycle_is_refused_unless_carry_to_names_one() {
 fn show_and_list_report_cycles_and_unknown_references_suggest() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleShow
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleList
+    // frob:tests crates/frob-pm/src/model.rs::Day.today
     let repo = Repo::new();
     let a = repo.new_cycle("2026-10-12", "second");
     repo.new_cycle("2026-10-05", "first");
