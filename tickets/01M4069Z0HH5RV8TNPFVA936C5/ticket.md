@@ -2,7 +2,8 @@
 id = "01M4069Z0HH5RV8TNPFVA936C5"
 title = "frob init adoption: an existing Cargo project with history, no hard-coded base branch"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
