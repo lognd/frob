@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:55Z"
-updated = "2026-10-03T10:59:16Z"
+updated = "2026-10-03T11:04:55Z"
 idempotency_key = "m2-rel-wip-repo"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-lease/**", "crates/frob-worktree/**", "frob.toml", "docs/design/architecture.md", "docs/design/tickets.md", "docs/design/releases.md", "docs/reference/config.md", "docs/reference/config.schema.json", "docs/schemas/config.json"]
@@ -23,7 +23,7 @@ target = "01M4069R19D2KZENDGEH83JZSW"
 
 [[acceptance]]
 text = "Given two tickets in progress and limit 2, when work takes a third, then it exits 3 naming both holders"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given limit 0, when work runs, then no WIP check applies"
