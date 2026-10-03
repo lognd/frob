@@ -20,7 +20,7 @@ target = "01M3Z712KRPYF3DQG6ZFCWVPS7"
 
 [[acceptance]]
 text = "Given the schema, when a sample grimble output and a sample crunk output are validated, then both pass and a document with a missing required mark fails"
-bound = false
+bound = true
 +++
 
 grimble-model.md 9.5: specify docs/schemas/sibling.json (schema_version, product, fidelity per language, findings with rule, severity incl. Unresolved reasons, polarity, subjects_examined, required mark, exception with opaque ticket, suppressed list, entities and bindings), the compute digest frob checks, version negotiation and refusal, and the frob behaviour for a configured-but-absent sibling.
