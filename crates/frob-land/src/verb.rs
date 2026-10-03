@@ -62,7 +62,13 @@ impl Command for Land {
             Arg::new("reason")
                 .long("reason")
                 .value_name("TEXT")
-                .help("Why no evidence is recorded (with --no-evidence)"),
+                .help("Why no evidence or no changelog note is recorded (with --no-evidence or --no-changelog)"),
+        )
+        .arg(
+            Arg::new("no-changelog")
+                .long("no-changelog")
+                .action(ArgAction::SetTrue)
+                .help("Close without a changelog fragment; needs --reason and is audited"),
         )
         .arg(
             Arg::new("outcome")
@@ -76,22 +82,21 @@ impl Command for Land {
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let reason = text(m, "reason");
-        let no_evidence_reason = match (m.get_flag("no-evidence"), reason) {
-            (true, Some(r)) if !r.trim().is_empty() => Some(r),
-            (true, _) => {
-                return Err(CliError::Usage(
-                    "--no-evidence needs --reason <text> saying why no evidence is recorded"
-                        .to_owned(),
-                ));
-            }
-            (false, Some(_)) => {
-                return Err(CliError::Usage(
-                    "--reason is only used with --no-evidence".to_owned(),
-                ));
-            }
-            (false, None) => None,
+        let reason = text(m, "reason").filter(|r| !r.trim().is_empty());
+        let (no_evidence, no_changelog) = (m.get_flag("no-evidence"), m.get_flag("no-changelog"));
+        let given = |flag: &str| match &reason {
+            Some(r) => Ok(r.clone()),
+            None => Err(CliError::Usage(format!(
+                "{flag} needs --reason <text> saying why"
+            ))),
         };
+        if !no_evidence && !no_changelog && text(m, "reason").is_some() {
+            return Err(CliError::Usage(
+                "--reason is only used with --no-evidence or --no-changelog".to_owned(),
+            ));
+        }
+        let no_evidence_reason = no_evidence.then(|| given("--no-evidence")).transpose()?;
+        let no_changelog_reason = no_changelog.then(|| given("--no-changelog")).transpose()?;
         let outcome = match text(m, "outcome") {
             Some(s) => s
                 .parse::<TicketOutcome>()
@@ -106,6 +111,7 @@ impl Command for Land {
                 wait_secs: m.get_one::<u64>("wait").copied().unwrap_or(0),
                 keep_worktree: m.get_flag("keep-worktree"),
                 no_evidence_reason,
+                no_changelog_reason,
                 outcome,
             },
         })

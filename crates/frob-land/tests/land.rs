@@ -73,6 +73,11 @@ struct Started {
 
 impl Fixture {
     fn new() -> Self {
+        Self::requiring("criteria_evidenced")
+    }
+
+    /// A fixture whose `[pm] done_requires` is exactly `requirement`.
+    fn requiring(requirement: &str) -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
         let root = tmp.path().join("repo");
         std::fs::create_dir(&root).expect("mkdir");
@@ -97,7 +102,7 @@ impl Fixture {
                 ),
                 (
                     RelPath::new("frob.toml").expect("path"),
-                    Some(b"[pm]\ndone_requires = [\"criteria_evidenced\"]\n".to_vec()),
+                    Some(format!("[pm]\ndone_requires = [\"{requirement}\"]\n").into_bytes()),
                 ),
                 (
                     RelPath::new(".gitignore").expect("path"),
@@ -430,6 +435,38 @@ fn missing_evidence_refuses_unless_bypassed_with_a_reason() {
     };
     let out = land(&fx.root, &opts).expect("bypassed land");
     assert!(out.closed);
+}
+
+// frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::requiring("changelog_fragment");
+    let s = fx.start("Design doc", &["docs/**"]);
+    Fixture::commit_in(&s.wt, "docs/d.md", "design\n");
+    Fixture::evidence(&s, "docs/d.md");
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("no fragment");
+    let r = refusal(&err);
+    assert!(
+        r.code == "E-DONE-CHANGELOG-FRAGMENT" || r.code == "E-LAND-CHECK-RED",
+        "{}",
+        r.code
+    );
+
+    let opts = LandOptions {
+        no_changelog_reason: Some("design only".to_owned()),
+        ..Fixture::opts(&s)
+    };
+    let out = land(&fx.root, &opts).expect("exempt land");
+    assert!(out.closed);
+    assert_eq!(out.changelog_exempt.as_deref(), Some("design only"));
+    let events = fx.ledger().events(s.id).expect("events");
+    let x = frob_ledger::event::changelog_exemption(&events).expect("changelog-exempt event");
+    assert_eq!(x.reason, "design only");
 }
 
 // frob:ticket 01M40WS6200M99J09D5XGAS05X

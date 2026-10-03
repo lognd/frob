@@ -149,6 +149,9 @@ pub struct ShowData {
     pub events: Option<Vec<EventView>>,
     /// Evidence records, each attestation marked as one.
     pub evidence: Vec<EvidenceView>,
+    /// The `--no-changelog` exemption the ticket was closed with: who, when and why.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub changelog_exempt: Option<frob_ledger::event::ChangelogExemption>,
 }
 
 /// Show one ticket from the index; `--events` adds its timeline.
@@ -187,18 +190,11 @@ impl Command for Show {
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
         let view = ledger.show(id).map_err(cli_err)?;
-        let events = if self.events {
-            Some(
-                ledger
-                    .events(id)
-                    .map_err(cli_err)?
-                    .iter()
-                    .map(EventView::from)
-                    .collect(),
-            )
-        } else {
-            None
-        };
+        let all = ledger.events(id).map_err(cli_err)?;
+        let changelog_exempt = frob_ledger::event::changelog_exemption(&all);
+        let events = self
+            .events
+            .then(|| all.iter().map(EventView::from).collect());
         let fields = frob_ledger::schema::field_map(&view.ticket);
         let evidence = evidence_views(&ledger, id)?;
         Ok(Payload::new(ShowData {
@@ -206,6 +202,7 @@ impl Command for Show {
             fields,
             events,
             evidence,
+            changelog_exempt,
         }))
     }
 }

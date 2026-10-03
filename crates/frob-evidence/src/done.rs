@@ -3,9 +3,10 @@
 
 use std::path::Path;
 
+use frob_ledger::event::{ChangelogExemptData, EventBody};
 use frob_ledger::guards::{CloseContext, CloseGuard, GuardFailure};
 use frob_ledger::model::{Category, Outcome, Ticket};
-use frob_ledger::{Ledger, TicketId};
+use frob_ledger::{EventId, Ledger, TicketId};
 use frob_pm::{DoneRequirement, PmConfig};
 
 use crate::error::{EvidenceError, Result as EvResult};
@@ -40,6 +41,10 @@ pub struct DoneGuard {
     open_children: Vec<String>,
     fragment: FragmentState,
     bypass: Option<String>,
+    /// A `changelog-exempt` event already on the ticket.
+    recorded_exemption: bool,
+    /// The reason of this close's `--no-changelog --reason`.
+    no_changelog: Option<String>,
 }
 
 impl DoneGuard {
@@ -58,13 +63,58 @@ impl DoneGuard {
             .map(|c| format!("{} ({})", c.handle, c.title))
             .collect();
         let fragment = fragment_state(root, id, &view.summary.handle);
-        tracing::debug!(requires = ?pm.pm.done_requires, ?fragment, "done guard loaded");
+        let recorded_exemption =
+            frob_ledger::event::changelog_exemption(&ledger.events(id)?).is_some();
+        tracing::debug!(requires = ?pm.pm.done_requires, ?fragment, recorded_exemption, "done guard loaded");
         Ok(Self {
             requires: pm.pm.done_requires,
             open_children,
             fragment,
             bypass: None,
+            recorded_exemption,
+            no_changelog: None,
         })
+    }
+
+    /// Satisfy `changelog_fragment` without a fragment (`--no-changelog --reason <why>`); [`Self::record_exemption`] audits it.
+    #[must_use]
+    pub fn allow_no_changelog(mut self, reason: impl Into<String>) -> Self {
+        let reason = reason.into();
+        tracing::warn!(%reason, "changelog exemption requested");
+        self.no_changelog = Some(reason);
+        self
+    }
+
+    /// The reason of the exemption this guard was given, when there is one.
+    pub fn exemption_reason(&self) -> Option<&str> {
+        self.no_changelog.as_deref()
+    }
+
+    /// Write the exemption as a `changelog-exempt` event on `id`; `None` when none was requested or the ticket already carries one with this reason.
+    ///
+    /// Call it before the close so a crash cannot leave a closed ticket without its record; an event on a ticket whose close is then refused is harmless, and a retry with the same reason reuses it.
+    ///
+    /// # Errors
+    ///
+    /// Ledger, git or format failures.
+    pub fn record_exemption(&self, ledger: &Ledger, id: TicketId) -> EvResult<Option<EventId>> {
+        let Some(reason) = self.no_changelog.as_deref() else {
+            return Ok(None);
+        };
+        let existing = frob_ledger::event::changelog_exemption(&ledger.events(id)?);
+        if existing.is_some_and(|x| x.reason == reason) {
+            tracing::debug!(ticket = %id, "changelog exemption already recorded; not repeated");
+            return Ok(None);
+        }
+        let body = EventBody::ChangelogExempt(ChangelogExemptData {
+            reason: reason.to_owned(),
+        });
+        let applied = ledger.append(id, body)?;
+        let event = applied.events.first().copied().ok_or_else(|| {
+            EvidenceError::Malformed("the changelog-exempt event was not written".to_owned())
+        })?;
+        tracing::info!(ticket = %id, event = %event, "changelog exemption audited");
+        Ok(Some(event))
     }
 
     /// Let `criteria_evidenced` through (`--no-evidence --reason <why>`); no other requirement has a bypass.
@@ -155,6 +205,9 @@ impl DoneGuard {
 
     // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
     fn fragment(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
+        if self.no_changelog.is_some() || self.recorded_exemption {
+            return Ok(());
+        }
         match &self.fragment {
             FragmentState::Valid => Ok(()),
             FragmentState::Missing => Err(GuardFailure {
@@ -168,7 +221,8 @@ impl DoneGuard {
                 remedy: Some(format!(
                     "run `frob ticket fragment {h}` in the ticket's worktree (writes changelog.d/<ULID>.<type>.md from the title; \
                      add --type added|changed|fixed|removed|deprecated|security and --sentence \"<one user-facing sentence>\" to set them), \
-                     edit the sentence, and commit it; or remove changelog_fragment from [pm] done_requires",
+                     edit the sentence, and commit it; \
+                     or, when the change has no user-visible effect, close with `--no-changelog --reason <why>` (audited as a changelog-exempt event)",
                     h = cx.handle
                 )),
             }),

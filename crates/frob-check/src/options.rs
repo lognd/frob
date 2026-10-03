@@ -10,6 +10,10 @@ use gob_check::{FailOn, FileCheck, RunOptions};
 use crate::product::Frob;
 
 /// Inputs of [`crate::run`] besides the repository root; `Default` is a plain full check.
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "independent caller switches, each one flag of the run"
+)]
 #[derive(Clone, Default)]
 pub struct CheckOptions {
     /// Ticket reference (`~handle`, ULID or alias) that scopes the run.
@@ -35,6 +39,8 @@ pub struct CheckOptions {
     pub sibling_programs: Vec<(String, PathBuf)>,
     /// Do not write `.frob/telemetry.jsonl` even when `[check] telemetry` is true.
     pub skip_telemetry: bool,
+    /// Treat the `--ticket` ticket as exempt from the changelog fragment (`land --no-changelog --reason`, not yet recorded).
+    pub changelog_exempt: bool,
 }
 
 impl CheckOptions {

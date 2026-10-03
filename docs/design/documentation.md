@@ -144,7 +144,14 @@ edits a sentence rather than inventing a file. The default type follows the tick
 type: bug and incident `fixed`, security `security`, story and epic `added`, every
 other type (task, docs, chore) `changed`; `--type` overrides. `land` and `close`
 never write it: a refusal on `changelog_fragment` names the verb, because a sentence
-nobody read would defeat the point of the fragment. git-cliff and release-plz are not used:
+nobody read would defeat the point of the fragment. A change with no user-visible effect
+(a design document, an internal refactor, a test-only change) needs no fragment: `ticket
+close` and `land` accept `--no-changelog --reason TEXT` (both required together, no
+exemption by file type), recorded as an audited `changelog-exempt` event that satisfies
+`changelog_fragment` and REL003 for that ticket; `release status` lists the exempted
+tickets of the milestone so a reviewer sees what shipped without a note. A refusal on
+`changelog_fragment` names both `frob ticket fragment` and `--no-changelog --reason`.
+git-cliff and release-plz are not used:
 commit history is not the user-facing voice.
 
 ## 7. Rustdoc discipline

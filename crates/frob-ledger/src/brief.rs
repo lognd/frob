@@ -43,6 +43,7 @@ pub(crate) fn render(view: &TicketView, events: &[Event]) -> String {
         out.push('\n');
     }
     links(&mut out, view);
+    exemption(&mut out, events);
     recent(&mut out, events);
     out
 }
@@ -67,6 +68,17 @@ fn links(out: &mut String, view: &TicketView) {
         );
     }
     out.push('\n');
+}
+
+/// A `## Changelog` section naming the exemption, when the ticket carries one.
+fn exemption(out: &mut String, events: &[Event]) {
+    if let Some(x) = crate::event::changelog_exemption(events) {
+        let _ = write!(
+            out,
+            "## Changelog\n\n- exempt (changelog-exempt by {} at {}): {}\n\n",
+            x.actor, x.at, x.reason
+        );
+    }
 }
 
 fn recent(out: &mut String, events: &[Event]) {

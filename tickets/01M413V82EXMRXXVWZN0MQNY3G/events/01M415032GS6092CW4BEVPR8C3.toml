@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-03T15:09:22Z"
+digest = "9d0fa9c4989ed83df48ce5625db3e13495eafdc0ecaa943738b118d94691fccb"
+exit_code = 0
+inline = """
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/0MQNY3G/crates/frob)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/0MQNY3G/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.01s
+────────────
+ Nextest run ID a50d6c43-6ea2-4da0-8438-c149d7b211f4 with nextest profile: default
+    Starting 3 tests across 27 binaries (210 tests skipped)
+        PASS [   0.007s] (1/3) frob-pm cycle::lifecycle::tests::state_is_derived_from_the_clock_and_the_close
+        PASS [   1.069s] (2/3) frob-cli::cycle a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed
+        PASS [   1.075s] (3/3) frob-cli::cycle state_is_derived_from_the_clock_in_show_list_and_assign
+────────────
+     Summary [   1.077s] 3 tests run: 3 passed, 210 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -p frob-cli -E 'test(state_is_derived) or test(a_cycle_starting_tomorrow)'"
+size = 848
+status = "measured"
+tests = ["cycle::lifecycle::tests::state_is_derived_from_the_clock_and_the_close", "a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed", "state_is_derived_from_the_clock_in_show_list_and_assign"]
+at = "2026-10-03T15:09:22Z"
+actor = "lognd"
+rev = 1

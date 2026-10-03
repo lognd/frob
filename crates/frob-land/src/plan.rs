@@ -22,6 +22,8 @@ pub struct LandOptions {
     pub keep_worktree: bool,
     /// Close without measured evidence, saying why (`--no-evidence --reason`).
     pub no_evidence_reason: Option<String>,
+    /// Close without a changelog fragment, saying why (`--no-changelog --reason`).
+    pub no_changelog_reason: Option<String>,
     /// The outcome the ticket is closed with.
     pub outcome: Outcome,
 }
@@ -35,6 +37,7 @@ impl Default for LandOptions {
             wait_secs: 0,
             keep_worktree: false,
             no_evidence_reason: None,
+            no_changelog_reason: None,
             outcome: Outcome::Done,
         }
     }
@@ -79,6 +82,9 @@ pub struct LandOutcome {
     pub plan: Vec<String>,
     /// Non-fatal notices.
     pub warnings: Vec<String>,
+    /// The reason of the `--no-changelog` exemption this land recorded, when it did.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub changelog_exempt: Option<String>,
 }
 
 /// The facts a plan is a pure function of.

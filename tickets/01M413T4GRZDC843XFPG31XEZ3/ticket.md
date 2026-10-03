@@ -2,12 +2,12 @@
 id = "01M413T4GRZDC843XFPG31XEZ3"
 title = "Evidence capture writes non-ASCII tool output into ledger event files"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T14:48:39Z"
-updated = "2026-10-03T14:48:39Z"
+updated = "2026-10-03T14:56:38Z"
 scope = ["crates/frob-evidence/**"]
 
 [[acceptance]]

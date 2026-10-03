@@ -68,6 +68,8 @@ pub struct FrobInputs {
     pub(crate) invariants: InvariantsConfig,
     /// True when `frob.toml` carries a `[tickets]` table, so a ledger is expected.
     pub(crate) tickets_configured: bool,
+    /// True when the caller declared the checked ticket exempt from the changelog fragment.
+    pub(crate) changelog_exempt: bool,
 }
 
 impl FrobInputs {
@@ -300,6 +302,7 @@ pub(crate) fn collect(
             ledger,
             invariants,
             tickets_configured: tickets_configured(root),
+            changelog_exempt: opts.changelog_exempt,
         },
         findings: scan_findings,
     })

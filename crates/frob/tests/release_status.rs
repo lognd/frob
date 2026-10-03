@@ -271,6 +271,38 @@ fn open_tickets_of_member_epics_are_listed_by_category_and_block() {
 }
 
 #[test]
+fn tickets_closed_with_no_changelog_are_listed_for_the_reviewer_and_do_not_block() {
+    // frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+    // frob:tests crates/frob/src/release_cmd.rs::ReleaseStatus.run
+    let repo = Repo::new();
+    milestone(&repo, &[]);
+    let epic = repo.titled("epic", "The epic");
+    let doc = repo.titled("task", "Design the thing");
+    repo.ok(&["ticket", "update", &doc, "--set", &format!("parent={epic}")]);
+    repo.ok(&[
+        "ticket",
+        "close",
+        &doc,
+        "--outcome",
+        "done",
+        "--no-evidence",
+        "--no-changelog",
+        "--reason",
+        "design document only",
+    ]);
+    repo.ok(&["milestone", "add", &epic, "0.532.0"]);
+    let v = repo.ok(&["release", "status"]);
+    let r = report(&v);
+    let listed = &r["changelog_exempt"];
+    assert_eq!(listed[0]["title"], "Design the thing");
+    assert_eq!(listed[0]["reason"], "design document only");
+    assert!(kinds(&v).is_empty(), "{:?}", kinds(&v));
+    let text = repo.run(&["--text", "release", "status"]);
+    let text = String::from_utf8_lossy(&text.stdout);
+    assert!(text.contains("design document only"), "{text}");
+}
+
+#[test]
 fn a_ticket_claiming_the_release_outside_its_epics_surfaces_pm034() {
     // frob:tests crates/frob/src/release_cmd.rs::ReleaseStatus.run
     // frob:tests crates/frob-pm/src/rules/membership.rs::claimants

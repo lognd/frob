@@ -30,9 +30,12 @@ use crate::fragment::{TicketResolver, files_of, read_all};
 ///
 /// For a missing fragment run `frob ticket fragment TICKET` in the ticket's worktree: it
 /// writes `changelog.d/<ULID>.<type>.md` from the title (`--type` and `--sentence` set them),
-/// validated by the same code; edit the sentence and commit it. For an invalid fragment,
+/// validated by the same code; edit the sentence and commit it, or, audited, close the ticket with
+/// `--no-changelog --reason TEXT`. For an invalid fragment,
 /// fix what the message names (rename the file, reword the body) or replace it with
-/// `frob ticket fragment TICKET --force`.
+/// `frob ticket fragment TICKET --force`. A change with no user-visible effect (a design
+/// document, an internal refactor) is closed with `--no-changelog --reason TEXT` instead; the
+/// exemption is a `changelog-exempt` event, audited, and a ticket that has one is not reported.
 #[derive(Debug, Clone, Copy, Default, Rule)]
 #[rule(
     id = "REL003",
@@ -114,7 +117,7 @@ pub fn missing(root: &Path, ulid: &str, handle: &str) -> Option<Finding> {
         Severity::Error,
         None,
         format!(
-            "REL003: ticket {handle} has no changelog fragment: changelog.d/{ulid}.<type>.md does not exist; run `frob ticket fragment {handle}` in the ticket's worktree, edit the sentence and commit it"
+            "REL003: ticket {handle} has no changelog fragment: changelog.d/{ulid}.<type>.md does not exist; run `frob ticket fragment {handle}` in the ticket's worktree, edit the sentence and commit it; or, if the change has no user-visible effect, close with `--no-changelog --reason <why>`"
         ),
         &format!("missing:{ulid}"),
     ))

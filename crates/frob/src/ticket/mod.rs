@@ -132,6 +132,9 @@ pub struct ChangeData {
     pub events: Vec<String>,
     /// The ledger commit, when one was made.
     pub commit: Option<String>,
+    /// The reason of the `--no-changelog` exemption this close recorded, when it did.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub changelog_exempt: Option<String>,
 }
 
 impl From<&Applied> for ChangeData {
@@ -147,6 +150,7 @@ impl From<&Applied> for ChangeData {
             priority: f.priority,
             events: Ledger::event_strings(&a.events),
             commit: a.commit.map(|c| c.to_string()),
+            changelog_exempt: None,
         }
     }
 }

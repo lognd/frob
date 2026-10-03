@@ -124,7 +124,7 @@ fn prepare(
     }
     let mut warnings = Vec::new();
     if base_merged {
-        verify_check(&wt_path, &here.ledger, &handle, base)?;
+        verify_check(&wt_path, &here.ledger, &handle, base, opts)?;
     } else {
         // A dry run leaves the base unmerged, so the ticket-scoped diff would
         // include the base's own changes; the real land merges first.
@@ -145,6 +145,9 @@ fn prepare(
     if let Some(reason) = &opts.no_evidence_reason {
         evidence = evidence.allow_bypass(reason.clone());
         done = done.allow_bypass(reason.clone());
+    }
+    if let Some(reason) = &opts.no_changelog_reason {
+        done = done.allow_no_changelog(reason.clone());
     }
     run_guards(view, &handle, &evidence, &done, opts)?;
     let mut done_view = view.ticket.clone();
@@ -247,6 +250,9 @@ impl Ready {
         }
         self.out.closed = true;
         self.out.outcome = Some(opts.outcome);
+        self.out
+            .changelog_exempt
+            .clone_from(&opts.no_changelog_reason);
         release(leases, self.id, &actor, &mut self.out.warnings);
         if !opts.keep_worktree && self.wt_path != self.primary {
             self.out.worktree_removed = remove_worktree(
@@ -282,6 +288,7 @@ fn empty_outcome(id: TicketId, handle: &str, base: &str, opts: &LandOptions) -> 
         digest: None,
         plan: Vec::new(),
         warnings: Vec::new(),
+        changelog_exempt: None,
     }
 }
 
@@ -475,6 +482,7 @@ fn verify_check(
     ledger: &Ledger,
     handle: &str,
     base: &str,
+    opts: &LandOptions,
 ) -> Result<(), LandError> {
     let report = frob_check::run(
         wt_path,
@@ -483,6 +491,7 @@ fn verify_check(
             base: Some(base.to_owned()),
             ledger: Some(ledger.config().clone()),
             skip_telemetry: true,
+            changelog_exempt: opts.no_changelog_reason.is_some(),
             ..CheckOptions::default()
         },
     )?;
@@ -685,6 +694,8 @@ fn ledger_step(
         },
     )?;
     let (evidence, done) = guards;
+    let exempt = done.record_exemption(ledger, id)?;
+    tracing::info!(ticket = %id, exempt = exempt.is_some(), "land audited the changelog exemption before closing");
     let defaults = default_close_guards();
     let mut guards: Vec<&dyn CloseGuard> = defaults.iter().map(|g| &**g).collect();
     guards.push(evidence);
@@ -692,7 +703,9 @@ fn ledger_step(
     let applied = ledger.close(
         id,
         Some(opts.outcome),
-        opts.no_evidence_reason.clone(),
+        opts.no_evidence_reason
+            .clone()
+            .or_else(|| opts.no_changelog_reason.clone()),
         &guards,
     )?;
     if !applied.already {

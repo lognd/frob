@@ -621,6 +621,7 @@ pub struct Close {
     outcome: Option<Outcome>,
     reason: Option<String>,
     no_evidence: bool,
+    no_changelog: bool,
 }
 
 impl Command for Close {
@@ -635,13 +636,19 @@ impl Command for Close {
             ))
             .arg(text_flag(
                 "reason",
-                "Free-text reason recorded on the event; required with --no-evidence",
+                "Free-text reason recorded on the event; required with --no-evidence and --no-changelog",
             ))
             .arg(
                 Arg::new("no-evidence")
                     .long("no-evidence")
                     .action(ArgAction::SetTrue)
                     .help("Close without measured evidence; needs --reason and is audited"),
+            )
+            .arg(
+                Arg::new("no-changelog")
+                    .long("no-changelog")
+                    .action(ArgAction::SetTrue)
+                    .help("Close without a changelog fragment; needs --reason and is audited"),
             )
     }
 
@@ -651,6 +658,7 @@ impl Command for Close {
             outcome: get_parsed(m, "outcome")?,
             reason: get(m, "reason"),
             no_evidence: m.get_flag("no-evidence"),
+            no_changelog: m.get_flag("no-changelog"),
         })
     }
 
@@ -658,6 +666,12 @@ impl Command for Close {
         if self.no_evidence && self.reason.as_deref().is_none_or(|r| r.trim().is_empty()) {
             return Err(CliError::Usage(
                 "--no-evidence needs --reason <text> saying why no evidence is recorded".to_owned(),
+            ));
+        }
+        if self.no_changelog && self.reason.as_deref().is_none_or(|r| r.trim().is_empty()) {
+            return Err(CliError::Usage(
+                "--no-changelog needs --reason <text> saying why the change needs no changelog note"
+                    .to_owned(),
             ));
         }
         let ledger = open(ctx)?;
@@ -672,6 +686,15 @@ impl Command for Close {
             .map_err(CliError::internal)?;
         if self.no_evidence {
             done = done.allow_bypass(self.reason.clone().unwrap_or_default());
+        }
+        if self.no_changelog {
+            done = done.allow_no_changelog(self.reason.clone().unwrap_or_default());
+        }
+        let already_done = ledger.show(id).map_err(cli_err)?.summary.category
+            == frob_ledger::model::Category::Done;
+        if !already_done {
+            done.record_exemption(&ledger, id)
+                .map_err(CliError::internal)?;
         }
         let guards = default_close_guards();
         let mut refs: Vec<&dyn frob_ledger::guards::CloseGuard> =
@@ -688,7 +711,11 @@ impl Command for Close {
             tracing::info!(ticket = %id, bypass = recorded.is_some(), "evidence bypass audited");
         }
         tracing::info!(ticket = %id, already = applied.already, "ticket close");
-        let out = payload(&applied);
+        let mut data = ChangeData::from(&applied);
+        if !applied.already {
+            data.changelog_exempt = done.exemption_reason().map(str::to_owned);
+        }
+        let out = gob_cli::Payload::new(data).with_already(applied.already);
         Ok(if applied.already {
             out
         } else {

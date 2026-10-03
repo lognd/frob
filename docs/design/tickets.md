@@ -117,6 +117,7 @@ any (provider, reference) pair's latest record for it passes.
 | `link` | ticket | op (add, remove), link type, target | link, unlink | graph, doctor |
 | `evidence` | ticket | evidence id, verdict, measured value, commit, store URI or inline text | evidence | close guard, done-report |
 | `evidence-bypass` | ticket | reason | `ticket close --no-evidence --reason` | audit, doctor |
+| `changelog-exempt` | ticket | reason | `ticket close` and `land` with `--no-changelog --reason` | audit, REL003, show, brief, release status (folds to no change, so old binaries read it as an uninterpreted kind) |
 | `lease` | ticket | op (take, renew, release, steal), holder, scope | start, work, requeue, close | contention, wave |
 | `review` | ticket or exception | subject, verdict, reviewer | review, `exceptions` review of an accept | EXC012, cycle report |
 | `exception` | ticket | kind (accept, defer, hotfix), rule, site | check --fix, land --hotfix | ticket page, close guard |
@@ -444,7 +445,16 @@ the `evidence-bypass` event. `no_open_children`: every child is done.
 `changelog_fragment`: `changelog.d/<ULID>.<type>.md` exists and passes the
 compile's own validator (REL003, ~HE2EX99): an unknown type, an empty or
 non-ASCII body or a near-miss product prefix refuses with the validation
-message, and `check --ticket` reports the same before land. `objective_target_met` passes for a ticket that is not a
+message, and `check --ticket` reports the same before land. A change with no
+user-visible effect (a design document, an internal refactor, a test-only
+change) is closed with `--no-changelog --reason TEXT` instead (~Y8ZYBDW): both
+flags are required together on `ticket close` and `land`, there is no
+exemption by file type, and the person or agent states why. The reason is
+recorded as a `changelog-exempt` event with the actor, written before the close so a crash cannot leave a closed ticket without its record (a refused close leaves the event on the open ticket; a retry with the same reason reuses it), satisfies
+`changelog_fragment` and REL003 for that ticket (`check --ticket` included, and
+`land` passes the exemption to its own check), and is shown by `ticket show`,
+`ticket brief`, the close and land reports and `release status`, which lists the
+exempted tickets of the milestone. `objective_target_met` passes for a ticket that is not a
 quality objective, and `docs_touched_or_excepted` and an objective's target
 are Unresolved today (no recorded docs exception, no stored target), so they
 refuse until they can be evaluated, so the default `done_requires` lists only

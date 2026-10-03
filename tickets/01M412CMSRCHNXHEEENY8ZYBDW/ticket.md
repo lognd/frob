@@ -2,13 +2,14 @@
 id = "01M412CMSRCHNXHEEENY8ZYBDW"
 title = "Audited --no-changelog exemption for changes with no user-visible effect"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T14:23:48Z"
-updated = "2026-10-03T14:54:47Z"
+updated = "2026-10-03T14:56:06Z"
 idempotency_key = "m2-rel-no-changelog-exempt"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-evidence/src/done.rs", "crates/frob-release/src/rel003.rs", "crates/frob/src/ticket/**", "crates/frob-land/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/brief.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "crates/frob-release/src/status.rs", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release_status.rs", "docs/design/tickets.md", "docs/design/documentation.md", "crates/frob-check/tests/check.rs", "docs/reference/rules/REL003.md"]
