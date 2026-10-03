@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:19Z"
 updated = "2026-10-03T10:25:27Z"
 idempotency_key = "m2-grl-parse"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/grl/ast.rs", "crates/gob-plan/src/grl/parse/**", "crates/gob-plan/Cargo.toml"]
+scope = ["crates/gob-plan/src/grl/ast.rs", "crates/gob-plan/src/grl/parse/**", "crates/gob-plan/Cargo.toml", "crates/gob-plan/src/grl/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
