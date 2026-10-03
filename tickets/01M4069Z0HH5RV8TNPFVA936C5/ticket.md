@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T09:47:39Z"
+updated = "2026-10-03T09:47:41Z"
 idempotency_key = "m2-rel-init-adopt"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob/src/init.rs", "crates/frob/tests/init_adopt.rs", "crates/frob/src/config_cmd.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/gob-check/src/config.rs", "crates/frob-check/src/product.rs", "crates/frob-check/tests/check.rs", "crates/frob/tests/snapshots/*", "crates/frob/tests/cli.rs", "docs/reference/config.md", "docs/design/cli.md", "docs/design/rules.md"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a repository on master, when init runs, then base is master"
-bound = false
+bound = true
 +++
 
 On a repository whose default branch is main (or master, or trunk) with tracked files and a Cargo.toml, init detects the base branch for [check] base (this repository's own value is experimental), ignores .frob/, installs the merge driver, writes no ticket data into the working tree beyond the ledger ref, and a following frob check runs clean or with only documented findings.
