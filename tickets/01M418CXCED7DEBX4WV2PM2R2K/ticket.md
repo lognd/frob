@@ -6,9 +6,9 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T16:08:48Z"
-updated = "2026-10-03T17:45:08Z"
+updated = "2026-10-03T18:04:23Z"
 labels = ["area:check"]
-scope = ["crates/frob-check", "crates/frob-obligations", "crates/gob-directives"]
+scope = ["crates/frob-check", "crates/frob-obligations", "crates/gob-directives", "crates/gob-languages/src/language.rs", "crates/gob-languages/src/grammar.rs", "crates/gob-symbols/src/yaml.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lib.rs", ".github/workflows/dev.yml", "frob.lock", "docs/reference/fidelity.md"]
 
 [[acceptance]]
 text = "Given a frob:accept CI006 comment directly above the on: key of a workflow, when frob check runs, then the CI006 finding is suppressed and the accept is listed"
