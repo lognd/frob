@@ -13,6 +13,10 @@ idempotency_key = "m2-ticket-proposals-verbs"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-ledger/**", "crates/frob/**"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M3ZXGAS3HJR9NYAMKWYGETZK"
+
 [[acceptance]]
 text = "Given a pending proposal, when accepted, then the ticket field changes through a recorded event and the proposal is closed"
 bound = false
