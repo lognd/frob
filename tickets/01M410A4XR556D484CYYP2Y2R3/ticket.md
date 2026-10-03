@@ -7,8 +7,7 @@ outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-03T13:47:29Z"
-updated = "2026-10-03T14:05:31Z"
-labels = ["release:0.532.0"]
+updated = "2026-10-03T15:28:30Z"
 scope = ["crates/frob-check/src/scope.rs", "crates/frob-lease/**", "crates/frob-check/tests/check.rs", "crates/frob-release/src/fragment.rs", "crates/frob-release/src/lib.rs", "Cargo.lock", "docs/reference/rules/SCOPE001.md", "docs/design/tickets.md"]
 +++
 
