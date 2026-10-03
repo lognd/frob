@@ -1,0 +1,44 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-03T14:48:13Z"
+digest = "746cb1b93183ced9689ed80cb42f0cc7139cec565212cb213eaea1718ac068e8"
+exit_code = 0
+inline = """
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/gob-symbols)
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-ledger)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-pm)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/gob-directives)
+   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/gob-check)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-ack)
+   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/grimble-model)
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-release)
+   Compiling grimble-bind v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/grimble-bind)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-lease)
+   Compiling grimble-check v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/grimble-check)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-tests)
+   Compiling grimble v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/grimble)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.54s
+────────────
+ Nextest run ID a5618a52-5738-40c4-aca5-95640f68db51 with nextest profile: ci
+    Starting 3 tests across 23 binaries (169 tests skipped)
+        PASS [   0.709s] (1/3) frob-cli::close_guards no_changelog_without_a_reason_is_a_usage_error_and_changes_nothing
+        PASS [   0.785s] (2/3) frob-cli::close_guards no_changelog_with_a_reason_closes_without_a_fragment_and_records_the_event
+        PASS [   0.980s] (3/3) frob-cli::release_status tickets_closed_with_no_changelog_are_listed_for_the_reviewer_and_do_not_block
+────────────
+     Summary [   0.982s] 3 tests run: 3 passed, 169 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --profile ci -E 'test(no_changelog)'"
+size = 2487
+status = "measured"
+tests = ["no_changelog_without_a_reason_is_a_usage_error_and_changes_nothing", "no_changelog_with_a_reason_closes_without_a_fragment_and_records_the_event", "tickets_closed_with_no_changelog_are_listed_for_the_reviewer_and_do_not_block"]
+at = "2026-10-03T14:48:13Z"
+actor = "lognd"
+rev = 1

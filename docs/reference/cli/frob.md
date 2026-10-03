@@ -14,6 +14,7 @@
 | `cycle new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a cycle; an identical repeat returns `already`, an overlapping or different one is refused. |
 | `cycle show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one cycle (default: the current one) with its members, carried work, ratio and retro. |
 | `cycle unassign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Take a ticket out of a cycle; idempotent when it was not a member. |
+| `cycle velocity` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show points delivered per closed cycle, the rolling mean and standard deviation, and the capacity `cycle assign` would use. |
 | `doctor` | yes | no | 0 ok, 3 refused | Report toolchain, git, cache, config and ledger health; never fails on findings. |
 | `graph affects` | yes | no | 0 ok, 2 usage, 4 internal | List the transitive dependents of a symbol, grouped by file. |
 | `graph why` | yes | no | 0 ok, 2 usage, 4 internal | Explain the bindings and acks that make a finding fire for a symbol. |

@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-03T14:43:39Z"
+digest = "dfdf9e53d657916532f15a6861f3e128c827fb902cae95f5d9d41accca5c041a"
+exit_code = 0
+inline = """
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/0AN408B/crates/frob)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/0AN408B/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.25s
+────────────
+ Nextest run ID c1148cd5-d3e3-4a00-b0fd-2055b4dcbf77 with nextest profile: default
+    Starting 10 tests across 27 binaries (198 tests skipped)
+        PASS [   0.005s] ( 1/10) frob-pm cycle::velocity::tests::carry_over_counts_only_in_the_completing_cycle
+        PASS [   0.006s] ( 2/10) frob-pm cycle::velocity::tests::capacity_is_set_unenforced_or_mean_minus_k_stddev
+        PASS [   0.008s] ( 3/10) frob-pm cycle::velocity::tests::epics_and_out_of_window_work_never_count
+        PASS [   0.009s] ( 4/10) frob-pm cycle::velocity::tests::history_capacity_matches_capacity_for_a_cycle_without_a_set_limit
+        PASS [   0.008s] ( 5/10) frob-pm cycle::velocity::tests::an_early_close_truncates_the_window
+        PASS [   0.011s] ( 6/10) frob-pm cycle::velocity::tests::velocity_over_three_closed_cycles_is_the_hand_computed_mean_and_stddev
+        PASS [   0.838s] ( 7/10) frob-cli::cycle velocity_with_no_closed_cycles_says_so_and_exits_zero
+        PASS [   0.985s] ( 8/10) frob-cli::cycle velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero
+        PASS [   1.242s] ( 9/10) frob-cli::cycle velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once
+        PASS [   2.426s] (10/10) frob-cli::cycle velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports
+────────────
+     Summary [   2.427s] 10 tests run: 10 passed, 198 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -p frob-cli -E 'test(velocity) or test(history_capacity) or test(carry_over)'"
+size = 1679
+status = "measured"
+tests = ["cycle::velocity::tests::carry_over_counts_only_in_the_completing_cycle", "cycle::velocity::tests::capacity_is_set_unenforced_or_mean_minus_k_stddev", "cycle::velocity::tests::epics_and_out_of_window_work_never_count", "cycle::velocity::tests::history_capacity_matches_capacity_for_a_cycle_without_a_set_limit", "cycle::velocity::tests::an_early_close_truncates_the_window", "cycle::velocity::tests::velocity_over_three_closed_cycles_is_the_hand_computed_mean_and_stddev", "velocity_with_no_closed_cycles_says_so_and_exits_zero", "velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero", "velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once", "velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports"]
+at = "2026-10-03T14:43:39Z"
+actor = "lognd"
+rev = 1

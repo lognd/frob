@@ -122,12 +122,18 @@ Milestone 2 or later (D36).
 
 - A cycle is an object: `frob cycle new --start --end --goal`,
   with `capacity_points` either set or derived.
-- Velocity is measured from events: points of tickets of type story,
-  task, bug and chore that carry points and reached `done` within the
-  cycle window, per cycle (epics and milestones never count; PM029's
-  committed points use the same set); `frob cycle velocity`
-  prints the last N cycles, the rolling mean, and the standard
-  deviation. Carry-over is counted in the completing cycle only.
+- Velocity is measured from events: per cycle, the points of the
+  tickets committed to that cycle (story, task, bug and chore with
+  points; epics and milestones never count; PM029's committed points
+  use the same set) that reached `done` in it. This is the same
+  definition as the close-time ratio (one function, `commitment`), and a
+  closed cycle's recorded ratio event is preferred over recomputing.
+  Work finished in the window but never assigned to the cycle is
+  reported separately as `unplanned_done` and never enters the ratio,
+  the mean or capacity. `frob cycle velocity [--last N]` prints the
+  last N cycles, the rolling mean, and the standard deviation.
+  Carry-over leaves the cycle at close, so it counts in the completing
+  cycle only.
 - `frob cycle assign <ticket> <cycle>` refuses when committed points
   would exceed `capacity = rolling_mean - k * stddev` (`[pm] capacity_k`,
   default 0.5) unless `--over-commit --reason`; the reason is a `cycle`

@@ -10,6 +10,9 @@
 // frob:ticket 01M4069RPPQE1ES1914K6V6Y0D
 // frob:ticket 01M4069SHBAEWRX9WWCSS2FEHN
 // frob:ticket 01M40VQWCV38B2JCABYNNNA877
+// frob:ticket 01M4069SYRHMYXCFAZH0AN408B
+use std::collections::BTreeMap;
+
 use frob_ledger::Ledger;
 use frob_ledger::TicketId;
 use frob_ledger::model::{Category, Outcome as TicketOutcome, Stamp};
@@ -18,9 +21,12 @@ use frob_pm::cycle::lifecycle::{
     ClosePlan, CycleError, MemberFacts, MemberStatus, NewPlan, plan_close, plan_new, plan_next,
     ratio, resolve_end, unknown_cycle,
 };
-use frob_pm::cycle::velocity::{capacity, committed, done_facts};
+use frob_pm::cycle::velocity::{
+    Delivery, ROLLING_CYCLES, capacity, committed, delivered, delivery, done_facts,
+    history_capacity, recent_closed, velocity,
+};
 use frob_pm::event::{CycleEventData, CycleOp, MemberData, Op, PmBody, PmEvent, TransitionData};
-use frob_pm::model::{Cycle, Day, State};
+use frob_pm::model::{Cycle, Day, ObjectId, State};
 use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
 use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
@@ -578,6 +584,55 @@ fn member_facts(ctx: &Context, ledger: &Ledger, c: &Cycle) -> Result<Vec<MemberF
         .collect()
 }
 
+/// A member's standing from its category and outcome.
+fn member_status(category: Category, outcome: Option<TicketOutcome>) -> MemberStatus {
+    match (category, outcome) {
+        (Category::Done, Some(TicketOutcome::Fixed | TicketOutcome::Done)) => {
+            MemberStatus::Finished
+        }
+        (Category::Done, _) => MemberStatus::Dropped,
+        (Category::InProgress, _) => MemberStatus::InProgress,
+        _ => MemberStatus::Open,
+    }
+}
+
+/// The delivery of every closed cycle, by the close-time definition: the recorded ratio event, else the finished members.
+fn deliveries(store: PmStore<'_>, ledger: &Ledger, all: &[Cycle]) -> BTreeMap<ObjectId, Delivery> {
+    all.iter()
+        .filter(|c| c.state == State::Closed)
+        .map(|c| {
+            let recorded = review_events(store, c)
+                .into_iter()
+                .rev()
+                .find(|d| d.op == CycleOp::Ratio)
+                .and_then(|d| d.committed.zip(d.done));
+            let members: Vec<MemberFacts> = c
+                .tickets
+                .iter()
+                .filter_map(|id| match ledger.show(*id) {
+                    Ok(v) => Some(MemberFacts {
+                        id: *id,
+                        handle: v.summary.handle,
+                        status: member_status(v.summary.category, v.summary.outcome),
+                        live_lease: false,
+                        points: u32::from(v.summary.points.unwrap_or(0)),
+                    }),
+                    Err(e) => {
+                        tracing::warn!(ticket = %id, error = %e, "member ticket unreadable; not counted");
+                        None
+                    }
+                })
+                .collect();
+            (c.id, delivery(recorded, &members))
+        })
+        .collect()
+}
+
+/// Done points per closed cycle, the input of velocity and capacity.
+fn done_points(deliveries: &BTreeMap<ObjectId, Delivery>) -> BTreeMap<ObjectId, u32> {
+    deliveries.iter().map(|(id, d)| (*id, d.done)).collect()
+}
+
 /// The close-rule facts of one ticket.
 fn member_fact(
     ledger: &Ledger,
@@ -585,14 +640,7 @@ fn member_fact(
     id: TicketId,
 ) -> Result<MemberFacts, CliError> {
     let s = ledger.show(id).map_err(cli_err)?.summary;
-    let status = match (s.category, s.outcome) {
-        (Category::Done, Some(TicketOutcome::Fixed | TicketOutcome::Done)) => {
-            MemberStatus::Finished
-        }
-        (Category::Done, _) => MemberStatus::Dropped,
-        (Category::InProgress, _) => MemberStatus::InProgress,
-        _ => MemberStatus::Open,
-    };
+    let status = member_status(s.category, s.outcome);
     Ok(MemberFacts {
         id,
         handle: s.handle,
@@ -958,7 +1006,7 @@ impl Command for CycleAssign {
             ty: s.ty,
             points: s.points.map(u32::from),
         };
-        let done = done_facts(&ledger).map_err(cycle_pm_err)?;
+        let done = done_points(&deliveries(store, &ledger, &all));
         let cap = capacity(
             &target,
             &all,
@@ -1094,7 +1142,7 @@ impl Command for CycleUnassign {
         let cap = capacity(
             &c,
             &all,
-            &done_facts(&ledger).map_err(cycle_pm_err)?,
+            &done_points(&deliveries(store, &ledger, &all)),
             cfg.pm.pm.min_history,
             cfg.pm.pm.capacity_k,
         );
@@ -1115,6 +1163,144 @@ impl Command for CycleUnassign {
     }
 }
 
+/// One closed cycle in `cycle velocity`: its window, commitment and delivery.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct VelocityCycleView {
+    /// The `START..END` alias.
+    pub alias: String,
+    /// First day (`YYYY-MM-DD`).
+    pub start: String,
+    /// Effective last day: the close day when closed early, else the planned end.
+    pub end: String,
+    /// Story points committed when the cycle closed; absent for cycles closed before commitments were recorded.
+    pub committed: Option<u32>,
+    /// Points done among the tickets committed to the cycle, as `cycle close` recorded them; carried work counts where it finished.
+    pub done: u32,
+    /// `done / committed`, absent when nothing was committed.
+    pub ratio: Option<f64>,
+    /// Points of tickets done inside the window that were not committed to the cycle; never part of the ratio, mean or capacity.
+    pub unplanned_done: u32,
+    /// Assignments accepted past capacity during the cycle, with their reasons.
+    pub over_commits: Vec<OverCommitView>,
+}
+
+/// Output of `cycle velocity`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct VelocityData {
+    /// How many cycles were asked for (`--last`).
+    pub last: usize,
+    /// Closed cycles shown, oldest first.
+    pub cycles: Vec<VelocityCycleView>,
+    /// Mean done points over the shown cycles; 0 with none.
+    pub mean: f64,
+    /// Population standard deviation of done points over the shown cycles.
+    pub stddev: f64,
+    /// Closed cycles that exist (the history sample count).
+    pub samples: u32,
+    /// `[pm] min_history`: closed cycles needed before capacity is enforced.
+    pub min_history: u32,
+    /// The capacity statement a cycle without `capacity_points` gets from `cycle assign`.
+    pub capacity: String,
+    /// The enforced limit in points, absent while history is too short.
+    pub capacity_limit: Option<u32>,
+    /// A hint when there is nothing to show; absent otherwise.
+    pub message: Option<String>,
+}
+
+/// Show points delivered per closed cycle, the rolling mean and standard deviation, and the capacity `cycle assign` would use.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "cycle velocity",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct CycleVelocity {
+    last: Option<String>,
+}
+
+impl Command for CycleVelocity {
+    type Data = VelocityData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(
+            text_flag(
+                "last",
+                "Closed cycles to show (default max(6, [pm] min_history))",
+            )
+            .value_name("N"),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            last: get(m, "last"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<VelocityData> {
+        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+        let min_history = cfg.pm.pm.min_history;
+        let last = match self.last.as_deref().map(str::parse::<usize>).transpose() {
+            Ok(Some(0)) => {
+                return Err(CliError::Usage("--last must be at least 1".to_owned()));
+            }
+            Ok(n) => n.unwrap_or_else(|| ROLLING_CYCLES.max(min_history as usize)),
+            Err(e) => return Err(CliError::Usage(format!("--last: {e}"))),
+        };
+        let ledger = open(ctx)?;
+        let store = PmStore::new(&ledger);
+        let all = cycles(store)?;
+        let facts = done_facts(&ledger).map_err(cycle_pm_err)?;
+        let deliv = deliveries(store, &ledger, &all);
+        let done_map = done_points(&deliv);
+        let shown: Vec<VelocityCycleView> = recent_closed(&all, last)
+            .into_iter()
+            .map(|c| {
+                let view = CycleView::of(c, store);
+                let d = deliv.get(&c.id).copied().unwrap_or(Delivery {
+                    committed: None,
+                    done: 0,
+                });
+                VelocityCycleView {
+                    alias: view.alias,
+                    start: view.start,
+                    end: c.effective_end().to_string(),
+                    committed: d.committed,
+                    done: d.done,
+                    ratio: d.committed.and_then(|k| ratio(k, d.done)),
+                    unplanned_done: delivered(c, &facts).saturating_sub(d.done),
+                    over_commits: view.over_commits,
+                }
+            })
+            .collect();
+        let v = velocity(&all, &done_map, last);
+        let cap = history_capacity(&all, &done_map, min_history, cfg.pm.pm.capacity_k);
+        let samples = u32::try_from(all.iter().filter(|c| c.state == State::Closed).count())
+            .unwrap_or(u32::MAX);
+        let message = shown.is_empty().then(|| {
+            "no closed cycles yet: velocity is measured once a cycle closes (`frob cycle close CYCLE`)"
+                .to_owned()
+        });
+        tracing::info!(
+            shown = shown.len(), last, samples, mean = v.mean, stddev = v.stddev,
+            capacity = %cap.describe(), "cycle velocity"
+        );
+        Ok(Payload::new(VelocityData {
+            last,
+            cycles: shown,
+            mean: v.mean,
+            stddev: v.stddev,
+            samples,
+            min_history,
+            capacity: cap.describe(),
+            capacity_limit: cap.limit(),
+            message,
+        }))
+    }
+}
+
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<CycleNew>()
@@ -1123,4 +1309,5 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<CycleClose>()
         .register::<CycleAssign>()
         .register::<CycleUnassign>()
+        .register::<CycleVelocity>()
 }

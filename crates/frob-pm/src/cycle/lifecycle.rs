@@ -279,6 +279,19 @@ pub struct MemberFacts {
     pub points: u32,
 }
 
+/// `(committed, done)` points of a cycle's members: the one definition of the close-time ratio.
+///
+/// Committed is every member's points; done is the points of the members that finished.
+pub fn commitment(members: &[MemberFacts]) -> (u32, u32) {
+    let committed = members.iter().map(|m| m.points).sum();
+    let done = members
+        .iter()
+        .filter(|m| m.status == MemberStatus::Finished)
+        .map(|m| m.points)
+        .sum();
+    (committed, done)
+}
+
 /// What closing a cycle will record.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClosePlan {
@@ -352,12 +365,7 @@ pub fn plan_close(
         .filter(|m| !m.status.is_done())
         .map(|m| m.id)
         .collect();
-    let committed = members.iter().map(|m| m.points).sum();
-    let done = members
-        .iter()
-        .filter(|m| m.status == MemberStatus::Finished)
-        .map(|m| m.points)
-        .sum();
+    let (committed, done) = commitment(members);
     let target = if carried.is_empty() {
         None
     } else if let Some(t) = carry_to {
