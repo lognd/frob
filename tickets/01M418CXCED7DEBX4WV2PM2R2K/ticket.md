@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T16:08:48Z"
-updated = "2026-10-03T18:14:47Z"
+updated = "2026-10-03T18:17:31Z"
 labels = ["area:check"]
 scope = ["crates/gob-languages/src/language.rs", "crates/gob-languages/src/grammar.rs", "crates/gob-symbols/src/yaml.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lib.rs", ".github/workflows/dev.yml", "frob.lock", "docs/reference/fidelity.md", "crates/frob-check/**", "crates/frob-obligations/**", "crates/gob-directives/**"]
 
