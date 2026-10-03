@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = [".github/workflows/release.yml", "packaging/pypi/build-wheel.sh", "packaging/pypi/smoke.sh", "packaging/pypi/BUILDING.md", "crates/frob-release/tests/release_workflow.rs", "crates/frob-release/Cargo.toml"]
+new = [".github/workflows/release.yml", "packaging/pypi/build-wheel.sh", "packaging/pypi/smoke.sh", "packaging/pypi/BUILDING.md", "crates/frob-release/tests/release_workflow.rs", "crates/frob-release/Cargo.toml", "Cargo.lock"]
+at = "2026-10-03T11:35:43Z"
+actor = "lognd"
+rev = 1
