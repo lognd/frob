@@ -154,7 +154,6 @@ fn acked_repo() -> Repo {
     r
 }
 
-// frob:tests crates/grimble-bind/src/ack.rs::plan_ack
 // frob:tests crates/grimble-bind/src/drift.rs::evaluate
 #[test]
 fn ack_flow_records_both_ends_and_a_second_ack_is_a_no_op_and_clean() {
@@ -238,7 +237,6 @@ fn rules_sys007_kinds_facet_gone_and_the_body_edit_is_not_a_contract_skew() {
     assert!(!drift(&b).iter().any(|d| d.starts_with("SYS008")));
 }
 
-// frob:tests crates/grimble-bind/src/drift.rs::evaluate
 // frob:tests crates/grimble-bind/src/ack.rs::plan_ack
 #[test]
 fn identity_body_rename_is_sys008_then_ack_rename_carries_the_entry() {
@@ -328,7 +326,6 @@ fn ack_refuse_may_unbound_and_node_targets_with_the_rows() {
     assert!(err.is_ok(), "owned by a Must node: {err:?}");
 }
 
-// frob:tests crates/grimble-bind/src/drift.rs::evaluate
 // frob:tests crates/grimble-bind/src/ack.rs::plan_ack
 #[test]
 fn rules_sys007_scheme_change_is_one_finding_per_entry_and_forces_reattest() {
