@@ -1,7 +1,7 @@
 # Releases: a scrumban flow wired to milestones, cycles and incremental releases
 
-Status: ACCEPTED as the design (D83, ticket ~5MAFAAY); the version scheme
-in section 5 awaits the owner. Builds on pm-enforcement.md (cycles,
+Status: ACCEPTED (D83, ticket ~5MAFAAY; version scheme decided by the
+owner 2026-10-03). Builds on pm-enforcement.md (cycles,
 capacity, velocity, forecasts, flow metrics, WIP limits, the PM family),
 documentation.md 6 (changelog fragments), monorepo.md 4 (lockstep crate
 versions, per-binary tags), build-test-ci.md (the release job), and v1's
@@ -86,22 +86,19 @@ so.
 | Channel | When | Where | Who installs it |
 |---|---|---|---|
 | dev | every green land on main | GitHub prerelease `dev` (artifacts replaced each time); nothing published to registries | people testing the tip |
-| alpha | `release cut` of an alpha milestone | crates.io and PyPI as prereleases, plus GitHub release | `uv tool install --prerelease allow frob` or `cargo install frob-cli --version 2.0.0-alpha.N` |
-| stable | `release cut` of 2.0.0 and later | crates.io, PyPI, GitHub release | everyone |
+| preview (0.53X) | `release cut` of a 0.53X milestone | crates.io, PyPI and a GitHub release | everyone who installs frob; no stability promised (0.x) |
+| stable | `release cut` of 1.0.0 and later | crates.io, PyPI, GitHub release | everyone, with compatibility guarantees |
 
-**Version scheme (OWNER).** PyPI's `frob` already ships v1 as 0.531.0
-(alpha, no guarantees). Proposed: v2 is the 2.0.0 line. Prereleases are
-`2.0.0a1` on PyPI and `2.0.0-alpha.1` on crates.io and in git tags (the
-same version in each registry's syntax). Consequences:
-
-- `pip install frob` and `uv tool install frob` keep installing v1
-  until 2.0.0 stable, because installers skip prereleases unless asked.
-  Nobody is upgraded by surprise.
-- v2's crates start at 2.0.0-alpha.1 in lockstep with the wheel, so one
-  number means one release everywhere.
-
-The alternative, continuing 0.6xx on PyPI, is monotonic but would
-publish the rewrite to everyone who runs v1 at the next install.
+**Version scheme (owner decision 2026-10-03).** v2 continues the
+existing line: PyPI's `frob` ships v1 as 0.531.0 (alpha, no guarantees),
+and v2's releases are 0.532.0, 0.533.0 and so on, one minor number per
+milestone, with patch releases (0.532.1) for fixes between milestones.
+1.0.0 is the first stable version, the first with compatibility
+guarantees. Every crate of the workspace and the wheel carry the same
+number (monorepo.md 4). Under 0.x semver no stability is promised, and
+installing or upgrading `frob` after 0.532.0 gives the rewrite: the
+0.532.0 release notes say so plainly, with the v1-to-v2 differences and
+how to pin 0.531.0.
 
 ## 6. The release job (lessons carried from v1)
 
@@ -137,12 +134,12 @@ Each milestone is a usable increment. Epics are the existing ones
 
 | Milestone | Goal | Contents (epics and areas) | Exit criteria (abridged) |
 |---|---|---|---|
-| **2.0.0-alpha.1 "frob in your repository"** | someone outside this repository can install frob and run its whole loop | frob core verbs (done); this release track (milestones, `release status/cut`, REL001-002, PM033-034, WIP limits, board); the release job; `frob init` on a fresh repository | binaries and wheel install on the five targets with artifact smoke; two outside repositories (the owner's cloc-style tool and the mdcat fork) managed by frob for two cycles with no ledger data loss; CHANGELOG compiled from fragments |
-| **2.0.0-alpha.2 "rules you can write"** | rules are written in GRL and taught by the tool | area:grl (front end, executor, std pack, rule verbs); area:diagnostics (teaching, explain, fixes); grimble preview binary | the ten GRL acceptance rules pass; the second newcomer test; B1 within target |
-| **2.0.0-alpha.3 "tickets anyone can read"** | the ledger lives on its branch, with navigation and a GitHub mirror | area:navigation; area:mirror (reconcile, proposals); migration of this repository's ledger | TICK004-007 green; mirror model-checked properties hold in the implementation's property tests; reindex replay check green |
-| **2.0.0-alpha.4 "plugins you can trust"** | repository and external packs run safely | area:packs; area:security; G10, G14, G17, NEAT families | security audit findings closed or recorded; trust review usability test; B2-B3 within target |
-| **2.0.0-beta.1 "plans you can trust"** | forecasting and flow metrics from real history | PM family, cycles, forecasts, `frob stats`; docs site | forecasts validated against two months of history |
-| **2.0.0** | stable | everything above | 30 days managing three or more repositories with no data loss; no open critical or high security finding; upgrade path from v1 documented |
+| **0.532.0 "frob in your repository"** | someone outside this repository can install frob and run its whole loop | frob core verbs (done); this release track (milestones, `release status/cut`, REL001-002, PM033-034, WIP limits, board); the release job; `frob init` on a fresh repository | binaries and wheel install on the five targets with artifact smoke; two outside repositories (the owner's cloc-style tool and the mdcat fork) managed by frob for two cycles with no ledger data loss; CHANGELOG compiled from fragments |
+| **0.533.0 "rules you can write"** | rules are written in GRL and taught by the tool | area:grl (front end, executor, std pack, rule verbs); area:diagnostics (teaching, explain, fixes); grimble preview binary | the ten GRL acceptance rules pass; the second newcomer test; B1 within target |
+| **0.534.0 "tickets anyone can read"** | the ledger lives on its branch, with navigation and a GitHub mirror | area:navigation; area:mirror (reconcile, proposals); migration of this repository's ledger | TICK004-007 green; mirror model-checked properties hold in the implementation's property tests; reindex replay check green |
+| **0.535.0 "plugins you can trust"** | repository and external packs run safely | area:packs; area:security; G10, G14, G17, NEAT families | security audit findings closed or recorded; trust review usability test; B2-B3 within target |
+| **0.536.0 "plans you can trust"** | forecasting and flow metrics from real history | PM family, cycles, forecasts, `frob stats`; docs site | forecasts validated against two months of history |
+| **1.0.0** | stable | everything above | 30 days managing three or more repositories with no data loss; no open critical or high security finding; upgrade path from v1 documented |
 
-Milestones beyond alpha.1 stay `unscheduled` until there is history
+Milestones beyond 0.532.0 stay `unscheduled` until there is history
 (bucket planning, section 2).
