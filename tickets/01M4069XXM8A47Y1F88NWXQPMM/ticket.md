@@ -11,7 +11,7 @@ created = "2026-10-03T06:12:59Z"
 updated = "2026-10-03T13:34:06Z"
 idempotency_key = "m2-rel-smoke-script"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/gob-dev/src/smoke.rs", "crates/gob-dev/tests/fixtures/smoke-repo/**", "packaging/smoke/**", "packaging/pypi/**", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs"]
+scope = ["crates/gob-dev/src/smoke.rs", "crates/gob-dev/tests/fixtures/smoke-repo/**", "packaging/smoke/**", "packaging/pypi/**", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/design/releases.md"]
 
 [[links]]
 kind = "blocked-by"
