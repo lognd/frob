@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:54Z"
-updated = "2026-10-03T11:08:41Z"
+updated = "2026-10-03T11:08:42Z"
 idempotency_key = "m2-rel-cycle-new-close"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-pm/src/cycle/lifecycle.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/model.rs", "crates/frob-pm/src/lib.rs"]
+scope = ["crates/frob-pm/src/cycle/lifecycle.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/model.rs", "crates/frob-pm/src/lib.rs", "crates/frob-pm/src/cycle/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
