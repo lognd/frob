@@ -2,13 +2,13 @@
 id = "01M3ZZXAZ39410AVYQSRSYVF9C"
 title = "gob-directives: an HTML comment inside a markdown code span is scanned as a directive"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T04:21:15Z"
-updated = "2026-10-03T06:13:16Z"
+updated = "2026-10-03T09:21:17Z"
 idempotency_key = "m2-directive-in-code-span"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/gob-directives/**"]
