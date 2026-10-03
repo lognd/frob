@@ -34,40 +34,76 @@ pub struct Capture {
     pub transcript: String,
 }
 
-/// Split `input` into arguments, honouring single and double quotes (no escapes, no shell).
+// frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
+/// Split `input` into arguments by POSIX shell quoting rules, without running a shell.
+///
+/// Whitespace separates words; `'...'` is literal; inside `"..."` a backslash escapes only
+/// `"`, `\`, `$`, backtick and newline; outside quotes a backslash escapes the next character
+/// (backslash-newline vanishes); an empty quoted pair is an empty word. Nothing is expanded:
+/// `$`, `|`, `;`, globs and `#` are ordinary characters, so the result goes to `gob-exec` as an argument vector.
 ///
 /// # Errors
 ///
-/// [`EvidenceError::BadReference`] for an unterminated quote.
+/// [`EvidenceError::BadReference`] for an unterminated quote or a trailing backslash.
 pub fn split_args(input: &str) -> Result<Vec<String>> {
+    #[derive(Clone, Copy, PartialEq)]
+    enum Mode {
+        Bare,
+        Single,
+        Double,
+    }
+    let bad = |what: &str| {
+        tracing::warn!(input, what, "unparseable evidence reference");
+        EvidenceError::BadReference(format!("{what} in `{input}`"))
+    };
     let mut out = Vec::new();
     let mut cur = String::new();
-    let mut quote: Option<char> = None;
+    let mut mode = Mode::Bare;
     let mut started = false;
-    for ch in input.chars() {
-        match (quote, ch) {
-            (Some(q), c) if c == q => quote = None,
-            (Some(_), c) => cur.push(c),
-            (None, '\'' | '"') => {
-                quote = Some(ch);
+    let mut chars = input.chars();
+    while let Some(ch) = chars.next() {
+        match (mode, ch) {
+            (Mode::Single, '\'') | (Mode::Double, '"') => mode = Mode::Bare,
+            (Mode::Double, '\\') => match chars.next() {
+                Some('\n') => {}
+                Some(c @ ('"' | '\\' | '$' | '`')) => cur.push(c),
+                Some(c) => {
+                    cur.push('\\');
+                    cur.push(c);
+                }
+                None => return Err(bad("unterminated quote")),
+            },
+            (Mode::Single | Mode::Double, c) => cur.push(c),
+            (Mode::Bare, '\'') => {
+                mode = Mode::Single;
                 started = true;
             }
-            (None, c) if c.is_whitespace() => {
+            (Mode::Bare, '"') => {
+                mode = Mode::Double;
+                started = true;
+            }
+            (Mode::Bare, '\\') => match chars.next() {
+                Some('\n') => {}
+                Some(c) => {
+                    cur.push(c);
+                    started = true;
+                }
+                None => return Err(bad("trailing backslash")),
+            },
+            (Mode::Bare, c) if c.is_whitespace() => {
                 if started {
                     out.push(std::mem::take(&mut cur));
                     started = false;
                 }
             }
-            (None, c) => {
+            (Mode::Bare, c) => {
                 cur.push(c);
                 started = true;
             }
         }
     }
-    if quote.is_some() {
-        return Err(EvidenceError::BadReference(format!(
-            "unterminated quote in `{input}`"
-        )));
+    if mode != Mode::Bare {
+        return Err(bad("unterminated quote"));
     }
     if started {
         out.push(cur);
@@ -420,6 +456,27 @@ mod tests {
         assert!(split_args("a 'b").is_err());
         assert!(split_args("   ").unwrap().is_empty());
         assert_eq!(split_args("a '' b").unwrap(), ["a", "", "b"]);
+    }
+
+    // frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
+    #[test]
+    fn split_args_follows_posix_escapes_and_expands_nothing() {
+        assert_eq!(split_args(r"a\ b c").unwrap(), ["a b", "c"]);
+        assert_eq!(split_args(r#""a\"b" 'c\d'"#).unwrap(), ["a\"b", "c\\d"]);
+        assert_eq!(split_args(r#""a\qb""#).unwrap(), ["a\\qb"]);
+        assert_eq!(split_args(r#"x"y z"w"#).unwrap(), ["xy zw"]);
+        assert_eq!(split_args("a\\\nb").unwrap(), ["ab"]);
+        assert_eq!(
+            split_args("$HOME | ; * #x").unwrap(),
+            ["$HOME", "|", ";", "*", "#x"]
+        );
+        for bad in ["a 'b", "a \"b", "a\\", "\"a\\"] {
+            let e = split_args(bad).unwrap_err().to_string();
+            assert!(
+                e.contains("unterminated quote") || e.contains("trailing backslash"),
+                "{bad}: {e}"
+            );
+        }
     }
 
     #[test]

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T11:04:55Z"
+digest = "1fa60b721b5ec90eaffb3970e5b5c12ef9ec8d2f3196f392879b4343b8085cd7"
+exit_code = 0
+inline = """
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/ZERXHAH/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.99s
+────────────
+ Nextest run ID f2091b70-6e60-49e4-a5f0-b8274d9764da with nextest profile: default
+    Starting 1 test across 2 binaries (11 tests skipped)
+        PASS [   0.122s] (1/1) frob-worktree::work cli_work_past_the_repository_limit_exits_3_with_the_wip_code
+────────────
+     Summary [   0.123s] 1 test run: 1 passed, 11 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E test(cli_work_past_the_repository_limit_exits_3_with_the_wip_code)"
+size = 554
+status = "measured"
+tests = ["cli_work_past_the_repository_limit_exits_3_with_the_wip_code"]
+at = "2026-10-03T11:04:55Z"
+actor = "lognd"
+rev = 1
