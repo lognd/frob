@@ -8,8 +8,8 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T22:53:49Z"
-updated = "2026-10-03T22:53:59Z"
-scope = [".github/workflows/ci.yml", ".github/workflows/dev.yml", "crates/frob-release/tests/**", "crates/gob-dev/tests/ci_parity.rs", "docs/design/releases.md", "docs/guides/release.md"]
+updated = "2026-10-03T22:54:48Z"
+scope = [".github/workflows/ci.yml", ".github/workflows/dev.yml", "crates/frob-release/tests/**", "crates/gob-dev/tests/ci_parity.rs", "docs/design/releases.md", "docs/guides/release.md", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "frob.lock"]
 
 [[acceptance]]
 text = "Given a push to experimental whose test jobs pass, when ci.yml runs, then the dev publish job runs in the same workflow and no workflow_run trigger exists anywhere"
