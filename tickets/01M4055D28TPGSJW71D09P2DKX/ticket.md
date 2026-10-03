@@ -2,13 +2,13 @@
 id = "01M4055D28TPGSJW71D09P2DKX"
 title = "ticket update: add, replace and remove acceptance criteria (repeatable flags, no comma splitting)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:53:02Z"
-updated = "2026-10-03T05:53:02Z"
+updated = "2026-10-03T05:56:35Z"
 idempotency_key = "m2-ticket-update-acceptance"
 labels = ["milestone:2"]
 scope = ["crates/frob-ledger/**", "crates/frob/**"]
