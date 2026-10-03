@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T14:28:55Z"
+digest = "28801c562812fd5a560b9c9ff16156cde59e440edb2c0cf37c4867c6c2bdeb2f"
+provider = "file"
+ref = "frob.toml"
+size = 6318
+status = "measured"
+at = "2026-10-03T14:28:55Z"
+actor = "lognd"
+rev = 1
