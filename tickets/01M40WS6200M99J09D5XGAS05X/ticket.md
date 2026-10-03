@@ -8,14 +8,14 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T12:45:47Z"
-updated = "2026-10-03T13:23:54Z"
+updated = "2026-10-03T13:24:43Z"
 idempotency_key = "m2-rel-done-requires-enforced"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-evidence/**", "crates/frob-ledger/src/guards*", "crates/frob-land/**", "crates/frob/src/ticket/**", "crates/frob/src/lib.rs", "crates/frob/tests/close_guards.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/wiring.rs", "crates/frob/tests/release_status.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/common/mod.rs", "changelog.d/01M40WS6200M99J09D5XGAS05X.fixed.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md"]
 
 [[acceptance]]
 text = "Given a chore with an unbound criterion, when land or close runs, then it is refused naming the criterion and the bypass"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given --no-evidence --reason, when close runs, then it closes and records the bypass event"
