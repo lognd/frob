@@ -2,12 +2,12 @@
 id = "01M40FXV4AB47ASH79KJNF3JFH"
 title = "usage error for missing required arguments lists none of them"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T09:01:09Z"
-updated = "2026-10-03T09:01:09Z"
+updated = "2026-10-03T09:58:38Z"
 idempotency_key = "m2-rel-e2e-usage-lists-missing-args"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/gob-cli/src/cli.rs", "crates/gob-cli/tests/usage_missing_args.rs"]
