@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T15:47:43Z"
+updated = "2026-10-03T16:04:11Z"
 idempotency_key = "m2-rel-dev-channel"
 labels = ["milestone:2", "area:release"]
 scope = [".github/workflows/dev.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/dev_workflow.rs", "docs/design/releases.md"]
@@ -19,7 +19,7 @@ target = "01M4069XFWGEFARNVXTXHT82FS"
 
 [[acceptance]]
 text = "Given a green CI run on the base branch, when dev.yml runs, then the dev prerelease holds fresh archives naming the sha"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a failed CI run, when dev.yml triggers, then it does nothing"
