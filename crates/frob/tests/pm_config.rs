@@ -7,7 +7,8 @@ use std::process::Output;
 use assert_cmd::Command;
 use serde_json::Value;
 
-const PM_KEYS: [&str; 11] = [
+const PM_KEYS: [&str; 12] = [
+    "pm.strict",
     "pm.pull",
     "pm.ready_min",
     "pm.ready_requires",

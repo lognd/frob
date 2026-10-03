@@ -14,6 +14,8 @@ pub struct Payload<T> {
     pub warnings: Vec<String>,
     /// True when the request already held and nothing changed (cli.md section 3).
     pub already: bool,
+    /// Pre-rendered text rows: the text view prints them verbatim (JSON ignores them).
+    pub rendered: Option<Vec<String>>,
 }
 
 impl<T> Payload<T> {
@@ -24,7 +26,15 @@ impl<T> Payload<T> {
             findings: Vec::new(),
             warnings: Vec::new(),
             already: false,
+            rendered: None,
         }
+    }
+
+    /// Mark the text view as pre-rendered: rows print raw, with no envelope header, markers or indent.
+    #[must_use]
+    pub fn with_rendered(mut self, rows: Vec<String>) -> Self {
+        self.rendered = Some(rows);
+        self
     }
 
     /// Attach findings.

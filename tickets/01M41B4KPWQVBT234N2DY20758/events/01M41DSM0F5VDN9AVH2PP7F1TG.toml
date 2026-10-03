@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T17:43:08Z"
+digest = "99886e88fb70f890699d796643aafa5fb04b12f6e93aa7e3198ce4c77e462656"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bd58a0b5-6b21-4fe7-b802-53f3e4b2f7ca with nextest profile: default
+    Starting 2 tests across 143 binaries (1257 tests skipped)
+        PASS [   0.009s] frob-release changelog::tests::section_body_is_exactly_one_versions_body_without_heading_or_marker
+        PASS [   1.347s] frob-cli::release release_notes_prints_exactly_one_versions_section_body
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.358s] 2 tests run: 2 passed, 1257 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(release_notes_prints_exactly_one_versions_section_body) | test(section_body_is_exactly_one_versions_body_without_heading_or_marker)'"
+size = 695
+status = "measured"
+tests = ["changelog::tests::section_body_is_exactly_one_versions_body_without_heading_or_marker", "release_notes_prints_exactly_one_versions_section_body"]
+at = "2026-10-03T17:43:08Z"
+actor = "lognd"
+rev = 1

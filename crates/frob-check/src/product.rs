@@ -68,6 +68,22 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
     }
 }
 
+/// Apply `[pm] strict` to a PM group's `findings`; an unreadable `[pm]` table means not strict, logged.
+// frob:ticket 01M41B2PD4NAV8VACA13750GWB
+fn strict_pm(inputs: &FrobInputs, findings: Vec<Finding>) -> Vec<Finding> {
+    if findings.is_empty() {
+        return findings;
+    }
+    let strict = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => cfg.pm.strict,
+        Err(err) => {
+            tracing::warn!(%err, "pm config unreadable; [pm] strict not applied");
+            false
+        }
+    };
+    frob_pm::rules::apply_strict(strict, findings)
+}
+
 /// `PM034`, `PM001` and `PM002` findings for the `repo:pm` group; empty without a ledger, milestones or on a read failure.
 // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
@@ -235,16 +251,18 @@ impl Product for Frob {
             RepoGroup::new(
                 "repo:pm",
                 vec![Pm034.meta(), Pm001.meta(), Pm002.meta()],
-                |s: &Snapshot<Self>, _| pm_findings(&s.inputs),
+                |s: &Snapshot<Self>, _| strict_pm(&s.inputs, pm_findings(&s.inputs)),
             ),
             // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
             RepoGroup::new("repo:wip", vec![Pm013.meta()], |s: &Snapshot<Self>, _| {
-                wip_findings(&s.inputs)
+                strict_pm(&s.inputs, wip_findings(&s.inputs))
             }),
             // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
             RepoGroup::new("repo:replenish", vec![Pm033.meta()], {
                 let lease = self.opts.lease.clone();
-                move |s: &Snapshot<Self>, _| replenish_findings(&s.inputs, lease.as_ref())
+                move |s: &Snapshot<Self>, _| {
+                    strict_pm(&s.inputs, replenish_findings(&s.inputs, lease.as_ref()))
+                }
             }),
             // frob:ticket 01M4069WNGJ8YR9DTTM9K9K8V5
             RepoGroup::new(

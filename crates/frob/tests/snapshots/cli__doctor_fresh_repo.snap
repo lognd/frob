@@ -14,7 +14,7 @@ expression: v
     },
     "config": {
       "error": null,
-      "missing_knobs": 31,
+      "missing_knobs": 32,
       "path": "[path]",
       "present": false
     },
@@ -208,6 +208,18 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `git.cas_retries` in frob.toml (default 5); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "4179812f9b1e63c7ba0da70eb716d0f49552f79e3e80dcd9744bc86b61953795",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `pm.strict` in frob.toml (default false); run `frob init` (or `frob config sync`) to write it",
       "required": null,
       "rule": "CFG001",
       "severity": "error",

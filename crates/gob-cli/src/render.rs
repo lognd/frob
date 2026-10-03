@@ -79,11 +79,21 @@ pub(crate) fn success(
         tracing::debug!(verb, "quiet: text output suppressed");
         return Execution::out(String::new());
     }
-    let mut out = format!(
-        "{verb}: ok{}\n",
-        if erased.already { " (already)" } else { "" }
-    );
-    value_lines(&erased.data, 1, &mut out);
+    let mut out = if let Some(rows) = &erased.rendered {
+        tracing::debug!(verb, rows = rows.len(), "text view: pre-rendered rows, raw");
+        rows.iter().fold(String::new(), |mut acc, row| {
+            acc.push_str(row);
+            acc.push('\n');
+            acc
+        })
+    } else {
+        let mut head = format!(
+            "{verb}: ok{}\n",
+            if erased.already { " (already)" } else { "" }
+        );
+        value_lines(&erased.data, 1, &mut head);
+        head
+    };
     for w in &erased.warnings {
         let _ = writeln!(out, "warning: {w}");
     }
@@ -236,6 +246,23 @@ pub(crate) fn emit(exec: &Execution) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:ticket 01M41B2P3B5KVG5FJ5B0X2ANR8
+    #[test]
+    fn rendered_rows_print_raw_in_text_and_stay_out_of_json() {
+        let erased = || Erased {
+            data: serde_json::json!({"k": 1}),
+            findings: Vec::new(),
+            warnings: Vec::new(),
+            already: false,
+            rendered: Some(vec!["a  b".to_owned(), "c".to_owned()]),
+        };
+        let text = success("v", erased(), false, false, ColorChoice::Never);
+        assert_eq!(text.stdout, "a  b\nc\n");
+        let json = success("v", erased(), true, false, ColorChoice::Never);
+        let v: Value = serde_json::from_str(&json.stdout).unwrap();
+        assert_eq!(v["data"], serde_json::json!({"k": 1}));
+    }
 
     // frob:ticket 01M3Z713YNM5666B7YFEHPFVKD
     #[test]
