@@ -2,13 +2,13 @@
 id = "01M3ZTB2Y0J454GSSK4KGAMSF9"
 title = "gob-ir: shared resolution cache keyed by (scope, name)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:43:54Z"
-updated = "2026-10-03T02:43:54Z"
+updated = "2026-10-03T03:25:24Z"
 idempotency_key = "m2-gobir-scope-name-cache"
 labels = ["milestone:2", "perf"]
 scope = ["crates/gob-ir/**"]
