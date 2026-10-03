@@ -2,13 +2,13 @@
 id = "01M41ZJGQ1GKF6NJ1JV25QHMNX"
 title = "Dev channel never runs: workflow_run fires only from the default branch; make it a gated job in ci.yml"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T22:53:49Z"
-updated = "2026-10-03T22:53:49Z"
+updated = "2026-10-03T22:53:59Z"
 scope = [".github/workflows/ci.yml", ".github/workflows/dev.yml", "crates/frob-release/tests/**", "crates/gob-dev/tests/ci_parity.rs", "docs/design/releases.md", "docs/guides/release.md"]
 
 [[acceptance]]
