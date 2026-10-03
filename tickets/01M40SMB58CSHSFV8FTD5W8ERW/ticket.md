@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:50:43Z"
-updated = "2026-10-03T11:50:43Z"
+updated = "2026-10-03T12:06:31Z"
 idempotency_key = "m2-rel-cycle-early-close"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "frob.toml"]
+scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs"]
 
 [[acceptance]]
 text = "Given a 7-day cycle closed on its first day, when a new cycle starting the next day is created, then it is accepted"
