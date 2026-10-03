@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T15:14:59Z"
-updated = "2026-10-03T16:27:57Z"
+updated = "2026-10-03T16:29:57Z"
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]
