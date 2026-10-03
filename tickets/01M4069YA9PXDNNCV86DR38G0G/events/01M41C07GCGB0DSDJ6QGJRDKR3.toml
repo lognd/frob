@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T17:11:47Z"
+digest = "8b07928a2a337d82210c51473cf6a92d73122af8a8df9fd23b0e80a1d0123d90"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aa800bb1-611c-4491-90de-f909fced88fc with nextest profile: default
+    Starting 1 test across 1 binary (13 tests skipped)
+        PASS [   0.023s] frob-release::release_workflow pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_only_other_id_token
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 1 test run: 1 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release --test release_workflow pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_only_other_id_token"
+size = 613
+status = "measured"
+tests = ["pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_only_other_id_token"]
+at = "2026-10-03T17:11:47Z"
+actor = "lognd"
+rev = 1
