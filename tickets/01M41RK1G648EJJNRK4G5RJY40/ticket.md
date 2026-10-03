@@ -2,13 +2,13 @@
 id = "01M41RK1G648EJJNRK4G5RJY40"
 title = "Nine tests fail on windows-latest: merge driver, command allowlist, trust config dir and paths on Windows"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T20:51:46Z"
-updated = "2026-10-03T20:51:46Z"
+updated = "2026-10-03T20:52:08Z"
 scope = ["crates/frob/src/init.rs", "crates/gob-trust/src/**", "crates/gob-cli/tests/root.rs", "crates/gob-trust/tests/trust.rs", "crates/frob-tests/tests/selection.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/close_guards.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/pm_wiring.rs"]
 
 [[acceptance]]
