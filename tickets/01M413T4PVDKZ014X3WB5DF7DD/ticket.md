@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T14:48:39Z"
-updated = "2026-10-03T15:17:29Z"
+updated = "2026-10-03T15:21:14Z"
 scope = ["crates/frob-release/**", "crates/gob-config/**", "docs/design/releases.md", "frob.toml", "crates/frob/src/release_cmd.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/release.rs", "crates/frob/tests/release_cut.rs", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "docs/reference/config.md", "docs/reference/rules/REL001.md", "docs/schemas/config.json"]
 
 [[acceptance]]
