@@ -149,6 +149,41 @@ pub struct ExceptionData {
     pub reason: Option<String>,
 }
 
+/// A measurement offered for some acceptance criteria, written by frob-evidence.
+///
+/// The fold needs only `accepts`; every other key of the record belongs to
+/// frob-evidence and rides along untouched in `record`, so the file keeps its
+/// exact keys.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EvidenceData {
+    /// 1-based acceptance criteria offered, numbered as the list stood when written.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub accepts: Vec<usize>,
+    /// The rest of the record (provider, ref, digest, status, ...), owned by frob-evidence.
+    #[serde(flatten)]
+    pub record: toml::Table,
+}
+
+/// A close that bypassed the evidence guard (`--no-evidence --reason`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct EvidenceBypassData {
+    /// Why the guard was bypassed.
+    pub reason: String,
+}
+
+/// A branch landed on a base ref.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct LandData {
+    /// Full name of the ref that advanced.
+    pub base_ref: String,
+    /// The commit the base ref was advanced to.
+    pub commit: String,
+    /// The ticket branch that was landed.
+    pub branch: String,
+    /// Whether the base branch was pushed.
+    pub pushed: bool,
+}
+
 /// The kind-specific part of an event; the `kind` key selects the variant.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
@@ -165,6 +200,12 @@ pub enum EventBody {
     Link(LinkData),
     /// A finding was accepted or deferred.
     Exception(ExceptionData),
+    /// A measurement offered for acceptance criteria; binds them in the fold.
+    Evidence(EvidenceData),
+    /// The evidence guard was bypassed at close; audit only.
+    EvidenceBypass(EvidenceBypassData),
+    /// The ticket's branch was landed; audit only.
+    Land(LandData),
     /// A kind this version does not interpret; it folds to no change.
     #[serde(other)]
     Other,
@@ -285,6 +326,9 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::Comment(_) => "comment",
         EventBody::Link(_) => "link",
         EventBody::Exception(_) => "exception",
+        EventBody::Evidence(_) => "evidence",
+        EventBody::EvidenceBypass(_) => "evidence-bypass",
+        EventBody::Land(_) => "land",
         EventBody::Other => "other",
     }
 }
@@ -358,6 +402,21 @@ mod tests {
                 site: "src/a.rs".into(),
                 reason: Some("generated".into()),
             }),
+            EventBody::Evidence(EvidenceData {
+                accepts: vec![1, 3],
+                record: "provider = \"command\"\nref = \"cargo test\"\npassed = true\nsize = 0\n"
+                    .parse()
+                    .expect("table"),
+            }),
+            EventBody::EvidenceBypass(EvidenceBypassData {
+                reason: "docs only".into(),
+            }),
+            EventBody::Land(LandData {
+                base_ref: "refs/heads/main".into(),
+                commit: "abc".into(),
+                branch: "ticket/X".into(),
+                pushed: false,
+            }),
         ];
         for body in bodies {
             let ev = Event::new("logan", body);
@@ -370,10 +429,10 @@ mod tests {
 
     #[test]
     fn unknown_kinds_parse_as_other() {
-        let text = "kind = \"evidence\"\nat = \"2026-10-02T14:03:11Z\"\nactor = \"a\"\nrev = 1\nverdict = \"passed\"\n";
+        let text = "kind = \"lease\"\nat = \"2026-10-02T14:03:11Z\"\nactor = \"a\"\nrev = 1\nverdict = \"passed\"\n";
         let ev = Event::parse(EventId::mint(), text).expect("parse");
         assert_eq!(ev.body, EventBody::Other);
-        assert_eq!(ev.kind, "evidence");
+        assert_eq!(ev.kind, "lease");
     }
 
     #[test]

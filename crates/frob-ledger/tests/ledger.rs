@@ -649,3 +649,149 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
     assert!(report.findings.is_empty(), "{report:?}");
     assert_eq!(ledger.events(id).expect("events").len(), 11);
 }
+
+fn evidence(accepts: &[usize]) -> frob_ledger::event::EventBody {
+    use frob_ledger::event::{EventBody, EvidenceData};
+    EventBody::Evidence(EvidenceData {
+        accepts: accepts.to_vec(),
+        record: "provider = \"command\"\nref = \"cargo test\"\nstatus = \"measured\"\npassed = true\nsize = 0\n"
+            .parse()
+            .expect("table"),
+    })
+}
+
+fn bound(ledger: &Ledger, id: TicketId) -> Vec<bool> {
+    ledger
+        .show(id)
+        .expect("show")
+        .ticket
+        .front
+        .acceptance
+        .iter()
+        .map(|a| a.bound)
+        .collect()
+}
+
+// frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
+#[test]
+fn evidence_binds_acceptance_through_the_remap() {
+    let (_dir, ledger) = fixture(RefMode::Trunk);
+    let mut req = NewTicket::new("Bind", TicketType::Task);
+    req.acceptance = vec!["one".into(), "two".into(), "three".into()];
+    let id = ledger.new_ticket(req).expect("new").ticket.front.id;
+    assert_eq!(bound(&ledger, id), [false, false, false]);
+
+    // Offered for criteria 1 and 3, then criterion 1 is removed: "three" is now second.
+    let applied = ledger.append(id, evidence(&[1, 3])).expect("append");
+    assert_eq!(applied.events.len(), 1);
+    assert_eq!(bound(&ledger, id), [true, false, true]);
+    ledger
+        .update(
+            id,
+            &Patch {
+                remove_acceptance: vec![1],
+                ..Patch::default()
+            },
+        )
+        .expect("remove");
+    let view = ledger.show(id).expect("show").ticket;
+    let state: Vec<_> = view
+        .front
+        .acceptance
+        .iter()
+        .map(|a| (a.text.as_str(), a.bound))
+        .collect();
+    assert_eq!(state, [("two", false), ("three", true)]);
+
+    // New evidence written after the removal numbers the list as it now stands.
+    ledger.append(id, evidence(&[1])).expect("append");
+    assert_eq!(bound(&ledger, id), [true, true]);
+
+    // The stored ticket equals the fold, and the ledger is clean.
+    let report = ledger.doctor(false).expect("doctor");
+    assert!(report.is_clean(), "{report:?}");
+}
+
+// frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
+#[test]
+fn append_writes_land_and_bypass_and_refuses_create() {
+    use frob_ledger::event::{EventBody, EvidenceBypassData, LandData};
+    let (_dir, ledger) = fixture(RefMode::Trunk);
+    let id = ledger
+        .new_ticket(NewTicket::new("L", TicketType::Task))
+        .expect("new")
+        .ticket
+        .front
+        .id;
+    ledger
+        .append(
+            id,
+            EventBody::Land(LandData {
+                base_ref: MAIN.into(),
+                commit: "abc123".into(),
+                branch: "ticket/L".into(),
+                pushed: false,
+            }),
+        )
+        .expect("land");
+    ledger
+        .append(
+            id,
+            EventBody::EvidenceBypass(EvidenceBypassData {
+                reason: "by hand".into(),
+            }),
+        )
+        .expect("bypass");
+    let kinds: Vec<_> = ledger
+        .events(id)
+        .expect("events")
+        .into_iter()
+        .map(|e| e.kind)
+        .collect();
+    assert_eq!(kinds, ["create", "land", "evidence-bypass"]);
+    assert!(matches!(
+        ledger.append(id, EventBody::Other),
+        Err(LedgerError::Invalid { .. })
+    ));
+    assert!(matches!(
+        ledger.append(TicketId::mint(), evidence(&[])),
+        Err(LedgerError::NotFound { .. })
+    ));
+    assert!(ledger.doctor(false).expect("doctor").is_clean());
+}
+
+// frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
+#[test]
+fn events_written_by_the_old_helpers_fold_and_round_trip() {
+    use frob_ledger::event::{Event, EventBody};
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/landed");
+    let mut events = Vec::new();
+    for entry in std::fs::read_dir(&dir).expect("fixtures") {
+        let path = entry.expect("entry").path();
+        if path.extension().is_none_or(|e| e != "toml") {
+            continue;
+        }
+        let text = std::fs::read_to_string(&path).expect("read");
+        let stem = path.file_stem().expect("stem").to_string_lossy();
+        let event = Event::parse(stem.parse().expect("event id"), &text).expect("parse");
+        // The same keys and values come back out, so an older reader sees an unchanged file.
+        let again: toml::Table = event.to_toml().expect("render").parse().expect("table");
+        let original: toml::Table = text.parse().expect("table");
+        assert_eq!(again, original, "{}", path.display());
+        events.push(event);
+    }
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e.body, EventBody::Evidence(_)))
+    );
+    assert!(events.iter().any(|e| matches!(e.body, EventBody::Land(_))));
+    let expected = std::fs::read_to_string(dir.join("expected.md.txt")).expect("expected");
+    let mut stored = frob_ledger::doc::parse("expected", &expected).expect("doc");
+    let id = stored.front.id;
+    let folded = fold::fold(id, &events).expect("fold").ticket;
+    // The stored file predates binding: it differs only in `bound`, which evidence for 1 now sets.
+    assert!(!stored.front.acceptance[0].bound);
+    stored.front.acceptance[0].bound = true;
+    assert_eq!(folded, stored);
+}

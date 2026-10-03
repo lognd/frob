@@ -613,6 +613,33 @@ impl Ledger {
         self.commit_events("comment", id, &[event])
     }
 
+    /// Append one event of an already-validated `body` to ticket `id` and commit it on the ledger ref.
+    ///
+    /// The event file is written, the ticket file re-folded from every event
+    /// (so `ticket.md` keeps equalling the fold) and both committed with the
+    /// ledger's CAS retry, exactly like the verbs. The commit verb is the
+    /// event's kind. Callers own the validation of `Field` and `Transition`
+    /// bodies; the producers of `Evidence`, `EvidenceBypass` and `Land` need none.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] for a `create` or uninterpreted body,
+    /// [`LedgerError::NotFound`], or store failures.
+    pub fn append(&self, id: TicketId, body: EventBody) -> Result<Applied> {
+        if matches!(body, EventBody::Create(_) | EventBody::Other) {
+            return Err(LedgerError::invalid(
+                "append takes an interpreted, non-create event body",
+            ));
+        }
+        let s = self.synced()?;
+        Self::require_exists(&s, id)?;
+        let event = Event::new(&self.actor()?, body);
+        drop(s);
+        let verb = event.kind.clone();
+        tracing::debug!(ticket = %id, event = %event.id, kind = %verb, "appending event");
+        self.commit_events(&verb, id, &[event])
+    }
+
     /// Move `id` to `to` (a general transition for lease and workflow crates).
     ///
     /// Moving to `done` needs an outcome and bypasses close guards; use

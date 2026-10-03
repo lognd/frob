@@ -91,12 +91,17 @@ small: a busy ticket has tens of events, each a few hundred bytes.
 
 Every kind that any file refers to is in this table. Milestone 1 code
 (frob-ledger `EventBody`) interprets `create`, `field`, `transition`,
-`comment`, `link` and `exception`; every `rev`-1 file carries a `rev`
-key, the revision of the event file format (not of the ticket), and a
-kind a reader does not know folds to no change. `evidence` events are
-written by frob-evidence, which re-folds the ticket itself, until
-frob-ledger gains `EventBody::Evidence` (Milestone 2 note); the guard
-bypass is an `evidence-bypass` event written the same way.
+`comment`, `link`, `exception`, `evidence`, `evidence-bypass` and `land`;
+every `rev`-1 file carries a `rev` key, the revision of the event file
+format (not of the ticket), and a kind a reader does not know folds to
+no change. frob-evidence and frob-land build those bodies and write them
+through `Ledger::append(ticket, EventBody)`, which writes the event file,
+re-folds `ticket.md` and commits on the ledger ref. The fold sets each
+acceptance criterion's `bound` from `evidence` events whose `accepts`
+(positions when written) map to it through the `moved` maps of later
+acceptance edits; a removed criterion binds nothing. The file keys of the
+three kinds are unchanged from before they were first-class, so older
+readers still parse them as uninterpreted kinds.
 
 | Kind | Subject | Required fields | Producer verb | Consumers |
 |---|---|---|---|---|

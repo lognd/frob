@@ -141,6 +141,30 @@ pub fn remap_accepts(events: &[Event], since: EventId, accepts: &[usize]) -> Vec
     now
 }
 
+/// Set each criterion's `bound` from the evidence offered for it, through the remap.
+///
+/// An evidence event bound to criterion N when it was written counts for
+/// whatever N became after later acceptance edits, and for nothing when N was removed.
+fn bind_acceptance(t: &mut Ticket, events: &[Event]) {
+    let mut bound = vec![false; t.front.acceptance.len()];
+    for ev in events {
+        let EventBody::Evidence(data) = &ev.body else {
+            continue;
+        };
+        for now in remap_accepts(events, ev.id, &data.accepts)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(slot) = now.checked_sub(1).and_then(|i| bound.get_mut(i)) {
+                *slot = true;
+            }
+        }
+    }
+    for (a, b) in t.front.acceptance.iter_mut().zip(bound) {
+        a.bound = b;
+    }
+}
+
 fn apply_transition(
     id: TicketId,
     t: &mut Ticket,
@@ -234,10 +258,17 @@ pub fn fold(id: TicketId, events: &[Event]) -> Result<Folded> {
             EventBody::Field(c) => apply_field(id, &mut ticket, ev, c, &mut conflicts)?,
             EventBody::Transition(c) => apply_transition(id, &mut ticket, ev, c, &mut conflicts)?,
             EventBody::Link(c) => apply_link(&mut ticket, c),
-            EventBody::Comment(_) | EventBody::Exception(_) | EventBody::Other => {}
+            EventBody::Comment(_)
+            | EventBody::Exception(_)
+            | EventBody::EvidenceBypass(_)
+            | EventBody::Land(_)
+            | EventBody::Other
+            // Evidence binds once at the end, through the acceptance remap.
+            | EventBody::Evidence(_) => {}
         }
         last = ev.at;
     }
+    bind_acceptance(&mut ticket, events);
     ticket.front.updated = last;
     tracing::debug!(ticket = %id, events = events.len(), conflicts = conflicts.len(), "folded");
     Ok(Folded { ticket, conflicts })
