@@ -95,7 +95,7 @@ fn refusal_text(out: &Output) -> String {
     format!("{} {}", v["error"]["message"], v["error"]["remedy"])
 }
 
-// frob:tests 01M40WS6200M99J09D5XGAS05X
+// frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
 #[test]
 fn a_chore_with_an_unbound_criterion_is_refused_naming_the_criterion_and_the_bypass() {
     let dir = repo(&["criteria_evidenced"]);
