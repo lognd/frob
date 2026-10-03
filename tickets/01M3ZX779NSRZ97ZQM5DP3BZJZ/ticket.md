@@ -16,11 +16,11 @@ scope = ["crates/gob-plan/**"]
 
 [[acceptance]]
 text = "Given a source with a # comment, a backtick snippet holding $$$ARGS, a double-backtick snippet holding a backtick, a triple-quoted string with common indentation and a /re/i regex, when lexed, then tokens carry gob-text spans, snippet text is raw and the common indent is removed from the block string"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a non-ASCII identifier or keyword, when lexed, then a located lexical error is returned as a Result and nothing panics"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md section 3; plugins.md section 10 (gob-plan).
