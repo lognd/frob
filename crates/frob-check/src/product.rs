@@ -250,6 +250,20 @@ impl Product for Frob {
                 }
                 why.is_none()
             })
+        } else if meta.id == "REF001" || meta.id == "TODO002" {
+            let ok = ledger_rule_applicable(
+                meta.id,
+                &snap.inputs.directives,
+                snap.shared.has_ledger,
+                snap.inputs.tickets_configured,
+            );
+            if !ok {
+                tracing::info!(
+                    rule = meta.id,
+                    "not applicable: nothing to resolve against a ledger"
+                );
+            }
+            ok
         } else if LEDGER_RULES.contains(&meta.id) {
             snap.shared.has_ledger || snap.inputs.tickets_configured
         } else if meta.id == "COV001" {
@@ -262,6 +276,23 @@ impl Product for Frob {
             true
         }
     }
+}
+
+/// Whether `REF001` or `TODO002` has anything to decide, from facts known before evaluation.
+///
+/// `REF001` judges `frob:ticket` references and `TODO002` judges `frob:todo` directives against the ledger, so each applies when the repository holds at least one such directive; `REF001` also applies when a ledger with tickets is open (every file is then a subject). With no such directive and no ledger there is nothing to resolve, so the rule is not applicable instead of a required silent zero; a configured-but-missing ledger with directives present stays a required Unresolved.
+// frob:ticket 01M4069Z0HH5RV8TNPFVA936C5
+pub(crate) fn ledger_rule_applicable(
+    rule: &str,
+    directives: &[gob_directives::DirectiveRecord],
+    has_ledger: bool,
+    tickets_configured: bool,
+) -> bool {
+    let verb = if rule == "REF001" { "ticket" } else { "todo" };
+    let referenced = directives
+        .iter()
+        .any(|d| d.namespace == "frob" && d.verb == verb);
+    (tickets_configured || has_ledger) && (referenced || (rule == "REF001" && has_ledger))
 }
 
 // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG

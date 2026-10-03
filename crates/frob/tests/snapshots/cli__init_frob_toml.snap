@@ -7,6 +7,8 @@ expression: toml1
 fail_on = "error"
 # Which Unresolved findings fail the gate: `required`, `never` or `all`.
 fail_on_unresolved = "required"
+# Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against.
+base = "main"
 # Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
 sibling_timeout_secs = 120
 # When true an unusable configured sibling is a required Unresolved (`SIB001`).

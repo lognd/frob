@@ -9,6 +9,7 @@ use serde::Serialize;
 
 use crate::PRODUCT;
 use crate::config::FrobConfig;
+use crate::init::detected_default;
 use crate::workspace::{Located, config_refusal, registered_tables, table_refs};
 
 /// What a materialize (or its dry run) did to `frob.toml`.
@@ -63,32 +64,28 @@ fn missing_knobs(
     Ok((missing, present))
 }
 
-/// Supplies the ledger ref to write when `tickets.ref` is absent; never called when it is present.
-pub(crate) type LedgerRef<'a> = &'a dyn Fn() -> Result<String, CliError>;
+/// Supplies the repository-detected default for a missing dotted knob, or `None` to keep the static default; never called for a present knob.
+pub(crate) type Detect<'a> = &'a dyn Fn(&str) -> Result<Option<String>, CliError>;
 
-/// Dotted key of the ledger ref knob.
-const LEDGER_REF_KEY: &str = "tickets.ref";
-
-/// Write every missing materialized knob of all registered tables; `ledger_ref` (when given) replaces the default of an absent `tickets.ref`.
+/// Write every missing materialized knob of all registered tables; `detect` (when given) replaces the static default of each absent knob it answers for.
 pub(crate) fn sync_config(
     root: &Path,
     dry_run: bool,
-    ledger_ref: Option<LedgerRef<'_>>,
+    detect: Option<Detect<'_>>,
 ) -> Result<SyncData, CliError> {
     let mut descs = registered_tables();
-    if let Some(supply) = ledger_ref {
+    if let Some(detect) = detect {
         let refs = table_refs(&descs);
         let (missing, _) = missing_knobs(root, &refs)?;
-        if missing.iter().any(|k| k == LEDGER_REF_KEY) {
-            let value = supply()?;
-            tracing::info!(value, "ledger ref default overridden");
-            let field = descs
-                .iter_mut()
-                .filter(|d| d.table == "tickets")
-                .flat_map(|d| d.fields.iter_mut())
-                .find(|f| f.key == "ref");
-            if let Some(f) = field {
-                f.default_toml = toml::Value::String(value).to_string();
+        for key in &missing {
+            let Some(value) = detect(key)? else { continue };
+            tracing::info!(key, value, "knob default detected from the repository");
+            for d in &mut descs {
+                for f in &mut d.fields {
+                    if format!("{}.{}", d.table, f.key) == *key {
+                        f.default_toml = toml::Value::String(value.clone()).to_string();
+                    }
+                }
             }
         }
     }
@@ -138,7 +135,17 @@ impl Command for ConfigSync {
 
     fn run(&self, ctx: &Context) -> Outcome<SyncData> {
         let located = Located::discover(&ctx.cwd);
-        let data = sync_config(&located.root, ctx.dry_run, None)?;
+        // Outside a work tree there is nothing to detect; the static defaults apply.
+        let root = &located.root;
+        let detect = located
+            .require_repo()
+            .ok()
+            .map(|repo| move |key: &str| detected_default(repo, root, key));
+        let data = sync_config(
+            &located.root,
+            ctx.dry_run,
+            detect.as_ref().map(|d| d as Detect<'_>),
+        )?;
         let already = data.added.is_empty();
         Ok(Payload::new(data).with_already(already))
     }

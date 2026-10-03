@@ -1,5 +1,6 @@
-//! `frob init` on repositories of different shapes: the ledger ref follows the checked-out branch.
+//! `frob init` on repositories of different shapes: the ledger ref and `[check] base` follow the repository's default branch.
 // frob:ticket 01M40FXTW5FYKQWG82PD8STDJR
+// frob:ticket 01M4069Z0HH5RV8TNPFVA936C5
 
 use std::path::Path;
 use std::process::Output;
@@ -41,6 +42,17 @@ fn repo(branch: &str, commit: bool) -> tempfile::TempDir {
     git(root, &["config", "user.email", "test@example.com"]);
     if commit {
         std::fs::write(root.join("a.txt"), "a\n").expect("write");
+        std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = \"tiny\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+        )
+        .expect("write");
+        std::fs::create_dir_all(root.join("src")).expect("mkdir");
+        std::fs::write(
+            root.join("src/lib.rs"),
+            "//! A.\n\n/// One.\npub fn one() -> u8 {\n    1\n}\n",
+        )
+        .expect("write");
         git(root, &["add", "-A"]);
         git(root, &["commit", "-q", "-m", "initial"]);
     }
@@ -126,4 +138,139 @@ fn init_rerun_keeps_an_existing_ref() {
     git(dir.path(), &["checkout", "-q", "--detach"]);
     assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
     assert!(config_text(dir.path()).contains("ref = \"refs/heads/main\""));
+}
+
+/// The `[check] base` line of a materialized `frob.toml`.
+fn base_line(dir: &Path, base: &str) -> bool {
+    config_text(dir).contains(&format!("base = \"{base}\""))
+}
+
+/// Acceptance 1: on main with existing code, init then check exits 0 and base is main.
+#[test]
+fn init_then_check_on_main_exits_zero_with_base_main() {
+    let dir = repo("main", true);
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    assert!(base_line(dir.path(), "main"), "{}", config_text(dir.path()));
+    git(dir.path(), &["add", "-A"]);
+    git(dir.path(), &["commit", "-q", "-m", "chore: frob init"]);
+    let check = frob(dir.path(), &["check"]);
+    assert_eq!(check.status.code(), Some(0), "{}", json(&check));
+}
+
+/// Acceptance 2: on master the base is master, not a hard-coded main.
+#[test]
+fn init_on_master_detects_base_master() {
+    let dir = repo("master", true);
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    assert!(
+        base_line(dir.path(), "master"),
+        "{}",
+        config_text(dir.path())
+    );
+}
+
+/// A repository on trunk gets base trunk.
+#[test]
+fn init_on_trunk_detects_base_trunk() {
+    let dir = repo("trunk", true);
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    assert!(
+        base_line(dir.path(), "trunk"),
+        "{}",
+        config_text(dir.path())
+    );
+}
+
+/// Point `origin/HEAD` at `origin/<default>` while a different branch is checked out.
+fn with_origin_head(dir: &Path, default: &str) {
+    git(
+        dir,
+        &[
+            "update-ref",
+            &format!("refs/remotes/origin/{default}"),
+            "HEAD",
+        ],
+    );
+    git(
+        dir,
+        &[
+            "symbolic-ref",
+            "refs/remotes/origin/HEAD",
+            &format!("refs/remotes/origin/{default}"),
+        ],
+    );
+}
+
+/// The remote HEAD of origin wins over the checked-out branch; the ledger ref still follows the checkout.
+#[test]
+fn init_prefers_the_origin_head_for_base() {
+    let dir = repo("feature", true);
+    with_origin_head(dir.path(), "develop");
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    assert!(
+        base_line(dir.path(), "develop"),
+        "{}",
+        config_text(dir.path())
+    );
+    assert!(config_text(dir.path()).contains("ref = \"refs/heads/feature\""));
+}
+
+/// A detached HEAD with an origin HEAD still detects the base; without one init refuses (ledger ref cannot be named).
+#[test]
+fn init_on_a_detached_head_refuses_before_writing_a_base() {
+    let dir = repo("main", true);
+    with_origin_head(dir.path(), "develop");
+    git(dir.path(), &["checkout", "-q", "--detach"]);
+    let out = frob(dir.path(), &["init"]);
+    assert_eq!(out.status.code(), Some(3), "{}", json(&out));
+    assert!(!dir.path().join("frob.toml").exists());
+}
+
+/// Re-running init, even after the default branch changes, never rewrites an existing base.
+#[test]
+fn init_rerun_keeps_an_existing_base() {
+    let dir = repo("main", true);
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    git(dir.path(), &["switch", "-q", "-c", "other"]);
+    with_origin_head(dir.path(), "develop");
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    assert!(base_line(dir.path(), "main"), "{}", config_text(dir.path()));
+}
+
+/// `config sync` on a config missing both knobs writes the detected values, not the main default.
+#[test]
+fn config_sync_detects_ref_and_base() {
+    let dir = repo("master", true);
+    std::fs::write(
+        dir.path().join("frob.toml"),
+        "[directives]\nnamespaces = [\"frob\"]\n",
+    )
+    .expect("write");
+    assert_eq!(frob(dir.path(), &["config", "sync"]).status.code(), Some(0));
+    let text = config_text(dir.path());
+    assert!(text.contains("ref = \"refs/heads/master\""), "{text}");
+    assert!(base_line(dir.path(), "master"), "{text}");
+}
+
+/// Init ignores `.frob/`, installs the merge driver and leaves only config files in the working tree.
+#[test]
+fn init_touches_only_config_files_and_installs_the_driver() {
+    let dir = repo("main", true);
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    let ignore = std::fs::read_to_string(dir.path().join(".gitignore")).expect("gitignore");
+    assert!(ignore.lines().any(|l| l == ".frob/"));
+    git(
+        dir.path(),
+        &["config", "--local", "--get", "merge.frob-ledger.driver"],
+    );
+    let mut untracked: Vec<String> = std::fs::read_dir(dir.path())
+        .expect("ls")
+        .map(|e| e.expect("entry").file_name().to_string_lossy().into_owned())
+        .filter(|n| n != ".git")
+        .collect();
+    untracked.sort();
+    assert!(
+        !untracked.iter().any(|n| n == "tickets" || n == ".frob"),
+        "{untracked:?}"
+    );
 }

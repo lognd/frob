@@ -22,7 +22,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
-| `base` | `String` | `"main"` | no | Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against. |
+| `base` | `String` | `"main"` | yes | Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against. |
 | `exclude` | `Vec<String>` | `[]` | no | Glob patterns of paths no rule inspects. |
 | `fail_on` | `FailOn` | `"error"` | yes | Lowest severity that makes `frob check` exit 1; `none` never fails. |
 | `fail_on_unresolved` | `UnresolvedPolicy` | `"required"` | yes | Which Unresolved findings fail the gate: `required`, `never` or `all`. |

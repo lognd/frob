@@ -710,15 +710,35 @@ fn a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_doe
     assert_eq!(silent.exit_code(), ExitCode::Ok);
 
     write(dir.path(), "frob.toml", "[tickets]\n");
+    // Nothing references a ticket or a todo owner: not applicable, not a required silence.
+    let nothing = run(dir.path(), &quiet()).expect("configured, no references");
+    assert!(
+        zero_subject_rules(&nothing).is_empty(),
+        "nothing to resolve"
+    );
+    assert_eq!(nothing.exit_code(), ExitCode::Ok);
+
+    // Wiring-bug pattern: the facts exist (a reference and a todo owner) but the missing ledger gives
+    // the rules no subject; they must still be flagged, not silently not-applicable.
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "// frob:ticket 01M4069Z0HH5RV8TNPFVA936C5\n// frob:todo 01M4069Z0HH5RV8TNPFVA936C5\npub const X: u8 = 1;\n",
+    );
     let configured = run(dir.path(), &quiet()).expect("configured");
     let mut rules = zero_subject_rules(&configured);
     rules.sort();
     assert_eq!(rules, ["REF001", "TODO002"]);
     assert_eq!(configured.exit_code(), ExitCode::Negative);
+    let required = configured
+        .findings
+        .iter()
+        .find(|f| f.required.is_some())
+        .expect("a required finding");
     assert_eq!(
-        configured.findings[0].required.as_ref(),
+        required.required.as_ref(),
         Some(&RequiredReason::ZeroSubjects {
-            rule: configured.findings[0].rule.to_string()
+            rule: required.rule.to_string()
         })
     );
 }
@@ -747,4 +767,48 @@ fn cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language(
         "no test capability, no required silence"
     );
     assert_eq!(md.subjects_examined.get("COV001"), Some(&0));
+}
+
+// frob:ticket 01M4069Z0HH5RV8TNPFVA936C5
+// frob:tests crates/frob-check/src/product.rs::ledger_rule_applicable
+#[test]
+fn ref001_and_todo002_apply_only_when_they_have_a_reference_to_judge() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "frob.toml", "[tickets]\n");
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "// frob:todo 01M4069Z0HH5RV8TNPFVA936C5\npub const X: u8 = 1;\n",
+    );
+    let todo_only = run(dir.path(), &quiet()).expect("todo only");
+    assert_eq!(
+        zero_subject_rules(&todo_only),
+        ["TODO002"],
+        "a todo directive makes TODO002 apply, not REF001"
+    );
+
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "// frob:ticket 01M4069Z0HH5RV8TNPFVA936C5\npub const X: u8 = 1;\n",
+    );
+    let ref_only = run(dir.path(), &quiet()).expect("ref only");
+    assert_eq!(
+        zero_subject_rules(&ref_only),
+        ["REF001"],
+        "a ticket reference makes REF001 apply, not TODO002"
+    );
+
+    let bare = tempfile::tempdir().expect("tempdir");
+    write(
+        bare.path(),
+        "src/lib.rs",
+        "// TODO: later\npub const X: u8 = 1;\n",
+    );
+    write(bare.path(), "frob.toml", "[tickets]\n");
+    let markers = run(bare.path(), &quiet()).expect("bare marker");
+    assert!(
+        zero_subject_rules(&markers).is_empty(),
+        "a bare marker is TODO001's subject, not TODO002's"
+    );
 }

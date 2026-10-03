@@ -284,9 +284,9 @@ fn check_before_init_says_to_run_init() {
     );
 }
 
-/// Gap: a fresh initialized repository fails `frob check` on two must-measure zero-subject rules; ~VA936C5 owns the fix.
+/// A fresh initialized repository passes `frob check`: REF001 and TODO002 have nothing to judge (~VA936C5).
+// frob:ticket 01M4069Z0HH5RV8TNPFVA936C5
 #[test]
-#[should_panic(expected = "~VA936C5")]
 fn check_after_init_on_a_fresh_repository_passes() {
     let repo = Fresh::new("main");
     repo.init_committed();

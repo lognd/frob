@@ -90,6 +90,44 @@ fn ledger_ref_of_current_branch(repo: &Repo) -> Result<String, CliError> {
     Ok(format!("refs/heads/{}", checked_out_branch(repo)?))
 }
 
+/// The repository's default branch: the remote HEAD of `origin` when present, else the checked-out branch.
+///
+/// # Errors
+/// A refusal on a detached `HEAD` when there is no `origin` HEAD to fall back on.
+pub(crate) fn default_branch(repo: &Repo, root: &Path) -> Result<String, CliError> {
+    let runner = Runner::new(Limits { jobs: 1 });
+    let (code, out) = git(
+        &runner,
+        root,
+        &["symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
+    )?;
+    if code == 0
+        && let Some(branch) = out.strip_prefix("origin/").filter(|b| !b.is_empty())
+    {
+        tracing::info!(branch, "default branch from origin HEAD");
+        return Ok(branch.to_owned());
+    }
+    let branch = checked_out_branch(repo)?;
+    tracing::info!(branch, "default branch from the checked-out branch");
+    Ok(branch)
+}
+
+/// The detected default of the absent knob `key` (`tickets.ref`, `check.base`), or `None` for knobs without detection.
+///
+/// # Errors
+/// The refusal of the underlying detection (a detached `HEAD`).
+pub(crate) fn detected_default(
+    repo: &Repo,
+    root: &Path,
+    key: &str,
+) -> Result<Option<String>, CliError> {
+    match key {
+        "tickets.ref" => ledger_ref_of_current_branch(repo).map(Some),
+        "check.base" => default_branch(repo, root).map(Some),
+        _ => Ok(None),
+    }
+}
+
 /// Ensure `.frob/` is ignored; returns whether the file changed.
 fn ensure_gitignore(root: &Path, dry_run: bool) -> Result<Step, CliError> {
     let path = root.join(".gitignore");
@@ -203,7 +241,7 @@ impl Command for Init {
         let config = sync_config(
             root,
             ctx.dry_run,
-            Some(&|| ledger_ref_of_current_branch(repo)),
+            Some(&|key| detected_default(repo, root, key)),
         )?;
         let gitignore = ensure_gitignore(root, ctx.dry_run)?;
         let merge_driver = ensure_merge_driver(root, ctx.dry_run)?;
