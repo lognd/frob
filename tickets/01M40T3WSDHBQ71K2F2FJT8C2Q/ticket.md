@@ -8,10 +8,10 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:59:13Z"
-updated = "2026-10-03T12:44:38Z"
+updated = "2026-10-03T12:45:04Z"
 idempotency_key = "m2-rel-locks-are-bookkeeping"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-check/**"]
+scope = ["crates/frob-check/**", "changelog.d/01M40T3WSDHBQ71K2F2FJT8C2Q.fixed.md"]
 
 [[acceptance]]
 text = "Given a ticket branch where frob ack changed frob.lock, when check --ticket runs, then frob.lock is not reported by SCOPE001"
