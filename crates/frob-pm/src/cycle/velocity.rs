@@ -73,11 +73,11 @@ pub fn done_facts(ledger: &Ledger) -> Result<Vec<DoneFact>> {
     Ok(out)
 }
 
-/// Points delivered inside the window of `cycle`.
+/// Points delivered inside the effective window of `cycle` (planned end, or the close day when closed early).
 pub fn delivered(cycle: &Cycle, facts: &[DoneFact]) -> u32 {
     facts
         .iter()
-        .filter(|f| counts(f.ty) && cycle.start <= f.done_on && f.done_on <= cycle.end)
+        .filter(|f| counts(f.ty) && cycle.start <= f.done_on && f.done_on <= cycle.effective_end())
         .map(|f| f.points)
         .sum()
 }
@@ -235,6 +235,7 @@ mod tests {
             id: ObjectId::mint(),
             start: day(start),
             end: day(end),
+            ended: None,
             goal: "g".to_owned(),
             capacity_points: cap,
             state,
@@ -295,5 +296,19 @@ mod tests {
         let c = capacity(&open, &all, &facts, 3, 0.5);
         assert_eq!(c.limit(), Some(9));
         assert!(c.describe().contains("capacity 9 points"));
+    }
+
+    #[test]
+    fn an_early_close_truncates_the_window() {
+        // frob:tests crates/frob-pm/src/cycle/velocity.rs::delivered
+        let mut c = cycle("2026-10-05", "2026-10-11", State::Closed, None);
+        c.ended = Some(day("2026-10-06"));
+        let facts = [
+            fact(TicketType::Task, 3, "2026-10-06"),
+            fact(TicketType::Task, 5, "2026-10-07"),
+        ];
+        assert_eq!(delivered(&c, &facts), 3);
+        let next = cycle("2026-10-07", "2026-10-08", State::Closed, None);
+        assert_eq!(delivered(&next, &facts), 5);
     }
 }

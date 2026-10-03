@@ -319,7 +319,8 @@ fn close_carries_incomplete_members_and_records_the_ratio_and_retro() {
 fn close_without_a_next_cycle_is_refused_unless_carry_to_names_one() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
     let repo = Repo::new();
-    let c = repo.new_cycle("2026-10-05", "first");
+    // Already over, so the planned end is the effective end and the remedy starts the day after it.
+    let c = window(&repo, -10, -4, None);
     let todo = repo.ticket("todo", "3");
     repo.assign(id(&c), &todo);
     let out = repo.frob(&["cycle", "close", id(&c)]);
@@ -327,7 +328,9 @@ fn close_without_a_next_cycle_is_refused_unless_carry_to_names_one() {
     let e = &json(&out)["error"];
     assert_eq!(e["code"], "E-CYCLE-NO-NEXT");
     let remedy = e["remedy"].as_str().expect("remedy");
-    assert!(remedy.contains("cycle new --start 2026-10-12") && remedy.contains("--carry-to"));
+    assert!(
+        remedy.contains(&format!("cycle new --start {}", rel(-3))) && remedy.contains("--carry-to")
+    );
     assert_eq!(
         repo.ok(&["cycle", "show", id(&c)])["data"]["cycle"]["state"],
         "planned"
@@ -571,4 +574,138 @@ fn assigning_to_another_cycle_moves_the_ticket() {
     );
     let new = repo.ok(&["cycle", "show", id(&second)]);
     assert_eq!(new["data"]["cycle"]["tickets"][0]["id"], t.as_str());
+}
+
+/// The UTC day `days` from now, as `YYYY-MM-DD` (the day an early close records).
+fn utc(days: i64) -> String {
+    frob_pm::Day::from_unix(frob_ledger::model::Stamp::now().unix())
+        .plus_days(days)
+        .expect("in range")
+        .to_string()
+}
+
+/// A cycle from `start` to `end` days from the UTC today.
+fn utc_window(repo: &Repo, start: i64, end: i64) -> Value {
+    let (s, e) = (utc(start), utc(end));
+    repo.ok(&["cycle", "new", "--start", &s, "--end", &e, "--goal", "g"])["data"]["cycle"].clone()
+}
+
+/// Every folded cycle, earliest start first.
+fn folded(repo: &Repo) -> Vec<frob_pm::Cycle> {
+    let ledger = repo.ledger();
+    let mut all: Vec<frob_pm::Cycle> = PmStore::new(&ledger)
+        .list(ObjectKind::Cycle)
+        .expect("list")
+        .into_iter()
+        .filter_map(|o| match o {
+            frob_pm::Object::Cycle(c) => Some(c),
+            frob_pm::Object::Milestone(_) => None,
+        })
+        .collect();
+    all.sort_by_key(|c| c.start);
+    all
+}
+
+#[test]
+fn closing_on_the_first_day_frees_the_next_day_and_shows_both_ends() {
+    // frob:ticket 01M40SMB58CSHSFV8FTD5W8ERW
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleShow
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleList
+    // frob:tests crates/frob-pm/src/fold.rs::fold
+    let repo = Repo::new();
+    let c = utc_window(&repo, 0, 6);
+    assert_eq!(c["ended"], Value::Null);
+    let closed = repo.ok(&["cycle", "close", id(&c)])["data"]["cycle"].clone();
+    assert_eq!(closed["end"], utc(6).as_str());
+    assert_eq!(closed["ended"], utc(0).as_str());
+    // The remainder of the planned week is free: a cycle from tomorrow is accepted.
+    let next = utc_window(&repo, 1, 2);
+    assert_eq!(next["state"], "planned");
+    let shown = repo.ok(&["cycle", "show", id(&c)])["data"]["cycle"].clone();
+    assert_eq!(
+        (&shown["end"], &shown["ended"]),
+        (&closed["end"], &closed["ended"])
+    );
+    let list = repo.ok(&["cycle", "list"]);
+    assert_eq!(list["data"]["cycles"][0]["end"], utc(6).as_str());
+    assert_eq!(list["data"]["cycles"][0]["ended"], utc(0).as_str());
+    assert_eq!(list["data"]["cycles"][1]["ended"], Value::Null);
+}
+
+#[test]
+fn closing_on_the_last_day_or_a_legacy_close_keeps_the_planned_end() {
+    // frob:ticket 01M40SMB58CSHSFV8FTD5W8ERW
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    // frob:tests crates/frob-pm/src/store.rs::PmStore.transition
+    let repo = Repo::new();
+    let last = utc_window(&repo, -6, 0);
+    let v = repo.ok(&["cycle", "close", id(&last)])["data"]["cycle"].clone();
+    assert_eq!(v["state"], "closed");
+    assert_eq!(v["ended"], Value::Null);
+    assert_eq!(v["end"], utc(0).as_str());
+    // A close event with no effective end (written before this field existed) folds as before.
+    let old = utc_window(&repo, -20, -14);
+    let ledger = repo.ledger();
+    PmStore::new(&ledger)
+        .transition(
+            ObjectKind::Cycle,
+            id(&old).parse::<ObjectId>().expect("id"),
+            frob_pm::State::Closed,
+            None,
+        )
+        .expect("legacy close");
+    let cycles = folded(&repo);
+    let legacy = cycles
+        .iter()
+        .find(|c| c.alias().starts_with(&utc(-20)))
+        .expect("legacy");
+    assert_eq!(legacy.state, frob_pm::State::Closed);
+    assert_eq!(legacy.ended, None);
+    assert_eq!(legacy.effective_end(), legacy.end);
+    assert_eq!(
+        repo.ok(&["cycle", "show", id(&old)])["data"]["cycle"]["ended"],
+        Value::Null
+    );
+}
+
+#[test]
+fn velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once() {
+    // frob:ticket 01M40SMB58CSHSFV8FTD5W8ERW
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    // frob:tests crates/frob-pm/src/cycle/velocity.rs::delivered
+    // frob:tests crates/frob-pm/src/cycle/velocity.rs::velocity
+    let repo = Repo::new();
+    let a = utc_window(&repo, 0, 6);
+    let b = utc_window(&repo, 7, 8);
+    let done = repo.done_ticket("5");
+    let todo = repo.ticket("todo", "3");
+    repo.assign(id(&a), &done);
+    repo.assign(id(&a), &todo);
+    let closed = repo.ok(&["cycle", "close", id(&a)])["data"]["cycle"].clone();
+    assert_eq!(closed["commitment"]["committed"], 8);
+    assert_eq!(closed["commitment"]["done"], 5);
+    assert_eq!(closed["carried"][0]["to"], b["id"]);
+    // Work after the early close and inside A's planned week counts in no cycle; work
+    // in B's window counts there once.
+    let on = |days: i64| {
+        frob_pm::Day::from_unix(frob_ledger::model::Stamp::now().unix())
+            .plus_days(days)
+            .expect("day")
+    };
+    let fact = |points, done_on| frob_pm::cycle::velocity::DoneFact {
+        ty: frob_ledger::model::TicketType::Task,
+        points,
+        done_on,
+    };
+    let facts = [fact(5, on(0)), fact(2, on(2)), fact(3, on(7))];
+    let cycles = folded(&repo);
+    let delivered = |i: usize| frob_pm::cycle::velocity::delivered(&cycles[i], &facts);
+    assert_eq!(
+        delivered(0),
+        5,
+        "the early-closed cycle counts up to the close day"
+    );
+    assert_eq!(delivered(1), 3, "later work counts in the next cycle");
+    assert_eq!(delivered(0) + delivered(1), 8, "nothing is counted twice");
 }

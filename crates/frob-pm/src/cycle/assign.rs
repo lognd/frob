@@ -103,7 +103,7 @@ pub enum AssignPlan {
 pub fn default_cycle(all: &[Cycle], today: Day) -> Result<&Cycle, AssignError> {
     let open = || all.iter().filter(|c| c.state != State::Closed);
     open()
-        .find(|c| c.start <= today && today <= c.end)
+        .find(|c| c.start <= today && today <= c.effective_end())
         .or_else(|| open().filter(|c| c.start > today).min_by_key(|c| c.start))
         .ok_or(AssignError::NoDefaultCycle { today })
 }
@@ -182,6 +182,7 @@ mod tests {
             id: ObjectId::mint(),
             start: day(start),
             end: day(end),
+            ended: None,
             goal: "g".to_owned(),
             capacity_points: None,
             state,

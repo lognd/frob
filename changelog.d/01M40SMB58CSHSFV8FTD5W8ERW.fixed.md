@@ -1,0 +1,1 @@
+Closing a cycle before its planned end records the close day as its effective end, which overlap, velocity, capacity, the commitment ratio and carry-over use; `cycle show` and `list` report both ends.

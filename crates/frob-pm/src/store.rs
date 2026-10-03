@@ -461,7 +461,12 @@ impl<'a> PmStore<'a> {
         self.append(
             kind,
             id,
-            PmBody::Transition(TransitionData { from, to, reason }),
+            PmBody::Transition(TransitionData {
+                from,
+                to,
+                reason,
+                ended: None,
+            }),
         )
     }
 
