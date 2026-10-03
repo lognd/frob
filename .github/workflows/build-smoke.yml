@@ -1,12 +1,12 @@
 name: build-smoke
 
 # The one source of the release matrix, the pinned dist version and the build
-# plus smoke steps (reusable `workflow_call`, called by release.yml and dev.yml
+# plus smoke steps (reusable `workflow_call`, called by release.yml and the dev jobs of ci.yml
 # through a local path, so caller and callee are always the same ref).
 #   plan   resolves the version of `frob-cli` and, when `tag` is given, requires
 #          the tag to be `frob-v<that version>`;
 #   build  one cargo-dist archive per target, smoked on the build runner;
-#   wheel  the five PyPI wheels (only when `wheels` is true; dev.yml builds none);
+#   wheel  the five PyPI wheels (only when `wheels` is true; the dev jobs build none);
 #   smoke  every artifact re-run on a fresh runner (not the build runner).
 # It needs no secrets and declares none; callers must not pass `secrets:` (pinned by
 # crates/frob-release/tests/release_workflow.rs). Its jobs ask for `contents: read`

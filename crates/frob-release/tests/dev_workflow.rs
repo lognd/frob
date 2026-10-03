@@ -1,8 +1,10 @@
-//! Invariants of `.github/workflows/dev.yml`, the dev channel: triggered only by a green ci run
-//! on the base branch, build and smoke through the reusable `build-smoke.yml` shared with
-//! `release.yml`, sha-pinned actions, timeouts and minimal permissions, add-then-prune asset
-//! replacement, and no registry publishing.
+//! Invariants of the dev channel, the `dev-artifacts` and `dev-publish` jobs of
+//! `.github/workflows/ci.yml`: gated on a push to a dev branch of this repository after every
+//! test job passed (no `workflow_run` anywhere), build and smoke through the reusable
+//! `build-smoke.yml` shared with `release.yml`, sha-pinned actions, timeouts and minimal
+//! permissions, add-then-prune asset replacement, and no registry publishing.
 // frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
+// frob:ticket 01M41ZJGQ1GKF6NJ1JV25QHMNX
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -24,7 +26,29 @@ fn load(rel: &str) -> Value {
 }
 
 fn dev() -> Value {
-    load(".github/workflows/dev.yml")
+    load(".github/workflows/ci.yml")
+}
+
+const CI: &str = ".github/workflows/ci.yml";
+
+/// The dev jobs of ci.yml: the shared-workflow call and the publisher.
+const DEV_JOBS: [&str; 2] = ["dev-artifacts", "dev-publish"];
+
+/// The gate every dev job carries: a push event, this repository, a configured dev branch.
+fn assert_dev_gate(job: &Value, name: &str) {
+    let cond = job["if"].as_str().unwrap_or_default();
+    for needle in [
+        "github.event_name == 'push'",
+        "github.repository == 'lognd/frob'",
+        "refs/heads/experimental",
+        "github.ref",
+    ] {
+        assert!(cond.contains(needle), "job {name:?} `if` lacks {needle}");
+    }
+    assert!(
+        !cond.contains("pull_request"),
+        "job {name:?} must not admit pull requests"
+    );
 }
 
 /// The text without comment-only lines, for "never appears" checks that prose may mention.
@@ -48,64 +72,68 @@ fn step_text(job: &Value) -> String {
     serde_yaml_ng::to_string(&job["steps"]).unwrap()
 }
 
-/// Binds acceptance criterion 2: the trigger is ci completing, and every job is gated on success.
+/// Binds the gate: ci.yml carries no `workflow_run`, the dev jobs wait for the test jobs, and
+/// only a push to a dev branch of this repository runs them (pull requests skip them).
 // frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
+// frob:ticket 01M41ZJGQ1GKF6NJ1JV25QHMNX
 #[test]
-fn triggers_only_after_ci_succeeds_on_the_base_branch() {
+fn dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job() {
     let wf = dev();
+    // No workflow_run trigger in any workflow file (GitHub fires it from the default branch only).
+    for entry in
+        fs::read_dir(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.github/workflows")).unwrap()
+    {
+        let path = entry.unwrap().path();
+        let text = code_only(&fs::read_to_string(&path).unwrap());
+        assert!(
+            !text.contains("workflow_run"),
+            "{} must not use workflow_run",
+            path.display()
+        );
+    }
     let on = wf["on"].as_mapping().unwrap();
-    assert_eq!(on.len(), 1, "only the workflow_run trigger");
-    let run = on["workflow_run"].as_mapping().unwrap();
-    assert_eq!(
-        run["workflows"].as_sequence().unwrap(),
-        &[Value::from("ci")]
-    );
-    assert_eq!(
-        run["types"].as_sequence().unwrap(),
-        &[Value::from("completed")]
-    );
-    // The ci workflow it follows is named `ci` and runs on push.
-    assert_eq!(
-        load(".github/workflows/ci.yml")["name"].as_str(),
-        Some("ci")
-    );
-
-    let plan = wf["jobs"]["plan"]["if"].as_str().unwrap();
-    for needle in [
-        "github.event.workflow_run.conclusion == 'success'",
-        "github.event.workflow_run.event == 'push'",
-        "github.event.workflow_run.head_repository.full_name == github.repository",
-    ] {
-        assert!(plan.contains(needle), "plan job `if` lacks {needle}");
-    }
-    // The base-branch knob lives in the env and the gate step reads it.
-    let knob = wf["env"]["DEV_BRANCHES"].as_str().unwrap();
-    assert!(knob.split_whitespace().any(|b| b == "experimental"));
-    let gate = step_text(&wf["jobs"]["plan"]);
-    assert!(gate.contains("$DEV_BRANCHES") && gate.contains("workflow_run.head_branch"));
-    // Every other job needs plan and its go output.
-    for (name, job) in jobs(&wf) {
-        if name == "plan" {
-            continue;
-        }
-        let gated = job["if"]
-            .as_str()
-            .is_some_and(|i| i.contains("needs.plan.outputs.go == 'true'"));
-        let downstream = job["needs"]
+    assert!(on.contains_key("push") && on.contains_key("pull_request"));
+    assert!(
+        on["push"]["branches"]
             .as_sequence()
-            .is_some_and(|n| n.iter().any(|v| v.as_str() == Some("artifacts")));
-        assert!(gated || downstream, "job {name:?} is not gated on the plan");
+            .unwrap()
+            .contains(&Value::from("experimental"))
+    );
+    // Both dev jobs carry the gate; a skipped dev-artifacts also skips dev-publish.
+    for name in DEV_JOBS {
+        assert_dev_gate(&wf["jobs"][name], name);
     }
+    // Every test job (all jobs but the dev ones) is awaited by the publisher, directly or
+    // through dev-artifacts, which itself needs them.
+    let tests: Vec<&str> = jobs(&wf)
+        .into_iter()
+        .map(|(n, _)| n)
+        .filter(|n| !DEV_JOBS.contains(n))
+        .collect();
+    assert!(tests.contains(&"rust"));
+    let needs = |name: &str| -> Vec<String> {
+        match &wf["jobs"][name]["needs"] {
+            Value::String(s) => vec![s.clone()],
+            Value::Sequence(q) => q.iter().map(|v| v.as_str().unwrap().to_owned()).collect(),
+            _ => vec![],
+        }
+    };
+    for t in &tests {
+        assert!(
+            needs("dev-artifacts").iter().any(|n| n == t),
+            "dev-artifacts must need {t}"
+        );
+        assert!(
+            needs("dev-publish").iter().any(|n| n == t),
+            "dev-publish must need {t}"
+        );
+    }
+    assert!(needs("dev-publish").iter().any(|n| n == "dev-artifacts"));
     // The build checks out the tested sha (the shared workflow's `ref` input), never a branch
     // name or a fork ref.
     assert_eq!(
-        wf["jobs"]["artifacts"]["with"]["ref"].as_str(),
-        Some("${{ needs.plan.outputs.sha }}")
-    );
-    assert_eq!(
-        wf["jobs"]["artifacts"]["needs"].as_str(),
-        Some("plan"),
-        "the build waits for the gate"
+        wf["jobs"]["dev-artifacts"]["with"]["ref"].as_str(),
+        Some("${{ github.sha }}")
     );
 }
 
@@ -118,8 +146,11 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
     let release = load(".github/workflows/release.yml");
     let wf = dev();
     let shared_uses = "./.github/workflows/build-smoke.yml";
-    for (file, w) in [("release.yml", &release), ("dev.yml", &wf)] {
-        let call = &w["jobs"]["artifacts"];
+    for (file, w, job) in [
+        ("release.yml", &release, "artifacts"),
+        ("ci.yml", &wf, "dev-artifacts"),
+    ] {
+        let call = &w["jobs"][job];
         assert_eq!(
             call["uses"].as_str(),
             Some(shared_uses),
@@ -147,15 +178,15 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
             Some("read"),
             "{file}"
         );
-        // Only the shared workflow owns a matrix.
+        // Only the shared workflow owns the release matrix: the call carries no strategy.
         assert!(
-            !text.contains("matrix:"),
+            call["strategy"].is_null() && (file == "ci.yml" || !text.contains("matrix:")),
             "{file} must not duplicate the matrix"
         );
     }
-    // dev.yml builds archives only: no wheels.
+    // The dev jobs build archives only: no wheels.
     assert_eq!(
-        wf["jobs"]["artifacts"]["with"]["wheels"].as_bool(),
+        wf["jobs"]["dev-artifacts"]["with"]["wheels"].as_bool(),
         Some(false)
     );
     // The shared workflow offers exactly the inputs the callers use and builds the archives.
@@ -167,17 +198,17 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
     assert_eq!(names, BTreeSet::from(["ref", "tag", "wheels"]));
     let smoke = step_text(&shared["jobs"]["build"]);
     assert!(smoke.contains("packaging/smoke/archive-smoke.sh"));
-    let publish = step_text(&wf["jobs"]["publish"]);
+    let publish = step_text(&wf["jobs"]["dev-publish"]);
     assert!(
         publish.contains("${stem}-${SHORT}."),
         "assets must name the sha"
     );
     assert!(publish.contains("gh release upload dev"));
     assert!(
-        wf["jobs"]["publish"]["needs"]
+        wf["jobs"]["dev-publish"]["needs"]
             .as_sequence()
             .unwrap()
-            .contains(&Value::from("artifacts"))
+            .contains(&Value::from("dev-artifacts"))
     );
 }
 
@@ -186,23 +217,31 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
 #[test]
 fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions() {
     let wf = dev();
-    assert!(
-        wf["permissions"].as_mapping().unwrap().is_empty(),
-        "workflow default permissions must be empty"
+    // The workflow default is read-only; the dev jobs spell out their own permissions.
+    let default = wf["permissions"].as_mapping().unwrap();
+    assert_eq!(
+        default.len(),
+        1,
+        "workflow default permissions: contents only"
     );
+    assert_eq!(wf["permissions"]["contents"].as_str(), Some("read"));
     let mut writers = BTreeSet::new();
     for (name, job) in jobs(&wf) {
+        let dev_job = DEV_JOBS.contains(&name);
         // A job-level `uses` is the shared workflow; its jobs carry their own timeouts, pins and
         // permissions (pinned in release_workflow.rs) and a called job takes no timeout key.
         let is_call = job["uses"].is_string();
         assert!(
-            is_call || job["timeout-minutes"].as_u64().is_some_and(|m| m > 0),
+            is_call || !dev_job || job["timeout-minutes"].as_u64().is_some_and(|m| m > 0),
             "job {name:?} lacks timeout-minutes"
         );
-        let perms = job["permissions"]
-            .as_mapping()
-            .unwrap_or_else(|| panic!("job {name:?} lacks explicit permissions"));
-        for (k, v) in perms {
+        if dev_job {
+            assert!(
+                job["permissions"].is_mapping(),
+                "job {name:?} lacks explicit permissions"
+            );
+        }
+        for (k, v) in job["permissions"].as_mapping().into_iter().flatten() {
             match v.as_str().unwrap() {
                 "read" => {}
                 "write" => {
@@ -225,9 +264,13 @@ fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permission
             }
         }
     }
-    assert_eq!(writers, BTreeSet::from(["publish"]), "only publish writes");
+    assert_eq!(
+        writers,
+        BTreeSet::from(["dev-publish"]),
+        "only dev-publish writes"
+    );
     // No secrets at all: the token is the job's own, and nothing reads `secrets.`.
-    assert!(!read(".github/workflows/dev.yml").contains("secrets."));
+    assert!(!read(CI).contains("secrets."));
 }
 
 /// Binds the atomic-replacement rule: add, move the tag, and prune the previous assets last.
@@ -235,7 +278,7 @@ fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permission
 #[test]
 fn assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones() {
     let wf = dev();
-    let steps = wf["jobs"]["publish"]["steps"].as_sequence().unwrap();
+    let steps = wf["jobs"]["dev-publish"]["steps"].as_sequence().unwrap();
     let pos = |needle: &str| {
         steps
             .iter()
@@ -258,7 +301,7 @@ fn assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones() 
         "prune must spare new assets"
     );
     // The upload never deletes a whole release, and the release is never recreated.
-    let text = step_text(&wf["jobs"]["publish"]);
+    let text = step_text(&wf["jobs"]["dev-publish"]);
     assert!(!text.contains("gh release delete dev") && !text.contains("release delete dev "));
     // A failure before the prune removes only this run's partial uploads.
     let cleanup = steps.last().unwrap();
@@ -291,16 +334,20 @@ fn assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones() 
     );
     // Runs queue; a half-published release is never cancelled.
     assert_eq!(
-        wf["concurrency"]["cancel-in-progress"].as_bool(),
+        wf["jobs"]["dev-publish"]["concurrency"]["cancel-in-progress"].as_bool(),
         Some(false)
     );
 }
 
-/// Binds the registry rule: nothing in dev.yml publishes to a package index.
+/// Binds the registry rule: nothing in the dev jobs of ci.yml publishes to a package index.
 // frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
 #[test]
 fn nothing_is_published_to_pypi_or_crates_io() {
-    let text = read(".github/workflows/dev.yml");
+    let wf = dev();
+    let text: String = DEV_JOBS
+        .iter()
+        .map(|j| serde_yaml_ng::to_string(&wf["jobs"][*j]).unwrap())
+        .collect();
     for banned in [
         "uv publish",
         "cargo publish",
@@ -315,9 +362,9 @@ fn nothing_is_published_to_pypi_or_crates_io() {
     ] {
         assert!(
             !text.contains(banned),
-            "dev.yml must not contain {banned:?}"
+            "the dev jobs must not contain {banned:?}"
         );
     }
-    // The dev workflow stays out of the tag-triggered release workflow's territory.
+    // The dev jobs stay out of the tag-triggered release workflow's territory.
     assert!(!text.contains("frob-v*"));
 }

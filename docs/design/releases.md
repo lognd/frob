@@ -234,19 +234,26 @@ part of the job's design:
 - **Dev channel branch.** "main" in section 5 means the repository's
   default branch; in this repository that is `experimental` until main
   is cut over.
-- **Dev channel workflow.** `.github/workflows/dev.yml` runs on
-  `workflow_run` of `ci` and does nothing unless that run concluded
-  success, came from a push to this repository, and ran on a branch in
-  the workflow's `DEV_BRANCHES` env knob. It rebuilds the cargo-dist
-  archives of the tested sha by calling the reusable
+- **Dev channel workflow.** The dev channel is the last two jobs of
+  `.github/workflows/ci.yml`, not a separate workflow: `workflow_run`
+  fires only from the default branch's copy of a workflow file (here
+  `main` still holds v1's), so a `workflow_run` dev workflow never ran,
+  and it is the trigger zizmor flags (CI006). `dev-artifacts` and
+  `dev-publish` need every test job and run only when the event is a
+  push, the repository is this one and `github.ref` is a dev branch
+  (`refs/heads/experimental`, listed in both `if` lines); pull requests
+  and pushes to other branches skip them. `dev-artifacts` rebuilds the
+  cargo-dist archives of the tested sha by calling the reusable
   `.github/workflows/build-smoke.yml`, the one source of the matrix, the pinned
   dist and the build and smoke steps that `release.yml` calls too (dev
-  passes `wheels: false` and no secrets), then a single `contents: write` job replaces
+  passes `wheels: false` and no secrets). `dev-publish` is the only
+  `contents: write` job in the workflow: it replaces
   the `dev` prerelease assets add-then-prune: new assets carry the sha in
   their names, the tag and notes move, and the previous assets are
   deleted last, so a failed run leaves the previous ones. It publishes
   nothing to PyPI or crates.io. `crates/frob-release/tests/dev_workflow.rs`
-  pins these invariants and that both workflows call the shared one.
+  pins these invariants and that both workflows call the shared one;
+  publishing is not a `cargo dev ci` step, so the parity test ignores it.
 - **CI status in `release status`.** Read through the hosting API (`gh`
   for GitHub) for the tip commit; without network or a token the line is
   Unresolved, never assumed green. The commit is the base-branch tip a
