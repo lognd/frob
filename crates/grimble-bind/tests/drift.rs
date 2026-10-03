@@ -41,12 +41,17 @@ struct Repo {
 
 impl Repo {
     fn new() -> Self {
+        Self::with_model(MODEL)
+    }
+
+    fn with_model(model: &str) -> Self {
         let r = Self {
             dir: tempfile::tempdir().unwrap(),
         };
-        r.write("design/m.grmb", MODEL);
+        r.write("design/m.grmb", model);
         r.write("p/lib.rs", &emit("u32"));
         r.write("c/lib.rs", &take());
+        r.write("s/lib.rs", "pub fn msg(id: u32) -> u32 { id }\n");
         r
     }
 
@@ -61,6 +66,10 @@ impl Repo {
     }
 
     fn bind(&self) -> Binding {
+        self.bind_with(12)
+    }
+
+    fn bind_with(&self, rename_min_tokens: usize) -> Binding {
         let walked = gob_walk::walk(self.root(), &gob_walk::WalkConfig::default()).unwrap();
         let mut model = ModelFiles::new();
         for f in &walked.files {
@@ -74,6 +83,7 @@ impl Repo {
             model: &model,
             modeled: &[],
             strict: false,
+            rename_min_tokens,
         })
     }
 
@@ -166,7 +176,7 @@ fn ack_flow_records_both_ends_and_a_second_ack_is_a_no_op_and_clean() {
     assert_eq!(drift(&b), Vec::<String>::new(), "{:#?}", b.findings);
     assert_eq!(b.subjects["SYS006"], 1);
     assert_eq!(b.subjects["SYS007"], 2);
-    assert!(r.ack(&["flow/f"], false, None).unwrap().is_empty());
+    assert!(r.ack(&["flow/f"], false, Some("why")).unwrap().is_empty());
 }
 
 // frob:tests crates/grimble-bind/src/drift.rs::evaluate
@@ -280,7 +290,7 @@ fn identity_body_rename_several_candidates_are_all_listed_and_trivial_bodies_are
     // A trivial body is never paired.
     let r = Repo::new();
     r.write("p/small.rs", "pub fn tiny() {}\n");
-    r.ack(&["p/small.rs::tiny"], false, None).unwrap();
+    r.ack(&["p/small.rs::tiny"], false, Some("why")).unwrap();
     r.write("p/small.rs", "pub fn small() {}\n");
     let b = r.bind();
     assert_eq!(drift(&b), ["SYS007 error"], "{:#?}", b.findings);
@@ -302,7 +312,12 @@ fn identity_rename_and_edit_is_not_paired_and_ack_rename_refuses_a_different_bod
     assert_eq!(drift(&b), ["SYS007 error"]);
     assert!(message_of(&b, "SYS007").contains("kind gone"));
     let err = r
-        .ack_with(&[], false, None, &[("c/lib.rs::take", "c/lib.rs::receive")])
+        .ack_with(
+            &[],
+            false,
+            Some("moved"),
+            &[("c/lib.rs::take", "c/lib.rs::receive")],
+        )
         .unwrap_err();
     assert!(matches!(err, AckError::Rename { .. }), "{err}");
 }
@@ -316,13 +331,13 @@ fn ack_refuse_may_unbound_and_node_targets_with_the_rows() {
         &format!("pub fn extra(x: u32) -> u32 {BIG}\n"),
     );
     for target in ["p/extra.rs::nothing", "node/p"] {
-        let err = r.ack(&[target], false, None).unwrap_err();
+        let err = r.ack(&[target], false, Some("why")).unwrap_err();
         assert!(
             matches!(err, AckError::Refused { .. } | AckError::Resolve { .. }),
             "{target}: {err}"
         );
     }
-    let err = r.ack(&["p/lib.rs::emit"], false, None);
+    let err = r.ack(&["p/lib.rs::emit"], false, Some("why"));
     assert!(err.is_ok(), "owned by a Must node: {err:?}");
 }
 
@@ -381,4 +396,101 @@ fn rules_without_a_lock_have_no_subjects_so_must_measure_is_not_vacuous() {
     assert!(!b.subjects.contains_key("SYS006"));
     assert!(!b.subjects.contains_key("SYS007"));
     assert_eq!(drift(&b), Vec::<String>::new());
+}
+
+fn contract_model(versioning: &str) -> String {
+    format!(
+        "grimble = \"2\";\nmodule m;\nnode p : trusted {{ owns \"p/**\"; }}\nnode c : trusted {{ owns \"c/**\"; }}\nnode s : trusted {{ owns \"s/**\"; }}\nnode d : trusted {{ owns \"design/**\"; }}\n\
+         contract k {{ shape \"s/lib.rs::msg\"; {versioning} }}\n\
+         flow f : p -> c {{ contract k; producer \"p/lib.rs::emit\"; consumer \"c/lib.rs::take\"; }}\n"
+    )
+}
+
+/// An acked repo whose consumer ack records a stale shape digest (the consumer is behind).
+fn consumer_behind_repo(versioning: &str) -> Repo {
+    let r = Repo::with_model(&contract_model(versioning));
+    r.ack(&["flow/f"], false, Some("initial")).unwrap();
+    let mut lock = r.lock();
+    let flow = lock.flows.get_mut("flow/f").unwrap();
+    assert!(flow.producer.shape_contract.is_some(), "{flow:?}");
+    assert_eq!(flow.producer.shape_contract, flow.consumer.shape_contract);
+    flow.consumer.shape_contract = Some("0".repeat(64));
+    lock.save(&r.root().join("grimble.lock")).unwrap();
+    r
+}
+
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:tests crates/grimble-bind/src/drift.rs::evaluate
+#[test]
+fn rules_sys006_shape_contract_clean_when_all_three_agree() {
+    let r = Repo::with_model(&contract_model("versioning compat=backward;"));
+    r.ack(&["flow/f"], false, Some("initial")).unwrap();
+    assert_eq!(drift(&r.bind()), Vec::<String>::new());
+}
+
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:tests crates/grimble-bind/src/drift.rs::evaluate
+#[test]
+fn rules_sys006_consumer_behind_is_warn_under_backward_and_error_otherwise() {
+    let r = consumer_behind_repo("versioning compat=backward;");
+    let b = r.bind();
+    assert_eq!(drift(&b), ["SYS006 warn"], "{:#?}", b.findings);
+    assert!(message_of(&b, "SYS006").contains("consumer"));
+    for versioning in ["", "versioning compat=none;", "versioning compat=forward;"] {
+        let r = consumer_behind_repo(versioning);
+        assert_eq!(drift(&r.bind()), ["SYS006 error"], "{versioning}");
+    }
+}
+
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:tests crates/grimble-bind/src/drift.rs::evaluate
+#[test]
+fn rules_sys006_shape_changed_under_both_acks_is_error_even_under_backward() {
+    let r = Repo::with_model(&contract_model("versioning compat=backward;"));
+    r.ack(&["flow/f"], false, Some("initial")).unwrap();
+    r.write(
+        "s/lib.rs",
+        "pub fn msg(id: u32, extra: u64) -> u32 { id + extra as u32 }\n",
+    );
+    let b = r.bind();
+    assert_eq!(drift(&b), ["SYS006 error"], "{:#?}", b.findings);
+    assert!(message_of(&b, "SYS006").contains("contract shape changed"));
+}
+
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:tests crates/grimble-bind/src/ack.rs::plan_ack
+#[test]
+fn ack_without_a_reason_is_refused_and_a_rename_is_logged() {
+    let r = Repo::new();
+    for reason in [None, Some("  ")] {
+        let err = r.ack(&["flow/f"], false, reason).unwrap_err();
+        assert!(matches!(err, AckError::ReasonRequired), "{err}");
+    }
+    let r = acked_repo();
+    r.write("c/lib.rs", &take().replace("take", "receive"));
+    r.ack_with(
+        &[],
+        false,
+        Some("renamed"),
+        &[("c/lib.rs::take", "c/lib.rs::receive")],
+    )
+    .unwrap();
+    let log = r.lock().ack_log;
+    assert_eq!(log.len(), 1, "{log:?}");
+    assert_eq!(log[0].kind, gob_lock::AckLogKind::Rename);
+    assert_eq!(log[0].subject, "c/lib.rs::take");
+    assert_eq!(log[0].target.as_deref(), Some("c/lib.rs::receive"));
+    assert_eq!(log[0].actor, "Me <me@example.com>");
+    assert_eq!(log[0].at, "2026-10-02T00:00:00Z");
+    assert_eq!(log[0].reason, "renamed");
+}
+
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:tests crates/grimble-bind/src/drift.rs::evaluate
+#[test]
+fn rename_min_tokens_knob_decides_whether_a_body_can_be_paired() {
+    let r = acked_repo();
+    r.write("c/lib.rs", &take().replace("take", "receive"));
+    assert_eq!(drift(&r.bind_with(12)), ["SYS008 advisory"]);
+    assert_eq!(drift(&r.bind_with(10_000)), ["SYS007 error"]);
 }

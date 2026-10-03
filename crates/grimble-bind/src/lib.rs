@@ -72,6 +72,8 @@ pub struct BindInput<'a> {
     pub modeled: &'a [String],
     /// `[grimble] strict`.
     pub strict: bool,
+    /// `[grimble] rename_min_tokens`: smaller Bodies are never paired as a rename.
+    pub rename_min_tokens: usize,
 }
 
 /// B, its findings and the subject counts.
@@ -89,6 +91,8 @@ pub struct Binding {
     pub edges: Vec<relation::CEdge>,
     /// Every symbol of the walk with its facet digests (what an ack records).
     pub live: live::Live,
+    /// For each flow anchor, the contract it names (`contract` clause) and that contract's compat.
+    pub flow_contracts: BTreeMap<String, model::FlowContract>,
 }
 
 impl Binding {
@@ -169,6 +173,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     };
     let mut out = rules::evaluate(&cx);
     let live = live::Live::build(&code);
+    let flow_contracts = model.flow_contracts();
     let lock_path = input.root.join(gob_lock::file_name(PRODUCT));
     match gob_lock::LockFile::load(&lock_path) {
         Ok(lock) => drift::evaluate(
@@ -177,6 +182,8 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
                 live: &live,
                 rows: &rel.rows,
                 lock: &lock,
+                contracts: &flow_contracts,
+                rename_min_tokens: input.rename_min_tokens,
             },
             &mut out,
         ),
@@ -198,5 +205,6 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         owners,
         edges: rel.edges,
         live,
+        flow_contracts,
     }
 }

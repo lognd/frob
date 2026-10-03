@@ -80,6 +80,9 @@ pub struct GrimbleTable {
     /// Warn rules SYS001 and SYS005 become Errors.
     #[config(default = false)]
     pub strict: bool,
+    /// A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3).
+    #[config(default = 12_u64)]
+    pub rename_min_tokens: u64,
 }
 
 impl GrimbleTable {

@@ -47,7 +47,9 @@ pub use product::{
 };
 pub use sibling::{SCHEMA_VERSION, exceptions_json, sibling_document};
 
-use config::{ComputeTable, PRODUCT, PacksTable};
+use config::{ComputeTable, GrimbleTable, PRODUCT, PacksTable};
+use gob_walk::FileEntry;
+use grimble_model::ModelFiles;
 
 /// What a `grimble check` run was asked to do.
 #[derive(Debug, Clone, Default)]
@@ -153,12 +155,12 @@ pub struct Survey {
     pub languages: BTreeMap<String, usize>,
 }
 
-/// Walk `root` honouring `[check] exclude` and `size_cap` and tally models and languages.
+/// Walk `root` honouring `[check] exclude` and `size_cap`: the one walk of grimble's verbs.
 ///
 /// # Errors
 ///
 /// [`CheckError`] for a bad `grimble.toml` table or a failed walk.
-pub fn survey(root: &Path) -> Result<Survey, CheckError> {
+pub fn walk_repo(root: &Path) -> Result<Vec<FileEntry>, CheckError> {
     let table = gob_check::CheckTable::load(root, PRODUCT)?;
     let mut exclude = vec![format!("/.{PRODUCT}/"), "/target/".to_owned()];
     exclude.extend(table.exclude.iter().cloned());
@@ -170,8 +172,71 @@ pub fn survey(root: &Path) -> Result<Survey, CheckError> {
             ..gob_walk::WalkConfig::default()
         },
     )?;
+    Ok(walked.files)
+}
+
+/// Read the `.grmb` files among `entries` and declare the `[grimble] models` roots.
+pub fn read_models(root: &Path, entries: &[FileEntry], table: &GrimbleTable) -> ModelFiles {
+    let mut model = ModelFiles::new();
+    let mut walk = Vec::with_capacity(entries.len());
+    for e in entries {
+        walk.push(e.path.clone());
+        if !e.path.ends_with(MODEL_EXTENSION) {
+            continue;
+        }
+        match std::fs::read(root.join(&e.path)) {
+            Ok(bytes) => {
+                tracing::debug!(path = %e.path, bytes = bytes.len(), "model file read");
+                model.files.insert(e.path.clone(), bytes);
+            }
+            Err(err) => tracing::warn!(path = %e.path, %err, "model file unreadable; skipped"),
+        }
+    }
+    model.walk = Some(walk);
+    tracing::info!(roots = ?table.models, files = model.files.len(), "model roots declared");
+    model.with_declared_roots(table.models.clone())
+}
+
+/// Build the binding relation over `entries` with the `[grimble]` knobs in force.
+///
+/// The one bind step of `grimble check` (through the product's collection) and `grimble ack`.
+pub fn bind_models(
+    root: &Path,
+    entries: &[FileEntry],
+    model: &ModelFiles,
+    table: &GrimbleTable,
+) -> grimble_bind::Binding {
+    grimble_bind::bind(&grimble_bind::BindInput {
+        root,
+        entries,
+        model,
+        modeled: &table.modeled,
+        strict: table.strict,
+        rename_min_tokens: usize::try_from(table.rename_min_tokens).unwrap_or(usize::MAX),
+    })
+}
+
+/// Walk and bind the repository at `root` exactly as `grimble check` does; what `grimble ack` plans over.
+///
+/// # Errors
+///
+/// [`CheckError`] for a bad `grimble.toml` table or a failed walk.
+pub fn bind_repo(root: &Path) -> Result<grimble_bind::Binding, CheckError> {
+    let entries = walk_repo(root)?;
+    let table = GrimbleTable::load(root)?;
+    let model = read_models(root, &entries, &table);
+    Ok(bind_models(root, &entries, &model, &table))
+}
+
+/// Walk `root` honouring `[check] exclude` and `size_cap` and tally models and languages.
+///
+/// # Errors
+///
+/// [`CheckError`] for a bad `grimble.toml` table or a failed walk.
+pub fn survey(root: &Path) -> Result<Survey, CheckError> {
+    let walked = walk_repo(root)?;
     let mut out = Survey::default();
-    for f in walked.files {
+    for f in walked {
         let tag = fidelity::language_tag(&f.path, &f.language);
         *out.languages.entry(tag.to_owned()).or_default() += 1;
         if tag == "grmb" {

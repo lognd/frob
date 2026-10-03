@@ -11,13 +11,12 @@ use std::path::Path;
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_git::{CommitOptions, RelPath, Repo};
+use grimble_bind::PRODUCT;
 use grimble_bind::ack::{AckError, AckRequest, plan_ack};
-use grimble_bind::{BindInput, PRODUCT};
-use grimble_model::ModelFiles;
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::workspace::{config_refusal, locate_root};
+use crate::workspace::{check_error, locate_root};
 
 /// Output of `ack`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -58,9 +57,10 @@ pub struct Ack {
 /// The refusal or usage error an [`AckError`] becomes.
 fn cli_error(e: AckError) -> CliError {
     match &e {
-        AckError::Resolve { .. } | AckError::Plan(_) | AckError::Rename { .. } => {
-            CliError::Usage(e.to_string())
-        }
+        AckError::Resolve { .. }
+        | AckError::Plan(_)
+        | AckError::Rename { .. }
+        | AckError::ReasonRequired => CliError::Usage(e.to_string()),
         AckError::Refused { .. } => Refusal::new(
             "E-ACK-REFUSED",
             RefusalClass::GuardNeedsAction,
@@ -72,41 +72,9 @@ fn cli_error(e: AckError) -> CliError {
     }
 }
 
-/// Walk and bind the repository at `root` the way `grimble check` does.
+/// Walk and bind the repository at `root` through the same entry point `grimble check` uses.
 fn bind_root(root: &Path) -> Result<grimble_bind::Binding, CliError> {
-    let table = gob_check::CheckTable::load(root, PRODUCT).map_err(|e| config_refusal(&e))?;
-    let mut exclude = vec![format!("/.{PRODUCT}/"), "/target/".to_owned()];
-    exclude.extend(table.exclude.iter().cloned());
-    let walked = gob_walk::walk(
-        root,
-        &gob_walk::WalkConfig {
-            exclude,
-            size_cap: table.size_cap,
-            ..gob_walk::WalkConfig::default()
-        },
-    )
-    .map_err(CliError::internal)?;
-    let mut model = ModelFiles::new();
-    for f in &walked.files {
-        if Path::new(&f.path)
-            .extension()
-            .is_some_and(|e| e.eq_ignore_ascii_case("grmb"))
-        {
-            match std::fs::read(root.join(&f.path)) {
-                Ok(bytes) => model = model.with_file(&f.path, bytes),
-                Err(err) => tracing::warn!(path = %f.path, %err, "model file unreadable; skipped"),
-            }
-        }
-    }
-    let models = grimble_check::config::GrimbleTable::load(root).map_err(|e| config_refusal(&e))?;
-    let model = model.with_declared_roots(models.models);
-    Ok(grimble_bind::bind(&BindInput {
-        root,
-        entries: &walked.files,
-        model: &model,
-        modeled: &[],
-        strict: false,
-    }))
+    grimble_check::bind_repo(root).map_err(check_error)
 }
 
 /// Commit `bytes` as the lock on the current branch; `None` outside a repository (written plainly).
@@ -175,7 +143,7 @@ impl Command for Ack {
             Arg::new("reason")
                 .long("reason")
                 .value_name("TEXT")
-                .help("Why the current state is acknowledged"),
+                .help("Why the current state is acknowledged (required)"),
         )
         .arg(
             Arg::new("rename")

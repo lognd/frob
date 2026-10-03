@@ -7,7 +7,22 @@
 //! digests are not comparable, so nothing is silently accepted (the REATTEST state of the
 //! exceptions design is this same comparison, not a separate rule).
 
+//! # SYS006 and `versioning compat=backward`
+//!
+//! Two comparisons feed one finding per flow. The end comparison checks each end's Contract
+//! digest against the one recorded at ack. The shape comparison runs when both ends of the lock
+//! entry carry a `shape_contract` and the flow names a contract: with `S_p`, `S_c` the recorded
+//! digests and `S_live` the Contract facet of the contract's one Must shape identity, it fires
+//! when `S_p != S_c`, `S_live != S_p` or `S_live != S_c`; a non-Exact `S_live` is Unresolved.
+//! The severity is `Warn` only when the contract writes `versioning compat=backward` and every
+//! comparison that fired shows nothing but a consumer behind a producer that moved forward
+//! (end mode: the producer end changed since a consistent ack while the consumer end did not;
+//! shape mode: `S_p == S_live != S_c`). Any other skew, and any skew under `compat=none`,
+//! `forward`, `full` or no `versioning`, is an `Error`; `compat` never decides whether skew
+//! exists.
+
 // frob:ticket 01M3Z714820D1SK6X44T9R1B70
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -16,11 +31,9 @@ use gob_rules::Severity;
 
 use crate::code::Code;
 use crate::live::{Live, LiveSymbol, body_tokens};
+use crate::model::FlowContract;
 use crate::rules::{Output, path_of};
 use crate::types::{Reason, Role, Row, Source, Status};
-
-/// A Body with fewer atoms than this cannot be paired as a rename (binding.md 5.4 item 3).
-pub const RENAME_MIN_TOKENS: usize = 12;
 
 /// The lock file as a finding anchor and site.
 pub const LOCK_ANCHOR: &str = "grimble.lock";
@@ -35,6 +48,10 @@ pub struct DriftCx<'a> {
     pub rows: &'a [Row],
     /// The lock as recorded.
     pub lock: &'a LockFile,
+    /// The contract each flow names, with its compat.
+    pub contracts: &'a BTreeMap<String, FlowContract>,
+    /// A Body with fewer atoms than this cannot be paired as a rename (binding.md 5.4 item 3).
+    pub rename_min_tokens: usize,
 }
 
 fn short(d: &str) -> &str {
@@ -147,7 +164,7 @@ fn sys007_symbol(
                     .live
                     .symbols
                     .get(*c)
-                    .is_some_and(|l| body_tokens(cx.code, &l.path, c) >= RENAME_MIN_TOKENS)
+                    .is_some_and(|l| body_tokens(cx.code, &l.path, c) >= cx.rename_min_tokens)
         })
         .collect();
     if !candidates.is_empty() {
@@ -265,6 +282,132 @@ pub(crate) fn live_end(
     }
 }
 
+/// The shape of a flow's contract as it stands now.
+pub(crate) enum Shape {
+    /// The contract has no `shape` row.
+    Absent,
+    /// Its one Must shape identity and that identity's Contract digest (hex).
+    Exact(String),
+    /// Not Exact: the reason code and a sentence.
+    Unresolved(Reason, String),
+}
+
+/// The live Contract digest of the one `shape` identity of the contract entity `contract`.
+pub(crate) fn live_shape(rows: &[Row], live: &Live, contract: &str) -> Shape {
+    let rows: Vec<&Row> = rows
+        .iter()
+        .filter(|r| r.entity == contract && r.role == Role::Shape)
+        .collect();
+    if rows.is_empty() {
+        return Shape::Absent;
+    }
+    let musts: Vec<&str> = rows
+        .iter()
+        .filter(|r| r.status == Status::Must && r.source != Source::Residual)
+        .filter_map(|r| r.identity.as_deref())
+        .collect();
+    let [id] = musts.as_slice() else {
+        let reason = if musts.is_empty() && rows.iter().any(|r| r.source == Source::Residual) {
+            Reason::UnseenRemainder
+        } else {
+            Reason::MayOnlyOwner
+        };
+        return Shape::Unresolved(
+            reason,
+            format!(
+                "{contract} has {} Must shape identities, need one",
+                musts.len()
+            ),
+        );
+    };
+    match live.symbols.get(*id) {
+        None => Shape::Unresolved(
+            Reason::Fidelity,
+            format!("the shape {id} of {contract} has no facet digests"),
+        ),
+        Some(l) => l.inexact().map_or_else(
+            || Shape::Exact(l.facets.contract.clone()),
+            |reason| {
+                Shape::Unresolved(
+                    reason,
+                    format!("the shape {id} of {contract}: its Contract facet is not Exact"),
+                )
+            },
+        ),
+    }
+}
+
+/// Skew over the end identities' Contract digests: the reasons, and whether the only skew is a
+/// consumer behind a producer that moved forward from a consistent ack.
+fn end_skew(
+    fe: &gob_lock::FlowEntry,
+    (pi, pc): (&str, &str),
+    (ci, cc): (&str, &str),
+    why: &mut Vec<String>,
+) -> bool {
+    let (p_moved, c_moved) = (pc != fe.producer.contract, cc != fe.consumer.contract);
+    let before = fe.producer.contract == fe.consumer.contract;
+    if pc != cc {
+        why.push(format!(
+            "the ends differ: producer {} vs consumer {}",
+            short(pc),
+            short(cc)
+        ));
+    }
+    if p_moved {
+        why.push(format!(
+            "the producer end {pi} is ahead of its ack ({} acked, {} now)",
+            short(&fe.producer.contract),
+            short(pc)
+        ));
+    }
+    if c_moved {
+        why.push(format!(
+            "the consumer end {ci} is ahead of its ack ({} acked, {} now)",
+            short(&fe.consumer.contract),
+            short(cc)
+        ));
+    }
+    p_moved && !c_moved && before
+}
+
+/// Skew over the contract shape digests (binding.md 6.6): fires when `S_p != S_c` or `S_live`
+/// differs from either; the only skew is "consumer behind" when `S_p == S_live != S_c`.
+fn shape_skew(sp: &str, sc: &str, live: &str, why: &mut Vec<String>) -> bool {
+    if sp != sc {
+        why.push(format!(
+            "the ends were attested against different contract shapes: producer {} vs consumer {}",
+            short(sp),
+            short(sc)
+        ));
+    }
+    if live != sp {
+        why.push(format!(
+            "the contract shape changed since the producer ack ({} acked, {} now)",
+            short(sp),
+            short(live)
+        ));
+    }
+    if live != sc {
+        why.push(format!(
+            "the contract shape changed since the consumer ack ({} acked, {} now)",
+            short(sc),
+            short(live)
+        ));
+    }
+    sp == live && sc != live
+}
+
+/// The severity of a skew: `Warn` only under `versioning compat=backward` when every compared
+/// side shows nothing but a consumer behind a producer that moved forward; otherwise `Error`.
+fn skew_severity(compat: Option<&str>, only_consumer_behind: bool) -> Severity {
+    if compat == Some("backward") && only_consumer_behind {
+        Severity::Warn
+    } else {
+        Severity::Error
+    }
+}
+
 fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
     let Some(fe) = cx.lock.flows.get(key) else {
         return;
@@ -304,28 +447,42 @@ fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
     };
     out.count("SYS006", 1);
     let mut why = Vec::new();
-    if pc != cc {
-        why.push(format!(
-            "the ends differ: producer {} vs consumer {}",
-            short(pc),
-            short(cc)
-        ));
+    let mut only_consumer_behind = true;
+    let mut skewed = false;
+    let ends_skewed = pc != cc || *pc != fe.producer.contract || *cc != fe.consumer.contract;
+    if ends_skewed {
+        only_consumer_behind &= end_skew(fe, (pi, pc), (ci, cc), &mut why);
+        skewed = true;
     }
-    if *pc != fe.producer.contract {
-        why.push(format!(
-            "the producer end {pi} is ahead of its ack ({} acked, {} now)",
-            short(&fe.producer.contract),
-            short(pc)
-        ));
+    let contract = cx.contracts.get(key);
+    if let (Some(sp), Some(sc), Some(k)) = (
+        &fe.producer.shape_contract,
+        &fe.consumer.shape_contract,
+        contract,
+    ) {
+        match live_shape(rows, live, &k.anchor) {
+            Shape::Exact(sl) => {
+                if sp != sc || *sl != **sp || *sl != **sc {
+                    only_consumer_behind &= shape_skew(sp, sc, &sl, &mut why);
+                    skewed = true;
+                }
+            }
+            Shape::Unresolved(reason, text) => {
+                out.unresolved(
+                    "SYS006",
+                    reason,
+                    &format!("{key}: {text}"),
+                    key,
+                    Some(lock_site()),
+                );
+                return;
+            }
+            Shape::Absent => {
+                tracing::debug!(flow = key, contract = %k.anchor, "contract has no shape row; shape skew not compared");
+            }
+        }
     }
-    if *cc != fe.consumer.contract {
-        why.push(format!(
-            "the consumer end {ci} is ahead of its ack ({} acked, {} now)",
-            short(&fe.consumer.contract),
-            short(cc)
-        ));
-    }
-    if why.is_empty() {
+    if !skewed {
         return;
     }
     let behind = match (*pc != fe.producer.contract, *cc != fe.consumer.contract) {
@@ -333,9 +490,12 @@ fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
         (false, true) => format!("the producer {pi} is behind"),
         _ => format!("producer {pi} and consumer {ci}"),
     };
+    let compat = contract.and_then(|k| k.compat.as_deref());
+    let severity = skew_severity(compat, only_consumer_behind);
+    tracing::debug!(flow = key, ?compat, ?severity, "contract skew found");
     out.fire(
         "SYS006",
-        Severity::Error,
+        severity,
         format!("contract skew on {key}: {behind}; {}", why.join("; ")),
         key,
         Some(lock_site()),
