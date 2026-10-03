@@ -2,7 +2,8 @@
 id = "01M406C57V9ECX2YEKFZ5P8YK3"
 title = "releases.md: close the ten gaps found by the 0.532.0 planner"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
