@@ -257,6 +257,73 @@ fn a_missing_fragment_refuses_with_the_remedy_and_a_present_one_closes() {
     ok(dir.path(), &["ticket", "close", &id, "--outcome", "done"]);
 }
 
+// frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+// frob:tests crates/frob/src/ticket/write.rs::Close.run
+#[test]
+fn no_changelog_with_a_reason_closes_without_a_fragment_and_records_the_event() {
+    let dir = repo(&["changelog_fragment"]);
+    let id = chore(dir.path(), &[]);
+    let closed = ok(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &id,
+            "--outcome",
+            "done",
+            "--no-changelog",
+            "--reason",
+            "design document only",
+        ],
+    );
+    assert_eq!(closed["data"]["category"], "done");
+    assert_eq!(closed["data"]["changelog_exempt"], "design document only");
+    let shown = ok(dir.path(), &["ticket", "show", &id, "--events"]);
+    let kinds: Vec<_> = shown["data"]["events"]
+        .as_array()
+        .expect("events")
+        .iter()
+        .map(|e| e["kind"].as_str().expect("kind"))
+        .collect();
+    assert!(kinds.contains(&"changelog-exempt"), "{kinds:?}");
+    let x = &shown["data"]["changelog_exempt"];
+    assert_eq!(x["reason"], "design document only");
+    assert!(x["actor"].as_str().is_some_and(|a| !a.is_empty()), "{x}");
+    let brief = ok(dir.path(), &["ticket", "brief", &id]);
+    let md = brief["data"]["markdown"].as_str().expect("markdown");
+    assert!(
+        md.contains("## Changelog") && md.contains("design document only"),
+        "{md}"
+    );
+}
+
+// frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+// frob:tests crates/frob/src/ticket/write.rs::Close.run
+#[test]
+fn no_changelog_without_a_reason_is_a_usage_error_and_changes_nothing() {
+    let dir = repo(&["changelog_fragment"]);
+    let id = chore(dir.path(), &[]);
+    let out = close(dir.path(), &id, &["--no-changelog"]);
+    assert_eq!(code(&out), 2, "{}", String::from_utf8_lossy(&out.stdout));
+    let text = json(&out)["error"]["message"].to_string();
+    assert!(text.contains("--no-changelog needs --reason"), "{text}");
+    let blank = close(dir.path(), &id, &["--no-changelog", "--reason", "  "]);
+    assert_eq!(code(&blank), 2);
+    let shown = ok(dir.path(), &["ticket", "show", &id]);
+    assert_ne!(shown["data"]["category"], "done");
+}
+
+// frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+// frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+#[test]
+fn the_missing_fragment_remedy_names_both_the_fragment_verb_and_the_exemption() {
+    let dir = repo(&["changelog_fragment"]);
+    let id = chore(dir.path(), &[]);
+    let text = refusal_text(&close(dir.path(), &id, &[]));
+    assert!(text.contains("frob ticket fragment"), "{text}");
+    assert!(text.contains("--no-changelog --reason"), "{text}");
+}
+
 #[test]
 fn an_invalid_fragment_refuses_close_with_the_validation_message() {
     // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99

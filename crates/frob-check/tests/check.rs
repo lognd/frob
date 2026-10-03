@@ -982,6 +982,43 @@ fn rel003_ticket_without_a_fragment_reports_with_the_remedy() {
 }
 
 #[test]
+fn rel003_is_clean_for_an_exempted_ticket_by_event_or_by_option() {
+    // frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+    // frob:tests crates/frob-release/src/rel003.rs::missing
+    let (dir, id) = ticket_fixture();
+    assert_eq!(ticket_rule_messages(dir.path(), &id, "REL003").len(), 1);
+    let by_option = run(
+        dir.path(),
+        &CheckOptions {
+            ticket: Some(id.clone()),
+            changelog_exempt: true,
+            ..quiet()
+        },
+    )
+    .expect("exempt run");
+    assert!(
+        by_option
+            .findings
+            .iter()
+            .all(|f| f.rule.as_str() != "REL003")
+    );
+    let repo = Repo::discover(dir.path()).expect("discover");
+    let ledger = Ledger::open(repo, LedgerConfig::default());
+    let ticket: frob_ledger::TicketId = id.parse().expect("id");
+    ledger
+        .append(
+            ticket,
+            frob_ledger::event::EventBody::ChangelogExempt(
+                frob_ledger::event::ChangelogExemptData {
+                    reason: "design only".to_owned(),
+                },
+            ),
+        )
+        .expect("append");
+    assert!(ticket_rule_messages(dir.path(), &id, "REL003").is_empty());
+}
+
+#[test]
 fn rel003_invalid_fragment_reports_the_validation_message_and_valid_is_clean() {
     // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
     // frob:tests crates/frob-release/src/rel003.rs::evaluate

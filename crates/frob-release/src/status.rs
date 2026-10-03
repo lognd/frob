@@ -85,6 +85,19 @@ pub struct OpenTicket {
     pub category: String,
 }
 
+/// A ticket of the release that shipped without a changelog note, with the audited reason.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct ExemptTicket {
+    /// Handle with `~`.
+    pub handle: String,
+    /// Title.
+    pub title: String,
+    /// Who recorded the exemption.
+    pub actor: String,
+    /// Why no changelog note was written.
+    pub reason: String,
+}
+
 /// Open tickets of one category, in the order they were gathered.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct CategoryGroup {
@@ -136,6 +149,8 @@ pub struct Input {
     pub milestone: Option<MilestoneFacts>,
     /// Open tickets of the member epics and those labelled `release:VERSION`.
     pub open_tickets: Vec<OpenTicket>,
+    /// Tickets of the release closed with `--no-changelog`.
+    pub exempt_tickets: Vec<ExemptTicket>,
     /// The changelog dry-run result.
     pub changelog: ChangelogFacts,
     /// What CI said about the base-branch tip.
@@ -188,6 +203,8 @@ pub struct Report {
     pub changelog_preview: Option<String>,
     /// Exit criteria with their binding state.
     pub criteria: Vec<CriterionStatus>,
+    /// Tickets of the release that carry a changelog exemption instead of a fragment.
+    pub changelog_exempt: Vec<ExemptTicket>,
     /// Fragment validity.
     pub fragments: FragmentsStatus,
     /// The milestone handle, absent when there is no milestone object.
@@ -481,6 +498,16 @@ fn glance(r: &Report, input: &Input) -> Vec<String> {
         (None, "valid") => l.push("changelog preview: no fragments yet".to_owned()),
         _ => {}
     }
+    l.push(format!(
+        "shipped without a changelog note ({}):",
+        r.changelog_exempt.len()
+    ));
+    for t in &r.changelog_exempt {
+        l.push(format!(
+            "  {} {} (by {}: {})",
+            t.handle, t.title, t.actor, t.reason
+        ));
+    }
     l.push("unresolved:".to_owned());
     for u in &r.unresolved {
         l.push(format!("  {}: {}", u.item, u.reason));
@@ -509,6 +536,7 @@ pub fn assess(input: &Input) -> Report {
             .as_ref()
             .map(|m| m.criteria.clone())
             .unwrap_or_default(),
+        changelog_exempt: input.exempt_tickets.clone(),
         fragments,
         milestone: input.milestone.as_ref().map(|m| m.handle.clone()),
         open_tickets: group(&input.open_tickets),
@@ -576,6 +604,7 @@ mod tests {
                 pm034: Vec::new(),
             }),
             open_tickets: Vec::new(),
+            exempt_tickets: Vec::new(),
             changelog: ChangelogFacts::Valid {
                 fragments: vec!["a.added.md".to_owned()],
                 section: Some("## 0.532.0\n".to_owned()),
@@ -603,6 +632,27 @@ mod tests {
         assert_eq!(r.verdict, "NOT READY: 1 blocker");
         assert_eq!(r.blockers[0].kind, BlockerKind::UnboundCriterion);
         assert_eq!(r.blockers[0].subject, "2");
+    }
+
+    #[test]
+    fn exempt_tickets_are_listed_in_the_report_and_never_block() {
+        // frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+        // frob:tests crates/frob-release/src/status.rs::assess
+        let mut i = input(vec![crit(1, true)]);
+        i.exempt_tickets = vec![ExemptTicket {
+            handle: "~DOC1".to_owned(),
+            title: "Design doc".to_owned(),
+            actor: "lognd".to_owned(),
+            reason: "design only".to_owned(),
+        }];
+        let r = assess(&i);
+        assert!(r.ready, "an exemption is not a blocker");
+        assert_eq!(r.changelog_exempt[0].handle, "~DOC1");
+        assert!(
+            r.at_a_glance
+                .iter()
+                .any(|l| l.contains("~DOC1") && l.contains("design only"))
+        );
     }
 
     #[test]

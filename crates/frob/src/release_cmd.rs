@@ -20,7 +20,7 @@ use frob_release::bump::{BumpError, BumpOptions, BumpReport, LockState};
 use frob_release::ci::{CiFacts, CiState, CiUnknown, check_tip};
 use frob_release::cut::{CutError, CutLedger, CutPlan};
 use frob_release::status::{
-    ChangelogFacts, EvidenceRef, Input, MilestoneFacts, OpenTicket, Report, assess,
+    ChangelogFacts, EvidenceRef, ExemptTicket, Input, MilestoneFacts, OpenTicket, Report, assess,
 };
 use frob_release::{Mode, Options, ReleaseError};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
@@ -240,6 +240,7 @@ fn report_for(
     let input = Input {
         milestone: milestone.map(|m| facts(m, ledger)).transpose()?,
         open_tickets: open_tickets(ledger, milestone, &version)?,
+        exempt_tickets: exempt_tickets(ledger, milestone, &version)?,
         changelog: changelog_facts(root, ledger, &version),
         ci: ci_facts(
             root,
@@ -366,21 +367,17 @@ fn facts(m: &Milestone, ledger: &Ledger) -> Result<MilestoneFacts, CliError> {
 }
 
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
-/// Not-done tickets below the member epics (the epics themselves excluded) or labelled `release:VERSION`.
-fn open_tickets(
+/// Every ticket below the member epics (the epics themselves excluded) or labelled `release:VERSION`, any category.
+fn release_tickets(
     ledger: &Ledger,
     milestone: Option<&Milestone>,
     version: &str,
-) -> Result<Vec<OpenTicket>, CliError> {
+) -> Result<Vec<frob_ledger::index::Summary>, CliError> {
     let mut seen: BTreeSet<TicketId> = BTreeSet::new();
     let mut found = Vec::new();
     let mut keep = |s: frob_ledger::index::Summary| {
-        if s.category != Category::Done && seen.insert(s.id) {
-            found.push(OpenTicket {
-                handle: s.handle,
-                title: s.title,
-                category: s.category.to_string(),
-            });
+        if seen.insert(s.id) {
+            found.push(s);
         }
     };
     let mut queue: Vec<TicketId> = milestone.map(|m| m.epics.clone()).unwrap_or_default();
@@ -406,8 +403,55 @@ fn open_tickets(
         })
         .map_err(cli_err)?;
     labelled.into_iter().for_each(keep);
+    tracing::debug!(version, tickets = found.len(), "release tickets gathered");
+    Ok(found)
+}
+
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// Not-done tickets of the release.
+fn open_tickets(
+    ledger: &Ledger,
+    milestone: Option<&Milestone>,
+    version: &str,
+) -> Result<Vec<OpenTicket>, CliError> {
+    let found: Vec<OpenTicket> = release_tickets(ledger, milestone, version)?
+        .into_iter()
+        .filter(|s| s.category != Category::Done)
+        .map(|s| OpenTicket {
+            handle: s.handle,
+            title: s.title,
+            category: s.category.to_string(),
+        })
+        .collect();
     tracing::debug!(version, open = found.len(), "open tickets gathered");
     Ok(found)
+}
+
+// frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+/// Tickets of the release that carry a `changelog-exempt` event, so a reviewer sees what shipped without a note.
+fn exempt_tickets(
+    ledger: &Ledger,
+    milestone: Option<&Milestone>,
+    version: &str,
+) -> Result<Vec<ExemptTicket>, CliError> {
+    let mut out = Vec::new();
+    for s in release_tickets(ledger, milestone, version)? {
+        let events = ledger.events(s.id).map_err(cli_err)?;
+        if let Some(x) = frob_ledger::event::changelog_exemption(&events) {
+            out.push(ExemptTicket {
+                handle: s.handle,
+                title: s.title,
+                actor: x.actor,
+                reason: x.reason,
+            });
+        }
+    }
+    tracing::debug!(
+        version,
+        exempt = out.len(),
+        "changelog-exempt tickets gathered"
+    );
+    Ok(out)
 }
 
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q

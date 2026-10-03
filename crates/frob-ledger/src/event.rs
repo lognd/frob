@@ -171,6 +171,13 @@ pub struct EvidenceBypassData {
     pub reason: String,
 }
 
+/// A ticket exempted from the changelog-fragment requirement (`--no-changelog --reason`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ChangelogExemptData {
+    /// Why the change needs no changelog note.
+    pub reason: String,
+}
+
 /// A branch landed on a base ref.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct LandData {
@@ -204,6 +211,8 @@ pub enum EventBody {
     Evidence(EvidenceData),
     /// The evidence guard was bypassed at close; audit only.
     EvidenceBypass(EvidenceBypassData),
+    /// The ticket was exempted from the changelog-fragment requirement; audit only.
+    ChangelogExempt(ChangelogExemptData),
     /// The ticket's branch was landed; audit only.
     Land(LandData),
     /// A kind this version does not interpret; it folds to no change.
@@ -312,6 +321,29 @@ impl Event {
     }
 }
 
+/// A recorded changelog exemption: who exempted the ticket, when, and why.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct ChangelogExemption {
+    /// Who recorded the exemption.
+    pub actor: String,
+    /// When it was recorded.
+    pub at: String,
+    /// The reason given.
+    pub reason: String,
+}
+
+/// The latest `changelog-exempt` event among `events`, if any (audit only; the fold ignores it).
+pub fn changelog_exemption(events: &[Event]) -> Option<ChangelogExemption> {
+    events.iter().rev().find_map(|e| match &e.body {
+        EventBody::ChangelogExempt(d) => Some(ChangelogExemption {
+            actor: e.actor.clone(),
+            at: e.at.to_string(),
+            reason: d.reason.clone(),
+        }),
+        _ => None,
+    })
+}
+
 /// Sort events into fold order.
 pub fn sort_events(events: &mut [Event]) {
     events.sort_by_key(Event::order_key);
@@ -328,6 +360,7 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::Exception(_) => "exception",
         EventBody::Evidence(_) => "evidence",
         EventBody::EvidenceBypass(_) => "evidence-bypass",
+        EventBody::ChangelogExempt(_) => "changelog-exempt",
         EventBody::Land(_) => "land",
         EventBody::Other => "other",
     }
@@ -410,6 +443,9 @@ mod tests {
             }),
             EventBody::EvidenceBypass(EvidenceBypassData {
                 reason: "docs only".into(),
+            }),
+            EventBody::ChangelogExempt(ChangelogExemptData {
+                reason: "design document".into(),
             }),
             EventBody::Land(LandData {
                 base_ref: "refs/heads/main".into(),
