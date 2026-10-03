@@ -8,13 +8,17 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-03T03:34:42Z"
+updated = "2026-10-03T03:35:00Z"
 idempotency_key = "m2-mirror-projection"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/**"]
 
 [[links]]
 kind = "blocked-by"
+target = "01M3WYJ81430D3D5QSNCFM8QB0"
+
+[[links]]
+kind = "relates"
 target = "01M3WYJ81430D3D5QSNCFM8QB0"
 
 [[acceptance]]

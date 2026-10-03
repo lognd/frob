@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-03T03:34:20Z"
+updated = "2026-10-03T03:35:00Z"
 idempotency_key = "m2-grl-catalog"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/catalog/**"]
@@ -16,6 +16,10 @@ scope = ["crates/gob-plan/src/catalog/**"]
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX779NSRZ97ZQM5DP3BZJZ"
+
+[[links]]
+kind = "relates"
+target = "01M3ZEH464EFCFAZ4XDKE89D5Z"
 
 [[acceptance]]
 text = "Given the gob-ir registry, when the catalog is built, then every word of grl-spec section 6 has a kind, a type, its Q-id, the languages that answer it and an Unknown-capable flag"

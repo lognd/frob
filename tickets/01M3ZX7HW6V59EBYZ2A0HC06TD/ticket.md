@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-03T03:34:24Z"
+updated = "2026-10-03T03:35:00Z"
 idempotency_key = "m2-grl-ten-a"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/ten_rules/**"]
@@ -20,6 +20,10 @@ target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX7F8WQQ8JKW7GVVB2EYG6"
+
+[[links]]
+kind = "relates"
+target = "01M3ZVQAA1DNM1BJ5TZG5B3CFR"
 
 [[acceptance]]
 text = "Given the six .grl files, when `rule test` runs, then every example passes"

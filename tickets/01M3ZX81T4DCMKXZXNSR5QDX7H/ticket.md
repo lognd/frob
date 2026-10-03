@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-03T03:34:40Z"
+updated = "2026-10-03T03:35:00Z"
 idempotency_key = "m2-diag-fix-scope"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/frob-check/src/fix.rs", "crates/frob-check/src/scope.rs"]
@@ -20,6 +20,10 @@ target = "01M3Z71361PCFXV5VKSACRF17G"
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX7E968R74N08V8DW4RJVG"
+
+[[links]]
+kind = "relates"
+target = "01M3Z71361PCFXV5VKSACRF17G"
 
 [[acceptance]]
 text = "Given a machine fix on a file outside the lease, when `check --fix` runs in the ticket worktree, then the file is unchanged and the skipped fix is listed with `frob lease widen`"
