@@ -2,13 +2,13 @@
 id = "01M41VT71KGG1AXT491SKCPWMA"
 title = "Ledger scrub recognizes only the host's path style; a Unix path in a ledger scrubbed on Windows (or the reverse) is mishandled"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T21:48:07Z"
-updated = "2026-10-03T21:48:07Z"
+updated = "2026-10-03T21:48:20Z"
 scope = ["crates/frob-evidence/src/scrub.rs", "crates/frob-ledger/src/scrub.rs", "crates/frob-ledger/src/privacy.rs", "crates/frob/tests/ticket_scrub.rs", "crates/frob-evidence/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
