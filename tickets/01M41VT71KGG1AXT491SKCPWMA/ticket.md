@@ -8,8 +8,8 @@ points = 2
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T21:48:07Z"
-updated = "2026-10-03T21:48:20Z"
-scope = ["crates/frob-evidence/src/scrub.rs", "crates/frob-ledger/src/scrub.rs", "crates/frob-ledger/src/privacy.rs", "crates/frob/tests/ticket_scrub.rs", "crates/frob-evidence/Cargo.toml", "Cargo.lock"]
+updated = "2026-10-03T21:59:51Z"
+scope = ["crates/frob-evidence/src/scrub.rs", "crates/frob-ledger/src/scrub.rs", "crates/frob-ledger/src/privacy.rs", "crates/frob/tests/ticket_scrub.rs", "crates/frob-evidence/Cargo.toml", "Cargo.lock", "crates/frob-ledger/tests/privacy.rs"]
 
 [[acceptance]]
 text = "Given a ledger holding both Unix and Windows home paths, when ticket doctor --fix runs on either host, then the same placeholders result and TICK004 is clean"
