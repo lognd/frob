@@ -2,7 +2,8 @@
 id = "01M40VQWCV38B2JCABYNNNA877"
 title = "cycle close early with unfinished work deadlocks: the next cycle cannot exist yet"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
