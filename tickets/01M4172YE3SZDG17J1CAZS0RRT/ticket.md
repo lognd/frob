@@ -8,12 +8,12 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T15:45:53Z"
-updated = "2026-10-03T17:55:12Z"
+updated = "2026-10-03T18:03:26Z"
 scope = ["Cargo.toml", "crates/*/Cargo.toml", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/design/releases.md", "crates/gob-dev/src/publish.rs"]
 
 [[acceptance]]
 text = "Given the workspace, when cargo dev publish --dry-run runs, then it plans every shipped crate in dependency order and excludes exactly the listed dev-only crates"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the release workflow, when its test runs, then the crates job uses a registry token when the environment provides one and the OIDC action otherwise"
