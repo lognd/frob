@@ -2,13 +2,13 @@
 id = "01M4069REJDB8FFVZFMJWAAVRY"
 title = "PM001 and PM002: milestone goal and epic completeness rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T15:28:18Z"
+updated = "2026-10-03T16:34:42Z"
 idempotency_key = "m2-rel-pm001-002"
 labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/rules/milestone.rs", "docs/reference/rules/pm/**"]
