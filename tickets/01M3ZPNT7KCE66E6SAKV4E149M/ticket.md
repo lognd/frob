@@ -2,13 +2,13 @@
 id = "01M3ZPNT7KCE66E6SAKV4E149M"
 title = "G12 follow-ups: one walk for check and ack, mandatory ack reason, rename log and knobs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T01:39:51Z"
-updated = "2026-10-03T01:39:51Z"
+updated = "2026-10-03T02:11:40Z"
 idempotency_key = "m2-g12-followups"
 labels = ["milestone:2"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**", "crates/grimble/**", "crates/gob-lock/**", "docs/reference/**", "Cargo.lock"]
