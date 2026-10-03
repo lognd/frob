@@ -2,13 +2,13 @@
 id = "01M3ZSHSF9CPQ18RZSQJ8PJHKX"
 title = "Record owner decisions on mirror, diagnostics and plugins (D76, D78, D79 accepted with changes)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:30:05Z"
-updated = "2026-10-03T02:30:05Z"
+updated = "2026-10-03T02:34:39Z"
 idempotency_key = "m2-owner-decisions-1004"
 labels = ["milestone:2"]
 scope = ["docs/design/**", "docs/schemas/**"]
