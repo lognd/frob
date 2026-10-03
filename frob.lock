@@ -1,2 +1,13 @@
 version = 2
 digest_scheme = 2
+
+[[symbol]]
+identity = ".github/workflows/dev.yml::on"
+symref = ".github/workflows/dev.yml::on"
+sig = "a3ead8f7e0a0ea7dd72a95016c0ba1c379ce75c3feded2aa2f1334851645866c"
+body = "8adee6889ac35b7a123eeeca820ce584055b6ae959796eb6b9a746c5f64194a8"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+contract = "bccddbca0abfe445f9011140542faac8ed2dcded489cc11c0e50bd070d283ce3"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-03T18:04:02.35992277Z"
