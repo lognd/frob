@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in /home/logan/projects/frob-v2-wt/HV53M66; scope: docs/design/**, notes/review/mirror-audit.md; ttl 7200s"
+at = "2026-10-03T05:16:57Z"
+actor = "lognd"
+rev = 1
