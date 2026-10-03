@@ -7,14 +7,14 @@ priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T09:01:08Z"
-updated = "2026-10-03T09:07:16Z"
+updated = "2026-10-03T09:11:40Z"
 idempotency_key = "m2-rel-e2e-init-ledger-ref"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob/src/init.rs", "crates/frob/tests/init_adopt.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/src/config_cmd.rs"]
 
 [[acceptance]]
 text = "Given a fresh repository whose checked-out branch is trunk, when frob init runs, then frob.toml has ref = refs/heads/trunk and frob ticket new succeeds"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a repository on main, when frob init runs, then ref stays refs/heads/main"
