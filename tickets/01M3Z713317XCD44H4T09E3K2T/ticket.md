@@ -8,10 +8,10 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-03T03:19:21Z"
+updated = "2026-10-03T03:21:30Z"
 idempotency_key = "m2-clischema"
 labels = ["milestone:2"]
-scope = ["crates/gob-cli/**", "crates/gob-macros/**", "crates/frob-evidence/**", "crates/frob/**", "docs/reference/**"]
+scope = ["crates/gob-cli/**", "crates/gob-macros/**", "crates/frob-evidence/**", "crates/frob/**", "docs/reference/**", "docs/design/cli.md"]
 
 [[acceptance]]
 text = "Given frob work --schema with no ticket, when run, then a schema prints and exit is 0"
