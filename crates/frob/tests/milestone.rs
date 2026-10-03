@@ -442,3 +442,30 @@ fn a_hyphen_led_ref_is_taken_whole_by_milestone_evidence_add() {
     assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
     assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-TOOL");
 }
+
+/// The severity `frob check` reports for `rule` in `repo`, if it fires.
+fn check_severity(repo: &Repo, rule: &str) -> Option<String> {
+    let out = repo.run(&["check", "--json", "--fail-on", "none"]);
+    let v = json(&out);
+    v["data"]["findings"]
+        .as_array()
+        .unwrap_or_else(|| panic!("no findings array: {v}"))
+        .iter()
+        .find(|f| f["rule"] == rule)
+        .map(|f| f["severity"].as_str().expect("severity").to_owned())
+}
+
+// frob:ticket 01M41B2PD4NAV8VACA13750GWB
+// frob:tests apply_strict
+#[test]
+fn pm_strict_escalates_pm001_to_error() {
+    let repo = Repo::new();
+    repo.ok(&["milestone", "new", "0.532.0", "--goal", "g"]);
+    let _ = repo.ticket("epic");
+    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("warning"));
+    let toml = repo.dir.path().join("frob.toml");
+    let text = std::fs::read_to_string(&toml).expect("frob.toml");
+    assert!(text.contains("strict = false"), "{text}");
+    std::fs::write(&toml, text.replace("strict = false", "strict = true")).expect("write");
+    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("error"));
+}

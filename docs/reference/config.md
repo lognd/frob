@@ -134,6 +134,7 @@ Materialized: yes.
 | `pull` | `Pull` | `"rank"` | yes | Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default. |
 | `ready_min` | `u32` | `4` | yes | Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP). |
 | `ready_requires` | `Vec<ReadyRequirement>` | `["story_or_objective_qualified", "criteria", "points", "scope", "parent"]` | yes | Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled. |
+| `strict` | `bool` | `false` | yes | Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised. |
 
 ## `[pm.classes]`
 

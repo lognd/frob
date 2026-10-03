@@ -130,6 +130,9 @@ impl DoneRequirement {
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "pm", materialize)]
 pub struct PmTable {
+    /// Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
+    #[config(default = false, enforcement)]
+    pub strict: bool,
     /// Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default.
     #[config(default = Pull::Rank, enforcement)]
     pub pull: Pull,
