@@ -2,7 +2,8 @@
 id = "01M3ZZXAZ39410AVYQSRSYVF9C"
 title = "gob-directives: an HTML comment inside a markdown code span is scanned as a directive"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
