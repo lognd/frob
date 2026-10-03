@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T07:09:02Z"
+updated = "2026-10-03T07:14:45Z"
 idempotency_key = "m2-rel-milestone-verbs"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/milestone/**", "crates/frob/src/milestone_cmd.rs", "crates/frob/src/lib.rs", "crates/frob-pm/src/lib.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/frob/tests/milestone.rs", "docs/reference/cli/**"]
@@ -19,7 +19,7 @@ target = "01M4069QWSJEH5KW8K0YR8CA0D"
 
 [[acceptance]]
 text = "Given a version and goal, when frob milestone new runs, then the object exists with its criteria unbound"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an epic, when frob milestone add runs, then show lists it and a repeat returns already true"
