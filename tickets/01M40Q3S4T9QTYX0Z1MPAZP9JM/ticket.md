@@ -2,7 +2,8 @@
 id = "01M40Q3S4T9QTYX0Z1MPAZP9JM"
 title = "Repository WIP check is not atomic with the in-progress transition"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
