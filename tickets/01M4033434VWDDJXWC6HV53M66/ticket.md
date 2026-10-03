@@ -1,0 +1,21 @@
++++
+id = "01M4033434VWDDJXWC6HV53M66"
+title = "Mirror protocol v2 from the adversarial audit and the TLA+ model"
+type = "docs"
+category = "todo"
+priority = "critical"
+points = 5
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-03T05:16:50Z"
+updated = "2026-10-03T05:16:50Z"
+idempotency_key = "m2-mirror-protocol-v2"
+labels = ["milestone:2", "area:mirror"]
+scope = ["docs/design/**", "notes/review/mirror-audit.md"]
+
+[[acceptance]]
+text = "Given mirror.md, when read, then every MIR-AUD finding and every model flaw F1-F9 and the spoofed-marker case maps to a specified mechanism, the properties and assumptions are stated, and the model README is linked"
+bound = false
++++
+
+Fold notes/review/mirror-audit.md (1 critical, 9 high, 17 medium, 6 low; 15 tracker assumptions) and docs/design/models/mirror (TLC: the protocol as written violates no-loss, convergence, no-duplicate and map integrity; nine fixes make every safety property hold; liveness holds under finite edits and faults with a fair mirror and round-robin budget) into mirror.md: triggers and secrets on the default branch only; change feed plus round-robin sweep and budget planner; cursor = history position read; read-time capture plus history with gap reporting (restated no-loss bound); create protocol with nonce, creator-list recovery and deterministic duplicate closing; markers trusted only in the bot-authored creation revision, v1 format with key id and repository binding; status classification 301/404/410, never recreate without a person; revert backoff and contested fields; proposals by reference, append-only with supersede, keyed by tracker event id, caps; accept inherits adopt guards; write journal for own-write attribution; additive label endpoints; per-ticket isolation and render limits; mention and closing-keyword neutralisation; stated properties and assumptions with runtime checks failing closed into MIR001. Commit the audit and the model.
