@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T05:49:59Z"
+updated = "2026-10-03T05:51:55Z"
 idempotency_key = "m2-mirror-identities"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/identity.rs"]
@@ -16,6 +16,10 @@ scope = ["crates/frob-mirror/src/identity.rs"]
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX83XX6D2N7XDTVRVYV6TS"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052R88Y0A9HQHDB86ERMEM"
 
 [[acceptance]]
 text = "Given an owner without a mapping, when published, then the issue is unassigned and the note says so"
