@@ -2,12 +2,12 @@
 id = "01M41KS5P8EGFFGBQSMRFBAJ8P"
 title = "ticket doctor flags every early-closed cycle (E-PM-CONFLICT) and same-day cycles (E-PM-ALIAS) since state and alias suffix became derived"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T19:27:44Z"
-updated = "2026-10-03T19:27:44Z"
+updated = "2026-10-03T19:28:30Z"
 scope = ["crates/frob-pm/src/cycle/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "crates/frob-pm/src/doctor.rs"]
 
 [[acceptance]]
