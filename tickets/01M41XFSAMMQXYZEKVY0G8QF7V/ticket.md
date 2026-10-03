@@ -7,8 +7,8 @@ priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T22:17:23Z"
-updated = "2026-10-03T22:17:35Z"
-scope = [".github/workflows/ci.yml", "crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", "CONTRIBUTING.md"]
+updated = "2026-10-03T22:27:45Z"
+scope = [".github/workflows/ci.yml", "crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", "CONTRIBUTING.md", ".cargo/config.toml"]
 
 [[acceptance]]
 text = "Given a host without x86_64-w64-mingw32-gcc, when cargo dev ci --step clippy-windows runs, then it fails before building and names the install command"
