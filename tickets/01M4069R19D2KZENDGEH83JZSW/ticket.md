@@ -2,7 +2,8 @@
 id = "01M4069R19D2KZENDGEH83JZSW"
 title = "[pm] config tables materialized by frob init: pull, ready_min, cycle_days, wip, classes, ready, done"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
