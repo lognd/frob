@@ -11,7 +11,7 @@ created = "2026-10-03T06:12:58Z"
 updated = "2026-10-03T08:07:59Z"
 idempotency_key = "m2-rel-rel002"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-release/src/rel002.rs", "docs/reference/rules/rel/**", "crates/frob-release/Cargo.toml", "crates/frob-release/src/lib.rs", "crates/frob-release/tests/**", "crates/frob-check/src/product.rs", "crates/frob-check/Cargo.toml"]
+scope = ["crates/frob-release/src/rel002.rs", "docs/reference/rules/rel/**", "crates/frob-release/Cargo.toml", "crates/frob-release/src/lib.rs", "crates/frob-release/tests/**", "crates/frob-check/src/product.rs", "crates/frob-check/Cargo.toml", "docs/reference/rules/**"]
 
 [[links]]
 kind = "blocked-by"
