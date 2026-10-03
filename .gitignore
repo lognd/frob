@@ -38,3 +38,4 @@ done-report-*.md
 
 # Secrets
 .env
+.grimble/
