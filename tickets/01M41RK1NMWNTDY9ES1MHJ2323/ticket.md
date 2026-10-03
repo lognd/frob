@@ -7,7 +7,7 @@ priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T20:51:46Z"
-updated = "2026-10-03T20:59:58Z"
+updated = "2026-10-03T21:01:45Z"
 scope = [".github/dependabot.yml"]
 
 [[acceptance]]
