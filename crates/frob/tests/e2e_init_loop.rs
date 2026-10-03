@@ -299,21 +299,22 @@ fn check_after_init_on_a_fresh_repository_passes() {
     );
 }
 
-/// Gap: a usage error for a missing required argument names none of them; filed as ~JNF3JFH.
+/// A usage error for missing required arguments names each of them and carries a usage line.
+///
+/// frob:tests ~JNF3JFH
 #[test]
-#[should_panic(expected = "~JNF3JFH")]
 fn usage_error_names_the_missing_arguments() {
     let repo = Fresh::new("main");
     let out = Fresh::frob(
         &repo.root,
         &["ticket", "evidence", "add", "~X", "--accepts", "1"],
     );
-    let msg = json(&out)["error"]["message"]
-        .as_str()
-        .expect("message")
-        .to_owned();
+    let error = json(&out)["error"].clone();
+    let msg = error["message"].as_str().expect("message").to_owned();
     assert!(
-        msg.contains("--provider"),
-        "~JNF3JFH: usage error message is `{msg}`"
+        msg.contains("--provider") && msg.contains("--ref"),
+        "usage error message is `{msg}`"
     );
+    let remedy = error["remedy"].as_str().expect("remedy");
+    assert!(remedy.contains("usage:"), "remedy is `{remedy}`");
 }

@@ -284,20 +284,7 @@ impl Cli {
         if matches!(e.kind(), ErrorKind::DisplayHelp | ErrorKind::DisplayVersion) {
             return Execution::out(e.to_string());
         }
-        let full = e.to_string();
-        let first = full.lines().next().unwrap_or_default();
-        let message = first.strip_prefix("error: ").unwrap_or(first).to_owned();
-        let remedy = match (
-            e.get(ContextKind::SuggestedSubcommand),
-            e.get(ContextKind::SuggestedArg),
-        ) {
-            (Some(ContextValue::Strings(s)), _) if !s.is_empty() => {
-                Some(format!("{} {}", self.product, s[0]))
-            }
-            (_, Some(ContextValue::Strings(s))) if !s.is_empty() => Some(format!("use {}", s[0])),
-            (_, Some(ContextValue::String(s))) => Some(format!("use {s}")),
-            _ => None,
-        };
+        let (message, remedy) = usage_parts(e, self.product);
         tracing::debug!(kind = ?e.kind(), "usage error");
         let mut err = gob_diagnostics::Refusal::new(
             "E-USAGE",
@@ -309,6 +296,103 @@ impl Cli {
         }
         render::failure(None, &CliError::Refusal(err), sniff_json(argv))
     }
+}
+
+/// Strings held by a clap context entry, whether it carries one value or a list.
+fn context_strings(e: &clap::Error, kind: ContextKind) -> Vec<String> {
+    match e.get(kind) {
+        Some(ContextValue::Strings(s)) => s.clone(),
+        Some(ContextValue::String(s)) => vec![s.clone()],
+        Some(ContextValue::StyledStr(s)) => vec![s.to_string()],
+        _ => Vec::new(),
+    }
+}
+
+/// Quote each name as `'name'` and join with commas.
+fn quoted(names: &[String]) -> String {
+    names
+        .iter()
+        .map(|n| format!("'{n}'"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// Build the one-line usage message and its remedy from clap's structured error, not its rendering.
+fn usage_parts(e: &clap::Error, product: &str) -> (String, Option<String>) {
+    let arg = context_strings(e, ContextKind::InvalidArg);
+    let value = context_strings(e, ContextKind::InvalidValue);
+    let valid = context_strings(e, ContextKind::ValidValue);
+    let sub = context_strings(e, ContextKind::InvalidSubcommand);
+    let message = match e.kind() {
+        ErrorKind::MissingRequiredArgument if !arg.is_empty() => {
+            format!("missing required arguments: {}", arg.join(", "))
+        }
+        ErrorKind::MissingSubcommand | ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => {
+            "a subcommand is required".to_owned()
+        }
+        ErrorKind::InvalidSubcommand if !sub.is_empty() => {
+            format!("unrecognized subcommand {}", quoted(&sub))
+        }
+        ErrorKind::UnknownArgument if !arg.is_empty() => {
+            format!("unexpected argument {} found", quoted(&arg))
+        }
+        ErrorKind::InvalidValue | ErrorKind::ValueValidation
+            if !arg.is_empty() && !value.is_empty() =>
+        {
+            let mut m = format!("invalid value {} for '{}'", quoted(&value), arg.join(" "));
+            if !valid.is_empty() {
+                m = format!("{m}; valid values: {}", valid.join(", "));
+            }
+            m
+        }
+        _ => rendered_summary(e),
+    };
+    // A suggested verb is itself the remedy: the exact command to run instead.
+    let subs = context_strings(e, ContextKind::SuggestedSubcommand);
+    if let Some(s) = subs.first() {
+        return (message, Some(format!("{product} {s}")));
+    }
+    let mut hints = Vec::new();
+    let args = context_strings(e, ContextKind::SuggestedArg);
+    if let Some(s) = args.first() {
+        hints.push(format!("did you mean `{s}`?"));
+    }
+    let vals = context_strings(e, ContextKind::SuggestedValue);
+    if let Some(s) = vals.first() {
+        hints.push(format!("did you mean `{s}`?"));
+    }
+    let mut usage = context_strings(e, ContextKind::Usage);
+    if usage.is_empty() {
+        usage = e
+            .to_string()
+            .lines()
+            .filter(|l| l.starts_with("Usage:"))
+            .map(str::to_owned)
+            .collect();
+    }
+    if let Some(u) = usage.first() {
+        let line = u.trim().strip_prefix("Usage:").unwrap_or(u.trim()).trim();
+        let first = line.lines().next().unwrap_or(line).trim();
+        hints.push(format!("usage: {first}"));
+    }
+    let subcommands = context_strings(e, ContextKind::ValidSubcommand);
+    if !subcommands.is_empty() {
+        hints.push(format!("subcommands: {}", subcommands.join(", ")));
+    }
+    let remedy = (!hints.is_empty()).then(|| hints.join("; "));
+    (message, remedy)
+}
+
+/// Fallback for error kinds without a structured form: the first paragraph of clap's text, on one line.
+fn rendered_summary(e: &clap::Error) -> String {
+    let full = e.to_string();
+    let para: Vec<&str> = full
+        .lines()
+        .take_while(|l| !l.trim().is_empty())
+        .map(str::trim)
+        .collect();
+    let joined = para.join(" ");
+    joined.strip_prefix("error: ").unwrap_or(&joined).to_owned()
 }
 
 /// One word of the verb-path trie; a node is a verb (leaf) or a group of deeper words.
