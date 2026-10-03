@@ -61,10 +61,7 @@ fn groups_by_product_type_then_ulid_and_removes_fragments() {
     assert!(pos("### frob") < pos("### gob"));
     assert!(pos("#### Added") < pos("#### Fixed"));
     assert!(pos("Added a thing. Second line.") < pos("Fixed the thing."));
-    assert!(text.contains(&format!(
-        "([~{}](tickets/{B}/ticket.md))",
-        &B[B.len() - 7..]
-    )));
+    assert!(text.contains(&format!("(~{}, {B})", &B[B.len() - 7..])));
     assert!(text.contains("CHANGELOG-v1.md"));
     assert!(
         !d.path()
