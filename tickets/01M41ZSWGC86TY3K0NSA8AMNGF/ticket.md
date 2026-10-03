@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T22:57:51Z"
-updated = "2026-10-03T22:57:51Z"
-scope = ["crates/frob-check/src/**", "crates/gob-cache/**", "crates/gob-symbols/src/pipeline.rs", "crates/gob-directives/src/**", "crates/frob-check/tests/**"]
+updated = "2026-10-03T22:57:54Z"
+scope = ["crates/frob-check/src/**", "crates/gob-cache/**", "crates/gob-symbols/src/pipeline.rs", "crates/gob-directives/src/**", "crates/frob-check/tests/warm_cache.rs"]
 
 [[acceptance]]
 text = "Given an unchanged fixture repository, when frob check runs twice, then the second run extracts zero files in the graph and directives stages"
