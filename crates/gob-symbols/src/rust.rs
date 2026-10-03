@@ -26,6 +26,7 @@
 
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
+use std::cell::RefCell;
 use std::collections::HashSet;
 
 use gob_ir::{
@@ -40,7 +41,8 @@ use crate::adapter::{
 };
 use crate::fold::{Cx, base_file, failed_file, file_root_spec};
 use crate::model::{
-    CallSite, ImportEdge, LocalBinding, RefKind, RefSite, UseBinding, Visibility, collapse_ws,
+    CallSite, ImportEdge, LocalBinding, Receiver, RefKind, RefSite, UseBinding, Visibility,
+    collapse_ws,
 };
 use crate::paths::crate_and_module;
 use crate::pipeline::EXTRACTOR_VERSION;
@@ -140,6 +142,14 @@ struct Site {
     qualifier: Option<String>,
     node: Option<NodeId>,
     item_local: bool,
+    /// Method-call receiver; `None` for non-method sites.
+    receiver: Option<Receiver>,
+    /// The qualifying path is a generic parameter or bracketed type.
+    opaque: bool,
+    /// One-based source line.
+    line: u32,
+    /// The callee expression as written.
+    text: String,
 }
 
 struct PendingUse {
@@ -156,6 +166,26 @@ struct CallTarget {
     method: bool,
     construct: bool,
     dynamic: bool,
+    receiver: Option<Receiver>,
+    opaque: bool,
+}
+
+/// Wrapper types whose methods are reached by auto-deref: a declared type of these says nothing about the callee.
+const DEREF_WRAPPERS: &[&str] = &[
+    "Box", "Rc", "Arc", "Cow", "Pin", "Ref", "RefMut", "RefCell", "Mutex", "RwLock", "MutexGuard",
+    "RwLockReadGuard", "RwLockWriteGuard", "ManuallyDrop", "Self",
+];
+
+/// Longest callee text kept for diagnostics.
+const MAX_CALL_TEXT: usize = 80;
+
+fn call_text(raw: &str) -> String {
+    let mut t = collapse_ws(raw);
+    if t.chars().count() > MAX_CALL_TEXT {
+        t = t.chars().take(MAX_CALL_TEXT).collect();
+        t.push_str("...");
+    }
+    format!("{t}(..)")
 }
 
 struct Fold<'a> {
@@ -172,6 +202,15 @@ struct Fold<'a> {
     locals: Vec<String>,
     sites: Vec<Site>,
     uses: Vec<PendingUse>,
+    /// Variables in scope with their declared type when syntactically evident (latest wins).
+    env: RefCell<Vec<(String, Option<String>)>>,
+    /// Generic parameter names of the enclosing items.
+    generics: Vec<String>,
+}
+
+/// One-based source line of `n`.
+fn line_of(n: Node<'_>) -> u32 {
+    u32::try_from(n.start_position().row + 1).unwrap_or(u32::MAX)
 }
 
 fn text_of<'t>(text: &'t str, n: Node<'_>) -> &'t str {
@@ -255,6 +294,8 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         locals: Vec::new(),
         sites: Vec::new(),
         uses: Vec::new(),
+        env: RefCell::new(Vec::new()),
+        generics: Vec::new(),
     };
     let kids = f.container(root, &Scope::default(), true)?;
     let root_id =
@@ -306,6 +347,10 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
                     method,
                     local,
                     in_macro,
+                    receiver: s.receiver,
+                    opaque_qualifier: s.opaque,
+                    line: s.line,
+                    text: s.text,
                 });
             }
             SiteKind::Value => file.refs.push(RefSite {
@@ -446,6 +491,10 @@ impl<'a> Fold<'a> {
                         qualifier: t.qualifier,
                         node: None,
                         item_local: false,
+                        receiver: t.receiver,
+                        opaque: t.opaque,
+                        line: line_of(n),
+                        text: call_text(self.t(f)),
                     });
                 }
             }
@@ -541,6 +590,10 @@ impl<'a> Fold<'a> {
             qualifier,
             node: Some(node),
             item_local,
+            receiver: None,
+            opaque: false,
+            line: 0,
+            text: String::new(),
         });
     }
 
@@ -553,6 +606,8 @@ impl<'a> Fold<'a> {
             method: false,
             construct: false,
             dynamic: true,
+            receiver: None,
+            opaque: false,
         };
         match f.kind() {
             "identifier" => {
@@ -563,24 +618,41 @@ impl<'a> Fold<'a> {
                     qualifier: None,
                     method: false,
                     dynamic: false,
+                    receiver: None,
+                    opaque: false,
                 }
             }
             "scoped_identifier" => {
                 let Some(leaf) = f.child_by_field_name("name").map(|n| self.t(n).to_owned()) else {
                     return dynamic();
                 };
-                let qualifier = f.child_by_field_name("path").and_then(|p| {
+                let path = f.child_by_field_name("path");
+                let qualifier = path.and_then(|p| {
                     strip_generics(self.t(p))
                         .rsplit("::")
                         .next()
                         .map(str::to_owned)
                 });
+                let opaque = path.is_some_and(|p| {
+                    !matches!(
+                        p.kind(),
+                        "identifier"
+                            | "scoped_identifier"
+                            | "self"
+                            | "crate"
+                            | "super"
+                            | "generic_type"
+                            | "generic_type_with_turbofish"
+                    )
+                }) || qualifier.as_ref().is_some_and(|q| self.generics.contains(q));
                 CallTarget {
                     construct: upper_first(&leaf),
                     name: leaf,
                     qualifier,
                     method: false,
                     dynamic: false,
+                    receiver: None,
+                    opaque,
                 }
             }
             "field_expression" => match f.child_by_field_name("field") {
@@ -590,6 +662,8 @@ impl<'a> Fold<'a> {
                     method: true,
                     construct: false,
                     dynamic: false,
+                    receiver: Some(self.receiver_of(f.child_by_field_name("value"))),
+                    opaque: false,
                 },
                 None => dynamic(),
             },
@@ -598,6 +672,92 @@ impl<'a> Fold<'a> {
                 .map_or_else(dynamic, |inner| self.call_target(inner)),
             _ => dynamic(),
         }
+    }
+
+    /// The receiver kind of a method call: `self`, a typed local, or an unknown expression.
+    fn receiver_of(&self, value: Option<Node<'_>>) -> Receiver {
+        let Some(v) = value else {
+            return Receiver::Expr;
+        };
+        match v.kind() {
+            "self" => Receiver::SelfValue,
+            "identifier" => {
+                let name = self.t(v);
+                self.env
+                    .borrow()
+                    .iter()
+                    .rev()
+                    .find(|(n, _)| n == name)
+                    .and_then(|(_, t)| t.clone())
+                    .map_or(Receiver::Expr, Receiver::Typed)
+            }
+            _ => Receiver::Expr,
+        }
+    }
+
+    /// The plain type named by `t` (through references), when it says what a method call on it reaches.
+    fn plain_type(&self, t: Node<'_>) -> Option<String> {
+        let name = match t.kind() {
+            "reference_type" => return self.plain_type(t.child_by_field_name("type")?),
+            "type_identifier" => self.t(t).to_owned(),
+            "scoped_type_identifier" => self.t(t.child_by_field_name("name")?).to_owned(),
+            "generic_type" => {
+                let head = t.child_by_field_name("type")?;
+                if head.kind() != "type_identifier" {
+                    return None;
+                }
+                self.t(head).to_owned()
+            }
+            _ => return None,
+        };
+        (!DEREF_WRAPPERS.contains(&name.as_str()) && !self.generics.contains(&name))
+            .then_some(name)
+    }
+
+    /// The type a `let` value evidently has: a struct literal or `Type::new`/`Type::default`.
+    fn value_type(&self, v: Node<'_>) -> Option<String> {
+        match v.kind() {
+            "struct_expression" => self.plain_type(v.child_by_field_name("name")?),
+            "call_expression" => {
+                let f = v.child_by_field_name("function")?;
+                if f.kind() != "scoped_identifier" {
+                    return None;
+                }
+                let leaf = self.t(f.child_by_field_name("name")?);
+                let path = f.child_by_field_name("path")?;
+                (matches!(leaf, "new" | "default") && path.kind() == "identifier")
+                    .then(|| self.plain_type(path))
+                    .flatten()
+            }
+            _ => None,
+        }
+    }
+
+    /// Declares the type of the variable `pattern` pushed at `env[at]` (a single plain binder only).
+    fn type_binder(&self, at: usize, pat: Option<Node<'_>>, ty: Option<String>) {
+        let Some(pat) = pat else { return };
+        let plain = pat.kind() == "identifier"
+            || (pat.kind() == "mut_pattern"
+                && children(pat).iter().any(|c| c.kind() == "identifier"));
+        if let (true, Some(ty), Some(slot)) = (plain, ty, self.env.borrow_mut().get_mut(at)) {
+            slot.1 = Some(ty);
+        }
+    }
+
+    /// Generic parameter names declared by `node`'s `type_parameters`.
+    fn declared_generics(&self, node: Node<'_>) -> Vec<String> {
+        let Some(tp) = node.child_by_field_name("type_parameters") else {
+            return Vec::new();
+        };
+        children(tp)
+            .into_iter()
+            .filter_map(|c| match c.kind() {
+                "type_parameter" | "const_parameter" => c.child_by_field_name("name"),
+                "constrained_type_parameter" => c.child_by_field_name("left"),
+                _ => None,
+            })
+            .map(|n| self.t(n).to_owned())
+            .collect()
     }
 
     fn call(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
@@ -664,6 +824,10 @@ impl<'a> Fold<'a> {
                 qualifier: target.qualifier,
                 node: Some(head),
                 item_local,
+                receiver: target.receiver,
+                opaque: target.opaque,
+                line: line_of(n),
+                text: call_text(self.t(f)),
             });
         }
         self.cx.op(Operator::apply(kind), n, &kids)
@@ -710,10 +874,18 @@ impl<'a> Fold<'a> {
                                 in_macro: true,
                             },
                             caller,
+                            text: call_text(&match (&qualifier, method) {
+                                (Some(q), _) => format!("{q}::{name}"),
+                                (None, true) => format!(".{name}"),
+                                (None, false) => name.clone(),
+                            }),
+                            line: line_of(*k),
                             name,
                             qualifier,
                             node: None,
                             item_local: false,
+                            receiver: method.then_some(Receiver::Expr),
+                            opaque: false,
                         });
                     }
                 }
@@ -748,6 +920,7 @@ impl<'a> Fold<'a> {
             if self.is_binder_leaf(l) {
                 let name = self.t(l).to_owned();
                 if !names.contains(&name) {
+                    self.env.borrow_mut().push((name.clone(), None));
                     names.push(name);
                 }
                 shape.push("_".to_owned());
@@ -779,8 +952,10 @@ impl<'a> Fold<'a> {
             .filter(|c| !matches!(c.kind(), "{" | "}"))
             .collect();
         let saved = self.locals.len();
+        let saved_env = self.env.borrow().len();
         let nodes = self.with_expr(true, |s| s.seq(&kids, depth + 1))?;
         self.locals.truncate(saved);
+        self.env.borrow_mut().truncate(saved_env);
         self.cx.op(Operator::group(GroupOrder::Sequence), n, &nodes)
     }
 
@@ -827,6 +1002,7 @@ impl<'a> Fold<'a> {
     }
 
     fn let_stmt(&mut self, k: Node<'_>, rest: &[Node<'_>], depth: usize) -> R<NodeId> {
+        let env_at = self.env.borrow().len();
         let (binders, shape) = k
             .child_by_field_name("pattern")
             .map_or((Vec::new(), String::new()), |p| self.pattern(p));
@@ -836,6 +1012,12 @@ impl<'a> Fold<'a> {
                 rhs.push(self.tr(c, depth + 1)?);
             }
         }
+        let declared = k.child_by_field_name("type").and_then(|t| self.plain_type(t));
+        let ty = declared.or_else(|| {
+            k.child_by_field_name("value")
+                .and_then(|v| self.value_type(v))
+        });
+        self.type_binder(env_at, k.child_by_field_name("pattern"), ty);
         let rhs = self.cx.op(Operator::group(GroupOrder::Sequence), k, &rhs)?;
         let scope = self.rest_group(k, rest, depth)?;
         self.bind_node("let", k, &binders, scope, rhs)
@@ -846,6 +1028,7 @@ impl<'a> Fold<'a> {
         let ord_guard = self.callers.len();
         let mut kids = Vec::new();
         let saved_locals = self.locals.len();
+        let saved_env = std::mem::take(&mut *self.env.borrow_mut());
         for c in children(k) {
             if Some(c.id()) == name.map(|n| n.id()) {
                 continue;
@@ -861,6 +1044,7 @@ impl<'a> Fold<'a> {
             kids.push(node);
         }
         self.locals.truncate(saved_locals);
+        *self.env.borrow_mut() = saved_env;
         debug_assert_eq!(ord_guard, self.callers.len());
         self.cx.op(Operator::anon("fn"), k, &kids)
     }
@@ -1322,6 +1506,10 @@ impl<'a> Fold<'a> {
         self.unit_stack.push(ord);
         self.callers.push(ord);
         self.fn_depth += 1;
+        let saved_env = std::mem::take(&mut *self.env.borrow_mut());
+        let saved_generics = self.generics.len();
+        let own = self.declared_generics(node);
+        self.generics.extend(own);
         let mut binders: Vec<String> = Vec::new();
         let mut sig = Vec::new();
         for c in children(node) {
@@ -1339,6 +1527,8 @@ impl<'a> Fold<'a> {
             None => Vec::new(),
         };
         self.fn_depth -= 1;
+        self.generics.truncate(saved_generics);
+        *self.env.borrow_mut() = saved_env;
         self.callers.pop();
         self.unit_stack.pop();
         let role = if body.is_some() { "impl" } else { "sig" };
@@ -1370,6 +1560,7 @@ impl<'a> Fold<'a> {
             match p.kind() {
                 "parameter" => {
                     let pat = p.child_by_field_name("pattern");
+                    let env_at = self.env.borrow().len();
                     let (names, mut shape) =
                         pat.map_or((Vec::new(), String::new()), |x| self.pattern(x));
                     if children(p).iter().any(|c| c.kind() == "mutable_specifier") {
@@ -1380,6 +1571,8 @@ impl<'a> Fold<'a> {
                             binders.push(nm);
                         }
                     }
+                    let ty = p.child_by_field_name("type").and_then(|t| self.plain_type(t));
+                    self.type_binder(env_at, pat, ty);
                     let mut kids = vec![self.cx.lit("pattern", &shape, pat.unwrap_or(p))?];
                     if let Some(t) = p.child_by_field_name("type") {
                         kids.push(self.with_expr(false, |s| s.tr(t, 2))?);
@@ -1490,7 +1683,12 @@ impl<'a> Fold<'a> {
                     inherit: Some(vis),
                     ..Scope::default()
                 };
-                self.container(b, &inner, false)?
+                let saved_generics = self.generics.len();
+                let own = self.declared_generics(node);
+                self.generics.extend(own);
+                let out = self.container(b, &inner, false);
+                self.generics.truncate(saved_generics);
+                out?
             }
             None => Vec::new(),
         };
@@ -1609,7 +1807,12 @@ impl<'a> Fold<'a> {
                     implements: tr.clone(),
                     trait_impl: tr.is_some(),
                 };
-                self.container(b, &inner, false)?
+                let saved_generics = self.generics.len();
+                let own = self.declared_generics(node);
+                self.generics.extend(own);
+                let out = self.container(b, &inner, false);
+                self.generics.truncate(saved_generics);
+                out?
             }
             None => Vec::new(),
         };

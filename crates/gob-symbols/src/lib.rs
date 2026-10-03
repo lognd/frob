@@ -52,6 +52,7 @@ mod model;
 mod opaque;
 mod paths;
 mod pipeline;
+mod qualifier;
 mod registry;
 mod rust;
 mod symref;
@@ -67,10 +68,11 @@ pub use graph::{
     CallEdge, EdgeKind, FileInfo, GapReason, ReachSet, ResolveError, Status, StatusEdge,
     SymbolGraph,
 };
+pub use qualifier::{Admit, CallQualifier};
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
-    CallSite, Digests, FacetDigest, FileSymbols, ImportEdge, LocalBinding, RefKind, RefSite,
-    SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility, collapse_ws,
+    CallSite, Digests, FacetDigest, FileSymbols, ImportEdge, LocalBinding, Receiver, RefKind,
+    RefSite, SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility, collapse_ws,
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{

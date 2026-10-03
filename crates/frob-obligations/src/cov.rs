@@ -16,7 +16,8 @@ use gob_directives::DirectiveRecord;
 use gob_languages::Language;
 use gob_rules::{Finding, Severity};
 use gob_symbols::{
-    CallEdge, EdgeKind, Status, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target,
+    Admit, CallEdge, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind, SymbolRecord, Symref,
+    Target,
 };
 use gob_text::{FileInterner, Span};
 
@@ -103,34 +104,127 @@ fn reach_of(tests: &BTreeSet<Symref>, adj: &HashMap<Symref, Vec<Symref>>) -> Has
     reached
 }
 
-/// Callee names of the `Unknown` calls that poison the reach of any test (`ReachSet` poison).
-fn unknown_call_names(graph: &SymbolGraph, tests: &BTreeSet<Symref>) -> HashSet<String> {
+/// An unresolved call in a test's reach that could be a call of some callable.
+#[derive(Debug, Clone)]
+struct Poison {
+    /// True when the call's qualifier pins exactly this callable among the candidates.
+    pinned: bool,
+    /// The call site: `file:line` and the call text.
+    site: String,
+    /// What the call's qualifier says, for the message.
+    how: String,
+}
+
+/// `file:line: \`text\`` for the call site of `e`.
+fn site_of(e: &StatusEdge) -> String {
+    format!(
+        "{}:{}: `{}`",
+        e.from.path(),
+        e.line.unwrap_or(0),
+        e.text.as_deref().unwrap_or("?")
+    )
+}
+
+/// The callables each unresolved call in a test's reach could be, matched on (qualifier, name).
+///
+/// A qualifier-less call keeps the broad name match; a qualified one only
+/// admits callables its qualifier cannot rule out (`SymbolGraph::admits`).
+fn poison_map(
+    graph: &SymbolGraph,
+    tests: &BTreeSet<Symref>,
+    by_name: &HashMap<&str, Vec<&SymbolRecord>>,
+) -> HashMap<Symref, Poison> {
     let mut poisoned: HashSet<Symref> = HashSet::new();
     for t in tests {
         poisoned.extend(graph.reach_with_status(t, &[EdgeKind::Calls]).poisoned_by);
     }
-    graph
+    let mut out: HashMap<Symref, Poison> = HashMap::new();
+    for e in graph
         .edges_with_status()
         .iter()
         .filter(|e| e.kind == EdgeKind::Calls && e.status == Status::Unknown)
         .filter(|e| poisoned.contains(&e.from))
-        .filter_map(|e| e.name.clone())
-        .collect()
+    {
+        let Some(cands) = e.name.as_deref().and_then(|n| by_name.get(n)) else {
+            continue;
+        };
+        let admitted: Vec<(&SymbolRecord, Admit)> = match &e.qualifier {
+            None => cands.iter().map(|r| (*r, Admit::Maybe)).collect(),
+            Some(q) => cands
+                .iter()
+                .map(|r| (*r, graph.admits(q, r)))
+                .filter(|(_, a)| *a != Admit::No)
+                .collect(),
+        };
+        let only_one = admitted.len() == 1;
+        let how = e.qualifier.as_ref().map_or_else(
+            || "no qualifier is known".to_owned(),
+            gob_symbols::CallQualifier::describe,
+        );
+        for (rec, a) in admitted {
+            let pinned = only_one && a == Admit::Pinned;
+            let better = out.get(&rec.symref).is_none_or(|p| pinned && !p.pinned);
+            if better {
+                out.insert(
+                    rec.symref.clone(),
+                    Poison {
+                        pinned,
+                        site: site_of(e),
+                        how: how.clone(),
+                    },
+                );
+            }
+        }
+    }
+    tracing::debug!(
+        poisoned_callables = out.len(),
+        "COV001 qualifier-matched poison"
+    );
+    out
 }
 
-/// Why `rec` is neither covered nor provably uncovered: May-only reach or a poisoned reach naming it.
+/// The first May call edge into each callable that is itself reached over May-or-better edges.
+fn may_sites<'g>(
+    graph: &'g SymbolGraph,
+    maybe: &HashSet<Symref>,
+) -> HashMap<&'g Symref, &'g StatusEdge> {
+    let mut out: HashMap<&Symref, &StatusEdge> = HashMap::new();
+    for e in graph
+        .edges_with_status()
+        .iter()
+        .filter(|e| e.kind == EdgeKind::Calls && e.status == Status::May && e.line.is_some())
+        .filter(|e| maybe.contains(&e.from))
+    {
+        if let Some(to) = &e.to {
+            out.entry(to).or_insert(e);
+        }
+    }
+    out
+}
+
+/// Why `rec` is neither covered nor provably uncovered, naming the ambiguous call site.
 fn unresolved_reach(
     rec: &SymbolRecord,
     maybe: &HashSet<Symref>,
-    unknown_names: &HashSet<String>,
+    maybe_sites: &HashMap<&Symref, &StatusEdge>,
+    poison: &HashMap<Symref, Poison>,
 ) -> Option<String> {
+    if let Some(e) = maybe_sites.get(&rec.symref) {
+        return Some(format!(
+            "it is reached only through ambiguous (May) calls, e.g. {}",
+            site_of(e)
+        ));
+    }
     if maybe.contains(&rec.symref) {
         return Some("it is reached only through ambiguous (May) calls".to_owned());
     }
-    let name = rec.symref.name()?;
-    unknown_names
-        .contains(name)
-        .then(|| format!("a test reaches an unresolved call named `{name}`"))
+    poison.get(&rec.symref).map(|p| {
+        let strength = if p.pinned { "names it" } else { "may name it" };
+        format!(
+            "a test reaches the unresolved call {} that {strength} ({})",
+            p.site, p.how
+        )
+    })
 }
 
 fn declared(graph: &SymbolGraph, directives: &[DirectiveRecord]) -> HashSet<Symref> {
@@ -175,7 +269,14 @@ pub(crate) fn cov001(
         .collect();
     let must = reach_of(&tests, &adjacency(graph, &mut sources, false));
     let maybe = reach_of(&tests, &adjacency(graph, &mut sources, true));
-    let unknown_names = unknown_call_names(graph, &tests);
+    let mut by_name: HashMap<&str, Vec<&SymbolRecord>> = HashMap::new();
+    for r in graph.records().filter(|r| is_callable(r)) {
+        if let Some(n) = r.symref.name() {
+            by_name.entry(n).or_default().push(r);
+        }
+    }
+    let poison = poison_map(graph, &tests, &by_name);
+    let maybe_sites = may_sites(graph, &maybe);
     let reached = must;
     let covered = declared(graph, directives);
     tracing::debug!(
@@ -210,7 +311,7 @@ pub(crate) fn cov001(
         }
         let file = files.intern(rec.symref.path());
         let kind = format!("{:?}", rec.kind).to_lowercase();
-        if let Some(why) = unresolved_reach(rec, &maybe, &unknown_names) {
+        if let Some(why) = unresolved_reach(rec, &maybe, &maybe_sites, &poison) {
             tracing::info!(symref = %rec.symref, %why, "COV001 unresolved");
             out.push(Finding::new(
                 rule_id(&Cov001),

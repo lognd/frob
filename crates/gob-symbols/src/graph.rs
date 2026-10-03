@@ -13,10 +13,11 @@ use petgraph::visit::EdgeRef;
 
 use crate::adapter::{Fidelity, ParseStatus};
 use crate::model::{
-    CallSite, Digests, FacetDigest, FileSymbols, ImportEdge, LocalBinding, RefKind, RefSite,
-    SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility,
+    CallSite, Digests, FacetDigest, FileSymbols, ImportEdge, LocalBinding, Receiver, RefKind,
+    RefSite, SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility,
 };
 use crate::paths::crate_and_module;
+use crate::qualifier::{Admit, CallQualifier};
 use crate::symref::{Symref, Target, split_qual};
 
 /// Kind of a graph edge.
@@ -71,6 +72,12 @@ pub struct StatusEdge {
     pub name: Option<String>,
     /// Why there is no target, for `Unknown` edges.
     pub reason: Option<GapReason>,
+    /// What the unresolved call says about its callee; `None` when genuinely unknown.
+    pub qualifier: Option<CallQualifier>,
+    /// One-based source line of a call edge's site.
+    pub line: Option<u32>,
+    /// The callee expression as written at a call edge's site.
+    pub text: Option<String>,
 }
 
 /// Facts about one walked file.
@@ -133,6 +140,8 @@ pub enum CallEdge {
         caller: Symref,
         /// The simple callee name.
         name: String,
+        /// What the call says about its callee; `None` when genuinely unknown.
+        qualifier: Option<CallQualifier>,
     },
 }
 
@@ -449,6 +458,7 @@ impl SymbolGraph {
         idx: &Index,
         caller: &Symref,
         site: (&str, Option<&str>, bool),
+        receiver: Option<&Receiver>,
         local: LocalBinding,
     ) -> Outcome {
         let (name, qualifier, method) = site;
@@ -469,7 +479,34 @@ impl SymbolGraph {
             .unwrap_or_default();
         let uses = idx.uses.get(file).map_or(&[][..], Vec::as_slice);
         if method {
-            // Receiver types are unknown: every method of that name may be it.
+            let own = match receiver {
+                Some(Receiver::SelfValue) => self.enclosing_impl_type(caller),
+                Some(Receiver::Typed(t)) => Some(t.clone()),
+                _ => None,
+            };
+            if let Some(t) = own {
+                let mine: Vec<NodeIndex> = named
+                    .iter()
+                    .copied()
+                    .filter(|&n| {
+                        let r = &self.graph[n];
+                        let segs = r.symref.segments();
+                        r.kind == SymbolKind::Method
+                            && segs
+                                .len()
+                                .checked_sub(2)
+                                .is_some_and(|i| base_segment(&segs[i]) == t)
+                    })
+                    .collect();
+                if let [one] = mine.as_slice() {
+                    let sure = self.graph[*one].implements.is_none();
+                    return Outcome::Hit(mine, if sure { Status::Must } else { Status::May });
+                }
+                if !mine.is_empty() {
+                    return Outcome::Hit(mine, Status::May);
+                }
+            }
+            // Receiver type unknown (or not found): every method of that name may be it.
             let cands: Vec<NodeIndex> = named
                 .into_iter()
                 .filter(|&n| self.graph[n].kind == SymbolKind::Method)
@@ -601,20 +638,122 @@ impl SymbolGraph {
     }
 
     fn link_calls(&mut self, files: &[FileSymbols], idx: &Index) {
+        let aliases: HashSet<String> = self
+            .graph
+            .node_weights()
+            .filter(|r| r.kind == SymbolKind::TypeAlias)
+            .filter_map(|r| r.symref.name().map(str::to_owned))
+            .collect();
         for f in files {
             for call in &f.calls {
                 let outcome = self.resolve_site(
                     idx,
                     &call.caller,
                     (&call.callee, call.qualifier.as_deref(), call.method),
+                    call.receiver.as_ref(),
                     call.local,
                 );
-                self.record_call(call, outcome);
+                let qualifier = self.call_qualifier(idx, call, &aliases);
+                self.record_call(call, outcome, qualifier);
             }
         }
     }
 
-    fn record_call(&mut self, call: &CallSite, outcome: Outcome) {
+    /// The type of the impl that directly contains `caller`, when it is a method of one.
+    fn enclosing_impl_type(&self, caller: &Symref) -> Option<String> {
+        let parent = self.parent_of(*self.index.get(caller)?)?;
+        if self.graph[parent].kind != SymbolKind::Impl {
+            return None;
+        }
+        let segs = caller.segments();
+        let i = segs.len().checked_sub(2)?;
+        Some(base_segment(&segs[i]).to_owned())
+    }
+
+    /// What an unresolved `call` says about its callee (`None` when genuinely unknown).
+    fn call_qualifier(
+        &self,
+        idx: &Index,
+        call: &CallSite,
+        aliases: &HashSet<String>,
+    ) -> Option<CallQualifier> {
+        if call.opaque_qualifier || call.callee.is_empty() {
+            return None;
+        }
+        if call.method {
+            return Some(match &call.receiver {
+                Some(Receiver::SelfValue) => self
+                    .enclosing_impl_type(&call.caller)
+                    .map_or(CallQualifier::Receiver, CallQualifier::SelfType),
+                Some(Receiver::Typed(t)) if !aliases.contains(t) => {
+                    CallQualifier::Typed(t.clone())
+                }
+                _ => CallQualifier::Receiver,
+            });
+        }
+        let q = call.qualifier.as_deref()?;
+        let real = match q {
+            "crate" | "self" | "super" => return None,
+            "Self" => self.enclosing_impl_type(&call.caller)?,
+            _ => idx
+                .uses
+                .get(call.caller.path())
+                .into_iter()
+                .flatten()
+                .find(|u| u.local == q && !u.target.ends_with("::*"))
+                .and_then(|u| u.target.rsplit("::").next().map(str::to_owned))
+                .unwrap_or_else(|| q.to_owned()),
+        };
+        (!aliases.contains(&real)).then_some(CallQualifier::Path(real))
+    }
+
+    /// Whether the qualified unresolved call `q` could be a call of `rec` (never guesses: doubt is `Maybe`).
+    pub fn admits(&self, q: &CallQualifier, rec: &SymbolRecord) -> Admit {
+        if !matches!(rec.kind, SymbolKind::Function | SymbolKind::Method) {
+            return Admit::No;
+        }
+        let segs = rec.symref.segments();
+        let parent = segs.len().checked_sub(2).map(|i| base_segment(&segs[i]));
+        let parent_is_trait = self
+            .index
+            .get(&rec.symref)
+            .and_then(|&n| self.parent_of(n))
+            .is_some_and(|p| self.graph[p].kind == SymbolKind::Trait);
+        match q {
+            CallQualifier::Path(t) => {
+                let (_, module) = crate_and_module(rec.symref.path());
+                if parent == Some(t.as_str()) || module.last() == Some(t) {
+                    Admit::Pinned
+                } else if parent_is_trait
+                    || (rec.kind == SymbolKind::Function && t.starts_with(char::is_lowercase))
+                {
+                    Admit::Maybe
+                } else {
+                    Admit::No
+                }
+            }
+            CallQualifier::SelfType(t) | CallQualifier::Typed(t) => {
+                if rec.kind != SymbolKind::Method {
+                    Admit::No
+                } else if parent == Some(t.as_str()) {
+                    Admit::Pinned
+                } else if parent_is_trait {
+                    Admit::Maybe
+                } else {
+                    Admit::No
+                }
+            }
+            CallQualifier::Receiver => {
+                if rec.kind == SymbolKind::Method {
+                    Admit::Maybe
+                } else {
+                    Admit::No
+                }
+            }
+        }
+    }
+
+    fn record_call(&mut self, call: &CallSite, outcome: Outcome, qualifier: Option<CallQualifier>) {
         let caller = &call.caller;
         let from = self.index.get(caller).copied();
         match outcome {
@@ -625,9 +764,17 @@ impl SymbolGraph {
                 } else {
                     call.callee.clone()
                 };
+                tracing::debug!(
+                    caller = %caller,
+                    name = %name,
+                    ?qualifier,
+                    line = call.line,
+                    "unresolved call recorded with qualifier"
+                );
                 self.calls.push(CallEdge::Unresolved {
                     caller: caller.clone(),
                     name: name.clone(),
+                    qualifier: qualifier.clone(),
                 });
                 self.status_edges.push(StatusEdge {
                     from: caller.clone(),
@@ -636,6 +783,9 @@ impl SymbolGraph {
                     status: Status::Unknown,
                     name: Some(name),
                     reason: Some(reason),
+                    qualifier,
+                    line: Some(call.line),
+                    text: Some(call.text.clone()),
                 });
                 if let Some(a) = from {
                     self.poisoned.insert(a);
@@ -667,6 +817,9 @@ impl SymbolGraph {
                         status,
                         name: None,
                         reason: None,
+                        qualifier: None,
+                        line: Some(call.line),
+                        text: Some(call.text.clone()),
                     });
                 }
                 self.calls.push(match (status, found.len()) {
@@ -700,6 +853,7 @@ impl SymbolGraph {
             idx,
             &r.from,
             (&r.name, r.qualifier.as_deref(), false),
+            None,
             LocalBinding::None,
         );
         let (Outcome::Hit(nodes, _), Some(&from)) = (outcome, self.index.get(&r.from)) else {
@@ -715,6 +869,9 @@ impl SymbolGraph {
                 status: Status::May,
                 name: Some(r.name.clone()),
                 reason: None,
+                qualifier: None,
+                line: None,
+                text: None,
             });
         }
     }
@@ -737,6 +894,9 @@ impl SymbolGraph {
                 status: Status::Must,
                 name: Some(r.name.clone()),
                 reason: None,
+                qualifier: None,
+                line: None,
+                text: None,
             });
         } else {
             tracing::debug!(from = %r.from, dest = %r.name, "broken link");
@@ -747,6 +907,9 @@ impl SymbolGraph {
                 status: Status::Unknown,
                 name: Some(r.name.clone()),
                 reason: Some(GapReason::BrokenLink),
+                qualifier: None,
+                line: None,
+                text: None,
             });
         }
     }
