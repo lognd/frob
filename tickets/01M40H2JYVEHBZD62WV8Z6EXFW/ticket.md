@@ -2,13 +2,13 @@
 id = "01M40H2JYVEHBZD62WV8Z6EXFW"
 title = "gob-directives: stacked directives above one item bind only the last one"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T09:21:13Z"
-updated = "2026-10-03T11:59:17Z"
+updated = "2026-10-03T14:06:11Z"
 idempotency_key = "m2-stacked-directives-bind"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/gob-directives/**"]
