@@ -174,7 +174,7 @@ pub fn sibling_document(run: &GrimbleRun) -> Value {
         "schema_version": SCHEMA_VERSION,
         "product": crate::config::PRODUCT,
         "product_version": env!("CARGO_PKG_VERSION"),
-        "compute_digest": run.compute.digest(),
+        "compute_digest": gob_config::compute_digest(&run.compute),
         "compute": run.compute.to_value(),
         "invocation": {
             "verb": "check",

@@ -80,14 +80,14 @@ pub struct DoctorData {
 
 fn config_row(root: &std::path::Path) -> ConfigRow {
     let present = root.join("grimble.toml").is_file();
-    let loaded =
-        ComputeTable::load_for(root).and_then(|(c, src)| Ok((c, src, PacksTable::load(root)?)));
+    let loaded = ComputeTable::load_for(root, crate::PRODUCT)
+        .and_then(|(c, src)| Ok((c, src, PacksTable::load(root)?)));
     match loaded {
         Ok((compute, source, packs)) => ConfigRow {
             present,
             status: "ok".to_owned(),
             compute_source: Some(source.to_owned()),
-            compute_digest: Some(compute.digest()),
+            compute_digest: Some(gob_config::compute_digest(&compute)),
             packs_unloaded: packs.requests_packs(),
             packs_enabled: packs.enabled,
         },

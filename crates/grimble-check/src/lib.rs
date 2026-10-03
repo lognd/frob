@@ -102,7 +102,7 @@ pub struct GrimbleRun {
 /// `--only` name. Findings are never errors.
 pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
     let started = Instant::now();
-    let (compute, compute_source) = ComputeTable::load_for(root)?;
+    let (compute, compute_source) = ComputeTable::load_for(root, PRODUCT)?;
     let packs = PacksTable::load(root)?;
     let product = Grimble::new();
     let run_opts = gob_check::RunOptions {
