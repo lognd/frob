@@ -2,13 +2,13 @@
 id = "01M4069YE7SYCYT7YGT2FCV344"
 title = "0.532.0 release notes and v1 to v2 upgrade guide (pin 0.531.0)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T15:28:24Z"
+updated = "2026-10-03T16:56:12Z"
 idempotency_key = "m2-rel-release-notes"
 labels = ["milestone:2", "area:release"]
 scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**"]
