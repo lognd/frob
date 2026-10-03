@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T08:39:55Z"
+updated = "2026-10-03T08:44:43Z"
 idempotency_key = "m2-rel-rel001"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-release/src/rel001.rs", "docs/reference/rules/rel/**", "docs/reference/rules/REL001.md", "docs/reference/rules/README.md", "crates/frob-release/src/lib.rs", "crates/frob-release/tests/rel001.rs", "crates/frob-release/tests/mdtest/rel001.md", "crates/frob-check/src/product.rs", "crates/gob-git/src/tag.rs", "crates/gob-git/tests/ledger.rs", "crates/gob-git/tests/tag.rs"]
+scope = ["crates/frob-release/src/rel001.rs", "docs/reference/rules/rel/**", "docs/reference/rules/REL001.md", "docs/reference/rules/README.md", "crates/frob-release/src/lib.rs", "crates/frob-release/tests/rel001.rs", "crates/frob-release/tests/mdtest/rel001.md", "crates/frob-check/src/product.rs", "crates/gob-git/src/tag.rs", "crates/gob-git/tests/ledger.rs", "crates/gob-git/tests/tag.rs", "crates/frob-release/tests/rel001_corpus/**"]
 
 [[links]]
 kind = "blocked-by"
