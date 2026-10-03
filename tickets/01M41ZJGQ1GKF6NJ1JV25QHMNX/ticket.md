@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T22:53:49Z"
-updated = "2026-10-03T23:14:50Z"
+updated = "2026-10-03T23:14:54Z"
 scope = [".github/workflows/ci.yml", ".github/workflows/dev.yml", "crates/frob-release/tests/**", "crates/gob-dev/tests/ci_parity.rs", "docs/design/releases.md", "docs/guides/release.md", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "frob.lock"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pull request or a push to another branch, when ci.yml runs, then the dev publish job is skipped"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the moved invariant tests, when they run, then every dev_workflow invariant holds against the job in ci.yml"
