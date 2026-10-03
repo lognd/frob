@@ -2,13 +2,13 @@
 id = "01M4069WHH6KXYWDAJD3TXB8SR"
 title = "land writes the changelog fragment skeleton from the ticket title"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T06:12:58Z"
+updated = "2026-10-03T13:33:25Z"
 idempotency_key = "m2-rel-land-fragment"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-land/src/**", "crates/frob-release/src/skeleton.rs"]
