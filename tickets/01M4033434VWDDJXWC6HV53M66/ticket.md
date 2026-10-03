@@ -2,7 +2,8 @@
 id = "01M4033434VWDDJXWC6HV53M66"
 title = "Mirror protocol v2 from the adversarial audit and the TLA+ model"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
