@@ -68,7 +68,7 @@ pub struct Evaluation {
 }
 
 /// `~` plus the last seven characters of `id`, the handle shown to humans.
-fn handle(id: TicketId) -> String {
+pub(crate) fn handle(id: TicketId) -> String {
     format!("~{}", &id.random_part()[9..])
 }
 
