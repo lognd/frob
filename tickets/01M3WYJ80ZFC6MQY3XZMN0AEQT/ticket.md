@@ -28,11 +28,11 @@ target = "01M3WYJ80NQWKC2VVY6AFX52KA"
 
 [[acceptance]]
 text = "Given the frob binary, when frob --schema work, frob --schema test, frob --schema ack and frob ticket evidence --schema run, then each prints a schema and exits 0"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a code-type ticket without measured evidence, when ticket close runs, then exit is 3 with the frob test remedy"
-bound = false
+bound = true
 +++
 
 T-0019, T-0020 and T-0021 each expose a register(cli) function and guard implementations instead of editing crates/frob. This ticket adds the dependencies to crates/frob, calls each register, installs the evidence CloseGuard and the lease LeaseCheck into the ledger verbs, regenerates docs/reference via cargo dev gen, and adds assert_cmd tests that frob work, frob test, frob ack, frob graph and ticket evidence are reachable with --schema.

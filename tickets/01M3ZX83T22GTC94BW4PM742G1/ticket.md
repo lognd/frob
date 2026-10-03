@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-03T03:34:42Z"
+updated = "2026-10-03T05:49:57Z"
 idempotency_key = "m2-mirror-gh-render"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/render.rs"]
@@ -26,6 +26,6 @@ text = "Given the same projection twice, when rendered, then the output is byte-
 bound = false
 +++
 
-Implements mirror.md sections 2 and 2.1.
+Implements mirror.md sections 2, 2.1 and 3.6 (one managed label).
 
-Section kinds map to headings; scope, evidence and leases are a generated read-only block; ULID in a hidden body marker plus a label.
+Section kinds map to headings; scope, evidence and leases are a generated read-only block; the body carries the hidden marker string supplied by the marker ticket (m2-mirror-markers), and the one managed label frob:managed is applied, never a label per ULID. No task-list checkboxes. Text neutralisation and render limits are separate tickets (m2-mirror2-neutralise, m2-mirror2-render-limits) layered on this renderer.

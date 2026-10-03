@@ -20,11 +20,11 @@ target = "01M3Z712DPZN71ZQDS6PXY6QQV"
 
 [[acceptance]]
 text = "Given a Rust fn passed as a value to another fn, when the graph is built, then an edge with status May exists and affects() follows it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a file in a language without a grammar, when walked, then it appears as one opaque unit at fidelity F0 and every rule reports it Unresolved or NotApplicable"
-bound = false
+bound = true
 +++
 
 universal-model.md 8 and 7 (G1-G4, G10-G19): SymbolRecord becomes the unit view of U terms; edges carry Must/May/Unknown; references are a superset of calls; functions passed as values are edges; re-exports in public_api; parse_status and holes are visible; unknown files are F0 opaque; attributes in the Sig stream, comments out of the Body stream, markdown section digests section-local; fidelity corpus per language; frob doctor --languages prints fidelity and capability precision.

@@ -836,6 +836,8 @@ dependencies = [
  "frob-lease",
  "frob-ledger",
  "frob-obligations",
+ "frob-pm",
+ "frob-release",
  "frob-tests",
  "gob-cache",
  "gob-check",
@@ -871,6 +873,8 @@ dependencies = [
  "frob-land",
  "frob-lease",
  "frob-ledger",
+ "frob-pm",
+ "frob-release",
  "frob-tests",
  "frob-worktree",
  "gob-cache",
@@ -882,6 +886,7 @@ dependencies = [
  "gob-symbols",
  "gob-walk",
  "insta",
+ "jiff",
  "schemars",
  "serde",
  "serde_json",
@@ -1001,6 +1006,44 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tracing",
+]
+
+[[package]]
+name = "frob-pm"
+version = "0.0.0"
+dependencies = [
+ "frob-ledger",
+ "gob-git",
+ "gob-mdtest",
+ "gob-rules",
+ "jiff",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
+name = "frob-release"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "frob-pm",
+ "gob-exec",
+ "gob-git",
+ "gob-mdtest",
+ "gob-rules",
+ "schemars",
+ "semver",
+ "serde",
+ "similar",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "toml_edit",
+ "tracing",
+ "ulid",
 ]
 
 [[package]]
@@ -2281,6 +2324,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-trust"
+version = "0.0.0"
+dependencies = [
+ "blake3",
+ "getrandom 0.3.4",
+ "proptest",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "gob-walk"
 version = "0.0.0"
 dependencies = [
@@ -3339,6 +3394,12 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "semver"
+version = "1.0.28"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
 
 [[package]]
 name = "serde"

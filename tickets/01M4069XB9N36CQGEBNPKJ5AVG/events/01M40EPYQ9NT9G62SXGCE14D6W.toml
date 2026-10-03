@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-release/src/rel001.rs", "docs/reference/rules/rel/**", "docs/reference/rules/REL001.md", "docs/reference/rules/README.md", "crates/frob-release/src/lib.rs", "crates/frob-release/tests/rel001.rs"]
+new = ["crates/frob-release/src/rel001.rs", "docs/reference/rules/rel/**", "docs/reference/rules/REL001.md", "docs/reference/rules/README.md", "crates/frob-release/src/lib.rs", "crates/frob-release/tests/rel001.rs", "crates/frob-release/tests/mdtest/rel001.md"]
+at = "2026-10-03T08:39:54Z"
+actor = "lognd"
+rev = 1

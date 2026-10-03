@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T08:47:48Z"
+digest = "9e596dfff87f5f6922a96850774abcefac1e1b9cb8a9c3745be30e7608e22c24"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+────────────
+ Nextest run ID bddcbaae-0ce5-41e8-a682-75ab6e6c4257 with nextest profile: default
+    Starting 1 test across 6 binaries (44 tests skipped)
+        PASS [   0.076s] (1/1) frob-release::rel001 tags_made_by_release_cut_itself_are_silent
+────────────
+     Summary [   0.077s] 1 test run: 1 passed, 44 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(tags_made_by_release_cut_itself_are_silent)'"
+size = 440
+status = "measured"
+tests = ["tags_made_by_release_cut_itself_are_silent"]
+at = "2026-10-03T08:47:48Z"
+actor = "lognd"
+rev = 1

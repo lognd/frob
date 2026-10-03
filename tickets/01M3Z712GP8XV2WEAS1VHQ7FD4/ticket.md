@@ -16,7 +16,7 @@ scope = ["docs/design/**"]
 
 [[acceptance]]
 text = "Given the specification, when a reader encodes the examples of grimble-model.md sections 1-3 by hand, then every construct maps to a U term listed in the spec"
-bound = false
+bound = true
 +++
 
 grimble-model.md 9.3 and the grimble review H1: write docs/design/grmb-spec.md: lexical rules, entities (node, flow, contract, claim, vmodel, pack) and their fields, scoping of entity names, selector expression grammar, excuses and the four exception kinds as attributes, includes across files, versioning, the U encoding of every construct at F4, and a conformance corpus outline.

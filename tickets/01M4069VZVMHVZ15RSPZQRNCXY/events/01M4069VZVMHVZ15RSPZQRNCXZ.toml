@@ -1,0 +1,19 @@
+kind = "create"
+title = "Classes of service: ticket class field and the expedite lane"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4065Y4N6DQG30TRSP2QNP8T"
+idempotency_key = "m2-rel-classes"
+labels = ["milestone:2", "area:release", "release:0.532.0"]
+scope = ["crates/frob-ledger/src/model.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-worktree/**"]
+acceptance = ["Given limit 2 reached, when work takes an expedite ticket, then it is granted as the single exception", "Given one expedite already running, when a second is taken, then it exits 3"]
+body = "Add `class` (expedite, fixed-date, standard, intangible; default standard) to the ticket model and `ticket new/update --class`; an expedite ticket may exceed the repository WIP limit by one, at most [pm.classes] expedite_max at a time; doable orders fixed-date by due. The intangible share check (PM014 per releases.md; pm-enforcement lists PM014 as milestone forecast, a numbering conflict) is out of scope."
+at = "2026-10-03T06:12:57Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4069T76A6WSNHT3NZERXHAH"

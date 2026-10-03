@@ -1,0 +1,59 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-03T08:13:20Z"
+digest = "5d9e181f4ad5a6dd2116780bcba32fe16cacb03b39db3b7eb52d1ba31c178b9f"
+exit_code = 4
+inline = """
+   Compiling libc v0.2.189
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling serde_json v1.0.151
+   Compiling memchr v2.8.3
+   Compiling getrandom v0.3.4
+   Compiling serde_derive_internals v0.30.0
+   Compiling rand_core v0.9.5
+   Compiling tracing-core v0.1.36
+   Compiling serde_derive v1.0.229
+   Compiling ref-cast-impl v1.0.27
+   Compiling schemars_derive v1.2.2
+   Compiling darling_core v0.20.11
+   Compiling ref-cast v1.0.27
+   Compiling thiserror-impl v2.0.21
+   Compiling tracing-attributes v0.1.31
+   Compiling serde v1.0.229
+   Compiling darling_macro v0.20.11
+   Compiling schemars v1.2.2
+   Compiling thiserror v2.0.21
+   Compiling tracing v0.1.44
+   Compiling rand_chacha v0.9.0
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.0.0 (/home/logan/projects/frob-v2-wt/9K9K8V5/crates/gob-macros)
+   Compiling winnow v1.0.4
+   Compiling rand v0.9.5
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/9K9K8V5/crates/gob-rules)
+   Compiling ulid v1.2.1
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling getrandom v0.4.3
+   Compiling tempfile v3.27.0
+   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/9K9K8V5/crates/gob-mdtest)
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/9K9K8V5/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.25s
+────────────
+ Nextest run ID 858e0d85-4eee-4d72-a7f1-c8c0468d8b40 with nextest profile: default
+    Starting 0 tests across 3 binaries (23 tests skipped)
+────────────
+     Summary [   0.000s] 0 tests run: 0 passed, 23 skipped
+error: no tests to run
+(hint: use `--no-tests` to customize)
+"""
+passed = false
+provider = "nextest"
+ref = "-p frob-release -E 'test(rel002)'"
+size = 1815
+status = "measured"
+at = "2026-10-03T08:13:20Z"
+actor = "lognd"
+rev = 1

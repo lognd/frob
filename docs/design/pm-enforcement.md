@@ -202,6 +202,9 @@ fire.
 | PM010-PM012 | cycle over capacity, no goal, not-ready members |
 | PM013 | WIP limit exceeded |
 | PM014 | milestone without forecast (no sized work) or past target date |
+| PM033 | replenish: ready work below `[pm] ready_min` (releases.md 2) |
+| PM034 | milestone member outside the milestone's epics (releases.md 1) |
+| PM035 | intangible-share: chores and debt above `[pm.classes] intangible_share` of a cycle's points (releases.md 2) |
 | PM015 | story done with zero evidenced criteria (should be unreachable; positive control) |
 | PM020-PM029 | quality objectives: attribute, driver resolves, metric measurable, baseline, checkable target, runnable proof, no hidden behavior change, not boilerplate, stable flavour, portfolio share |
 | PM030 | chore over `max_chore_points`, or with neither a parent epic nor an `enabler-for` link |

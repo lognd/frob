@@ -26,6 +26,11 @@ pub enum RequiredReason {
         /// The rule id that measured nothing.
         rule: String,
     },
+    /// A configured tool stage could not run, exited abnormally or printed unreadable output.
+    ToolFailed {
+        /// The name of the tool stage that did not produce evidence.
+        stage: String,
+    },
 }
 
 impl fmt::Display for RequiredReason {
@@ -41,6 +46,7 @@ impl fmt::Display for RequiredReason {
                 if *public_surface { " (public)" } else { "" }
             ),
             Self::ZeroSubjects { rule } => write!(f, "zero-subjects: {rule}"),
+            Self::ToolFailed { stage } => write!(f, "tool-failed: {stage}"),
         }
     }
 }

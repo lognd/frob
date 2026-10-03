@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:2.0.0", "component:frob-ledger"]
+new = ["milestone:2.0.0", "component:frob-ledger", "release:0.532.0"]
+at = "2026-10-03T06:13:15Z"
+actor = "lognd"
+rev = 1

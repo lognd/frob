@@ -142,6 +142,12 @@ Every verb, every time:
   lease is gone, through the branch name). `frob ticket start` takes the
   lease for the current checkout and records that checkout's root as the
   holder path.
+- Acceptance: `ticket update <id> --add-acceptance TEXT` (repeatable,
+  the text is taken whole, commas included), `--remove-acceptance N`
+  (repeatable, 1-based as `show` and `brief` number them) and
+  `--clear-acceptance`; each command writes one `field` event carrying
+  the old and new lists and an index map (tickets.md section 2a), and
+  removing a criterion that has bound evidence reports that evidence.
 - Batching: `ticket update <id> --set priority=high --set points=3
   --add-label x --link blocks:01J9QKX3M8Z4T7N2V5B6C0D1E2` is one commit,
   one lock. `frob batch` (Milestone 2 or later (D36)) reads JSON lines
@@ -178,7 +184,7 @@ described in their own files, and are Milestone 2 or later (D36).
 
 | Verb | Product | Crate | Idempotent | Exit codes | M |
 |---|---|---|---|---|---|
-| `init` | frob | frob (bin) | yes, adds only missing knobs | 0 2 4 | 1 |
+| `init` | frob | frob (bin) | yes, adds only missing knobs; a missing `[tickets] ref` is written as `refs/heads/<checked-out branch>` (an unborn branch counts, a detached HEAD is refused with `E-DETACHED-HEAD`) and a missing `[check] base` is the default branch (the remote HEAD of `origin` when present, else the checked-out branch); `config sync` detects both the same way; an existing value is never changed | 0 2 3 4 | 1 |
 | `doctor` | frob | frob (bin) | yes; `--fix` installs the merge driver | 0 2 4 | 1 |
 | `doctor --languages` | frob | frob (bin) | yes, read-only; prints per-language fidelity level, capability precision and the rules that are NotApplicable once per language (universal-model.md 3.3, 4.2) | 0 2 4 | 2 |
 | `init --ci` (open question, cicd.md section 7) | frob | frob (bin) | yes, adds only missing files | 0 2 4 | 2 |

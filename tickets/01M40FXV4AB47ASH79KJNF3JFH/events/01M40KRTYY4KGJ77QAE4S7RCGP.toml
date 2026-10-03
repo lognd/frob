@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T10:08:19Z"
+digest = "3be189f9822d6c14e007fbcf9f62d2946373a84bec7b0c1cd344cdf1c9c00f7a"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+────────────
+ Nextest run ID 1708df32-8851-457a-8d58-c15ad3bbad79 with nextest profile: default
+    Starting 5 tests across 18 binaries (116 tests skipped)
+        PASS [   0.005s] (1/5) gob-cli::usage_missing_args unknown_flag_carries_a_did_you_mean
+        PASS [   0.006s] (2/5) gob-cli::usage_missing_args invalid_value_lists_the_valid_values
+        PASS [   0.006s] (3/5) gob-cli::usage_missing_args missing_subcommand_is_one_complete_line
+        PASS [   0.006s] (4/5) gob-cli::usage_missing_args missing_required_arguments_are_all_named
+        PASS [   0.061s] (5/5) frob-cli::e2e_init_loop usage_error_names_the_missing_arguments
+────────────
+     Summary [   0.062s] 5 tests run: 5 passed, 116 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-cli -p frob-cli -E 'binary(usage_missing_args) | test(usage_error_names_the_missing_arguments)'"
+size = 835
+status = "measured"
+tests = ["unknown_flag_carries_a_did_you_mean", "invalid_value_lists_the_valid_values", "missing_subcommand_is_one_complete_line", "missing_required_arguments_are_all_named", "usage_error_names_the_missing_arguments"]
+at = "2026-10-03T10:08:19Z"
+actor = "lognd"
+rev = 1

@@ -9,7 +9,7 @@
 //! run from any worktree; the lease keeps the holder's own worktree path).
 
 use frob_lease::error::SAME_TICKET;
-use frob_lease::{Holder, Lease, LeaseError, LeaseStore, open_store};
+use frob_lease::{Holder, Lease, LeaseError, LeaseStore};
 use frob_ledger::ops::Patch;
 use frob_ledger::{Applied, Ledger, TicketId};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
@@ -17,7 +17,9 @@ use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::ticket::{ChangeData, cli_err, get, get_many, many_flag, open, resolve, ticket_arg};
+use crate::ticket::{
+    ChangeData, cli_err, get, get_many, many_flag, open, open_lease_store, resolve, ticket_arg,
+};
 
 /// What the lease side of a scope change did.
 enum LeaseSide {
@@ -55,7 +57,7 @@ pub(crate) fn update_with_lease(
     if old == new {
         return Ok((ledger.update(id, patch).map_err(cli_err)?, Vec::new()));
     }
-    let (store, _) = open_store(&ctx.cwd)?;
+    let (store, _) = open_lease_store(ctx)?;
     let actor = ledger.actor().map_err(cli_err)?;
     let state = match classify(&store, id, &actor)? {
         None => LeaseSide::None,
@@ -134,7 +136,7 @@ impl Command for LeaseWiden {
     fn run(&self, ctx: &Context) -> Outcome<WidenData> {
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
-        let (store, _) = open_store(&ctx.cwd)?;
+        let (store, _) = open_lease_store(ctx)?;
         let actor = ledger.actor().map_err(cli_err)?;
         let Some(lease) = classify(&store, id, &actor)? else {
             return Err(LeaseError::NotHeld { ticket: id }.into());

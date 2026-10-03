@@ -8,7 +8,7 @@ base = "experimental"
 fail_on = "error"
 # Paths no rule inspects: build output, frob's own local state and the v1
 # changelog (a 2.7 MB history file full of v1 directives).
-exclude = ["target/", ".frob/", "CHANGELOG.md", "notes/", "crates/*/tests/corpus/**", "crates/*/tests/mdtest/**", "crates/*/tests/mdtest_fail/**", "crates/*/tests/fixtures/**"]
+exclude = ["target/", ".frob/", "CHANGELOG.md", "CHANGELOG-v1.md", "notes/", "crates/*/tests/corpus/**", "crates/*/tests/mdtest/**", "crates/*/tests/mdtest_fail/**", "crates/*/tests/fixtures/**"]
 # Which Unresolved findings fail the gate: `required`, `never` or `all`.
 fail_on_unresolved = "required"
 # Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
@@ -48,9 +48,9 @@ max_version = "1.30.99"
 [[check.tool]]
 name = "actionlint"
 command = "uvx"
-args = ["--from", "actionlint-py==1.7.12", "actionlint", "-format", "{{json .}}"]
+args = ["--from", "actionlint-py==1.7.12.25", "actionlint", "-format", "{{json .}}"]
 parser = "actionlint-json"
-version_args = ["--from", "actionlint-py==1.7.12", "actionlint", "-version"]
+version_args = ["--from", "actionlint-py==1.7.12.25", "actionlint", "-version"]
 min_version = "1.7.0"
 max_version = "1.7.99"
 # Custom self-hosted runner labels go here; this repository uses GitHub-hosted runners only.

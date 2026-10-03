@@ -1,0 +1,47 @@
++++
+id = "01M4052VZ10VRGMVPC1JYHAH7M"
+title = "frob mirror status: sweep bound, reasons, gaps, contested fields, uncertain creates"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+reporter = "lognd"
+created = "2026-10-03T05:51:39Z"
+updated = "2026-10-03T05:51:39Z"
+idempotency_key = "m2-mirror2-status"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/src/status.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052S04N2E2A08NNPAZKPYT"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052SVV8ZVVX0AW4MN0Q367"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052TG0DWTW9KA7A1CH4ED3"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052VTX4T6W688PQXVTQV56"
+
+[[acceptance]]
+text = "Given N issues and K per run, when status runs, then it states ceil(N/K) runs as the visit bound"
+bound = false
+
+[[acceptance]]
+text = "Given a gap and a contested field, when status runs, then both are listed with ticket and field"
+bound = false
+
+[[acceptance]]
+text = "Given a create-uncertain ticket, when status runs, then it is listed with its create-start time"
+bound = false
++++
+
+Implements mirror.md sections 3.2 (the stated sweep bound), 3.4 (gaps, contested) and 3.3 (uncertain creates, unmirrored).
+
+Reports the last successful run, every MIR001 reason with its scope, the visit bound ceil(N/K) runs, fidelity gaps, contested fields (MIR002 Advisory), create-uncertain and unmirrored tickets.

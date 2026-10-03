@@ -37,7 +37,7 @@ impl Opened {
         let ledger_cfg = ledger_config(&root).map_err(WorktreeError::Config)?;
         let config =
             WorktreeConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
-        let (leases, _) = frob_lease::open_store(&root)?;
+        let (leases, _) = frob_lease::open_store_from_file(&root)?;
         Ok(Self {
             ledger: Ledger::open(repo, ledger_cfg),
             leases,

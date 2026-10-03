@@ -159,7 +159,7 @@ impl Command for New {
     }
 }
 
-/// Patch fields of a ticket: `--set key=value`, dedicated flags, label edits.
+/// Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket update",
@@ -175,17 +175,100 @@ pub struct Update {
     add_scope: Vec<String>,
     remove_scope: Vec<String>,
     clears: Vec<String>,
+    add_acceptance: Vec<String>,
+    remove_acceptance: Vec<usize>,
+    clear_acceptance: bool,
     reason: Option<String>,
 }
 
+/// An evidence record whose acceptance criterion an update removed.
+#[derive(Debug, Clone, serde::Serialize, schemars::JsonSchema)]
+pub struct LostEvidence {
+    /// The evidence event id.
+    pub event: String,
+    /// The provider that measured it.
+    pub provider: String,
+    /// What was measured (the record's `ref`).
+    pub reference: String,
+    /// The removed criteria it was offered for, numbered as before this update.
+    pub lost: Vec<usize>,
+    /// Its criteria that survive, numbered as after this update.
+    pub kept: Vec<usize>,
+}
+
+/// Output of `ticket update`: the change plus the evidence that lost a criterion.
+#[derive(Debug, Clone, serde::Serialize, schemars::JsonSchema)]
+pub struct UpdateData {
+    /// The ticket change.
+    #[serde(flatten)]
+    pub change: ChangeData,
+    /// Evidence that lost a criterion to this update, empty when none did.
+    pub lost_evidence: Vec<LostEvidence>,
+}
+
+/// Evidence on ticket `id` offered for any of the criteria `removed` (numbered now), before the update.
+///
+/// Each record's recorded positions are first mapped through every earlier
+/// acceptance edit (`Ledger::criteria_now`), so a record written before an
+/// earlier removal is judged by the criterion it was really offered for.
+fn lost_evidence(
+    ledger: &frob_ledger::Ledger,
+    id: frob_ledger::TicketId,
+    patch: &Patch,
+) -> Result<Vec<LostEvidence>, CliError> {
+    if patch.remove_acceptance.is_empty() && !patch.clear_acceptance {
+        return Ok(Vec::new());
+    }
+    let removed = ledger.acceptance_removed(id, patch).map_err(cli_err)?;
+    let mut out = Vec::new();
+    if removed.is_empty() {
+        return Ok(out);
+    }
+    let records =
+        frob_evidence::events::list(ledger, id).map_err(frob_evidence::EvidenceError::into_cli)?;
+    for stored in records {
+        let event: frob_ledger::EventId = stored
+            .event
+            .parse()
+            .map_err(|e: frob_ledger::id::ParseIdError| CliError::internal(e))?;
+        let now = ledger
+            .criteria_now(id, event, &stored.record.accepts)
+            .map_err(cli_err)?;
+        let lost: Vec<usize> = now
+            .iter()
+            .flatten()
+            .copied()
+            .filter(|n| removed.contains(n))
+            .collect();
+        if lost.is_empty() {
+            continue;
+        }
+        let kept = now
+            .iter()
+            .flatten()
+            .filter(|n| !removed.contains(n))
+            .map(|n| n - removed.iter().filter(|r| **r < *n).count())
+            .collect();
+        tracing::warn!(ticket = %id, evidence = %stored.event, ?lost, "evidence loses its criterion");
+        out.push(LostEvidence {
+            event: stored.event,
+            provider: stored.record.provider.as_str().to_owned(),
+            reference: stored.record.reference,
+            lost,
+            kept,
+        });
+    }
+    Ok(out)
+}
+
 impl Command for Update {
-    type Data = ChangeData;
+    type Data = UpdateData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
         cmd.arg(ticket_arg())
             .arg(many_flag(
                 "set",
-                "FIELD=VALUE to set (repeatable; empty value unsets a scalar, lists need --clear); lists are comma separated",
+                "FIELD=VALUE to set (repeatable; empty value unsets a scalar, lists need --clear); lists are comma separated; acceptance needs --add-acceptance",
             ))
             .arg(text_flag("title", "New title"))
             .arg(choice_flag("priority", Priority::NAMES, "New priority"))
@@ -197,6 +280,24 @@ impl Command for Update {
                 "remove-scope",
                 "Scope glob to remove (repeatable)",
             ))
+            .arg(many_flag(
+                "add-acceptance",
+                "Acceptance criterion to add, taken whole, commas included (repeatable)",
+            ))
+            .arg(
+                Arg::new("remove-acceptance")
+                    .long("remove-acceptance")
+                    .value_name("N")
+                    .action(ArgAction::Append)
+                    .value_parser(gob_cli::clap::value_parser!(usize))
+                    .help("1-based acceptance criterion to remove, as `ticket show` numbers them (repeatable); reports evidence that loses it"),
+            )
+            .arg(
+                Arg::new("clear-acceptance")
+                    .long("clear-acceptance")
+                    .action(ArgAction::SetTrue)
+                    .help("Remove every acceptance criterion; reports evidence that loses one"),
+            )
             .arg(many_flag(
                 "clear",
                 "List field to empty (repeatable); the only way to empty a list",
@@ -229,11 +330,17 @@ impl Command for Update {
             add_scope: get_many(m, "add-scope"),
             remove_scope: get_many(m, "remove-scope"),
             clears: get_many(m, "clear"),
+            add_acceptance: get_many(m, "add-acceptance"),
+            remove_acceptance: m
+                .get_many::<usize>("remove-acceptance")
+                .map(|v| v.copied().collect())
+                .unwrap_or_default(),
+            clear_acceptance: m.get_flag("clear-acceptance"),
             reason: get(m, "reason"),
         })
     }
 
-    fn run(&self, ctx: &Context) -> CliOutcome<ChangeData> {
+    fn run(&self, ctx: &Context) -> CliOutcome<UpdateData> {
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
         let mut patch = Patch {
@@ -242,6 +349,9 @@ impl Command for Update {
             add_scope: self.add_scope.clone(),
             remove_scope: self.remove_scope.clone(),
             clears: self.clears.clone(),
+            add_acceptance: self.add_acceptance.clone(),
+            remove_acceptance: self.remove_acceptance.clone(),
+            clear_acceptance: self.clear_acceptance,
             reason: self.reason.clone(),
             ..Patch::default()
         };
@@ -254,11 +364,30 @@ impl Command for Update {
             let value = parse_text_value(name, &text).map_err(CliError::Usage)?;
             patch.sets.push((name.clone(), value));
         }
+        let lost = lost_evidence(&ledger, id, &patch)?;
         let (applied, warnings) = crate::lease_cmd::update_with_lease(ctx, &ledger, id, &patch)?;
-        tracing::info!(ticket = %id, already = applied.already, "ticket update");
-        Ok(warnings
+        tracing::info!(ticket = %id, already = applied.already, lost = lost.len(), "ticket update");
+        let note = (!lost.is_empty() && !applied.already).then(|| {
+            let each: Vec<String> = lost
+                .iter()
+                .map(|l| format!("{} ({} {}) lost criteria {:?}", l.event, l.provider, l.reference, l.lost))
+                .collect();
+            format!(
+                "evidence lost its acceptance criterion: {}; re-offer it with a new `ticket evidence add --accepts N`",
+                each.join("; ")
+            )
+        });
+        let lost = if applied.already { Vec::new() } else { lost };
+        let data = UpdateData {
+            change: ChangeData::from(&applied),
+            lost_evidence: lost,
+        };
+        let out = gob_cli::Payload::new(data).with_already(applied.already);
+        let out = warnings
             .into_iter()
-            .fold(payload(&applied), gob_cli::Payload::with_warning))
+            .chain(note)
+            .fold(out, gob_cli::Payload::with_warning);
+        Ok(out)
     }
 }
 

@@ -16,7 +16,7 @@ scope = ["crates/grimble-bind/**", "crates/grimble-check/**", "crates/grimble/**
 
 [[acceptance]]
 text = "Given the workspace, when grepped for the walk logic, then grimble ack and grimble check call one function, and grimble ack without --reason is a usage error"
-bound = false
+bound = true
 +++
 
 From ~T9R1B70: grimble ack copied the walk logic of grimble_check::survey because grimble-check was leased; expose one shared function and delete the copy. binding.md 5.3 makes --reason mandatory for grimble ack: enforce it (E-USAGE with remedy). Record a kind=rename entry in the ack log (binding.md 5.5 item 1). Read rename_min_tokens from the [grimble] table instead of a constant. Add the shape_contract to the gob-lock FlowEnd so SYS006 can honour versioning compat=backward (binding.md 5.2, 6.6).

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by mirror.md 3.3 (Status codes: a deleted issue is never recreated without frob mirror recreate) and 3.4 (additive label endpoints); replaced by m2-mirror2-gh-writes, m2-mirror2-create, m2-mirror2-recreate."
+at = "2026-10-03T05:51:57Z"
+actor = "lognd"
+rev = 1

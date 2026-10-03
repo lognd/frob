@@ -89,14 +89,24 @@ into per-ticket timelines, cycle times, velocity, and flow metrics in
 one pass; `frob ticket show --events` prints the timeline. Counts stay
 small: a busy ticket has tens of events, each a few hundred bytes.
 
-Every kind that any file refers to is in this table. Milestone 1 code
-(frob-ledger `EventBody`) interprets `create`, `field`, `transition`,
-`comment`, `link` and `exception`; every `rev`-1 file carries a `rev`
-key, the revision of the event file format (not of the ticket), and a
-kind a reader does not know folds to no change. `evidence` events are
-written by frob-evidence, which re-folds the ticket itself, until
-frob-ledger gains `EventBody::Evidence` (Milestone 2 note); the guard
-bypass is an `evidence-bypass` event written the same way.
+Every kind that any file refers to is in this table. frob-ledger's
+`EventBody` interprets `create`, `field`, `transition`, `comment`,
+`link`, `exception`, `evidence`, `evidence-bypass` and `land`; every
+`rev`-1 file carries a `rev` key, the revision of the event file format
+(not of the ticket), and a kind a reader does not know folds to no
+change. Every producer writes through one API, `Ledger::append(ticket,
+EventBody)`, which writes the event file, re-folds the ticket file and
+commits on the ledger ref (CAS); no crate writes event files directly
+(~CFM8QB0).
+
+The fold binds an acceptance criterion (`bound = true`) only from
+measured, passing evidence: a record whose status is `measured` and
+whose verdict is not a failure, whose `accepts` maps to the criterion
+through the `moved` maps of later acceptance edits (a removed criterion
+binds nothing). For each (provider, reference, criterion) the latest
+record decides, so a failure or an unmeasured record after a pass
+unbinds, and a pass after a failure binds; a criterion is bound when
+any (provider, reference) pair's latest record for it passes.
 
 | Kind | Subject | Required fields | Producer verb | Consumers |
 |---|---|---|---|---|
@@ -114,6 +124,22 @@ bypass is an `evidence-bypass` event written the same way.
 | `attempt` | ticket | outcome (failed, abandoned), reason | requeue --failed, a failed land | brief, doctor |
 | `triage` | ticket | action (accept, decline, snooze, duplicate), until | ticket triage | inbox |
 | `cost` | ticket | tokens in, out, cache, cost, wall seconds | harness hook, land | stats, forecasts |
+
+Acceptance edits are `field` events on `acceptance` written by `frob
+ticket update --add-acceptance TEXT`, `--remove-acceptance N` and
+`--clear-acceptance` (one event per command; `--set acceptance=` is
+refused because criteria hold commas). `old` and `new` are the lists of
+criterion texts and a `moved` array maps each old criterion, by position,
+to its 1-based position in `new` (0 when removed). Evidence events are
+immutable and record `accepts` as positions in the list as it stood when
+they were written, so indices are not rewritten and do not shift in the
+record: a reader resolves a record's current criteria by composing the
+`moved` maps of every later acceptance event (`frob_ledger::fold::
+remap_accepts`, `Ledger::criteria_now`). A removal therefore never leaves
+evidence silently pointing at a different criterion, and `ticket update`
+reports (`lost_evidence` in the envelope, a warning in text) each record
+that loses a criterion, so it can be re-offered with `evidence add
+--accepts N`.
 
 Events with no ticket live under `events/<ulid>.toml` at the repo root,
 with the same envelope plus a `subject` such as `exception:<id>` or
@@ -197,7 +223,7 @@ v1-style warn) unless declared under `[tickets.custom_fields]`.
 
 Types replace v1's kind x tier conflation: `epic | story | task | bug |
 security | docs | invariant | incident | chore | custom`. A milestone is
-a release object (section 7), not a ticket type. A story has
+a release object (releases.md 1, 8), not a ticket type. A story has
 `flavour = user_story | quality_objective` and carries the structured
 fields that pm-enforcement.md requires (section 2 and 2a there). Each type
 declares its evidence policy (bug needs a repro that fails at parent,
@@ -261,7 +287,8 @@ the integrity guards on `done`. Post-actions (`release_lease`,
 - TTL is the knob `[lease] ttl_secs` (default 7200); the lock wait is
   `[lease] lock_timeout_ms` (default 5000), and append-shared files such
   as `Cargo.lock` are exempt from overlap through `[lease] shared_files`
-  (`[tickets] registry_files` is a compatibility alias folded into it). The heartbeat is renewed by any frob verb run from that
+  (every verb that opens the lease store passes the same config; the old
+  `[tickets] registry_files` alias is gone). The heartbeat is renewed by any frob verb run from that
   worktree and, when it exists, by the daemon, so a 40-minute build
   with no frob call stays inside the TTL; a stale lease can be taken
   with `--steal` and a reason. Leases release automatically on every

@@ -28,7 +28,7 @@ target = "01M3Z713VGKF4Z0JJ3263XJMC3"
 
 [[acceptance]]
 text = "Given a repository with grimble.toml and no .grmb file, when grimble check --json runs, then a valid sibling document with zero findings and a fidelity report is produced"
-bound = false
+bound = true
 +++
 
 boundaries.md and grimble-model.md 9.7: standalone grimble over gob-check with the sibling JSON schema (G03), grimble.toml with materialized knobs, doctor with fidelity report, fmt via grimble-model, exceptions list; no frob dependency.

@@ -16,7 +16,7 @@ scope = ["crates/gob-git/**", "crates/frob-land/src/git.rs", "crates/frob-land/s
 
 [[acceptance]]
 text = "Given a primary with main checked out and a linked worktree, when commit_paths on refs/heads/main runs from the worktree, then the primary's index and tickets/ files match the new tip and a following commit_paths from the primary succeeds"
-bound = false
+bound = true
 +++
 
 commit_paths syncs index and worktree files only in the checkout it runs from. A ledger commit made from a linked worktree (evidence add, work transition, land) advances the ref while the primary checkout, which has that branch checked out, keeps the old tickets/ files and index; the next ledger write from the primary refuses with E-GIT-LOCAL-EDITS. frob-land works around it with git restore. Fix in gob-git: after the CAS succeeds, sync every worktree (list_worktrees) whose HEAD is symbolic to the ref, updating index entries and files for exactly the changed paths under index.lock, skipping and reporting any checkout with genuine local edits to those paths. Then remove the git restore workaround from frob-land (crates/frob-land/src/git.rs) if it is in scope, otherwise report it.

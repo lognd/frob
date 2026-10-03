@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Points 3 to 5; blockers re-wired from the dropped reads ticket to the new history reads and the keyring. Added acceptance: (1) Given a human who pastes ticket B's marker into a bot-created issue of ticket A after creation, when the mirror runs, then the marker is ignored and the issue stays A's (model trace D1). (2) Given a marker present only in a later revision, then it is not trusted. (3) Given a bot issue whose marker kid is not in the keyring, then MIR001 marker-key-unknown is reported and no issue is created. (4) Given a marker for another repository (node id differs), then the MAC fails."
+at = "2026-10-03T05:49:58Z"
+actor = "lognd"
+rev = 1

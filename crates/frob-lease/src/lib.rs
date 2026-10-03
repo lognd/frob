@@ -32,20 +32,38 @@ pub use model::{Holder, Lease, StealRecord};
 pub use rule::{Scope001, scope001};
 pub use store::{Acquired, Contended, LeaseStore, Stolen};
 
-/// Open the lease store of the repository containing `cwd`, with `[lease]` from its `frob.toml`.
+/// Open the lease store of the repository containing `cwd` with the caller's `cfg`.
 ///
-/// Returns the store and the work tree root.
+/// Every verb passes the same [`LeaseConfig`] (built once from the materialized
+/// `[lease]` table) so they agree on `shared_files`. Returns the store and the work tree root.
 ///
 /// # Errors
 ///
-/// [`LeaseError::Repo`] when `cwd` is not inside a git work tree or the config is invalid.
-pub fn open_store(cwd: &Path) -> Result<(LeaseStore, PathBuf), LeaseError> {
+/// [`LeaseError::Repo`] when `cwd` is not inside a git work tree, or
+/// [`LeaseError::BadGlob`] when `cfg.shared_files` holds an invalid glob.
+pub fn open_store(cwd: &Path, cfg: LeaseConfig) -> Result<(LeaseStore, PathBuf), LeaseError> {
+    let repo = gob_git::Repo::discover(cwd).map_err(|e| LeaseError::Repo(e.to_string()))?;
+    let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
+        LeaseError::Repo(format!("{} is not inside a git work tree", cwd.display()))
+    })?;
+    tracing::debug!(root = %root.display(), shared = cfg.shared_files.len(), "opening lease store");
+    Ok((LeaseStore::open(&repo, cfg)?, root))
+}
+
+/// Open the lease store of `cwd` with `[lease]` loaded from its `frob.toml`.
+///
+/// For verbs that live outside the `frob` binary and so cannot see `FrobConfig`.
+///
+/// # Errors
+///
+/// [`LeaseError::Repo`] when `cwd` is not in a work tree or the config is invalid.
+pub fn open_store_from_file(cwd: &Path) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let repo = gob_git::Repo::discover(cwd).map_err(|e| LeaseError::Repo(e.to_string()))?;
     let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
         LeaseError::Repo(format!("{} is not inside a git work tree", cwd.display()))
     })?;
     let cfg = LeaseConfig::load(&root).map_err(|e| LeaseError::Repo(e.to_string()))?;
-    Ok((LeaseStore::open(&repo, cfg)?, root))
+    open_store(cwd, cfg)
 }
 
 /// Register `lease list` and `ticket contention` on a product root.

@@ -12,7 +12,7 @@ use crate::event::{
 };
 use crate::id::{EventId, TicketId};
 use crate::model::{Acceptance, Category, Frontmatter, LinkOp, Ticket, normalize_body};
-use crate::schema::{get_field, set_field};
+use crate::schema::{get_field, set_acceptance, set_field};
 
 /// A concurrent pair of changes that disagree about the previous value.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -104,8 +104,90 @@ fn apply_field(
             });
         }
     }
-    set_field(t, &c.field, c.new.as_ref())
-        .map_err(|m| LedgerError::fold(id, format!("event {}: {m}", ev.id)))
+    let applied = if c.field == "acceptance" {
+        set_acceptance(t, c.new.as_ref())
+    } else {
+        set_field(t, &c.field, c.new.as_ref())
+    };
+    applied.map_err(|m| LedgerError::fold(id, format!("event {}: {m}", ev.id)))
+}
+
+/// Where criteria numbered under the list as it stood at event `since` sit now.
+///
+/// Evidence events are immutable and record `accepts` as 1-based positions in
+/// the acceptance list at write time. Every later `acceptance` field event
+/// carries a `moved` map, so composing those maps in fold order gives each
+/// recorded position's current one, or `None` when that criterion was removed
+/// (or a later event has no map, which can only lose track of it).
+pub fn remap_accepts(events: &[Event], since: EventId, accepts: &[usize]) -> Vec<Option<usize>> {
+    let mut ordered: Vec<&Event> = events.iter().collect();
+    ordered.sort_by_key(|e| e.order_key());
+    let mut now: Vec<Option<usize>> = accepts.iter().map(|n| Some(*n)).collect();
+    let later = ordered.into_iter().skip_while(|e| e.id != since).skip(1);
+    for ev in later {
+        let EventBody::Field(c) = &ev.body else {
+            continue;
+        };
+        if c.field != "acceptance" {
+            continue;
+        }
+        for slot in &mut now {
+            *slot = slot.and_then(|n| match c.moved.as_deref() {
+                Some(map) => map.get(n.wrapping_sub(1)).copied().filter(|m| *m != 0),
+                None => None,
+            });
+        }
+    }
+    now
+}
+
+/// Whether an evidence record counts as a pass: measured and not a failing run.
+///
+/// `status` must be `measured` and `passed` must not be `false`; a file-provider
+/// record has no `passed` and counts when measured, as the close guard reads it.
+pub fn evidence_passes(data: &crate::event::EvidenceData) -> bool {
+    let measured = data.record.get("status").and_then(toml::Value::as_str) == Some("measured");
+    let failed = data.record.get("passed").and_then(toml::Value::as_bool) == Some(false);
+    measured && !failed
+}
+
+/// Set each criterion's `bound` from the evidence offered for it, through the remap.
+///
+/// Rule: an evidence event offered for criterion N when it was written counts
+/// for whatever N became after later acceptance edits, and for nothing when N
+/// was removed. Within one (provider, reference, criterion) the latest record
+/// in fold order decides: it binds only when it is measured and passed, so a
+/// failing or unmeasured record never binds and supersedes an earlier pass of
+/// the same provider and reference. A criterion is bound when at least one
+/// (provider, reference) pair's latest record for it passes.
+fn bind_acceptance(t: &mut Ticket, events: &[Event]) {
+    let mut ordered: Vec<&Event> = events.iter().collect();
+    ordered.sort_by_key(|e| e.order_key());
+    let text = |data: &crate::event::EvidenceData, key: &str| {
+        data.record
+            .get(key)
+            .and_then(toml::Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    let mut latest: std::collections::BTreeMap<(String, String, usize), bool> =
+        std::collections::BTreeMap::new();
+    for ev in ordered {
+        let EventBody::Evidence(data) = &ev.body else {
+            continue;
+        };
+        let passes = evidence_passes(data);
+        let (provider, reference) = (text(data, "provider"), text(data, "ref"));
+        for now in remap_accepts(events, ev.id, &data.accepts)
+            .into_iter()
+            .flatten()
+        {
+            latest.insert((provider.clone(), reference.clone(), now), passes);
+        }
+    }
+    for (i, a) in t.front.acceptance.iter_mut().enumerate() {
+        a.bound = latest.iter().any(|((_, _, n), pass)| *n == i + 1 && *pass);
+    }
 }
 
 fn apply_transition(
@@ -201,10 +283,17 @@ pub fn fold(id: TicketId, events: &[Event]) -> Result<Folded> {
             EventBody::Field(c) => apply_field(id, &mut ticket, ev, c, &mut conflicts)?,
             EventBody::Transition(c) => apply_transition(id, &mut ticket, ev, c, &mut conflicts)?,
             EventBody::Link(c) => apply_link(&mut ticket, c),
-            EventBody::Comment(_) | EventBody::Exception(_) | EventBody::Other => {}
+            EventBody::Comment(_)
+            | EventBody::Exception(_)
+            | EventBody::EvidenceBypass(_)
+            | EventBody::Land(_)
+            | EventBody::Other
+            // Evidence binds once at the end, through the acceptance remap.
+            | EventBody::Evidence(_) => {}
         }
         last = ev.at;
     }
+    bind_acceptance(&mut ticket, events);
     ticket.front.updated = last;
     tracing::debug!(ticket = %id, events = events.len(), conflicts = conflicts.len(), "folded");
     Ok(Folded { ticket, conflicts })
@@ -257,6 +346,7 @@ mod tests {
                 old: old.map(|s| toml::Value::String(s.into())),
                 new: Some(toml::Value::String(new.into())),
                 reason: None,
+                moved: None,
             }),
         )
     }
@@ -326,5 +416,53 @@ mod tests {
         assert!(fold(id, &evs).is_err());
         let evs = vec![create_event("a"), set("nope", None, "x")];
         assert!(fold(id, &evs).is_err());
+    }
+
+    fn texts(items: &[&str]) -> toml::Value {
+        toml::Value::Array(
+            items
+                .iter()
+                .map(|t| toml::Value::String((*t).into()))
+                .collect(),
+        )
+    }
+
+    fn acceptance_edit(old: &[&str], new: &[&str], moved: &[usize]) -> Event {
+        Event::new(
+            "a",
+            EventBody::Field(FieldChange {
+                field: "acceptance".into(),
+                old: Some(texts(old)),
+                new: Some(texts(new)),
+                reason: None,
+                moved: Some(moved.to_vec()),
+            }),
+        )
+    }
+
+    // frob:ticket 01M4055D28TPGSJW71D09P2DKX
+    #[test]
+    fn acceptance_events_fold_and_remap_recorded_positions() {
+        let id = TicketId::mint();
+        let create = create_event("a");
+        let evidence = Event::new("a", EventBody::Other);
+        let first = acceptance_edit(&["a"], &["a", "b, c"], &[1]);
+        let later = Event::new("a", EventBody::Other);
+        let second = acceptance_edit(&["a", "b, c"], &["b, c"], &[0, 1]);
+        let evs = vec![create, evidence.clone(), first, later.clone(), second];
+        let f = fold(id, &evs).expect("fold");
+        assert!(f.conflicts.is_empty(), "{:?}", f.conflicts);
+        let left: Vec<_> = f
+            .ticket
+            .front
+            .acceptance
+            .iter()
+            .map(|a| a.text.as_str())
+            .collect();
+        assert_eq!(left, ["b, c"]);
+        // Recorded before both edits: "a" (1) was removed by the second.
+        assert_eq!(remap_accepts(&evs, evidence.id, &[1]), [None]);
+        // Recorded between them: "b, c" (2) is now the first criterion, "a" (1) is gone.
+        assert_eq!(remap_accepts(&evs, later.id, &[1, 2]), [None, Some(1)]);
     }
 }

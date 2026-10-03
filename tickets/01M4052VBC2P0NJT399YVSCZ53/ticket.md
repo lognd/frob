@@ -1,0 +1,31 @@
++++
+id = "01M4052VBC2P0NJT399YVSCZ53"
+title = "Mirror job on the default branch: schedule, workflow_dispatch, repository_dispatch, never push"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+reporter = "lognd"
+created = "2026-10-03T05:51:38Z"
+updated = "2026-10-03T05:51:38Z"
+idempotency_key = "m2-mirror2-job"
+labels = ["milestone:2", "area:mirror"]
+scope = [".github/workflows/mirror.yml"]
+
+[[acceptance]]
+text = "Given the workflow, when linted by zizmor and actionlint, then no finding is reported"
+bound = false
+
+[[acceptance]]
+text = "Given the workflow's triggers, when inspected by a test, then they are exactly schedule, workflow_dispatch and repository_dispatch"
+bound = false
+
+[[acceptance]]
+text = "Given a run from a ref other than the default branch, when the guard step runs, then it fails before the environment is requested"
+bound = false
++++
+
+Implements mirror.md section 3.1 (Who runs it); security.md 2.11.
+
+Defined only on the default branch; triggers are schedule, workflow_dispatch and repository_dispatch, never push or a ticket-branch event; the first step verifies the run is from the default branch before the environment is requested; one concurrency group for the single writer; pinned actions, explicit permissions and a timeout per cicd.md.

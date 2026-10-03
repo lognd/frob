@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Corrected by the coordinator: the design names grimble vet (cli.md verb table, crate grimble-vet; build-test-ci.md Milestone 2 item 8), not frob vet. Scope moved to crates/grimble-vet and the grimble binary. The acceptance criteria apply with grimble vet in place of frob vet."
+at = "2026-10-03T06:19:03Z"
+actor = "lognd"
+rev = 1

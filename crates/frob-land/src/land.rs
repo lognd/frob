@@ -48,7 +48,7 @@ pub fn land(root: &Path, opts: &LandOptions) -> Result<LandOutcome, LandError> {
     let repo = Repo::discover(root).map_err(|e| LandError::Config(e.to_string()))?;
     let cwd_root = work_dir(&repo)?;
     let here = Workspace::open(&cwd_root)?;
-    let (leases, _) = frob_lease::open_store(&cwd_root)?;
+    let (leases, _) = frob_lease::open_store_from_file(&cwd_root)?;
     let id = resolve(&here.ledger, &leases, &cwd_root, opts.handle.as_deref())?;
     let view = here.ledger.show(id)?;
     let handle = view.summary.handle.clone();

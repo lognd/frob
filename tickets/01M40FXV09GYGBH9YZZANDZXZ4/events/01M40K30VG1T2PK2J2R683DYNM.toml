@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T09:56:24Z"
+digest = "d787103109726f63287138d902052ca76886f6981175e2f9c20606e43d32515f"
+exit_code = 0
+inline = """
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s
+────────────
+ Nextest run ID db55cc71-0f55-4aa7-9a3f-9abceff55e31 with nextest profile: default
+    Starting 6 tests across 1 binary (14 binaries skipped)
+        PASS [   0.013s] (1/6) frob-cli::first_run outside_a_git_repository_says_to_run_inside_one
+        PASS [   0.034s] (2/6) frob-cli::first_run text_mode_names_init_on_stderr
+        PASS [   0.034s] (3/6) frob-cli::first_run check_without_config_teaches_init_with_no_findings
+        PASS [   0.034s] (4/6) frob-cli::first_run ticket_list_without_config_gives_the_same_diagnostic
+        PASS [   0.135s] (5/6) frob-cli::first_run a_present_frob_toml_lets_check_run
+        PASS [   0.138s] (6/6) frob-cli::first_run doctor_schema_and_help_work_without_config
+────────────
+     Summary [   0.138s] 6 tests run: 6 passed, 0 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E binary(first_run)"
+size = 997
+status = "measured"
+tests = ["outside_a_git_repository_says_to_run_inside_one", "text_mode_names_init_on_stderr", "check_without_config_teaches_init_with_no_findings", "ticket_list_without_config_gives_the_same_diagnostic", "a_present_frob_toml_lets_check_run", "doctor_schema_and_help_work_without_config"]
+at = "2026-10-03T09:56:24Z"
+actor = "lognd"
+rev = 1

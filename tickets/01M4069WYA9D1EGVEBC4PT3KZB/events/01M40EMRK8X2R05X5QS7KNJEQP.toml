@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Coordinator note: release cut (~BZ9EG10) commits through gob-git commit_paths, not through land, so it does not run frob check itself; the readiness gate it trusts is release status. This ticket must therefore make release status NOT READY when CI on the tip is red or unknown-and-required, so a cut cannot ship a red tip without --override."
+at = "2026-10-03T08:38:43Z"
+actor = "lognd"
+rev = 1

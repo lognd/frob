@@ -41,11 +41,15 @@
 
 mod grammar;
 pub mod grmb;
+#[cfg(feature = "markdown")]
+mod inline;
 mod language;
 mod parse;
 mod query;
 
 pub use grammar::grammar_identity;
+#[cfg(feature = "markdown")]
+pub use inline::{markdown_code_ranges, markdown_code_spans, markdown_link_destinations};
 pub use language::Language;
 pub use parse::{ParseLimits, ParseResult, ParsedTree, Unresolved, UnresolvedReason, parse};
 pub use query::{Capture, CompiledQuery, QueryError, captures, compiled_query};

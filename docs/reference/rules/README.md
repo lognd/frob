@@ -83,6 +83,12 @@
 |---|---|---|---|---|---|---|
 | [PERF001](PERF001.md) | check-over-budget | warn | manual | P+ | false | The built-in stages of a check run took longer than the `[perf]` budget. |
 
+## PM
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P+ | false | A ticket claims a milestone that its epic ancestry does not reach. |
+
 ## PROC
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -94,6 +100,13 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [REF001](REF001.md) | dangling-ticket-ref | error | manual | P+ | true | A `frob:ticket` directive names a ticket that is not in the ledger. |
+
+## REL
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [REL001](REL001.md) | release-without-cut | error | manual | P+ | false | A product release tag that `frob release cut` did not create, or that no longer matches its cut. |
+| [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P+ | false | Crates or the wheel whose version differs from the workspace version. |
 
 ## SCOPE
 

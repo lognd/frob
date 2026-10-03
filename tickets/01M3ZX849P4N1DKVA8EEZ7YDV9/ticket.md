@@ -2,13 +2,14 @@
 id = "01M3ZX849P4N1DKVA8EEZ7YDV9"
 title = "Mirror CI job: single writer from the default branch workflow"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T03:34:43Z"
+updated = "2026-10-03T05:51:57Z"
 idempotency_key = "m2-mirror-ci-job"
 labels = ["milestone:2", "area:mirror"]
 scope = [".github/workflows/mirror.yml"]

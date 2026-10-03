@@ -16,7 +16,7 @@ scope = ["crates/gob-symbols/**", "crates/grimble-model/**", "crates/frob/**", "
 
 [[acceptance]]
 text = "Given a binary linking grimble-model, when frob doctor --languages runs, then grmb appears at F4 with its capability precisions"
-bound = false
+bound = true
 +++
 
 From ~63XJMC3 (D-a): adapters()/adapter_for are static over LanguageHint, so grimble-model's GrmbAdapter cannot register (grimble-model depends on gob-symbols). Add an inventory-based adapter registry, a ConcreteTree::Source(Arc<str>) variant for hand-written parsers (replacing grimble-model's thread-local hand-off), and SymbolKind variants for model entities (node, flow, contract, claim, vmodel, pack, boundary) so the FileSymbols view is populated; frob doctor --languages then lists grmb at F4 when the grimble-model crate is linked.

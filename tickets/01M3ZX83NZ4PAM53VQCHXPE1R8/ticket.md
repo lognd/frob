@@ -2,13 +2,14 @@
 id = "01M3ZX83NZ4PAM53VQCHXPE1R8"
 title = "GitHub adapter reads: find-by-ULID, schema validation, edit history"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-03T03:34:42Z"
+updated = "2026-10-03T05:51:57Z"
 idempotency_key = "m2-mirror-gh-read"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/src/read.rs", "crates/frob-mirror/src/github/read.rs"]

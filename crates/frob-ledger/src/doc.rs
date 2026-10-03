@@ -5,39 +5,32 @@ use crate::model::{Frontmatter, Ticket, normalize_body};
 
 const FENCE: &str = "+++";
 
-/// Render a ticket as the text of `ticket.md`.
-///
-/// # Errors
-///
-/// [`LedgerError::Malformed`] when the frontmatter cannot be written as TOML.
-pub fn render(ticket: &Ticket) -> Result<String> {
-    let front = toml::to_string(&ticket.front).map_err(|e| {
-        LedgerError::malformed(format!("{}/ticket.md", ticket.front.id), e.to_string())
-    })?;
-    let mut out = String::with_capacity(front.len() + ticket.body.len() + 16);
+/// Join TOML `front` and markdown `body` into a fenced document (the shape of every ledger object file).
+pub fn fenced(front: &str, body: &str) -> String {
+    let mut out = String::with_capacity(front.len() + body.len() + 16);
     out.push_str(FENCE);
     out.push('\n');
-    out.push_str(&front);
+    out.push_str(front);
     if !front.ends_with('\n') {
         out.push('\n');
     }
     out.push_str(FENCE);
     out.push('\n');
-    let body = normalize_body(&ticket.body);
+    let body = normalize_body(body);
     if !body.is_empty() {
         out.push('\n');
         out.push_str(&body);
         out.push('\n');
     }
-    Ok(out)
+    out
 }
 
-/// Parse the text of a `ticket.md`; `label` names it in errors.
+/// Split a fenced document into its TOML frontmatter text and normalized body; `label` names it in errors.
 ///
 /// # Errors
 ///
-/// [`LedgerError::Malformed`] for a missing fence, bad TOML or an unknown key.
-pub fn parse(label: &str, text: &str) -> Result<Ticket> {
+/// [`LedgerError::Malformed`] for a missing opening or closing fence.
+pub fn split_fenced<'a>(label: &str, text: &'a str) -> Result<(&'a str, String)> {
     let bad = |m: &str| LedgerError::malformed(label, m);
     let rest = text
         .strip_prefix("+++\n")
@@ -53,8 +46,30 @@ pub fn parse(label: &str, text: &str) -> Result<Ticket> {
         offset += line.len();
     }
     let (front_end, body_start) = close.ok_or_else(|| bad("missing closing `+++` fence"))?;
-    let front: Frontmatter = toml::from_str(&rest[..front_end]).map_err(|e| bad(&e.to_string()))?;
-    let body = normalize_body(&rest[body_start..]);
+    Ok((&rest[..front_end], normalize_body(&rest[body_start..])))
+}
+
+/// Render a ticket as the text of `ticket.md`.
+///
+/// # Errors
+///
+/// [`LedgerError::Malformed`] when the frontmatter cannot be written as TOML.
+pub fn render(ticket: &Ticket) -> Result<String> {
+    let front = toml::to_string(&ticket.front).map_err(|e| {
+        LedgerError::malformed(format!("{}/ticket.md", ticket.front.id), e.to_string())
+    })?;
+    Ok(fenced(&front, &ticket.body))
+}
+
+/// Parse the text of a `ticket.md`; `label` names it in errors.
+///
+/// # Errors
+///
+/// [`LedgerError::Malformed`] for a missing fence, bad TOML or an unknown key.
+pub fn parse(label: &str, text: &str) -> Result<Ticket> {
+    let (front_text, body) = split_fenced(label, text)?;
+    let front: Frontmatter =
+        toml::from_str(front_text).map_err(|e| LedgerError::malformed(label, e.to_string()))?;
     Ok(Ticket { front, body })
 }
 

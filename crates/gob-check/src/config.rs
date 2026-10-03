@@ -135,7 +135,7 @@ pub struct CheckTable {
     #[config(default = false)]
     pub fix_requires_scope: bool,
     /// Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against.
-    #[config(default = "main".to_owned())]
+    #[config(default = "main".to_owned(), enforcement)]
     pub base: String,
     /// External tool stages run after the built-in rules, outside the time budget.
     #[config(default = Vec::new())]

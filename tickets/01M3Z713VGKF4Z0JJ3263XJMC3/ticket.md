@@ -24,7 +24,7 @@ target = "01M3Z713RETBN30XBC6CK11FBF"
 
 [[acceptance]]
 text = "Given the corpus from the specification, when parsed, printed and parsed again, then the U terms are identical and every directive in a .grmb file binds to its entity"
-bound = false
+bound = true
 +++
 
 G01 spec: tree-sitter or hand-written parser for .grmb, error recovery, alpha-normal printer (grimble fmt), the F4 U adapter so frob directives bind to entities, conformance corpus.

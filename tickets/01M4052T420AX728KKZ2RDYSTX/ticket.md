@@ -1,0 +1,51 @@
++++
+id = "01M4052T420AX728KKZ2RDYSTX"
+title = "Record proposals by reference: tracker event id key, supersede, caps, one commit per run"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+reporter = "lognd"
+created = "2026-10-03T05:51:37Z"
+updated = "2026-10-03T05:51:37Z"
+idempotency_key = "m2-mirror2-proposal-record"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/src/proposals.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7YW7S3BJ72FPRQ85F72V"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052R0DZK01W7K8EE77637T"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052SQS2X5XYN24DE9ENQF8"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052SZYWSD45GEYNTTTJMDB"
+
+[[acceptance]]
+text = "Given an edit read twice after a crash, when recorded, then one proposal exists keyed by its tracker event id, and an accepted or declined one never returns"
+bound = false
+
+[[acceptance]]
+text = "Given a 5000-character edited value, when recorded, then the excerpt is 200 characters, escaped, origin tracker, and the digest covers the full value"
+bound = false
+
+[[acceptance]]
+text = "Given a second edit by the same actor to the same field, when recorded, then a superseding event is appended"
+bound = false
+
+[[acceptance]]
+text = "Given more than P new proposals in a run, when recorded, then those beyond P stay after the cursor and are recorded in a later run, and all recorded ones share one ledger commit"
+bound = false
++++
+
+Implements mirror.md section 3.5 (F9).
+
+A proposal stores the tracker item id, field, actor id, time, a digest of the value and a capped (200 characters), escaped excerpt with origin tracker; the full value is fetched at accept time. Keyed by the tracker event id so a re-run never records an edit twice. A later edit by the same actor to the same field appends proposal-superseded. Caps: one new proposal per (issue, field) per day and P per run. All proposals of a run are written in one ledger commit.

@@ -16,6 +16,8 @@ frob-evidence = { path = "../frob-evidence" }
 frob-lease = { path = "../frob-lease" }
 frob-ledger = { path = "../frob-ledger" }
 frob-obligations = { path = "../frob-obligations" }
+frob-pm = { path = "../frob-pm" }
+frob-release = { path = "../frob-release" }
 frob-tests = { path = "../frob-tests" }
 gob-check = { path = "../gob-check" }
 gob-cache = { path = "../gob-cache" }

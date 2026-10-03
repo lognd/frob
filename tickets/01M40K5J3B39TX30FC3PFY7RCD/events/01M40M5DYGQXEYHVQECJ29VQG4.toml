@@ -1,0 +1,50 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T10:15:12Z"
+digest = "50ff3a91bfe73d2e18b8afa0c678952901e7e5a5318c292d0663913cc147f3dd"
+exit_code = 0
+inline = """
+   Compiling aho-corasick v1.1.5
+   Compiling serde_json v1.0.151
+   Compiling pest_generator v2.9.2
+   Compiling pest_derive v2.9.2
+   Compiling regex-automata v0.4.18
+   Compiling insta v1.48.0
+   Compiling tree-sitter v0.27.0
+   Compiling regex v1.13.1
+   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/gob-symbols)
+   Compiling error_set_impl v0.9.2
+   Compiling error_set v0.9.2
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-ledger)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/gob-directives)
+   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/gob-check)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-evidence)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-tests)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-lease)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-pm)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-ack)
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-release)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-obligations)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-worktree)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/PFY7RCD/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.41s
+────────────
+ Nextest run ID e8159024-f9d4-417f-a245-a5de085c13a3 with nextest profile: default
+    Starting 2 tests across 17 binaries (117 tests skipped)
+        PASS [   0.094s] (1/2) frob-evidence::evidence a_hyphen_led_ref_is_taken_whole
+        PASS [   0.135s] (2/2) frob-cli::milestone a_hyphen_led_ref_is_taken_whole_by_milestone_evidence_add
+────────────
+     Summary [   0.136s] 2 tests run: 2 passed, 117 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -p frob-cli -E 'test(a_hyphen_led_ref_is_taken_whole) | test(a_hyphen_led_ref_is_taken_whole_by_milestone_evidence_add)'"
+size = 2347
+status = "measured"
+tests = ["a_hyphen_led_ref_is_taken_whole", "a_hyphen_led_ref_is_taken_whole_by_milestone_evidence_add"]
+at = "2026-10-03T10:15:12Z"
+actor = "lognd"
+rev = 1

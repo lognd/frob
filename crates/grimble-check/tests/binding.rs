@@ -67,3 +67,233 @@ fn no_model_means_no_binding_rows() {
             .all(|f| !f["rule"].as_str().unwrap().starts_with("SYS"))
     );
 }
+
+// frob:ticket 01M403Q1W4PMWRM8GXPRS10WX7
+// frob:tests crates/grimble-check/src/bind_cache.rs::BindSummary
+#[test]
+fn a_warm_run_reuses_the_binding_and_an_edit_rebuilds_it() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/m.grmb",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    let cold = run(dir.path(), &CheckOptions::default()).unwrap();
+    assert!(!cold.bind_cached, "the first run builds the binding");
+    let warm = run(dir.path(), &CheckOptions::default()).unwrap();
+    assert!(
+        warm.bind_cached,
+        "an unchanged repository reuses the binding"
+    );
+    let strip = |r: &grimble_check::GrimbleRun| {
+        let mut d = sibling_document(r);
+        d.as_object_mut().unwrap().remove("timing");
+        d
+    };
+    assert_eq!(strip(&cold), strip(&warm), "warm output equals cold output");
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "pub fn run() {}\npub fn more() {}\n",
+    );
+    let edited = run(dir.path(), &CheckOptions::default()).unwrap();
+    assert!(!edited.bind_cached, "an edit rebuilds the binding");
+}
+
+// frob:tests crates/grimble-check/src/bind_cache.rs::BindSummary
+#[test]
+fn a_summary_survives_its_encoding() {
+    use grimble_bind::BindFinding;
+    use grimble_check::bind_cache::BindSummary;
+    let mut s = BindSummary::default();
+    s.bindings.push(serde_json::json!({"entity": "node/a"}));
+    s.findings.push(BindFinding {
+        rule: "SYS001",
+        severity: gob_rules::Severity::Warn,
+        file: Some("src/a.rs".to_owned()),
+        range: Some((1, 4)),
+        message: "m".to_owned(),
+        anchor: "a".to_owned(),
+    });
+    s.subjects.insert("SYS003", 7);
+    s.not_applicable.insert("SYS009", "no flow".to_owned());
+    assert_eq!(BindSummary::decode(&s.encode()), Some(s));
+    assert_eq!(BindSummary::decode(b"{}"), None);
+}
+
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn rules_without_subjects_are_not_applicable_and_never_zero_subject_rows() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/m.grmb",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; }\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    let r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let doc = sibling_document(&r);
+    let na = ["SYS003", "SYS008", "SYS009", "SYS010", "SYS011"];
+    let grmb = doc["fidelity"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["language"] == "grmb")
+        .unwrap();
+    let listed: Vec<&str> = grmb["not_applicable_rules"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap())
+        .collect();
+    for rule in na {
+        assert!(
+            listed.contains(&rule),
+            "{rule} in not_applicable_rules: {listed:?}"
+        );
+        assert!(r.not_applicable.contains_key(rule));
+    }
+    for row in doc["rules"].as_array().unwrap() {
+        let rule = row["rule"].as_str().unwrap();
+        assert!(!na.contains(&rule), "{rule} must not appear as a rule row");
+        let measured = row["subjects_examined"].as_u64().unwrap() > 0
+            || row["findings"].as_u64().unwrap() > 0
+            || row["unresolved"].as_u64().unwrap() > 0;
+        assert!(measured, "{rule} reported zero subjects");
+    }
+}
+
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
+// frob:tests crates/grimble-check/src/sibling.rs::sibling_document
+#[test]
+fn an_applicable_rule_wired_to_no_subject_stays_a_zero_subject_row() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    // Every fact is present: a flow end, a claim above L1, a vmodel ref and a lock entry.
+    write(
+        dir.path(),
+        "design/m.grmb",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; owns \"docs/**\"; }\nflow f : a -> d { producer \"src/lib.rs::run\"; }\nclaim c { noflow a -> d; proof L2; evidence tests \"src/lib.rs::run\"; }\nvmodel r { kind artifact; level requirements; ref \"docs/s.md#intro\"; }\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    write(dir.path(), "docs/s.md", "# Intro\n");
+    let mut r = run(dir.path(), &CheckOptions::default()).unwrap();
+    for rule in ["SYS003", "SYS009", "SYS010", "SYS011"] {
+        assert!(!r.not_applicable.contains_key(rule), "{rule} applies here");
+    }
+    // Simulate the wiring bug: the rules receive no subject although their facts exist.
+    for rule in ["SYS003", "SYS009", "SYS010", "SYS011"] {
+        r.report.subjects_examined.insert(rule.to_owned(), 0);
+    }
+    r.report
+        .findings
+        .retain(|f| !["SYS003", "SYS009", "SYS010", "SYS011"].contains(&f.rule.as_str()));
+    let doc = sibling_document(&r);
+    let rows = doc["rules"].as_array().unwrap();
+    for rule in ["SYS003", "SYS009", "SYS010", "SYS011"] {
+        let row = rows.iter().find(|x| x["rule"] == rule).unwrap_or_else(|| {
+            panic!("{rule} must stay a rule row so frob warns of zero subjects")
+        });
+        assert_eq!(row["subjects_examined"], 0);
+        assert_eq!(row["findings"], 0);
+        assert_eq!(row["unresolved"], 0);
+    }
+    let grmb = doc["fidelity"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["language"] == "grmb")
+        .unwrap();
+    assert!(!grmb["not_applicable_rules"].to_string().contains("SYS009"));
+}
+
+// frob:ticket 01M405B09EW2M0NDNTXKHXV2X7
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn a_repository_with_no_model_entity_lists_the_ownership_rules_not_applicable() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    let r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let doc = sibling_document(&r);
+    let na = ["SYS001", "SYS002", "SYS004"];
+    let grmb = doc["fidelity"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["language"] == "grmb")
+        .unwrap();
+    let listed = grmb["not_applicable_rules"].to_string();
+    for rule in na {
+        assert!(listed.contains(rule), "{rule} in {listed}");
+        assert!(r.not_applicable.get(rule).is_some_and(|w| !w.is_empty()));
+    }
+    for row in doc["rules"].as_array().unwrap() {
+        let rule = row["rule"].as_str().unwrap();
+        assert!(!na.contains(&rule), "{rule} must not be a rule row");
+    }
+}
+
+// frob:ticket 01M405B09EW2M0NDNTXKHXV2X7
+// frob:tests crates/grimble-check/src/sibling.rs::sibling_document
+#[test]
+fn ownership_rules_wired_to_no_subject_stay_zero_subject_rows() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/m.grmb",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; }\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    let mut r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let rules = ["SYS001", "SYS002", "SYS004"];
+    for rule in rules {
+        assert!(!r.not_applicable.contains_key(rule), "{rule} applies here");
+        r.report.subjects_examined.insert(rule.to_owned(), 0);
+    }
+    r.report
+        .findings
+        .retain(|f| !rules.contains(&f.rule.as_str()));
+    let doc = sibling_document(&r);
+    let rows = doc["rules"].as_array().unwrap();
+    for rule in rules {
+        let row = rows
+            .iter()
+            .find(|x| x["rule"] == rule)
+            .unwrap_or_else(|| panic!("{rule} must stay a rule row"));
+        assert_eq!(row["subjects_examined"], 0);
+        assert_eq!(row["findings"], 0);
+    }
+    let grmb = doc["fidelity"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["language"] == "grmb")
+        .unwrap();
+    assert!(!grmb["not_applicable_rules"].to_string().contains("SYS001"));
+}

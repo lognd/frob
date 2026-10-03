@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Replaces the single mirror.toml of the first design (last event, render hash) with per-ticket shards. Additional acceptance: (1) Given K operations in a run, when the K-th completes, then the shards are committed, and a crash afterwards loses at most K operations. (2) Given two writers racing on one shard, when both commit, then CAS on the shard content lets one win and the other re-reads. (3) Given a stale map read, when a run starts, then the tracker listing still finds the issue and no create is made. Existing acceptance (round trip, lost map re-found by marker) stays, with 're-found' meaning the read-your-writes listing of m2-mirror2-gh-lookup."
+at = "2026-10-03T05:49:56Z"
+actor = "lognd"
+rev = 1

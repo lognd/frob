@@ -122,17 +122,6 @@ fn rust_tree(tree: &ParsedTree) -> Vec<Segment<'_>> {
     out
 }
 
-/// Byte ranges of code blocks in a markdown tree.
-fn markdown_code_ranges(tree: &ParsedTree) -> Vec<std::ops::Range<usize>> {
-    let mut out = Vec::new();
-    walk(tree.root(), &mut |n| {
-        if matches!(n.kind(), "fenced_code_block" | "indented_code_block") {
-            out.push(n.byte_range());
-        }
-    });
-    out
-}
-
 /// HTML comments in `text`, skipping those inside `skip` ranges.
 fn html_regions<'t>(text: &'t str, skip: &[std::ops::Range<usize>]) -> Vec<Segment<'t>> {
     let mut out = Vec::new();
@@ -214,7 +203,9 @@ pub(crate) fn segments<'t>(
     let found = match (language, tree) {
         (Language::Rust, Some(t)) => rust_tree(t),
         (Language::Rust, None) => rust_plain(text),
-        (Language::Markdown, Some(t)) => html_regions(text, &markdown_code_ranges(t)),
+        (Language::Markdown, Some(t)) => {
+            html_regions(text, &gob_languages::markdown_code_ranges(t))
+        }
         (Language::Markdown, None) => html_regions(text, &[]),
         (Language::Toml, _) => hash_comments(text),
     };

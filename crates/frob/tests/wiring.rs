@@ -181,16 +181,24 @@ fn doable_hides_tickets_overlapping_a_live_lease_and_shows_them_otherwise() {
 }
 
 #[test]
-fn registry_files_alias_is_accepted_and_shared_tables_are_listed() {
+fn registry_files_alias_is_dropped_and_shared_tables_are_listed() {
     let dir = repo();
     let toml = dir.path().join("frob.toml");
     let text = std::fs::read_to_string(&toml).expect("frob.toml");
-    let text = text.replacen(
+    let aliased = text.replacen(
         "[tickets]\n",
         "[tickets]\nregistry_files = [\"Cargo.lock\"]\n",
         1,
     );
-    std::fs::write(&toml, text).expect("write");
+    std::fs::write(&toml, aliased).expect("write");
+    let refused = frob(dir.path(), &["config", "show", "--effective"]);
+    assert_ne!(code(&refused), 0, "alias must be an unknown key");
+    assert!(
+        String::from_utf8_lossy(&refused.stdout).contains("registry_files"),
+        "names the key: {}",
+        String::from_utf8_lossy(&refused.stdout)
+    );
+    std::fs::write(&toml, text).expect("restore");
     let shown = ok(dir.path(), &["config", "show", "--effective"]);
     let tables: Vec<_> = shown["data"]["tables"]
         .as_array()

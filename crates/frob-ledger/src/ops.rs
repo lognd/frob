@@ -18,7 +18,7 @@ use crate::links::{Edge, check_add, check_parent};
 use crate::model::{
     Category, CommentSubtype, Link, LinkKind, LinkOp, Outcome, Points, Priority, Ticket, TicketType,
 };
-use crate::schema::{FieldKind, field, get_field, set_field};
+use crate::schema::{FieldKind, field, get_field, set_acceptance, set_field};
 
 /// A request to create a ticket.
 #[derive(Debug, Clone)]
@@ -102,6 +102,12 @@ pub struct Patch {
     pub remove_scope: Vec<String>,
     /// List fields to empty; the only way to empty a list.
     pub clears: Vec<String>,
+    /// Acceptance criteria to append, each taken whole (never split on commas); present texts are no-ops.
+    pub add_acceptance: Vec<String>,
+    /// 1-based positions, as `show` numbers them in the current list, of criteria to remove.
+    pub remove_acceptance: Vec<usize>,
+    /// Empty the acceptance list (applied before the adds).
+    pub clear_acceptance: bool,
     /// Reason recorded on the events (required when changing `flavour`).
     pub reason: Option<String>,
 }
@@ -374,6 +380,52 @@ impl Ledger {
         Ok(work.front.scope)
     }
 
+    /// The 1-based acceptance positions (in the current list) that `patch` would remove, nothing written.
+    ///
+    /// Covers `--remove-acceptance` and `--clear-acceptance`; runs the same
+    /// validation as [`Ledger::update`].
+    ///
+    /// # Errors
+    ///
+    /// The errors of [`Ledger::update`].
+    pub fn acceptance_removed(&self, id: TicketId, patch: &Patch) -> Result<Vec<usize>> {
+        let s = self.synced()?;
+        let (_, events) = self.plan_update(&s, id, patch)?;
+        let mut gone = Vec::new();
+        for ev in &events {
+            if let EventBody::Field(c) = &ev.body
+                && c.field == "acceptance"
+                && let Some(map) = &c.moved
+            {
+                gone.extend(
+                    map.iter()
+                        .enumerate()
+                        .filter(|(_, m)| **m == 0)
+                        .map(|(i, _)| i + 1),
+                );
+            }
+        }
+        Ok(gone)
+    }
+
+    /// Where positions recorded at event `since` (an evidence event's `accepts`) sit now; `None` when removed.
+    ///
+    /// # Errors
+    ///
+    /// Store failures reading the events.
+    pub fn criteria_now(
+        &self,
+        id: TicketId,
+        since: EventId,
+        accepts: &[usize],
+    ) -> Result<Vec<Option<usize>>> {
+        let Some(tip) = self.tip()? else {
+            return Ok(accepts.iter().map(|n| Some(*n)).collect());
+        };
+        let events = self.read_events_at(&tip.to_string(), id)?;
+        Ok(crate::fold::remap_accepts(&events, since, accepts))
+    }
+
     /// Validate `patch` against ticket `id`: the ticket after it and the events it would write.
     fn plan_update(&self, s: &Synced, id: TicketId, patch: &Patch) -> Result<(Ticket, Vec<Event>)> {
         let (_, current) = Self::load(s, id)?;
@@ -420,13 +472,19 @@ impl Ledger {
                     old,
                     new: new.clone(),
                     reason: patch.reason.clone(),
+                    moved: None,
                 }),
             ));
         }
         for name in &patch.clears {
             if !is_list_field(name) {
+                let hint = if name == "acceptance" {
+                    "; use --clear-acceptance for acceptance criteria"
+                } else {
+                    ""
+                };
                 return Err(LedgerError::invalid(format!(
-                    "--clear applies to list fields only, and `{name}` is not one"
+                    "--clear applies to list fields only, and `{name}` is not one{hint}"
                 )));
             }
             let old = get_field(&work, name);
@@ -442,8 +500,13 @@ impl Ledger {
                     old,
                     new: None,
                     reason: patch.reason.clone(),
+                    moved: None,
                 }),
             ));
+        }
+        if let Some(change) = edit_acceptance(&mut work, patch)? {
+            tracing::info!(ticket = %id, "acceptance criteria edited");
+            events.push(Event::new(&actor, EventBody::Field(change)));
         }
         let edits = [
             ("labels", &patch.add_labels, &patch.remove_labels),
@@ -548,6 +611,33 @@ impl Ledger {
         );
         drop(s);
         self.commit_events("comment", id, &[event])
+    }
+
+    /// Append one event of an already-validated `body` to ticket `id` and commit it on the ledger ref.
+    ///
+    /// The event file is written, the ticket file re-folded from every event
+    /// (so `ticket.md` keeps equalling the fold) and both committed with the
+    /// ledger's CAS retry, exactly like the verbs. The commit verb is the
+    /// event's kind. Callers own the validation of `Field` and `Transition`
+    /// bodies; the producers of `Evidence`, `EvidenceBypass` and `Land` need none.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] for a `create` or uninterpreted body,
+    /// [`LedgerError::NotFound`], or store failures.
+    pub fn append(&self, id: TicketId, body: EventBody) -> Result<Applied> {
+        if matches!(body, EventBody::Create(_) | EventBody::Other) {
+            return Err(LedgerError::invalid(
+                "append takes an interpreted, non-create event body",
+            ));
+        }
+        let s = self.synced()?;
+        Self::require_exists(&s, id)?;
+        let event = Event::new(&self.actor()?, body);
+        drop(s);
+        let verb = event.kind.clone();
+        tracing::debug!(ticket = %id, event = %event.id, kind = %verb, "appending event");
+        self.commit_events(&verb, id, &[event])
     }
 
     /// Move `id` to `to` (a general transition for lease and workflow crates).
@@ -791,5 +881,71 @@ fn edit_list(
         old,
         new,
         reason: None,
+        moved: None,
+    }))
+}
+
+/// Apply the acceptance edits of `patch` to `work`; the field change (with its index map) when the list differs.
+///
+/// Positions in `remove_acceptance` refer to the list as it stands before this
+/// patch. Order: clear or remove first, then append (so one command can replace a
+/// criterion); an added text already present, or repeated, is a no-op.
+fn edit_acceptance(work: &mut Ticket, patch: &Patch) -> Result<Option<FieldChange>> {
+    if patch.add_acceptance.is_empty()
+        && patch.remove_acceptance.is_empty()
+        && !patch.clear_acceptance
+    {
+        return Ok(None);
+    }
+    let old: Vec<String> = work
+        .front
+        .acceptance
+        .iter()
+        .map(|a| a.text.clone())
+        .collect();
+    if let Some(bad) = patch
+        .remove_acceptance
+        .iter()
+        .find(|n| **n == 0 || **n > old.len())
+    {
+        return Err(LedgerError::invalid(format!(
+            "--remove-acceptance {bad}: the ticket has {} acceptance criteria (1-based, as `ticket show` numbers them)",
+            old.len()
+        )));
+    }
+    if let Some(blank) = patch.add_acceptance.iter().find(|t| t.trim().is_empty()) {
+        return Err(LedgerError::invalid(format!(
+            "--add-acceptance needs non-empty text, got `{blank}`"
+        )));
+    }
+    let mut list: Vec<String> = Vec::new();
+    let mut moved = vec![0_usize; old.len()];
+    for (i, text) in old.iter().enumerate() {
+        if patch.clear_acceptance || patch.remove_acceptance.contains(&(i + 1)) {
+            continue;
+        }
+        list.push(text.clone());
+        moved[i] = list.len();
+    }
+    for text in &patch.add_acceptance {
+        if !list.contains(text) {
+            list.push(text.clone());
+        }
+    }
+    if list == old {
+        return Ok(None);
+    }
+    let as_value = |v: &[String]| {
+        (!v.is_empty())
+            .then(|| toml::Value::Array(v.iter().cloned().map(toml::Value::String).collect()))
+    };
+    let new = as_value(&list);
+    set_acceptance(work, new.as_ref()).map_err(LedgerError::invalid)?;
+    Ok(Some(FieldChange {
+        field: "acceptance".to_owned(),
+        old: as_value(&old),
+        new,
+        reason: patch.reason.clone(),
+        moved: Some(moved),
     }))
 }

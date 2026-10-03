@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path, PathBuf};
 
 use frob_tests::catalog::is_test_file;
-use gob_languages::Language;
+use gob_languages::{Language, ParseLimits, ParseResult, markdown_link_destinations, parse};
 use gob_rules::Finding;
 use gob_symbols::{FacetDigest, SymbolGraph, SymbolKind, Target, extract_file, slugify};
 use gob_text::{FileId, Span};
@@ -63,55 +63,6 @@ pub(crate) fn doc001(graph: &SymbolGraph, file: FileId, path: &str, text: &str) 
         ));
     }
     out
-}
-
-/// Replace the contents of inline code spans in `line` with spaces (same length).
-fn blank_code_spans(line: &str) -> String {
-    let mut out = String::with_capacity(line.len());
-    let mut open = false;
-    for c in line.chars() {
-        if c == '`' {
-            open = !open;
-            out.push(c);
-        } else if open {
-            out.extend(std::iter::repeat_n(' ', c.len_utf8()));
-        } else {
-            out.push(c);
-        }
-    }
-    out
-}
-
-/// The destination of a link whose `](` ends just before `from`, as `(start, end)` in `line`.
-fn destination(line: &str, from: usize) -> Option<(usize, usize)> {
-    let rest = &line[from..];
-    let (skip, body) = match rest.strip_prefix('<') {
-        Some(r) => (1, r),
-        None => (0, rest),
-    };
-    let end = if skip == 1 {
-        body.find('>')?
-    } else {
-        let mut depth = 0usize;
-        let mut end = None;
-        for (i, c) in body.char_indices() {
-            match c {
-                '(' => depth += 1,
-                ')' if depth == 0 => {
-                    end = Some(i);
-                    break;
-                }
-                ')' => depth -= 1,
-                c if c.is_whitespace() => {
-                    end = Some(i);
-                    break;
-                }
-                _ => {}
-            }
-        }
-        end?
-    };
-    (end > 0).then_some((from + skip, from + skip + end))
 }
 
 /// True when `dest` starts with a URL scheme (`https:`, `mailto:`) or `//`.
@@ -192,6 +143,7 @@ fn is_markdown(path: &str) -> bool {
     Language::detect(path) == Some(Language::Markdown)
 }
 
+// frob:ticket 01M3Z712ZXXKVJYREYG65P3P35
 /// DOC002 over one markdown file: relative links whose target or anchor does not exist.
 pub(crate) fn doc002(root: &Path, file: FileId, path: &str, text: &str) -> Vec<Finding> {
     if !is_markdown(path) {
@@ -205,43 +157,19 @@ pub(crate) fn doc002(root: &Path, file: FileId, path: &str, text: &str) -> Vec<F
         cache: HashMap::new(),
     };
     let mut out = Vec::new();
-    let mut fence: Option<char> = None;
-    let mut offset = 0;
-    for raw in text.split_inclusive('\n') {
-        let start = offset;
-        offset += raw.len();
-        let line = raw.trim_end_matches(['\n', '\r']);
-        let t = line.trim_start();
-        if let Some(c) = t.chars().next().filter(|c| matches!(c, '`' | '~'))
-            && t.starts_with(&c.to_string().repeat(3))
-        {
-            match fence {
-                None => fence = Some(c),
-                Some(open) if open == c => fence = None,
-                Some(_) => {}
-            }
-            continue;
-        }
-        if fence.is_some() {
-            continue;
-        }
-        let blanked = blank_code_spans(line);
-        let mut from = 0;
-        while let Some(p) = blanked[from..].find("](") {
-            let dest_from = from + p + 2;
-            from = dest_from;
-            let Some((s, e)) = destination(&blanked, dest_from) else {
-                continue;
-            };
-            let dest = &line[s..e];
-            if let Some(msg) = check_link(root, base_dir, path, dest, &mut anchors) {
-                out.push(finding(
-                    &Doc002,
-                    Some(Span::new(file, range(start + s, e - s))),
-                    msg,
-                    &format!("{path}->{dest}"),
-                ));
-            }
+    let ParseResult::Parsed(tree) = parse(Language::Markdown, text, &ParseLimits::default()) else {
+        tracing::warn!(path, "markdown not parsed; DOC002 skipped");
+        return out;
+    };
+    for r in markdown_link_destinations(&tree) {
+        let dest = &text[r.clone()];
+        if let Some(msg) = check_link(root, base_dir, path, dest, &mut anchors) {
+            out.push(finding(
+                &Doc002,
+                Some(Span::new(file, range(r.start, r.len()))),
+                msg,
+                &format!("{path}->{dest}"),
+            ));
         }
     }
     out
@@ -294,9 +222,6 @@ mod tests {
 
     #[test]
     fn destinations_and_schemes() {
-        let line = "see [a](x/y.md#z \"t\") and [b](<p q.md>)";
-        let (s, e) = destination(line, line.find("](").unwrap() + 2).unwrap();
-        assert_eq!(&line[s..e], "x/y.md#z");
         assert!(is_external("https://a.b") && is_external("mailto:a@b"));
         assert!(!is_external("a/b.md") && !is_external("#frag"));
     }

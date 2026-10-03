@@ -134,6 +134,7 @@ threshold and list is a materialized knob under `[ci]` in
 | CI013 | no-secrets-inherit: a job calling an external reusable workflow with `secrets: inherit` | P+ | Advisory | bind zizmor `secrets-inherit` |
 | CI014 | gha-syntax-and-schema: any actionlint finding other than an unknown runner label when labels are not configured | P+ | Warn | bind actionlint; Unresolved on schema lag |
 | CI015 | action-currency: an external action from an archived repository or on an end-of-life Node runtime (an offline table; "pin behind the latest release" is covered by Dependabot or Renovate presence under CI012, and an opt-in online check is `frob audit --online`, open question 3) | P+ | Advisory | bind zizmor `archived-uses` and actionlint |
+| CI016 | trust-from-protected-ref: a `pull_request_target` or `workflow_run` workflow runs frob, grimble or crunk with any trust other than `--trust-from` a protected ref (security.md 2.11, D82) | P+ | Error | native |
 | DK001 | docker-non-root: the final stage has no `USER` other than root or 0 | P- | Advisory | grimble or hadolint DL3002 |
 | DK002 | docker-base-pinned: an external `FROM` without an `@sha256:` digest | P+ | Off (opt-in; needs automation) | grimble |
 | DK003 | docker-no-latest: an external `FROM` with no tag or `:latest` | P+ | Warn | grimble or hadolint DL3006 and DL3007 |

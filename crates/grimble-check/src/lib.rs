@@ -21,7 +21,7 @@
 //! |---|---|---|
 //! | entity `body_digest`, `doc_digest` | the U facet digests are not yet joined to model entities | G11 |
 //! | finding `anchor`, `entity`, `remedy` | `check_model` returns findings without them | a `grimble-model` change |
-//! | `fidelity[].not_applicable_rules` | no CAP rule exists | the CAP rules |
+//! | `fidelity[].not_applicable_rules` | lists only the SYS rules the model gives nothing to (the `grmb` row); no CAP rule exists | the CAP rules |
 //! | `packs` | packs are accepted in `grimble.toml` but not loaded (packs.md 3) | G14 |
 //!
 //! # Boundaries
@@ -29,6 +29,7 @@
 //! No frob crate is a dependency, direct or transitive (a test enforces it with the manifests),
 //! so the grimble binary never links frob (boundaries.md).
 
+pub mod bind_cache;
 pub mod config;
 pub mod fidelity;
 pub mod model_view;
@@ -90,6 +91,10 @@ pub struct GrimbleRun {
     pub base: Option<String>,
     /// The rows of the binding relation B, as sibling `bindings` items.
     pub bindings: Vec<serde_json::Value>,
+    /// True when the binding result came from the cache instead of being rebuilt.
+    pub bind_cached: bool,
+    /// Rules whose whole scope is `NotApplicable` on this model, with the reason (never findings).
+    pub not_applicable: BTreeMap<String, String>,
     /// Wall time of the run in milliseconds.
     pub elapsed_ms: u64,
     /// Non-fatal notes: pipeline warnings plus the packs notice.
@@ -121,6 +126,9 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
     if packs.requests_packs() {
         warnings.push(config::PACKS_NOT_LOADED.to_owned());
     }
+    for (rule, why) in &trace.not_applicable {
+        tracing::info!(%rule, %why, "rule is not applicable on this model");
+    }
     let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
     tracing::info!(
         findings = report.findings.len(),
@@ -141,6 +149,8 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         ticket_scope: opts.ticket_scope.clone(),
         base: opts.base.clone(),
         bindings: trace.bindings,
+        bind_cached: trace.bind_cached,
+        not_applicable: trace.not_applicable,
         elapsed_ms,
         warnings,
     })

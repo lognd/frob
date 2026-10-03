@@ -244,8 +244,7 @@ impl Command for Doable {
 
 /// The live-lease check for `doable`, or `NoLeases` plus a warning when it cannot be built.
 ///
-/// `[tickets] registry_files` is folded into `[lease] shared_files` here (the
-/// compatibility alias), so both spellings exempt the same files.
+/// The store is opened with the materialized `[lease]` config, like every other verb.
 fn lease_check(ctx: &Context) -> (Box<dyn LeaseCheck>, Option<String>) {
     match build_lease_guard(&ctx.cwd) {
         Ok(g) => (Box::new(g), None),
@@ -261,16 +260,14 @@ fn lease_check(ctx: &Context) -> (Box<dyn LeaseCheck>, Option<String>) {
     }
 }
 
-/// Snapshot live leases with the alias-merged `[lease]` config.
+/// Snapshot live leases with the materialized `[lease]` config.
 fn build_lease_guard(cwd: &std::path::Path) -> Result<frob_lease::LeaseGuard, String> {
     let repo = gob_git::Repo::discover(cwd).map_err(|e| e.to_string())?;
     let root = repo
         .work_dir()
         .map(std::path::Path::to_path_buf)
         .ok_or_else(|| format!("{} is not inside a git work tree", cwd.display()))?;
-    let cfg = FrobConfig::load(&root)
-        .map_err(|e| e.to_string())?
-        .lease_config();
+    let cfg = FrobConfig::load(&root).map_err(|e| e.to_string())?.lease;
     let store = frob_lease::LeaseStore::open(&repo, cfg).map_err(|e| e.to_string())?;
     frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string())
 }

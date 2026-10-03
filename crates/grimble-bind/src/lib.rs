@@ -26,6 +26,7 @@
 //!   registered; only `grimble:binds` is.
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 
 pub mod ack;
 pub mod code;
@@ -93,6 +94,42 @@ pub struct Binding {
     pub live: live::Live,
     /// For each flow anchor, the contract it names (`contract` clause) and that contract's compat.
     pub flow_contracts: BTreeMap<String, model::FlowContract>,
+    /// Rules whose whole scope is `NotApplicable` on this model, with the reason (never a finding).
+    pub not_applicable: BTreeMap<&'static str, &'static str>,
+}
+
+/// Declare the rules whose subject fact is absent, before any rule runs.
+///
+/// Each predicate sits next to its rule (`rules::sysNNN_inapplicable`,
+/// `drift::sys008_inapplicable`) and reads model, code or lock facts, never an evaluation result:
+/// a rule that is applicable and then examines zero subjects stays a framework bug. An unreadable
+/// lock leaves SYS008 applicable (the fact is unknown, not absent).
+fn declare_not_applicable(
+    model: &model::Model,
+    rel: &relation::Relation,
+    lock: &Result<gob_lock::LockFile, gob_lock::LockError>,
+) -> BTreeMap<&'static str, &'static str> {
+    let verdicts = [
+        ("SYS001", rules::sys001_inapplicable(model)),
+        ("SYS002", rules::sys002_inapplicable(rel)),
+        ("SYS003", rules::sys003_inapplicable(model, rel)),
+        ("SYS004", rules::sys004_inapplicable(model)),
+        (
+            "SYS008",
+            lock.as_ref().ok().and_then(drift::sys008_inapplicable),
+        ),
+        ("SYS009", rules::sys009_inapplicable(model)),
+        ("SYS010", rules::sys010_inapplicable(model)),
+        ("SYS011", rules::sys011_inapplicable(model)),
+    ];
+    let mut out = BTreeMap::new();
+    for (rule, why) in verdicts {
+        if let Some(why) = why {
+            tracing::info!(rule, why, "rule is not applicable on this model");
+            out.insert(rule, why);
+        }
+    }
+    out
 }
 
 impl Binding {
@@ -135,9 +172,15 @@ fn expand_files(
 /// is no subject, and every file reading as unowned would be noise.
 pub fn bind(input: &BindInput<'_>) -> Binding {
     let model = model::load(input.model);
+    let lock_path = input.root.join(gob_lock::file_name(PRODUCT));
+    let lock = gob_lock::LockFile::load(&lock_path);
     if model.entities.is_empty() {
         tracing::info!("no model entities; binding skipped");
-        return Binding::default();
+        let not_applicable = declare_not_applicable(&model, &relation::Relation::default(), &lock);
+        return Binding {
+            not_applicable,
+            ..Binding::default()
+        };
     }
     let code = code::Code::build(input.root, input.entries);
     let directives = directives::scan(&code);
@@ -171,11 +214,11 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         modeled: &modeled,
         strict: input.strict,
     };
+    let not_applicable = declare_not_applicable(&model, &rel, &lock);
     let mut out = rules::evaluate(&cx);
     let live = live::Live::build(&code);
     let flow_contracts = model.flow_contracts();
-    let lock_path = input.root.join(gob_lock::file_name(PRODUCT));
-    match gob_lock::LockFile::load(&lock_path) {
+    match lock {
         Ok(lock) => drift::evaluate(
             &drift::DriftCx {
                 code: &code,
@@ -198,10 +241,14 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
             );
         }
     }
+    for rule in not_applicable.keys() {
+        out.subjects.remove(rule);
+    }
     Binding {
         rows: rel.rows,
         findings: out.findings,
         subjects: out.subjects,
+        not_applicable,
         owners,
         edges: rel.edges,
         live,

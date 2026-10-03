@@ -9,6 +9,7 @@ use serde::Serialize;
 
 use crate::PRODUCT;
 use crate::config::FrobConfig;
+use crate::init::detected_default;
 use crate::workspace::{Located, config_refusal, registered_tables, table_refs};
 
 /// What a materialize (or its dry run) did to `frob.toml`.
@@ -63,9 +64,31 @@ fn missing_knobs(
     Ok((missing, present))
 }
 
-/// Write every missing materialized knob of all registered tables.
-pub(crate) fn sync_config(root: &Path, dry_run: bool) -> Result<SyncData, CliError> {
-    let descs = registered_tables();
+/// Supplies the repository-detected default for a missing dotted knob, or `None` to keep the static default; never called for a present knob.
+pub(crate) type Detect<'a> = &'a dyn Fn(&str) -> Result<Option<String>, CliError>;
+
+/// Write every missing materialized knob of all registered tables; `detect` (when given) replaces the static default of each absent knob it answers for.
+pub(crate) fn sync_config(
+    root: &Path,
+    dry_run: bool,
+    detect: Option<Detect<'_>>,
+) -> Result<SyncData, CliError> {
+    let mut descs = registered_tables();
+    if let Some(detect) = detect {
+        let refs = table_refs(&descs);
+        let (missing, _) = missing_knobs(root, &refs)?;
+        for key in &missing {
+            let Some(value) = detect(key)? else { continue };
+            tracing::info!(key, value, "knob default detected from the repository");
+            for d in &mut descs {
+                for f in &mut d.fields {
+                    if format!("{}.{}", d.table, f.key) == *key {
+                        f.default_toml = toml::Value::String(value.clone()).to_string();
+                    }
+                }
+            }
+        }
+    }
     let refs = table_refs(&descs);
     if dry_run {
         let (added, present) = missing_knobs(root, &refs)?;
@@ -112,7 +135,17 @@ impl Command for ConfigSync {
 
     fn run(&self, ctx: &Context) -> Outcome<SyncData> {
         let located = Located::discover(&ctx.cwd);
-        let data = sync_config(&located.root, ctx.dry_run)?;
+        // Outside a work tree there is nothing to detect; the static defaults apply.
+        let root = &located.root;
+        let detect = located
+            .require_repo()
+            .ok()
+            .map(|repo| move |key: &str| detected_default(repo, root, key));
+        let data = sync_config(
+            &located.root,
+            ctx.dry_run,
+            detect.as_ref().map(|d| d as Detect<'_>),
+        )?;
         let already = data.added.is_empty();
         Ok(Payload::new(data).with_already(already))
     }

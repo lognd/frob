@@ -312,14 +312,6 @@
           "$ref": "#/$defs/RefModeKnob",
           "default": "trunk",
           "description": "`trunk` commits to `ref`; `branch` commits to the checked-out branch."
-        },
-        "registry_files": {
-          "default": [],
-          "description": "Compatibility alias read from v1 `frob.toml`: append-shared files that\nextend `[lease] shared_files` (for example `Cargo.lock`).",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
         }
       },
       "type": "object"

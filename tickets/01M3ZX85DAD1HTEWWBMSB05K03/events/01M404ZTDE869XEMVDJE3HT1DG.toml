@@ -1,0 +1,13 @@
+kind = "field"
+field = "body"
+old = """
+Implements navigation.md section 1 (autolink, UNVERIFIED); mirror.md.
+
+Prints the secrets, permissions and workflow to set up and the autolink reference; the autolink format limits are UNVERIFIED and must be checked here."""
+new = """
+Implements mirror.md section 3.1 (setup) and navigation.md section 1 (autolink, UNVERIFIED).
+
+Prints, writing nothing: the dedicated GitHub App and its permissions, the environment restricted to the default branch holding the App key and the marker keyring (never repository secrets), the default-branch workflow, the optional nudge workflow, [mirror] bot_ids, and the autolink reference. The autolink format limits are UNVERIFIED and must be checked here against the live API."""
+at = "2026-10-03T05:49:59Z"
+actor = "lognd"
+rev = 1

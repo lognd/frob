@@ -38,6 +38,8 @@ pub(crate) struct LedgerState {
     pub tip: String,
     /// Tickets the ledger held at `tip`; the subjects of the ledger-reading `must_measure` rules.
     pub tickets: usize,
+    /// Milestone objects at `tip`; `PM034` is not applicable at zero.
+    pub milestones: usize,
 }
 
 /// Thread-safe facts frob's checks read while deciding applicability and cache keys.
@@ -107,10 +109,19 @@ fn open_ledger(root: &Path, cfg: LedgerConfig) -> Option<LedgerState> {
         Ok(ids) if !ids.is_empty() => {
             tracing::info!(tickets = ids.len(), %tip, "ledger present");
             let tickets = ids.len();
+            // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
+            let milestones = frob_pm::rules::membership::milestones(&ledger).map_or_else(
+                |err| {
+                    tracing::warn!(%err, "milestones unreadable: PM034 not evaluated");
+                    0
+                },
+                |m| m.len(),
+            );
             Some(LedgerState {
                 ledger,
                 tip,
                 tickets,
+                milestones,
             })
         }
         Ok(_) => {

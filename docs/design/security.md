@@ -58,9 +58,18 @@ not re-lock, but it does change the tree digest and so needs trust again.
 
 ### 2.2 Derived state outside the work tree (I4)
 
-- Plans, compiled WASM (`.cwasm`), compiled grammars and findings caches
-  live under `$XDG_CACHE_HOME/<product>/`, keyed by tree digest plus
-  engine fingerprint, never by path.
+- Executable derived state (plans, compiled WASM `.cwasm`, compiled
+  grammars) lives under `$XDG_CACHE_HOME/<product>/`, keyed by tree
+  digest plus engine fingerprint, never by path, and never in the work
+  tree.
+- Decision-bearing caches (parse payloads and findings) stay per
+  worktree in `.frob/cache.sqlite` and `.grimble/cache.sqlite` (D38),
+  which keeps the warm path within its 2 s budget, but every row is
+  MAC'd with the per-machine key (a keyed blake3, microseconds per row)
+  and scoped by the engine fingerprint; a row without a valid MAC is a
+  miss. Together with the tracked-state guard below and CI ignoring
+  in-tree caches, a committed or planted cache row can never turn a red
+  check green (consistency pass D85).
 - Every entry carries an HMAC under a per-machine key stored beside the
   trust store; an entry with no valid MAC is discarded and rebuilt. A
   shipped `.cwasm` is therefore never loaded. Plan bytes from disk are
@@ -143,7 +152,9 @@ any sandbox, so they enter the same trust model:
   or a shell string.
 - The program is resolved at trust time to an absolute path outside the
   work tree (a `$PATH` entry inside the work tree is refused) and its
-  digest recorded in the lock; a different binary is untrusted.
+  digest recorded in the lock of the product that declares the stage
+  (`frob.lock` for `frob.toml` stages, `grimble.lock` for
+  `grimble.toml`); a different binary is untrusted.
 - It runs with a scrubbed environment, `GIT_CONFIG_NOSYSTEM=1`, no `-c`
   passthrough, stdin closed.
 - **Honest classes** (TUX-04). Programs known to execute work-tree
@@ -224,7 +235,11 @@ Read implies publish: the trust prompt and docs say "can read and print".
   `untrusted`, `untrusted-in-change`, `budget`, `trap`, `effect-denied`
   and `pack-unavailable` are required, with matching `RequiredReason`
   variants (PACK006 gets one too).
-- **No new unknowns.** `check --base REF` (CI) fails on any new
+- **No new unknowns.** The base side is computed from git objects (a
+  gob-git snapshot of the base tree, no checkout), only for the files the
+  change touches and only for P+ rules, and cached in the findings cache
+  by (base commit, engine), so the cost is proportional to the change.
+  `check --base REF` (CI) fails on any new
   Unresolved for a P+ rule in a changed file. Existing Unresolved stay
   non-failing so adoption is never blocked.
 - **GATE001 policy-weakened** (Error, required): with `--base`, the
@@ -233,8 +248,8 @@ Read implies publish: the trust prompt and docs say "can read and print".
   `replaces`, trust settings, new NotApplicable claims from repository
   adapters, new in-source declarations that a P+ security verdict
   depends on) and each weakening is one finding naming old and new
-  value. Cleared only by an exception with a ticket (exceptions.md) or a
-  reviewer label; strengthening is silent. `config diff --base REF`
+  value. Cleared only by an exception with a ticket (exceptions.md);
+  strengthening is silent. `config diff --base REF`
   prints the delta. `init` recommends CODEOWNERS for the control plane.
 - The summary separates "Unresolved because a plugin did not finish"
   from "Unresolved because the code is undecidable", so nobody filters
@@ -272,8 +287,9 @@ Read implies publish: the trust prompt and docs say "can read and print".
 - `replaces` is a privilege (2.6). The replaced std rule keeps running
   as a shadow: a finding it produces that the replacement does not is
   Unresolved `replaced-divergence`, required for security-relevant
-  families. Replacing a kernel-integrity rule (PACK, CAP004, GATE)
-  needs `--allow-replace ID` on every invocation, so it cannot arrive in
+  families. Replacing a kernel-integrity rule (PACK, CAP004, GATE) is
+  impossible in CI by construction (intended: CI never passes the flag);
+  locally it needs `--allow-replace ID` on every invocation, so it cannot arrive in
   a pull request. A new `replaces` is a GATE001 weakening.
 - WASM grammars are trust-gated like tier 3, run in the worker under
   budgets (a parse over budget makes the file opaque, Unresolved
@@ -353,7 +369,7 @@ docs/design/models/mirror/). The points that matter for I12:
   agent brief suggests are limited to `[evidence] allowed_tools`.
 - CI rules: running a check with any trust other than `--trust-from` a
   protected ref inside a `pull_request_target` or `workflow_run`
-  workflow is an Error (joins CI006 and CI011 in cicd.md).
+  workflow is CI016 (Error; joins CI006 and CI011 in cicd.md).
 
 ### 2.12 The trust review a person sees (from the trust UX audit)
 

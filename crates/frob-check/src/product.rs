@@ -8,6 +8,9 @@ use frob_ledger::rules::{Tick001, Tick003};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
+use frob_pm::rules::membership::Pm034;
+use frob_release::rel001::Rel001;
+use frob_release::rel002::Rel002;
 use gob_check::{
     CheckError, CheckTable, CollectCx, Collected, External, FileCheck, Product, RepoGroup,
     ScopedFindings, Snapshot, Timing,
@@ -24,6 +27,9 @@ use crate::snapshot::{self, FrobInputs, FrobShared};
 
 /// Rules that read the ticket ledger: without one they examine nothing.
 const LEDGER_RULES: [&str; 3] = ["REF001", "TODO002", "TICK002"];
+
+/// Why `PM034` is not applicable when it is not (logged, never a finding).
+const PM034_NA: &str = "no milestone objects in this repository";
 
 /// frob driving the shared check pipeline, with the options of one `frob check` run.
 pub struct Frob {
@@ -53,6 +59,21 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
             Vec::new()
         }
     }
+}
+
+/// `PM034` findings for the `repo:pm` group; empty without a ledger, milestones or on a read failure.
+// frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
+fn pm_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    let Some(state) = &inputs.ledger else {
+        return Vec::new();
+    };
+    frob_pm::rules::membership::evaluate(&state.ledger).map_or_else(
+        |err| {
+            tracing::warn!(%err, "PM034 not evaluated");
+            Vec::new()
+        },
+        |e| e.findings,
+    )
 }
 
 impl Product for Frob {
@@ -108,6 +129,21 @@ impl Product for Frob {
                         &read,
                     )
                 },
+            ),
+            RepoGroup::new("repo:pm", vec![Pm034.meta()], |s: &Snapshot<Self>, _| {
+                pm_findings(&s.inputs)
+            }),
+            // frob:ticket 01M4069WNGJ8YR9DTTM9K9K8V5
+            RepoGroup::new(
+                "repo:release",
+                vec![Rel002.meta()],
+                |s: &Snapshot<Self>, _| frob_release::rel002::evaluate(&s.core.root).findings,
+            ),
+            // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+            RepoGroup::new(
+                "repo:release-tags",
+                vec![Rel001.meta()],
+                |s: &Snapshot<Self>, _| rel001_findings(s),
             ),
             RepoGroup::new(
                 "repo:ledger",
@@ -194,7 +230,41 @@ impl Product for Frob {
     }
 
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
-        if LEDGER_RULES.contains(&meta.id) {
+        // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
+        if meta.id == "PM034" {
+            let ok = snap
+                .inputs
+                .ledger
+                .as_ref()
+                .is_some_and(|l| l.milestones > 0);
+            if !ok {
+                tracing::info!(rule = meta.id, why = PM034_NA, "not applicable");
+            }
+            ok
+        } else if meta.id == "REL001" {
+            // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+            rel001_inputs(snap).is_some_and(|(repo, cuts)| {
+                let why = frob_release::rel001::not_applicable(&repo, &cuts);
+                if let Some(why) = &why {
+                    tracing::info!(rule = meta.id, %why, "not applicable");
+                }
+                why.is_none()
+            })
+        } else if meta.id == "REF001" || meta.id == "TODO002" {
+            let ok = ledger_rule_applicable(
+                meta.id,
+                &snap.inputs.directives,
+                snap.shared.has_ledger,
+                snap.inputs.tickets_configured,
+            );
+            if !ok {
+                tracing::info!(
+                    rule = meta.id,
+                    "not applicable: nothing to resolve against a ledger"
+                );
+            }
+            ok
+        } else if LEDGER_RULES.contains(&meta.id) {
             snap.shared.has_ledger || snap.inputs.tickets_configured
         } else if meta.id == "COV001" {
             // COV001 needs a language with a test capability; only Rust has one today.
@@ -206,4 +276,77 @@ impl Product for Frob {
             true
         }
     }
+}
+
+/// Whether `REF001` or `TODO002` has anything to decide, from facts known before evaluation.
+///
+/// `REF001` judges `frob:ticket` references and `TODO002` judges `frob:todo` directives against the ledger, so each applies when the repository holds at least one such directive; `REF001` also applies when a ledger with tickets is open (every file is then a subject). With no such directive and no ledger there is nothing to resolve, so the rule is not applicable instead of a required silent zero; a configured-but-missing ledger with directives present stays a required Unresolved.
+// frob:ticket 01M4069Z0HH5RV8TNPFVA936C5
+pub(crate) fn ledger_rule_applicable(
+    rule: &str,
+    directives: &[gob_directives::DirectiveRecord],
+    has_ledger: bool,
+    tickets_configured: bool,
+) -> bool {
+    let verb = if rule == "REF001" { "ticket" } else { "todo" };
+    let referenced = directives
+        .iter()
+        .any(|d| d.namespace == "frob" && d.verb == verb);
+    (tickets_configured || has_ledger) && (referenced || (rule == "REF001" && has_ledger))
+}
+
+// frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+/// The repository and every recorded release cut, the two inputs of `REL001`; `None` outside a git work tree.
+fn rel001_inputs(snap: &Snapshot<Frob>) -> Option<(gob_git::Repo, Vec<frob_pm::event::CutData>)> {
+    let repo = match gob_git::Repo::discover(&snap.core.root) {
+        Ok(r) if r.work_dir().is_some() => r,
+        Ok(_) | Err(_) => {
+            tracing::info!("REL001: no git work tree");
+            return None;
+        }
+    };
+    let cuts = snap
+        .inputs
+        .ledger
+        .as_ref()
+        .map(|l| recorded_cuts(&l.ledger))
+        .unwrap_or_default();
+    Some((repo, cuts))
+}
+
+// frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+/// Every `cut` event on every milestone at the ledger tip; an unreadable ledger yields none (logged).
+fn recorded_cuts(ledger: &frob_ledger::Ledger) -> Vec<frob_pm::event::CutData> {
+    use frob_pm::event::PmBody;
+    use frob_pm::{ObjectKind, PmStore};
+    let read = || -> Result<Vec<frob_pm::event::CutData>, String> {
+        let Some(tip) = ledger.tip_hex().map_err(|e| e.to_string())? else {
+            return Ok(Vec::new());
+        };
+        let store = PmStore::new(ledger);
+        let mut cuts = Vec::new();
+        for m in frob_pm::rules::membership::milestones(ledger).map_err(|e| e.to_string())? {
+            for e in store
+                .read_events_at(&tip, ObjectKind::Milestone, m.id)
+                .map_err(|e| e.to_string())?
+            {
+                if let PmBody::Cut(d) = e.body {
+                    cuts.push(d);
+                }
+            }
+        }
+        Ok(cuts)
+    };
+    read().unwrap_or_else(|err| {
+        tracing::warn!(%err, "REL001: recorded cuts unreadable");
+        Vec::new()
+    })
+}
+
+// frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+/// `REL001` findings for the snapshot's repository.
+fn rel001_findings(snap: &Snapshot<Frob>) -> Vec<Finding> {
+    rel001_inputs(snap)
+        .map(|(repo, cuts)| frob_release::rel001::evaluate(&repo, &cuts).findings)
+        .unwrap_or_default()
 }
