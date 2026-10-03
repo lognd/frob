@@ -2,12 +2,12 @@
 id = "01M418TM2GZ24YPQE7ECTKE1J4"
 title = "Lockfiles serialize every parallel ticket: [lease] shared_files defaults to empty and nothing points to it"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T16:16:18Z"
-updated = "2026-10-03T16:16:18Z"
+updated = "2026-10-03T16:30:25Z"
 scope = ["crates/frob-lease/src/config.rs", "crates/frob-lease/src/store.rs", "crates/frob-lease/tests/**", "crates/frob-land/**", "docs/design/tickets.md"]
 
 [[acceptance]]
