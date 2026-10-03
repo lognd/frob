@@ -29,6 +29,10 @@ target = "01M3Z713YNM5666B7YFEHPFVKD"
 kind = "blocked-by"
 target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
 
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FYE5D1N2SY01VNVVACK"
+
 [[acceptance]]
 text = "Given a unit marked frob:honest that calls a clock vocabulary symbol, when grimble check runs, then NEAT010 reports the claim contradicted"
 bound = false
