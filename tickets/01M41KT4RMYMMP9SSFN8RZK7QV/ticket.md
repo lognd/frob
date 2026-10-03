@@ -2,12 +2,12 @@
 id = "01M41KT4RMYMMP9SSFN8RZK7QV"
 title = "Closing a ticket as invalid, duplicate or wont-fix demands measured evidence and a changelog fragment"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T19:28:16Z"
-updated = "2026-10-03T19:28:16Z"
+updated = "2026-10-03T19:28:38Z"
 scope = ["crates/frob-evidence/src/done.rs", "crates/frob/src/ticket/**", "crates/frob/tests/close_guards.rs"]
 
 [[acceptance]]
