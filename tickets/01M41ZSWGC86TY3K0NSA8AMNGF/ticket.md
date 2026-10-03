@@ -2,12 +2,12 @@
 id = "01M41ZSWGC86TY3K0NSA8AMNGF"
 title = "Warm frob check re-does graph (3.0 s) and directives (2.2 s) on an unchanged repository"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T22:57:51Z"
-updated = "2026-10-03T22:57:54Z"
+updated = "2026-10-03T22:58:13Z"
 scope = ["crates/frob-check/src/**", "crates/gob-cache/**", "crates/gob-symbols/src/pipeline.rs", "crates/gob-directives/src/**", "crates/frob-check/tests/warm_cache.rs"]
 
 [[acceptance]]
