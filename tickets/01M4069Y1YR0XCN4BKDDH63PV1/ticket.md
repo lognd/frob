@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T14:34:17Z"
+updated = "2026-10-03T14:34:18Z"
 idempotency_key = "m2-rel-smoke-wiring"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = [".github/workflows/release.yml", "crates/frob/tests/release_workflow.rs", "crates/frob-release/tests/release_workflow.rs", "docs/design/releases.md", "packaging/pypi/BUILDING.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a publish job without needs smoke, when the test runs, then it fails"
-bound = false
+bound = true
 +++
 
 artifact-smoke job per runnable target (needs the build jobs, with timeout) invoking cargo dev smoke; publish jobs need it. A Rust test parses release.yml and asserts: every job has timeout-minutes, no retired runner label, manylinux 2_28 pinned, publish jobs need smoke, triggers are tag-only, the exemption list equals the documented one (v1 test_release_workflow_gate).
