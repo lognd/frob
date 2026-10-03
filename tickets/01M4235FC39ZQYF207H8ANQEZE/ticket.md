@@ -2,13 +2,13 @@
 id = "01M4235FC39ZQYF207H8ANQEZE"
 title = "frob release adopt VERSION: record an existing published tag as a cut instead of deleting it (REL001)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:56:36Z"
-updated = "2026-10-03T23:56:36Z"
+updated = "2026-10-03T23:56:57Z"
 scope = ["crates/frob-release/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release.rs", "crates/frob/tests/release_cut.rs", "docs/design/releases.md", "docs/guides/release.md", "docs/reference/cli/frob.md", "docs/reference/rules/REL001.md"]
 
 [[acceptance]]
