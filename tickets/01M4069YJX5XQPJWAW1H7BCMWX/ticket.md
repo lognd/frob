@@ -2,7 +2,8 @@
 id = "01M4069YJX5XQPJWAW1H7BCMWX"
 title = "docs/guides/release.md: the release runbook (owner steps, environments, resume)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
