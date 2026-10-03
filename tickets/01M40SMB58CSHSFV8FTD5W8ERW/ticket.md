@@ -2,7 +2,8 @@
 id = "01M40SMB58CSHSFV8FTD5W8ERW"
 title = "cycle close before the end date truncates the window to the close date"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
