@@ -1,4 +1,3 @@
-# frob:used-by .github/workflows/ci.yml
 # Actions in .github/workflows/*.yml are pinned to commit SHAs; Dependabot
 # bumps the SHA and the trailing version comment together.
 version: 2

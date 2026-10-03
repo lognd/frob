@@ -1,13 +1,13 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T10:06:44Z"
-digest = "70752bfb2e54b560c9ceadaaf6a4141deff1934394247de9b6bd87f3dac2b928"
+digest = "b8ce3c3727df21ac518083ac8f64e1f99207f507dd1ef04e425002416d736219"
 exit_code = 0
 inline = """
    Compiling aho-corasick v1.1.5
    Compiling serde_json v1.0.151
    Compiling pest_generator v2.9.2
-   Compiling gob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/gob-cli)
+   Compiling gob-cli v0.0.0 (frob-v2-wt/JNF3JFH/crates/gob-cli)
    Compiling pest_derive v2.9.2
    Compiling regex-automata v0.4.18
    Compiling tree-sitter v0.27.0
@@ -15,22 +15,22 @@ inline = """
    Compiling regex v1.13.1
    Compiling error_set_impl v0.9.2
    Compiling error_set v0.9.2
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-ledger)
-   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/gob-languages)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/gob-symbols)
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-evidence)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-lease)
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/gob-directives)
-   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/gob-check)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-tests)
-   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-ack)
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-pm)
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-obligations)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-worktree)
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-release)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-check)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-ledger)
+   Compiling gob-languages v0.0.0 (frob-v2-wt/JNF3JFH/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/JNF3JFH/crates/gob-symbols)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-lease)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/JNF3JFH/crates/gob-directives)
+   Compiling gob-check v0.0.0 (frob-v2-wt/JNF3JFH/crates/gob-check)
+   Compiling frob-tests v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-tests)
+   Compiling frob-ack v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-ack)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-pm)
+   Compiling frob-obligations v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-obligations)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-worktree)
+   Compiling frob-release v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-release)
+   Compiling frob-check v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-check)
+   Compiling frob-land v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/JNF3JFH/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 9.87s
 ────────────
  Nextest run ID b496c0d2-8535-488c-b3cb-aa68048f8fba with nextest profile: default
@@ -42,7 +42,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p gob-cli -p frob-cli -E 'test(usage_missing_args) | test(usage_error_names_the_missing_arguments)'"
-size = 2329
+size = 1972
 status = "measured"
 tests = ["usage_error_names_the_missing_arguments"]
 at = "2026-10-03T10:06:44Z"

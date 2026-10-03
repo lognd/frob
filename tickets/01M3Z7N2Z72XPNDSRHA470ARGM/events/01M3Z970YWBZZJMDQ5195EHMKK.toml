@@ -4,15 +4,15 @@ actor = "lognd"
 rev = 1
 provider = "command"
 ref = "cargo nextest run --profile ci -p frob-check -p frob-lease"
-digest = "3b141bc45138b08078e662b269db0030c425454a70f91633b8b494a644a02dad"
+digest = "31e06aca681ae53f56d9a429f1ec5d230c12358c7bf9fc1600ad01460a4edff6"
 status = "measured"
 captured_at = "2026-10-02T21:44:35Z"
 accepts = [1]
 passed = true
 exit_code = 0
 inline = """
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/470ARGM/crates/frob-check)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/470ARGM/crates/frob-lease)
+   Compiling frob-check v0.0.0 (frob-v2-wt/470ARGM/crates/frob-check)
+   Compiling frob-lease v0.0.0 (frob-v2-wt/470ARGM/crates/frob-lease)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 4.08s
 ────────────
  Nextest run ID afa31ccc-871c-4651-b414-66f4da22c05d with nextest profile: ci
@@ -71,4 +71,4 @@ inline = """
 ────────────
      Summary [  19.946s] 51 tests run: 51 passed, 0 skipped
 """
-size = 5550
+size = 5508

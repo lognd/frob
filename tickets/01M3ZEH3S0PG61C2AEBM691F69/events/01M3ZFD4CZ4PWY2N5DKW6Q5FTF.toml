@@ -4,27 +4,27 @@ actor = "lognd"
 rev = 1
 provider = "command"
 ref = "cargo nextest run --profile ci -p gob-symbols -p grimble-model -p frob-cli"
-digest = "815225a1749e9a430240f7ea60e8c308949ac372625baac97e1482a62791a922"
+digest = "e060d5002e2620f479de0c141994141fd1218faded2933e6eaffa3fb5872d44b"
 status = "measured"
 captured_at = "2026-10-02T23:32:47Z"
 accepts = [1]
 passed = true
 exit_code = 0
 inline = """
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/gob-symbols)
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-ledger)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/M691F69/crates/gob-symbols)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/M691F69/crates/frob-ledger)
    Compiling proptest v1.11.0
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/gob-directives)
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-evidence)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-tests)
-   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-ack)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-lease)
-   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/grimble-model)
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-obligations)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-check)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-worktree)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/M691F69/crates/gob-directives)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/M691F69/crates/frob-evidence)
+   Compiling frob-tests v0.0.0 (frob-v2-wt/M691F69/crates/frob-tests)
+   Compiling frob-ack v0.0.0 (frob-v2-wt/M691F69/crates/frob-ack)
+   Compiling frob-lease v0.0.0 (frob-v2-wt/M691F69/crates/frob-lease)
+   Compiling grimble-model v0.0.0 (frob-v2-wt/M691F69/crates/grimble-model)
+   Compiling frob-obligations v0.0.0 (frob-v2-wt/M691F69/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (frob-v2-wt/M691F69/crates/frob-check)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/M691F69/crates/frob-worktree)
+   Compiling frob-land v0.0.0 (frob-v2-wt/M691F69/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/M691F69/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 24.36s
 ────────────
  Nextest run ID 67a6a1e0-0b6d-41fd-870a-831761c6f731 with nextest profile: ci
@@ -143,4 +143,4 @@ inline = """
 ────────────
      Summary [  27.855s] 111 tests run: 111 passed, 0 skipped
 """
-size = 12641
+size = 12368

@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T16:23:18Z"
-digest = "c57f56ff44ea6713d61148585163edecdbd13df781ec2c83b3fdba8f0c36dc92"
+digest = "6329163bf82aacc1ad4209f610a8cce2183662ae688d3b2ea93f364a41cf8e0a"
 exit_code = 0
 inline = '''
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/frob-pm)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/7HWFTBP/crates/frob-pm)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 6.13s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 4e0b33c0-7d99-45ed-bb71-9d3171b04e25 with nextest profile: default
@@ -21,7 +21,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-worktree -p frob-pm -E 'test(wip) | test(expedite) | test(the_gate)'"
-size = 1110
+size = 1089
 status = "measured"
 tests = ["rules::wip::tests::empty_input_splits_to_empty_lanes", "rules::wip::tests::limits_zero_are_off", "cli_work_past_the_repository_limit_exits_3_with_the_wip_code", "a_second_expedite_exits_3_while_one_is_running", "the_gate_and_pm013_count_the_same_holders", "expedite_is_granted_as_the_single_exception_when_the_limit_is_reached"]
 at = "2026-10-03T16:23:18Z"

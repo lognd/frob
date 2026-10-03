@@ -8,7 +8,7 @@ inline = """
 """
 passed = true
 provider = "command"
-ref = "/home/logan/projects/frob-v2/target/debug/frob check --only PM --fail-on warn"
+ref = "<repo>/target/debug/frob check --only PM --fail-on warn"
 size = 856
 status = "measured"
 at = "2026-10-03T15:29:01Z"

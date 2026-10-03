@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T10:51:29Z"
-digest = "f8a00dd0a2659bca754cc26a3225423ef3828652a03fb65883f077203733f2eb"
+digest = "16e79dec3ff9ab59f1283f049143d5c920c2c19b5582204d4a51794abb60ac40"
 exit_code = 0
 inline = """
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/H83JZSW/crates/frob)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/H83JZSW/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 0.51s
 ────────────
  Nextest run ID b10ea829-13e7-4ccb-bd4e-e725496b761f with nextest profile: default
@@ -16,7 +16,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli -E test(init_writes_every_pm_knob)"
-size = 543
+size = 522
 status = "measured"
 tests = ["init_writes_every_pm_knob_with_its_default_and_a_doc_comment"]
 at = "2026-10-03T10:51:29Z"

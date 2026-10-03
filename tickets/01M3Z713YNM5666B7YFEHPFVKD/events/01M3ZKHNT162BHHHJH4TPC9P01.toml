@@ -4,7 +4,7 @@ actor = "lognd"
 rev = 1
 provider = "nextest"
 ref = "-p frob-ack -p frob-check -p frob-cli -p frob-land -p frob-ledger -p frob-tests -p frob-worktree -p gob-cli -p gob-config -p gob-dev -p gob-diagnostics -p gob-directives -p gob-exec -p gob-git -p grimble -p grimble-check -E '(package(=frob-ack) & (test(=acked_signature_change_fires_drift003_and_ack_clears_it) | test(=changed_public_signature_with_unacked_dependents_fires_affect001) | test(=code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet) | test(=doc_to_missing_heading_fires_drift002_with_nearest_heading) | test(=evaluate_matches_check_and_is_served_from_cache_on_repeat) | test(=outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr) | test(=path_target_acks_every_symbol_and_all_reacks_tracked) | test(=reack_of_unchanged_state_is_a_no_op) | test(=scheme_one_lock_under_version_two_is_all_reattest) | test(=unknown_target_and_empty_request_are_errors) | test(=verbs_ack_why_and_affects_work_end_to_end) | test(=version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it))) | (package(=frob-check) & (test(=a_branch_touching_an_out_of_scope_file_still_fires_scope001) | test(=a_changed_side_input_misses_the_cache) | test(=a_frob_accept_suppresses_a_tool_finding_like_a_native_one) | test(=a_tool_outside_its_version_range_yields_one_non_required_unresolved) | test(=actionlint_findings_map_to_ci014_and_configured_labels_are_dropped) | test(=base_advancing_does_not_leak_into_scope001) | test(=fixture_a_matches_the_recorded_findings) | test(=fixture_b_matches_the_recorded_findings) | test(=the_ledger_directory_is_exempt_from_scope001) | test(=ticket_restricts_per_file_rules_to_its_scope) | test(=uncommitted_out_of_scope_edits_still_fire_scope001) | test(=unparseable_output_is_a_tool001_error) | test(=zizmor_findings_carry_ci_ids_and_real_spans))) | (package(=frob-cli) & (test(=add_scope_and_remove_scope_round_trip_with_noop_semantics) | test(=ambiguous_handle_exits_3_listing_both_candidates) | test(=empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event) | test(=lease_widen_rereads_the_scope_and_is_idempotent) | test(=lease_widen_without_a_lease_is_refused) | test(=links_blocked_doable_and_repeat_semantics) | test(=merge_driver_fails_with_exit_1_when_the_fold_fails) | test(=merge_driver_unions_events_from_both_branches_and_refolds) | test(=new_update_close_makes_three_commits_and_frontmatter_equals_the_fold) | test(=new_with_the_same_key_returns_already) | test(=show_json_has_every_schema_field) | test(=update_by_a_non_holder_succeeds_with_a_warning_naming_the_holder) | test(=update_by_the_holder_widens_and_narrows_the_lease) | test(=update_set_comment_brief_and_parent) | test(=widening_into_another_live_lease_is_refused_and_the_ticket_is_unchanged))) | (package(=frob-land) & (test(=an_unleased_ticket_and_another_worktree_are_refused) | test(=conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean) | test(=dirty_worktree_refuses_and_lists_paths) | test(=dry_run_plan_is_deterministic_and_changes_nothing) | test(=happy_path_lands_closes_and_cleans_up) | test(=landing_from_inside_the_worktree_defaults_to_its_ticket) | test(=lock_contention_refuses_retryably_naming_the_holder) | test(=missing_evidence_refuses_unless_bypassed_with_a_reason) | test(=red_check_refuses_with_exit_3_and_moves_nothing))) | (package(=frob-ledger) & (test(=alias_ambiguity_lists_both_candidates) | test(=branch_mode_commits_to_the_current_branch) | test(=concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent) | test(=doctor_flags_and_fixes_a_stale_frontmatter) | test(=handles_resolve_and_ambiguous_suffixes_refuse) | test(=index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise) | test(=lifecycle_new_update_link_comment_close) | test(=link_topology_is_enforced) | test(=new_is_idempotent_on_the_key) | test(=tick002_and_tick003) | test(=trunk_mode_commits_to_trunk_even_on_another_branch) | test(=update_validates_and_repeats_are_already))) | (package(=frob-tests) & (test(=an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests) | test(=only_tests_reaching_the_changed_function_are_selected))) | (package(=frob-worktree) & (test(=another_holder_is_refused_and_can_steal_with_a_reason) | test(=cli_work_twice_reports_already_and_other_actor_gets_exit_3) | test(=concurrent_work_on_overlapping_tickets_grants_exactly_one) | test(=doable_hides_tickets_overlapping_a_live_lease) | test(=start_leases_the_current_checkout_and_requeue_releases) | test(=unworkable_tickets_are_refused) | test(=work_creates_worktree_and_is_idempotent_for_the_holder) | test(=worktree_dir_knob_moves_the_worktree))) | (package(=gob-cli) & (test(=render::tests::a_gate_failure_keeps_its_data_in_json_and_exits_one))) | (package(=gob-config) & (test(=defaults_when_file_absent) | test(=file_beats_default_and_override_beats_file) | test(=schema_has_property_per_table) | test(=unknown_key_suggests_nearest) | test(=unknown_key_without_close_match_has_no_suggestion))) | (package(=gob-dev) & (test(=imports_maps_and_verifies))) | (package(=gob-diagnostics) & (test(=required_reason_serializes_tagged_and_summary_counts_required) | test(=schema_has_envelope_fields))) | (package(=gob-directives) & (test(=dsl001_suggests_close_verb_and_points_at_it) | test(=parse001_points_at_the_exact_token) | test(=record_span_covers_directive_text) | test(=registry_lists_every_verb_with_schemas))) | (package(=gob-exec) & (test(=captured_output_is_redacted_and_env_added) | test(=concurrency_is_bounded_by_jobs) | test(=proc001::tests::flags_code_and_skips_comments) | test(=proc001::tests::scan_fires_outside_allowed_crates) | test(=spawn_counter_counts_only_real_spawns) | test(=timeout_kills_group_within_a_second) | test(=timeout_leaves_no_grandchild) | test(=unlisted_program_is_not_allowed))) | (package(=gob-git) & (test(=cas_exhausted_when_ref_keeps_churning) | test(=cas_succeeds_after_one_lost_race) | test(=commit_from_linked_worktree_syncs_primary_checkout) | test(=concurrent_writers_lose_nothing) | test(=crlf_checkout_rewrite_is_not_a_local_edit) | test(=delete_via_none_and_local_edit_refusal) | test(=primary_with_local_edit_is_reported_and_keeps_it) | test(=read_apis) | test(=real_edit_still_refused_under_autocrlf) | test(=root_commit_on_missing_ref_and_checkout_sync) | test(=spawn_fallbacks_worktree_merge_push) | test(=staged_unrelated_file_is_untouched))) | (package(=grimble) & (test(=a_bad_grimble_toml_is_a_refusal) | test(=a_model_error_exits_one_and_the_finding_is_in_the_document) | test(=an_accept_clause_parks_its_finding_and_is_listed) | test(=check_json_without_a_model_is_a_valid_empty_sibling_document) | test(=doctor_reports_fidelity_model_and_config_status) | test(=fmt_check_fails_on_an_unformatted_file_and_fmt_fixes_it) | test(=init_twice_is_idempotent) | test(=no_frob_crate_is_a_direct_or_transitive_dependency_of_a_grimble_crate) | test(=the_binary_prints_exactly_one_envelope_line_on_stdout))) | (package(=grimble-check) & (test(=frob_toml_wins_over_grimble_toml_for_compute) | test(=the_default_compute_digest_is_the_blake3_of_the_canonical_object) | test(=the_document_lists_the_languages_the_walk_saw)))'"
-digest = "7a2f516dbe2b552462a1cfddd7005653df247a97e63598bd67759f76a697184c"
+digest = "7be04efb75f36af840dca9993d4ebffd298f0463ada5bff35d98d00fc6ec8c37"
 status = "measured"
 captured_at = "2026-10-03T00:45:10Z"
 passed = true
@@ -12,21 +12,21 @@ exit_code = 0
 tests = ["unknown_target_and_empty_request_are_errors", "doc_to_missing_heading_fires_drift002_with_nearest_heading", "reack_of_unchanged_state_is_a_no_op", "outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr", "version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it", "path_target_acks_every_symbol_and_all_reacks_tracked", "scheme_one_lock_under_version_two_is_all_reattest", "changed_public_signature_with_unacked_dependents_fires_affect001", "acked_signature_change_fires_drift003_and_ack_clears_it", "evaluate_matches_check_and_is_served_from_cache_on_repeat", "verbs_ack_why_and_affects_work_end_to_end", "code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet", "a_tool_outside_its_version_range_yields_one_non_required_unresolved", "a_frob_accept_suppresses_a_tool_finding_like_a_native_one", "actionlint_findings_map_to_ci014_and_configured_labels_are_dropped", "unparseable_output_is_a_tool001_error", "zizmor_findings_carry_ci_ids_and_real_spans", "fixture_b_matches_the_recorded_findings", "fixture_a_matches_the_recorded_findings", "a_changed_side_input_misses_the_cache", "a_branch_touching_an_out_of_scope_file_still_fires_scope001", "base_advancing_does_not_leak_into_scope001", "the_ledger_directory_is_exempt_from_scope001", "uncommitted_out_of_scope_edits_still_fire_scope001", "ticket_restricts_per_file_rules_to_its_scope", "lease_widen_without_a_lease_is_refused", "update_by_a_non_holder_succeeds_with_a_warning_naming_the_holder", "lease_widen_rereads_the_scope_and_is_idempotent", "widening_into_another_live_lease_is_refused_and_the_ticket_is_unchanged", "update_by_the_holder_widens_and_narrows_the_lease", "merge_driver_fails_with_exit_1_when_the_fold_fails", "ambiguous_handle_exits_3_listing_both_candidates", "new_with_the_same_key_returns_already", "empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event", "new_update_close_makes_three_commits_and_frontmatter_equals_the_fold", "add_scope_and_remove_scope_round_trip_with_noop_semantics", "show_json_has_every_schema_field", "links_blocked_doable_and_repeat_semantics", "merge_driver_unions_events_from_both_branches_and_refolds", "update_set_comment_brief_and_parent", "an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests", "only_tests_reaching_the_changed_function_are_selected", "branch_mode_commits_to_the_current_branch", "alias_ambiguity_lists_both_candidates", "handles_resolve_and_ambiguous_suffixes_refuse", "doctor_flags_and_fixes_a_stale_frontmatter", "new_is_idempotent_on_the_key", "index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise", "tick002_and_tick003", "trunk_mode_commits_to_trunk_even_on_another_branch", "update_validates_and_repeats_are_already", "concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent", "lifecycle_new_update_link_comment_close", "link_topology_is_enforced", "render::tests::a_gate_failure_keeps_its_data_in_json_and_exits_one", "conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean", "dirty_worktree_refuses_and_lists_paths", "an_unleased_ticket_and_another_worktree_are_refused", "dry_run_plan_is_deterministic_and_changes_nothing", "landing_from_inside_the_worktree_defaults_to_its_ticket", "lock_contention_refuses_retryably_naming_the_holder", "red_check_refuses_with_exit_3_and_moves_nothing", "missing_evidence_refuses_unless_bypassed_with_a_reason", "happy_path_lands_closes_and_cleans_up", "required_reason_serializes_tagged_and_summary_counts_required", "schema_has_envelope_fields", "file_beats_default_and_override_beats_file", "schema_has_property_per_table", "defaults_when_file_absent", "unknown_key_without_close_match_has_no_suggestion", "unknown_key_suggests_nearest", "imports_maps_and_verifies", "dsl001_suggests_close_verb_and_points_at_it", "record_span_covers_directive_text", "parse001_points_at_the_exact_token", "registry_lists_every_verb_with_schemas", "proc001::tests::flags_code_and_skips_comments", "proc001::tests::scan_fires_outside_allowed_crates", "no_frob_crate_is_a_direct_or_transitive_dependency_of_a_grimble_crate", "another_holder_is_refused_and_can_steal_with_a_reason", "worktree_dir_knob_moves_the_worktree", "doable_hides_tickets_overlapping_a_live_lease", "cli_work_twice_reports_already_and_other_actor_gets_exit_3", "start_leases_the_current_checkout_and_requeue_releases", "work_creates_worktree_and_is_idempotent_for_the_holder", "concurrent_work_on_overlapping_tickets_grants_exactly_one", "unworkable_tickets_are_refused", "cas_succeeds_after_one_lost_race", "cas_exhausted_when_ref_keeps_churning", "crlf_checkout_rewrite_is_not_a_local_edit", "concurrent_writers_lose_nothing", "root_commit_on_missing_ref_and_checkout_sync", "real_edit_still_refused_under_autocrlf", "delete_via_none_and_local_edit_refusal", "commit_from_linked_worktree_syncs_primary_checkout", "read_apis", "primary_with_local_edit_is_reported_and_keeps_it", "staged_unrelated_file_is_untouched", "spawn_fallbacks_worktree_merge_push", "the_default_compute_digest_is_the_blake3_of_the_canonical_object", "frob_toml_wins_over_grimble_toml_for_compute", "the_document_lists_the_languages_the_walk_saw", "a_bad_grimble_toml_is_a_refusal", "doctor_reports_fidelity_model_and_config_status", "fmt_check_fails_on_an_unformatted_file_and_fmt_fixes_it", "check_json_without_a_model_is_a_valid_empty_sibling_document", "a_model_error_exits_one_and_the_finding_is_in_the_document", "an_accept_clause_parks_its_finding_and_is_listed", "the_binary_prints_exactly_one_envelope_line_on_stdout", "init_twice_is_idempotent", "captured_output_is_redacted_and_env_added", "unlisted_program_is_not_allowed", "spawn_counter_counts_only_real_spawns", "timeout_kills_group_within_a_second", "concurrency_is_bounded_by_jobs", "timeout_leaves_no_grandchild"]
 inline = """
    Compiling zerocopy-derive v0.8.59
-   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-rules)
+   Compiling gob-rules v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-rules)
    Compiling tracing-subscriber v0.3.23
    Compiling serde_json v1.0.151
-   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-config)
-   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-diagnostics)
+   Compiling gob-config v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-config)
+   Compiling gob-diagnostics v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-diagnostics)
    Compiling tree-sitter v0.27.0
-   Compiling gob-log v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-log)
+   Compiling gob-log v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-log)
    Compiling zerocopy v0.8.59
-   Compiling gob-exec v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-exec)
-   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-ir)
-   Compiling gob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-cli)
+   Compiling gob-exec v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-exec)
+   Compiling gob-ir v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-ir)
+   Compiling gob-cli v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-cli)
    Compiling aho-corasick v1.1.5
-   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-languages)
+   Compiling gob-languages v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-languages)
    Compiling regex-automata v0.4.18
-   Compiling gob-lock v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-lock)
+   Compiling gob-lock v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-lock)
    Compiling pest_generator v2.9.2
    Compiling ahash v0.8.12
    Compiling ppv-lite86 v0.2.21
@@ -43,8 +43,8 @@ inline = """
    Compiling gix-lock v24.0.0
    Compiling gix-shallow v0.13.0
    Compiling error_set_impl v0.9.2
-   Compiling gob-cache v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-cache)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-symbols)
+   Compiling gob-cache v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-cache)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-symbols)
    Compiling ulid v1.2.1
    Compiling gix-revwalk v0.35.0
    Compiling gix-traverse v0.61.0
@@ -56,7 +56,7 @@ inline = """
    Compiling gix-config v0.60.0
    Compiling gix-diff v0.67.1
    Compiling gix-dir v0.29.1
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-directives)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-directives)
    Compiling gix-revision v0.49.1
    Compiling gix-pack v0.74.2
    Compiling gix-merge v0.20.1
@@ -66,35 +66,35 @@ inline = """
    Compiling gix-worktree-state v0.34.1
    Compiling gix-protocol v0.65.1
    Compiling error_set v0.9.2
-   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-check)
+   Compiling gob-check v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-check)
    Compiling insta v1.48.0
    Compiling gix v0.87.1
    Compiling half v2.7.1
-   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-mdtest)
+   Compiling gob-mdtest v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-mdtest)
    Compiling ciborium-ll v0.2.2
-   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/grimble-model)
+   Compiling grimble-model v0.0.0 (frob-v2-wt/EHPFVKD/crates/grimble-model)
    Compiling ciborium v0.2.2
    Compiling tinytemplate v1.2.1
    Compiling criterion v0.5.1
-   Compiling grimble-check v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/grimble-check)
-   Compiling gob-git v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-git)
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-ledger)
-   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-ack)
+   Compiling grimble-check v0.0.0 (frob-v2-wt/EHPFVKD/crates/grimble-check)
+   Compiling gob-git v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-ledger)
+   Compiling frob-ack v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-ack)
    Compiling strum_macros v0.28.0
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-evidence)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-lease)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-tests)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-worktree)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-lease)
+   Compiling frob-tests v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-tests)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-worktree)
    Compiling referencing v0.58.5
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-obligations)
+   Compiling frob-obligations v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-obligations)
    Compiling jsonschema-value v0.58.5
    Compiling strum v0.28.0
-   Compiling grimble v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/grimble)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-check)
+   Compiling grimble v0.0.0 (frob-v2-wt/EHPFVKD/crates/grimble)
+   Compiling frob-check v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-check)
    Compiling jsonschema v0.58.5
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/frob)
-   Compiling gob-dev v0.0.0 (/home/logan/projects/frob-v2-wt/EHPFVKD/crates/gob-dev)
+   Compiling frob-land v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/EHPFVKD/crates/frob)
+   Compiling gob-dev v0.0.0 (frob-v2-wt/EHPFVKD/crates/gob-dev)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 24.52s
 ────────────
  Nextest run ID f1ebb6ad-6f7d-4f06-871d-2173ef82f4a3 with nextest profile: default
@@ -218,4 +218,4 @@ inline = """
 ────────────
      Summary [   2.155s] 116 tests run: 116 passed, 175 skipped
 """
-size = 16351
+size = 15742

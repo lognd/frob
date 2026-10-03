@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [2]
 captured_at = "2026-10-03T16:22:49Z"
-digest = "7d12aac0745c99f72353b986384b26cfc926307a856c2e9256a8f01c023878a8"
+digest = "d23757bea8a24f93593862b3aa4eeeeeb117dca9b5679f9ce32f1dda3e03dc1c"
 exit_code = 0
 inline = '''
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/frob-worktree)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/7HWFTBP/crates/frob-worktree)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 3.88s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 7607bf8e-a0e0-4277-a29a-5f4ab2672d66 with nextest profile: default
@@ -16,7 +16,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-worktree -E 'test(the_gate_and_pm013_count_the_same_holders)'"
-size = 649
+size = 628
 status = "measured"
 tests = ["the_gate_and_pm013_count_the_same_holders"]
 at = "2026-10-03T16:22:49Z"

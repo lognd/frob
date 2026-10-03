@@ -1,11 +1,11 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T16:31:31Z"
-digest = "90aac09ec4d3b2c935d689188331366f483cef9f927228a49335ebb5001d9e19"
+digest = "6acdc4c719120ad9fd942e0d241a712b8d091f0fce3d38a5835c4983ee8746ea"
 exit_code = 0
 inline = '''
-   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/ZQHJH6H/crates/frob-pm)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/ZQHJH6H/crates/frob)
+   Compiling frob-pm v0.0.0 (frob-v2-wt/ZQHJH6H/crates/frob-pm)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/ZQHJH6H/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 1.63s
 \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
  Nextest run ID 9c17cb67-ed60-41e5-b1d2-61547ec401b6 with nextest profile: default
@@ -21,7 +21,7 @@ inline = '''
 passed = true
 provider = "nextest"
 ref = "-p frob-pm --lib cycle::plan::tests::fills_in_rank_order_and_leaves_out_what_does_not_fit cycle::plan::tests::next_milestone_leads_the_plain_lane_only cycle::plan::tests::members_and_other_cycles_are_not_reassigned_and_replanning_is_stable cycle::plan::tests::unenforced_capacity_and_closed_cycles_are_refused -p frob-cli --test cycle plan_without_enforced_capacity_is_refused_unless_points_is_given"
-size = 1166
+size = 1124
 status = "measured"
 tests = ["cycle::plan::tests::fills_in_rank_order_and_leaves_out_what_does_not_fit", "cycle::plan::tests::members_and_other_cycles_are_not_reassigned_and_replanning_is_stable", "cycle::plan::tests::unenforced_capacity_and_closed_cycles_are_refused", "cycle::plan::tests::next_milestone_leads_the_plain_lane_only", "plan_without_enforced_capacity_is_refused_unless_points_is_given"]
 at = "2026-10-03T16:31:31Z"

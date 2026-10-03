@@ -2,14 +2,14 @@
 id = "01M41RK1G648EJJNRK4G5RJY40"
 title = "Nine tests fail on windows-latest: merge driver, command allowlist, trust config dir and paths on Windows"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T20:51:46Z"
-updated = "2026-10-03T20:51:46Z"
-scope = ["crates/frob/src/init.rs", "crates/gob-trust/src/**", "crates/gob-cli/tests/root.rs", "crates/gob-trust/tests/trust.rs", "crates/frob-tests/tests/selection.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/close_guards.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/pm_wiring.rs"]
+updated = "2026-10-03T21:23:29Z"
+scope = ["crates/frob/src/init.rs", "crates/gob-trust/src/**", "crates/gob-cli/tests/root.rs", "crates/gob-trust/tests/trust.rs", "crates/frob-tests/tests/selection.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/close_guards.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/pm_wiring.rs", "crates/frob-land/src/land.rs", "crates/frob/tests/common/mod.rs", "crates/frob/tests/cli.rs", "crates/gob-exec/src/cmdline.rs", "crates/gob-exec/src/lib.rs", "crates/gob-exec/Cargo.toml", "crates/gob-exec/tests/cmdline.rs"]
 
 [[acceptance]]
 text = "Given the windows-latest CI job, when cargo nextest run --profile ci runs, then all tests pass"
@@ -17,7 +17,7 @@ bound = false
 
 [[acceptance]]
 text = "Given frob init on Windows, when a ledger merge happens, then git runs the frob merge driver and the merge succeeds"
-bound = false
+bound = true
 +++
 
 CI run https://github.com/lognd/frob/actions/runs/37151892875 (2026-10-03), windows-latest: 1270 tests, 9 failed. These are product bugs on a release target (x86_64-pc-windows-msvc is one of the five), not test noise; fix the product where the product is wrong and the test where the test is non-portable, and say which for each:
