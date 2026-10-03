@@ -258,11 +258,7 @@ fn identity_body_rename_is_sys008_then_ack_rename_carries_the_entry() {
     assert!(
         message_of(&b, "SYS008").contains("grimble ack --rename c/lib.rs::take c/lib.rs::receive")
     );
-    assert_eq!(
-        b.subjects.get("SYS008"),
-        Some(&1),
-        "the gone anchor is examined"
-    );
+    assert!(b.subjects["SYS008"] >= 1, "the lock entries are examined");
     assert!(!b.not_applicable.contains_key("SYS008"));
     let acked = r
         .ack_with(
@@ -502,11 +498,21 @@ fn rename_min_tokens_knob_decides_whether_a_body_can_be_paired() {
     assert_eq!(drift(&r.bind_with(10_000)), ["SYS007 error"]);
 }
 
-// frob:tests crates/grimble-bind/src/drift.rs::evaluate
+// frob:tests crates/grimble-bind/src/drift.rs::sys008_inapplicable
 #[test]
-fn sys008_is_not_applicable_when_no_anchor_is_gone() {
+fn sys008_with_a_lock_and_no_gone_anchor_is_a_measured_clean() {
     let r = acked_repo();
     let b = r.bind();
-    assert!(b.not_applicable.contains_key("SYS008"));
+    assert!(!b.not_applicable.contains_key("SYS008"));
+    assert!(b.subjects["SYS008"] >= 1, "lock entries are the subjects");
+    assert!(!b.findings.iter().any(|f| f.rule == "SYS008"));
+}
+
+// frob:tests crates/grimble-bind/src/drift.rs::sys008_inapplicable
+#[test]
+fn sys008_without_a_lock_is_not_applicable_with_a_reason() {
+    let r = Repo::new();
+    let b = r.bind();
+    assert!(b.not_applicable["SYS008"].contains("grimble.lock"));
     assert!(!b.subjects.contains_key("SYS008"), "no zero subject count");
 }

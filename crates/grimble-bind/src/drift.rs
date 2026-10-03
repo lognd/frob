@@ -23,6 +23,7 @@
 
 // frob:ticket 01M3Z714820D1SK6X44T9R1B70
 // frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -168,7 +169,6 @@ fn sys007_symbol(
         })
         .collect();
     if !candidates.is_empty() {
-        out.count("SYS008", 1);
         out.fire(
             "SYS008",
             Severity::Advisory,
@@ -502,11 +502,22 @@ fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
     );
 }
 
+/// Why SYS008 has no subject, or `None` when `grimble.lock` records symbol anchors.
+///
+/// The fact SYS008 depends on is that a lock with entries exists: each entry is examined for
+/// being gone with a rename candidate. With such a lock, zero gone anchors is a measured clean,
+/// not an inapplicable rule; with no lock or no entry there is nothing to pair.
+pub fn sys008_inapplicable(lock: &gob_lock::LockFile) -> Option<&'static str> {
+    lock.entries
+        .is_empty()
+        .then_some("grimble.lock is absent or records no symbol anchor, so no rename can be paired")
+}
+
 /// Evaluate SYS006, SYS007 and SYS008 over the lock; counts a subject per entry.
 pub fn evaluate(cx: &DriftCx<'_>, out: &mut Output) {
-    // A rule with nothing to examine is not applicable, not vacuous: a repository that never
-    // acked has no lock, and must_measure must not fail it. SYS008 is not a required rule.
-    out.subjects.entry("SYS008").or_default();
+    // Every lock entry is a SYS008 subject (examined for being gone with a rename candidate).
+    // Whether the rule applies at all was decided before evaluation ([`sys008_inapplicable`]).
+    out.count("SYS008", cx.lock.entries.len());
     if !cx.lock.flows.is_empty() {
         out.subjects.entry("SYS006").or_default();
     }
@@ -533,7 +544,6 @@ pub fn evaluate(cx: &DriftCx<'_>, out: &mut Output) {
         sys007_symbol(cx, key, e, &mut by_body, out, &mut hidden_gone);
     }
     if !hidden_gone.is_empty() {
-        out.count("SYS008", 1);
         out.unresolved(
             "SYS008",
             Reason::UnseenRemainder,

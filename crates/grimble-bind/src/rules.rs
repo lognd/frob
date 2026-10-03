@@ -5,6 +5,7 @@
 //! otherwise. Nothing here passes silently on an Unknown answer.
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -368,11 +369,13 @@ fn end_owner(cx: &Cx<'_>, flow: &Entity, out: &mut Output) {
         if cx.model.entities.get(end).is_some_and(|n| n.external) {
             continue;
         }
+        if flow.clauses_of(role).next().is_some() {
+            out.count("SYS003", 1);
+        }
         for sym in singleton_rows(cx, flow, role) {
             let Some(uo) = cx.owners.units.get(&sym) else {
                 continue;
             };
-            out.count("SYS003", 1);
             let site = flow
                 .clauses_of(role)
                 .next()
@@ -512,14 +515,68 @@ fn end_state(cx: &Cx<'_>, flow: &Entity, role: Role) -> End {
     }
 }
 
-fn expected(cx: &Cx<'_>, flow: &Entity, role: Role) -> bool {
+fn expected(model: &Model, flow: &Entity, role: Role) -> bool {
     let Some((from, to)) = &flow.ends else {
         return false;
     };
     let end = if role == Role::Producer { from } else { to };
     end.as_ref()
-        .and_then(|a| cx.model.entities.get(a))
+        .and_then(|a| model.entities.get(a))
         .is_some_and(|n| n.owns_code() && !n.external)
+}
+
+/// Why SYS003 has no subject, or `None` when the model or the code gives it one.
+///
+/// Subjects: an operand (`grimble:binds`), a `shape`, `ref` or `runnable` clause, a directive
+/// owner, or a flow `producer`/`consumer` clause.
+pub fn sys003_inapplicable(model: &Model, rel: &Relation) -> Option<&'static str> {
+    let has = rel.operands > 0
+        || !rel.dir_owns.is_empty()
+        || model.entities.values().any(|e| {
+            e.clauses.iter().any(|c| {
+                matches!(
+                    c.role,
+                    Role::Shape | Role::Runnable | Role::Ref | Role::Producer | Role::Consumer
+                )
+            })
+        });
+    (!has).then_some(
+        "the model has no operand, directive owner, shape, ref, runnable, producer or consumer clause to examine",
+    )
+}
+
+/// Why SYS009 has no subject, or `None` when a flow end's node owns code.
+pub fn sys009_inapplicable(model: &Model) -> Option<&'static str> {
+    let has = model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Flow)
+        .any(|f| expected(model, f, Role::Producer) || expected(model, f, Role::Consumer));
+    (!has).then_some("the model declares no flow whose endpoint node owns code")
+}
+
+/// Why SYS010 has no subject, or `None` when a claim above L1 that is not assumed exists.
+pub fn sys010_inapplicable(model: &Model) -> Option<&'static str> {
+    let has = model.entities.values().any(is_checked_claim);
+    (!has).then_some("the model declares no claim above proof level L1 that is not assumed")
+}
+
+/// Why SYS011 has no subject, or `None` when a vmodel `ref` or `runnable` clause exists.
+pub fn sys011_inapplicable(model: &Model) -> Option<&'static str> {
+    let has = model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Vmodel)
+        .any(|e| {
+            e.clauses
+                .iter()
+                .any(|c| matches!(c.role, Role::Ref | Role::Runnable))
+        });
+    (!has).then_some("the model declares no vmodel ref or runnable clause")
+}
+
+fn is_checked_claim(e: &Entity) -> bool {
+    e.kind == EntityKind::Claim && e.proof.is_some_and(|p| p >= 2) && !e.assumed
 }
 
 fn flows(cx: &Cx<'_>, out: &mut Output) {
@@ -534,8 +591,8 @@ fn flows(cx: &Cx<'_>, out: &mut Output) {
             end_state(cx, f, Role::Consumer),
         );
         let (pe, ce) = (
-            expected(cx, f, Role::Producer),
-            expected(cx, f, Role::Consumer),
+            expected(cx.model, f, Role::Producer),
+            expected(cx.model, f, Role::Consumer),
         );
         out.count("SYS009", usize::from(pe) + usize::from(ce));
         let site = Some((f.file.as_str(), (f.span.start, f.span.end)));
@@ -707,7 +764,7 @@ fn sys005(cx: &Cx<'_>, out: &mut Output) {
 
 fn sys010(cx: &Cx<'_>, out: &mut Output) {
     for e in cx.model.entities.values() {
-        if e.kind != EntityKind::Claim || e.proof.is_none_or(|p| p < 2) || e.assumed {
+        if !is_checked_claim(e) {
             continue;
         }
         out.count("SYS010", 1);

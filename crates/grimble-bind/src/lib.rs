@@ -98,43 +98,32 @@ pub struct Binding {
     pub not_applicable: BTreeMap<&'static str, &'static str>,
 }
 
-/// Rules that have nothing to examine, rather than something to certify, when the model lacks
-/// their subject entity, with the reason each reports.
-const SCOPED_RULES: [(&str, &str); 5] = [
-    (
-        "SYS003",
-        "the model has no operand, singleton clause (shape, ref, runnable), directive owner or flow end to examine",
-    ),
-    (
-        "SYS008",
-        "no grimble.lock entry names a gone anchor, so there is nothing to pair as a rename",
-    ),
-    (
-        "SYS009",
-        "the model declares no flow whose endpoint node owns code",
-    ),
-    (
-        "SYS010",
-        "the model declares no claim above proof level L1 that is not assumed",
-    ),
-    ("SYS011", "the model declares no vmodel ref or runnable"),
-];
-
-/// Move every [`SCOPED_RULES`] rule that examined zero subjects and reported nothing out of
-/// `subjects` and into the `NotApplicable` map with its reason.
+/// Declare the rules whose subject fact is absent, before any rule runs.
+///
+/// Each predicate sits next to its rule (`rules::sysNNN_inapplicable`,
+/// `drift::sys008_inapplicable`) and reads model, code or lock facts, never an evaluation result:
+/// a rule that is applicable and then examines zero subjects stays a framework bug. An unreadable
+/// lock leaves SYS008 applicable (the fact is unknown, not absent).
 fn declare_not_applicable(
-    subjects: &mut BTreeMap<&'static str, usize>,
-    findings: &[BindFinding],
+    model: &model::Model,
+    rel: &relation::Relation,
+    lock: &Result<gob_lock::LockFile, gob_lock::LockError>,
 ) -> BTreeMap<&'static str, &'static str> {
+    let verdicts = [
+        ("SYS003", rules::sys003_inapplicable(model, rel)),
+        (
+            "SYS008",
+            lock.as_ref().ok().and_then(drift::sys008_inapplicable),
+        ),
+        ("SYS009", rules::sys009_inapplicable(model)),
+        ("SYS010", rules::sys010_inapplicable(model)),
+        ("SYS011", rules::sys011_inapplicable(model)),
+    ];
     let mut out = BTreeMap::new();
-    for (rule, reason) in SCOPED_RULES {
-        let idle = subjects.get(rule).is_none_or(|n| *n == 0);
-        if idle && !findings.iter().any(|f| f.rule == rule) {
-            tracing::info!(rule, reason, "rule is not applicable on this model");
-            subjects.remove(rule);
-            if let Some(id) = RULES.iter().copied().find(|r| *r == rule) {
-                out.insert(id, reason);
-            }
+    for (rule, why) in verdicts {
+        if let Some(why) = why {
+            tracing::info!(rule, why, "rule is not applicable on this model");
+            out.insert(rule, why);
         }
     }
     out
@@ -180,10 +169,11 @@ fn expand_files(
 /// is no subject, and every file reading as unowned would be noise.
 pub fn bind(input: &BindInput<'_>) -> Binding {
     let model = model::load(input.model);
+    let lock_path = input.root.join(gob_lock::file_name(PRODUCT));
+    let lock = gob_lock::LockFile::load(&lock_path);
     if model.entities.is_empty() {
         tracing::info!("no model entities; binding skipped");
-        let mut subjects = BTreeMap::new();
-        let not_applicable = declare_not_applicable(&mut subjects, &[]);
+        let not_applicable = declare_not_applicable(&model, &relation::Relation::default(), &lock);
         return Binding {
             not_applicable,
             ..Binding::default()
@@ -221,11 +211,11 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         modeled: &modeled,
         strict: input.strict,
     };
+    let not_applicable = declare_not_applicable(&model, &rel, &lock);
     let mut out = rules::evaluate(&cx);
     let live = live::Live::build(&code);
     let flow_contracts = model.flow_contracts();
-    let lock_path = input.root.join(gob_lock::file_name(PRODUCT));
-    match gob_lock::LockFile::load(&lock_path) {
+    match lock {
         Ok(lock) => drift::evaluate(
             &drift::DriftCx {
                 code: &code,
@@ -248,7 +238,9 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
             );
         }
     }
-    let not_applicable = declare_not_applicable(&mut out.subjects, &out.findings);
+    for rule in not_applicable.keys() {
+        out.subjects.remove(rule);
+    }
     Binding {
         rows: rel.rows,
         findings: out.findings,

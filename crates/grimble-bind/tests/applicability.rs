@@ -119,6 +119,10 @@ fn sys009_examines_a_flow_end_and_fires_on_an_unbound_one() {
         ("dst/lib.rs", "pub fn recv() {}\n"),
     ]);
     assert_eq!(examined(&b, "SYS009"), 2);
+    assert!(
+        examined(&b, "SYS003") >= 1,
+        "a flow end clause is a SYS003 subject"
+    );
     assert!(fired(&b, "SYS009"));
     assert!(!b.not_applicable.contains_key("SYS009"));
 }

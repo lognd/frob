@@ -174,3 +174,51 @@ fn rules_without_subjects_are_not_applicable_and_never_zero_subject_rows() {
         assert!(measured, "{rule} reported zero subjects");
     }
 }
+
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
+// frob:tests crates/grimble-check/src/sibling.rs::sibling_document
+#[test]
+fn an_applicable_rule_wired_to_no_subject_stays_a_zero_subject_row() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    // Every fact is present: a flow end, a claim above L1, a vmodel ref and a lock entry.
+    write(
+        dir.path(),
+        "design/m.grmb",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; owns \"docs/**\"; }\nflow f : a -> d { producer \"src/lib.rs::run\"; }\nclaim c { noflow a -> d; proof L2; evidence tests \"src/lib.rs::run\"; }\nvmodel r { kind artifact; level requirements; ref \"docs/s.md#intro\"; }\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    write(dir.path(), "docs/s.md", "# Intro\n");
+    let mut r = run(dir.path(), &CheckOptions::default()).unwrap();
+    for rule in ["SYS003", "SYS009", "SYS010", "SYS011"] {
+        assert!(!r.not_applicable.contains_key(rule), "{rule} applies here");
+    }
+    // Simulate the wiring bug: the rules receive no subject although their facts exist.
+    for rule in ["SYS003", "SYS009", "SYS010", "SYS011"] {
+        r.report.subjects_examined.insert(rule.to_owned(), 0);
+    }
+    r.report
+        .findings
+        .retain(|f| !["SYS003", "SYS009", "SYS010", "SYS011"].contains(&f.rule.as_str()));
+    let doc = sibling_document(&r);
+    let rows = doc["rules"].as_array().unwrap();
+    for rule in ["SYS003", "SYS009", "SYS010", "SYS011"] {
+        let row = rows.iter().find(|x| x["rule"] == rule).unwrap_or_else(|| {
+            panic!("{rule} must stay a rule row so frob warns of zero subjects")
+        });
+        assert_eq!(row["subjects_examined"], 0);
+        assert_eq!(row["findings"], 0);
+        assert_eq!(row["unresolved"], 0);
+    }
+    let grmb = doc["fidelity"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["language"] == "grmb")
+        .unwrap();
+    assert!(!grmb["not_applicable_rules"].to_string().contains("SYS009"));
+}
