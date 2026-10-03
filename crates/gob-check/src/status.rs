@@ -62,15 +62,15 @@ impl RuleNeed {
     }
 }
 
-/// The needs of rule `id`; unknown rules default to a capability rule at F1.
-pub fn need_of(id: &str) -> RuleNeed {
-    match id {
+/// The needs of rule `id`; `None` for a rule outside the table, which is always examined.
+pub fn need_of(id: &str) -> Option<RuleNeed> {
+    Some(match id {
         "TODO001" | "REF001" | "TEST001" | "INV001" | "DRIFT001" | "DRIFT002" | "DRIFT003"
         | "DRIFT004" => RuleNeed::text(Fidelity::F1),
         "DOC001" | "INV002" => RuleNeed::capability(Fidelity::F1, true),
         "COV001" | "AFFECT001" => RuleNeed::capability(Fidelity::F2, true),
-        _ => RuleNeed::capability(Fidelity::F1, false),
-    }
+        _ => return None,
+    })
 }
 
 /// [`subject_status_for`] for an unscanned text file.
@@ -92,7 +92,9 @@ pub fn subject_status_for(
     binary: bool,
     scanned: bool,
 ) -> SubjectStatus {
-    let need = need_of(meta.id);
+    let Some(need) = need_of(meta.id) else {
+        return SubjectStatus::Examine;
+    };
     let status = if info.is_opaque() {
         match need.need {
             Need::Capability => {
@@ -123,7 +125,10 @@ pub fn subject_status_for(
 
 /// For an examined file with parse holes: why subjects inside or across a hole stay Unresolved.
 pub fn hole_caveat(info: &FileInfo, meta: &RuleMeta) -> Option<String> {
-    match (&info.parse_status, need_of(meta.id).symbol_subjects) {
+    match (
+        &info.parse_status,
+        need_of(meta.id).is_some_and(|n| n.symbol_subjects),
+    ) {
         (ParseStatus::Partial { holes }, true) => Some(format!(
             "the file parsed partially ({holes} hole(s)); subjects inside or across a hole cannot be decided"
         )),
@@ -338,6 +343,14 @@ mod tests {
         assert_eq!(subject_status(&i, meta("DOC001")), SubjectStatus::Examine);
         assert!(hole_caveat(&i, meta("DOC001")).is_some());
         assert!(hole_caveat(&i, meta("TODO001")).is_none());
+    }
+
+    #[test]
+    fn unknown_rules_are_always_examined() {
+        assert_eq!(
+            subject_status(&opaque(), meta("ZZZ001")),
+            SubjectStatus::Examine
+        );
     }
 
     #[test]

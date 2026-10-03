@@ -189,7 +189,7 @@ fn opaque_repo_findings<P: Product>(
         .flat_map(|g| g.metas.iter())
         .filter(|m| wanted(m))
     {
-        if need_of(meta.id).need != Need::EveryTextArtifact {
+        if need_of(meta.id).is_none_or(|n| n.need != Need::EveryTextArtifact) {
             continue;
         }
         tracing::info!(
