@@ -2,13 +2,13 @@
 id = "01M3ZR5KCPY3E3NFCVFS404RDJ"
 title = "Cross-crate call resolution through use imports and crate dependencies; field and signature tables"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:05:57Z"
-updated = "2026-10-03T02:05:57Z"
+updated = "2026-10-03T02:11:39Z"
 idempotency_key = "m2-cov-crosscrate"
 labels = ["milestone:2"]
 scope = ["crates/gob-symbols/**", "crates/frob-obligations/**"]
