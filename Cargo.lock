@@ -910,6 +910,7 @@ dependencies = [
  "gob-exec",
  "gob-git",
  "gob-log",
+ "proptest",
  "schemars",
  "serde",
  "serde_json",

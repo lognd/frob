@@ -141,3 +141,50 @@ fn home_root_range_stops_after_the_user_name() {
     }
     assert!(find_home_root(b"~/projects /home/<user>/x").is_none());
 }
+
+// frob:ticket 01M41VT71KGG1AXT491SKCPWMA
+/// Angle-bracket placeholders in both styles, and a bare `/root/`, are documentation, not home paths.
+#[test]
+fn placeholder_account_names_are_not_hits() {
+    for clean in [
+        "/home/<n>/x",
+        "/home/<name>/",
+        "/Users/<user>/",
+        "/Users/<>/",
+        "C:\\Users\\<n>\\",
+        "C:\\\\Users\\\\<name>\\\\",
+        "C:/Users/<user>/",
+        "roots /home/<n>/, /Users/<n>/, /root/, C:\\Users\\<n>\\ and C:/Users/<n>/",
+    ] {
+        assert_eq!(find_home_path(clean.as_bytes()), None, "{clean}");
+    }
+}
+
+/// A sibling worktree directory is found in either style, with mixed or doubled separators, and only at a boundary.
+#[test]
+fn worktree_dir_matches_both_styles() {
+    use frob_ledger::privacy::find_worktree_dir;
+    let cases: &[(&str, Option<&str>)] = &[
+        (
+            "in /home/ann/projects/app-wt/T2;",
+            Some("/home/ann/projects/app-wt"),
+        ),
+        (
+            "C:\\Users\\bo\\p\\app-wt\\T3",
+            Some("C:\\Users\\bo\\p\\app-wt"),
+        ),
+        (
+            "C:\\Users\\RUNNER~1\\Temp/app-wt/T1",
+            Some("C:\\Users\\RUNNER~1\\Temp/app-wt"),
+        ),
+        ("D:/w/app-wt/T1", Some("D:/w/app-wt")),
+        ("/home/ann/app-wt-x/T1", None),
+        ("/home/ann/my-app-wt/T1", None),
+        ("rel/app-wt/T1", None),
+        ("app-wt/T1", None),
+    ];
+    for (text, want) in cases {
+        let got = find_worktree_dir(text.as_bytes(), "app-wt").map(|r| &text[r]);
+        assert_eq!(got, *want, "{text}");
+    }
+}

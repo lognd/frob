@@ -152,7 +152,7 @@ fn dirty() -> (Repo, String, PathBuf) {
     let path = format!("tickets/{id}/events/{}", ev.file_name());
     std::fs::write(repo.path().join(&path), ev.to_toml().expect("toml")).expect("write event");
     let lease = format!(
-        "kind = \"lease\"\nat = \"{}\"\nactor = \"a\"\nrev = 1\nreason = \"lease: ann in /home/ann/projects/{name}-wt/T2; scope: x\"\n",
+        "kind = \"lease\"\nat = \"{}\"\nactor = \"a\"\nrev = 1\nreason = \"lease: ann in /home/ann/projects/{name}-wt/T2 and C:\\\\Users\\\\bo\\\\p\\\\{name}-wt\\\\T3; scope: x\"\n",
         frob_ledger::model::Stamp::now()
     );
     let lease_ev = Event::parse(frob_ledger::EventId::mint(), &lease).expect("lease");
@@ -257,6 +257,11 @@ fn placeholders_follow_the_repair_rules() {
         all.contains(&format!("{name}-wt/T2")),
         "lease reason: {all}"
     );
+    assert!(
+        all.contains(&format!("{name}-wt\\\\T3")),
+        "windows-style sibling on any host: {all}"
+    );
+    assert!(!all.contains("Users"), "{all}");
     assert!(!all.contains("/home/ann"), "{all}");
     assert!(all.contains("~other/z"), "{all}");
     assert!(all.contains("~/.cargo"), "{all}");

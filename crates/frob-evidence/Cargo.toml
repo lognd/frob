@@ -27,6 +27,7 @@ which = "8"
 tracing = "0.1"
 
 [dev-dependencies]
+proptest = "1"
 tempfile = "3"
 
 [lints]
