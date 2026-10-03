@@ -157,6 +157,58 @@ mod range_serde {
     }
 }
 
+/// How a method or function takes `self`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SelfKind {
+    /// No `self` parameter: an associated function, never callable with method syntax.
+    None,
+    /// `&self`.
+    Ref,
+    /// `&mut self`.
+    RefMut,
+    /// `self` by value, or a typed `self: Box<Self>` and the like.
+    Value,
+}
+
+impl SelfKind {
+    /// The attribute text for this kind (`none`, `ref`, `refmut`, `value`).
+    pub const fn as_attr(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Ref => "ref",
+            Self::RefMut => "refmut",
+            Self::Value => "value",
+        }
+    }
+
+    /// Reads the attribute text written by [`Self::as_attr`].
+    pub fn from_attr(s: &str) -> Option<Self> {
+        match s {
+            "none" => Some(Self::None),
+            "ref" => Some(Self::Ref),
+            "refmut" => Some(Self::RefMut),
+            "value" => Some(Self::Value),
+            _ => None,
+        }
+    }
+}
+
+/// The calling shape of a function or method: its `self` kind and argument count.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct MethodSig {
+    /// How the callable takes `self`.
+    pub self_kind: SelfKind,
+    /// Number of parameters other than `self`.
+    pub arity: usize,
+}
+
+impl MethodSig {
+    /// Whether `x.m(args)` with `args` arguments (receiver excluded) can call a callable of this shape.
+    pub fn accepts_method_call(&self, args: Option<usize>) -> bool {
+        self.self_kind != SelfKind::None && args.is_none_or(|n| n == self.arity)
+    }
+}
+
 /// One extracted symbol.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SymbolRecord {
@@ -177,6 +229,8 @@ pub struct SymbolRecord {
     /// For members of `impl Trait for Type` and the impl block itself, the
     /// whitespace-free trait text.
     pub implements: Option<String>,
+    /// The calling shape of a function or method; `None` for every other symbol.
+    pub signature: Option<MethodSig>,
 }
 
 /// A flattened `use` import.
@@ -230,6 +284,12 @@ pub struct CallSite {
     /// True when the qualifying path is a generic parameter or a bracketed type: no usable qualifier.
     #[serde(default)]
     pub opaque_qualifier: bool,
+    /// Number of call arguments (receiver excluded); `None` when not syntactically known (macro arguments).
+    #[serde(default)]
+    pub args: Option<usize>,
+    /// The full qualifying path of a path call, generics stripped (`frob_ack::inputs` in `frob_ack::inputs::collect()`).
+    #[serde(default)]
+    pub qual_path: Vec<String>,
     /// One-based source line of the call.
     #[serde(default)]
     pub line: u32,
@@ -245,8 +305,21 @@ pub enum Receiver {
     SelfValue,
     /// A local or parameter whose declared type is syntactically evident.
     Typed(String),
+    /// A field of the receiver `base` (`self.paths`, `x.node`): typed through the struct field table.
+    Field(Box<Receiver>, String),
     /// Any other expression: its type is unknown.
     Expr,
+}
+
+/// A struct field whose declared type is a concrete path type (the field type table).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FieldDecl {
+    /// The declaring struct's simple name.
+    pub owner: String,
+    /// The field name.
+    pub field: String,
+    /// The field's plain declared type (wrappers, generics and non-path types are never recorded).
+    pub ty: String,
 }
 
 /// What a non-call reference site is.
@@ -333,4 +406,6 @@ pub struct FileSymbols {
     pub uses: Vec<UseBinding>,
     /// Extra per-symbol facts, one per symbol.
     pub extras: Vec<UnitExtras>,
+    /// Struct fields with a concrete declared type, in source order.
+    pub fields: Vec<FieldDecl>,
 }

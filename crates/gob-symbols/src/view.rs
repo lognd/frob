@@ -12,13 +12,19 @@ use std::fmt::Write as _;
 use gob_ir::{Digest, Facet, FacetDigest as IrFacet, NodeId, Operator, Segment, Term, Universal};
 
 use crate::adapter::ParseStatus;
-use crate::model::{Digests, FacetDigest, SymbolKind, SymbolRecord, UnitExtras, Visibility};
+use crate::model::{
+    Digests, FacetDigest, MethodSig, SelfKind, SymbolKind, SymbolRecord, UnitExtras, Visibility,
+};
 use crate::symref::Symref;
 
 /// Attribute key holding a unit's visibility (`public`, `crate`, `private`).
 pub(crate) const ATTR_VISIBILITY: &str = "visibility";
 /// Attribute key holding the trait text of an impl member.
 pub(crate) const ATTR_IMPLEMENTS: &str = "implements";
+/// Unit attribute: the `self` kind of a function (`none`, `ref`, `refmut`, `value`).
+pub(crate) const ATTR_SELF_KIND: &str = "self_kind";
+/// Unit attribute: the parameter count of a function, `self` excluded.
+pub(crate) const ATTR_ARITY: &str = "arity";
 /// Attribute key holding the slug of a markdown section's parent section.
 pub(crate) const ATTR_SECTION_PARENT: &str = "section.parent";
 /// Hole kind of a syntax error.
@@ -223,6 +229,14 @@ fn collect_pending(term: &Term, naming: Naming) -> Vec<Pending> {
     pending
 }
 
+/// The calling shape recorded on a function unit, if any.
+fn signature_of(term: &Term, n: NodeId) -> Option<MethodSig> {
+    let attrs = term.node(n).attrs();
+    let self_kind = SelfKind::from_attr(attrs.get_str(ATTR_SELF_KIND)?)?;
+    let arity = attrs.get_str(ATTR_ARITY)?.parse().ok()?;
+    Some(MethodSig { self_kind, arity })
+}
+
 /// Computes the view of `term` for `path`.
 pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
     let mut view = View::default();
@@ -269,6 +283,7 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
             digests,
             parent,
             implements: p.implements.clone(),
+            signature: signature_of(term, n),
         });
     }
     match naming {

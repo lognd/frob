@@ -45,6 +45,7 @@
 //!   cached until gob-ir is serializable; a miss re-folds from source.
 
 mod adapter;
+mod crates;
 mod fold;
 mod graph;
 mod markdown;
@@ -64,14 +65,16 @@ pub use adapter::{
 };
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
 pub use gob_ir::DIGEST_SCHEME;
+pub use crates::CrateDeps;
 pub use graph::{
     CallEdge, EdgeKind, FileInfo, GapReason, ReachSet, ResolveError, Status, StatusEdge,
     SymbolGraph,
 };
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
-    CallSite, Digests, FacetDigest, FileSymbols, ImportEdge, LocalBinding, Receiver, RefKind,
-    RefSite, SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility, collapse_ws,
+    CallSite, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge, LocalBinding, MethodSig,
+    Receiver, RefKind, RefSite, SelfKind, SymbolKind, SymbolRecord, UnitExtras, UseBinding,
+    Visibility, collapse_ws,
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{

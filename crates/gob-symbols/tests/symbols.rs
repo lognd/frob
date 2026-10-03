@@ -430,7 +430,7 @@ fn unresolved_method_calls_record_the_receiver_kind() {
     );
     assert_eq!(
         q("fn f() { make().absent(); }", "absent"),
-        Some(CallQualifier::Receiver)
+        Some(CallQualifier::Receiver { args: Some(0) })
     );
 }
 
@@ -443,17 +443,17 @@ fn receiver_types_are_dropped_when_shadowed_wrapped_or_generic() {
             "struct P;\nfn f() { let p = P::new(); { let p = other(); p.absent(); } }",
             "absent"
         ),
-        Some(CallQualifier::Receiver),
+        Some(CallQualifier::Receiver { args: Some(0) }),
         "an inner untyped binding shadows the typed one"
     );
     assert_eq!(
         q("struct P;\nfn f(p: Box<P>) { p.absent(); }", "absent"),
-        Some(CallQualifier::Receiver),
+        Some(CallQualifier::Receiver { args: Some(0) }),
         "a deref wrapper hides the real receiver type"
     );
     assert_eq!(
         q("fn f<T: Tr>(t: T) { t.absent(); }", "absent"),
-        Some(CallQualifier::Receiver),
+        Some(CallQualifier::Receiver { args: Some(0) }),
         "a generic parameter is not a concrete type"
     );
     assert_eq!(
@@ -461,7 +461,7 @@ fn receiver_types_are_dropped_when_shadowed_wrapped_or_generic() {
             "struct P;\nfn f(p: P) { fn inner() { p.absent(); } }",
             "absent"
         ),
-        Some(CallQualifier::Receiver),
+        Some(CallQualifier::Receiver { args: Some(0) }),
         "a nested fn cannot see the outer locals"
     );
 }
@@ -510,7 +510,7 @@ fn admits_pins_the_named_type_and_rules_out_the_rest() {
     assert_eq!(g.admits(&path_a, &rec("A.new")), Admit::Pinned);
     assert_eq!(g.admits(&path_a, &rec("B.new")), Admit::No);
     assert_eq!(g.admits(&path_a, &rec("T.dflt")), Admit::Maybe);
-    let recv = CallQualifier::Receiver;
+    let recv = CallQualifier::Receiver { args: Some(0) };
     assert_eq!(g.admits(&recv, &rec("A.go")), Admit::Maybe);
     assert_eq!(
         g.admits(&recv, &rec("go")),

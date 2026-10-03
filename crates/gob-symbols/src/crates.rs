@@ -1,6 +1,7 @@
 //! Workspace crate dependency closure, so a call can only reach crates it links.
 //!
-//! COV001's unresolved-call poison matches callables repository-wide. Rust can
+//! Shared by the symbol graph (cross-crate path resolution through `use`
+//! imports) and COV001's unresolved-call poison. Rust can
 //! only call into the crate itself and the crates it (transitively) depends
 //! on, so callables elsewhere are ruled out soundly. Only path and workspace
 //! dependencies matter (external crates hold no repository callables). A file
@@ -9,18 +10,19 @@
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 
-/// Direct path dependencies of one crate directory (repo-relative, `/`-separated).
-type DepDirs = BTreeSet<String>;
+/// Named direct dependencies: (extern crate name with dashes mapped to underscores, crate directory).
+type NamedDeps = Vec<(String, String)>;
 
 /// Lazily parsed crate manifests and their transitive dependency closures.
 #[derive(Debug)]
-pub(crate) struct CrateDeps {
+pub struct CrateDeps {
     root: PathBuf,
     /// Repo-relative dir of each `[workspace.dependencies]` path entry, by dependency name.
     workspace: HashMap<String, String>,
     /// Nearest manifest directory per source directory (`None`: no manifest above).
     owner: HashMap<String, Option<String>>,
-    direct: HashMap<String, DepDirs>,
+    direct: HashMap<String, NamedDeps>,
+    names: HashMap<String, Option<String>>,
     closure: HashMap<String, BTreeSet<String>>,
 }
 
@@ -76,14 +78,33 @@ fn dependency_entries(manifest: &str) -> Vec<(String, String)> {
     out
 }
 
+/// The `[package] name` of a manifest, dashes mapped to underscores.
+fn package_name_of(manifest: &str) -> Option<String> {
+    let mut in_package = false;
+    for raw in manifest.lines() {
+        let line = raw.trim();
+        if line.starts_with('[') {
+            in_package = line == "[package]";
+        } else if in_package
+            && let Some((key, rest)) = line.split_once('=')
+            && key.trim() == "name"
+        {
+            return quoted_value(&format!("name = {}", rest.trim()), "name")
+                .map(|n| n.replace('-', "_"));
+        }
+    }
+    None
+}
+
 impl CrateDeps {
     /// Dependency data for the work tree `root`.
-    pub(crate) fn new(root: &Path) -> Self {
+    pub fn new(root: &Path) -> Self {
         let mut s = Self {
             root: root.to_path_buf(),
             workspace: HashMap::new(),
             owner: HashMap::new(),
             direct: HashMap::new(),
+            names: HashMap::new(),
             closure: HashMap::new(),
         };
         if let Ok(text) = std::fs::read_to_string(root.join("Cargo.toml")) {
@@ -104,7 +125,7 @@ impl CrateDeps {
     }
 
     /// The directory of the crate owning repo-relative file `path`, when a manifest sits above it.
-    pub(crate) fn crate_of(&mut self, path: &str) -> Option<String> {
+    pub fn crate_of(&mut self, path: &str) -> Option<String> {
         let dir = path.rsplit_once('/').map_or("", |(d, _)| d).to_owned();
         if let Some(hit) = self.owner.get(&dir) {
             return hit.clone();
@@ -124,28 +145,64 @@ impl CrateDeps {
         found
     }
 
-    fn direct_deps(&mut self, krate: &str) -> DepDirs {
+    fn direct_deps(&mut self, krate: &str) -> NamedDeps {
         if let Some(d) = self.direct.get(krate) {
             return d.clone();
         }
         let text =
             std::fs::read_to_string(self.root.join(krate).join("Cargo.toml")).unwrap_or_default();
-        let mut deps = DepDirs::new();
+        let mut deps = NamedDeps::new();
         for (name, inline) in dependency_entries(&text) {
+            let extern_name = name.replace('-', "_");
             if let Some(p) = quoted_value(&inline, "path") {
-                deps.insert(join_rel(krate, p));
+                deps.push((extern_name, join_rel(krate, p)));
             } else if inline.contains("workspace = true")
                 && let Some(dir) = self.workspace.get(&name)
             {
-                deps.insert(dir.clone());
+                deps.push((extern_name, dir.clone()));
             }
         }
         self.direct.insert(krate.to_owned(), deps.clone());
         deps
     }
 
+    /// The package name of crate directory `krate`, dashes mapped to underscores (its extern name).
+    pub fn package_name(&mut self, krate: &str) -> Option<String> {
+        if let Some(n) = self.names.get(krate) {
+            return n.clone();
+        }
+        let text =
+            std::fs::read_to_string(self.root.join(krate).join("Cargo.toml")).unwrap_or_default();
+        let name = package_name_of(&text);
+        self.names.insert(krate.to_owned(), name.clone());
+        name
+    }
+
+    /// Every extern crate name nameable inside crate `from` (itself and its direct dependencies) with its directory.
+    pub fn extern_crates(&mut self, from: &str) -> Vec<(String, String)> {
+        let mut out: Vec<(String, String)> = self.direct_deps(from);
+        if let Some(own) = self.package_name(from) {
+            out.push((own, from.to_owned()));
+        }
+        out
+    }
+
+    /// The crate directory that the extern crate `name` denotes inside crate `from`.
+    ///
+    /// `from` itself under its own package name (integration tests name their crate), else a
+    /// direct dependency of that name; never a transitive one, which `use` cannot name.
+    pub fn extern_crate(&mut self, from: &str, name: &str) -> Option<String> {
+        if self.package_name(from).as_deref() == Some(name) {
+            return Some(from.to_owned());
+        }
+        self.direct_deps(from)
+            .into_iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, dir)| dir)
+    }
+
     /// True when code in crate `from` can call code in crate `to` (itself or a transitive dependency).
-    pub(crate) fn can_reach(&mut self, from: &str, to: &str) -> bool {
+    pub fn can_reach(&mut self, from: &str, to: &str) -> bool {
         if from == to {
             return true;
         }
@@ -153,7 +210,7 @@ impl CrateDeps {
             let mut seen = BTreeSet::new();
             let mut stack = vec![from.to_owned()];
             while let Some(c) = stack.pop() {
-                for d in self.direct_deps(&c) {
+                for (_, d) in self.direct_deps(&c) {
                     if seen.insert(d.clone()) {
                         stack.push(d);
                     }
@@ -166,7 +223,7 @@ impl CrateDeps {
     }
 
     /// Like [`Self::can_reach`] for files, never ruling out a file with no manifest above it.
-    pub(crate) fn file_can_reach(&mut self, from_file: &str, to_file: &str) -> bool {
+    pub fn file_can_reach(&mut self, from_file: &str, to_file: &str) -> bool {
         match (self.crate_of(from_file), self.crate_of(to_file)) {
             (Some(a), Some(b)) => self.can_reach(&a, &b),
             _ => true,
@@ -187,6 +244,13 @@ mod tests {
         assert_eq!(quoted_value(&e[0].1, "path"), Some("../b"));
         assert!(e[1].1.contains("workspace = true"));
         assert_eq!(quoted_value(&e[3].1, "path"), Some("../d"));
+    }
+
+    #[test]
+    fn package_name_maps_dashes() {
+        let m = "[package]\nname = \"frob-ack\"\nversion = \"0\"\n[dependencies]\nname = \"no\"\n";
+        assert_eq!(package_name_of(m).as_deref(), Some("frob_ack"));
+        assert_eq!(package_name_of("[workspace]\n"), None);
     }
 
     #[test]

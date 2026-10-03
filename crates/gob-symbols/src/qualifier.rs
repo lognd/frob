@@ -16,8 +16,12 @@ pub enum CallQualifier {
     SelfType(String),
     /// `x.m(..)` where `x` has this syntactically evident declared type.
     Typed(String),
-    /// `expr.m(..)` with an unknown receiver type: certainly a method, nothing more.
-    Receiver,
+    /// `expr.m(..)` with an unknown receiver type: certainly a method taking `self`, called with `args`
+    /// arguments (`None` when not syntactically known).
+    Receiver {
+        /// Argument count of the call, receiver excluded.
+        args: Option<usize>,
+    },
 }
 
 impl CallQualifier {
@@ -27,7 +31,7 @@ impl CallQualifier {
             Self::Path(q) => format!("path `{q}::`"),
             Self::SelfType(t) => format!("`self.` in `{t}`"),
             Self::Typed(t) => format!("receiver of type `{t}`"),
-            Self::Receiver => "receiver of unknown type".to_owned(),
+            Self::Receiver { .. } => "receiver of unknown type".to_owned(),
         }
     }
 }

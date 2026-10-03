@@ -16,12 +16,11 @@ use gob_directives::DirectiveRecord;
 use gob_languages::Language;
 use gob_rules::{Finding, Severity};
 use gob_symbols::{
-    Admit, CallEdge, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind, SymbolRecord, Symref,
-    Target,
+    Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind, SymbolRecord,
+    Symref, Target,
 };
 use gob_text::{FileInterner, Span};
 
-use crate::deps::CrateDeps;
 use crate::rules::Cov001;
 use crate::util::{finding, rule_id};
 

@@ -12,13 +12,14 @@ use rayon::prelude::*;
 
 use crate::adapter::{Adapter, Fidelity, FileInput, Folded, ParseStatus};
 use crate::fold::{base_file, opaque_file};
+use crate::crates::CrateDeps;
 use crate::graph::SymbolGraph;
 use crate::model::FileSymbols;
 use crate::registry::adapter_for;
 
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
-pub const EXTRACTOR_VERSION: u32 = 3;
+pub const EXTRACTOR_VERSION: u32 = 4;
 
 /// Counters from one [`build_graph_with_stats`] run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -172,5 +173,8 @@ pub fn build_graph_with_stats(
         opaque: opaque.load(Ordering::Relaxed),
     };
     tracing::info!(?stats, "symbol extraction done");
-    (SymbolGraph::from_files(per_file), stats)
+    (
+        SymbolGraph::from_files_with_deps(per_file, &mut CrateDeps::new(root)),
+        stats,
+    )
 }

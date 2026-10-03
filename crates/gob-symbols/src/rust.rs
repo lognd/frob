@@ -41,13 +41,16 @@ use crate::adapter::{
 };
 use crate::fold::{Cx, base_file, failed_file, file_root_spec};
 use crate::model::{
-    CallSite, ImportEdge, LocalBinding, Receiver, RefKind, RefSite, UseBinding, Visibility,
-    collapse_ws,
+    CallSite, FieldDecl, ImportEdge, LocalBinding, Receiver, RefKind, RefSite, SelfKind,
+    UseBinding, Visibility, collapse_ws,
 };
 use crate::paths::crate_and_module;
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
-use crate::view::{self, ATTR_IMPLEMENTS, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming};
+use crate::view::{
+    self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_SELF_KIND, ATTR_VISIBILITY, HOLE_MISSING,
+    HOLE_PARSE_ERROR, Naming,
+};
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
 const MAX_DEPTH: usize = 160;
@@ -146,6 +149,10 @@ struct Site {
     receiver: Option<Receiver>,
     /// The qualifying path is a generic parameter or bracketed type.
     opaque: bool,
+    /// Call argument count, receiver excluded (`None` inside macro arguments).
+    args: Option<usize>,
+    /// The full qualifying path segments of a path call.
+    qual_path: Vec<String>,
     /// One-based source line.
     line: u32,
     /// The callee expression as written.
@@ -172,6 +179,8 @@ struct CallTarget {
     dynamic: bool,
     receiver: Option<Receiver>,
     opaque: bool,
+    /// The full qualifying path segments, generics stripped (`frob_ack::inputs`).
+    path: Vec<String>,
 }
 
 /// Wrapper types whose methods are reached by auto-deref: a declared type of these says nothing about the callee.
@@ -223,6 +232,10 @@ struct Fold<'a> {
     env: RefCell<Vec<(String, Option<String>)>>,
     /// Generic parameter names of the enclosing items.
     generics: Vec<String>,
+    /// The calling shape of the function about to become a unit (taken by `make_unit`).
+    fn_sig: Option<(SelfKind, usize)>,
+    /// Struct fields with a concrete declared type.
+    fields: Vec<FieldDecl>,
 }
 
 /// One-based source line of `n`.
@@ -313,6 +326,8 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         uses: Vec::new(),
         env: RefCell::new(Vec::new()),
         generics: Vec::new(),
+        fn_sig: None,
+        fields: Vec::new(),
     };
     let kids = f.container(root, &Scope::default(), true)?;
     let root_id =
@@ -322,6 +337,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         ord_nodes,
         sites,
         uses,
+        fields,
         ..
     } = f;
     let term = cx.b.finish(root_id)?;
@@ -337,6 +353,20 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
             .flatten()
             .and_then(|n| v.by_node.get(&n).cloned())
     };
+    let fields: Vec<FieldDecl> = fields
+        .into_iter()
+        .map(|mut d| {
+            // `use a::B as C;` then `f: C` declares a `B`.
+            if let Some(real) = uses
+                .iter()
+                .find(|u| u.local == d.ty && !u.target.ends_with("::*"))
+                .and_then(|u| u.target.rsplit("::").next())
+            {
+                real.clone_into(&mut d.ty);
+            }
+            d
+        })
+        .collect();
     for u in uses {
         file.imports.push(ImportEdge {
             from_file: input.path.to_owned(),
@@ -366,6 +396,8 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
                     in_macro,
                     receiver: s.receiver,
                     opaque_qualifier: s.opaque,
+                    args: s.args,
+                    qual_path: s.qual_path,
                     line: s.line,
                     text: s.text,
                 });
@@ -380,6 +412,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     }
     file.symbols = v.symbols;
     file.extras = v.extras;
+    file.fields = fields;
     tracing::debug!(
         path = input.path,
         symbols = file.symbols.len(),
@@ -510,6 +543,8 @@ impl<'a> Fold<'a> {
                         item_local: false,
                         receiver: t.receiver,
                         opaque: t.opaque,
+                        args: Some(self.arg_count(n)),
+                        qual_path: t.path,
                         line: line_of(n),
                         text: call_text(self.t(f)),
                     });
@@ -609,6 +644,8 @@ impl<'a> Fold<'a> {
             item_local,
             receiver: None,
             opaque: false,
+            args: None,
+            qual_path: Vec::new(),
             line: 0,
             text: String::new(),
         });
@@ -625,6 +662,7 @@ impl<'a> Fold<'a> {
             dynamic: true,
             receiver: None,
             opaque: false,
+            path: Vec::new(),
         };
         match f.kind() {
             "identifier" => {
@@ -637,6 +675,7 @@ impl<'a> Fold<'a> {
                     dynamic: false,
                     receiver: None,
                     opaque: false,
+                    path: Vec::new(),
                 }
             }
             "scoped_identifier" => {
@@ -672,6 +711,7 @@ impl<'a> Fold<'a> {
                     dynamic: false,
                     receiver: None,
                     opaque,
+                    path: path.map(|p| split_path(self.t(p))).unwrap_or_default(),
                 }
             }
             "field_expression" => match f.child_by_field_name("field") {
@@ -683,6 +723,7 @@ impl<'a> Fold<'a> {
                     dynamic: false,
                     receiver: Some(self.receiver_of(f.child_by_field_name("value"))),
                     opaque: false,
+                    path: Vec::new(),
                 },
                 None => dynamic(),
             },
@@ -710,8 +751,28 @@ impl<'a> Fold<'a> {
                     .and_then(|(_, t)| t.clone())
                     .map_or(Receiver::Expr, Receiver::Typed)
             }
+            "field_expression" => {
+                let field = v.child_by_field_name("field");
+                match (self.receiver_of(v.child_by_field_name("value")), field) {
+                    (Receiver::Expr, _) | (_, None) => Receiver::Expr,
+                    (base, Some(f)) if f.kind() == "field_identifier" => {
+                        Receiver::Field(Box::new(base), self.t(f).to_owned())
+                    }
+                    _ => Receiver::Expr,
+                }
+            }
             _ => Receiver::Expr,
         }
+    }
+
+    /// Number of arguments in the call expression `n` (comments excluded).
+    fn arg_count(&self, n: Node<'_>) -> usize {
+        n.child_by_field_name("arguments").map_or(0, |a| {
+            children(a)
+                .into_iter()
+                .filter(|c| c.is_named() && !is_comment(*c))
+                .count()
+        })
     }
 
     /// The plain type named by `t` (through references), when it says what a method call on it reaches.
@@ -719,7 +780,14 @@ impl<'a> Fold<'a> {
         let name = match t.kind() {
             "reference_type" => return self.plain_type(t.child_by_field_name("type")?),
             "type_identifier" => self.t(t).to_owned(),
-            "scoped_type_identifier" => self.t(t.child_by_field_name("name")?).to_owned(),
+            "scoped_type_identifier" => {
+                // `module::Type` names a type; `Self::Item`, `T::Output` name associated types.
+                let path = t.child_by_field_name("path")?;
+                if !split_path(self.t(path)).iter().all(|s| !upper_first(s)) {
+                    return None;
+                }
+                self.t(t.child_by_field_name("name")?).to_owned()
+            }
             "generic_type" => {
                 let head = t.child_by_field_name("type")?;
                 if head.kind() != "type_identifier" {
@@ -848,6 +916,8 @@ impl<'a> Fold<'a> {
                 item_local,
                 receiver: target.receiver,
                 opaque: target.opaque,
+                args: Some(self.arg_count(n)),
+                qual_path: target.path,
                 line: line_of(n),
                 text: call_text(self.t(f)),
             });
@@ -908,6 +978,8 @@ impl<'a> Fold<'a> {
                             item_local: false,
                             receiver: method.then_some(Receiver::Expr),
                             opaque: false,
+                            args: None,
+                            qual_path: Vec::new(),
                         });
                     }
                 }
@@ -1383,6 +1455,11 @@ impl<'a> Fold<'a> {
         if let Some(i) = implements {
             spec = spec.attr(ATTR_IMPLEMENTS, i);
         }
+        if let Some((self_kind, arity)) = self.fn_sig.take() {
+            spec = spec
+                .attr(ATTR_SELF_KIND, self_kind.as_attr())
+                .attr(ATTR_ARITY, arity.to_string().as_str());
+        }
         let id = self.cx.add(spec, &kids)?;
         self.ord_nodes[ord] = Some(id);
         tracing::trace!(path = self.path, kind, name, "rust unit");
@@ -1494,6 +1571,9 @@ impl<'a> Fold<'a> {
         };
         let vis = self.visibility(node, scope);
         let body = node.child_by_field_name("body");
+        if node.kind() == "struct_item" {
+            self.struct_fields(node, &name);
+        }
         let ord = self.alloc();
         self.unit_stack.push(ord);
         let sig = self.sig_tokens(node, &[Some(name_node), body])?;
@@ -1556,6 +1636,7 @@ impl<'a> Fold<'a> {
         self.callers.pop();
         self.unit_stack.pop();
         let role = if body.is_some() { "impl" } else { "sig" };
+        self.fn_sig = Some(self.signature_of(params));
         let id = self.make_unit(
             ord,
             node,
@@ -1569,6 +1650,62 @@ impl<'a> Fold<'a> {
             body_nodes,
         )?;
         Ok(Some(id))
+    }
+
+    /// The `self` kind and parameter count of a function with parameter list `params`.
+    fn signature_of(&self, params: Option<Node<'_>>) -> (SelfKind, usize) {
+        let mut kind = SelfKind::None;
+        let mut arity = 0;
+        for p in params.map(children).into_iter().flatten() {
+            match p.kind() {
+                "self_parameter" => {
+                    let text = collapse_ws(self.t(p));
+                    kind = if text.starts_with('&') {
+                        if text.split(|c: char| !c.is_alphanumeric()).any(|w| w == "mut") {
+                            SelfKind::RefMut
+                        } else {
+                            SelfKind::Ref
+                        }
+                    } else {
+                        SelfKind::Value
+                    };
+                }
+                "parameter" | "variadic_parameter" => arity += 1,
+                _ => {}
+            }
+        }
+        (kind, arity)
+    }
+
+    /// Records the concrete-typed fields of the struct `node` named `owner` (the field type table).
+    fn struct_fields(&mut self, node: Node<'_>, owner: &str) {
+        let Some(list) = node
+            .child_by_field_name("body")
+            .filter(|b| b.kind() == "field_declaration_list")
+        else {
+            return;
+        };
+        let saved = self.generics.len();
+        let own = self.declared_generics(node);
+        self.generics.extend(own);
+        for d in children(list)
+            .into_iter()
+            .filter(|c| c.kind() == "field_declaration")
+        {
+            let (Some(name), Some(ty)) = (
+                d.child_by_field_name("name"),
+                d.child_by_field_name("type").and_then(|t| self.plain_type(t)),
+            ) else {
+                continue;
+            };
+            tracing::trace!(path = self.path, owner, field = self.t(name), %ty, "struct field type");
+            self.fields.push(FieldDecl {
+                owner: owner.to_owned(),
+                field: self.t(name).to_owned(),
+                ty,
+            });
+        }
+        self.generics.truncate(saved);
     }
 
     fn params(
