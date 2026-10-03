@@ -6,8 +6,8 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T15:43:45Z"
-updated = "2026-10-03T16:13:59Z"
-scope = ["crates/frob-worktree/src/wip.rs", "crates/frob-pm/src/rules/wip.rs", "crates/frob-pm/tests/mdtest/pm013.md", "crates/frob-worktree/tests/work.rs", "docs/design/pm-enforcement.md", "docs/reference/rules/PM013.md"]
+updated = "2026-10-03T16:15:23Z"
+scope = ["crates/frob-worktree/src/wip.rs", "crates/frob-pm/src/rules/wip.rs", "crates/frob-pm/tests/mdtest/pm013.md", "crates/frob-worktree/tests/work.rs", "docs/design/pm-enforcement.md", "docs/reference/rules/PM013.md", "crates/frob-check/src/product.rs"]
 
 [[acceptance]]
 text = "PM013 and the work gate share one lease-aware, lane-aware WIP count (frob_pm::rules::wip::count), documented in pm-enforcement.md"
