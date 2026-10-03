@@ -8,10 +8,10 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-03T09:31:16Z"
+updated = "2026-10-03T09:34:07Z"
 idempotency_key = "m2-doc002"
 labels = ["milestone:2", "release:0.532.0"]
-scope = ["crates/frob-obligations/**", "crates/gob-languages/**", "crates/gob-directives/src/comments.rs"]
+scope = ["crates/frob-obligations/**", "crates/gob-languages/**", "crates/gob-directives/src/comments.rs", "docs/reference/rules/DOC002.md"]
 
 [[acceptance]]
 text = "Given a four-backtick block containing a three-backtick fence, when DOC002 scans the file, then links inside the outer block are not checked"
