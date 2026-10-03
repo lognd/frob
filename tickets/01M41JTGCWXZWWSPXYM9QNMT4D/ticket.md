@@ -2,7 +2,8 @@
 id = "01M41JTGCWXZWWSPXYM9QNMT4D"
 title = "ticket fragment: a bug ticket's title is not a usable default sentence; require --sentence for bugs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
