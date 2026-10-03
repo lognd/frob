@@ -1,0 +1,54 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T08:05:21Z"
+digest = "66c4d753c266acec8af4905f4a3422a1a6af6a2150b6a036729e0677c053c99e"
+exit_code = 0
+inline = """
+   Compiling aho-corasick v1.1.5
+   Compiling serde_json v1.0.151
+   Compiling pest_generator v2.9.2
+   Compiling pest_derive v2.9.2
+   Compiling regex-automata v0.4.18
+   Compiling tree-sitter v0.27.0
+   Compiling insta v1.48.0
+   Compiling regex v1.13.1
+   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/gob-symbols)
+   Compiling error_set_impl v0.9.2
+   Compiling error_set v0.9.2
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-ledger)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/gob-directives)
+   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/gob-check)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-evidence)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-tests)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-lease)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-ack)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-pm)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-obligations)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-worktree)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/2YECX6Q/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.17s
+────────────
+ Nextest run ID 4db06527-da8e-498a-8bdf-b85207135c95 with nextest profile: default
+    Starting 7 tests across 1 binary (1 test and 9 binaries skipped)
+        PASS [   0.110s] (1/7) frob-cli::release_status no_milestone_at_all_is_a_helpful_message_and_exit_zero
+        PASS [   0.153s] (2/7) frob-cli::release_status invalid_fragments_are_reported_without_failing_the_command
+        PASS [   0.173s] (3/7) frob-cli::release_status an_unevidenced_criterion_is_listed_and_the_exit_is_zero
+        PASS [   0.178s] (4/7) frob-cli::release_status the_default_version_is_the_lowest_open_milestone
+        PASS [   0.181s] (5/7) frob-cli::release_status label_claims_are_listed_before_the_milestone_object_exists
+        PASS [   0.260s] (6/7) frob-cli::release_status a_ticket_claiming_the_release_outside_its_epics_surfaces_pm034
+        PASS [   0.354s] (7/7) frob-cli::release_status open_tickets_of_member_epics_are_listed_by_category_and_block
+────────────
+     Summary [   0.357s] 7 tests run: 7 passed, 1 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'binary(release_status) & !test(everything_ready)'"
+size = 2858
+status = "measured"
+tests = ["no_milestone_at_all_is_a_helpful_message_and_exit_zero", "invalid_fragments_are_reported_without_failing_the_command", "an_unevidenced_criterion_is_listed_and_the_exit_is_zero", "the_default_version_is_the_lowest_open_milestone", "label_claims_are_listed_before_the_milestone_object_exists", "a_ticket_claiming_the_release_outside_its_epics_surfaces_pm034", "open_tickets_of_member_epics_are_listed_by_category_and_block"]
+at = "2026-10-03T08:05:21Z"
+actor = "lognd"
+rev = 1
