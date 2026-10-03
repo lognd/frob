@@ -194,6 +194,8 @@ pub struct LockFile {
     pub entries: BTreeMap<String, LockEntry>,
     /// Flow entries in flow-key order.
     pub flows: BTreeMap<String, FlowEntry>,
+    /// The rename chain: old symref to the symref its entry was re-keyed to (`ack --rename`).
+    pub renamed: BTreeMap<String, String>,
 }
 
 impl Default for LockFile {
@@ -203,6 +205,7 @@ impl Default for LockFile {
             digest_scheme: DIGEST_SCHEME,
             entries: BTreeMap::new(),
             flows: BTreeMap::new(),
+            renamed: BTreeMap::new(),
         }
     }
 }
@@ -279,6 +282,8 @@ struct FileV2 {
     symbol: Vec<SymbolRow>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     flow: Vec<FlowRow>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    renamed: BTreeMap<String, String>,
 }
 
 impl LockFile {
@@ -298,6 +303,7 @@ impl LockFile {
             digest_scheme: v1.digest_scheme,
             entries,
             flows: BTreeMap::new(),
+            renamed: BTreeMap::new(),
         }
     }
 
@@ -311,6 +317,7 @@ impl LockFile {
             digest_scheme: v2.digest_scheme,
             entries: BTreeMap::new(),
             flows: BTreeMap::new(),
+            renamed: v2.renamed,
         };
         for r in v2.symbol {
             let e = LockEntry {
@@ -377,7 +384,40 @@ impl LockFile {
                     reason: e.reason.clone(),
                 })
                 .collect(),
+            renamed: self.renamed.clone(),
         }
+    }
+
+    // frob:ticket 01M3Z714820D1SK6X44T9R1B70
+    /// Re-keys the symbol entry `old` to `new` keeping every digest, retargets flow ends that
+    /// named `old`, and records `old -> new` in the rename chain.
+    ///
+    /// Returns false (changing nothing) when there is no entry for `old` or one already exists
+    /// for `new`.
+    pub fn rename(&mut self, old: &str, new: &str) -> bool {
+        if self.entries.contains_key(new) {
+            return false;
+        }
+        let Some(entry) = self.entries.remove(old) else {
+            return false;
+        };
+        self.entries.insert(new.to_owned(), entry);
+        for flow in self.flows.values_mut() {
+            for end in [&mut flow.producer, &mut flow.consumer] {
+                if end.identity == old {
+                    new.clone_into(&mut end.identity);
+                }
+            }
+        }
+        // Chains collapse: anything that pointed at `old` now points at `new`.
+        for target in self.renamed.values_mut() {
+            if target == old {
+                new.clone_into(target);
+            }
+        }
+        self.renamed.insert(old.to_owned(), new.to_owned());
+        tracing::info!(old, new, "lock entry re-keyed by rename");
+        true
     }
 
     /// True when the file was written under another format version or digest scheme than this build's.

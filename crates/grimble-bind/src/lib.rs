@@ -27,8 +27,11 @@
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 
+pub mod ack;
 pub mod code;
 pub mod directives;
+pub mod drift;
+pub mod live;
 pub mod model;
 pub mod owner;
 pub mod relation;
@@ -43,13 +46,19 @@ use gob_walk::{FileEntry, Selector};
 use grimble_model::ModelFiles;
 use serde_json::Value;
 
-pub use rule_defs::{Sys001, Sys002, Sys003, Sys004, Sys005, Sys009, Sys010, Sys011};
+pub use rule_defs::{
+    Sys001, Sys002, Sys003, Sys004, Sys005, Sys006, Sys007, Sys008, Sys009, Sys010, Sys011,
+};
 pub use types::{BindFinding, REASON_PREFIX, Reason, Role, Row, Source, Status, reason_of_message};
 
 /// The rule ids this crate evaluates.
-pub const RULES: [&str; 8] = [
-    "SYS001", "SYS002", "SYS003", "SYS004", "SYS005", "SYS009", "SYS010", "SYS011",
+pub const RULES: [&str; 11] = [
+    "SYS001", "SYS002", "SYS003", "SYS004", "SYS005", "SYS006", "SYS007", "SYS008", "SYS009",
+    "SYS010", "SYS011",
 ];
+
+/// The product name: the lock is `grimble.lock`.
+pub const PRODUCT: &str = "grimble";
 
 /// What binding reads.
 pub struct BindInput<'a> {
@@ -78,6 +87,8 @@ pub struct Binding {
     pub owners: owner::Owners,
     /// The relation C (code-to-code `binds`).
     pub edges: Vec<relation::CEdge>,
+    /// Every symbol of the walk with its facet digests (what an ack records).
+    pub live: live::Live,
 }
 
 impl Binding {
@@ -156,12 +167,36 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         modeled: &modeled,
         strict: input.strict,
     };
-    let out = rules::evaluate(&cx);
+    let mut out = rules::evaluate(&cx);
+    let live = live::Live::build(&code);
+    let lock_path = input.root.join(gob_lock::file_name(PRODUCT));
+    match gob_lock::LockFile::load(&lock_path) {
+        Ok(lock) => drift::evaluate(
+            &drift::DriftCx {
+                code: &code,
+                live: &live,
+                rows: &rel.rows,
+                lock: &lock,
+            },
+            &mut out,
+        ),
+        Err(err) => {
+            tracing::error!(%err, "grimble.lock is unreadable; SYS006 to SYS008 cannot run");
+            out.unresolved(
+                "SYS007",
+                Reason::LockUnreadable,
+                &format!("grimble.lock cannot be read: {err}"),
+                drift::LOCK_ANCHOR,
+                Some((drift::LOCK_ANCHOR, (0, 0))),
+            );
+        }
+    }
     Binding {
         rows: rel.rows,
         findings: out.findings,
         subjects: out.subjects,
         owners,
         edges: rel.edges,
+        live,
     }
 }

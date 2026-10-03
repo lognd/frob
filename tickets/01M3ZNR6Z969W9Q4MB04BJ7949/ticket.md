@@ -2,16 +2,16 @@
 id = "01M3ZNR6Z969W9Q4MB04BJ7949"
 title = "Sibling follow-ups: materialized knobs, shared compute digest, state dirs never walked, grimble evidence, output cap"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T01:23:41Z"
-updated = "2026-10-03T01:23:41Z"
+updated = "2026-10-03T01:40:32Z"
 idempotency_key = "m2-sibling-followups"
 labels = ["milestone:2"]
-scope = ["crates/gob-config/**", "crates/grimble-check/**", "crates/frob-check/**", "crates/gob-walk/**", "crates/gob-exec/**", "crates/gob-check/**", "frob.toml", "docs/reference/**", "docs/schemas/**", "Cargo.lock"]
+scope = ["crates/gob-config/**", "crates/grimble-check/**", "crates/frob-check/**", "crates/gob-walk/**", "crates/gob-exec/**", "crates/gob-check/**", "frob.toml", "docs/reference/**", "docs/schemas/**", "Cargo.lock", "crates/frob/tests/**"]
 
 [[acceptance]]
 text = "Given this repository, when frob check runs grimble as a sibling, then no finding names a .frob or .grimble path, the compute digests are compared, and both sibling knobs are materialized in frob.toml"

@@ -2,16 +2,17 @@
 id = "01M3Z714820D1SK6X44T9R1B70"
 title = "G12: grimble.lock, grimble ack, SYS006-008"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-02T21:06:25Z"
+updated = "2026-10-03T01:39:49Z"
 idempotency_key = "m2-drift"
 labels = ["milestone:2"]
-scope = ["crates/grimble-bind/**", "crates/gob-lock/**"]
+scope = ["crates/grimble-bind/**", "crates/gob-lock/**", "crates/grimble/**"]
 
 [[links]]
 kind = "blocked-by"
