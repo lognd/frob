@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:21:55Z"
+digest = "66dd1119466c4419d02a88d1fb1b6ba8f9f8ae671508cd9f0691fad6914a86c1"
+exit_code = 0
+inline = """
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+────────────
+ Nextest run ID bb908a86-8ef3-40ef-92bb-7518f740a0c7 with nextest profile: default
+    Starting 2 tests across 133 binaries (1065 tests skipped)
+        PASS [   0.015s] (1/2) frob-pm cycle::velocity::tests::an_early_close_truncates_the_window
+        PASS [   2.259s] (2/2) frob-cli::cycle velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once
+────────────
+     Summary [   2.265s] 2 tests run: 2 passed, 1065 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-E 'test(velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once) | test(an_early_close_truncates_the_window)'"
+size = 619
+status = "measured"
+tests = ["cycle::velocity::tests::an_early_close_truncates_the_window", "velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once"]
+at = "2026-10-03T12:21:55Z"
+actor = "lognd"
+rev = 1
