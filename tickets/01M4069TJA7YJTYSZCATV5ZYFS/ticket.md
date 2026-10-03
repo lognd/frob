@@ -2,13 +2,14 @@
 id = "01M4069TJA7YJTYSZCATV5ZYFS"
 title = "PM033 replenish: ready queue below ready_min (Advisory)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:56Z"
-updated = "2026-10-03T16:11:09Z"
+updated = "2026-10-03T16:13:02Z"
 idempotency_key = "m2-rel-pm033"
 labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/rules/replenish.rs", "docs/reference/rules/pm/**", "crates/frob-pm/src/rules/mod.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/mdtest/pm033.md", "crates/frob-check/src/product.rs", "docs/reference/rules/PM033.md", "docs/reference/rules/README.md"]

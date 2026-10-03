@@ -715,3 +715,70 @@ fn a_second_expedite_exits_3_while_one_is_running() {
     let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &two.to_string()], &fx.root);
     assert_eq!(code, 0, "{out}{err}");
 }
+
+// frob:tests crates/frob-worktree/src/wip.rs::check
+// frob:tests crates/frob-pm/src/rules/wip.rs::count
+#[test]
+fn the_gate_and_pm013_count_the_same_holders() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    std::fs::write(
+        fx.root.join("frob.toml"),
+        "[pm.wip]\nin_progress = 1\n[pm.classes]\nexpedite_max = 1\n",
+    )
+    .expect("config");
+    let ledger = fx.ledger(None);
+    let a = classed_ticket(&ledger, "Std A", Class::Standard, "a/**");
+    let hot = classed_ticket(&ledger, "Hotfix", Class::Expedite, "hot/**");
+    let old = classed_ticket(&ledger, "Old stale", Class::Standard, "old/**");
+    let next = classed_ticket(&ledger, "Std next", Class::Standard, "next/**");
+    // `old` is in progress with no lease: stale for both the gate and the rule.
+    ledger
+        .transition(old, Category::InProgress, None, None)
+        .expect("stale transition");
+    drop(ledger);
+    let cli = frob_worktree::register(gob_cli::Cli::new("frob", "0.0.0"));
+    for t in [a, hot] {
+        let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &t.to_string()], &fx.root);
+        assert_eq!(code, 0, "{out}{err}");
+    }
+    // Gate: standard `a` fills the limit of 1; expedite and stale are not counted.
+    let (code, out, _) = gob_cli::run_for_test(&cli, &["work", &next.to_string()], &fx.root);
+    assert_eq!(code, 3, "{out}");
+    let gate = json(&out)["error"]["message"]
+        .as_str()
+        .expect("message")
+        .to_owned();
+    assert!(gate.contains("(1 of 1)"), "{gate}");
+    assert!(gate.contains("Std A"), "{gate}");
+    assert!(!gate.contains("Hotfix") || gate.contains("Stale"), "{gate}");
+    // Rule: the same fixture, the same count, so no finding at the limit ...
+    let ledger = fx.ledger(None);
+    let live: std::collections::BTreeSet<TicketId> = fx
+        .leases()
+        .live_snapshot()
+        .expect("live")
+        .into_iter()
+        .map(|l| l.ticket)
+        .collect();
+    let at = |limit: u32| {
+        let limits = frob_pm::rules::wip::WipLimits {
+            in_progress: limit,
+            expedite_max: 1,
+        };
+        frob_pm::rules::wip::evaluate_with(&ledger, limits, Some(&live)).expect("pm013")
+    };
+    assert!(
+        at(1).findings.is_empty(),
+        "rule agrees with the gate at the limit"
+    );
+    // ... and it fires exactly when the gate's holder count is exceeded.
+    let wip = frob_pm::rules::wip::read(&ledger, Some(&live), 1).expect("read");
+    assert_eq!(wip.standard.len(), 1);
+    assert_eq!(wip.expedite.len(), 1);
+    assert_eq!(wip.stale.len(), 1);
+    let over = at(1).subjects;
+    assert_eq!(over, 2, "standard plus expedite holders, stale excluded");
+}

@@ -1,13 +1,16 @@
-//! `PM034` and `PM013` markdown corpus: each block is a small ledger built from a line DSL.
+//! `PM034`, `PM013` and `PM033` markdown corpus: each block is a small ledger built from a line DSL.
 // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
 // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
+// frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
+// frob:ticket 01M416Z11V5GR012FR47HWFTBP
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
+use frob_ledger::guards::NoLeases;
 use frob_ledger::model::{Category, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
-use frob_pm::rules::{membership::evaluate, wip};
+use frob_pm::rules::{membership::evaluate, replenish, wip};
 use frob_pm::{NewObject, ObjectKind, PmStore, event::Op};
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_mdtest::Case;
@@ -43,7 +46,7 @@ fn opts<'a>(words: &[&'a str]) -> BTreeMap<&'a str, &'a str> {
     words.iter().filter_map(|w| w.split_once('=')).collect()
 }
 
-/// Build the ledger a block describes and evaluate the block's rule (`PM034` or `PM013`) over it.
+/// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM013` or `PM033`) over it.
 fn runner(case: &Case) -> Vec<Finding> {
     // frob:tests crates/frob-pm/src/rules/membership.rs::pm034
     // frob:tests crates/frob-pm/src/rules/membership.rs::evaluate
@@ -52,6 +55,9 @@ fn runner(case: &Case) -> Vec<Finding> {
     let ledger = ledger(dir.path());
     let mut keys: BTreeMap<String, TicketId> = BTreeMap::new();
     let mut limit = 0_u32;
+    let mut ready_min = 0_u32;
+    let mut expedite_max = 1_u32;
+    let mut live: BTreeSet<TicketId> = BTreeSet::new();
     for line in case.text.lines().filter(|l| !l.trim().is_empty()) {
         let w: Vec<&str> = line.split_whitespace().collect();
         let o = opts(&w);
@@ -68,15 +74,23 @@ fn runner(case: &Case) -> Vec<Finding> {
                     .get("labels")
                     .map(|l| l.split(',').map(str::to_owned).collect())
                     .unwrap_or_default();
+                if let Some(class) = o.get("class") {
+                    t.class = class.parse().expect("class");
+                }
                 let id = ledger.new_ticket(t).expect("ticket").ticket.front.id;
                 if o.get("state") == Some(&"in_progress") {
                     ledger
                         .transition(id, Category::InProgress, None, None)
                         .expect("transition");
+                    if !w.contains(&"stale") {
+                        live.insert(id);
+                    }
                 }
                 keys.insert(w[1].to_owned(), id);
             }
             "limit" => limit = w[1].parse().expect("limit"),
+            "ready_min" => ready_min = w[1].parse().expect("ready_min"),
+            "expedite_max" => expedite_max = w[1].parse().expect("expedite_max"),
             "milestone" => {
                 let applied = PmStore::new(&ledger)
                     .create(NewObject::Milestone {
@@ -101,11 +115,24 @@ fn runner(case: &Case) -> Vec<Finding> {
             other => unreachable!("unknown DSL verb {other}"),
         }
     }
+    if case.rule.to_string() == "PM033" {
+        // frob:tests crates/frob-pm/src/rules/replenish.rs::pm033
+        // frob:tests crates/frob-pm/src/rules/replenish.rs::evaluate
+        return replenish::evaluate(&ledger, &NoLeases, ready_min)
+            .expect("evaluate")
+            .findings;
+    }
     if case.rule.to_string() == "PM013" {
         // frob:tests crates/frob-pm/src/rules/wip.rs::pm013
-        // frob:tests crates/frob-pm/src/rules/wip.rs::evaluate
+        // frob:tests crates/frob-pm/src/rules/wip.rs::evaluate_with
         // frob:tests crates/frob-pm/src/rules/wip.rs::in_progress
-        return wip::evaluate(&ledger, limit).expect("evaluate").findings;
+        let limits = wip::WipLimits {
+            in_progress: limit,
+            expedite_max,
+        };
+        return wip::evaluate_with(&ledger, limits, Some(&live))
+            .expect("evaluate")
+            .findings;
     }
     evaluate(&ledger).expect("evaluate").findings
 }

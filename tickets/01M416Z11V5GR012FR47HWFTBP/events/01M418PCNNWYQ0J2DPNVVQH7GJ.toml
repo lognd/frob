@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T16:13:59Z"
+digest = "f989e7653e4caf265f9ddc390eeefd2d4aab6ca0e564491f025604200e273667"
+exit_code = 0
+inline = '''
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.96s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 64967646-7130-4b94-ac5a-c3107b05459d with nextest profile: default
+    Starting 6 tests across 6 binaries (50 tests skipped)
+        PASS [   0.007s] frob-pm rules::wip::tests::empty_input_splits_to_empty_lanes
+        PASS [   0.006s] frob-pm rules::wip::tests::limits_zero_are_off
+        PASS [   0.262s] frob-worktree::work cli_work_past_the_repository_limit_exits_3_with_the_wip_code
+        PASS [   0.286s] frob-worktree::work a_second_expedite_exits_3_while_one_is_running
+        PASS [   0.402s] frob-worktree::work the_gate_and_pm013_count_the_same_holders
+        PASS [   0.450s] frob-worktree::work expedite_is_granted_as_the_single_exception_when_the_limit_is_reached
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.453s] 6 tests run: 6 passed, 50 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -p frob-pm -E 'test(wip) | test(expedite) | test(the_gate)'"
+size = 1110
+status = "measured"
+tests = ["rules::wip::tests::empty_input_splits_to_empty_lanes", "rules::wip::tests::limits_zero_are_off", "cli_work_past_the_repository_limit_exits_3_with_the_wip_code", "a_second_expedite_exits_3_while_one_is_running", "the_gate_and_pm013_count_the_same_holders", "expedite_is_granted_as_the_single_exception_when_the_limit_is_reached"]
+at = "2026-10-03T16:13:59Z"
+actor = "lognd"
+rev = 1
