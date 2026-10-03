@@ -6,7 +6,7 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T15:43:45Z"
-updated = "2026-10-03T15:43:45Z"
+updated = "2026-10-03T15:53:24Z"
 scope = ["crates/frob-worktree/src/wip.rs"]
 +++
 
