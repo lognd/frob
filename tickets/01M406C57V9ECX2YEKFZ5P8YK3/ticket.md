@@ -9,9 +9,9 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T06:14:12Z"
-updated = "2026-10-03T06:16:48Z"
+updated = "2026-10-03T15:28:26Z"
 idempotency_key = "m2-releases-gaps"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["docs/design/**"]
 
 [[acceptance]]
