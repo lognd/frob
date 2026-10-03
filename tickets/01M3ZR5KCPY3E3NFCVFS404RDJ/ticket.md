@@ -8,10 +8,10 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:05:57Z"
-updated = "2026-10-03T02:11:39Z"
+updated = "2026-10-03T02:54:15Z"
 idempotency_key = "m2-cov-crosscrate"
 labels = ["milestone:2"]
-scope = ["crates/gob-symbols/**", "crates/frob-obligations/**"]
+scope = ["crates/gob-symbols/**", "crates/frob-obligations/**", "docs/reference/fidelity.md"]
 
 [[acceptance]]
 text = "Given this repository, when frob check runs, then COV001 Unresolved findings are below 40 and a test proves no genuinely ambiguous call became Covered"
