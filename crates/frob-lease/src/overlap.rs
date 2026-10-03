@@ -120,8 +120,13 @@ pub fn glob_set<'a>(globs: impl IntoIterator<Item = &'a String>) -> Result<GlobS
 ///   directory containing the other (`src` and `src/a.rs`).
 /// - One has a wildcard: it overlaps the literal when it matches it, or when
 ///   the literal names a directory above the wildcard's literal prefix.
-/// - Both have wildcards: they overlap when either literal prefix is a prefix
-///   of the other (an empty prefix, as in `**/*.rs`, overlaps everything).
+/// - Both have wildcards: a segment-wise intersection over the `/`-separated
+///   segments. Literal segments must be equal, `*`/`?` segments match one segment
+///   (two of them are compatible when their literal prefixes and suffixes agree),
+///   `**` matches zero or more, and a glob that runs out of segments first must have
+///   only `**` left on the other side. Disjoint is answered
+///   only when proven; a glob with a character class, brace alternative or escape is
+///   undecidable here and always overlaps.
 ///
 /// # Errors
 ///
@@ -136,12 +141,89 @@ pub fn globs_overlap(a: &str, b: &str) -> Result<bool, LeaseError> {
         (false, true) => literal_vs_wild(&a, &b),
         (true, false) => literal_vs_wild(&b, &a),
         (true, true) => {
-            let (pa, pb) = (literal_prefix(&a), literal_prefix(&b));
             builder(&a)?;
             builder(&b)?;
-            Ok(pa.starts_with(pb) || pb.starts_with(pa))
+            let overlap = wild_segments_overlap(&a, &b);
+            tracing::debug!(%a, %b, overlap, "wildcard glob pair tested");
+            Ok(overlap)
         }
     }
+}
+
+/// Segment-wise intersection test for two wildcard globs; `false` only when provably disjoint.
+///
+/// Globs with `[`, `{` or `\` are undecidable (alternatives and classes can contain `/`, which
+/// would misalign the segments), so they answer `true`.
+fn wild_segments_overlap(a: &str, b: &str) -> bool {
+    if a.contains(['[', '{', '\\']) || b.contains(['[', '{', '\\']) {
+        return true;
+    }
+    let (sa, sb): (Vec<&str>, Vec<&str>) = (a.split('/').collect(), b.split('/').collect());
+    let mut memo = vec![vec![None; sb.len() + 1]; sa.len() + 1];
+    segs_overlap(&sa, &sb, 0, 0, &mut memo)
+}
+
+/// True for a segment that can span several path segments (`**`, or any run of stars the
+/// matcher might treat that way; over-approximated to stay sound).
+fn is_globstar(seg: &str) -> bool {
+    seg.contains("**")
+}
+
+/// Memoized recursion over segment positions `(li, ri)` of the two globs.
+fn segs_overlap(
+    left: &[&str],
+    right: &[&str],
+    li: usize,
+    ri: usize,
+    memo: &mut [Vec<Option<bool>>],
+) -> bool {
+    if let Some(r) = memo[li][ri] {
+        return r;
+    }
+    let r = if li == left.len() {
+        right[ri..].iter().all(|s| is_globstar(s))
+    } else if ri == right.len() {
+        left[li..].iter().all(|s| is_globstar(s))
+    } else if is_globstar(left[li]) || is_globstar(right[ri]) {
+        // The star side spans zero segments or absorbs one more of the other side.
+        segs_overlap(left, right, li + 1, ri, memo) || segs_overlap(left, right, li, ri + 1, memo)
+    } else {
+        segment_compatible(left[li], right[ri]) && segs_overlap(left, right, li + 1, ri + 1, memo)
+    };
+    memo[li][ri] = Some(r);
+    r
+}
+
+/// True when two single-segment patterns (no `**`, class, brace or escape) can match a common string.
+fn segment_compatible(a: &str, b: &str) -> bool {
+    let simple = |s: &str| !s.contains(['*', '?']);
+    match (simple(a), simple(b)) {
+        (true, true) => a == b,
+        (true, false) => segment_matches(b, a),
+        (false, true) => segment_matches(a, b),
+        (false, false) => wild_pair_compatible(a, b),
+    }
+}
+
+/// Necessary condition for two `*`/`?` segments to share a string: literal prefixes and suffixes agree.
+///
+/// Only `false` is a proof of disjointness; `ab*` and `ac*` cannot match one string, `a*` and `*b` can.
+fn wild_pair_compatible(a: &str, b: &str) -> bool {
+    let affixes = |s: &str| {
+        let head = s.find(['*', '?']).map_or(s, |i| &s[..i]);
+        let tail = s.rfind(['*', '?']).map_or(s, |i| &s[i + 1..]);
+        (head.to_owned(), tail.to_owned())
+    };
+    let ((ha, ta), (hb, tb)) = (affixes(a), affixes(b));
+    (ha.starts_with(&hb) || hb.starts_with(&ha)) && (ta.ends_with(&tb) || tb.ends_with(&ta))
+}
+
+fn segment_matches(pattern: &str, literal: &str) -> bool {
+    // A pattern that fails to compile is undecidable: treat it as compatible.
+    GlobBuilder::new(pattern)
+        .literal_separator(true)
+        .build()
+        .map_or(true, |g| g.compile_matcher().is_match(literal))
 }
 
 fn dir_contains(dir: &str, path: &str) -> bool {
@@ -303,6 +385,32 @@ mod tests {
         for (a, b) in no {
             assert!(!globs_overlap(a, b).unwrap(), "{a} vs {b}");
             assert!(!globs_overlap(b, a).unwrap(), "{b} vs {a}");
+        }
+    }
+
+    // frob:ticket 01M41FDWMMZTSHZETC48C6Y5DZ
+    #[test]
+    fn per_crate_wildcards_are_disjoint_when_segments_differ() {
+        let no = [
+            ("crates/*/Cargo.toml", "crates/frob-evidence/tests/**"),
+            ("crates/*/Cargo.toml", "crates/*/src/**"),
+            ("crates/*/src/**", "docs/**/*.md"),
+            ("src/*.rs", "src/*/mod.rs"),
+            ("src/*", "src/a/b/*"),
+        ];
+        for (a, b) in no {
+            assert!(!globs_overlap(a, b).unwrap(), "{a} vs {b}");
+            assert!(!globs_overlap(b, a).unwrap(), "{b} vs {a}");
+        }
+        let yes = [
+            ("crates/*/src/**", "crates/frob-*/src/lib.rs"),
+            ("crates/*/Cargo.toml", "crates/*/*.toml"),
+            ("**/Cargo.toml", "crates/*/Cargo.toml"),
+            ("crates/{a/b,c}/x/y", "crates/c/x/*"),
+        ];
+        for (a, b) in yes {
+            assert!(globs_overlap(a, b).unwrap(), "{a} vs {b}");
+            assert!(globs_overlap(b, a).unwrap(), "{b} vs {a}");
         }
     }
 

@@ -956,6 +956,7 @@ dependencies = [
  "gob-git",
  "gob-rules",
  "gob-walk",
+ "proptest",
  "schemars",
  "serde",
  "serde_json",

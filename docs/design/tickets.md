@@ -320,7 +320,12 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   terminal transition and on `requeue`.
 - Overlap is glob intersection OR resolved-set intersection (in code, a
   conservative intersection test over the glob text, with the resolved
-  file set as a backstop): two
+  file set as a backstop; for two wildcard globs the text test is
+  segment-wise over the `/`-separated segments, so `crates/*/Cargo.toml`
+  and `crates/frob-evidence/tests/**` are disjoint while
+  `crates/*/src/**` and `crates/frob-*/src/lib.rs` overlap, and a glob
+  with a character class, brace or escape is undecidable and always
+  overlaps): two
   tickets scoped to `src/newmod/**` overlap even though no file exists
   yet (v1's glob-overlap proof is kept), and a glob that is disjoint
   from another's text but resolves to a shared file also overlaps.
