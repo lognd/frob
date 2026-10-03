@@ -7,10 +7,10 @@ priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T16:56:42Z"
-updated = "2026-10-03T17:33:01Z"
+updated = "2026-10-03T17:33:18Z"
 idempotency_key = "m2-rel-notes-verb"
 labels = ["milestone:2", "area:release"]
-scope = ["crates/frob/src/release_cmd.rs", "crates/frob-release/src/changelog.rs", ".github/workflows/release.yml", "crates/frob/tests/release.rs", "crates/frob-release/tests/release_workflow.rs", "docs/reference/changelog.md", "docs/design/releases.md"]
+scope = ["crates/frob/src/release_cmd.rs", "crates/frob-release/src/changelog.rs", ".github/workflows/release.yml", "crates/frob/tests/release.rs", "crates/frob-release/tests/release_workflow.rs", "docs/reference/changelog.md", "docs/design/releases.md", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
 text = "Given a CHANGELOG with a section for version X, when frob release notes --version X runs, then it prints exactly that section body"
