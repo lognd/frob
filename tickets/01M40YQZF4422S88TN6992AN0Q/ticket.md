@@ -11,7 +11,7 @@ created = "2026-10-03T13:20:05Z"
 updated = "2026-10-03T13:52:06Z"
 idempotency_key = "m2-rel-remedy-commands-exist"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob/src/cycle_cmd.rs", "crates/frob/tests/remedies.rs", "crates/gob-cli/src/cli.rs", "crates/frob/Cargo.toml"]
+scope = ["crates/frob/src/cycle_cmd.rs", "crates/frob/tests/remedies.rs", "crates/gob-cli/src/cli.rs", "crates/frob/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given every remedy string frob can emit, when the remedy test runs, then each frob command and flag it names exists in the CLI registry"
