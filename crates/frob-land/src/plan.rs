@@ -1,11 +1,49 @@
 //! The options and results of a land, and the deterministic dry-run plan.
 
+use std::fmt;
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Duration;
 
 use frob_ledger::TicketId;
 use frob_ledger::model::Outcome;
 use schemars::JsonSchema;
 use serde::Serialize;
+
+/// Tuning of the stale-base retry loop `--wait` enables (frob:ticket ~VMHTBE7).
+#[derive(Clone)]
+pub struct RetryPolicy {
+    /// First backoff ceiling; doubles each attempt up to `max`.
+    pub backoff_base: Duration,
+    /// Largest backoff ceiling.
+    pub backoff_max: Duration,
+    /// Total retry budget; `--wait` seconds when absent.
+    pub budget: Option<Duration>,
+    /// Called with the attempt number just before each compare-and-swap; a test seam.
+    pub before_attempt: Option<Arc<dyn Fn(u32) + Send + Sync>>,
+}
+
+impl Default for RetryPolicy {
+    fn default() -> Self {
+        Self {
+            backoff_base: Duration::from_millis(50),
+            backoff_max: Duration::from_secs(2),
+            budget: None,
+            before_attempt: None,
+        }
+    }
+}
+
+impl fmt::Debug for RetryPolicy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RetryPolicy")
+            .field("backoff_base", &self.backoff_base)
+            .field("backoff_max", &self.backoff_max)
+            .field("budget", &self.budget)
+            .field("before_attempt", &self.before_attempt.is_some())
+            .finish()
+    }
+}
 
 /// Options of [`crate::land()`].
 #[derive(Debug, Clone)]
@@ -16,7 +54,7 @@ pub struct LandOptions {
     pub dry_run: bool,
     /// Push the base branch to `origin` after advancing it.
     pub push: bool,
-    /// Seconds to wait for the land lock before refusing with `E-LAND-LOCKED`.
+    /// Seconds to wait for the land lock, and to retry a stale base, before refusing.
     pub wait_secs: u64,
     /// Keep the worktree and branch after landing.
     pub keep_worktree: bool,
@@ -26,6 +64,8 @@ pub struct LandOptions {
     pub no_changelog_reason: Option<String>,
     /// The outcome the ticket is closed with.
     pub outcome: Outcome,
+    /// Stale-base retry tuning; only used when `wait_secs` is above zero.
+    pub retry: RetryPolicy,
 }
 
 impl Default for LandOptions {
@@ -39,6 +79,7 @@ impl Default for LandOptions {
             no_evidence_reason: None,
             no_changelog_reason: None,
             outcome: Outcome::Done,
+            retry: RetryPolicy::default(),
         }
     }
 }
@@ -80,6 +121,9 @@ pub struct LandOutcome {
     pub digest: Option<String>,
     /// The ordered steps (dry run).
     pub plan: Vec<String>,
+    /// Compare-and-swap attempts the publish took (1 unless `--wait` retried a stale base); 0 when nothing was published.
+    #[serde(default)]
+    pub attempts: u32,
     /// Non-fatal notices.
     pub warnings: Vec<String>,
     /// The reason of the `--no-changelog` exemption this land recorded, when it did.

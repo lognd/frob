@@ -1,0 +1,102 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T16:22:33Z"
+digest = "36ad99253945a55f6e59d5d0804744db730a985989e2209f834ad4bf24c056e2"
+exit_code = 0
+inline = '''
+   Compiling memchr v2.8.3
+   Compiling syn v3.0.6
+   Compiling aho-corasick v1.1.5
+   Compiling serde_json v1.0.151
+   Compiling serde_derive_internals v0.30.0
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling regex-automata v0.4.18
+   Compiling thiserror v2.0.21
+   Compiling ref-cast-impl v1.0.27
+   Compiling schemars_derive v1.2.2
+   Compiling ref-cast v1.0.27
+   Compiling serde v1.0.229
+   Compiling gix-zlib v0.1.0
+   Compiling tracing-serde v0.2.0
+   Compiling schemars v1.2.2
+   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/gob-rules)
+   Compiling regex v1.13.1
+   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/gob-diagnostics)
+   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/gob-config)
+   Compiling bstr v1.13.1
+   Compiling matchers v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling error_set_impl v0.9.2
+   Compiling gix-validate v0.11.4
+   Compiling gix-utils v0.3.6
+   Compiling gix-path v0.12.6
+   Compiling gix-error v0.3.2
+   Compiling gix-packetline v0.22.2
+   Compiling gix-features v0.49.1
+   Compiling gix-config-value v0.19.1
+   Compiling gix-quote v0.8.0
+   Compiling gix-date v0.16.0
+   Compiling gix-command v0.10.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-actor v0.42.0
+   Compiling gix-chunk v0.8.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-glob v0.27.1
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-bitmap v0.4.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-url v0.38.0
+   Compiling gix-imara-diff v0.2.5
+   Compiling gix-transport v0.59.2
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-shallow v0.13.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gob-log v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/gob-log)
+   Compiling error_set v0.9.2
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gob-mdtest v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/gob-mdtest)
+   Compiling gob-exec v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/gob-exec)
+   Compiling gix v0.87.1
+   Compiling gob-git v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/frob-ledger)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/7HWFTBP/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 49.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1f8a7351-d84a-4bff-aa0c-a7a0543f972e with nextest profile: default
+    Starting 1 test across 4 binaries (42 tests skipped)
+        PASS [  14.362s] frob-pm::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  14.363s] 1 test run: 1 passed, 42 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E 'test(mdtest_corpus)'"
+size = 3583
+status = "measured"
+tests = ["mdtest_corpus"]
+at = "2026-10-03T16:22:33Z"
+actor = "lognd"
+rev = 1

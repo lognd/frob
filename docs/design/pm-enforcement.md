@@ -239,6 +239,15 @@ worktree path, so parallel agents in separate worktrees are not one
 identity); `[pm.wip] in_progress` (default 2) caps the repository; a
 category limit makes the board column red and PM013 fire.
 
+What counts toward WIP has one definition, `frob_pm::rules::wip::count`,
+shared by the `work`/`start` gate and PM013: an in-progress ticket holds
+a slot only while its lease is live (a ticket whose lease expired is
+stale, named with a requeue hint but never counted); expedite tickets are
+counted in their own lane, exempt from `in_progress` and capped by
+`[pm.classes] expedite_max` (0 closes the lane, so expedite then counts
+as standard). PM013 fires when live standard holders exceed
+`in_progress` and when live expedite holders exceed `expedite_max`.
+
 ## 7. Rule family PM (generated like every other family)
 
 | Id | Checks |
