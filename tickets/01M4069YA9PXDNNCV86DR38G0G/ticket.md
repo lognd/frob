@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T17:11:41Z"
+updated = "2026-10-03T17:11:46Z"
 idempotency_key = "m2-rel-publish-pypi"
 labels = ["milestone:2", "area:release"]
 scope = [".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "packaging/pypi/BUILDING.md"]
@@ -19,7 +19,7 @@ target = "01M4069Y1YR0XCN4BKDDH63PV1"
 
 [[acceptance]]
 text = "Given smoke failed, when the workflow runs, then no publish job starts"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the job definition, when inspected, then id-token write is granted to no other job"
