@@ -2,7 +2,8 @@
 id = "01M4069X2KPQ6RNV26SWSY4VA5"
 title = "Lockstep version bump across Cargo workspace and wheel metadata"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
