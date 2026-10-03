@@ -30,9 +30,18 @@ fn fixture() -> (tempfile::TempDir, Repo) {
     let repo = Repo::init(dir.path()).unwrap();
     // Point HEAD at main regardless of init.defaultBranch.
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").unwrap();
+    set_local_identity(&repo);
     repo.commit_paths(MAIN, &[change("README.md", "hello\n")], "root", &opts())
         .unwrap();
     (dir, repo)
+}
+
+/// Give the repository a local committer identity so spawned `git` never reads the host's config.
+fn set_local_identity(repo: &Repo) {
+    let cfg = repo.git_dir().join("config");
+    let mut text = std::fs::read_to_string(&cfg).unwrap();
+    text.push_str("[user]\n\tname = Test\n\temail = test@example.com\n");
+    std::fs::write(&cfg, text).unwrap();
 }
 
 fn commit_count(repo: &Repo, rev: &str) -> usize {

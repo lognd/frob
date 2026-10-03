@@ -65,6 +65,17 @@ fn fixture_with(toml: Option<&str>) -> (tempfile::TempDir, Repo) {
     let dir = tempfile::tempdir().unwrap();
     let repo = Repo::init(dir.path()).unwrap();
     fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").unwrap();
+    // Local author identity for the release commit and tags; written before the repository is
+    // reopened because a handle snapshots its config when opened, and never the host's config.
+    fs::write(
+        repo.git_dir().join("config"),
+        format!(
+            "{}[user]\n\tname = Test\n\temail = test@example.com\n",
+            fs::read_to_string(repo.git_dir().join("config")).unwrap()
+        ),
+    )
+    .unwrap();
+    let repo = Repo::discover(dir.path()).unwrap();
     let mut files = vec![
         ("Cargo.toml", ROOT),
         ("crates/a/Cargo.toml", A),
@@ -84,15 +95,6 @@ fn fixture_with(toml: Option<&str>) -> (tempfile::TempDir, Repo) {
         .collect();
     repo.commit_paths("refs/heads/main", &changes, "base", &opts())
         .unwrap();
-    // Author identity for the release commit and tags.
-    fs::write(
-        repo.git_dir().join("config"),
-        format!(
-            "{}[user]\n\tname = Test\n\temail = test@example.com\n",
-            fs::read_to_string(repo.git_dir().join("config")).unwrap()
-        ),
-    )
-    .unwrap();
     (dir, repo)
 }
 

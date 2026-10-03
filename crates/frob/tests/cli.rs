@@ -7,18 +7,11 @@ use assert_cmd::Command;
 use insta::{assert_json_snapshot, assert_snapshot};
 use serde_json::Value;
 
-/// A fresh git repository in a temp dir.
+mod common;
+
+/// A fresh git repository with a fixed local owner identity: init writes the email as `[evidence] attesters`, so snapshots must not depend on the machine's git config.
 fn repo() -> tempfile::TempDir {
-    let dir = tempfile::tempdir().expect("tempdir");
-    gob_git::Repo::init(dir.path()).expect("git init");
-    // A fixed owner email: init writes it as `[evidence] attesters`, so snapshots must not depend on the machine's git config.
-    let status = std::process::Command::new("git")
-        .args(["config", "user.email", "test@example.com"])
-        .current_dir(dir.path())
-        .status()
-        .expect("git config");
-    assert!(status.success(), "git config user.email");
-    dir
+    common::git_repo()
 }
 
 fn frob(cwd: &Path, args: &[&str]) -> Output {
