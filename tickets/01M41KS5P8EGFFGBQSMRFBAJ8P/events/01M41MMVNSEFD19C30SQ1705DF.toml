@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T19:42:52Z"
+digest = "ce04199f7d3edce14f84a20a6e76cbb0baf68d512d16dda53bd73571fda51cda"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7ee407d3-2ae1-4fe8-af26-28b20bedd099 with nextest profile: default
+    Starting 1 test across 1 binary (30 tests skipped)
+        PASS [   0.910s] frob-cli::cycle doctor_fix_numbers_existing_duplicate_aliases_in_creation_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.911s] 1 test run: 1 passed, 30 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test cycle doctor_fix_numbers_existing_duplicate_aliases_in_creation_order"
+size = 568
+status = "measured"
+tests = ["doctor_fix_numbers_existing_duplicate_aliases_in_creation_order"]
+at = "2026-10-03T19:42:52Z"
+actor = "lognd"
+rev = 1
