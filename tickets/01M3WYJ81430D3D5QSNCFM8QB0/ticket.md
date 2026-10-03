@@ -2,7 +2,8 @@
 id = "01M3WYJ81430D3D5QSNCFM8QB0"
 title = "frob-ledger: first-class evidence, evidence-bypass and land events with an append API"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3WYJ802ZVWE6E3050EVRCSV"
