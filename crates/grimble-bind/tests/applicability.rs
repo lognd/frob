@@ -1,7 +1,8 @@
-//! SYS003, SYS008, SYS009, SYS010 and SYS011 examine their subjects when the model has them
+//! SYS001, SYS002, SYS004 (no node, owns row or checkable clause), SYS003, SYS008, SYS009, SYS010 and SYS011 examine their subjects when the model has them
 //! and report `NotApplicable` (with a reason, never zero subjects) when it does not.
 
 // frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
+// frob:ticket 01M405B09EW2M0NDNTXKHXV2X7
 
 use std::path::Path;
 
@@ -155,4 +156,65 @@ fn sys011_examines_a_vmodel_link_and_fires_when_it_is_broken() {
     assert_eq!(examined(&b, "SYS011"), 1);
     assert!(fired(&b, "SYS011"));
     assert!(!b.not_applicable.contains_key("SYS011"));
+}
+
+const OWNERSHIP: [&str; 3] = ["SYS001", "SYS002", "SYS004"];
+
+// frob:tests crates/grimble-bind/src/rules.rs::sys001_inapplicable
+// frob:tests crates/grimble-bind/src/rules.rs::sys002_inapplicable
+// frob:tests crates/grimble-bind/src/rules.rs::sys004_inapplicable
+#[test]
+fn no_model_entity_makes_sys001_sys002_sys004_not_applicable() {
+    for files in [
+        vec![("src/lib.rs", "pub fn run() {}\n")],
+        vec![
+            ("design/m.grmb", "grimble = \"2\";\nmodule m;\n"),
+            ("src/lib.rs", "pub fn run() {}\n"),
+        ],
+    ] {
+        let b = bind(&files);
+        for rule in OWNERSHIP {
+            let why = b.not_applicable.get(rule);
+            assert!(why.is_some_and(|w| !w.is_empty()), "{rule} needs a reason");
+            assert!(
+                !b.subjects.contains_key(rule),
+                "{rule} has no subject count"
+            );
+            assert!(!fired(&b, rule));
+        }
+    }
+}
+
+// frob:tests crates/grimble-bind/src/rules.rs::sys001_inapplicable
+// frob:tests crates/grimble-bind/src/rules.rs::sys002_inapplicable
+// frob:tests crates/grimble-bind/src/rules.rs::sys004_inapplicable
+#[test]
+fn a_model_with_nodes_examines_ownership_subjects() {
+    let model = format!("{PLAIN}node t : trusted {{ owns \"src/**\"; }}\n");
+    let b = bind(&[
+        ("design/m.grmb", &model),
+        ("src/lib.rs", "pub fn run() {}\n"),
+        ("docs/loose.txt", "x\n"),
+    ]);
+    for rule in OWNERSHIP {
+        assert!(!b.not_applicable.contains_key(rule), "{rule} applies");
+        assert!(examined(&b, rule) >= 1, "{rule} examines subjects");
+    }
+    assert!(fired(&b, "SYS001"), "an unowned file is a real finding");
+    assert!(fired(&b, "SYS002"), "two nodes own src/** equally");
+}
+
+// frob:tests crates/grimble-bind/src/rules.rs::sys001_inapplicable
+#[test]
+fn a_model_with_only_a_flow_has_no_node_to_own_files() {
+    let model = "grimble = \"2\";\nmodule m;\n\nnode a : external { }\nnode b : external { }\nflow f : a -> b { }\n";
+    let b = bind(&[
+        ("design/m.grmb", model),
+        ("src/lib.rs", "pub fn run() {}\n"),
+    ]);
+    assert!(
+        !b.not_applicable.contains_key("SYS004"),
+        "a flow is checked for code"
+    );
+    assert!(examined(&b, "SYS004") >= 1);
 }

@@ -17,7 +17,7 @@ use gob_walk::{Owner, Selector, select_files};
 use grimble_model::ast::EntityKind;
 
 use crate::code::Code;
-use crate::model::{Entity, Model};
+use crate::model::{Clause, Entity, Model};
 use crate::owner::Owners;
 use crate::relation::{ClauseResult, Relation, hidden_reason};
 use crate::types::{BindFinding, Reason, Role, Source, Status};
@@ -145,6 +145,45 @@ fn modeled_paths(cx: &Cx<'_>) -> BTreeSet<String> {
         .flat_map(|s| select_files(s, &cx.code.walk))
         .map(|m| m.path)
         .collect()
+}
+
+/// Why SYS001 has no subject, or `None` when the model declares a node that could own a file.
+///
+/// With no node at all, "no node owns this file" is vacuous (every file would read as unowned);
+/// with a node, each unowned file is a real finding.
+pub fn sys001_inapplicable(model: &Model) -> Option<&'static str> {
+    let has = model.entities.values().any(|e| e.kind == EntityKind::Node);
+    (!has).then_some("the model declares no node, so no file can be unowned")
+}
+
+/// Why SYS002 has no subject, or `None` when an `owns` row or a directive owner exists.
+///
+/// Subjects: an identity with an owner candidate, so an `owns` clause that matched an identity
+/// or a directive owner.
+pub fn sys002_inapplicable(rel: &Relation) -> Option<&'static str> {
+    let has = !rel.dir_owns.is_empty() || rel.rows.iter().any(|r| r.role == Role::Owns);
+    (!has).then_some("no `owns` clause matches an identity and no directive names an owner, so no ownership can tie")
+}
+
+/// Why SYS004 has no subject, or `None` when a clause or flow it checks for code exists.
+///
+/// Subjects: a node `owns` clause, a contract `shape` clause, a claim `evidence` selector that
+/// is not itself a checked claim, or a flow.
+pub fn sys004_inapplicable(model: &Model) -> Option<&'static str> {
+    let has = model
+        .entities
+        .values()
+        .any(|e| e.kind == EntityKind::Flow || e.clauses.iter().any(|c| sys004_clause(e, c)));
+    (!has).then_some("the model has no node owns, contract shape, claim evidence selector or flow to check for code")
+}
+
+/// Whether SYS004 checks this clause of `e` for code.
+fn sys004_clause(e: &Entity, c: &Clause) -> bool {
+    match (e.kind, c.role) {
+        (EntityKind::Node, Role::Owns) | (EntityKind::Contract, Role::Shape) => true,
+        (EntityKind::Claim, Role::Evidence) => !is_checked_claim(e) && c.selector.is_some(),
+        _ => false,
+    }
 }
 
 fn sys001(cx: &Cx<'_>, out: &mut Output) {
@@ -408,15 +447,8 @@ fn clause_result<'a>(cx: &'a Cx<'_>, anchor: &str) -> Option<&'a ClauseResult> {
 
 fn sys004(cx: &Cx<'_>, out: &mut Output) {
     for e in cx.model.entities.values() {
-        let claim_subject =
-            e.kind == EntityKind::Claim && e.proof.is_some_and(|p| p >= 2) && !e.assumed;
         for c in &e.clauses {
-            let in_scope = match (e.kind, c.role) {
-                (EntityKind::Node, Role::Owns) | (EntityKind::Contract, Role::Shape) => true,
-                (EntityKind::Claim, Role::Evidence) => !claim_subject && c.selector.is_some(),
-                _ => false,
-            };
-            if !in_scope {
+            if !sys004_clause(e, c) {
                 continue;
             }
             let Some(r) = clause_result(cx, &c.anchor) else {
@@ -597,8 +629,8 @@ fn flows(cx: &Cx<'_>, out: &mut Output) {
         out.count("SYS009", usize::from(pe) + usize::from(ce));
         let site = Some((f.file.as_str(), (f.span.start, f.span.end)));
         let empty = |s: End| matches!(s, End::Empty | End::Future);
+        out.count("SYS004", 1);
         if empty(p) && empty(c) {
-            out.count("SYS004", 1);
             if p == End::Future && c == End::Future {
                 continue;
             }

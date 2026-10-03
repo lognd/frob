@@ -110,7 +110,10 @@ fn declare_not_applicable(
     lock: &Result<gob_lock::LockFile, gob_lock::LockError>,
 ) -> BTreeMap<&'static str, &'static str> {
     let verdicts = [
+        ("SYS001", rules::sys001_inapplicable(model)),
+        ("SYS002", rules::sys002_inapplicable(rel)),
         ("SYS003", rules::sys003_inapplicable(model, rel)),
+        ("SYS004", rules::sys004_inapplicable(model)),
         (
             "SYS008",
             lock.as_ref().ok().and_then(drift::sys008_inapplicable),

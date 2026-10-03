@@ -222,3 +222,78 @@ fn an_applicable_rule_wired_to_no_subject_stays_a_zero_subject_row() {
         .unwrap();
     assert!(!grmb["not_applicable_rules"].to_string().contains("SYS009"));
 }
+
+// frob:ticket 01M405B09EW2M0NDNTXKHXV2X7
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn a_repository_with_no_model_entity_lists_the_ownership_rules_not_applicable() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    let r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let doc = sibling_document(&r);
+    let na = ["SYS001", "SYS002", "SYS004"];
+    let grmb = doc["fidelity"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["language"] == "grmb")
+        .unwrap();
+    let listed = grmb["not_applicable_rules"].to_string();
+    for rule in na {
+        assert!(listed.contains(rule), "{rule} in {listed}");
+        assert!(r.not_applicable.get(rule).is_some_and(|w| !w.is_empty()));
+    }
+    for row in doc["rules"].as_array().unwrap() {
+        let rule = row["rule"].as_str().unwrap();
+        assert!(!na.contains(&rule), "{rule} must not be a rule row");
+    }
+}
+
+// frob:ticket 01M405B09EW2M0NDNTXKHXV2X7
+// frob:tests crates/grimble-check/src/sibling.rs::sibling_document
+#[test]
+fn ownership_rules_wired_to_no_subject_stay_zero_subject_rows() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/m.grmb",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; }\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    let mut r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let rules = ["SYS001", "SYS002", "SYS004"];
+    for rule in rules {
+        assert!(!r.not_applicable.contains_key(rule), "{rule} applies here");
+        r.report.subjects_examined.insert(rule.to_owned(), 0);
+    }
+    r.report
+        .findings
+        .retain(|f| !rules.contains(&f.rule.as_str()));
+    let doc = sibling_document(&r);
+    let rows = doc["rules"].as_array().unwrap();
+    for rule in rules {
+        let row = rows
+            .iter()
+            .find(|x| x["rule"] == rule)
+            .unwrap_or_else(|| panic!("{rule} must stay a rule row"));
+        assert_eq!(row["subjects_examined"], 0);
+        assert_eq!(row["findings"], 0);
+    }
+    let grmb = doc["fidelity"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["language"] == "grmb")
+        .unwrap();
+    assert!(!grmb["not_applicable_rules"].to_string().contains("SYS001"));
+}
