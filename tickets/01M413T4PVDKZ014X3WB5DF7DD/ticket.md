@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T14:48:39Z"
-updated = "2026-10-03T15:16:15Z"
+updated = "2026-10-03T15:16:16Z"
 scope = ["crates/frob-release/**", "crates/gob-config/**", "docs/design/releases.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given [release] tag and products configured, when release cut runs, then one tag per product follows the pattern"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a hand-written CHANGELOG.md with an Unreleased heading, when release changelog runs, then it inserts the generated section without refusing and leaves the hand-written text intact"
