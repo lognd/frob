@@ -159,6 +159,7 @@ namespaces families by product so a foreign family is never unknown.
 | NEAT | grimble | grimble-lints | neatness (neatness.md); NEAT001-NEAT037; knobs in `grimble.toml` `[neat]`; tool-bound NEAT findings arrive through frob's `[[check.tool]]` stages |
 | CI, DK | grimble | grimble-ci | CI001-CI015 and DK001-DK004 (cicd.md); knobs in `grimble.toml` `[ci]`; adapters in gob-languages (features `actions`, `dockerfile`) and gob-symbols; CI012 reads manifests through the F2 manifest adapter; frob adopts zizmor and actionlint through `[[check.tool]]` before the adapters exist |
 | GPOL | grimble | grimble-lints | user policy over code; `rules/*.grl.toml` next to grimble.toml and `[[policy]]` in grimble.toml |
+| PATH | grimble | grimble-lints | host-path portability, PATH001-PATH003 (rules.md section 3.1, D86); GRL rules in the standard pack; knobs in `grimble.toml` `[path]` |
 | COLOR, SPACE, TYPE, RADIUS, SIZE, LAYER, CONTRAST, ORG, TW, BP | crunk | crunk-rules | notes/crunk.md section 4 |
 | GALLERY | crunk | crunk-gallery | gallery checks |
 | GEN | this repo only | not a registry family | `cargo dev gen --check` runs as a `[[check.tool]]` stage in this repo's frob.toml; its output maps to GEN001 |

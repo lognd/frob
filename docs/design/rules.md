@@ -136,6 +136,36 @@ scope and content.
 | NEAT | code | the neatness family, NEAT001-NEAT037 (neatness.md): honesty and effects, one level of abstraction, caller-friendly signatures, thin hooks; owner grimble, crate grimble-lints |
 | CI, DK | ci | CI001-CI015 over GitHub Actions and DK001-DK004 over Dockerfiles (cicd.md); owner grimble, crate grimble-ci; tool-bound findings arrive through `[[check.tool]]` stages |
 | POL, GPOL | config | user-declared policy rules: `POL` over tickets and docs from `[[policy]]` in `frob.toml`, `GPOL` over code from `rules/*.grl.toml` next to `grimble.toml` |
+| PATH | code | host-path portability (section 3.1): PATH001 absolute host path literal, PATH002 separator literal applied to a path turned into a string, PATH003 host path pasted into a command-line string; owner grimble, crate grimble-lints; universal over U |
+
+### 3.1 PATH: host-path portability (D86)
+
+The `/` versus `\` difference broke this repository's CI on every first
+Windows run (merge driver path, command allowlist, `--cwd` comparison,
+test fixtures). Clippy has no lint for it and the Windows-target clippy
+check only catches code that does not compile. PATH catches code that
+compiles everywhere and is wrong on one platform. It is a new family:
+v1's `PORT` (frob policing its own package paths) is dropped and its id
+is not reused, so converted v1 waivers keep their meaning.
+
+| Rule | Fires on | Default |
+|---|---|---|
+| PATH001 `absolute-host-path` | a string literal that is an absolute host path: `/home/<name>/`, `/Users/<name>/`, `/root/`, `/tmp/...`, a drive path `X:\` or `X:/`, a UNC path; not `/`, URLs, shebang lines, or entries in `[path] allowed` (default `/dev/null`) | Warn in non-test code, Advisory in tests and fixtures |
+| PATH002 `string-path-separator` | a value produced by turning a path into a string (Rust `to_str`, `to_string_lossy`, `display`, `as_os_str`; Python `str(p)`, `os.fspath`; per-language through the callee vocabulary) that is split, joined, concatenated, compared, trimmed or searched with a literal `/` or `\` in the same function | Warn |
+| PATH003 `path-in-command-line` | a path-derived string interpolated into one command-line string (`format!` into a shell command, `sh -c`, a git config value that git runs, a `.ps1` body) instead of passed as its own argument | Warn |
+
+Remedies name the portable form: `Path::join`, `components`,
+`strip_prefix` and `Path` equality; the repository-relative path type
+(forward slashes by contract, sibling-contract.md) for paths stored in
+data; one argument per path for commands, with the platform's quoting
+helper where a single string is unavoidable. A path that is *meant* to
+use `/` (a repository-relative key, a URL path) goes through that type,
+so PATH002 stays quiet on it without an exception. PATH002 and PATH003
+need def-use within one function, so they are GRL relational rules in
+the standard pack and among the first written in GRL (grl-spec.md); a
+language whose adapter lacks the path-conversion roles reports
+Unresolved, never clean. This repository raises PATH002 and PATH003 to
+Error in its own config.
 
 Dropped from core (optional packs or gone): web families (249 ids),
 PERF lexical set, EXHAUST/FFI/SUPPRESS/CONFIGPATH/PKG/NATIVE/PORT/
