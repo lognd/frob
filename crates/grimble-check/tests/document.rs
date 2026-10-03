@@ -11,7 +11,7 @@ fn write(dir: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).unwrap();
 }
 
-// frob:tests crates/grimble-check/src/config.rs::ComputeTable
+// frob:tests crates/gob-config/src/compute.rs::ComputeTable
 #[test]
 fn the_default_compute_digest_is_the_blake3_of_the_canonical_object() {
     let table = gob_config_default();
@@ -32,10 +32,12 @@ fn the_default_compute_digest_is_the_blake3_of_the_canonical_object() {
 
 fn gob_config_default() -> ComputeTable {
     let dir = tempfile::tempdir().unwrap();
-    ComputeTable::load_for(dir.path(), "grimble").unwrap().0
+    ComputeTable::load_for_product(dir.path(), "grimble")
+        .unwrap()
+        .0
 }
 
-// frob:tests crates/grimble-check/src/config.rs::ComputeTable
+// frob:tests crates/gob-config/src/compute.rs::ComputeTable
 #[test]
 fn frob_toml_wins_over_grimble_toml_for_compute() {
     let dir = tempfile::tempdir().unwrap();
@@ -45,10 +47,10 @@ fn frob_toml_wins_over_grimble_toml_for_compute() {
         "[compute]\nexpansion_steps = 5\n",
     );
     write(dir.path(), "frob.toml", "[compute]\nexpansion_steps = 7\n");
-    let (table, source) = ComputeTable::load_for(dir.path(), "grimble").unwrap();
+    let (table, source) = ComputeTable::load_for_product(dir.path(), "grimble").unwrap();
     assert_eq!((table.expansion_steps, source), (7, "frob"));
     std::fs::remove_file(dir.path().join("frob.toml")).unwrap();
-    let (table, source) = ComputeTable::load_for(dir.path(), "grimble").unwrap();
+    let (table, source) = ComputeTable::load_for_product(dir.path(), "grimble").unwrap();
     assert_eq!((table.expansion_steps, source), (5, "grimble"));
     assert_ne!(
         compute_digest(&table),

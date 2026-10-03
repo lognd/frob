@@ -179,8 +179,7 @@ fn captured_output_is_redacted_and_env_added() {
     assert_eq!(out.stderr.trim(), "oops");
 }
 
-// frob:tests crates/gob-exec/src/runner.rs::Runner
-#[cfg(unix)]
+// frob:tests crates/gob-exec/src/runner.rs::Runner.output_cap
 #[test]
 fn a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error() {
     let spec = Spec {
@@ -206,7 +205,7 @@ fn a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error() {
     );
 }
 
-// frob:tests crates/gob-exec/src/runner.rs::Runner
+// frob:tests crates/gob-exec/src/runner.rs::Runner.output_cap
 #[test]
 fn output_under_the_cap_is_returned_whole() {
     let spec = Spec {

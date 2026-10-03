@@ -26,8 +26,9 @@ fn finding(
 
 /// The digest of the `[compute]` knobs the repository's config files resolve to.
 fn own_digest() -> String {
-    let (table, _) = gob_config::ComputeTable::load_for(std::path::Path::new("."), "grimble")
-        .expect("compute knobs load");
+    let (table, _) =
+        gob_config::ComputeTable::load_for_product(std::path::Path::new("."), "grimble")
+            .expect("compute knobs load");
     gob_config::compute_digest(&table)
 }
 

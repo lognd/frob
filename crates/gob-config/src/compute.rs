@@ -61,6 +61,21 @@ impl ComputeTable {
         })
     }
 
+    /// [`compute_digest`] of this table.
+    #[must_use]
+    pub fn digest(&self) -> String {
+        compute_digest(self)
+    }
+
+    /// [`Self::load_for_product`] for `grimble`, the one product that reads `[compute]` today.
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load_for(root: &Path) -> Result<(Self, &'static str), ConfigError> {
+        Self::load_for_product(root, "grimble")
+    }
+
     /// Load `[compute]` from `frob.toml` when it exists, else from `<product>.toml`.
     ///
     /// Returns the table and the config stem it came from (sibling-contract 2).
@@ -68,7 +83,10 @@ impl ComputeTable {
     /// # Errors
     ///
     /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
-    pub fn load_for<'a>(root: &Path, product: &'a str) -> Result<(Self, &'a str), ConfigError> {
+    pub fn load_for_product<'a>(
+        root: &Path,
+        product: &'a str,
+    ) -> Result<(Self, &'a str), ConfigError> {
         let source = if root.join("frob.toml").is_file() {
             "frob"
         } else {

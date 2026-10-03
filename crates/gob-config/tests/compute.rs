@@ -6,7 +6,7 @@ use gob_config::{ComputeTable, compute_digest};
 #[test]
 fn the_default_digest_is_the_pinned_canonical_blake3() {
     let dir = tempfile::tempdir().unwrap();
-    let (table, source) = ComputeTable::load_for(dir.path(), "grimble").unwrap();
+    let (table, source) = ComputeTable::load_for_product(dir.path(), "grimble").unwrap();
     assert_eq!(source, "grimble");
     assert_eq!(
         compute_digest(&table),
@@ -23,7 +23,7 @@ fn a_changed_knob_changes_the_digest_and_frob_toml_wins() {
         "[compute]\neffects = \"required\"\n",
     )
     .unwrap();
-    let (table, source) = ComputeTable::load_for(dir.path(), "grimble").unwrap();
+    let (table, source) = ComputeTable::load_for_product(dir.path(), "grimble").unwrap();
     assert_eq!(source, "frob");
     assert_eq!(table.effects, "required");
     assert_ne!(

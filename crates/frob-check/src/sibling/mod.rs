@@ -114,7 +114,7 @@ impl Siblings {
                     },
                     |(_, path)| Program::Hook { path: path.clone() },
                 );
-            let compute_digest = match gob_config::ComputeTable::load_for(root, product) {
+            let compute_digest = match gob_config::ComputeTable::load_for_product(root, product) {
                 Ok((table, _)) => Some(gob_config::compute_digest(&table)),
                 Err(e) => {
                     tracing::error!(product, error = %e, "compute knobs unreadable; digest not compared");
