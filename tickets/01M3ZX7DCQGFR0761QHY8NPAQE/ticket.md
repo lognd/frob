@@ -2,7 +2,7 @@
 id = "01M3ZX7DCQGFR0761QHY8NPAQE"
 title = "GRL parser: the twenty constructs to an AST"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
