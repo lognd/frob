@@ -1,0 +1,31 @@
++++
+id = "01M3ZX83J29R620BVRAVK5Z6DZ"
+title = "mirror.toml on the ticket branch: ULID to tracker key, last event, render hash"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+reporter = "lognd"
+created = "2026-10-03T03:34:42Z"
+updated = "2026-10-03T03:34:42Z"
+idempotency_key = "m2-mirror-map-file"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/src/mapfile.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX82Q2N145P3DWVVY4E868"
+
+[[acceptance]]
+text = "Given a published ticket, when the map is read back, then ULID, tracker key, last event and hash round-trip"
+bound = false
+
+[[acceptance]]
+text = "Given a lost map file, when the mirror re-finds issues by ULID marker, then no duplicate is created"
+bound = false
++++
+
+Implements mirror.md section 3 (partial failure, identity).
+
+Map file with last published event, hash of the last published rendering, ignored fields and the tracker key stored as a ticket alias.
