@@ -1,0 +1,22 @@
+kind = "create"
+title = "GitHub adapter renders projection sections to markdown, labels and hidden marker"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror-gh-render"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/src/github/render.rs"]
+acceptance = ["Given a projection, when rendered, then the body has the documented sections and the managed notice and the digest equals the projection render digest", "Given the same projection twice, when rendered, then the output is byte-identical"]
+body = """
+Implements mirror.md sections 2 and 2.1.
+
+Section kinds map to headings; scope, evidence and leases are a generated read-only block; ULID in a hidden body marker plus a label."""
+at = "2026-10-03T03:34:42Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX83AB2JADBKWFA9SY4J60"
