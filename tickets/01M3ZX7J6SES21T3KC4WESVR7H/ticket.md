@@ -2,7 +2,8 @@
 id = "01M3ZX7J6SES21T3KC4WESVR7H"
 title = "gob-trust crate: per-machine key and MAC primitives"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
