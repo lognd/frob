@@ -2,13 +2,13 @@
 id = "01M3ZX7J6SES21T3KC4WESVR7H"
 title = "gob-trust crate: per-machine key and MAC primitives"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-03T03:34:24Z"
+updated = "2026-10-03T06:10:16Z"
 idempotency_key = "m2-sec-trust-core"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/**"]
