@@ -11,7 +11,7 @@ created = "2026-10-03T06:12:58Z"
 updated = "2026-10-03T13:34:22Z"
 idempotency_key = "m2-rel-land-fragment"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-land/src/**", "crates/frob-release/src/skeleton.rs", "crates/frob-release/src/fragment.rs"]
+scope = ["crates/frob-land/src/**", "crates/frob-release/src/skeleton.rs", "crates/frob-release/src/fragment.rs", "crates/frob-release/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
