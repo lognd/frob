@@ -348,7 +348,7 @@ fn evaluate_file_runs_the_per_file_rules_on_toml_text() {
 #[test]
 fn cov001_is_unresolved_when_a_test_reaches_an_unresolved_call_naming_the_item() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let text = "/// Target.\npub fn target() {}\n\n/// Plain.\npub fn plain() {}\n\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn calls_out() {\n        other::target();\n    }\n}\n";
+    let text = "/// Target.\npub fn target() {}\n\n/// Other target.\npub struct S;\n\nimpl S {\n    /// Same name.\n    pub fn target() {}\n}\n\n/// Plain.\npub fn plain() {}\n\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn calls_out() {\n        other::target();\n    }\n}\n";
     common::write_tree(dir.path(), &[("src/lib.rs", text)]);
     let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
     let cov: Vec<&Finding> = ev
@@ -358,6 +358,7 @@ fn cov001_is_unresolved_when_a_test_reaches_an_unresolved_call_naming_the_item()
         .collect();
     let by = |name: &str| cov.iter().find(|f| f.message.contains(name)).copied();
     let target = by("::target").expect("target is not silently covered");
+    let _ = by("S.target").expect("the method is not silently covered either");
     assert_eq!(target.severity, Severity::Unresolved, "{}", target.message);
     let plain = by("::plain").expect("plain is uncovered");
     assert_eq!(plain.severity, Severity::Warn, "{}", plain.message);
