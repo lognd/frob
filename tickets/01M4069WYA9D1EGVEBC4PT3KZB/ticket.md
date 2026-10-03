@@ -8,10 +8,10 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T11:51:56Z"
+updated = "2026-10-03T12:06:03Z"
 idempotency_key = "m2-rel-release-ci"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-release/src/ci.rs", "crates/gob-git/src/read.rs", "crates/frob-release/Cargo.toml", "crates/frob-release/src/status.rs", "crates/frob-release/src/lib.rs", "crates/frob-release/src/config.rs", "crates/frob-release/tests/release_workflow.rs", "crates/frob/src/release_cmd.rs", "crates/frob/src/config.rs", "crates/frob/Cargo.toml", "docs/reference/config.md", "docs/schemas/config.json", "frob.toml", "Cargo.lock"]
+scope = ["crates/frob-release/src/ci.rs", "crates/gob-git/src/read.rs", "crates/frob-release/Cargo.toml", "crates/frob-release/src/status.rs", "crates/frob-release/src/lib.rs", "crates/frob-release/src/config.rs", "crates/frob-release/tests/release_workflow.rs", "crates/frob/src/release_cmd.rs", "crates/frob/src/config.rs", "crates/frob/Cargo.toml", "docs/reference/config.md", "docs/schemas/config.json", "frob.toml", "Cargo.lock", "crates/frob/tests/release_status.rs"]
 
 [[links]]
 kind = "blocked-by"
