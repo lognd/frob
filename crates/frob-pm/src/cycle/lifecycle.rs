@@ -78,6 +78,29 @@ pub enum CycleError {
     },
 }
 
+/// The state of `cycle` on `today` (UTC): the one rule every consumer of a cycle's state uses.
+///
+/// Closed once a close event folded it; else planned before `start`, else active. A cycle past its
+/// end with no close stays active (there is no overdue state); close it to finish it.
+pub fn state_on(cycle: &Cycle, today: Day) -> State {
+    // frob:ticket 01M413V82EXMRXXVWZN0MQNY3G
+    if cycle.state == State::Closed {
+        return State::Closed;
+    }
+    if today < cycle.start {
+        State::Planned
+    } else {
+        State::Active
+    }
+}
+
+/// `cycle` with its state derived for `today` (see [`state_on`]).
+pub fn with_state(cycle: Cycle, today: Day) -> Cycle {
+    // frob:ticket 01M413V82EXMRXXVWZN0MQNY3G
+    let state = state_on(&cycle, today);
+    Cycle { state, ..cycle }
+}
+
 /// The last day of a window: `end` when given, else `start + cycle_days - 1`.
 ///
 /// # Errors
@@ -436,6 +459,20 @@ mod tests {
             live_lease: live,
             points,
         }
+    }
+
+    #[test]
+    fn state_is_derived_from_the_clock_and_the_close() {
+        // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::state_on
+        let c = cycle("2026-10-05", "2026-10-11", State::Planned);
+        assert_eq!(state_on(&c, day("2026-10-04")), State::Planned);
+        assert_eq!(state_on(&c, day("2026-10-05")), State::Active);
+        assert_eq!(state_on(&c, day("2026-10-11")), State::Active);
+        assert_eq!(state_on(&c, day("2026-10-20")), State::Active);
+        let closed = cycle("2026-10-05", "2026-10-11", State::Closed);
+        assert_eq!(state_on(&closed, day("2026-10-01")), State::Closed);
+        assert_eq!(state_on(&closed, day("2026-10-08")), State::Closed);
+        assert_eq!(with_state(c, day("2026-10-06")).state, State::Active);
     }
 
     #[test]

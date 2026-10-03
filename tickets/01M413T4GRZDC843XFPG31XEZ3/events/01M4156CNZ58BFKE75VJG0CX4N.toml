@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T15:12:49Z"
+digest = "9f65dbd5caad7118ba234a77168d3571ab673c8146e1049e2c6a4b2dec0ba8ed"
+exit_code = 0
+inline = '''
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/G31XEZ3/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4f42e6bd-80a0-4af3-bc14-c2eac7159cd8 with nextest profile: default
+    Starting 1 test across 3 binaries (31 tests skipped)
+        PASS [   0.175s] frob-evidence::evidence non_ascii_provider_output_is_escaped_in_every_ledger_file_and_shown_escaped
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.177s] 1 test run: 1 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(=non_ascii_provider_output_is_escaped_in_every_ledger_file_and_shown_escaped)'"
+size = 687
+status = "measured"
+tests = ["non_ascii_provider_output_is_escaped_in_every_ledger_file_and_shown_escaped"]
+at = "2026-10-03T15:12:49Z"
+actor = "lognd"
+rev = 1
