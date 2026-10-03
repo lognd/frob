@@ -12,6 +12,7 @@ pub mod events;
 mod git;
 pub mod land;
 pub mod lock;
+mod lockfile;
 pub mod plan;
 pub mod verb;
 

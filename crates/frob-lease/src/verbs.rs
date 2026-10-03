@@ -6,6 +6,7 @@ use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::config::overlap_is_lockfiles;
 use crate::error::{LeaseError, SAME_TICKET};
 use crate::model::Lease;
 use crate::open_store_from_file as open_store;
@@ -20,6 +21,12 @@ impl From<LeaseError> for CliError {
                         ticket, overlap, ..
                     } if overlap == SAME_TICKET => r.with_remedy(format!(
                         "wait and rerun, or take it over with `frob work {ticket} --steal --reason <why>`"
+                    )),
+                    // frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4
+                    LeaseError::Held {
+                        ticket, overlap, ..
+                    } if overlap_is_lockfiles(overlap) => r.with_remedy(format!(
+                        "the overlap is only generated lockfiles: ({overlap}) add them to `[lease] shared_files` in frob.toml, or delete that key to get the default lockfile list, so tickets can run in parallel; or wait until the lease on {ticket} ends"
                     )),
                     LeaseError::Held { ticket, .. } => r.with_remedy(format!(
                         "wait until the lease on {ticket} ends (`frob requeue {ticket} --reason <why>` frees it), then rerun"
