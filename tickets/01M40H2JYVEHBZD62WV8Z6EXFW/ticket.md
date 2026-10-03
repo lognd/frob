@@ -2,7 +2,8 @@
 id = "01M40H2JYVEHBZD62WV8Z6EXFW"
 title = "gob-directives: stacked directives above one item bind only the last one"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
