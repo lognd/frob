@@ -2,7 +2,8 @@
 id = "01M4069WHH6KXYWDAJD3TXB8SR"
 title = "ticket fragment writes the changelog fragment skeleton from the ticket title"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
