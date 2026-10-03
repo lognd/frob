@@ -11,7 +11,7 @@ created = "2026-10-03T06:12:54Z"
 updated = "2026-10-03T11:24:53Z"
 idempotency_key = "m2-rel-cycle-assign"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-pm/src/cycle/assign.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/cycle/mod.rs", "crates/frob-pm/src/cycle/velocity.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/model.rs", "crates/frob/tests/cycle.rs"]
+scope = ["crates/frob-pm/src/cycle/assign.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/cycle/mod.rs", "crates/frob-pm/src/cycle/velocity.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/model.rs", "crates/frob/tests/cycle.rs", "changelog.d/01M4069SHBAEWRX9WWCSS2FEHN.added.md"]
 
 [[links]]
 kind = "blocked-by"
