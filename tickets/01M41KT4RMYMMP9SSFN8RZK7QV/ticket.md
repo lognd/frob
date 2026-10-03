@@ -7,12 +7,12 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T19:28:16Z"
-updated = "2026-10-03T19:29:14Z"
+updated = "2026-10-03T19:40:13Z"
 scope = ["crates/frob-evidence/src/done.rs", "crates/frob/src/ticket/**", "crates/frob/tests/close_guards.rs", "crates/frob-evidence/src/guard.rs", "crates/frob-evidence/src/lib.rs", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "Given an open bug with no evidence, when ticket close --outcome invalid --reason R runs, then it closes without --no-evidence or --no-changelog"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an open bug with no evidence, when ticket close --outcome fixed runs, then it is still refused with E-EVIDENCE-MISSING"

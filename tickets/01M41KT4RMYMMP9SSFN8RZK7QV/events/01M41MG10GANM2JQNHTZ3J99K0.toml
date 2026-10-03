@@ -1,0 +1,54 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T19:40:13Z"
+digest = "5009cece60118970e316fba4a5bd19e2dc7fbe35b2e6ad5d2a98bae1a5b35031"
+exit_code = 0
+inline = '''
+   Compiling serde_json v1.0.151
+   Compiling aho-corasick v1.1.5
+   Compiling pest_generator v2.9.2
+   Compiling pest_derive v2.9.2
+   Compiling regex-automata v0.4.18
+   Compiling insta v1.48.0
+   Compiling regex v1.13.1
+   Compiling error_set_impl v0.9.2
+   Compiling tree-sitter v0.27.0
+   Compiling error_set v0.9.2
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-ledger)
+   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/gob-symbols)
+   Compiling frob-pm v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-pm)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/gob-directives)
+   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/gob-check)
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-release)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-ack)
+   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/grimble-model)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-lease)
+   Compiling grimble-bind v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/grimble-bind)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-tests)
+   Compiling grimble-check v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/grimble-check)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-obligations)
+   Compiling grimble v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/grimble)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/8RZK7QV/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.92s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eae2ebff-8468-4796-9009-80e620ab024d with nextest profile: default
+    Starting 2 tests across 1 binary (14 tests skipped)
+        PASS [   0.720s] frob-cli::close_guards a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing
+        PASS [   1.009s] frob-cli::close_guards invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.009s] 2 tests run: 2 passed, 14 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test close_guards -E 'test(invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone) | test(a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing)'"
+size = 2871
+status = "measured"
+tests = ["a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing", "invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone"]
+at = "2026-10-03T19:40:13Z"
+actor = "lognd"
+rev = 1
