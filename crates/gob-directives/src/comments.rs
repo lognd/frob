@@ -122,7 +122,8 @@ fn rust_tree(tree: &ParsedTree) -> Vec<Segment<'_>> {
     out
 }
 
-/// Byte ranges of code blocks in a markdown tree.
+// frob:ticket 01M3ZZXAZ39410AVYQSRSYVF9C
+/// Byte ranges of code blocks and inline code spans in a markdown tree.
 fn markdown_code_ranges(tree: &ParsedTree) -> Vec<std::ops::Range<usize>> {
     let mut out = Vec::new();
     walk(tree.root(), &mut |n| {
@@ -130,6 +131,7 @@ fn markdown_code_ranges(tree: &ParsedTree) -> Vec<std::ops::Range<usize>> {
             out.push(n.byte_range());
         }
     });
+    out.extend(gob_languages::markdown_code_spans(tree));
     out
 }
 

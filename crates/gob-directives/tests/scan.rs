@@ -400,3 +400,65 @@ fn grimble_binds_is_registered_and_read_only_when_the_namespace_is_honoured() {
     let r = common::scan("src/a.rs", "// grimble:binds design:node/a\nfn f() {}\n");
     assert!(r.directives.is_empty() && r.findings.is_empty());
 }
+
+// frob:ticket 01M3ZZXAZ39410AVYQSRSYVF9C
+/// Directive count of a markdown document at `docs/a.md`.
+fn md_count(text: &str) -> usize {
+    let r = common::scan("docs/a.md", text);
+    assert!(r.findings.is_empty(), "{:?}", r.findings);
+    r.directives.len()
+}
+
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_inline_code_span_directive_is_text() {
+    assert_eq!(
+        md_count("# T\n\nsyntax: `<!-- frob:invariant x -->` here\n"),
+        0
+    );
+}
+
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_double_backtick_span_with_inner_backtick_is_text() {
+    assert_eq!(md_count("# T\n\n`` a ` <!-- frob:invariant x --> ``\n"), 0);
+}
+
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_directive_right_after_code_span_counts() {
+    assert_eq!(md_count("# T\n\n`code`<!-- frob:invariant x -->\n"), 1);
+}
+
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_code_span_over_line_break_is_text() {
+    assert_eq!(md_count("# T\n\n`a\nx <!-- frob:invariant x --> b` c\n"), 0);
+}
+
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_escaped_backtick_does_not_open_a_span() {
+    assert_eq!(md_count("# T\n\n\\`a <!-- frob:invariant x --> b`\n"), 1);
+}
+
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_fenced_block_directive_still_text() {
+    assert_eq!(md_count("# T\n\n```\n<!-- frob:invariant x -->\n```\n"), 0);
+}
+
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_real_directive_beside_code_span_text_is_found() {
+    let t = "# T\n\n`<!-- frob:invariant a -->`\n\n<!-- frob:invariant b -->\n";
+    assert_eq!(md_count(t), 1);
+}
+
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_comment_opening_a_line_is_an_html_block_not_span_content() {
+    // CommonMark: `<!--` at a line start interrupts the paragraph, so the
+    // backtick never closes and the comment is a real directive.
+    assert_eq!(md_count("# T\n\n`a\n<!-- frob:invariant x --> b` c\n"), 1);
+}
