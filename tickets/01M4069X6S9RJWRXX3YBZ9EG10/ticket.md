@@ -11,7 +11,7 @@ created = "2026-10-03T06:12:58Z"
 updated = "2026-10-03T08:26:16Z"
 idempotency_key = "m2-rel-release-cut"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-release/src/cut.rs", "crates/frob-land/src/**", "crates/frob/src/release_cmd.rs", "crates/gob-git/src/**", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs"]
+scope = ["crates/frob-release/src/cut.rs", "crates/frob-land/src/**", "crates/frob/src/release_cmd.rs", "crates/gob-git/src/**", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-release/Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"
