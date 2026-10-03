@@ -2,7 +2,8 @@
 id = "01M413V8CDKKBSBV8JDV92VDGB"
 title = "check --ticket leads with findings in the ticket's diff and summarises the rest as counts"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
