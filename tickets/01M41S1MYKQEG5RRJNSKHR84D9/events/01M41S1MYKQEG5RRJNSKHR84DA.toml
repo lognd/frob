@@ -1,0 +1,17 @@
+kind = "create"
+title = "Migrate gob-* crates to gob-path; remove them from the allow list"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M41S1JXXN380WPE29ATR5EP7"
+scope = ["crates/gob-*/**"]
+acceptance = ["Given the gob-* crates other than gob-path, when clippy runs without their allow-list entries, then it is clean"]
+body = "paths.md migration step 3 for the gob-* crates (gob-path itself excepted)."
+at = "2026-10-03T20:59:45Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M41S1KX3ZVF51H8KPJ3YXZF9"

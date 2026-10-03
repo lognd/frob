@@ -1,0 +1,16 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T20:59:56Z"
+digest = "364278022c3d3de907b7ae51fce5b9e7f75b13d87bd2b859412997b98c8dd24b"
+exit_code = 0
+inline = """
+{"verb":"check","already":false,"ok":true,"data":{"counts":{"advisory":0,"error":0,"unresolved":0,"warn":0},"elsewhere":[],"explain":null,"fail_on":"error","fail_on_unresolved":"required","fidelity":{"languages":{"markdown":{"fidelity":"F4","files":608,"files_examined":0,"not_applicable":{},"partial_parse":0,"unresolved":{}},"opaque":{"fidelity":"F0","files":2136,"files_examined":0,"not_applicable":{},"partial_parse":0,"unresolved":{}},"rust":{"fidelity":"F3","files":520,"files_examined":0,"not_applicable":{},"partial_parse":0,"unresolved":{}},"yaml":{"fidelity":"F1","files":8,"files_examined":0,"not_applicable":{},"partial_parse":0,"unresolved":{}}}},"findings":[],"fix":null,"lines":[],"notes":[],"required_unresolved":0,"stats":{"file_hits":0,"file_misses":0,"files":3272,"files_checked":3272,"graph_cached":1136,"graph_extracted":0,"repo_hits":0,"repo_misses":0},"suppressed":0,"ticket":null,"timing":null},"findings":[],"warnings":[],"error":null,"schema_version":1}
+"""
+passed = true
+provider = "command"
+ref = "~/projects/frob-v2/target/debug/frob check --only DSL --fail-on error"
+size = 980
+status = "measured"
+at = "2026-10-03T20:59:58Z"
+actor = "lognd"
+rev = 1
