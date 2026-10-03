@@ -439,15 +439,27 @@ fn cov001_unknown_receiver_poisons_methods_but_not_free_functions() {
 // frob:tests crates/frob-obligations/src/cov.rs::cov001
 #[test]
 fn cov001_unknown_receiver_is_never_falsely_covered() {
-    let test = "\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() {\n        let r = R;\n        r.run();\n    }\n}\n";
+    let test = "\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() {\n        let r = mystery();\n        r.run();\n    }\n}\n";
     let cov = cov_findings(&[("src/lib.rs", &format!("{TWO_TYPES}{test}"))]);
-    // `R` is a unit struct literal path, not `R::new()`: the receiver stays unknown,
-    // so the method is Unresolved (never a false Covered).
+    // `mystery()` is declared nowhere: the receiver stays unknown, so the method is
+    // Unresolved (never a false Covered).
     assert_eq!(
         severity_of(&cov, "R.run"),
         Some(Severity::Unresolved),
         "{cov:?}"
     );
+}
+
+// frob:ticket 01M3ZVQAA1DNM1BJ5TZG5B3CFR
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_unit_struct_value_types_its_receiver_and_covers_the_method() {
+    let test = "\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() {\n        let r = R;\n        r.run();\n    }\n}\n";
+    let cov = cov_findings(&[("src/lib.rs", &format!("{TWO_TYPES}{test}"))]);
+    // `R` is the unit struct `R`: `r.run()` is `R::run`, so it is covered (no finding) and
+    // the free function `run` is not.
+    assert_eq!(severity_of(&cov, "R.run"), None, "{cov:?}");
+    assert_eq!(severity_of(&cov, "::run`"), Some(Severity::Warn), "{cov:?}");
 }
 
 // frob:tests crates/frob-obligations/src/cov.rs::cov001
