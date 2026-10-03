@@ -2,13 +2,14 @@
 id = "01M4069R5RH6KRMMNQA76XZ8VG"
 title = "frob milestone new, add and show with --criterion"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T07:16:34Z"
+updated = "2026-10-03T07:16:35Z"
 idempotency_key = "m2-rel-milestone-verbs"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/milestone/**", "crates/frob/src/milestone_cmd.rs", "crates/frob/src/lib.rs", "crates/frob-pm/src/lib.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/frob/tests/milestone.rs", "docs/reference/cli/**"]
