@@ -2,12 +2,12 @@
 id = "01M41B2PD4NAV8VACA13750GWB"
 title = "[pm] strict escalates PM001 and PM002 (and other PM warnings the design names) to Error"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T16:55:39Z"
-updated = "2026-10-03T16:55:39Z"
+updated = "2026-10-03T17:14:39Z"
 scope = ["crates/frob-pm/src/config.rs", "crates/frob-pm/src/rules/**", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
