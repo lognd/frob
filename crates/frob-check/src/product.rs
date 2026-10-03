@@ -1,9 +1,11 @@
 //! frob as a [`gob_check::Product`]: its inputs, rule groups, ticket scope and exceptions.
 
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use frob_ack::{Affect001, Drift001, Drift002, Drift003};
-use frob_lease::LeaseConfig;
+use frob_lease::{LeaseConfig, LeaseStore};
+use frob_ledger::TicketId;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
 use frob_ledger::rules::{Tick001, Tick003};
 use frob_obligations::{
@@ -80,20 +82,44 @@ fn pm_findings(inputs: &FrobInputs) -> Vec<Finding> {
     )
 }
 
-/// `PM013` findings for the `repo:wip` group; the limit is `[pm.wip] in_progress`, and the ledger index is the only input.
+/// Ticket ids holding a live lease, the liveness input of `PM013`; `None` (every in-progress ticket counts) when the lease store cannot be read.
+// frob:ticket 01M416Z11V5GR012FR47HWFTBP
+fn live_leases(
+    state: &snapshot::LedgerState,
+    root: &std::path::Path,
+) -> Option<BTreeSet<TicketId>> {
+    let cfg = LeaseConfig::load(root).unwrap_or_else(|err| {
+        tracing::warn!(%err, "lease config unreadable; default used for PM013 liveness");
+        LeaseConfig::default()
+    });
+    match LeaseStore::open(state.ledger.repo(), cfg).and_then(|s| s.live_snapshot()) {
+        Ok(live) => Some(live.into_iter().map(|l| l.ticket).collect()),
+        Err(err) => {
+            tracing::warn!(%err, "leases unreadable; PM013 counts every in-progress ticket");
+            None
+        }
+    }
+}
+
+/// `PM013` findings for the `repo:wip` group; limits are `[pm.wip] in_progress` and `[pm.classes] expedite_max`, counted with the same lease-aware rule as the `work` gate.
 // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
+// frob:ticket 01M416Z11V5GR012FR47HWFTBP
 fn wip_findings(inputs: &FrobInputs) -> Vec<Finding> {
     let Some(state) = &inputs.ledger else {
         return Vec::new();
     };
-    let limit = match frob_pm::PmConfig::load(&inputs.root) {
-        Ok(cfg) => cfg.wip.in_progress,
+    let limits = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => frob_pm::rules::wip::WipLimits {
+            in_progress: cfg.wip.in_progress,
+            expedite_max: cfg.classes.expedite_max,
+        },
         Err(err) => {
             tracing::warn!(%err, "pm config unreadable; PM013 not evaluated");
             return Vec::new();
         }
     };
-    frob_pm::rules::wip::evaluate(&state.ledger, limit).map_or_else(
+    let live = live_leases(state, &inputs.root);
+    frob_pm::rules::wip::evaluate_with(&state.ledger, limits, live.as_ref()).map_or_else(
         |err| {
             tracing::warn!(%err, "PM013 not evaluated");
             Vec::new()

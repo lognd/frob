@@ -238,7 +238,6 @@ counted in their own lane, exempt from `in_progress` and capped by
 `[pm.classes] expedite_max` (0 closes the lane, so expedite then counts
 as standard). PM013 fires when live standard holders exceed
 `in_progress` and when live expedite holders exceed `expedite_max`.
-`frob check` still feeds PM013 from the index alone (~W87T6MG wires leases and lanes).
 
 ## 7. Rule family PM (generated like every other family)
 

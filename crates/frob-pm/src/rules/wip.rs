@@ -209,21 +209,6 @@ pub fn evaluate_with(
     Ok(out)
 }
 
-/// Evaluate `PM013` from the ledger index alone: no lease input (every in-progress ticket is live) and the expedite lane closed, the pre-lane behaviour.
-///
-/// Kept for callers that cannot read leases yet; prefer [`evaluate_with`].
-///
-/// # Errors
-///
-/// Ledger read failures.
-pub fn evaluate(ledger: &Ledger, limit: u32) -> Result<Evaluation> {
-    let limits = WipLimits {
-        in_progress: limit,
-        expedite_max: 0,
-    };
-    evaluate_with(ledger, limits, None)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
