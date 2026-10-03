@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T14:49:15Z"
-updated = "2026-10-03T18:36:19Z"
-scope = ["crates/frob-check/**", "crates/frob/src/check_cmd.rs"]
+updated = "2026-10-03T18:36:42Z"
+scope = ["crates/frob-check/**", "crates/frob/src/check_cmd.rs", "docs/design/cli.md", "changelog.d/01M413V8CDKKBSBV8JDV92VDGB.added.md"]
 
 [[acceptance]]
 text = "Given a ticket diff touching one file and repository-wide warnings elsewhere, when check --ticket --text runs, then findings on the touched file print first and the others appear only as per-rule counts"
