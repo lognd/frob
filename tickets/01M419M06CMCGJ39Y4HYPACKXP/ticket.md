@@ -2,12 +2,12 @@
 id = "01M419M06CMCGJ39Y4HYPACKXP"
 title = "One ledger-path classifier shared by frob-check scope and frob-land retry"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T16:30:09Z"
-updated = "2026-10-03T16:30:09Z"
+updated = "2026-10-03T18:55:32Z"
 scope = ["crates/frob-check/src/scope.rs", "crates/frob-land/src/land.rs", "crates/frob-ledger/src/lib.rs"]
 
 [[acceptance]]
