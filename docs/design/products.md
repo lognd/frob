@@ -102,13 +102,30 @@ the terminal, not something the agent does.
 ## 6. Install story
 
 Three binaries from one workspace, released independently
-(`frob-v*`, `grimble-v*`, `crunk-v*`). frob discovers sibling binaries on
-PATH or links their crates in-process when built with the `bundle`
-feature (the default `uv tool install frob` wheel bundles all three so
-agents get one install; a build without `bundle`, such as crates.io
-`frob-cli`, reports a configured but missing sibling as an Unresolved
-finding rather than omitting it silently, and treats a sibling whose
-`--json` has another `schema_version` the same way; both are required
-Unresolved findings that fail the gate with exit 1 under the default
+(`frob-v*`, `grimble-v*`, `crunk-v*`). D87 (owner decision 2026-10-03):
+**one binary per package, composed by dependencies.**
+
+| Channel | frob | grimble | crunk |
+|---|---|---|---|
+| PyPI (prebuilt wheels, five platforms) | `frob`: the `frob` binary only; depends on `grimble` and `crunk` pinned to the same version, so `pip install frob` / `uv tool install frob` installs all three | `grimble`: the `grimble` binary only, installable alone | `crunk`: the `crunk` binary only, installable alone (the Python crunk in lognd/crunk keeps publishing until the Rust crunk ships from this repository; both repositories are trusted publishers meanwhile) |
+| crates.io (source) | `frob-cli` (binary `frob`) and its library crates | `grimble` and its library crates | `crunk` and its library crates, once they exist |
+| GitHub release | one archive per binary and platform | same | same |
+
+No package carries another product's binary, so installing `frob`
+and `grimble` side by side never puts two `grimble` executables on PATH
+and versions cannot skew. Each PyPI project has one trusted publisher
+for this repository (`release.yml`, environment `pypi`).
+
+**Sibling discovery.** `uv tool install frob` exposes only `frob` on
+PATH; its dependencies' executables sit in the same tool environment.
+frob therefore looks for a sibling first next to its own executable
+(the same `bin`/`Scripts` directory, resolved through symlinks), then
+on PATH, and reports which one it used. A user who wants `grimble` on
+PATH as well runs `uv tool install grimble`. frob can still link a
+sibling's crates in-process when built with the `bundle` feature; a
+build without it (crates.io `frob-cli`) that cannot find a configured
+sibling reports it as a required Unresolved finding rather than
+omitting it, and treats a sibling whose `--json` has another
+`schema_version` the same way (exit 1 under the default
 `[check] fail_on_unresolved = "required"`, cli.md section 2;
 boundaries.md section 6).

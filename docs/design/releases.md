@@ -170,8 +170,9 @@ part of the job's design:
   `_SMOKE_EXEMPT_TARGETS`).
 - **Build matrix:** cargo-dist per binary (monorepo.md 4): linux
   x86_64 and aarch64, macOS arm64 and x86_64 (cross), windows x86_64.
-  The PyPI wheel bundles the binaries (`frob` bundles all three,
-  products.md).
+  PyPI gets one wheel set per product, each carrying only its own
+  binary; `frob` depends on `grimble` and `crunk` at the same version
+  (products.md 6, D87).
 - **Pinned installers:** inside the manylinux containers rustup-init is
   downloaded from its versioned static URL
   (`static.rust-lang.org/rustup/archive/<version>/<triple>/rustup-init`)
@@ -221,9 +222,11 @@ part of the job's design:
 - **Forecast in `release status`.** Printed only when `[pm] min_history`
   cycles exist; before that the line is Unresolved with the sample
   count. `frob release forecast` ships with 0.536.0.
-- **What the wheel bundles.** The binaries built in that release: `frob`
-  always, `grimble` from 0.532.0 as a preview (its `--version` says
-  preview until 0.533.0), `crunk` once it exists.
+- **What the wheels carry (D87).** One binary per package: the
+  `frob` wheels carry `frob` and depend on `grimble` (and `crunk` once it
+  ships from this repository) pinned to the same version; the `grimble`
+  wheels carry `grimble`, a preview from 0.532.0 (its `--version` says
+  preview until 0.533.0).
 - **Trigger and gates.** Pushing a `frob-v*` tag starts the build and
   smoke jobs; the crates.io and PyPI publish jobs run in a protected
   environment that needs the owner's approval (v1's reviewer gate,
