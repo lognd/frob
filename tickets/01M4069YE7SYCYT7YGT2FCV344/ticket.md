@@ -13,6 +13,10 @@ idempotency_key = "m2-rel-release-notes"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M4069W8ECWEPBH6YPAR7X0X0"
+
 [[acceptance]]
 text = "Given the guide, when read, then it contains the exact pin command for 0.531.0"
 bound = false
