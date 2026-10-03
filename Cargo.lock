@@ -1013,11 +1013,14 @@ name = "frob-pm"
 version = "0.0.0"
 dependencies = [
  "frob-ledger",
+ "gob-config",
  "gob-git",
  "gob-mdtest",
  "gob-rules",
  "jiff",
+ "schemars",
  "serde",
+ "strsim",
  "tempfile",
  "thiserror",
  "toml",

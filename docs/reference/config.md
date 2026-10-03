@@ -119,6 +119,44 @@ Materialized: no.
 | `budget_ms` | `u64` | `2000` | no | Milliseconds the built-in stages of a warm run may take. |
 | `enforce` | `bool` | `false` | no | Turn an exceeded budget into a Warn finding (`PERF001`). |
 
+## `[pm]`
+
+Scrumban policies: pull order, definitions of ready and done, cadence and capacity statistics.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `capacity_k` | `f64` | `0.5` | yes | Safety factor k in `capacity = rolling_mean - k * stddev` for cycle commitment; 0.5 trades a little throughput for commitments that are usually met. |
+| `cycle_days` | `u32` | `7` | yes | Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence. |
+| `done_requires` | `Vec<DoneRequirement>` | `["criteria_evidenced", "objective_target_met", "docs_touched_or_excepted", "no_open_children", "changelog_fragment"]` | yes | Definition of done: predicates checked on close and land; the default is the full list of pm-enforcement.md section 3 so done means evidenced, documented and releasable. |
+| `min_history` | `u32` | `3` | yes | Completed cycles needed before capacity and forecasts are enforced; below it they report Unresolved, so a fresh repository never needs an over-commit. |
+| `pull` | `Pull` | `"rank"` | yes | Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default. |
+| `ready_min` | `u32` | `4` | yes | Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP). |
+| `ready_requires` | `Vec<ReadyRequirement>` | `["story_or_objective_qualified", "criteria", "points", "scope", "parent"]` | yes | Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled. |
+
+## `[pm.classes]`
+
+Classes of service (`[pm.classes]`).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `expedite_max` | `u32` | `1` | yes | Expedite tickets that may exceed the repository WIP limit at once; 1 lets one critical fix through without opening the floodgates. |
+| `intangible_share` | `f64` | `0.2` | yes | Largest share (0.0 to 1.0) of a cycle's points that intangible work (chores, debt) may take, checked by PM035; 0.2 keeps upkeep from crowding out features. |
+
+## `[pm.wip]`
+
+Work-in-progress limits (`[pm.wip]`); 0 turns a limit off.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `in_progress` | `u32` | `2` | yes | Most tickets in progress in the repository at once, sized to what the machine can build; the default 2 matches the two-builder rule, and 0 is off. |
+| `in_progress_per_identity` | `u32` | `1` | yes | Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off. |
+
 ## `[tickets]`
 
 Where the ticket ledger lives.

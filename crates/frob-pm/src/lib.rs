@@ -27,6 +27,7 @@
 //! Ticket reads only accept `tickets/<ULID>/ticket.md`, so a binary without
 //! this crate ignores `_milestones/` and `_cycles/` entirely.
 
+pub mod config;
 pub mod doctor;
 pub mod error;
 pub mod event;
@@ -37,6 +38,9 @@ pub mod model;
 pub mod rules;
 pub mod store;
 
+pub use config::{
+    DoneRequirement, PmClassesTable, PmConfig, PmTable, PmWipTable, Pull, ReadyRequirement,
+};
 pub use error::{PmError, Result};
 pub use model::{Cycle, Day, Milestone, Object, ObjectId, ObjectKind, State};
 pub use store::{Applied, NewObject, PmStore};

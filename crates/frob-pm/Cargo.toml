@@ -11,9 +11,12 @@ publish.workspace = true
 
 [dependencies]
 frob-ledger = { path = "../frob-ledger" }
+gob-config = { path = "../gob-config" }
 gob-rules = { path = "../gob-rules" }
 jiff = "0.2"
+schemars = "1"
 serde = { version = "1", features = ["derive"] }
+strsim = "0.11"
 thiserror = "2"
 toml = "1"
 tracing = "0.1"
