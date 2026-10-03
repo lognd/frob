@@ -2,13 +2,13 @@
 id = "01M40SMB58CSHSFV8FTD5W8ERW"
 title = "cycle close before the end date truncates the window to the close date"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:50:43Z"
-updated = "2026-10-03T12:06:32Z"
+updated = "2026-10-03T12:06:38Z"
 idempotency_key = "m2-rel-cycle-early-close"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs"]
