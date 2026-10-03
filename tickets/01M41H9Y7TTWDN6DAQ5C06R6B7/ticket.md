@@ -2,7 +2,8 @@
 id = "01M41H9Y7TTWDN6DAQ5C06R6B7"
 title = "SYS001 reports every ledger directory as unowned (894 warnings here); the ledger is frob-owned"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
