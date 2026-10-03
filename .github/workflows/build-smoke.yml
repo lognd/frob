@@ -1,0 +1,402 @@
+name: build-smoke
+
+# The one source of the release matrix, the pinned dist version and the build
+# plus smoke steps (reusable `workflow_call`, called by release.yml and dev.yml
+# through a local path, so caller and callee are always the same ref).
+#   plan   resolves the version of `frob-cli` and, when `tag` is given, requires
+#          the tag to be `frob-v<that version>`;
+#   build  one cargo-dist archive per target, smoked on the build runner;
+#   wheel  the five PyPI wheels (only when `wheels` is true; dev.yml builds none);
+#   smoke  every artifact re-run on a fresh runner (not the build runner).
+# It needs no secrets and declares none; callers must not pass `secrets:` (pinned by
+# crates/frob-release/tests/release_workflow.rs). Its jobs ask for `contents: read`
+# only, which is also the most a caller can grant them.
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to build; empty builds the ref that triggered the caller.
+        type: string
+        default: ""
+      tag:
+        description: Release tag that must be frob-v<frob-cli version>; empty skips the check.
+        type: string
+        default: ""
+      wheels:
+        description: Also build and smoke the PyPI wheels (archives are always built).
+        type: boolean
+        default: false
+    outputs:
+      version:
+        description: The frob-cli version that was built.
+        value: ${{ jobs.plan.outputs.version }}
+
+permissions: {}
+
+env:
+  CARGO_TERM_COLOR: always
+  DIST_VERSION: "0.32.0"
+  # Exact pins for the wheel job (build-wheel.sh reads MATURIN_VERSION as a
+  # pip requirement; uv is pinned by setup-uv and inside the container).
+  MATURIN_VERSION: "==1.15.0"
+  UV_VERSION: "0.11.19"
+
+jobs:
+  plan:
+    name: plan (version, and tag when given)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - name: Resolve the workspace version and check the tag against it
+        id: check
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          crate=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "frob-cli") | .version')
+          if [ -n "$TAG" ]; then
+            version="${TAG#frob-v}"
+            if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+              echo "tag $TAG is not frob-vMAJOR.MINOR.PATCH" >&2
+              exit 1
+            fi
+            if [ "$crate" != "$version" ]; then
+              echo "tag version $version differs from frob-cli version $crate" >&2
+              exit 1
+            fi
+          fi
+          echo "version=$crate" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build (${{ matrix.target }})
+    needs: plan
+    # An unschedulable label must fail after a bounded wait (v1 T-4470).
+    timeout-minutes: 60
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            dist_host: x86_64-unknown-linux-gnu
+            dist_sha: eb52f9fae0d0506774e9f1801c1168f87fa2c87a45e2d64d3ae7c89401929946
+            smoke: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            dist_host: aarch64-unknown-linux-gnu
+            dist_sha: d29bcffeb3f8b0c517b4ce0dd2470926ed5cb0bb29d78c6bdd5f88d76ee14a6a
+            smoke: true
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            dist_host: aarch64-apple-darwin
+            dist_sha: aa343b2ff78ec2981f17a65140250c5ad6062c74072163f68c5c2686d94763a7
+            smoke: true
+          # Cross-built on the arm64 macos-latest runner; the Intel
+          # image was retired and queued forever (v1 T-4470).
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            dist_host: aarch64-apple-darwin
+            dist_sha: aa343b2ff78ec2981f17a65140250c5ad6062c74072163f68c5c2686d94763a7
+            smoke: false
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            dist_host: x86_64-pc-windows-msvc
+            dist_sha: 26e845cabff12a92911ce960af73a86c8f9b2b2d9072b01dfe5b662acf044fa3
+            smoke: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - name: Install pinned Rust toolchain and target
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --target "$TARGET"
+          rustup default "$channel"
+      - name: Install dist (checksum verified, unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          DIST_HOST: ${{ matrix.dist_host }}
+          DIST_SHA: ${{ matrix.dist_sha }}
+        run: |
+          url="https://github.com/axodotdev/cargo-dist/releases/download/v${DIST_VERSION}/cargo-dist-${DIST_HOST}.tar.xz"
+          curl --proto '=https' --tlsv1.2 -sSfL "$url" -o "$RUNNER_TEMP/dist.tar.xz"
+          echo "${DIST_SHA}  $RUNNER_TEMP/dist.tar.xz" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/dist-bin"
+          tar -xJf "$RUNNER_TEMP/dist.tar.xz" -C "$RUNNER_TEMP/dist-bin" --strip-components=1
+          echo "$RUNNER_TEMP/dist-bin" >> "$GITHUB_PATH"
+      - name: Install dist (checksum verified, windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          DIST_HOST: ${{ matrix.dist_host }}
+          DIST_SHA: ${{ matrix.dist_sha }}
+        run: |
+          $url = "https://github.com/axodotdev/cargo-dist/releases/download/v$env:DIST_VERSION/cargo-dist-$env:DIST_HOST.zip"
+          $zip = Join-Path $env:RUNNER_TEMP "dist.zip"
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          if ((Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower() -ne $env:DIST_SHA) { throw "dist checksum mismatch" }
+          $dest = Join-Path $env:RUNNER_TEMP "dist-bin"
+          Expand-Archive -Path $zip -DestinationPath $dest
+          Add-Content -Path $env:GITHUB_PATH -Value $dest
+      - name: Build archives
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: dist build --artifacts=local --target "$TARGET" --output-format=json > dist-manifest.json
+      - name: Smoke the archive (unpack, run the fixture repository loop)
+        if: matrix.smoke
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          case "$RUNNER_OS" in
+            Windows) archive=$(ls target/distrib/*.zip) ;;
+            *) archive=$(ls target/distrib/*.tar.xz) ;;
+          esac
+          packaging/smoke/archive-smoke.sh "$archive" "$VERSION"
+      - name: Cross-built archive is not executable here (explicit smoke exemption)
+        if: ${{ !matrix.smoke }}
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          archive=$(ls target/distrib/*.tar.xz)
+          case "$archive" in
+            *"$TARGET"*) echo "::notice::smoke exempt for $TARGET: archive built but not executed on this runner ($archive)" ;;
+            *) echo "archive $archive does not carry the $TARGET triple" >&2; exit 1 ;;
+          esac
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: archives-${{ matrix.target }}
+          path: |
+            target/distrib/*.tar.xz
+            target/distrib/*.zip
+            target/distrib/*.sha256
+          if-no-files-found: error
+
+  # Five PyPI wheels, uploaded as run artifacts (packaging/pypi/BUILDING.md).
+  # Linux wheels are built natively per architecture inside the pinned
+  # manylinux_2_28 image (the image lacks the repository's clang and mold, so
+  # the linker is overridden to gcc and RUSTFLAGS replaces the config's).
+  # Every wheel is smoked (install into a clean venv, run frob and grimble, then
+  # the fixture repository loop of packaging/smoke/fixture-loop.sh)
+  # except the macOS x86_64 one: it is cross-built on the arm64 macos-latest
+  # runner, which cannot execute it. That exemption is the matrix entry with
+  # `smoke: false`; crates/frob-release/tests/release_workflow.rs pins the
+  # exempt set and fails if any other entry skips the smoke.
+  wheel:
+    name: wheel (${{ matrix.target }})
+    needs: plan
+    if: inputs.wheels
+    # An unschedulable label must fail after a bounded wait (v1 T-4470).
+    timeout-minutes: 60
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            image: quay.io/pypa/manylinux_2_28_x86_64@sha256:39df0042d5cc900b085aa25a0659368b42a0006c54c474299b785b44c1b4ff82
+            linker_var: CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER
+            cross: false
+            smoke: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            image: quay.io/pypa/manylinux_2_28_aarch64@sha256:f5f03dedf61b47d69d0742d36047db78adeee3bdb7a9910ff52304750ecf2514
+            linker_var: CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER
+            cross: false
+            smoke: true
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            image: ""
+            linker_var: ""
+            cross: false
+            smoke: true
+          # Cross-built on the arm64 runner (the Intel macOS image was retired): the wheel
+          # cannot run there, so it is the one explicit smoke exemption.
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            image: ""
+            linker_var: ""
+            cross: true
+            smoke: false
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            image: ""
+            linker_var: ""
+            cross: false
+            smoke: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - name: Install pinned Rust toolchain and target
+        if: matrix.image == ''
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --target "$TARGET"
+          rustup default "$channel"
+      - name: Build the wheel in the manylinux_2_28 container
+        if: matrix.image != ''
+        shell: bash
+        env:
+          IMAGE: ${{ matrix.image }}
+          LINKER_VAR: ${{ matrix.linker_var }}
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          docker run --rm -v "$PWD":/work -w /work \
+            -e CARGO_TARGET_DIR=/work/target/m28 \
+            -e "$LINKER_VAR=gcc" -e RUSTFLAGS="-C debuginfo=0" \
+            -e CHANNEL="$channel" -e MATURIN_VERSION -e UV_VERSION \
+            "$IMAGE" bash -euo pipefail -c '
+              curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs \
+                | sh -s -- -y --profile minimal --default-toolchain "$CHANNEL"
+              export PATH="$HOME/.cargo/bin:/opt/python/cp312-cp312/bin:$PATH"
+              pip install --quiet "uv==$UV_VERSION"
+              packaging/pypi/build-wheel.sh --out /work/target/wheels'
+      - name: Build the wheel natively
+        if: matrix.image == ''
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          CROSS: ${{ matrix.cross }}
+        run: |
+          args=(--out target/wheels)
+          if [ "$CROSS" = "true" ]; then args+=(--target "$TARGET"); fi
+          packaging/pypi/build-wheel.sh "${args[@]}"
+      - name: Smoke the wheel (install, run frob and grimble, the fixture repository loop)
+        if: matrix.smoke
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: packaging/pypi/smoke.sh target/wheels/frob-*.whl "$VERSION"
+      - name: Cross-built wheel is not executable here (explicit smoke exemption)
+        if: ${{ !matrix.smoke }}
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          arch="${TARGET%%-*}"
+          wheel=$(ls target/wheels/frob-*.whl)
+          case "$wheel" in
+            *"$arch"*) echo "::notice::smoke exempt for $TARGET: wheel built but not executed on this runner ($wheel)" ;;
+            *) echo "wheel $wheel does not carry the $arch platform tag" >&2; exit 1 ;;
+          esac
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: wheel-${{ matrix.target }}
+          path: target/wheels/frob-*.whl
+          if-no-files-found: error
+
+  # Artifact smoke on fresh runners: every artifact built above is downloaded
+  # into a clean job (not the build runner, so a runtime dependency that only
+  # the build machine has is caught), installed, and driven through the fixture
+  # repository loop. The exemption is the matrix entry with `smoke: false`
+  # (cross-built macOS x86_64: no runner executes it); the same exempt set is
+  # pinned by crates/frob-release/tests/release_workflow.rs, which also requires
+  # every publishing job of release.yml to need the call of this workflow.
+  smoke:
+    name: smoke (${{ matrix.target }})
+    needs: [plan, build, wheel]
+    # `wheel` is skipped when `wheels` is false; a failed or cancelled need still stops the smoke.
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    # An unschedulable label must fail after a bounded wait (v1 T-4470).
+    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            smoke: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            smoke: true
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            smoke: true
+          # Exempt: built on an arm64 runner that cannot execute it; nothing
+          # is downloaded, the job only reports the skip.
+          - target: x86_64-apple-darwin
+            os: ubuntu-latest
+            smoke: false
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            smoke: true
+    steps:
+      - name: Artifact is not executable on any runner (explicit smoke exemption)
+        if: ${{ !matrix.smoke }}
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          echo "::notice::artifact smoke exempt for $TARGET: no runner executes it"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: matrix.smoke
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - name: Install uv
+        if: matrix.smoke
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: matrix.smoke && inputs.wheels
+        with:
+          name: wheel-${{ matrix.target }}
+          path: wheels
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: matrix.smoke
+        with:
+          name: archives-${{ matrix.target }}
+          path: archives
+      - name: Smoke the downloaded wheel (clean venv, fixture repository loop)
+        if: matrix.smoke && inputs.wheels
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: packaging/pypi/smoke.sh wheels/frob-*.whl "$VERSION"
+      - name: Smoke the downloaded archive (unpack, fixture repository loop)
+        if: matrix.smoke
+        shell: bash
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          case "$RUNNER_OS" in
+            Windows) archive=$(ls archives/*.zip) ;;
+            *) archive=$(ls archives/*.tar.xz) ;;
+          esac
+          packaging/smoke/archive-smoke.sh "$archive" "$VERSION"
