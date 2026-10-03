@@ -16,7 +16,7 @@ scope = ["crates/gob-dev/**", "crates/gob-mdtest/**"]
 
 [[acceptance]]
 text = "Given gob-dev compiled in one worktree and run from another, when cargo dev gen all --check runs, then it compares against the current worktree's files and exits 0 on a clean tree"
-bound = false
+bound = true
 +++
 
 crates/gob-dev/src/lib.rs:86 resolves the workspace root as env!(CARGO_MANIFEST_DIR)/../.. at compile time. With the shared build directory every worktree uses (/home/logan/projects/frob-v2-wt/.target), a cached gob-dev binary keeps the path of the worktree it was compiled in; once that worktree is removed, cargo dev gen all --check reports all 44 generated files missing and the GEN001 tool stage fails every land. gob-mdtest has the same pattern. Resolve the root at run time: --root flag, else walk up from the current directory to the Cargo.toml containing [workspace]; mdtest corpora resolve relative to the runtime CARGO_MANIFEST_DIR env var that cargo sets when running tests, not the compile-time one.
