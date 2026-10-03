@@ -2,7 +2,8 @@
 id = "01M3Z712ZXXKVJYREYG65P3P35"
 title = "frob-obligations DOC002 fence tracking ignores fence length"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
