@@ -300,8 +300,7 @@ fn check_after_init_on_a_fresh_repository_passes() {
 }
 
 /// A usage error for missing required arguments names each of them and carries a usage line.
-///
-/// frob:tests ~JNF3JFH
+// frob:ticket 01M40FXV4AB47ASH79KJNF3JFH
 #[test]
 fn usage_error_names_the_missing_arguments() {
     let repo = Fresh::new("main");

@@ -1,5 +1,7 @@
 //! Usage errors are built from clap's structured error and name every argument involved.
 
+// frob:ticket 01M40FXV4AB47ASH79KJNF3JFH
+
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{Cli, CliError, Command, Context, Outcome, Payload, run_for_test};
 
@@ -50,7 +52,7 @@ fn failure(args: &[&str]) -> serde_json::Value {
     v["error"].clone()
 }
 
-/// frob:tests ~JNF3JFH
+// frob:tests crates/gob-cli/src/cli.rs::usage_parts
 #[test]
 fn missing_required_arguments_are_all_named() {
     let e = failure(&["grp", "put"]);
@@ -61,7 +63,7 @@ fn missing_required_arguments_are_all_named() {
     assert!(remedy.contains("usage: usagetest grp put"), "{remedy}");
 }
 
-/// frob:tests ~JNF3JFH
+// frob:tests crates/gob-cli/src/cli.rs::usage_parts
 #[test]
 fn unknown_flag_carries_a_did_you_mean() {
     let e = failure(&["grp", "put", "--provder", "x"]);
@@ -74,7 +76,7 @@ fn unknown_flag_carries_a_did_you_mean() {
     );
 }
 
-/// frob:tests ~JNF3JFH
+// frob:tests crates/gob-cli/src/cli.rs::usage_parts
 #[test]
 fn invalid_value_lists_the_valid_values() {
     let e = failure(&[
@@ -98,7 +100,7 @@ fn invalid_value_lists_the_valid_values() {
     );
 }
 
-/// frob:tests ~JNF3JFH
+// frob:tests crates/gob-cli/src/cli.rs::usage_parts
 #[test]
 fn missing_subcommand_is_one_complete_line() {
     let e = failure(&["grp"]);
