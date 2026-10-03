@@ -1,11 +1,12 @@
 //! The repository WIP limit (`[pm.wip] in_progress`): who holds the slots and when `work` and `start` must refuse.
-// frob:ticket 01M4069T76A6WSNHT3NZERXHAH
 //!
 //! Only in-progress tickets with a live lease count. An in-progress ticket whose
 //! lease expired is stale: it is named in the refusal (with a requeue hint) but
 //! never occupies a slot. The decision is a pure function over those two lists
 //! so it can be tested without a repository, and so the expedite lane of
 //! `releases.md` section 2 can later raise the `ceiling` it takes.
+
+// frob:ticket 01M4069T76A6WSNHT3NZERXHAH
 
 use std::fmt::Write;
 
