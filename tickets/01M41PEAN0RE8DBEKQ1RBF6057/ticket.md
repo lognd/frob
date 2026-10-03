@@ -2,7 +2,8 @@
 id = "01M41PEAN0RE8DBEKQ1RBF6057"
 title = "CI run 2 fails: ci.yml pins a nonexistent actionlint-py version, and Windows-only gob-trust code fails clippy"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 2
 reporter = "lognd"
