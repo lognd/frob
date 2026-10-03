@@ -572,3 +572,41 @@ fn tests_directive_naming_nothing_still_binds_so_test001_judges_the_symref() {
     assert_eq!(r.directives[0].bound, sym("src/a.rs::missing"));
     assert!(r.directives[0].source.is_some());
 }
+
+const YAML_ACCEPT: &str = "# frob:accept CI006 because=\"gated by the plan job on a push run\"";
+
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:tests crates/gob-directives/src/bind.rs::bind
+#[test]
+fn yaml_accept_binds_to_the_key_on_the_next_line() {
+    let text = format!("name: ci\n{YAML_ACCEPT}\non:\n  push:\n    branches: [main]\n");
+    assert_eq!(
+        bound(".github/workflows/dev.yml", &text),
+        [sym(".github/workflows/dev.yml::on")]
+    );
+}
+
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:tests crates/gob-directives/src/bind.rs::bind
+#[test]
+fn yaml_stacked_comments_bind_to_the_same_key() {
+    let text = format!("{YAML_ACCEPT}\n# note\n{YAML_ACCEPT}\non: push\n");
+    let on = sym("ci.yml::on");
+    assert_eq!(bound("ci.yml", &text), [on.clone(), on]);
+}
+
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:tests crates/gob-directives/src/bind.rs::bind
+#[test]
+fn yaml_blank_line_gap_does_not_attach_to_the_next_key() {
+    let text = format!("name: ci\n{YAML_ACCEPT}\n\non: push\n");
+    assert_eq!(bound("ci.yml", &text), [Binding::File]);
+}
+
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:tests crates/gob-directives/src/bind.rs::bind
+#[test]
+fn yaml_trailing_comment_binds_to_its_own_key() {
+    let text = "on: # frob:accept CI006 because=\"gated by the plan job on a push run\"\n  push:\n";
+    assert_eq!(bound("ci.yml", text), [sym("ci.yml::on")]);
+}

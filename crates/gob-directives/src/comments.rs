@@ -140,7 +140,8 @@ fn html_regions<'t>(text: &'t str, skip: &[std::ops::Range<usize>]) -> Vec<Segme
     out
 }
 
-/// `#` comments of a TOML-like file, ignoring `#` inside quotes (naive).
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+/// `#` comments of a TOML or YAML file, ignoring `#` inside quotes (naive).
 fn hash_comments(text: &str) -> Vec<Segment<'_>> {
     let mut out = Vec::new();
     let mut offset = 0;
@@ -194,6 +195,7 @@ fn rust_plain(text: &str) -> Vec<Segment<'_>> {
     out
 }
 
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 /// All comment segments of `text`, using `tree` when one was produced.
 pub(crate) fn segments<'t>(
     language: Language,
@@ -207,7 +209,7 @@ pub(crate) fn segments<'t>(
             html_regions(text, &gob_languages::markdown_code_ranges(t))
         }
         (Language::Markdown, None) => html_regions(text, &[]),
-        (Language::Toml, _) => hash_comments(text),
+        (Language::Toml | Language::Yaml, _) => hash_comments(text),
     };
     tracing::trace!(
         language = language.name(),

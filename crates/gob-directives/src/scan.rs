@@ -126,6 +126,7 @@ impl Scanner {
         self.scan_in(file, language, text, symbols)
     }
 
+    // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
     /// Scan `text` of `language`, attributing spans to `file`.
     pub fn scan_in(
         &self,
@@ -140,7 +141,7 @@ impl Scanner {
             return result;
         };
         let tree = match language {
-            Language::Toml => None,
+            Language::Toml | Language::Yaml => None,
             _ => match parse(language, text, &ParseLimits::default()) {
                 ParseResult::Parsed(t) => Some(t),
                 ParseResult::Unresolved(u) => {
@@ -240,6 +241,7 @@ impl Scanner {
         }
     }
 
+    // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
     // frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
     /// Build the record, binding it and reorienting `tests` inside a test item.
     ///
@@ -258,6 +260,7 @@ impl Scanner {
             start: seg.offset,
             end: seg.offset + seg.text.len(),
             allow_following: !seg.inner_doc && ctx.language != Language::Markdown,
+            hash_comments: matches!(ctx.language, Language::Toml | Language::Yaml),
         };
         let sym = bind(ctx.index, ctx.text, &ctx.symbols.symbols, site);
         if sym.is_none()

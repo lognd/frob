@@ -20,22 +20,28 @@ pub(crate) fn ts_language(language: Language) -> Option<tree_sitter::Language> {
     }
 }
 
-/// Returns `(grammar crate name, exact pinned version)` for `language`.
-pub(crate) const fn pin(language: Language) -> (&'static str, &'static str) {
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+/// Returns `(grammar crate name, exact pinned version)` for `language`, or
+/// `None` for a language scanned without a grammar (YAML).
+pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static str)> {
     match language {
-        Language::Rust => ("tree-sitter-rust", "0.24.2"),
-        Language::Markdown => ("tree-sitter-md", "0.5.3"),
-        Language::Toml => ("tree-sitter-toml-ng", "0.7.0"),
+        Language::Rust => Some(("tree-sitter-rust", "0.24.2")),
+        Language::Markdown => Some(("tree-sitter-md", "0.5.3")),
+        Language::Toml => Some(("tree-sitter-toml-ng", "0.7.0")),
+        Language::Yaml => None,
     }
 }
 
+// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 /// Identity string for the grammar of `language`, for cache keys.
 ///
 /// Combines the language name, grammar crate and version, the grammar ABI
 /// version and the tree-sitter core version, so any grammar or core change
 /// invalidates caches. A disabled feature yields an `unavailable` identity.
 pub fn grammar_identity(language: Language) -> String {
-    let (krate, version) = pin(language);
+    let Some((krate, version)) = pin(language) else {
+        return format!("{}:line-scanner", language.name());
+    };
     match ts_language(language) {
         Some(ts) => format!(
             "{}:{krate}@{version}:abi{}:ts{CORE_VERSION}",
@@ -77,7 +83,9 @@ mod tests {
         let manifest = include_str!("../Cargo.toml");
         let mut expected = vec![format!("tree-sitter = \"={CORE_VERSION}\"")];
         for l in Language::ALL {
-            let (krate, ver) = pin(l);
+            let Some((krate, ver)) = pin(l) else {
+                continue;
+            };
             expected.push(format!("{krate} = {{ version = \"={ver}\""));
         }
         for e in expected {
