@@ -2,13 +2,14 @@
 id = "01M40T3VS6VVN80SP39XGS6PK2"
 title = "PROC001 (frob's own spawn policy) fires in consumer repositories, and on std::process::ExitCode"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:59:12Z"
-updated = "2026-10-03T12:39:48Z"
+updated = "2026-10-03T12:39:49Z"
 idempotency_key = "m2-rel-proc001-repo-local"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-check/**", "crates/frob-obligations/**", "frob.toml", "docs/reference/rules/**", "crates/gob-exec/src/proc001.rs", "crates/gob-exec/tests/proc001_self.rs", "crates/gob-check/**", "changelog.d/01M40T3VS6VVN80SP39XGS6PK2.fixed.md", "docs/reference/config.md", "docs/schemas/config.json"]
