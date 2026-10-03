@@ -2,12 +2,12 @@
 id = "01M415AC5KGV3FMV512VMHTBE7"
 title = "land --wait does not retry E-LAND-STALE when the base moves during the land"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T15:14:59Z"
-updated = "2026-10-03T15:14:59Z"
+updated = "2026-10-03T16:12:26Z"
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]

@@ -1,5 +1,8 @@
 name: ci
 
+# The `dev` workflow (dev.yml) triggers on this workflow's name and push runs; renaming it
+# or dropping the push trigger silences the dev channel.
+
 on:
   push:
     branches: [main, experimental]

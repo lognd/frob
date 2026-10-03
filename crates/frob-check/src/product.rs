@@ -4,11 +4,13 @@ use std::sync::Arc;
 
 use frob_ack::{Affect001, Drift001, Drift002, Drift003};
 use frob_lease::LeaseConfig;
+use frob_ledger::guards::{LeaseCheck, NoLeases};
 use frob_ledger::rules::{Tick001, Tick003};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
 use frob_pm::rules::membership::Pm034;
+use frob_pm::rules::replenish::Pm033;
 use frob_pm::rules::wip::Pm013;
 use frob_release::rel001::Rel001;
 use frob_release::rel002::Rel002;
@@ -100,6 +102,43 @@ fn wip_findings(inputs: &FrobInputs) -> Vec<Finding> {
     )
 }
 
+/// `PM033` findings for the `repo:replenish` group; ready is `Ledger::doable` under the live lease check, as `ticket doable` computes it.
+// frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
+fn replenish_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> Vec<Finding> {
+    let Some(state) = &inputs.ledger else {
+        return Vec::new();
+    };
+    let ready_min = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => cfg.pm.ready_min,
+        Err(err) => {
+            tracing::warn!(%err, "pm config unreadable; PM033 not evaluated");
+            return Vec::new();
+        }
+    };
+    let cfg = match lease_cfg {
+        Some(c) => Ok(c.clone()),
+        None => LeaseConfig::load(&inputs.root),
+    };
+    let guard = cfg
+        .map_err(|e| e.to_string())
+        .and_then(|c| frob_lease::open_store(&inputs.root, c).map_err(|e| e.to_string()))
+        .and_then(|(store, _)| frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string()));
+    let leases: Box<dyn LeaseCheck> = match guard {
+        Ok(g) => Box::new(g),
+        Err(msg) => {
+            tracing::warn!(error = %msg, "lease check unavailable; PM033 counts every doable ticket");
+            Box::new(NoLeases)
+        }
+    };
+    frob_pm::rules::replenish::evaluate(&state.ledger, &*leases, ready_min).map_or_else(
+        |err| {
+            tracing::warn!(%err, "PM033 not evaluated");
+            Vec::new()
+        },
+        |e| e.findings,
+    )
+}
+
 impl Product for Frob {
     type Shared = FrobShared;
     type Inputs = FrobInputs;
@@ -160,6 +199,11 @@ impl Product for Frob {
             // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
             RepoGroup::new("repo:wip", vec![Pm013.meta()], |s: &Snapshot<Self>, _| {
                 wip_findings(&s.inputs)
+            }),
+            // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
+            RepoGroup::new("repo:replenish", vec![Pm033.meta()], {
+                let lease = self.opts.lease.clone();
+                move |s: &Snapshot<Self>, _| replenish_findings(&s.inputs, lease.as_ref())
             }),
             // frob:ticket 01M4069WNGJ8YR9DTTM9K9K8V5
             RepoGroup::new(

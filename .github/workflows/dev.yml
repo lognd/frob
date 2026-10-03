@@ -1,0 +1,279 @@
+name: dev
+
+# The dev channel (docs/design/releases.md section 5): after the `ci` workflow
+# succeeds on the base branch, rebuild the cargo-dist archives of the tested
+# commit and replace the assets of the GitHub prerelease `dev`. Nothing is
+# published to PyPI or crates.io. The build matrix mirrors release.yml's
+# `build` job (crates/frob-release/tests/dev_workflow.rs fails on drift).
+# Safety: workflow_run runs with the base repository's token, so the plan job
+# refuses anything but a successful push-triggered ci run of this repository;
+# fork pull requests never reach a build and no secrets are read.
+# The zizmor ignore on `on:` is deliberate: see the plan job's `if` and the
+# tests that pin it; nothing from the triggering event is executed.
+
+on: # zizmor: ignore[dangerous-triggers]
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+
+permissions: {}
+
+# Newest land wins but a half-published release must finish: queue, never cancel.
+concurrency:
+  group: dev-channel
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  DIST_VERSION: "0.32.0"
+  # The branches whose green land feeds the dev channel (space separated).
+  # This repository's tip is `experimental` until main is cut over.
+  DEV_BRANCHES: "experimental"
+
+jobs:
+  plan:
+    name: plan (ci succeeded on the base branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      contents: read
+    outputs:
+      go: ${{ steps.gate.outputs.go }}
+      sha: ${{ steps.gate.outputs.sha }}
+      short: ${{ steps.gate.outputs.short }}
+    steps:
+      - name: Gate on the base branch and name the tested commit
+        id: gate
+        shell: bash
+        env:
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          go=false
+          for b in $DEV_BRANCHES; do
+            if [ "$b" = "$HEAD_BRANCH" ]; then go=true; fi
+          done
+          if ! printf '%s' "$HEAD_SHA" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "head sha $HEAD_SHA is not a full commit sha" >&2
+            exit 1
+          fi
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+          echo "sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "short=${HEAD_SHA:0:12}" >> "$GITHUB_OUTPUT"
+          if [ "$go" != true ]; then
+            echo "::notice::branch $HEAD_BRANCH is not in DEV_BRANCHES ($DEV_BRANCHES); nothing to do"
+          fi
+
+  build:
+    name: build (${{ matrix.target }})
+    needs: plan
+    if: needs.plan.outputs.go == 'true'
+    # An unschedulable label must fail after a bounded wait (v1 T-4470).
+    timeout-minutes: 60
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            dist_host: x86_64-unknown-linux-gnu
+            dist_sha: eb52f9fae0d0506774e9f1801c1168f87fa2c87a45e2d64d3ae7c89401929946
+            smoke: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            dist_host: aarch64-unknown-linux-gnu
+            dist_sha: d29bcffeb3f8b0c517b4ce0dd2470926ed5cb0bb29d78c6bdd5f88d76ee14a6a
+            smoke: true
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            dist_host: aarch64-apple-darwin
+            dist_sha: aa343b2ff78ec2981f17a65140250c5ad6062c74072163f68c5c2686d94763a7
+            smoke: true
+          # Cross-built on the arm64 macos-latest runner (see release.yml).
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            dist_host: aarch64-apple-darwin
+            dist_sha: aa343b2ff78ec2981f17a65140250c5ad6062c74072163f68c5c2686d94763a7
+            smoke: false
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            dist_host: x86_64-pc-windows-msvc
+            dist_sha: 26e845cabff12a92911ce960af73a86c8f9b2b2d9072b01dfe5b662acf044fa3
+            smoke: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - name: Install pinned Rust toolchain and target
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --target "$TARGET"
+          rustup default "$channel"
+      - name: Install dist (checksum verified, unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          DIST_HOST: ${{ matrix.dist_host }}
+          DIST_SHA: ${{ matrix.dist_sha }}
+        run: |
+          url="https://github.com/axodotdev/cargo-dist/releases/download/v${DIST_VERSION}/cargo-dist-${DIST_HOST}.tar.xz"
+          curl --proto '=https' --tlsv1.2 -sSfL "$url" -o "$RUNNER_TEMP/dist.tar.xz"
+          echo "${DIST_SHA}  $RUNNER_TEMP/dist.tar.xz" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/dist-bin"
+          tar -xJf "$RUNNER_TEMP/dist.tar.xz" -C "$RUNNER_TEMP/dist-bin" --strip-components=1
+          echo "$RUNNER_TEMP/dist-bin" >> "$GITHUB_PATH"
+      - name: Install dist (checksum verified, windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          DIST_HOST: ${{ matrix.dist_host }}
+          DIST_SHA: ${{ matrix.dist_sha }}
+        run: |
+          $url = "https://github.com/axodotdev/cargo-dist/releases/download/v$env:DIST_VERSION/cargo-dist-$env:DIST_HOST.zip"
+          $zip = Join-Path $env:RUNNER_TEMP "dist.zip"
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          if ((Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower() -ne $env:DIST_SHA) { throw "dist checksum mismatch" }
+          $dest = Join-Path $env:RUNNER_TEMP "dist-bin"
+          Expand-Archive -Path $zip -DestinationPath $dest
+          Add-Content -Path $env:GITHUB_PATH -Value $dest
+      - name: Build archives
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: dist build --artifacts=local --target "$TARGET" --output-format=json > dist-manifest.json
+      - name: Smoke the archive (unpack, run the fixture repository loop)
+        if: matrix.smoke
+        shell: bash
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "frob-cli") | .version')
+          case "$RUNNER_OS" in
+            Windows) archive=$(ls target/distrib/*.zip) ;;
+            *) archive=$(ls target/distrib/*.tar.xz) ;;
+          esac
+          packaging/smoke/archive-smoke.sh "$archive" "$version"
+      - name: Cross-built archive is not executable here (explicit smoke exemption)
+        if: ${{ !matrix.smoke }}
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          archive=$(ls target/distrib/*.tar.xz)
+          case "$archive" in
+            *"$TARGET"*) echo "::notice::smoke exempt for $TARGET: archive built but not executed on this runner ($archive)" ;;
+            *) echo "archive $archive does not carry the $TARGET triple" >&2; exit 1 ;;
+          esac
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: archives-${{ matrix.target }}
+          path: |
+            target/distrib/*.tar.xz
+            target/distrib/*.zip
+          if-no-files-found: error
+
+  # The only job that can write. It runs only when every build job (and its
+  # smoke) passed, so a failed build never touches `dev`. Replacement is
+  # add-then-prune: the new assets carry the tested sha in their names, so
+  # they never collide with the previous ones; they are uploaded first, the
+  # tag and notes move next, and the previous assets are deleted last. A run
+  # that fails before the prune removes only the assets it uploaded itself (a
+  # recorded list, never a match by sha) and leaves the previous assets in place.
+  publish:
+    name: publish (replace the dev prerelease assets)
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ needs.plan.outputs.sha }}
+      SHORT: ${{ needs.plan.outputs.short }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: archives-*
+          path: archives
+          merge-multiple: true
+      - name: Name the archives after the tested sha and checksum them
+        shell: bash
+        run: |
+          mkdir staged
+          for f in archives/*; do
+            base=$(basename "$f")
+            stem="${base%%.*}"
+            new="${stem}-${SHORT}.${base#*.}"
+            cp "$f" "staged/$new"
+            (cd staged && sha256sum "$new" > "$new.sha256")
+          done
+          ls -l staged
+      - name: Ensure the dev prerelease exists
+        id: ensure
+        shell: bash
+        run: |
+          if gh release view dev --repo "$REPO" >/dev/null 2>&1; then
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+          else
+            gh release create dev --repo "$REPO" --prerelease --target "$SHA" \
+              --title "frob dev" --notes "dev channel: creating"
+            echo "fresh=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload the new assets (additive; a name already on the release is skipped)
+        shell: bash
+        run: |
+          # Existing names (same sha from an earlier run) are never overwritten, deleted or
+          # re-added. A name is recorded before its upload starts, so the failure cleanup
+          # removes exactly what this run may have created and nothing else.
+          : > "$RUNNER_TEMP/uploaded.txt"
+          existing=$(gh release view dev --repo "$REPO" --json assets --jq '.assets[].name')
+          for f in staged/*; do
+            name=$(basename "$f")
+            if printf '%s\n' "$existing" | grep -Fxq "$name"; then
+              echo "skip $name: already on the release for this sha"
+              continue
+            fi
+            echo "$name" >> "$RUNNER_TEMP/uploaded.txt"
+            gh release upload dev --repo "$REPO" "$f"
+          done
+      - name: Move the dev tag to the tested commit
+        shell: bash
+        run: |
+          gh api -X PATCH "repos/$REPO/git/refs/tags/dev" -f sha="$SHA" -F force=true
+      - name: Name the tested sha in the release notes
+        shell: bash
+        run: |
+          printf 'Development build of %s (commit %s), built after ci succeeded.\nAssets are replaced on every green land; do not rely on them for production.\n' \
+            "$SHORT" "$SHA" > notes.md
+          gh release edit dev --repo "$REPO" --prerelease --title "frob dev ($SHORT)" --notes-file notes.md
+      - name: Prune the previous assets (last, so a failure above keeps them)
+        id: prune
+        shell: bash
+        run: |
+          gh release view dev --repo "$REPO" --json assets --jq '.assets[].name' | while read -r name; do
+            case "$name" in
+              *"-${SHORT}."*) ;;
+              *) gh release delete-asset dev "$name" --repo "$REPO" --yes ;;
+            esac
+          done
+      - name: Remove this run's own uploads (previous assets stay)
+        if: ${{ failure() && steps.prune.outcome == 'skipped' }}
+        shell: bash
+        run: |
+          # Only names recorded by this run's upload step; never matched by sha.
+          if [ -f "$RUNNER_TEMP/uploaded.txt" ]; then
+            while read -r name; do
+              [ -n "$name" ] && { gh release delete-asset dev "$name" --repo "$REPO" --yes || true; }
+            done < "$RUNNER_TEMP/uploaded.txt"
+          fi

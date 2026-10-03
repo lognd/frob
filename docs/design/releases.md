@@ -206,6 +206,17 @@ part of the job's design:
 - **Dev channel branch.** "main" in section 5 means the repository's
   default branch; in this repository that is `experimental` until main
   is cut over.
+- **Dev channel workflow.** `.github/workflows/dev.yml` runs on
+  `workflow_run` of `ci` and does nothing unless that run concluded
+  success, came from a push to this repository, and ran on a branch in
+  the workflow's `DEV_BRANCHES` env knob. It rebuilds the cargo-dist
+  archives of the tested sha with the same matrix, pinned dist and smoke
+  scripts as `release.yml`, then a single `contents: write` job replaces
+  the `dev` prerelease assets add-then-prune: new assets carry the sha in
+  their names, the tag and notes move, and the previous assets are
+  deleted last, so a failed run leaves the previous ones. It publishes
+  nothing to PyPI or crates.io. `crates/frob-release/tests/dev_workflow.rs`
+  pins these invariants and the matrix's equality with `release.yml`.
 - **CI status in `release status`.** Read through the hosting API (`gh`
   for GitHub) for the tip commit; without network or a token the line is
   Unresolved, never assumed green. The commit is the base-branch tip a
