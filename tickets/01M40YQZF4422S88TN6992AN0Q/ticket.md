@@ -8,10 +8,10 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T13:20:05Z"
-updated = "2026-10-03T13:54:03Z"
+updated = "2026-10-03T13:54:04Z"
 idempotency_key = "m2-rel-remedy-commands-exist"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob/src/cycle_cmd.rs", "crates/frob/tests/remedies.rs", "crates/gob-cli/src/cli.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/gob-directives/src/scan.rs", "crates/gob-directives/src/rules.rs", "crates/gob-directives/tests/scan.rs"]
+scope = ["crates/frob/src/cycle_cmd.rs", "crates/frob/tests/remedies.rs", "crates/gob-cli/src/cli.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/gob-directives/src/scan.rs", "crates/gob-directives/src/rules.rs", "crates/gob-directives/tests/scan.rs", "docs/reference/rules/DSL002.md"]
 
 [[acceptance]]
 text = "Given every remedy string frob can emit, when the remedy test runs, then each frob command and flag it names exists in the CLI registry"
