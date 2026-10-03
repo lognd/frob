@@ -12,6 +12,7 @@
 | `cycle close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a cycle: carry incomplete work to the next, record the ratio and retro; refused while live work is in progress. |
 | `cycle list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every cycle, earliest start first. |
 | `cycle new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a cycle; an identical repeat returns `already`, an overlapping or different one is refused. |
+| `cycle plan` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Propose filling a cycle from ready work in rank order, preferring the next milestone, never past capacity; `--apply` assigns. |
 | `cycle show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one cycle (default: the current one) with its members, carried work, ratio and retro. |
 | `cycle unassign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Take a ticket out of a cycle; idempotent when it was not a member. |
 | `cycle velocity` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show points delivered per closed cycle, the rolling mean and standard deviation, and the capacity `cycle assign` would use. |
