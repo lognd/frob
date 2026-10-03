@@ -2,7 +2,8 @@
 id = "01M3ZTNXM1HH9CEP3K11RH38WH"
 title = "Plugins: path-scoped activation instead of directory packs; repository pack trust model"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
