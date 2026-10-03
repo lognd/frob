@@ -20,11 +20,11 @@ target = "01M3WYJ804VRZGKGH6ECGXSH9N"
 
 [[acceptance]]
 text = "Given a repo with .gitignore excluding target/, when walked, then no path under target/ appears and the order is stable across runs"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a findings entry keyed by (digest, rule, version, side-input), when any key component changes, then the lookup misses"
-bound = false
+bound = true
 +++
 
 Implement crates/gob-walk and crates/gob-cache per architecture.md section 3 and D30. gob-walk: parallel repository walk with the ignore crate honoring .gitignore and a [check] exclude knob, returning FileEntry { path, size, blake3 digest, language guess by extension } in a deterministic order; size cap knob with Unresolved marker for oversized files. gob-cache: per-worktree SQLite at .frob/cache.sqlite (WAL, busy_timeout knob, best-effort writes logged on failure, schema versioned with migrations): tables artifacts(key = digest + producer identity, bytes), findings(file digest, rule id, rule version, side-input digest -> serialized findings), repo_rule(graph digest, rule id -> findings). API is sync; a Cache::open fails soft (returns a NullCache) when the directory is read-only. Benchmarks with criterion for walk of 10k files and 10k cache hits.
