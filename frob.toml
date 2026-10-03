@@ -105,7 +105,7 @@ ready_requires = ["story_or_objective_qualified", "criteria", "points", "scope",
 # Definition of done: predicates checked on close and land; the default is the full list of pm-enforcement.md section 3 so done means evidenced, documented and releasable.
 done_requires = ["criteria_evidenced", "objective_target_met", "docs_touched_or_excepted", "no_open_children", "changelog_fragment"]
 # Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence.
-cycle_days = 7
+cycle_days = 2
 # Completed cycles needed before capacity and forecasts are enforced; below it they report Unresolved, so a fresh repository never needs an over-commit.
 min_history = 3
 # Safety factor k in `capacity = rolling_mean - k * stddev` for cycle commitment; 0.5 trades a little throughput for commitments that are usually met.
