@@ -1043,3 +1043,135 @@ fn rel003_invalid_fragment_reports_the_validation_message_and_valid_is_clean() {
     );
     assert!(ticket_rule_messages(dir.path(), &id, "REL003").is_empty());
 }
+
+/// `--ticket` fixture: two untouched files on `main` with findings, one touched file on the branch.
+fn lead_fixture() -> (tempfile::TempDir, String, gob_cli::Cli) {
+    let (dir, id) = ticket_fixture();
+    let bare = "pub fn f() {}\n".to_owned();
+    write(dir.path(), "src/b/lib.rs", &bare);
+    write(dir.path(), "src/c/lib.rs", &bare);
+    let repo = Repo::discover(dir.path()).expect("discover");
+    let changes: Vec<_> = ["src/b/lib.rs", "src/c/lib.rs"]
+        .iter()
+        .map(|p| {
+            (
+                RelPath::new(*p).expect("path"),
+                Some(bare.clone().into_bytes()),
+            )
+        })
+        .collect();
+    repo.commit_paths(
+        "refs/heads/main",
+        &changes,
+        "base",
+        &CommitOptions::default(),
+    )
+    .expect("commit");
+    drop(repo);
+    let (dir, id) = branched_in((dir, id), &[("src/a/lib.rs", bare.as_str())], &[]);
+    write(dir.path(), "src/a/lib.rs", &bare);
+    (
+        dir,
+        id,
+        frob_check::register(gob_cli::Cli::new("frob", "0.0.0")),
+    )
+}
+
+// frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
+// frob:tests crates/frob-check/src/verb.rs::lead_lines
+#[test]
+fn ticket_text_leads_with_diff_findings_and_counts_the_rest() {
+    let (dir, id, cli) = lead_fixture();
+    let args = [
+        "check",
+        "--ticket",
+        id.as_str(),
+        "--base",
+        "main",
+        "--text",
+        "--fail-on",
+        "none",
+    ];
+    let (code, out, err) = gob_cli::run_for_test(&cli, &args, dir.path());
+    assert_eq!(code, 0, "{err}");
+    assert!(
+        out.contains("src/a/lib.rs"),
+        "diff finding listed in full: {out}"
+    );
+    assert!(
+        !out.contains("src/b/lib.rs"),
+        "untouched file summarised: {out}"
+    );
+    assert!(
+        !out.contains("src/c/lib.rs"),
+        "untouched file summarised: {out}"
+    );
+    assert!(
+        out.contains("outside this ticket's diff") && out.contains("COV001"),
+        "per-rule count line: {out}"
+    );
+    assert!(out.contains("x2"), "two findings counted: {out}");
+
+    let verbose = [
+        "-v",
+        "check",
+        "--ticket",
+        id.as_str(),
+        "--base",
+        "main",
+        "--text",
+        "--fail-on",
+        "none",
+    ];
+    let (_, out, _) = gob_cli::run_for_test(&cli, &verbose, dir.path());
+    assert!(out.contains("src/b/lib.rs"), "-v lists everything: {out}");
+    assert!(!out.contains("outside this ticket's diff"), "{out}");
+}
+
+// frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
+// frob:tests crates/frob-check/src/verb.rs::lead_lines
+#[test]
+fn ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full() {
+    let (dir, id, cli) = lead_fixture();
+    let args = [
+        "check",
+        "--ticket",
+        id.as_str(),
+        "--base",
+        "main",
+        "--json",
+        "--fail-on",
+        "none",
+    ];
+    let (code, out, err) = gob_cli::run_for_test(&cli, &args, dir.path());
+    assert_eq!(code, 0, "{err}");
+    let v: serde_json::Value = serde_json::from_str(&out).expect("json");
+    let files: Vec<&str> = v["data"]["findings"]
+        .as_array()
+        .expect("findings")
+        .iter()
+        .filter_map(|f| f["file"].as_str())
+        .collect();
+    for want in ["src/a/lib.rs", "src/b/lib.rs", "src/c/lib.rs"] {
+        assert!(files.contains(&want), "{want} present in JSON: {files:?}");
+    }
+    assert_eq!(v["data"]["elsewhere"].as_array().map(Vec::len), Some(0));
+
+    // Failing on warnings makes the outside findings blocking: they print in full.
+    let strict = [
+        "check",
+        "--ticket",
+        id.as_str(),
+        "--base",
+        "main",
+        "--text",
+        "--fail-on",
+        "warn",
+    ];
+    let (code, _, err) = gob_cli::run_for_test(&cli, &strict, dir.path());
+    assert_eq!(code, 1);
+    assert!(
+        err.contains("src/b/lib.rs"),
+        "blocking finding outside the diff is shown: {err}"
+    );
+}

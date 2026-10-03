@@ -42,6 +42,8 @@ const PM034_NA: &str = "no milestone objects in this repository";
 pub struct Frob {
     opts: CheckOptions,
     siblings: Siblings,
+    /// Paths of the `--ticket` branch diff, recorded by the scoped rules for the text view.
+    diff: std::sync::Mutex<Option<std::collections::BTreeSet<String>>>,
 }
 
 impl Frob {
@@ -50,7 +52,17 @@ impl Frob {
         Self {
             opts,
             siblings: Siblings::default(),
+            diff: std::sync::Mutex::new(None),
         }
+    }
+
+    // frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
+    /// The paths of the `--ticket` branch diff of the last run; `None` outside `--ticket` or when the diff failed.
+    pub fn diff_paths(&self) -> Option<std::collections::BTreeSet<String>> {
+        self.diff
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 }
 
@@ -317,7 +329,12 @@ impl Product for Frob {
         table: &CheckTable,
     ) -> ScopedFindings {
         let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
-        let mut findings = scope::ticket_rules(snap, scope, &base);
+        let mut diff = None;
+        let mut findings = scope::ticket_rules(snap, scope, &base, &mut diff);
+        *self
+            .diff
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = diff;
         findings.extend(rel003_missing(snap, scope));
         let subjects = snap
             .inputs

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T18:36:19Z"
+digest = "792612386e49d9d80df36cbbe2d65f00275ab48b786156e0af7794f0faef1c2c"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 09475e50-9cd3-4b1e-9fae-e77a4895186b with nextest profile: default
+    Starting 1 test across 8 binaries (60 tests skipped)
+        PASS [   0.517s] frob-check::check ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.521s] 1 test run: 1 passed, 60 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full)'"
+size = 738
+status = "measured"
+tests = ["ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full"]
+at = "2026-10-03T18:36:19Z"
+actor = "lognd"
+rev = 1

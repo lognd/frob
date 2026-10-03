@@ -3,7 +3,9 @@
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{Cli, CliError, Command, Context, ExitCode, Outcome, Payload, Refusal, RefusalClass};
 use gob_diagnostics::{FindingRecord, MemorySources};
-use gob_rules::{Finding, Registry};
+use std::collections::{BTreeMap, BTreeSet};
+
+use gob_rules::{Finding, Registry, Severity};
 use gob_text::SourceText;
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -11,7 +13,7 @@ use serde::Serialize;
 use gob_check::{CheckError, CheckReport, Counts, FailOn, FixOutcome, StageTime, Stats};
 
 use crate::options::CheckOptions;
-use crate::run;
+use crate::run_with_diff;
 
 /// Adds the `check` verb to a product root.
 pub fn register(cli: Cli) -> Cli {
@@ -53,6 +55,8 @@ pub struct CheckData {
     pub suppressed: usize,
     /// One line per finding: `file:line:col: severity RULE message`.
     pub lines: Vec<String>,
+    /// `--ticket` text view only: one count line per rule for the findings outside the ticket diff.
+    pub elsewhere: Vec<String>,
     /// The findings as structured records (filled in JSON mode only).
     pub findings: Vec<FindingRecord>,
     /// Counters of the run.
@@ -83,6 +87,7 @@ impl CheckData {
             counts: Counts::default(),
             suppressed: 0,
             lines: Vec::new(),
+            elsewhere: Vec::new(),
             findings: Vec::new(),
             stats: None,
             timing: None,
@@ -285,8 +290,17 @@ impl Command for Check {
             base: self.base.clone(),
             ..CheckOptions::default()
         };
-        let report = run(&root, &opts).map_err(cli_error)?;
-        let data = data_of(&root, &report, ctx.json, self.timing || ctx.verbosity > 0);
+        let (report, diff) = run_with_diff(&root, &opts).map_err(cli_error)?;
+        let lead = (!ctx.json && ctx.verbosity == 0)
+            .then_some(diff.as_ref())
+            .flatten();
+        let data = data_of(
+            &root,
+            &report,
+            ctx.json,
+            self.timing || ctx.verbosity > 0,
+            lead,
+        );
         if report.exit_code() == ExitCode::Negative {
             let c = data.counts;
             return Err(CliError::Negative(format!(
@@ -298,7 +312,12 @@ impl Command for Check {
                 c.unresolved,
                 data.required_unresolved,
                 report.fail_on_unresolved.name(),
-                data.lines.join("\n")
+                data.lines
+                    .iter()
+                    .chain(&data.elsewhere)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("\n")
             )));
         }
         let mut payload = Payload::new(data);
@@ -307,12 +326,70 @@ impl Command for Check {
     }
 }
 
-/// Build the verb data of `report`.
+// frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
+/// Rules whose findings always print in full under `--ticket`: they judge the diff itself.
+const DIFF_RULES: [&str; 2] = ["SCOPE001", "TICK002"];
+
+/// True when `finding` must print in full although its path is outside the ticket diff.
+///
+/// Anything that can fail the gate stays visible: errors, required unresolved
+/// findings, and everything at or above `fail_on`.
+fn blocking(report: &CheckReport, finding: &Finding) -> bool {
+    finding.severity == Severity::Error
+        || finding.required.is_some()
+        || report
+            .fail_on
+            .threshold()
+            .is_some_and(|t| finding.severity >= t && finding.severity != Severity::Unresolved)
+}
+
+/// Split the report lines into the full lines and one count line per `(rule, severity)` for the rest.
+///
+/// A finding is full when its file is in `diff`, its rule judges the diff, or it is [`blocking`].
+fn lead_lines(
+    report: &CheckReport,
+    records: &[FindingRecord],
+    diff: &BTreeSet<String>,
+) -> (Vec<String>, Vec<String>) {
+    let mut full = Vec::new();
+    let mut counts: BTreeMap<(String, String), usize> = BTreeMap::new();
+    for (finding, record) in report.findings.iter().zip(records) {
+        let in_diff = record.file.as_deref().is_some_and(|f| diff.contains(f));
+        if in_diff || DIFF_RULES.contains(&record.rule.as_str()) || blocking(report, finding) {
+            full.push(line_of(record));
+        } else {
+            *counts
+                .entry((record.rule.clone(), record.severity.clone()))
+                .or_default() += 1;
+        }
+    }
+    let total: usize = counts.values().sum();
+    tracing::debug!(
+        full = full.len(),
+        elsewhere = total,
+        "ticket diff partition"
+    );
+    let mut summary = Vec::new();
+    if total > 0 {
+        summary.push(format!(
+            "{total} more finding(s) outside this ticket's diff (rerun with -v to list them, or --json):"
+        ));
+        summary.extend(
+            counts
+                .into_iter()
+                .map(|((rule, sev), n)| format!("  {rule} {sev} x{n}")),
+        );
+    }
+    (full, summary)
+}
+
+/// Build the verb data of `report`; `lead` is the ticket diff when the text view should lead with it.
 fn data_of(
     root: &std::path::Path,
     report: &CheckReport,
     json: bool,
     with_timing: bool,
+    lead: Option<&BTreeSet<String>>,
 ) -> CheckData {
     let sources = sources_of(root, report);
     let registry = Registry::global();
@@ -325,10 +402,15 @@ fn data_of(
             record
         })
         .collect();
+    let (lines, elsewhere) = match lead {
+        Some(diff) => lead_lines(report, &records, diff),
+        None => (records.iter().map(line_of).collect(), Vec::new()),
+    };
     CheckData {
         counts: Counts::of(&report.findings),
         suppressed: report.suppressed.len(),
-        lines: records.iter().map(line_of).collect(),
+        lines,
+        elsewhere,
         findings: if json { records } else { Vec::new() },
         stats: Some(report.stats),
         timing: with_timing.then(|| crate::verb::TimingView {

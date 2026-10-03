@@ -204,3 +204,51 @@ fn a_tampered_statement_degrades_to_unmeasured() {
         frob_evidence::Status::Unmeasured
     );
 }
+
+#[test]
+fn a_non_ascii_statement_or_fact_is_refused_naming_the_character() {
+    // frob:ticket 01M415HTAQ7YSKXW09DG39YHBW
+    // frob:tests crates/frob-evidence/src/attestation.rs::attest
+    // frob:tests crates/frob-evidence/src/attestation.rs::validate_facts
+    let dir = repo(r#"["owner@example.com"]"#);
+    let ws = Workspace::open(dir.path()).expect("workspace");
+    let human = Presence::interactive();
+    let err = refused(&ws, &human, &request("caf\u{e9} works", &[]));
+    let EvidenceError::NonAscii {
+        what,
+        position,
+        escape,
+    } = &err
+    else {
+        panic!("NonAscii, got {err}")
+    };
+    assert_eq!(
+        (*what, *position, escape.as_str()),
+        ("statement", 4, "\\u{00E9}")
+    );
+    assert!(err.to_string().is_ascii(), "{err}");
+    let err = refused(
+        &ws,
+        &human,
+        &request("fine", &["https://example.com/\u{2500}"]),
+    );
+    assert!(
+        matches!(&err, EvidenceError::NonAscii { what: "fact", position: 21, escape } if escape == "\\u{2500}"),
+        "{err}"
+    );
+}
+
+#[test]
+fn an_ascii_statement_still_attests() {
+    // frob:ticket 01M415HTAQ7YSKXW09DG39YHBW
+    // frob:tests crates/frob-evidence/src/attestation.rs::attest
+    let dir = repo(r#"["owner@example.com"]"#);
+    let ws = Workspace::open(dir.path()).expect("workspace");
+    let rec = attest(
+        &ws,
+        &Presence::interactive(),
+        &request("plain ascii\twith a tab", &["https://example.com/x"]),
+    )
+    .expect("attests");
+    assert!(rec.attestation.is_some());
+}

@@ -156,6 +156,29 @@ pub fn escape_non_ascii(text: &str) -> String {
     out
 }
 
+/// Refuse `text` if it holds a non-ASCII character, naming the first one so the attester can retype it.
+///
+/// # Errors
+///
+/// [`EvidenceError::NonAscii`] for the first non-ASCII character of `text`.
+fn require_ascii(what: &'static str, text: &str) -> Result<()> {
+    match text.chars().enumerate().find(|(_, c)| !c.is_ascii()) {
+        None => Ok(()),
+        Some((i, c)) => {
+            tracing::warn!(
+                what,
+                position = i + 1,
+                "attestation refused: non-ASCII input"
+            );
+            Err(EvidenceError::NonAscii {
+                what,
+                position: i + 1,
+                escape: format!("\\u{{{:04X}}}", u32::from(c)),
+            })
+        }
+    }
+}
+
 impl Attestation {
     /// The visible form: `[attested by X: "statement"]`, escaped and cut to one line.
     pub fn label(&self) -> String {
@@ -207,10 +230,11 @@ fn classify(fact: &str) -> Option<FactKind> {
 ///
 /// # Errors
 ///
-/// [`EvidenceError::BadFact`] for a malformed fact, [`EvidenceError::MissingFact`] for a commit or ticket that does not exist.
+/// [`EvidenceError::NonAscii`] for a non-ASCII fact, [`EvidenceError::BadFact`] for a malformed fact, [`EvidenceError::MissingFact`] for a commit or ticket that does not exist.
 pub fn validate_facts(ws: &Workspace, facts: &[String]) -> Result<Vec<String>> {
     let mut out = Vec::new();
     for raw in facts {
+        require_ascii("fact", raw)?;
         let fact = raw.trim();
         let Some(kind) = classify(fact) else {
             tracing::warn!(fact, "attestation fact has no recognised shape");
@@ -275,13 +299,14 @@ fn attester_of(ws: &Workspace) -> Result<String> {
 ///
 /// # Errors
 ///
-/// [`EvidenceError::NotHuman`], [`EvidenceError::EmptyStatement`], [`EvidenceError::NotAttester`], [`EvidenceError::BadFact`] or [`EvidenceError::MissingFact`]; nothing is written for any of them.
+/// [`EvidenceError::NotHuman`], [`EvidenceError::EmptyStatement`], [`EvidenceError::NonAscii`], [`EvidenceError::NotAttester`], [`EvidenceError::BadFact`] or [`EvidenceError::MissingFact`]; nothing is written for any of them.
 pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<EvidenceRecord> {
     presence.require_human()?;
     if req.statement.trim().is_empty() {
         tracing::warn!("attestation refused: empty statement");
         return Err(EvidenceError::EmptyStatement);
     }
+    require_ascii("statement", &req.statement)?;
     let by = attester_of(ws)?;
     let facts = validate_facts(ws, &req.facts)?;
     let digest = digest_hex(req.statement.as_bytes());

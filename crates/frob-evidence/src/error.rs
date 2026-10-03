@@ -39,6 +39,18 @@ pub enum EvidenceError {
     /// The statement is empty.
     #[error("E-ATTEST-STATEMENT: an attestation needs a non-empty --statement")]
     EmptyStatement,
+    /// A statement or fact holds a non-ASCII character; ledger text must be ASCII.
+    #[error(
+        "E-ATTEST-NON-ASCII: the {what} has a non-ASCII character at position {position} (1-based), {escape}; retype it in ASCII, nothing was recorded"
+    )]
+    NonAscii {
+        /// `statement` or `fact`.
+        what: &'static str,
+        /// 1-based character position of the first offender.
+        position: usize,
+        /// The offender as `\u{XXXX}`.
+        escape: String,
+    },
     /// A fact is not a URL, a commit id or a ticket id.
     #[error(
         "E-ATTEST-FACT: `{fact}` is not an https/http URL, a commit id (7 to 40 hex digits) or a ticket handle or ULID"
@@ -132,6 +144,10 @@ impl EvidenceError {
             Self::EmptyStatement => Some(
                 Refusal::new("E-ATTEST-STATEMENT", UsageError, self.to_string())
                     .with_remedy("pass the statement text with --statement"),
+            ),
+            Self::NonAscii { .. } => Some(
+                Refusal::new("E-ATTEST-NON-ASCII", UsageError, self.to_string())
+                    .with_remedy("retype the statement or fact using ASCII characters only"),
             ),
             Self::BadFact { .. } => Some(
                 Refusal::new("E-ATTEST-FACT", UsageError, self.to_string())

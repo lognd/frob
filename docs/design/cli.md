@@ -171,7 +171,11 @@ Every verb, every time:
 - `check --ticket <id>` adds the ticket's scope-and-lease context and
   narrows per-file rules to the ticket's files plus `[check]
   ticket_hops` hops of dependents (rules.md section 4 is the single
-  definition).
+  definition). The text view leads with findings on paths in the
+  ticket's diff (the same branch-changes set SCOPE001 judges), always
+  prints errors, required and gate-failing findings in full, and folds
+  the rest into one count line per rule and severity; `-v` lists them
+  all and `--json` is unchanged (every finding present).
 - `ticket evidence add --ref` (~XR3342F): the value is taken whole even
   when it starts with `-`. For `nextest` it is the filter arguments for
   `cargo nextest run`; for `command` it is the command line. Both are
