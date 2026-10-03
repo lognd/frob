@@ -106,7 +106,7 @@ pull = "rank"
 ready_min = 4
 # Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled.
 ready_requires = ["story_or_objective_qualified", "criteria", "points", "scope", "parent"]
-# Definition of done: predicates checked on close and land; the default lists the three evaluable ones (criteria_evidenced, no_open_children, changelog_fragment); docs_touched_or_excepted and objective_target_met exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice.
+# Definition of done: predicates checked on close and land; the default lists the three evaluable ones (`criteria_evidenced`, `no_open_children`, `changelog_fragment`); `docs_touched_or_excepted` and `objective_target_met` exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice.
 done_requires = ["criteria_evidenced", "no_open_children", "changelog_fragment"]
 # Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence.
 cycle_days = 2
