@@ -7,8 +7,8 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T16:55:39Z"
-updated = "2026-10-03T17:36:56Z"
-scope = ["crates/frob-pm/src/config.rs", "crates/frob-pm/src/rules/**", "docs/reference/config.md", "docs/schemas/config.json", "crates/frob-check/src/product.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/pm_config.rs", "crates/frob/tests/milestone.rs", "changelog.d/*3750GWB*"]
+updated = "2026-10-03T17:38:07Z"
+scope = ["crates/frob-pm/src/config.rs", "crates/frob-pm/src/rules/**", "docs/reference/config.md", "docs/schemas/config.json", "crates/frob-check/src/product.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/pm_config.rs", "crates/frob/tests/milestone.rs", "changelog.d/*3750GWB*", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap"]
 
 [[acceptance]]
 text = "Given [pm] strict = true and a milestone without exit criteria, when frob check runs, then PM001 is an error"
