@@ -11,7 +11,7 @@ created = "2026-10-03T06:13:00Z"
 updated = "2026-10-03T09:39:44Z"
 idempotency_key = "m2-rel-init-adopt"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob/src/init.rs", "crates/frob/tests/init_adopt.rs", "crates/frob/src/config_cmd.rs", "crates/frob/tests/e2e_init_loop.rs"]
+scope = ["crates/frob/src/init.rs", "crates/frob/tests/init_adopt.rs", "crates/frob/src/config_cmd.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/gob-check/src/config.rs"]
 
 [[links]]
 kind = "blocked-by"
