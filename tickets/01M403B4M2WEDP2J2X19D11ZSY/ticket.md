@@ -2,7 +2,7 @@
 id = "01M403B4M2WEDP2J2X19D11ZSY"
 title = "Doc consistency: fold the docgen survey (existing include syntaxes, ratchet baseline, duplicate classes, keep-in-sync comments)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
