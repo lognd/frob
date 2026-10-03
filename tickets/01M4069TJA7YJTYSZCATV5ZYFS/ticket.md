@@ -2,7 +2,8 @@
 id = "01M4069TJA7YJTYSZCATV5ZYFS"
 title = "PM033 replenish: ready queue below ready_min (Advisory)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
