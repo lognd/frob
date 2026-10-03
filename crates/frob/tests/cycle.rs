@@ -535,11 +535,11 @@ fn computed_capacity_applies_once_min_history_cycles_have_closed() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleAssign
     // frob:tests crates/frob-pm/src/cycle/velocity.rs::capacity
     let repo = Repo::new();
-    repo.done_ticket("8");
-    repo.done_ticket("2");
-    // Three closed cycles whose windows each hold today: velocity 10, 10, 10.
+    // Three closed cycles, each committed 10 points and finished them: velocity 10, 10, 10.
     for (s, e) in [(-3, 3), (-2, 4), (-1, 5)] {
         let c = window(&repo, s, e, None);
+        repo.assign(id(&c), &repo.done_ticket("8"));
+        repo.assign(id(&c), &repo.done_ticket("2"));
         repo.ok(&["cycle", "close", id(&c)]);
     }
     let open = window(&repo, 10, 16, None);
@@ -937,14 +937,10 @@ fn velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleVelocity
     // frob:tests crates/frob-pm/src/cycle/velocity.rs::history_capacity
     let repo = Repo::new();
-    let t1 = repo.done_ticket("8");
-    let t2 = repo.done_ticket("2");
-    for (i, (s, e)) in [(-3, 3), (-2, 4)].into_iter().enumerate() {
+    for (s, e) in [(-3, 3), (-2, 4)] {
         let c = window(&repo, s, e, None);
-        if i == 0 {
-            repo.assign(id(&c), &t1);
-            repo.assign(id(&c), &t2);
-        }
+        repo.assign(id(&c), &repo.done_ticket("8"));
+        repo.assign(id(&c), &repo.done_ticket("2"));
         repo.ok(&["cycle", "close", id(&c)]);
     }
     // Fewer than min_history (3) closed cycles: samples shown, no capacity derived.
@@ -963,6 +959,8 @@ fn velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports() {
     assert_eq!(first["done"], 10);
     assert!((first["ratio"].as_f64().expect("ratio") - 1.0).abs() < 1e-9);
     let third = window(&repo, -1, 5, None);
+    repo.assign(id(&third), &repo.done_ticket("8"));
+    repo.assign(id(&third), &repo.done_ticket("2"));
     repo.ok(&["cycle", "close", id(&third)]);
     let open = window(&repo, 10, 16, None);
     let a = repo.ticket("todo", "1");
@@ -992,4 +990,29 @@ fn velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero() {
     assert_ne!(c["end"], utc(6));
     let out = repo.frob(&["cycle", "velocity", "--last", "0"]);
     assert_eq!(code(&out), 2);
+}
+
+#[test]
+fn velocity_agrees_with_the_close_record_and_ignores_unassigned_done_work() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleVelocity
+    // frob:tests crates/frob-pm/src/cycle/velocity.rs::delivery
+    let repo = Repo::new();
+    let a = utc_window(&repo, 0, 6);
+    utc_window(&repo, 7, 8);
+    let done = repo.done_ticket("3");
+    let todo = repo.ticket("todo", "5");
+    repo.assign(id(&a), &done);
+    repo.assign(id(&a), &todo);
+    // Done today inside A's window but never committed to it.
+    repo.done_ticket("13");
+    let closed = repo.ok(&["cycle", "close", id(&a)])["data"]["cycle"].clone();
+    assert_eq!(closed["commitment"]["committed"], 8);
+    assert_eq!(closed["commitment"]["done"], 3);
+    let v = repo.ok(&["cycle", "velocity"]);
+    let c = &v["data"]["cycles"][0];
+    assert_eq!(c["committed"], closed["commitment"]["committed"]);
+    assert_eq!(c["done"], closed["commitment"]["done"]);
+    assert_eq!(c["ratio"], closed["commitment"]["ratio"]);
+    assert_eq!(c["unplanned_done"], 13);
+    assert!((v["data"]["mean"].as_f64().expect("mean") - 3.0).abs() < 1e-9);
 }
