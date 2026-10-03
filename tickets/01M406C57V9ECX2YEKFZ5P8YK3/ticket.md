@@ -2,13 +2,13 @@
 id = "01M406C57V9ECX2YEKFZ5P8YK3"
 title = "releases.md: close the ten gaps found by the 0.532.0 planner"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T06:14:12Z"
-updated = "2026-10-03T06:14:12Z"
+updated = "2026-10-03T06:14:13Z"
 idempotency_key = "m2-releases-gaps"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["docs/design/**"]
