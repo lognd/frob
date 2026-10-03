@@ -2,12 +2,12 @@
 id = "01M41H9Y7TTWDN6DAQ5C06R6B7"
 title = "SYS001 reports every ledger directory as unowned (894 warnings here); the ledger is frob-owned"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T18:44:28Z"
-updated = "2026-10-03T18:44:28Z"
+updated = "2026-10-03T18:44:43Z"
 scope = ["crates/grimble-bind/**", "crates/frob-check/src/product.rs", "docs/design/binding.md"]
 
 [[acceptance]]
