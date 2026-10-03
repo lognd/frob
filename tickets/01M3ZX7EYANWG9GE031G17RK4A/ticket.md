@@ -1,0 +1,35 @@
++++
+id = "01M3ZX7EYANWG9GE031G17RK4A"
+title = "Plan executor relations: edge verbs, bounded reaches, count, defs, knobs, side relations"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+reporter = "lognd"
+created = "2026-10-03T03:34:21Z"
+updated = "2026-10-03T03:34:21Z"
+idempotency_key = "m2-exec-relations"
+labels = ["milestone:2", "area:grl"]
+scope = ["crates/gob-plan/src/exec/relations/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7DMYNTWB3AP04CDMAECH"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7ETPH5Z6K2VJ64K5XTMX"
+
+[[acceptance]]
+text = "Given `t reaches f via calls within 2` over a fixture whose only path crosses a May edge, when executed, then the answer is Unknown with that edge on the frontier"
+bound = false
+
+[[acceptance]]
+text = "Given `find p: diff.changed` and a lease input, when executed, then rows come from the typed inputs and a knob override in [rules] changes a count threshold"
+bound = false
++++
+
+Implements grl-spec.md sections 6, 7.1 and 7.4.
+
+Verbs with Must/May status, `reaches ... via ... within N` returning Yes/No/Unknown with the frontier, count, non-recursive defs, knobs overridable from [rules], and typed side relations (config, diff, lease, model).
