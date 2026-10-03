@@ -2,12 +2,12 @@
 id = "01M41PM9TCJ8MJQREJ733PZ67A"
 title = "Ledger events commit absolute local paths (home directory, user name) into pushed repositories"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T20:17:30Z"
-updated = "2026-10-03T20:17:30Z"
+updated = "2026-10-03T20:17:47Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-lease/src/model.rs", "crates/frob-evidence/**", "crates/frob-obligations/**"]
 
 [[acceptance]]
