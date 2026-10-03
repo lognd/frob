@@ -2,13 +2,13 @@
 id = "01M4069RACAQ8Z2C8APK0YKGNK"
 title = "Milestone exit criteria bound to evidence like ticket acceptance"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T06:12:53Z"
+updated = "2026-10-03T07:17:08Z"
 idempotency_key = "m2-rel-milestone-evidence"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/milestone/criteria.rs", "crates/frob-evidence/src/**"]
