@@ -2,13 +2,13 @@
 id = "01M4069X6S9RJWRXX3YBZ9EG10"
 title = "frob release cut VERSION: bump, compile CHANGELOG, one commit through land, tag"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T06:12:58Z"
+updated = "2026-10-03T08:24:37Z"
 idempotency_key = "m2-rel-release-cut"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-release/src/cut.rs", "crates/frob-land/src/**", "crates/frob/src/release_cmd.rs"]
