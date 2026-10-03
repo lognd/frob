@@ -9,9 +9,9 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T09:21:13Z"
-updated = "2026-10-03T14:25:02Z"
+updated = "2026-10-03T15:28:28Z"
 idempotency_key = "m2-stacked-directives-bind"
-labels = ["milestone:2", "release:0.532.0"]
+labels = ["milestone:2"]
 scope = ["crates/gob-directives/**", "crates/frob-ack/src/inputs.rs", "docs/design/code-model.md"]
 
 [[acceptance]]
