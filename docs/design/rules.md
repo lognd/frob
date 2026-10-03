@@ -144,7 +144,10 @@ The `/` versus `\` difference broke this repository's CI on every first
 Windows run (merge driver path, command allowlist, `--cwd` comparison,
 test fixtures). Clippy has no lint for it and the Windows-target clippy
 check only catches code that does not compile. PATH catches code that
-compiles everywhere and is wrong on one platform. It is a new family:
+compiles everywhere and is wrong on one platform. It is the second line
+of the path discipline in paths.md (types, compile-time confinement and
+both-style tests come first) and the product feature that brings that
+discipline to other repositories. It is a new family:
 v1's `PORT` (frob policing its own package paths) is dropped and its id
 is not reused, so converted v1 waivers keep their meaning.
 
