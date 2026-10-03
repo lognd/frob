@@ -1,4 +1,4 @@
-//! Opaque and partial-parse files are Unresolved or NotApplicable, never silently skipped.
+//! Opaque and partial-parse files are Unresolved or `NotApplicable`, never silently skipped.
 
 use std::path::Path;
 
@@ -117,6 +117,6 @@ fn every_walked_file_appears_in_the_fidelity_counts() {
     assert_eq!(counted, report.stats.files, "{:?}", report.fidelity);
     assert_eq!(report.fidelity.languages["rust"].partial_parse, 1);
     assert_eq!(report.fidelity.languages["markdown"].files, 1);
-    assert!(report.fidelity.languages["markdown"].files_examined == 1);
+    assert_eq!(report.fidelity.languages["markdown"].files_examined, 1);
     assert!(!report.fidelity.lines().is_empty());
 }
