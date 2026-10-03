@@ -162,3 +162,41 @@ fn a_ulid_that_is_not_a_ticket_is_refused() {
     assert_eq!(code(&out), 3);
     assert!(p.exists());
 }
+
+#[test]
+fn release_notes_prints_exactly_one_versions_section_body() {
+    // frob:ticket 01M41B4KPWQVBT234N2DY20758
+    // frob:tests crates/frob/src/release_cmd.rs::ReleaseNotes.run
+    let repo = Repo::new();
+    let a = repo.ticket("task");
+    fragment(&repo, &a, "added", "frob: Added a thing.\n");
+    repo.ok(&[
+        "release",
+        "changelog",
+        "--version",
+        "0.1.0",
+        "--date",
+        "2026-10-03",
+    ]);
+    let b = repo.ticket("task");
+    fragment(&repo, &b, "fixed", "frob: Fixed a thing.\n");
+    repo.ok(&[
+        "release",
+        "changelog",
+        "--version",
+        "0.2.0",
+        "--date",
+        "2026-10-04",
+    ]);
+    let v = repo.ok(&["release", "notes", "--version", "0.1.0"]);
+    let notes = v["data"]["notes"].as_str().expect("notes");
+    assert!(notes.starts_with("### frob"), "{notes}");
+    assert!(notes.contains("Added a thing.") && !notes.contains("Fixed a thing."));
+    assert!(
+        !notes.contains("## 0.1.0") && !notes.contains("frob-section"),
+        "{notes}"
+    );
+    let missing = repo.frob(&["release", "notes", "--version", "9.9.9"]);
+    assert_eq!(code(&missing), 3);
+    assert_eq!(json(&missing)["error"]["code"], "E-CHANGELOG-NO-SECTION");
+}
