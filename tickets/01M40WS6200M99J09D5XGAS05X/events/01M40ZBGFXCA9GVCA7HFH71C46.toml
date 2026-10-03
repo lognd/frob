@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T13:30:45Z"
+digest = "666afbce53ecabbb250bfd625079afacad1ec1c9efd51213aba13632e3ad48de"
+exit_code = 0
+inline = """
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/XGAS05X/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+────────────
+ Nextest run ID bc24b95c-47e5-4e3d-8ff1-919c4f07b227 with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.629s] (1/1) frob-cli::close_guards a_chore_with_an_unbound_criterion_is_refused_naming_the_criterion_and_the_bypass
+────────────
+     Summary [   0.630s] 1 test run: 1 passed, 7 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test close_guards -E 'test(~a_chore_with_an_unbound)'"
+size = 559
+status = "measured"
+tests = ["a_chore_with_an_unbound_criterion_is_refused_naming_the_criterion_and_the_bypass"]
+at = "2026-10-03T13:30:45Z"
+actor = "lognd"
+rev = 1
