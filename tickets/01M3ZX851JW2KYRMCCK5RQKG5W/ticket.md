@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T05:49:58Z"
+updated = "2026-10-03T05:51:55Z"
 idempotency_key = "m2-mirror-markers"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/marker.rs"]
@@ -16,10 +16,6 @@ scope = ["crates/frob-mirror/src/marker.rs"]
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX7J6SES21T3KC4WESVR7H"
-
-[[links]]
-kind = "blocked-by"
-target = "01M3ZX83NZ4PAM53VQCHXPE1R8"
 
 [[acceptance]]
 text = "Given an issue created by another user carrying a valid-looking marker, when the mirror runs, then it is ignored and MIR003 is reported"
