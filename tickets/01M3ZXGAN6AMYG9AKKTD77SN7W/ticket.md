@@ -17,6 +17,10 @@ scope = ["crates/frob-mirror/**"]
 kind = "blocked-by"
 target = "01M3ZX83NZ4PAM53VQCHXPE1R8"
 
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX841SP0ZXM4CT18A4B8CV"
+
 [[acceptance]]
 text = "Given an issue whose title was edited in the tracker, when the mirror runs, then the title is reverted to the projection, no check fails, and a second run changes nothing"
 bound = false
