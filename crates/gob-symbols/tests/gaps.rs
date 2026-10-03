@@ -70,7 +70,7 @@ fn g01_unresolved_calls_poison_reach_instead_of_being_dropped() {
 #[test]
 fn g02_edges_carry_must_may_unknown_status() {
     let src = "struct A;\nimpl A { fn go(&self) {} }\n\
-               fn free() {}\nfn user(a: impl Tr) { free(); a.go(); other(); }\n";
+               fn free() {}\nfn user() { free(); make().go(); other(); }\n";
     let g = graph_of(&[("c/src/lib.rs", src)]);
     let status_of = |to: &str| {
         g.edges_with_status()

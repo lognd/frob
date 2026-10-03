@@ -326,6 +326,8 @@ pub enum Receiver {
     Ret(Box<CallRef>),
     /// The success value of a `Result` or `Option` receiver (`e?`, `e.unwrap()`, `e.expect(..)`).
     Unwrap(Box<Receiver>),
+    /// A value known only by its trait bounds (`&dyn A`, `impl A`, a generic `T: A + B`): trait names, sorted.
+    Bound(Vec<String>),
     /// Any other expression: its type is unknown.
     Expr,
 }

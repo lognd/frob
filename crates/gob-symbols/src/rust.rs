@@ -294,6 +294,8 @@ struct Fold<'a> {
     env: RefCell<Vec<(String, Option<Receiver>)>>,
     /// Generic parameter names of the enclosing items.
     generics: Vec<String>,
+    /// Trait bounds of the generic parameters in scope, as (parameter, trait names), innermost last.
+    bounds: Vec<(String, Vec<String>)>,
     /// The calling shape of the function about to become a unit (taken by `make_unit`).
     fn_sig: Option<(SelfKind, usize, Option<RetType>)>,
     /// Struct fields with a concrete declared type.
@@ -388,6 +390,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         uses: Vec::new(),
         env: RefCell::new(Vec::new()),
         generics: Vec::new(),
+        bounds: Vec::new(),
         fn_sig: None,
         fields: Vec::new(),
     };
@@ -1006,6 +1009,103 @@ impl<'a> Fold<'a> {
             .collect()
     }
 
+    /// The trait bounds `node` puts on its generic parameters, inline and in its `where` clause.
+    fn declared_bounds(&self, node: Node<'_>) -> Vec<(String, Vec<String>)> {
+        let mut out: Vec<(String, Vec<String>)> = Vec::new();
+        let mut add = |name: &str, bounds: Option<Node<'_>>| {
+            let traits = bounds.map(|b| self.trait_names(b)).unwrap_or_default();
+            if let Some((_, have)) = out.iter_mut().find(|(n, _)| n == name) {
+                have.extend(traits);
+            } else {
+                out.push((name.to_owned(), traits));
+            }
+        };
+        if let Some(tp) = node.child_by_field_name("type_parameters") {
+            for c in children(tp) {
+                if c.kind() == "constrained_type_parameter"
+                    && let Some(l) = c.child_by_field_name("left")
+                {
+                    add(self.t(l), c.child_by_field_name("bounds"));
+                }
+            }
+        }
+        for w in children(node)
+            .into_iter()
+            .filter(|c| c.kind() == "where_clause")
+        {
+            for p in children(w)
+                .into_iter()
+                .filter(|c| c.kind() == "where_predicate")
+            {
+                if let Some(l) = p.child_by_field_name("left")
+                    && l.kind() == "type_identifier"
+                {
+                    add(self.t(l), p.child_by_field_name("bounds"));
+                }
+            }
+        }
+        out
+    }
+
+    /// The trait names written in a bound list or trait type (`A + B`, `dyn A`, `impl A<T>`).
+    fn trait_names(&self, n: Node<'_>) -> Vec<String> {
+        match n.kind() {
+            "type_identifier" => vec![self.t(n).to_owned()],
+            "scoped_type_identifier" => n
+                .child_by_field_name("name")
+                .map(|x| vec![self.t(x).to_owned()])
+                .unwrap_or_default(),
+            "generic_type" => n
+                .child_by_field_name("type")
+                .map(|x| self.trait_names(x))
+                .unwrap_or_default(),
+            "trait_bounds" | "bounded_type" | "abstract_type" | "dynamic_type" => children(n)
+                .into_iter()
+                .filter(tree_sitter::Node::is_named)
+                .flat_map(|c| self.trait_names(c))
+                .collect(),
+            _ => Vec::new(),
+        }
+    }
+
+    /// Brings the generics and bounds of `node` into scope; returns the marks for [`Self::leave_generics`].
+    fn enter_generics(&mut self, node: Node<'_>) -> (usize, usize) {
+        let marks = (self.generics.len(), self.bounds.len());
+        let own = self.declared_generics(node);
+        self.generics.extend(own);
+        let bounds = self.declared_bounds(node);
+        self.bounds.extend(bounds);
+        marks
+    }
+
+    /// Drops the generics and bounds brought in since `marks`.
+    fn leave_generics(&mut self, marks: (usize, usize)) {
+        self.generics.truncate(marks.0);
+        self.bounds.truncate(marks.1);
+    }
+
+    /// The receiver a parameter or `let` type stands for when it is only known by its trait bounds.
+    fn bound_receiver(&self, t: Node<'_>) -> Option<Receiver> {
+        let traits: Vec<String> = match t.kind() {
+            "reference_type" => return self.bound_receiver(t.child_by_field_name("type")?),
+            "abstract_type" | "dynamic_type" => self.trait_names(t),
+            "type_identifier" => {
+                let name = self.t(t);
+                self.bounds
+                    .iter()
+                    .rev()
+                    .find(|(n, _)| n == name)
+                    .map(|(_, b)| b.clone())
+                    .unwrap_or_default()
+            }
+            _ => Vec::new(),
+        };
+        let mut traits = traits;
+        traits.sort();
+        traits.dedup();
+        (!traits.is_empty()).then_some(Receiver::Bound(traits))
+    }
+
     fn call(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
         let Some(f) = n.child_by_field_name("function") else {
             return self.generic(n, depth);
@@ -1178,7 +1278,7 @@ impl<'a> Fold<'a> {
             all.extend(children(x));
         }
         for x in &nodes {
-            for p in self.binder_patterns(*x) {
+            for p in Self::binder_patterns(*x) {
                 let _ = self.pattern(p);
             }
         }
@@ -1195,7 +1295,7 @@ impl<'a> Fold<'a> {
     }
 
     /// The pattern nodes that `x` itself introduces bindings with.
-    fn binder_patterns<'t>(&self, x: Node<'t>) -> Vec<Node<'t>> {
+    fn binder_patterns(x: Node<'_>) -> Vec<Node<'_>> {
         match x.kind() {
             "closure_parameters" => vec![x],
             "let_declaration" | "match_arm" | "for_expression" | "let_condition" => {
@@ -1437,10 +1537,11 @@ impl<'a> Fold<'a> {
                 rhs.push(self.tr(c, depth + 1)?);
             }
         }
-        let declared = k
-            .child_by_field_name("type")
-            .and_then(|t| self.plain_type(t))
-            .map(Receiver::Typed);
+        let declared = k.child_by_field_name("type").and_then(|t| {
+            self.plain_type(t)
+                .map(Receiver::Typed)
+                .or_else(|| self.bound_receiver(t))
+        });
         let ty = declared.or_else(|| {
             k.child_by_field_name("value")
                 .and_then(|v| self.value_receiver(v))
@@ -1949,9 +2050,7 @@ impl<'a> Fold<'a> {
         self.callers.push(ord);
         self.fn_depth += 1;
         let saved_env = std::mem::take(&mut *self.env.borrow_mut());
-        let saved_generics = self.generics.len();
-        let own = self.declared_generics(node);
-        self.generics.extend(own);
+        let saved_generics = self.enter_generics(node);
         let ret = node
             .child_by_field_name("return_type")
             .and_then(|t| self.ret_type(t));
@@ -1972,7 +2071,7 @@ impl<'a> Fold<'a> {
             None => Vec::new(),
         };
         self.fn_depth -= 1;
-        self.generics.truncate(saved_generics);
+        self.leave_generics(saved_generics);
         *self.env.borrow_mut() = saved_env;
         self.callers.pop();
         self.unit_stack.pop();
@@ -2033,9 +2132,7 @@ impl<'a> Fold<'a> {
         else {
             return;
         };
-        let saved = self.generics.len();
-        let own = self.declared_generics(node);
-        self.generics.extend(own);
+        let saved = self.enter_generics(node);
         for d in children(list)
             .into_iter()
             .filter(|c| c.kind() == "field_declaration")
@@ -2054,7 +2151,7 @@ impl<'a> Fold<'a> {
                 ty,
             });
         }
-        self.generics.truncate(saved);
+        self.leave_generics(saved);
     }
 
     fn params(
@@ -2081,10 +2178,11 @@ impl<'a> Fold<'a> {
                             binders.push(nm);
                         }
                     }
-                    let ty = p
-                        .child_by_field_name("type")
-                        .and_then(|t| self.plain_type(t))
-                        .map(Receiver::Typed);
+                    let ty = p.child_by_field_name("type").and_then(|t| {
+                        self.plain_type(t)
+                            .map(Receiver::Typed)
+                            .or_else(|| self.bound_receiver(t))
+                    });
                     self.type_binder(env_at, pat, ty);
                     let mut kids = vec![self.cx.lit("pattern", &shape, pat.unwrap_or(p))?];
                     if let Some(t) = p.child_by_field_name("type") {
@@ -2196,11 +2294,9 @@ impl<'a> Fold<'a> {
                     inherit: Some(vis),
                     ..Scope::default()
                 };
-                let saved_generics = self.generics.len();
-                let own = self.declared_generics(node);
-                self.generics.extend(own);
+                let saved_generics = self.enter_generics(node);
                 let out = self.container(b, &inner, false);
-                self.generics.truncate(saved_generics);
+                self.leave_generics(saved_generics);
                 out?
             }
             None => Vec::new(),
@@ -2320,11 +2416,9 @@ impl<'a> Fold<'a> {
                     implements: tr.clone(),
                     trait_impl: tr.is_some(),
                 };
-                let saved_generics = self.generics.len();
-                let own = self.declared_generics(node);
-                self.generics.extend(own);
+                let saved_generics = self.enter_generics(node);
                 let out = self.container(b, &inner, false);
-                self.generics.truncate(saved_generics);
+                self.leave_generics(saved_generics);
                 out?
             }
             None => Vec::new(),

@@ -416,6 +416,8 @@ struct Query<'a> {
 enum Outcome {
     /// Targets with the status of the edges to them.
     Hit(Vec<NodeIndex>, Status),
+    /// A call through a trait bound: Must to the trait's method, May to its implementations.
+    Dispatch(NodeIndex, Vec<NodeIndex>),
     /// Resolved inside the file (a nested item): no crate edge, no poison.
     Local,
     /// Nothing can be claimed.
@@ -748,7 +750,7 @@ impl SymbolGraph {
                     file: t.file,
                 }
             }
-            Receiver::Expr => return None,
+            Receiver::Bound(_) | Receiver::Expr => return None,
         };
         let real = idx.real_type_name(&ty.file, &ty.head);
         (!idx.aliases.contains(&real)).then_some(ty)
@@ -852,6 +854,9 @@ impl SymbolGraph {
                 .checked_sub(2)
                 .map(|i| base_segment(&segs[i]).to_owned())
         };
+        if let Some(traits) = self.receiver_bounds(caller, receiver) {
+            return self.resolve_bound_method(&traits, &named, &fits, &parent_seg);
+        }
         if let Some(ty) = receiver.and_then(|r| self.receiver_ty(idx, caller, r)) {
             let t = idx.real_type_name(&ty.file, &ty.head);
             if let Some((dir, rel)) = idx.explicit_extern(&ty.file, &ty.head) {
@@ -896,6 +901,75 @@ impl SymbolGraph {
             Outcome::Gap(GapReason::Unbound)
         } else {
             Outcome::Hit(cands, Status::May)
+        }
+    }
+
+    /// The trait names bounding a receiver: its declared bounds, or the enclosing trait for `self` in a trait body.
+    fn receiver_bounds(&self, caller: &Symref, receiver: Option<&Receiver>) -> Option<Vec<String>> {
+        match receiver? {
+            Receiver::Bound(t) => Some(t.clone()),
+            Receiver::SelfValue => {
+                let parent = self.parent_of(*self.index.get(caller)?)?;
+                if self.graph[parent].kind != SymbolKind::Trait {
+                    return None;
+                }
+                let segs = self.graph[parent].symref.segments();
+                segs.last().map(|t| vec![base_segment(t).to_owned()])
+            }
+            _ => None,
+        }
+    }
+
+    /// `x.name(..)` where `x` is known only by trait bounds: the trait's method (Must) and its implementations (May).
+    ///
+    /// Inherent methods of concrete types cannot be called on such a receiver. A method none of the
+    /// bound traits declares comes from a supertrait, an external trait or a blanket extension: May.
+    fn resolve_bound_method(
+        &self,
+        traits: &[String],
+        named: &[NodeIndex],
+        fits: &dyn Fn(NodeIndex) -> bool,
+        parent_seg: &dyn Fn(NodeIndex) -> Option<String>,
+    ) -> Outcome {
+        let in_bounds = |name: &str| traits.iter().any(|t| t == name);
+        let decls: Vec<NodeIndex> = named
+            .iter()
+            .copied()
+            .filter(|&n| {
+                fits(n) && self.is_trait_member(n) && parent_seg(n).is_some_and(|p| in_bounds(&p))
+            })
+            .collect();
+        let implements_bound = |n: NodeIndex| {
+            self.graph[n].implements.as_deref().is_some_and(|tr| {
+                let tr = tr.split('<').next().unwrap_or(tr);
+                tr.rsplit("::").next().is_some_and(in_bounds)
+            })
+        };
+        let impls: Vec<NodeIndex> = named
+            .iter()
+            .copied()
+            .filter(|&n| fits(n) && implements_bound(n))
+            .collect();
+        match decls.as_slice() {
+            [one] => Outcome::Dispatch(*one, impls),
+            [] => {
+                let broad: Vec<NodeIndex> = named
+                    .iter()
+                    .copied()
+                    .filter(|&n| {
+                        fits(n)
+                            && (self.is_trait_member(n)
+                                || self.graph[n].implements.is_some()
+                                || parent_seg(n).is_some_and(|p| p.starts_with("dyn")))
+                    })
+                    .collect();
+                if broad.is_empty() {
+                    Outcome::Gap(GapReason::Unbound)
+                } else {
+                    Outcome::Hit(broad, Status::May)
+                }
+            }
+            _ => Outcome::Hit([decls, impls].concat(), Status::May),
         }
     }
 
@@ -1219,10 +1293,10 @@ impl SymbolGraph {
                 );
                 let qualifier = self.call_qualifier(idx, call);
                 let capped = call.in_macro
-                    && !call
+                    && call
                         .macro_exact
                         .as_deref()
-                        .is_some_and(|m| !idx.declared_macros.contains(m));
+                        .is_none_or(|m| idx.declared_macros.contains(m));
                 self.record_call(call, outcome, qualifier, capped);
             }
         }
@@ -1369,49 +1443,60 @@ impl SymbolGraph {
                     self.poisoned.insert(a);
                 }
             }
-            Outcome::Hit(nodes, status) => {
-                let status = if capped {
-                    status.meet(Status::May)
-                } else {
-                    status
-                };
-                let mut found: Vec<Symref> = nodes
-                    .iter()
-                    .map(|&n| self.graph[n].symref.clone())
-                    .collect();
-                found.sort();
-                found.dedup();
-                if let (Some(a), true) = (from, true) {
-                    for &n in &nodes {
-                        self.link(a, n, EdgeKind::Calls, status);
-                        self.link(a, n, EdgeKind::References, status);
-                    }
+            Outcome::Hit(nodes, status) => self.record_hit(call, &nodes, status, capped),
+            Outcome::Dispatch(decl, impls) => {
+                self.record_hit(call, &[decl], Status::Must, capped);
+                if !impls.is_empty() {
+                    self.record_hit(call, &impls, Status::May, capped);
                 }
-                for to in &found {
-                    self.status_edges.push(StatusEdge {
-                        from: caller.clone(),
-                        to: Some(to.clone()),
-                        kind: EdgeKind::Calls,
-                        status,
-                        name: None,
-                        reason: None,
-                        qualifier: None,
-                        line: Some(call.line),
-                        text: Some(call.text.clone()),
-                    });
-                }
-                self.calls.push(match (status, found.len()) {
-                    (Status::Must, 1) => CallEdge::Resolved {
-                        caller: caller.clone(),
-                        callee: found.remove(0),
-                    },
-                    _ => CallEdge::Ambiguous {
-                        caller: caller.clone(),
-                        candidates: found,
-                    },
-                });
             }
         }
+    }
+
+    /// Records the call edges from `call` to `nodes`, all with `status` (May when `capped`).
+    fn record_hit(&mut self, call: &CallSite, nodes: &[NodeIndex], status: Status, capped: bool) {
+        let caller = &call.caller;
+        let from = self.index.get(caller).copied();
+        let status = if capped {
+            status.meet(Status::May)
+        } else {
+            status
+        };
+        let mut found: Vec<Symref> = nodes
+            .iter()
+            .map(|&n| self.graph[n].symref.clone())
+            .collect();
+        found.sort();
+        found.dedup();
+        if let Some(a) = from {
+            for &n in nodes {
+                self.link(a, n, EdgeKind::Calls, status);
+                self.link(a, n, EdgeKind::References, status);
+            }
+        }
+        for to in &found {
+            self.status_edges.push(StatusEdge {
+                from: caller.clone(),
+                to: Some(to.clone()),
+                kind: EdgeKind::Calls,
+                status,
+                name: None,
+                reason: None,
+                qualifier: None,
+                line: Some(call.line),
+                text: Some(call.text.clone()),
+            });
+        }
+        self.calls.push(match (status, found.len()) {
+            (Status::Must, 1) => CallEdge::Resolved {
+                caller: caller.clone(),
+                callee: found.remove(0),
+            },
+            _ => CallEdge::Ambiguous {
+                caller: caller.clone(),
+                candidates: found,
+            },
+        });
     }
 
     fn link_refs(&mut self, files: &[FileSymbols], idx: &Index) {
