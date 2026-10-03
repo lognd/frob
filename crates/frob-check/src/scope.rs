@@ -153,11 +153,16 @@ fn unresolved<R: Rule>(rule: &R, message: String) -> Finding {
     Finding::new(id_of(rule), Severity::Unresolved, None, message, "base")
 }
 
+/// Root lock files written by frob's own verbs; SCOPE001 never counts them as branch changes.
+const BOOKKEEPING_LOCKS: [&str; 2] = ["frob.lock", "grimble.lock"];
+
 /// Paths this branch changed since it left `base`, committed or not, minus ledger bookkeeping.
 ///
 /// Diffs the worktree against `merge_base(base, HEAD)` (three-dot semantics) so
 /// commits that only landed on `base` never count. Everything under the ledger
-/// directory is written by frob's own ledger commits, so it is exempt.
+/// directory is written by frob's own ledger commits, so it is exempt; so are
+/// the root lock files (`frob.lock` by `frob ack`, `grimble.lock`), whose
+/// content stays under the drift rules.
 fn branch_changes(repo: &Repo, base: &str, ledger_dir: &str) -> Result<Vec<RelPath>, GitError> {
     let from = if let Some(mb) = repo.merge_base(base, "HEAD")? {
         tracing::debug!(base, merge_base = %mb, "SCOPE001 diffs from the merge base");
@@ -178,7 +183,11 @@ fn branch_changes(repo: &Repo, base: &str, ledger_dir: &str) -> Result<Vec<RelPa
             if ledger {
                 tracing::trace!(path = %c.path, "ledger path exempt from SCOPE001");
             }
-            !ledger
+            let lock = BOOKKEEPING_LOCKS.contains(&c.path.as_str());
+            if lock {
+                tracing::trace!(path = %c.path, "lock file exempt from SCOPE001");
+            }
+            !ledger && !lock
         })
         .filter_map(|c| RelPath::new(c.path).ok())
         .collect();

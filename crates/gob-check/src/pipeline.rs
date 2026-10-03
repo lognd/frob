@@ -202,7 +202,7 @@ fn opaque_repo_findings<P: Product>(
     }
     let mut out = Vec::new();
     let mut groups = product.repo_groups();
-    groups.extend(crate::repo::builtin_groups::<P>());
+    groups.extend(crate::repo::builtin_groups::<P>(Vec::new()));
     for meta in groups
         .iter()
         .flat_map(|g| g.metas.iter())
@@ -310,7 +310,7 @@ fn pass<P: Product>(
 
     let mut files = snap.core.files.clone();
     raw.extend(run_repo_rules(
-        product, &snap, &cache, &mut files, &wanted, &mut tally,
+        product, &snap, &cache, &mut files, &wanted, &mut tally, table,
     ));
 
     raw.extend(opaque_repo_findings(

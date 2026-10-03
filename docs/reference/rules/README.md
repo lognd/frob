@@ -93,7 +93,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [PROC001](PROC001.md) | process-outside-exec | error | manual | P+ | false | A crate other than `gob-exec`, `gob-git` or the binary references `std::process`. |
+| [PROC001](PROC001.md) | process-outside-exec | error | manual | P+ | false | A crate outside the repository's declared spawners uses a process-spawning API. |
 
 ## REF
 

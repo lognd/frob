@@ -16,6 +16,10 @@ sibling_timeout_secs = 120
 # When true an unusable configured sibling is a required Unresolved (`SIB001`).
 require_siblings = true
 
+# Crates allowed to spawn processes (PROC001 is inert in repositories that do not list any);
+# every other spawn goes through gob_exec::Runner.
+process_spawners = ["gob-exec", "gob-git"]
+
 # External tool stages, run after the built-in rules.
 [[check.tool]]
 name = "cargo"
