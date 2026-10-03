@@ -25,6 +25,37 @@ uncovered. `AFFECT001` does the same for dependents reached through May
 edges or behind unresolved calls naming the changed symbol. A file that
 parsed partially adds one Unresolved to each of these rules.
 
+### What narrows a call
+
+A call is Must only when the syntax proves one target; anything else stays May
+(several candidates) or Unknown (none found), and Unknown calls poison by
+`(qualifier, name)` only. These facts narrow a call and never guess:
+
+- **Path calls through `use`.** `use frob_ack::Inputs;` then `Inputs::collect(..)`
+  resolves into the crate named by the importing crate's `Cargo.toml`
+  dependencies (package names with dashes mapped to underscores, an
+  integration test also naming its own crate), following `pub use` re-exports
+  across modules and crates. A single concrete target is Must; an inherent and
+  a trait method of one name, a trait method, or a glob import when the file
+  has more than one glob stay May.
+- **Typed receivers.** `self`, annotated locals and parameters, struct
+  literals, `Type::new`, declared return types (through `?`, `unwrap` and
+  `expect`), tuple returns and struct fields (`self.field.m()`, only when the
+  struct name is unique in its crate and the field type is a concrete path
+  type) type a method call. Wrappers (`Box`, `Rc`, ...), generics, type aliases
+  and types with a `Deref` impl drop the typing. A typed receiver without such a
+  method of its own can only reach trait-provided methods.
+- **Trait bounds.** `&dyn T`, `impl T` and a generic `P: T` receiver or path
+  qualifier (`P::make()`) reach the trait's method (Must) and its
+  implementations (May); inherent methods of concrete types are ruled out.
+- **Signatures.** Each function records its `self` kind, arity and return type;
+  an unknown-receiver `x.m(args)` admits only methods that take `self` and match
+  the argument count.
+- **Std macros.** The arguments of `assert!`, `assert_eq!`, `format!`,
+  `write!`, `println!`, `tracing::info!` and the like are re-parsed as
+  expressions and resolve like any other call, unless the repository declares a
+  macro of that name or the arguments are not plain expressions.
+
 ## Test selection
 
 `frob test` reports changed files without an adapter in
