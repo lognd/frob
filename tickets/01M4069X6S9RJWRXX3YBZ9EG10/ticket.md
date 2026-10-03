@@ -2,7 +2,8 @@
 id = "01M4069X6S9RJWRXX3YBZ9EG10"
 title = "frob release cut VERSION: bump, compile CHANGELOG, one commit through land, tag"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
