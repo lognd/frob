@@ -1,0 +1,11 @@
+# Wheel metadata for ~A389FFK, built in quay.io/pypa/manylinux_2_28_aarch64 with maturin 1.15.0
+$ unzip -p frob-0.532.0-py3-none-manylinux_2_28_aarch64.whl frob-0.532.0.dist-info/WHEEL
+Wheel-Version: 1.0
+Generator: maturin (1.15.0)
+Root-Is-Purelib: false
+Tag: py3-none-manylinux_2_28_aarch64
+$ unzip -p frob-0.532.0-py3-none-manylinux_2_28_aarch64.whl frob-0.532.0.dist-info/METADATA | head -3
+Metadata-Version: 2.4
+Name: frob
+Version: 0.532.0
+# filename: frob-0.532.0-py3-none-manylinux_2_28_aarch64.whl

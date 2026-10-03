@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-pm/src/cycle/assign.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/cycle/mod.rs", "crates/frob-pm/src/cycle/velocity.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/model.rs"]
+new = ["crates/frob-pm/src/cycle/assign.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/cycle/mod.rs", "crates/frob-pm/src/cycle/velocity.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/model.rs", "crates/frob/tests/cycle.rs"]
+at = "2026-10-03T11:24:53Z"
+actor = "lognd"
+rev = 1

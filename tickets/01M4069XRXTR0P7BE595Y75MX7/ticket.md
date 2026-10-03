@@ -2,13 +2,13 @@
 id = "01M4069XRXTR0P7BE595Y75MX7"
 title = "Release workflow wheel matrix: manylinux 2_28, macOS x86_64 cross-built on macos-latest"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T06:12:59Z"
+updated = "2026-10-03T11:33:49Z"
 idempotency_key = "m2-rel-wheel-matrix"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = [".github/workflows/release.yml"]
