@@ -150,7 +150,19 @@ fn type_and_text_flags_override_and_an_existing_fragment_is_refused_until_force(
 fn the_close_remedy_names_the_verb_and_the_guard_passes_after_writing() {
     let dir = repo();
     let (id, handle) = ticket(dir.path(), "task");
-    let out = frob(dir.path(), &["ticket", "close", &id, "--outcome", "done"]);
+    let out = frob(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &id,
+            "--outcome",
+            "done",
+            "--no-evidence",
+            "--reason",
+            "test",
+        ],
+    );
     assert_eq!(code(&out), 3);
     let v = json(&out);
     assert_eq!(v["error"]["code"], "E-DONE-CHANGELOG-FRAGMENT");
@@ -160,5 +172,17 @@ fn the_close_remedy_names_the_verb_and_the_guard_passes_after_writing() {
         "{remedy}"
     );
     ok(dir.path(), &["ticket", "fragment", &handle]);
-    ok(dir.path(), &["ticket", "close", &id, "--outcome", "done"]);
+    ok(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &id,
+            "--outcome",
+            "done",
+            "--no-evidence",
+            "--reason",
+            "test",
+        ],
+    );
 }
