@@ -42,7 +42,7 @@
 | `ticket comment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a comment (note, decision, question or answer) to a ticket. |
 | `ticket contention` | yes | no | 0 ok, 3 refused, 4 internal | Print the files claimed by more than one live lease, ranked by holder count. |
 | `ticket doable` | yes | no | 0 ok, 2 usage, 4 internal | List tickets that can be started: todo, no open blocker, scope not leased. |
-| `ticket doctor` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-fold every ticket and report frontmatter drift, dangling links and event-order problems. |
+| `ticket doctor` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-fold every ticket, milestone and cycle and report frontmatter drift, dangling links and event-order problems. |
 | `ticket drop` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Drop a ticket: close it as wont-fix with a required reason. |
 | `ticket evidence add` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Capture evidence with a provider and append it to a ticket: `ticket evidence add <ticket>`. |
 | `ticket evidence fetch` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Fetch one evidence blob, hash verified: `ticket evidence fetch <ticket> <index>`. |

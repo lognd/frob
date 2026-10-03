@@ -55,7 +55,7 @@ pub struct InitData {
     pub gitignore: Step,
     /// The `merge.frob-ledger.driver` git config.
     pub merge_driver: Step,
-    /// The `.gitattributes` line.
+    /// The `.gitattributes` lines (tickets, milestones, cycles).
     pub gitattributes: Step,
 }
 
@@ -158,20 +158,41 @@ fn ensure_gitignore(root: &Path, dry_run: bool) -> Result<Step, CliError> {
     })
 }
 
-/// Ensure the ticket ledger attribute line is in `.gitattributes`.
+/// The `.gitattributes` lines that route ledger files to the frob merge driver.
+fn attribute_lines(tickets_dir: &str) -> [String; 3] {
+    [
+        format!("{tickets_dir}/**/ticket.md {DRIVER_ATTR}"),
+        format!("{tickets_dir}/_milestones/*/milestone.md {DRIVER_ATTR}"),
+        format!("{tickets_dir}/_cycles/*/cycle.md {DRIVER_ATTR}"),
+    ]
+}
+
+/// Ensure the ticket, milestone and cycle attribute lines are in `.gitattributes`.
 fn ensure_gitattributes(root: &Path, tickets_dir: &str, dry_run: bool) -> Result<Step, CliError> {
     let path = root.join(".gitattributes");
-    let line = format!("{tickets_dir}/**/ticket.md {DRIVER_ATTR}");
-    let existing = read_or_empty(&path)?;
-    let present = existing
-        .lines()
-        .any(|l| l.split_whitespace().eq(line.split_whitespace()));
-    if !present && !dry_run {
-        append_line(&path, &existing, &line)?;
+    let mut text = read_or_empty(&path)?;
+    let mut changed = false;
+    for line in attribute_lines(tickets_dir) {
+        let present = text
+            .lines()
+            .any(|l| l.split_whitespace().eq(line.split_whitespace()));
+        if !present {
+            changed = true;
+            if !text.is_empty() && !text.ends_with('\n') {
+                text.push('\n');
+            }
+            text.push_str(&line);
+            text.push('\n');
+            tracing::info!(path = %path.display(), line, "attribute line added");
+        }
+    }
+    if changed && !dry_run {
+        std::fs::write(&path, text)
+            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
     }
     Ok(Step {
         target: path.display().to_string(),
-        changed: !present,
+        changed,
     })
 }
 

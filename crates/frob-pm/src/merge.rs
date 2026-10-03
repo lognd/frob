@@ -3,9 +3,12 @@
 //! Two branches that edited one milestone each added event files and rewrote
 //! the frontmatter; git conflicts only on the frontmatter. Events are
 //! append-only files, so the union on disk is the truth and the frontmatter is
-//! its fold. [`resolve`] is the pm counterpart of the ticket merge driver; wiring
-//! it to `frob merge-driver` is the CLI crate's job (a follow-up ticket).
+//! its fold. [`resolve`] is the pm counterpart of the ticket merge driver; the CLI
+//! crate dispatches `frob merge-driver` to it. Git may run the driver before the
+//! other side's event files are checked out, so [`resolve_with`] also takes events
+//! read from the merged commits.
 
+use std::collections::BTreeSet;
 use std::path::Path;
 
 use frob_ledger::EventId;
@@ -22,6 +25,8 @@ pub struct MergeReport {
     pub id: ObjectId,
     /// Events folded (the union).
     pub events: usize,
+    /// Events that were not on disk and came from the extra (history) set.
+    pub from_extra: usize,
 }
 
 /// Kind and id of a path like `tickets/_milestones/<ulid>/milestone.md`.
@@ -87,27 +92,51 @@ pub fn read_events_on_disk(dir: &Path) -> Result<Vec<PmEvent>> {
     Ok(events)
 }
 
-/// Resolve a conflicted frontmatter: write the re-folded file to `ours`.
+/// Resolve a conflicted frontmatter from the events on disk: write the re-folded file to `ours`.
 ///
-/// `root` is the work tree root, `path` the repo-relative path git passes as `%P`.
+/// # Errors
+///
+/// As [`resolve_with`].
+pub fn resolve(root: &Path, path: &str, ours: &Path) -> Result<MergeReport> {
+    resolve_with(root, path, ours, Vec::new())
+}
+
+/// Resolve a conflicted frontmatter: union the events on disk with `extra`, re-fold, write to `ours`.
+///
+/// `root` is the work tree root, `path` the repo-relative path git passes as `%P`;
+/// `extra` holds events read from the merged commits (duplicates by id are dropped).
 ///
 /// # Errors
 ///
 /// [`PmError::Invalid`] for a foreign path, [`PmError::Fold`] / [`PmError::Malformed`]
 /// when no valid history exists, [`PmError::Malformed`] when `ours` cannot be written.
-pub fn resolve(root: &Path, path: &str, ours: &Path) -> Result<MergeReport> {
+pub fn resolve_with(
+    root: &Path,
+    path: &str,
+    ours: &Path,
+    extra: Vec<PmEvent>,
+) -> Result<MergeReport> {
     let (kind, id) = object_of_path(path)?;
     let dir = root
         .join(path)
         .parent()
         .map_or_else(|| root.to_path_buf(), Path::to_path_buf);
-    let events = read_events_on_disk(&dir)?;
+    let mut events = read_events_on_disk(&dir)?;
+    let on_disk = events.len();
+    let mut seen: BTreeSet<EventId> = events.iter().map(|e| e.id).collect();
+    for ev in extra {
+        if seen.insert(ev.id) {
+            events.push(ev);
+        }
+    }
+    let from_extra = events.len() - on_disk;
     let folded = fold(kind, id, &events)?;
     std::fs::write(ours, folded.object.render()?)
         .map_err(|e| PmError::malformed(ours.display().to_string(), e.to_string()))?;
-    tracing::info!(object = %id, events = events.len(), "frontmatter re-folded by pm merge");
+    tracing::info!(object = %id, events = events.len(), from_extra, "frontmatter re-folded by pm merge");
     Ok(MergeReport {
         id,
         events: events.len(),
+        from_extra,
     })
 }

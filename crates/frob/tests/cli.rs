@@ -148,7 +148,12 @@ fn init_twice_second_is_already_and_changes_nothing() {
     );
     assert_snapshot!("init_frob_toml", toml1);
     assert_eq!(ignore1, ".frob/\n");
-    assert_eq!(attrs1, "tickets/**/ticket.md merge=frob-ledger\n");
+    assert_eq!(
+        attrs1,
+        "tickets/**/ticket.md merge=frob-ledger\n\
+         tickets/_milestones/*/milestone.md merge=frob-ledger\n\
+         tickets/_cycles/*/cycle.md merge=frob-ledger\n"
+    );
 
     let second = frob(dir.path(), &["init"]);
     assert_eq!(code(&second), 0);

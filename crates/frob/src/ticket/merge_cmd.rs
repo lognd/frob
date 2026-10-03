@@ -1,4 +1,4 @@
-//! `merge-driver`: the hidden verb git invokes for conflicted `ticket.md` files.
+//! `merge-driver`: the hidden verb git invokes for conflicted `ticket.md`, `milestone.md` and `cycle.md` files.
 
 use std::path::PathBuf;
 
@@ -42,7 +42,7 @@ fn side_commits(ledger: &frob_ledger::Ledger) -> Vec<String> {
 /// Output of `merge-driver`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct MergeData {
-    /// The ticket whose frontmatter was re-folded.
+    /// The ticket, milestone or cycle whose frontmatter was re-folded.
     pub ticket: String,
     /// Events in the union.
     pub events: usize,
@@ -61,6 +61,40 @@ pub struct MergeData {
 pub struct MergeDriver {
     ours: PathBuf,
     path: String,
+}
+
+impl MergeDriver {
+    /// Resolve a conflicted `milestone.md` or `cycle.md` through `frob_pm::merge::resolve`.
+    fn run_pm(&self, ctx: &Context) -> CliOutcome<MergeData> {
+        let ledger = open(ctx)?;
+        let (kind, id) = frob_pm::merge::object_of_path(&self.path)
+            .map_err(|e| CliError::Usage(e.to_string()))?;
+        let root = ledger
+            .repo()
+            .work_dir()
+            .map_or_else(|| ctx.cwd.clone(), std::path::Path::to_path_buf);
+        let store = frob_pm::PmStore::new(&ledger);
+        let mut extra = Vec::new();
+        for side in side_commits(&ledger) {
+            match store.read_events_at(&side, kind, id) {
+                Ok(mut events) => extra.append(&mut events),
+                Err(e) => tracing::debug!(side, error = %e, "no events readable from this side"),
+            }
+        }
+        let ours = if self.ours.is_absolute() {
+            self.ours.clone()
+        } else {
+            ctx.cwd.join(&self.ours)
+        };
+        let report = frob_pm::merge::resolve_with(&root, &self.path, &ours, extra)
+            .map_err(|e| CliError::Negative(e.to_string()))?;
+        tracing::info!(path = %self.path, events = report.events, "pm object merged");
+        Ok(Payload::new(MergeData {
+            ticket: report.id.to_string(),
+            events: report.events,
+            from_history: report.from_extra,
+        }))
+    }
 }
 
 impl Command for MergeDriver {
@@ -101,6 +135,9 @@ impl Command for MergeDriver {
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<MergeData> {
+        if frob_pm::merge::object_of_path(&self.path).is_ok() {
+            return self.run_pm(ctx);
+        }
         let ledger = open(ctx)?;
         let id = ticket_id_of_path(&self.path).map_err(|e| CliError::Usage(e.to_string()))?;
         let root = ledger

@@ -158,7 +158,7 @@ Acks are not events: they live in the ack log of the product lock file.
   disk and in every merge head, and re-folds the frontmatter; it never
   picks a last writer. `frob init`
   and `frob doctor --fix` install the `.gitattributes` line
-  (`tickets/*/ticket.md merge=frob-ledger`) and `git config
+  (`tickets/**/ticket.md merge=frob-ledger`, plus `tickets/_milestones/*/milestone.md` and `tickets/_cycles/*/cycle.md`, which `frob merge-driver` dispatches to the pm resolver) and `git config
   merge.frob-ledger.driver`, and `doctor` verifies both because git
   config is not cloned. A hosting provider's merge button never runs
   the driver, so a TICK rule re-folds every ticket in CI and fails when
