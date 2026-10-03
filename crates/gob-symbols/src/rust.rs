@@ -41,15 +41,15 @@ use crate::adapter::{
 };
 use crate::fold::{Cx, base_file, failed_file, file_root_spec};
 use crate::model::{
-    CallSite, FieldDecl, ImportEdge, LocalBinding, Receiver, RefKind, RefSite, SelfKind,
-    UseBinding, Visibility, collapse_ws,
+    CallRef, CallSite, FieldDecl, ImportEdge, LocalBinding, Receiver, RefKind, RefSite, RetType,
+    SelfKind, UseBinding, Visibility, collapse_ws,
 };
 use crate::paths::crate_and_module;
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
 use crate::view::{
-    self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_SELF_KIND, ATTR_VISIBILITY, HOLE_MISSING,
-    HOLE_PARSE_ERROR, Naming,
+    self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_RET, ATTR_RET_ARG, ATTR_SELF_KIND, ATTR_VISIBILITY,
+    HOLE_MISSING, HOLE_PARSE_ERROR, Naming,
 };
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
@@ -149,6 +149,8 @@ struct Site {
     receiver: Option<Receiver>,
     /// The qualifying path is a generic parameter or bracketed type.
     opaque: bool,
+    /// The std macro whose arguments were parsed as ordinary expressions around this call.
+    macro_exact: Option<String>,
     /// Call argument count, receiver excluded (`None` inside macro arguments).
     args: Option<usize>,
     /// The full qualifying path segments of a path call.
@@ -202,6 +204,66 @@ const DEREF_WRAPPERS: &[&str] = &[
     "Self",
 ];
 
+/// Std and `tracing` macros whose arguments are ordinary expressions (calls in them resolve like any other).
+const EXACT_MACROS: &[&str] = &[
+    "assert",
+    "assert_eq",
+    "assert_ne",
+    "debug_assert",
+    "debug_assert_eq",
+    "debug_assert_ne",
+    "format",
+    "format_args",
+    "print",
+    "println",
+    "eprint",
+    "eprintln",
+    "write",
+    "writeln",
+    "panic",
+    "unreachable",
+    "todo",
+    "unimplemented",
+    "dbg",
+    "info",
+    "debug",
+    "warn",
+    "error",
+    "trace",
+];
+
+/// `c` blanked for the synthetic text: newlines stay so line numbers match.
+fn blank(c: u8) -> u8 {
+    if c == b'\n' { b'\n' } else { b' ' }
+}
+
+/// The call expression `f(..)` of the synthetic wrapper whose callee starts at byte `at`.
+fn find_synthetic_call(root: Node<'_>, at: usize) -> Option<Node<'_>> {
+    let mut stack = vec![root];
+    while let Some(n) = stack.pop() {
+        if n.kind() == "call_expression"
+            && n.child_by_field_name("function")
+                .is_some_and(|f| f.start_byte() == at)
+        {
+            return Some(n);
+        }
+        stack.extend(children(n));
+    }
+    None
+}
+
+/// True when `n` sits inside a macro invocation of the synthetic tree (its own scan handles it).
+fn inside_macro(n: Node<'_>) -> bool {
+    let mut cur = n.parent();
+    while let Some(p) = cur {
+        if p.kind() == "macro_invocation" {
+            return true;
+        }
+        cur = p.parent();
+    }
+    false
+}
+
 /// Longest callee text kept for diagnostics.
 const MAX_CALL_TEXT: usize = 80;
 
@@ -229,11 +291,11 @@ struct Fold<'a> {
     sites: Vec<Site>,
     uses: Vec<PendingUse>,
     /// Variables in scope with their declared type when syntactically evident (latest wins).
-    env: RefCell<Vec<(String, Option<String>)>>,
+    env: RefCell<Vec<(String, Option<Receiver>)>>,
     /// Generic parameter names of the enclosing items.
     generics: Vec<String>,
     /// The calling shape of the function about to become a unit (taken by `make_unit`).
-    fn_sig: Option<(SelfKind, usize)>,
+    fn_sig: Option<(SelfKind, usize, Option<RetType>)>,
     /// Struct fields with a concrete declared type.
     fields: Vec<FieldDecl>,
 }
@@ -353,20 +415,6 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
             .flatten()
             .and_then(|n| v.by_node.get(&n).cloned())
     };
-    let fields: Vec<FieldDecl> = fields
-        .into_iter()
-        .map(|mut d| {
-            // `use a::B as C;` then `f: C` declares a `B`.
-            if let Some(real) = uses
-                .iter()
-                .find(|u| u.local == d.ty && !u.target.ends_with("::*"))
-                .and_then(|u| u.target.rsplit("::").next())
-            {
-                real.clone_into(&mut d.ty);
-            }
-            d
-        })
-        .collect();
     for u in uses {
         file.imports.push(ImportEdge {
             from_file: input.path.to_owned(),
@@ -396,6 +444,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
                     in_macro,
                     receiver: s.receiver,
                     opaque_qualifier: s.opaque,
+                    macro_exact: s.macro_exact,
                     args: s.args,
                     qual_path: s.qual_path,
                     line: s.line,
@@ -543,7 +592,8 @@ impl<'a> Fold<'a> {
                         item_local: false,
                         receiver: t.receiver,
                         opaque: t.opaque,
-                        args: Some(self.arg_count(n)),
+                        macro_exact: None,
+                        args: Some(Self::arg_count(n)),
                         qual_path: t.path,
                         line: line_of(n),
                         text: call_text(self.t(f)),
@@ -551,7 +601,7 @@ impl<'a> Fold<'a> {
                 }
             }
             if n.kind() == "macro_invocation" {
-                self.scan_macro_calls(n, caller);
+                self.scan_macro(n, caller);
             } else {
                 stack.extend(children(n));
             }
@@ -644,6 +694,7 @@ impl<'a> Fold<'a> {
             item_local,
             receiver: None,
             opaque: false,
+            macro_exact: None,
             args: None,
             qual_path: Vec::new(),
             line: 0,
@@ -749,8 +800,23 @@ impl<'a> Fold<'a> {
                     .rev()
                     .find(|(n, _)| n == name)
                     .and_then(|(_, t)| t.clone())
-                    .map_or(Receiver::Expr, Receiver::Typed)
+                    .unwrap_or(Receiver::Expr)
             }
+            "parenthesized_expression" | "reference_expression" => {
+                let inner = if v.kind() == "reference_expression" {
+                    v.child_by_field_name("value")
+                } else {
+                    children(v).into_iter().find(tree_sitter::Node::is_named)
+                };
+                self.receiver_of(inner)
+            }
+            "try_expression" => {
+                match self.receiver_of(children(v).into_iter().find(tree_sitter::Node::is_named)) {
+                    Receiver::Expr => Receiver::Expr,
+                    inner => Receiver::Unwrap(Box::new(inner)),
+                }
+            }
+            "call_expression" => self.call_receiver(v),
             "field_expression" => {
                 let field = v.child_by_field_name("field");
                 match (self.receiver_of(v.child_by_field_name("value")), field) {
@@ -765,8 +831,98 @@ impl<'a> Fold<'a> {
         }
     }
 
+    /// The receiver standing for the value of the call expression `v`: its callee, for a return-type lookup.
+    fn call_receiver(&self, v: Node<'_>) -> Receiver {
+        let Some(f) = v.child_by_field_name("function") else {
+            return Receiver::Expr;
+        };
+        let f = if f.kind() == "generic_function" {
+            f.child_by_field_name("function").unwrap_or(f)
+        } else {
+            f
+        };
+        let t = self.call_target(f);
+        let args = Self::arg_count(v);
+        if t.dynamic || t.opaque || t.construct {
+            return Receiver::Expr;
+        }
+        if t.method {
+            let Some(
+                Receiver::SelfValue
+                | Receiver::Typed(_)
+                | Receiver::Field(..)
+                | Receiver::Ret(_)
+                | Receiver::Unwrap(_),
+            ) = t.receiver.as_ref()
+            else {
+                return Receiver::Expr;
+            };
+            let recv = t.receiver;
+            if matches!(t.name.as_str(), "unwrap" | "expect") && args <= 1 {
+                return recv.map_or(Receiver::Expr, |r| Receiver::Unwrap(Box::new(r)));
+            }
+            return Receiver::Ret(Box::new(CallRef {
+                name: t.name,
+                path: Vec::new(),
+                recv,
+                args,
+            }));
+        }
+        let bound =
+            self.env.borrow().iter().any(|(n, _)| *n == t.name) || self.locals.contains(&t.name);
+        if bound && t.path.is_empty() {
+            return Receiver::Expr;
+        }
+        Receiver::Ret(Box::new(CallRef {
+            name: t.name,
+            path: t.path,
+            recv: None,
+            args,
+        }))
+    }
+
+    /// The receiver a `let` value evidently has: a struct literal, `Type::new`/`Type::default`, or a typed expression.
+    fn value_receiver(&self, v: Node<'_>) -> Option<Receiver> {
+        if let Some(t) = self.value_type(v) {
+            return Some(Receiver::Typed(t));
+        }
+        match self.receiver_of(Some(v)) {
+            Receiver::Expr => None,
+            r => Some(r),
+        }
+    }
+
+    /// A declared return type reduced to its plain head and first generic argument.
+    fn ret_type(&self, t: Node<'_>) -> Option<RetType> {
+        let name = |n: Node<'_>| -> Option<String> {
+            if n.kind() == "type_identifier" && self.t(n) == "Self" {
+                return Some("Self".to_owned());
+            }
+            self.plain_type(n)
+        };
+        match t.kind() {
+            "reference_type" => self.ret_type(t.child_by_field_name("type")?),
+            "generic_type" => {
+                let head = name(t.child_by_field_name("type")?)?;
+                let arg = t
+                    .child_by_field_name("type_arguments")
+                    .and_then(|a| {
+                        children(a)
+                            .into_iter()
+                            .find(|c| c.is_named() && c.kind() != "lifetime")
+                    })
+                    .and_then(name);
+                Some(RetType { head, arg })
+            }
+            _ => Some(RetType {
+                head: name(t)?,
+                arg: None,
+            }),
+        }
+    }
+
     /// Number of arguments in the call expression `n` (comments excluded).
-    fn arg_count(&self, n: Node<'_>) -> usize {
+    fn arg_count(n: Node<'_>) -> usize {
         n.child_by_field_name("arguments").map_or(0, |a| {
             children(a)
                 .into_iter()
@@ -824,7 +980,7 @@ impl<'a> Fold<'a> {
     }
 
     /// Declares the type of the variable `pattern` pushed at `env[at]` (a single plain binder only).
-    fn type_binder(&self, at: usize, pat: Option<Node<'_>>, ty: Option<String>) {
+    fn type_binder(&self, at: usize, pat: Option<Node<'_>>, ty: Option<Receiver>) {
         let Some(pat) = pat else { return };
         let plain = pat.kind() == "identifier"
             || (pat.kind() == "mut_pattern"
@@ -916,7 +1072,8 @@ impl<'a> Fold<'a> {
                 item_local,
                 receiver: target.receiver,
                 opaque: target.opaque,
-                args: Some(self.arg_count(n)),
+                macro_exact: None,
+                args: Some(Self::arg_count(n)),
                 qual_path: target.path,
                 line: line_of(n),
                 text: call_text(self.t(f)),
@@ -934,9 +1091,183 @@ impl<'a> Fold<'a> {
             .cx
             .op(Operator::group(GroupOrder::Sequence), n, &toks)?;
         if let Some(&caller) = self.callers.last() {
-            self.scan_macro_calls(n, caller);
+            self.scan_macro(n, caller);
         }
         self.cx.op(Operator::phase("macro"), n, &[group])
+    }
+
+    /// Records the calls inside the macro invocation `n`: exactly when it is a std macro with expression
+    /// arguments, else by the token-shape scan (status capped at May).
+    fn scan_macro(&mut self, n: Node<'_>, caller: usize) {
+        if !self.scan_exact_macro(n, caller) {
+            self.scan_macro_calls(n, caller);
+        }
+    }
+
+    /// Parses the arguments of a std macro (`assert_eq!`, `format!`, ...) as ordinary call arguments and
+    /// records their calls like any others; false when the macro is not one of those or does not parse.
+    ///
+    /// The arguments are re-parsed inside a synthetic `fn g(){f(ARGS);}` laid over blanks so every node
+    /// keeps its byte offset and line in the real file. Names bound inside the arguments (closure
+    /// parameters, `let`, match arms) shadow outer typed variables for the whole invocation.
+    fn scan_exact_macro(&mut self, n: Node<'_>, caller: usize) -> bool {
+        let Some(name) = n
+            .child_by_field_name("macro")
+            .and_then(|m| self.t(m).rsplit("::").next())
+            .filter(|m| EXACT_MACROS.contains(m))
+        else {
+            return false;
+        };
+        let Some(tt) = children(n).into_iter().find(|c| c.kind() == "token_tree") else {
+            return false;
+        };
+        let (a, b) = (tt.start_byte(), tt.end_byte());
+        let bytes = self.cx.text.as_bytes();
+        if a < 8 || b > bytes.len() || b < a + 2 {
+            return false;
+        }
+        let mut synth: Vec<u8> = bytes[..b]
+            .iter()
+            .enumerate()
+            .map(|(i, &c)| if i < a { blank(c) } else { c })
+            .collect();
+        synth[..7].copy_from_slice(b"fn g(){");
+        synth[a - 1] = b'f';
+        synth[a] = b'(';
+        synth[b - 1] = b')';
+        // `%x` and `?x` field values (tracing) are not Rust expressions: blank the sigil.
+        for i in a + 1..b - 1 {
+            if matches!(synth[i], b'%' | b'?')
+                && synth[..i]
+                    .iter()
+                    .rev()
+                    .find(|c| !c.is_ascii_whitespace())
+                    .is_some_and(|c| matches!(c, b'=' | b',' | b'('))
+            {
+                synth[i] = b' ';
+            }
+        }
+        synth.extend_from_slice(b";}");
+        let Ok(synth) = String::from_utf8(synth) else {
+            return false;
+        };
+        let gob_languages::ParseResult::Parsed(tree) =
+            parse(Language::Rust, &synth, &ParseLimits::default())
+        else {
+            return false;
+        };
+        if tree.has_errors() {
+            tracing::trace!(
+                path = self.path,
+                macro_name = name,
+                "macro arguments are not plain expressions"
+            );
+            return false;
+        }
+        let Some(call) = find_synthetic_call(tree.root(), a - 1) else {
+            return false;
+        };
+        let Some(args) = call.child_by_field_name("arguments") else {
+            return false;
+        };
+        let saved_env = self.env.borrow().len();
+        let mut all = vec![args];
+        let mut nodes = Vec::new();
+        while let Some(x) = all.pop() {
+            nodes.push(x);
+            all.extend(children(x));
+        }
+        for x in &nodes {
+            for p in self.binder_patterns(*x) {
+                let _ = self.pattern(p);
+            }
+        }
+        for x in nodes {
+            self.exact_macro_node(x, caller, name);
+        }
+        self.env.borrow_mut().truncate(saved_env);
+        tracing::trace!(
+            path = self.path,
+            macro_name = name,
+            "std macro arguments scanned as expressions"
+        );
+        true
+    }
+
+    /// The pattern nodes that `x` itself introduces bindings with.
+    fn binder_patterns<'t>(&self, x: Node<'t>) -> Vec<Node<'t>> {
+        match x.kind() {
+            "closure_parameters" => vec![x],
+            "let_declaration" | "match_arm" | "for_expression" | "let_condition" => {
+                x.child_by_field_name("pattern").into_iter().collect()
+            }
+            _ => Vec::new(),
+        }
+    }
+
+    /// Records the site of `x` (a node of a parsed std-macro argument) when it is a call or a nested macro.
+    fn exact_macro_node(&mut self, x: Node<'_>, caller: usize, macro_name: &str) {
+        if x.kind() == "macro_invocation" {
+            // Handled whole (the walk of its token tree below is token-shaped, not expression-shaped).
+            self.scan_macro(x, caller);
+            return;
+        }
+        if x.kind() != "call_expression" || inside_macro(x) {
+            return;
+        }
+        let Some(f) = x.child_by_field_name("function") else {
+            return;
+        };
+        let t = self.call_target(f);
+        if t.construct {
+            return;
+        }
+        let bare_local = !t.method
+            && t.path.is_empty()
+            && (self.env.borrow().iter().any(|(n, _)| *n == t.name)
+                || self.locals.contains(&t.name));
+        self.sites.push(Site {
+            kind: SiteKind::Call {
+                method: t.method,
+                in_macro: true,
+            },
+            caller,
+            name: if bare_local { String::new() } else { t.name },
+            qualifier: t.qualifier,
+            node: None,
+            item_local: false,
+            receiver: t.receiver,
+            opaque: t.opaque,
+            macro_exact: Some(macro_name.to_owned()),
+            args: Some(Self::arg_count(x)),
+            qual_path: t.path,
+            line: line_of(x),
+            text: call_text(self.t(f)),
+        });
+    }
+
+    /// The type or module before `::name` at `kids[i]` inside a macro, skipping a turbofish (`Vec::<T>::new`).
+    fn macro_qualifier(&self, kids: &[Node<'_>], i: usize) -> Option<String> {
+        let mut j = i.checked_sub(2)?;
+        if self.t(kids[j]) == ">" {
+            let mut depth = 0usize;
+            loop {
+                match self.t(kids[j]) {
+                    ">" => depth += 1,
+                    "<" => depth -= 1,
+                    _ => {}
+                }
+                if depth == 0 {
+                    break;
+                }
+                j = j.checked_sub(1)?;
+            }
+            if j < 2 || self.t(kids[j - 1]) != "::" {
+                return None;
+            }
+            j -= 2;
+        }
+        (kids[j].kind() == "identifier").then(|| self.t(kids[j]).to_owned())
     }
 
     /// Records `name(` call shapes inside a macro's token trees (status capped at May).
@@ -952,12 +1283,11 @@ impl<'a> Fold<'a> {
                 {
                     let prev = i.checked_sub(1).map(|j| self.t(kids[j]));
                     let method = prev == Some(".");
-                    let qualifier =
-                        if prev == Some("::") && i >= 2 && kids[i - 2].kind() == "identifier" {
-                            Some(self.t(kids[i - 2]).to_owned())
-                        } else {
-                            None
-                        };
+                    let qualifier = if prev == Some("::") {
+                        self.macro_qualifier(&kids, i)
+                    } else {
+                        None
+                    };
                     let name = self.t(*k).to_owned();
                     if !upper_first(&name) {
                         self.sites.push(Site {
@@ -978,6 +1308,7 @@ impl<'a> Fold<'a> {
                             item_local: false,
                             receiver: method.then_some(Receiver::Expr),
                             opaque: false,
+                            macro_exact: None,
                             args: None,
                             qual_path: Vec::new(),
                         });
@@ -1108,10 +1439,11 @@ impl<'a> Fold<'a> {
         }
         let declared = k
             .child_by_field_name("type")
-            .and_then(|t| self.plain_type(t));
+            .and_then(|t| self.plain_type(t))
+            .map(Receiver::Typed);
         let ty = declared.or_else(|| {
             k.child_by_field_name("value")
-                .and_then(|v| self.value_type(v))
+                .and_then(|v| self.value_receiver(v))
         });
         self.type_binder(env_at, k.child_by_field_name("pattern"), ty);
         let rhs = self.cx.op(Operator::group(GroupOrder::Sequence), k, &rhs)?;
@@ -1455,10 +1787,16 @@ impl<'a> Fold<'a> {
         if let Some(i) = implements {
             spec = spec.attr(ATTR_IMPLEMENTS, i);
         }
-        if let Some((self_kind, arity)) = self.fn_sig.take() {
+        if let Some((self_kind, arity, ret)) = self.fn_sig.take() {
             spec = spec
                 .attr(ATTR_SELF_KIND, self_kind.as_attr())
                 .attr(ATTR_ARITY, arity.to_string().as_str());
+            if let Some(r) = ret {
+                spec = spec.attr(ATTR_RET, r.head.as_str());
+                if let Some(a) = r.arg {
+                    spec = spec.attr(ATTR_RET_ARG, a.as_str());
+                }
+            }
         }
         let id = self.cx.add(spec, &kids)?;
         self.ord_nodes[ord] = Some(id);
@@ -1614,6 +1952,9 @@ impl<'a> Fold<'a> {
         let saved_generics = self.generics.len();
         let own = self.declared_generics(node);
         self.generics.extend(own);
+        let ret = node
+            .child_by_field_name("return_type")
+            .and_then(|t| self.ret_type(t));
         let mut binders: Vec<String> = Vec::new();
         let mut sig = Vec::new();
         for c in children(node) {
@@ -1636,7 +1977,7 @@ impl<'a> Fold<'a> {
         self.callers.pop();
         self.unit_stack.pop();
         let role = if body.is_some() { "impl" } else { "sig" };
-        self.fn_sig = Some(self.signature_of(params));
+        self.fn_sig = Some(self.signature_of(params, ret));
         let id = self.make_unit(
             ord,
             node,
@@ -1653,7 +1994,11 @@ impl<'a> Fold<'a> {
     }
 
     /// The `self` kind and parameter count of a function with parameter list `params`.
-    fn signature_of(&self, params: Option<Node<'_>>) -> (SelfKind, usize) {
+    fn signature_of(
+        &self,
+        params: Option<Node<'_>>,
+        ret: Option<RetType>,
+    ) -> (SelfKind, usize, Option<RetType>) {
         let mut kind = SelfKind::None;
         let mut arity = 0;
         for p in params.map(children).into_iter().flatten() {
@@ -1661,7 +2006,10 @@ impl<'a> Fold<'a> {
                 "self_parameter" => {
                     let text = collapse_ws(self.t(p));
                     kind = if text.starts_with('&') {
-                        if text.split(|c: char| !c.is_alphanumeric()).any(|w| w == "mut") {
+                        if text
+                            .split(|c: char| !c.is_alphanumeric())
+                            .any(|w| w == "mut")
+                        {
                             SelfKind::RefMut
                         } else {
                             SelfKind::Ref
@@ -1674,7 +2022,7 @@ impl<'a> Fold<'a> {
                 _ => {}
             }
         }
-        (kind, arity)
+        (kind, arity, ret)
     }
 
     /// Records the concrete-typed fields of the struct `node` named `owner` (the field type table).
@@ -1694,7 +2042,8 @@ impl<'a> Fold<'a> {
         {
             let (Some(name), Some(ty)) = (
                 d.child_by_field_name("name"),
-                d.child_by_field_name("type").and_then(|t| self.plain_type(t)),
+                d.child_by_field_name("type")
+                    .and_then(|t| self.plain_type(t)),
             ) else {
                 continue;
             };
@@ -1734,7 +2083,8 @@ impl<'a> Fold<'a> {
                     }
                     let ty = p
                         .child_by_field_name("type")
-                        .and_then(|t| self.plain_type(t));
+                        .and_then(|t| self.plain_type(t))
+                        .map(Receiver::Typed);
                     self.type_binder(env_at, pat, ty);
                     let mut kids = vec![self.cx.lit("pattern", &shape, pat.unwrap_or(p))?];
                     if let Some(t) = p.child_by_field_name("type") {

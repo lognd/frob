@@ -14,8 +14,8 @@ use petgraph::visit::EdgeRef;
 use crate::adapter::{Fidelity, ParseStatus};
 use crate::crates::CrateDeps;
 use crate::model::{
-    CallSite, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge, LocalBinding, Receiver,
-    RefKind, RefSite, SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility,
+    CallRef, CallSite, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge, LocalBinding,
+    Receiver, RefKind, RefSite, SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility,
 };
 use crate::paths::crate_and_module;
 use crate::qualifier::{Admit, CallQualifier};
@@ -201,28 +201,201 @@ struct Index {
     /// (crate dir, module path) to the file-level `pub use` bindings of that module.
     pubuses: HashMap<(String, String), Vec<UseBinding>>,
     /// (crate dir, struct name) to its typed fields (the field type table).
-    fields: HashMap<(String, String), Vec<FieldDecl>>,
+    fields: HashMap<(String, String), Vec<(FieldDecl, String)>>,
     /// (crate dir, struct name) to the number of structs declared so (a field table is only sound for one).
     struct_count: HashMap<(String, String), usize>,
     /// Names of structs and enums declared anywhere in the repository.
     declared_types: HashSet<String>,
     /// Names of types with an `impl Deref` or `impl DerefMut`: methods may come from the target.
     deref_types: HashSet<String>,
-    /// Names of type aliases: a declared type of these says nothing about the callee.
+    /// Names of `macro_rules!` macros declared anywhere (they may shadow a std macro of the same name).
+    declared_macros: HashSet<String>,
+    /// Names of module-level type aliases anywhere: a declared type of these says nothing about the callee.
     aliases: HashSet<String>,
 }
 
 impl Index {
-    /// The type of `owner.field` when `owner` is the only struct so named in `krate` and the field is typed.
-    fn field_type(&self, krate: &str, owner: &str, field: &str) -> Option<String> {
+    /// The crate-relative paths at which `segs` is defined in crate `dir`, following `pub use` re-exports.
+    fn canonical_paths(&self, dir: &str, segs: &[String], depth: usize) -> Vec<String> {
+        const MAX_HOPS: usize = 8;
+        let joined = segs.join("::");
+        if self.by_item.contains_key(&(dir.to_owned(), joined.clone())) {
+            return vec![joined];
+        }
+        let Some((last, parent)) = segs.split_last() else {
+            return Vec::new();
+        };
+        if depth >= MAX_HOPS {
+            return Vec::new();
+        }
+        let mut out = Vec::new();
+        let module = parent.join("::");
+        for u in self
+            .pubuses
+            .get(&(dir.to_owned(), module))
+            .into_iter()
+            .flatten()
+        {
+            let rel = rel_path(&u.target);
+            let next: Vec<String> = if let Some(glob) = rel.strip_suffix("::*") {
+                glob.split("::")
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_owned)
+                    .chain(std::iter::once(last.clone()))
+                    .collect()
+            } else if u.local == *last {
+                rel.split("::").map(str::to_owned).collect()
+            } else {
+                continue;
+            };
+            out.extend(self.canonical_paths(dir, &next, depth + 1));
+        }
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    /// `t` as `file` imports it: `use a::B as t` names type `B`.
+    fn real_type_name(&self, file: &str, t: &str) -> String {
+        self.uses
+            .get(file)
+            .into_iter()
+            .chain(self.ext_uses.get(file))
+            .flatten()
+            .find(|u| u.local == t && !u.target.ends_with("::*"))
+            .and_then(|u| u.target.rsplit("::").next().map(str::to_owned))
+            .unwrap_or_else(|| t.to_owned())
+    }
+
+    /// Sorts every file's `use` bindings into internal, external and re-exported.
+    ///
+    /// A file-level `use inputs::Inputs;` names a module of the current module (2018 paths): when
+    /// that item exists it is the internal `crate::..` binding, not an extern crate path.
+    fn classify_uses(&mut self, files: &[FileSymbols]) {
+        for f in files.iter().filter(|f| is_rust(&f.path)) {
+            let (krate, module) = crate_and_module(&f.path);
+            let mut internal = Vec::new();
+            let mut external = Vec::new();
+            for u in &f.uses {
+                let mut u = u.clone();
+                if !u.is_internal() && u.container.is_none() {
+                    let rel = u.target.strip_suffix("::*").unwrap_or(&u.target);
+                    let mut key = module.clone();
+                    key.extend(rel.split("::").map(str::to_owned));
+                    if self.by_item.contains_key(&(krate.clone(), key.join("::"))) {
+                        let glob = if u.target.ends_with("::*") { "::*" } else { "" };
+                        u.target = format!("crate::{}{glob}", key.join("::"));
+                    }
+                }
+                if u.is_internal() {
+                    if u.public && u.container.is_none() {
+                        self.pubuses
+                            .entry((krate.clone(), module.join("::")))
+                            .or_default()
+                            .push(u.clone());
+                    }
+                    internal.push(u);
+                } else {
+                    external.push(u);
+                }
+            }
+            self.uses.insert(f.path.clone(), internal);
+            self.ext_uses.insert(f.path.clone(), external);
+        }
+    }
+
+    /// Records what the declaration `s` in crate `krate` contributes to the type tables.
+    fn note_symbol(&mut self, krate: &str, s: &SymbolRecord, assoc: bool) {
+        match (s.kind, s.symref.name()) {
+            (SymbolKind::Struct, Some(n)) => {
+                let n = base_segment(n);
+                *self
+                    .struct_count
+                    .entry((krate.to_owned(), n.to_owned()))
+                    .or_default() += 1;
+                self.declared_types.insert(n.to_owned());
+            }
+            (SymbolKind::Enum, Some(n)) => {
+                self.declared_types.insert(n.to_owned());
+            }
+            (SymbolKind::Macro, Some(n)) => {
+                self.declared_macros.insert(n.to_owned());
+            }
+            (SymbolKind::TypeAlias, Some(n)) if !assoc => {
+                self.aliases.insert(n.to_owned());
+            }
+            (SymbolKind::Impl, _) => {
+                let tr = s.implements.as_deref().unwrap_or("");
+                let tr = tr.split('<').next().unwrap_or(tr);
+                if matches!(tr.rsplit("::").next(), Some("Deref" | "DerefMut"))
+                    && let Some(seg) = s.symref.segments().last()
+                {
+                    self.deref_types.insert(base_segment(seg).to_owned());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// The type of `owner.field` (and the file declaring it) when `owner` is the only struct so named in `krate`.
+    fn field_type(&self, krate: &str, owner: &str, field: &str) -> Option<Ty> {
         let key = (krate.to_owned(), owner.to_owned());
         if self.struct_count.get(&key) != Some(&1) {
             return None;
         }
-        let mut hits = self.fields.get(&key)?.iter().filter(|d| d.field == field);
-        let first = hits.next()?;
-        hits.next().is_none().then(|| first.ty.clone())
+        let mut hits = self
+            .fields
+            .get(&key)?
+            .iter()
+            .filter(|(d, _)| d.field == field);
+        let (first, file) = hits.next()?;
+        hits.next().is_none().then(|| Ty {
+            head: first.ty.clone(),
+            arg: None,
+            file: file.clone(),
+        })
     }
+
+    /// The extern crate directory and crate-relative path that `file` imports `local` from, by explicit `use`.
+    fn explicit_extern(&self, file: &str, local: &str) -> Option<(String, Vec<String>)> {
+        let externs = self.externs.get(self.file_crate.get(file)?)?;
+        let u = self
+            .ext_uses
+            .get(file)?
+            .iter()
+            .find(|u| u.local == local && !u.target.ends_with("::*"))?;
+        let mut segs = u.target.split("::").map(str::to_owned);
+        let head = segs.next()?;
+        let dir = externs.iter().find(|(n, _)| *n == head)?.1.clone();
+        Some((dir, segs.collect()))
+    }
+
+    /// The crate directory declaring the type `written` in `file`, and its real name there.
+    fn type_home(&self, file: &str, written: &str) -> (String, String) {
+        let real = self.real_type_name(file, written);
+        let here = crate_and_module(file).0;
+        if self
+            .struct_count
+            .contains_key(&(here.clone(), real.clone()))
+        {
+            return (here, real);
+        }
+        match self.explicit_extern(file, written) {
+            Some((home, path)) => (home, path.last().cloned().unwrap_or(real)),
+            None => (here, real),
+        }
+    }
+}
+
+/// A receiver type proven for a call.
+#[derive(Debug, Clone)]
+struct Ty {
+    /// The type name as written (`written` in `use a::B as written`).
+    head: String,
+    /// The first generic argument, for `Result<T, _>` and `Option<T>`.
+    arg: Option<String>,
+    /// The file whose imports the names are written against.
+    file: String,
 }
 
 /// What a call site asks the resolver, independent of how it was written.
@@ -409,6 +582,7 @@ impl SymbolGraph {
             declared_types: HashSet::new(),
             deref_types: HashSet::new(),
             aliases: HashSet::new(),
+            declared_macros: HashSet::new(),
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
             let (krate, module) = crate_and_module(&f.path);
@@ -425,50 +599,21 @@ impl SymbolGraph {
                 idx.fields
                     .entry((krate.clone(), d.owner.clone()))
                     .or_default()
-                    .push(d.clone());
+                    .push((d.clone(), f.path.clone()));
             }
-            for u in f.uses.iter().filter(|u| u.public && u.is_internal()) {
-                if u.container.is_none() {
-                    idx.pubuses
-                        .entry((krate.clone(), module.join("::")))
-                        .or_default()
-                        .push(u.clone());
-                }
-            }
-            idx.ext_uses.insert(
-                f.path.clone(),
-                f.uses.iter().filter(|u| !u.is_internal()).cloned().collect(),
-            );
             idx.by_item
                 .entry((krate.clone(), module.join("::")))
                 .or_default()
                 .push(self.index[&Symref::file(&f.path)]);
             for s in &f.symbols {
-                match (s.kind, s.symref.name()) {
-                    (SymbolKind::Struct, Some(n)) => {
-                        let n = base_segment(n);
-                        *idx.struct_count
-                            .entry((krate.clone(), n.to_owned()))
-                            .or_default() += 1;
-                        idx.declared_types.insert(n.to_owned());
-                    }
-                    (SymbolKind::Enum, Some(n)) => {
-                        idx.declared_types.insert(n.to_owned());
-                    }
-                    (SymbolKind::TypeAlias, Some(n)) => {
-                        idx.aliases.insert(n.to_owned());
-                    }
-                    (SymbolKind::Impl, _) => {
-                        let tr = s.implements.as_deref().unwrap_or("");
-                        let tr = tr.split('<').next().unwrap_or(tr);
-                        if matches!(tr.rsplit("::").next(), Some("Deref" | "DerefMut"))
-                            && let Some(seg) = s.symref.segments().last()
-                        {
-                            idx.deref_types.insert(base_segment(seg).to_owned());
-                        }
-                    }
-                    _ => {}
-                }
+                let assoc = s
+                    .parent
+                    .as_ref()
+                    .and_then(|p| self.index.get(p))
+                    .is_some_and(|&p| {
+                        matches!(self.graph[p].kind, SymbolKind::Impl | SymbolKind::Trait)
+                    });
+                idx.note_symbol(&krate, s, assoc);
                 let mut segs = module.clone();
                 segs.extend(
                     s.symref
@@ -490,11 +635,8 @@ impl SymbolGraph {
                         .push(node);
                 }
             }
-            idx.uses.insert(
-                f.path.clone(),
-                f.uses.iter().filter(|u| u.is_internal()).cloned().collect(),
-            );
         }
+        idx.classify_uses(files);
         idx
     }
 
@@ -570,34 +712,80 @@ impl SymbolGraph {
         }
     }
 
-    /// The declared type a method receiver has, when the syntax and the field table prove it.
+    /// The declared type a method receiver has, when the syntax, the field table and return types prove it.
     ///
-    /// `self` is the enclosing impl's type, a typed local is its type read through the file's
-    /// import aliases, `a.f` is the table type of field `f` of `a`'s type. Aliases and anything
-    /// unproven give `None`.
-    fn receiver_type(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<String> {
-        let t = match r {
-            Receiver::SelfValue => self.enclosing_impl_type(caller)?,
-            Receiver::Typed(t) => self.real_type_name(idx, caller.path(), t),
+    /// `self` is the enclosing impl's type, a typed local is its annotation, `a.f` is the table type
+    /// of field `f` of `a`'s type, a call is its callee's declared return type (only when the callee
+    /// resolves to exactly one Must target) and `?`/`unwrap` open a `Result` or `Option`. Aliases and
+    /// anything unproven give `None`.
+    fn receiver_ty(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<Ty> {
+        let ty = match r {
+            Receiver::SelfValue => Ty {
+                head: self.enclosing_impl_type(caller)?,
+                arg: None,
+                file: caller.path().to_owned(),
+            },
+            Receiver::Typed(t) => Ty {
+                head: t.clone(),
+                arg: None,
+                file: caller.path().to_owned(),
+            },
             Receiver::Field(base, field) => {
-                let owner = self.receiver_type(idx, caller, base)?;
-                idx.field_type(&crate_and_module(caller.path()).0, &owner, field)?
+                let b = self.receiver_ty(idx, caller, base)?;
+                let (krate, real) = idx.type_home(&b.file, &b.head);
+                idx.field_type(&krate, &real, field)?
+            }
+            Receiver::Ret(call) => self.ret_ty(idx, caller, call)?,
+            Receiver::Unwrap(inner) => {
+                let t = self.receiver_ty(idx, caller, inner)?;
+                if !matches!(t.head.as_str(), "Result" | "Option") || idx.aliases.contains(&t.head)
+                {
+                    return None;
+                }
+                Ty {
+                    head: t.arg?,
+                    arg: None,
+                    file: t.file,
+                }
             }
             Receiver::Expr => return None,
         };
-        (!idx.aliases.contains(&t)).then_some(t)
+        let real = idx.real_type_name(&ty.file, &ty.head);
+        (!idx.aliases.contains(&real)).then_some(ty)
     }
 
-    /// `t` as `file` imports it: `use a::B as t` names type `B`.
-    fn real_type_name(&self, idx: &Index, file: &str, t: &str) -> String {
-        idx.uses
-            .get(file)
-            .into_iter()
-            .chain(idx.ext_uses.get(file))
-            .flatten()
-            .find(|u| u.local == t && !u.target.ends_with("::*"))
-            .and_then(|u| u.target.rsplit("::").next().map(str::to_owned))
-            .unwrap_or_else(|| t.to_owned())
+    /// The declared return type of the one concrete callee that `call` resolves to.
+    fn ret_ty(&self, idx: &Index, caller: &Symref, call: &CallRef) -> Option<Ty> {
+        let q = Query {
+            name: &call.name,
+            qualifier: call.path.last().map(String::as_str),
+            path: &call.path,
+            method: call.recv.is_some(),
+            args: Some(call.args),
+        };
+        let Outcome::Hit(nodes, Status::Must) =
+            self.resolve_site(idx, caller, &q, call.recv.as_ref(), LocalBinding::None)
+        else {
+            return None;
+        };
+        let [n] = nodes[..] else { return None };
+        if self.is_trait_member(n) {
+            return None;
+        }
+        let rec = &self.graph[n];
+        let ret = rec.signature.as_ref()?.ret.as_ref()?;
+        let sub = |s: &str| {
+            if s == "Self" {
+                self.enclosing_impl_type(&rec.symref)
+            } else {
+                Some(s.to_owned())
+            }
+        };
+        Some(Ty {
+            head: sub(&ret.head)?,
+            arg: ret.arg.as_deref().and_then(sub),
+            file: rec.symref.path().to_owned(),
+        })
     }
 
     /// Resolves a call or value reference by name, imports and qualifier.
@@ -636,7 +824,9 @@ impl SymbolGraph {
                 }
                 self.resolve_qualified(caller, qual, named, uses)
             }
-            None => self.resolve_bare(idx, &krate, file, name, named, uses),
+            None => self
+                .resolve_extern(idx, file, q)
+                .unwrap_or_else(|| self.resolve_bare(idx, &krate, file, name, named, uses)),
         }
     }
 
@@ -652,7 +842,9 @@ impl SymbolGraph {
         let fits = |n: NodeIndex| {
             let r = &self.graph[n];
             r.kind == SymbolKind::Method
-                && r.signature.is_none_or(|s| s.accepts_method_call(q.args))
+                && r.signature
+                    .as_ref()
+                    .is_none_or(|s| s.accepts_method_call(q.args))
         };
         let parent_seg = |n: NodeIndex| {
             let segs = self.graph[n].symref.segments();
@@ -660,7 +852,11 @@ impl SymbolGraph {
                 .checked_sub(2)
                 .map(|i| base_segment(&segs[i]).to_owned())
         };
-        if let Some(t) = receiver.and_then(|r| self.receiver_type(idx, caller, r)) {
+        if let Some(ty) = receiver.and_then(|r| self.receiver_ty(idx, caller, r)) {
+            let t = idx.real_type_name(&ty.file, &ty.head);
+            if let Some((dir, rel)) = idx.explicit_extern(&ty.file, &ty.head) {
+                return self.extern_methods(idx, (&dir, &rel), q.name, &fits);
+            }
             let mine: Vec<NodeIndex> = named
                 .iter()
                 .copied()
@@ -703,10 +899,112 @@ impl SymbolGraph {
         }
     }
 
+    /// `x.name(..)` where `x` has a type imported from another crate: its methods there, or a gap when none is found.
+    fn extern_methods(
+        &self,
+        idx: &Index,
+        home: (&str, &[String]),
+        name: &str,
+        fits: &dyn Fn(NodeIndex) -> bool,
+    ) -> Outcome {
+        let (dir, rel) = home;
+        let mut found: Vec<NodeIndex> = Vec::new();
+        for canon in idx.canonical_paths(dir, rel, 0) {
+            let key = format!("{canon}::{name}");
+            found.extend(
+                idx.by_item
+                    .get(&(dir.to_owned(), key))
+                    .into_iter()
+                    .flatten()
+                    .copied()
+                    .filter(|&n| fits(n)),
+            );
+        }
+        found.sort();
+        found.dedup();
+        match found.as_slice() {
+            [] => Outcome::Gap(GapReason::Unbound),
+            [one] => {
+                let sure = self.graph[*one].implements.is_none() && !self.is_trait_member(*one);
+                Outcome::Hit(found, if sure { Status::Must } else { Status::May })
+            }
+            _ => Outcome::Hit(found, Status::May),
+        }
+    }
+
     /// True when `n` is declared directly inside a trait (a declaration or default method).
     fn is_trait_member(&self, n: NodeIndex) -> bool {
         self.parent_of(n)
             .is_some_and(|p| self.graph[p].kind == SymbolKind::Trait)
+    }
+
+    /// The (callee parent path, callee name) candidates of a path call through extern crates.
+    ///
+    /// Also whether the head is certain (explicit import or crate name, or the file's only glob)
+    /// and whether it came from an explicit import or crate name rather than a glob.
+    #[allow(
+        clippy::type_complexity,
+        reason = "a private three-part result used once"
+    )]
+    fn extern_candidates(
+        idx: &Index,
+        file: &str,
+        q: &Query<'_>,
+    ) -> Option<(Vec<(Vec<String>, String)>, bool, bool)> {
+        let owner = idx.file_crate.get(file)?;
+        let externs = idx.externs.get(owner)?;
+        let ext_uses = idx.ext_uses.get(file).map_or(&[][..], Vec::as_slice);
+        let segs = |t: &str| t.split("::").map(str::to_owned).collect::<Vec<_>>();
+        // Each candidate is (path of the callee's parent, callee name).
+        let direct: Option<(Vec<String>, String)> = match q.path.first() {
+            None => ext_uses
+                .iter()
+                .find(|u| u.local == q.name && !u.target.ends_with("::*"))
+                .and_then(|u| {
+                    let mut v = segs(&u.target);
+                    let name = v.pop()?;
+                    Some((v, name))
+                }),
+            Some(head) => ext_uses
+                .iter()
+                .find(|u| u.local == *head && !u.target.ends_with("::*"))
+                .map(|u| {
+                    let mut v = segs(&u.target);
+                    v.extend(q.path[1..].iter().cloned());
+                    (v, q.name.to_owned())
+                })
+                .or_else(|| {
+                    externs
+                        .iter()
+                        .any(|(n, _)| n == head)
+                        .then(|| (q.path.to_vec(), q.name.to_owned()))
+                }),
+        };
+        let explicit = direct.is_some();
+        let (cands, sure_head): (Vec<(Vec<String>, String)>, bool) = if let Some(c) = direct {
+            (vec![c], true)
+        } else {
+            let globs: Vec<(Vec<String>, String)> = ext_uses
+                .iter()
+                .filter_map(|u| u.target.strip_suffix("::*"))
+                .map(|t| {
+                    let mut v = segs(t);
+                    v.extend(q.path.iter().cloned());
+                    (v, q.name.to_owned())
+                })
+                .collect();
+            let all_globs = idx
+                .uses
+                .get(file)
+                .into_iter()
+                .flatten()
+                .chain(ext_uses.iter())
+                .filter(|u| u.target.ends_with("::*"))
+                .count();
+            let sole = all_globs == 1 && globs.len() == 1;
+            (globs, sole)
+        };
+        Some((cands, sure_head, explicit))
     }
 
     /// `Q::name(..)` where `Q` is reached through an extern crate: resolved through `use` imports and `pub use` re-exports.
@@ -715,50 +1013,12 @@ impl SymbolGraph {
     /// resolution). A single concrete callee is Must; a trait method, an ambiguity or a glob import
     /// that could be shadowed stays May; no such item anywhere is a gap.
     fn resolve_extern(&self, idx: &Index, file: &str, q: &Query<'_>) -> Option<Outcome> {
-        let owner = idx.file_crate.get(file)?;
-        let externs = idx.externs.get(owner)?;
-        let head = q.path.first()?;
-        let ext_uses = idx.ext_uses.get(file).map_or(&[][..], Vec::as_slice);
-        let segs = |t: &str| t.split("::").map(str::to_owned).collect::<Vec<_>>();
-        let tail = &q.path[1..];
-        let direct: Option<Vec<String>> = ext_uses
-            .iter()
-            .find(|u| u.local == *head && !u.target.ends_with("::*"))
-            .map(|u| {
-                let mut v = segs(&u.target);
-                v.extend(tail.iter().cloned());
-                v
-            })
-            .or_else(|| {
-                externs
-                    .iter()
-                    .any(|(n, _)| n == head)
-                    .then(|| q.path.to_vec())
-            });
-        let explicit = direct.is_some();
-        let (abs, sure_head): (Vec<Vec<String>>, bool) = match direct {
-            Some(a) => (vec![a], true),
-            None => {
-                let globs: Vec<Vec<String>> = ext_uses
-                    .iter()
-                    .filter_map(|u| u.target.strip_suffix("::*"))
-                    .map(|t| {
-                        let mut v = segs(t);
-                        v.extend(q.path.iter().cloned());
-                        v
-                    })
-                    .collect();
-                let all_globs = idx.uses.get(file).into_iter().flatten().chain(ext_uses.iter())
-                    .filter(|u| u.target.ends_with("::*"))
-                    .count();
-                let sole = all_globs == 1 && globs.len() == 1;
-                (globs, sole)
-            }
-        };
+        let (cands, sure_head, explicit) = Self::extern_candidates(idx, file, q)?;
+        let externs = idx.externs.get(idx.file_crate.get(file)?)?;
         let mut found: Vec<NodeIndex> = Vec::new();
         let mut any_extern = false;
-        for path in &abs {
-            let Some(dir) = path
+        for (parent, name) in &cands {
+            let Some(dir) = parent
                 .first()
                 .and_then(|h| externs.iter().find(|(n, _)| n == h))
                 .map(|(_, d)| d.clone())
@@ -766,20 +1026,37 @@ impl SymbolGraph {
                 continue;
             };
             any_extern = true;
-            for canon in self.canonical_paths(idx, &dir, &path[1..], 0) {
-                let key = if canon.is_empty() {
-                    q.name.to_owned()
-                } else {
-                    format!("{canon}::{}", q.name)
-                };
-                for &n in idx.by_item.get(&(dir.clone(), key)).into_iter().flatten() {
-                    if matches!(
-                        self.graph[n].kind,
-                        SymbolKind::Function | SymbolKind::Method
-                    ) {
-                        found.push(n);
+            let rel = &parent[1..];
+            let mut keys: Vec<String> = idx
+                .canonical_paths(&dir, rel, 0)
+                .into_iter()
+                .map(|c| {
+                    if c.is_empty() {
+                        name.clone()
+                    } else {
+                        format!("{c}::{name}")
                     }
-                }
+                })
+                .collect();
+            let mut full = rel.to_vec();
+            full.push(name.clone());
+            keys.extend(idx.canonical_paths(&dir, &full, 0));
+            keys.sort();
+            keys.dedup();
+            for key in keys {
+                found.extend(
+                    idx.by_item
+                        .get(&(dir.clone(), key))
+                        .into_iter()
+                        .flatten()
+                        .copied()
+                        .filter(|&n| {
+                            matches!(
+                                self.graph[n].kind,
+                                SymbolKind::Function | SymbolKind::Method
+                            )
+                        }),
+                );
             }
         }
         if !any_extern || (found.is_empty() && !explicit) {
@@ -791,7 +1068,7 @@ impl SymbolGraph {
             file,
             name = q.name,
             candidates = found.len(),
-            "cross-crate path call resolved"
+            "cross-crate call resolved"
         );
         Some(match found.as_slice() {
             [] => Outcome::Gap(GapReason::Unbound),
@@ -808,46 +1085,6 @@ impl SymbolGraph {
             }
             _ => Outcome::Hit(found, Status::May),
         })
-    }
-
-    /// The crate-relative paths at which `segs` is defined in crate `dir`, following `pub use` re-exports.
-    fn canonical_paths(&self, idx: &Index, dir: &str, segs: &[String], depth: usize) -> Vec<String> {
-        const MAX_HOPS: usize = 8;
-        let joined = segs.join("::");
-        if idx.by_item.contains_key(&(dir.to_owned(), joined.clone())) {
-            return vec![joined];
-        }
-        let Some((last, parent)) = segs.split_last() else {
-            return Vec::new();
-        };
-        if depth >= MAX_HOPS {
-            return Vec::new();
-        }
-        let mut out = Vec::new();
-        let module = parent.join("::");
-        for u in idx
-            .pubuses
-            .get(&(dir.to_owned(), module))
-            .into_iter()
-            .flatten()
-        {
-            let rel = rel_path(&u.target);
-            let next: Vec<String> = if let Some(glob) = rel.strip_suffix("::*") {
-                glob.split("::")
-                    .filter(|s| !s.is_empty())
-                    .map(str::to_owned)
-                    .chain(std::iter::once(last.clone()))
-                    .collect()
-            } else if u.local == *last {
-                rel.split("::").map(str::to_owned).collect()
-            } else {
-                continue;
-            };
-            out.extend(self.canonical_paths(idx, dir, &next, depth + 1));
-        }
-        out.sort();
-        out.dedup();
-        out
     }
 
     /// `Q::name(..)`: candidates whose enclosing type or module is `Q`.
@@ -981,7 +1218,12 @@ impl SymbolGraph {
                     call.local,
                 );
                 let qualifier = self.call_qualifier(idx, call);
-                self.record_call(call, outcome, qualifier);
+                let capped = call.in_macro
+                    && !call
+                        .macro_exact
+                        .as_deref()
+                        .is_some_and(|m| !idx.declared_macros.contains(m));
+                self.record_call(call, outcome, qualifier, capped);
             }
         }
     }
@@ -1007,15 +1249,15 @@ impl SymbolGraph {
             let typed = call
                 .receiver
                 .as_ref()
-                .and_then(|r| self.receiver_type(idx, &call.caller, r))
+                .and_then(|r| self.receiver_ty(idx, &call.caller, r))
+                .map(|t| idx.real_type_name(&t.file, &t.head))
                 .filter(|t| !idx.deref_types.contains(t));
             return Some(match (&call.receiver, typed) {
                 (Some(Receiver::SelfValue), Some(t)) => CallQualifier::SelfType(t),
-                (Some(Receiver::Typed(_) | Receiver::Field(..)), Some(t)) => CallQualifier::Typed(t),
+                (Some(_), Some(t)) => CallQualifier::Typed(t),
                 _ => unknown,
             });
         }
-        let aliases = &idx.aliases;
         let q = call.qualifier.as_deref()?;
         let real = match q {
             "crate" | "self" | "super" => return None,
@@ -1029,7 +1271,7 @@ impl SymbolGraph {
                 .and_then(|u| u.target.rsplit("::").next().map(str::to_owned))
                 .unwrap_or_else(|| q.to_owned()),
         };
-        (!aliases.contains(&real)).then_some(CallQualifier::Path(real))
+        (!idx.aliases.contains(&real)).then_some(CallQualifier::Path(real))
     }
 
     /// Whether the qualified unresolved call `q` could be a call of `rec` (never guesses: doubt is `Maybe`).
@@ -1072,6 +1314,7 @@ impl SymbolGraph {
                 if rec.kind == SymbolKind::Method
                     && rec
                         .signature
+                        .as_ref()
                         .is_none_or(|s| s.accepts_method_call(*args))
                 {
                     Admit::Maybe
@@ -1082,7 +1325,13 @@ impl SymbolGraph {
         }
     }
 
-    fn record_call(&mut self, call: &CallSite, outcome: Outcome, qualifier: Option<CallQualifier>) {
+    fn record_call(
+        &mut self,
+        call: &CallSite,
+        outcome: Outcome,
+        qualifier: Option<CallQualifier>,
+        capped: bool,
+    ) {
         let caller = &call.caller;
         let from = self.index.get(caller).copied();
         match outcome {
@@ -1121,7 +1370,7 @@ impl SymbolGraph {
                 }
             }
             Outcome::Hit(nodes, status) => {
-                let status = if call.in_macro {
+                let status = if capped {
                     status.meet(Status::May)
                 } else {
                     status

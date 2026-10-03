@@ -13,7 +13,8 @@ use gob_ir::{Digest, Facet, FacetDigest as IrFacet, NodeId, Operator, Segment, T
 
 use crate::adapter::ParseStatus;
 use crate::model::{
-    Digests, FacetDigest, MethodSig, SelfKind, SymbolKind, SymbolRecord, UnitExtras, Visibility,
+    Digests, FacetDigest, MethodSig, RetType, SelfKind, SymbolKind, SymbolRecord, UnitExtras,
+    Visibility,
 };
 use crate::symref::Symref;
 
@@ -25,6 +26,10 @@ pub(crate) const ATTR_IMPLEMENTS: &str = "implements";
 pub(crate) const ATTR_SELF_KIND: &str = "self_kind";
 /// Unit attribute: the parameter count of a function, `self` excluded.
 pub(crate) const ATTR_ARITY: &str = "arity";
+/// Unit attribute: the plain head of a function's declared return type.
+pub(crate) const ATTR_RET: &str = "ret";
+/// Unit attribute: the plain first generic argument of a function's declared return type.
+pub(crate) const ATTR_RET_ARG: &str = "ret_arg";
 /// Attribute key holding the slug of a markdown section's parent section.
 pub(crate) const ATTR_SECTION_PARENT: &str = "section.parent";
 /// Hole kind of a syntax error.
@@ -234,7 +239,15 @@ fn signature_of(term: &Term, n: NodeId) -> Option<MethodSig> {
     let attrs = term.node(n).attrs();
     let self_kind = SelfKind::from_attr(attrs.get_str(ATTR_SELF_KIND)?)?;
     let arity = attrs.get_str(ATTR_ARITY)?.parse().ok()?;
-    Some(MethodSig { self_kind, arity })
+    let ret = attrs.get_str(ATTR_RET).map(|head| RetType {
+        head: head.to_owned(),
+        arg: attrs.get_str(ATTR_RET_ARG).map(str::to_owned),
+    });
+    Some(MethodSig {
+        self_kind,
+        arity,
+        ret,
+    })
 }
 
 /// Computes the view of `term` for `path`.

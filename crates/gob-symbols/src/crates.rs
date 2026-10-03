@@ -151,7 +151,7 @@ impl CrateDeps {
         }
         let text =
             std::fs::read_to_string(self.root.join(krate).join("Cargo.toml")).unwrap_or_default();
-        let mut deps = NamedDeps::new();
+        let mut deps = Vec::new();
         for (name, inline) in dependency_entries(&text) {
             let extern_name = name.replace('-', "_");
             if let Some(p) = quoted_value(&inline, "path") {

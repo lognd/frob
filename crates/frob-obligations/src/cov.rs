@@ -16,8 +16,8 @@ use gob_directives::DirectiveRecord;
 use gob_languages::Language;
 use gob_rules::{Finding, Severity};
 use gob_symbols::{
-    Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind, SymbolRecord,
-    Symref, Target,
+    Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind,
+    SymbolRecord, Symref, Target,
 };
 use gob_text::{FileInterner, Span};
 

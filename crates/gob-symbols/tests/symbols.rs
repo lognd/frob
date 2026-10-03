@@ -518,3 +518,160 @@ fn admits_pins_the_named_type_and_rules_out_the_rest() {
         "a method call is never a free function"
     );
 }
+
+/// The (caller, callee) pairs of every Resolved edge in `g`, as strings.
+fn resolved_pairs(g: &SymbolGraph) -> Vec<(String, String)> {
+    g.call_edges()
+        .iter()
+        .filter_map(|e| match e {
+            CallEdge::Resolved { caller, callee } => Some((caller.to_string(), callee.to_string())),
+            _ => None,
+        })
+        .collect()
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.resolve_site
+#[test]
+fn field_types_type_self_and_variable_receivers() {
+    let src = "struct Inner; struct Other;\n\
+               impl Inner { fn go(&self) {} }\n\
+               impl Other { fn go(&self) {} }\n\
+               struct Outer { inner: Inner, tag: u8 }\n\
+               impl Outer { fn run(&self) { self.inner.go(); } }\n\
+               fn user(o: Outer) { o.inner.go(); }\n";
+    let resolved = resolved_pairs(&graph_of(&[("c/src/lib.rs", src)]));
+    for caller in ["Outer.run", "user"] {
+        assert!(
+            resolved.contains(&(
+                format!("c/src/lib.rs::{caller}"),
+                "c/src/lib.rs::Inner.go".to_owned()
+            )),
+            "{caller} resolves through the field table: {resolved:?}"
+        );
+    }
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.resolve_site
+#[test]
+fn field_types_drop_for_wrappers_generics_and_duplicate_structs() {
+    let call = |src: &str| {
+        let g = graph_of(&[("c/src/lib.rs", src)]);
+        resolved_pairs(&g)
+            .into_iter()
+            .any(|(_, callee)| callee.ends_with("Inner.go"))
+    };
+    let items = "struct Inner; struct Other;\n\
+                 impl Inner { fn go(&self) {} }\n\
+                 impl Other { fn go(&self) {} }\n";
+    assert!(
+        !call(&format!(
+            "{items}struct O {{ f: Box<Inner> }}\nimpl O {{ fn r(&self) {{ self.f.go(); }} }}\n"
+        )),
+        "a deref wrapper hides the field type"
+    );
+    assert!(
+        !call(&format!(
+            "{items}struct O<T> {{ f: T }}\nimpl<T> O<T> {{ fn r(&self) {{ self.f.go(); }} }}\n"
+        )),
+        "a generic field type is not concrete"
+    );
+    assert!(
+        !call(&format!(
+            "{items}mod m {{ pub struct O {{ pub f: u8 }} }}\nstruct O {{ f: Inner }}\nimpl O {{ fn r(&self) {{ self.f.go(); }} }}\n"
+        )),
+        "two structs named O: the field table is ambiguous"
+    );
+    assert!(call(&format!(
+        "{items}struct O {{ f: Inner }}\nimpl O {{ fn r(&self) {{ self.f.go(); }} }}\n"
+    )));
+}
+
+// frob:tests crates/gob-symbols/src/model.rs::MethodSig
+#[test]
+fn method_signatures_record_self_kind_arity_and_return() {
+    use gob_symbols::SelfKind;
+    let fs = extract(
+        "c/src/lib.rs",
+        "struct S;\nimpl S {\n fn a() {}\n fn b(&self, x: u8) -> Option<S> { None }\n fn c(&mut self) {}\n fn d(self, x: u8, y: u8) -> Self { self }\n}\nfn free(x: u8) {}\n",
+    );
+    let sig = |s: &str| {
+        find(&fs, s)
+            .signature
+            .clone()
+            .unwrap_or_else(|| panic!("no sig {s}"))
+    };
+    assert_eq!(
+        (
+            sig("c/src/lib.rs::S.a").self_kind,
+            sig("c/src/lib.rs::S.a").arity
+        ),
+        (SelfKind::None, 0)
+    );
+    let b = sig("c/src/lib.rs::S.b");
+    assert_eq!((b.self_kind, b.arity), (SelfKind::Ref, 1));
+    let ret = b.ret.expect("Option<S> is recorded");
+    assert_eq!(
+        (ret.head.as_str(), ret.arg.as_deref()),
+        ("Option", Some("S"))
+    );
+    assert_eq!(sig("c/src/lib.rs::S.c").self_kind, SelfKind::RefMut);
+    let d = sig("c/src/lib.rs::S.d");
+    assert_eq!((d.self_kind, d.arity), (SelfKind::Value, 2));
+    assert_eq!(d.ret.expect("Self").head, "Self");
+    assert_eq!(sig("c/src/lib.rs::free").self_kind, SelfKind::None);
+    assert!(find(&fs, "c/src/lib.rs::S").signature.is_none());
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.resolve_site
+#[test]
+fn unknown_receiver_calls_admit_only_methods_that_fit_the_call_shape() {
+    let src = "struct A; struct B; struct C;\n\
+               impl A { fn go(&self) {} }\n\
+               impl B { fn go() {} }\n\
+               impl C { fn go(&self, x: u8) {} }\n\
+               fn user(v: Vec<u8>) { make().go(); }\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    let callees: Vec<String> = g
+        .edges_with_status()
+        .iter()
+        .filter(|e| e.from.to_string().ends_with("::user") && e.to.is_some())
+        .filter_map(|e| e.to.as_ref().map(ToString::to_string))
+        .collect();
+    assert_eq!(
+        callees,
+        ["c/src/lib.rs::A.go"],
+        "no-self B.go and two-argument C.go cannot be `x.go()`"
+    );
+    let rec = |s: &str| {
+        g.get(&Symref::parse(&format!("c/src/lib.rs::{s}")).unwrap())
+            .unwrap()
+            .clone()
+    };
+    let q = CallQualifier::Receiver { args: Some(0) };
+    assert_eq!(g.admits(&q, &rec("A.go")), Admit::Maybe);
+    assert_eq!(g.admits(&q, &rec("B.go")), Admit::No);
+    assert_eq!(g.admits(&q, &rec("C.go")), Admit::No);
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.resolve_site
+#[test]
+fn return_types_type_chained_and_unwrapped_receivers() {
+    let src = "struct Store;\n\
+               impl Store { fn open() -> Result<Store, ()> { Ok(Store) } fn get(&self) {} }\n\
+               struct Other;\n\
+               impl Other { fn get(&self) {} }\n\
+               fn make() -> Store { Store }\n\
+               fn a() { let s = make(); s.get(); }\n\
+               fn b() { let s = Store::open().unwrap(); s.get(); }\n\
+               fn c() { let s = Store::open()?; s.get(); }\n";
+    let resolved = resolved_pairs(&graph_of(&[("c/src/lib.rs", src)]));
+    for caller in ["a", "b", "c"] {
+        assert!(
+            resolved.contains(&(
+                format!("c/src/lib.rs::{caller}"),
+                "c/src/lib.rs::Store.get".to_owned()
+            )),
+            "{caller}: {resolved:?}"
+        );
+    }
+}

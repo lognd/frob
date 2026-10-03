@@ -63,18 +63,18 @@ pub use adapter::{
     Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
     ParseStatus, Precision,
 };
+pub use crates::CrateDeps;
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
 pub use gob_ir::DIGEST_SCHEME;
-pub use crates::CrateDeps;
 pub use graph::{
     CallEdge, EdgeKind, FileInfo, GapReason, ReachSet, ResolveError, Status, StatusEdge,
     SymbolGraph,
 };
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
-    CallSite, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge, LocalBinding, MethodSig,
-    Receiver, RefKind, RefSite, SelfKind, SymbolKind, SymbolRecord, UnitExtras, UseBinding,
-    Visibility, collapse_ws,
+    CallRef, CallSite, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge, LocalBinding,
+    MethodSig, Receiver, RefKind, RefSite, RetType, SelfKind, SymbolKind, SymbolRecord, UnitExtras,
+    UseBinding, Visibility, collapse_ws,
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{

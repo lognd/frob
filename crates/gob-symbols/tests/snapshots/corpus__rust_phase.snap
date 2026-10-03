@@ -20,4 +20,4 @@ fidelity F3 status Complete
 tests/corpus/rust/ops/phase.rs::shout Function Public parent=
 tests/corpus/rust/ops/phase.rs::greet Function Private parent=
 == edges ==
-Calls tests/corpus/rust/ops/phase.rs::shout -> tests/corpus/rust/ops/phase.rs::greet May None None
+Calls tests/corpus/rust/ops/phase.rs::shout -> tests/corpus/rust/ops/phase.rs::greet Must None None

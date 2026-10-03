@@ -193,13 +193,24 @@ impl SelfKind {
     }
 }
 
-/// The calling shape of a function or method: its `self` kind and argument count.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+/// A declared return type reduced to what a method call on its value can reach.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RetType {
+    /// The plain head type (`Foo` in `&Foo`, `Result` in `Result<Foo, E>`, `Self` for the impl type).
+    pub head: String,
+    /// The plain first generic argument (`Foo` in `Result<Foo, E>`), when it is a plain type.
+    pub arg: Option<String>,
+}
+
+/// The calling shape of a function or method: its `self` kind, argument count and return type.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MethodSig {
     /// How the callable takes `self`.
     pub self_kind: SelfKind,
     /// Number of parameters other than `self`.
     pub arity: usize,
+    /// The declared return type, when it is a plain path type (wrappers and non-path types are not recorded).
+    pub ret: Option<RetType>,
 }
 
 impl MethodSig {
@@ -284,6 +295,10 @@ pub struct CallSite {
     /// True when the qualifying path is a generic parameter or a bracketed type: no usable qualifier.
     #[serde(default)]
     pub opaque_qualifier: bool,
+    /// The std macro (`assert_eq`, `format`, ...) whose arguments were parsed as ordinary expressions around
+    /// this call: the call is as certain as one outside a macro unless the repository declares a macro of that name.
+    #[serde(default)]
+    pub macro_exact: Option<String>,
     /// Number of call arguments (receiver excluded); `None` when not syntactically known (macro arguments).
     #[serde(default)]
     pub args: Option<usize>,
@@ -307,8 +322,25 @@ pub enum Receiver {
     Typed(String),
     /// A field of the receiver `base` (`self.paths`, `x.node`): typed through the struct field table.
     Field(Box<Receiver>, String),
+    /// The value of a call whose callee has a declared return type (`store_in(..)`, `Type::open(..)`, `x.term()`).
+    Ret(Box<CallRef>),
+    /// The success value of a `Result` or `Option` receiver (`e?`, `e.unwrap()`, `e.expect(..)`).
+    Unwrap(Box<Receiver>),
     /// Any other expression: its type is unknown.
     Expr,
+}
+
+/// The callee of a call whose value is used as a receiver, kept so the graph can look up its return type.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct CallRef {
+    /// Simple callee name.
+    pub name: String,
+    /// The full qualifying path (`Type` in `Type::open(..)`), empty for bare and method calls.
+    pub path: Vec<String>,
+    /// For a method call, its receiver.
+    pub recv: Option<Receiver>,
+    /// Argument count, receiver excluded.
+    pub args: usize,
 }
 
 /// A struct field whose declared type is a concrete path type (the field type table).
