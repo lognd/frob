@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T08:35:37Z"
+updated = "2026-10-03T08:35:38Z"
 idempotency_key = "m2-rel-release-cut"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-release/src/cut.rs", "crates/frob-land/src/**", "crates/frob/src/release_cmd.rs", "crates/gob-git/src/**", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-release/Cargo.toml", "crates/frob-release/src/lib.rs", "crates/frob/tests/release_cut.rs", "Cargo.lock", "crates/gob-git/tests/**", "docs/reference/cli/frob.md", "docs/design/releases.md"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given status not ready, when cut runs without --override, then it exits 3 with the remedy"
-bound = false
+bound = true
 +++
 
 Requires status ready or `--override --reason` (recorded as a ledger event); bump, compile CHANGELOG.md and remove fragments, commit on the base branch through the land machinery (CAS, one commit), tag frob-vVERSION (annotated, local; push is opt-in), and record the cut (version, commit, tag oid) as a ledger event that REL001 reads. Refuses a dirty tree and an existing tag.

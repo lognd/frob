@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T08:35:38Z"
+digest = "5633f04185c953f3eb23ff4f7650643c97ed61d7090f3b5d679d125158036fc5"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+────────────
+ Nextest run ID c737b937-c457-475a-968c-4721088ddd6d with nextest profile: default
+    Starting 2 tests across 16 binaries (112 tests skipped)
+        PASS [   0.037s] (1/2) frob-release::cut not_ready_refuses_and_leaves_the_tree_and_refs_alone
+        PASS [   0.219s] (2/2) frob-cli::release_cut not_ready_without_override_exits_3_with_the_remedy
+────────────
+     Summary [   0.220s] 2 tests run: 2 passed, 112 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-release -E 'test(=not_ready_without_override_exits_3_with_the_remedy) | test(=not_ready_refuses_and_leaves_the_tree_and_refs_alone)'"
+size = 556
+status = "measured"
+tests = ["not_ready_refuses_and_leaves_the_tree_and_refs_alone", "not_ready_without_override_exits_3_with_the_remedy"]
+at = "2026-10-03T08:35:38Z"
+actor = "lognd"
+rev = 1
