@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use crate::error::Result;
 use crate::fold::fold;
-use crate::model::{ObjectId, ObjectKind};
+use crate::model::{Day, Object, ObjectId, ObjectKind};
 use crate::store::PmStore;
 
 /// Seconds an event's `at` may differ from its ULID time before it is flagged.
@@ -60,6 +60,7 @@ impl PmStore<'_> {
         };
         for kind in ObjectKind::ALL {
             let mut aliases: BTreeMap<String, Vec<String>> = BTreeMap::new();
+            let mut highest: BTreeMap<(Day, Day), u32> = BTreeMap::new();
             for (dir, files) in self.files_by_dir(&tip, kind)? {
                 report.objects += 1;
                 let mut found = Vec::new();
@@ -74,6 +75,10 @@ impl PmStore<'_> {
                     }));
                 let Some(c) = checked else { continue };
                 report.events += c.events;
+                if let Some((start, end, ordinal)) = c.range {
+                    let top = highest.entry((start, end)).or_insert(0);
+                    *top = (*top).max(ordinal);
+                }
                 aliases.entry(c.alias).or_default().push(dir.clone());
                 if c.drift {
                     let id = c.id;
@@ -90,6 +95,10 @@ impl PmStore<'_> {
                 }
             }
             for (alias, dirs) in aliases.into_iter().filter(|(_, d)| d.len() > 1) {
+                if fix && kind == ObjectKind::Cycle {
+                    self.renumber_duplicates(&alias, &dirs, &mut highest, &mut report)?;
+                    continue;
+                }
                 report.issues.push(PmIssue {
                     code: "E-PM-ALIAS",
                     kind,
@@ -105,6 +114,40 @@ impl PmStore<'_> {
             "pm doctor finished"
         );
         Ok(report)
+    }
+
+    /// Give every cycle of a duplicated `alias` but the earliest the next free ordinal of its range.
+    ///
+    /// `dirs` are in creation (ULID) order. Each repair is a `field` event setting `ordinal`,
+    /// the way any other change to a cycle is recorded, so history is appended to and never rewritten.
+    fn renumber_duplicates(
+        self,
+        alias: &str,
+        dirs: &[String],
+        highest: &mut BTreeMap<(Day, Day), u32>,
+        report: &mut PmReport,
+    ) -> Result<()> {
+        // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
+        for dir in dirs.iter().skip(1) {
+            let Ok(id) = dir.parse::<ObjectId>() else {
+                continue;
+            };
+            let Some(Object::Cycle(c)) = self.get(ObjectKind::Cycle, id)?.map(|f| f.object) else {
+                continue;
+            };
+            let top = highest.entry((c.start, c.end)).or_insert(0);
+            *top += 1;
+            let ordinal = *top;
+            self.set_field(
+                ObjectKind::Cycle,
+                id,
+                "ordinal",
+                Some(toml::Value::Integer(i64::from(ordinal))),
+            )?;
+            tracing::info!(cycle = %id, alias, ordinal, "duplicate cycle alias renumbered");
+            report.fixed.push(id);
+        }
+        Ok(())
     }
 
     /// Check one object directory, pushing `(code, message)` problems onto `found`; `None` when it cannot be folded.
@@ -185,6 +228,10 @@ impl PmStore<'_> {
             id,
             events: events.len(),
             alias: folded.object.alias(),
+            range: match &folded.object {
+                Object::Cycle(c) => Some((c.start, c.end, c.ordinal)),
+                Object::Milestone(_) => None,
+            },
             drift,
         }))
     }
@@ -195,5 +242,7 @@ struct Checked {
     id: ObjectId,
     events: usize,
     alias: String,
+    /// A cycle's `(start, end, ordinal)`.
+    range: Option<(Day, Day, u32)>,
     drift: bool,
 }

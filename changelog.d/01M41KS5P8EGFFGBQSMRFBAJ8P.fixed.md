@@ -1,0 +1,1 @@
+ticket doctor no longer reports E-PM-CONFLICT for early-closed cycles or E-PM-ALIAS for cycles recreated on the same dates: the alias suffix is now stored at creation, and ticket doctor --fix numbers existing duplicates in creation order.

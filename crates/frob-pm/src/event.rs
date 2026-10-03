@@ -46,6 +46,9 @@ pub struct CreateData {
     /// Milestone: initial exit criteria texts.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub criteria: Vec<String>,
+    /// Cycle: position among cycles sharing the date range, assigned at creation; absent means 1.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ordinal: Option<u32>,
 }
 
 /// Add or remove.

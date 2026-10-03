@@ -1118,3 +1118,106 @@ fn plan_without_enforced_capacity_is_refused_unless_points_is_given() {
     assert_eq!(v["data"]["picks"].as_array().expect("picks").len(), 1);
     assert_eq!(v["data"]["capacity_limit"], 4);
 }
+
+/// The issue codes `ticket doctor` reports for cycles, with `--fix` when asked.
+fn pm_codes(repo: &Repo, fix: bool) -> Vec<String> {
+    let mut args = vec!["ticket", "doctor"];
+    if fix {
+        args.push("--fix");
+    }
+    let out = repo.frob(&args);
+    json(&out)["data"]["pm_issues"]
+        .as_array()
+        .expect("pm_issues")
+        .iter()
+        .map(|i| i["code"].as_str().expect("code").to_owned())
+        .collect()
+}
+
+#[test]
+fn doctor_is_clean_after_an_early_close_and_a_same_day_recreate() {
+    // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
+    // frob:tests crates/frob-pm/src/fold.rs::apply_transition
+    // frob:tests crates/frob-pm/src/store.rs::PmStore.create
+    let repo = Repo::new();
+    let (s, e) = (utc(0), utc(1));
+    let first = utc_window(&repo, 0, 1);
+    repo.ok(&["cycle", "close", id(&first)]);
+    assert_eq!(pm_codes(&repo, false), Vec::<String>::new());
+    let second = repo.ok(&["cycle", "new", "--start", &s, "--end", &e, "--goal", "c"]);
+    let (a, b) = (
+        first["alias"].as_str().expect("alias"),
+        second["data"]["cycle"]["alias"].as_str().expect("alias"),
+    );
+    assert_ne!(a, b);
+    assert_eq!(b, format!("{a}.2"));
+    assert_eq!(pm_codes(&repo, false), Vec::<String>::new());
+    // The suffix is stored, so the event and the frontmatter both carry it.
+    let stored = folded(&repo);
+    assert_eq!(stored.iter().map(|c| c.ordinal).collect::<Vec<_>>(), [1, 2]);
+}
+
+#[test]
+fn close_with_next_goal_on_a_reused_range_gets_a_unique_alias() {
+    // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
+    // frob:tests crates/frob/src/cycle_cmd.rs::create_next
+    let repo = Repo::new();
+    let first = utc_window(&repo, -2, -1);
+    repo.ok(&["cycle", "close", id(&first)]);
+    let (s, e) = (utc(-2), utc(-1));
+    // Same range as the closed one, then closing it creates a following cycle with a unique alias.
+    let again = repo.ok(&["cycle", "new", "--start", &s, "--end", &e, "--goal", "x"]);
+    assert_eq!(
+        again["data"]["cycle"]["alias"],
+        format!("{s}..{e}.2").as_str()
+    );
+    repo.ok(&[
+        "cycle",
+        "close",
+        id(&again["data"]["cycle"]),
+        "--next-goal",
+        "n",
+        "--next-days",
+        "2",
+    ]);
+    assert_eq!(pm_codes(&repo, false), Vec::<String>::new());
+}
+
+#[test]
+fn doctor_fix_numbers_existing_duplicate_aliases_in_creation_order() {
+    // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
+    // frob:tests crates/frob-pm/src/doctor.rs::PmStore.renumber_duplicates
+    let repo = Repo::new();
+    let (s, e) = (utc(0), utc(1));
+    let first = utc_window(&repo, 0, 1);
+    repo.ok(&["cycle", "close", id(&first)]);
+    let second = repo.ok(&["cycle", "new", "--start", &s, "--end", &e, "--goal", "b"]);
+    repo.ok(&["cycle", "close", id(&second["data"]["cycle"])]);
+    let third = repo.ok(&["cycle", "new", "--start", &s, "--end", &e, "--goal", "c"]);
+    // A ledger written before suffixes were stored: every cycle of the range claims ordinal 1.
+    let ledger = repo.ledger();
+    let store = PmStore::new(&ledger);
+    for c in folded(&repo).iter().filter(|c| c.ordinal > 1) {
+        store
+            .set_field(ObjectKind::Cycle, c.id, "ordinal", Some(1.into()))
+            .expect("legacy ordinal");
+    }
+    let before = pm_codes(&repo, false);
+    assert_eq!(before, vec!["E-PM-ALIAS".to_owned()]);
+    pm_codes(&repo, true);
+    assert_eq!(pm_codes(&repo, false), Vec::<String>::new());
+    let ids: Vec<String> = [&first, &second["data"]["cycle"], &third["data"]["cycle"]]
+        .iter()
+        .map(|c| id(c).to_owned())
+        .collect();
+    let mut cycles = folded(&repo);
+    cycles.sort_by_key(|c| c.id);
+    assert_eq!(
+        cycles.iter().map(|c| c.id.to_string()).collect::<Vec<_>>(),
+        ids
+    );
+    assert_eq!(
+        cycles.iter().map(|c| c.ordinal).collect::<Vec<_>>(),
+        [1, 2, 3]
+    );
+}

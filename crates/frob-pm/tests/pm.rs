@@ -575,3 +575,57 @@ fn bindings_name_the_deciding_event_and_removal_records_the_moved_map() {
         });
     assert_eq!(moved, Some(vec![1, 0, 2]));
 }
+
+/// Events of a cycle `2026-10-03..2026-10-09` created that morning, then one `transition` body at 13:32.
+fn cycle_events(transition: &str) -> Vec<frob_pm::event::PmEvent> {
+    use frob_pm::event::PmEvent;
+    let create = "kind = \"create\"\nobject = \"cycle\"\ngoal = \"g\"\nstart = \"2026-10-03\"\nend = \"2026-10-09\"\nat = \"2026-10-03T11:34:47Z\"\nactor = \"a\"\nrev = 1\n";
+    let close = format!(
+        "kind = \"transition\"\n{transition}at = \"2026-10-03T13:32:45Z\"\nactor = \"a\"\nrev = 1\n"
+    );
+    vec![
+        PmEvent::parse("01M40RQ5772BQBYHSPJY7Z8QK0".parse().expect("id"), create).expect("create"),
+        PmEvent::parse("01M40ZF55YA2ZS64T1AKXSSZ42".parse().expect("id"), &close).expect("close"),
+    ]
+}
+
+#[test]
+fn a_legacy_close_recorded_from_planned_on_a_started_day_folds_cleanly() {
+    // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
+    // frob:tests crates/frob-pm/src/fold.rs::apply_transition
+    let id = "01M40RQ5772BQBYHSPJY7Z8QJZ".parse().expect("id");
+    let legacy = cycle_events("from = \"planned\"\nto = \"closed\"\nended = \"2026-10-03\"\n");
+    let folded = fold::fold(ObjectKind::Cycle, id, &legacy).expect("fold");
+    assert!(folded.conflicts.is_empty(), "{:?}", folded.conflicts);
+    let current = cycle_events("from = \"active\"\nto = \"closed\"\n");
+    assert!(
+        fold::fold(ObjectKind::Cycle, id, &current)
+            .expect("fold")
+            .conflicts
+            .is_empty()
+    );
+}
+
+#[test]
+fn a_genuinely_wrong_from_is_still_a_conflict() {
+    // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
+    // frob:tests crates/frob-pm/src/fold.rs::apply_transition
+    let id = "01M40RQ5772BQBYHSPJY7Z8QJZ".parse().expect("id");
+    let wrong = cycle_events("from = \"closed\"\nto = \"closed\"\n");
+    let folded = fold::fold(ObjectKind::Cycle, id, &wrong).expect("fold");
+    assert_eq!(folded.conflicts.len(), 1);
+    // `planned` is tolerated only while the cycle is still open: a second close from planned conflicts.
+    let mut twice = cycle_events("from = \"planned\"\nto = \"closed\"\n");
+    let again = "kind = \"transition\"\nfrom = \"planned\"\nto = \"closed\"\nat = \"2026-10-03T14:00:00Z\"\nactor = \"a\"\nrev = 1\n";
+    twice.push(
+        frob_pm::event::PmEvent::parse("01M40ZF55YA2ZS64T1AKXSSZ43".parse().expect("id"), again)
+            .expect("again"),
+    );
+    assert_eq!(
+        fold::fold(ObjectKind::Cycle, id, &twice)
+            .expect("fold")
+            .conflicts
+            .len(),
+        1
+    );
+}
