@@ -2,12 +2,12 @@
 id = "01M41ZSW6DZMBE5QWNGB6VY10G"
 title = "Test suite wall time is one test: split the real-repo perf test into a fixture test plus the scheduled bench, tune hot-crate opt-levels, enforce a per-test budget"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:50Z"
-updated = "2026-10-03T22:57:50Z"
+updated = "2026-10-03T22:58:04Z"
 scope = ["crates/frob-check/tests/perf.rs", "crates/frob-check/benches/**", "crates/frob-check/Cargo.toml", "crates/gob-ir/tests/deep.rs", "crates/frob-ack/tests/workspace.rs", "Cargo.toml", ".config/nextest.toml", "crates/gob-dev/src/ci.rs", "docs/design/build-test-ci.md", "Cargo.lock"]
 
 [[acceptance]]
