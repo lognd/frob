@@ -8,6 +8,8 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
+use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use tracing::{debug, trace};
 
@@ -202,6 +204,40 @@ pub struct ScopeGraph {
     decl_of_node: HashMap<NodeId, DeclId>,
     scope_of_node: HashMap<NodeId, ScopeId>,
     decl_index: HashMap<(ScopeId, String, Option<String>, bool), DeclId>,
+    memo: Memo,
+}
+
+/// Per-reference resolution cache, keyed by `RefId` (one cell per reference).
+///
+/// Cells fill lazily on the first [`ScopeGraph::resolve`]; any graph mutation that can change a
+/// resolution (an edge, a declaration, an opaque hint) empties them again.
+#[derive(Debug, Default)]
+struct Memo {
+    cells: Vec<OnceLock<Resolution>>,
+    /// Set once any cell was filled, so a mutation only pays to clear after a resolve.
+    filled: AtomicBool,
+}
+
+impl Clone for Memo {
+    fn clone(&self) -> Self {
+        Self {
+            cells: self.cells.clone(),
+            filled: AtomicBool::new(self.filled.load(Ordering::Relaxed)),
+        }
+    }
+}
+
+impl Memo {
+    /// Drop every cached resolution if any exist.
+    fn invalidate(&mut self) {
+        if *self.filled.get_mut() {
+            trace!(cells = self.cells.len(), "resolution cache invalidated");
+            for c in &mut self.cells {
+                *c = OnceLock::new();
+            }
+            *self.filled.get_mut() = false;
+        }
+    }
 }
 
 #[derive(Default)]
@@ -209,6 +245,22 @@ struct Acc {
     cands: BTreeMap<DeclId, Status>,
     unknown: bool,
     downgraded: bool,
+}
+
+/// What entering a scope during a resolution search yielded.
+enum Entered<'g> {
+    /// The scope was already visited on this search.
+    Seen,
+    /// A proven declaration was found: end the search.
+    Stop,
+    /// Continue through these outgoing edges.
+    Frame(Frame<'g>),
+}
+
+/// One scope on the search stack: its unvisited edges (next one last) and the path status.
+struct Frame<'g> {
+    edges: Vec<&'g Edge>,
+    path: Status,
 }
 
 impl ScopeGraph {
@@ -239,6 +291,7 @@ impl ScopeGraph {
             ?status,
             "scope edge"
         );
+        self.memo.invalidate();
         self.scopes[from.index()].edges.push(Edge {
             label,
             target: to,
@@ -257,6 +310,7 @@ impl ScopeGraph {
         status: Status,
         node: Option<NodeId>,
     ) -> DeclId {
+        self.memo.invalidate();
         let key = (
             scope,
             name.to_owned(),
@@ -310,6 +364,7 @@ impl ScopeGraph {
             scope,
             node,
         });
+        self.memo.cells.push(OnceLock::new());
         if let Some(n) = node {
             self.ref_of_node.insert(n, id);
         }
@@ -319,6 +374,7 @@ impl ScopeGraph {
     /// Attach an opaque-region hint to `scope`.
     pub fn add_opaque(&mut self, scope: ScopeId, hint: OpaqueHint) {
         debug!(scope = scope.0, ?hint, "opaque region hint");
+        self.memo.invalidate();
         self.scopes[scope.index()].hints.push(hint);
     }
 
@@ -367,15 +423,14 @@ impl ScopeGraph {
         self.scope_of_node.get(&node).copied()
     }
 
-    /// Resolve `name` as seen from `scope`.
+    /// Resolve `name` as seen from `scope` (uncached; see [`Self::resolve`] for references).
     ///
     /// # Panics
     ///
     /// Never; the internal `expect` is guarded by a length check.
     pub fn resolve_name(&self, scope: ScopeId, name: &str) -> Resolution {
         let mut acc = Acc::default();
-        let mut seen = BTreeSet::new();
-        self.visit(scope, name, Status::Must, &mut acc, &mut seen);
+        self.search(scope, name, &mut acc);
         let res = if acc.unknown || acc.cands.is_empty() {
             Resolution::Unknown
         } else if !acc.downgraded
@@ -390,22 +445,31 @@ impl ScopeGraph {
         res
     }
 
-    /// Resolve a reference.
+    /// Resolve a reference; the result is cached per reference until the graph next changes.
+    // frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
     pub fn resolve(&self, r: RefId) -> Resolution {
         let reference = &self.refs[r.index()];
-        self.resolve_name(reference.scope, &reference.name)
+        let cell = &self.memo.cells[r.index()];
+        if let Some(hit) = cell.get() {
+            trace!(reference = r.0, "resolution cache hit");
+            return hit.clone();
+        }
+        let res = self.resolve_name(reference.scope, &reference.name);
+        self.memo.filled.store(true, Ordering::Relaxed);
+        cell.get_or_init(|| res).clone()
     }
 
-    fn visit(
+    /// Enter `scope` on a path of status `path`: record its declarations and hints.
+    fn enter(
         &self,
         scope: ScopeId,
         name: &str,
         path: Status,
         acc: &mut Acc,
         seen: &mut BTreeSet<ScopeId>,
-    ) -> bool {
+    ) -> Entered<'_> {
         if !seen.insert(scope) {
-            return false;
+            return Entered::Seen;
         }
         let sc = &self.scopes[scope.index()];
         if sc.hints.iter().any(|h| h.may_define.covers(name)) {
@@ -427,21 +491,41 @@ impl ScopeGraph {
             }
         }
         if stop {
-            return true;
+            return Entered::Stop;
         }
         let mut edges: Vec<&Edge> = sc.edges.iter().collect();
         edges.sort_by(|a, b| a.label.cmp(&b.label).then(a.target.cmp(&b.target)));
-        for e in edges {
-            let st = path.meet(e.status);
+        Entered::Frame(Frame {
+            edges: edges.into_iter().rev().collect(),
+            path,
+        })
+    }
+
+    /// Depth-first search over edges with an explicit stack of frames; a proven (`Must`)
+    /// declaration ends the whole search, as the recursive version did.
+    fn search(&self, start: ScopeId, name: &str, acc: &mut Acc) {
+        let mut seen = BTreeSet::new();
+        let mut stack: Vec<Frame<'_>> = Vec::new();
+        match self.enter(start, name, Status::Must, acc, &mut seen) {
+            Entered::Frame(f) => stack.push(f),
+            Entered::Stop | Entered::Seen => return,
+        }
+        while let Some(top) = stack.last_mut() {
+            let Some(e) = top.edges.pop() else {
+                stack.pop();
+                continue;
+            };
+            let st = top.path.meet(e.status);
             if st == Status::Unknown {
                 acc.unknown = true;
                 continue;
             }
-            if self.visit(e.target, name, st, acc, seen) {
-                return true;
+            match self.enter(e.target, name, st, acc, &mut seen) {
+                Entered::Frame(f) => stack.push(f),
+                Entered::Stop => return,
+                Entered::Seen => {}
             }
         }
-        false
     }
 
     /// Whether some opaque region with `may_read_scope` can observe `decl`.
@@ -493,50 +577,54 @@ impl ScopeGraph {
         g
     }
 
-    fn walk(&mut self, term: &Term, id: NodeId, scope: ScopeId) {
-        let node = term.node(id);
-        let scopes_here = match &node.op {
-            Operator::Universal(
-                Universal::Unit { .. } | Universal::Anon { .. } | Universal::Bind { .. },
-            ) => true,
-            Operator::Adapter(_) => !node.binders.is_empty(),
-            Operator::Universal(_) => false,
-        };
-        if let Operator::Universal(Universal::Ref { name }) = &node.op {
-            self.reference(scope, name, Some(id));
-        }
-        if matches!(
-            node.op,
-            Operator::Universal(Universal::Opaque { .. } | Universal::Phase { .. })
-        ) && let Some(hint) = hint_from_attrs(node, id)
-        {
-            self.add_opaque(scope, hint);
-        }
-        let inner = if scopes_here {
-            if matches!(node.op, Operator::Universal(Universal::Unit { .. }))
-                && let Some(name) = &node.name
+    /// Derive scopes, declarations, references and hints with an explicit-stack preorder walk.
+    fn walk(&mut self, term: &Term, root: NodeId, root_scope: ScopeId) {
+        let mut stack = vec![(root, root_scope)];
+        while let Some((id, scope)) = stack.pop() {
+            let node = term.node(id);
+            let scopes_here = match &node.op {
+                Operator::Universal(
+                    Universal::Unit { .. } | Universal::Anon { .. } | Universal::Bind { .. },
+                ) => true,
+                Operator::Adapter(_) => !node.binders.is_empty(),
+                Operator::Universal(_) => false,
+            };
+            if let Operator::Universal(Universal::Ref { name }) = &node.op {
+                self.reference(scope, name, Some(id));
+            }
+            if matches!(
+                node.op,
+                Operator::Universal(Universal::Opaque { .. } | Universal::Phase { .. })
+            ) && let Some(hint) = hint_from_attrs(node, id)
             {
-                self.declare(
-                    scope,
-                    name,
-                    node.attrs.get_str(reserved::QUALIFIER),
-                    DeclKind::Unit,
-                    Status::Must,
-                    Some(id),
-                );
+                self.add_opaque(scope, hint);
             }
-            let s = self.add_scope(Some(id));
-            self.add_edge(s, Label::Lexical, scope, Status::Must);
-            for b in &node.binders {
-                self.declare(s, b, None, DeclKind::Binder, Status::Must, None);
+            let inner = if scopes_here {
+                if matches!(node.op, Operator::Universal(Universal::Unit { .. }))
+                    && let Some(name) = &node.name
+                {
+                    self.declare(
+                        scope,
+                        name,
+                        node.attrs.get_str(reserved::QUALIFIER),
+                        DeclKind::Unit,
+                        Status::Must,
+                        Some(id),
+                    );
+                }
+                let s = self.add_scope(Some(id));
+                self.add_edge(s, Label::Lexical, scope, Status::Must);
+                for b in &node.binders {
+                    self.declare(s, b, None, DeclKind::Binder, Status::Must, None);
+                }
+                s
+            } else {
+                scope
+            };
+            for (i, &c) in node.children.iter().enumerate().rev() {
+                let sub = if node.op.binds_over(i) { inner } else { scope };
+                stack.push((c, sub));
             }
-            s
-        } else {
-            scope
-        };
-        for (i, &c) in node.children.iter().enumerate() {
-            let sub = if node.op.binds_over(i) { inner } else { scope };
-            self.walk(term, c, sub);
         }
     }
 

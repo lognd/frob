@@ -71,8 +71,11 @@ internal errors because it may not use `std::process`. `cargo dev` exists only i
 gate is a `[[check.tool]]` stage in this repo's `frob.toml`, whose
 output maps to GEN001; it is repo-local, not a built-in rule that
 consumer repos inherit. It runs in `frob check` so drift fails locally
-before CI. Generated pages are committed so GitHub browsing and diffs
-work.
+before CI. Generated pages are committed so GitHub browsing, diffs and
+terminal reading work with no site build (owner decision, D81; ruff and
+uv build theirs into a site instead, and the survey supports either for
+a small reference set). Marking, the README region, the generated
+SUMMARY.md and the ledger-side generators are navigation.md 3.
 
 ## 4. Keeping ticket narrative out of code (enforced)
 

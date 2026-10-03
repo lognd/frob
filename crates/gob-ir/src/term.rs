@@ -301,43 +301,47 @@ pub struct Term {
     symrefs: Vec<Option<Symref>>,
 }
 
+/// Derive every unit and anon symref with one explicit-stack preorder walk.
+///
+/// Each stack entry carries the arena index of the nearest enclosing symref owner (`None` is the
+/// locator root); anon segments count per owner in preorder, exactly as the recursive pass did.
+// frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
 fn compute_symrefs(term: &Term) -> Vec<Option<Symref>> {
-    fn walk(term: &Term, id: NodeId, base: &Symref, counter: &mut u32, out: &mut [Option<Symref>]) {
+    let mut out: Vec<Option<Symref>> = vec![None; term.nodes.len()];
+    // One anon counter per possible owner, plus the locator root in the last slot.
+    let mut counters = vec![0_u32; term.nodes.len() + 1];
+    let root_slot = term.nodes.len();
+    let mut stack: Vec<(NodeId, usize)> = vec![(term.root, root_slot)];
+    while let Some((id, owner)) = stack.pop() {
         let node = term.node(id);
+        let base = || match out.get(owner).and_then(Option::as_ref) {
+            Some(sym) => sym.clone(),
+            None => Symref::locator_only(term.locator.clone()),
+        };
         let own = match &node.op {
             Operator::Universal(Universal::Unit { .. }) => Some(match &node.name {
-                Some(n) => base.child(Segment::Name {
+                Some(n) => base().child(Segment::Name {
                     name: n.clone(),
                     qualifier: node.attrs.get_str(reserved::QUALIFIER).map(str::to_owned),
                 }),
-                None => base.clone(),
+                None => base(),
             }),
             Operator::Universal(Universal::Anon { .. }) => {
-                let i = *counter;
-                *counter += 1;
-                Some(base.child(Segment::Anon(i)))
+                let i = counters[owner];
+                counters[owner] += 1;
+                Some(base().child(Segment::Anon(i)))
             }
             _ => None,
         };
-        match own {
+        let child_owner = match own {
             Some(sym) => {
-                out[id.index()] = Some(sym.clone());
-                let mut inner = 0;
-                for &c in &node.children {
-                    walk(term, c, &sym, &mut inner, out);
-                }
+                out[id.index()] = Some(sym);
+                id.index()
             }
-            None => {
-                for &c in &node.children {
-                    walk(term, c, base, counter, out);
-                }
-            }
-        }
+            None => owner,
+        };
+        stack.extend(node.children.iter().rev().map(|&c| (c, child_owner)));
     }
-    let mut out = vec![None; term.nodes.len()];
-    let base = Symref::locator_only(term.locator.clone());
-    let mut counter = 0;
-    walk(term, term.root, &base, &mut counter, &mut out);
     out
 }
 

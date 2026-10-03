@@ -330,7 +330,11 @@ reformatting, reordering tables and editing comments never re-lock:
 
 Documentary text is excluded because it only changes messages, not
 findings; a documentation-only edit therefore needs a version bump by
-convention but not a re-lock. `grimble packs show NAME --digest` prints
+convention but not a re-lock. These two digests feed PACK001 drift
+reporting only. Trust, grants and cache keys bind to a third digest,
+the TREE digest over every byte of the pack including its text
+(security.md 2.1, D82), so a text-only change needs trust again even
+though it does not re-lock. `grimble packs show NAME --digest` prints
 both digest levels.
 
 ### 2.6 Semantic checks (PACK005)

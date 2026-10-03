@@ -17,6 +17,7 @@ use grimble_model::{ModelFiles, check_model, rules::file_table};
 use crate::config::{GrimbleTable, PRODUCT};
 use crate::fidelity::language_tag;
 use crate::model_view::ModelView;
+use crate::{bind_models, read_models};
 
 /// Extension of a model file.
 pub const MODEL_EXTENSION: &str = ".grmb";
@@ -125,40 +126,19 @@ impl Product for Grimble {
     }
 
     fn collect(&self, cx: &mut CollectCx<'_>) -> Result<Collected<Self>, CheckError> {
-        let mut model = ModelFiles::new();
-        let mut walk = Vec::with_capacity(cx.core.entries.len());
         let mut languages: BTreeMap<String, usize> = BTreeMap::new();
         for e in &cx.core.entries {
-            walk.push(e.path.clone());
             *languages
                 .entry(language_tag(&e.path, &e.language).to_owned())
                 .or_default() += 1;
-            if !e.path.ends_with(MODEL_EXTENSION) {
-                continue;
-            }
-            match std::fs::read(cx.core.root.join(&e.path)) {
-                Ok(bytes) => {
-                    tracing::debug!(path = %e.path, bytes = bytes.len(), "model file read");
-                    model.files.insert(e.path.clone(), bytes);
-                }
-                Err(err) => tracing::warn!(path = %e.path, %err, "model file unreadable; skipped"),
-            }
         }
-        model.walk = Some(walk);
         let table = GrimbleTable::load(&cx.core.root)?;
-        tracing::info!(roots = ?table.models, files = model.files.len(), "model roots declared");
-        model = model.with_declared_roots(table.models.clone());
+        let model = read_models(&cx.core.root, &cx.core.entries, &table);
         let started = std::time::Instant::now();
         let view = Arc::new(ModelView::build(&model));
         cx.timing.push("model", started.elapsed(), true);
         let started = std::time::Instant::now();
-        let binding = grimble_bind::bind(&grimble_bind::BindInput {
-            root: &cx.core.root,
-            entries: &cx.core.entries,
-            model: &model,
-            modeled: &table.modeled,
-            strict: table.strict,
-        });
+        let binding = bind_models(&cx.core.root, &cx.core.entries, &model, &table);
         cx.timing.push("binding", started.elapsed(), true);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);

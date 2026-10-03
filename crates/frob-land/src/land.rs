@@ -13,6 +13,7 @@
 //! `git update-ref <ref> <new> <old>` (compare-and-swap) when no checkout
 //! has it. `gob-git` has no ref-update or worktree-removal API yet.
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -473,8 +474,22 @@ fn verify_check(
         tracing::info!(findings = report.findings.len(), "land check green");
         return Ok(());
     }
-    let listed: Vec<String> = report
+    // Reuse the gate's own predicate on one finding at a time so the list matches the verdict.
+    let mut blocking: Vec<_> = report
         .findings
+        .iter()
+        .filter(|f| {
+            gob_diagnostics::fail_on(
+                std::slice::from_ref(*f),
+                report.fail_on.threshold(),
+                report.fail_on_unresolved,
+            ) != ExitCode::Ok
+        })
+        .collect();
+    blocking.sort_by_key(|f| std::cmp::Reverse(f.severity));
+    let non_blocking = report.findings.len() - blocking.len();
+    tracing::warn!(blocking = blocking.len(), non_blocking, "land check red");
+    let listed: Vec<String> = blocking
         .iter()
         .take(LIST_CAP)
         .map(|f| {
@@ -486,13 +501,21 @@ fn verify_check(
             format!("{} {at}: {}", f.rule, f.message)
         })
         .collect();
+    let hidden = blocking.len().saturating_sub(LIST_CAP);
+    let mut tail = String::new();
+    if hidden > 0 {
+        let _ = write!(tail, "; and {hidden} more blocking finding(s)");
+    }
+    if non_blocking > 0 {
+        let _ = write!(tail, "; and {non_blocking} non-blocking findings");
+    }
     Err(LandError::Refused(
         Refusal::new(
             "E-LAND-CHECK-RED",
             RefusalClass::GuardNeedsAction,
             format!(
-                "frob check --ticket {handle} has {} finding(s) at or above fail_on ({:?}): {}",
-                report.findings.len(),
+                "frob check --ticket {handle} has {} blocking finding(s) at or above fail_on ({:?}): {}{tail}",
+                blocking.len(),
                 report.fail_on,
                 listed.join("; ")
             ),

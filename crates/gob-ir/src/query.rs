@@ -4,7 +4,7 @@
 //! `opaque` or `hole` node answer [`Answer::Unknown`] (nothing is computed
 //! through them), except the lexical ones that read an opaque payload.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 use crate::answer::Answer;
 use crate::digest::{DIGEST_SCHEME, Digest, Facet, FacetDigest};
@@ -198,28 +198,51 @@ impl Term {
     }
 
     /// Free variables of the subterm at `id` (names of `ref`s not bound inside it).
+    // frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
     pub fn free_vars(&self, id: NodeId) -> BTreeSet<String> {
-        fn go<'a>(t: &'a Term, id: NodeId, bound: &mut Vec<&'a str>, out: &mut BTreeSet<String>) {
-            let n = t.node(id);
-            if let Operator::Universal(Universal::Ref { name }) = &n.op
-                && !bound.iter().any(|b| *b == name)
-            {
-                out.insert(name.clone());
-            }
-            for (i, &c) in n.children.iter().enumerate() {
-                let scoped = n.op.binds_over(i);
-                if scoped {
-                    bound.extend(n.binders.iter().map(String::as_str));
+        /// Pending work of the explicit-stack walk.
+        enum Task<'a> {
+            Visit(NodeId),
+            Bind(&'a [String]),
+            Unbind(&'a [String]),
+        }
+        let mut out = BTreeSet::new();
+        let mut bound: HashMap<&str, usize> = HashMap::new();
+        let mut work = vec![Task::Visit(id)];
+        while let Some(task) = work.pop() {
+            match task {
+                Task::Bind(names) => {
+                    for n in names {
+                        *bound.entry(n.as_str()).or_default() += 1;
+                    }
                 }
-                go(t, c, bound, out);
-                if scoped {
-                    let keep = bound.len() - n.binders.len();
-                    bound.truncate(keep);
+                Task::Unbind(names) => {
+                    for n in names {
+                        if let Some(c) = bound.get_mut(n.as_str()) {
+                            *c -= 1;
+                        }
+                    }
+                }
+                Task::Visit(id) => {
+                    let n = self.node(id);
+                    if let Operator::Universal(Universal::Ref { name }) = &n.op
+                        && bound.get(name.as_str()).is_none_or(|c| *c == 0)
+                    {
+                        out.insert(name.clone());
+                    }
+                    for (i, &c) in n.children.iter().enumerate().rev() {
+                        let scoped = n.op.binds_over(i) && !n.binders.is_empty();
+                        if scoped {
+                            work.push(Task::Unbind(&n.binders));
+                        }
+                        work.push(Task::Visit(c));
+                        if scoped {
+                            work.push(Task::Bind(&n.binders));
+                        }
+                    }
                 }
             }
         }
-        let mut out = BTreeSet::new();
-        go(self, id, &mut Vec::new(), &mut out);
         out
     }
 

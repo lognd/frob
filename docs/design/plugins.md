@@ -1,6 +1,10 @@
 # Plugins: one mechanism for the standard library and third parties
 
-Status: DRAFT under T-0001, for owner review (proposed decision D76).
+Status: ACCEPTED with changes (D76, owner review 2026-10-04, ticket
+~J8PJHKX). The changes: GRL is the one rule language (no second source
+form), so it must be intuitive (grl-spec.md, ticket ~4QBTKCK); built-in
+rules are compiled into the binary for speed and treated logically the
+same as plugin rules (section 6.1).
 Evidence: notes/research/plugins.md (wasmtime, dprint, swc, Zed, Typst,
 Extism, oxlint, ruff, dylint, Semgrep, CodeQL, stack-graphs, tree-sitter
 WASM grammars, pluggy and pytest measured locally). Depends on
@@ -74,11 +78,25 @@ in `[packs] enabled` and pinned in `grimble.packs.lock` (packs.md 4). This
 replaces pytest's entry-point auto-discovery, whose import-time cost and
 surprise activation the survey measured.
 
-Directory-scoped packs, the conftest analogue: a repository pack may be
-scoped to a subtree (`scope = "services/payments/**"`). Scoped packs may
-only provide per-file hooks; a per-run hook in a scoped pack is a load
-error (PACK009), which removes pytest's conftest ordering confusion for
-repository-wide state.
+There are no directory-scoped packs (owner decision 2026-10-04): no
+pack file in a subdirectory changes what applies there. Rules that apply
+to part of a repository are activated per path from the one root
+configuration:
+
+```toml
+[[packs.enable]]
+name  = "react"
+paths = ["frontend/**"]
+```
+
+One file says what applies where, so a reviewer and a newcomer read one
+place. `grimble config --for <file>` prints the packs and rules in
+effect for that file and the config line each came from. Rejected
+because of locality-of-definition confusion: ESLint removed cascading
+config in its flat-config redesign for that reason, ruff never merges
+nested configs, and pytest's conftest lookup is a recurring source of
+"where does this come from" questions. A nested `grimble.toml` is a
+separate project (its own root, no merging), as in ruff.
 
 Rule ids stay FAMILYNNN. A pack owns the families it declares; two packs
 declaring one family is PACK004. The std packs own the existing families.
@@ -116,18 +134,28 @@ Every rule declares its language reach:
   (tree-sitter queries or gob-pattern patterns). On other languages it is
   NotApplicable and appears once in the fidelity report.
 
-Tier 2 has two source forms, both compiled to the same plan format:
+Tier 2 has exactly one source language, GRL (owner decision: one way to
+do a thing). GRL has two sublanguages that mix freely in one rule:
 
-1. **Pattern rules** (single-language): a tree-sitter query or a
-   gob-pattern pattern with metavariables and `inside`, `has`, `not`,
-   `all`, `any` combinators (rules.md section 3), plus a message and an
-   optional fix template.
-2. **Relational rules** (universal or single-language): GRL, a small,
+1. **Patterns** (single-language): a language-tagged code snippet with
+   metavariables and ellipsis, refined by `inside`, `has`, `not`, `all`,
+   `any` (the gob-pattern combinators of rules.md section 3), so the
+   easiest rule starts by pasting the code it should match.
+2. **Relations** (universal or single-language): a small,
    non-Turing-complete predicate language over U relations: select units,
    edges and attributes; join; bounded transitive closure; counts and
    thresholds; Kleene three-valued results. It is stratified Datalog in
    shape (universal-model.md 4.3) with no recursion beyond declared
    closures, so every plan terminates and runs in polynomial time.
+
+Because there is no escape into a second form, GRL carries the burden of
+being intuitive for someone who has never written a lint rule: it reads
+like the code it matches, every construct has an example, embedded
+fire/clean tests, and its own errors teach like rustc (diagnostics.md).
+The full language, grammar, static checks, ten existing rules rewritten
+as proof of expressiveness, and a five-minute newcomer walkthrough are
+specified in grl-spec.md (ticket ~4QBTKCK, decision D80). The sketch
+below is illustrative until that spec lands.
 
 ```text
 rule NEAT013 "ambient-source-call"
@@ -140,8 +168,9 @@ rule NEAT013 "ambient-source-call"
 
 Rules written in Rust today (`#[derive(Rule)]`) stay valid as tier-0 std
 rules registered through the same Registry API. New std rules are
-written in tier 2 whenever they can be, so the std library is mostly
-the same thing a third party can write.
+written in GRL whenever they can be, so the std library is mostly the
+same source a third party can write, then compiled into the binary
+(section 6.1).
 
 ## 5. Hooks: the plugin contract
 
@@ -170,13 +199,33 @@ to wrap another pack's execution.
 
 ## 6. Performance: how parity is guaranteed and measured
 
-1. **One plan format, one executor.** Std declarative rules are compiled
-   to plan bytes at build time (`cargo dev gen plans`) and embedded; a
-   disk pack's rules are compiled to the same bytes on first load and
-   cached under `.grimble/cache/plans/<digest>`. The executor cannot tell
-   them apart. Parity for tiers 1 and 2 is a property of the
-   architecture, and a CI test asserts that the same rule run embedded
-   and from disk gives identical findings and timing within noise.
+1. **Built-ins are compiled in, and treated logically the same.** (Owner
+   decision.) A std GRL rule is compiled ahead of time at build time
+   (`cargo dev gen rules`): GRL to Rust code against the executor's
+   operator library, so the hot path has no plan interpretation. A disk
+   pack's GRL is compiled to plans on first load, cached under
+   `.grimble/cache/plans/<digest>`, and run by the plan executor built
+   from the same operator library. Speed differs; nothing else may.
+   "Logically the same" is a list of obligations, each enforced:
+
+   | Same | How it is enforced |
+   |---|---|
+   | source | every std rule has its GRL source in a std pack directory; the Rust is generated from it (GEN001 keeps it current), never hand-written |
+   | registry entry | one Registry view; built-in and plugin rules both carry pack provenance (`std` or the pack name) and appear identically in `rules list` |
+   | metadata | the same Rule metadata (id, slug, family, severity, polarity, must_measure, fixes, explain) from the same GRL declaration |
+   | configuration | the same `[rules]` knobs, severities, exceptions and waivers; a built-in can be disabled exactly like a plugin |
+   | lock and manifest | the std pack is listed in the pack lock with its digest like any other pack (frozen to the binary's version) |
+   | diagnostics and explain | the same renderer, the same `explain` page generator |
+   | semantics | the conformance test: every std GRL rule also runs as a plan on the std corpus and on the rule's embedded examples, and findings must be identical (byte-identical JSON) |
+   | override | a plugin may replace a std rule only by declaring `replaces = "ID"`, which is recorded in the lock and reported; no silent shadowing |
+
+   Hand-written tier-0 Rust rules (the current frob families) satisfy
+   every row except "source"; each is recorded as a known exception in
+   the std pack manifest, and moving one to GRL is a normal ticket.
+   Plugin authors who need built-in-class speed compile their pack ahead
+   of time to a WASM component (`grimble pack build`), which runs in the
+   tier-3 host with the tier-2 semantics; the conformance test applies
+   to it too.
 2. **Prefilter by node kind.** Every plan carries the set of operator and
    node kinds it can match; the executor skips files and subtrees
    without them. This is the main reason host-executed declarative rules
@@ -196,8 +245,9 @@ to wrap another pack's execution.
    Unresolved with reason `trap`. Never silence.
 6. **Benchmark gates in CI** (survey benchmarks B1-B4, filed as tickets):
    B1 plan executor versus handwritten Rust on three std rules (target:
-   within 1.3x per file); B2 embedded versus disk-loaded plan (target:
-   identical within noise after cache); B3 tier-3 per-file call versus
+   within 1.3x per file); B2 compiled-in GRL rule versus the same rule as
+   a disk-loaded plan (target: plan within 1.3x after cache, findings
+   identical); B3 tier-3 per-file call versus
    the same rule in tier 0 (target: within 1.5x); B4 WASM tree-sitter
    grammar versus native (target: measured and published per adapter,
    with native grammars compiled in for the std languages). `--timing`
@@ -237,16 +287,31 @@ adapter, Rust and markdown become std adapter packs.
 
 ## 9. Trust and effects of plugins themselves
 
-Plugins are deny by default for their own effects: a tier-3 component
-gets no file system, network, environment, clock or process access unless
-its manifest declares the effect and the lock grants it. Grants are
-listed in `grimble check --json` and counted. Packs are pinned by content
-digest; a signature check (sigstore) is a later option. Tier 1 and 2
-content runs no code at all.
+Owner decision 2026-10-04: repository packs may run tier 3 (WASM) and
+may be granted any effect; nothing is banned. The pessimistic audit
+(notes/review/plugin-security-audit.md) tightened the first sketch; the
+full model is security.md (D82). In short:
+
+1. **Pure by default**, in a separate sandbox worker with no secrets;
+   granted effects are performed by a host broker, never by the guest.
+   Tier 1 and 2 content runs no code at all.
+2. **Declared, exact and classed**: ordinary, secret-shaped, control
+   plane and privilege effects (`replaces`, `fix.machine`, `subprocess`)
+   are separate classes; read implies publish.
+3. **Pinned to the pack tree digest**, which covers every byte of the
+   pack (code, data, text, includes); any change drops trust and grants.
+4. **Trusted from a protected branch, not from a prompt**: CI uses
+   `--trust-from <protected ref>` only; developers run
+   `trust --follow origin/main` once; the TTY-only prompt remains for
+   code not yet on the protected branch. A repository can never raise
+   its own privileges.
+5. **An honest gate**: required packs make untrusted, budget and trap
+   results fail; CI fails on new unknowns in changed files; GATE001
+   reports any policy weakening between base and head.
 
 ## 10. Consequences
 
-- New crates: `gob-packs` (manifest, lock, loader, scoped packs, hook
+- New crates: `gob-packs` (manifest, lock, loader, path-scoped activation, trust store, hook
   registry; product-neutral so frob and crunk use it), `gob-plan` (plan
   format, GRL compiler, pattern compiler, executor; the gob-ir evaluator
   becomes its backend), `gob-wasm` (wasmtime host, feature-gated, per-file
@@ -263,13 +328,17 @@ content runs no code at all.
 - frob's own rules stay tier 0 for milestone 2 and may move to std packs
   later; the mechanism is product-neutral from the start.
 
-## 11. Open questions for the owner
+## 11. Owner decisions and open questions
 
-1. GRL syntax: the sketch above, or a Semgrep-like YAML form for pattern
-   rules plus GRL only for relational rules?
-2. Should frob's families (COV, DOC, TODO, and so on) become std packs in
-   milestone 2, or stay tier 0 until the plan executor has proven B1?
-3. Should repository packs be allowed tier 3 (WASM) at all in version 1,
-   or only external packs with a signature?
-4. Directory-scoped packs: keep them (the conftest idea) or defer to keep
-   version 1 smaller?
+Decided 2026-10-04 (all four questions are now decided):
+
+1. One rule language, GRL, for pattern and relational rules; no YAML
+   form. GRL must be intuitive (grl-spec.md).
+2. Built-in rules are compiled in for performance and treated logically
+   the same as plugin rules (section 6.1). frob's families stay tier-0
+   Rust in milestone 2, registered as recorded exceptions in the std pack.
+3. Repository packs may run tier 3 with any granted effect under the
+   trust model of section 9 (owner decision 2026-10-04), subject to the
+   pessimistic security audit.
+4. No directory-scoped packs; path-scoped activation from the root
+   configuration instead (section 2, owner decision 2026-10-04).

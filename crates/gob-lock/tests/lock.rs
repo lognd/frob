@@ -131,10 +131,12 @@ fn flow() -> FlowEntry {
         producer: FlowEnd {
             identity: "web/api.ts::get".to_owned(),
             contract: "aa".to_owned(),
+            shape_contract: Some("sh".to_owned()),
         },
         consumer: FlowEnd {
             identity: "src/client.rs::call".to_owned(),
             contract: "aa".to_owned(),
+            shape_contract: Some("sh".to_owned()),
         },
         acked_by: "Me".to_owned(),
         acked_at: "2026-10-02T00:00:00Z".to_owned(),
@@ -314,4 +316,30 @@ fn rename_rekeys_entry_and_flow_ends_and_records_the_chain() {
     );
     let text = lock.to_toml().unwrap();
     assert_eq!(LockFile::from_toml(&text).unwrap(), lock);
+}
+
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:tests crates/gob-lock/src/file.rs::LockFile
+#[test]
+fn rename_log_and_absent_shape_contract_round_trip() {
+    let mut lock = LockFile::default();
+    let mut f = flow();
+    f.producer.shape_contract = None;
+    lock.flows.insert("orders.get".to_owned(), f);
+    lock.log_rename(
+        "a.rs::old",
+        "a.rs::new",
+        "Me <m@x>",
+        "2026-10-02T00:00:00Z",
+        "moved",
+    );
+    let text = lock.to_toml().unwrap();
+    assert!(
+        text.contains("[[ack_log]]") && text.contains("kind = \"rename\""),
+        "{text}"
+    );
+    assert_eq!(text.matches("shape_contract").count(), 1, "{text}");
+    let back = LockFile::from_toml(&text).unwrap();
+    assert_eq!(back, lock);
+    assert_eq!(back.ack_log[0].target.as_deref(), Some("a.rs::new"));
 }

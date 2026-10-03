@@ -1,6 +1,9 @@
 # Diagnostics that teach, and fixes that are safe to apply
 
-Status: DRAFT under T-0001, for owner review (proposed decision D78).
+Status: ACCEPTED with changes (D78, owner review 2026-10-04, ticket
+~J8PJHKX). The changes: first-occurrence teaching is on by default and
+a long explanation can always be repeated (section 5.1); `--fix` stays
+within the current ticket's scope (section 3).
 Applies to frob, grimble and crunk alike (gob-diagnostics, gob-rules,
 gob-cli). Modelled on rustc and cargo: the compiler teaches the language
 while you use it, every error has a code you can look up, and fixes are
@@ -44,6 +47,14 @@ error[SYS003]: unit claimed by two bindings that disagree
    = explain: grimble explain SYS003
 ```
 
+Security rules for all rendered text (security.md 2.10, D82): every
+text field carries an `origin` (`host`, `std`, `pack:NAME`, `source`,
+`tracker`, `ledger`) and non-host text is labelled; controls, bidi and
+invisible characters are always escaped; `remedy`, `help` and fix
+commands come only from host templates; first-occurrence teaching
+applies to std rules only; plugin fixes are at most `maybe-incorrect`
+unless the pack holds `fix.machine`, and never touch the control plane.
+
 Rules for the renderer (gob-diagnostics): primary span with a label;
 secondary spans in other files with `:::` headers; `note` for facts the
 user did not ask for but needs; `help` for the next action; `fix` lines
@@ -64,7 +75,11 @@ Each `Fix` on a finding carries one applicability. The existing
 
 `--fix` applies only `machine` fixes, re-runs the affected rules once,
 and reports what it changed and what remains (as `cargo fix` and ruff
-do). `--fix --unsafe` is not offered in version 1: a fix that may be
+do). It stays within scope: inside a ticket worktree it edits only files
+in the ticket's scope (plus generated files the scope owns) and lists
+the out-of-scope fixes it skipped, with the command that would widen the
+scope (`frob lease widen`). Outside a ticket it edits only the paths the
+check was asked to cover. `--fix --unsafe` is not offered in version 1: a fix that may be
 wrong is reviewed by a person, not by a flag.
 
 ## 4. Auto-apply and prompting: when, and when never
@@ -101,8 +116,27 @@ normal run is a bad idea.
 | unknown verb or flag | did-you-mean (strsim) plus the three most likely verbs |
 | unknown config key | did-you-mean against the materialized table, and the doc link for the table |
 | no model root declared (MDL021) | the default root path, and `grimble init` if the file is missing |
-| a finding seen for the first time in this repository | the full `explain` text inline once, then only the one-line help afterwards (state kept in `.frob/seen.toml`, local and disposable) |
+| a finding seen for the first time in this repository | the full `explain` text inline once (on by default, `[ui] teach = "first"`), then only the one-line help afterwards (state kept in `.frob/seen.toml`, local and disposable) |
 | Unresolved finding | why the tool could not decide (the reason code in words) and the exact annotation or capability that would let it decide |
+
+### 5.1 Repeating a long explanation
+
+Teaching once must never mean losing the text. Every path back to it is
+one command, and the one-line help after the first occurrence names it:
+
+| Want | Command |
+|---|---|
+| one rule's full explanation again | `frob explain SYS003` / `grimble explain SYS003` (any time, offline) |
+| the full explanation for every finding in this run | `frob check --teach` (alias `--explain-all`) |
+| the explanation for findings of one rule in this run | `frob check --teach SYS003` |
+| start over as if new | `frob teach reset` (or `reset SYS003`), which edits `.frob/seen.toml` |
+| never inline, help lines only | `[ui] teach = "never"`; `"always"` prints in full every time |
+
+The one-line form after the first occurrence is
+`= explain: grimble explain SYS003 (shown in full on first occurrence)`,
+so a reader who scrolled past it knows it exists and how to get it.
+Long explanations go through the pager on a TTY (`$PAGER`, then `less
+-R`), and print plainly otherwise.
 
 ## 6. Where explanations come from
 
@@ -112,9 +146,8 @@ same source (docs/reference/rules/<ID>.md) and the binaries embed it for
 `explain`. One source, three outputs (terminal, web, JSON), so they can
 never disagree. GEN001 keeps the generated copies current.
 
-## 7. Open questions
+## 7. Owner decisions (2026-10-04)
 
-1. Should first-occurrence inline teaching (section 5, row 6) be on by
-   default, or opt-in with `[ui] teach = true`?
-2. Should `--fix` also apply machine fixes to files outside the current
-   ticket's scope, or stay within scope by default?
+1. First-occurrence inline teaching is on by default, with the repeat
+   paths of section 5.1.
+2. `--fix` stays within the current ticket's scope (section 3).

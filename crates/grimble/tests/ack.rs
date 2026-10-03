@@ -67,7 +67,10 @@ fn ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit() {
     assert!(dir.path().join("grimble.lock").is_file());
     let (_, env, _) = grimble(dir.path(), &["check", "--json"]);
     assert_eq!(rules(&env), Vec::<String>::new(), "{env}");
-    let (code, env, _) = grimble(dir.path(), &["ack", "flow/f", "--json"]);
+    let (code, env, _) = grimble(
+        dir.path(),
+        &["ack", "flow/f", "--reason", "again", "--json"],
+    );
     assert_eq!(code, 0);
     assert_eq!(env["already"], true, "a second ack changes nothing: {env}");
 
@@ -94,14 +97,20 @@ fn ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit() {
 fn ack_refuses_a_stale_scheme_for_a_targeted_ack_and_all_with_reason_migrates() {
     let dir = tempfile::tempdir().unwrap();
     fixture(dir.path());
-    grimble(dir.path(), &["ack", "flow/f", "--json"]);
+    grimble(
+        dir.path(),
+        &["ack", "flow/f", "--reason", "initial", "--json"],
+    );
     let lock = std::fs::read_to_string(dir.path().join("grimble.lock")).unwrap();
     write(
         dir.path(),
         "grimble.lock",
         &lock.replace("digest_scheme = 2", "digest_scheme = 1"),
     );
-    let (code, _, err) = grimble(dir.path(), &["ack", "p/lib.rs::emit", "--json"]);
+    let (code, _, err) = grimble(
+        dir.path(),
+        &["ack", "p/lib.rs::emit", "--reason", "stale", "--json"],
+    );
     assert_eq!(code, 2, "usage error: {err}");
     let (code, env, _) = grimble(dir.path(), &["ack", "--all", "--reason", "bump", "--json"]);
     assert_eq!(code, 0, "{env}");
@@ -119,9 +128,47 @@ fn ack_refuses_a_stale_scheme_for_a_targeted_ack_and_all_with_reason_migrates() 
 fn ack_dry_run_writes_nothing_and_a_node_target_is_refused() {
     let dir = tempfile::tempdir().unwrap();
     fixture(dir.path());
-    let (code, env, _) = grimble(dir.path(), &["ack", "flow/f", "--dry-run", "--json"]);
+    let (code, env, _) = grimble(
+        dir.path(),
+        &["ack", "flow/f", "--reason", "try", "--dry-run", "--json"],
+    );
     assert_eq!(code, 0, "{env}");
     assert!(!dir.path().join("grimble.lock").exists());
-    let (code, _, _) = grimble(dir.path(), &["ack", "node/p", "--json"]);
+    let (code, _, _) = grimble(dir.path(), &["ack", "node/p", "--reason", "node", "--json"]);
     assert_ne!(code, 0);
+}
+
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:tests crates/grimble/src/ack.rs::Ack
+#[test]
+fn ack_without_a_reason_is_a_usage_error_with_the_remedy() {
+    let dir = tempfile::tempdir().unwrap();
+    fixture(dir.path());
+    let (code, env, err) = grimble(dir.path(), &["ack", "flow/f", "--json"]);
+    assert_eq!(code, 2, "{env} {err}");
+    assert_eq!(env["error"]["code"], "E-USAGE", "{env}");
+    assert!(env.to_string().contains("--reason"), "{env}");
+    assert!(!dir.path().join("grimble.lock").exists());
+}
+
+// frob:ticket 01M3ZPNT7KCE66E6SAKV4E149M
+// frob:tests crates/grimble/src/ack.rs::Ack
+#[test]
+fn ack_honours_the_grimble_table_like_check() {
+    let dir = tempfile::tempdir().unwrap();
+    fixture(dir.path());
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"nowhere.grmb\"]\n",
+    );
+    let (code, env, _) = grimble(dir.path(), &["ack", "flow/f", "--reason", "x", "--json"]);
+    assert_ne!(code, 0, "no declared model root means nothing binds: {env}");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    let (code, env, err) = grimble(dir.path(), &["ack", "flow/f", "--reason", "x", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
 }

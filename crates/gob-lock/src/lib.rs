@@ -6,8 +6,10 @@
 //! `[[symbol]]` ([`LockEntry`]: identity, symref, the five facet digests,
 //! who, when, reason, bound doc sections as [`LockTarget`]) and `[[flow]]`
 //! ([`FlowEntry`]: flow key, producer and consumer identity with Contract
-//! digest). The file is TOML, entries sorted, so two saves of the same content
-//! are byte-identical and diffs stay small.
+//! digest, plus the optional `shape_contract` digest of the flow's contract shape, which SYS006
+//! compares against the live shape). `[[ack_log]]` ([`AckLogEntry`]) is the append-only record of
+//! decisions the entries do not show, today `rename`. The file is TOML, entries sorted, so two saves of the same
+//! content are byte-identical and diffs stay small.
 //!
 //! A file of another version or scheme loads, but [`LockFile::reattest`] lists
 //! every entry: nothing is silently accepted, and only [`plan`] with `all` and a
@@ -29,7 +31,7 @@ mod plan;
 
 pub use diff::{Facet, LockDiff, diff};
 pub use file::{
-    DIGEST_SCHEME, EntryKind, FlowEnd, FlowEntry, LOCK_VERSION, LockEntry, LockError, LockFile,
-    LockTarget, Reattest, file_name,
+    AckLogEntry, AckLogKind, DIGEST_SCHEME, EntryKind, FlowEnd, FlowEntry, LOCK_VERSION, LockEntry,
+    LockError, LockFile, LockTarget, Reattest, file_name,
 };
 pub use plan::{Current, CurrentFlow, CurrentSymbol, FacetSet, Plan, PlanError, PlanOptions, plan};

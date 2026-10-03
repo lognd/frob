@@ -8,7 +8,7 @@
 use std::collections::BTreeMap;
 
 use gob_walk::Selector;
-use grimble_model::ast::{ClauseKind, EntityKind, Evidence, Header};
+use grimble_model::ast::{ClauseKind, EntityKind, Evidence, Header, Value};
 use grimble_model::binding::{ExplicitBind, explicit_binds};
 use grimble_model::model::{Index, LoadedRoot, load_roots};
 use grimble_model::{ModelFiles, span::Span};
@@ -55,6 +55,19 @@ pub struct Entity {
     pub assumed: bool,
     /// True when the entity asked for pack inference (`attr infer`).
     pub infer_requested: bool,
+    /// For a flow: the anchor of the contract its `contract` clause names, when it resolves.
+    pub contract: Option<String>,
+    /// For a contract: the `compat=` value of its `versioning` clause (grmb-spec 4.3).
+    pub compat: Option<String>,
+}
+
+/// The contract a flow names and what its `versioning` clause allows skew to be.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FlowContract {
+    /// The contract anchor, `contract/full-name`.
+    pub anchor: String,
+    /// The contract's `versioning compat=` value, when written.
+    pub compat: Option<String>,
 }
 
 impl Entity {
@@ -79,6 +92,18 @@ pub struct Model {
 }
 
 impl Model {
+    /// Flow anchor to the contract it names; flows without a resolvable `contract` are absent.
+    pub fn flow_contracts(&self) -> BTreeMap<String, FlowContract> {
+        self.entities
+            .values()
+            .filter_map(|e| {
+                let anchor = e.contract.clone()?;
+                let compat = self.entities.get(&anchor).and_then(|c| c.compat.clone());
+                Some((e.anchor.clone(), FlowContract { anchor, compat }))
+            })
+            .collect()
+    }
+
     /// The `(node anchor, selector)` pairs of every `owns` clause, for the owner function.
     pub fn owner_inputs(&self) -> Vec<(gob_walk::EntityName, Selector)> {
         let mut out = Vec::new();
@@ -147,6 +172,12 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
         ClauseKind::Proof(p) => ent.proof = parse_proof(&p.text),
         ClauseKind::Assumed(_) => ent.assumed = true,
         ClauseKind::Attr { key, .. } if key.text == "infer" => ent.infer_requested = true,
+        ClauseKind::Versioning(v) => {
+            ent.compat = v.attrs.iter().find_map(|kv| match &kv.value.value {
+                Value::Ident(i) if kv.key.text == "compat" => Some(i.clone()),
+                _ => None,
+            });
+        }
         _ => {}
     }
 }
@@ -175,12 +206,20 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 proof: None,
                 assumed: false,
                 infer_requested: false,
+                contract: None,
+                compat: None,
             });
         if let Header::Flow { from, to } = &e.header {
             ent.ends = Some((node_anchor(&rec.ctx, from), node_anchor(&rec.ctx, to)));
         }
         for c in &e.clauses {
             add_clause(ent, &file, c);
+            if let ClauseKind::Contract(p) = &c.kind
+                && let Some(r) = idx.resolve(&rec.ctx, p)
+                && idx.kind(r.rec) == EntityKind::Contract
+            {
+                ent.contract = Some(format!("contract/{}", idx.entities[r.rec].full));
+            }
         }
     }
     out.explicit.extend(explicit_binds(root));

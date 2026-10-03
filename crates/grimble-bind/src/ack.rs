@@ -19,7 +19,7 @@ use gob_lock::{
 
 use crate::Binding;
 use crate::PRODUCT;
-use crate::drift::{End, live_end};
+use crate::drift::{End, Shape, live_end, live_shape};
 use crate::live::LiveSymbol;
 use crate::types::{Role, Row, Source, Status};
 
@@ -30,7 +30,7 @@ pub struct AckRequest {
     pub targets: Vec<String>,
     /// Re-ack every lock entry that still exists (`--all`).
     pub all: bool,
-    /// The reason; required to migrate a stale lock.
+    /// The reason (binding.md 5.3): mandatory, [`plan_ack`] refuses a missing or blank one.
     pub reason: Option<String>,
     /// `--rename OLD NEW` pairs, applied before the rest.
     pub renames: Vec<(String, String)>,
@@ -49,6 +49,11 @@ pub enum AckError {
     /// The planner refused: empty selection, or a stale lock not yet migrated (E-LOCK-REATTEST).
     #[error(transparent)]
     Plan(#[from] PlanError),
+    /// No reason was given; an ack is an attestation and always says why (binding.md 5.3).
+    #[error(
+        "E-ACK-REASON: grimble ack needs a reason; rerun with --reason \"why the current state is acknowledged\""
+    )]
+    ReasonRequired,
     /// A target names nothing this snapshot knows.
     #[error("E-ACK-RESOLVE: `{input}`: {why}")]
     Resolve {
@@ -153,7 +158,14 @@ fn end_of_flow(
     match live_end(&b.rows, &b.live, flow, role, recorded) {
         End::Exact { identity, contract } => {
             let live = b.live.symbols[&identity].clone();
-            Ok((FlowEnd { identity, contract }, live))
+            Ok((
+                FlowEnd {
+                    identity,
+                    contract,
+                    shape_contract: None,
+                },
+                live,
+            ))
         }
         End::Absent => Err(AckError::Refused {
             target: target.to_owned(),
@@ -174,20 +186,31 @@ fn add_flow(
     target: &str,
     cur: &mut Current,
 ) -> Result<(), AckError> {
-    let (p, pl) = end_of_flow(
+    let (mut p, pl) = end_of_flow(
         b,
         flow,
         Role::Producer,
         recorded.map(|r| r.producer.identity.as_str()),
         target,
     )?;
-    let (c, cl) = end_of_flow(
+    let (mut c, cl) = end_of_flow(
         b,
         flow,
         Role::Consumer,
         recorded.map(|r| r.consumer.identity.as_str()),
         target,
     )?;
+    if let Some(k) = b.flow_contracts.get(flow) {
+        match live_shape(&b.rows, &b.live, &k.anchor) {
+            Shape::Exact(d) => {
+                p.shape_contract = Some(d.clone());
+                c.shape_contract = Some(d);
+            }
+            Shape::Absent | Shape::Unresolved(..) => {
+                tracing::warn!(flow, contract = %k.anchor, "contract shape is not Exact; the ack records no shape digest");
+            }
+        }
+    }
     cur.symbols.insert(p.identity.clone(), current_symbol(&pl));
     cur.symbols.insert(c.identity.clone(), current_symbol(&cl));
     cur.flows.insert(
@@ -289,7 +312,12 @@ fn resolve(b: &Binding, t: &str, cur: &mut Current) -> Result<Vec<String>, AckEr
     Ok(keys)
 }
 
-fn apply_renames(b: &Binding, lock: &mut LockFile, req: &AckRequest) -> Result<(), AckError> {
+fn apply_renames(
+    b: &Binding,
+    lock: &mut LockFile,
+    req: &AckRequest,
+    reason: &str,
+) -> Result<(), AckError> {
     let stale = lock.reattest();
     if !stale.is_empty() && !req.renames.is_empty() {
         return Err(PlanError::MigrationRequired {
@@ -323,6 +351,7 @@ fn apply_renames(b: &Binding, lock: &mut LockFile, req: &AckRequest) -> Result<(
         if !lock.rename(old, new) {
             return Err(fail("the lock refused the re-key"));
         }
+        lock.log_rename(old, new, &req.actor, &req.at, reason);
     }
     Ok(())
 }
@@ -331,12 +360,15 @@ fn apply_renames(b: &Binding, lock: &mut LockFile, req: &AckRequest) -> Result<(
 ///
 /// # Errors
 ///
-/// [`AckError`]: an unreadable lock, a target that does not resolve or is not Must and Exact, a
+/// [`AckError`]: a missing reason, an unreadable lock, a target that does not resolve or is not Must and Exact, a
 /// rename that does not hold, or the planner's refusals (empty selection; stale lock without
 /// `--all --reason`, E-LOCK-REATTEST).
 pub fn plan_ack(binding: &Binding, root: &Path, req: &AckRequest) -> Result<AckPlan, AckError> {
+    let Some(reason) = req.reason.as_deref().filter(|r| !r.trim().is_empty()) else {
+        return Err(AckError::ReasonRequired);
+    };
     let mut lock = LockFile::load(&root.join(file_name(PRODUCT)))?;
-    apply_renames(binding, &mut lock, req)?;
+    apply_renames(binding, &mut lock, req, reason)?;
     let renamed = req.renames.clone();
     let mut cur = Current::default();
     let mut keys: BTreeSet<String> = BTreeSet::new();

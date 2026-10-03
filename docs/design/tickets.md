@@ -16,6 +16,15 @@ on top of it.
 
 ## 2. Storage and identity
 
+Layout note (D79, D81): the ledger moves to the orphan branch
+`frob-tickets` with a human layout, `<top-epic-slug>/<ticket-slug>.md`
+for tickets and `.events/<ULID>/` for event logs (mirror.md 1,
+navigation.md 2). The `tickets/<id>/` layout below is the milestone-1
+machine layout still in use until that migration lands; everything else
+in this section (ULID identity, handles, aliases, events) holds for
+both. In either layout a path is presentation and never a reference
+(navigation.md 1).
+
 - One directory per ticket, `tickets/<id>/`, containing `ticket.md`
   (TOML frontmatter + markdown body), `events/<ulid>.toml` (append-only
   state changes, field changes, comments, evidence, reviews), and
