@@ -23,6 +23,10 @@ target = "01M3ZX7ETPH5Z6K2VJ64K5XTMX"
 
 [[links]]
 kind = "relates"
+target = "01M3ZTB2Y0J454GSSK4KGAMSF9"
+
+[[links]]
+kind = "relates"
 target = "01M3ZVQA77ZEK9DXEN5Z0XMZEG"
 
 [[acceptance]]
