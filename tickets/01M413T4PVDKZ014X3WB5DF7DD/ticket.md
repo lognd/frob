@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T14:48:39Z"
-updated = "2026-10-03T14:56:29Z"
+updated = "2026-10-03T15:16:15Z"
 scope = ["crates/frob-release/**", "crates/gob-config/**", "docs/design/releases.md"]
 
 [[acceptance]]
 text = "Given a repository with no [release] products, when release cut 0.1.0 runs, then exactly one tag v0.1.0 is created"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given [release] tag and products configured, when release cut runs, then one tag per product follows the pattern"
