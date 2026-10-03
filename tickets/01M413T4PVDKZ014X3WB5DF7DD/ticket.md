@@ -2,12 +2,12 @@
 id = "01M413T4PVDKZ014X3WB5DF7DD"
 title = "release cut and release changelog work in consumer repositories"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T14:48:39Z"
-updated = "2026-10-03T14:48:39Z"
+updated = "2026-10-03T14:56:29Z"
 scope = ["crates/frob-release/**", "crates/gob-config/**", "docs/design/releases.md"]
 
 [[acceptance]]
