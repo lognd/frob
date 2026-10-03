@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in /home/logan/projects/frob-v2-wt/NWXQPMM; scope: crates/gob-dev/src/smoke.rs, crates/gob-dev/tests/fixtures/smoke-repo/**; ttl 7200s"
+at = "2026-10-03T13:33:37Z"
+actor = "lognd"
+rev = 1

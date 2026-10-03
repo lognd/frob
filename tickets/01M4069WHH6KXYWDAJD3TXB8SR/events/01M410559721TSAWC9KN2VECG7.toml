@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T13:44:46Z"
+digest = "f0ff14c2cfec5f8cb7296df76ba15c26012cbc99064a1e5c907257dd8caf63d6"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+────────────
+ Nextest run ID fbae78c9-1277-423d-9440-d36c8adf934a with nextest profile: ci
+    Starting 1 test across 30 binaries (238 tests skipped)
+        PASS [   1.089s] (1/1) frob-cli::fragment the_close_remedy_names_the_verb_and_the_guard_passes_after_writing
+────────────
+     Summary [   1.091s] 1 test run: 1 passed, 238 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-release -p frob-cli --profile ci -E test(the_close_remedy_names_the_verb)"
+size = 460
+status = "measured"
+tests = ["the_close_remedy_names_the_verb_and_the_guard_passes_after_writing"]
+at = "2026-10-03T13:44:46Z"
+actor = "lognd"
+rev = 1

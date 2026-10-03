@@ -1,0 +1,10 @@
+kind = "create"
+title = "lease: exempt changelog.d fragments from scope overlap (shared_files)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["frob.toml"]
+body = "found while working ~3TXB8SR: another ticket leasing changelog.d/** blocks every other ticket from widening to its own <ULID>.<type>.md, so check --ticket reports SCOPE001 on the fragment the close guard requires. Fragments are one file per ticket, so add changelog.d/** to [lease] shared_files or have the scope check always allow the ticket's own fragment."
+at = "2026-10-03T13:47:29Z"
+actor = "lognd"
+rev = 1
