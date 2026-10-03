@@ -1,0 +1,12 @@
+kind = "create"
+title = "One ledger-path classifier shared by frob-check scope and frob-land retry"
+type = "chore"
+category = "todo"
+priority = "low"
+points = 1
+scope = ["crates/frob-check/src/scope.rs", "crates/frob-land/src/land.rs", "crates/frob-ledger/src/lib.rs"]
+acceptance = ["Given the ledger directory configuration, when frob-check scope and frob-land retry classify a path, then both call the single frob-ledger function"]
+body = "~VMHTBE7 re-implemented the '<ledger dir>/' prefix test in frob-land because branch_changes in frob-check/src/scope.rs is private. Move the classification to frob-ledger (it owns the ledger dir) and call it from both."
+at = "2026-10-03T16:30:09Z"
+actor = "lognd"
+rev = 1
