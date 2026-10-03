@@ -6,7 +6,7 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T13:47:29Z"
-updated = "2026-10-03T13:47:29Z"
+updated = "2026-10-03T13:48:02Z"
 scope = ["frob.toml"]
 +++
 
