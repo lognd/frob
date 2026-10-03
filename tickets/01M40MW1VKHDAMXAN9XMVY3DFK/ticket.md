@@ -8,14 +8,14 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T10:27:33Z"
-updated = "2026-10-03T10:41:26Z"
+updated = "2026-10-03T10:49:12Z"
 idempotency_key = "m2-grl-literal-braces"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/**"]
 
 [[acceptance]]
 text = "Given the verbatim CI002 rule from grl-spec.md 12, when parsed, then it parses with no error and the glob holds literal braces"
-bound = false
+bound = true
 
 [[acceptance]]
 text = 'Given a report message with {x.name}, when parsed, then it is an interpolation, and \{ in a message is a literal brace'
