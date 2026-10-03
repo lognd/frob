@@ -8,10 +8,10 @@ points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-03T01:10:38Z"
+updated = "2026-10-03T01:12:57Z"
 idempotency_key = "m2-orchestrate"
 labels = ["milestone:2"]
-scope = ["crates/frob-check/**", "crates/frob-obligations/**", "crates/frob-ledger/**"]
+scope = ["crates/frob-check/**", "crates/frob-obligations/**", "crates/frob-ledger/**", "crates/gob-check/**"]
 
 [[links]]
 kind = "blocked-by"
