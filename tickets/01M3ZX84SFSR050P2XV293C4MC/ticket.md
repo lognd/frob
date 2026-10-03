@@ -2,13 +2,14 @@
 id = "01M3ZX84SFSR050P2XV293C4MC"
 title = "mirror resolve --keep-repo and --ignore-field, recorded as ledger events"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T03:34:43Z"
+updated = "2026-10-03T03:39:11Z"
 idempotency_key = "m2-mirror-resolve-basic"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/mirror_cmd.rs", "crates/frob-ledger/src/event.rs"]
