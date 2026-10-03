@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-check/**", "crates/frob-obligations/**", "frob.toml", "docs/reference/rules/**", "crates/gob-exec/src/proc001.rs", "crates/gob-exec/tests/proc001_self.rs", "crates/gob-check/**", "changelog.d/01M40T3VS6VVN80SP39XGS6PK2.fixed.md"]
+new = ["crates/frob-check/**", "crates/frob-obligations/**", "frob.toml", "docs/reference/rules/**", "crates/gob-exec/src/proc001.rs", "crates/gob-exec/tests/proc001_self.rs", "crates/gob-check/**", "changelog.d/01M40T3VS6VVN80SP39XGS6PK2.fixed.md", "docs/reference/config.md"]
+at = "2026-10-03T12:37:19Z"
+actor = "lognd"
+rev = 1
