@@ -10,7 +10,7 @@
 
 use std::path::{Path, PathBuf};
 
-use frob_ledger::privacy::find_home_root;
+use frob_ledger::privacy::{find_home_root, find_worktree_dir};
 use gob_git::Repo;
 
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
@@ -29,8 +29,12 @@ pub const OTHER_HOME: &str = "~other";
 #[derive(Debug, Clone, Default)]
 pub struct PathScrub {
     rules: Vec<(String, String)>,
+    /// The home-directory rules, applied after the sibling-worktree collapse so a sibling under home is not cut to `~/...`.
+    home_rules: Vec<(String, String)>,
     /// Rewrite any remaining `/home/<name>` style root to [`OTHER_HOME`] (repair only).
     foreign: bool,
+    /// Sibling worktree directory names (`app-wt`) whose absolute path, in any style, collapses to the name.
+    wt_dirs: Vec<String>,
 }
 
 impl PathScrub {
@@ -46,6 +50,7 @@ impl PathScrub {
     /// A scrub for `worktree`, `repo` and an explicit `home` (none skips the home rule).
     pub fn with_home(repo: &Path, worktree: &Path, home: Option<&Path>) -> Self {
         let mut scrub = Self::default();
+        scrub.add_wt_dir(repo);
         scrub.add(worktree, WORKTREE);
         scrub.add(repo, REPO);
         if let Some(h) = home {
@@ -81,6 +86,7 @@ impl PathScrub {
             }
         }
         for root in &roots {
+            scrub.add_wt_dir(root);
             let (Some(parent), Some(name)) = (parent_of(root), root.file_name()) else {
                 continue;
             };
@@ -107,10 +113,25 @@ impl PathScrub {
         self.add_text(root, placeholder);
     }
 
+    /// Remember the `<name>-wt` directory of `root` so sibling worktrees match in either path style.
+    fn add_wt_dir(&mut self, root: &Path) {
+        if let Some(name) = root.file_name() {
+            let dir = format!("{}-wt", name.to_string_lossy());
+            if !self.wt_dirs.contains(&dir) {
+                self.wt_dirs.push(dir);
+            }
+        }
+    }
+
     fn add_text(&mut self, root: &Path, placeholder: &str) {
+        let rules = if placeholder == HOME {
+            &mut self.home_rules
+        } else {
+            &mut self.rules
+        };
         for form in forms(root) {
-            if !self.rules.iter().any(|(n, _)| *n == form) {
-                self.rules.push((form, placeholder.to_owned()));
+            if !rules.iter().any(|(n, _)| *n == form) {
+                rules.push((form, placeholder.to_owned()));
             }
         }
     }
@@ -118,8 +139,10 @@ impl PathScrub {
     /// Order the rules longest root first.
     fn finish(mut self) -> Self {
         self.rules.sort_by_key(|(n, _)| std::cmp::Reverse(n.len()));
+        self.home_rules
+            .sort_by_key(|(n, _)| std::cmp::Reverse(n.len()));
         tracing::debug!(
-            rules = self.rules.len(),
+            rules = self.rules.len() + self.home_rules.len(),
             foreign = self.foreign,
             "path scrub built"
         );
@@ -130,6 +153,12 @@ impl PathScrub {
     pub fn apply(&self, text: &str) -> String {
         let mut out = text.to_owned();
         for (needle, placeholder) in &self.rules {
+            out = replace_rooted(&out, needle, placeholder);
+        }
+        for dir in &self.wt_dirs {
+            out = rewrite_worktree_dirs(&out, dir);
+        }
+        for (needle, placeholder) in &self.home_rules {
             out = replace_rooted(&out, needle, placeholder);
         }
         if self.foreign {
@@ -157,6 +186,16 @@ fn local_path(url: &str) -> Option<PathBuf> {
     let path = url.strip_prefix("file://").unwrap_or(url);
     (path.starts_with('/') && !path.contains(':'))
         .then(|| PathBuf::from(path.trim_end_matches('/')))
+}
+
+// frob:ticket 01M41VT71KGG1AXT491SKCPWMA
+/// Collapse every absolute path (Unix or Windows style) ending at the directory `dir` to `dir` itself.
+fn rewrite_worktree_dirs(text: &str, dir: &str) -> String {
+    let mut out = text.to_owned();
+    while let Some(range) = find_worktree_dir(out.as_bytes(), dir) {
+        out.replace_range(range, dir);
+    }
+    out
 }
 
 /// Replace every remaining `/home/<name>` style root by [`OTHER_HOME`], keeping the rest of the path.
@@ -278,5 +317,44 @@ mod tests {
             "lease in app-wt/T9; ~other/x and ~other\\\\p and ~/home/zed/q"
         );
         assert_eq!(s.apply(&got), got, "a second pass changes nothing");
+    }
+
+    // frob:ticket 01M41VT71KGG1AXT491SKCPWMA
+    /// A Unix sibling worktree path collapses on any host, and a Windows one too, with the same placeholder.
+    #[test]
+    fn sibling_worktrees_collapse_in_both_styles() {
+        let mut s = scrub();
+        s.foreign = true;
+        let got = s.apply(
+            "a /home/ann/projects/app-wt/T2 b C:\\\\Users\\\\bo\\\\p\\\\app-wt\\\\T3 c C:\\Temp/.t~1/app-wt/T4/y d /home/ann/projects/app-wtx/T5",
+        );
+        assert_eq!(
+            got,
+            "a app-wt/T2 b app-wt\\\\T3 c app-wt/T4/y d ~/projects/app-wtx/T5"
+        );
+    }
+
+    proptest::proptest! {
+        // frob:tests crates/frob-evidence/src/scrub.rs::rewrite_worktree_dirs
+        /// Any account, parent and ticket in either style reduces to `app-wt<sep>ticket`, idempotently.
+        #[test]
+        fn worktree_paths_reduce_in_either_style(
+            user in "[a-z][a-z0-9_.-]{0,8}",
+            parent in "[a-z][a-z0-9_-]{0,8}",
+            ticket in "[A-Z0-9]{1,8}",
+            style in 0usize..4,
+        ) {
+            let (path, want) = match style {
+                0 => (format!("/home/{user}/{parent}/app-wt/{ticket}/x"), format!("app-wt/{ticket}/x")),
+                1 => (format!("C:\\Users\\{user}\\{parent}\\app-wt\\{ticket}\\x"), format!("app-wt\\{ticket}\\x")),
+                2 => (format!("C:/Users/{user}/{parent}/app-wt/{ticket}/x"), format!("app-wt/{ticket}/x")),
+                _ => (format!("C:\\\\Users\\\\{user}\\\\app-wt\\\\{ticket}"), format!("app-wt\\\\{ticket}")),
+            };
+            let mut s = scrub();
+            s.foreign = true;
+            let got = s.apply(&format!("at {path};"));
+            proptest::prop_assert_eq!(&got, &format!("at {want};"));
+            proptest::prop_assert_eq!(s.apply(&got), got);
+        }
     }
 }

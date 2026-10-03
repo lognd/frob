@@ -16,7 +16,8 @@ use crate::rules::{Tick004, id_of};
 /// The first absolute home path in `bytes`: what it looked like and its byte offset.
 ///
 /// Matches `/home/<name>/`, `/Users/<name>/`, `/root/` and the Windows forms
-/// `C:\Users\<name>\`, `C:\\Users\\<name>\\` (escaped) and `C:/Users/<name>/`. A
+/// `C:\Users\<name>\`, `C:\\Users\\<name>\\` (escaped) and `C:/Users/<name>/`. The account name must
+/// be plausible (name characters only), so a documentation placeholder such as `<n>` is not a hit. A
 /// Unix form must start an absolute path (the byte before it does not continue a
 /// path), so `crates/root/` and `../home/x/` are not hits.
 pub fn find_home_path(bytes: &[u8]) -> Option<(usize, &'static str)> {
@@ -50,6 +51,56 @@ pub fn find_home_root(bytes: &[u8]) -> Option<std::ops::Range<usize>> {
     Some(start..name_at + name)
 }
 
+// frob:ticket 01M41VT71KGG1AXT491SKCPWMA
+/// The byte range of the first absolute path, in either style, that ends at the directory `dir` (such as `app-wt`).
+///
+/// The range runs from the path root (`/`, `C:\`, `C:/`, escaped `C:\\`, any mix of separators) through
+/// `dir`, so a repair replaces it with `dir` alone and keeps the ticket component after it. A path is
+/// recognised by its component pattern, so it matches whichever host wrote it. `dir` must be followed by a
+/// separator or the end of a name; `app-wt-x` and `my-app-wt` are not hits.
+pub fn find_worktree_dir(bytes: &[u8], dir: &str) -> Option<std::ops::Range<usize>> {
+    let d = dir.as_bytes();
+    let mut from = 0;
+    while let Some(rel) = find_sub(&bytes[from..], d) {
+        let at = from + rel;
+        from = at + 1;
+        let end = at + d.len();
+        if bytes.get(end).is_some_and(|b| is_name(*b)) || !(at > 0 && is_sep(bytes[at - 1])) {
+            continue;
+        }
+        let mut start = at;
+        while start > 0 && is_path_byte(bytes[start - 1]) {
+            start -= 1;
+        }
+        if let Some(root) = root_offset(&bytes[start..at]) {
+            return Some(start + root..end);
+        }
+    }
+    None
+}
+
+fn find_sub(hay: &[u8], needle: &[u8]) -> Option<usize> {
+    hay.windows(needle.len()).position(|w| w == needle)
+}
+
+fn is_sep(b: u8) -> bool {
+    matches!(b, b'/' | b'\\')
+}
+
+/// A byte that can sit inside an absolute path of either style, drive colon and short names included.
+fn is_path_byte(b: u8) -> bool {
+    is_name(b) || is_sep(b) || matches!(b, b':' | b'~' | b'+' | b'@')
+}
+
+/// Where in `span` (the path text before a directory name) the absolute root begins, if one does.
+fn root_offset(span: &[u8]) -> Option<usize> {
+    let skip = if span.starts_with(b"file://") { 7 } else { 0 };
+    let rest = &span[skip..];
+    let drive =
+        rest.len() > 2 && rest[0].is_ascii_alphabetic() && rest[1] == b':' && is_sep(rest[2]);
+    (drive || rest.first() == Some(&b'/')).then_some(skip)
+}
+
 /// True when the byte before `at` does not continue a path, so a `/` at `at` begins an absolute one.
 fn starts_path(bytes: &[u8], at: usize) -> bool {
     at == 0 || !(is_name(bytes[at - 1]) || matches!(bytes[at - 1], b'/' | b'\\' | b'~'))
@@ -66,7 +117,9 @@ fn named_then(rest: &[u8], sep: &[u8]) -> bool {
 }
 
 fn unix_hit(at: &[u8]) -> Option<&'static str> {
-    if at.starts_with(b"/root/") {
+    if let Some(rest) = at.strip_prefix(b"/root/")
+        && rest.first().is_some_and(|b| is_name(*b))
+    {
         return Some("/root/");
     }
     if let Some(rest) = at.strip_prefix(b"/home/")
