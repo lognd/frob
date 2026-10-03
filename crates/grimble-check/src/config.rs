@@ -142,5 +142,4 @@ impl PacksTable {
 }
 
 /// The warning printed when packs are requested but not loaded.
-pub const PACKS_NOT_LOADED: &str =
-    "packs are enabled in grimble.toml but this build does not load packs yet; PACK rules and pack atoms are not evaluated";
+pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build does not load packs yet; PACK rules and pack atoms are not evaluated";

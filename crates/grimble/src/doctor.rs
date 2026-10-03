@@ -80,7 +80,8 @@ pub struct DoctorData {
 
 fn config_row(root: &std::path::Path) -> ConfigRow {
     let present = root.join("grimble.toml").is_file();
-    let loaded = ComputeTable::load_for(root).and_then(|(c, src)| Ok((c, src, PacksTable::load(root)?)));
+    let loaded =
+        ComputeTable::load_for(root).and_then(|(c, src)| Ok((c, src, PacksTable::load(root)?)));
     match loaded {
         Ok((compute, source, packs)) => ConfigRow {
             present,
@@ -143,7 +144,9 @@ impl Command for Doctor {
             languages,
         });
         if payload.data.config.packs_unloaded {
-            payload.warnings.push(grimble_check::config::PACKS_NOT_LOADED.to_owned());
+            payload
+                .warnings
+                .push(grimble_check::config::PACKS_NOT_LOADED.to_owned());
         }
         tracing::info!("doctor finished");
         Ok(payload)

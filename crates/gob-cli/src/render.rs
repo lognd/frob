@@ -150,9 +150,7 @@ pub(crate) fn envelope_error(err: &CliError) -> EnvelopeError {
     match err {
         CliError::Refusal(r) => EnvelopeError::from(r),
         CliError::Usage(m) => plain("E-USAGE", m.clone()),
-        CliError::Negative(m) | CliError::Gate { message: m, .. } => {
-            plain("E-NEGATIVE", m.clone())
-        }
+        CliError::Negative(m) | CliError::Gate { message: m, .. } => plain("E-NEGATIVE", m.clone()),
         CliError::Internal(e) => plain("E-INTERNAL", e.to_string()),
     }
 }

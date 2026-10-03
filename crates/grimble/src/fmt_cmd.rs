@@ -88,9 +88,8 @@ impl Command for Fmt {
                 Ok(text) => {
                     data.changed.push(path.clone());
                     if !self.check {
-                        std::fs::write(&full, text).map_err(|e| {
-                            CliError::internal(format!("cannot write {path}: {e}"))
-                        })?;
+                        std::fs::write(&full, text)
+                            .map_err(|e| CliError::internal(format!("cannot write {path}: {e}")))?;
                         tracing::info!(%path, "file formatted");
                     }
                 }

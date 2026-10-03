@@ -39,7 +39,11 @@ fn gob_config_default() -> ComputeTable {
 #[test]
 fn frob_toml_wins_over_grimble_toml_for_compute() {
     let dir = tempfile::tempdir().unwrap();
-    write(dir.path(), "grimble.toml", "[compute]\nexpansion_steps = 5\n");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[compute]\nexpansion_steps = 5\n",
+    );
     write(dir.path(), "frob.toml", "[compute]\nexpansion_steps = 7\n");
     let (table, source) = ComputeTable::load_for(dir.path()).unwrap();
     assert_eq!((table.expansion_steps, source), (7, "frob"));

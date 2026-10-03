@@ -210,7 +210,11 @@ fn fmt_check_fails_on_an_unformatted_file_and_fmt_fixes_it() {
 #[test]
 fn doctor_reports_fidelity_model_and_config_status() {
     let dir = repo();
-    write(dir.path(), "grimble.toml", "[packs]\nenabled = [\"grimble/core-effects\"]\n");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[packs]\nenabled = [\"grimble/core-effects\"]\n",
+    );
     write(dir.path(), "design/m.grmb", "grimble = \"2\";\nmodule m;\n");
     let (code, env, _) = grimble(dir.path(), &["doctor", "--json"]);
     assert_eq!(code, 0, "{env}");

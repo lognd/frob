@@ -35,15 +35,16 @@ pub fn known_adapters() -> Vec<&'static dyn Adapter> {
 /// macro, pattern) is `typed`; no declaration is `none`.
 pub fn precision_of(atom: &str, lang: &str) -> &'static str {
     match detectors(atom, lang) {
-        Answer::Exact(kinds) if kinds.iter().any(|k| {
-            matches!(
-                k,
-                DetectorKind::Import
-                    | DetectorKind::Attribute
-                    | DetectorKind::Macro
-                    | DetectorKind::Pattern
-            )
-        }) =>
+        Answer::Exact(kinds)
+            if kinds.iter().any(|k| {
+                matches!(
+                    k,
+                    DetectorKind::Import
+                        | DetectorKind::Attribute
+                        | DetectorKind::Macro
+                        | DetectorKind::Pattern
+                )
+            }) =>
         {
             "typed"
         }

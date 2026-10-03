@@ -13,9 +13,9 @@ use gob_rules::{Finding, Registry, Severity};
 use gob_text::SourceText;
 use serde_json::{Value, json};
 
+use crate::GrimbleRun;
 use crate::config::blake3_tagged;
 use crate::fidelity::fidelity_json;
-use crate::GrimbleRun;
 
 /// The contract name and major this build implements.
 pub const SCHEMA_VERSION: &str = "gob.sibling/1";
@@ -30,7 +30,7 @@ fn polarity_of(rule: &str) -> &'static str {
 /// Unresolved reason code of a finding: the required mark decides, else `fidelity`.
 fn reason_of(f: &Finding) -> Option<&'static str> {
     use gob_rules::RequiredReason::{AnnotationRequired, SiblingMissing, ZeroSubjects};
-    (f.severity == Severity::Unresolved).then(|| match &f.required {
+    (f.severity == Severity::Unresolved).then_some(match &f.required {
         Some(ZeroSubjects { .. }) => "vacuous",
         Some(AnnotationRequired { .. }) => "annotation-required",
         Some(SiblingMissing { .. }) => "incompatible",
@@ -55,7 +55,10 @@ fn sources_of(run: &GrimbleRun) -> MemorySources {
         let Some(path) = run.report.files.path(span.file) else {
             continue;
         };
-        if let Ok(text) = std::fs::read_to_string(run.root.join(path))
+        // Lossy: an opaque (non-UTF-8) model file still needs a path and an approximate line.
+        let text =
+            std::fs::read(run.root.join(path)).map(|b| String::from_utf8_lossy(&b).into_owned());
+        if let Ok(text) = text
             && let Ok(src) = SourceText::new(text)
         {
             sources.insert(span.file, path, src);
@@ -84,9 +87,10 @@ fn finding_json(run: &GrimbleRun, sources: &MemorySources, f: &Finding) -> Value
     object.insert("remedy".to_owned(), Value::Null);
     object.insert(
         "range".to_owned(),
-        f.span.map_or(Value::Null, |s| {
-            json!({"start": u32::from(s.range.start()), "end": u32::from(s.range.end())})
-        }),
+        f.span.map_or(
+            Value::Null,
+            |s| json!({"start": u32::from(s.range.start()), "end": u32::from(s.range.end())}),
+        ),
     );
     debug_assert_eq!(severity_label(f.severity), record.severity);
     v

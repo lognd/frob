@@ -8,8 +8,8 @@ use gob_check::{
     CheckError, CollectCx, Collected, FileCheck, NoScope, Product, RepoGroup, Snapshot,
 };
 use gob_rules::{
-    BoundException, ExceptionCtx, ExceptionKind, Finding, Registry, Resolved, RuleMeta,
-    Severity, apply_exceptions,
+    BoundException, ExceptionCtx, ExceptionKind, Finding, Registry, Resolved, RuleMeta, Severity,
+    apply_exceptions,
 };
 use gob_text::{FileInterner, Span};
 use grimble_model::{ModelFiles, check_model, rules::file_table};
@@ -60,12 +60,21 @@ impl Grimble {
     }
 }
 
-/// The MDL rules grimble owns today (the families PACK, SYS, CAP, ... register later).
+/// Directive-scanner rules `check_model` also emits for `frob:` and `grimble:` comments in `.grmb` files.
+const DIRECTIVE_RULES: [&str; 3] = ["PARSE001", "DSL001", "DSL002"];
+
+/// The rules the model group emits: the MDL family and the directive-scanner rules it relays.
+///
+/// The families SYS, CAP, CYCLE/LARGE/DEAD, PACK, GPOL, NEAT, CI and DK register their own
+/// groups as their tickets land.
 pub fn model_rules() -> Vec<&'static RuleMeta> {
-    Registry::global()
+    let registry = Registry::global();
+    let mut metas: Vec<&'static RuleMeta> = registry
         .iter()
         .filter(|m| m.product == PRODUCT && m.family == "MDL")
-        .collect()
+        .collect();
+    metas.extend(DIRECTIVE_RULES.iter().filter_map(|id| registry.by_id(id)));
+    metas
 }
 
 /// Key under which a suppressed finding is remembered: rule, file, offset and message.
@@ -181,11 +190,13 @@ impl Product for Grimble {
         let ctx = ExceptionCtx { files };
         let mut resolved = apply_exceptions(raw, &bounds, &ctx);
         // EXC016: an accept never parks an Unresolved finding.
-        let (kept_back, parked): (Vec<_>, Vec<_>) = resolved
-            .suppressed
-            .into_iter()
-            .partition(|(f, e)| f.severity == Severity::Unresolved && e.kind == ExceptionKind::Accept);
-        resolved.findings.extend(kept_back.into_iter().map(|(f, _)| f));
+        let (kept_back, parked): (Vec<_>, Vec<_>) =
+            resolved.suppressed.into_iter().partition(|(f, e)| {
+                f.severity == Severity::Unresolved && e.kind == ExceptionKind::Accept
+            });
+        resolved
+            .findings
+            .extend(kept_back.into_iter().map(|(f, _)| f));
         let mut parks = BTreeMap::new();
         for (f, _) in &parked {
             let best = rows

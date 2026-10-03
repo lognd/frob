@@ -107,7 +107,10 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         ..gob_check::RunOptions::default()
     };
     let report = gob_check::run(&product, root, &run_opts)?;
-    let trace = product.trace.into_inner().unwrap_or_else(PoisonError::into_inner);
+    let trace = product
+        .trace
+        .into_inner()
+        .unwrap_or_else(PoisonError::into_inner);
     let mut warnings = report.warnings.clone();
     if packs.requests_packs() {
         warnings.push(config::PACKS_NOT_LOADED.to_owned());

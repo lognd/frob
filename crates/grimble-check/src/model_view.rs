@@ -101,8 +101,7 @@ pub struct ModelView {
 
 /// 1-based line of byte `offset` in `text`.
 fn line_of(text: &str, offset: usize) -> u32 {
-    let end = offset.min(text.len());
-    let n = text.as_bytes()[..end].iter().filter(|b| **b == b'\n').count();
+    let n = text.bytes().take(offset).filter(|b| *b == b'\n').count();
     u32::try_from(n + 1).unwrap_or(u32::MAX)
 }
 
@@ -156,17 +155,22 @@ fn exception_row(x: &grimble_model::ast::Exception, site: &Site<'_>) -> Exceptio
         attr("ticket")
     };
     let until = attr("until");
-    let bound = x.rule.text.parse::<RuleId>().ok().map(|rule| BoundException {
-        exception: Exception {
-            kind: bound_kind(x.kind),
-            rule,
-            reason: because.clone(),
-            ticket: ticket.clone(),
-            until: until.clone(),
-        },
-        path: site.cover_file.to_owned(),
-        range: Some(site.cover.0..site.cover.1),
-    });
+    let bound = x
+        .rule
+        .text
+        .parse::<RuleId>()
+        .ok()
+        .map(|rule| BoundException {
+            exception: Exception {
+                kind: bound_kind(x.kind),
+                rule,
+                reason: because.clone(),
+                ticket: ticket.clone(),
+                until: until.clone(),
+            },
+            path: site.cover_file.to_owned(),
+            range: Some(site.cover.0..site.cover.1),
+        });
     ExceptionRow {
         id: exception_id(kind, &x.rule.text, site.file, site.start),
         kind,
@@ -202,7 +206,11 @@ fn directives_of(root: &LoadedRoot) -> BTreeMap<(String, String), Vec<DirectiveR
         let Ok(folded) = fold_file(&f.parsed, &f.mount) else {
             continue;
         };
-        for d in folded.directives.iter().filter(|d| d.hit.namespace == "frob") {
+        for d in folded
+            .directives
+            .iter()
+            .filter(|d| d.hit.namespace == "frob")
+        {
             let Some(entity) = entity_part(&d.anchor) else {
                 continue;
             };
@@ -265,21 +273,18 @@ impl ModelView {
                             cover_file: &parsed.path,
                             cover: (e.span.start, e.span.end),
                         };
-                        exceptions.insert(
-                            (parsed.path.clone(), c.span.start),
-                            exception_row(x, &site),
-                        );
+                        exceptions
+                            .insert((parsed.path.clone(), c.span.start), exception_row(x, &site));
                     }
                 }
             }
             for top in &idx.top_exceptions {
                 let parsed = &root.files[top.file].parsed;
                 let x = &top.exc.exception;
-                let target = x
-                    .on
-                    .as_ref()
-                    .and_then(|on| idx.resolve(&top.ctx, on))
-                    .map(|r| &idx.entities[r.rec]);
+                let target =
+                    x.on.as_ref()
+                        .and_then(|on| idx.resolve(&top.ctx, on))
+                        .map(|r| &idx.entities[r.rec]);
                 let (cover_file, cover) = match target {
                     Some(t) => (
                         root.files[t.file].parsed.path.as_str(),
@@ -291,7 +296,11 @@ impl ModelView {
                     file: &parsed.path,
                     text: &parsed.text,
                     start: top.exc.span.start,
-                    on: x.on.as_ref().map(|o| o.written()).unwrap_or_default(),
+                    on: x
+                        .on
+                        .as_ref()
+                        .map(grimble_model::ast::RefPath::written)
+                        .unwrap_or_default(),
                     cover_file,
                     cover,
                 };

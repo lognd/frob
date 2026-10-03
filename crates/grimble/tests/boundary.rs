@@ -38,7 +38,8 @@ fn no_frob_crate_is_a_direct_or_transitive_dependency_of_a_grimble_crate() {
         .filter(|(_, m)| m.is_file())
         .collect();
     assert!(
-        roots.iter().any(|(n, _)| n == "grimble") && roots.iter().any(|(n, _)| n == "grimble-check"),
+        roots.iter().any(|(n, _)| n == "grimble")
+            && roots.iter().any(|(n, _)| n == "grimble-check"),
         "the walk found the grimble crates: {roots:?}"
     );
     let mut seen: BTreeSet<String> = BTreeSet::new();
