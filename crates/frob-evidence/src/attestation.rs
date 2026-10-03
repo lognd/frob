@@ -137,6 +137,25 @@ pub fn escape_line(text: &str) -> String {
     out
 }
 
+/// Escape every non-ASCII character of `text` as `\u{..}`, keeping ASCII (newlines and tabs included) as is.
+///
+/// Ledger files must be ASCII; captured tool text goes through this before it is written into an event.
+pub fn escape_non_ascii(text: &str) -> String {
+    if text.is_ascii() {
+        return text.to_owned();
+    }
+    let mut out = String::with_capacity(text.len() + 16);
+    for c in text.chars() {
+        if c.is_ascii() {
+            out.push(c);
+        } else {
+            let _ = write!(out, "\\u{{{:x}}}", u32::from(c));
+        }
+    }
+    tracing::debug!("non-ASCII captured text escaped");
+    out
+}
+
 impl Attestation {
     /// The visible form: `[attested by X: "statement"]`, escaped and cut to one line.
     pub fn label(&self) -> String {
@@ -302,6 +321,12 @@ mod tests {
         assert!(agent.reasons()[0].contains("CLAUDECODE"));
         let empty = Presence::from_parts(true, true, |_| Some(String::new()));
         assert!(empty.require_human().is_ok(), "an empty marker is unset");
+    }
+
+    #[test]
+    fn escape_non_ascii_keeps_layout_and_hides_the_rest() {
+        assert_eq!(escape_non_ascii("a\n\tb"), "a\n\tb");
+        assert_eq!(escape_non_ascii("\u{2500}x\u{e9}\n"), "\\u{2500}x\\u{e9}\n");
     }
 
     #[test]

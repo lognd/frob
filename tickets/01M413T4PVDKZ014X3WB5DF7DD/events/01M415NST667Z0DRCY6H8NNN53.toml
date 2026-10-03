@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T15:21:14Z"
+digest = "41223b55e37d5af9e54100ab516ca7ce4b94272e9b4b6685136abdb822101377"
+exit_code = 0
+inline = """
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob-release)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob-lease)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/frob)
+   Compiling gob-dev v0.0.0 (/home/logan/projects/frob-v2-wt/B5DF7DD/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.05s
+────────────
+ Nextest run ID 55391efc-8026-4c6f-b03b-9e95918e4ff5 with nextest profile: default
+    Starting 1 test across 141 binaries (1187 tests skipped)
+        PASS [   0.198s] (1/1) frob-release::cut a_preview_product_tag_message_says_preview_and_the_others_do_not
+────────────
+     Summary [   0.205s] 1 test run: 1 passed, 1187 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "a_preview_product_tag_message_says_preview_and_the_others_do_not"
+size = 1388
+status = "measured"
+tests = ["a_preview_product_tag_message_says_preview_and_the_others_do_not"]
+at = "2026-10-03T15:21:14Z"
+actor = "lognd"
+rev = 1

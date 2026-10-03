@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T15:12:01Z"
+digest = "6ab97da402beab0e2551f704b0d5af0df0b662b387565548aa4eafdbd5528c3c"
+exit_code = 0
+inline = '''
+warning: ignoring --hide-progress-bar because --show-progress is specified
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/G31XEZ3/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.82s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9dc23a8d-e39f-4bbd-8a6f-a673f9b1ad51 with nextest profile: default
+    Starting 1 test across 3 binaries (31 tests skipped)
+        PASS [   0.295s] frob-evidence::evidence non_ascii_provider_output_is_escaped_in_every_ledger_file_and_shown_escaped
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.296s] 1 test run: 1 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(=non_ascii_provider_output_is_escaped_in_every_ledger_file_and_shown_escaped)'"
+size = 762
+status = "measured"
+tests = ["non_ascii_provider_output_is_escaped_in_every_ledger_file_and_shown_escaped"]
+at = "2026-10-03T15:12:01Z"
+actor = "lognd"
+rev = 1

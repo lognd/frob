@@ -9,6 +9,7 @@ use frob_ledger::{Applied, EventId, Ledger, TicketId};
 use gob_git::Oid;
 use serde::Serialize;
 
+use crate::attestation::escape_non_ascii;
 use crate::error::{EvidenceError, Result};
 use crate::record::EvidenceRecord;
 
@@ -50,10 +51,32 @@ pub fn to_data(record: &EvidenceRecord) -> Result<EvidenceData> {
     let mut table = toml::Table::try_from(record)
         .map_err(|e| EvidenceError::Malformed(format!("rendering the record: {e}")))?;
     table.remove("accepts");
+    // An attestation's statement is a person's exact words and its digest is over them; it is escaped on render instead.
+    let attestation = table.remove("attestation");
+    ascii_table(&mut table);
+    if let Some(a) = attestation {
+        table.insert("attestation".to_owned(), a);
+    }
     Ok(EvidenceData {
         accepts: record.accepts.clone(),
         record: table,
     })
+}
+
+/// Escape non-ASCII in every string of `table`, the backstop that keeps ledger event files ASCII.
+fn ascii_table(table: &mut toml::Table) {
+    for (_, value) in table.iter_mut() {
+        ascii_value(value);
+    }
+}
+
+fn ascii_value(value: &mut toml::Value) {
+    match value {
+        toml::Value::String(s) => *s = escape_non_ascii(s),
+        toml::Value::Array(items) => items.iter_mut().for_each(ascii_value),
+        toml::Value::Table(t) => ascii_table(t),
+        _ => {}
+    }
 }
 
 /// Rebuild the record an `evidence` event carries.
