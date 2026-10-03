@@ -2,7 +2,8 @@
 id = "01M4095RVEYWMEWQJFT5Y8JFGW"
 title = "Wire frob-pm into ticket doctor and the merge driver (milestone.md, cycle.md)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
