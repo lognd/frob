@@ -1004,6 +1004,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "frob-pm"
+version = "0.0.0"
+dependencies = [
+ "frob-ledger",
+ "gob-git",
+ "jiff",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "frob-tests"
 version = "0.0.0"
 dependencies = [

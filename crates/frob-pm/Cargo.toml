@@ -1,0 +1,25 @@
+[package]
+name = "frob-pm"
+version = "0.0.0"
+description = "frob project management objects: milestones and cycles as event-sourced ledger objects."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+frob-ledger = { path = "../frob-ledger" }
+jiff = "0.2"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+toml = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+gob-git = { path = "../gob-git" }
+tempfile = "3"
+
+[lints]
+workspace = true
