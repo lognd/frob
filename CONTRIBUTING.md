@@ -41,7 +41,11 @@ Only the full ULID is ever written into a file or a directive.
    actionlint, `frob doctor`, `frob check`, `frob test --dry-run`).
    `--keep-going` runs every step, `--step <name>` one, `--list` names them.
    The Windows clippy step needs `rustup target add
-   x86_64-pc-windows-gnu` and fails with that command otherwise. Run
+   x86_64-pc-windows-gnu` and the MinGW C compiler (`sudo apt-get install
+   -y gcc-mingw-w64-x86-64`, required by libsqlite3-sys); it checks both
+   first and fails naming the install command. Steps declare such
+   prerequisites in `crates/gob-dev/src/ci.rs`, and the parity test
+   requires `ci.yml` to install each one. Run
    `cargo dev gen all` after any change to a rule, knob, directive or
    verb (generated pages under `docs/reference/` and `docs/schemas/`).
 4. Evidence: `frob test --base <base>` records a measurement for the

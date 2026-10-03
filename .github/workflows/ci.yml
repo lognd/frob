@@ -44,6 +44,9 @@ jobs:
       - name: Install the Windows cross-check target (clippy-windows step)
         if: runner.os == 'Linux'
         run: rustup target add x86_64-pc-windows-gnu
+      - name: Install the MinGW C compiler (libsqlite3-sys for clippy-windows)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y gcc-mingw-w64-x86-64
       # Every check below is `cargo dev ci --step <name>`: the argv, flags and environment live
       # in crates/gob-dev/src/ci.rs, so `cargo dev ci` locally runs exactly this list.
       # crates/gob-dev/tests/ci_parity.rs fails when the two diverge.

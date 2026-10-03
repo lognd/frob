@@ -2,6 +2,7 @@
 //! workflow is `cargo dev ci --step <name>` (no argv, flags or environment of its own), in the
 //! order of `gob_dev::ci::steps`, on the platforms the step list says, and every step is run.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
+// frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
 
 use std::path::PathBuf;
 
@@ -93,6 +94,27 @@ fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
     Ok(())
 }
 
+/// First declared prerequisite of a Linux step whose install command `ci.yml` never runs.
+fn missing_install(text: &str, steps: &[Step]) -> Result<(), String> {
+    let code: String = text
+        .lines()
+        .filter(|l| !l.trim_start().starts_with('#'))
+        .collect::<Vec<_>>()
+        .join("\n");
+    for step in steps.iter().filter(|s| s.linux_only) {
+        for need in &step.needs {
+            let cmd = need.install_command();
+            if !code.contains(&cmd) {
+                return Err(format!(
+                    "ci.yml never runs `{cmd}`, a prerequisite of step {} ({need:?})",
+                    step.name
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 fn real_steps() -> Vec<Step> {
     ci::steps(&root()).unwrap()
 }
@@ -145,5 +167,51 @@ fn a_raw_or_dropped_check_in_ci_yml_fails_naming_it() {
         parity(&with_env, &real_steps())
             .unwrap_err()
             .contains("sets env")
+    );
+}
+
+// frob:tests crates/gob-dev/tests/ci_parity.rs::ci_yml_installs_every_linux_step_prerequisite
+#[test]
+fn ci_yml_installs_every_linux_step_prerequisite() {
+    let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
+    missing_install(&text, &real_steps()).unwrap();
+}
+
+// frob:tests crates/gob-dev/tests/ci_parity.rs::a_missing_prerequisite_install_fails_naming_it
+#[test]
+fn a_missing_prerequisite_install_fails_naming_it() {
+    let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
+    let dropped = text.replace("gcc-mingw-w64-x86-64", "nothing");
+    let err = missing_install(&dropped, &real_steps()).unwrap_err();
+    assert!(
+        err.contains("gcc-mingw-w64-x86-64") && err.contains("clippy-windows"),
+        "{err}"
+    );
+    let no_target = text.replace("rustup target add", "echo");
+    let err = missing_install(&no_target, &real_steps()).unwrap_err();
+    assert!(
+        err.contains("rustup target add x86_64-pc-windows-gnu"),
+        "{err}"
+    );
+}
+
+// frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
+// frob:tests crates/gob-dev/tests/ci_parity.rs::dev_alias_builds_into_a_separate_target_dir
+#[test]
+fn dev_alias_builds_into_a_separate_target_dir() {
+    let text = std::fs::read_to_string(root().join(".cargo/config.toml")).unwrap();
+    let cfg: toml::Table = text.parse().unwrap();
+    let alias = cfg["alias"]["dev"].as_str().unwrap();
+    let words: Vec<&str> = alias.split_whitespace().collect();
+    let dir = words
+        .windows(2)
+        .find(|w| w[0] == "--target-dir")
+        .map_or_else(
+            || panic!("dev alias {alias:?} shares the workspace target dir"),
+            |w| w[1].trim_end_matches('/'),
+        );
+    assert!(
+        dir != "target" && dir.starts_with("target/"),
+        "dev alias target dir {dir:?} must be a subdirectory of target/"
     );
 }

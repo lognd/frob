@@ -6,6 +6,7 @@
 //! cannot be missing from the other. Process spawning goes through `gob-exec` (PROC001).
 //! Design: `docs/design/build-test-ci.md`.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
+// frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
 
 use std::path::Path;
 use std::time::Duration;
@@ -33,9 +34,40 @@ pub struct Step {
     pub env: Vec<(String, String)>,
     /// Only the Linux CI job runs it; other hosts report it as skipped.
     pub linux_only: bool,
-    /// Rust target that must be installed before the step can run.
-    pub needs_target: Option<&'static str>,
+    /// Prerequisites checked before the step runs; `ci.yml` must install each (parity test).
+    pub needs: Vec<Prerequisite>,
 }
+
+/// Something a step needs on the host, checked before it runs and installed by `ci.yml`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Prerequisite {
+    /// A rustup target for the active toolchain.
+    RustTarget(&'static str),
+    /// An executable on `PATH`, with the command that installs it.
+    SystemTool {
+        /// Executable name looked up on `PATH`.
+        tool: &'static str,
+        /// Exact install command (Debian/Ubuntu), printed on failure and required in `ci.yml`.
+        install: &'static str,
+    },
+}
+
+impl Prerequisite {
+    /// The command that satisfies this prerequisite; `ci.yml` must contain it verbatim.
+    #[must_use]
+    pub fn install_command(&self) -> String {
+        match self {
+            Self::RustTarget(t) => format!("rustup target add {t}"),
+            Self::SystemTool { install, .. } => (*install).to_owned(),
+        }
+    }
+}
+
+/// MinGW C compiler that `libsqlite3-sys` needs to build for [`WINDOWS_TARGET`] from Linux.
+pub const MINGW_GCC: Prerequisite = Prerequisite::SystemTool {
+    tool: "x86_64-w64-mingw32-gcc",
+    install: "sudo apt-get install -y gcc-mingw-w64-x86-64",
+};
 
 /// Why the step list or a run could not proceed.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -56,6 +88,16 @@ pub enum CiError {
     TargetMissing {
         /// The missing target triple.
         target: String,
+    },
+    /// A required system tool is not on `PATH`.
+    #[error("{tool} is not installed (needed by the {step} step); run: {install}")]
+    ToolMissing {
+        /// The missing executable.
+        tool: String,
+        /// Step that needs it.
+        step: String,
+        /// Command that installs it.
+        install: String,
     },
     /// A process could not be run at all.
     #[error("{0}")]
@@ -95,7 +137,7 @@ fn cargo(name: &'static str, args: &[&str]) -> Step {
         args: strings(args),
         env: Vec::new(),
         linux_only: false,
-        needs_target: None,
+        needs: Vec::new(),
     }
 }
 
@@ -147,7 +189,7 @@ pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
             args: pinned_uvx(&frob_toml, tool)?,
             env: Vec::new(),
             linux_only: true,
-            needs_target: None,
+            needs: Vec::new(),
         })
     };
     let linux = |mut s: Step| {
@@ -168,7 +210,7 @@ pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
         ],
     );
     clippy_windows.linux_only = true;
-    clippy_windows.needs_target = Some(WINDOWS_TARGET);
+    clippy_windows.needs = vec![Prerequisite::RustTarget(WINDOWS_TARGET), MINGW_GCC];
     let mut docs = cargo("docs", &["doc", "--no-deps", "--all-features"]);
     docs.env = vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())];
     Ok(vec![
@@ -213,7 +255,7 @@ pub trait StepRunner {
     /// Run `step` in `root`, returning `Ok(())` when it exits 0.
     ///
     /// # Errors
-    /// [`CiError::TargetMissing`] when a required target is absent, [`CiError::Spawn`] on any
+    /// [`CiError::TargetMissing`] or [`CiError::ToolMissing`] when a prerequisite is absent, [`CiError::Spawn`] on any
     /// other failure to run or a non-zero exit.
     fn run(&self, root: &Path, step: &Step) -> Result<(), CiError>;
 }
@@ -262,11 +304,42 @@ fn require_target(root: &Path, target: &str) -> Result<(), CiError> {
     }
 }
 
+/// Fail with the install command when `tool` is not an executable file on `PATH`.
+fn require_tool(step: &str, tool: &str, install: &str) -> Result<(), CiError> {
+    let found = std::env::var_os("PATH").is_some_and(|path| {
+        std::env::split_paths(&path).any(|dir| {
+            dir.join(tool).is_file()
+                || dir
+                    .join(format!("{tool}{}", std::env::consts::EXE_SUFFIX))
+                    .is_file()
+        })
+    });
+    if found {
+        Ok(())
+    } else {
+        tracing::error!(tool, step, "required system tool missing");
+        Err(CiError::ToolMissing {
+            tool: tool.to_owned(),
+            step: step.to_owned(),
+            install: install.to_owned(),
+        })
+    }
+}
+
+/// Check every prerequisite of `step`, stopping at the first missing one.
+fn require_all(root: &Path, step: &Step) -> Result<(), CiError> {
+    for need in &step.needs {
+        match need {
+            Prerequisite::RustTarget(t) => require_target(root, t)?,
+            Prerequisite::SystemTool { tool, install } => require_tool(step.name, tool, install)?,
+        }
+    }
+    Ok(())
+}
+
 impl StepRunner for ExecRunner {
     fn run(&self, root: &Path, step: &Step) -> Result<(), CiError> {
-        if let Some(target) = step.needs_target {
-            require_target(root, target)?;
-        }
+        require_all(root, step)?;
         let out = runner()
             .run(&spec(root, step, STEP_TIMEOUT, false))
             .map_err(|e| CiError::Spawn(format!("{}: {e}", step.name)))?;
@@ -472,6 +545,43 @@ mod tests {
         assert!(
             e.to_string()
                 .contains("rustup target add x86_64-pc-windows-gnu")
+        );
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::ExecRunner
+    #[test]
+    fn missing_system_tool_fails_before_running_and_names_the_install_command() {
+        // Test hook: the prerequisite points at a name that cannot exist; the program is also
+        // nonexistent, so a spawn attempt would produce a different error.
+        let step = Step {
+            name: "needs-ghost",
+            program: Program::Tool {
+                name: "no-such-program-0g8qf7v".to_owned(),
+            },
+            args: Vec::new(),
+            env: Vec::new(),
+            linux_only: false,
+            needs: vec![Prerequisite::SystemTool {
+                tool: "no-such-tool-0g8qf7v",
+                install: "sudo apt-get install -y ghost-pkg",
+            }],
+        };
+        let e = ExecRunner.run(Path::new("."), &step).unwrap_err();
+        assert!(matches!(e, CiError::ToolMissing { .. }), "{e}");
+        let text = e.to_string();
+        assert!(text.contains("no-such-tool-0g8qf7v"), "{text}");
+        assert!(text.contains("sudo apt-get install -y ghost-pkg"), "{text}");
+    }
+
+    #[test]
+    fn clippy_windows_declares_target_and_mingw() {
+        let all = real();
+        let s = all.iter().find(|s| s.name == "clippy-windows").unwrap();
+        assert!(s.needs.contains(&Prerequisite::RustTarget(WINDOWS_TARGET)));
+        assert!(s.needs.contains(&MINGW_GCC));
+        assert_eq!(
+            MINGW_GCC.install_command(),
+            "sudo apt-get install -y gcc-mingw-w64-x86-64"
         );
     }
 
