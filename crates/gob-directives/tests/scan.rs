@@ -116,7 +116,7 @@ fn markdown_stacked_comments_bind_to_the_same_heading() {
 }
 
 // frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
-// frob:tests crates/gob-directives/src/scan.rs::Scanner[impl].record
+// frob:tests crates/gob-directives/src/scan.rs::Scanner.record
 #[test]
 fn tests_directive_separated_by_a_blank_line_is_not_attached() {
     let text = "fn foo() {}\n\n// frob:tests src/a.rs::foo\n\n#[test]\nfn works() {}\n";
@@ -129,7 +129,7 @@ fn tests_directive_separated_by_a_blank_line_is_not_attached() {
 }
 
 // frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
-// frob:tests crates/gob-directives/src/scan.rs::Scanner[impl].record
+// frob:tests crates/gob-directives/src/scan.rs::Scanner.record
 #[test]
 fn tests_directive_at_the_end_of_a_file_is_not_attached() {
     let text = "fn foo() {}\n// frob:tests src/a.rs::foo\n";
@@ -562,7 +562,7 @@ fn markdown_comment_opening_a_line_is_an_html_block_not_span_content() {
 }
 
 // frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
-// frob:tests crates/gob-directives/src/scan.rs::Scanner[impl].record
+// frob:tests crates/gob-directives/src/scan.rs::Scanner.record
 #[test]
 fn tests_directive_naming_nothing_still_binds_so_test001_judges_the_symref() {
     let text = "// frob:tests src/a.rs::missing\n#[test]\nfn works() {}\n";
