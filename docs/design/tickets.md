@@ -439,7 +439,9 @@ the `evidence-bypass` event. `no_open_children`: every child is done.
 rules are ~HE2EX99). `objective_target_met` passes for a ticket that is not a
 quality objective, and `docs_touched_or_excepted` and an objective's target
 are Unresolved today (no recorded docs exception, no stored target), so they
-refuse until they can be evaluated; a requirement that cannot be evaluated
+refuse until they can be evaluated, so the default `done_requires` lists only
+`criteria_evidenced`, `no_open_children` and `changelog_fragment` and listing the
+other two is an explicit choice; a requirement that cannot be evaluated
 never passes. Other requirements have no bypass beyond editing
 `done_requires`. The running `frob` and its `grimble` sibling are allowed
 command-evidence tools by canonical path without being listed in

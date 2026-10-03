@@ -97,7 +97,7 @@ impl Fixture {
                 ),
                 (
                     RelPath::new("frob.toml").expect("path"),
-                    Some(b"[pm]\ndone_requires = []\n".to_vec()),
+                    Some(b"[pm]\ndone_requires = [\"criteria_evidenced\"]\n".to_vec()),
                 ),
                 (
                     RelPath::new(".gitignore").expect("path"),
@@ -129,11 +129,17 @@ impl Fixture {
 
     /// Create a task with `scope` and `work` it.
     fn start(&self, title: &str, scope: &[&str]) -> Started {
+        self.start_with(title, scope, &[])
+    }
+
+    /// Like `start`, with acceptance criteria on the ticket.
+    fn start_with(&self, title: &str, scope: &[&str], acceptance: &[&str]) -> Started {
         let ledger = self.ledger();
         let leases = self.leases();
         let cfg = WorktreeConfig::load(&self.root).expect("config");
         let mut req = NewTicket::new(title, TicketType::Task);
         req.scope = scope.iter().map(|s| (*s).to_owned()).collect();
+        req.acceptance = acceptance.iter().map(|s| (*s).to_owned()).collect();
         let created = ledger.new_ticket(req).expect("new");
         let id = created.ticket.front.id;
         let ws = Workspace {
@@ -424,6 +430,36 @@ fn missing_evidence_refuses_unless_bypassed_with_a_reason() {
     };
     let out = land(&fx.root, &opts).expect("bypassed land");
     assert!(out.closed);
+}
+
+// frob:ticket 01M40WS6200M99J09D5XGAS05X
+#[test]
+fn an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start_with("Add g", &["src/**"], &["g answers"]);
+    Fixture::commit_in(&s.wt, "src/g.rs", "fn g() {}\n");
+    Fixture::evidence(&s, "src/g.rs");
+    let before = fx.main_tip();
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("unbound criterion");
+    let r = refusal(&err);
+    assert_eq!(r.code, "E-DONE-CRITERIA-UNBOUND");
+    assert!(r.message.contains("g answers"), "{}", r.message);
+    assert!(
+        r.remedy
+            .as_deref()
+            .is_some_and(|c| c.contains("--no-evidence --reason")),
+        "{:?}",
+        r.remedy
+    );
+    assert_eq!(fx.main_tip(), before, "base did not move");
+    assert_eq!(
+        fx.ledger().show(s.id).expect("show").summary.category,
+        Category::InProgress
+    );
 }
 
 #[test]

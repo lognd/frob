@@ -331,12 +331,10 @@
         "done_requires": {
           "default": [
             "criteria_evidenced",
-            "objective_target_met",
-            "docs_touched_or_excepted",
             "no_open_children",
             "changelog_fragment"
           ],
-          "description": "Definition of done: predicates checked on close and land; the default is the full list of pm-enforcement.md section 3 so done means evidenced, documented and releasable.",
+          "description": "Definition of done: predicates checked on close and land; the default lists the three evaluable ones (criteria_evidenced, no_open_children, changelog_fragment); docs_touched_or_excepted and objective_target_met exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice.",
           "items": {
             "$ref": "#/$defs/DoneRequirement"
           },

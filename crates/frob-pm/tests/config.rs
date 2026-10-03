@@ -19,7 +19,7 @@ fn missing_file_loads_the_documented_defaults() {
     assert_eq!(cfg.pm.min_history, 3);
     assert!((cfg.pm.capacity_k - 0.5).abs() < f64::EPSILON);
     assert_eq!(cfg.pm.ready_requires, ReadyRequirement::ALL);
-    assert_eq!(cfg.pm.done_requires, DoneRequirement::ALL);
+    assert_eq!(cfg.pm.done_requires, DoneRequirement::DEFAULT);
     assert_eq!(cfg.wip.in_progress_per_identity, 1);
     assert_eq!(cfg.wip.in_progress, 2);
     assert_eq!(cfg.classes.expedite_max, 1);

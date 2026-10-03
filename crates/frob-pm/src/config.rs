@@ -117,6 +117,15 @@ knob_names! {
     }
 }
 
+impl DoneRequirement {
+    /// The requirements enabled by default: the ones the close guard can evaluate today.
+    pub const DEFAULT: &'static [Self] = &[
+        Self::CriteriaEvidenced,
+        Self::NoOpenChildren,
+        Self::ChangelogFragment,
+    ];
+}
+
 /// Scrumban policies: pull order, definitions of ready and done, cadence and capacity statistics.
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "pm", materialize)]
@@ -130,8 +139,8 @@ pub struct PmTable {
     /// Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled.
     #[config(default = ReadyRequirement::ALL.to_vec(), enforcement)]
     pub ready_requires: Vec<ReadyRequirement>,
-    /// Definition of done: predicates checked on close and land; the default is the full list of pm-enforcement.md section 3 so done means evidenced, documented and releasable.
-    #[config(default = DoneRequirement::ALL.to_vec(), enforcement)]
+    /// Definition of done: predicates checked on close and land; the default lists the three evaluable ones (criteria_evidenced, no_open_children, changelog_fragment); docs_touched_or_excepted and objective_target_met exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice.
+    #[config(default = DoneRequirement::DEFAULT.to_vec(), enforcement)]
     pub done_requires: Vec<DoneRequirement>,
     /// Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence.
     #[config(default = 7, enforcement)]
