@@ -1033,6 +1033,7 @@ version = "0.0.0"
 dependencies = [
  "blake3",
  "frob-pm",
+ "gob-config",
  "gob-exec",
  "gob-git",
  "gob-mdtest",
@@ -1040,6 +1041,7 @@ dependencies = [
  "schemars",
  "semver",
  "serde",
+ "serde_json",
  "serde_yaml_ng",
  "similar",
  "tempfile",

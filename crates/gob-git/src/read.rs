@@ -228,6 +228,18 @@ impl Repo {
         Ok(out)
     }
 
+    /// The configured fetch URL of the remote `name`, or `None` when there is no such remote.
+    pub fn remote_url(&self, name: &str) -> Option<String> {
+        let key = format!("remote.{name}.url");
+        let url = self
+            .gix
+            .config_snapshot()
+            .string(&key)
+            .map(|u| u.to_str_lossy().into_owned());
+        debug!(remote = name, found = url.is_some(), "remote url read");
+        url
+    }
+
     /// `user.name` and `user.email` from git config, when both are set.
     pub fn config_user(&self) -> Option<(String, String)> {
         let cfg = self.gix.config_snapshot();

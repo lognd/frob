@@ -122,3 +122,7 @@ intangible_share = 0.2
 in_progress_per_identity = 1
 # Most tickets in progress in the repository at once; 0 is off. The generic default is 2 (the two-builder rule is about disk use, see notes/coordinator.md); this repository runs 3 for two building agents plus the coordinator's design tickets.
 in_progress = 3
+
+[release]
+# When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.
+require_ci = true
