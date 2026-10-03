@@ -32,6 +32,8 @@ fn synthetic(n: usize, ids: &[TicketId]) -> Ticket {
             },
             outcome: (n.is_multiple_of(3)).then_some(frob_ledger::model::Outcome::Done),
             priority: Priority::Medium,
+            class: frob_ledger::model::Class::Standard,
+            due: None,
             points: None,
             parent: (!n.is_multiple_of(50)).then(|| ids[n - n % 50]),
             reporter: "bench".into(),

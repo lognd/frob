@@ -286,6 +286,8 @@ fn summary(id: TicketId) -> Summary {
         category: Category::Todo,
         outcome: None,
         priority: Priority::Medium,
+        class: frob_ledger::model::Class::Standard,
+        due: None,
         points: None,
         parent: None,
         created: Stamp::from_unix(1),
@@ -576,4 +578,14 @@ fn scope001_allows_the_own_fragment_only() {
     let hits = scope001(&paths, &lease, &[]);
     assert_eq!(hits.len(), 2, "{hits:?}");
     assert!(hits.iter().all(|f| !f.message.starts_with(&own)));
+}
+
+// frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
+// frob:tests crates/frob-lease/src/store.rs::LeaseStore.with_expedite_max
+#[test]
+fn the_expedite_lane_defaults_to_one_and_is_configurable() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    assert_eq!(store.expedite_max(), 1);
+    assert_eq!(store.with_expedite_max(3).expedite_max(), 3);
 }

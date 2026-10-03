@@ -12,7 +12,7 @@ pub mod merge_cmd;
 pub mod read;
 pub mod write;
 
-use frob_ledger::model::{Category, Outcome, Priority, TicketType};
+use frob_ledger::model::{Category, Class, Outcome, Priority, TicketType};
 use frob_ledger::{Applied, Ledger, LedgerError, TicketId};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Context};
@@ -128,6 +128,8 @@ pub struct ChangeData {
     pub outcome: Option<Outcome>,
     /// Priority.
     pub priority: Priority,
+    /// Class of service.
+    pub class: Class,
     /// Ids of the events written (empty when `already`).
     pub events: Vec<String>,
     /// The ledger commit, when one was made.
@@ -148,6 +150,7 @@ impl From<&Applied> for ChangeData {
             category: f.category,
             outcome: f.outcome,
             priority: f.priority,
+            class: f.class,
             events: Ledger::event_strings(&a.events),
             commit: a.commit.map(|c| c.to_string()),
             changelog_exempt: None,

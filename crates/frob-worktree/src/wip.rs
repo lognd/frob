@@ -3,16 +3,19 @@
 //! Only in-progress tickets with a live lease count. An in-progress ticket whose
 //! lease expired is stale: it is named in the refusal (with a requeue hint) but
 //! never occupies a slot. The decision is a pure function over those two lists
-//! so it can be tested without a repository, and so the expedite lane of
-//! `releases.md` section 2 can later raise the `ceiling` it takes.
+//! so it can be tested without a repository. The expedite lane of
+//! `releases.md` section 2 is the one exception: an expedite ticket may exceed
+//! the repository limit, at most `[pm.classes] expedite_max` at a time.
 
 // frob:ticket 01M4069T76A6WSNHT3NZERXHAH
+// frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
 
 use std::fmt::Write;
 
 use frob_lease::Lease;
 use frob_ledger::index::ListFilter;
 use frob_ledger::model::Category;
+use frob_ledger::model::Class;
 use frob_ledger::model::Stamp;
 use frob_ledger::{Ledger, TicketId};
 use gob_diagnostics::{Refusal, RefusalClass};
@@ -21,6 +24,9 @@ use crate::error::WorktreeError;
 
 /// The refusal code of a repository WIP breach.
 pub const CODE: &str = "E-WIP-REPO";
+
+/// The refusal code of taking an expedite ticket past `[pm.classes] expedite_max`.
+pub const EXPEDITE_CODE: &str = "E-WIP-EXPEDITE";
 
 /// One in-progress ticket holding a WIP slot: its live lease.
 #[derive(Debug, Clone)]
@@ -31,6 +37,8 @@ pub struct Holding {
     pub title: String,
     /// The live lease (holder, worktree, since).
     pub lease: Lease,
+    /// Class of service of the held ticket.
+    pub class: Class,
 }
 
 /// One in-progress ticket whose lease expired: reported, not counted.
@@ -42,6 +50,39 @@ pub struct Stale {
     pub title: String,
     /// Time of the ticket's latest event.
     pub since: Stamp,
+}
+
+/// Append one line per holder to `msg`.
+fn write_holders<'a>(msg: &mut String, holdings: impl Iterator<Item = &'a Holding>) {
+    for h in holdings {
+        let _ = write!(
+            msg,
+            "\n  {} {} - holder {}, worktree {}, since {}",
+            h.handle,
+            h.title,
+            h.lease.holder.actor,
+            h.lease.holder.worktree.display(),
+            h.lease.acquired_at
+        );
+    }
+}
+
+/// The refusal for taking one more expedite ticket when `max` are already running; `None` when the lane is closed (0) or has room.
+pub fn expedite_refusal(max: u32, holdings: &[Holding], handle: &str) -> Option<Refusal> {
+    let running: Vec<&Holding> = holdings
+        .iter()
+        .filter(|h| h.class == Class::Expedite)
+        .collect();
+    if max == 0 || running.len() < max as usize {
+        return None;
+    }
+    let mut msg = format!(
+        "the expedite lane is full ({} of {max}); taking {handle} would exceed [pm.classes] expedite_max. Running expedite tickets:",
+        running.len()
+    );
+    write_holders(&mut msg, running.into_iter());
+    let remedy = "finish or requeue the running expedite ticket (frob requeue <ticket> --reason <why>), or raise [pm.classes] expedite_max in frob.toml";
+    Some(Refusal::new(EXPEDITE_CODE, RefusalClass::GuardNeedsAction, msg).with_remedy(remedy))
 }
 
 /// The refusal for taking one more ticket when `holdings` already fill `ceiling` slots; `None` when there is room or the limit is off (0).
@@ -58,17 +99,7 @@ pub fn refusal(
         "the repository is at its in-progress limit ({} of {ceiling}); taking {handle} would exceed [pm.wip] in_progress. Current holders:",
         holdings.len()
     );
-    for h in holdings {
-        let _ = write!(
-            msg,
-            "\n  {} {} - holder {}, worktree {}, since {}",
-            h.handle,
-            h.title,
-            h.lease.holder.actor,
-            h.lease.holder.worktree.display(),
-            h.lease.acquired_at
-        );
-    }
+    write_holders(&mut msg, holdings.iter());
     if !stale.is_empty() {
         msg.push_str("\nStale (in progress, lease expired; not counted):");
         for s in stale {
@@ -83,19 +114,44 @@ pub fn refusal(
     Some(Refusal::new(CODE, RefusalClass::GuardNeedsAction, msg).with_remedy(remedy))
 }
 
-/// Check that taking `id` (handle `handle`) fits under `limit`; a limit of 0 skips the check.
+/// The slot request of one ticket: its id, handle and class of service.
+#[derive(Debug, Clone, Copy)]
+pub struct Taking<'a> {
+    /// The ticket being taken.
+    pub id: TicketId,
+    /// Its handle with `~`.
+    pub handle: &'a str,
+    /// Its class of service.
+    pub class: Class,
+}
+
+/// The two knobs of the WIP policy: `[pm.wip] in_progress` and `[pm.classes] expedite_max`; 0 turns either off.
+#[derive(Debug, Clone, Copy)]
+pub struct Limits {
+    /// Repository-wide in-progress limit.
+    pub repo: u32,
+    /// Expedite tickets allowed at once.
+    pub expedite_max: u32,
+}
+
+/// Check that taking `taking` fits the WIP policy.
+///
+/// An expedite ticket skips the repository limit while the lane has room
+/// (`expedite_max` of 0 closes the lane: it is then treated like any ticket);
+/// everyone else counts every live holder, expedite included.
 ///
 /// # Errors
 ///
-/// `E-WIP-REPO` naming every holder when the repository is at its limit; ledger and lease failures.
+/// `E-WIP-EXPEDITE` when the lane is full, `E-WIP-REPO` naming every holder when the repository is at its limit; ledger and lease failures.
 pub fn check(
     ledger: &Ledger,
     leases: &frob_lease::LeaseStore,
-    limit: u32,
-    id: TicketId,
-    handle: &str,
+    limits: Limits,
+    taking: Taking<'_>,
 ) -> Result<(), WorktreeError> {
-    if limit == 0 {
+    let Taking { id, handle, class } = taking;
+    let lane = class == Class::Expedite && limits.expedite_max > 0;
+    if limits.repo == 0 && !lane {
         tracing::debug!(%id, "repository wip limit off");
         return Ok(());
     }
@@ -115,6 +171,7 @@ pub fn check(
                 handle: s.handle,
                 title: s.title,
                 lease: lease.clone(),
+                class: s.class,
             }),
             None => stale.push(Stale {
                 handle: s.handle,
@@ -123,10 +180,18 @@ pub fn check(
             }),
         }
     }
-    tracing::debug!(%id, limit, holders = holdings.len(), stale = stale.len(), "repository wip counted");
-    match refusal(limit, &holdings, &stale, handle) {
+    tracing::debug!(%id, %class, repo = limits.repo, holders = holdings.len(), stale = stale.len(), "repository wip counted");
+    if lane {
+        if let Some(r) = expedite_refusal(limits.expedite_max, &holdings, handle) {
+            tracing::info!(%id, max = limits.expedite_max, "work refused: expedite lane full");
+            return Err(WorktreeError::Refused(r));
+        }
+        tracing::info!(%id, "expedite ticket takes the lane, repository limit not applied");
+        return Ok(());
+    }
+    match refusal(limits.repo, &holdings, &stale, handle) {
         Some(r) => {
-            tracing::info!(%id, limit, holders = holdings.len(), "work refused: repository wip limit");
+            tracing::info!(%id, limit = limits.repo, holders = holdings.len(), "work refused: repository wip limit");
             Err(WorktreeError::Refused(r))
         }
         None => Ok(()),

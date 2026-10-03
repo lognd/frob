@@ -73,6 +73,7 @@ pub struct LeaseStore {
     cfg: LeaseConfig,
     holder_limit: u32,
     repo_limit: u32,
+    expedite_max: u32,
     shared: GlobSet,
     resolver: Resolver,
     clock: fn() -> Stamp,
@@ -107,6 +108,7 @@ impl LeaseStore {
             cfg,
             holder_limit: 0,
             repo_limit: 0,
+            expedite_max: 1,
             shared,
             resolver: Resolver::new(root),
             clock: Stamp::now,
@@ -139,6 +141,19 @@ impl LeaseStore {
     /// The repository-wide in-progress limit, 0 when off.
     pub fn repo_limit(&self) -> u32 {
         self.repo_limit
+    }
+
+    /// Record how many expedite tickets may be in progress at once (`[pm.classes] expedite_max`, default 1); like the repository limit the store only carries it and `frob-worktree` enforces it.
+    #[must_use]
+    pub fn with_expedite_max(mut self, max: u32) -> Self {
+        tracing::debug!(max, "expedite lane size set");
+        self.expedite_max = max;
+        self
+    }
+
+    /// How many expedite tickets may be in progress at once; 0 closes the lane (expedite then gets no exception).
+    pub fn expedite_max(&self) -> u32 {
+        self.expedite_max
     }
 
     /// The configuration in force.

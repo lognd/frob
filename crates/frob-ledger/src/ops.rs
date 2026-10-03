@@ -16,9 +16,25 @@ use crate::index::{ListFilter, Summary};
 use crate::ledger::{Applied, Ledger, Synced};
 use crate::links::{Edge, check_add, check_parent};
 use crate::model::{
-    Category, CommentSubtype, Link, LinkKind, LinkOp, Outcome, Points, Priority, Ticket, TicketType,
+    Category, Class, CommentSubtype, Link, LinkKind, LinkOp, Outcome, Points, Priority, Stamp,
+    Ticket, TicketType,
 };
 use crate::schema::{FieldKind, field, get_field, set_acceptance, set_field};
+
+/// Sort key of `doable`: expedite first, then fixed-date by due date (undated last), then the rest in index order.
+fn doable_rank(s: &Summary) -> (u8, i64) {
+    let lane = match s.class {
+        Class::Expedite => 0,
+        Class::FixedDate => 1,
+        Class::Standard | Class::Intangible => 2,
+    };
+    let due = if s.class == Class::FixedDate {
+        s.due.map_or(i64::MAX, Stamp::unix)
+    } else {
+        0
+    };
+    (lane, due)
+}
 
 /// A request to create a ticket.
 #[derive(Debug, Clone)]
@@ -31,6 +47,8 @@ pub struct NewTicket {
     pub category: Category,
     /// Priority.
     pub priority: Priority,
+    /// Class of service.
+    pub class: Class,
     /// Story points.
     pub points: Option<Points>,
     /// Parent ticket (must exist).
@@ -69,6 +87,7 @@ impl NewTicket {
             ty,
             category: Category::Todo,
             priority: Priority::Medium,
+            class: Class::Standard,
             points: None,
             parent: None,
             blocked_by: Vec::new(),
@@ -191,6 +210,7 @@ impl Ledger {
                 tracing::debug!(ticket = %c.id, "excluded from doable by lease check");
             }
         }
+        out.sort_by_key(doable_rank);
         Ok(out)
     }
 
@@ -329,6 +349,8 @@ impl Ledger {
                 ty: req.ty,
                 category: req.category,
                 priority: req.priority,
+                class: req.class,
+                due: None,
                 flavour: req.flavour,
                 points: req.points,
                 parent: req.parent,

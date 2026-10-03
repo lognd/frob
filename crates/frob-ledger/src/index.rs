@@ -15,10 +15,10 @@ use serde::Serialize;
 use crate::error::{Candidate, LedgerError, Result};
 use crate::id::{TicketId, compute_handles, display_handle};
 use crate::links::{Edge, edges_of};
-use crate::model::{Category, LinkKind, Outcome, Priority, Stamp, Ticket, TicketType};
+use crate::model::{Category, Class, LinkKind, Outcome, Priority, Stamp, Ticket, TicketType};
 
 /// Schema version; a mismatch drops and recreates every table.
-pub const INDEX_FORMAT: i64 = 1;
+pub const INDEX_FORMAT: i64 = 2;
 
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS tickets (
     category TEXT NOT NULL,
     outcome TEXT,
     priority TEXT NOT NULL,
+    class TEXT NOT NULL DEFAULT 'standard',
+    due TEXT,
     points INTEGER,
     parent TEXT,
     created TEXT NOT NULL,
@@ -78,6 +80,10 @@ pub struct Summary {
     pub outcome: Option<Outcome>,
     /// Priority.
     pub priority: Priority,
+    /// Class of service (`standard` unless set).
+    pub class: Class,
+    /// Due date, when set.
+    pub due: Option<Stamp>,
     /// Story points.
     pub points: Option<u8>,
     /// Parent ticket.
@@ -125,7 +131,7 @@ where
     })
 }
 
-const SUMMARY_COLS: &str = "id, handle, title, type, category, outcome, priority, points, parent, created, updated, blocked";
+const SUMMARY_COLS: &str = "id, handle, title, type, category, outcome, priority, points, parent, created, updated, blocked, class, due";
 
 fn summary_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Summary> {
     let outcome: Option<String> = r.get(5)?;
@@ -148,6 +154,14 @@ fn summary_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Summary> {
             rusqlite::Error::FromSqlConversionFailure(10, rusqlite::types::Type::Text, e.into())
         })?,
         blocked: r.get::<_, i64>(11)? != 0,
+        class: conv(12, &r.get::<_, String>(12)?)?,
+        due: r
+            .get::<_, Option<String>>(13)?
+            .map(|d| d.parse())
+            .transpose()
+            .map_err(|e: String| {
+                rusqlite::Error::FromSqlConversionFailure(13, rusqlite::types::Type::Text, e.into())
+            })?,
     })
 }
 
@@ -469,8 +483,8 @@ fn insert(tx: &rusqlite::Transaction<'_>, t: &Ticket) -> Result<()> {
         serde_json::to_string(t).map_err(|e| LedgerError::malformed("index.doc", e.to_string()))?;
     tx.prepare_cached(
         "INSERT OR REPLACE INTO tickets
-         (id, title, type, category, outcome, priority, points, parent, created, updated, idem_key, doc)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+         (id, title, type, category, outcome, priority, points, parent, created, updated, idem_key, doc, class, due)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
     )?
     .execute(params![
         id,
@@ -485,6 +499,8 @@ fn insert(tx: &rusqlite::Transaction<'_>, t: &Ticket) -> Result<()> {
         f.updated.to_string(),
         f.idempotency_key,
         doc,
+        f.class.as_str(),
+        f.due.map(|d| d.to_string()),
     ])?;
     let mut link = tx.prepare_cached("INSERT INTO links (src, kind, dst) VALUES (?1, ?2, ?3)")?;
     for l in &f.links {

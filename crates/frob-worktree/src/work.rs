@@ -186,9 +186,15 @@ impl Workspace<'_> {
             crate::wip::check(
                 self.ledger,
                 self.leases,
-                self.leases.repo_limit(),
-                id,
-                &handle,
+                crate::wip::Limits {
+                    repo: self.leases.repo_limit(),
+                    expedite_max: self.leases.expedite_max(),
+                },
+                crate::wip::Taking {
+                    id,
+                    handle: &handle,
+                    class: view.summary.class,
+                },
             )?;
         }
 
