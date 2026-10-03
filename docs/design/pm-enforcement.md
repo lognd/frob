@@ -134,7 +134,12 @@ Milestone 2 or later (D36).
   event (op `over-commit`) and shows on the cycle report. Bootstrap:
   until `[pm] min_history` (default 3) completed cycles exist, capacity is not
   enforced (PM010 is advisory) unless `capacity_points` is set, so a
-  fresh repo never needs `--over-commit`. PM010 flags cycles
+  fresh repo never needs `--over-commit`. The rolling window is the last
+  `max(6, min_history)` closed cycles and the stddev is the population
+  one; the limit is floored to whole points. `assign` defaults the cycle to the
+  open one holding today, else the next planned; a ticket lives in one open or
+  planned cycle, so assigning it elsewhere moves it (`remove` then `add`);
+  epics and unestimated tickets are refused. PM010 flags cycles
   over capacity; PM011 flags a cycle with no goal; PM012 flags stories
   in a cycle that are not `ready`.
 - `frob cycle plan <cycle>` proposes a commitment: ready stories by

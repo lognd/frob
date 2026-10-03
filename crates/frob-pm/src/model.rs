@@ -104,6 +104,12 @@ impl Day {
         Self(jiff::Zoned::now().date())
     }
 
+    /// The UTC calendar day of Unix time `secs`; the epoch day when out of range.
+    pub fn from_unix(secs: i64) -> Self {
+        let ts = jiff::Timestamp::from_second(secs).unwrap_or(jiff::Timestamp::UNIX_EPOCH);
+        Self(ts.to_zoned(jiff::tz::TimeZone::UTC).date())
+    }
+
     /// This day shifted by `days` (negative goes back); `Err` when the result leaves the calendar.
     ///
     /// # Errors

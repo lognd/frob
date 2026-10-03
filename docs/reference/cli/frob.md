@@ -8,10 +8,12 @@
 | `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and report findings; exit 1 at or above `fail_on`. |
 | `config show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print every config table merged (defaults, then frob.toml) with provenance. |
 | `config sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Add every knob a materialized table is missing to `frob.toml`; comments are kept. |
+| `cycle assign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Assign a ticket to a cycle (default: the open one containing today, else the next planned); refused past capacity unless over-committed. |
 | `cycle close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a cycle: carry incomplete work to the next, record the ratio and retro; refused while live work is in progress. |
 | `cycle list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every cycle, earliest start first. |
 | `cycle new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a cycle; an identical repeat returns `already`, an overlapping or different one is refused. |
 | `cycle show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one cycle (default: the current one) with its members, carried work, ratio and retro. |
+| `cycle unassign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Take a ticket out of a cycle; idempotent when it was not a member. |
 | `doctor` | yes | no | 0 ok, 3 refused | Report toolchain, git, cache, config and ledger health; never fails on findings. |
 | `graph affects` | yes | no | 0 ok, 2 usage, 4 internal | List the transitive dependents of a symbol, grouped by file. |
 | `graph why` | yes | no | 0 ok, 2 usage, 4 internal | Explain the bindings and acks that make a finding fire for a symbol. |

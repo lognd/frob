@@ -142,6 +142,8 @@ pub enum CycleOp {
     Ratio,
     /// The retrospective note written at close (`text`).
     Retro,
+    /// An assignment past capacity, allowed by `--over-commit` (`ticket`, `committed` points after it, `capacity`, `text` the reason).
+    OverCommit,
     /// An op this version does not interpret; it folds to no change.
     #[serde(other)]
     Other,
@@ -159,15 +161,18 @@ pub struct CycleEventData {
     /// Carried: the cycle it moved to.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<crate::model::ObjectId>,
-    /// Ratio: story points committed (members' points at close).
+    /// Ratio: story points committed (members' points at close); over-commit: committed points after the assignment.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub committed: Option<u32>,
     /// Ratio: story points done.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub done: Option<u32>,
-    /// Retro: the note, taken whole.
+    /// Retro: the note, taken whole; over-commit: the reason.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
+    /// Over-commit: the capacity in points that was exceeded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<u32>,
 }
 
 /// The kind-specific part of an event; the `kind` key selects the variant.
