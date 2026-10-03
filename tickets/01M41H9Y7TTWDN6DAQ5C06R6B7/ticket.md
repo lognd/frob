@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T18:44:28Z"
-updated = "2026-10-03T18:44:43Z"
-scope = ["crates/grimble-bind/**", "crates/frob-check/src/product.rs", "docs/design/binding.md"]
+updated = "2026-10-03T18:48:07Z"
+scope = ["crates/grimble-bind/**", "crates/frob-check/src/product.rs", "docs/design/binding.md", "crates/grimble-check/src/lib.rs", "crates/grimble-check/src/config.rs", "crates/grimble-check/src/bind_cache.rs", "crates/grimble-check/tests/binding.rs"]
 
 [[acceptance]]
 text = "Given a repository with a ledger of N tickets and no model node covering it, when frob check runs, then SYS001 reports nothing under the ledger directory"
