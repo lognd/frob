@@ -18,7 +18,7 @@ fn frob(dir: &Path, args: &[&str]) -> std::process::Output {
         .expect("run frob")
 }
 
-/// A temp directory holding a git repository with a TODO marker and no `frob.toml`.
+/// A temp directory holding a git repository and no `frob.toml`.
 fn repo() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let spec = Spec {
