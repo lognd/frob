@@ -336,7 +336,8 @@ fn close_without_a_next_cycle_is_refused_unless_carry_to_names_one() {
     );
     assert_eq!(
         repo.ok(&["cycle", "show", id(&c)])["data"]["cycle"]["state"],
-        "planned"
+        // Started in the past and never closed: active, as the refused close left it.
+        "active"
     );
     let far = repo.new_cycle("2026-12-01", "far");
     let skipped = repo.new_cycle("2026-11-01", "mid");
@@ -801,7 +802,8 @@ fn close_early_without_next_goal_refuses_and_the_remedy_names_it() {
     );
     assert_eq!(
         repo.ok(&["cycle", "show", id(&c)])["data"]["cycle"]["state"],
-        "planned"
+        // Started in the past and never closed: active, as the refused close left it.
+        "active"
     );
 }
 
@@ -1015,4 +1017,45 @@ fn velocity_agrees_with_the_close_record_and_ignores_unassigned_done_work() {
     assert_eq!(c["ratio"], closed["commitment"]["ratio"]);
     assert_eq!(c["unplanned_done"], 13);
     assert!((v["data"]["mean"].as_f64().expect("mean") - 3.0).abs() < 1e-9);
+}
+
+#[test]
+fn state_is_derived_from_the_clock_in_show_list_and_assign() {
+    // frob:ticket 01M413V82EXMRXXVWZN0MQNY3G
+    let repo = Repo::new();
+    let today = utc_window(&repo, 0, 6);
+    let tomorrow = utc_window(&repo, 7, 13);
+    assert_eq!(today["state"], "active");
+    assert_eq!(tomorrow["state"], "planned");
+    assert_eq!(
+        repo.ok(&["cycle", "show", id(&today)])["data"]["cycle"]["state"],
+        "active"
+    );
+    let list = repo.ok(&["cycle", "list"]);
+    let states: Vec<&str> = list["data"]["cycles"]
+        .as_array()
+        .expect("cycles")
+        .iter()
+        .map(|c| c["state"].as_str().expect("state"))
+        .collect();
+    assert_eq!(states, ["active", "planned"]);
+    // The overlap refusal and assign see the same derived state.
+    let (s, e) = (utc(3), utc(4));
+    let out = repo.frob(&["cycle", "new", "--start", &s, "--end", &e, "--goal", "g"]);
+    assert!(String::from_utf8_lossy(&out.stdout).contains("(active)"));
+}
+
+#[test]
+fn a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed() {
+    // frob:ticket 01M413V82EXMRXXVWZN0MQNY3G
+    let repo = Repo::new();
+    let c = utc_window(&repo, 0, 6);
+    let closed = repo.ok(&["cycle", "close", id(&c)])["data"]["cycle"].clone();
+    assert_eq!(closed["state"], "closed");
+    assert_eq!(
+        repo.ok(&["cycle", "show", id(&c)])["data"]["cycle"]["state"],
+        "closed"
+    );
+    let later = utc_window(&repo, 8, 14);
+    assert_eq!(later["state"], "planned");
 }
