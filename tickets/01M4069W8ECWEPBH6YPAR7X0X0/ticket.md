@@ -2,13 +2,13 @@
 id = "01M4069W8ECWEPBH6YPAR7X0X0"
 title = "frob release changelog: compile changelog.d fragments into CHANGELOG.md"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:57Z"
-updated = "2026-10-03T06:12:57Z"
+updated = "2026-10-03T07:28:38Z"
 idempotency_key = "m2-rel-changelog-compile"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-release/**", "Cargo.toml", "changelog.d/.gitkeep", "docs/reference/changelog.md"]
