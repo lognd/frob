@@ -198,7 +198,7 @@ fn drain(
     let exceeded = Arc::clone(exceeded);
     thread::spawn(move || {
         let mut buf = Vec::new();
-        let mut chunk = [0_u8; 64 * 1024];
+        let mut chunk = [0_u8; 8 * 1024];
         loop {
             match r.read(&mut chunk) {
                 Ok(0) => break,
