@@ -479,3 +479,46 @@ fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
         }
     }
 }
+
+/// Binds the `crates` job design of ~6N2KET1: OIDC in the `crates-io` environment, gated on smoke, no stored token.
+// frob:ticket 01M4069Y65FA7GGXG2F6N2KET1
+#[test]
+fn crates_job_publishes_through_trusted_publishing_in_the_crates_io_environment_after_smoke() {
+    let wf = workflow();
+    let job = &wf["jobs"]["crates"];
+    assert!(
+        publishes(job),
+        "the crates job must be detected as publishing"
+    );
+    assert!(needs_of(job).is_superset(&BTreeSet::from(["plan", "smoke"])));
+    assert_eq!(job["environment"].as_str(), Some("crates-io"));
+    let perms = job["permissions"].as_mapping().unwrap();
+    assert_eq!(perms.len(), 2, "only contents and id-token: {perms:?}");
+    assert_eq!(job["permissions"]["contents"].as_str(), Some("read"));
+    assert_eq!(job["permissions"]["id-token"].as_str(), Some("write"));
+    let steps = job["steps"].as_sequence().unwrap();
+    let auth = steps
+        .iter()
+        .position(|s| {
+            s["uses"]
+                .as_str()
+                .is_some_and(|u| u.starts_with("rust-lang/crates-io-auth-action@"))
+        })
+        .expect("the OIDC exchange step");
+    let publish = steps
+        .iter()
+        .position(|s| s["run"].as_str() == Some("cargo dev publish"))
+        .expect("the publish step");
+    assert!(auth < publish, "token is minted before the publish");
+    assert!(
+        steps[publish]["env"]["CARGO_REGISTRY_TOKEN"]
+            .as_str()
+            .is_some_and(|t| t.contains("steps.auth.outputs.token")),
+        "the registry token comes from the OIDC exchange"
+    );
+    let text = workflow_text();
+    assert!(
+        !text.contains("secrets."),
+        "no stored secret: crates.io uses trusted publishing"
+    );
+}
