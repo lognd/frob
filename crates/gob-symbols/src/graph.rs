@@ -391,22 +391,6 @@ impl Index {
         let dir = externs.iter().find(|(n, _)| *n == head)?.1.clone();
         Some((dir, segs.collect()))
     }
-
-    /// The crate directory declaring the type `written` in `file`, and its real name there.
-    fn type_home(&self, file: &str, written: &str) -> (String, String) {
-        let real = self.real_type_name(file, written);
-        let here = crate_and_module(file).0;
-        if self
-            .struct_count
-            .contains_key(&(here.clone(), real.clone()))
-        {
-            return (here, real);
-        }
-        match self.explicit_extern(file, written) {
-            Some((home, path)) => (home, path.last().cloned().unwrap_or(real)),
-            None => (here, real),
-        }
-    }
 }
 
 /// A receiver type proven for a call.
@@ -775,7 +759,7 @@ impl SymbolGraph {
             },
             Receiver::Field(base, field) => {
                 let b = self.receiver_ty(idx, caller, base)?;
-                let (krate, real) = idx.type_home(&b.file, &b.head);
+                let (krate, real) = self.type_home(idx, &b.file, &b.head);
                 idx.field_type(&krate, &real, field)?
             }
             Receiver::Ret(call) => self.ret_ty(idx, caller, call)?,
@@ -927,17 +911,36 @@ impl SymbolGraph {
             return self.resolve_bound_method(&traits, &named, &fits, &parent_seg);
         }
         if let Some(ty) = receiver.and_then(|r| self.receiver_ty(idx, caller, r)) {
-            let t = idx.real_type_name(&ty.file, &ty.head);
-            if let Some((dir, rel)) = idx.explicit_extern(&ty.file, &ty.head) {
-                return self.extern_methods(idx, (&dir, &rel), q.name, &fits);
-            }
-            let mine: Vec<NodeIndex> = named
+            let (home, t) = self.type_home(idx, &ty.file, &ty.head);
+            let here = crate_and_module(caller.path()).0;
+            // The type's methods live in its home crate; impls written in the caller's crate add trait impls.
+            let pool: Vec<NodeIndex> = if home == here {
+                named.clone()
+            } else {
+                let mut p = idx
+                    .by_name
+                    .get(&(home.clone(), q.name.to_owned()))
+                    .cloned()
+                    .unwrap_or_default();
+                p.extend(
+                    named
+                        .iter()
+                        .copied()
+                        .filter(|&n| self.graph[n].implements.is_some()),
+                );
+                p
+            };
+            let mine: Vec<NodeIndex> = pool
                 .iter()
                 .copied()
                 .filter(|&n| fits(n) && parent_seg(n).as_deref() == Some(t.as_str()))
                 .collect();
             if let [one] = mine.as_slice() {
-                let sure = self.graph[*one].implements.is_none();
+                let unique = idx
+                    .struct_count
+                    .get(&(home, t.clone()))
+                    .is_none_or(|&c| c <= 1);
+                let sure = self.graph[*one].implements.is_none() && unique;
                 return Outcome::Hit(mine, if sure { Status::Must } else { Status::May });
             }
             if !mine.is_empty() {
@@ -946,7 +949,7 @@ impl SymbolGraph {
             if !idx.deref_types.contains(&t) {
                 // The type has no such method of its own: only trait-provided methods remain
                 // (a trait declaration or default, or an impl for a type we cannot name).
-                let cands: Vec<NodeIndex> = named
+                let cands: Vec<NodeIndex> = pool
                     .iter()
                     .copied()
                     .filter(|&n| {
@@ -1062,36 +1065,35 @@ impl SymbolGraph {
         }
     }
 
-    /// `x.name(..)` where `x` has a type imported from another crate: its methods there, or a gap when none is found.
-    fn extern_methods(
-        &self,
-        idx: &Index,
-        home: (&str, &[String]),
-        name: &str,
-        fits: &dyn Fn(NodeIndex) -> bool,
-    ) -> Outcome {
-        let (dir, rel) = home;
-        let mut found: Vec<NodeIndex> = Vec::new();
-        for (home_dir, canon) in idx.canonical_paths(dir, rel, 0) {
-            let key = format!("{canon}::{name}");
-            found.extend(
-                idx.by_item
-                    .get(&(home_dir, key))
-                    .into_iter()
-                    .flatten()
-                    .copied()
-                    .filter(|&n| fits(n)),
-            );
+    /// The crate directory declaring the type `written` in `file`, and its name there.
+    ///
+    /// A name imported from another crate follows `pub use` re-exports to the crate that declares it.
+    fn type_home(&self, idx: &Index, file: &str, written: &str) -> (String, String) {
+        let real = idx.real_type_name(file, written);
+        let here = crate_and_module(file).0;
+        if idx.struct_count.contains_key(&(here.clone(), real.clone())) {
+            return (here, real);
         }
-        found.sort();
-        found.dedup();
-        match found.as_slice() {
-            [] => Outcome::Gap(GapReason::Unbound),
-            [one] => {
-                let sure = self.graph[*one].implements.is_none() && !self.is_trait_member(*one);
-                Outcome::Hit(found, if sure { Status::Must } else { Status::May })
-            }
-            _ => Outcome::Hit(found, Status::May),
+        let Some((dir, within)) = idx.explicit_extern(file, written) else {
+            return (here, real);
+        };
+        let homes: BTreeSet<(String, String)> =
+            idx.canonical_paths(&dir, &within, 0)
+                .into_iter()
+                .filter(|key| {
+                    idx.by_item.get(key).into_iter().flatten().any(|&n| {
+                        matches!(self.graph[n].kind, SymbolKind::Struct | SymbolKind::Enum)
+                    })
+                })
+                .map(|(d, path)| {
+                    let name = path.rsplit("::").next().unwrap_or(&path).to_owned();
+                    (d, name)
+                })
+                .collect();
+        let mut it = homes.into_iter();
+        match (it.next(), it.next()) {
+            (Some(one), None) => one,
+            _ => (dir, within.last().cloned().unwrap_or(real)),
         }
     }
 
