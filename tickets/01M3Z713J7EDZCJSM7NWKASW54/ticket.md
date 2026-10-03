@@ -20,11 +20,11 @@ target = "01M3Z713F6VY15YSMS15033RN1"
 
 [[acceptance]]
 text = "Given a lock written under scheme 1, when read under scheme 2, then every entry is reported REATTEST and nothing is silently accepted"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a change to an outer attribute of an acked symbol, when check runs, then DRIFT fires on the Attr facet"
-bound = false
+bound = true
 +++
 
 grimble-model.md 9.2 and universal-model.md 7: facets Sig, Body, Doc, Attr, Contract over the canonical facet stream; gob-lock entries typed symbol|flow with roles and flow keys and a digest_scheme field; scheme change makes every entry REATTEST loudly; the ack planner moves from frob-ack into gob-lock; this repository's frob.lock is regenerated; migration.md consumer import unblocked.
