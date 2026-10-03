@@ -25,6 +25,10 @@ target = "01M3Z713YNM5666B7YFEHPFVKD"
 kind = "blocked-by"
 target = "01M3ZX7DCQGFR0761QHY8NPAQE"
 
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7DMYNTWB3AP04CDMAECH"
+
 [[acceptance]]
 text = "Given the no-print-in-lib example rule from rules.md, when run over a Rust and a Python fixture, then it fires in both from one rule file"
 bound = false
