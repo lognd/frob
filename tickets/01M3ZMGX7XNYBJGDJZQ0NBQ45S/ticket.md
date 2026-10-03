@@ -2,13 +2,13 @@
 id = "01M3ZMGX7XNYBJGDJZQ0NBQ45S"
 title = "Capabilities deny by default; excuses only in matrix-build templates; CAP004 excused-but-used"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T01:02:13Z"
-updated = "2026-10-03T01:02:13Z"
+updated = "2026-10-03T01:02:14Z"
 idempotency_key = "m2-deny-default"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]
