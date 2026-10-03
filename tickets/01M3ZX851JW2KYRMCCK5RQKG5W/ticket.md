@@ -17,6 +17,10 @@ scope = ["crates/frob-mirror/src/marker.rs"]
 kind = "blocked-by"
 target = "01M3ZX7J6SES21T3KC4WESVR7H"
 
+[[links]]
+kind = "blocked-by"
+target = "01M4052R0DZK01W7K8EE77637T"
+
 [[acceptance]]
 text = "Given an issue created by another user carrying a valid-looking marker, when the mirror runs, then it is ignored and MIR003 is reported"
 bound = false
