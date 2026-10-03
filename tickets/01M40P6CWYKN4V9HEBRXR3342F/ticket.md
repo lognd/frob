@@ -2,7 +2,8 @@
 id = "01M40P6CWYKN4V9HEBRXR3342F"
 title = "nextest evidence: a filter expression with | is refused as matching no tests"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
