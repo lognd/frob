@@ -2,13 +2,13 @@
 id = "01M40MW1VKHDAMXAN9XMVY3DFK"
 title = "GRL: braces are literal outside message strings (no escaping in globs)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T10:27:33Z"
-updated = "2026-10-03T10:27:33Z"
+updated = "2026-10-03T10:41:26Z"
 idempotency_key = "m2-grl-literal-braces"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/**"]
