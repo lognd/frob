@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "~NTKAXC1 landed the shared helper: gob_git::Repo::worktree_content_as_git(rel) -> Result<Option<Vec<u8>>> in crates/gob-git/src/status.rs (symlink -> target string; regular file -> clean filters incl. core.autocrlf, core.eol, .gitattributes text/eol and configured filters; missing -> None). Use it for every content digest. Also fix crates/frob-ledger (or wherever) ledger.rs check_local_edits, which has its own filter-aware hash that follows symlinks; route it through the same helper."
+at = "2026-10-03T12:26:37Z"
+actor = "lognd"
+rev = 1
