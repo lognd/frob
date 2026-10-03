@@ -273,8 +273,8 @@ pub struct Cycle {
     pub created: Stamp,
     /// Time of the latest event.
     pub updated: Stamp,
-    /// Position among cycles sharing this date range, by creation (1: the first); derived by the store, never written.
-    #[serde(skip, default = "first_ordinal")]
+    /// Position among cycles sharing this date range, fixed at creation (1: the first); stored, written only when above 1.
+    #[serde(default = "first_ordinal", skip_serializing_if = "is_first")]
     pub ordinal: u32,
 }
 
@@ -283,8 +283,14 @@ const fn first_ordinal() -> u32 {
     1
 }
 
+/// True for the ordinal that needs no stored suffix.
+#[allow(clippy::trivially_copy_pass_by_ref)] // serde `skip_serializing_if` passes a reference
+const fn is_first(n: &u32) -> bool {
+    *n == 1
+}
+
 impl Cycle {
-    /// The alias of the cycle: `START..END`, with `.N` appended from the second cycle of a shared date range.
+    /// The alias of the cycle: `START..END`, with the stored `.N` appended from the second cycle of a shared date range.
     pub fn alias(&self) -> String {
         match self.ordinal {
             0 | 1 => format!("{}..{}", self.start, self.end),

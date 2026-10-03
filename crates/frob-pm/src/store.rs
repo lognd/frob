@@ -13,12 +13,14 @@ use std::collections::BTreeMap;
 use frob_ledger::event::{EvidenceData, FieldChange};
 use frob_ledger::{EventId, Ledger, TicketId};
 
+use crate::cycle::lifecycle::state_on;
 use crate::error::{PmError, Result};
 use crate::event::{
     CreateData, CriterionData, MemberData, Op, PmBody, PmEvent, TransitionData, sort_events,
 };
 use crate::fold::{Folded, fold, get_field};
 use crate::model::{Day, Object, ObjectId, ObjectKind, State};
+use frob_ledger::model::Stamp;
 
 const MAX_RECONCILE: u32 = 3;
 
@@ -66,6 +68,7 @@ impl NewObject {
                 end: None,
                 capacity_points: None,
                 criteria,
+                ordinal: None,
             },
             Self::Cycle {
                 start,
@@ -81,6 +84,7 @@ impl NewObject {
                 end: Some(end),
                 capacity_points,
                 criteria: Vec::new(),
+                ordinal: None,
             },
         }
     }
@@ -211,21 +215,22 @@ impl<'a> PmStore<'a> {
         if events.is_empty() {
             return Ok(None);
         }
-        let mut folded = fold(kind, id, &events)?;
-        self.number(&mut folded.object)?;
-        Ok(Some(folded))
+        Ok(Some(fold(kind, id, &events)?))
     }
 
-    /// Set a cycle's `ordinal` from its place among the cycles of the tip that share its date range.
-    fn number(self, object: &mut Object) -> Result<()> {
-        let Object::Cycle(c) = object else {
-            return Ok(());
-        };
-        let numbered = self.list(ObjectKind::Cycle)?;
-        if let Some(Object::Cycle(n)) = numbered.iter().find(|o| o.id() == c.id) {
-            c.ordinal = n.ordinal;
-        }
-        Ok(())
+    /// The ordinal a new cycle of `start..end` takes: one above the highest already used by that range.
+    fn next_ordinal(self, start: Day, end: Day) -> Result<u32> {
+        let highest = self
+            .list(ObjectKind::Cycle)?
+            .iter()
+            .filter_map(|o| match o {
+                Object::Cycle(c) if c.start == start && c.end == end => Some(c.ordinal),
+                _ => None,
+            })
+            .max()
+            .unwrap_or(0);
+        tracing::debug!(%start, %end, highest, "next cycle ordinal chosen");
+        Ok(highest + 1)
     }
 
     /// Every object of `kind` folded at the current tip, ordered by id; unreadable ones are skipped with a warning.
@@ -247,7 +252,6 @@ impl<'a> PmStore<'a> {
                 Err(e) => tracing::warn!(object = %id, error = %e, "skipping unreadable object"),
             }
         }
-        number_cycles(&mut out);
         Ok(out)
     }
 
@@ -290,15 +294,24 @@ impl<'a> PmStore<'a> {
     /// [`PmError::Invalid`] for a bad date range, a missing version, or an alias
     /// (version, dates) that another object of the kind already has; ledger failures.
     pub fn create(self, new: NewObject) -> Result<Applied> {
-        let data = new.into_create();
+        let mut data = new.into_create();
         let kind = data.object;
         let id = ObjectId::mint();
+        // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
+        // The suffix is fixed here, once, so no two cycles of a range ever share an alias.
+        if let (ObjectKind::Cycle, Some(start), Some(end)) = (kind, data.start, data.end) {
+            let ordinal = self.next_ordinal(start, end)?;
+            data.ordinal = (ordinal > 1).then_some(ordinal);
+        }
         let event = PmEvent::new(&self.ledger.actor()?, PmBody::Create(Box::new(data)));
         let folded = fold(kind, id, std::slice::from_ref(&event))?;
         let alias = folded.object.alias();
         // A closed cycle never holds its date range: only open or planned cycles (and any milestone) block the alias.
-        let taken = |o: &Object| {
-            o.alias() == alias && !matches!(o, Object::Cycle(c) if c.state == State::Closed)
+        let taken = |o: &Object| match (o, &folded.object) {
+            (Object::Cycle(c), Object::Cycle(n)) => {
+                c.state != State::Closed && c.start == n.start && c.end == n.end
+            }
+            _ => o.alias() == alias,
         };
         if self.list(kind)?.iter().any(taken) {
             return Err(PmError::invalid(format!(
@@ -474,9 +487,10 @@ impl<'a> PmStore<'a> {
         reason: Option<String>,
     ) -> Result<Applied> {
         let current = self.require(kind, id)?;
+        // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
         let from = match &current.object {
             Object::Milestone(m) => m.state,
-            Object::Cycle(c) => c.state,
+            Object::Cycle(c) => state_on(c, Day::from_unix(Stamp::now().unix())),
         };
         self.append(
             kind,
@@ -531,10 +545,9 @@ impl<'a> PmStore<'a> {
             folded.object.alias()
         );
         let commit = self.ledger.commit_files(&message, &changes)?.to_string();
-        let mut object = self
+        let object = self
             .reconcile(kind, id, MAX_RECONCILE)?
             .map_or(folded.object, |f| f.object);
-        self.number(&mut object)?;
         Ok(Applied {
             object,
             events: new.iter().map(|e| e.id).collect(),
@@ -596,21 +609,5 @@ impl<'a> PmStore<'a> {
             }
         }
         Ok(out)
-    }
-}
-
-/// Number every cycle of `objects` among those sharing its date range, earliest id first.
-///
-/// The first cycle of a range keeps the bare alias; later ones get `.2`, `.3`, and so on.
-fn number_cycles(objects: &mut [Object]) {
-    let mut seen: std::collections::HashMap<(Day, Day), u32> = std::collections::HashMap::new();
-    let mut order: Vec<usize> = (0..objects.len()).collect();
-    order.sort_by_key(|i| objects[*i].id());
-    for i in order {
-        if let Object::Cycle(c) = &mut objects[i] {
-            let n = seen.entry((c.start, c.end)).or_insert(0);
-            *n += 1;
-            c.ordinal = *n;
-        }
     }
 }

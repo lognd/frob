@@ -10,6 +10,7 @@
 use frob_ledger::TicketId;
 pub use frob_ledger::fold::Conflict;
 
+use crate::cycle::lifecycle::state_on;
 use crate::error::{PmError, Result};
 use crate::event::{
     CreateData, CriterionData, CycleEventData, CycleOp, MemberData, Op, PmBody, PmEvent,
@@ -71,7 +72,7 @@ fn initial(id: ObjectId, ev: &PmEvent, c: &CreateData) -> std::result::Result<Ob
                 tickets: Vec::new(),
                 created: ev.at,
                 updated: ev.at,
-                ordinal: 1,
+                ordinal: c.ordinal.unwrap_or(1).max(1),
             }))
         }
     }
@@ -87,6 +88,7 @@ pub(crate) fn get_field(o: &Object, field: &str) -> Option<toml::Value> {
         (Object::Cycle(c), "goal") => s(&c.goal),
         (Object::Cycle(c), "start") => s(&c.start.to_string()),
         (Object::Cycle(c), "end") => s(&c.end.to_string()),
+        (Object::Cycle(c), "ordinal") => Some(toml::Value::Integer(i64::from(c.ordinal))),
         (Object::Cycle(c), "capacity_points") => c
             .capacity_points
             .map(|n| toml::Value::Integer(i64::from(n))),
@@ -119,6 +121,14 @@ fn set_field(
         (Object::Cycle(c), "goal") => c.goal = text(v, field)?,
         (Object::Cycle(c), "start") => c.start = day(v, field)?,
         (Object::Cycle(c), "end") => c.end = day(v, field)?,
+        (Object::Cycle(c), "ordinal") => {
+            c.ordinal = match v {
+                Some(toml::Value::Integer(n)) if *n >= 1 => {
+                    u32::try_from(*n).map_err(|_| "`ordinal` is out of range".to_owned())?
+                }
+                _ => return Err("`ordinal` needs an integer of 1 or more".to_owned()),
+            };
+        }
         (Object::Cycle(c), "capacity_points") => {
             c.capacity_points = match v {
                 None => None,
@@ -220,19 +230,25 @@ fn apply_transition(
     if !d.to.valid_for(kind) || !d.from.valid_for(kind) {
         return Err(format!("`{}` is not a state of a {kind}", d.to));
     }
-    let slot = match o {
-        Object::Milestone(m) => &mut m.state,
-        Object::Cycle(c) => &mut c.state,
+    // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
+    // A cycle's state is derived from the clock, so the transition is judged against the state
+    // on the day the event happened, by the one rule every reader uses.
+    let before = match &*o {
+        Object::Milestone(m) => m.state,
+        Object::Cycle(c) => state_on(c, Day::from_unix(ev.at.unix())),
     };
-    if *slot != d.from {
+    if before != d.from {
         out.push(Conflict {
             event: ev.id,
             field: "state".to_owned(),
             expected: Some(d.from.to_string()),
-            found: Some(slot.to_string()),
+            found: Some(before.to_string()),
         });
     }
-    *slot = d.to;
+    match o {
+        Object::Milestone(m) => m.state = d.to,
+        Object::Cycle(c) => c.state = d.to,
+    }
     if let (Object::Cycle(c), Some(ended)) = (o, d.ended) {
         if d.to != State::Closed || ended < c.start {
             return Err(format!(
