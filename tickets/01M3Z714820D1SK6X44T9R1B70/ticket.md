@@ -2,7 +2,8 @@
 id = "01M3Z714820D1SK6X44T9R1B70"
 title = "G12: grimble.lock, grimble ack, SYS006-008"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
