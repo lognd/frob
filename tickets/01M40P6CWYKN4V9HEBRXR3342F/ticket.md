@@ -8,14 +8,14 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T10:50:40Z"
-updated = "2026-10-03T10:55:18Z"
+updated = "2026-10-03T10:56:28Z"
 idempotency_key = "m2-evidence-filter-union"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/frob-evidence/**"]
 
 [[acceptance]]
 text = "Given --ref with -E 'test(a) | test(b)' where both tests exist, when evidence add runs, then both run and a measured pass is recorded"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a filter that matches nothing, when evidence add runs, then it still refuses"

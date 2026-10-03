@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T10:56:28Z"
+digest = "b3d91e3904a320c00c839c5d2efc20d8ce399adee603b36d4630818e83e84ef2"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+────────────
+ Nextest run ID 1d433a2a-6524-4b8f-9c10-8eb98bd45d06 with nextest profile: default
+    Starting 2 tests across 2 binaries (33 tests skipped)
+        PASS [   0.004s] (1/2) gob-plan::lex every_token_kind
+        PASS [   0.004s] (2/2) gob-plan::lex comments_are_dropped_but_kept
+────────────
+     Summary [   0.005s] 2 tests run: 2 passed, 33 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(every_token_kind) | test(comments_are_dropped_but_kept)'"
+size = 484
+status = "measured"
+tests = ["every_token_kind", "comments_are_dropped_but_kept"]
+at = "2026-10-03T10:56:28Z"
+actor = "lognd"
+rev = 1
