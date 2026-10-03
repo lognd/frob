@@ -71,7 +71,7 @@ pub use filecheck::{CheckCtx, FileCheck, SharedCtx};
 pub use options::RunOptions;
 pub use pipeline::run;
 pub use product::{
-    CollectCx, Collected, CountFn, NoScope, Product, RepoGroup, RunFn, ScopeView, ScopedFindings,
+    CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn, ScopeView, ScopedFindings,
     Snapshot,
 };
 pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};

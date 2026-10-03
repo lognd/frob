@@ -113,8 +113,12 @@ fn tool_stages(
 ///
 /// Cached findings do not keep their original anchor, so fresh and cached
 /// results are normalized alike; that is what makes a warm run byte-identical.
-fn refingerprint(findings: &mut [Finding], files: &FileInterner) {
-    for f in findings {
+fn refingerprint(
+    findings: &mut [Finding],
+    files: &FileInterner,
+    kept: &std::collections::HashMap<gob_rules::Fingerprint, String>,
+) {
+    for f in findings.iter_mut().filter(|f| !kept.contains_key(&f.fingerprint)) {
         let anchor = f
             .span
             .and_then(|s| files.path(s.file))
@@ -249,6 +253,7 @@ fn pass<P: Product>(
         None => None,
     };
     let scope_files = scope.as_ref().map(ScopeView::files);
+    product.start_external(&snap, table, scope_files);
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);
     let wanted_rule = |f: &Finding| matches_only(only, f.rule.family(), f.rule.as_str());
@@ -333,8 +338,16 @@ fn pass<P: Product>(
         &mut files,
     ));
 
-    let (mut findings, suppressed) =
+    let external = product.join_external(&snap, &mut files, &mut tally.timing);
+    raw.extend(external.findings);
+    for (label, row) in external.languages {
+        tally.fidelity.languages.insert(label, row);
+    }
+    warnings.extend(external.warnings);
+
+    let (mut findings, mut suppressed) =
         resolve_exceptions(product, &snap, &files, raw, only, &mut tally.timing);
+    suppressed.extend(external.suppressed);
 
     if let Some(f) = perf_finding(perf, &tally.timing, only) {
         warnings.push("PERF001: time budget exceeded".to_owned());
@@ -354,6 +367,7 @@ fn pass<P: Product>(
         fail_on_unresolved: table.fail_on_unresolved,
         subjects_examined: tally.subjects,
         fidelity: tally.fidelity,
+        namespaces: external.namespaces,
     })
 }
 
@@ -397,7 +411,7 @@ pub fn run<P: Product>(
             remaining: report.findings.len(),
         });
     }
-    refingerprint(&mut report.findings, &report.files);
+    refingerprint(&mut report.findings, &report.files, &report.namespaces);
     mark_annotations(&mut report.findings);
     sort_findings(&mut report.findings, &report.files);
     if table.telemetry && !opts.skip_telemetry {

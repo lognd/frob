@@ -140,6 +140,12 @@ pub struct CheckTable {
     /// External tool stages run after the built-in rules, outside the time budget.
     #[config(default = Vec::new())]
     pub tool: Vec<ToolStage>,
+    /// Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
+    #[config(default = 120)]
+    pub sibling_timeout_secs: u64,
+    /// When true an unusable configured sibling is a required Unresolved (`SIB001`).
+    #[config(default = true)]
+    pub require_siblings: bool,
 }
 
 /// The time budget of the built-in rules.

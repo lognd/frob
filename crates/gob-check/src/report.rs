@@ -177,9 +177,19 @@ pub struct CheckReport {
     pub subjects_examined: BTreeMap<String, usize>,
     /// Files examined, `NotApplicable` and Unresolved per language (every checked file appears).
     pub fidelity: FidelityReport,
+    /// Fingerprints of external findings, mapped to their namespaced form (`grimble:<hex>`).
+    pub namespaces: std::collections::HashMap<gob_rules::Fingerprint, String>,
 }
 
 impl CheckReport {
+    /// The reported form of `finding`'s fingerprint: namespaced for a sibling finding, plain hex otherwise.
+    pub fn fingerprint_of(&self, finding: &gob_rules::Finding) -> String {
+        self.namespaces
+            .get(&finding.fingerprint)
+            .cloned()
+            .unwrap_or_else(|| finding.fingerprint.to_hex())
+    }
+
     /// `Negative` when a finding reaches `fail_on` or an Unresolved one fails `fail_on_unresolved`.
     pub fn exit_code(&self) -> ExitCode {
         fail_on(

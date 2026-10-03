@@ -5,11 +5,11 @@
 //! its own inputs (graph, ledger, lock, ...), its rules grouped for caching,
 //! its scope semantics and how exceptions are parsed.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
 
 use gob_cache::Cache;
-use gob_rules::{Finding, Resolved, RuleMeta};
+use gob_rules::{Exception, Finding, Fingerprint, Resolved, RuleMeta};
 use gob_symbols::FileInfo;
 use gob_text::FileInterner;
 
@@ -18,6 +18,7 @@ use crate::core::Core;
 use crate::error::CheckError;
 use crate::filecheck::FileCheck;
 use crate::report::{Stats, Timing};
+use crate::status::LanguageFidelity;
 
 /// A resolved scope: a label for the report and the files per-file rules are limited to.
 pub trait ScopeView {
@@ -84,6 +85,25 @@ pub struct ScopedFindings {
     pub findings: Vec<Finding>,
     /// `(rule id, subjects examined)` for each rule that ran.
     pub subjects: Vec<(&'static str, usize)>,
+}
+
+/// What a product's external stages (sibling binaries) contributed to one pass.
+///
+/// The findings join the raw set, so `--only` and the gate treat them as native ones; the
+/// suppressed pairs go straight to the report, and `namespaces` keeps the fingerprints the
+/// final re-fingerprinting must not overwrite.
+#[derive(Debug, Default)]
+pub struct External {
+    /// Live findings, spans interned into the pass's file table.
+    pub findings: Vec<Finding>,
+    /// Findings the external product parked, each with its exception.
+    pub suppressed: Vec<(Finding, Exception)>,
+    /// Fingerprint kept as is, mapped to its namespaced display form (`grimble:<hex>`).
+    pub namespaces: HashMap<Fingerprint, String>,
+    /// Fidelity rows to merge into the report, keyed by a product-qualified language label.
+    pub languages: Vec<(String, LanguageFidelity)>,
+    /// Non-fatal notes for the report's warnings.
+    pub warnings: Vec<String>,
 }
 
 /// A repo group's computation: the snapshot and the extendable interner in, raw findings out.
@@ -202,6 +222,28 @@ pub trait Product: Sized + Sync {
         files: &FileInterner,
         raw: Vec<Finding>,
     ) -> Resolved;
+
+    /// Start external stages (sibling binaries) before the product's own rules run.
+    ///
+    /// `scope_files` is the resolved scope's file set, when the run is scoped. The default starts
+    /// nothing; a product that spawns work here collects it in [`Product::join_external`].
+    fn start_external(
+        &self,
+        _snap: &Snapshot<Self>,
+        _table: &CheckTable,
+        _scope_files: Option<&BTreeSet<String>>,
+    ) {
+    }
+
+    /// Join the stages started by [`Product::start_external`], timing them outside the budget.
+    fn join_external(
+        &self,
+        _snap: &Snapshot<Self>,
+        _files: &mut FileInterner,
+        _timing: &mut Timing,
+    ) -> External {
+        External::default()
+    }
 
     /// Fidelity and parse facts of a walked file; `None` when the product has no symbol graph.
     ///
