@@ -2,7 +2,8 @@
 id = "01M4069YQHN3EMTKR3RNE8Z036"
 title = "Dev channel: every green land builds artifacts to a GitHub prerelease dev"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
