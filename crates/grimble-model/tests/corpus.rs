@@ -131,6 +131,9 @@ fn parse_expect(c: &Case) -> Expect {
                     e.mf = std::mem::take(&mut e.mf).with_rule(r);
                 }
             }
+            "roots" if rest == "none" => {
+                e.mf = std::mem::take(&mut e.mf).with_declared_roots(Vec::new());
+            }
             "root" => e.mf = std::mem::take(&mut e.mf).with_root(rest),
             "pack" => e.mf = std::mem::take(&mut e.mf).with_pack_line(rest),
             "fmt" => rest.clone_into(&mut e.fmt_mode),

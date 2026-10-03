@@ -98,6 +98,8 @@ fn bind_root(root: &Path) -> Result<grimble_bind::Binding, CliError> {
             }
         }
     }
+    let models = grimble_check::config::GrimbleTable::load(root).map_err(|e| config_refusal(&e))?;
+    let model = model.with_declared_roots(models.models);
     Ok(grimble_bind::bind(&BindInput {
         root,
         entries: &walked.files,

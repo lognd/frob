@@ -1,0 +1,4 @@
+# a glob follows the same rule: sub/a.grmb needs `outside` to reach ../parts/*.grmb
+root: root.grmb
+error: MDL020
+warn: MDL019

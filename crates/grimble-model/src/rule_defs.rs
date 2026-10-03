@@ -169,3 +169,27 @@ mdl_rule!(
     "A list clause repeated with identical content.",
     "The formatter removes the duplicate."
 );
+mdl_rule!(
+    Mdl019,
+    "MDL019",
+    "mdl-orphan-file",
+    Warn,
+    "A .grmb file in the walk is reachable from no model root.",
+    "Only files reachable from a root listed in `[grimble] models` through `include` are loaded. Include the file from a root, list it as a root, or exclude it with `[check] exclude`; rustc ignores unreachable files silently, grimble does not."
+);
+mdl_rule!(
+    Mdl020,
+    "MDL020",
+    "mdl-include-outside",
+    Error,
+    "An include names a file above the including file's directory without the `outside` marker.",
+    "Location mirrors hierarchy: an include may name only files at or below the directory of the including file, globs included. Write `include \"../shared/x.grmb\" outside;` when climbing out is intended."
+);
+mdl_rule!(
+    Mdl021,
+    "MDL021",
+    "mdl-no-root",
+    Error,
+    "No model root is declared, or a declared root is not a .grmb file of the walk.",
+    "Declare the entry file with `[grimble] models = [\"design/model.grmb\"]` in grimble.toml (`grimble init` writes it). Reported as a required Unresolved finding, so the gate fails until a root is declared."
+);

@@ -147,7 +147,8 @@ difference (exit 1), not a rule finding.
 
 Reserved in every position (an identifier equal to a keyword is
 MDL000; there are no contextual keywords except the three selector
-predicates noted below):
+predicates noted below and `outside`, recognized only after an include
+path, 3.2):
 
 ```
 accept age allocates alias as assumed at attr blocked_by bound boundary
@@ -188,36 +189,85 @@ by a pack-generated `attr id` on an identifier-named claim (section 14).
 
 ## 3. Files and includes
 
-### 3.1 One model across files
+The model follows the Rust crate model (owner decision D77): a crate root
+by convention that `Cargo.toml` can override, modules reachable only
+through `mod` declarations from the root, `mod foo;` resolving to a file
+next to the declaring file, and `#[path]` as the explicit escape hatch.
+Here the root is listed in `grimble.toml`, files join the model only
+through `include`, an include resolves at or below the including file's
+directory, and the `outside` marker is the `#[path]` analogue. Where
+rustc silently ignores an unreachable file, grimble fails loudly (3.1).
+
+### 3.1 Roots: one model from one declared entry
 
 A MODEL is the set of files reachable from one ROOT file through
-`include`. Roots are listed in `grimble.toml` (`[grimble] models =
-["design/frob.grmb"]`); a repository may have several roots and each is a
-separate model with its own namespace (no reference crosses a root,
-section 14). Every file in a model starts with the version header
-(3.4) and then one of:
+`include`. Roots are declared by the materialized enforcement knob
+
+```
+[grimble]
+models = ["design/model.grmb"]      # the default; `grimble init` writes it
+```
+
+- grimble-check loads ONLY the files reachable from the listed roots. It
+  never loads every `.grmb` file of the walk; the walk only supplies the
+  candidate set and the paths a root may reach.
+- A repository may list several roots; each is a separate, independent
+  model with its own namespace and no reference crosses a root (section
+  14; declared cross-model dependencies are out of scope). Two roots that
+  declare one module name are MDL011.
+- If `models` is empty, or names a file that is not a `.grmb` file of the
+  walk, while `.grmb` files exist, the run reports one Unresolved MDL021
+  per problem. It is a REQUIRED Unresolved (the gate fails, reason
+  `zero-subjects: MDL021`) telling the user to declare a root. A
+  repository with no `.grmb` file at all reports nothing.
+- ORPHANS: a `.grmb` file of the walk that no root reaches and that
+  `[check] exclude` does not exclude is MDL019 (Warn), naming the file and
+  the three remedies: include it from a root, list it as a root, or
+  exclude it. (Not reported while MDL021 holds, which already says no model
+  is loaded.)
+
+Every file in a model starts with the version header (3.4) and then one
+of:
 
 ```
 module frob;          // exactly one per model, in the root file
 part of frob;         // every included file; the name must equal the root's
 ```
 
-A mismatch is MDL011.
+A mismatch is MDL011. `grimble init` seeds `design/model.grmb` as
+`grimble = "2"; module model;` when the repository has no model file.
 
 ### 3.2 Include semantics
 
 ```
-include "design/gob.grmb";                // one file
-include "design/services/*.grmb";         // a glob (path glob of section 6.2)
-include "design/api.grmb" as api;         // mount under the prefix api
+include "gob.grmb";                       // one file, at or below this directory
+include "services/*.grmb";                // a glob (path glob of section 6.2)
+include "api.grmb" as api;                // mount under the prefix api
+include "../shared/x.grmb" outside;       // explicitly climbing out (below)
+include "../shared/*.grmb" as s outside;  // marker comes last, after `as`
 ```
 
+Grammar: `include STRING [ "as" REFPATH ] [ "outside" ] ";"`. `outside` is
+the only word recognized after the path and is not otherwise reserved
+(it stays a valid identifier elsewhere).
+
+- LOCATION MIRRORS HIERARCHY. An include may name only files at or below
+  the directory of the including file (the way `mod foo;` finds `foo.rs`
+  next to the declaring file). An include that climbs out is MDL020 and is
+  skipped, unless it carries `outside`. Climbing means any `..` segment in
+  the written path, or a resulting path (a leading `/` anchors the path at
+  the repository root) that is not at or below the including directory.
+  Globs follow the same rule: the pattern is checked as written and every
+  file it matches must be at or below the including directory. `outside`
+  on an include that does not climb is accepted and does nothing.
 - Paths are POSIX, resolved relative to the directory of the including
-  file, never absolute, and must stay inside the repository (a path that
-  leaves it is MDL002). A glob expands to its files in byte-wise
-  lexicographic order; a glob that matches nothing is MDL002 (an include
-  that names a file that is missing is an error, a selector that matches
-  nothing is a warning: includes are structural, selectors are intent).
+  file (a leading `/` is relative to the repository root, never to the
+  file system), and must stay inside the repository (a path that leaves it
+  is MDL002 even with `outside`; so is a backslash). A glob expands to its
+  files in byte-wise lexicographic order; a glob that matches nothing is
+  MDL002 (an include that names a file that is missing is an error, a
+  selector that matches nothing is a warning: includes are structural,
+  selectors are intent).
 - A file is read once per model however many times it is included
   (identity by normalized path). The same file included under two
   different `as` prefixes is MDL001 on the first duplicate entity.
@@ -229,7 +279,9 @@ include "design/api.grmb" as api;         // mount under the prefix api
   and the offending include is skipped so the rest of the model still
   loads. A diamond (two files including a third) is not a cycle.
 - Include is the only cross-file mechanism; there is no `import`,
-  `export` or `layer` (v1 parse-only forms, dropped).
+  `export` or `layer` (v1 parse-only forms, dropped). A file that is
+  included is a file of the model; one that is not reached is an orphan
+  (3.1).
 
 ### 3.3 Order independence
 
@@ -1129,6 +1181,9 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL016 | MDL-UNKNOWN-ATOM | Error | a capability atom in no registry and no enabled pack |
 | MDL017 | MDL-DUPLICATE-CLAUSE | Advisory | a list clause repeated with identical content |
 | MDL018 | MDL-NODE-EXCUSE | Error | an `excuses` clause on a `node` or in an `extend node` (removed by D75). Remedy: move the reasoning into a matrix-build template (4.7) or grant the atom with `may`; ungranted already means denied |
+| MDL019 | MDL-ORPHAN-FILE | Warn | a `.grmb` file of the walk that no declared root reaches through `include` and that is not excluded (3.1). Remedy: include it from a root, list it under `[grimble] models`, or exclude it in `[check] exclude` |
+| MDL020 | MDL-INCLUDE-OUTSIDE | Error | an include (or glob) names a file above the including file's directory without the `outside` marker (3.2); the include is skipped |
+| MDL021 | MDL-NO-ROOT | Unresolved (required) | no model root is declared (`[grimble] models` empty) while `.grmb` files exist, or a declared root is not a `.grmb` file of the walk (3.1) |
 
 Cyclic flows are allowed and are not an MDL rule: a cycle is a legal
 model and the kernel's age and demand computations handle it by SCC
@@ -1163,6 +1218,11 @@ test the U adapter hold the expected U term and scope graph per construct
 | `include/glob/` | glob expansion order, glob matching nothing is MDL002 |
 | `include/cycle/` | MDL003 and the rest of the model still loads |
 | `include/escape/` | path leaving the repository is MDL002 |
+| `include/roots/` | only the declared root's include tree is the model; an extra unreachable file is MDL019 |
+| `include/no-root/` | files but no declared root is the required Unresolved MDL021 |
+| `include/climb/` | an include above the including directory without `outside` is MDL020, the include is skipped (its target is then an MDL019 orphan) |
+| `include/climb-marker/` | the same include with the `outside` marker loads clean |
+| `include/climb-glob/` | a glob that climbs out follows the same rule (MDL020 without `outside`) |
 | `include/mount/` | `as P` prefixes entities, resolution inside the mounted file, root-anchored `::` |
 | `version/header/` | a directory (multi-file): missing header and unsupported major (MDL007); mismatched majors are unreachable while only major 2 is read, so that half is untested until a second major exists |
 | `entity/node.grmb` | every node clause and its U term; missing `trust` is MDL008 |

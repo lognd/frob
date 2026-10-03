@@ -76,7 +76,11 @@ fn write(dir: &Path, rel: &str, text: &str) {
 #[test]
 fn check_json_without_a_model_is_a_valid_empty_sibling_document() {
     let dir = repo();
-    write(dir.path(), "grimble.toml", "");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
     let (code, env, _) = grimble(dir.path(), &["check", "--json"]);
     assert_eq!(code, 0, "{env}");
     assert_eq!(env["ok"], true);
@@ -102,7 +106,11 @@ fn check_json_without_a_model_is_a_valid_empty_sibling_document() {
 #[test]
 fn a_model_error_exits_one_and_the_finding_is_in_the_document() {
     let dir = repo();
-    write(dir.path(), "grimble.toml", "");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
     write(
         dir.path(),
         "design/m.grmb",
@@ -139,7 +147,11 @@ fn a_model_error_exits_one_and_the_finding_is_in_the_document() {
 #[test]
 fn an_accept_clause_parks_its_finding_and_is_listed() {
     let dir = repo();
-    write(dir.path(), "grimble.toml", "");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
     write(
         dir.path(),
         "design/m.grmb",
@@ -170,8 +182,12 @@ fn init_twice_is_idempotent() {
     assert_eq!(first["already"], false);
     let config = std::fs::read_to_string(dir.path().join("grimble.toml")).unwrap();
     assert!(config.contains("[compute]") && config.contains("expansion_steps = 1000"));
+    assert!(
+        config.contains("models = [\"design/model.grmb\"]"),
+        "{config}"
+    );
     let model = std::fs::read_to_string(dir.path().join("design/model.grmb")).unwrap();
-    assert_eq!(model, "grimble = \"2\";\n");
+    assert_eq!(model, "grimble = \"2\";\nmodule model;\n");
     let (code, second, _) = grimble(dir.path(), &["init", "--json"]);
     assert_eq!(code, 0);
     assert_eq!(second["already"], true, "{second}");
@@ -190,7 +206,11 @@ fn init_twice_is_idempotent() {
 #[test]
 fn fmt_check_fails_on_an_unformatted_file_and_fmt_fixes_it() {
     let dir = repo();
-    write(dir.path(), "grimble.toml", "");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
     write(
         dir.path(),
         "design/m.grmb",
@@ -249,7 +269,11 @@ fn a_bad_grimble_toml_is_a_refusal() {
 #[test]
 fn the_binary_prints_exactly_one_envelope_line_on_stdout() {
     let dir = repo();
-    write(dir.path(), "grimble.toml", "");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
     let out = assert_cmd::Command::cargo_bin("grimble")
         .unwrap()
         .args(["check", "--json", "-vv"])

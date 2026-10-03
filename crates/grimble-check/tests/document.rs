@@ -76,3 +76,86 @@ fn the_document_lists_the_languages_the_walk_saw() {
     assert_eq!(doc["invocation"]["root"], ".");
     assert!(doc["bindings"].as_array().unwrap().is_empty());
 }
+
+fn rules_of(doc: &serde_json::Value) -> Vec<String> {
+    doc["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f["rule"].as_str().unwrap().to_owned())
+        .collect()
+}
+
+// frob:ticket 01M3ZP159QB9VT8D4MBB5XVMKR
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn only_the_declared_roots_tree_is_the_model_and_an_orphan_warns() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/model.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/model.grmb",
+        "grimble = \"2\";\nmodule m;\nnode a : trusted { }\n",
+    );
+    write(
+        dir.path(),
+        "design/extra.grmb",
+        "grimble = \"2\";\nmodule extra;\nnode ghost : trusted { }\n",
+    );
+    let r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let doc = sibling_document(&r);
+    let rules = rules_of(&doc);
+    assert!(rules.contains(&"MDL019".to_owned()), "{rules:?}");
+    let names: Vec<String> = doc["entities"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["name"].to_string())
+        .collect();
+    assert!(names.iter().all(|n| !n.contains("ghost")), "{names:?}");
+    assert!(names.iter().any(|n| n.contains('a')), "{names:?}");
+}
+
+// frob:ticket 01M3ZP159QB9VT8D4MBB5XVMKR
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn a_climbing_include_without_the_marker_is_an_mdl_error_and_no_root_is_required() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/model.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/model.grmb",
+        "grimble = \"2\";\nmodule m;\ninclude \"sub/a.grmb\";\n",
+    );
+    write(
+        dir.path(),
+        "design/sub/a.grmb",
+        "grimble = \"2\";\npart of m;\ninclude \"../shared.grmb\";\n",
+    );
+    write(
+        dir.path(),
+        "design/shared.grmb",
+        "grimble = \"2\";\npart of m;\n",
+    );
+    let doc = sibling_document(&run(dir.path(), &CheckOptions::default()).unwrap());
+    assert!(rules_of(&doc).contains(&"MDL020".to_owned()));
+
+    write(dir.path(), "grimble.toml", "[grimble]\nmodels = []\n");
+    let doc = sibling_document(&run(dir.path(), &CheckOptions::default()).unwrap());
+    let f = doc["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["rule"] == "MDL021")
+        .expect("MDL021");
+    assert_eq!(f["severity"], "unresolved");
+    assert_eq!(f["required"]["rule"], "MDL021");
+}

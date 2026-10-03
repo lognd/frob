@@ -26,8 +26,12 @@ pub struct PackPin {
 pub struct ModelFiles {
     /// Repo-relative path to raw bytes of every candidate .grmb file.
     pub files: BTreeMap<String, Vec<u8>>,
-    /// The root files; empty means every file that declares `module`.
+    /// The root files; empty means every file that declares `module` unless
+    /// [`ModelFiles::declared_roots`] is set.
     pub roots: Vec<String>,
+    /// True when `roots` is the declared list (`[grimble] models`): empty then means no model
+    /// is declared (MDL021) instead of falling back to every file that declares `module`.
+    pub declared_roots: bool,
     /// Every repo-relative path of the walk, for MDL005; `None` skips MDL005.
     pub walk: Option<Vec<String>>,
     /// Enabled packs by pack id (the `ref` of a `pack` entity).
@@ -53,6 +57,14 @@ impl ModelFiles {
     #[must_use]
     pub fn with_root(mut self, path: &str) -> Self {
         self.roots.push(path.to_owned());
+        self
+    }
+
+    /// Makes `roots` authoritative: the declared `[grimble] models` list, possibly empty.
+    #[must_use]
+    pub fn with_declared_roots(mut self, roots: Vec<String>) -> Self {
+        self.roots = roots;
+        self.declared_roots = true;
         self
     }
 
@@ -132,20 +144,43 @@ fn has_glob_meta(s: &str) -> bool {
     s.contains(['*', '?', '[', '{'])
 }
 
-/// Joins `rel` onto the directory of `from` and normalizes; `Err` when it leaves the repository.
-fn normalize(from: &str, rel: &str) -> Result<String, String> {
-    if rel.starts_with('/') || rel.contains('\\') {
+/// Where an include path points, and whether reaching it climbs out of the including directory.
+struct IncludePath {
+    /// The normalized repo-relative path or glob pattern.
+    path: String,
+    /// True when the written path has a `..` segment or resolves above the including directory.
+    climbs: bool,
+}
+
+/// The directory of a repo-relative file path (empty at the repository root).
+fn dir_of(path: &str) -> &str {
+    path.rsplit_once('/').map_or("", |(d, _)| d)
+}
+
+/// True when `path` is at or below directory `dir` (the empty directory is the repository root).
+fn is_below(dir: &str, path: &str) -> bool {
+    dir.is_empty() || path.strip_prefix(dir).is_some_and(|r| r.starts_with('/'))
+}
+
+/// Joins `rel` onto the directory of `from` and normalizes (a leading `/` anchors at the
+/// repository root); `Err` when it leaves the repository (MDL002).
+fn normalize(from: &str, rel: &str) -> Result<IncludePath, String> {
+    if rel.contains('\\') {
         return Err(format!(
             "include path `{rel}` must be a relative POSIX path"
         ));
     }
-    let mut parts: Vec<&str> = from
-        .rsplit_once('/')
-        .map_or(vec![], |(d, _)| d.split('/').collect());
+    let mut parts: Vec<&str> = if rel.starts_with('/') {
+        Vec::new()
+    } else {
+        dir_of(from).split('/').filter(|s| !s.is_empty()).collect()
+    };
+    let mut dotdot = false;
     for seg in rel.split('/') {
         match seg {
             "" | "." => {}
             ".." => {
+                dotdot = true;
                 if parts.pop().is_none() {
                     return Err(format!("include path `{rel}` leaves the repository"));
                 }
@@ -153,7 +188,9 @@ fn normalize(from: &str, rel: &str) -> Result<String, String> {
             s => parts.push(s),
         }
     }
-    Ok(parts.join("/"))
+    let path = parts.join("/");
+    let climbs = dotdot || !is_below(dir_of(from), &path);
+    Ok(IncludePath { path, climbs })
 }
 
 struct Loader<'a> {
@@ -201,17 +238,16 @@ impl Loader<'_> {
         Some(idx)
     }
 
-    fn include(&mut self, from_idx: usize, from: &str, inc: &Include, ns: &[String], mount: &str) {
-        let span = inc.span;
-        let pattern = match normalize(from, &inc.path.value) {
-            Ok(p) => p,
-            Err(msg) => {
-                self.diag(from_idx, "MDL002", inc.path.span, msg);
-                return;
-            }
-        };
-        let targets: Vec<String> = if has_glob_meta(&pattern) {
-            match Glob::parse(&pattern) {
+    /// The files an include names (MDL002 when none, MDL020 when one climbs without `outside`).
+    fn targets(
+        &mut self,
+        from_idx: usize,
+        from: &str,
+        inc: &Include,
+        pattern: &str,
+    ) -> Option<Vec<String>> {
+        let targets: Vec<String> = if has_glob_meta(pattern) {
+            match Glob::parse(pattern) {
                 Ok(g) => self
                     .input
                     .files
@@ -220,29 +256,55 @@ impl Loader<'_> {
                     .cloned()
                     .collect(),
                 Err(e) => {
-                    self.diag(
-                        from_idx,
-                        "MDL002",
-                        inc.path.span,
-                        format!("include glob: {}", e.message),
-                    );
-                    return;
+                    let msg = format!("include glob: {}", e.message);
+                    self.diag(from_idx, "MDL002", inc.path.span, msg);
+                    return None;
                 }
             }
-        } else if self.input.files.contains_key(&pattern) {
-            vec![pattern.clone()]
+        } else if self.input.files.contains_key(pattern) {
+            vec![pattern.to_owned()]
         } else {
             Vec::new()
         };
         if targets.is_empty() {
+            let msg = format!("include `{}` matches no file", inc.path.value);
+            self.diag(from_idx, "MDL002", inc.path.span, msg);
+            return None;
+        }
+        if !inc.outside
+            && let Some(t) = targets.iter().find(|t| !is_below(dir_of(from), t))
+        {
+            let msg = format!(
+                "{} (it matches `{t}`)",
+                climb_message(from, &inc.path.value)
+            );
+            self.diag(from_idx, "MDL020", inc.path.span, msg);
+            return None;
+        }
+        Some(targets)
+    }
+
+    fn include(&mut self, from_idx: usize, from: &str, inc: &Include, ns: &[String], mount: &str) {
+        let span = inc.span;
+        let (pattern, climbs) = match normalize(from, &inc.path.value) {
+            Ok(r) => (r.path, r.climbs),
+            Err(msg) => {
+                self.diag(from_idx, "MDL002", inc.path.span, msg);
+                return;
+            }
+        };
+        if climbs && !inc.outside {
             self.diag(
                 from_idx,
-                "MDL002",
+                "MDL020",
                 inc.path.span,
-                format!("include `{}` matches no file", inc.path.value),
+                climb_message(from, &inc.path.value),
             );
             return;
         }
+        let Some(targets) = self.targets(from_idx, from, inc, &pattern) else {
+            return;
+        };
         if targets.len() > 1
             && let Some(m) = &inc.mount
         {
@@ -299,6 +361,19 @@ impl Loader<'_> {
     }
 }
 
+/// The MDL020 message for an include that climbs out without the `outside` marker.
+fn climb_message(from: &str, written: &str) -> String {
+    let dir = dir_of(from);
+    let dir = if dir.is_empty() {
+        "the repository root"
+    } else {
+        dir
+    };
+    format!(
+        "include `{written}` leaves the directory of `{from}` ({dir}); an include may only name files at or below it, so write `include \"{written}\" outside;` if climbing out is intended"
+    )
+}
+
 fn first_entity(f: &ParsedFile) -> Option<String> {
     fn walk(items: &[Item]) -> Option<String> {
         items.iter().find_map(|i| match i {
@@ -310,25 +385,29 @@ fn first_entity(f: &ParsedFile) -> Option<String> {
     walk(&f.items)
 }
 
-/// Loads one model per root (explicit roots, else every file declaring `module`).
+/// The roots in force: the declared list, else (library default) every file declaring `module`.
+pub fn root_list(input: &ModelFiles) -> Vec<String> {
+    if input.declared_roots || !input.roots.is_empty() {
+        return input.roots.clone();
+    }
+    input
+        .files
+        .iter()
+        .filter(|(p, b)| {
+            parse_file(p, b)
+                .module
+                .is_some_and(|m| m.kind == ModuleKind::Module)
+        })
+        .map(|(p, _)| p.clone())
+        .collect()
+}
+
+/// Loads one model per root (see [`root_list`]); only files reachable through `include` load.
 pub fn load_roots(input: &ModelFiles) -> Vec<LoadedRoot> {
-    let roots: Vec<String> = if input.roots.is_empty() {
-        input
-            .files
-            .iter()
-            .filter(|(p, b)| {
-                parse_file(p, b)
-                    .module
-                    .is_some_and(|m| m.kind == ModuleKind::Module)
-            })
-            .map(|(p, _)| p.clone())
-            .collect()
-    } else {
-        input.roots.clone()
-    };
+    let roots = root_list(input);
     roots
         .iter()
-        .map(|root| {
+        .filter_map(|root| {
             let mut l = Loader {
                 input,
                 out: LoadedRoot {
@@ -342,9 +421,10 @@ pub fn load_roots(input: &ModelFiles) -> Vec<LoadedRoot> {
             };
             if l.visit(root, "", true).is_none() {
                 tracing::warn!(%root, "root file is not among the supplied files");
+                return None;
             }
             tracing::info!(%root, files = l.out.files.len(), diags = l.out.diags.len(), "model loaded");
-            l.out
+            Some(l.out)
         })
         .collect()
 }

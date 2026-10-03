@@ -1,0 +1,4 @@
+# a.grmb climbs out of sub/ without `outside`: MDL020, the include is skipped, shared.grmb is an orphan
+root: root.grmb
+error: MDL020
+warn: MDL019

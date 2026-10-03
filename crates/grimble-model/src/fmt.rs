@@ -222,6 +222,9 @@ impl Printer<'_> {
                 if let Some(m) = &inc.mount {
                     let _ = write!(t, " as {}", m.written());
                 }
+                if inc.outside {
+                    t.push_str(" outside");
+                }
                 t.push(';');
                 self.line(indent, &t);
             }

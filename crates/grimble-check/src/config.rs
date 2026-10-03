@@ -63,10 +63,17 @@ impl PacksTable {
 /// The warning printed when packs are requested but not loaded.
 pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build does not load packs yet; PACK rules and pack atoms are not evaluated";
 
-/// The `[grimble]` table: binding policy (binding.md 6).
+/// The conventional model root `grimble init` seeds and the `models` knob defaults to.
+pub const DEFAULT_MODEL_ROOT: &str = "design/model.grmb";
+
+/// The `[grimble]` table: model roots and binding policy (grmb-spec 3, binding.md 6).
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
-#[config(table = "grimble")]
+#[config(table = "grimble", materialize)]
 pub struct GrimbleTable {
+    /// Root `.grmb` files, one independent model each; only files reachable from them through
+    /// `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared).
+    #[config(default = vec![DEFAULT_MODEL_ROOT.to_owned()], enforcement)]
+    pub models: Vec<String>,
     /// Selectors whose public units must have an owner (SYS005); empty turns the rule off.
     #[config(default = Vec::new())]
     pub modeled: Vec<String>,

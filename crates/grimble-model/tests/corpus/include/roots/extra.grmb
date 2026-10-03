@@ -1,0 +1,4 @@
+grimble = "2";
+module extra;
+node e : trusted {
+}

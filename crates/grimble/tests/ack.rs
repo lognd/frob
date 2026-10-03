@@ -35,7 +35,11 @@ fn rules(env: &Value) -> Vec<String> {
 }
 
 fn fixture(dir: &Path) {
-    write(dir, "grimble.toml", "");
+    write(
+        dir,
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
     write(dir, "design/m.grmb", MODEL);
     write(
         dir,

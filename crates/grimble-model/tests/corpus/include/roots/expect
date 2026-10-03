@@ -1,0 +1,3 @@
+# only the declared root's include tree is the model; extra.grmb is reachable from no root
+root: root.grmb
+warn: MDL019

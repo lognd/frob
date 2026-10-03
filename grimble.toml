@@ -29,3 +29,8 @@ namespaces = ["frob", "grimble", "crunk"]
 enabled = []
 # Path of the pack lock, relative to the repository root.
 lock = "grimble.packs.lock"
+
+[grimble]
+# Root `.grmb` files, one independent model each; only files reachable from them through
+# `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared).
+models = ["design/model.grmb"]

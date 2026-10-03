@@ -145,10 +145,12 @@ impl Product for Grimble {
             }
         }
         model.walk = Some(walk);
+        let table = GrimbleTable::load(&cx.core.root)?;
+        tracing::info!(roots = ?table.models, files = model.files.len(), "model roots declared");
+        model = model.with_declared_roots(table.models.clone());
         let started = std::time::Instant::now();
         let view = Arc::new(ModelView::build(&model));
         cx.timing.push("model", started.elapsed(), true);
-        let table = GrimbleTable::load(&cx.core.root)?;
         let started = std::time::Instant::now();
         let binding = grimble_bind::bind(&grimble_bind::BindInput {
             root: &cx.core.root,
