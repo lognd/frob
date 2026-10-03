@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T18:07:55Z"
+digest = "0725e478f94538d075550c63cbce4711a28f87c26377adaea8b2377c185a7a04"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5e69a7f5-3ad1-42d5-98cf-7152df4655bf with nextest profile: default
+    Starting 1 test across 10 binaries (107 tests skipped)
+        PASS [   0.019s] frob-release status::tests::registry_setup_names_an_existing_guide_section
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 107 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release registry_setup_names_an_existing_guide_section"
+size = 672
+status = "measured"
+tests = ["status::tests::registry_setup_names_an_existing_guide_section"]
+at = "2026-10-03T18:07:55Z"
+actor = "lognd"
+rev = 1
