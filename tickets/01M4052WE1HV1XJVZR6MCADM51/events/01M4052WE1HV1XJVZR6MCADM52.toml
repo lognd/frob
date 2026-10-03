@@ -1,0 +1,26 @@
+kind = "create"
+title = "Property tests: safety S1 to S9 against the fake GitHub"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror2-prop-safety"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/tests/prop_safety.rs"]
+acceptance = ["Given random scenarios of human edits, crashes and failures, when runs execute, then S1, S2, S4 and S5 hold after every step", "Given the D1 trace (a pasted marker), when replayed, then the map never points ticket B at ticket A's issue", "Given a converged state, when a run starts from a fresh map, then it makes no mutation and no ledger commit (S9)"]
+body = """
+Implements mirror.md section 3.7 (safety rows) and the model README section 5 (S1 to S9).
+
+proptest scenarios over the adversaries and faults check: no tracker-owned write (S1), cursor soundness (S2), proposals never change the tracker and writes come from the ledger (S4), map integrity (S5), comment bound (S6), run bound (S7), no reopen (S8), idempotence (S9). The model's counterexample traces D1, F2, F3, F4, F7 and F9 are fixed regression cases."""
+at = "2026-10-03T05:51:39Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052W6Q1FAQK362YF6RCGW1"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052WAB3H52W92NYG3AS571"
