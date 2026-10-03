@@ -2,7 +2,8 @@
 id = "01M4069RPPQE1ES1914K6V6Y0D"
 title = "frob cycle new and close (carry-over events, retro note, commitment ratio)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
