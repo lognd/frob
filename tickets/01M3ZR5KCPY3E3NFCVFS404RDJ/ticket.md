@@ -2,7 +2,8 @@
 id = "01M3ZR5KCPY3E3NFCVFS404RDJ"
 title = "Cross-crate call resolution through use imports and crate dependencies; field and signature tables"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
