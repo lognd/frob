@@ -2,13 +2,13 @@
 id = "01M3Z712ZXXKVJYREYG65P3P35"
 title = "frob-obligations DOC002 fence tracking ignores fence length"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:23Z"
-updated = "2026-10-03T06:13:16Z"
+updated = "2026-10-03T09:29:59Z"
 idempotency_key = "m2-doc002"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/frob-obligations/**"]
