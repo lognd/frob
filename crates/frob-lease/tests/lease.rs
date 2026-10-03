@@ -76,6 +76,63 @@ fn concurrent_overlapping_globs_grant_exactly_one() {
     }
 }
 
+// frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
+// frob:tests crates/frob-lease/src/store.rs::acquire_admitting
+#[test]
+fn admission_count_and_acquire_are_one_critical_section() {
+    #[derive(Debug)]
+    struct Full;
+    impl From<LeaseError> for Full {
+        fn from(_: LeaseError) -> Self {
+            Self
+        }
+    }
+    for round in 0..10 {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // One slot already taken; the limit is 2, so exactly one racer fits.
+        store_in(dir.path(), LeaseConfig::default())
+            .acquire(TicketId::mint(), &holder("seed"), &scope(&["seed/**"]))
+            .expect("seed");
+        let barrier = Arc::new(Barrier::new(2));
+        let handles: Vec<_> = ["alice", "bob"]
+            .into_iter()
+            .map(|who| {
+                let root = dir.path().to_path_buf();
+                let barrier = Arc::clone(&barrier);
+                std::thread::spawn(move || {
+                    let store = store_in(&root, LeaseConfig::default());
+                    let area = format!("{who}/**");
+                    barrier.wait();
+                    store.acquire_admitting(
+                        TicketId::mint(),
+                        &holder(who),
+                        &scope(&[area.as_str()]),
+                        |live| {
+                            // Widen the window between the count and the write.
+                            std::thread::sleep(std::time::Duration::from_millis(5));
+                            if live.len() >= 2 { Err(Full) } else { Ok(()) }
+                        },
+                    )
+                })
+            })
+            .collect();
+        let results: Vec<_> = handles
+            .into_iter()
+            .map(|h| h.join().expect("thread"))
+            .collect();
+        let ok = results.iter().filter(|r| r.is_ok()).count();
+        let full = results.iter().filter(|r| r.is_err()).count();
+        assert_eq!((ok, full), (1, 1), "round {round}: {results:?}");
+        assert_eq!(
+            store_in(dir.path(), LeaseConfig::default())
+                .list()
+                .expect("list")
+                .len(),
+            2
+        );
+    }
+}
+
 #[test]
 fn held_error_maps_to_retryable_refusal_naming_holder() {
     let dir = tempfile::tempdir().expect("tempdir");

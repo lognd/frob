@@ -335,6 +335,9 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   (default 1) expedite tickets hold a live lease, and past that it is
   refused with `E-WIP-EXPEDITE` (exit 3); an `expedite_max` of 0 closes the
   lane. Standard tickets still count every live holder, expedite included.
+  The repository count runs inside the lease-store lock together with the
+  lease write (`acquire_admitting`), counting live leases, so two concurrent
+  `work` calls cannot both take the last slot.
 - Edits outside any symbol (imports, module headers) belong to the
   file-level scope: a symbol-level entry claims only symbol bodies, so
   such edits need a file-level entry or conflict with any symbol-level
