@@ -36,7 +36,7 @@
 | `release bump` | yes | yes | 0 ok, 3 refused, 4 internal | Set one lockstep version on every crate, intra-workspace pin and the wheel; idempotent. |
 | `release changelog` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Compile changelog.d fragments into a new CHANGELOG.md section for a version. |
 | `release cut` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Cut a release: bump, compile CHANGELOG, one commit on the base branch, tags, ledger record. |
-| `release notes` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print one version's CHANGELOG section body for `gh release create --notes-file`. |
+| `release notes` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print one version's CHANGELOG section body for `gh release create --notes-file` (`--text` prints it raw). |
 | `release status` | yes | no | 0 ok, 3 refused, 4 internal | Report release readiness: criteria, open tickets, PM034, fragments, what is unresolved; never fails. |
 | `requeue` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Release a ticket's lease and move it back to todo. |
 | `start` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket for this checkout (no new worktree) and move it to in-progress. |

@@ -171,7 +171,7 @@ pub struct NotesData {
 }
 
 // frob:ticket 01M41B4KPWQVBT234N2DY20758
-/// Print one version's CHANGELOG section body for `gh release create --notes-file`.
+/// Print one version's CHANGELOG section body for `gh release create --notes-file` (`--text` prints it raw).
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "release notes",
@@ -224,10 +224,13 @@ impl Command for ReleaseNotes {
             )));
         };
         tracing::info!(version = %self.version, bytes = notes.len(), "release notes");
+        // Text mode prints these rows raw, so `--text > notes.md` is exactly the section.
+        let rows = notes.lines().map(str::to_owned).collect();
         Ok(Payload::new(NotesData {
             version: self.version.clone(),
             notes,
-        }))
+        })
+        .with_rendered(rows))
     }
 }
 

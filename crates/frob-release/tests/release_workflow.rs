@@ -609,6 +609,14 @@ fn release_notes_come_from_the_verb_output_not_generated_or_inline_text() {
     let create = run.find("gh release create").unwrap();
     assert!(notes < create, "the notes are produced before the release");
     assert!(run.contains("--notes-file"), "{run}");
+    assert!(
+        run.contains("release notes --version \"$VERSION\" --text > notes.md"),
+        "the raw text view is the notes file: {run}"
+    );
+    assert!(
+        !run.contains("jq"),
+        "no JSON post-processing in shell: {run}"
+    );
     assert!(!run.contains("--generate-notes"), "{run}");
     assert!(!run.contains("--notes \""), "{run}");
 }

@@ -30,7 +30,7 @@ releases; the frob v1 history lives in [CHANGELOG-v1.md](../../CHANGELOG-v1.md).
 | `... --dry-run` | print the section (in the response `data.section`), change nothing |
 | `... --check` | validate every fragment and that every older section is unedited (for CI) |
 | `... --date YYYY-MM-DD` | section date (default today; fixed for reproducible output) |
-| `frob release notes --version X` | print one version's section body (no heading, no integrity marker) in `data.notes`, for `gh release create --notes-file`; refuses with `E-CHANGELOG-NO-SECTION` when CHANGELOG.md has none |
+| `frob release notes --version X` | print one version's section body (no heading, no integrity marker) in `data.notes` (`--text` prints just the section, raw, so `--text > notes.md` is a notes file), for `gh release create --notes-file`; refuses with `E-CHANGELOG-NO-SECTION` when CHANGELOG.md has none |
 
 An empty `changelog.d/` adds nothing and reports `already: true`. Invalid
 fragments are all listed at once, each naming its file and the remedy, and exit

@@ -196,6 +196,9 @@ fn release_notes_prints_exactly_one_versions_section_body() {
         !notes.contains("## 0.1.0") && !notes.contains("frob-section"),
         "{notes}"
     );
+    let raw = repo.run(&["release", "notes", "--version", "0.1.0", "--text"]);
+    assert_eq!(code(&raw), 0);
+    assert_eq!(raw.stdout, format!("{notes}\n").into_bytes());
     let missing = repo.frob(&["release", "notes", "--version", "9.9.9"]);
     assert_eq!(code(&missing), 3);
     assert_eq!(json(&missing)["error"]["code"], "E-CHANGELOG-NO-SECTION");

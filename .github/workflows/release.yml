@@ -415,7 +415,7 @@ jobs:
           tar -xJf archives/*x86_64-unknown-linux-gnu*.tar.xz -C unpacked
           frob_bin=$(find unpacked -name frob -type f | head -n 1)
           chmod +x "$frob_bin"
-          "$frob_bin" release notes --version "$VERSION" --json | jq -r '.data.notes' > notes.md
+          "$frob_bin" release notes --version "$VERSION" --text > notes.md
           gh release create "$TAG" --repo "$REPO" --verify-tag --title "frob $VERSION" \
             --notes-file notes.md "${flags[@]}" archives/*
 
