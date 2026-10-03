@@ -72,7 +72,7 @@ forms, and prefers the strongest that fits:
   of a program is produced only by a registered generator (documentation
   .md 3), so an include can never execute anything (security.md I11).
 - Includes nest; a cycle is SYNC003. The copy carries the source digest
-  in the end marker (`<!-- frob:end include digest=blake3:... -->`) so
+  in the end marker (the closing comment gains `digest=blake3:...`) so
   staleness is a digest comparison, not a re-render.
 - `frob fix` (or `cargo dev gen docs` in this repository) re-renders
   every region; GEN001's check covers them.
