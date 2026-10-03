@@ -300,9 +300,12 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   yet (v1's glob-overlap proof is kept), and a glob that is disjoint
   from another's text but resolves to a shared file also overlaps.
   `doable` excludes overlaps; `wave --agents N` partitions;
-  `contention` names the hot files. The per-identity WIP limit is
-  `[pm.wip] in_progress_per_identity`, off by default; the milestone-1
-  limit is `[lease] wip_per_holder` (0 turns it off).
+  `contention` names the hot files. The per-holder WIP limit is
+  `[pm.wip] in_progress_per_identity` (the former `[lease] wip_per_holder`
+  was removed so there is one knob), and `work` and `start` also refuse
+  with `E-WIP-REPO` past the repository limit `[pm.wip] in_progress`,
+  naming every holder; expired leases do not count and are reported as
+  stale.
 - Edits outside any symbol (imports, module headers) belong to the
   file-level scope: a symbol-level entry claims only symbol bodies, so
   such edits need a file-level entry or conflict with any symbol-level

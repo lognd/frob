@@ -71,6 +71,8 @@ pub struct LeaseStore {
     dir: PathBuf,
     lock_path: PathBuf,
     cfg: LeaseConfig,
+    holder_limit: u32,
+    repo_limit: u32,
     shared: GlobSet,
     resolver: Resolver,
     clock: fn() -> Stamp,
@@ -103,6 +105,8 @@ impl LeaseStore {
             dir: base.join("leases"),
             lock_path: base.join("leases.lock"),
             cfg,
+            holder_limit: 0,
+            repo_limit: 0,
             shared,
             resolver: Resolver::new(root),
             clock: Stamp::now,
@@ -114,6 +118,27 @@ impl LeaseStore {
     pub fn with_clock(mut self, clock: fn() -> Stamp) -> Self {
         self.clock = clock;
         self
+    }
+
+    /// Cap the live leases one holder may own (`[pm.wip] in_progress_per_identity`, the single per-holder knob); 0 turns it off.
+    #[must_use]
+    pub fn with_holder_limit(mut self, limit: u32) -> Self {
+        tracing::debug!(limit, "per-holder lease limit set");
+        self.holder_limit = limit;
+        self
+    }
+
+    /// Record the repository-wide in-progress limit (`[pm.wip] in_progress`) next to the per-holder one; 0 is off. The store only carries it, `frob-worktree` enforces it because it needs the ledger.
+    #[must_use]
+    pub fn with_repo_limit(mut self, limit: u32) -> Self {
+        tracing::debug!(limit, "repository in-progress limit set");
+        self.repo_limit = limit;
+        self
+    }
+
+    /// The repository-wide in-progress limit, 0 when off.
+    pub fn repo_limit(&self) -> u32 {
+        self.repo_limit
     }
 
     /// The configuration in force.
@@ -253,7 +278,7 @@ impl LeaseStore {
                 overlap: SAME_TICKET.to_owned(),
             });
         }
-        let limit = self.cfg.wip_per_holder;
+        let limit = self.holder_limit;
         if limit > 0 {
             let count = live
                 .iter()

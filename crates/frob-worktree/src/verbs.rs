@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use frob_lease::{Holder, Lease, LeaseStore};
 use frob_ledger::{Ledger, TicketId};
+use frob_pm::PmConfig;
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_git::Repo;
@@ -37,10 +38,15 @@ impl Opened {
         let ledger_cfg = ledger_config(&root).map_err(WorktreeError::Config)?;
         let config =
             WorktreeConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
+        let wip = PmConfig::load(&root)
+            .map_err(|e| WorktreeError::Config(e.to_string()))?
+            .wip;
         let (leases, _) = frob_lease::open_store_from_file(&root)?;
         Ok(Self {
             ledger: Ledger::open(repo, ledger_cfg),
-            leases,
+            leases: leases
+                .with_holder_limit(wip.in_progress_per_identity)
+                .with_repo_limit(wip.in_progress),
             config,
         })
     }

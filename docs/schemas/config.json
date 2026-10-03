@@ -260,13 +260,6 @@
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
-        },
-        "wip_per_holder": {
-          "default": 0,
-          "description": "Most live leases one holder may own; 0 turns the limit off.",
-          "format": "uint32",
-          "minimum": 0,
-          "type": "integer"
         }
       },
       "type": "object"

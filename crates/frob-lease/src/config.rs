@@ -1,4 +1,4 @@
-//! The `[lease]` config table: TTL, lock wait, shared files and the WIP limit.
+//! The `[lease]` config table: TTL, lock wait and shared files.
 
 use std::path::Path;
 
@@ -20,9 +20,6 @@ pub struct LeaseConfig {
     /// Append-shared files (such as `Cargo.lock`) exempt from overlap checks.
     #[config(default = Vec::new())]
     pub shared_files: Vec<String>,
-    /// Most live leases one holder may own; 0 turns the limit off.
-    #[config(default = 0)]
-    pub wip_per_holder: u32,
 }
 
 impl LeaseConfig {

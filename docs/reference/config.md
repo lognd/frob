@@ -106,7 +106,6 @@ Materialized: yes.
 | `lock_timeout_ms` | `u64` | `5000` | no | Milliseconds to wait for the lease lock before refusing with a timeout. |
 | `shared_files` | `Vec<String>` | `[]` | no | Append-shared files (such as `Cargo.lock`) exempt from overlap checks. |
 | `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
-| `wip_per_holder` | `u32` | `0` | no | Most live leases one holder may own; 0 turns the limit off. |
 
 ## `[perf]`
 

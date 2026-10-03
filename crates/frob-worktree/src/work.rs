@@ -181,6 +181,16 @@ impl Workspace<'_> {
             &handle,
             existing.is_some(),
         )?;
+        // An in-progress ticket with a live lease already holds its slot (re-entry, steal).
+        if !(view.summary.category == Category::InProgress && existing.is_some()) {
+            crate::wip::check(
+                self.ledger,
+                self.leases,
+                self.leases.repo_limit(),
+                id,
+                &handle,
+            )?;
+        }
 
         let (lease, fresh, stolen_from) = self.take(id, &handle, &holder, &scope, steal)?;
         let outcome = self.build(plan, id, &handle, &lease, branch.as_deref());

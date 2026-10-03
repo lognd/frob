@@ -222,7 +222,6 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[lease] ttl_secs` (M1) | frob.toml | no | 7200 | frob-lease |
 | `[lease] lock_timeout_ms` (M1) | frob.toml | no | 5000 | frob-lease |
 | `[lease] shared_files` (M1) | frob.toml | no | empty (append-shared files such as `Cargo.lock`) | frob-lease |
-| `[lease] wip_per_holder` (M1) | frob.toml | no | 0 (off) | frob-lease |
 | `[worktree] dir` (M1) | frob.toml | no | `"../{repo}-wt"` | frob-worktree |
 | `[evidence] allowed_tools` (M1) | frob.toml | no | `["cargo", "git"]` | frob-evidence |
 | `[evidence] inline_max_bytes` (M1) | frob.toml | no | 16384 | frob-evidence |
@@ -271,7 +270,8 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[pm] capacity_k`, `capacity_points`, `min_history` | frob.toml | yes | 0.5, unset, 3 | frob-pm |
 | `[pm] max_duplicate_objective_text` | frob.toml | yes | 3 | frob-pm |
 | `[pm] measurer_timeout_secs` | frob.toml | yes | 600 | frob-pm |
-| `[pm.wip] in_progress_per_identity` | frob.toml | yes | 0 (off) | frob-pm |
+| `[pm.wip] in_progress_per_identity` | frob.toml | yes | 1 (0 is off); the one per-holder limit, applied by the lease store | frob-pm, frob-lease |
+| `[pm.wip] in_progress` | frob.toml | yes | 2 (0 is off); `work` and `start` refuse past it with `E-WIP-REPO` | frob-pm, frob-worktree |
 | `[pm.ready]`, `[pm.done]`, `[pm.personas]`, `[pm.attributes]`, `[pm.metrics]` | frob.toml | yes (ready, done), no (registries) | pm-enforcement.md | frob-pm |
 | `[exceptions] hotfix_days` | frob.toml | yes | 14 | gob-rules |
 | `[exceptions] max_defers_per_component`, `max_defer_age_days`, `max_hotfixes_open` | frob.toml | yes | 25, 90, 5 | gob-rules |

@@ -12,6 +12,7 @@ publish.workspace = true
 [dependencies]
 frob-ledger = { path = "../frob-ledger" }
 frob-lease = { path = "../frob-lease" }
+frob-pm = { path = "../frob-pm" }
 gob-cli = { path = "../gob-cli" }
 gob-config = { path = "../gob-config" }
 gob-diagnostics = { path = "../gob-diagnostics" }

@@ -1,4 +1,5 @@
 //! `work`, `start` and `requeue` end to end in temporary repositories (system git required).
+// frob:ticket 01M4069T76A6WSNHT3NZERXHAH
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -473,4 +474,171 @@ fn set_actor(root: &Path, name: &str) {
     let config = root.join(".git/config");
     let text = std::fs::read_to_string(&config).expect("config");
     std::fs::write(&config, text.replace("Test User", name)).expect("write");
+}
+
+/// Take `n` disjoint tickets with `work`, returning their ids and the workspace pieces used.
+fn fill_wip(ledger: &Ledger, leases: &LeaseStore, cfg: &WorktreeConfig, n: usize) -> Vec<TicketId> {
+    let ws = Workspace {
+        ledger,
+        leases,
+        config: cfg,
+    };
+    (0..n)
+        .map(|i| {
+            let scope = format!("area{i}/**");
+            let id = Fixture::ticket(ledger, &format!("Holder {i}"), TicketType::Task, &[&scope]);
+            ws.work(&id.to_string(), &WorkOptions::default())
+                .expect("fill");
+            id
+        })
+        .collect()
+}
+
+fn refusal_message(e: &WorktreeError) -> String {
+    match e {
+        WorktreeError::Refused(r) => r.message.clone(),
+        other => panic!("not a refusal: {other}"),
+    }
+}
+
+// frob:tests crates/frob-worktree/src/wip.rs::check
+#[test]
+fn work_refuses_past_the_repository_limit_naming_both_holders() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    fill_wip(&ledger, &leases, &cfg, 2);
+    let limited = fx.leases().with_repo_limit(2);
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &limited,
+        config: &cfg,
+    };
+    let third = Fixture::ticket(&ledger, "Third", TicketType::Task, &["area9/**"]);
+    let err = ws
+        .work(&third.to_string(), &WorkOptions::default())
+        .expect_err("third refused");
+    assert_eq!(refusal_code(&err), "E-WIP-REPO");
+    let msg = refusal_message(&err);
+    assert!(
+        msg.contains("Holder 0") && msg.contains("Holder 1"),
+        "{msg}"
+    );
+    assert!(msg.contains("worktree") && msg.contains("since"), "{msg}");
+    assert_eq!(category(&ledger, third), Category::Todo);
+    // start obeys the same limit
+    let err = ws
+        .start(&third.to_string(), &fx.root, None)
+        .expect_err("start refused");
+    assert_eq!(refusal_code(&err), "E-WIP-REPO");
+    // requeue frees a slot
+    let held = ledger
+        .list(&ListFilter {
+            category: Some(Category::InProgress),
+            ..ListFilter::default()
+        })
+        .expect("list");
+    ws.requeue(&held[0].id.to_string(), "make room")
+        .expect("requeue");
+    ws.work(&third.to_string(), &WorkOptions::default())
+        .expect("third fits now");
+}
+
+// frob:tests crates/frob-worktree/src/wip.rs::check
+#[test]
+fn limit_zero_is_off_and_reentry_is_not_a_new_slot() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ids = fill_wip(&ledger, &leases, &cfg, 3);
+    let off_leases = fx.leases().with_repo_limit(0);
+    let off = Workspace {
+        ledger: &ledger,
+        leases: &off_leases,
+        config: &cfg,
+    };
+    let more = Fixture::ticket(&ledger, "More", TicketType::Task, &["area8/**"]);
+    off.work(&more.to_string(), &WorkOptions::default())
+        .expect("limit 0 does not check");
+    // Four in progress, limit 2: re-entering a held ticket still works.
+    let tight_leases = fx.leases().with_repo_limit(2);
+    let tight = Workspace {
+        ledger: &ledger,
+        leases: &tight_leases,
+        config: &cfg,
+    };
+    let again = tight
+        .work(&ids[0].to_string(), &WorkOptions::default())
+        .expect("re-entry");
+    assert!(again.already);
+}
+
+// frob:tests crates/frob-worktree/src/wip.rs::check
+#[test]
+fn a_stale_in_progress_ticket_does_not_count_and_is_named() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    fill_wip(&ledger, &leases, &cfg, 1);
+    let stale = Fixture::ticket(&ledger, "Abandoned", TicketType::Task, &["old/**"]);
+    ledger
+        .transition(stale, Category::InProgress, None, None)
+        .expect("in progress without a lease");
+    let limited = fx.leases().with_repo_limit(2);
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &limited,
+        config: &cfg,
+    };
+    let next = Fixture::ticket(&ledger, "Next", TicketType::Task, &["area7/**"]);
+    ws.work(&next.to_string(), &WorkOptions::default())
+        .expect("stale does not count: one live holder, limit 2");
+    let last = Fixture::ticket(&ledger, "Last", TicketType::Task, &["area6/**"]);
+    let err = ws
+        .work(&last.to_string(), &WorkOptions::default())
+        .expect_err("two live holders now");
+    let msg = refusal_message(&err);
+    assert!(msg.contains("Stale") && msg.contains("Abandoned"), "{msg}");
+    assert!(msg.contains("frob requeue"), "{msg}");
+}
+
+// frob:tests crates/frob-worktree/src/verbs.rs::Work
+#[test]
+fn cli_work_past_the_repository_limit_exits_3_with_the_wip_code() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    std::fs::write(fx.root.join("frob.toml"), "[pm.wip]\nin_progress = 1\n").expect("config");
+    let ledger = fx.ledger(None);
+    let a = Fixture::ticket(&ledger, "First", TicketType::Task, &["a/**"]);
+    let b = Fixture::ticket(&ledger, "Second", TicketType::Task, &["b/**"]);
+    drop(ledger);
+    let cli = frob_worktree::register(gob_cli::Cli::new("frob", "0.0.0"));
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &a.to_string()], &fx.root);
+    assert_eq!(code, 0, "{out}{err}");
+    let (code, out, _) = gob_cli::run_for_test(&cli, &["work", &b.to_string()], &fx.root);
+    assert_eq!(code, 3, "{out}");
+    let v = json(&out);
+    assert_eq!(v["error"]["code"], "E-WIP-REPO");
+    assert!(
+        v["error"]["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("First")),
+        "{out}"
+    );
+    let (code, out, _) = gob_cli::run_for_test(&cli, &["start", &b.to_string()], &fx.root);
+    assert_eq!(code, 3, "start obeys the limit: {out}");
 }

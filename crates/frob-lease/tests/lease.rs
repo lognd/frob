@@ -238,13 +238,7 @@ fn steal_records_history_and_returns_previous() {
 #[test]
 fn renew_extends_and_wip_limit_refuses() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let store = store_in(
-        dir.path(),
-        LeaseConfig {
-            wip_per_holder: 1,
-            ..LeaseConfig::default()
-        },
-    );
+    let store = store_in(dir.path(), LeaseConfig::default()).with_holder_limit(1);
     let t = TicketId::mint();
     store
         .acquire(t, &holder("a"), &scope(&["a/**"]))

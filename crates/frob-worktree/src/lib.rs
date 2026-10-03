@@ -14,6 +14,7 @@
 pub mod config;
 pub mod error;
 pub mod verbs;
+pub mod wip;
 pub mod work;
 
 pub use config::{WorktreeConfig, ledger_config};

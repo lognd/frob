@@ -120,5 +120,5 @@ intangible_share = 0.2
 [pm.wip]
 # Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off.
 in_progress_per_identity = 1
-# Most tickets in progress in the repository at once, sized to what the machine can build; the default 2 matches the two-builder rule, and 0 is off.
-in_progress = 2
+# Most tickets in progress in the repository at once; 0 is off. The generic default is 2 (the two-builder rule is about disk use, see notes/coordinator.md); this repository runs 3 for two building agents plus the coordinator's design tickets.
+in_progress = 3
