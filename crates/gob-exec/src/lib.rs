@@ -8,6 +8,7 @@
 //! [`gob_log::redact`], and counts spawns (see [`SpawnCount`]).
 //! Design: `git-io.md` section 3, `architecture.md` section 9.
 
+mod cmdline;
 mod counter;
 mod error;
 pub mod proc001;
@@ -15,6 +16,7 @@ mod program;
 mod runner;
 mod semaphore;
 
+pub use cmdline::{Arg, Shell, command_line};
 pub use counter::{SpawnCount, assert_spawns};
 pub use error::ExecError;
 pub use program::Program;
