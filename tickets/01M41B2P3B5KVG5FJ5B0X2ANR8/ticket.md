@@ -8,7 +8,7 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T16:55:39Z"
-updated = "2026-10-03T17:33:05Z"
+updated = "2026-10-03T17:33:07Z"
 scope = ["crates/gob-cli/**", "crates/frob/tests/snapshots/**", "crates/frob/src/board_cmd.rs", "crates/frob/tests/board.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given --json, when it runs, then the envelope is unchanged"
-bound = false
+bound = true
 +++
 
 frob board (~4XZVMNC) renders its own text into data.lines, but the generic text envelope prints it as 'board: ok / lines: / - row' with a 6-character indent, which wastes width and looks archaic. When a verb's data carries pre-rendered lines (board, and any future dashboard verb), the text view should print them verbatim with no envelope header or list markers; JSON is unchanged. Owner preference: pretty output from one renderer.
