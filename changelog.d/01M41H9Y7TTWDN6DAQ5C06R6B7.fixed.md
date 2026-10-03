@@ -1,1 +1,1 @@
-frob: SYS001 reports every ledger directory as unowned (894 warnings here); the ledger is frob-owned.
+grimble: SYS001 no longer reports the ticket ledger, changelog.d fragments, frob.lock or .frob/ as unowned files.
