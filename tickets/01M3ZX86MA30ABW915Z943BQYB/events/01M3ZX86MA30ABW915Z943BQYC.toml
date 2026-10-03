@@ -1,0 +1,26 @@
+kind = "create"
+title = "TICK004 ledger-path-reference with machine fix"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+idempotency_key = "m2-nav-tick004"
+labels = ["milestone:2", "area:navigation"]
+scope = ["crates/frob-obligations/src/tick_paths.rs"]
+acceptance = ["Given a doc linking `https://github.com/o/r/blob/frob-tickets/parser-rewrite/x.md`, when check runs, then TICK004 fires and `--fix` rewrites it to the ticket ULID", "Given generated pages that use relative paths, when check runs, then TICK004 does not fire"]
+body = """
+Implements navigation.md sections 1 and 6.
+
+Error, P+: tracked hand-written text links to a ticket-branch path (<epic>/<slug>.md, a blob or tree URL on the ticket branch, or the old tickets/<ULID>/ticket.md); the machine fix rewrites it to the ULID; runs over the code repository and the hand-written files of the ticket branch."""
+at = "2026-10-03T03:34:45Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX8141MTBF6G2E6BAD33TS"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX82K7HX9D2VKT25KS4MV2"
