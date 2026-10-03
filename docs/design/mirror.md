@@ -20,15 +20,17 @@ are specified after the documentation survey
   and it can be browsed on the web. Hidden custom refs were rejected:
   clones would silently lack the ledger.
 - Layout for humans, identity for machines: `README.md` (generated),
-  `<epic-slug>/<ticket-slug>.md` (slug frozen at creation), `.events/<ULID>/`
-  (event logs). The ULID stays canonical in each file's frontmatter;
-  paths are presentation. frob resolves ids through its index, never
-  through paths.
+  `<top-epic-slug>/<ticket-slug>.md` (slug frozen at creation; the file
+  moves only in a verifiable reindex commit when its top epic changes),
+  `.events/<ULID>/` (event logs). The ULID stays canonical in each
+  file's frontmatter; paths are presentation and never references.
+  frob resolves ids through its index, never through paths. The full
+  layout, the generated pages and the reindex rules are navigation.md.
 - frob writes the branch through gob-git commit_paths with CAS (D23), so
   the code checkout is never touched. Branch protection on the hosting
   side should forbid force pushes.
-- The code repository carries one short committed pointer (`TICKETS.md`
-  or a README section, generated) saying where tickets live, the three
+- The code repository carries one short pointer, a generated region of
+  README.md (navigation.md 3.2), saying where tickets live, the three
   commands to use, and the tracker link.
 
 ## 2. The one-way mirror: what it does
@@ -152,8 +154,5 @@ Decided 2026-10-04:
    projection later.
 2. Divergence: skip and report, loudly and resolvably (section 3.1).
 
-Still open:
-
-3. Should the code repository's pointer be a committed generated
-   `TICKETS.md`, or a section inside README.md? (Waiting on the
-   documentation survey, notes/research/docs-survey.md.)
+3. The code repository's pointer is a generated region of README.md,
+   not a `TICKETS.md` (navigation.md 3.2).
