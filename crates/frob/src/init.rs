@@ -3,8 +3,9 @@
 use std::path::Path;
 use std::time::Duration;
 
-use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
+use gob_git::Repo;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -56,6 +57,37 @@ pub struct InitData {
     pub merge_driver: Step,
     /// The `.gitattributes` line.
     pub gitattributes: Step,
+}
+
+/// Short name of the checked-out branch; an unborn branch counts (its ref exists after the first commit).
+///
+/// Shared by every init step that needs the working branch (the ledger ref, and the `[check] base` detection of ~VA936C5).
+///
+/// # Errors
+/// A refusal on a detached `HEAD` (no branch to name; check one out or write the knob by hand) and an internal error when `HEAD` is unreadable.
+pub(crate) fn checked_out_branch(repo: &Repo) -> Result<String, CliError> {
+    match repo.current_branch() {
+        Ok(Some(branch)) => {
+            tracing::debug!(branch, "checked-out branch detected");
+            Ok(branch)
+        }
+        Ok(None) => {
+            tracing::warn!("HEAD is detached; no branch to name");
+            Err(Refusal::new(
+                "E-DETACHED-HEAD",
+                RefusalClass::GuardNeedsAction,
+                "HEAD is detached, so frob init cannot tell which branch holds the ticket ledger",
+            )
+            .with_remedy("git switch <branch>, or set [tickets] ref in frob.toml, then rerun")
+            .into())
+        }
+        Err(e) => Err(CliError::internal(e)),
+    }
+}
+
+/// The ledger ref (`refs/heads/<branch>`) of the checked-out branch.
+fn ledger_ref_of_current_branch(repo: &Repo) -> Result<String, CliError> {
+    Ok(format!("refs/heads/{}", checked_out_branch(repo)?))
 }
 
 /// Ensure `.frob/` is ignored; returns whether the file changed.
@@ -165,10 +197,14 @@ impl Command for Init {
 
     fn run(&self, ctx: &Context) -> Outcome<InitData> {
         let located = Located::discover(&ctx.cwd);
-        located.require_repo()?;
+        let repo = located.require_repo()?;
         let root = &located.root;
         let cfg = FrobConfig::load(root).map_err(|e| config_refusal(&e))?;
-        let config = sync_config(root, ctx.dry_run)?;
+        let config = sync_config(
+            root,
+            ctx.dry_run,
+            Some(&|| ledger_ref_of_current_branch(repo)),
+        )?;
         let gitignore = ensure_gitignore(root, ctx.dry_run)?;
         let merge_driver = ensure_merge_driver(root, ctx.dry_run)?;
         let gitattributes = ensure_gitattributes(root, &cfg.tickets.dir, ctx.dry_run)?;

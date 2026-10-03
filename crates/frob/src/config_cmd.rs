@@ -63,9 +63,35 @@ fn missing_knobs(
     Ok((missing, present))
 }
 
-/// Write every missing materialized knob of all registered tables.
-pub(crate) fn sync_config(root: &Path, dry_run: bool) -> Result<SyncData, CliError> {
-    let descs = registered_tables();
+/// Supplies the ledger ref to write when `tickets.ref` is absent; never called when it is present.
+pub(crate) type LedgerRef<'a> = &'a dyn Fn() -> Result<String, CliError>;
+
+/// Dotted key of the ledger ref knob.
+const LEDGER_REF_KEY: &str = "tickets.ref";
+
+/// Write every missing materialized knob of all registered tables; `ledger_ref` (when given) replaces the default of an absent `tickets.ref`.
+pub(crate) fn sync_config(
+    root: &Path,
+    dry_run: bool,
+    ledger_ref: Option<LedgerRef<'_>>,
+) -> Result<SyncData, CliError> {
+    let mut descs = registered_tables();
+    if let Some(supply) = ledger_ref {
+        let refs = table_refs(&descs);
+        let (missing, _) = missing_knobs(root, &refs)?;
+        if missing.iter().any(|k| k == LEDGER_REF_KEY) {
+            let value = supply()?;
+            tracing::info!(value, "ledger ref default overridden");
+            let field = descs
+                .iter_mut()
+                .filter(|d| d.table == "tickets")
+                .flat_map(|d| d.fields.iter_mut())
+                .find(|f| f.key == "ref");
+            if let Some(f) = field {
+                f.default_toml = toml::Value::String(value).to_string();
+            }
+        }
+    }
     let refs = table_refs(&descs);
     if dry_run {
         let (added, present) = missing_knobs(root, &refs)?;
@@ -112,7 +138,7 @@ impl Command for ConfigSync {
 
     fn run(&self, ctx: &Context) -> Outcome<SyncData> {
         let located = Located::discover(&ctx.cwd);
-        let data = sync_config(&located.root, ctx.dry_run)?;
+        let data = sync_config(&located.root, ctx.dry_run, None)?;
         let already = data.added.is_empty();
         Ok(Payload::new(data).with_already(already))
     }

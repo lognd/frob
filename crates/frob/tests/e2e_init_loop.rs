@@ -47,7 +47,6 @@ fn code(out: &Output) -> i32 {
 struct Fresh {
     _tmp: tempfile::TempDir,
     root: PathBuf,
-    branch: String,
 }
 
 impl Fresh {
@@ -69,11 +68,7 @@ impl Fresh {
         std::fs::write(root.join(".gitignore"), "target/\n").expect("write");
         git(&root, &["add", "-A"]);
         git(&root, &["commit", "-q", "-m", "initial"]);
-        Self {
-            _tmp: tmp,
-            root,
-            branch: branch.to_owned(),
-        }
+        Self { _tmp: tmp, root }
     }
 
     /// Run frob in `dir` with the nextest environment of the outer run scrubbed.
@@ -109,7 +104,7 @@ impl Fresh {
         env
     }
 
-    /// `frob init` with the ledger ref set to the default branch (the workaround for the hard-coded `refs/heads/main`), committed.
+    /// `frob init` (the ledger ref follows the checked-out branch), then init again and commit.
     fn init_committed(&self) {
         let env = Self::ok(&self.root, &["init"]);
         assert_eq!(env["verb"], "init");
@@ -117,13 +112,6 @@ impl Fresh {
         assert_eq!(env["data"]["gitignore"]["changed"], true);
         assert_eq!(env["data"]["gitattributes"]["changed"], true);
         assert_eq!(env["data"]["merge_driver"]["changed"], true);
-        if self.branch != "main" {
-            let p = self.root.join("frob.toml");
-            let text = std::fs::read_to_string(&p).expect("read frob.toml");
-            let fixed = text.replace("refs/heads/main", &format!("refs/heads/{}", self.branch));
-            assert_ne!(text, fixed, "frob.toml names the ledger ref");
-            std::fs::write(&p, fixed).expect("write frob.toml");
-        }
         let again = Self::ok(&self.root, &["init"]);
         assert_eq!(again["data"]["config"]["created"], false, "init repeats");
         assert!(self.root.join("frob.toml").is_file());
@@ -265,16 +253,16 @@ fn loop_on_trunk() {
 }
 
 /// frob:ticket 01M4069YW2EF551WF2J7R0EMJ4
-/// Gap: `frob init` writes `[tickets] ref = "refs/heads/main"` whatever the checked-out branch is; filed as ~D8STDJR.
+/// frob:ticket 01M40FXTW5FYKQWG82PD8STDJR
+/// `frob init` points `[tickets] ref` at the checked-out branch.
 #[test]
-#[should_panic(expected = "~D8STDJR")]
 fn init_points_the_ledger_ref_at_the_current_branch() {
     let repo = Fresh::new("trunk");
     Fresh::ok(&repo.root, &["init"]);
     let text = std::fs::read_to_string(repo.root.join("frob.toml")).expect("read");
     assert!(
         text.contains("ref = \"refs/heads/trunk\""),
-        "~D8STDJR: init hard-codes refs/heads/main on a repository whose branch is trunk"
+        "init must point the ledger ref at refs/heads/trunk"
     );
 }
 
