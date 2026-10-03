@@ -254,15 +254,24 @@ impl<'m> Ctx<'m> {
         let mut r = Relation::new();
         let t = self.term();
         let scopes = self.model.scopes();
-        for id in t.ids() {
+        // Nearest unit-like proper ancestor of every node, in one pass: a parent's id is always
+        // greater than its children's, so walking ids downwards sees parents first.
+        let mut enclosing: Vec<Option<NodeId>> = vec![None; t.len()];
+        let ids: Vec<NodeId> = t.ids().collect();
+        for &id in ids.iter().rev() {
+            enclosing[id.index()] = t.parent(id).and_then(|p| {
+                if t.node(p).op.is_unit_like() {
+                    Some(p)
+                } else {
+                    enclosing[p.index()]
+                }
+            });
+        }
+        for id in ids {
             if !matches!(t.node(id).op, Operator::Universal(Universal::Apply { .. })) {
                 continue;
             }
-            let Some(caller) = t
-                .ancestors(id)
-                .into_iter()
-                .find(|&a| t.node(a).op.is_unit_like())
-            else {
+            let Some(caller) = enclosing[id.index()] else {
                 continue;
             };
             let head = t.children(id)[0];

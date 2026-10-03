@@ -4,9 +4,13 @@
 //! levels (`#k`) and free variables are quoted names, so alpha-equivalent
 //! terms print byte-identically. Facet digests are BLAKE3 over a facet's
 //! printed stream with trivia excluded and literals exact. The printer
-//! recurses over term depth; adapters keep terms shallower than the thread stack.
+//! walks the term with an explicit work stack, so term depth is bounded by memory, not by
+//! the thread stack (Theorem 1, totality).
 
+use std::collections::HashMap;
 use std::fmt::Write as _;
+
+use tracing::trace;
 
 use crate::attrs::{AttrValue, reserved};
 use crate::digest::{DIGEST_SCHEME, Digest, Facet, FacetDigest};
@@ -148,7 +152,25 @@ struct Printer<'a> {
     term: &'a Term,
     opts: PrintOpts,
     env: Vec<&'a str>,
+    /// For each bound name, the indices (de Bruijn levels) at which it sits in `env`.
+    levels: HashMap<&'a str, Vec<usize>>,
     out: String,
+}
+
+/// One unit of pending printer work.
+enum Task<'a> {
+    /// Print a node (preceded by a space when it is a child).
+    Enter {
+        id: NodeId,
+        parent: Option<&'a Node>,
+        space: bool,
+    },
+    /// Print the closing paren of a node.
+    Close,
+    /// Bring the binders of a node into scope.
+    Bind(&'a Node),
+    /// Drop the most recent `n` binders from scope.
+    Unbind(usize),
 }
 
 impl<'a> Printer<'a> {
@@ -157,7 +179,22 @@ impl<'a> Printer<'a> {
             term,
             opts,
             env: Vec::new(),
+            levels: HashMap::new(),
             out: String::new(),
+        }
+    }
+
+    fn bind(&mut self, name: &'a str) {
+        self.levels.entry(name).or_default().push(self.env.len());
+        self.env.push(name);
+    }
+
+    fn unbind(&mut self, n: usize) {
+        for _ in 0..n {
+            let name = self.env.pop().expect("balanced binders");
+            if let Some(v) = self.levels.get_mut(name) {
+                v.pop();
+            }
         }
     }
 
@@ -255,7 +292,7 @@ impl<'a> Printer<'a> {
     }
 
     fn reference(&mut self, name: &str) {
-        match self.env.iter().rposition(|b| *b == name) {
+        match self.levels.get(name).and_then(|v| v.last().copied()) {
             Some(level) => {
                 let _ = write!(self.out, " #{level}");
             }
@@ -267,41 +304,54 @@ impl<'a> Printer<'a> {
         }
     }
 
-    fn children(&mut self, id: NodeId) {
+    /// Print the subtree at `id` with an explicit work stack (no recursion over depth).
+    fn node_with_parent(&mut self, id: NodeId, parent: Option<&'a Node>) {
         let term = self.term;
-        let node = term.node(id);
-        for (i, &c) in node.children.iter().enumerate() {
-            let bound = node.op.binds_over(i);
-            if bound {
-                self.env.extend(node.binders.iter().map(String::as_str));
+        let mut work = vec![Task::Enter {
+            id,
+            parent,
+            space: false,
+        }];
+        while let Some(task) = work.pop() {
+            match task {
+                Task::Close => self.out.push(')'),
+                Task::Bind(node) => {
+                    for b in &node.binders {
+                        self.bind(b);
+                    }
+                }
+                Task::Unbind(n) => self.unbind(n),
+                Task::Enter { id, parent, space } => {
+                    let node = term.node(id);
+                    if space {
+                        self.out.push(' ');
+                    }
+                    self.header(node, parent);
+                    if let Operator::Universal(Universal::Ref { name }) = &node.op {
+                        self.reference(name);
+                    }
+                    work.push(Task::Close);
+                    for (i, &c) in node.children.iter().enumerate().rev() {
+                        let child = term.node(c);
+                        if self.skipped(child) {
+                            continue;
+                        }
+                        let bound = node.op.binds_over(i) && !node.binders.is_empty();
+                        if bound {
+                            work.push(Task::Unbind(node.binders.len()));
+                        }
+                        work.push(Task::Enter {
+                            id: c,
+                            parent: Some(node),
+                            space: true,
+                        });
+                        if bound {
+                            work.push(Task::Bind(node));
+                        }
+                    }
+                }
             }
-            self.child(c, node);
-            if bound {
-                let n = self.env.len() - node.binders.len();
-                self.env.truncate(n);
-            }
         }
-    }
-
-    fn child(&mut self, id: NodeId, parent: &Node) {
-        let term = self.term;
-        let node = term.node(id);
-        if self.skipped(node) {
-            return;
-        }
-        self.out.push(' ');
-        self.node_with_parent(id, Some(parent));
-    }
-
-    fn node_with_parent(&mut self, id: NodeId, parent: Option<&Node>) {
-        let term = self.term;
-        let node = term.node(id);
-        self.header(node, parent);
-        if let Operator::Universal(Universal::Ref { name }) = &node.op {
-            self.reference(name);
-        }
-        self.children(id);
-        self.out.push(')');
     }
 }
 
@@ -310,6 +360,7 @@ impl Term {
     pub fn print_with(&self, id: NodeId, opts: PrintOpts) -> String {
         let mut p = Printer::new(self, opts);
         p.node_with_parent(id, None);
+        trace!(node = %id, bytes = p.out.len(), "term printed");
         p.out
     }
 
@@ -343,14 +394,25 @@ impl Term {
             .collect()
     }
 
+    /// Whether any node at or under `id` satisfies `pred`; an explicit-stack preorder walk.
+    fn any_under(&self, id: NodeId, pred: impl Fn(&Operator) -> bool) -> bool {
+        let mut stack = vec![id];
+        while let Some(n) = stack.pop() {
+            let node = self.node(n);
+            if pred(&node.op) {
+                return true;
+            }
+            stack.extend(node.children.iter().rev());
+        }
+        false
+    }
+
     fn has_hole(&self, id: NodeId) -> bool {
-        let n = self.node(id);
-        n.op.is_hole() || n.children.iter().any(|&c| self.has_hole(c))
+        self.any_under(id, Operator::is_hole)
     }
 
     fn has_hole_or_opaque(&self, id: NodeId) -> bool {
-        let n = self.node(id);
-        n.op.is_hole() || n.op.is_opaque() || n.children.iter().any(|&c| self.has_hole_or_opaque(c))
+        self.any_under(id, |op| op.is_hole() || op.is_opaque())
     }
 
     /// The canonical stream of `facet` for the `unit` or `anon` node `unit` (query Q38).
@@ -400,8 +462,12 @@ impl Term {
                 }
             }
         }
-        p.env.extend(self.env_at(unit));
-        p.env.extend(node.binders.iter().map(String::as_str));
+        for name in self.env_at(unit) {
+            p.bind(name);
+        }
+        for b in &node.binders {
+            p.bind(b);
+        }
         for c in selected {
             p.out.push(' ');
             p.node_with_parent(c, Some(node));
