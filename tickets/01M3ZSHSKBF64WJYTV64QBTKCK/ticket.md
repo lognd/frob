@@ -1,0 +1,25 @@
++++
+id = "01M3ZSHSKBF64WJYTV64QBTKCK"
+title = "GRL language specification: one intuitive rule language for pattern and relational rules"
+type = "docs"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-03T02:30:05Z"
+updated = "2026-10-03T02:30:05Z"
+idempotency_key = "m2-grl-spec"
+labels = ["milestone:2"]
+scope = ["docs/design/**"]
+
+[[acceptance]]
+text = "Given grl-spec.md, when the ten existing built-in rules are expressed in GRL, then each rewrite is shorter than or equal in length to its description and compiles under the stated grammar"
+bound = false
+
+[[acceptance]]
+text = "Given a reader who has never written a lint rule, when they follow the newcomer walkthrough, then they write and test a working pattern rule using only the document"
+bound = false
++++
+
+Owner decision: GRL is the only rule language, so it must be intuitive for someone who has never written a lint rule. Write docs/design/grl-spec.md: design principles (reads like the code it matches; copy a code snippet with metavariables to start a pattern rule, as Semgrep, ast-grep and GritQL allow; relational clauses only when needed; every construct has an example; errors explain themselves like rustc); survey and borrow deliberately from GritQL (Biome plugins), Semgrep and ast-grep patterns, CodeQL QL, Datalog/Souffle, tree-sitter queries and Rego, recording what each does well and badly for newcomers; full grammar (EBNF), the pattern sublanguage (language-tagged code snippets with metavariables, ellipsis, inside, has, not, any, all), the relational sublanguage over U (units, edges, attributes, scope graph status, bounded closure, counts), polarity and must_measure declarations, messages with interpolation, fix templates with applicability, explain text, tests embedded as mdtest examples with fire and clean cases; static checks (universal rules may not touch language-specific constructs; termination; unknown query names with did-you-mean); compilation targets (plans for plugins, Rust codegen for built-ins, optional WASM); ten worked examples rewritten from existing built-in rules (TODO001, DOC002, COV001, INV002, SCOPE001, SYS001, CAP001, NEAT013, NEAT031, CI002) to prove expressiveness; a newcomer walkthrough (write your first rule in five minutes); tooling: grimble rule test, grimble rule explain, playground later. Add D80 to the README.
