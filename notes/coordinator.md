@@ -161,6 +161,24 @@ experimental. Record such lands in the status log.
 
 ## Status log (newest first)
 
+- 2026-10-03: ~CFM8QB0 changed the fold (acceptance bound only from
+  measured passing evidence, through the moved maps), so every ticket
+  with evidence drifted under the new binary and the new binary's land
+  check refused (TICK001 x75). Procedure that worked, now the rule for
+  any fold change: copy the worktree binaries (frob and grimble) to the
+  scratchpad, run `ticket doctor --fix` with them (74 reconcile commits,
+  zero drift after), then land with the same binary, then rebuild the
+  landing binary in the primary. Since the last entry: design D76-D85
+  accepted (plugins, diagnostics, mirror, GRL, navigation, security
+  incl. trust UX, releases, doc consistency, consistency pass 2); mirror
+  protocol v2 from an adversarial audit plus a TLA+ model
+  (docs/design/models/mirror); 0.532.0 release slice planned (epic
+  ~P2QNP8T, label release:0.532.0); landed code: gob-ir stack safety and
+  scope cache, cross-crate calls and type inference (COV001 284 -> 35),
+  engine-scoped caches, grimble binding cache (warm 0.09 s release),
+  SYS applicability predicates, ticket acceptance edits, gob-trust,
+  gob-plan lexer, ledger append API, hand-written release workflow.
+
 - 2026-10-04 (after compaction): freed another ~174 GB (324 -> 150 GB
   used): v1 worktree build output, then all 135 v1 frob worktrees
   removed with branches kept (3 with uncommitted state backed up to
