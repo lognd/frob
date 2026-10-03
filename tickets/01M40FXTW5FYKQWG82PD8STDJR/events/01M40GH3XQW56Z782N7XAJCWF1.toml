@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T09:11:40Z"
+digest = "ea88a194fe2dd057238ae3f59b71692266f51123bd234e4280f8b2416aa97ae7"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+────────────
+ Nextest run ID e2b25f4c-c6ef-4f6a-bec6-f462f4777b62 with nextest profile: default
+    Starting 1 test across 14 binaries (89 tests skipped)
+        PASS [   0.083s] (1/1) frob-cli::init_adopt init_on_main_keeps_main
+────────────
+     Summary [   0.083s] 1 test run: 1 passed, 89 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(=init_on_main_keeps_main)"
+size = 422
+status = "measured"
+tests = ["init_on_main_keeps_main"]
+at = "2026-10-03T09:11:40Z"
+actor = "lognd"
+rev = 1

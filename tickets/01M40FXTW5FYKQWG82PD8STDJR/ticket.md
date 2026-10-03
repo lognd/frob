@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a repository on main, when frob init runs, then ref stays refs/heads/main"
-bound = false
+bound = true
 +++
 
 found while working ~7R0EMJ4. Exact failure: git init -b trunk; commit; frob init writes ref = "refs/heads/main"; frob --json ticket new exits 3 with E-LEDGER-REF-MISSING 'ledger ref refs/heads/main does not exist'. Bound by crates/frob/tests/e2e_init_loop.rs init_points_the_ledger_ref_at_the_current_branch (expected-to-fail until fixed; drop its should_panic when this lands). Related: ~VA936C5 ([check] base detection).
