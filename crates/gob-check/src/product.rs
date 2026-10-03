@@ -211,6 +211,11 @@ pub trait Product: Sized + Sync {
         None
     }
 
+    /// True when the product's scanner reads comments and directives of `path` without an adapter.
+    fn scans_text(&self, _path: &str) -> bool {
+        false
+    }
+
     /// Whether a `must_measure` rule has a non-empty scope in this repository.
     ///
     /// A rule whose whole scope is not applicable (no ledger configured, no

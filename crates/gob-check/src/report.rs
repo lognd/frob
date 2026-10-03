@@ -175,7 +175,7 @@ pub struct CheckReport {
     pub fail_on_unresolved: UnresolvedPolicy,
     /// Subjects each evaluated rule examined (`rules.md` section 2); rules not evaluated are absent.
     pub subjects_examined: BTreeMap<String, usize>,
-    /// Files examined, NotApplicable and Unresolved per language (every checked file appears).
+    /// Files examined, `NotApplicable` and Unresolved per language (every checked file appears).
     pub fidelity: FidelityReport,
 }
 

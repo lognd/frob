@@ -73,23 +73,32 @@ pub fn need_of(id: &str) -> RuleNeed {
     }
 }
 
-/// [`subject_status_for`] for a text file.
+/// [`subject_status_for`] for an unscanned text file.
 pub fn subject_status(info: &FileInfo, meta: &RuleMeta) -> SubjectStatus {
-    subject_status_for(info, meta, false)
+    subject_status_for(info, meta, false, false)
 }
 
-/// What `meta` may do with the file described by `info`; `binary` marks a non-text opaque file.
+/// What `meta` may do with the file described by `info`.
+///
+/// `binary` marks a non-text opaque file; `scanned` marks an opaque file whose
+/// comments and directives the scanner reads anyway (TOML).
 ///
 /// Opaque F0: `NotApplicable` for capability rules and for binary files,
 /// `Unresolved` for every-text-artifact rules. A failed parse is Unresolved
 /// for every rule. A fidelity below the rule's minimum is Unresolved.
-pub fn subject_status_for(info: &FileInfo, meta: &RuleMeta, binary: bool) -> SubjectStatus {
+pub fn subject_status_for(
+    info: &FileInfo,
+    meta: &RuleMeta,
+    binary: bool,
+    scanned: bool,
+) -> SubjectStatus {
     let need = need_of(meta.id);
     let status = if info.is_opaque() {
         match need.need {
             Need::Capability => {
                 SubjectStatus::NotApplicable("no adapter: the file has no parsed items".to_owned())
             }
+            Need::EveryTextArtifact if scanned && !binary => SubjectStatus::Examine,
             Need::EveryTextArtifact if binary => {
                 SubjectStatus::NotApplicable("binary artifact holds no text".to_owned())
             }
@@ -141,6 +150,20 @@ pub fn unresolved_finding(
     )
 }
 
+/// One Unresolved finding of `meta` for all opaque text files `files` (spanless, one per rule).
+pub fn opaque_finding(meta: &RuleMeta, files: &[&str]) -> Finding {
+    let first = files.first().copied().unwrap_or_default();
+    unresolved_finding(
+        meta,
+        None,
+        "repository",
+        &format!(
+            "{} opaque text file(s) (no adapter, first `{first}`) were not read for comments or directives",
+            files.len()
+        ),
+    )
+}
+
 /// Extensions that are binary regardless of content.
 const BINARY_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "ico", "webp", "pdf", "zip", "gz", "xz", "zst", "tar", "woff",
@@ -168,7 +191,7 @@ pub struct LanguageFidelity {
     pub files_examined: usize,
     /// Files with parse holes.
     pub partial_parse: usize,
-    /// Files per rule family where every subject was NotApplicable.
+    /// Files per rule family where every subject was `NotApplicable`.
     pub not_applicable: BTreeMap<String, usize>,
     /// Unresolved findings per rule id raised for this language's files.
     pub unresolved: BTreeMap<String, usize>,
@@ -285,17 +308,25 @@ mod tests {
     fn opaque_files_split_by_need_and_binariness() {
         let i = opaque();
         assert!(matches!(
-            subject_status_for(&i, meta("TODO001"), false),
+            subject_status_for(&i, meta("TODO001"), false, false),
             SubjectStatus::Unresolved(_)
         ));
         assert!(matches!(
-            subject_status_for(&i, meta("TODO001"), true),
+            subject_status_for(&i, meta("TODO001"), true, false),
             SubjectStatus::NotApplicable(_)
         ));
         assert!(matches!(
             subject_status(&i, meta("TODO001")),
             SubjectStatus::Unresolved(_)
         ));
+    }
+
+    #[test]
+    fn scanned_opaque_text_is_examined() {
+        assert_eq!(
+            subject_status_for(&opaque(), meta("TODO001"), false, true),
+            SubjectStatus::Examine
+        );
     }
 
     #[test]

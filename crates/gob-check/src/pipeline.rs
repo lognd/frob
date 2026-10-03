@@ -18,7 +18,7 @@ use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
 use crate::rules::Perf001;
-use crate::status::{FidelityReport, Need, need_of, unresolved_finding};
+use crate::status::{FidelityReport, Need, need_of, opaque_finding};
 use crate::telemetry;
 use crate::tools::run_tools;
 
@@ -171,27 +171,34 @@ fn opaque_repo_findings<P: Product>(
         let Some(info) = product.file_info(&snap.shared, &e.path) else {
             continue;
         };
-        if info.is_opaque() && !opaque_binary(&snap.core.root, &e.path, &info) {
+        if info.is_opaque()
+            && !product.scans_text(&e.path)
+            && !opaque_binary(&snap.core.root, &e.path, &info)
+        {
             opaque.push(&e.path);
         }
     }
-    let Some(first) = opaque.first() else {
+    if opaque.is_empty() {
         return Vec::new();
-    };
+    }
     let mut out = Vec::new();
     let mut groups = product.repo_groups();
     groups.extend(crate::repo::builtin_groups::<P>());
-    for meta in groups.iter().flat_map(|g| g.metas.iter()).filter(|m| wanted(m)) {
+    for meta in groups
+        .iter()
+        .flat_map(|g| g.metas.iter())
+        .filter(|m| wanted(m))
+    {
         if need_of(meta.id).need != Need::EveryTextArtifact {
             continue;
         }
-        let why = format!(
-            "{} opaque text file(s) (no adapter, first `{first}`) were not read for comments or directives",
-            opaque.len()
+        tracing::info!(
+            rule = meta.id,
+            files = opaque.len(),
+            "repo rule unresolved on opaque text"
         );
-        tracing::info!(rule = meta.id, files = opaque.len(), "repo rule unresolved on opaque text");
         fidelity.add_unresolved("opaque", meta.id, 1);
-        out.push(unresolved_finding(meta, None, "repository", &why));
+        out.push(opaque_finding(meta, &opaque));
     }
     out
 }

@@ -75,8 +75,8 @@ pub use product::{
     Snapshot,
 };
 pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};
-pub use status::{
-    FidelityReport, LanguageFidelity, Need, RuleNeed, SubjectStatus, hole_caveat, is_binary, need_of,
-    subject_status, subject_status_for, unresolved_finding,
-};
 pub use rules::{Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Tool001, Tool002};
+pub use status::{
+    FidelityReport, LanguageFidelity, Need, RuleNeed, SubjectStatus, hole_caveat, is_binary,
+    need_of, subject_status, subject_status_for, unresolved_finding,
+};
