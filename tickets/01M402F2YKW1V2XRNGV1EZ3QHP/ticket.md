@@ -16,7 +16,7 @@ scope = ["crates/gob-cache/**", "crates/gob-check/**", "crates/frob-check/**"]
 
 [[acceptance]]
 text = "Given a cached repo-level result from engine fingerprint A, when engine fingerprint B checks the same inputs, then the rule is recomputed"
-bound = false
+bound = true
 +++
 
 Found by ~G5B3CFR: frob check reused a COV001 result computed by a different frob binary because repo-level rule results are keyed by input digests alone. After an upgrade or a worktree binary, findings can be stale and wrong (they were in the measurement). Key every cached rule result (file and repo level) by an engine fingerprint as well: binary version plus EXTRACTOR_VERSION plus the rule's version (rule metadata has one). Add a test: two engine fingerprints over the same inputs never share a cached result.
