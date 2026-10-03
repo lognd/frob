@@ -7,19 +7,18 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish.workspace = true
 
 [dependencies]
-frob-evidence = { path = "../frob-evidence" }
-frob-ledger = { path = "../frob-ledger" }
-gob-cache = { path = "../gob-cache" }
-gob-cli = { path = "../gob-cli" }
-gob-directives = { path = "../gob-directives" }
-gob-exec = { path = "../gob-exec" }
-gob-git = { path = "../gob-git" }
-gob-rules = { path = "../gob-rules" }
-gob-symbols = { path = "../gob-symbols" }
-gob-walk = { path = "../gob-walk" }
+frob-evidence = { version = "0.0.0", path = "../frob-evidence" }
+frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
+gob-cache = { version = "0.0.0", path = "../gob-cache" }
+gob-cli = { version = "0.0.0", path = "../gob-cli" }
+gob-directives = { version = "0.0.0", path = "../gob-directives" }
+gob-exec = { version = "0.0.0", path = "../gob-exec" }
+gob-git = { version = "0.0.0", path = "../gob-git" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
+gob-walk = { version = "0.0.0", path = "../gob-walk" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"

@@ -175,7 +175,19 @@ part of the job's design:
 - **Publishing:** crates.io in dependency order and in lockstep. A
   partial publish resumes from the first unpublished crate, never
   re-bumps. Registry tokens live only in the release environment, and
-  security.md's CI rules apply.
+  security.md's CI rules apply. Every crate publishes (`publish` is set
+  per crate, never workspace-wide) except the dev-only crates, which
+  carry `publish = false` and are exactly `gob-dev` (the `cargo dev`
+  runner), `gob-mdtest` (the corpus test harness) and `grimble` (the
+  preview binary, shipped with 0.533.0; the `grimble-*` library crates
+  do publish). The root `Cargo.toml` comment repeats this list. Every
+  path dependency on a shipped crate carries a `version`, which `frob
+  release bump` keeps in lockstep. The `crates` job publishes with the
+  `crates-io` environment's `CARGO_REGISTRY_TOKEN` secret when one is
+  set and through the OIDC action otherwise (crates.io cannot configure
+  trusted publishing for a crate that does not exist yet, so the first
+  publish needs the token; the owner then configures trusted publishing
+  per crate and deletes the secret).
 
 ## 6a. Details (closing the 0.532.0 planner's gaps)
 
@@ -235,8 +247,9 @@ part of the job's design:
   as Unresolved only). `release cut` runs the same gate, so a red tip cannot
   be cut without `--override`.
 - **Owner actions before the first publish.** Configure trusted
-  publishing on PyPI (`frob`) and crates.io where available (otherwise a
-  token in the release environment); confirm ownership of the reserved
+  publishing on PyPI (`frob`) and, once the first publish has created the
+  crates, on crates.io (the first publish uses a token in the release
+  environment); confirm ownership of the reserved
   crate names (products.md 5). These are human steps, listed by
   `frob release status` as Unresolved items until done.
 - **Rule numbers.** PM035 intangible-share (Warning) is new; PM014 keeps

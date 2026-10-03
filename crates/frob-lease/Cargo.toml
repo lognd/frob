@@ -7,18 +7,17 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish.workspace = true
 
 [dependencies]
-frob-ledger = { path = "../frob-ledger" }
-frob-release = { path = "../frob-release" }
+frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
+frob-release = { version = "0.0.0", path = "../frob-release" }
 globset = "0.4"
-gob-cli = { path = "../gob-cli" }
-gob-config = { path = "../gob-config" }
-gob-diagnostics = { path = "../gob-diagnostics" }
-gob-git = { path = "../gob-git" }
-gob-rules = { path = "../gob-rules" }
-gob-walk = { path = "../gob-walk" }
+gob-cli = { version = "0.0.0", path = "../gob-cli" }
+gob-config = { version = "0.0.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
+gob-git = { version = "0.0.0", path = "../gob-git" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-walk = { version = "0.0.0", path = "../gob-walk" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

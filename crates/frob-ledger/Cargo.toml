@@ -7,14 +7,13 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish.workspace = true
 
 [dependencies]
 error_set = "0.9"
-gob-diagnostics = { path = "../gob-diagnostics" }
-gob-git = { path = "../gob-git" }
-gob-macros = { path = "../gob-macros" }
-gob-rules = { path = "../gob-rules" }
+gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
+gob-git = { version = "0.0.0", path = "../gob-git" }
+gob-macros = { version = "0.0.0", path = "../gob-macros" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
 inventory = "0.3"
 jiff = "0.2"
 rusqlite = { version = "0.32", features = ["bundled"] }

@@ -7,7 +7,6 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish = false
 
 [package.metadata.dist]
 # frob-cli is the only distributable binary; dist ignores publish = false without this.
@@ -22,25 +21,25 @@ name = "frob"
 path = "src/main.rs"
 
 [dependencies]
-gob-cache = { path = "../gob-cache" }
-gob-cli = { path = "../gob-cli" }
-gob-config = { path = "../gob-config" }
-gob-diagnostics = { path = "../gob-diagnostics" }
-gob-exec = { path = "../gob-exec" }
-gob-git = { path = "../gob-git" }
-gob-rules = { path = "../gob-rules" }
-gob-symbols = { path = "../gob-symbols" }
-gob-walk = { path = "../gob-walk" }
-frob-ack = { path = "../frob-ack" }
-frob-check = { path = "../frob-check" }
-frob-evidence = { path = "../frob-evidence" }
-frob-land = { path = "../frob-land" }
-frob-lease = { path = "../frob-lease" }
-frob-pm = { path = "../frob-pm" }
-frob-release = { path = "../frob-release" }
-frob-ledger = { path = "../frob-ledger" }
-frob-tests = { path = "../frob-tests" }
-frob-worktree = { path = "../frob-worktree" }
+gob-cache = { version = "0.0.0", path = "../gob-cache" }
+gob-cli = { version = "0.0.0", path = "../gob-cli" }
+gob-config = { version = "0.0.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
+gob-exec = { version = "0.0.0", path = "../gob-exec" }
+gob-git = { version = "0.0.0", path = "../gob-git" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
+gob-walk = { version = "0.0.0", path = "../gob-walk" }
+frob-ack = { version = "0.0.0", path = "../frob-ack" }
+frob-check = { version = "0.0.0", path = "../frob-check" }
+frob-evidence = { version = "0.0.0", path = "../frob-evidence" }
+frob-land = { version = "0.0.0", path = "../frob-land" }
+frob-lease = { version = "0.0.0", path = "../frob-lease" }
+frob-pm = { version = "0.0.0", path = "../frob-pm" }
+frob-release = { version = "0.0.0", path = "../frob-release" }
+frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
+frob-tests = { version = "0.0.0", path = "../frob-tests" }
+frob-worktree = { version = "0.0.0", path = "../frob-worktree" }
 jiff = "0.2"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

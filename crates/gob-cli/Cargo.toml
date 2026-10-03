@@ -7,15 +7,14 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish.workspace = true
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-gob-config = { path = "../gob-config" }
-gob-diagnostics = { path = "../gob-diagnostics" }
-gob-log = { path = "../gob-log" }
-gob-macros = { path = "../gob-macros" }
-gob-rules = { path = "../gob-rules" }
+gob-config = { version = "0.0.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
+gob-log = { version = "0.0.0", path = "../gob-log" }
+gob-macros = { version = "0.0.0", path = "../gob-macros" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
 inventory = "0.3"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
