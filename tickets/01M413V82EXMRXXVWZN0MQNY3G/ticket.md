@@ -2,7 +2,8 @@
 id = "01M413V82EXMRXXVWZN0MQNY3G"
 title = "A cycle whose start date has come stays planned; state never becomes active"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
