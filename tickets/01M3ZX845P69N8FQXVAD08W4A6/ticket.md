@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T03:34:43Z"
+updated = "2026-10-03T05:49:58Z"
 idempotency_key = "m2-mirror-push-verb"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/mirror_cmd.rs"]
@@ -26,6 +26,6 @@ text = "Given `frob mirror push --full-resync`, when run, then every ticket is d
 bound = false
 +++
 
-Implements mirror.md section 3 (who runs it).
+Implements mirror.md sections 3.1 and 3.2.
 
-One writer; local pushes are opt-in; --dry-run previews the operations.
+The verb that performs a live run; local pushes are opt-in and use the person's own token. It takes the writer lock, honours the budget, and --dry-run prints the plan: work classes in order, calls and mutations budgeted, and nothing is sent.

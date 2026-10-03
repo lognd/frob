@@ -1,0 +1,13 @@
+kind = "field"
+field = "body"
+old = """
+Implements mirror.md section 3 (who runs it).
+
+One writer; local pushes are opt-in; --dry-run previews the operations."""
+new = """
+Implements mirror.md sections 3.1 and 3.2.
+
+The verb that performs a live run; local pushes are opt-in and use the person's own token. It takes the writer lock, honours the budget, and --dry-run prints the plan: work classes in order, calls and mutations budgeted, and nothing is sent."""
+at = "2026-10-03T05:49:58Z"
+actor = "lognd"
+rev = 1
