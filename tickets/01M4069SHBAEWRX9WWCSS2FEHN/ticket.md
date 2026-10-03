@@ -2,13 +2,14 @@
 id = "01M4069SHBAEWRX9WWCSS2FEHN"
 title = "frob cycle assign with capacity and over-commit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:54Z"
-updated = "2026-10-03T11:32:50Z"
+updated = "2026-10-03T11:34:33Z"
 idempotency_key = "m2-rel-cycle-assign"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/cycle/assign.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/cycle/mod.rs", "crates/frob-pm/src/cycle/velocity.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/model.rs", "crates/frob/tests/cycle.rs", "changelog.d/01M4069SHBAEWRX9WWCSS2FEHN.added.md", "docs/design/pm-enforcement.md", "docs/reference/cli/frob.md"]

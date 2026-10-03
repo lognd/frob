@@ -1,19 +1,24 @@
-//! The `cycle` verbs: `new`, `show`, `list`, `close` over `frob-pm`.
+//! The `cycle` verbs: `new`, `show`, `list`, `close`, `assign`, `unassign` over `frob-pm`.
 //!
 //! A cycle's alias is its dates (`START..END`). `new` and `close` are
 //! idempotent: an identical repeat returns `already: true`. Incomplete members
 //! carry to the next cycle with `cycle` events (op `carried`) and the
 //! commitment ratio is recorded at close (pm-enforcement.md section 4).
+//! `assign` refuses past capacity unless `--over-commit --reason`, and moves a
+//! ticket out of the open or planned cycle that held it.
 
 // frob:ticket 01M4069RPPQE1ES1914K6V6Y0D
+// frob:ticket 01M4069SHBAEWRX9WWCSS2FEHN
 use frob_ledger::Ledger;
 use frob_ledger::TicketId;
 use frob_ledger::model::{Category, Outcome as TicketOutcome, Stamp};
+use frob_pm::cycle::assign::{AssignError, AssignPlan, TicketFacts, default_cycle, plan_assign};
 use frob_pm::cycle::lifecycle::{
     ClosePlan, CycleError, MemberFacts, MemberStatus, NewPlan, plan_close, plan_new, ratio,
     resolve_end, unknown_cycle,
 };
-use frob_pm::event::{CycleEventData, CycleOp, PmBody, PmEvent, TransitionData};
+use frob_pm::cycle::velocity::{capacity, committed, done_facts};
+use frob_pm::event::{CycleEventData, CycleOp, MemberData, Op, PmBody, PmEvent, TransitionData};
 use frob_pm::model::{Cycle, Day, State};
 use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
 use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
@@ -23,7 +28,7 @@ use serde::Serialize;
 
 use crate::config::FrobConfig;
 use crate::milestone_cmd::pm_err;
-use crate::ticket::{cli_err, get, open, open_lease_store, text_flag};
+use crate::ticket::{cli_err, get, open, open_lease_store, resolve, text_flag, ticket_arg};
 use crate::workspace::{Located, config_refusal};
 
 /// A member ticket as listed under a cycle.
@@ -61,6 +66,19 @@ pub struct RatioView {
     pub ratio: Option<f64>,
 }
 
+/// An assignment past capacity that `--over-commit` allowed, as recorded on the cycle.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct OverCommitView {
+    /// Full ULID of the ticket assigned.
+    pub ticket: Option<String>,
+    /// Committed points after the assignment.
+    pub committed: Option<u32>,
+    /// The capacity that was exceeded.
+    pub capacity: Option<u32>,
+    /// Why the over-commit was accepted.
+    pub reason: String,
+}
+
 /// A cycle as every `cycle` verb reports it.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct CycleView {
@@ -88,6 +106,8 @@ pub struct CycleView {
     pub commitment: Option<RatioView>,
     /// The retro note recorded at close.
     pub retro: Option<String>,
+    /// Assignments accepted past capacity, with their reasons.
+    pub over_commits: Vec<OverCommitView>,
     /// Creation time.
     pub created: Stamp,
     /// Time of the latest event.
@@ -125,6 +145,7 @@ impl CycleView {
         let mut carried = Vec::new();
         let mut commitment = None;
         let mut retro = None;
+        let mut over_commits = Vec::new();
         for d in events {
             match d.op {
                 CycleOp::Carried => {
@@ -145,6 +166,12 @@ impl CycleView {
                     }
                 }
                 CycleOp::Retro => retro = d.text,
+                CycleOp::OverCommit => over_commits.push(OverCommitView {
+                    ticket: d.ticket.map(|t| t.to_string()),
+                    committed: d.committed,
+                    capacity: d.capacity,
+                    reason: d.text.unwrap_or_default(),
+                }),
                 CycleOp::Other => {}
             }
         }
@@ -161,6 +188,7 @@ impl CycleView {
             carried,
             commitment,
             retro,
+            over_commits,
             created: c.created,
             updated: c.updated,
         }
@@ -255,6 +283,33 @@ fn refusal(e: &CycleError) -> CliError {
         CycleError::BadCarryTarget { .. } => {
             Refusal::new("E-CYCLE-CARRY-TARGET", GuardNeedsAction, e.to_string())
                 .with_remedy("frob cycle list")
+        }
+    };
+    r.into()
+}
+
+/// Map an assignment failure to its refusal, with the command that fixes it.
+fn assign_refusal(e: &AssignError, cycle: &str) -> CliError {
+    use RefusalClass::GuardNeedsAction;
+    let r = match e {
+        AssignError::NoDefaultCycle { .. } => {
+            Refusal::new("E-CYCLE-NONE", GuardNeedsAction, e.to_string())
+                .with_remedy("create one (`frob cycle new --start YYYY-MM-DD --goal <text>`) or name a cycle")
+        }
+        AssignError::Closed { .. } => Refusal::new("E-CYCLE-CLOSED", GuardNeedsAction, e.to_string())
+            .with_remedy("frob cycle list"),
+        AssignError::NotAssignable { handle, .. } => {
+            Refusal::new("E-CYCLE-NOT-ASSIGNABLE", GuardNeedsAction, e.to_string())
+                .with_remedy(format!("assign one of its children (`frob ticket list --parent {handle}`)"))
+        }
+        AssignError::NoPoints { handle } => {
+            Refusal::new("E-CYCLE-NO-POINTS", GuardNeedsAction, e.to_string())
+                .with_remedy(format!("frob ticket update {handle} --points N"))
+        }
+        AssignError::OverCapacity { handle, .. } => {
+            Refusal::new("E-CYCLE-OVER-CAPACITY", GuardNeedsAction, e.to_string()).with_remedy(format!(
+                "assign it to a later cycle (`frob cycle list`), or accept the over-commit: `frob cycle assign {handle} {cycle} --over-commit --reason <why>`"
+            ))
         }
     };
     r.into()
@@ -548,6 +603,7 @@ fn close_bodies(c: &Cycle, plan: &ClosePlan, retro: Option<&str>) -> Vec<PmBody>
         committed: None,
         done: None,
         text: None,
+        capacity: None,
     };
     let mut bodies: Vec<PmBody> = plan
         .carried
@@ -673,10 +729,303 @@ impl Command for CycleClose {
     }
 }
 
+/// The `(type, points)` of every member of `c`; unreadable members are logged and skipped.
+fn member_points(ledger: &Ledger, c: &Cycle) -> Vec<(frob_ledger::model::TicketType, u32)> {
+    c.tickets
+        .iter()
+        .filter_map(|id| match ledger.show(*id) {
+            Ok(v) => Some((v.summary.ty, u32::from(v.summary.points.unwrap_or(0)))),
+            Err(e) => {
+                tracing::warn!(ticket = %id, error = %e, "member ticket unreadable; not counted");
+                None
+            }
+        })
+        .collect()
+}
+
+/// Output of `cycle assign` and `unassign`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct AssignData {
+    /// The cycle after the verb ran.
+    pub cycle: CycleView,
+    /// Handle of the ticket.
+    pub ticket: String,
+    /// Alias of the cycle the ticket left (assign moved it).
+    pub moved_from: Option<String>,
+    /// Committed story points of the cycle after the verb (velocity-counting tickets only).
+    pub committed: u32,
+    /// The capacity statement, for example `capacity not enforced yet: 1 of 3 cycles of history`.
+    pub capacity: String,
+    /// The enforced limit in points, absent when not enforced.
+    pub capacity_limit: Option<u32>,
+    /// True when the assignment went past capacity and an over-commit event was recorded.
+    pub over_committed: bool,
+    /// Ids of the events written (empty when `already`).
+    pub events: Vec<String>,
+    /// The ledger commit, when one was made.
+    pub commit: Option<String>,
+}
+
+/// The trimmed `--reason` when `--over-commit` is set; usage errors for a missing reason or a reason alone.
+fn over_commit_reason(over_commit: bool, reason: Option<&str>) -> Result<Option<String>, CliError> {
+    match (over_commit, reason.map(str::trim)) {
+        (true, Some(r)) if !r.is_empty() => Ok(Some(r.to_owned())),
+        (true, _) => Err(CliError::Usage(
+            "--over-commit needs --reason TEXT saying why the cycle may exceed capacity".to_owned(),
+        )),
+        (false, Some(_)) => Err(CliError::Usage(
+            "--reason is only used with --over-commit".to_owned(),
+        )),
+        (false, None) => Ok(None),
+    }
+}
+
+/// The events an assign writes: the membership and, when over-committing, the `(committed, capacity, reason)` record.
+fn assign_bodies(ticket: TicketId, over: Option<(u32, Option<u32>, Option<&str>)>) -> Vec<PmBody> {
+    let mut bodies = vec![PmBody::Member(MemberData {
+        op: Op::Add,
+        ticket,
+    })];
+    if let Some((committed, capacity, reason)) = over {
+        bodies.push(PmBody::Cycle(Box::new(CycleEventData {
+            op: CycleOp::OverCommit,
+            ticket: Some(ticket),
+            to: None,
+            committed: Some(committed),
+            done: None,
+            text: reason.map(str::to_owned),
+            capacity,
+        })));
+    }
+    bodies
+}
+
+/// Assign a ticket to a cycle (default: the open one containing today, else the next planned); refused past capacity unless over-committed.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "cycle assign",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct CycleAssign {
+    ticket: String,
+    cycle: Option<String>,
+    over_commit: bool,
+    reason: Option<String>,
+}
+
+impl Command for CycleAssign {
+    type Data = AssignData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(ticket_arg())
+            .arg(cycle_arg(false))
+            .arg(
+                Arg::new("over-commit")
+                    .long("over-commit")
+                    .action(gob_cli::clap::ArgAction::SetTrue)
+                    .help("Allow the assignment past capacity; needs --reason"),
+            )
+            .arg(text_flag(
+                "reason",
+                "Why the cycle is over-committed, recorded as a cycle event (with --over-commit)",
+            ))
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            ticket: get(m, "ticket").unwrap_or_default(),
+            cycle: get(m, "cycle"),
+            over_commit: m.get_flag("over-commit"),
+            reason: get(m, "reason"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<AssignData> {
+        let reason = over_commit_reason(self.over_commit, self.reason.as_deref())?;
+        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+        let ledger = open(ctx)?;
+        let store = PmStore::new(&ledger);
+        let all = cycles(store)?;
+        let target = match &self.cycle {
+            Some(r) => find(store, r)?,
+            None => default_cycle(&all, Day::today())
+                .map_err(|e| assign_refusal(&e, "CYCLE"))?
+                .clone(),
+        };
+        let id = resolve(&ledger, &self.ticket)?;
+        let s = ledger.show(id).map_err(cli_err)?.summary;
+        let facts = TicketFacts {
+            id,
+            handle: s.handle.clone(),
+            ty: s.ty,
+            points: s.points.map(u32::from),
+        };
+        let done = done_facts(&ledger).map_err(cycle_pm_err)?;
+        let cap = capacity(
+            &target,
+            &all,
+            &done,
+            cfg.pm.pm.min_history,
+            cfg.pm.pm.capacity_k,
+        );
+        let members = member_points(&ledger, &target);
+        let plan = plan_assign(
+            &target,
+            &all,
+            &facts,
+            &members,
+            cap.clone(),
+            self.over_commit,
+        )
+        .map_err(|e| assign_refusal(&e, &target.alias()))?;
+        let (c, moved_from, committed_after, over, events, commit, already) = match plan {
+            AssignPlan::Already => {
+                let committed = committed(&members);
+                (target, None, committed, false, Vec::new(), None, true)
+            }
+            AssignPlan::Add {
+                moved_from,
+                committed,
+                capacity: _,
+                over_commit,
+            } => {
+                if let Some((old, _)) = &moved_from {
+                    store
+                        .set_member(ObjectKind::Cycle, *old, id, Op::Remove)
+                        .map_err(cycle_pm_err)?;
+                }
+                let bodies = assign_bodies(
+                    id,
+                    over_commit.then_some((committed, cap.limit(), reason.as_deref())),
+                );
+                let applied = store
+                    .append_many(ObjectKind::Cycle, target.id, bodies)
+                    .map_err(cycle_pm_err)?;
+                let frob_pm::Object::Cycle(c) = applied.object else {
+                    unreachable!("a cycle event folds to a cycle")
+                };
+                let events = applied.events.iter().map(ToString::to_string).collect();
+                (
+                    c,
+                    moved_from.map(|(_, a)| a),
+                    committed,
+                    over_commit,
+                    events,
+                    Some(applied.commit),
+                    false,
+                )
+            }
+        };
+        tracing::info!(
+            cycle = %c.alias(), ticket = %facts.handle, already, over_committed = over,
+            moved_from = ?moved_from, committed = committed_after, capacity = %cap.describe(),
+            "cycle assign"
+        );
+        Ok(Payload::new(AssignData {
+            cycle: CycleView::of(&c, store),
+            ticket: facts.handle,
+            moved_from,
+            committed: committed_after,
+            capacity: cap.describe(),
+            capacity_limit: cap.limit(),
+            over_committed: over,
+            events,
+            commit,
+        })
+        .with_already(already))
+    }
+}
+
+/// Take a ticket out of a cycle; idempotent when it was not a member.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "cycle unassign",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct CycleUnassign {
+    ticket: String,
+    cycle: String,
+}
+
+impl Command for CycleUnassign {
+    type Data = AssignData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(ticket_arg()).arg(cycle_arg(true))
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            ticket: get(m, "ticket").unwrap_or_default(),
+            cycle: get(m, "cycle").unwrap_or_default(),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<AssignData> {
+        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+        let ledger = open(ctx)?;
+        let store = PmStore::new(&ledger);
+        let target = find(store, &self.cycle)?;
+        let id = resolve(&ledger, &self.ticket)?;
+        let handle = ledger.show(id).map_err(cli_err)?.summary.handle;
+        if target.state == State::Closed && target.tickets.contains(&id) {
+            return Err(assign_refusal(
+                &AssignError::Closed {
+                    alias: target.alias(),
+                },
+                &target.alias(),
+            ));
+        }
+        let applied = store
+            .set_member(ObjectKind::Cycle, target.id, id, Op::Remove)
+            .map_err(cycle_pm_err)?;
+        let (c, events, commit, already) = match applied {
+            None => (target, Vec::new(), None, true),
+            Some(a) => {
+                let frob_pm::Object::Cycle(c) = a.object else {
+                    unreachable!("a cycle event folds to a cycle")
+                };
+                let events = a.events.iter().map(ToString::to_string).collect();
+                (c, events, Some(a.commit), false)
+            }
+        };
+        let all = cycles(store)?;
+        let cap = capacity(
+            &c,
+            &all,
+            &done_facts(&ledger).map_err(cycle_pm_err)?,
+            cfg.pm.pm.min_history,
+            cfg.pm.pm.capacity_k,
+        );
+        let committed = committed(&member_points(&ledger, &c));
+        tracing::info!(cycle = %c.alias(), ticket = %handle, already, "cycle unassign");
+        Ok(Payload::new(AssignData {
+            cycle: CycleView::of(&c, store),
+            ticket: handle,
+            moved_from: None,
+            committed,
+            capacity: cap.describe(),
+            capacity_limit: cap.limit(),
+            over_committed: false,
+            events,
+            commit,
+        })
+        .with_already(already))
+    }
+}
+
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<CycleNew>()
         .register::<CycleShow>()
         .register::<CycleList>()
         .register::<CycleClose>()
+        .register::<CycleAssign>()
+        .register::<CycleUnassign>()
 }

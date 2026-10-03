@@ -175,7 +175,10 @@ fn apply_cycle(o: &mut Object, d: &CycleEventData) -> std::result::Result<(), St
         CycleOp::Retro if d.text.is_none() => {
             return Err("a retro event needs `text`".to_owned());
         }
-        CycleOp::Ratio | CycleOp::Retro | CycleOp::Other => {}
+        CycleOp::OverCommit if d.text.is_none() => {
+            return Err("an over-commit event needs `text` (the reason)".to_owned());
+        }
+        CycleOp::Ratio | CycleOp::Retro | CycleOp::OverCommit | CycleOp::Other => {}
     }
     Ok(())
 }

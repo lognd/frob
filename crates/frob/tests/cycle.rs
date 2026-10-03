@@ -371,3 +371,204 @@ fn show_and_list_report_cycles_and_unknown_references_suggest() {
     assert_eq!(e["code"], "E-CYCLE-NOT-FOUND");
     assert_eq!(e["remedy"], "frob cycle show 2026-10-12..2026-10-18");
 }
+
+/// `today` shifted by `days`, as `YYYY-MM-DD`.
+fn rel(days: i64) -> String {
+    frob_pm::Day::today()
+        .plus_days(days)
+        .expect("in range")
+        .to_string()
+}
+
+/// A cycle from `start` to `end` days relative to today, with an optional capacity.
+fn window(repo: &Repo, start: i64, end: i64, capacity: Option<&str>) -> Value {
+    let (s, e) = (rel(start), rel(end));
+    let mut args = vec!["cycle", "new", "--start", &s, "--end", &e, "--goal", "g"];
+    if let Some(c) = capacity {
+        args.extend(["--capacity", c]);
+    }
+    repo.ok(&args)["data"]["cycle"].clone()
+}
+
+#[test]
+fn assign_and_unassign_are_idempotent_and_say_capacity_is_not_enforced_yet() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleAssign
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleUnassign
+    let repo = Repo::new();
+    let c = window(&repo, -1, 5, None);
+    let t = repo.ticket("todo", "3");
+    let v = repo.ok(&["cycle", "assign", &t, id(&c)]);
+    assert_eq!(v["already"], false);
+    assert_eq!(v["data"]["committed"], 3);
+    assert_eq!(v["data"]["over_committed"], false);
+    assert_eq!(
+        v["data"]["capacity"],
+        "capacity not enforced yet: 0 of 3 cycles of history"
+    );
+    assert_eq!(v["data"]["cycle"]["tickets"][0]["id"], t.as_str());
+    let again = repo.ok(&["cycle", "assign", &t, id(&c)]);
+    assert_eq!(again["already"], true);
+    let off = repo.ok(&["cycle", "unassign", &t, id(&c)]);
+    assert_eq!(off["already"], false);
+    assert_eq!(off["data"]["committed"], 0);
+    assert_eq!(
+        off["data"]["cycle"]["tickets"].as_array().expect("t").len(),
+        0
+    );
+    let off_again = repo.ok(&["cycle", "unassign", &t, id(&c)]);
+    assert_eq!(off_again["already"], true);
+}
+
+#[test]
+fn assign_defaults_to_the_open_cycle_holding_today_else_the_next_planned() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleAssign
+    // frob:tests crates/frob-pm/src/cycle/assign.rs::default_cycle
+    let repo = Repo::new();
+    let t = repo.ticket("todo", "2");
+    let none = repo.frob(&["cycle", "assign", &t]);
+    assert_eq!(code(&none), 3);
+    assert_eq!(json(&none)["error"]["code"], "E-CYCLE-NONE");
+    assert!(
+        json(&none)["error"]["remedy"]
+            .as_str()
+            .expect("remedy")
+            .contains("frob cycle new")
+    );
+    let future = window(&repo, 14, 20, None);
+    let v = repo.ok(&["cycle", "assign", &t]);
+    assert_eq!(v["data"]["cycle"]["id"], future["id"]);
+    let current = window(&repo, -1, 5, None);
+    let u = repo.ticket("todo", "2");
+    let v = repo.ok(&["cycle", "assign", &u]);
+    assert_eq!(v["data"]["cycle"]["id"], current["id"]);
+}
+
+#[test]
+fn assign_refuses_epics_and_tickets_without_points_with_remedies() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleAssign
+    // frob:tests crates/frob-pm/src/cycle/assign.rs::plan_assign
+    let repo = Repo::new();
+    let c = window(&repo, -1, 5, None);
+    let epic = repo.ok(&["ticket", "new", "--title", "e", "--type", "epic"])["data"]["id"]
+        .as_str()
+        .expect("id")
+        .to_owned();
+    let out = repo.frob(&["cycle", "assign", &epic, id(&c)]);
+    assert_eq!(code(&out), 3);
+    assert_eq!(json(&out)["error"]["code"], "E-CYCLE-NOT-ASSIGNABLE");
+    let bare = repo.ok(&["ticket", "new", "--title", "b", "--type", "task"])["data"]["id"]
+        .as_str()
+        .expect("id")
+        .to_owned();
+    let out = repo.frob(&["cycle", "assign", &bare, id(&c)]);
+    assert_eq!(code(&out), 3);
+    let e = &json(&out)["error"];
+    assert_eq!(e["code"], "E-CYCLE-NO-POINTS");
+    assert!(
+        e["remedy"]
+            .as_str()
+            .expect("remedy")
+            .contains("ticket update")
+    );
+    assert!(e["remedy"].as_str().expect("remedy").contains("--points"));
+}
+
+#[test]
+fn explicit_capacity_is_enforced_and_over_commit_records_the_reason() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleAssign
+    // frob:tests crates/frob-pm/src/cycle/assign.rs::plan_assign
+    let repo = Repo::new();
+    let c = window(&repo, -1, 5, Some("5"));
+    let first = repo.ticket("todo", "3");
+    let second = repo.ticket("todo", "3");
+    repo.ok(&["cycle", "assign", &first, id(&c)]);
+    let out = repo.frob(&["cycle", "assign", &second, id(&c)]);
+    assert_eq!(code(&out), 3);
+    let err = &json(&out)["error"];
+    assert_eq!(err["code"], "E-CYCLE-OVER-CAPACITY");
+    assert!(err["message"].as_str().expect("m").contains("6 points"));
+    assert!(
+        err["message"]
+            .as_str()
+            .expect("m")
+            .contains("5-point limit")
+    );
+    assert!(
+        err["remedy"]
+            .as_str()
+            .expect("r")
+            .contains("--over-commit --reason")
+    );
+    let no_reason = repo.frob(&["cycle", "assign", &second, id(&c), "--over-commit"]);
+    assert_eq!(code(&no_reason), 2);
+    let v = repo.ok(&[
+        "cycle",
+        "assign",
+        &second,
+        id(&c),
+        "--over-commit",
+        "--reason",
+        "customer escalation",
+    ]);
+    assert_eq!(v["data"]["over_committed"], true);
+    assert_eq!(v["data"]["committed"], 6);
+    let oc = &v["data"]["cycle"]["over_commits"][0];
+    assert_eq!(oc["reason"], "customer escalation");
+    assert_eq!(oc["ticket"], second.as_str());
+    assert_eq!(oc["capacity"], 5);
+    assert_eq!(oc["committed"], 6);
+    let shown = repo.ok(&["cycle", "show", id(&c)]);
+    assert_eq!(
+        shown["data"]["cycle"]["over_commits"][0]["reason"],
+        "customer escalation"
+    );
+}
+
+#[test]
+fn computed_capacity_applies_once_min_history_cycles_have_closed() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleAssign
+    // frob:tests crates/frob-pm/src/cycle/velocity.rs::capacity
+    let repo = Repo::new();
+    repo.done_ticket("8");
+    repo.done_ticket("2");
+    // Three closed cycles whose windows each hold today: velocity 10, 10, 10.
+    for (s, e) in [(-3, 3), (-2, 4), (-1, 5)] {
+        let c = window(&repo, s, e, None);
+        repo.ok(&["cycle", "close", id(&c)]);
+    }
+    let open = window(&repo, 10, 16, None);
+    let a = repo.ticket("todo", "8");
+    let b = repo.ticket("todo", "5");
+    let v = repo.ok(&["cycle", "assign", &a, id(&open)]);
+    assert_eq!(v["data"]["capacity_limit"], 10);
+    assert!(
+        v["data"]["capacity"]
+            .as_str()
+            .expect("c")
+            .starts_with("capacity 10 points")
+    );
+    let out = repo.frob(&["cycle", "assign", &b, id(&open)]);
+    assert_eq!(code(&out), 3);
+    assert_eq!(json(&out)["error"]["code"], "E-CYCLE-OVER-CAPACITY");
+}
+
+#[test]
+fn assigning_to_another_cycle_moves_the_ticket() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleAssign
+    // frob:tests crates/frob-pm/src/cycle/assign.rs::plan_assign
+    let repo = Repo::new();
+    let first = window(&repo, -1, 5, None);
+    let second = window(&repo, 10, 16, None);
+    let t = repo.ticket("todo", "2");
+    repo.ok(&["cycle", "assign", &t, id(&first)]);
+    let v = repo.ok(&["cycle", "assign", &t, id(&second)]);
+    assert_eq!(v["already"], false);
+    assert_eq!(v["data"]["moved_from"], first["alias"]);
+    let old = repo.ok(&["cycle", "show", id(&first)]);
+    assert_eq!(
+        old["data"]["cycle"]["tickets"].as_array().expect("t").len(),
+        0
+    );
+    let new = repo.ok(&["cycle", "show", id(&second)]);
+    assert_eq!(new["data"]["cycle"]["tickets"][0]["id"], t.as_str());
+}
