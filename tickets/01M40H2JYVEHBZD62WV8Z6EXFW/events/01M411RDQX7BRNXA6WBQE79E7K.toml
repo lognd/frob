@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T14:12:45Z"
+digest = "6b6f6d516abe7ea1dc92779cfb1cc3a401b6e74acfc9704255aa2916cc74ccb4"
+exit_code = 0
+inline = """
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/8Z6EXFW/crates/gob-directives)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.97s
+────────────
+ Nextest run ID 10b4c5c7-15b7-4cee-bbb5-64ee005a6ba0 with nextest profile: default
+    Starting 1 test across 4 binaries (65 tests skipped)
+        PASS [   0.008s] (1/1) gob-directives::scan three_stacked_tests_directives_all_bind
+────────────
+     Summary [   0.009s] 1 test run: 1 passed, 65 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-directives -E 'test(three_stacked_tests_directives_all_bind)'"
+size = 536
+status = "measured"
+tests = ["three_stacked_tests_directives_all_bind"]
+at = "2026-10-03T14:12:45Z"
+actor = "lognd"
+rev = 1
