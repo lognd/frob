@@ -549,6 +549,64 @@ fn work_refuses_past_the_repository_limit_naming_both_holders() {
         .expect("third fits now");
 }
 
+// frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
+// frob:tests crates/frob-worktree/src/wip.rs::check
+// frob:tests crates/frob-worktree/src/work.rs::take
+#[test]
+fn concurrent_work_for_the_last_wip_slot_grants_exactly_one() {
+    if !git_available() {
+        return;
+    }
+    for round in 0..5 {
+        let fx = Fixture::new();
+        let ledger = fx.ledger(None);
+        let cfg = WorktreeConfig::load(&fx.root).expect("config");
+        fill_wip(&ledger, &fx.leases(), &cfg, 1);
+        let a = Fixture::ticket(&ledger, "A", TicketType::Task, &["racea/**"]);
+        let b = Fixture::ticket(&ledger, "B", TicketType::Task, &["raceb/**"]);
+        drop(ledger);
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let threads: Vec<_> = [(a, "alice"), (b, "bob")]
+            .into_iter()
+            .map(|(id, who)| {
+                let root = fx.root.clone();
+                let barrier = std::sync::Arc::clone(&barrier);
+                std::thread::spawn(move || {
+                    let repo = Repo::discover(&root).expect("repo");
+                    let leases = LeaseStore::open(&repo, LeaseConfig::default())
+                        .expect("leases")
+                        .with_repo_limit(2);
+                    let cfg = LedgerConfig {
+                        actor: Some(who.to_owned()),
+                        ..LedgerConfig::default()
+                    };
+                    let ledger = Ledger::open(repo, cfg);
+                    let wt = WorktreeConfig::load(&root).expect("config");
+                    let ws = Workspace {
+                        ledger: &ledger,
+                        leases: &leases,
+                        config: &wt,
+                    };
+                    barrier.wait();
+                    ws.work(&id.to_string(), &WorkOptions::default())
+                        .map(|s| s.lease.ticket)
+                })
+            })
+            .collect();
+        let results: Vec<_> = threads
+            .into_iter()
+            .map(|t| t.join().expect("thread"))
+            .collect();
+        let ok = results.iter().filter(|r| r.is_ok()).count();
+        let refused = results
+            .iter()
+            .filter(|r| matches!(r, Err(WorktreeError::Refused(x)) if x.code == "E-WIP-REPO"))
+            .count();
+        assert_eq!((ok, refused), (1, 1), "round {round}: {results:?}");
+        assert_eq!(fx.leases().list().expect("list").len(), 2);
+    }
+}
+
 // frob:tests crates/frob-worktree/src/wip.rs::check
 #[test]
 fn limit_zero_is_off_and_reentry_is_not_a_new_slot() {

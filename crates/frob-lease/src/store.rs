@@ -7,6 +7,8 @@
 //! check. The lock is an advisory `flock` on a file shared by all worktrees of
 //! one clone; leases are single-clone by design (decision D26).
 
+// frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
+
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
@@ -280,6 +282,27 @@ impl LeaseStore {
         holder: &Holder,
         scope: &[String],
     ) -> Result<Acquired, LeaseError> {
+        self.acquire_admitting(ticket, holder, scope, |_| Ok(()))
+    }
+
+    /// [`LeaseStore::acquire`] with an admission check run inside the same critical section.
+    ///
+    /// `admit` receives every live lease (this ticket's own included) while the
+    /// lock is held, after the same-ticket holder check and before anything is
+    /// written, so a count of live holders and the new lease are one atomic
+    /// step: two callers racing for the last slot cannot both be admitted. An
+    /// `Err` from `admit` aborts the acquisition and is returned unchanged.
+    ///
+    /// # Errors
+    ///
+    /// Whatever `admit` returns, plus everything [`LeaseStore::acquire`] can.
+    pub fn acquire_admitting<E: From<LeaseError>>(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        scope: &[String],
+        admit: impl FnOnce(&[Lease]) -> Result<(), E>,
+    ) -> Result<Acquired, E> {
         let lock = self.lock()?;
         let now = (self.clock)();
         let live = self.live_pruned(&lock, now)?;
@@ -291,8 +314,10 @@ impl LeaseStore {
                 ticket,
                 since: e.acquired_at,
                 overlap: SAME_TICKET.to_owned(),
-            });
+            }
+            .into());
         }
+        admit(&live)?;
         let limit = self.holder_limit;
         if limit > 0 {
             let count = live
@@ -305,7 +330,8 @@ impl LeaseStore {
                     holder: holder.clone(),
                     count,
                     limit,
-                });
+                }
+                .into());
             }
         }
         for other in live.iter().filter(|l| l.ticket != ticket) {
@@ -321,7 +347,8 @@ impl LeaseStore {
                     ticket: other.ticket,
                     since: other.acquired_at,
                     overlap,
-                });
+                }
+                .into());
             }
         }
         let lease = match existing {

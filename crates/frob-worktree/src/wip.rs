@@ -12,15 +12,16 @@
 // frob:ticket 01M4069T76A6WSNHT3NZERXHAH
 // frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
+// frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
 
 use std::collections::BTreeSet;
 use std::fmt::Write;
 
 use frob_lease::Lease;
 use frob_ledger::index::Summary;
-use frob_ledger::model::Class;
 use frob_ledger::model::Stamp;
-use frob_ledger::{Ledger, TicketId};
+use frob_ledger::model::{Category, Class};
+use frob_ledger::{Ledger, LedgerError, TicketId};
 use gob_diagnostics::{Refusal, RefusalClass};
 
 use crate::error::WorktreeError;
@@ -137,7 +138,33 @@ pub struct Limits {
     pub expedite_max: u32,
 }
 
-/// Check that taking `taking` fits the WIP policy.
+/// The in-progress tickets plus every ticket holding a live lease, so a holder that is mid-start (lease taken, transition not yet recorded) still counts.
+fn holders(ledger: &Ledger, live: &[Lease], id: TicketId) -> Result<Vec<Summary>, WorktreeError> {
+    let mut all = frob_pm::rules::wip::in_progress(ledger)?;
+    for lease in live.iter().filter(|l| l.ticket != id) {
+        if all.iter().any(|s| s.id == lease.ticket) {
+            continue;
+        }
+        match ledger.show(lease.ticket) {
+            Ok(view) if view.summary.category != Category::Done => {
+                tracing::debug!(ticket = %lease.ticket, "live lease on a ticket not yet in progress counts as a holder");
+                all.push(view.summary);
+            }
+            Ok(_) => tracing::debug!(ticket = %lease.ticket, "live lease on a done ticket ignored"),
+            Err(LedgerError::NotFound { .. }) => {
+                tracing::warn!(ticket = %lease.ticket, "live lease on an unknown ticket ignored");
+            }
+            Err(e) => return Err(e.into()),
+        }
+    }
+    Ok(all)
+}
+
+/// Check that taking `taking` fits the WIP policy, given the `live` leases read under the lease-store lock.
+///
+/// Called from [`frob_lease::LeaseStore::acquire_admitting`], so the count and
+/// the lease write are one critical section; the live leases (not the ledger's
+/// in-progress state, which lags the lease) are the source of truth for holders.
 ///
 /// An expedite ticket skips the repository limit while the lane has room
 /// (`expedite_max` of 0 closes the lane: it is then treated like any ticket);
@@ -148,7 +175,7 @@ pub struct Limits {
 /// `E-WIP-EXPEDITE` when the lane is full, `E-WIP-REPO` naming every holder when the repository is at its limit; ledger and lease failures.
 pub fn check(
     ledger: &Ledger,
-    leases: &frob_lease::LeaseStore,
+    live: &[Lease],
     limits: Limits,
     taking: Taking<'_>,
 ) -> Result<(), WorktreeError> {
@@ -158,9 +185,12 @@ pub fn check(
         tracing::debug!(%id, "repository wip limit off");
         return Ok(());
     }
-    let live = leases.live_snapshot()?;
     let live_ids: BTreeSet<TicketId> = live.iter().map(|l| l.ticket).collect();
-    let mut wip = frob_pm::rules::wip::read(ledger, Some(&live_ids), limits.expedite_max)?;
+    let mut wip = frob_pm::rules::wip::count(
+        holders(ledger, live, id)?,
+        Some(&live_ids),
+        limits.expedite_max,
+    );
     for list in [&mut wip.standard, &mut wip.expedite, &mut wip.stale] {
         list.retain(|s| s.id != id);
     }

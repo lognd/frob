@@ -5,7 +5,11 @@
 //! merge the base, then append the `in-progress` transition carrying the lease
 //! summary. A failure after a fresh lease releases it again. A repeat by the
 //! same holder (actor plus worktree path) changes nothing and reports
-//! `already`; anyone else gets `E-LEASE-HELD` naming the holder.
+//! `already`; anyone else gets `E-LEASE-HELD` naming the holder. The repository
+//! WIP count runs inside the lease-store lock (`acquire_admitting`), so the check
+//! and the lease are one critical section.
+
+// frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
 
 use std::path::{Component, Path, PathBuf};
 
@@ -182,23 +186,13 @@ impl Workspace<'_> {
             existing.is_some(),
         )?;
         // An in-progress ticket with a live lease already holds its slot (re-entry, steal).
-        if !(view.summary.category == Category::InProgress && existing.is_some()) {
-            crate::wip::check(
-                self.ledger,
-                self.leases,
-                crate::wip::Limits {
-                    repo: self.leases.repo_limit(),
-                    expedite_max: self.leases.expedite_max(),
-                },
-                crate::wip::Taking {
-                    id,
-                    handle: &handle,
-                    class: view.summary.class,
-                },
-            )?;
-        }
-
-        let (lease, fresh, stolen_from) = self.take(id, &handle, &holder, &scope, steal)?;
+        let needs_slot = !(view.summary.category == Category::InProgress && existing.is_some());
+        let taking = crate::wip::Taking {
+            id,
+            handle: &handle,
+            class: view.summary.class,
+        };
+        let (lease, fresh, stolen_from) = self.take(taking, needs_slot, &holder, &scope, steal)?;
         let outcome = self.build(plan, id, &handle, &lease, branch.as_deref());
         let built = match outcome {
             Ok(b) => b,
@@ -266,22 +260,40 @@ impl Workspace<'_> {
     }
 
     /// Acquire the lease (or steal it): the lease, whether it is new, and the previous holder when stolen.
+    ///
+    /// The WIP count runs inside the lease-store lock (when `needs_slot`), so it
+    /// and the lease write cannot interleave with another `work`.
     fn take(
         &self,
-        id: TicketId,
-        handle: &str,
+        taking: crate::wip::Taking<'_>,
+        needs_slot: bool,
         holder: &Holder,
         scope: &[String],
         steal: Option<&str>,
     ) -> Result<(Lease, bool, Option<Holder>), WorktreeError> {
-        match self.leases.acquire(id, holder, scope) {
+        let (id, handle) = (taking.id, taking.handle);
+        let limits = crate::wip::Limits {
+            repo: self.leases.repo_limit(),
+            expedite_max: self.leases.expedite_max(),
+        };
+        let admit = |live: &[Lease]| {
+            if needs_slot {
+                crate::wip::check(self.ledger, live, limits, taking)
+            } else {
+                Ok(())
+            }
+        };
+        match self.leases.acquire_admitting(id, holder, scope, admit) {
             Ok(a) => Ok((a.lease, !a.already, None)),
-            Err(LeaseError::Held { ticket, .. }) if steal.is_some() && ticket == id => {
+            Err(WorktreeError::Lease(LeaseError::Held { ticket, .. }))
+                if steal.is_some() && ticket == id =>
+            {
                 let reason = steal.unwrap_or_default();
                 let s = self.leases.steal(id, holder, reason)?;
                 Ok((s.lease, false, Some(s.previous)))
             }
-            Err(e) => Err(held_refusal(e, id, handle)),
+            Err(WorktreeError::Lease(e)) => Err(held_refusal(e, id, handle)),
+            Err(e) => Err(e),
         }
     }
 
