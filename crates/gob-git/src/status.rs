@@ -244,59 +244,6 @@ impl Repo {
             .collect())
     }
 
-    /// The bytes git would store as the blob for worktree path `rel`, or `None` when it is absent.
-    ///
-    /// A symlink yields its target path string (never the followed content);
-    /// a regular file is run through the clean filters (`core.autocrlf`,
-    /// `core.eol`, `.gitattributes` text/eol, configured filters). Use this,
-    /// not raw file bytes, for any digest meant to match git's view.
-    ///
-    /// # Errors
-    /// [`GitError::Unsupported`] for a bare repository, [`GitError::Io`] on
-    /// unreadable files, [`GitError::Index`] when the filter pipeline fails.
-    pub fn worktree_content_as_git(&self, rel: &str) -> Result<Option<Vec<u8>>, GitError> {
-        use gix::filter::plumbing::pipeline::convert::ToGitOutcome;
-        use std::io::Read;
-        let Some(root) = self.work_dir() else {
-            return Err(GitError::Unsupported(
-                "bare repository has no worktree".into(),
-            ));
-        };
-        let full = root.join(rel);
-        let ctx = |e: std::io::Error| GitError::io(format!("reading {rel}"), e);
-        let meta = match std::fs::symlink_metadata(&full) {
-            Ok(m) => m,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-            Err(e) => return Err(ctx(e)),
-        };
-        if meta.file_type().is_symlink() {
-            let target = std::fs::read_link(&full).map_err(ctx)?;
-            trace!(rel, "symlink hashed as its target string");
-            return Ok(Some(gix::path::into_bstr(target).into_owned().into()));
-        }
-        if !meta.is_file() {
-            return Ok(None);
-        }
-        let fresh = self.fresh_gix()?;
-        let (mut pipeline, state) = fresh
-            .filter_pipeline(None)
-            .map_err(|e| GitError::Index(e.to_string()))?;
-        let file = std::fs::File::open(&full).map_err(ctx)?;
-        let outcome = pipeline
-            .convert_to_git(file, std::path::Path::new(rel), &state)
-            .map_err(|e| GitError::Index(e.to_string()))?;
-        let mut out = Vec::new();
-        match outcome {
-            ToGitOutcome::Unchanged(mut f) => f.read_to_end(&mut out).map_err(ctx)?,
-            ToGitOutcome::Buffer(b) => {
-                out.extend_from_slice(b);
-                b.len()
-            }
-            ToGitOutcome::Process(mut r) => r.read_to_end(&mut out).map_err(ctx)?,
-        };
-        Ok(Some(out))
-    }
-
     /// Tree-to-worktree names computed by gix's own status machinery with `old` as the base tree.
     ///
     /// Symlinks are compared by target string, and `core.autocrlf` / attribute

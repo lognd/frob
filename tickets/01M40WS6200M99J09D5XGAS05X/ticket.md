@@ -2,16 +2,16 @@
 id = "01M40WS6200M99J09D5XGAS05X"
 title = "Close guards ignore [pm] done_requires: a ticket closed as done with no evidence"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T12:45:47Z"
-updated = "2026-10-03T12:45:47Z"
+updated = "2026-10-03T13:07:23Z"
 idempotency_key = "m2-rel-done-requires-enforced"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-evidence/**", "crates/frob-ledger/src/guards*", "crates/frob-land/**", "crates/frob-pm/**", "crates/frob/src/**", "crates/frob/tests/**"]
+scope = ["crates/frob-evidence/**", "crates/frob-ledger/src/guards*", "crates/frob-land/**", "crates/frob/src/ticket/**", "crates/frob/src/lib.rs", "crates/frob/tests/close_guards.rs"]
 
 [[acceptance]]
 text = "Given a chore with an unbound criterion, when land or close runs, then it is refused naming the criterion and the bypass"

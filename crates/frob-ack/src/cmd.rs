@@ -7,6 +7,7 @@ use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{Cli, CliError, Command, Context, Outcome, Payload};
 use gob_git::Repo;
 use gob_symbols::{SymbolRecord, Symref};
+use gob_walk::ContentSource;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -193,7 +194,8 @@ pub struct WhyData {
 }
 
 fn line_of(root: &std::path::Path, file: &str, offset: u32) -> u32 {
-    let Ok(text) = std::fs::read_to_string(root.join(file)) else {
+    // Offsets are into the git-normalized text (see `inputs::scan_file`).
+    let Ok(text) = ContentSource::locate(root).with_reader(|r| r.read_text(file)) else {
         return 0;
     };
     let newlines = text

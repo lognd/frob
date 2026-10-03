@@ -89,6 +89,14 @@ through gix's filter pipeline (core.autocrlf and `.gitattributes` safe)
 before comparing; `merge_branch` decides "up to date" in gix and
 otherwise spawns one `git merge`; a name without `refs/` resolves as
 `refs/heads/<name>`.
+`gob-git` also owns the one worktree-content normalizer
+(`Repo::worktree_content_as_git`, `WorktreeSource`): a symlink reads as
+its target string and a regular file runs through the same clean filters.
+Every digest compared with recorded state goes through it (`gob-walk`'s
+`ContentSource` for walk digests and symbol extraction), so a CRLF
+checkout under `core.autocrlf` hashes like its LF twin. Parsed text is the
+normalized text, so spans are offsets into it; line numbers are identical
+in both forms.
 
 Measured target: a typical ticket verb spawns zero processes; `land`
 spawns at most two git processes (merge fallback, hooks); `check` spawns

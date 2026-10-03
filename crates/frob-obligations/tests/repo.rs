@@ -546,3 +546,37 @@ fn cov001_never_covers_a_genuinely_ambiguous_cross_crate_call() {
         "{cov:?}"
     );
 }
+
+/// A git repository at `root` with `core.autocrlf=true`, as a Windows checkout would have.
+fn init_autocrlf_repo(root: &std::path::Path) {
+    gob_git::Repo::init(root).expect("git init");
+    let config = root.join(".git/config");
+    let mut text = std::fs::read_to_string(&config).expect("git config");
+    text.push_str("[core]\n\tautocrlf = true\n");
+    std::fs::write(config, text).expect("write git config");
+}
+
+// frob:tests crates/frob-obligations/src/rules.rs::Exc005
+#[test]
+fn crlf_checkout_under_autocrlf_keeps_an_accept_attested_but_a_real_edit_does_not() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    init_autocrlf_repo(dir.path());
+    let lf = "/* frob:accept COV001 because=\"generated entry point, see ADR-0007\" */\n/// Does f.\npub fn f() {}\n";
+    common::write_tree(dir.path(), &[("src/lib.rs", lf)]);
+    let f = Symref::symbol("src/lib.rs", vec!["f".to_owned()]);
+    let lock = lock_for(dir.path(), &f);
+
+    common::write_tree(dir.path(), &[("src/lib.rs", &lf.replace('\n', "\r\n"))]);
+    let crlf = common::evaluate_tree(dir.path(), None, &defaults(), Some(lock.clone()));
+    assert_eq!(
+        count(&crlf.findings, "EXC005"),
+        0,
+        "{:?}",
+        common::ids(&crlf.findings)
+    );
+
+    let edited = lf.replace("pub fn f() {}", "pub fn f() { drop(1) }");
+    common::write_tree(dir.path(), &[("src/lib.rs", &edited.replace('\n', "\r\n"))]);
+    let changed = common::evaluate_tree(dir.path(), None, &defaults(), Some(lock));
+    assert_eq!(count(&changed.findings, "EXC005"), 1);
+}

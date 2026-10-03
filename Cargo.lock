@@ -2348,8 +2348,10 @@ version = "0.0.0"
 dependencies = [
  "blake3",
  "criterion",
+ "gob-git",
  "ignore",
  "proptest",
+ "rayon",
  "tempfile",
  "thiserror",
  "tracing",

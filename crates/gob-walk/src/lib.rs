@@ -5,6 +5,9 @@
 //! same tree are identical. Files above the size cap are reported in
 //! [`WalkResult::oversized`] without being read.
 //!
+//! Digests and sizes are over the content as git would store it ([`ContentSource`]): clean
+//! filters such as `core.autocrlf` are applied, so a CRLF checkout hashes like its LF twin.
+//!
 //! The [`selector`] module parses the grmb-spec 6 selector grammar and evaluates it over the walk
 //! ([`select_files`]); gob-ir evaluates the same selectors over units. [`owner`] resolves which
 //! entity owns an item by [`Specificity`] and the possible-worlds reading of binding.md 2.2.
@@ -15,12 +18,15 @@ use std::sync::Mutex;
 
 use ignore::overrides::OverrideBuilder;
 use ignore::{WalkBuilder, WalkState};
+use rayon::prelude::*;
 
+mod content;
 pub mod owner;
 mod select;
 pub mod selector;
 mod specificity;
 
+pub use content::{ContentReader, ContentSource};
 pub use owner::{Candidate, EntityName, MatchStatus, Owner, Ownership};
 pub use select::{PathMatch, owner_of_path, select_files, unseen_files};
 pub use selector::{Glob, Selector, wildcard_match};
@@ -157,7 +163,8 @@ pub struct WalkResult {
 }
 
 enum Item {
-    File(FileEntry),
+    /// Under the cap; read and hashed after the walk through the content source.
+    Pending(String),
     Big(Oversized),
 }
 
@@ -180,6 +187,9 @@ fn is_state_entry(e: &ignore::DirEntry) -> bool {
     }
     e.file_type().is_some_and(|t| t.is_dir()) && STATE_DIRS.iter().any(|d| name == *d)
 }
+
+/// Files read per filter pipeline (building one loads the index and attributes).
+const READ_CHUNK: usize = 256;
 
 /// Walks `root` in parallel honoring ignore files and `config.exclude`.
 ///
@@ -238,18 +248,7 @@ pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
                 tracing::debug!(path, size, cap, "oversized file");
                 Item::Big(Oversized { path, size })
             } else {
-                match std::fs::read(entry.path()) {
-                    Ok(bytes) => Item::File(FileEntry {
-                        language: LanguageHint::from_path(&path),
-                        digest: Digest::of(&bytes),
-                        size: bytes.len() as u64,
-                        path,
-                    }),
-                    Err(err) => {
-                        tracing::warn!(%err, path, "read failed; skipping");
-                        return WalkState::Continue;
-                    }
-                }
+                Item::Pending(path)
             };
             items
                 .lock()
@@ -260,15 +259,41 @@ pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
     });
 
     let mut out = WalkResult::default();
+    let mut pending = Vec::new();
     for item in items
         .into_inner()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
     {
         match item {
-            Item::File(f) => out.files.push(f),
+            Item::Pending(p) => pending.push(p),
             Item::Big(b) => out.oversized.push(b),
         }
     }
+    // Digests are over the content as git would store it (clean filters applied),
+    // so a CRLF checkout under core.autocrlf hashes like its LF twin.
+    let source = ContentSource::locate(root);
+    out.files = pending
+        .par_chunks(READ_CHUNK)
+        .flat_map_iter(|chunk| {
+            source.with_reader(|reader| {
+                chunk
+                    .iter()
+                    .filter_map(|path| match reader.read(path) {
+                        Ok(bytes) => Some(FileEntry {
+                            language: LanguageHint::from_path(path),
+                            digest: Digest::of(&bytes),
+                            size: bytes.len() as u64,
+                            path: path.clone(),
+                        }),
+                        Err(err) => {
+                            tracing::warn!(%err, path, "read failed; skipping");
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            })
+        })
+        .collect();
     out.files.sort_by(|a, b| a.path.cmp(&b.path));
     out.oversized.sort_by(|a, b| a.path.cmp(&b.path));
     tracing::info!(

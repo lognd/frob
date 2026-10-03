@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use gob_cache::{ArtifactKey, Cache};
 use gob_languages::ParseLimits;
-use gob_walk::FileEntry;
+use gob_walk::{ContentSource, FileEntry};
 use rayon::prelude::*;
 
 use crate::adapter::{Adapter, Fidelity, FileInput, Folded, ParseStatus};
@@ -20,6 +20,9 @@ use crate::registry::adapter_for;
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
 pub const EXTRACTOR_VERSION: u32 = 14;
+
+/// Files read per filter pipeline (building one loads the index and attributes).
+const READ_CHUNK: usize = 256;
 
 /// Counters from one [`build_graph_with_stats`] run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -124,9 +127,15 @@ pub fn build_graph_with_stats(
     let cached = AtomicUsize::new(0);
     let skipped = AtomicUsize::new(0);
     let opaque = AtomicUsize::new(0);
+    // Text is read as git would store it, matching the walk's digests (CRLF checkouts parse as LF).
+    let source = ContentSource::locate(root);
     let per_file: Vec<FileSymbols> = files
-        .par_iter()
-        .filter_map(|entry| {
+        .par_chunks(READ_CHUNK)
+        .flat_map_iter(|chunk| {
+            source.with_reader(|reader| {
+                chunk
+                    .iter()
+                    .filter_map(|entry| {
             let Some(adapter) = adapter_for(&entry.language) else {
                 opaque.fetch_add(1, Ordering::Relaxed);
                 return Some(extract_file(entry, ""));
@@ -146,7 +155,7 @@ pub fn build_graph_with_stats(
                     }
                 }
             }
-            let text = match std::fs::read_to_string(root.join(&entry.path)) {
+            let text = match reader.read_text(&entry.path) {
                 Ok(t) => t,
                 Err(err) => {
                     tracing::warn!(path = %entry.path, %err, "unreadable file skipped");
@@ -164,6 +173,9 @@ pub fn build_graph_with_stats(
                 Err(err) => tracing::warn!(path = %entry.path, %err, "payload not serializable"),
             }
             Some(fs)
+                    })
+                    .collect::<Vec<_>>()
+            })
         })
         .collect();
     let stats = BuildStats {

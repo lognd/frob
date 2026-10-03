@@ -56,13 +56,17 @@ fn git(dir: &Path, args: &[&str]) -> String {
 
 impl Fixture {
     fn new() -> Self {
+        Self::with_autocrlf("false")
+    }
+
+    fn with_autocrlf(autocrlf: &str) -> Self {
         let dir = tempfile::tempdir().expect("tempdir");
         let p = dir.path();
         git(p, &["init", "-q"]);
         git(p, &["symbolic-ref", "HEAD", "refs/heads/main"]);
         git(p, &["config", "user.name", "Test User"]);
         git(p, &["config", "user.email", "test@example.com"]);
-        git(p, &["config", "core.autocrlf", "false"]);
+        git(p, &["config", "core.autocrlf", autocrlf]);
         std::fs::write(p.join(".gitignore"), ".frob/\n").unwrap();
         std::fs::create_dir_all(p.join("src")).unwrap();
         std::fs::create_dir_all(p.join("docs")).unwrap();
@@ -80,6 +84,15 @@ impl Fixture {
     fn commit_all(&self, message: &str) {
         git(self.root(), &["add", "-A"]);
         git(self.root(), &["commit", "-q", "-m", message]);
+    }
+
+    /// Rewrites `file` with CRLF line endings, as a `core.autocrlf=true` checkout would.
+    fn to_crlf(&self, file: &str) {
+        let path = self.root().join(file);
+        let text = std::fs::read_to_string(&path)
+            .unwrap()
+            .replace("\r\n", "\n");
+        std::fs::write(path, text.replace('\n', "\r\n")).unwrap();
     }
 
     fn edit(&self, file: &str, from: &str, to: &str) {
@@ -441,4 +454,23 @@ fn scheme_one_lock_under_version_two_is_all_reattest() {
 fn lock_and_symbols_agree_on_the_digest_scheme() {
     assert_eq!(gob_lock::DIGEST_SCHEME, gob_symbols::DIGEST_SCHEME);
     assert_eq!(gob_symbols::DIGEST_SCHEME, 2);
+}
+
+// frob:tests crates/frob-ack/src/rules.rs::Drift001
+#[test]
+fn crlf_checkout_under_autocrlf_is_not_drift_but_a_real_edit_still_is() {
+    let fx = Fixture::with_autocrlf("true");
+    fx.ack(&["src/lib.rs::greet", "src/lib.rs::plain"]);
+    assert_eq!(ids(&fx.findings()), Vec::<String>::new());
+
+    fx.to_crlf("src/lib.rs");
+    fx.to_crlf("docs/guide.md");
+    assert_eq!(git(fx.root(), &["diff", "--stat"]), "");
+    let found = fx.findings();
+    assert_eq!(ids(&found), Vec::<String>::new(), "{found:?}");
+
+    fx.edit("src/lib.rs", "hello {name}", "hi {name}");
+    let found = fx.findings();
+    assert_eq!(ids(&found), ["DRIFT001"], "{found:?}");
+    assert!(messages(&found, "DRIFT001")[0].contains("body facet"));
 }
