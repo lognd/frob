@@ -2,7 +2,7 @@
 id = "01M407QTBGH3J0GZ0G60C2M5G6"
 title = "tickets.md: evidence, evidence-bypass and land are first-class events; bound means measured passing evidence"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"

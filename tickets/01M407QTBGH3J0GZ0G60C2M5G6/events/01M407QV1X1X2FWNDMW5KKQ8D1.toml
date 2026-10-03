@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in /home/logan/projects/frob-v2-wt/0C2M5G6; scope: docs/design/tickets.md; ttl 7200s"
+at = "2026-10-03T06:38:03Z"
+actor = "lognd"
+rev = 1
