@@ -13,7 +13,7 @@ fn finding(
     file: &str,
     message: &str,
     fp: char,
-    required: Value,
+    required: &Value,
 ) -> Value {
     json!({
         "rule": rule, "slug": null, "severity": severity, "polarity": "P+",
@@ -32,7 +32,7 @@ fn valid(ticket: &Value, args: &str) -> Value {
         "a.txt",
         "opaque cone",
         'b',
-        required,
+        &required,
     );
     unresolved["reason"] = json!("annotation-required");
     json!({
@@ -45,8 +45,8 @@ fn valid(ticket: &Value, args: &str) -> Value {
             {"rule": "SYS006", "polarity": "P+", "subjects_examined": 3, "findings": 1, "suppressed": 1, "unresolved": 0},
             {"rule": "SYS003", "polarity": "P+", "subjects_examined": 3, "findings": 1, "suppressed": 0, "unresolved": 1}
         ],
-        "findings": [finding("SYS006", "warning", "a.txt", &format!("two owners ({args})"), 'a', Value::Null), unresolved],
-        "suppressed": [{"finding": finding("SYS006", "warning", "b.txt", "parked", 'c', Value::Null), "exception": "ex1"}],
+        "findings": [finding("SYS006", "warning", "a.txt", &format!("two owners ({args})"), 'a', &Value::Null), unresolved],
+        "suppressed": [{"finding": finding("SYS006", "warning", "b.txt", "parked", 'c', &Value::Null), "exception": "ex1"}],
         "exceptions": [{"id": "ex1", "kind": "defer", "rule": "SYS006", "on": "node/x", "file": "model/a.grmb",
                         "line": 1, "because": "waiting on the split", "until": null, "ticket": ticket,
                         "exit_state": "unresolved_exit", "status": null, "suppresses": 1}],

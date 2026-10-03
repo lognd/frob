@@ -113,7 +113,7 @@ fn exception(e: &DocException) -> Result<Exception, Failure> {
 /// A [`Failure`] (malformed) when a finding or exception is unusable; nothing is merged then.
 pub(super) fn merge(
     product: &str,
-    doc: Doc,
+    doc: &Doc,
     files: &mut FileInterner,
     out: &mut External,
 ) -> Result<Vec<SiblingException>, Failure> {

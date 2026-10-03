@@ -101,6 +101,12 @@
 |---|---|---|---|---|---|---|
 | [SCOPE001](SCOPE001.md) | path-outside-lease | error | manual | P+ | false | A changed path lies outside the globs of the ticket's scope lease. |
 
+## SIB
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [SIB001](SIB001.md) | sibling-unavailable | unresolved | manual | P- | false | A sibling product's `check --json` could not be used: unavailable, incompatible, failed, late or malformed. |
+
 ## TEST
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

@@ -27,6 +27,8 @@ Materialized: yes.
 | `fail_on` | `FailOn` | `"error"` | yes | Lowest severity that makes `frob check` exit 1; `none` never fails. |
 | `fail_on_unresolved` | `UnresolvedPolicy` | `"required"` | yes | Which Unresolved findings fail the gate: `required`, `never` or `all`. |
 | `fix_requires_scope` | `bool` | `false` | no | Refuse `--fix` unless `--ticket` scopes the run. |
+| `require_siblings` | `bool` | `true` | no | When true an unusable configured sibling is a required Unresolved (`SIB001`). |
+| `sibling_timeout_secs` | `u64` | `120` | no | Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7). |
 | `size_cap` | `u64` | `4194304` | no | Files larger than this many bytes are skipped. |
 | `telemetry` | `bool` | `true` | no | Append one JSON line per run to `.frob/telemetry.jsonl`. |
 | `ticket_hops` | `u32` | `1` | no | Hops of dependents (callers, via the symbol graph) added to a `--ticket` run. |

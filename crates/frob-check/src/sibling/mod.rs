@@ -165,7 +165,7 @@ impl Siblings {
             });
             timing.push(format!("sibling:{product}"), spawned.elapsed, false);
             match spawned.result {
-                Ok(doc) => match merge::merge(product, doc, files, &mut out) {
+                Ok(doc) => match merge::merge(product, &doc, files, &mut out) {
                     Ok(exceptions) => {
                         out.findings.extend(sibling_exception_findings(
                             root,
