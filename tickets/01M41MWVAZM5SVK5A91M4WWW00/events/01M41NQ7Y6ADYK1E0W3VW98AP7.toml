@@ -1,0 +1,94 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T20:01:38Z"
+digest = "b630ab1a0dbcf57655e798a6699f3504090f6fe590905c6584b894e8910045c7"
+exit_code = 0
+inline = '''
+   Compiling syn v3.0.6
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand v0.9.5
+   Compiling serde_derive_internals v0.30.0
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling ref-cast-impl v1.0.27
+   Compiling schemars_derive v1.2.2
+   Compiling ref-cast v1.0.27
+   Compiling thiserror v2.0.21
+   Compiling rand_chacha v0.9.0
+   Compiling gix-path v0.12.6
+   Compiling gix-packetline v0.22.2
+   Compiling gix-zlib v0.1.0
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling serde v1.0.229
+   Compiling gix-config-value v0.19.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-url v0.38.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling tracing-serde v0.2.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-shallow v0.13.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-transport v0.59.2
+   Compiling gix-refspec v0.45.1
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-odb v0.84.0
+   Compiling gob-log v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-log)
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-worktree-state v0.34.1
+   Compiling gob-exec v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-exec)
+   Compiling schemars v1.2.2
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling cobs v0.3.0
+   Compiling postcard v1.1.3
+   Compiling gob-cache v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-cache)
+   Compiling gix v0.87.1
+   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-rules)
+   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-languages)
+   Compiling proptest v1.11.0
+   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-config)
+   Compiling gob-git v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-git)
+   Compiling gob-walk v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-walk)
+   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-ir)
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-symbols)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/gob-directives)
+   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/M4WWW00/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 58d8c628-1b72-4782-9240-d95a1b2ffbac with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.004s] grimble-model::tracked_paths the_detector_catches_the_known_bad_shapes
+        PASS [   0.028s] grimble-model::tracked_paths no_tracked_path_uses_a_windows_reserved_name_or_character
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.028s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model --test tracked_paths"
+size = 3607
+status = "measured"
+tests = ["the_detector_catches_the_known_bad_shapes", "no_tracked_path_uses_a_windows_reserved_name_or_character"]
+at = "2026-10-03T20:01:38Z"
+actor = "lognd"
+rev = 1

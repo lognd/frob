@@ -7,7 +7,7 @@ priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T19:47:13Z"
-updated = "2026-10-03T19:47:47Z"
+updated = "2026-10-03T20:01:38Z"
 scope = ["crates/grimble-model/tests/**", "crates/frob-release/tests/**", "crates/gob-git/tests/**", "crates/frob/src/init.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "crates/frob/tests/common/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = false
 
 [[acceptance]]
 text = "Given the tracked files, when the reserved-name test runs, then no path uses a Windows-reserved device name or character"
-bound = false
+bound = true
 +++
 
 First push of experimental (run https://github.com/lognd/frob/actions/runs/37148534601, 2026-10-03): (1) windows-latest checkout fails: invalid path crates/grimble-model/tests/corpus/lex/encoding/nul.grmb (NUL is a reserved device name on Windows; rename the fixture and its references, e.g. nul-byte.grmb, and add a test that no tracked path uses a Windows-reserved name: CON PRN AUX NUL COM1-9 LPT1-9 with any extension, case-insensitive, or the characters <>:"|?*). (2) ubuntu nextest: 3 of 1293 failed, all because the tests rely on the developer's global git identity: frob-cli::cli init_twice_second_is_already_and_changes_nothing (snapshot expects attesters = ["test@example.com"]; on CI init reads no user.email and writes []), frob-release::cut an_existing_tag_is_refused_and_never_moved (NoIdentity), gob-git::ledger spawn_fallbacks_worktree_merge_push (Committer identity unknown). Make every test hermetic: set the identity explicitly in each temp repository (repo-local user.name/user.email, or GIT_AUTHOR_*/GIT_COMMITTER_* on the spawned process) through the shared test helper if one exists, and make the init snapshot independent of the host identity. Find any other test with the same dependency by running the suite with HOME pointed at an empty temp dir and GIT_CONFIG_NOSYSTEM=1, GIT_CONFIG_GLOBAL=/dev/null.
