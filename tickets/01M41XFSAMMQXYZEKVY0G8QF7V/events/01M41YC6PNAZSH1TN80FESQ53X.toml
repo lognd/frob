@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T22:32:54Z"
+digest = "b2d843081d620d8d63130406a0750ae6d802ee8df743f82c7183952e3b59758b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID da915c51-a7b0-4acc-87e8-4c76a9cb9027 with nextest profile: default
+    Starting 2 tests across 5 binaries (47 tests skipped)
+        PASS [   0.006s] gob-dev ci::tests::clippy_windows_declares_target_and_mingw
+        PASS [   0.115s] gob-dev ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.116s] 2 tests run: 2 passed, 47 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(missing_system_tool) | test(clippy_windows_declares)'"
+size = 667
+status = "measured"
+tests = ["ci::tests::clippy_windows_declares_target_and_mingw", "ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command"]
+at = "2026-10-03T22:32:54Z"
+actor = "lognd"
+rev = 1

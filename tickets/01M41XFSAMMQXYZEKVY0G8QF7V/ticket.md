@@ -7,12 +7,12 @@ priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T22:17:23Z"
-updated = "2026-10-03T22:27:45Z"
+updated = "2026-10-03T22:32:54Z"
 scope = [".github/workflows/ci.yml", "crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", "CONTRIBUTING.md", ".cargo/config.toml"]
 
 [[acceptance]]
 text = "Given a host without x86_64-w64-mingw32-gcc, when cargo dev ci --step clippy-windows runs, then it fails before building and names the install command"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given ci.yml missing an install for a declared step prerequisite, when the parity test runs, then it fails naming the prerequisite"
