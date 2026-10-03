@@ -8,7 +8,7 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:56Z"
-updated = "2026-10-03T16:11:06Z"
+updated = "2026-10-03T16:11:09Z"
 idempotency_key = "m2-rel-pm033"
 labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/rules/replenish.rs", "docs/reference/rules/pm/**", "crates/frob-pm/src/rules/mod.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/mdtest/pm033.md", "crates/frob-check/src/product.rs", "docs/reference/rules/PM033.md", "docs/reference/rules/README.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given four doable tickets, when frob check runs, then PM033 is silent"
-bound = false
+bound = true
 +++
 
 Counts doable tickets (the same set as `ticket doable`); below [pm] ready_min fires Advisory: "ready queue is N, below M: run frob cycle plan or triage". Advisory never fails the gate.
