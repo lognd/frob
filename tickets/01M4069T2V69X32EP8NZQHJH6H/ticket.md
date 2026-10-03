@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:55Z"
-updated = "2026-10-03T16:13:28Z"
+updated = "2026-10-03T16:13:29Z"
 idempotency_key = "m2-rel-cycle-plan"
 labels = ["milestone:2", "area:release"]
-scope = ["crates/frob-pm/src/cycle/plan.rs", "crates/frob/src/cycle_cmd.rs"]
+scope = ["crates/frob-pm/src/cycle/plan.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/rules/replenish.rs"]
 
 [[links]]
 kind = "blocked-by"
