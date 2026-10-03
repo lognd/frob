@@ -2,7 +2,8 @@
 id = "01M3ZTVKT99TVVVEKSKAMBGYQ4"
 title = "Navigation design: canonical ids only, verifiable reindex, generated docs, profiles and a repository tour"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
