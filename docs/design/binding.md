@@ -699,6 +699,23 @@ Severity column: proposed defaults; Warn rules become Error under
 - Subject: each artifact in the walk that is not excluded by `[grimble]
   exclude`. The model's own `.grmb` files are artifacts and are ownable like
   any other.
+- Frob-owned artifacts are not subjects. frob's own files belong to no
+  node of the design model, so asking whether a node owns them is
+  vacuous. They are excluded from SYS001's universe (and from its subject
+  count) rather than given an implicit owner: an implicit `frob ledger`
+  node would put a model entity the user never wrote into the owner
+  function, SYS002 ties, `bindings` rows and acks, and would still need
+  the owned set passed in. The exclusion needs no change to `gob.sibling/1`:
+  grimble reads the one configurable path itself from the shared
+  `frob.toml`. The frob-owned set is final and closed:
+  - the ledger directory, `[tickets] dir` of `frob.toml` (default
+    `tickets`), everything under it, matched by whole path components;
+  - `changelog.d/`, the release fragments;
+  - `frob.lock`, frob's ack lock;
+  - `.frob/`, frob's per-worktree local state.
+
+  Every other unowned file is still reported, including `grimble.lock`
+  and the model's own files. The set is `grimble_bind::frob_owned`.
 - Predicate: `owner(i) = Exact(None)` for EVERY unit i of the artifact,
   including its module unit; that is, no node owns any part of it. An
   artifact some node owns in part is not SYS001 (the unowned remainder is

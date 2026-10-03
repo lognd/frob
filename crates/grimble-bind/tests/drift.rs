@@ -85,6 +85,7 @@ impl Repo {
             modeled: &[],
             strict: false,
             rename_min_tokens,
+            ledger_dir: "tickets",
         })
     }
 

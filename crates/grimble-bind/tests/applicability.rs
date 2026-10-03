@@ -3,6 +3,7 @@
 
 // frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 // frob:ticket 01M405B09EW2M0NDNTXKHXV2X7
+// frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 
 use std::path::Path;
 
@@ -35,6 +36,7 @@ fn bind(files: &[(&str, &str)]) -> Binding {
         modeled: &[],
         strict: false,
         rename_min_tokens: 12,
+        ledger_dir: "tickets",
     })
 }
 
@@ -213,4 +215,31 @@ fn a_model_with_only_a_flow_has_no_node_to_own_files() {
         "a flow is checked for code"
     );
     assert!(examined(&b, "SYS004") >= 1);
+}
+
+// frob:tests crates/grimble-bind/src/frob_owned.rs::is_frob_owned
+#[test]
+fn frob_owned_paths_are_never_unowned_but_other_loose_files_still_are() {
+    let model = format!("{PLAIN}node t : trusted {{ owns \"src/**\"; }}\n");
+    let b = bind(&[
+        ("design/m.grmb", &model),
+        ("src/lib.rs", "pub fn run() {}\n"),
+        ("tickets/01ABC/ticket.md", "x\n"),
+        ("tickets/01DEF/ticket.md", "x\n"),
+        ("changelog.d/01ABC.fix.md", "x\n"),
+        ("frob.lock", "x\n"),
+        (".frob/cache.txt", "x\n"),
+        ("docs/loose.txt", "x\n"),
+    ]);
+    let sys001: Vec<&str> = b
+        .findings
+        .iter()
+        .filter(|f| f.rule == "SYS001")
+        .map(|f| f.anchor.as_str())
+        .collect();
+    assert_eq!(
+        sys001,
+        ["docs"],
+        "only the loose file is unowned: {sys001:?}"
+    );
 }
