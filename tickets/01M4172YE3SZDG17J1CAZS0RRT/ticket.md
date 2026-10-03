@@ -8,8 +8,8 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T15:45:53Z"
-updated = "2026-10-03T18:03:30Z"
-scope = ["Cargo.toml", "crates/*/Cargo.toml", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/design/releases.md", "crates/gob-dev/src/publish.rs"]
+updated = "2026-10-03T18:05:35Z"
+scope = ["Cargo.toml", "crates/*/Cargo.toml", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/design/releases.md", "crates/gob-dev/src/publish.rs", "docs/guides/release.md"]
 
 [[acceptance]]
 text = "Given the workspace, when cargo dev publish --dry-run runs, then it plans every shipped crate in dependency order and excludes exactly the listed dev-only crates"
