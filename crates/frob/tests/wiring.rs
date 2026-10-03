@@ -86,13 +86,15 @@ fn new_ticket(dir: &Path, title: &str, ty: &str, scope: &str) -> String {
 #[test]
 fn sibling_verbs_print_schemas() {
     let dir = repo();
-    // gob-cli does not waive required positionals under --schema, so `work` and
-    // `ticket evidence` get placeholder arguments that are never read.
-    let cases: [&[&str]; 4] = [
-        &["work", "~x", "--schema"],
+    // --schema waives every verb's required positionals.
+    let cases: [&[&str]; 7] = [
+        &["work", "--schema"],
         &["test", "--schema"],
         &["ack", "--schema"],
-        &["ticket", "evidence", "list", "~x", "--schema"],
+        &["ticket", "evidence", "add", "--schema"],
+        &["ticket", "evidence", "list", "--schema"],
+        &["ticket", "evidence", "fetch", "--schema"],
+        &["ticket", "show", "--schema"],
     ];
     for args in cases {
         let out = frob(dir.path(), args);
@@ -199,4 +201,26 @@ fn registry_files_alias_is_accepted_and_shared_tables_are_listed() {
     for t in ["lease", "worktree", "evidence"] {
         assert!(tables.contains(&t), "{t} in {tables:?}");
     }
+}
+
+#[test]
+fn ticket_evidence_actions_are_subcommands_with_their_own_help() {
+    let dir = repo();
+    let out = frob(dir.path(), &["ticket", "evidence", "--help"]);
+    assert_eq!(code(&out), 0);
+    let text = String::from_utf8_lossy(&out.stdout).into_owned();
+    for action in ["add", "list", "fetch"] {
+        assert!(text.contains(action), "{action} missing from: {text}");
+    }
+    let add = frob(dir.path(), &["ticket", "evidence", "add", "--help"]);
+    assert_eq!(code(&add), 0);
+    let text = String::from_utf8_lossy(&add.stdout).into_owned();
+    assert!(
+        text.contains("--provider") && text.contains("--accepts"),
+        "{text}"
+    );
+    let fetch = frob(dir.path(), &["ticket", "evidence", "fetch", "--help"]);
+    assert!(String::from_utf8_lossy(&fetch.stdout).contains("INDEX"));
+    // An unknown action is a usage error with the verb tree's suggestion.
+    assert_eq!(code(&frob(dir.path(), &["ticket", "evidence", "nope"])), 2);
 }

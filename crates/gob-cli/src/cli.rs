@@ -124,8 +124,11 @@ impl Cli {
         ]
     }
 
-    /// Build the clap tree: global flags, one subcommand per verb path.
-    fn build(&self) -> clap::Command {
+    /// Build the clap tree: global flags, one nested subcommand per verb-path word.
+    ///
+    /// `relaxed` drops every verb argument's `required`, so `--schema` can be
+    /// answered without the verb's positionals.
+    fn build(&self, relaxed: bool) -> clap::Command {
         let mut root = clap::Command::new(self.product)
             .version(self.version)
             .bin_name(self.product)
@@ -134,31 +137,12 @@ impl Cli {
             .subcommand_required(true)
             .arg_required_else_help(true)
             .args(Self::global_args());
-        // Groups keep first-seen order; a verb path has one or two words.
-        let mut groups: Vec<(&'static str, Vec<&Registered>)> = Vec::new();
+        let mut tree = Node::default();
         for v in &self.verbs {
-            let head = v.meta.verb.split(' ').next().unwrap_or(v.meta.verb);
-            match groups.iter_mut().find(|(g, _)| *g == head) {
-                Some((_, members)) => members.push(v),
-                None => groups.push((head, vec![v])),
-            }
+            tree.insert(v.meta.verb, v);
         }
-        for (head, members) in groups {
-            if let [single] = members.as_slice()
-                && single.meta.verb == head
-            {
-                root = root.subcommand(leaf_command(head, single));
-                continue;
-            }
-            let mut group = clap::Command::new(head)
-                .about(format!("{head} commands"))
-                .subcommand_required(true)
-                .arg_required_else_help(true);
-            for v in members {
-                let tail = v.meta.verb.split_once(' ').map_or(v.meta.verb, |(_, t)| t);
-                group = group.subcommand(leaf_command(tail, v));
-            }
-            root = root.subcommand(group);
+        for (name, node) in tree.children {
+            root = root.subcommand(node.command(name, relaxed));
         }
         root
     }
@@ -174,7 +158,8 @@ impl Cli {
     {
         let mut full: Vec<OsString> = vec![OsString::from(self.product)];
         full.extend(args.into_iter().map(Into::into));
-        let matches = match self.build().try_get_matches_from(&full) {
+        let relaxed = wants_schema(&full);
+        let matches = match self.build(relaxed).try_get_matches_from(&full) {
             Ok(m) => m,
             Err(e) => return self.parse_failure(&e, &full),
         };
@@ -307,8 +292,58 @@ impl Cli {
     }
 }
 
+/// One word of the verb-path trie; a node is a verb (leaf) or a group of deeper words.
+#[derive(Default)]
+struct Node<'a> {
+    verb: Option<&'a Registered>,
+    children: Vec<(&'static str, Node<'a>)>,
+}
+
+impl<'a> Node<'a> {
+    /// Add `v` under its space-separated path, keeping first-seen order.
+    fn insert(&mut self, path: &'static str, v: &'a Registered) {
+        let mut node = self;
+        for word in path.split(' ') {
+            let at = if let Some(i) = node.children.iter().position(|(w, _)| *w == word) {
+                i
+            } else {
+                node.children.push((word, Node::default()));
+                node.children.len() - 1
+            };
+            node = &mut node.children[at].1;
+        }
+        node.verb = Some(v);
+    }
+
+    /// The clap command for this word: a leaf when it is only a verb, else a group.
+    fn command(self, name: &'static str, relaxed: bool) -> clap::Command {
+        if self.children.is_empty() {
+            let v = self
+                .verb
+                .unwrap_or_else(|| unreachable!("a leaf node holds a verb"));
+            return leaf_command(name, v, relaxed);
+        }
+        let mut group = clap::Command::new(name)
+            .about(format!("{name} commands"))
+            .subcommand_required(true)
+            .arg_required_else_help(true);
+        for (child, node) in self.children {
+            group = group.subcommand(node.command(child, relaxed));
+        }
+        group
+    }
+}
+
+/// True when argv asks for a schema (a `--schema` before any `--` terminator).
+fn wants_schema(argv: &[OsString]) -> bool {
+    argv.iter()
+        .skip(1)
+        .take_while(|a| *a != "--")
+        .any(|a| a == "--schema")
+}
+
 /// A leaf subcommand with the verb's flags and (if it opts in) `--dry-run`.
-fn leaf_command(name: &'static str, v: &Registered) -> clap::Command {
+fn leaf_command(name: &'static str, v: &Registered, relaxed: bool) -> clap::Command {
     let mut cmd = clap::Command::new(name).about(v.meta.summary);
     if v.meta.dry_run {
         cmd = cmd.arg(
@@ -318,7 +353,12 @@ fn leaf_command(name: &'static str, v: &Registered) -> clap::Command {
                 .help("Report what would change without changing it"),
         );
     }
-    (v.configure)(cmd)
+    let cmd = (v.configure)(cmd);
+    if relaxed {
+        tracing::debug!(verb = v.meta.verb, "--schema: verb arguments made optional");
+        return cmd.mut_args(|a| a.required(false));
+    }
+    cmd
 }
 
 /// Walk to the innermost subcommand; returns its space-joined path and matches.

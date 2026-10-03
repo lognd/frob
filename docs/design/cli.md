@@ -107,18 +107,18 @@ Every verb, every time:
   only through `--fail-on`).
 - `--schema` on any verb prints the bare JSON schema of that verb's
   data payload (not of the envelope or its inputs) and exits; `frob
-  schema` dumps all. Generated from the handler types. Known limitation
-  (Milestone 2 note): `--schema` does not waive a verb's required
-  positionals, so clap still demands them before the schema is printed.
+  schema` dumps all. Generated from the handler types. `--schema` waives
+  every required positional and flag of the verb (the root rebuilds the
+  clap tree with arguments optional when argv carries `--schema`), so
+  `frob work --schema` prints the schema and exits 0.
 - Every error names the exact corrected command in `remedy`.
 - No prefix abbreviation of flags (clap `infer_long_args = false`);
   did-you-mean on unknown verbs and flags.
-- A verb path is at most two words (`ticket show`, `graph why`): the
-  `gob-cli` command tree has one group level. A longer designed path
-  collapses to two words with the last word an action positional, so
-  `ticket evidence add` and `ticket evidence fetch` are the verb `ticket
-  evidence` with an action argument. Known limitation; a deeper tree is
-  a Milestone 2 note.
+- A verb path may have any number of words (`ticket show`, `graph why`,
+  `ticket evidence add`): the `gob-cli` command tree nests one clap
+  subcommand per word. `ticket evidence add|list|fetch` are three real
+  verbs with their own `--help`, `--schema` and verb names
+  (`ticket.evidence.add` in the envelope).
 - `--dry-run` is a per-verb opt-in declared in the verb's metadata
   (`#[derive(Command)]`), not a global flag; a verb that does not opt in
   rejects it as a usage error.

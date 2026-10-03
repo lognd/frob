@@ -2,13 +2,13 @@
 id = "01M3ZVQA77ZEK9DXEN5Z0XMZEG"
 title = "gob-symbols: unknown-receiver calls get May edges only within the caller's crate"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T03:08:03Z"
-updated = "2026-10-03T03:08:03Z"
+updated = "2026-10-03T03:22:54Z"
 idempotency_key = "m2-gobsym-crosscrate-poison"
 labels = ["milestone:2", "soundness"]
 scope = ["crates/gob-symbols/**", "crates/frob-obligations/**"]

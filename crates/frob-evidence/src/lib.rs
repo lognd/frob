@@ -16,7 +16,7 @@
 //!
 //! # Hooks for the binary
 //!
-//! [`register`] adds the `ticket evidence add|list|fetch` verb to a `gob_cli::Cli`;
+//! [`register`] adds the `ticket evidence add|list|fetch` verbs to a `gob_cli::Cli`;
 //! [`EvidenceGuard`] implements `frob_ledger::guards::CloseGuard` so closing a
 //! code-changing ticket needs a measured record (`E-EVIDENCE-MISSING`) unless
 //! [`EvidenceGuard::allow_bypass`] was set (and recorded with
@@ -42,7 +42,9 @@ pub use workspace::Workspace;
 /// Register the `ticket evidence` verbs on `cli`, mirroring how the binary registers `ticket`.
 #[must_use]
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
-    cli.register::<verbs::Evidence>()
+    cli.register::<verbs::AddVerb>()
+        .register::<verbs::ListVerb>()
+        .register::<verbs::FetchVerb>()
 }
 
 /// In-place form of [`register`] for callers that hold `&mut Cli`.
