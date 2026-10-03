@@ -23,7 +23,7 @@ pub const PRODUCT: &str = "frob";
 const DOC_MARKER: &str = "frob:doc";
 
 /// Bump when the scan or its binding output changes for the same input; part of the cache key.
-const SCAN_VERSION: u32 = 1;
+const SCAN_VERSION: u32 = 2;
 
 /// One cached `frob:doc` directive of a file, free of interner ids.
 #[derive(Serialize, Deserialize)]

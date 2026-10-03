@@ -273,9 +273,21 @@ with the scaffold feature, boundaries.md 2.6).
 
 Carried unchanged from v1 (notes/v1/graph-lang-dsl.md section 8.1): a
 per-file size cap and parse timeout (a file over either yields a PARSE
-finding, never a hang); a directive binds to the symbol that follows it
-within 2 lines in preference to the enclosing symbol; and the canonical
-reorientation of `frob:tests` edges.
+finding, never a hang); and the canonical reorientation of `frob:tests`
+edges.
+
+Binding order (Rust): a directive binds to the symbol that follows its
+directive block in preference to the enclosing symbol. The block is the
+directive's own line plus the lines after it that are directives, ordinary
+or doc comments, or attributes (also multi-line ones); the item may start on
+the first line after that run. Every directive in a stacked block binds to
+the same item, so several `frob:tests` lines above one `#[test]` all bind. A
+blank line ends the block: the directive then binds to its enclosing symbol,
+else to the file. A `frob:tests` directive that attaches to no item is
+reported as PARSE001 ("directive is not attached to an item: put it directly
+above the function or heading it describes") rather than as an unknown
+symref. Markdown HTML comments bind to the heading section that contains
+them (the preceding heading), so stacked comments agree by construction.
 
 ## 5. Structural IR (pointer)
 

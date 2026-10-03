@@ -22,10 +22,12 @@ fn sym(s: &str) -> Binding {
     Binding::Symbol(s.parse().unwrap())
 }
 
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/bind.rs::bind
 #[test]
-fn binds_to_fn_two_lines_later() {
+fn blank_line_ends_the_directive_block() {
     let text = format!("// frob:ticket {ID}\n\nfn target() {{}}\n");
-    assert_eq!(bound("src/a.rs", &text), [sym("src/a.rs::target")]);
+    assert_eq!(bound("src/a.rs", &text), [Binding::File]);
 }
 
 #[test]
@@ -34,10 +36,106 @@ fn binds_to_adjacent_fn_and_doc_comment_form() {
     assert_eq!(bound("src/a.rs", &text), [sym("src/a.rs::target")]);
 }
 
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/bind.rs::bind
 #[test]
-fn three_lines_away_is_not_following() {
+fn two_blank_lines_also_end_the_block() {
     let text = format!("// frob:ticket {ID}\n\n\nfn target() {{}}\n");
     assert_eq!(bound("src/a.rs", &text), [Binding::File]);
+}
+
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/bind.rs::bind
+#[test]
+fn two_stacked_tests_directives_all_bind() {
+    let text = "#[cfg(test)]\nmod tests {\n    // frob:tests src/a.rs::foo\n    // frob:tests src/a.rs::bar\n    #[test]\n    fn works() {}\n}\n";
+    assert_eq!(
+        bound("src/a.rs", text),
+        [sym("src/a.rs::foo"), sym("src/a.rs::bar")]
+    );
+}
+
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/bind.rs::bind
+#[test]
+fn three_stacked_tests_directives_all_bind() {
+    let text = "fn foo() {}\n\n// frob:tests src/a.rs::foo\n// frob:tests src/a.rs::foo2\n// frob:tests src/a.rs::foo3\n#[test]\nfn works() {}\n";
+    let r = common::scan("src/a.rs", text);
+    assert!(r.findings.is_empty(), "{:?}", r.findings);
+    let got: Vec<_> = r.directives.iter().map(|d| d.bound.clone()).collect();
+    assert_eq!(
+        got,
+        [
+            sym("src/a.rs::foo"),
+            sym("src/a.rs::foo2"),
+            sym("src/a.rs::foo3")
+        ]
+    );
+    assert!(r.directives.iter().all(|d| {
+        d.source
+            .as_ref()
+            .is_some_and(|s| s.to_string() == "src/a.rs::works")
+    }));
+}
+
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/bind.rs::block_limit
+#[test]
+fn stacked_directives_mixed_with_comments_docs_and_attributes_bind() {
+    let text = format!(
+        "// frob:ticket {ID}\n// ordinary note\n/// docs\n#[inline]\n#[allow(\n    dead_code,\n)]\n// frob:invariant sorted\n/// more docs\nfn target() {{}}\n"
+    );
+    assert_eq!(
+        bound("src/a.rs", &text),
+        [sym("src/a.rs::target"), sym("src/a.rs::target")]
+    );
+}
+
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/bind.rs::block_limit
+#[test]
+fn stacked_directives_in_a_block_comment_and_below_it_bind() {
+    let text = format!(
+        "/*\n * frob:ticket {ID}\n * frob:invariant sorted\n */\n#[test]\nfn target() {{}}\n"
+    );
+    assert_eq!(
+        bound("src/a.rs", &text),
+        [sym("src/a.rs::target"), sym("src/a.rs::target")]
+    );
+}
+
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/bind.rs::bind
+#[test]
+fn markdown_stacked_comments_bind_to_the_same_heading() {
+    let text = format!(
+        "# One\n\n<!-- frob:ticket {ID} -->\n<!-- frob:doc docs/x.md#sec -->\n<!-- note -->\n<!-- frob:ticket {ID} -->\n## Two\n"
+    );
+    let one = Binding::Symbol("docs/a.md#one".parse().unwrap());
+    assert_eq!(bound("docs/a.md", &text), [one.clone(), one.clone(), one]);
+}
+
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/scan.rs::Scanner[impl].record
+#[test]
+fn tests_directive_separated_by_a_blank_line_is_not_attached() {
+    let text = "fn foo() {}\n\n// frob:tests src/a.rs::foo\n\n#[test]\nfn works() {}\n";
+    let r = common::scan("src/a.rs", text);
+    assert!(r.directives.is_empty(), "{:?}", r.directives);
+    assert_eq!(r.findings.len(), 1);
+    assert_eq!(r.findings[0].rule.as_str(), "PARSE001");
+    assert_eq!(r.findings[0].message, gob_directives::NOT_ATTACHED);
+    assert!(r.findings[0].message.contains("not attached to an item"));
+}
+
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/scan.rs::Scanner[impl].record
+#[test]
+fn tests_directive_at_the_end_of_a_file_is_not_attached() {
+    let text = "fn foo() {}\n// frob:tests src/a.rs::foo\n";
+    let r = common::scan("src/a.rs", text);
+    assert!(r.directives.is_empty());
+    assert_eq!(r.findings[0].message, gob_directives::NOT_ATTACHED);
 }
 
 #[test]
@@ -461,4 +559,16 @@ fn markdown_comment_opening_a_line_is_an_html_block_not_span_content() {
     // CommonMark: `<!--` at a line start interrupts the paragraph, so the
     // backtick never closes and the comment is a real directive.
     assert_eq!(md_count("# T\n\n`a\n<!-- frob:invariant x --> b` c\n"), 1);
+}
+
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+// frob:tests crates/gob-directives/src/scan.rs::Scanner[impl].record
+#[test]
+fn tests_directive_naming_nothing_still_binds_so_test001_judges_the_symref() {
+    let text = "// frob:tests src/a.rs::missing\n#[test]\nfn works() {}\n";
+    let r = common::scan("src/a.rs", text);
+    assert!(r.findings.is_empty(), "{:?}", r.findings);
+    assert_eq!(r.directives.len(), 1);
+    assert_eq!(r.directives[0].bound, sym("src/a.rs::missing"));
+    assert!(r.directives[0].source.is_some());
 }

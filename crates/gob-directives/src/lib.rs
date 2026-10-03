@@ -60,5 +60,5 @@ pub use gob_macros::Directive;
 pub use inventory;
 pub use meta::{Directive, DirectiveEntry, DirectiveMeta, all_directives, validate};
 pub use rules::{Dsl001, Dsl002, Parse001};
-pub use scan::{DirectiveRecord, REORIENT_VERB, ScanConfig, ScanResult, Scanner};
+pub use scan::{DirectiveRecord, NOT_ATTACHED, REORIENT_VERB, ScanConfig, ScanResult, Scanner};
 pub use ulid::{is_full_ulid, looks_like_ticket_ref};

@@ -19,6 +19,10 @@ use crate::ulid::{is_full_ulid, looks_like_ticket_ref};
 /// The verb whose binding is reoriented to its named target inside a test item.
 pub const REORIENT_VERB: &str = "tests";
 
+// frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
+/// The message for a directive with no item to attach to.
+pub const NOT_ATTACHED: &str = "directive is not attached to an item: put it directly above the function or heading it describes";
+
 /// Which namespaces a [`Scanner`] honours and which product it reports as.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ScanConfig {
@@ -231,11 +235,17 @@ impl Scanner {
             emit(meta, span, message);
             return;
         }
-        out.directives
-            .push(Self::record(ctx, seg, (ns, verb), args, whole, &mut emit));
+        if let Some(rec) = Self::record(ctx, seg, (ns, verb), args, whole, &mut emit) {
+            out.directives.push(rec);
+        }
     }
 
+    // frob:ticket 01M40H2JYVEHBZD62WV8Z6EXFW
     /// Build the record, binding it and reorienting `tests` inside a test item.
+    ///
+    /// A Rust `tests` directive that attaches to no item is reported (PARSE001)
+    /// and dropped: it has nothing to cover and would only be misreported as an
+    /// unknown symref downstream. Other verbs may legitimately bind the file.
     fn record(
         ctx: &Ctx<'_>,
         seg: &Segment<'_>,
@@ -243,13 +253,22 @@ impl Scanner {
         args: ArgList,
         span: Span,
         emit: &mut impl FnMut(&RuleMeta, Span, String),
-    ) -> DirectiveRecord {
+    ) -> Option<DirectiveRecord> {
         let site = Site {
             start: seg.offset,
             end: seg.offset + seg.text.len(),
             allow_following: !seg.inner_doc && ctx.language != Language::Markdown,
         };
-        let sym = bind(ctx.index, &ctx.symbols.symbols, site);
+        let sym = bind(ctx.index, ctx.text, &ctx.symbols.symbols, site);
+        if sym.is_none()
+            && verb == REORIENT_VERB
+            && site.allow_following
+            && ctx.language == Language::Rust
+        {
+            tracing::debug!(?span, "unattached tests directive dropped");
+            emit(&Parse001::META, span, NOT_ATTACHED.to_owned());
+            return None;
+        }
         let mut bound = sym.map_or(Binding::File, |s| Binding::Symbol(s.symref.clone()));
         let mut source = None;
         if verb == REORIENT_VERB
@@ -269,14 +288,14 @@ impl Scanner {
                 ),
             }
         }
-        DirectiveRecord {
+        Some(DirectiveRecord {
             namespace: ns.to_owned(),
             verb: verb.to_owned(),
             args,
             span,
             bound,
             source,
-        }
+        })
     }
 
     fn unknown_verb_message(&self, ns: &str, verb: &str) -> String {
