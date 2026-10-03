@@ -7,8 +7,8 @@ priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T19:47:13Z"
-updated = "2026-10-03T19:47:13Z"
-scope = ["crates/grimble-model/tests/**", "crates/frob/tests/**", "crates/frob-release/tests/**", "crates/gob-git/tests/**", "crates/frob/src/init.rs"]
+updated = "2026-10-03T19:47:35Z"
+scope = ["crates/grimble-model/tests/**", "crates/frob-release/tests/**", "crates/gob-git/tests/**", "crates/frob/src/init.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__init_frob_toml.snap"]
 
 [[acceptance]]
 text = "Given an environment with no global or system git config (GIT_CONFIG_GLOBAL=/dev/null, GIT_CONFIG_NOSYSTEM=1, empty HOME), when cargo nextest run --workspace runs, then every test passes"
